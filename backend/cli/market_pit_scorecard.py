@@ -30,6 +30,32 @@ reads.
 
 Read-only with respect to the desk and the store; writes
 `<root>/desk/pit_scorecard.json`.
+
+The book gate for a proposed analyst (`docs/research/stance-table-gate.md`)
+adds `--stance-table FILE` (repeatable), a point-in-time stance table in
+the studies' long form (session, ticker, stance[, conviction | rank]) read
+by `desk/stance_table.py`, and `--stance-mode {sixth,replace:<analyst>}`:
+`sixth` grades each table as a further full vote under the unchanged rule,
+`replace:sentiment` (or any of the five) puts the one table in that
+analyst's place. `--membership FILE` names the dated membership file the
+point-in-time mask reads, `--output FILE` where the payload goes,
+`--rank-ic` attaches the graded score's rank IC at 20 and 60 sessions,
+and `--null-test` (with `--stance-table`) grades the book with the same
+rows zeroed in `sixth` mode against the plain desk and asserts the grades,
+scores and every line's returns are reproduced to the bit at two offsets:
+the incumbent must be reproduced before any table is read. Every payload
+carries each row's per-offset CAGRs and worst drawdown and the
+median-offset daily curves of every line, so two runs can be paired
+session by session; a stance-table payload records each table's sha256,
+the mode, and what the table did to the grade counts per window.
+
+    python -m backend.cli.market_pit_scorecard --graded-cap 0.25 \\
+        --stance-table stances/A2.parquet --null-test
+    python -m backend.cli.market_pit_scorecard --graded-cap 0.25 --rank-ic \\
+        --output docs/research/scorecards/<study>/control.json
+    python -m backend.cli.market_pit_scorecard --graded-cap 0.25 --rank-ic \\
+        --stance-table stances/A2.parquet --stance-mode sixth \\
+        --output docs/research/scorecards/<study>/pit_scorecard_A2.json
 """
 
 from __future__ import annotations
@@ -51,8 +77,9 @@ from backend.agents.trading.desk import (
     paper,
     point_in_time,
     simulate,
+    stance_table,
 )
-from backend.market import benchmarks, candidate_stats
+from backend.market import benchmarks, candidate_stats, universe
 from backend.market.universe import MARKET_INDICES
 
 FILE = "pit_scorecard.json"
@@ -295,6 +322,12 @@ def summarise(
                     "median_drawdown": _nanmedian(
                         np.array([s["drawdown"] for s in per_label[label]])
                     ),
+                    "worst_drawdown": _nanmin(
+                        np.array([s["drawdown"] for s in per_label[label]])
+                    ),
+                    # Every offset's CAGR, in offset order, so two runs can
+                    # be compared offset by offset.
+                    "cagrs": [float(c) for c in cagrs],
                     "median_sharpe": _nanmedian(
                         np.array([s["sharpe"] for s in per_label[label]])
                     ),
@@ -352,6 +385,116 @@ def paired(priced: list[dict[str, Curve]], cost_bps: float) -> list[dict[str, ob
     return out
 
 
+# Two reports priced on the same lines at the same offsets and costs,
+# compared to the bit: the null test of a new desk path is that the book
+# through it reproduces the control exactly. Returns the verdict and, per
+# (cost, offset, line), whether the dates and the returns arrays are equal
+# (NaN equal to NaN); the whole thing is `ok` only when every line is and
+# the grades and scores agree.
+def null_test(
+    report_a,
+    report_b,
+    store,
+    history_path,
+    offsets: int,
+    costs: tuple[float, ...],
+    arm=None,
+) -> dict:
+    """Return {"ok", "lines": [{cost, offset, line, dates_equal, returns_equal}]}."""
+    priced = []
+    for report in (report_a, report_b):
+        restricted, mask = point_in_time.point_in_time(report, history_path)
+        priced.append(
+            {
+                (cost, k): price_offset(
+                    report, restricted, mask, store, _since(report.panel, k), cost, arm
+                )
+                for cost in costs
+                for k in range(offsets)
+            }
+        )
+    lines = []
+    for (cost, k), curves in priced[0].items():
+        other = priced[1][(cost, k)]
+        for label, curve in curves.items():
+            a, b = curve, other[label]
+            dates_equal = bool(np.array_equal(a.dates, b.dates))
+            returns_equal = bool(
+                np.array_equal(
+                    np.asarray(a.daily, dtype=float),
+                    np.asarray(b.daily, dtype=float),
+                    equal_nan=True,
+                )
+            )
+            lines.append(
+                {
+                    "cost_bps": cost,
+                    "offset": k,
+                    "line": label,
+                    "dates_equal": dates_equal,
+                    "returns_equal": returns_equal,
+                }
+            )
+    grades_equal = bool(
+        np.array_equal(report_a.graded.grades, report_b.graded.grades)
+        and np.array_equal(report_a.scores, report_b.scores, equal_nan=True)
+    )
+    return {
+        "ok": grades_equal
+        and all(r["dates_equal"] and r["returns_equal"] for r in lines),
+        "grades_and_scores_equal": grades_equal,
+        "lines": lines,
+    }
+
+
+# The graded score's rank IC at 20 and 60 sessions (`desk.calibrate`): how
+# the analysts are measured, attached so a re-graded desk and the incumbent
+# can be read side by side.
+def rank_ic(report) -> dict[str, dict[str, float]]:
+    """Return {"h20": {...}, "h60": {...}} of the graded score's rank IC."""
+    from backend.agents.trading.desk import desk
+
+    out: dict[str, dict[str, float]] = {}
+    for horizon in (20, 60):
+        _, harness = desk.calibrate(report, horizon)
+        out[f"h{horizon}"] = {
+            "rank_ic": float(harness.mean_ic),
+            "ic_t": float(harness.ic_tstat),
+            "net_sharpe": float(harness.net_sharpe),
+        }
+    return out
+
+
+# The stance tables read and laid onto the report's panel, in the order
+# given, each with its audit record.
+def load_stance_tables(paths, report) -> list[stance_table.Aligned]:
+    """Return the Aligned tables for `paths` on `report.panel`."""
+    panel = report.panel
+    return [stance_table.align(stance_table.load(path), panel) for path in paths]
+
+
+# The payload's "stance_tables" block: each table's path, sha256, grade
+# name, row audit, the mode, and what the tables did to the grade counts
+# of the eligible book per window (before: the desk as run; after: with
+# the tables).
+def stance_record(
+    plain, regraded, aligned: list[stance_table.Aligned], mode: str, mask: np.ndarray
+) -> dict[str, object]:
+    """Return the payload's "stance_tables" block."""
+    return {
+        "mode": mode,
+        "tables": [item.record for item in aligned],
+        "grades": stance_table.grade_record(plain, regraded, mask, WINDOWS),
+    }
+
+
+# The file-name tag a stance mode carries: stance_sixth, stance_replace_<analyst>.
+def stance_tag(mode: str) -> str:
+    """Return the tag for `mode`."""
+    kind, analyst = stance_table.parse_mode(mode)
+    return f"stance_{kind}" if analyst is None else f"stance_{kind}_{analyst}"
+
+
 # Run everything and assemble the payload; `report` is the desk's unrestricted report.
 def build(
     report, store, offsets: int, costs: tuple[float, ...], history_path=None, arm=None
@@ -376,6 +519,7 @@ def build(
             "eligible_last_session": int(members[-1]),
             "eligible_median": float(np.median(members)),
         },
+        "membership": str(history_path or universe.MEMBERSHIP_HISTORY_PATH),
         "rows": [],
         "paired": [],
         "note": (
@@ -390,6 +534,7 @@ def build(
             f"({WORST_NAME_DAY_BASIS})."
         ),
     }
+    payload["curves"] = {}
     for cost in costs:
         priced = [
             price_offset(report, restricted, mask, store, _since(panel, k), cost, arm)
@@ -397,7 +542,24 @@ def build(
         ]
         payload["rows"].extend(summarise(priced, cost))
         payload["paired"].extend(paired(priced, cost))
+        payload["curves"][f"{cost:g}"] = median_offset_curves(priced)
     return payload
+
+
+# The daily returns of every line at the median offset (the offset `paired`
+# reads), on the rule's calendar, so two payloads from different runs can
+# be paired session by session: a candidate against its control is a
+# comparison the scorecard cannot make within one run.
+def median_offset_curves(priced: list[dict[str, Curve]]) -> dict:
+    """Return {"offset", "dates", "lines": {label: [daily...]}} at the median offset."""
+    k = len(priced) // 2
+    offset = priced[k]
+    base = offset[RULE_TODAY].dates
+    return {
+        "offset": k,
+        "dates": [str(d) for d in np.asarray(base, dtype="datetime64[D]")],
+        "lines": {label: _on(base, curve).tolist() for label, curve in offset.items()},
+    }
 
 
 # The k-th panel session as a date, for `simulate.run(since=...)`.
@@ -415,6 +577,25 @@ def render(payload: dict) -> str:
         f"{book['eligible_first_session']} at the start, {book['eligible_last_session']} "
         f"at the end, median {book['eligible_median']:.0f}"
     )
+    stances = payload.get("stance_tables")
+    if stances:
+        lines.append(f"stance tables, mode {stances['mode']}:")
+        for table in stances["tables"]:
+            lines.append(
+                f"  {table['path']} sha256 {table['sha256'][:12]}... as "
+                f"{table['name']}: {table['rows']} rows, {table['rows_used']} on "
+                f"the panel, {table['cells_bullish']} bullish / "
+                f"{table['cells_bearish']} bearish cells"
+            )
+        for window, moved in stances["grades"].items():
+            before, after = moved["before"], moved["after"]
+            lines.append(
+                f"  {window}: A+ {before['A+']} -> {after['A+']}, "
+                f"A {before['A']} -> {after['A']}, B {before['B']} -> {after['B']}, "
+                f"C {before['C']} -> {after['C']}; {moved['moved']} of "
+                f"{moved['eligible_name_sessions']} name-sessions moved "
+                f"({moved['moved_up']} up, {moved['moved_down']} down)"
+            )
     for cost in payload["costs_bps"]:
         for window in WINDOWS:
             lines.append(f"\n{cost:g} bp, {window}  (median / worst across {payload['offsets']} offsets)")
@@ -468,15 +649,50 @@ def main(argv: list[str] | None = None) -> int:
         "(0 < cap <= 1) with its concentration statistics; writes "
         "pit_scorecard_ew_graded_cap<percent>.json",
     )
+    parser.add_argument(
+        "--stance-table",
+        type=Path,
+        action="append",
+        default=[],
+        metavar="FILE",
+        help="a point-in-time stance table (session, ticker, stance[, conviction "
+        "| rank]; parquet or CSV) graded with the desk's five under "
+        "--stance-mode; repeatable in sixth mode, one in replace mode; writes "
+        "pit_scorecard_..._stance_<mode>.json",
+    )
+    parser.add_argument(
+        "--stance-mode",
+        default=stance_table.MODE_SIXTH,
+        help="how a stance table is graded: 'sixth' (a further full vote under "
+        "the unchanged rule, never a veto) or 'replace:<analyst>' (the table "
+        f"takes that analyst's place); analysts: {', '.join(stance_table.ANALYSTS)}",
+    )
+    parser.add_argument(
+        "--rank-ic",
+        action="store_true",
+        help="attach the graded score's rank IC at 20 and 60 sessions",
+    )
+    parser.add_argument(
+        "--membership",
+        type=Path,
+        help="the dated membership file the point-in-time mask reads "
+        "(default: the book's)",
+    )
+    parser.add_argument("--output", type=Path, help="where to write the payload")
+    parser.add_argument(
+        "--null-test",
+        action="store_true",
+        help="with --stance-table: grade the book with the same rows zeroed in "
+        "sixth mode against the plain desk, and assert the grades, scores and "
+        "every line are reproduced to the bit at two offsets; no payload",
+    )
     args = parser.parse_args(argv)
+    _check_stance_arguments(parser, args)
     from backend.agents.trading.desk import desk
     from backend.market.store import MarketStore
 
     root = Path(args.root)
     store = MarketStore(root)
-    report = desk.run(
-        store, None, inputs=(desk.EXPECTATIONS_GAP,), signed_rotation=args.signed_rotation
-    )
     arm = ARMS[args.arm] if args.arm else None
     cap_tag = None
     if args.graded_cap is not None:
@@ -484,28 +700,105 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("--graded-cap must be in (0, 1]")
         arm = graded_arm(args.graded_cap)
         cap_tag = f"ew_graded_cap{round(args.graded_cap * 100):02d}"
-    payload = build(report, store, args.offsets, tuple(args.costs), arm=arm)
+    history = args.membership or universe.MEMBERSHIP_HISTORY_PATH
+    # The book is asked for exactly as before; a stance table re-grades it.
+    plain = desk.run(
+        store,
+        None,
+        inputs=(desk.EXPECTATIONS_GAP,),
+        signed_rotation=args.signed_rotation,
+    )
+    aligned = load_stance_tables(args.stance_table, plain)
+    if args.null_test:
+        zeroed = [stance_table.zeroed(item) for item in aligned]
+        through = stance_table.regrade(plain, zeroed, stance_table.MODE_SIXTH)
+        verdict = null_test(plain, through, store, history, 2, tuple(args.costs), arm)
+        verdict["tables"] = [item.record for item in aligned]
+        print(render_null_test(verdict))
+        return 0 if verdict["ok"] else 1
+    report = plain
+    if aligned:
+        report = stance_table.regrade(plain, aligned, args.stance_mode)
+    payload = build(
+        report, store, args.offsets, tuple(args.costs), history_path=history, arm=arm
+    )
     if args.graded_cap is not None:
-        restricted, mask = point_in_time.point_in_time(report)
+        restricted, mask = point_in_time.point_in_time(report, history)
         payload["cap"] = args.graded_cap
         payload["concentration"] = concentration(restricted, mask, arm(restricted, mask))
+    if args.rank_ic:
+        payload["rank_ic"] = rank_ic(report)
+    if aligned:
+        _, mask = point_in_time.point_in_time(report, history)
+        payload["stance_tables"] = stance_record(
+            plain, report, aligned, args.stance_mode, mask
+        )
     tags = [
         t
         for t, on in (
             ("signed_rotation", args.signed_rotation),
             (args.arm, args.arm),
             (cap_tag, cap_tag),
+            (stance_tag(args.stance_mode) if aligned else None, bool(aligned)),
         )
         if on
     ]
     payload["arm"] = " + ".join(tags) if tags else "frozen rule"
     name = FILE if not tags else FILE.replace(".json", "_" + "_".join(tags) + ".json")
-    target = root / "desk" / name
+    target = args.output or root / "desk" / name
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(payload, indent=2, allow_nan=True), encoding="utf-8")
     print(render(payload))
     print(f"\nwrote {target}")
     return 0
+
+
+# The stance-table arguments checked before the desk is asked for anything:
+# a mode that parses, one table in replace mode, tables that exist, and a
+# null test that has a table to zero.
+def _check_stance_arguments(parser: argparse.ArgumentParser, args) -> None:
+    """Exit through `parser.error` on a bad stance-table command line."""
+    try:
+        kind, _ = stance_table.parse_mode(args.stance_mode)
+    except ValueError as exc:
+        parser.error(str(exc))
+    if kind == stance_table.MODE_REPLACE and len(args.stance_table) != 1:
+        parser.error("--stance-mode replace:<analyst> takes exactly one --stance-table")
+    missing = [str(p) for p in args.stance_table if not p.is_file()]
+    if missing:
+        parser.error(f"--stance-table not found: {', '.join(missing)}")
+    if args.null_test and not args.stance_table:
+        parser.error("--null-test needs --stance-table: it tests that path")
+
+
+# The null test's verdict as text: one line per mismatch, or the all-clear.
+def render_null_test(verdict: dict) -> str:
+    """Return the null test as text."""
+    lines = [
+        "null test: the book re-graded with the stance table's rows zeroed "
+        "(sixth mode) against the plain desk",
+    ]
+    for table in verdict.get("tables", []):
+        lines.append(
+            f"  table {table['path']} sha256 {table['sha256']}: "
+            f"{table['rows']} rows, {table['rows_used']} on the panel"
+        )
+    lines.extend(
+        [
+            f"  grades and scores equal: {verdict['grades_and_scores_equal']}",
+            f"  lines compared: {len(verdict['lines'])}",
+        ]
+    )
+    for row in verdict["lines"]:
+        if not (row["dates_equal"] and row["returns_equal"]):
+            lines.append(
+                f"  MISMATCH {row['cost_bps']:g} bp offset {row['offset']} "
+                f"{row['line']}: dates {row['dates_equal']}, "
+                f"returns {row['returns_equal']}"
+            )
+    passed = "PASS, reproduced to the bit" if verdict["ok"] else "FAIL"
+    lines.append(f"  verdict: {passed}")
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":
