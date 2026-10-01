@@ -14,16 +14,28 @@ async function installScenario(page: Page, frontendURL: string, evidence: Eviden
   const market = {exchange: 'XNYS', as_of: NOW, session: '2026-09-25', calendar_known: true, is_session: true, open: true, phase: 'open', opens_at: null, closes_at: null}
   const latest = {session: SESSION, written: '2026-09-24T21:05:00Z', regime: {ai_participation: .5, software_participation: .5, participation_percentile: .5, ai_vs_software_correlation: 0, correlation_z: 0, novelty_z: 0, rotation_leader: 'none', rotation_spread: 0, ai_drawdown: .1, selection_confidence: .6, exposure: 1, flags: []}, grades: {AAA: {grade: 'A', votes: 2, stances: {technical: 1, fundamental: 1}, ranks: {technical: .6}, score: .7, side: 'ai', headline: 'Synthetic recorded grade.', reason: 'Synthetic evidence.'}}, book: [], briefs: {}, paper: null}
   const live = {as_of: NOW, data_at: BAR, stale: false, market_status: market, quotes: {AAA: {symbol: 'AAA', last: 150, open: 149, high: 151, low: 148, bar: BAR, as_of: NOW}}, technical: {AAA: {now: .8, close: .6}}, technical_detail: {AAA: {now: .8, short: {}, medium: {}, long: {}, walls: LEGACY_WALLS}}, ...(evidence ? {options_evidence: {AAA: evidence}} : {})}
-  const diagnostics = {consoleErrors: [] as string[], pageErrors: [] as string[], failedRequests: [] as string[], badResponses: [] as string[], unexpectedRequests: [] as string[], forbiddenWrites: [] as string[]}
+  const cancelledConversationReads = new Set<string>()
+  const completedConversationReads = new Set<string>()
+  const diagnostics = {consoleErrors: [] as string[], pageErrors: [] as string[], failedRequests: [] as string[], badResponses: [] as string[], unexpectedRequests: [] as string[], forbiddenWrites: [] as string[],
+    // A conversation GET cancelled after a reload counts as failed unless its repeat succeeded.
+    get unreplacedConversationReads() {return [...cancelledConversationReads].filter(url => !completedConversationReads.has(url))}}
   const reads: string[] = []
   // A successful content assertion cannot hide an error elsewhere on the page.
   page.on('console', message => {if (message.type() === 'error') diagnostics.consoleErrors.push(message.text())})
   // Record exceptions even when React leaves part of the previous view visible.
   page.on('pageerror', error => diagnostics.pageErrors.push(error.message))
-  // All required browser requests must finish.
-  page.on('requestfailed', request => diagnostics.failedRequests.push(`${request.method()} ${request.url()}`))
+  // All required browser requests must finish. After a reload the dev server's StrictMode
+  // mounts the chat's conversation restore twice and cancels the first GET; that one is
+  // held to its repeat (unreplacedConversationReads) instead.
+  page.on('requestfailed', request => {
+    if (request.method() === 'GET' && new URL(request.url()).pathname.startsWith('/api/v1/conversations/') && request.failure()?.errorText === 'net::ERR_ABORTED') cancelledConversationReads.add(request.url())
+    else diagnostics.failedRequests.push(`${request.method()} ${request.url()}`)
+  })
   // Reject silent HTTP failures behind fallback content.
-  page.on('response', response => {if (response.status() >= 400) diagnostics.badResponses.push(`${response.status()} ${response.url()}`)})
+  page.on('response', response => {
+    if (response.status() >= 400) diagnostics.badResponses.push(`${response.status()} ${response.url()}`)
+    if (response.ok() && response.request().method() === 'GET' && new URL(response.url()).pathname.startsWith('/api/v1/conversations/')) completedConversationReads.add(response.url())
+  })
   await page.clock.install({time: new Date(NOW)})
   // Synthetic browser appearance must not depend on the operator's local preferences.
   await page.addInitScript(() => localStorage.setItem('anios.theme', 'light'))
