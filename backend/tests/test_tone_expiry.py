@@ -269,6 +269,7 @@ def test_the_null_reproduces_the_block_to_the_bit(book, monkeypatch):
     records = {t: [_record(t, d, guidance=-1.0) for d in book[t]] for t in tickers}
     tone = language.tone_features(panel, records)
     tone[:, :, 7] = -0.0
+    monkeypatch.setattr(te, "TONE_EXPIRY", None)
     assert te.on_load(tone, panel, records) is tone
     for mode in te.MODES:
         monkeypatch.setattr(te, "TONE_EXPIRY", mode)
@@ -397,9 +398,11 @@ def test_the_desk_loader_applies_the_flag_and_nothing_else(book, monkeypatch):
 # the flag and the block itself without it (the desk loader's two steps,
 # checked where torch is absent).
 def test_stored_records_and_on_load_compose_the_desk_loader(book, monkeypatch):
-    # Off by default: the live desk never ages a reading.
-    assert te.TONE_EXPIRY is None
+    # The live desk's default is HARD (A5-hard, 2026-10-01) and never null;
+    # the block is handed back untouched only with the flag off.
+    assert te.TONE_EXPIRY == te.HARD
     assert te.TONE_EXPIRY_NULL is False
+    monkeypatch.setattr(te, "TONE_EXPIRY", None)
     sessions = _sessions(date(2023, 1, 2), 520)
     tickers = ("LATE", "REG", "SHORT")
     panel = _panel(sessions, tickers)

@@ -44,7 +44,10 @@ sessions, and `--null-test`, which runs the book through the expiry path
 with an infinite horizon (`tone_expiry.TONE_EXPIRY_NULL`) and through the
 plain path and asserts that the grades, the scores, the sentiment
 analyst's scores and every line's returns are the same to the bit at two
-offsets: the incumbent must be reproduced before any arm is read. Every
+offsets: the incumbent must be reproduced before any arm is read. Since
+A5-hard went live (2026-10-01) a run without `--tone-expiry` is the desk
+as live (`tone_expiry.TONE_EXPIRY`, "hard"); `--tone-expiry off` is the
+desk as it was before, the study's control. Every
 payload carries each row's per-offset CAGRs and worst drawdown and the
 median-offset daily curves of every line, so two runs can be paired
 session by session (`tone_expiry_study.verdict`, `market_tone_expiry`).
@@ -82,6 +85,9 @@ from backend.agents.trading.desk import (
 from backend.market import benchmarks, candidate_stats, tone_expiry, universe
 from backend.market import tone_expiry_study as tes
 from backend.market.universe import MARKET_INDICES
+
+# `--tone-expiry off`: the desk with no reading aged, as before A5 went live.
+OFF = "off"
 
 FILE = "pit_scorecard.json"
 WINDOWS: dict[str, tuple[date | None, date | None]] = {
@@ -603,10 +609,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--tone-expiry",
-        choices=tone_expiry.MODES,
+        choices=(*tone_expiry.MODES, OFF),
         help="run the desk with the sentiment analyst's overdue release readings "
-        "treated as missing (hard) or decayed to neutral (decay), study A5; "
-        "writes pit_scorecard_..._tone_expiry_<mode>.json",
+        "treated as missing (hard) or decayed to neutral (decay), study A5, or "
+        "never aged (off, the desk before A5); writes "
+        "pit_scorecard_..._tone_expiry_<mode>.json. Default: the live desk's "
+        "own mode",
     )
     parser.add_argument(
         "--sentiment-ic",
@@ -635,8 +643,8 @@ def main(argv: list[str] | None = None) -> int:
         "reproduced to the bit at two offsets; no payload",
     )
     args = parser.parse_args(argv)
-    if args.null_test and args.tone_expiry is None:
-        parser.error("--null-test needs --tone-expiry: it tests that path")
+    if args.null_test and args.tone_expiry not in tone_expiry.MODES:
+        parser.error("--null-test needs --tone-expiry hard|decay: it tests that path")
     from backend.agents.trading.desk import desk
     from backend.market.store import MarketStore
 
@@ -653,9 +661,9 @@ def main(argv: list[str] | None = None) -> int:
     run = dict(inputs=(desk.EXPECTATIONS_GAP,), signed_rotation=args.signed_rotation)
     if args.null_test:
         return expiry_null_test(desk, store, run, history, args, arm)
-    # The book is asked for exactly as before; only the flag (None: off) ages
-    # the readings.
-    report = _desk_with_expiry(desk, store, run, args.tone_expiry)
+    # The book is asked for exactly as before; only the flag ages the
+    # readings: the live desk's own mode unless the run names one.
+    report = _desk_with_expiry(desk, store, run, _expiry_mode(args.tone_expiry))
     payload = build(
         report, store, args.offsets, tuple(args.costs), history_path=history, arm=arm
     )
@@ -675,15 +683,27 @@ def main(argv: list[str] | None = None) -> int:
         if on
     ]
     payload["arm"] = " + ".join(tags) if tags else "frozen rule"
+    # The tone-expiry mode the desk was graded under (None: no expiry), so a
+    # payload says it whether or not the run named one.
+    payload["tone_expiry_mode"] = _expiry_mode(args.tone_expiry)
     name = FILE if not tags else FILE.replace(".json", "_" + "_".join(tags) + ".json")
     target = args.output or root / "desk" / name
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(payload, indent=2, allow_nan=True), encoding="utf-8")
     print(render(payload))
-    if args.tone_expiry:
+    if args.tone_expiry in tone_expiry.MODES:
         print(render_expiry(payload["tone_expiry"]))
     print(f"\nwrote {target}")
     return 0
+
+
+# The mode a run's `--tone-expiry` asks for: the live desk's own when it
+# names none, no expiry for "off", else the arm it names.
+def _expiry_mode(asked: str | None) -> str | None:
+    """Return the tone_expiry mode a scorecard run grades under."""
+    if asked is None:
+        return tone_expiry.TONE_EXPIRY
+    return None if asked == OFF else asked
 
 
 # The tone-expiry flags set for the duration of a block and put back
@@ -713,7 +733,7 @@ def _desk_with_expiry(desk, store, run: dict, mode: str | None, null: bool = Fal
 # and returns the exit code (0 pass, 1 fail).
 def expiry_null_test(desk, store, run: dict, history, args, arm) -> int:
     """Run the tone-expiry null test; return the exit code."""
-    plain = desk.run(store, None, **run)
+    plain = _desk_with_expiry(desk, store, run, None)
     through = _desk_with_expiry(desk, store, run, args.tone_expiry, null=True)
     verdict = null_test(plain, through, store, history, 2, tuple(args.costs), arm)
     verdict.update(expiry_null(plain, through, store, args.tone_expiry))
@@ -736,7 +756,7 @@ def attach_study_blocks(payload: dict, report, store, history, args) -> None:
         payload["desk_fingerprint"] = tes.fingerprint(
             report.graded.grades, report.scores
         )
-    if args.tone_expiry:
+    if args.tone_expiry in tone_expiry.MODES:
         payload["tone_expiry"] = expiry_block(report, store, history, args.tone_expiry)
 
 

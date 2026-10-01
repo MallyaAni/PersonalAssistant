@@ -26,28 +26,51 @@ and the book's gap alike - which is how the check counts them and how
 `tone_features` admits them on the desk's (legacy) path. The age is in
 calendar days, as the check's.
 
-**The flag.** `TONE_EXPIRY` is None (off: the default and the live desk),
-`HARD` or `DECAY`. `model.load_tone_features`, the desk's loader of the
-sentiment analyst's only input, applies it through `on_load`. Nothing that
-reads tone through `language.tone_features` directly - the expectations-gap
-learner's strict path, which feeds the value analyst - is touched.
-`TONE_EXPIRY_NULL` runs the same path with an infinite horizon, every weight
-1, which the point-in-time scorecard's `--tone-expiry <arm> --null-test`
-asserts reproduces the incumbent to the bit.
+**The flag.** `TONE_EXPIRY` is None (off), `HARD` or `DECAY`.
+`model.load_tone_features`, the desk's loader of the sentiment analyst's
+only input, applies it through `on_load`. Nothing that reads tone through
+`language.tone_features` directly - the expectations-gap learner's strict
+path, which feeds the value analyst - is touched. `TONE_EXPIRY_NULL` runs
+the same path with an infinite horizon, every weight 1, which the
+point-in-time scorecard's `--tone-expiry <arm> --null-test` asserts
+reproduces the incumbent to the bit.
 
-`expired_words` and `weighted_words` are the board's grade-detail lines the
-plan drafted for an expired and for a weighted-down reading. Nothing on the
-board calls them: they exist so the words are fixed and tested before any
-arm could be adopted.
+**Live since 2026-10-01: `HARD`.** A5-hard cleared its pre-registered gate
+on spark1 at 18:57 ET (`docs/research/scorecards/tone-expiry/
+tone_expiry_verdict.json`: REPLACES on both windows; A5-decay also
+REPLACES, and the plan proposes A5-hard when both do). The flag is a module
+constant, as the desk's other switches are (`intraday_orders.
+INTRADAY_EXECUTION`), so it reaches the nightly cron - which exports only
+the broker keys - and survives every restart; turning it off is a reviewed
+code change through `scripts/deploy.sh`. Outside the nightly it changes
+whatever reads `model.load_tone_features`: every research run of the desk
+(`desk.run`) and the `+tone` extras of `market_train` / `market_sweep` /
+`market_book` / `market_xsect_net`; the point-in-time scorecard's
+`--tone-expiry off` asks for the desk as it was before.
+
+**Stamped on the record.** `record_block` writes the mode the nightly
+decided under into the record (`record["tone_expiry"]["mode"]`), with each
+book name whose reading had expired at the session, the grade it was given
+and the grade it would have had with the reading counted, and the board's
+plain lines. `stamp_of` reads that mode back, and the grade parity replay
+(`grade_parity.run`) rebuilds a record under the mode it was decided
+under (a record from before the stamp existed: off), so a record written
+before the switch is never reported as drifting because of it.
+
+`expired_words` and `weighted_words` are the grade-detail lines the plan
+drafted for an expired and for a weighted-down reading; the board shows
+`record_lines` instead, in its data-health strip.
 """
 
 from __future__ import annotations
 
 import math
 from bisect import bisect_right
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date
+from typing import Any
 
 import numpy as np
 
@@ -64,9 +87,10 @@ HORIZON = release_coverage.TOLERANCE
 DECAY_START = 1.0
 DECAY_END = 2.0
 
-# The study's flag: None (off), HARD or DECAY. Off by default and in the
-# live desk; set only inside a scorecard run that asks for it.
-TONE_EXPIRY: str | None = None
+# The desk's flag: None (off), HARD or DECAY. HARD since 2026-10-01, when
+# A5-hard replaced the carry-forward (see the module notes); a scorecard run
+# sets it for its own duration and puts it back.
+TONE_EXPIRY: str | None = HARD
 # The null test: the expiry path with an infinite horizon (every weight 1).
 TONE_EXPIRY_NULL = False
 
@@ -236,9 +260,9 @@ def apply(tone: np.ndarray, weight: np.ndarray) -> np.ndarray:
     return out
 
 
-# The desk's tone block with the study's flag applied: the block itself when
-# the flag is off (the live desk), else a copy aged under TONE_EXPIRY, read
-# point in time from the same records the block was built from.
+# The desk's tone block with the flag applied: the block itself when the
+# flag is off, else a copy aged under TONE_EXPIRY (HARD on the live desk),
+# read point in time from the same records the block was built from.
 def on_load(tone: np.ndarray, panel, records) -> np.ndarray:
     """Return `tone`, or its expired copy when TONE_EXPIRY is set."""
     if TONE_EXPIRY is None:
@@ -289,8 +313,212 @@ def weighted_words(
     )
 
 
+# The flags set for the duration of a block and put back however it ends,
+# so a replay or a study run under another mode never leaves it changed.
+@contextmanager
+def using(mode: str | None, null: bool = False) -> Iterator[None]:
+    """Set TONE_EXPIRY / TONE_EXPIRY_NULL inside the block, then restore them."""
+    global TONE_EXPIRY, TONE_EXPIRY_NULL
+    if mode is not None and mode not in MODES:
+        raise ValueError(f"unknown tone expiry {mode!r}; expected one of {MODES}")
+    before = (TONE_EXPIRY, TONE_EXPIRY_NULL)
+    TONE_EXPIRY, TONE_EXPIRY_NULL = mode, null
+    try:
+        yield
+    finally:
+        TONE_EXPIRY, TONE_EXPIRY_NULL = before
+
+
+# The mode a desk record was decided under: its `tone_expiry` stamp, None
+# (off) for a record written before the stamp existed. A mode this code does
+# not know is refused rather than replayed as something else.
+def stamp_of(record: Mapping[str, Any] | None) -> str | None:
+    """Return the record's tone-expiry mode, None when it carries none."""
+    block = (record or {}).get("tone_expiry")
+    if not isinstance(block, Mapping):
+        return None
+    mode = block.get("mode")
+    if mode is None:
+        return None
+    if mode not in MODES:
+        raise ValueError(f"the record's tone expiry {mode!r} is not one of {MODES}")
+    return str(mode)
+
+
+# One board line for a name whose reading no longer counts in full at the
+# record's session, in the coverage note's form: the reading's date, its age
+# and the usual gap it was judged by, what the rule did to it (expired: the
+# reading no longer counts, as for a name never read; or, under DECAY, the
+# share it still counts at), and the grade the name was
+# given against the grade it would have had with the reading counted in
+# full, so a grade that moved because a reading expired says so and one that
+# did not says that too. Statements of fact, no advice.
+def record_line(ticker: str, entry: Mapping[str, Any]) -> str:
+    """Return the board's plain line for one expired or weighted-down reading."""
+    weight = float(entry.get("weight", 0.0))
+    usual = _usual(
+        float(entry.get("cadence_days", math.nan)), entry.get("cadence_from") == "own"
+    )
+    reading = (
+        f"last release read {entry.get('last_read')}, "
+        f"{int(entry.get('days_since', 0))} days ago, {usual}"
+    )
+    grade, counted = entry.get("grade"), entry.get("grade_if_counted")
+    if grade == counted:
+        effect = f"graded {grade} either way"
+    else:
+        effect = f"graded {grade}; {counted} with the reading counted"
+    if weight <= 0.0:
+        return (
+            f"Earnings tone expired: {ticker} ({reading}); the reading no "
+            f"longer counts, {effect}"
+        )
+    percent = min(99, max(1, int(100.0 * weight + 0.5)))
+    return (
+        f"Earnings tone weighted down: {ticker} ({reading}); the reading "
+        f"counts at {percent}%, {effect}"
+    )
+
+
+# The board's lines for every name in a record's `expired`, alphabetical.
+def record_lines(expired: Mapping[str, Mapping[str, Any]] | None) -> list[str]:
+    """Return one plain line per name whose reading the expiry changed."""
+    return [record_line(t, expired[t]) for t in sorted(expired or {})]
+
+
+# One board line per name whose own reading still counts but whose letter
+# moved because other names' readings expired (the analyst ranks names
+# against each other), alphabetical: the grade given and the grade with the
+# expired readings counted. Statements of fact, no advice.
+def also_moved_lines(also: Mapping[str, Mapping[str, Any]] | None) -> list[str]:
+    """Return one plain line per name moved by other names' expired readings."""
+    return [
+        f"Earnings tone expiry elsewhere in the book: {t} graded "
+        f"{also[t].get('grade')}; {also[t].get('grade_if_counted')} with the "
+        "expired readings counted (its reading still counts)"
+        for t in sorted(also or {})
+    ]
+
+
+# The record's `tone_expiry` block for a desk report decided under the
+# current flag: the mode (always, so a replay can honour it), then - when
+# the flag is on - every book name whose reading the rule changed at the
+# report's last session (weight below 1: expired under HARD, also weighted
+# down under DECAY), with the reading's date, age and usual gap, the grade
+# the report gave it and the grade the same desk gives it with the reading
+# counted in full. That second grade is the report rebuilt from its own
+# opinions with only the sentiment analyst's input put back unaged
+# (`desk.assemble`, as the study's `expiry_block` rebuilds the incumbent),
+# so nothing else can differ; any other name whose letter differs between
+# the two is listed under `also_moved`. Reads the tone partitions the desk read
+# (`asof`, None for tonight's newest). Raises on a store it cannot read; the
+# nightly then records the mode and says the names could not be listed.
+def record_block(store, report, asof: date | None = None) -> dict[str, Any]:
+    """Return {"mode", "expired", "also_moved", "lines"} for `report`'s record."""
+    mode = TONE_EXPIRY
+    block: dict[str, Any] = {"mode": mode, "expired": {}, "also_moved": {}, "lines": []}
+    if mode is None:
+        return block
+    from backend.agents.trading.desk import desk, sentiment
+
+    panel = report.panel
+    records = language.stored_records(store, panel.tickers, asof)
+    if not records:
+        return block
+    found = ages(panel.dates, panel.tickers, histories(records), panel.benchmark)
+    weight = weights(found, mode, null=TONE_EXPIRY_NULL)
+    last = len(panel.dates) - 1
+    changed = [
+        column
+        for column, ticker in enumerate(panel.tickers)
+        if ticker != panel.benchmark and weight[last, column] < 1.0
+    ]
+    if not changed:
+        return block
+    plain = language.tone_features(panel, records)
+    opinions = {**report.opinions, sentiment.NAME: sentiment.opine(plain)}
+    counted = desk.assemble(
+        panel,
+        report.sides,
+        opinions,
+        report.regime,
+        report.inputs,
+        fundamentals_source=report.fundamentals_source,
+    )
+    expired: dict[str, dict[str, Any]] = {}
+    for column in changed:
+        ticker = panel.tickers[column]
+        expired[ticker] = {
+            "last_read": str(found.last_read[last, column]),
+            "days_since": int(found.age[last, column]),
+            "cadence_days": float(found.cadence[last, column]),
+            "cadence_from": "own" if bool(found.own[last, column]) else "book",
+            "weight": float(weight[last, column]),
+            "grade": report.graded.letter(last, column),
+            "grade_if_counted": counted.graded.letter(last, column),
+        }
+    # The sentiment analyst ranks names against each other, so taking one
+    # reading out can move a name whose own reading still counts; those are
+    # named too, so no letter the rule moved goes unexplained.
+    also: dict[str, dict[str, str]] = {}
+    for column, ticker in enumerate(panel.tickers):
+        if ticker == panel.benchmark or ticker in expired:
+            continue
+        grade = report.graded.letter(last, column)
+        if_counted = counted.graded.letter(last, column)
+        if grade != if_counted:
+            also[ticker] = {"grade": grade, "grade_if_counted": if_counted}
+    block["expired"] = expired
+    block["also_moved"] = also
+    block["lines"] = record_lines(expired) + also_moved_lines(also)
+    return block
+
+
+# The record's block when the names could not be listed: the mode (always,
+# for the replay), no names, and - with the expiry on - one board line that
+# says the list is missing, so a grade that moved is never left unexplained
+# without a word. Off, there is nothing to explain and no line.
+def unlisted_block(mode: str | None, exc: BaseException) -> dict[str, Any]:
+    """Return the `tone_expiry` block for a nightly that could not list names."""
+    lines = []
+    if mode is not None:
+        lines.append(
+            "Earnings tone expiry: the names whose release reading expired at "
+            "this session could not be listed; a grade may have moved for that "
+            "reason without its name shown here"
+        )
+    return {
+        "mode": mode,
+        "expired": None,
+        "lines": lines,
+        "note": f"{type(exc).__name__}: {exc}",
+    }
+
+
+# The one-line summary the nightly prints above the board's lines.
+def summary(block: Mapping[str, Any]) -> str:
+    """Return the `tone expiry:` log line for a record block."""
+    mode = block.get("mode") or "off"
+    if block.get("expired") is None:
+        return f"tone expiry: {mode}; names not listed ({block.get('note')})"
+    names = sorted(block.get("expired") or {})
+    expired = block["expired"]
+    moved = [
+        t
+        for t in names
+        if expired[t].get("grade") != expired[t].get("grade_if_counted")
+    ]
+    moved += sorted(block.get("also_moved") or {})
+    listed = ", ".join(names) or "none"
+    return (
+        f"tone expiry: {mode}; readings not counted in full: {listed}; "
+        f"grade letter moved: {', '.join(moved) or 'none'}"
+    )
+
+
 __all__ = [
     "ADVICE",
+    "also_moved_lines",
     "Ages",
     "DECAY",
     "DECAY_END",
@@ -307,6 +535,13 @@ __all__ = [
     "expired_words",
     "histories",
     "on_load",
+    "record_block",
+    "record_line",
+    "record_lines",
+    "stamp_of",
+    "summary",
+    "unlisted_block",
+    "using",
     "weighted_words",
     "weights",
 ]

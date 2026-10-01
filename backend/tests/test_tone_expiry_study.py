@@ -176,6 +176,7 @@ def study(tmp_path_factory):
     run = _desk(panel, others)
     history = _membership(root / "membership.csv")
     out = {"root": root, "panel": panel, "records": records, "run": run}
+    out["flags_before"] = (te.TONE_EXPIRY, te.TONE_EXPIRY_NULL)
     with pytest.MonkeyPatch.context() as mp:
         mp.setattr(_Store, "records", records)
         mp.setattr("backend.market.store.MarketStore", _Store)
@@ -211,7 +212,8 @@ def study(tmp_path_factory):
         out["flags_after_null"] = (te.TONE_EXPIRY, te.TONE_EXPIRY_NULL)
         paths = {}
         for name, extra in (
-            ("control", []),
+            # The study's control is the desk before A5 went live.
+            ("control", ["--tone-expiry", "off"]),
             ("hard", ["--tone-expiry", "hard"]),
             ("decay", ["--tone-expiry", "decay"]),
         ):
@@ -335,14 +337,16 @@ def test_the_affected_cells_ic_by_hand(study):
 # back, and the real arm's book is not the incumbent's.
 def test_the_null_tests_pass_and_are_not_vacuous(study, monkeypatch):
     assert study["null"] == {"hard": 0, "decay": 0}
-    assert study["flags_after_null"] == (None, False)
-    assert study["flags_after_runs"] == (None, False)
+    assert study["flags_before"] == (te.HARD, False)
+    assert study["flags_after_null"] == study["flags_before"]
+    assert study["flags_after_runs"] == study["flags_before"]
     panel, run = study["panel"], study["run"]
     monkeypatch.setattr(_Store, "records", study["records"])
-    plain = run(_Store())
+    with sc._expiry_flags(None):
+        plain = run(_Store())
     with sc._expiry_flags(te.HARD):
         hard = run(_Store())
-    assert te.TONE_EXPIRY is None
+    assert te.TONE_EXPIRY == te.HARD
     assert not np.array_equal(plain.graded.grades, hard.graded.grades)
     plain_tone, found, weight = sc._expiry_inputs(plain, _Store(), te.HARD)
     assert tes.changed_cells(plain_tone, weight).sum() > 100
@@ -357,7 +361,8 @@ def test_the_null_tests_pass_and_are_not_vacuous(study, monkeypatch):
 # is the control's, and the board's words are the plan's phrasing.
 def test_the_arm_payloads_carry_the_plans_block(study):
     control = study["payloads"]["control"]
-    assert control["arm"] == "ew_graded_cap25"
+    assert control["arm"] == "ew_graded_cap25 + tone_expiry_off"
+    assert control["tone_expiry_mode"] is None
     assert set(control["sentiment_ic"]) == {"h20", "h60"}
     assert "desk_fingerprint" in control
     assert "tone_expiry" not in control

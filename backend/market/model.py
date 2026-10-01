@@ -1102,9 +1102,9 @@ def load_edgar_features(store, panel, asof=None):
 
 
 # The release-tone feature array for a panel from stored frames, or None.
-# The tone-expiry study's flag (`tone_expiry.TONE_EXPIRY`, off by default
-# and in the live desk) is applied here, on the desk's sentiment input; with
-# the flag off the array is `tone_features`' own, untouched.
+# The tone expiry (`tone_expiry.TONE_EXPIRY`, "hard" on the live desk since
+# 2026-10-01) is applied here, on the desk's sentiment input; with the flag
+# off the array is `tone_features`' own, untouched.
 def load_tone_features(store, panel, asof=None):
     """Return language.tone_features(panel, records) from stored frames, or None."""
     from backend.market import language, tone_expiry

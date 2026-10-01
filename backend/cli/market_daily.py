@@ -2074,6 +2074,28 @@ def _release_coverage(store: MarketStore, core: dict, asof: date | None) -> dict
     return block
 
 
+# Which tone-expiry mode tonight's grades were decided under, and which book
+# names' release readings no longer counted in full at the session, with the
+# grade each was given against the grade it would have had with the reading
+# counted (`tone_expiry.record_block`). The mode is always recorded, because
+# the grade parity replay rebuilds a record under the mode it was decided
+# under; when the names cannot be listed with the expiry on, the board's line
+# says so (a grade may have moved without its name being shown) and the
+# record proceeds. Printed; it changes no grade, score or order.
+def _tone_expiry(store: MarketStore, report, asof: date | None) -> dict:
+    """Return the record's `tone_expiry` block, having printed it."""
+    from backend.market import tone_expiry
+
+    try:
+        block = tone_expiry.record_block(store, report, asof)
+    except Exception as exc:  # noqa: BLE001 - reporting must not stop the record
+        block = tone_expiry.unlisted_block(tone_expiry.TONE_EXPIRY, exc)
+    print(tone_expiry.summary(block))
+    for text in block.get("lines") or []:
+        print(f"  {text}")
+    return block
+
+
 # The ML observer's receipt for the record, whichever way it was reached.
 # The observer returns its ledger state either way, so the receipt says
 # whether that state is tonight's session or an earlier one it fell back to.
@@ -2231,6 +2253,9 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
     # Whether every book name's earnings releases are still being read, on
     # the record so the board can name the ones that are not.
     core["release_coverage"] = _release_coverage(store, core, args.asof)
+    # The tone-expiry mode the grades were decided under (the replay honours
+    # it) and the names whose stale reading no longer counted.
+    core["tone_expiry"] = _tone_expiry(store, report, args.asof)
     # Tonight's grades and targets against the point-in-time replay, on the
     # record before it is saved so the board reads the verdict with the
     # decision it applies to.
