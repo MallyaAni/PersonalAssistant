@@ -21,7 +21,7 @@ const themeButton = (page: import('@playwright/test').Page) =>
 // The workspace only renders behind a resolved session, so the header that
 // carries the control does not exist without one.
 test.beforeEach(async ({ page }) => {
-  await page.route('http://localhost:8000/api/v1/auth/session', route =>
+  await page.route('**/api/v1/auth/session', route =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -36,7 +36,7 @@ test.beforeEach(async ({ page }) => {
       }),
     }),
   )
-  await page.route('http://localhost:8000/api/v1/conversations/ani.mallya', route =>
+  await page.route('**/api/v1/conversations/ani.mallya', route =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -137,7 +137,7 @@ test.describe('theme', () => {
   // (`hasMessages`) state and reads its computed colour back, rather than
   // trusting that the right selector exists in theme.css.
   test('the composer bar behind the message list is dark, not left white', async ({ page }) => {
-    await page.route('http://localhost:8000/api/v1/chat', async route => {
+    await page.route('**/api/v1/chat', async route => {
       const payload = route.request().postDataJSON()
       await route.fulfill({
         status: 200,
