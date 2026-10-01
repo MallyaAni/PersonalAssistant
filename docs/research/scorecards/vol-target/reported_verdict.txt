@@ -1,0 +1,23 @@
+volatility target (B1) against ew_graded_cap25 as of 2026-09-30, 20 offsets, 25 bp; trials 474 cumulative, trial variance nan
+σ* = 15%: paired 2016-2023 -5.0 bp/session (t -2.61) over 2012 sessions; 2024-2026 -9.2 bp/session (t -2.42); above the control at 0 of 20 offsets; deflated Sharpe n/a at 474
+  2016-2023: median worst drawdown -18.8% against -45.5% (+26.7 points); CAGR +17.2% against +28.0% (-10.8 points); Sharpe 1.05 against 0.98 (+0.07)
+  2024-2026: median worst drawdown -19.5% against -25.4% (+5.8 points); CAGR +17.3% against +45.3% (-28.0 points); Sharpe 1.02 against 1.25 (-0.23)
+  RECORD (drawdown trade fails; Sharpe trade fails; paired difference negative at t <= -2)
+σ* = 25% (60-session window): paired 2016-2023 -1.7 bp/session (t -1.48) over 2012 sessions; 2024-2026 -4.0 bp/session (t -2.09); above the control at 0 of 20 offsets; deflated Sharpe n/a at 474
+  2016-2023: median worst drawdown -32.8% against -45.5% (+12.6 points); CAGR +24.6% against +28.0% (-3.4 points); Sharpe 1.05 against 0.98 (+0.07)
+  2024-2026: median worst drawdown -24.0% against -25.4% (+1.4 points); CAGR +31.4% against +45.3% (-13.9 points); Sharpe 1.18 against 1.25 (-0.07)
+  RECORD (drawdown trade fails; Sharpe trade fails; paired difference negative at t <= -2)
+σ* = 25% (return switch): paired 2016-2023 -3.0 bp/session (t -1.38) over 2012 sessions; 2024-2026 -6.6 bp/session (t -1.82); above the control at 0 of 20 offsets; deflated Sharpe n/a at 474
+  2016-2023: median worst drawdown -26.6% against -45.5% (+18.9 points); CAGR +21.6% against +28.0% (-6.4 points); Sharpe 1.09 against 0.98 (+0.11)
+  2024-2026: median worst drawdown -20.1% against -25.4% (+5.2 points); CAGR +27.2% against +45.3% (-18.1 points); Sharpe 1.11 against 1.25 (-0.14)
+  RECORD (drawdown trade fails; Sharpe trade fails)
+σ* = 25% (intercept switch): paired 2016-2023 -1.0 bp/session (t -1.26) over 2012 sessions; 2024-2026 -3.0 bp/session (t -1.87); above the control at 7 of 20 offsets; deflated Sharpe n/a at 474
+  2016-2023: median worst drawdown -36.7% against -45.5% (+8.8 points); CAGR +28.0% against +28.0% (-0.0 points); Sharpe 1.10 against 0.98 (+0.12)
+  2024-2026: median worst drawdown -26.3% against -25.4% (-0.9 points); CAGR +38.5% against +45.3% (-6.8 points); Sharpe 1.27 against 1.25 (+0.02)
+  RECORD (drawdown trade fails; Sharpe trade fails)
+σ* = 25% (return switch, intercept switch): paired 2016-2023 -2.0 bp/session (t -0.94) over 2012 sessions; 2024-2026 -5.9 bp/session (t -1.76); above the control at 0 of 20 offsets; deflated Sharpe n/a at 474
+  2016-2023: median worst drawdown -26.6% against -45.5% (+18.9 points); CAGR +24.9% against +28.0% (-3.1 points); Sharpe 1.15 against 0.98 (+0.17)
+  2024-2026: median worst drawdown -23.8% against -25.4% (+1.6 points); CAGR +30.9% against +45.3% (-14.4 points); Sharpe 1.13 against 1.25 (-0.12)
+  RECORD (drawdown trade fails; Sharpe trade fails)
+
+wrote docs/research/scorecards/vol-target/vol_target_reported.json
