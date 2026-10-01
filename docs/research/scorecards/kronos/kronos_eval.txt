@@ -1,0 +1,174 @@
+start Wed Sep 30 09:41:12 PM EDT 2026
+/home/animallya96/scratch/wt-kronos/backend/agents/trading/desk/regime.py:136: RuntimeWarning: Mean of empty slice
+  out[t] = np.nanmean(window, axis=0)
+/home/animallya96/scratch/wt-kronos/backend/agents/trading/desk/regime.py:226: RuntimeWarning: All-NaN slice encountered
+  ai_part = np.nanmedian(np.where(is_ai[None, :], part, np.nan), axis=1)
+/home/animallya96/scratch/wt-kronos/backend/agents/trading/desk/regime.py:227: RuntimeWarning: All-NaN slice encountered
+  sw_part = np.nanmedian(np.where(is_sw[None, :], part, np.nan), axis=1)
+/home/animallya96/scratch/wt-kronos/backend/market/levels.py:64: RuntimeWarning: All-NaN slice encountered
+  is_low = np.isfinite(low[t]) & (low[t] < np.nanmin(window_low, axis=0))
+/home/animallya96/scratch/wt-kronos/backend/market/levels.py:65: RuntimeWarning: All-NaN slice encountered
+  is_high = np.isfinite(high[t]) & (high[t] > np.nanmax(window_high, axis=0))
+/home/animallya96/scratch/wt-kronos/backend/market/levels.py:83: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmax(candidates, axis=0) if len(window) else np.nan
+/home/animallya96/scratch/wt-kronos/backend/market/levels.py:86: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmin(candidates, axis=0) if len(window) else np.nan
+/home/animallya96/scratch/wt-kronos/backend/market/levels.py:129: RuntimeWarning: Mean of empty slice
+  middle = np.nanmean(piece, axis=0)
+/home/animallya96/research-venv/lib/python3.12/site-packages/numpy/lib/_nanfunctions_impl.py:1997: RuntimeWarning: Degrees of freedom <= 0 for slice.
+  var = nanvar(a, axis=axis, dtype=dtype, out=out, ddof=ddof,
+/home/animallya96/scratch/wt-kronos/backend/market/levels.py:278: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmax(window, axis=0) if largest else np.nanmin(window, axis=0)
+[  272 s] desk: 2953 sessions x 95 names; 88,251 graded member cells
+[  274 s] K1: 76,019 forecast rows from /home/animallya96/scratch/kronos/forecasts/k1
+[  276 s] K1c40: 76,280 forecast rows from /home/animallya96/scratch/kronos/forecasts/k1c40
+K1 in_window K1 return: rank IC -0.0064 (t -0.23) over 82 periods on 51,666 cells, net Sharpe -0.26; vs desk -0.0605 (paired t -1.38)
+K1 in_window K1 drawdown: rank IC -0.0090 (t -0.33) over 82 periods on 51,666 cells, net Sharpe -0.59; vs desk -0.0631 (paired t -1.46)
+K1 in_window K1c40 return: rank IC +0.0246 (t +0.97) over 82 periods on 51,666 cells, net Sharpe -0.09; vs desk -0.0295 (paired t -0.81)
+K1 in_window K1c40 drawdown: rank IC +0.0363 (t +1.36) over 82 periods on 51,666 cells, net Sharpe -0.32; vs desk -0.0178 (paired t -0.50)
+K1 in_window desk score: rank IC +0.0541 (t +2.33) over 82 periods on 51,666 cells, net Sharpe +0.64
+K1 post_window K1 return: rank IC -0.0570 (t -0.85) over 28 periods on 24,326 cells, net Sharpe -0.60; vs desk -0.1265 (paired t -1.24)
+K1 post_window K1 drawdown: rank IC -0.0777 (t -1.27) over 28 periods on 24,326 cells, net Sharpe -0.91; vs desk -0.1472 (paired t -1.52)
+K1 post_window K1c40 return: rank IC +0.0129 (t +0.33) over 28 periods on 24,326 cells, net Sharpe +0.04; vs desk -0.0566 (paired t -0.90)
+K1 post_window K1c40 drawdown: rank IC -0.0217 (t -0.54) over 28 periods on 24,326 cells, net Sharpe -1.00; vs desk -0.0912 (paired t -1.44)
+K1 post_window desk score: rank IC +0.0695 (t +1.78) over 28 periods on 24,326 cells, net Sharpe +1.02
+K1 criterion K1 return: post-cutoff IC -0.0570 (t -0.85) on 28 periods (needs >= 60, IC >= 0.02, t >= 2.0) - fails
+K1 criterion K1 drawdown: post-cutoff IC -0.0777 (t -1.27) on 28 periods (needs >= 60, IC >= 0.02, t >= 2.0) - fails
+K1 criterion K1c40 return: post-cutoff IC +0.0129 (t +0.33) on 28 periods (needs >= 60, IC >= 0.02, t >= 2.0) - fails
+K1 criterion K1c40 drawdown: post-cutoff IC -0.0217 (t -0.54) on 28 periods (needs >= 60, IC >= 0.02, t >= 2.0) - fails
+VERDICT: RECORD - RECORD by construction: fewer than 60 post-cutoff periods
+wrote /home/animallya96/scratch/kronos/payloads/kronos_k1.json
+k1 exit 0 Wed Sep 30 09:45:49 PM EDT 2026
+[    6 s] dataset 81,612 rows, 76,019 forecast rows
+    ridge/rank fit 1: train through 2020-02-11 (12,869 rows), test 2020-02-20..2020-05-19 (1,728 rows), 7.3 s
+    ridge/rank fit 2: train through 2020-05-12 (14,597 rows), test 2020-05-20..2020-08-18 (1,799 rows), 5.9 s
+    ridge/rank fit 3: train through 2020-08-11 (16,391 rows), test 2020-08-19..2020-11-16 (1,856 rows), 5.8 s
+    ridge/rank fit 4: train through 2020-11-09 (18,242 rows), test 2020-11-17..2021-03-08 (1,935 rows), 5.7 s
+    ridge/rank fit 5: train through 2021-03-01 (20,167 rows), test 2021-03-09..2021-06-07 (2,056 rows), 9.6 s
+    ridge/rank fit 6: train through 2021-05-28 (22,213 rows), test 2021-06-08..2021-09-03 (2,113 rows), 7.3 s
+    ridge/rank fit 7: train through 2021-08-27 (24,330 rows), test 2021-09-07..2021-12-13 (2,067 rows), 6.1 s
+    ridge/rank fit 8: train through 2021-12-06 (26,398 rows), test 2021-12-14..2022-03-15 (2,030 rows), 5.2 s
+    ridge/rank fit 9: train through 2022-03-08 (28,448 rows), test 2022-03-16..2022-06-14 (2,115 rows), 8.2 s
+    ridge/rank fit 10: train through 2022-06-07 (30,538 rows), test 2022-06-15..2022-09-14 (2,186 rows), 35.0 s
+    ridge/rank fit 11: train through 2022-09-07 (32,722 rows), test 2022-09-15..2022-12-21 (2,202 rows), 7.7 s
+    ridge/rank fit 12: train through 2022-12-14 (34,918 rows), test 2022-12-22..2023-03-24 (2,263 rows), 11.9 s
+    ridge/rank fit 13: train through 2023-03-17 (37,178 rows), test 2023-03-27..2023-06-26 (2,285 rows), 22.5 s
+    ridge/rank fit 14: train through 2023-06-16 (39,456 rows), test 2023-06-27..2023-10-03 (2,301 rows), 22.1 s
+    ridge/rank fit 15: train through 2023-09-26 (41,759 rows), test 2023-10-04..2024-01-11 (2,300 rows), 34.4 s
+    ridge/rank fit 16: train through 2024-01-04 (44,068 rows), test 2024-01-12..2024-04-12 (2,272 rows), 25.6 s
+    ridge/rank fit 17: train through 2024-04-05 (46,335 rows), test 2024-04-15..2024-07-23 (2,294 rows), 14.0 s
+    ridge/rank fit 18: train through 2024-07-16 (48,622 rows), test 2024-07-24..2024-10-21 (2,362 rows), 36.9 s
+    ridge/rank fit 19: train through 2024-10-14 (50,983 rows), test 2024-10-22..2025-02-10 (2,445 rows), 27.7 s
+    ridge/rank fit 20: train through 2025-02-03 (53,421 rows), test 2025-02-11..2025-05-12 (2,479 rows), 15.2 s
+    ridge/rank fit 21: train through 2025-05-05 (55,901 rows), test 2025-05-13..2025-08-20 (2,488 rows), 10.1 s
+    ridge/rank fit 22: train through 2025-08-13 (58,383 rows), test 2025-08-21..2025-11-18 (2,568 rows), 19.5 s
+    ridge/rank fit 23: train through 2025-11-11 (60,944 rows), test 2025-11-19..2026-03-10 (2,667 rows), 20.1 s
+    ridge/rank fit 24: train through 2026-03-03 (63,605 rows), test 2026-03-11..2026-06-09 (2,756 rows), 13.5 s
+    ridge/rank fit 25: train through 2026-06-02 (66,356 rows), test 2026-06-10..2026-09-09 (2,951 rows), 57.8 s
+    ridge/rank fit 26: train through 2026-09-01 (69,176 rows), test 2026-09-10..2026-09-24 (966 rows), 47.2 s
+    ridge/rank fit 1: train through 2020-02-11 (12,869 rows), test 2020-02-20..2020-05-19 (1,728 rows), 1.6 s
+    ridge/rank fit 2: train through 2020-05-12 (14,597 rows), test 2020-05-20..2020-08-18 (1,799 rows), 1.8 s
+    ridge/rank fit 3: train through 2020-08-11 (16,391 rows), test 2020-08-19..2020-11-16 (1,856 rows), 4.4 s
+    ridge/rank fit 4: train through 2020-11-09 (18,242 rows), test 2020-11-17..2021-03-08 (1,935 rows), 6.6 s
+    ridge/rank fit 5: train through 2021-03-01 (20,167 rows), test 2021-03-09..2021-06-07 (2,056 rows), 6.1 s
+    ridge/rank fit 6: train through 2021-05-28 (22,213 rows), test 2021-06-08..2021-09-03 (2,113 rows), 5.8 s
+    ridge/rank fit 7: train through 2021-08-27 (24,330 rows), test 2021-09-07..2021-12-13 (2,067 rows), 8.9 s
+    ridge/rank fit 8: train through 2021-12-06 (26,398 rows), test 2021-12-14..2022-03-15 (2,030 rows), 7.0 s
+    ridge/rank fit 9: train through 2022-03-08 (28,448 rows), test 2022-03-16..2022-06-14 (2,115 rows), 8.5 s
+    ridge/rank fit 10: train through 2022-06-07 (30,538 rows), test 2022-06-15..2022-09-14 (2,186 rows), 7.3 s
+    ridge/rank fit 11: train through 2022-09-07 (32,722 rows), test 2022-09-15..2022-12-21 (2,202 rows), 18.1 s
+    ridge/rank fit 12: train through 2022-12-14 (34,918 rows), test 2022-12-22..2023-03-24 (2,263 rows), 13.0 s
+    ridge/rank fit 13: train through 2023-03-17 (37,178 rows), test 2023-03-27..2023-06-26 (2,285 rows), 24.7 s
+    ridge/rank fit 14: train through 2023-06-16 (39,456 rows), test 2023-06-27..2023-10-03 (2,301 rows), 26.3 s
+    ridge/rank fit 15: train through 2023-09-26 (41,759 rows), test 2023-10-04..2024-01-11 (2,300 rows), 50.4 s
+    ridge/rank fit 16: train through 2024-01-04 (44,068 rows), test 2024-01-12..2024-04-12 (2,272 rows), 40.0 s
+    ridge/rank fit 17: train through 2024-04-05 (46,335 rows), test 2024-04-15..2024-07-23 (2,294 rows), 57.1 s
+    ridge/rank fit 18: train through 2024-07-16 (48,622 rows), test 2024-07-24..2024-10-21 (2,362 rows), 47.2 s
+    ridge/rank fit 19: train through 2024-10-14 (50,983 rows), test 2024-10-22..2025-02-10 (2,445 rows), 45.5 s
+    ridge/rank fit 20: train through 2025-02-03 (53,421 rows), test 2025-02-11..2025-05-12 (2,479 rows), 43.5 s
+    ridge/rank fit 21: train through 2025-05-05 (55,901 rows), test 2025-05-13..2025-08-20 (2,488 rows), 13.0 s
+    ridge/rank fit 22: train through 2025-08-13 (58,383 rows), test 2025-08-21..2025-11-18 (2,568 rows), 6.2 s
+    ridge/rank fit 23: train through 2025-11-11 (60,944 rows), test 2025-11-19..2026-03-10 (2,667 rows), 1.5 s
+    ridge/rank fit 24: train through 2026-03-03 (63,605 rows), test 2026-03-11..2026-06-09 (2,756 rows), 1.9 s
+    ridge/rank fit 25: train through 2026-06-02 (66,356 rows), test 2026-06-10..2026-09-09 (2,951 rows), 3.6 s
+    ridge/rank fit 26: train through 2026-09-01 (69,176 rows), test 2026-09-10..2026-09-24 (966 rows), 2.1 s
+K3 in_window: stage-1 ridge daily IC +0.0054 (t +0.84), ridge + K1 +0.0060 (t +0.94); marginal +0.0006 (t +0.92) over 1061 dates
+K3 post_window: stage-1 ridge daily IC +0.0086 (t +1.13), ridge + K1 +0.0076 (t +1.00); marginal -0.0010 (t -1.01) over 525 dates
+wrote /home/animallya96/scratch/kronos/payloads/kronos_k3.json
+k3 exit 0 Wed Sep 30 10:01:37 PM EDT 2026
+/home/animallya96/scratch/wt-kronos/backend/agents/trading/desk/regime.py:136: RuntimeWarning: Mean of empty slice
+  out[t] = np.nanmean(window, axis=0)
+/home/animallya96/scratch/wt-kronos/backend/agents/trading/desk/regime.py:226: RuntimeWarning: All-NaN slice encountered
+  ai_part = np.nanmedian(np.where(is_ai[None, :], part, np.nan), axis=1)
+/home/animallya96/scratch/wt-kronos/backend/agents/trading/desk/regime.py:227: RuntimeWarning: All-NaN slice encountered
+  sw_part = np.nanmedian(np.where(is_sw[None, :], part, np.nan), axis=1)
+/home/animallya96/scratch/wt-kronos/backend/market/levels.py:64: RuntimeWarning: All-NaN slice encountered
+  is_low = np.isfinite(low[t]) & (low[t] < np.nanmin(window_low, axis=0))
+/home/animallya96/scratch/wt-kronos/backend/market/levels.py:65: RuntimeWarning: All-NaN slice encountered
+  is_high = np.isfinite(high[t]) & (high[t] > np.nanmax(window_high, axis=0))
+/home/animallya96/scratch/wt-kronos/backend/market/levels.py:83: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmax(candidates, axis=0) if len(window) else np.nan
+/home/animallya96/scratch/wt-kronos/backend/market/levels.py:86: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmin(candidates, axis=0) if len(window) else np.nan
+/home/animallya96/scratch/wt-kronos/backend/market/levels.py:129: RuntimeWarning: Mean of empty slice
+  middle = np.nanmean(piece, axis=0)
+/home/animallya96/research-venv/lib/python3.12/site-packages/numpy/lib/_nanfunctions_impl.py:1997: RuntimeWarning: Degrees of freedom <= 0 for slice.
+  var = nanvar(a, axis=axis, dtype=dtype, out=out, ddof=ddof,
+/home/animallya96/scratch/wt-kronos/backend/market/levels.py:278: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmax(window, axis=0) if largest else np.nanmin(window, axis=0)
+[    212 s] desk: 2953 sessions x 95 names
+[    213 s] cubes: 94 of 94 names
+[    213 s] edgar: 94 names (213 s)
+[    215 s] forecasts: 75,157 rows; 75,157 on the grid
+[    217 s] fills: 94 names with a cube
+/home/animallya96/scratch/wt-kronos/backend/market/bands.py:25: RuntimeWarning: Mean of empty slice
+  out[t] = np.nanmean(close[t - window + 1 : t + 1], axis=0)
+/home/animallya96/research-venv/lib/python3.12/site-packages/numpy/lib/_nanfunctions_impl.py:1997: RuntimeWarning: Degrees of freedom <= 0 for slice.
+  var = nanvar(a, axis=axis, dtype=dtype, out=out, ddof=ddof,
+[    219 s]   offset 0: 2569 orders from session 0
+[    221 s]   offset 1: 2579 orders from session 1
+[    224 s]   offset 2: 2500 orders from session 2
+[    227 s]   offset 3: 2546 orders from session 3
+[    230 s]   offset 4: 2598 orders from session 4
+[    234 s]   offset 5: 2609 orders from session 5
+[    237 s]   offset 6: 2622 orders from session 6
+[    241 s]   offset 7: 2567 orders from session 7
+[    244 s]   offset 8: 2651 orders from session 8
+[    248 s]   offset 9: 2640 orders from session 9
+[    251 s]   offset 10: 2566 orders from session 10
+[    254 s]   offset 11: 2642 orders from session 11
+[    258 s]   offset 12: 2645 orders from session 12
+[    261 s]   offset 13: 2665 orders from session 13
+[    265 s]   offset 14: 2520 orders from session 14
+[    269 s]   offset 15: 2660 orders from session 15
+[    272 s]   offset 16: 2659 orders from session 16
+[    276 s]   offset 17: 2575 orders from session 17
+[    280 s]   offset 18: 2619 orders from session 18
+[    284 s]   offset 19: 2546 orders from session 19
+kronos K2 (docs/research/kronos-plan-2026-09-30.md) as of 2026-09-30: 2 candidates on the executed orders of ew-redeploy under graded-equal-weight/5 against dip_or_close; 20 of 20 offsets, statistics at offset 10; model window 2024-07-01 onwards (post-cutoff); Newey-West lag 20
+orders at the median offset: model 319 buys and 116 sells over 564 sessions; contaminated 1185 buys and 398 sells over 1633 sessions
+drift: model +14.60 bp/session over 2719 A/A+ name-days; contaminated +9.67 bp/session over 10421 A/A+ name-days
+
+RECORD: no Kronos fill candidate clears every criterion on the post-cutoff window; the board keeps dip_or_close on both sides
+  K2_buy (kronos_low, buy): post-cutoff model window +0.1 bp/session (t +0.55) over 564 sessions; next-bar +0.1 (t +0.50) fails; contaminated 2018-01..2024-06 +0.0 bp/session (t +0.23); deflated Sharpe +0.50 at N = 2 (+0.01 at 466); drift-adjusted +0.1 (t +0.55); positive at 3 of 20 offsets; per re-timed order +18.8 bp (t +1.03) over 116 of 319 orders; forecast on 100%; mean level ratio 0.9758; level reached 32%; oracle capture 5% - RECORD
+  K2_sell (kronos_high, sell): post-cutoff model window -0.2 bp/session (t -0.87) over 564 sessions; next-bar -0.2 (t -0.81) fails; contaminated 2018-01..2024-06 +0.2 bp/session (t +1.37); deflated Sharpe +0.08 at N = 2 (+0.00 at 466); drift-adjusted -0.2 (t -0.87); positive at 0 of 20 offsets; per re-timed order -14.5 bp (t -0.57) over 42 of 116 orders; forecast on 98%; mean level ratio 1.0189; level reached 34%; oracle capture -4% - RECORD
+wrote /home/animallya96/scratch/kronos/payloads/kronos_k2.json
+k2 exit 0 Wed Sep 30 10:06:22 PM EDT 2026
+== /home/animallya96/scratch/kronos/payloads/kronos_k1.json
+K1 in_window   K1 return        IC -0.0064 (t -0.23) over 82 periods; payload -0.0064 (t -0.23)
+K1 in_window   K1 drawdown      IC -0.0090 (t -0.33) over 82 periods; payload -0.0090 (t -0.33)
+K1 in_window   K1c40 return     IC +0.0246 (t +0.97) over 82 periods; payload +0.0246 (t +0.97)
+K1 in_window   K1c40 drawdown   IC +0.0363 (t +1.36) over 82 periods; payload +0.0363 (t +1.36)
+K1 in_window   desk score       IC +0.0541 (t +2.33) over 82 periods; payload +0.0541 (t +2.33)
+K1 post_window K1 return        IC -0.0570 (t -0.85) over 28 periods; payload -0.0570 (t -0.85)
+K1 post_window K1 drawdown      IC -0.0777 (t -1.27) over 28 periods; payload -0.0777 (t -1.27)
+K1 post_window K1c40 return     IC +0.0129 (t +0.33) over 28 periods; payload +0.0129 (t +0.33)
+K1 post_window K1c40 drawdown   IC -0.0217 (t -0.54) over 28 periods; payload -0.0217 (t -0.54)
+K1 post_window desk score       IC +0.0695 (t +1.78) over 28 periods; payload +0.0695 (t +1.78)
+== /home/animallya96/scratch/kronos/payloads/kronos_k2.json
+K2 K2_buy   model         +0.15 bp/session (t +0.55) over 564 sessions, re-timed +18.8 bp over 116; payload +0.15 (t +0.55) over 564
+K2 K2_buy   contaminated  +0.03 bp/session (t +0.23) over 1633 sessions, re-timed +0.3 bp over 359; payload +0.03 (t +0.23) over 1633
+K2 K2_sell  model         -0.23 bp/session (t -0.87) over 564 sessions, re-timed -14.5 bp over 42; payload -0.23 (t -0.87) over 564
+K2 K2_sell  contaminated  +0.16 bp/session (t +1.37) over 1633 sessions, re-timed +21.8 bp over 103; payload +0.16 (t +1.37) over 1633
+independent check: PASS
+check exit 0 Wed Sep 30 10:06:22 PM EDT 2026

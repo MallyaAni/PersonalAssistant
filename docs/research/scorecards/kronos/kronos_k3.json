@@ -1,0 +1,834 @@
+{
+  "arm": "K3",
+  "rows": 70493,
+  "rows_without_forecast": 11119,
+  "windows": {
+    "in_window": {
+      "stage-1 ridge": {
+        "mean": 0.005366269608764318,
+        "t": 0.8445541070693946,
+        "dates": 1061
+      },
+      "ridge + K1": {
+        "mean": 0.006014044729193011,
+        "t": 0.9446193544308938,
+        "dates": 1061
+      },
+      "marginal": {
+        "delta": 0.0006477751204286899,
+        "t": 0.9150060524817332,
+        "dates": 1061
+      }
+    },
+    "post_window": {
+      "stage-1 ridge": {
+        "mean": 0.008623779970425145,
+        "t": 1.1316518396405375,
+        "dates": 525
+      },
+      "ridge + K1": {
+        "mean": 0.007610593998500064,
+        "t": 0.9966784154038305,
+        "dates": 525
+      },
+      "marginal": {
+        "delta": -0.0010131859719250786,
+        "t": -1.0092734218192565,
+        "dates": 525
+      }
+    }
+  },
+  "lines": [
+    "K3 in_window: stage-1 ridge daily IC +0.0054 (t +0.84), ridge + K1 +0.0060 (t +0.94); marginal +0.0006 (t +0.92) over 1061 dates",
+    "K3 post_window: stage-1 ridge daily IC +0.0086 (t +1.13), ridge + K1 +0.0076 (t +1.00); marginal -0.0010 (t -1.01) over 525 dates"
+  ],
+  "study": "kronos",
+  "plan": "docs/research/kronos-plan-2026-09-30.md",
+  "run": {
+    "dataset": {
+      "file": "/home/animallya96/scratch/stage1_dataset.npz",
+      "sha256": "8510f3e757dff3b5eb3cd0bc16a78be9bf590362c2683769a1479a0020d1e64e"
+    },
+    "forecasts": {
+      "directory": "/home/animallya96/scratch/kronos/forecasts/k1",
+      "files": {
+        "AAOI.parquet": "4937e58e02d473d844428baa48cd0585158e00cc206001d99fe65ceeffcc104c",
+        "AAPL.parquet": "469d4b25c33f322f82f5e2e89f0e24d1cae7cc9d10c211996582a25c8a925f05",
+        "ACN.parquet": "e150dc57f88f27ded73c25dcc2cab4a74154f797e432f331acd992e9a1703f86",
+        "ADBE.parquet": "2cf25fe256eb2ed769da591e5b3893a27393945265b3d4089ec6c40f1da00951",
+        "ADI.parquet": "fd94c9357c13ed9429a3f9bbdad2d07c1528b48fa341ceebf3a0cd6b1ae069bb",
+        "ADSK.parquet": "ae6ee8713f18001e1f1dc2e60e7d92155b0ca24045ed0fb1f8f0e295074c7802",
+        "ALAB.parquet": "5c73973510b61a7fd0fb8eedbd4864f8225d8b424b4e5a457624658fb9e54132",
+        "AMAT.parquet": "ebbcc2cd85d116c7be5c373b50d1aa1505329695b998c5238ac22ea8af797b6b",
+        "AMD.parquet": "b6f53797d4419fa1dc5fa0baa81d7b9a890a688e0c8ef063e9b4bab819218384",
+        "AMZN.parquet": "f38d9a20fed8aa5aab7750d286f8b2eb058868862fe5b55589ed0eb810756cc5",
+        "ANET.parquet": "770d542f4138966879a61a6b9cd5a677c15a425f7572dea30ba221d982d9028f",
+        "APLD.parquet": "a54191bc932649af0b0a3385609142fa2fe65a8f26e981cf50b8eb17d46cafce",
+        "ARM.parquet": "f2462987c70ee6e8f86dc3230d698a1e7420d782ac0e097a0c8ae93e838417be",
+        "ASML.parquet": "92bd51217f0b789c71d95377a4cae0714e07e265d1fe7d3880a551bd0df6a33f",
+        "AVGO.parquet": "843a619773c7876ef6895c23776a1db21705b40a57de86bb85646dc297ab6814",
+        "BE.parquet": "473dda93de6a1a2747a4c10441047b5f6edb709771737deca5c2f826ca59e19b",
+        "CDNS.parquet": "5436c30a6bc21042812c428c3c5487265bdad29d7d99162b7921c19096f76528",
+        "CEG.parquet": "3e2e031ad4b755877fab0a920c98a8e602d41db724537cf61ce48c8fae5b8214",
+        "CIEN.parquet": "b2ec703a4db37872a052acee9c2b375f348ba6ed934f0b84e830a01e627bc175",
+        "CIFR.parquet": "4ecd390cba7b77e50d0282c034c39b2e0f5ab59abf4a4c0d259dcebc63d02d46",
+        "COHR.parquet": "194efa0ab10a97fe10e2415c13cf49432481768ccc4083be5c387b17477134db",
+        "CORZ.parquet": "ae76fa1f640c7ef4897362fa7c9dfd587176ddbca898cb4a5049baa16dd20f6d",
+        "CRDO.parquet": "509f77691037a6a99c1f39e34e32c9f232d71e7b8b0db524cbb4d8eeea22f043",
+        "CRM.parquet": "b6133165d8316ffff4e0bc598ae32ad319af2ba51cdedc19171b2e49d9134f08",
+        "CRWD.parquet": "31c989da3e44df2a29a09c06c75f7cf745c35ec1907f13d243a26e4b661ec0ba",
+        "CRWV.parquet": "74c2ffa7bea3077c928dc76c593eef3efb6c933da14a442e2432fb8276e30b24",
+        "CSCO.parquet": "9c222dff800e41986f18c6bacab7b8b20ee229e5bab346ebe38b92d47cf0bac5",
+        "DDOG.parquet": "00225342d62e29325a89f9b3bb22694774d6e0748c460c4092e51ed3a6d6caac",
+        "DELL.parquet": "b5e153d33a2d19cc7292dd4684bc782452e6ff2b18fc1e11ae6e2fb67e5d697f",
+        "ETN.parquet": "c8698dbced66d1b1de8ae93455bde34b8a6226e972b9b948ce87d18aecad657c",
+        "FFIV.parquet": "6c1c896e4ba102004039f04e5a539f76470c266563a90163ac5a0c71078b1814",
+        "FICO.parquet": "c2abb328316ab47bf8d2e3472b7437e808e0f72edf708f8caabc2afedfbc049c",
+        "FN.parquet": "6559fd150785c57d45348cdf9d5654895b2594ad89c22c87efd378107b023bd9",
+        "FSLR.parquet": "d418ef489c99c0d93898ce5608c5d9093851109615afb3524b9bdd5548a70447",
+        "FTNT.parquet": "1dae722af94b9b9daf9fd8d95bb160eb4f6bf7f28f84167e2069fccc7e4de38c",
+        "GEN.parquet": "d2d823adb248bd099ac275f1c8823b7960e2ba8fef010cb6448f956aa3299727",
+        "GEV.parquet": "f34146c3a71a26dbea265851e5b10fb2ff3df820238dba74f3269beb8841d8a5",
+        "GLW.parquet": "e50130bff212536f794507e0b03063d39c8ae82b2fb6428fb13f9d63c5123c3a",
+        "GLXY.parquet": "74c2ffa7bea3077c928dc76c593eef3efb6c933da14a442e2432fb8276e30b24",
+        "GOOGL.parquet": "352c3ff077c9289fee8f08ff57a612cf5f6ae317d893146103083c8395047439",
+        "HPE.parquet": "814a99646396520a6b6715ae25462c184f97f53a2d85d0106e622a83b30fc72f",
+        "HUT.parquet": "54a9aa03ea4b8700d35982bcaf8ba9c43a0cb5b47ce30a0dd415bfd2a134c79f",
+        "IBM.parquet": "1ad0dc224f5071116349f982c215fa467ae99469e8538a2e4c410ec2d4bd8a89",
+        "INTC.parquet": "e69b5b33ab1effa449be589eb4f20de188a0a251197dbfe17f33ed740f90cc91",
+        "INTU.parquet": "a7fbf15239306db2265dff910214b2f00e0acb2df490de111144485f209a3fb7",
+        "IREN.parquet": "33ba4e5bb423cf42c1354dd2050d04abf0d15d0049fe7e2a42364f68ae2505dd",
+        "KLAC.parquet": "f96dba8920c32b889c90c35f24793717938dfcb214604dd16a0938d49a4d02e9",
+        "LITE.parquet": "cdba559229401ea1251f1ab4a6266affa9efc0d4999a703c6ed08fecc0de2a4b",
+        "LRCX.parquet": "0bdeb1b71ccbabd1d75783779dd61a404c4c90f11febb7116fd052118b3d3e0a",
+        "MCHP.parquet": "9bd256e58fa15c9951bb85161da8f5dc02768010f8f051bcb1d668e77d6f41ce",
+        "MDB.parquet": "c5fb1d35980b371ebcd4bfc667398729f97a547c92770f49e78db349ee3c10d3",
+        "META.parquet": "ebe086e8638caf143c0cf61dca481b4ffdb61951297cb80bf16e4639d43e3255",
+        "MOD.parquet": "3e491136a135155638309d9eda7adfa730a12e9e55e8fa9c0bd7c424c1724235",
+        "MPWR.parquet": "e59d22827b9c62f581edcd42615629c54f71cc143371ae53df0c259bd961e462",
+        "MRVL.parquet": "0b7b3f7e04222178ab3caf140c7c276835778b7971feb36e00e0acfb612764f4",
+        "MSFT.parquet": "2918a6f2732105d0449b3f7fb7a4b83df97ff945417ce5deb445eaf6f65418fd",
+        "MSI.parquet": "c0dd0c8482bd92e2542b8d541ecdce9748185f1dd81aaa4cca116d63060215fa",
+        "MU.parquet": "554667ae0fbe07aa9ca756b95592b08e2a15f69549662b77e32845a93dd16ac0",
+        "NBIS.parquet": "74c2ffa7bea3077c928dc76c593eef3efb6c933da14a442e2432fb8276e30b24",
+        "NET.parquet": "7c67d343b26e92eea90a11dfa47a678273e98ee0b49a3a9fc19f193892bc0d2c",
+        "NOW.parquet": "742cf71365c70fa87e9fd88898b782e6ed1ba3551ee2ad2d6f197cc8867c925a",
+        "NTAP.parquet": "3484731444badd81b9aaa5703593d464f95055919c405aec9b32d4a9031691c0",
+        "NVDA.parquet": "7a8e68570c14cc49518090b729c41ab2581454d143f8e425cdb47542f1e44f15",
+        "NXPI.parquet": "5e334584973359764b62726677d056c67dd01fb9e0729ece15599782e0864b49",
+        "OKLO.parquet": "ccb314b6cf7464bea78fad1b73baba1db1f3421399837dca6e6a99925695d78d",
+        "ON.parquet": "ae1995eb2bf04096d51ba25c06cb903040afbd7aa1012fab9cf33c4248fa8c8e",
+        "ORCL.parquet": "38bfe9ddebc3a1797a951d9b7899f9d56e3f64c902be5a9c56ead5adfe85e570",
+        "PANW.parquet": "05fb09584210601311e392115dca9e3c8ed059722dc2fabbb444d18e603a34b4",
+        "PLTR.parquet": "b7ad95e06afd62a38011a5a55c81490c6bfc0dec951561b614b07725aa0a112e",
+        "POWL.parquet": "0446951ef99e6a1f38709556943b5f4ca0d2b83658bc9a5756edd18c1e4e0440",
+        "PTC.parquet": "9ddd15eb470f6edf0fdb472ef2bed687156bc332574816c412877b04519c0401",
+        "Q.parquet": "74c2ffa7bea3077c928dc76c593eef3efb6c933da14a442e2432fb8276e30b24",
+        "QCOM.parquet": "5c5bcec1fa77670e82bc0ad0635be4d651dfb60925b25792acfecbb493b5a3f9",
+        "SIMO.parquet": "f4365b909456a81299ac6d9148db22d668abc17f5096d8b87c21d0119d2b7b3d",
+        "SMCI.parquet": "521eb2e33205f9488d7d8e473b167c1c01247328216fe31bea19f483b416251c",
+        "SMR.parquet": "8cbbf6b92d3eb13b2da7cad5d71df58d8ebbfa5e484a7e3cb7624c96ea8ee211",
+        "SNDK.parquet": "74c2ffa7bea3077c928dc76c593eef3efb6c933da14a442e2432fb8276e30b24",
+        "SNOW.parquet": "80977d9805a4e62606a1ea107516ede8537fa4497a0e300466b46204caf2ee29",
+        "SNPS.parquet": "203d84c055c44892eaf469b20482dee6de6d790d6e61b7441996fbcce9ae63d1",
+        "STX.parquet": "3c4d3fa84a9a909a6396572fa9cb5d915b8356b50d02a20a776973d89a5695cf",
+        "SWKS.parquet": "bb528a790d3467d070d11353fbaf1498b4f48bc845bd7c5d49351b4fc2e07aa5",
+        "TEAM.parquet": "98e9331d9968815f2bc53490e9d13dc428ccf9073b720941ddeebcfa8a3f276c",
+        "TER.parquet": "26fb77f9a305d7728e2a08355b9b7071231af87d31ac770cfef678b6fe36e505",
+        "TLN.parquet": "fede0cf30f6510405907eda8b583a32f64ee5712b011965c4d019ff26cee33e7",
+        "TRMB.parquet": "45fb916f601a82a7eb4f1f6d6b3cbc8eff4ccf7d54c9973e37e52285211d7997",
+        "TSM.parquet": "f0ec17f781c6d8a3fe3bc143239dfd30af177c1be103aa890228ee80595ad2eb",
+        "TXN.parquet": "e84daf657f7bd4b6f960a895c2132e500282c016c2e3327c0255186dc9ab775b",
+        "TYL.parquet": "b7930476a74f24e20cea0b4611c601e3c54b231eec1a8c25ac4f73e6d2a3c7f7",
+        "VRT.parquet": "98e49d666030b569867d037cbd136d3a5fc7f2efc031dfb34ef6fae7db3acb89",
+        "VST.parquet": "22a08b190b2691788356e1c49dd6080d9167e783ef18ddb8e3749e6c46f31732",
+        "WDAY.parquet": "8bbf2ba2c772605a493ac71249bab320e945eb45bfe5f504822415ea4b56b90f",
+        "WDC.parquet": "2433110ebfc7d08522e0b913b552612f02274bde3f460f92d212bf3c78a8f50f",
+        "WULF.parquet": "0e7f62380fe01b8cf2b18ca407b03b0533fa0ee5481996508c13c75c53eb2647",
+        "ZS.parquet": "f69e9032697dae380e0022ab9faf57c06ea33677dbd505c6c0fdf27074942cb4"
+      },
+      "run": {
+        "arm": "k1",
+        "context": 512,
+        "sampling": {
+          "T": 1.0,
+          "top_k": 0,
+          "top_p": 0.9,
+          "sample_count": 1
+        },
+        "max_context": 512,
+        "clip": 5,
+        "seed": 0,
+        "batch": 192,
+        "autocast": false,
+        "names": {
+          "AAOI": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 2.1,
+            "cells_per_second": 7.91
+          },
+          "AAPL": {
+            "cells": 16,
+            "forecast": 16,
+            "skipped_short_context": 0,
+            "seconds": 1.6,
+            "cells_per_second": 9.74
+          },
+          "ACN": {
+            "cells": 16,
+            "forecast": 16,
+            "skipped_short_context": 0,
+            "seconds": 1.6,
+            "cells_per_second": 9.74
+          },
+          "ADBE": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 237.3,
+            "cells_per_second": 9.26
+          },
+          "ADI": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.5,
+            "cells_per_second": 9.21
+          },
+          "ADSK": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.6,
+            "cells_per_second": 9.21
+          },
+          "ALAB": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.64
+          },
+          "AMAT": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.7,
+            "cells_per_second": 9.2
+          },
+          "AMD": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.8,
+            "cells_per_second": 9.2
+          },
+          "AMZN": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.62
+          },
+          "ANET": {
+            "cells": 2032,
+            "forecast": 2032,
+            "skipped_short_context": 0,
+            "seconds": 221.0,
+            "cells_per_second": 9.19
+          },
+          "APLD": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.66
+          },
+          "ARM": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.65
+          },
+          "ASML": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.62
+          },
+          "AVGO": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.8,
+            "cells_per_second": 9.2
+          },
+          "BE": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.66
+          },
+          "CDNS": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.8,
+            "cells_per_second": 9.2
+          },
+          "CEG": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.63
+          },
+          "CIEN": {
+            "cells": 161,
+            "forecast": 161,
+            "skipped_short_context": 0,
+            "seconds": 17.5,
+            "cells_per_second": 9.21
+          },
+          "CIFR": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.63
+          },
+          "COHR": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.62
+          },
+          "CORZ": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.67
+          },
+          "CRDO": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.64
+          },
+          "CRM": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.8,
+            "cells_per_second": 9.2
+          },
+          "CRWD": {
+            "cells": 569,
+            "forecast": 569,
+            "skipped_short_context": 0,
+            "seconds": 61.7,
+            "cells_per_second": 9.22
+          },
+          "CRWV": {
+            "cells": 17,
+            "forecast": 0,
+            "skipped_short_context": 17,
+            "seconds": 0.0,
+            "cells_per_second": 0.0
+          },
+          "CSCO": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.8,
+            "cells_per_second": 9.2
+          },
+          "DDOG": {
+            "cells": 309,
+            "forecast": 309,
+            "skipped_short_context": 0,
+            "seconds": 33.6,
+            "cells_per_second": 9.2
+          },
+          "DELL": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.66
+          },
+          "ETN": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.65
+          },
+          "FFIV": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.8,
+            "cells_per_second": 9.2
+          },
+          "FICO": {
+            "cells": 886,
+            "forecast": 886,
+            "skipped_short_context": 0,
+            "seconds": 96.4,
+            "cells_per_second": 9.19
+          },
+          "FN": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.63
+          },
+          "FSLR": {
+            "cells": 947,
+            "forecast": 947,
+            "skipped_short_context": 0,
+            "seconds": 102.8,
+            "cells_per_second": 9.21
+          },
+          "FTNT": {
+            "cells": 2001,
+            "forecast": 2001,
+            "skipped_short_context": 0,
+            "seconds": 217.5,
+            "cells_per_second": 9.2
+          },
+          "GEN": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.9,
+            "cells_per_second": 9.2
+          },
+          "GEV": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.64
+          },
+          "GLW": {
+            "cells": 7,
+            "forecast": 7,
+            "skipped_short_context": 0,
+            "seconds": 0.7,
+            "cells_per_second": 9.69
+          },
+          "GLXY": {
+            "cells": 17,
+            "forecast": 0,
+            "skipped_short_context": 17,
+            "seconds": 0.0,
+            "cells_per_second": 0.0
+          },
+          "GOOGL": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.65
+          },
+          "HPE": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.63
+          },
+          "HUT": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.65
+          },
+          "IBM": {
+            "cells": 16,
+            "forecast": 16,
+            "skipped_short_context": 0,
+            "seconds": 1.7,
+            "cells_per_second": 9.58
+          },
+          "INTC": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.9,
+            "cells_per_second": 9.2
+          },
+          "INTU": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.9,
+            "cells_per_second": 9.2
+          },
+          "IREN": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.66
+          },
+          "KLAC": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.8,
+            "cells_per_second": 9.2
+          },
+          "LITE": {
+            "cells": 132,
+            "forecast": 132,
+            "skipped_short_context": 0,
+            "seconds": 14.3,
+            "cells_per_second": 9.22
+          },
+          "LRCX": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.9,
+            "cells_per_second": 9.2
+          },
+          "MCHP": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 239.0,
+            "cells_per_second": 9.19
+          },
+          "MDB": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.65
+          },
+          "META": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.65
+          },
+          "MOD": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.61
+          },
+          "MPWR": {
+            "cells": 1413,
+            "forecast": 1413,
+            "skipped_short_context": 0,
+            "seconds": 153.8,
+            "cells_per_second": 9.18
+          },
+          "MRVL": {
+            "cells": 70,
+            "forecast": 70,
+            "skipped_short_context": 0,
+            "seconds": 8.0,
+            "cells_per_second": 8.77
+          },
+          "MSFT": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.8,
+            "cells_per_second": 9.2
+          },
+          "MSI": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.8,
+            "cells_per_second": 9.2
+          },
+          "MU": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.9,
+            "cells_per_second": 9.2
+          },
+          "NBIS": {
+            "cells": 17,
+            "forecast": 0,
+            "skipped_short_context": 17,
+            "seconds": 0.0,
+            "cells_per_second": 0.0
+          },
+          "NET": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.65
+          },
+          "NOW": {
+            "cells": 1721,
+            "forecast": 1721,
+            "skipped_short_context": 0,
+            "seconds": 186.7,
+            "cells_per_second": 9.22
+          },
+          "NTAP": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.64
+          },
+          "NVDA": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.9,
+            "cells_per_second": 9.2
+          },
+          "NXPI": {
+            "cells": 1388,
+            "forecast": 1388,
+            "skipped_short_context": 0,
+            "seconds": 150.8,
+            "cells_per_second": 9.2
+          },
+          "OKLO": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.66
+          },
+          "ON": {
+            "cells": 1073,
+            "forecast": 1073,
+            "skipped_short_context": 0,
+            "seconds": 116.5,
+            "cells_per_second": 9.21
+          },
+          "ORCL": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.8,
+            "cells_per_second": 9.2
+          },
+          "PANW": {
+            "cells": 823,
+            "forecast": 823,
+            "skipped_short_context": 0,
+            "seconds": 89.5,
+            "cells_per_second": 9.19
+          },
+          "PLTR": {
+            "cells": 506,
+            "forecast": 506,
+            "skipped_short_context": 0,
+            "seconds": 55.4,
+            "cells_per_second": 9.13
+          },
+          "POWL": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.65
+          },
+          "PTC": {
+            "cells": 1368,
+            "forecast": 1368,
+            "skipped_short_context": 0,
+            "seconds": 148.4,
+            "cells_per_second": 9.22
+          },
+          "Q": {
+            "cells": 227,
+            "forecast": 0,
+            "skipped_short_context": 227,
+            "seconds": 0.0,
+            "cells_per_second": 0.0
+          },
+          "QCOM": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.8,
+            "cells_per_second": 9.2
+          },
+          "SIMO": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.66
+          },
+          "SMCI": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.62
+          },
+          "SMR": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.6
+          },
+          "SNDK": {
+            "cells": 17,
+            "forecast": 0,
+            "skipped_short_context": 17,
+            "seconds": 0.0,
+            "cells_per_second": 0.0
+          },
+          "SNOW": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.48
+          },
+          "SNPS": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.9,
+            "cells_per_second": 9.2
+          },
+          "STX": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.63
+          },
+          "SWKS": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.9,
+            "cells_per_second": 9.2
+          },
+          "TEAM": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.64
+          },
+          "TER": {
+            "cells": 1513,
+            "forecast": 1513,
+            "skipped_short_context": 0,
+            "seconds": 164.3,
+            "cells_per_second": 9.21
+          },
+          "TLN": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.64
+          },
+          "TRMB": {
+            "cells": 1429,
+            "forecast": 1429,
+            "skipped_short_context": 0,
+            "seconds": 155.6,
+            "cells_per_second": 9.18
+          },
+          "TSM": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.66
+          },
+          "TXN": {
+            "cells": 2197,
+            "forecast": 2197,
+            "skipped_short_context": 0,
+            "seconds": 238.9,
+            "cells_per_second": 9.2
+          },
+          "TYL": {
+            "cells": 1576,
+            "forecast": 1576,
+            "skipped_short_context": 0,
+            "seconds": 171.1,
+            "cells_per_second": 9.21
+          },
+          "VRT": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.65
+          },
+          "VST": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.61
+          },
+          "WDAY": {
+            "cells": 442,
+            "forecast": 442,
+            "skipped_short_context": 0,
+            "seconds": 48.1,
+            "cells_per_second": 9.18
+          },
+          "WDC": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.65
+          },
+          "WULF": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.66
+          },
+          "ZS": {
+            "cells": 17,
+            "forecast": 17,
+            "skipped_short_context": 0,
+            "seconds": 1.8,
+            "cells_per_second": 9.64
+          }
+        },
+        "seconds": 8259.7,
+        "cells_forecast": 76019
+      }
+    },
+    "revision": {
+      "commit": "402a38d810699fcb2c7c2e60d75d8e231e961c99",
+      "dirty": false
+    },
+    "seconds": 946.6
+  }
+}
