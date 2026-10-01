@@ -1643,6 +1643,13 @@ $env:ANIOS_E2E_LIVE='1'
 npm.cmd run test:e2e:live
 ```
 
+The browser gate a frontend change must pass is the full suite in the spark1
+harness with **0 failed**: every test passes or is skipped by an environment
+condition whose reason names what it waits for. How to run it, how to read
+the report, the rules that keep a spec passing both there and under
+`npm run dev`, and the list of conditional skips are in
+[`frontend/e2e/README.md`](../frontend/e2e/README.md).
+
 Backend tests are located under `backend/tests`:
 
 ```powershell
@@ -2078,10 +2085,12 @@ Require visible generation/refinement/analysis progress, one
 active image card after an edit, a terminal ready image and grounded analysis,
 enabled/cleared controls, navigation and full-reload restoration,
 artifact-history rendering, download/deletion, visible 413/422/502/503 errors,
-and successful retry. Run the reusable live provider checks explicitly:
+and successful retry. Run the reusable live provider checks explicitly (they
+skip unless `ANIOS_E2E_LIVE=1`, like every other `@live` test):
 
 ```powershell
 cd frontend
+$env:ANIOS_E2E_LIVE='1'
 npx.cmd playwright test --grep "@live visual generation"
 npx.cmd playwright test --grep "@live cancelled image"
 npx.cmd playwright test --grep "image conversation routes through generation"
