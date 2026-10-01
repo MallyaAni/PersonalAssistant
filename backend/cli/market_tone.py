@@ -23,7 +23,11 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
-from backend.agents.trading.release_tone import PROMPT_VERSION, ReleaseToneReader
+from backend.agents.trading.release_tone import (
+    PROMPT_VERSION,
+    ReleaseTone,
+    ReleaseToneReader,
+)
 from backend.config.settings import settings
 from backend.core.llm import OpenAICompatibleInferenceProvider
 from backend.market import edgar, language
@@ -215,6 +219,38 @@ def _release_texts(
     return texts, failures
 
 
+# The stored record of one scored release. The financial fields are dollar
+# amounts read from the text; a 6-K from an issuer that reports in another
+# currency (TSMC in NT$, ASML in euro) is stored with them None, so a
+# figure copied in the wrong currency cannot reach the fundamental layer.
+# The five tone scores and the summary are kept whatever the currency.
+def tone_record(
+    event: edgar.EarningsEvent, tone: ReleaseTone, cik: int, model: str
+) -> language.ToneRecord:
+    """Return the ToneRecord for `event` scored as `tone`."""
+    dollars = not (event.form == "6-K" and cik in edgar.REPORTING_CURRENCY)
+    return language.ToneRecord(
+        accession=event.accession,
+        reaction_date=event.reaction_date,
+        guidance=tone.guidance,
+        demand=tone.demand,
+        pricing=tone.pricing,
+        capex=tone.capex,
+        supply_constrained=tone.supply_constrained,
+        summary=tone.summary,
+        model=model,
+        prompt_version=PROMPT_VERSION,
+        truncated=tone.truncated,
+        quarter_end=(
+            date.fromisoformat(tone.quarter_end) if tone.quarter_end else None
+        ),
+        revenue_usd_m=tone.revenue_usd_m if dollars else None,
+        eps_usd=tone.eps_usd if dollars else None,
+        net_income_usd_m=tone.net_income_usd_m if dollars else None,
+        gross_margin_pct=tone.gross_margin_pct if dollars else None,
+    )
+
+
 # Score one ticker's unscored releases and store the frame when complete.
 def _refresh_ticker(  # noqa: C901
     store: MarketStore,
@@ -234,16 +270,7 @@ def _refresh_ticker(  # noqa: C901
         return 0, 0, -1
     columns, meta = events_frame
     cik = int(meta.get("cik", "0"))
-    events = [
-        edgar.EarningsEvent(
-            accepted=datetime.fromisoformat(columns["accepted"][i]),
-            filed=columns["filed"][i],
-            accession=columns["accession"][i],
-            items=columns["items"][i],
-        )
-        for i in range(len(columns.get("accepted", [])))
-    ]
-    events = [e for e in events if e.filed >= since]
+    events = [e for e in edgar.events_from_columns(columns) if e.filed >= since]
     partial = language.partial_path(store.root, asof, ticker)
     done = prior_records(store, ticker, asof, model)
     done.update(
@@ -278,26 +305,7 @@ def _refresh_ticker(  # noqa: C901
                 missing += 1
                 failures += int(had_text)
                 continue
-            record = language.ToneRecord(
-                accession=event.accession,
-                reaction_date=event.reaction_date,
-                guidance=tone.guidance,
-                demand=tone.demand,
-                pricing=tone.pricing,
-                capex=tone.capex,
-                supply_constrained=tone.supply_constrained,
-                summary=tone.summary,
-                model=model,
-                prompt_version=PROMPT_VERSION,
-                truncated=tone.truncated,
-                quarter_end=(
-                    date.fromisoformat(tone.quarter_end) if tone.quarter_end else None
-                ),
-                revenue_usd_m=tone.revenue_usd_m,
-                eps_usd=tone.eps_usd,
-                net_income_usd_m=tone.net_income_usd_m,
-                gross_margin_pct=tone.gross_margin_pct,
-            )
+            record = tone_record(event, tone, cik, model)
             language.append_partial(partial, record)
             done[record.accession] = record
             scored += 1

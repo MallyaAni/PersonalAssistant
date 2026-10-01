@@ -124,22 +124,34 @@ def parse_index_page(html: str) -> list[tuple[str, str, str]]:
 
 
 # The archive URL of the first EX-99.1 (or any EX-99) document, or None.
-def press_release_href(documents: Sequence[tuple[str, str, str]]) -> str | None:
+# With `main_document`, a filing with no EX-99 falls back to the form's own
+# document (type "6-K"): TSMC's 6-Ks before 2019-10 carried the release
+# there rather than as an exhibit.
+def press_release_href(
+    documents: Sequence[tuple[str, str, str]], main_document: str | None = None
+) -> str | None:
     """Return the href of the press-release exhibit in an index listing."""
     ranked = sorted(
         (d for d in documents if d[0].upper().startswith("EX-99")),
         key=lambda d: (0 if d[0].upper() == "EX-99.1" else 1, d[1]),
     )
+    if not ranked and main_document:
+        ranked = [d for d in documents if d[0].upper() == main_document.upper()]
     if not ranked:
         return None
-    href = ranked[0][2]
+    return _archive_url(ranked[0][2])
+
+
+# An index-page href as an absolute archive URL, the iXBRL viewer unwrapped.
+def _archive_url(href: str) -> str:
     if href.startswith("/ix?doc="):
         href = href[len("/ix?doc=") :]
     return href if href.startswith("http") else _ARCHIVE_ROOT + href
 
 
 # The plain text of an event's press release, or None when the filing has
-# no EX-99 exhibit.
+# no EX-99 exhibit (nor, for a filer whose older 6-Ks carried the release
+# as the main document, that document).
 def fetch_release_text(
     cik: int,
     event: EarningsEvent,
@@ -147,7 +159,7 @@ def fetch_release_text(
     pacer: Pacer | None = None,
     sleep: Callable[[float], None] = time.sleep,
 ) -> str | None:
-    """Return the press-release text for an 8-K, or None if it has none."""
+    """Return the press-release text for a filing, or None if it has none."""
     pacer = pacer or Pacer(sleep=sleep)
     folder = event.accession.replace("-", "")
     page = _get_text(
@@ -156,7 +168,10 @@ def fetch_release_text(
         pacer,
         sleep,
     )
-    href = press_release_href(parse_index_page(page))
+    from backend.market.edgar import release_in_main_document
+
+    main = event.form if release_in_main_document(cik, event) else None
+    href = press_release_href(parse_index_page(page), main)
     if href is None:
         return None
     return html_to_text(_get_text(href, transport, pacer, sleep))
