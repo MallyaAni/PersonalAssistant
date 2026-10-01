@@ -42,6 +42,7 @@ adjusted close, because mixing a raw open with an adjusted close puts a
 split in the middle of a return.
 """
 
+import functools
 from dataclasses import dataclass, field
 from datetime import date
 
@@ -929,6 +930,32 @@ def _event_target(target, path, t, rebalanced, previous, reason, label="FOMC"):
     return target, scale, reason, changed
 
 
+# The volatility target's gross applied to one session's target: on a
+# rebalance the decided weights are scaled by today's gross; between
+# rebalances the held weights, which already carry `previous`, are scaled
+# by today's gross over it, so nothing is traded while the gross stands
+# still. A held book at gross 0 has no composition to scale up, so the
+# session the gross returns re-enters at the allocator's own targets for
+# that session (`fresh()`), scaled. Returns (target, gross, reason, changed).
+def _gross_target(target, path, t, rebalanced, previous, reason, fresh):
+    """Return (target scaled to `path[t]`, the gross now carried, reason, changed)."""
+    gross = float(path[t])
+    if rebalanced:
+        target = target * gross
+    elif previous > 0:
+        target = target * (gross / previous)
+    elif gross > 0:
+        target = np.asarray(fresh(), dtype=float) * gross
+    changed = gross != previous
+    if changed:
+        reason = (
+            "volatility target risk reduction"
+            if gross < previous
+            else "volatility target risk restoration"
+        )
+    return target, gross, reason, changed
+
+
 # The one exposure ceiling the incumbent loop applies: the FOMC path and the
 # trend brake's path composed as a per-session minimum, so whichever overlay
 # asks for less exposure on a session is the one that binds. Either alone
@@ -1045,6 +1072,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     midcycle_exits: bool = True,
     reset_topup: bool = False,
     midcycle_trims: bool = False,
+    gross_path: np.ndarray | None = None,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
 
@@ -1232,6 +1260,22 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     untouched (a raise is expressed through the allocator's targets, which
     the redeploy buys toward). The sale fills as every live sell does, at
     the close, held back on a green open. Off, every result is byte-identical.
+
+    `gross_path` is the volatility-targeting study's gross exposure per
+    session, one value in [0, 1] on the panel's calendar, decided outside
+    the run (`vol_target.gross_path`, from the book's own returns at gross
+    1) and applied the way the FOMC and brake ceilings are: on a rebalance
+    the decided targets are scaled by `gross_path[t]`; between rebalances
+    the held weights, which already carry the previous session's gross, are
+    scaled by the ratio of today's gross to it, so the book is only traded
+    when the gross changes, and such a trade pays the same cost as any
+    other. A gross of 0 holds the book in cash; the session the gross comes
+    back from 0 between rebalances re-enters at the allocator's targets for
+    that session, scaled, since an empty book carries no composition to
+    scale up. Cash earns nothing. While the gross is below 1 the mid-cycle
+    entries and deferred retries are paused as they are under the brake.
+    None leaves every result byte-identical, and a path of all ones
+    reproduces it to the bit (the study's null test).
     """
     decide = allocator or _targets
     if midcycle_entries not in MIDCYCLE_ENTRIES:
@@ -1294,6 +1338,8 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             incompatible.append("trend_brake")
         if weight_filter is not None:
             incompatible.append("weight_filter")
+        if gross_path is not None:
+            incompatible.append("gross_path")
         if incompatible:
             raise ValueError(
                 "funded_allocation cannot be combined with: " + ", ".join(incompatible)
@@ -1327,6 +1373,17 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         # same session's buys, so there is no idle cash to defer and the
         # remainder this would record would be one the fill never left.
         raise ValueError("deferred_buys requires exit_at_close")
+    if gross_path is not None:
+        gross_path = np.asarray(gross_path, dtype=float)
+        if (
+            gross_path.shape != (len(panel.dates),)
+            or not np.isfinite(gross_path).all()
+            or np.any((gross_path < 0) | (gross_path > 1))
+        ):
+            raise ValueError("gross path must align with sessions and be in [0, 1]")
+    # The gross the held book carries from the last session the loop
+    # scaled it; 1 until the path first moves it.
+    previous_gross = 1.0
 
     live_bands = entry.bollinger_z(panel.adj_close) if live_midcycle else None
     # The previous session's unpaid buy shares per symbol, when the deferred
@@ -1658,6 +1715,18 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             reason,
             label,
         )
+        scaled_down = False
+        if gross_path is not None:
+            target, previous_gross, reason, _ = _gross_target(
+                target,
+                gross_path,
+                t,
+                rebalanced,
+                previous_gross,
+                reason,
+                functools.partial(decide, report, panel, config, t),
+            )
+            scaled_down = float(gross_path[t]) < 1.0
         order = book.plan(target, closes[t])
         # The deferred leg: last session's unpaid remainder is retried on a
         # plain session and superseded by a rebalance; an event session
@@ -1668,8 +1737,9 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         # a buy budget: a breakout entry or a deferred retry would put it
         # straight back to work and undo the cut the brake just made. The
         # live FOMC cycle pauses entries the same way (`event_execution.plan`
-        # owns the plan for the whole cycle). Sells still go through.
-        braked = brake_path is not None and float(brake_path[t]) < 1.0
+        # owns the plan for the whole cycle). Sells still go through. The
+        # volatility target's gross below 1 is treated the same way.
+        braked = (brake_path is not None and float(brake_path[t]) < 1.0) or scaled_down
         event_paused = event_exposure is not None and float(event_exposure[t]) < 1.0
         reduced = braked or event_paused
         if deferred_buys and not event_changed and not reduced:

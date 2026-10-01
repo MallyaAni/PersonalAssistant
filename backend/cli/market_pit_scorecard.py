@@ -1,7 +1,8 @@
 """The first honest scorecard: the rule against a point-in-time book and funded indexes.
 
     python -m backend.cli.market_pit_scorecard
-    python -m backend.cli.market_pit_scorecard --root data/market --offsets 20 --costs 10 25
+    python -m backend.cli.market_pit_scorecard --root data/market --offsets 20 \
+        --costs 10 25
 
 Every published curve so far graded 2016-2026 on the book as it stands today,
 and the equal-weight version of that book beats every rule the desk has - so
@@ -30,6 +31,31 @@ reads.
 
 Read-only with respect to the desk and the store; writes
 `<root>/desk/pit_scorecard.json`.
+
+Every payload carries each row's per-offset CAGRs and worst drawdown and the
+median-offset daily curves of every line, so two runs can be paired session
+by session (a candidate against its control is a comparison one run cannot
+make; `--output FILE` says where a payload goes). These fields were first
+written on the structure-rules branch (`a3041068`, not merged) and are
+re-implemented here for the volatility-targeting study.
+
+The volatility-targeting study (`docs/research/vol-target-plan-2026-10-01.md`,
+B1) adds `--gross-target PCT` (repeatable: one payload per target, named by
+the target's tag), `--gross-window N` (default 20), and the two reported
+switches `--gross-switch-return` and `--gross-switch-intercept`. With a
+target, the two rule lines are run twice at every offset and cost: once at
+gross 1 (the control's book, whose daily returns give σ̂), then scaled by
+gross(t) = min(1, σ*/σ̂(t)) through `simulate.run(gross_path=...)`
+(`vol_target.gross_path`). `--null-test` with `--gross-target inf` runs
+the book through the scaled path at an infinite target and through the
+plain path at two offsets and asserts every line is reproduced to the bit.
+
+    python -m backend.cli.market_pit_scorecard --graded-cap 0.25 \
+        --output docs/research/scorecards/vol-target/control.json
+    python -m backend.cli.market_pit_scorecard --graded-cap 0.25 \
+        --gross-target inf --null-test
+    python -m backend.cli.market_pit_scorecard --graded-cap 0.25 \
+        --gross-target 20 25 30 --output docs/research/scorecards/vol-target/vt.json
 """
 
 from __future__ import annotations
@@ -52,7 +78,7 @@ from backend.agents.trading.desk import (
     point_in_time,
     simulate,
 )
-from backend.market import benchmarks, candidate_stats
+from backend.market import benchmarks, candidate_stats, universe, vol_target
 from backend.market.universe import MARKET_INDICES
 
 FILE = "pit_scorecard.json"
@@ -61,6 +87,7 @@ WINDOWS: dict[str, tuple[date | None, date | None]] = {
     "2024-2026": (date(2024, 1, 1), None),
     "all": (None, None),
 }
+CONTROL = "control"
 RULE_TODAY = "rule / today's book"
 RULE_PIT = "rule / point-in-time"
 EW_PIT = "equal weight / point-in-time"
@@ -178,6 +205,13 @@ class Curve:
     label: str
     dates: np.ndarray
     daily: np.ndarray  # NaN before the first fill
+    # The simulator's result behind a rule line (its returns at gross 1 are
+    # what a volatility target reads), and under a target the gross and
+    # σ̂ the rule applied on these sessions.
+    sim: object = None
+    gross: np.ndarray | None = None
+    sigma: np.ndarray | None = None
+    unit: object = None  # the gross-1 result a scaled line was read from
 
 
 # Annualised return, drawdown from the starting NAV and Sharpe, or NaNs.
@@ -187,7 +221,12 @@ def window_stats(daily: np.ndarray) -> dict[str, float]:
     r = r[np.isfinite(r)]
     n = len(r)
     if n < 2:
-        return {"cagr": math.nan, "drawdown": math.nan, "sharpe": math.nan, "sessions": n}
+        return {
+            "cagr": math.nan,
+            "drawdown": math.nan,
+            "sharpe": math.nan,
+            "sessions": n,
+        }
     curve = np.concatenate(([1.0], np.cumprod(1.0 + r)))
     cagr = float(curve[-1] ** (252.0 / n) - 1.0)
     peak = np.maximum.accumulate(curve)
@@ -210,7 +249,12 @@ def _live_options(panel) -> dict:
 
 # Price the six lines from one offset at one cost.
 def price_offset(
-    report, restricted, mask: np.ndarray, store, since, cost_bps: float,
+    report,
+    restricted,
+    mask: np.ndarray,
+    store,
+    since,
+    cost_bps: float,
     arm=None,
 ) -> dict[str, Curve]:
     """Return {label: Curve} for every line on this offset.
@@ -230,11 +274,19 @@ def price_offset(
         rule_today = simulate.run(report, since=since, cost_bps=cost_bps, **live)
         rule_pit = simulate.run(restricted, since=since, cost_bps=cost_bps, **live)
     else:
-        plain = dict(use_exits=False, rebalance=paper.REBALANCE_EVERY, cost_bps=cost_bps)
-        rule_today = simulate.run(report, since=since, allocator=arm(report, everyone), **plain)
-        rule_pit = simulate.run(restricted, since=since, allocator=arm(restricted, mask), **plain)
-    out[RULE_TODAY] = Curve(RULE_TODAY, rule_today.dates, rule_today.returns)
-    out[RULE_PIT] = Curve(RULE_PIT, rule_pit.dates, rule_pit.returns)
+        plain = dict(
+            use_exits=False, rebalance=paper.REBALANCE_EVERY, cost_bps=cost_bps
+        )
+        rule_today = simulate.run(
+            report, since=since, allocator=arm(report, everyone), **plain
+        )
+        rule_pit = simulate.run(
+            restricted, since=since, allocator=arm(restricted, mask), **plain
+        )
+    out[RULE_TODAY] = Curve(
+        RULE_TODAY, rule_today.dates, rule_today.returns, sim=rule_today
+    )
+    out[RULE_PIT] = Curve(RULE_PIT, rule_pit.dates, rule_pit.returns, sim=rule_pit)
     for label, book_mask in ((EW_PIT, mask), (EW_TODAY, everyone)):
         sim = simulate.run(
             restricted if label == EW_PIT else report,
@@ -249,8 +301,50 @@ def price_offset(
         series = benchmarks.load_benchmark(
             store, symbol, rule_today.dates, cost_bps=cost_bps
         )
-        daily = series.daily if series.available else np.full(len(rule_today.dates), np.nan)
+        daily = (
+            series.daily if series.available else np.full(len(rule_today.dates), np.nan)
+        )
         out[symbol] = Curve(symbol, rule_today.dates, daily)
+    return out
+
+
+# The two rule lines of one priced offset run again under a volatility
+# target: the gross path is read off each line's own gross-1 returns (the
+# book `price_offset` already ran, so σ̂ at t reads only sessions before
+# t), the book is run again through `simulate.run(gross_path=...)` on the
+# same sessions and cost, and the other lines are shared with the base.
+# Each scaled curve carries its gross path and σ̂ on the rule's calendar.
+def scale_offset(
+    report, restricted, mask: np.ndarray, since, cost_bps: float, arm, base: dict, spec
+) -> dict[str, Curve]:
+    """Return the base's lines with the two rule lines scaled to `spec`."""
+    if arm is None:
+        raise ValueError("a volatility target needs an allocation arm")
+    out = dict(base)
+    everyone = np.ones_like(mask)
+    everyone[:, report.panel.index(report.panel.benchmark)] = False
+    plain = dict(use_exits=False, rebalance=paper.REBALANCE_EVERY, cost_bps=cost_bps)
+    for label, rep, book_mask in (
+        (RULE_TODAY, report, everyone),
+        (RULE_PIT, restricted, mask),
+    ):
+        unit = base[label].sim
+        on_calendar = np.full(len(rep.panel.dates), np.nan)
+        start = len(rep.panel.dates) - len(unit.returns)
+        on_calendar[start:] = unit.returns
+        gross, sigma = vol_target.gross_path(on_calendar, spec)
+        sim = simulate.run(
+            rep, since=since, allocator=arm(rep, book_mask), gross_path=gross, **plain
+        )
+        out[label] = Curve(
+            label,
+            sim.dates,
+            sim.returns,
+            sim=sim,
+            gross=gross[start:],
+            sigma=sigma[start:],
+            unit=unit,
+        )
     return out
 
 
@@ -295,12 +389,20 @@ def summarise(
                     "median_drawdown": _nanmedian(
                         np.array([s["drawdown"] for s in per_label[label]])
                     ),
+                    "worst_drawdown": _nanmin(
+                        np.array([s["drawdown"] for s in per_label[label]])
+                    ),
+                    # Every offset's CAGR, in offset order, so two runs can
+                    # be compared offset by offset.
+                    "cagrs": [float(c) for c in cagrs],
                     "median_sharpe": _nanmedian(
                         np.array([s["sharpe"] for s in per_label[label]])
                     ),
                     "offsets_above_ew_pit": int(np.nansum(cagrs > hurdle)),
                     "offsets_above_qqq": int(np.nansum(cagrs > index)),
-                    "sessions": int(np.nanmedian([s["sessions"] for s in per_label[label]])),
+                    "sessions": int(
+                        np.nanmedian([s["sessions"] for s in per_label[label]])
+                    ),
                 }
             )
     return rows
@@ -329,7 +431,12 @@ def paired(priced: list[dict[str, Curve]], cost_bps: float) -> list[dict[str, ob
     base = offset[RULE_TODAY].dates
     for name, (start, end) in WINDOWS.items():
         keep = point_in_time.window(base, start, end)
-        for line, against in ((RULE_PIT, EW_PIT), (RULE_PIT, "QQQ"), (RULE_TODAY, "QQQ"), (EW_PIT, "QQQ")):
+        for line, against in (
+            (RULE_PIT, EW_PIT),
+            (RULE_PIT, "QQQ"),
+            (RULE_TODAY, "QQQ"),
+            (EW_PIT, "QQQ"),
+        ):
             a = _on(base, offset[line])[keep]
             b = _on(base, offset[against])[keep]
             diff = a - b
@@ -342,8 +449,12 @@ def paired(priced: list[dict[str, Curve]], cost_bps: float) -> list[dict[str, ob
                     "line": line,
                     "against": against,
                     "sessions": int(len(diff)),
-                    "mean_daily_bp": float(diff.mean() * 1e4) if len(diff) else math.nan,
-                    "hac_t": candidate_stats.hac_t(diff, 20) if len(diff) > 2 else math.nan,
+                    "mean_daily_bp": float(diff.mean() * 1e4)
+                    if len(diff)
+                    else math.nan,
+                    "hac_t": candidate_stats.hac_t(diff, 20)
+                    if len(diff) > 2
+                    else math.nan,
                     "psr": candidate_stats.probabilistic_sharpe(
                         mom.sharpe, mom.length, mom.skew, mom.kurtosis
                     ),
@@ -357,6 +468,24 @@ def build(
     report, store, offsets: int, costs: tuple[float, ...], history_path=None, arm=None
 ) -> dict:
     """Return the scorecard payload; `arm` as in `price_offset`."""
+    return build_targets(report, store, offsets, costs, history_path, arm, ())[CONTROL]
+
+
+# The scorecard payload and, per volatility-target variant, the payload of
+# the same run with the two rule lines scaled (`scale_offset`): every
+# variant shares the base pricing, so the control inside a target run is
+# the plain path at the same offsets, costs and store. Keys are `CONTROL`
+# and each variant's tag.
+def build_targets(
+    report,
+    store,
+    offsets: int,
+    costs: tuple[float, ...],
+    history_path=None,
+    arm=None,
+    specs: tuple = (),
+) -> dict[str, dict]:
+    """Return {CONTROL: payload, spec.tag: payload, ...}."""
     panel = report.panel
     restricted, mask = (
         point_in_time.point_in_time(report, history_path)
@@ -364,12 +493,117 @@ def build(
         else point_in_time.point_in_time(report)
     )
     members = mask.sum(axis=1)
+    payloads = {CONTROL: _payload(panel, offsets, costs, members, history_path)}
+    for spec in specs:
+        payloads[spec.tag] = _payload(panel, offsets, costs, members, history_path)
+        payloads[spec.tag]["vol_target"] = spec.record()
+    for cost in costs:
+        priced = [
+            price_offset(report, restricted, mask, store, _since(panel, k), cost, arm)
+            for k in range(offsets)
+        ]
+        _score(payloads[CONTROL], priced, cost)
+        for spec in specs:
+            scaled = [
+                scale_offset(
+                    report, restricted, mask, _since(panel, k), cost, arm, base, spec
+                )
+                for k, base in enumerate(priced)
+            ]
+            _score(payloads[spec.tag], scaled, cost)
+            payloads[spec.tag]["vol_target"][f"{cost:g}"] = gross_record(scaled)
+    return payloads
+
+
+# One cost's rows, paired evidence and median-offset curves onto a payload.
+def _score(payload: dict, priced: list[dict[str, Curve]], cost: float) -> None:
+    """Extend the payload's rows, paired and curves with this cost's pricing."""
+    payload["rows"].extend(summarise(priced, cost))
+    payload["paired"].extend(paired(priced, cost))
+    payload["curves"][f"{cost:g}"] = median_offset_curves(priced)
+
+
+# The daily returns of every line at the median offset (the offset `paired`
+# reads), on the rule's calendar, so two payloads from different runs can
+# be paired session by session: a candidate against its control is a
+# comparison the scorecard cannot make within one run.
+def median_offset_curves(priced: list[dict[str, Curve]]) -> dict:
+    """Return {"offset", "dates", "lines": {label: [daily...]}} at the median offset."""
+    k = len(priced) // 2
+    offset = priced[k]
+    base = offset[RULE_TODAY].dates
+    return {
+        "offset": k,
+        "dates": [str(d) for d in np.asarray(base, dtype="datetime64[D]")],
+        "lines": {label: _on(base, curve).tolist() for label, curve in offset.items()},
+    }
+
+
+# What the volatility target did to the point-in-time rule line at one
+# cost: the gross and σ̂ it applied at the median offset, session by
+# session, and per window across the offsets the median of each offset's
+# mean gross, share of sessions under gross 1, lowest gross, sessions in
+# cash, and the notional traded against the gross-1 book (the rescaling
+# trades' cost is in the returns; this is their size).
+def gross_record(scaled: list[dict[str, Curve]]) -> dict:
+    """Return the payload's per-cost record of the gross path."""
+    k = len(scaled) // 2
+    median = scaled[k][RULE_PIT]
+    out: dict[str, object] = {
+        "median_offset": {
+            "offset": k,
+            "dates": [str(d) for d in np.asarray(median.dates, dtype="datetime64[D]")],
+            "gross": [float(g) for g in median.gross],
+            "sigma_hat": [float(s) for s in median.sigma],
+        },
+        "windows": {},
+    }
+    for name, (start, end) in WINDOWS.items():
+        stats: dict[str, list[float]] = {
+            "mean_gross": [],
+            "share_below_one": [],
+            "min_gross": [],
+            "share_in_cash": [],
+            "traded_over_gross_one": [],
+        }
+        for offset in scaled:
+            curve = offset[RULE_PIT]
+            keep = point_in_time.window(curve.dates, start, end)
+            g = np.asarray(curve.gross, dtype=float)[keep]
+            if not len(g):
+                continue
+            stats["mean_gross"].append(float(g.mean()))
+            stats["share_below_one"].append(float((g < 1.0).mean()))
+            stats["min_gross"].append(float(g.min()))
+            stats["share_in_cash"].append(float((g <= 0.0).mean()))
+        for offset in scaled:
+            # Whole-run notional, not per window: one number per offset.
+            curve = offset[RULE_PIT]
+            stats["traded_over_gross_one"].append(
+                float(curve.sim.traded / curve.unit.traded)
+                if curve.unit.traded
+                else math.nan
+            )
+        out["windows"][name] = {
+            key: (float(np.median(v)) if v else math.nan) for key, v in stats.items()
+        }
+    return out
+
+
+# The skeleton every payload starts from.
+def _payload(
+    panel, offsets: int, costs: tuple[float, ...], members, history_path
+) -> dict:
+    """Return the payload with its header and empty rows, paired and curves."""
     payload: dict[str, object] = {
         "metrics_version": METRICS_VERSION,
         "asof": str(panel.dates[-1]),
         "offsets": offsets,
         "costs_bps": list(costs),
-        "windows": {k: [str(s) if s else None, str(e) if e else None] for k, (s, e) in WINDOWS.items()},
+        "windows": {
+            k: [str(s) if s else None, str(e) if e else None]
+            for k, (s, e) in WINDOWS.items()
+        },
         "book": {
             "names_today": int(len(panel.tickers) - 1),
             "eligible_first_session": int(members[0]),
@@ -389,14 +623,9 @@ def build(
             "close times the name's simple return into the next close "
             f"({WORST_NAME_DAY_BASIS})."
         ),
+        "membership": str(history_path or universe.MEMBERSHIP_HISTORY_PATH),
+        "curves": {},
     }
-    for cost in costs:
-        priced = [
-            price_offset(report, restricted, mask, store, _since(panel, k), cost, arm)
-            for k in range(offsets)
-        ]
-        payload["rows"].extend(summarise(priced, cost))
-        payload["paired"].extend(paired(priced, cost))
     return payload
 
 
@@ -412,18 +641,26 @@ def render(payload: dict) -> str:
     book = payload["book"]
     lines.append(
         f"book: {book['names_today']} names today; eligible per session "
-        f"{book['eligible_first_session']} at the start, {book['eligible_last_session']} "
+        f"{book['eligible_first_session']} at the start, "
+        f"{book['eligible_last_session']} "
         f"at the end, median {book['eligible_median']:.0f}"
     )
     for cost in payload["costs_bps"]:
         for window in WINDOWS:
-            lines.append(f"\n{cost:g} bp, {window}  (median / worst across {payload['offsets']} offsets)")
-            lines.append(f"  {'line':<34}{'CAGR':>8}{'worst':>8}{'maxDD':>8}{'Sharpe':>8}{'>EW-PIT':>9}{'>QQQ':>7}")
+            lines.append(
+                f"\n{cost:g} bp, {window}  (median / worst across "
+                f"{payload['offsets']} offsets)"
+            )
+            lines.append(
+                f"  {'line':<34}{'CAGR':>8}{'worst':>8}{'maxDD':>8}{'Sharpe':>8}"
+                f"{'>EW-PIT':>9}{'>QQQ':>7}"
+            )
             for row in payload["rows"]:
                 if row["cost_bps"] != cost or row["window"] != window:
                     continue
                 lines.append(
-                    f"  {row['line']:<34}{_pct(row['median_cagr']):>8}{_pct(row['worst_cagr']):>8}"
+                    f"  {row['line']:<34}{_pct(row['median_cagr']):>8}"
+                    f"{_pct(row['worst_cagr']):>8}"
                     f"{_pct(row['median_drawdown']):>8}{row['median_sharpe']:>8.2f}"
                     f"{row['offsets_above_ew_pit']:>9}{row['offsets_above_qqq']:>7}"
                 )
@@ -432,8 +669,29 @@ def render(payload: dict) -> str:
                     continue
                 lines.append(
                     f"  paired {pair['line']} minus {pair['against']}: "
-                    f"{pair['mean_daily_bp']:+.1f} bp/day, HAC t {pair['hac_t']:.2f}, PSR {pair['psr']:.2f}"
+                    f"{pair['mean_daily_bp']:+.1f} bp/day, HAC t {pair['hac_t']:.2f}, "
+                    f"PSR {pair['psr']:.2f}"
                 )
+            gross = (
+                payload.get("vol_target", {}).get(f"{cost:g}", {}).get("windows", {})
+            )
+            if window in gross:
+                g = gross[window]
+                lines.append(
+                    f"  gross on {RULE_PIT}: mean {g['mean_gross']:.2f}, below 1 on "
+                    f"{g['share_below_one'] * 100:.0f}% of sessions, lowest "
+                    f"{g['min_gross']:.2f}, in cash {g['share_in_cash'] * 100:.0f}%; "
+                    f"traded {g['traded_over_gross_one']:.2f}x the gross-1 book"
+                )
+    spec = payload.get("vol_target")
+    if spec:
+        lines.insert(
+            1,
+            f"volatility target {spec['tag']}: sigma* {spec['target'] * 100:g}%/yr, "
+            f"{spec['window']}-session sigma-hat, return switch "
+            f"{spec['switch_return']}, "
+            f"intercept switch {spec['switch_intercept']}",
+        )
     return "\n".join(lines)
 
 
@@ -468,15 +726,58 @@ def main(argv: list[str] | None = None) -> int:
         "(0 < cap <= 1) with its concentration statistics; writes "
         "pit_scorecard_ew_graded_cap<percent>.json",
     )
+    parser.add_argument(
+        "--membership",
+        type=Path,
+        help="the dated membership file the point-in-time mask reads "
+        "(default: the book's)",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="where to write the payload; with several --gross-target values "
+        "each target's payload is written beside it with the target's tag "
+        "before the suffix",
+    )
+    parser.add_argument(
+        "--gross-target",
+        type=float,
+        nargs="+",
+        metavar="PCT",
+        help="scale the rule lines' gross to min(1, PCT%%/sigma-hat) (B1; "
+        "needs an arm); repeatable, one payload per target; 'inf' is the null",
+    )
+    parser.add_argument(
+        "--gross-window",
+        type=int,
+        default=vol_target.WINDOW,
+        help="sessions of the book's own gross-1 returns sigma-hat reads",
+    )
+    parser.add_argument(
+        "--gross-switch-return",
+        action="store_true",
+        help="reported only: gross 0 when the trailing 120-session book return "
+        "is negative",
+    )
+    parser.add_argument(
+        "--gross-switch-intercept",
+        action="store_true",
+        help="reported only: no scaling when the trailing risk-return intercept "
+        "is negative",
+    )
+    parser.add_argument(
+        "--null-test",
+        action="store_true",
+        help="with --gross-target inf: run the book through the scaled path at an "
+        "infinite target and through the plain path and assert every line is "
+        "reproduced to the bit at two offsets; no payload",
+    )
     args = parser.parse_args(argv)
     from backend.agents.trading.desk import desk
     from backend.market.store import MarketStore
 
     root = Path(args.root)
     store = MarketStore(root)
-    report = desk.run(
-        store, None, inputs=(desk.EXPECTATIONS_GAP,), signed_rotation=args.signed_rotation
-    )
     arm = ARMS[args.arm] if args.arm else None
     cap_tag = None
     if args.graded_cap is not None:
@@ -484,11 +785,35 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("--graded-cap must be in (0, 1]")
         arm = graded_arm(args.graded_cap)
         cap_tag = f"ew_graded_cap{round(args.graded_cap * 100):02d}"
-    payload = build(report, store, args.offsets, tuple(args.costs), arm=arm)
-    if args.graded_cap is not None:
-        restricted, mask = point_in_time.point_in_time(report)
-        payload["cap"] = args.graded_cap
-        payload["concentration"] = concentration(restricted, mask, arm(restricted, mask))
+    specs = tuple(
+        vol_target.Spec(
+            target=t if math.isinf(t) else t / 100.0,
+            window=args.gross_window,
+            switch_return=args.gross_switch_return,
+            switch_intercept=args.gross_switch_intercept,
+        )
+        for t in (args.gross_target or ())
+    )
+    if specs and arm is None:
+        parser.error("--gross-target needs an allocation arm (--arm or --graded-cap)")
+    if args.gross_window < 2:
+        parser.error("--gross-window needs at least two sessions")
+    history = args.membership or universe.MEMBERSHIP_HISTORY_PATH
+    report = desk.run(
+        store,
+        None,
+        inputs=(desk.EXPECTATIONS_GAP,),
+        signed_rotation=args.signed_rotation,
+    )
+    if args.null_test:
+        if len(specs) != 1 or not math.isinf(specs[0].target):
+            parser.error("--null-test needs exactly --gross-target inf")
+        verdict = null_test(report, store, history, 2, tuple(args.costs), arm, specs[0])
+        print(render_null_test(verdict))
+        return 0 if verdict["ok"] else 1
+    payloads = build_targets(
+        report, store, args.offsets, tuple(args.costs), history, arm, specs
+    )
     tags = [
         t
         for t, on in (
@@ -498,14 +823,115 @@ def main(argv: list[str] | None = None) -> int:
         )
         if on
     ]
-    payload["arm"] = " + ".join(tags) if tags else "frozen rule"
+    base_arm = " + ".join(tags) if tags else "frozen rule"
     name = FILE if not tags else FILE.replace(".json", "_" + "_".join(tags) + ".json")
-    target = root / "desk" / name
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(payload, indent=2, allow_nan=True), encoding="utf-8")
-    print(render(payload))
-    print(f"\nwrote {target}")
+    if args.graded_cap is not None:
+        restricted, mask = point_in_time.point_in_time(report, history)
+        for payload in payloads.values():
+            payload["cap"] = args.graded_cap
+            payload["concentration"] = concentration(
+                restricted, mask, arm(restricted, mask)
+            )
+    written = _write_payloads(payloads, base_arm, args.output or root / "desk" / name)
+    for target in written:
+        print(f"\nwrote {target}")
     return 0
+
+
+# Name, write and print every payload of a run. The control goes to `path`
+# itself, or, when the run carries targets, to `path` tagged "control"
+# beside them; a target goes to `path` tagged with its own tag, or to
+# `path` itself when it is the run's only target.
+def _write_payloads(payloads: dict[str, dict], base_arm: str, path: Path) -> list[Path]:
+    """Return the paths written, in the payloads' order."""
+    targets = [key for key in payloads if key != CONTROL]
+    written = []
+    for key, payload in payloads.items():
+        if key == CONTROL:
+            payload["arm"] = base_arm
+            target = _tagged(path, CONTROL) if targets else path
+        else:
+            payload["arm"] = f"{base_arm} + {key}"
+            target = path if len(targets) == 1 else _tagged(path, key)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(
+            json.dumps(payload, indent=2, allow_nan=True), encoding="utf-8"
+        )
+        print(render(payload))
+        written.append(target)
+    return written
+
+
+# A payload path with a tag before its suffix: vt.json + "vt25" -> vt_vt25.json.
+def _tagged(path: Path, tag: str) -> Path:
+    """Return `path` with `_<tag>` before the suffix."""
+    return path.with_name(f"{path.stem}_{tag}{path.suffix}")
+
+
+# The null test of the volatility-target path: the book through
+# `scale_offset` at an infinite target (gross 1 on every session) against
+# the plain `price_offset`, every line at two offsets and every cost,
+# dates and returns equal to the bit (NaN equal to NaN). The whole thing
+# is `ok` only when every line is.
+def null_test(report, store, history_path, offsets: int, costs, arm, spec) -> dict:
+    """Return {"ok", "lines": [{cost, offset, line, dates_equal, returns_equal}]}."""
+    restricted, mask = point_in_time.point_in_time(report, history_path)
+    lines = []
+    for cost in costs:
+        for k in range(offsets):
+            since = _since(report.panel, k)
+            plain = price_offset(report, restricted, mask, store, since, cost, arm)
+            through = scale_offset(
+                report, restricted, mask, since, cost, arm, plain, spec
+            )
+            for label, curve in plain.items():
+                other = through[label]
+                lines.append(
+                    {
+                        "cost_bps": cost,
+                        "offset": k,
+                        "line": label,
+                        "dates_equal": bool(np.array_equal(curve.dates, other.dates)),
+                        "returns_equal": bool(
+                            np.array_equal(
+                                np.asarray(curve.daily, dtype=float),
+                                np.asarray(other.daily, dtype=float),
+                                equal_nan=True,
+                            )
+                        ),
+                        "gross_all_one": bool(
+                            other.gross is None
+                            or np.all(np.asarray(other.gross) == 1.0)
+                        ),
+                    }
+                )
+    return {
+        "ok": all(
+            r["dates_equal"] and r["returns_equal"] and r["gross_all_one"]
+            for r in lines
+        ),
+        "lines": lines,
+    }
+
+
+# The null test's verdict as text: one line per mismatch, or the all-clear.
+def render_null_test(verdict: dict) -> str:
+    """Return the null test as text."""
+    lines = [
+        "null test: the book through the volatility-target path at an infinite "
+        "target against the plain path",
+        f"  lines compared: {len(verdict['lines'])}",
+    ]
+    for row in verdict["lines"]:
+        if not (row["dates_equal"] and row["returns_equal"] and row["gross_all_one"]):
+            lines.append(
+                f"  MISMATCH {row['cost_bps']:g} bp offset {row['offset']} "
+                f"{row['line']}: dates {row['dates_equal']}, "
+                f"returns {row['returns_equal']}, gross all one {row['gross_all_one']}"
+            )
+    passed = "PASS, reproduced to the bit" if verdict["ok"] else "FAIL"
+    lines.append(f"  verdict: {passed}")
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":
