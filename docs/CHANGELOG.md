@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-01 — Nightly earnings coverage check: a missing or stale release reading is said on the board: BUILT, gates pending, not deployed
+## 2026-10-01 — Nightly earnings coverage check: a missing or stale release reading is said on the board: BUILT and gated, not deployed
 
 Branch `desk/release-coverage` on `4384ea77`. Two ways the sentiment
 analyst's input goes stale made no noise anywhere: a foreign filer added to
@@ -107,6 +107,30 @@ and is not run nightly.
   block is null, or when it is absent).
 - Diagram impact: NONE - a new field on the existing record, read by the
   existing desk panel; no new component, store, dependency or boundary.
+
+**Validation, on spark1, on `3816b6f3`** (the code as it would ship; the
+commit after it changes only this entry).
+
+- **Unit gate** (`unitgate.sh`, `anios_gate`, after the 12:20 ET deploy had
+  finished): 8,356 passed, 70 skipped, 6 xfailed, exit 0, 358.6 s. The base
+  tree (`e3e5c3eb`, the same code as `4384ea77`) gave 8,343, 70 and 6: the 13
+  more are `test_release_coverage.py`.
+- **Types:** `tsc --noEmit` passed.
+- **Browser**, full suite (`run_int_e2e.sh`, port 5187, mocks): 314 passed,
+  105 failed, 24 skipped (39.3 min), report `~/scratch/rc_3816b6f3.json`.
+  Compared with `vb3_e3e5c3eb.json` by spec file and test title: no new
+  failure, no baseline test missing, no flaky test; the 4 more passes are
+  `desk-release-coverage.spec.ts`. The 105 are the known environmental ones,
+  the same titles as the baseline: chat 68, fundamental-period-eligibility
+  21, theme 4, presentations 3, desk-options-isolation 3,
+  desk-options-provenance 2, background-session-prices 2, hash-routing 2.
+  The flagged-case screenshot shows three plain grey lines under a hairline
+  divider, no warning styling.
+- **Not verified:** the hook inside a real nightly and the note on the live
+  board (not deployed); NBIS and SIMO leaving the list after tonight's 6-K
+  re-read (they should, if the widened classifier admits their releases); the
+  read lag on more than three releases (the October season will add most of
+  the book).
 
 ## 2026-10-01 — Grades that moved on a data update say so; the discovery sweep test no longer dates itself: BUILT and gated, not deployed
 
