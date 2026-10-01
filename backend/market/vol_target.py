@@ -317,11 +317,13 @@ def offsets_above(
 # One target's verdict from its payload and the control's. `trial_variance`
 # is the variance of the paired-difference Sharpes across the registered
 # targets (NaN leaves the deflated Sharpe unjudged; it is reported either
-# way and decides nothing).
+# way and decides nothing); `trials` is the cumulative count the deflated
+# Sharpe is taken at (a study reusing this verdict passes its own).
 def verdict(
     candidate: Mapping[str, Any],
     control: Mapping[str, Any],
     trial_variance: float = math.nan,
+    trials: int = TRIALS["cumulative"],
 ) -> dict[str, Any]:
     """Return the target's verdict record."""
     spec = candidate.get("vol_target", {})
@@ -336,7 +338,7 @@ def verdict(
             deciding["length"],
             deciding["skew"],
             deciding["kurtosis"],
-            TRIALS["cumulative"],
+            trials,
             trial_variance,
         )
     drawdown_trade = all(
@@ -374,7 +376,7 @@ def verdict(
         "offsets_above": above,
         "offsets": offsets,
         "dsr": dsr,
-        "trials": TRIALS["cumulative"],
+        "trials": trials,
         "trial_variance": trial_variance,
         "cost_bps": COST_BPS,
         "vol_target": dict(spec),
@@ -399,16 +401,21 @@ def lines(reading: Mapping[str, Any]) -> list[str]:
     """Return the verdict as lines."""
     signed = _signed
     spec = reading.get("vol_target", {})
-    target = spec.get("target", math.nan)
-    name = "inf" if target is None or math.isinf(target) else f"{target * 100:.0f}%"
-    extras = []
-    if spec.get("window", WINDOW) != WINDOW:
-        extras.append(f"{spec['window']}-session window")
-    if spec.get("switch_return"):
-        extras.append("return switch")
-    if spec.get("switch_intercept"):
-        extras.append("intercept switch")
-    head = f"σ* = {name}" + (f" ({', '.join(extras)})" if extras else "")
+    if "target" in spec:
+        target = spec["target"]
+        name = "inf" if target is None or math.isinf(target) else f"{target * 100:.0f}%"
+        extras = []
+        if spec.get("window", WINDOW) != WINDOW:
+            extras.append(f"{spec['window']}-session window")
+        if spec.get("switch_return"):
+            extras.append("return switch")
+        if spec.get("switch_intercept"):
+            extras.append("intercept switch")
+        head = f"σ* = {name}" + (f" ({', '.join(extras)})" if extras else "")
+    else:
+        # A candidate that is not a volatility target (the regime-gross
+        # study reuses this verdict): named by its arm.
+        head = str(reading.get("candidate_arm") or "candidate")
     d, r = reading["paired"][DECIDING], reading["paired"][RECENT]
     out = [
         f"{head}: paired {DECIDING} {signed(d['mean_daily_bp'], 1)} bp/session "

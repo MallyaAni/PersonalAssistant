@@ -56,6 +56,22 @@ plain path at two offsets and asserts every line is reproduced to the bit.
         --gross-target inf --null-test
     python -m backend.cli.market_pit_scorecard --graded-cap 0.25 \
         --gross-target 20 25 30 --output docs/research/scorecards/vol-target/vt.json
+
+The regime-gross study (`docs/research/regime-gross-plan-2026-10-01.md`,
+B2) reuses the same gross path with a different rule: `--gross-regime
+THRESH:GLOW` (repeatable, one payload per pair) scales the rule lines to
+GLOW on every session whose previous close carried a day-type tail
+probability (`regime_gross.tail_probability`: the walk-forward day-type
+model, produced once per run on the point-in-time book) at or above
+THRESH, and to 1 elsewhere. `--gross-regime-with-target PCT` (reported)
+combines each pair with a PCT% volatility target as the per-session
+minimum. `--null-test` with `--gross-regime 1.0:GLOW` is the study's null.
+
+    python -m backend.cli.market_pit_scorecard --graded-cap 0.25 \
+        --gross-regime 1.0:0.5 --null-test
+    python -m backend.cli.market_pit_scorecard --graded-cap 0.25 \
+        --gross-regime 0.3:0.5 0.5:0.5 0.5:0.0 \
+        --output docs/research/scorecards/regime-gross/rg.json
 """
 
 from __future__ import annotations
@@ -78,7 +94,14 @@ from backend.agents.trading.desk import (
     point_in_time,
     simulate,
 )
-from backend.market import benchmarks, candidate_stats, universe, vol_target
+from backend.market import (
+    benchmarks,
+    candidate_stats,
+    day_type,
+    regime_gross,
+    universe,
+    vol_target,
+)
 from backend.market.universe import MARKET_INDICES
 
 FILE = "pit_scorecard.json"
@@ -212,6 +235,8 @@ class Curve:
     gross: np.ndarray | None = None
     sigma: np.ndarray | None = None
     unit: object = None  # the gross-1 result a scaled line was read from
+    # Under a regime gross, the tail probability p(t−1) the rule read.
+    probability: np.ndarray | None = None
 
 
 # Annualised return, drawdown from the starting NAV and Sharpe, or NaNs.
@@ -308,18 +333,50 @@ def price_offset(
     return out
 
 
+# The payload key a scaled variant's record lives under: "vol_target" for
+# B1's specs, "regime_gross" for B2's.
+def spec_key(spec) -> str:
+    """Return the payload key of `spec`'s study."""
+    return regime_gross.KEY if isinstance(spec, regime_gross.Spec) else "vol_target"
+
+
+# The gross path of one variant on the panel's calendar from the gross-1
+# book's returns there and, for a regime gross, the point-in-time tail
+# probability: (gross, σ̂ or None, p(t−1) or None).
+def gross_for(spec, on_calendar: np.ndarray, probability: np.ndarray | None):
+    """Return (gross, sigma, probability read) for `spec`."""
+    if isinstance(spec, regime_gross.Spec):
+        if probability is None:
+            raise ValueError("a regime gross needs the tail probability series")
+        gross, read, sigma = regime_gross.gross_path(probability, spec, on_calendar)
+        return gross, sigma, read
+    gross, sigma = vol_target.gross_path(on_calendar, spec)
+    return gross, sigma, None
+
+
 # The two rule lines of one priced offset run again under a volatility
-# target: the gross path is read off each line's own gross-1 returns (the
-# book `price_offset` already ran, so σ̂ at t reads only sessions before
-# t), the book is run again through `simulate.run(gross_path=...)` on the
-# same sessions and cost, and the other lines are shared with the base.
-# Each scaled curve carries its gross path and σ̂ on the rule's calendar.
+# target or a regime gross: the gross path is read off each line's own
+# gross-1 returns (the book `price_offset` already ran, so σ̂ at t reads
+# only sessions before t) and, for a regime gross, the tail probability
+# series on the panel's calendar (`probability`, read at t−1); the book is
+# run again through `simulate.run(gross_path=...)` on the same sessions
+# and cost, and the other lines are shared with the base. Each scaled
+# curve carries its gross path and what the rule read, on the rule's
+# calendar.
 def scale_offset(
-    report, restricted, mask: np.ndarray, since, cost_bps: float, arm, base: dict, spec
+    report,
+    restricted,
+    mask: np.ndarray,
+    since,
+    cost_bps: float,
+    arm,
+    base: dict,
+    spec,
+    probability: np.ndarray | None = None,
 ) -> dict[str, Curve]:
     """Return the base's lines with the two rule lines scaled to `spec`."""
     if arm is None:
-        raise ValueError("a volatility target needs an allocation arm")
+        raise ValueError("a gross rule needs an allocation arm")
     out = dict(base)
     everyone = np.ones_like(mask)
     everyone[:, report.panel.index(report.panel.benchmark)] = False
@@ -332,7 +389,7 @@ def scale_offset(
         on_calendar = np.full(len(rep.panel.dates), np.nan)
         start = len(rep.panel.dates) - len(unit.returns)
         on_calendar[start:] = unit.returns
-        gross, sigma = vol_target.gross_path(on_calendar, spec)
+        gross, sigma, read = gross_for(spec, on_calendar, probability)
         sim = simulate.run(
             rep, since=since, allocator=arm(rep, book_mask), gross_path=gross, **plain
         )
@@ -342,8 +399,9 @@ def scale_offset(
             sim.returns,
             sim=sim,
             gross=gross[start:],
-            sigma=sigma[start:],
+            sigma=None if sigma is None else sigma[start:],
             unit=unit,
+            probability=None if read is None else read[start:],
         )
     return out
 
@@ -471,11 +529,15 @@ def build(
     return build_targets(report, store, offsets, costs, history_path, arm, ())[CONTROL]
 
 
-# The scorecard payload and, per volatility-target variant, the payload of
-# the same run with the two rule lines scaled (`scale_offset`): every
-# variant shares the base pricing, so the control inside a target run is
-# the plain path at the same offsets, costs and store. Keys are `CONTROL`
-# and each variant's tag.
+# The scorecard payload and, per gross variant (a volatility target or a
+# regime gross), the payload of the same run with the two rule lines
+# scaled (`scale_offset`): every variant shares the base pricing, so the
+# control inside a variant run is the plain path at the same offsets,
+# costs and store. Keys are `CONTROL` and each variant's tag. A regime
+# gross reads the point-in-time tail probability of the restricted book
+# (`regime_gross.tail_probability`, one series per horizon and model,
+# produced once here, or passed in through `probabilities` keyed by
+# (horizon, model) when a caller already holds it).
 def build_targets(
     report,
     store,
@@ -484,6 +546,7 @@ def build_targets(
     history_path=None,
     arm=None,
     specs: tuple = (),
+    probabilities: dict | None = None,
 ) -> dict[str, dict]:
     """Return {CONTROL: payload, spec.tag: payload, ...}."""
     panel = report.panel
@@ -493,10 +556,14 @@ def build_targets(
         else point_in_time.point_in_time(report)
     )
     members = mask.sum(axis=1)
+    series = probability_series(restricted, mask, specs, probabilities)
     payloads = {CONTROL: _payload(panel, offsets, costs, members, history_path)}
     for spec in specs:
         payloads[spec.tag] = _payload(panel, offsets, costs, members, history_path)
-        payloads[spec.tag]["vol_target"] = spec.record()
+        payloads[spec.tag][spec_key(spec)] = spec.record()
+        if isinstance(spec, regime_gross.Spec):
+            key = (spec.horizon, spec.model)
+            payloads[spec.tag]["probability"] = series[key].record()
     for cost in costs:
         priced = [
             price_offset(report, restricted, mask, store, _since(panel, k), cost, arm)
@@ -506,13 +573,45 @@ def build_targets(
         for spec in specs:
             scaled = [
                 scale_offset(
-                    report, restricted, mask, _since(panel, k), cost, arm, base, spec
+                    report,
+                    restricted,
+                    mask,
+                    _since(panel, k),
+                    cost,
+                    arm,
+                    base,
+                    spec,
+                    _probability_of(series, spec),
                 )
                 for k, base in enumerate(priced)
             ]
             _score(payloads[spec.tag], scaled, cost)
-            payloads[spec.tag]["vol_target"][f"{cost:g}"] = gross_record(scaled)
+            payloads[spec.tag][spec_key(spec)][f"{cost:g}"] = gross_record(scaled)
     return payloads
+
+
+# The tail-probability series every regime-gross spec needs, keyed by
+# (horizon, model): those passed in are kept, the rest produced once from
+# the restricted book. Empty when no spec is a regime gross.
+def probability_series(restricted, mask, specs, probabilities=None) -> dict:
+    """Return {(horizon, model): Probability} for the regime specs."""
+    out = dict(probabilities or {})
+    for spec in specs:
+        if isinstance(spec, regime_gross.Spec):
+            key = (spec.horizon, spec.model)
+            if key not in out:
+                out[key] = regime_gross.tail_probability(
+                    restricted, mask, spec.horizon, spec.model
+                )
+    return out
+
+
+# The (T,) probability array a spec reads, None for a volatility target.
+def _probability_of(series: dict, spec) -> np.ndarray | None:
+    """Return the probability series of a regime spec, else None."""
+    if not isinstance(spec, regime_gross.Spec):
+        return None
+    return np.asarray(series[(spec.horizon, spec.model)].probability, dtype=float)
 
 
 # One cost's rows, paired evidence and median-offset curves onto a payload.
@@ -539,25 +638,27 @@ def median_offset_curves(priced: list[dict[str, Curve]]) -> dict:
     }
 
 
-# What the volatility target did to the point-in-time rule line at one
-# cost: the gross and σ̂ it applied at the median offset, session by
-# session, and per window across the offsets the median of each offset's
-# mean gross, share of sessions under gross 1, lowest gross, sessions in
-# cash, and the notional traded against the gross-1 book (the rescaling
-# trades' cost is in the returns; this is their size).
+# What the gross rule did to the point-in-time rule line at one cost: the
+# gross it applied at the median offset, session by session, with what it
+# read (σ̂ under a volatility target, p(t−1) under a regime gross, both
+# when combined), and per window across the offsets the median of each
+# offset's mean gross, share of sessions under gross 1, lowest gross,
+# sessions in cash, and the notional traded against the gross-1 book (the
+# rescaling trades' cost is in the returns; this is their size).
 def gross_record(scaled: list[dict[str, Curve]]) -> dict:
     """Return the payload's per-cost record of the gross path."""
     k = len(scaled) // 2
     median = scaled[k][RULE_PIT]
-    out: dict[str, object] = {
-        "median_offset": {
-            "offset": k,
-            "dates": [str(d) for d in np.asarray(median.dates, dtype="datetime64[D]")],
-            "gross": [float(g) for g in median.gross],
-            "sigma_hat": [float(s) for s in median.sigma],
-        },
-        "windows": {},
+    at_median: dict[str, object] = {
+        "offset": k,
+        "dates": [str(d) for d in np.asarray(median.dates, dtype="datetime64[D]")],
+        "gross": [float(g) for g in median.gross],
     }
+    if median.sigma is not None:
+        at_median["sigma_hat"] = [float(s) for s in median.sigma]
+    if median.probability is not None:
+        at_median["probability"] = [float(p) for p in median.probability]
+    out: dict[str, object] = {"median_offset": at_median, "windows": {}}
     for name, (start, end) in WINDOWS.items():
         stats: dict[str, list[float]] = {
             "mean_gross": [],
@@ -672,9 +773,8 @@ def render(payload: dict) -> str:
                     f"{pair['mean_daily_bp']:+.1f} bp/day, HAC t {pair['hac_t']:.2f}, "
                     f"PSR {pair['psr']:.2f}"
                 )
-            gross = (
-                payload.get("vol_target", {}).get(f"{cost:g}", {}).get("windows", {})
-            )
+            record = payload.get("vol_target") or payload.get(regime_gross.KEY) or {}
+            gross = record.get(f"{cost:g}", {}).get("windows", {})
             if window in gross:
                 g = gross[window]
                 lines.append(
@@ -692,7 +792,29 @@ def render(payload: dict) -> str:
             f"{spec['switch_return']}, "
             f"intercept switch {spec['switch_intercept']}",
         )
+    spec = payload.get(regime_gross.KEY)
+    if spec:
+        combined = (
+            f", min with sigma* {spec['combine_target'] * 100:g}%/yr"
+            if spec.get("combine_target") is not None
+            else ""
+        )
+        p = payload.get("probability", {})
+        lines.insert(
+            1,
+            f"regime gross {spec['tag']}: g_low {spec['g_low']:g} when p(t-1) >= "
+            f"{spec['threshold']:g}{combined}; p from horizon {spec['horizon']} "
+            f"{spec['model']}, first {p.get('first_session')}, refit every "
+            f"{p.get('refit_every')} sessions, Brier skill "
+            f"{_f(p.get('brier_skill')):.3f}, max p {_f(p.get('max')):.2f}",
+        )
     return "\n".join(lines)
+
+
+# A payload number as a float, NaN for None.
+def _f(value) -> float:
+    """Return `value` as a float, NaN when missing."""
+    return math.nan if value is None else float(value)
 
 
 # A fraction as a percentage string, "n/a" for NaN.
@@ -766,11 +888,40 @@ def main(argv: list[str] | None = None) -> int:
         "is negative",
     )
     parser.add_argument(
+        "--gross-regime",
+        nargs="+",
+        metavar="THRESH:GLOW",
+        help="gross g_low when the day-type model's walk-forward tail "
+        "probability at the previous close is at or above THRESH, else 1 (B2; "
+        "needs an arm); repeatable, one payload per pair; THRESH 1.0 is the null",
+    )
+    parser.add_argument(
+        "--gross-regime-with-target",
+        type=float,
+        metavar="PCT",
+        help="reported only: every --gross-regime pair combined with a PCT%% "
+        "volatility target as the per-session minimum of the two grosses",
+    )
+    parser.add_argument(
+        "--regime-horizon",
+        type=int,
+        default=regime_gross.HORIZON,
+        choices=sorted(day_type.HORIZONS),
+        help="the day-type label's horizon in sessions",
+    )
+    parser.add_argument(
+        "--regime-model",
+        default=regime_gross.MODEL,
+        choices=("logistic", "hgb"),
+        help="the day-type model",
+    )
+    parser.add_argument(
         "--null-test",
         action="store_true",
-        help="with --gross-target inf: run the book through the scaled path at an "
-        "infinite target and through the plain path and assert every line is "
-        "reproduced to the bit at two offsets; no payload",
+        help="with --gross-target inf or --gross-regime 1.0:GLOW: run the book "
+        "through the scaled path at a rule that never fires and through the "
+        "plain path and assert every line is reproduced to the bit at two "
+        "offsets; no payload",
     )
     args = parser.parse_args(argv)
     from backend.agents.trading.desk import desk
@@ -785,19 +936,7 @@ def main(argv: list[str] | None = None) -> int:
             parser.error("--graded-cap must be in (0, 1]")
         arm = graded_arm(args.graded_cap)
         cap_tag = f"ew_graded_cap{round(args.graded_cap * 100):02d}"
-    specs = tuple(
-        vol_target.Spec(
-            target=t if math.isinf(t) else t / 100.0,
-            window=args.gross_window,
-            switch_return=args.gross_switch_return,
-            switch_intercept=args.gross_switch_intercept,
-        )
-        for t in (args.gross_target or ())
-    )
-    if specs and arm is None:
-        parser.error("--gross-target needs an allocation arm (--arm or --graded-cap)")
-    if args.gross_window < 2:
-        parser.error("--gross-window needs at least two sessions")
+    specs = _specs(args, parser, arm)
     history = args.membership or universe.MEMBERSHIP_HISTORY_PATH
     report = desk.run(
         store,
@@ -806,8 +945,11 @@ def main(argv: list[str] | None = None) -> int:
         signed_rotation=args.signed_rotation,
     )
     if args.null_test:
-        if len(specs) != 1 or not math.isinf(specs[0].target):
-            parser.error("--null-test needs exactly --gross-target inf")
+        if len(specs) != 1 or not _is_null(specs[0]):
+            parser.error(
+                "--null-test needs exactly --gross-target inf or "
+                "--gross-regime 1.0:GLOW"
+            )
         verdict = null_test(report, store, history, 2, tuple(args.costs), arm, specs[0])
         print(render_null_test(verdict))
         return 0 if verdict["ok"] else 1
@@ -836,6 +978,47 @@ def main(argv: list[str] | None = None) -> int:
     for target in written:
         print(f"\nwrote {target}")
     return 0
+
+
+# The gross variants a run asks for: B1's targets from `--gross-target`
+# and the window and switches, B2's pairs from `--gross-regime` (each
+# combined with `--gross-regime-with-target` when given); the options
+# are checked here and a bad one stops the parser.
+def _specs(args, parser, arm) -> tuple:
+    """Return the run's specs, in option order."""
+    specs = tuple(
+        vol_target.Spec(
+            target=t if math.isinf(t) else t / 100.0,
+            window=args.gross_window,
+            switch_return=args.gross_switch_return,
+            switch_intercept=args.gross_switch_intercept,
+        )
+        for t in (args.gross_target or ())
+    )
+    combine = args.gross_regime_with_target
+    if combine is not None:
+        combine /= 100.0
+        if not combine > 0:
+            parser.error("--gross-regime-with-target must be positive")
+    try:
+        specs += tuple(
+            regime_gross.parse_pair(
+                pair, combine, horizon=args.regime_horizon, model=args.regime_model
+            )
+            for pair in (args.gross_regime or ())
+        )
+    except ValueError as err:
+        parser.error(str(err))
+    if specs and arm is None:
+        parser.error(
+            "--gross-target and --gross-regime need an allocation arm "
+            "(--arm or --graded-cap)"
+        )
+    if args.gross_window < 2:
+        parser.error("--gross-window needs at least two sessions")
+    if len({s.tag for s in specs}) != len(specs):
+        parser.error("two gross variants carry the same tag")
+    return specs
 
 
 # Name, write and print every payload of a run. The control goes to `path`
@@ -868,21 +1051,37 @@ def _tagged(path: Path, tag: str) -> Path:
     return path.with_name(f"{path.stem}_{tag}{path.suffix}")
 
 
-# The null test of the volatility-target path: the book through
-# `scale_offset` at an infinite target (gross 1 on every session) against
-# the plain `price_offset`, every line at two offsets and every cost,
-# dates and returns equal to the bit (NaN equal to NaN). The whole thing
-# is `ok` only when every line is.
-def null_test(report, store, history_path, offsets: int, costs, arm, spec) -> dict:
+# Whether a spec is its study's null: an infinite volatility target, or a
+# regime threshold no probability reaches.
+def _is_null(spec) -> bool:
+    """Return True for the null variant of either study."""
+    if isinstance(spec, regime_gross.Spec):
+        return spec.is_null
+    return math.isinf(spec.target)
+
+
+# The null test of the gross path: the book through `scale_offset` at a
+# rule that never fires (an infinite volatility target, or a regime
+# threshold of 1.0 - gross 1 on every session) against the plain
+# `price_offset`, every line at two offsets and every cost, dates and
+# returns equal to the bit (NaN equal to NaN). A regime null reads the
+# real tail-probability series, so it also proves the series reaches the
+# path and never crosses 1. The whole thing is `ok` only when every line
+# is.
+def null_test(
+    report, store, history_path, offsets: int, costs, arm, spec, probabilities=None
+) -> dict:
     """Return {"ok", "lines": [{cost, offset, line, dates_equal, returns_equal}]}."""
     restricted, mask = point_in_time.point_in_time(report, history_path)
+    series = probability_series(restricted, mask, (spec,), probabilities)
+    probability = _probability_of(series, spec)
     lines = []
     for cost in costs:
         for k in range(offsets):
             since = _since(report.panel, k)
             plain = price_offset(report, restricted, mask, store, since, cost, arm)
             through = scale_offset(
-                report, restricted, mask, since, cost, arm, plain, spec
+                report, restricted, mask, since, cost, arm, plain, spec, probability
             )
             for label, curve in plain.items():
                 other = through[label]
@@ -918,8 +1117,8 @@ def null_test(report, store, history_path, offsets: int, costs, arm, spec) -> di
 def render_null_test(verdict: dict) -> str:
     """Return the null test as text."""
     lines = [
-        "null test: the book through the volatility-target path at an infinite "
-        "target against the plain path",
+        "null test: the book through the gross path at a rule that never fires "
+        "(target inf, or regime threshold 1.0) against the plain path",
         f"  lines compared: {len(verdict['lines'])}",
     ]
     for row in verdict["lines"]:
