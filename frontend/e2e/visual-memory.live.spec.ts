@@ -7,7 +7,7 @@ const frontendUrl = process.env.ANIOS_FRONTEND_URL || 'http://127.0.0.1:5173'
 
 // Verify ordinary chat carries the visible owned image and answers from it.
 test('@live active uploaded image grounds a style question', async ({ page }) => {
-  test.skip(!token || !conversationId || !artifactId, 'Live owned-image inputs required')
+  test.skip(!token || !conversationId || !artifactId, 'Set LIVE_AUTH_TOKEN, LIVE_CONVERSATION_ID and LIVE_IMAGE_ARTIFACT_ID (an owned image in a live conversation)')
   test.setTimeout(240_000)
 
   const consoleErrors: string[] = []
@@ -62,7 +62,7 @@ test('@live active uploaded image grounds a style question', async ({ page }) =>
 
 // Verify semantic visual recall works with no image explicitly selected.
 test('@live historical image memory grounds a style question', async ({ page }) => {
-  test.skip(!token, 'Live authenticated owner required')
+  test.skip(!token, 'Set LIVE_AUTH_TOKEN (a live authenticated owner) to run against the live backend')
   test.setTimeout(240_000)
 
   const consoleErrors: string[] = []
@@ -121,7 +121,7 @@ test('@live historical image memory grounds a style question', async ({ page }) 
 
 // Verify an unrelated agent-setting turn never renders private image memory.
 test('@live Scout schedule confirmation skips visual memory', async ({ page }) => {
-  test.skip(!token, 'Live authenticated owner required')
+  test.skip(!token, 'Set LIVE_AUTH_TOKEN (a live authenticated owner) to run against the live backend')
   test.setTimeout(240_000)
 
   const consoleErrors: string[] = []
