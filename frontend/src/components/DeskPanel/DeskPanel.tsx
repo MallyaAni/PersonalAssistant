@@ -711,7 +711,7 @@ function GradeParityBanner({parity}: {parity?: DeskPayload['grade_parity']}) {
   const open = note ? parity.mismatches.filter(m => !m.explained) : parity.mismatches
   const date = parity.date ?? 'this session'
   const stale = `The board shows ${date}'s grades; the next nightly record re-grades on current code and data.`
-  if (open.length === 0) return <DataVintageNote vintage={note}><p className="text-xs">{stale}</p></DataVintageNote>
+  if (note && open.length === 0) return <DataVintageNote vintage={note}><p className="text-xs">{stale}</p></DataVintageNote>
   const names = [...new Set(open.map(m => m.ticker).filter((t): t is string => !!t))].sort()
   const others = open.filter(m => !m.ticker)
   const count = `${names.length} ${names.length === 1 ? 'name' : 'names'}`
