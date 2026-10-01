@@ -113,6 +113,19 @@ only, no alert; parity OK with the record's note).
 
 **Validation, on spark1.**
 
+- **On the tree that would go live**, `e3e5c3eb` (this branch merged with
+  `origin/main` `6b85cfe0`, which gained `33ac6c71` and `6b85cfe0` at 09:50
+  ET, after the branch was cut; the merge conflicted only in this file):
+  unit gate 8,343 passed, 70 skipped, 6 xfailed, exit 0 (414 s; the 22 more
+  than below are main's new tests); `tsc --noEmit` passed; full browser
+  suite 310 passed, 105 failed, 24 skipped (39.3 min). The 105 are chat 68,
+  fundamental-period-eligibility 21, theme 4, presentations 3,
+  desk-options-isolation 3, desk-options-provenance 2,
+  background-session-prices 2, hash-routing 2, all known environmental; none
+  is new against `g6_e2e.log`, and 29 of its failures pass (main's
+  fundamental-source-versions fix 25, desk 4). Targeted: desk-grade-parity
+  7/7, desk-trade-board 12/12, simple-actions 7/7, desk.spec 67/67.
+- The same gates before the merge, on the branch alone, follow.
 - **Unit gate** on `ac8a6fe2` (`unitgate.sh`, `anios_gate`): 8,321 passed,
   70 skipped, 6 xfailed, exit 0, 404 s. The base `8046f0c9` gave 8,309, 70
   and 7: the 12 more are the 10 vintage tests, the date guard and the sweep
