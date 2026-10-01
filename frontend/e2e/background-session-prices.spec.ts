@@ -12,7 +12,8 @@ const BAR = '2026-09-24T19:45:00Z'
 type Snapshot = Omit<DeskSessionPrices, 'as_of'> & {as_of: string | null}
 type Read = {snapshot: Snapshot; browserAt: string}
 type Scenario = {snapshot: Snapshot; requests: {path: string; method: string; body?: unknown}[];
-  reads: Read[]; pending: Set<Request>; changed: number; errors: string[]}
+  reads: Read[]; pending: Set<Request>; changed: number; errors: string[];
+  cancelledConversationReads: Set<string>; completedConversationReads: Set<string>}
 
 // Prepare already-collected evidence independently of every browser request and its clock.
 function snapshot(captured: string | null = CAPTURED, observed = OBSERVED, price = 102): Snapshot {
@@ -33,7 +34,8 @@ function unavailable(captured = '2026-09-24T22:00:25Z'): Snapshot {
 
 // Start each case with an independent fixed snapshot and a complete read-only network audit.
 function scenario(): Scenario {
-  return {snapshot: snapshot(), requests: [], reads: [], pending: new Set(), changed: Date.now(), errors: []}
+  return {snapshot: snapshot(), requests: [], reads: [], pending: new Set(), changed: Date.now(), errors: [],
+    cancelledConversationReads: new Set(), completedConversationReads: new Set()}
 }
 
 // Serve only synthetic APIs; the mutable snapshot models a contract, not a real collector or store.
@@ -48,8 +50,17 @@ async function install(page: Page, state: Scenario, baseURL: string) {
   // Track consumed responses so assertions never race an earlier navigation's idle event.
   const finished = (request: Request) => {if (state.pending.delete(request)) state.changed = Date.now()}
   page.on('requestfinished', finished)
-  page.on('requestfailed', request => {finished(request); state.errors.push(`failed: ${request.url()} ${request.failure()?.errorText}`)})
-  page.on('response', response => {if (response.status() >= 400) state.errors.push(`HTTP ${response.status()}: ${response.url()}`)})
+  // After a reload the dev server's StrictMode mounts the chat's conversation restore twice and
+  // cancels the first GET; that one is held to its repeat in finish(). Every other failure is an error.
+  page.on('requestfailed', request => {
+    finished(request)
+    if (request.method() === 'GET' && new URL(request.url()).pathname.startsWith('/api/v1/conversations/') && request.failure()?.errorText === 'net::ERR_ABORTED') state.cancelledConversationReads.add(request.url())
+    else state.errors.push(`failed: ${request.url()} ${request.failure()?.errorText}`)
+  })
+  page.on('response', response => {
+    if (response.status() >= 400) state.errors.push(`HTTP ${response.status()}: ${response.url()}`)
+    if (response.ok() && response.request().method() === 'GET' && new URL(response.url()).pathname.startsWith('/api/v1/conversations/')) state.completedConversationReads.add(response.url())
+  })
   // Deny unknown reads, real account writes and external access before supplying fixture data.
   await page.route('**/*', async route => {
     const request = route.request()
@@ -100,6 +111,9 @@ async function settle(page: Page, state: Scenario) {
 // Preserve every returned snapshot and reject all browser, network and mutation diagnostics.
 async function finish(page: Page, state: Scenario, info: TestInfo) {
   await settle(page, state)
+  for (const url of state.cancelledConversationReads) {
+    if (!state.completedConversationReads.has(url)) state.errors.push(`cancelled conversation read never repeated successfully: ${url}`)
+  }
   await info.attach('background-session-contract-evidence', {body: JSON.stringify({requests: state.requests, reads: state.reads,
     errors: state.errors, readings: await page.getByLabel('AAPL session price', {exact: true}).allTextContents()}, null, 2), contentType: 'application/json'})
   expect(state.errors).toEqual([])
