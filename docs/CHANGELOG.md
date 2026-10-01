@@ -1,6 +1,16 @@
 # Changelog
 
-## 2026-10-01 — Nightly earnings coverage check: a missing or stale release reading is said on the board: BUILT and gated, not deployed
+## 2026-10-01 — Deployed `6b85cfe0` (10:33 ET), `4384ea77` (12:07 ET) and `d17f1632` (16:32 ET)
+
+- `6b85cfe0` (other session): reset sizing under `/5`, execution wording,
+  6-K audit coverage.
+- `4384ea77`: the Form 6-K classifier widened to the filings' real
+  headlines, the data-vintage note, the discovery test fix (entries below).
+- `d17f1632`: the nightly earnings-coverage check (entry below).
+- The four entries below that say "not deployed" or "branch only" were
+  written before these deploys; they describe what is now live.
+
+## 2026-10-01 — Nightly earnings coverage check: a missing or stale release reading is said on the board: BUILT and gated, not deployed (deployed 16:32 ET as `d17f1632`)
 
 Branch `desk/release-coverage` on `4384ea77`. Two ways the sentiment
 analyst's input goes stale made no noise anywhere: a foreign filer added to
@@ -132,7 +142,7 @@ commit after it changes only this entry).
   read lag on more than three releases (the October season will add most of
   the book).
 
-## 2026-10-01 — Grades that moved on a data update say so; the discovery sweep test no longer dates itself: BUILT and gated, not deployed
+## 2026-10-01 — Grades that moved on a data update say so; the discovery sweep test no longer dates itself: BUILT and gated, not deployed (deployed 12:07 ET as part of `4384ea77`)
 
 Branch `desk/vintage-banner` on `8046f0c9` (fix/6k-classifier). Two small
 reliability fixes for the live board.
@@ -283,7 +293,7 @@ only, no alert; parity OK with the record's note).
 Diagram impact: NONE — no component, store, dependency or data flow added;
 the nightly and the parity CLI read the same EDGAR frames they already read.
 
-## 2026-10-01 — Reset sizing, execution wording and 6-K audit corrected (branch only)
+## 2026-10-01 — Reset sizing, execution wording and 6-K audit corrected (branch only) (deployed 10:33 ET as `6b85cfe0`)
 
 `33ac6c71` on `fix/review-consistency-20261001`: reset orders preserve
 allocation targets under cash/rounding/band constraints; the separate
@@ -300,7 +310,7 @@ parity and economic superiority are not established. No deployment.
 See [evidence and remaining work](research/review-corrections-2026-10-01.md).
 Gross-risk execution correction remains on a separate research branch.
 
-## 2026-10-01 — Form 6-K classifier widened to the filings' real headlines: BUILT, not deployed, not re-run
+## 2026-10-01 — Form 6-K classifier widened to the filings' real headlines: BUILT, not deployed, not re-run (deployed 12:07 ET as part of `4384ea77`; the re-read runs 20:05 ET)
 
 The 2026-09-30 backfill's `--audit-6k` flagged NBIS 0 of 53 6-Ks admitted,
 ASML 3 a year (2021-2025), SIMO's newest release 2025-07-31 and TSM 2020 with

@@ -1,6 +1,83 @@
 # Next session
 
-## 2026-10-01 — Review corrections verified on branches, not deployed
+## 2026-10-01, 16:32 ET — LIVE: `d17f1632` (earnings coverage) on `4384ea77` (12:07 ET: 6-K classifier, data-vintage note, discovery test) and `6b85cfe0` (10:33 ET: reset sizing)
+
+Three deploys today, all through `scripts/deploy.sh` on Spark:
+
+1. **10:33 ET, `6b85cfe0`, by the other session, during market hours**
+   (its entry below still says "not deployed"; superseded). Reset buys
+   under `/5` fund the allocator's targets instead of the 15% mid-cycle
+   entry cap; planner stamp `cash-bounded-breakout-rotation/5`. The
+   planner runs in the nightly, so it takes effect with the 10-01 plan.
+   Reviewed here at 12:00 ET: correct, and it brings the paper account in
+   line with the simulation `/5` was promoted on.
+2. **12:07 ET, `4384ea77`, a market-hours deploy at the operator's
+   explicit request** ("can we get these changes live in next 30
+   minutes"): unit 8,343 passed, routing 100/100, post-deploy ok.
+   - D1, the Form 6-K classifier (`8046f0c9`): one general
+     results-headline rule (`results_headline`, `NOT_A_RELEASE`) instead
+     of a hand-written pattern per company, which had silently refused
+     every NBIS release, ASML's year-end releases and SIMO's 2025
+     releases; HTML entities decoded; a 6-K without an exhibit read from
+     its own document after the cover; `market_edgar --reclassify-6k`.
+     The five-filer allow-list `RESULTS_6K_ISSUERS` stays as a gate.
+   - D3, the data-vintage note (`data_vintage.py`): the nightly record
+     carries `data_vintage`; the board shows a grey "Data updates" note
+     for names whose grade letter moved after their own earnings data
+     changed. Grade parity never drifts on a data update (it compares a
+     record with its own replay), so this note is the only place the
+     cause shows.
+   - D4: the discovery sweep test no longer dates itself.
+3. **16:32 ET, `d17f1632`, the earnings-coverage check**
+   (`release_coverage.py`): deploy.sh unit 8,356 passed / 70 skipped / 6 xfailed, routing 100/100, post-deploy ok. Nightly `release coverage:` block
+   and `release_coverage` record field (an error prints "skipped" and the
+   record proceeds; a test proves grades, targets and orders identical);
+   a grey "Earnings coverage" note on the board, only when a name is
+   flagged: no reading, a filing not read past the reader's measured lag,
+   or a reading overdue against 1.5 x the name's own median release gap
+   (the book's median under four releases). The 1.5 is the one constant,
+   chosen from 3,452 measured gaps: gap / own median has p95 1.15 and
+   p99 1.38, and every gap above 1.75 is a missed release. No names,
+   dates or day counts are written into it.
+
+**What the coverage check flags on today's store:** NBIS (no admitted
+6-K until tonight's re-read); **OKLO, last release read 2025-03-25 — its
+later quarters were reported only in 10-Q/10-K, so the sentiment analyst
+has carried a 555-day-old reading** (open question: should a reading
+expire? a registered study, not a quick change); SIMO (until tonight's
+re-read); WDAY (its 2026-09-29 8-K 2.02 was a restructuring filing with no
+release text; it clears at its next release).
+
+**Operational trap, not in AGENTS.md yet:** the cron jobs
+(`~/desk_intraday.sh` every 15 minutes in market hours, `~/desk_daily.sh`
+at 19:30 ET) run Python straight from `~/deploy/anios`. A `git pull` there
+changes what the next balancer run and the nightly execute at once,
+before `deploy.sh` has gated anything, and a failed gate's "left on the
+previous code" is true of the containers only. Pull there only a commit
+already gated elsewhere, between balancer runs
+(`pgrep -f "[b]ackend.cli.market_balancer"` empty), and outside market
+hours unless the operator asks.
+
+**Tonight:**
+
+- 19:30 ET nightly: the corrected reset sizing plans; the record carries
+  `data_vintage` and `release_coverage`.
+- 20:05 ET, the 6-K re-read under the deployed classifier: `market_edgar
+  --refresh --reclassify-6k --tickers NBIS,ASML,SIMO,TSM`, then
+  `--audit-6k`; the tone re-score runs only if no year shows more than
+  four admitted releases (that would be a false admission). Expected: four
+  a year for NBIS from 2025, ASML 2021-2025, SIMO 2025, TSM from 2015. A
+  data-vintage change: the 10-02 record's "Data updates" note.
+- Research chain `~/scratch/evening_1001.sh` (log `evening_1001.log`),
+  started after this deploy: B1 vol targeting and A1 text surprise; A4
+  insider data-set fetch from 21:00 ET; B2 regime gross from 20:40 ET; the
+  A2 statement scorer 22:05-05:30 ET. Write-ups at 18:30, 23:30 and 05:45
+  ET. All seven branches were unit-gated 08:42-09:28 ET with no failures
+  (`gate_chain_1001.log`). `desk/stance-table` and the research branches
+  stay off main: the stance flag changes `grading.grade`, which the live
+  desk calls.
+
+## 2026-10-01 — Review corrections verified on branches, not deployed (superseded: deployed 10:33 ET, see the entry above)
 
 Implementation `33ac6c71`, branch `fix/review-consistency-20261001`, from
 latest reviewed main `95424784`. Verified source was mounted at Spark
