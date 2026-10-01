@@ -1272,7 +1272,11 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     other. A gross of 0 holds the book in cash; the session the gross comes
     back from 0 between rebalances re-enters at the allocator's targets for
     that session, scaled, since an empty book carries no composition to
-    scale up. Cash earns nothing. While the gross is below 1 the mid-cycle
+    scale up. Gross changes override ordinary mid-cycle orders, fill next
+    open without green-open sell suppression, and supersede older buy retries.
+    The separate FOMC `event_lifecycle` is refused with this research path:
+    a coordinated baseline and recovery policy has not been implemented.
+    Cash earns nothing. While the gross is below 1 the mid-cycle
     entries and deferred retries are paused as they are under the brake.
     None leaves every result byte-identical, and a path of all ones
     reproduces it to the bit (the study's null test).
@@ -1374,6 +1378,11 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         # remainder this would record would be one the fill never left.
         raise ValueError("deferred_buys requires exit_at_close")
     if gross_path is not None:
+        # The FOMC lifecycle returns before ordinary planning and restores
+        # its own baseline. Until the controllers share a baseline/ceiling,
+        # refuse the combination instead of silently dropping the gross path.
+        if event_lifecycle:
+            raise ValueError("gross_path cannot be combined with event_lifecycle")
         gross_path = np.asarray(gross_path, dtype=float)
         if (
             gross_path.shape != (len(panel.dates),)
@@ -1716,8 +1725,9 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             label,
         )
         scaled_down = False
+        gross_changed = False
         if gross_path is not None:
-            target, previous_gross, reason, _ = _gross_target(
+            target, previous_gross, reason, gross_changed = _gross_target(
                 target,
                 gross_path,
                 t,
@@ -1727,6 +1737,11 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                 functools.partial(decide, report, panel, config, t),
             )
             scaled_down = float(gross_path[t]) < 1.0
+        overlay_changed = event_changed or gross_changed
+        if gross_changed:
+            # The new risk target supersedes older buy retries; replaying
+            # those on recovery could buy above the restored target.
+            pending_deferred = {}
         order = book.plan(target, closes[t])
         # The deferred leg: last session's unpaid remainder is retried on a
         # plain session and superseded by a rebalance; an event session
@@ -1742,9 +1757,9 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         braked = (brake_path is not None and float(brake_path[t]) < 1.0) or scaled_down
         event_paused = event_exposure is not None and float(event_exposure[t]) < 1.0
         reduced = braked or event_paused
-        if deferred_buys and not event_changed and not reduced:
+        if deferred_buys and not overlay_changed and not reduced:
             carried, pending_deferred = ({} if rebalanced else pending_deferred), {}
-        if live_midcycle and not rebalanced and not event_changed:
+        if live_midcycle and not rebalanced and not overlay_changed:
             unfunded: dict[str, float] = {}
             variant = None
             if midcycle_variant:
@@ -1786,7 +1801,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             reset_topup
             and not rebalanced
             and t == last_rebalance + 1
-            and not event_changed
+            and not overlay_changed
             and not reduced
         ):
             # The reset's top-up: the session after the rebalance, once the
@@ -1806,18 +1821,18 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         if event_paused:
             # Live FOMC execution owns the cycle and cannot add positions.
             order = np.minimum(order, book.shares)
-        if deferred_buys and rebalanced and not event_changed and not reduced:
+        if deferred_buys and rebalanced and not overlay_changed and not reduced:
             pending_deferred = _unpaid_buys(book, order, closes[t])
         buy_prices = opens[t + 1]
         sell_prices = opens[t + 1]
-        if exit_at_close and not event_changed:
+        if exit_at_close and not overlay_changed:
             sell_prices = closes[t + 1]
         book.observe_decision(
             t,
             order,
             desired_weights=(
                 None
-                if live_midcycle and not rebalanced and not event_changed
+                if live_midcycle and not rebalanced and not overlay_changed
                 else target
             ),
             reason=reason,
@@ -1825,14 +1840,18 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                 "scheduled": bool(rebalanced),
                 "topup": topped_up,
                 "event_changed": bool(event_changed),
+                **(
+                    {"gross_changed": bool(gross_changed)}
+                    if gross_path is not None else {}
+                ),
                 "braked": bool(braked),
-                "sell_at_close": bool(exit_at_close and not event_changed),
+                "sell_at_close": bool(exit_at_close and not overlay_changed),
                 "deferred_units": dict(pending_deferred),
             },
         )
-        # Event-risk changes are explicitly next-open orders, including a green open.
+        # Event and gross-risk changes are next-open orders, including a green open.
         # Restoring a deferred cut's theoretical size would add unintended risk.
-        if green_day_skip and not event_changed:
+        if green_day_skip and not overlay_changed:
             # Hold a sell back when the name opens up for the day: the
             # desk does not exit into a name's own rally.
             up_at_open = (
@@ -1852,7 +1871,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             sell_prices,
             t + 1,
             reason,
-            sell_at_close=exit_at_close and not event_changed,
+            sell_at_close=exit_at_close and not overlay_changed,
         )
         equity[t + 1] = book.equity(closes[t + 1])
         returns[t + 1] = (
