@@ -21,9 +21,17 @@ newest, or the replay's own as-of), for the two kinds that carry it,
 * a past one (reaction or filing date on or before `d`) that was not there
   is a vintage change - read for the first time when the name had no release
   reading at all, else more of its releases read;
-* the same accession with a different score, prompt version, model or
-  release figure is a re-read; an accession gone is a drop;
+* the same accession with a different score, prompt version, model,
+  reaction session or release figure is a re-read; an accession gone is a
+  drop; a filing is compared as the desk reads it (its reaction session,
+  filing date, items and form), never by the raw acceptance text;
 * the nightly's own re-fetch with the same content is no change at all.
+
+Replayed over the 18 live records of 2026-09-04 to 09-30 it is empty on
+ordinary nights and names exactly the known updates: every name's releases
+read for the first time (09-08), the `release_tone/2` and `/3` re-scores
+(09-11, 09-14 to 09-16), GLW's first reading (09-21), WDAY's 8-K moved past
+the close (09-30), and ARM, ASML, SIMO, TSM after the 6-K backfill.
 
 The comparison is decided by partition dates, as `tone_revisions` does, not
 by file times: a store copied without its modification times must never make
@@ -52,6 +60,7 @@ KINDS = (TONE_KIND, EVENTS_KIND)
 # the reader that produced them and the release figures `release_facts` folds
 # into the fundamental layer. The summary is prose and is not compared.
 TONE_FIELDS = (
+    "reaction_date",
     "guidance",
     "demand",
     "pricing",
@@ -64,7 +73,14 @@ TONE_FIELDS = (
     "net_income_usd_m",
     "gross_margin_pct",
 )
-EVENT_FIELDS = ("accepted", "filed", "items", "form")
+# What the desk reads from an earnings filing: the session the market could
+# first react (`EarningsEvent.reaction_date`, from the acceptance time in New
+# York), the filing date, the items and the form. The raw acceptance time is
+# not compared: CIEN's 2011-2012 8-Ks were stored five hours apart on
+# 2026-09-21 and back on 09-23, both before the open, which no grade can see;
+# WDAY's 2026-09-29 8-K moved from 12:01 to 16:01 New York on 09-30, which
+# moves its reaction to the next session and is a change.
+EVENT_FIELDS = ("reaction_date", "filed", "items", "form")
 # What changed, in the order the lines are written; one phrase each, for one
 # name and for several.
 FIRST = "first"
@@ -124,9 +140,24 @@ def _differs(a, b) -> bool:
 
 
 # One stored frame as {accession: row}; a frame without accessions is empty.
-def _rows(columns: dict | None) -> dict[str, dict]:
+# A release reading is compared as stored; an earnings filing as the desk
+# reads it (`edgar.events_from_columns`), so its row is the reaction session,
+# the filing date, the items and the form.
+def _rows(columns: dict | None, kind: str = TONE_KIND) -> dict[str, dict]:
     """Return the frame's rows keyed by accession."""
     columns = columns or {}
+    if kind == EVENTS_KIND:
+        from backend.market import edgar
+
+        return {
+            str(e.accession): {
+                "reaction_date": e.reaction_date,
+                "filed": e.filed,
+                "items": e.items,
+                "form": e.form,
+            }
+            for e in edgar.events_from_columns(columns)
+        }
     accessions = list(columns.get("accession") or [])
     out: dict[str, dict] = {}
     for i, accession in enumerate(accessions):
@@ -143,7 +174,7 @@ def _read(store, kind: str, ticker: str, partition: _date | None) -> dict[str, d
     if partition is None:
         return {}
     found = store.read_frame(kind, ticker, partition)
-    return _rows(found[0]) if found is not None else {}
+    return _rows(found[0], kind) if found is not None else {}
 
 
 # Whether the newest frame's file was already on disk when the record was
@@ -172,19 +203,19 @@ def written_at(record: dict | None) -> datetime | None:
 
 
 # What changed between two readings of one kind for one name, or None when
-# nothing did. `cut` is the earlier record's session: rows dated after it are
-# new data and never count. Returns the counts that decide the phrase.
+# nothing did. `cut` is the earlier record's session: a release or filing
+# the market could first react to after it is new data and never counts.
+# Returns the counts that decide the phrase.
 def compare_rows(
     kind: str, before: dict[str, dict], after: dict[str, dict], cut: _date
 ) -> dict | None:
     """Return {"before", "after", "added", "reread", "dropped"} or None."""
-    date_field = "reaction_date" if kind == TONE_KIND else "filed"
     fields = TONE_FIELDS if kind == TONE_KIND else EVENT_FIELDS
     limit = cut.isoformat()
     added = [
         a
         for a, row in after.items()
-        if a not in before and (_text(row.get(date_field)) or "")[:10] <= limit
+        if a not in before and (_text(row.get("reaction_date")) or "")[:10] <= limit
     ]
     dropped = [a for a in before if a not in after]
     reread = [

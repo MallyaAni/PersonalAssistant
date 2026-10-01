@@ -54,13 +54,16 @@ def _release(accession: str, reaction: str, guidance: float = 0.5) -> dict:
     }
 
 
-# One earnings filing as the events frame stores it.
-def _filing(accession: str, filed: str, form: str = "6-K") -> dict:
+# One earnings filing as the events frame stores it: accepted in UTC, by
+# default 06:00 New York, before the open.
+def _filing(
+    accession: str, filed: str, form: str = "6-K", at: str = "10:00:00"
+) -> dict:
     return {
-        "accepted": f"{filed}T06:00:00",
+        "accepted": f"{filed}T{at}+00:00",
         "filed": date.fromisoformat(filed),
         "accession": accession,
-        "items": "",
+        "items": "2.02" if form == "8-K" else "",
         "form": form,
     }
 
@@ -150,15 +153,24 @@ def test_each_kind_of_change_is_detected_with_its_own_words(tmp_path):
     _both(store, AFTER, "TSM", old[:1], [], LATER)
     _both(store, BEFORE, "NBIS", [], [], EARLIER)
     _both(store, AFTER, "NBIS", [], [_filing("N-1", "2025-08-07")], LATER)
+    # WDAY's 2026-09-29 8-K as stored on 09-29 (16:01 UTC, 12:01 New York:
+    # the market reacts that day) and on 09-30 (20:01 UTC, after the close:
+    # the next session) - the same filing read with a different reaction.
+    wday = ("0001327811-26-000048", "2026-09-29", "8-K")
+    _both(store, BEFORE, "WDAY", [], [_filing(*wday, at="16:01:40")], EARLIER)
+    _both(store, AFTER, "WDAY", [], [_filing(*wday, at="20:01:40")], LATER)
     found = data_vintage.changes(
-        store, ["ASML", "SIMO", "TSM", "NBIS"], CUT, None, WRITTEN
+        store, ["ASML", "SIMO", "TSM", "NBIS", "WDAY"], CUT, None, WRITTEN
     )
     assert {t: c["what"] for t, c in found.items()} == {
         "ASML": data_vintage.MORE,
         "SIMO": data_vintage.REREAD,
         "TSM": data_vintage.DROPPED,
         "NBIS": data_vintage.FILINGS,
+        "WDAY": data_vintage.FILINGS,
     }
+    assert found["WDAY"][data_vintage.EVENTS_KIND]["reread"] == 1
+    found.pop("WDAY")
     assert data_vintage.lines(found, found, "2026-10-01") == [
         "ASML: grade recomputed after more of its earnings releases were read "
         "(data update after the 2026-10-01 record)",
@@ -175,8 +187,10 @@ def test_each_kind_of_change_is_detected_with_its_own_words(tmp_path):
 
 
 # Not detected: a release dated after the record is new data; the nightly's
-# identical re-fetch in a new partition is nothing; a name with no newer
-# partition, or no frames at all, is nothing.
+# identical re-fetch in a new partition is nothing; a filing whose stored
+# acceptance time moved without moving its reaction session is nothing (CIEN's
+# 2011 8-K stored at 12:23 and at 07:23 UTC, both before the open); a name
+# with no newer partition, or no frames at all, is nothing.
 def test_new_data_and_identical_refetches_are_not_detected(tmp_path):
     store = MarketStore(tmp_path)
     same = [_release("M-1", "2026-07-28")]
@@ -184,9 +198,12 @@ def test_new_data_and_identical_refetches_are_not_detected(tmp_path):
     _both(store, AFTER, "MSFT", same, [_filing("M-1", "2026-07-28", "8-K")], LATER)
     _both(store, BEFORE, "AAPL", same, [], EARLIER)
     _both(store, AFTER, "AAPL", same + [_release("P-2", "2026-10-01")], [], LATER)
+    cien = ("0000936395-11-000005", "2011-12-08", "8-K")
+    _both(store, BEFORE, "CIEN", [], [_filing(*cien, at="12:23:13")], EARLIER)
+    _both(store, AFTER, "CIEN", [], [_filing(*cien, at="07:23:13")], LATER)
     _both(store, BEFORE, "NVDA", same, [], EARLIER)
     found = data_vintage.changes(
-        store, ["MSFT", "AAPL", "NVDA", "NONE"], CUT, None, WRITTEN
+        store, ["MSFT", "AAPL", "CIEN", "NVDA", "NONE"], CUT, None, WRITTEN
     )
     assert found == {}
 
