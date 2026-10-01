@@ -117,7 +117,7 @@ test('the board shows the paper account’s orders mid-session', async ({page}, 
   await expect(page.getByLabel('HPE action status')).toHaveText('Finish last session’s buy (cash was short) + Reinvest an exit’s proceeds'.replaceAll('’', "'"))
   await expect(page.getByLabel('HPE order status')).toContainText('Sent 10:16 AM · market order')
   // A filled exit.
-  await expect(page.getByLabel('ANET strategy intent')).toHaveText('SOLD')
+  await expect(page.getByLabel('ANET strategy intent')).toHaveText('SELL')
   await expect(page.getByLabel('ANET size')).toContainText('32 sh filled')
   await expect(page.getByLabel('ANET size')).toContainText('$6,563')
   await expect(page.getByLabel('ANET order status')).toContainText('Sold 32 @ $205.10 · 9:46 AM')
@@ -186,8 +186,8 @@ test('the row details and the ticker panel repeat the board’s words', async ({
   await page.goto('/#desk')
   await page.getByRole('button', {name: 'details for HPE'}).click()
   const orders = page.getByRole('region', {name: 'HPE orders'})
-  await expect(orders).toContainText('BUY SENT 6 sh submitted')
-  await expect(orders).toContainText('BUY SENT 3 sh submitted')
+  await expect(orders).toContainText('BUY 6 sh submitted')
+  await expect(orders).toContainText('BUY 3 sh submitted')
   await expect(orders).toContainText("Finish last session's buy (cash was short)")
   await expect(page.getByRole('region', {name: 'HPE position'})).toContainText('61 sh')
   await expect(page.getByRole('region', {name: 'HPE grade'})).toContainText('Grade A')
@@ -258,8 +258,8 @@ test('the board on a phone', async ({page}, testInfo) => {
   expect(diagnostics.errors).toEqual([])
 })
 
-// Terminal orders never look like fresh buys or offer a duplicate personal size.
-for (const [state, word] of [['filled', 'BOUGHT'], ['cancelled', 'CANCELLED'], ['rejected', 'REJECTED']] as const) {
+// A finished order keeps its word (greyed), shows what happened in its status, and offers no reference size.
+for (const [state, word] of [['filled', 'BUY'], ['cancelled', 'BUY'], ['rejected', 'BUY']] as const) {
   test(`${state} buy stays historical in the board, details and ticker panel`, async ({page}) => {
     const order = {...fixture.thursday.orders.find((o: {symbol: string}) => o.symbol === 'AAOI'), state, terminal: true, qty: 5, planned_qty: 20, submitted_qty: 5, remaining_qty: 0, quantity_basis: state === 'filled' ? 'filled' : 'submitted', status: state === 'filled' ? 'Bought 5 @ $100.00' : `Not filled: order ${state}`, filled_qty: state === 'filled' ? 5 : 0, notional: 500, price: 100, weight: .005}
     const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', orders: [order]})
@@ -297,7 +297,7 @@ test('mixed orders stay separate and cannot be scaled together', async ({page}) 
   await page.getByRole('button', {name: 'AAOI', exact: true}).click()
   const card = page.getByRole('region', {name: 'AAOI paper order'})
   await expect(card).toContainText('BUY 4 sh planned')
-  await expect(card).toContainText('SOLD 2 sh filled')
+  await expect(card).toContainText('SELL 2 sh filled')
   expect(diagnostics.writes).toEqual([])
   expect(diagnostics.errors).toEqual([])
 })

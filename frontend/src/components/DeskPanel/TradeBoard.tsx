@@ -29,6 +29,7 @@ export type BoardRow = {
   ticker: string
   grade: string
   word: BoardWord
+  done: boolean
   why: string
   orders: DeskPaperOrder[]
   qty: number
@@ -199,18 +200,18 @@ const PROGRESS: Record<string, number> = {
   partial: 5, cancelled: 6, held: 6, filled: 7,
 }
 
-// Describe the order's current state, not a new instruction to repeat a trade.
+// The board's word for an order is the paper account's action (BUY, SELL,
+// TRIM; HOLD for a kept position). What has happened to it (sent, filled,
+// cancelled) is the status column's job and the size's basis label, so a
+// finished order keeps its word, greyed, and never reads as a new instruction.
 export const orderWord = (order: DeskPaperOrder): BoardWord => {
-  if (order.state === 'filled') return order.side === 'buy' ? 'BOUGHT' : order.action === 'TRIM' ? 'TRIMMED' : 'SOLD'
-  if (order.state === 'cancelled') return 'CANCELLED'
-  if (order.state === 'rejected') return 'REJECTED'
-  if (order.state === 'missed') return 'MISSED'
-  if (order.state === 'problem') return 'NOT SENT'
   if (order.state === 'held') return 'HOLD'
-  if (order.state === 'partial') return 'PART FILLED'
-  if (order.state === 'sent' || order.state === 'queued') return order.side === 'buy' ? 'BUY SENT' : 'SELL SENT'
   return order.action
 }
+
+// An order that is over: filled, cancelled, rejected or missed.
+export const isDone = (order: DeskPaperOrder): boolean =>
+  order.terminal === true || ['filled', 'cancelled', 'rejected', 'missed'].includes(order.state)
 
 // Only unsubmitted plans can have a reference size; this is not a personal trade plan.
 const canScale = (order: DeskPaperOrder) =>
@@ -280,13 +281,14 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
     const qty = mine.reduce((sum, o) => sum + o.qty, 0)
     const notional = combined && mine.length && mine.every(o => o.notional !== null) ? mine.reduce((sum, o) => sum + (o.notional ?? 0), 0) : null
     const word: BoardWord = mine.length ? wordOf(mine) : held > 0 ? 'HOLD' : '—'
+    const done = mine.length > 0 && mine.every(isDone)
     const why = mine.length
       ? [...new Set(mine.map(o => o.why))].join(' + ')
       : held > 0 ? holdReason(heldWeight, target, untilReset)
       : target && target > 0 ? blocked.has(ticker) ? 'In the book · no buy while its daily rejects the upper band' : `In the book at ${percent(target)} · no order tonight`
       : grade ? `Not in the book (grade ${grade})` : 'Not graded'
     return {
-      ticker, grade, word, why, orders: mine, qty, notional, combined,
+      ticker, grade, word, done, why, orders: mine, qty, notional, combined,
       sizeLabel: mine.length && combined ? quantityLabel(mine[0]) : '',
       weight: notional !== null && equity ? notional / equity : null,
       held, heldValue, heldWeight,
@@ -364,7 +366,7 @@ const RowDetails = ({row, latest, myAccount, onOpen, extra}: {row: BoardRow; lat
         const mine = canScale(order) ? myShares(order.weight, myAccount, order.price) : null
         const word = orderWord(order)
         return <div key={order.client_order_id} className="mb-2">
-          <p><span className={`font-semibold ${WORD_STYLE[word]}`}>{word}</span> {shares(order.qty)} {quantityLabel(order)}{order.notional !== null ? ` · ${dollars(order.notional)}` : ''}{order.weight !== null ? ` · ${percent(order.weight)} of current equity` : ''}{mine !== null ? ` · ref. ${shares(mine)}` : ''}</p>
+          <p><span className={`font-semibold ${isDone(order) ? 'text-[#6e6e73]' : WORD_STYLE[word]}`}>{word}</span> {shares(order.qty)} {quantityLabel(order)}{order.notional !== null ? ` · ${dollars(order.notional)}` : ''}{order.weight !== null ? ` · ${percent(order.weight)} of current equity` : ''}{mine !== null ? ` · ref. ${shares(mine)}` : ''}</p>
           {order.planned_qty !== undefined && order.planned_qty !== order.qty && <p className="text-[#6e6e73]">Originally planned: {shares(order.planned_qty)}</p>}
           <p className="text-[#6e6e73]">{order.why}</p>
           <p><span className={`mr-1 inline-block h-2 w-2 rounded-full ${STATE_DOT[order.state] ?? 'bg-[#86868b]'}`} aria-hidden="true" />{order.status}</p>
@@ -479,7 +481,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
             <Head label="Grade" column="grade" sort={sort} onSort={onSort} title="The desk's grade at the last close; A and A+ are in the book." />
             <Head label="Position" column="position" sort={sort} onSort={onSort} title="Paper-account shares and share of the account, against the policy's target." />
             <Head label="Levels" sort={sort} onSort={onSort} title="The 21-session EMA and the 20-session high, with the distance from the last price and the EMA's five-session slope; a flag when the session's first 15-minute bar reached a level from below and closed back under it. Shown, not acted on." />
-            <Head label="Paper order" sort={sort} onSort={onSort} title="Order intent or recorded outcome, not a new personal-account instruction." />
+            <Head label="Action" sort={sort} onSort={onSort} title="The paper account's order for the name. HOLD: no order, the position stays. A finished order keeps its word, greyed; the status column says what happened to it." />
             <Head label="Size" column="size" sort={sort} onSort={onSort} title="Planned or submitted sizes use a price estimate; filled sizes use execution prices. Percentages use current paper equity." />
             <Head label="When / status" sort={sort} onSort={onSort} title="The order's rule for its session and what has happened to it." />
           </tr>
@@ -509,7 +511,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
                 {flag && <div aria-label={`${row.ticker} level flag`} className="whitespace-nowrap font-medium text-[#1d1d1f]">{flag}</div>}
               </td>
               <td className="max-w-56 py-2 text-xs">
-                <span aria-label={`${row.ticker} strategy intent`} className={`font-semibold ${WORD_STYLE[row.word]}`}>{row.word}</span>
+                <span aria-label={`${row.ticker} strategy intent`} className={`font-semibold ${row.done ? 'text-[#6e6e73]' : WORD_STYLE[row.word]}`}>{row.word}</span>
                 <div aria-label={`${row.ticker} action status`} className="whitespace-normal text-[10px] text-[#6e6e73]">{row.why}</div>
                 {age && <div aria-label={`${row.ticker} price age`} className="whitespace-nowrap text-[10px] text-[#86868b]">{age}</div>}
               </td>

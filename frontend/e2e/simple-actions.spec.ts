@@ -68,7 +68,7 @@ test('visible grades and concise actions expose diagnostics only on request', as
   const headers = board.locator('thead tr').last().getByRole('columnheader')
   await expect(page.locator('details[aria-label="Strategy details"]')).not.toHaveAttribute('open', '')
   await expect(headers).toHaveCount(8)
-  await expect(headers).toHaveText([/Details/, /Stock/, /Grade/, /Position/, /Levels/, /Paper order/, /Size/, /When \/ status/])
+  await expect(headers).toHaveText([/Details/, /Stock/, /Grade/, /Position/, /Levels/, /Action/, /Size/, /When \/ status/])
   await expect(board.getByLabel('AAPL displayed grade', {exact: true})).toHaveText('A')
   await expect(board.getByLabel('AAPL strategy intent')).toHaveText('BUY')
   await expect(board.getByLabel('AAPL size')).toContainText('20 sh')

@@ -172,7 +172,7 @@ test('keeps a planned Sell on its session clock alongside a fresh overnight quot
     await expect(page.getByLabel('Today', {exact: true})).toContainText('Paper orders: 1 planned.')
     await page.getByRole('button', {name: 'details for AAOI', exact: true}).click()
     const orders = page.getByRole('region', {name: 'AAOI orders', exact: true})
-    await expect(orders).toContainText('SELL 100 sh · $9,825 · 9.8% of the account')
+    await expect(orders).toContainText('SELL 100 sh planned · $9,825 · 9.8% of current equity')
     await expect(orders).toContainText('Planned')
     await expect(quote).toContainText('$99.50')
     await page.screenshot({path: testInfo.outputPath('overnight-quote-clock-unknown.png'), fullPage: true})
