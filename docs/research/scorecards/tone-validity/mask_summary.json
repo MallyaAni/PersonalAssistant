@@ -1,0 +1,32 @@
+{
+  "releases": 3451,
+  "names": 89,
+  "replacements": {
+    "contact": 27984,
+    "email": 5386,
+    "company": 127417,
+    "about_section": 2682,
+    "trailer": 2349,
+    "ticker": 4218,
+    "other_ticker": 9,
+    "person": 0,
+    "product": 0,
+    "date": 77858,
+    "month": 1645,
+    "period": 59183,
+    "quarter": 21355,
+    "year": 36912,
+    "dateline": 2989,
+    "wire": 296,
+    "people": 4585,
+    "rare": 246198
+  },
+  "residual_share": {
+    "year": 0.0,
+    "month": 0.0,
+    "name": 0.0
+  },
+  "min_issuers": 15,
+  "rare_tokens": 21806,
+  "rare_share_mean": 0.021244319552968724
+}
