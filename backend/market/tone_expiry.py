@@ -169,7 +169,7 @@ def ages(
     age = np.full((size, width), np.nan)
     cadence = np.full((size, width), np.nan)
     own = np.zeros((size, width), dtype=bool)
-    last_read = np.full((size, width), np.datetime64("NaT"), dtype="datetime64[D]")
+    last_read = np.full((size, width), np.datetime64("NaT", "D"), dtype="datetime64[D]")
     for column, ticker in enumerate(tickers):
         dates = known.get(ticker, ())
         if not dates:
