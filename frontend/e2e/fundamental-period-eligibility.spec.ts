@@ -29,14 +29,25 @@ async function install(page: Page, frontendURL: string, scenario: Scenario) {
     grades: {AAPL: {grade: 'C', score: 0, votes: 0, stances: {fundamental: 0}, ranks: {}, headline: HEADLINE, reason: 'Original recorded explanation.'}}, book: [], actions: [], briefs: {}}
   const original = JSON.stringify(latest)
   const diagnostics = {consoleErrors: [] as string[], pageErrors: [] as string[], failedRequests: [] as string[], badResponses: [] as string[], unexpectedRequests: [] as string[], forbiddenWrites: [] as string[]}
+  const cancelledConversationReads = new Set<string>()
+  const completedConversationReads = new Set<string>()
   // Retain console errors even when the evidence table renders.
   page.on('console', message => {if (message.type() === 'error') diagnostics.consoleErrors.push(message.text())})
   // A rendered fragment must not conceal a page exception.
   page.on('pageerror', error => diagnostics.pageErrors.push(error.message))
-  // Track required requests that fail before a response arrives.
-  page.on('requestfailed', request => diagnostics.failedRequests.push(request.url()))
+  // Track required requests that fail before a response arrives. After a reload the dev
+  // server's StrictMode mounts the chat's conversation restore twice and cancels the first
+  // GET; that one is only accepted if its repeat succeeds (checked in the test). Every other
+  // failed request, and every failed desk read, stays fatal.
+  page.on('requestfailed', request => {
+    if (request.method() === 'GET' && new URL(request.url()).pathname.startsWith('/api/v1/conversations/') && request.failure()?.errorText === 'net::ERR_ABORTED') cancelledConversationReads.add(request.url())
+    else diagnostics.failedRequests.push(request.url())
+  })
   // Refuse successful validation when a required endpoint returns an error.
-  page.on('response', response => {if (response.status() >= 400) diagnostics.badResponses.push(`${response.status()} ${response.url()}`)})
+  page.on('response', response => {
+    if (response.status() >= 400) diagnostics.badResponses.push(`${response.status()} ${response.url()}`)
+    if (response.ok() && response.request().method() === 'GET' && new URL(response.url()).pathname.startsWith('/api/v1/conversations/')) completedConversationReads.add(response.url())
+  })
   await page.clock.install({time: new Date('2026-09-25T14:00:00Z')})
   // Stabilize the fixture without reading the operator's preferences.
   await page.addInitScript(() => localStorage.setItem('anios.theme', 'light'))
@@ -72,7 +83,7 @@ async function install(page: Page, frontendURL: string, scenario: Scenario) {
     }
     return route.fulfill({json})
   })
-  return {latest, original, diagnostics}
+  return {latest, original, diagnostics, cancelledConversationReads, completedConversationReads}
 }
 
 // Check metadata where users open evening evidence, without upgrading older source versions.
@@ -148,19 +159,29 @@ const scenarios: Scenario[] = [
   ...['fundamentals-features/2', 'fundamentals-features/1', 'edgar-frozen', 'fundamentals-features/99', undefined].map(source => ({name: `${source ?? 'absent source'} ignores foreign eligibility`, source, entry: eligibility(), ignored: true})),
 ]
 
+// Open the board row's details, require the saved wording there, and open the full panel from them.
+// The trade board (93dd9ee9) shows the grade's headline and reason under the row; the evidence
+// dates and their reporting-period checks are in the full panel's evening analysis.
+async function openPanelFromRow(page: Page) {
+  await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
+  const grade = page.getByRole('region', {name: 'AAPL grade', exact: true})
+  await expect(grade.getByText(HEADLINE, {exact: true})).toBeVisible()
+  await expect(grade).toContainText('Original recorded explanation.')
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await grade.getByRole('button', {name: 'Chart and full history'}).click()
+  const dialog = page.getByRole('dialog', {name: 'AAPL history'})
+  await expect(dialog).toBeVisible()
+  return dialog
+}
+
 for (const scenario of scenarios) {
-  // Walk both the expanded board and full ticker panel, preserving the saved record and errors.
+  // Walk the board row into the full ticker panel before and after a reload, preserving the saved record and errors.
   test(`reporting-period evidence: ${scenario.name}`, async ({page, baseURL}, testInfo: TestInfo) => {
     if (scenario.phone) await page.setViewportSize({width: 390, height: 844})
     const fixture = await install(page, baseURL!, scenario)
     try {
       await page.goto('/#desk')
-      await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
-      const expansion = page.getByRole('region', {name: 'AAPL decision details', exact: true})
-      await check(expansion, scenario)
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-      await expansion.getByRole('button', {name: 'Open the full panel'}).click()
-      const dialog = page.getByRole('dialog', {name: 'AAPL history'})
+      const dialog = await openPanelFromRow(page)
       await check(dialog, scenario)
       expect(await dialog.evaluate(element => element.scrollWidth <= innerWidth)).toBe(true)
       if (scenario.phone || scenario.name === 'accepted and excluded metrics with a finite score reset') {
@@ -168,12 +189,12 @@ for (const scenario of scenarios) {
       }
       await dialog.getByRole('button', {name: 'Close', exact: true}).click()
       await page.reload()
-      await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
-      await check(page.getByRole('region', {name: 'AAPL decision details', exact: true}), scenario)
+      await check(await openPanelFromRow(page), scenario)
       expect(JSON.stringify(fixture.latest)).toBe(fixture.original)
     } finally {
       await testInfo.attach('browser-diagnostics', {body: JSON.stringify(fixture.diagnostics, null, 2), contentType: 'application/json'})
       for (const [category, errors] of Object.entries(fixture.diagnostics)) expect.soft(errors, category).toEqual([])
+      for (const url of fixture.cancelledConversationReads) expect.soft(fixture.completedConversationReads.has(url), `cancelled GET must have a successful replacement: ${url}`).toBe(true)
     }
   })
 }
