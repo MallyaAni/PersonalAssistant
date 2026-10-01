@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-30 — Deployed `2fe7ac3a`: board Levels column, order-evidence fixes, 6-K tone coverage
+
+- `desk/structure.py`, `market_balancer` `structure` block, `TradeBoard`
+  Levels column and rejected-first-bar flag, price age in the action cell,
+  `TickerChart` level lines (display only).
+- Order evidence on the board: filled quantity and fill price, no invented
+  remainder, broker status unavailable; action cell vocabulary unchanged
+  (BUY/SELL/TRIM/HOLD; a finished order greyed).
+- Form 6-K results releases read by the tone pipeline for ARM, ASML, NBIS,
+  SIMO, TSM; backfilled 2026-09-30 22:20 ET (data-vintage change).
+- Research (RECORD, nothing adopted): adaptive entry ×3, structure rules
+  ×7, Kronos ×3, universe expansion ×3; the scenario catalogue
+  `docs/research/trading-scenarios-2026-09-30.md`.
+- `test_discovery_personalization` sweep fixture marked xfail (date rot).
+
 ## 2026-09-30 — Continuous tone descriptions (branch verified, not deployed)
 
 `81ab2f1`: small positive/negative release scores no longer read as “silent,”

@@ -1,5 +1,80 @@
 # Next session
 
+## 2026-09-30, 22:09 ET — DEPLOYED `2fe7ac3a`: 6-K tone coverage, board Levels column, order-evidence fixes; seven structure rules and Kronos measured, all RECORD
+
+**Live since 22:09 ET** (`deploy.sh`: unit 8,288 passed / 7 xfailed, routing
+100/100, backup, post-deploy cheap checks ok). What changed on the board:
+
+- **Levels column** (`desk/board-structure`, display only, "Shown, not acted
+  on"): 21-EMA with slope, 20-day high, distances, a plain flag when the
+  session's first 15-minute bar tagged a level from below and closed back
+  under it ("Rejected at 21-EMA 104.4 · 3rd day"), the price's age in the
+  action cell, both levels drawn on the ticker chart. `structure.py`,
+  `entry_timing` first-bar latch, `market_balancer` writes a `structure`
+  block into `live.json`.
+- **Order evidence** (GPT-6's `fix/desk-order-evidence-20260930`): a filled
+  order shows the filled quantity and fill price, a cancelled partial has
+  no invented remainder, a missing broker status says so; tone wording on
+  the grade details keeps the sign of small scores. **The action cell keeps
+  BUY/SELL/TRIM/HOLD** (GPT-6's status words BOUGHT/SOLD/BUY SENT/... were
+  not adopted there; a finished order keeps its word, greyed, and the
+  status column says what happened). `DeskPanel` close fallback
+  (`dd2ea4e5`).
+- **6-K tone coverage** (`trading/tone-6k`): ARM, ASML, NBIS, SIMO, TSM now
+  have release tone. Backfill ran 22:20-22:38 ET from the deployed code:
+  `market_edgar --refresh` (partition `asof=2026-10-01`), then `market_tone
+  --refresh` on the Sparks' reader. Scored: ARM 12 releases (2023-2026, 4 a
+  year), ASML 18, SIMO 39, TSM 27 (4 a year from 2021), **NBIS 0**. The
+  `--audit-6k` CHECK flags to resolve: NBIS admits none of its 53 6-Ks;
+  ASML admits 3 a year (one results 6-K a year refused, 2021-2025); SIMO's
+  newest scored release is 2025-07-31 (its 2025-26 6-Ks refused); TSM 2020
+  has 3. The classifier is too strict for those filers' exhibit naming;
+  the fix is a classifier change plus a re-run, registered separately.
+  **Data-vintage change:** these names' past grades change retroactively;
+  expect grade-parity drift banners on 10-01.
+- Research in the tree: `adaptive-entry` (RECORD ×3), the scenario
+  catalogue `docs/research/trading-scenarios-2026-09-30.md`, GPT-6's
+  grounded-release pilot (failed its own gate; nothing promoted).
+- `test_discovery_personalization::test_a_sweep_searches_and_ranks_with_what_memory_knows`
+  is xfail: date rot (its fixture is dated 2026-09-30 against a sweep clock
+  pinned to 2026-08-01). Needs a fixture relative to both clocks.
+
+**Measured tonight, nothing adopted (all pre-registered, 20 offsets,
+independent checks OK):**
+
+- **S1 structure rules** (`research/structure-rules` `579801e2`,
+  `docs/research/structure-rules-results-2026-09-30.md`): resistance guard
+  (defer / skip), hold-the-dip, decision-price reference, market-relative
+  dip, sell at the level, and the technical-vote notch under a falling
+  21-EMA with lower highs. **RECORD ×7.** Per re-timed buy −3 to −13 bp;
+  sell at the level −21.7 bp; the notch costs 0.4 / 2.2 CAGR points and
+  moves the worst drawdown by 0.0 points. After a rejected first bar that
+  closes 1% under the open the session close is *higher* 57% of the time
+  on 2016-2023 (the 09-30 AAOI case is the minority). Trials 464.
+- **Kronos** (`research/kronos` `15f65ce3`,
+  `docs/research/kronos-results-2026-09-30.md`): the pre-trained K-line
+  model's daily forecast ranks the book at IC −0.006 in-window
+  (contaminated) and −0.057 post-cutoff against the desk's +0.054 / +0.070;
+  as a fill rule +0.15 bp a session (t 0.55, 3/20 offsets); no marginal
+  information over the stage-1 ridge. **RECORD** (K1 by construction: 28
+  post-cutoff periods). Trials 466/467. The RTX run is finished; weights
+  stay under `E:\AgentWorkspace\rtx-data\kronos`.
+- **Universe expansion** (`research/universe-expansion` `73a91687`): RECORD
+  ×3; not merged.
+
+**Reading for the operator (recorded in the catalogue):** price-side
+timing on this book has now been tested across rules, learned models,
+foundation models and structure; nothing beats `dip_or_close`, and the
+grade's edge is in text and fundamentals. The next registered studies are
+on the selection side: earnings-call transcripts and a FinGPT-style reader
+as arms of the tone pipeline; the regime gross (S3) for drawdown.
+
+**Scheduled / open:** 09:50 ET read-only check of the first session with the
+Levels column (a `structure` block in `live.json`, no tracebacks, the flag
+appears only on a rejected first bar); the 6-K grade-parity banners;
+`OpportunityCard` still reads `/desk/mine`; `~/scratch/wt-int` and
+`wt-g6` worktrees on spark1 are root-owned under `test-results`.
+
 ## 2026-09-30 — Tone wording verified without changing any trading score
 
 Implementation checkpoint `81ab2f1` on `fix/desk-order-evidence-20260930`.
