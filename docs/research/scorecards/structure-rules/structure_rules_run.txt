@@ -1,0 +1,62 @@
+/home/animallya96/scratch/wt-s1/backend/agents/trading/desk/regime.py:136: RuntimeWarning: Mean of empty slice
+  out[t] = np.nanmean(window, axis=0)
+/home/animallya96/scratch/wt-s1/backend/agents/trading/desk/regime.py:226: RuntimeWarning: All-NaN slice encountered
+  ai_part = np.nanmedian(np.where(is_ai[None, :], part, np.nan), axis=1)
+/home/animallya96/scratch/wt-s1/backend/agents/trading/desk/regime.py:227: RuntimeWarning: All-NaN slice encountered
+  sw_part = np.nanmedian(np.where(is_sw[None, :], part, np.nan), axis=1)
+/home/animallya96/scratch/wt-s1/backend/market/levels.py:64: RuntimeWarning: All-NaN slice encountered
+  is_low = np.isfinite(low[t]) & (low[t] < np.nanmin(window_low, axis=0))
+/home/animallya96/scratch/wt-s1/backend/market/levels.py:65: RuntimeWarning: All-NaN slice encountered
+  is_high = np.isfinite(high[t]) & (high[t] > np.nanmax(window_high, axis=0))
+/home/animallya96/scratch/wt-s1/backend/market/levels.py:83: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmax(candidates, axis=0) if len(window) else np.nan
+/home/animallya96/scratch/wt-s1/backend/market/levels.py:86: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmin(candidates, axis=0) if len(window) else np.nan
+/home/animallya96/scratch/wt-s1/backend/market/levels.py:129: RuntimeWarning: Mean of empty slice
+  middle = np.nanmean(piece, axis=0)
+/home/animallya96/research-venv/lib/python3.12/site-packages/numpy/lib/_nanfunctions_impl.py:1997: RuntimeWarning: Degrees of freedom <= 0 for slice.
+  var = nanvar(a, axis=axis, dtype=dtype, out=out, ddof=ddof,
+/home/animallya96/scratch/wt-s1/backend/market/levels.py:278: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmax(window, axis=0) if largest else np.nanmin(window, axis=0)
+[    328 s] desk: 2953 sessions x 95 names
+[    591 s] cubes: 94 of 94 names
+[    592 s] edgar: 94 names (592 s)
+[    619 s] SPY cube: 2679 sessions 2016-01-04..2026-09-30
+[    621 s] fills: 94 names with a cube; 227363 name-sessions with a level
+/home/animallya96/scratch/wt-s1/backend/market/bands.py:25: RuntimeWarning: Mean of empty slice
+  out[t] = np.nanmean(close[t - window + 1 : t + 1], axis=0)
+/home/animallya96/research-venv/lib/python3.12/site-packages/numpy/lib/_nanfunctions_impl.py:1997: RuntimeWarning: Degrees of freedom <= 0 for slice.
+  var = nanvar(a, axis=axis, dtype=dtype, out=out, ddof=ddof,
+[    630 s]   offset 0: 2569 orders from session 0
+[    637 s]   offset 1: 2579 orders from session 1
+[    644 s]   offset 2: 2500 orders from session 2
+[    649 s]   offset 3: 2546 orders from session 3
+[    657 s]   offset 4: 2598 orders from session 4
+[    662 s]   offset 5: 2609 orders from session 5
+[    668 s]   offset 6: 2622 orders from session 6
+[    674 s]   offset 7: 2567 orders from session 7
+[    686 s]   offset 8: 2651 orders from session 8
+[    689 s]   offset 9: 2640 orders from session 9
+[    692 s]   offset 10: 2566 orders from session 10
+[    694 s]   offset 11: 2642 orders from session 11
+[    696 s]   offset 12: 2645 orders from session 12
+[    700 s]   offset 13: 2665 orders from session 13
+[    704 s]   offset 14: 2520 orders from session 14
+[    712 s]   offset 15: 2660 orders from session 15
+[    716 s]   offset 16: 2659 orders from session 16
+[    719 s]   offset 17: 2575 orders from session 17
+[    724 s]   offset 18: 2619 orders from session 18
+[    728 s]   offset 19: 2546 orders from session 19
+structure rules (docs/research/structure-rules-plan-2026-09-30.md) as of 2026-09-30: 6 candidates on the executed orders of ew-redeploy under graded-equal-weight/5 against dip_or_close; 20 of 20 offsets, statistics at offset 10; model window 2018-01-02..2023-12-29; Newey-West lag 20
+orders at the median offset: model 1107 buys and 374 sells over 1509 sessions; 2024-2026 397 buys and 140 sells over 688 sessions
+drift: model +7.98 bp/session over 9709 A/A+ name-days; 2024-2026 +18.37 bp/session over 3431 A/A+ name-days
+SPY cube: 2679 sessions
+
+RECORD: no fill candidate clears every criterion; the board keeps dip_or_close on both sides
+  S1a (resistance_defer, buy): model window -0.0 bp/session (t -0.64); next-bar -0.0 (t -0.66) fails; 2024-2026 +0.2 bp/session; deflated Sharpe +0.07 at N = 7 (+0.01 at 464); drift-adjusted -0.0 (t -0.64); positive at 5 of 20 offsets; per re-timed order -7.5 bp (t -0.25) over 75 of 1107 orders; fired 16%; tagged 28%; level reached 36%; oracle capture -0% - RECORD
+  S1b (resistance_skip, buy): model window +0.0 bp/session (t +0.11); next-bar +0.0 (t +0.08) fails; 2024-2026 -0.6 bp/session; deflated Sharpe +0.21 at N = 7 (+0.03 at 464); drift-adjusted +0.0 (t +0.52); positive at 18 of 20 offsets; per re-timed order -10.8 bp (t -0.59) over 177 of 1107 orders; waited 16%; fired 16%; tagged 28%; level reached 42%; oracle capture -2% - RECORD
+  S1c (hold_the_dip, buy): model window -0.1 bp/session (t -1.25); next-bar -0.1 (t -1.12) fails; 2024-2026 -0.1 bp/session; deflated Sharpe +0.02 at N = 7 (+0.00 at 464); drift-adjusted -0.1 (t -1.25); positive at 0 of 20 offsets; per re-timed order -3.2 bp (t -0.84) over 468 of 1107 orders; fired 43%; tagged 0%; level reached 41%; oracle capture -1% - RECORD
+  S1d (decision_reference, buy): model window -0.0 bp/session (t -0.53); next-bar -0.0 (t -0.54) fails; 2024-2026 +0.2 bp/session; deflated Sharpe +0.08 at N = 7 (+0.01 at 464); drift-adjusted -0.0 (t -0.53); positive at 2 of 20 offsets; per re-timed order -12.9 bp (t -1.03) over 217 of 1107 orders; fired 57%; tagged 0%; level reached 32%; oracle capture -2% - RECORD
+  S1e (market_relative, buy): model window -0.0 bp/session (t -0.16); next-bar -0.0 (t -0.17) fails; 2024-2026 -0.1 bp/session; deflated Sharpe +0.14 at N = 7 (+0.02 at 464); drift-adjusted -0.0 (t -0.16); positive at 15 of 20 offsets; per re-timed order -4.9 bp (t -0.61) over 281 of 1107 orders; fired 100%; tagged 0%; level reached 36%; oracle capture -1% - RECORD
+  S1f (sell_at_level, sell): model window -0.1 bp/session (t -1.80); next-bar -0.1 (t -1.83) fails; 2024-2026 +0.2 bp/session; deflated Sharpe +0.00 at N = 7 (+0.00 at 464); drift-adjusted -0.1 (t -1.80); positive at 0 of 20 offsets; per re-timed order -21.7 bp (t -1.12) over 42 of 374 orders; fired 100%; tagged 19%; level reached 52%; oracle capture -2% - RECORD
+wrote docs/research/scorecards/structure-rules/structure_rules.json

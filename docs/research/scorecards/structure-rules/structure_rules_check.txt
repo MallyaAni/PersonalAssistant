@@ -1,0 +1,38 @@
+== S1a (resistance_defer, buy)
+   model: -0.025 bp/session (payload -0.025), NW t -0.64 (payload -0.64); drift-adjusted -0.025 (t -0.64); per re-timed order -7.5 bp (t -0.25) over 75 of 1107 buys, 17 unpriced, 0 waited
+   2024-2026: +0.200 bp/session (payload +0.200), NW t +1.44 (payload +1.44); drift-adjusted +0.200 (t +1.44); per re-timed order +19.7 bp (t +0.66) over 27 of 397 buys, 9 unpriced, 0 waited
+   positive at 5 of 20 offsets; DSR 0.072 at N=7 (0.007 at 464); fired 0.164, tagged 0.277
+   criteria {'1_floor': False, '2_next_bar': False, '3_not_negative_2024_2026': True, '4_deflated_sharpe': False, '5_drift_adjusted': False, '6_offsets_positive': False}
+   verdict RECORD (recomputed RECORD)
+== S1b (resistance_skip, buy)
+   model: +0.009 bp/session (payload +0.009), NW t +0.11 (payload +0.11); drift-adjusted +0.041 (t +0.52); per re-timed order -10.8 bp (t -0.59) over 177 of 1107 buys, 18 unpriced, 178 waited
+   2024-2026: -0.627 bp/session (payload -0.627), NW t -0.67 (payload -0.67); drift-adjusted -0.551 (t -0.59); per re-timed order +34.3 bp (t +0.51) over 50 of 397 buys, 9 unpriced, 50 waited
+   positive at 18 of 20 offsets; DSR 0.206 at N=7 (0.028 at 464); fired 0.163, tagged 0.276
+   criteria {'1_floor': False, '2_next_bar': False, '3_not_negative_2024_2026': False, '4_deflated_sharpe': False, '5_drift_adjusted': False, '6_offsets_positive': True}
+   verdict RECORD (recomputed RECORD)
+== S1c (hold_the_dip, buy)
+   model: -0.069 bp/session (payload -0.069), NW t -1.25 (payload -1.25); drift-adjusted -0.069 (t -1.25); per re-timed order -3.2 bp (t -0.84) over 468 of 1107 buys, 17 unpriced, 0 waited
+   2024-2026: -0.055 bp/session (payload -0.055), NW t -0.51 (payload -0.51); drift-adjusted -0.055 (t -0.51); per re-timed order -2.3 bp (t -0.28) over 199 of 397 buys, 9 unpriced, 0 waited
+   positive at 0 of 20 offsets; DSR 0.017 at N=7 (0.001 at 464); fired 0.435, tagged 0.000
+   criteria {'1_floor': False, '2_next_bar': False, '3_not_negative_2024_2026': False, '4_deflated_sharpe': False, '5_drift_adjusted': False, '6_offsets_positive': False}
+   verdict RECORD (recomputed RECORD)
+== S1d (decision_reference, buy)
+   model: -0.037 bp/session (payload -0.037), NW t -0.53 (payload -0.53); drift-adjusted -0.037 (t -0.53); per re-timed order -12.9 bp (t -1.03) over 217 of 1107 buys, 17 unpriced, 0 waited
+   2024-2026: +0.196 bp/session (payload +0.196), NW t +1.89 (payload +1.89); drift-adjusted +0.196 (t +1.89); per re-timed order +19.4 bp (t +1.05) over 85 of 397 buys, 9 unpriced, 0 waited
+   positive at 2 of 20 offsets; DSR 0.082 at N=7 (0.007 at 464); fired 0.571, tagged 0.000
+   criteria {'1_floor': False, '2_next_bar': False, '3_not_negative_2024_2026': True, '4_deflated_sharpe': False, '5_drift_adjusted': False, '6_offsets_positive': False}
+   verdict RECORD (recomputed RECORD)
+== S1e (market_relative, buy)
+   model: -0.013 bp/session (payload -0.013), NW t -0.16 (payload -0.16); drift-adjusted -0.013 (t -0.16); per re-timed order -4.9 bp (t -0.61) over 281 of 1107 buys, 17 unpriced, 0 waited
+   2024-2026: -0.080 bp/session (payload -0.080), NW t -0.71 (payload -0.71); drift-adjusted -0.080 (t -0.71); per re-timed order -13.1 bp (t -1.05) over 76 of 397 buys, 9 unpriced, 0 waited
+   positive at 15 of 20 offsets; DSR 0.140 at N=7 (0.015 at 464); fired 0.999, tagged 0.000
+   criteria {'1_floor': False, '2_next_bar': False, '3_not_negative_2024_2026': False, '4_deflated_sharpe': False, '5_drift_adjusted': False, '6_offsets_positive': True}
+   verdict RECORD (recomputed RECORD)
+== S1f (sell_at_level, sell)
+   model: -0.114 bp/session (payload -0.114), NW t -1.80 (payload -1.80); drift-adjusted -0.114 (t -1.80); per re-timed order -21.7 bp (t -1.12) over 42 of 374 sells, 8 unpriced, 0 waited
+   2024-2026: +0.159 bp/session (payload +0.159), NW t +1.39 (payload +1.39); drift-adjusted +0.159 (t +1.39); per re-timed order +46.0 bp (t +1.47) over 10 of 140 sells, 0 unpriced, 0 waited
+   positive at 0 of 20 offsets; DSR 0.001 at N=7 (0.000 at 464); fired 1.000, tagged 0.189
+   criteria {'1_floor': False, '2_next_bar': False, '3_not_negative_2024_2026': True, '4_deflated_sharpe': False, '5_drift_adjusted': False, '6_offsets_positive': False}
+   verdict RECORD (recomputed RECORD)
+offsets: {'registered': 20, 'priced': 20, 'median': 10, 'smoke': False, 'starts': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+independent check: OK

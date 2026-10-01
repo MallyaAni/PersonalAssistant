@@ -1,0 +1,5 @@
+S1g (structure notch): paired 2016-2023 -0.2 bp/session (t -0.91) over 2012 sessions; 2024-2026 -0.0 bp/session (t -0.88); above the control at 10 of 20 offsets; deflated Sharpe +0.00 at 464
+  2016-2023: median worst drawdown -42.9% against -42.9% (-0.0 points); CAGR +28.0% against +28.5% (-0.4 points)
+  2024-2026: median worst drawdown -24.5% against -24.5% (-0.0 points); CAGR +44.6% against +46.8% (-2.2 points)
+  RECORD (neither the return gate nor drawdown)
+wrote docs/research/scorecards/structure-rules/structure_notch_verdict.json

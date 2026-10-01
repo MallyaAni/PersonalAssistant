@@ -1,0 +1,83 @@
+{
+  "label": "RECORD",
+  "replaces_on": [],
+  "gate": {
+    "1_floor": false,
+    "2_not_negative_2024_2026": false,
+    "3_offsets_positive": false,
+    "4_deflated_sharpe": false
+  },
+  "paired": {
+    "2016-2023": {
+      "window": "2016-2023",
+      "sessions": 2012,
+      "mean_daily_bp": -0.18836029126974785,
+      "hac_t": -0.9056859800634992,
+      "sharpe": -0.020044580035279633,
+      "skew": 5.142966952471563,
+      "kurtosis": 136.06387894670118,
+      "length": 2012
+    },
+    "2024-2026": {
+      "window": "2024-2026",
+      "sessions": 689,
+      "mean_daily_bp": -0.005701463854167008,
+      "hac_t": -0.8847471102281627,
+      "sharpe": -0.014610595414285181,
+      "skew": -14.297279147312693,
+      "kurtosis": 436.5713157449025,
+      "length": 689
+    }
+  },
+  "offsets_above": 10,
+  "offsets": 20,
+  "dsr": 0.0011811005311420653,
+  "trials": 464,
+  "trial_variance": 0.00029002872843038985,
+  "drawdown": {
+    "2016-2023": {
+      "drawdown_notch": -0.42885717636211346,
+      "drawdown_control": -0.42854241170289054,
+      "drawdown_gain": -0.0003147646592229214,
+      "cagr_notch": 0.2802157773574835,
+      "cagr_control": 0.2845783211350258,
+      "cagr_difference": -0.004362543777542305
+    },
+    "2024-2026": {
+      "drawdown_notch": -0.24504935525686888,
+      "drawdown_control": -0.2450493552568671,
+      "drawdown_gain": -1.7763568394002505e-15,
+      "cagr_notch": 0.4457053316481909,
+      "cagr_control": 0.4677575652443162,
+      "cagr_difference": -0.022052233596125292
+    }
+  },
+  "drawdown_criterion": false,
+  "cost_bps": 25.0,
+  "notch_arm": "ew_graded_cap25 + structure_notch",
+  "control_arm": "ew_graded_cap25",
+  "lines": [
+    "S1g (structure notch): paired 2016-2023 -0.2 bp/session (t -0.91) over 2012 sessions; 2024-2026 -0.0 bp/session (t -0.88); above the control at 10 of 20 offsets; deflated Sharpe +0.00 at 464",
+    "  2016-2023: median worst drawdown -42.9% against -42.9% (-0.0 points); CAGR +28.0% against +28.5% (-0.4 points)",
+    "  2024-2026: median worst drawdown -24.5% against -24.5% (-0.0 points); CAGR +44.6% against +46.8% (-2.2 points)",
+    "  RECORD (neither the return gate nor drawdown)"
+  ],
+  "inputs": {
+    "control": {
+      "file": "docs/research/scorecards/structure-rules/notch_control.json",
+      "sha256": "0007ece32c814bfa50dfe0d09ab9e4ecce028c464306824ae1ad264f53aa5bb8"
+    },
+    "notch": {
+      "file": "docs/research/scorecards/structure-rules/notch.json",
+      "sha256": "b37c8182b800f7f80fc960031ef6d0642bb34b41bc335b9d9d766f0ff948dbad"
+    },
+    "fills": {
+      "file": "docs/research/scorecards/structure-rules/structure_rules.json",
+      "sha256": "a43882d358b9291e53da501fbd19f5f0f4667c4209ed9a6cca33ee94e991c4ab"
+    },
+    "revision": {
+      "commit": "5a4b1ccf0c19481062d3ca4beb0510bdb108c5d5",
+      "dirty": false
+    }
+  }
+}
