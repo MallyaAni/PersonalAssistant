@@ -31,17 +31,29 @@ async function installOptionsFixture(page: Page, frontendURL: string, state: Opt
   const live = {as_of: NOW, data_at: BAR, stale: false, market_status: market, quotes: {AAA: {symbol: 'AAA', last: 100, open: 99, high: 101, low: 98, bar: BAR, as_of: NOW}}, technical: {AAA: {now: .8, close: .6}}, technical_detail: {AAA: detail}, options_evidence: {AAA: evidence}}
   const mine = {session: SESSION, market_status: market, grade_valid_until: {}, grades_live: {}, rows: [],
     decisions: {session: SESSION, written: WRITTEN, as_of: NOW, rows: {AAA: {action: 'Hold', strategy_action: 'Hold', executable: false, reason: 'Synthetic read-only fixture.', valid_until: null, target_weight: 0, current_weight: 0, move_weight: 0}}}}
-  const diagnostics = {consoleErrors: [] as string[], pageErrors: [] as string[], failedRequests: [] as string[], badResponses: [] as string[], unexpectedRequests: [] as string[], forbiddenWrites: [] as string[]}
+  const cancelledConversationReads = new Set<string>()
+  const completedConversationReads = new Set<string>()
+  const diagnostics = {consoleErrors: [] as string[], pageErrors: [] as string[], failedRequests: [] as string[], badResponses: [] as string[], unexpectedRequests: [] as string[], forbiddenWrites: [] as string[],
+    // A conversation GET cancelled after a reload counts as failed unless its repeat succeeded.
+    get unreplacedConversationReads() {return [...cancelledConversationReads].filter(url => !completedConversationReads.has(url))}}
   const reads: string[] = []
   const frontendOrigin = new URL(frontendURL).origin
   // Capture console failures independently of whether the expected content still renders.
   page.on('console', message => {if (message.type() === 'error') diagnostics.consoleErrors.push(message.text())})
   // A partially rendered panel cannot conceal a JavaScript exception.
   page.on('pageerror', error => diagnostics.pageErrors.push(error.message))
-  // Every required request must complete successfully.
-  page.on('requestfailed', request => diagnostics.failedRequests.push(`${request.method()} ${request.url()}`))
+  // Every required request must complete successfully. After a reload the dev server's
+  // StrictMode mounts the chat's conversation restore twice and cancels the first GET;
+  // that one is held to its repeat (unreplacedConversationReads) instead.
+  page.on('requestfailed', request => {
+    if (request.method() === 'GET' && new URL(request.url()).pathname.startsWith('/api/v1/conversations/') && request.failure()?.errorText === 'net::ERR_ABORTED') cancelledConversationReads.add(request.url())
+    else diagnostics.failedRequests.push(`${request.method()} ${request.url()}`)
+  })
   // Retain failed responses even when the component has a fallback.
-  page.on('response', response => {if (response.status() >= 400) diagnostics.badResponses.push(`${response.status()} ${response.url()}`)})
+  page.on('response', response => {
+    if (response.status() >= 400) diagnostics.badResponses.push(`${response.status()} ${response.url()}`)
+    if (response.ok() && response.request().method() === 'GET' && new URL(response.url()).pathname.startsWith('/api/v1/conversations/')) completedConversationReads.add(response.url())
+  })
   await page.clock.install({time: new Date(NOW)})
   // Keep rendering independent of the operator's stored appearance setting.
   await page.addInitScript(() => localStorage.setItem('anios.theme', 'light'))
