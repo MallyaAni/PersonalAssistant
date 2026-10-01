@@ -175,9 +175,11 @@ not, which is the paper's own claim.
 ## Permissions and cost
 
 One batch on the Sparks' DeepSeek server (`deepseek-v4-flash`, vLLM,
-port 8000): about 94 names × ~35 quarters (2015-Q1 blocks need 2013 facts,
-which the company-facts feed carries) ≈ **3,300 calls**, each a block of
-~1,200 characters in and ≤ 500 tokens out. At the tone run's measured
+port 8000): about 94 names × ~35 quarters ≈ **3,300 calls** (the panel's
+bars start 2015-01-01, so only observations available from then are
+scored — `--since`; the first 2015 blocks need 2013 facts, which the
+company-facts feed carries; `plan` prints the exact count before any
+call), each a block of ~1,500 characters in and ≤ 500 tokens out. At the tone run's measured
 pace (four workers, a few seconds a call) that is **2-4 hours**, run
 **off-hours only**, started after the 19:30 ET nightly and the 20:30 ET
 SIP append have finished and never overlapping either; it resumes from
