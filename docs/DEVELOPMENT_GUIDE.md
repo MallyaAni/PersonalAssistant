@@ -156,6 +156,26 @@ drift (exit 3) as before, marks those names' grade and target rows
 `explained` and prints them as `data update:` lines; every other row stays
 in the banner.
 
+Every nightly record also carries `record["release_coverage"]`
+(`backend/market/release_coverage.py`): for each book name at the session,
+point in time, its newest scored earnings release, its usual gap between
+releases (its own median with four or more releases, else the median of every
+gap in the book) and its newest earnings filing. A name is flagged as **no
+reading** (no earnings filing on file - for example a foreign filer that is not
+in `edgar.RESULTS_6K_ISSUERS` - or filings on file and none read), **unscored**
+(its newest filing is unread for longer than the reader's normal lag, which is
+measured from the store each night) or **overdue** (its newest reading is older
+than 1.5 times its usual gap). The nightly prints `release coverage: ...` with
+one line per flagged kind, and the board shows the same lines in a plain grey
+`Earnings coverage` note. The check never changes a grade, score or order; on
+any error the record carries None and the log says `release coverage: skipped
+(...)`. To look into a flagged name, read its filings and readings with
+`python -m backend.cli.market_edgar --status --tickers <T>` (and `--audit-6k`
+for a Form 6-K filer) and `python -m backend.cli.market_tone --status --tickers
+<T>`; an "unscored ... no release text found in it" line means the reader ran
+after the filing and found no exhibit it reads, which is either a 2.02 filing
+that carries no release or a changed exhibit layout.
+
 The line and the exit code say which of two things a mismatch is. **Parity
 mismatch** (`GRADE PARITY MISMATCH`, exit 1, red banner): the replay ran on
 the record's own code and store and still disagrees - stop, do not trade

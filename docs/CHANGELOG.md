@@ -1,5 +1,113 @@
 # Changelog
 
+## 2026-10-01 — Nightly earnings coverage check: a missing or stale release reading is said on the board: BUILT, gates pending, not deployed
+
+Branch `desk/release-coverage` on `4384ea77`. Two ways the sentiment
+analyst's input goes stale made no noise anywhere: a foreign filer added to
+the book but not on the Form 6-K allow-list (`RESULTS_6K_ISSUERS`) never gets
+a release reading, and a filer whose layout or exhibit naming stops the 6-K
+classifier or the 8-K exhibit reader admitting its releases keeps its last
+reading, which `tone_features` carries forward until the next one, however
+long that takes. `market_edgar --audit-6k` covers only the listed 6-K filers
+and is not run nightly.
+
+- `backend/market/release_coverage.py` (new): every book name at the
+  record's session, point in time - the newest partitions on or before the
+  desk's own as-of, and only filings and releases the market could react to
+  by the session (a release filed after the close on the session day is not
+  counted, as `tone_features` does not use it for that session): its newest
+  scored release, its usual gap between consecutive scored releases (its own
+  median with four or more releases, else the median of every gap in the
+  book, computed each night) and its newest earnings filing. States: **no
+  reading** (no earnings filing on file, or filings on file and none read);
+  **unscored** (the newest filing is newer than the newest scored release, is
+  not scored, and has gone unread longer than the reader's normal lag - "no
+  release text found in it" when the reader has run for the name since the
+  filing, "not read yet" when it has not); **overdue** (days since the
+  newest reading over 1.5 times the usual gap); **unchecked** (stored data
+  that cannot be read; one such name never stops the rest). No ticker, CIK,
+  date or day count in the logic; 1.5 is the one tolerance.
+- The reader's normal lag is measured from the store each night, never
+  assumed: for each book name whose newest scored release was filed on or
+  after the name's first stored reading (so the store saw it arrive), the days
+  from its filing date to the first partition holding its score, and the
+  median over the book. On the live store three releases qualify today (ADBE
+  and ORCL filed 2026-09-10, MU 2026-09-30), each scored in its own filing
+  date's partition: lag 0, so a filing still unread the night after it was
+  filed is flagged. With no release seen arriving the lag is unknown and no
+  filing is called unscored (the overdue clock still runs).
+- The tolerance, measured read-only on the live store (94 book names; 3,452
+  gaps between consecutive scored releases of 93 names, NBIS has none): the
+  gaps run p5 60, p25 86, median 91, p75 93, p95 105, p99 126 days; of the
+  92 names with four or more releases, 87 have own medians of 89 to 98 days
+  and five short or irregular histories lower ones (IREN 71, Q 72.5, GLXY 77,
+  SMCI 81, CORZ 86.5).
+  Against its own name's median a gap is p50 1.00, p90 1.08, p95 1.15, p99
+  1.38. What runs long is the year-end release that comes with the annual
+  report: 49 gaps between 1.25 and 1.40 (of the 54 between 1.25 and 1.75, 37
+  end in February or March, and 45 of the 52 with a stated quarter end on a
+  release published 40 or more days after its quarter closed - FSLR, CDNS,
+  VRT, VST, POWL every year). Then only 2 between 1.40 and 1.50 (CORZ's 2026
+  year-end at 1.49 the closest) and 3 between 1.50 and 1.75 (late or missing
+  releases: APLD 2024, POWL 2017, CRDO 2025-26), before the 27 above 1.75:
+  releases missing from the store (ASML's fourth-quarter 6-Ks the old
+  classifier refused, a 182-day gap every year; TSM 2020; SIMO; NXPI's five
+  unread 8-Ks of 2019-20; AMAT 2024-05) or years with no release at all
+  (TLN's private years, CORZ's bankruptcy). 1.5 sits in that valley: above
+  99% of ordinary gaps, below one missed release (about 2.0), which at a
+  91-day cadence it flags 46 days after it was due.
+  Replayed every 28 days since 2016 on today's frames (not vintage-exact),
+  1.8% of 10,560 name-sessions read overdue and 0.3% unscored. The overdue
+  repeats are real holes (TLN's private years 2016-23 97 sessions, CORZ's
+  bankruptcy 18, SIMO 16, OKLO 14, ASML's refused 6-Ks 13, WULF 9); no other
+  name is overdue on more than two of the 140 sessions. The 28 unscored are
+  NXPI's five unread 2019-20 releases (9) and 2.02 filings that carry no
+  release, each listed until the name's next release is read (ANET 5, CRDO
+  4, HPE 3, APLD 3, FTNT, GEN, TXN, WDC 1 each).
+- `market_daily`: `record["release_coverage"]`, printed as `release coverage:
+  <n> names at <session>; usual gap <d> days across the book; read lag <l>
+  days (<k> releases); flagged: <names>` with one line per flagged kind;
+  None and `release coverage: skipped (<error>)` on any error, so the record
+  is always written. It changes no grade, score or order.
+- Board: a plain grey `Earnings coverage` note (role status, `#6e6e73`, 12 px)
+  in the data-health strip after `Data updates`, only when a name is
+  flagged; nothing when all names read as usual, when the check could not
+  run, or on an older record. Types `ReleaseCoverage` and
+  `ReleaseCoverageName` in `api.ts`.
+- **On the live store** (spark1, read-only, 0.56 s for 94 names), today at
+  session 2026-10-01 on the newest partitions the board would read:
+  "No earnings reading: NBIS (no earnings filing on file)" · "Earnings filing
+  not read: WDAY (filed 2026-09-29, no release text found in it; last release
+  read 2026-08-28)" · "Earnings reading overdue: OKLO (last release read
+  2025-03-25, usually every 91 days across the book)" · "Earnings reading
+  overdue: SIMO (last release read 2025-07-31, usually every 92 days)".
+  NBIS has no admitted 6-K until tonight's re-read; SIMO's releases after
+  2025-07-31 were refused by the old 6-K classifier; OKLO's last item 2.02
+  8-K on EDGAR is 2025-03-24 (its later quarters came as 10-Q and 10-K only),
+  so its reading has been carried 555 days; WDAY's 2026-09-29 8-K carries
+  items 2.02 and 2.05 and no exhibit (a restructuring filing), and stays
+  listed until WDAY's next release is read. The 2026-09-30 record point in
+  time would have read ARM, ASML, NBIS, SIMO, TSM as no reading (the 6-K
+  backfill landed in the 10-01 partition, after that record), OKLO overdue
+  and WDAY unscored; replayed over all 18 live records the list is the same
+  every night from 09-08 (the six names, WDAY from 09-30), and on 09-04,
+  before the earnings layers were stored, every name reads as no reading.
+  ACN, 105 days since its last reading, is inside its usual gap; it filed its
+  fourth-quarter release on 2026-10-01 and tonight's refresh reads it.
+- Tests: `backend/tests/test_release_coverage.py` (13: a regular reporter;
+  overdue and its boundary at 136/137 days; no filing on file; filings and
+  none read; the book's computed usual gap for a short history; a malformed
+  name never stops the rest; point in time - a release after the session and
+  a partition after the as-of; unscored at the measured lag, and a slower
+  measured lag moves the threshold; an unknown lag; no advice words; the
+  nightly hook prints and never raises; the record written and its grades,
+  targets, book, actions and levels unchanged when the check fails).
+  `frontend/e2e/desk-release-coverage.spec.ts` (4: flagged lines in grey as a
+  status note with no advice words; nothing when no name is flagged, when the
+  block is null, or when it is absent).
+- Diagram impact: NONE - a new field on the existing record, read by the
+  existing desk panel; no new component, store, dependency or boundary.
+
 ## 2026-10-01 — Grades that moved on a data update say so; the discovery sweep test no longer dates itself: BUILT and gated, not deployed
 
 Branch `desk/vintage-banner` on `8046f0c9` (fix/6k-classifier). Two small

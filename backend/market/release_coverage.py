@@ -75,15 +75,19 @@ EVENTS_KIND = "edgar_events"
 # scored releases of 93 names; NBIS has none): the gaps run p5 60, p25 86,
 # median 91, p75 93, p95 105, p99 126 days. Against each name's own median
 # (3,450 gaps of the 92 names with four or more releases) a gap is a median
-# 1.00 of it, p90 1.08, p95 1.15, p99 1.38: an ordinary quarter, and the
-# annual-report quarter that runs long (49 gaps between 1.25 and 1.40), stay
-# under 1.4. Then the distribution is nearly empty - 2 gaps between 1.40 and
-# 1.50, 3 between 1.50 and 1.75 - before the 27 above 1.75, which are
-# releases missing from the store: ASML's fourth-quarter 6-Ks the old
-# classifier refused (a 182-day gap every year), TSM 2020, SIMO, NXPI's five
-# unread 8-Ks of 2019-20, AMAT's 2024-05 release. 1.5 sits in that valley:
-# above 99% of ordinary gaps and below one missed release (about 2.0), which
-# at a 91-day cadence it flags 46 days after the release was due.
+# 1.00 of it, p90 1.08, p95 1.15, p99 1.38. What runs long is the year-end
+# release that comes with the annual report: 49 gaps between 1.25 and 1.40,
+# nearly all ending on a fourth-quarter release published 40 or more days
+# after its quarter closed (FSLR, CDNS, VRT, VST, POWL every year). Then the
+# distribution is nearly empty - 2 gaps between 1.40 and 1.50 (CORZ's 2026
+# year-end at 1.49 the closest), 3 between 1.50 and 1.75 (late or missing
+# releases: APLD 2024, POWL 2017, CRDO 2025-26) - before the 27 above 1.75:
+# releases missing from the store (ASML's fourth-quarter 6-Ks the old
+# classifier refused, a 182-day gap every year; TSM 2020; SIMO; NXPI's five
+# unread 8-Ks of 2019-20; AMAT 2024-05) or years with no release at all
+# (TLN's private years, CORZ's bankruptcy). 1.5 sits in that valley: above
+# 99% of ordinary gaps and below one missed release (about 2.0), which at a
+# 91-day cadence it flags 46 days after the release was due.
 TOLERANCE = 1.5
 # The fewest scored releases a name's own cadence is read from (three gaps,
 # so the median is never one or two gaps); fewer falls back to the book's.
