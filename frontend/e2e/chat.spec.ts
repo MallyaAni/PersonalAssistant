@@ -2631,7 +2631,7 @@ test('@live delegates a presentation subagent without blocking chat', async ({ p
 // Verify the configured model selects a live tool and exposes its full lifecycle.
 test('@live uses the configured model for an MCP tool in chat', async ({ page }) => {
   test.setTimeout(120_000)
-  test.skip(process.env.RUN_LIVE_TOOL_TESTS !== '1', 'requires configured live MCP servers')
+  test.skip(process.env.RUN_LIVE_TOOL_TESTS !== '1', 'Set RUN_LIVE_TOOL_TESTS=1 with the live backend and its configured MCP servers running')
   const errors = observeBlockingBrowserErrors(page)
   const apiUrl = 'http://localhost:8000'
   const userId = process.env.ANIOS_LIVE_TOOL_USER || 'live_tool_browser_user'
@@ -2716,7 +2716,7 @@ test('@live uses the configured model for an MCP tool in chat', async ({ page })
 // Verify the live browser completes a provider-attributed internet MCP search.
 test('@live uses the hybrid internet MCP in chat', async ({ page }) => {
   test.setTimeout(150_000)
-  test.skip(process.env.RUN_LIVE_TOOL_TESTS !== '1', 'requires configured live MCP search')
+  test.skip(process.env.RUN_LIVE_TOOL_TESTS !== '1', 'Set RUN_LIVE_TOOL_TESTS=1 with the live backend and its internet MCP search running')
   const errors = observeBlockingBrowserErrors(page)
   const apiUrl = 'http://localhost:8000'
   const userId = process.env.ANIOS_LIVE_TOOL_USER || 'live_search_browser_user'
@@ -3735,6 +3735,10 @@ test('shows every documented image-analysis failure contract', async ({ page }) 
 
 // Verify real ComfyUI generation plus generated/uploaded source edits in the UI.
 test('@live visual generation and analysis complete through the browser', async ({ page }) => {
+  test.skip(
+    process.env.ANIOS_E2E_LIVE !== '1',
+    'Set ANIOS_E2E_LIVE=1 to generate, edit and analyse real images through the live backend (ComfyUI and the vision model)',
+  )
   test.setTimeout(240_000)
   const errors = observeBlockingBrowserErrors(page)
   const userId = `live_visual_${Date.now()}`
@@ -3936,7 +3940,7 @@ test('@live uncertain image analysis renders tentative candidates', async ({ pag
   test.setTimeout(120_000)
   const token = process.env.ANIOS_E2E_BEARER_TOKEN ?? ''
   const imagePath = process.env.ANIOS_E2E_VISION_IMAGE ?? ''
-  test.skip(!token || !imagePath, 'Set a bearer token and real vision image fixture.')
+  test.skip(!token || !imagePath, 'Set ANIOS_E2E_BEARER_TOKEN and ANIOS_E2E_VISION_IMAGE (a real photo) to run live vision analysis')
   const errors = observeBlockingBrowserErrors(page)
   const userId = process.env.ANIOS_E2E_VISION_USER ?? 'testuser'
   const conversationId = randomUUID()
@@ -3987,6 +3991,10 @@ test('@live uncertain image analysis renders tentative candidates', async ({ pag
 
 // Verify natural image intent, followups, web search, and memory drilldown live.
 test('@live image conversation routes through generation, chat, search, and memory details', async ({ page }) => {
+  test.skip(
+    process.env.ANIOS_E2E_LIVE !== '1',
+    'Set ANIOS_E2E_LIVE=1 to route a real image, chat, web search and memory turn through the live backend',
+  )
   test.setTimeout(240_000)
   const errors = observeBlockingBrowserErrors(page)
   const stamp = Date.now()
@@ -4094,6 +4102,10 @@ test('@live image conversation routes through generation, chat, search, and memo
 
 // Verify cancelling a live browser request interrupts its provider job and terminalizes state.
 test('@live cancelled image generation becomes a terminal failed artifact', async ({ page }) => {
+  test.skip(
+    process.env.ANIOS_E2E_LIVE !== '1',
+    'Set ANIOS_E2E_LIVE=1 to cancel a real ComfyUI generation through the live backend',
+  )
   test.setTimeout(90_000)
   const errors = observeBlockingBrowserErrors(page)
   const userId = `live_cancel_${Date.now()}`
