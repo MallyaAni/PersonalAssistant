@@ -503,8 +503,13 @@ def splits(
 # the plan's trial counts: the gate at N = 3, the trial variance the
 # across-candidate variance (ddof 1) of the three model-window Sharpe
 # ratios; the cumulative 457 beside it. NaN with fewer than two finite
-# Sharpes.
-def deflated(excess: Mapping[str, Mapping[str, Any]], candidate: str) -> dict[str, Any]:
+# Sharpes. `trials` is another study's {"registered", "cumulative"}
+# (structure_rules: 7 and 464).
+def deflated(
+    excess: Mapping[str, Mapping[str, Any]],
+    candidate: str,
+    trials: Mapping[str, int] = TRIALS,
+) -> dict[str, Any]:
     """Return the deflated Sharpe record of `candidate`."""
     sharpes = np.array(
         [sd._f((e or {}).get("sharpe")) for e in excess.values()], dtype=float
@@ -518,11 +523,11 @@ def deflated(excess: Mapping[str, Mapping[str, Any]], candidate: str) -> dict[st
     kurtosis = sd._f(own.get("kurtosis"))
     values = {
         label: candidate_stats.deflated_sharpe(
-            sharpe, length, skew, kurtosis, trials, variance
+            sharpe, length, skew, kurtosis, count, variance
         )
         if math.isfinite(variance) and math.isfinite(sharpe)
         else math.nan
-        for label, trials in TRIALS.items()
+        for label, count in trials.items()
     }
     dsr = values["registered"]
     return {
@@ -531,7 +536,7 @@ def deflated(excess: Mapping[str, Mapping[str, Any]], candidate: str) -> dict[st
         "length": length,
         "candidates": int(len(sharpes)),
         "trial_variance": variance,
-        "trials": TRIALS["registered"],
+        "trials": int(trials["registered"]),
         "dsr": dsr,
         "dsr_cumulative": values["cumulative"],
         "gate": DSR_GATE,
