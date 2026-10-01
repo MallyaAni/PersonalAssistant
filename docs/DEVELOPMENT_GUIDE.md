@@ -272,20 +272,25 @@ See the [collection contract](research/options-collection-contract-2026-09-25.md
 
 The nightly (`~/desk_daily.sh` on spark1, `market_daily --paper-trade`)
 plans the paper book once a session. On a rebalance session it brings the
-book to `live_policy.targets`. On every other session it retries last
+book toward `live_policy.targets`, subject to cash, rounding and the band
+gate. Planner `cash-bounded-breakout-rotation/5` preserves reset targets
+instead of clipping them to the separate 15% mid-cycle entry limit. This
+does not change the active `graded-equal-weight/5` allocator or trigger an
+unscheduled reset. On every other session it retries last
 night's unpaid buys, rotates out of names graded below A, enters band
 breakouts, and since 2026-09-27 (execution policy
 `cash-bounded-breakout-rotation/4`) **redeploys idle cash**: cash on hand
 beyond 2% of equity (`paper.REDEPLOY_BUFFER`), after the other legs have
 planned their buys, goes back to the policy's targets pro rata to each held
 or newly graded A/A+ name's shortfall, never beyond a name's target, with
-no band gate and nothing deferred. Sells are unchanged. The orders are
-next-open market buys with `kind: "redeploy"`; the nightly log prints
+no band gate and nothing deferred. Sells are unchanged. The orders carry
+`kind: "redeploy"` and, when `INTRADAY_EXECUTION` is enabled, wait for the
+next session's dip/pop-or-close clock; the nightly log prints
 `redeploy: N buys put X of idle cash back to the targets`, and the record's
 paper block carries `idle_cash_share` and a `redeploy` block. To turn it
 off, set `REDEPLOY_IDLE_CASH = False` in `backend/agents/trading/desk/paper.py`
-and redeploy: the planner is then the /3 planner byte for byte (pinned by
-`test_the_planner_with_the_redeploy_off_is_the_v3_planner`).
+and redeploy: this disables only the idle-cash leg. It does not undo the
+reset-sizing correction or the separately configured intraday timing.
 
 To see what tonight's plan would be without submitting, run the dry-run
 planner against the real paper account from the deploy clone, with the
@@ -314,14 +319,15 @@ nightly has run.
 
 ### The board's timed actions: the entry-timing latch
 
-Since 2026-09-28 the `/4` board says BUY only when a 15-minute bar has
-CLOSED at or under 1% below today's open (`fill_timing.DIP`), SELL/TRIM only
-on a close at or over 1% above it, and either in the close window (from
-the session close - 30 minutes: 15:30 ET, 12:30 ET on an early close;
-market-on-close before close - 10 minutes); otherwise Hold, with the
-planned size and level on the row's hover. A buy on a name whose record
-flags `levels[T]["rejecting_band"]` (the executor's band gate) is always a
-Hold. The balancer (`market_balancer`, cron `*/15 9-16 * * 1-5`) latches
+The board shows the paper order's BUY/SELL/TRIM intent separately from its
+status: waiting, due, sent, partially filled or filled. A waiting BUY is
+not an instruction that its entry level has already fired. A 15-minute bar
+closing at or under 1% below today's open triggers a buy; a close at or over
+1% above it triggers a sell/trim. Otherwise execution becomes due in the
+close window (session close - 30 minutes: 15:30 ET, 12:30 ET on an early
+close; market-on-close before close - 10 minutes). Only a broker response
+establishes submission or a fill. A band-blocked buy is absent from the
+executable plan. The balancer (`market_balancer`, cron `*/15 9-16 * * 1-5`) latches
 each candle right after writing `live.json`, into
 `data/market/desk/entry-timing/<YYYY-MM-DD>.json` (New York session date;
 the 30 newest are kept). Per symbol it holds `open` (the 09:30 bar's open,
@@ -342,8 +348,12 @@ If a BUY does not appear when the price clearly traded through the level:
 today's file; the cron log says `Entry timing latch unavailable (...)` when
 a write failed; and the snapshot carries one bar per balancer run, so a run
 that was skipped (or a feed that was a bar late) can miss a bar that
-crossed and recovered inside it - the close window still acts. The paper
-executor does not read the latch: it still fills at the next open.
+crossed and recovered inside it - the close window still acts. With
+`intraday_orders.INTRADAY_EXECUTION` enabled, the paper executor reads this
+same latch and timing function. The historical daily-price simulation does
+not: `daily-open-close/1` retains ordinary next-open buys, next-close sells
+and green-open sell suppression, plus the separate FOMC lifecycle. Do not
+interpret its returns as live dip/pop-or-close execution performance.
 
 ### Verification instruments
 

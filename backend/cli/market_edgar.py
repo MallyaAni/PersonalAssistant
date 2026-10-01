@@ -19,8 +19,9 @@ rule refused, which is what a widened classifier needs. `--status` reports,
 per ticker, how
 many events and quarterly facts the newest partition holds. `--audit-6k`
 lists the admitted 6-K releases per name per year from the stored frames
-and flags any full year without four, which is what a results filer
-produces; nothing is fetched.
+and checks completed filing years for four releases. The first observed year
+and the current year are partial; absent admissions or no completed year are
+not a pass. Counts alone do not verify every fiscal quarter; nothing is fetched.
 """
 
 import argparse
@@ -137,30 +138,32 @@ def prior_decisions(store: MarketStore, ticker: str, asof: date) -> dict[str, bo
     return edgar.decisions_from_metadata(frame[1])
 
 
-# The admitted 6-K releases per year for one events frame, and the years
-# that do not hold four. The first and last years on file are partial by
-# nature and are reported but not flagged.
-def audit_6k_frame(columns: dict[str, list]) -> tuple[dict[int, int], list[int]]:
+# Count admissions through a stated horizon, including empty trailing full years.
+# The first observed year may be partial; the horizon's year is still in progress.
+# Without a horizon, retain the legacy frame-only range for existing callers.
+def audit_6k_frame(
+    columns: dict[str, list], *, through: date | None = None
+) -> tuple[dict[int, int], list[int]]:
     """Return ({year: admitted 6-K count}, years with a count other than 4)."""
     counts: dict[int, int] = {}
     for event in edgar.events_from_columns(columns):
-        if event.form != "6-K":
+        if event.form != "6-K" or (through is not None and event.filed > through):
             continue
         counts[event.filed.year] = counts.get(event.filed.year, 0) + 1
     if not counts:
         return counts, []
-    first, last = min(counts), max(counts)
+    first, last = min(counts), through.year if through is not None else max(counts)
     for year in range(first + 1, last):
         counts.setdefault(year, 0)
     short = [y for y in sorted(counts) if first < y < last and counts[y] != 4]
     return counts, short
 
 
-# Print the 6-K audit per ticker from stored frames; True when every full
-# year of every name holds four releases.
+# Check counts through the requested date; missing or untestable coverage fails.
 def audit_6k(store: MarketStore, tickers: tuple[str, ...], asof: date | None) -> bool:
     """Print admitted 6-K releases per name per year; return whether all pass."""
     ok = True
+    through = asof or datetime.now(UTC).date()
     for ticker in tickers:
         frame = store.read_frame(EVENTS, ticker, asof)
         if frame is None:
@@ -169,21 +172,28 @@ def audit_6k(store: MarketStore, tickers: tuple[str, ...], asof: date | None) ->
             continue
         columns, meta = frame
         decided = edgar.decisions_from_metadata(meta)
-        counts, short = audit_6k_frame(columns)
+        counts, short = audit_6k_frame(columns, through=through)
         refused = sum(1 for v in decided.values() if not v)
         years = " ".join(f"{y}:{n}" for y, n in sorted(counts.items()))
-        verdict = "ok" if not short else f"CHECK {short}"
+        if not counts:
+            verdict = "CHECK no admitted 6-K releases"
+        elif short:
+            verdict = f"CHECK {short}"
+        elif min(counts) + 1 >= through.year:
+            verdict = "UNVERIFIED no complete filing year"
+        else:
+            verdict = "ok"
         print(
             f"{ticker:6} 6-K admitted={sum(counts.values()):3d} "
             f"refused={refused:4d} {verdict} {years}"
         )
         for event in edgar.events_from_columns(columns):
-            if event.form == "6-K":
+            if event.form == "6-K" and event.filed <= through:
                 print(
                     f"       {event.filed} {event.accession} "
                     f"reacts {event.reaction_date}"
                 )
-        ok = ok and not short
+        ok = ok and verdict == "ok"
     return ok
 
 

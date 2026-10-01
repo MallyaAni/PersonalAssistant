@@ -708,7 +708,7 @@ def _clock_status(
         cutoff = entry_timing._clock(clock["cutoff"])
         return "waiting", f"Waiting for {shown} or the close ({cutoff} window)"
     if state == entry_timing.TRIGGERED:
-        return "due", f"Level hit: {_trigger(timed)} · sending now"
+        return "due", f"Level hit: {_trigger(timed)} · order due"
     if state == entry_timing.CLOSE:
         how = "market-on-close" if now < clock["moc"] else "market order"
         return "due", f"Close window · {how} due"

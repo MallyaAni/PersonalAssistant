@@ -138,6 +138,23 @@ only, no alert; parity OK with the record's note).
 Diagram impact: NONE — no component, store, dependency or data flow added;
 the nightly and the parity CLI read the same EDGAR frames they already read.
 
+## 2026-10-01 — Reset sizing, execution wording and 6-K audit corrected (branch only)
+
+`33ac6c71` on `fix/review-consistency-20261001`: reset orders preserve
+allocation targets under cash/rounding/band constraints; the separate
+mid-cycle entry cap stays 15%. Planner becomes `/5`, allocator unchanged.
+Dashboard differentiates due/sent and partial/filled, retains held/unknown,
+and consistently greys terminal orders. Daily-price simulations have their
+own execution identity instead of claiming current live parity. Empty and
+incomplete 6-K coverage now fails audit; no release data was rewritten.
+
+Verified: 382 relevant backend cases across two environments, 138 browser
+cases, TypeScript, production build, fixture consistency, no new Ruff
+findings, and 33 diagram pairs/published page. Current intraday simulation
+parity and economic superiority are not established. No deployment.
+See [evidence and remaining work](research/review-corrections-2026-10-01.md).
+Gross-risk execution correction remains on a separate research branch.
+
 ## 2026-10-01 — Form 6-K classifier widened to the filings' real headlines: BUILT, not deployed, not re-run
 
 The 2026-09-30 backfill's `--audit-6k` flagged NBIS 0 of 53 6-Ks admitted,

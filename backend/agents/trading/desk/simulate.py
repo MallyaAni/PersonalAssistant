@@ -62,13 +62,10 @@ START_EQUITY = 1.0
 FUNDING_MODEL = "cash-at-fill-v1"
 VALUATION_MODEL = "complete-held-marks-v1"
 
-# The one versioned execution policy the live paper account runs, used
-# wherever a backtest is published so the measured curve and the live book
-# decide the same way. Each flag is a `simulate.run` argument; the paper
-# account applies them at the rebalance (the band blocker on buys) and at
-# the fill (sells at the close, holds a sell on a name up at the open).
-# Any change to how the live book executes edits this dict and nothing
-# else, so a backtest cannot drift from the account it is measured against.
+# Legacy daily-price execution options, retained under this public name so
+# registered research controls remain reproducible. Since 2026-09-30 the paper
+# account's dip/pop-or-close timing differs: this dictionary cannot establish
+# live execution parity. Do not change old control results to hide that gap.
 #
 # The one deliberate exception (2026-09-27): the live planner's redeploy of
 # idle cash (`paper.REDEPLOY_IDLE_CASH`, execution policy /4) is the
@@ -1049,12 +1046,12 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     """Return the SimResult of the desk's rules over the panel.
 
     The defaults here are NOT the live configuration. Bare, this runs the
-    exit analyst's between-rebalance exits (`use_exits=True`) and none of
-    the account's execution rules; the live paper book runs no exit overlay
-    and every flag in `LIVE_POLICY`. The published curve is the one
-    `market_daily.curve_block` draws - `use_exits=False`, the live reset
-    cadence, the FOMC lifecycle and `**LIVE_POLICY` - and a measurement
-    meant to describe the account has to be made the same way.
+    exit analyst's between-rebalance exits (`use_exits=True`). The published
+    curve uses `market_daily._live_rules_options`: no exit overlay, the
+    account's reset cadence, FOMC lifecycle and legacy daily execution flags.
+    Those flags do not reproduce today's intraday dip/pop-or-close executor,
+    whole-share sizing or feed latency. This is a historical model, not the
+    paper account's realized track record or proof of live execution parity.
 
     `allocator(report, panel, config, t)` replaces the rule's targets on
     rebalance sessions when given; everything else - fills, costs, the
@@ -1102,10 +1099,8 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     lost. `exit_at_close` fills sells at the execution session's close instead
     of its open, so an exit captures the day's move rather than an opening
     print it has not seen. `green_day_skip` holds a sell back when the
-    name opens up for the day - the desk never exits into a name's own
-    rally. Both are the paper account's live behavior since 2026-09-11 and
-    are measured here so the change from the old all-at-the-open fills is
-    visible.
+    name opens up for the day. These are retained daily-model conventions
+    from the earlier executor, not today's intraday execution rules.
 
     `deferred_buys` is the paper book's deferred buy leg, and it needs
     `exit_at_close`: with buys paid from the cash on hand at the open and

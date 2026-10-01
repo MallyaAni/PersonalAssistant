@@ -1401,7 +1401,7 @@ test('names the fundamental data source and flags older fundamental-input curves
   // Historical source checks live with the simulation, not the actual account values.
   await simulationDetails(page)
   const glance = page.getByLabel('Historical simulation summary')
-  await expect(glance.getByText('Policy simulation · names known at the time · live executor', { exact: true })).toBeVisible()
+  await expect(glance.getByText('Policy simulation · names known at the time', { exact: true })).toBeVisible()
 
   // Same execution policy version, a record whose analyst read the frozen
   // EDGAR snapshot: the board's label switches to the legacy source and the
@@ -1415,7 +1415,7 @@ test('names the fundamental data source and flags older fundamental-input curves
   await expect(page.getByLabel('Fundamental data source', {exact: true})).toContainText('frozen EDGAR snapshot')
   await simulationDetails(page)
   const glance2 = page.getByLabel('Historical simulation summary')
-  await expect(glance2.getByText('Policy simulation · names known at the time · live executor · older fundamental inputs', { exact: true })).toBeVisible()
+  await expect(glance2.getByText('Policy simulation · names known at the time · older fundamental inputs', { exact: true })).toBeVisible()
   await expect(glance2).toContainText('frozen EDGAR snapshot')
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
@@ -1441,7 +1441,7 @@ test('a /5 record reads its /5 simulation as the policy simulation', async ({ pa
   await page.goto('/?deskDetails=1#desk')
   await simulationDetails(page)
   const glance = page.getByLabel('Historical simulation summary')
-  await expect(glance.getByText('Policy simulation · names known at the time · live executor', { exact: true })).toBeVisible()
+  await expect(glance.getByText('Policy simulation · names known at the time', { exact: true })).toBeVisible()
   await expect(glance).not.toContainText('Unrecognized policy simulation')
   await expect(glance).not.toContainText('Older policy simulation')
   await strategyDetails(page)

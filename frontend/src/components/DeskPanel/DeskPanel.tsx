@@ -447,10 +447,14 @@ const describeSimulationPolicy = (source: unknown, active: unknown) => {
   }
 }
 
-// The strip's label for a simulation of the active strategy: the point-in-
-// time line is the number shown, so the label says which names and which
-// executor priced it. Fixed here so a test can pin the exact wording.
-const POLICY_SIMULATION_LABEL = 'Policy simulation · names known at the time · live executor'
+// Allocation identity does not establish execution parity, including for old records.
+const POLICY_SIMULATION_LABEL = 'Policy simulation · names known at the time'
+
+// Describe only a recognized simulation model; old live-planner stamps prove nothing.
+const simulationExecutionNote = (backtest: DeskCurve['backtest']): string =>
+  backtest?.execution_policy === 'daily-open-close/1'
+    ? 'Daily-price model: ordinary buys at the next open; ordinary sells at the next close, with green-open sells held. Does not reproduce current paper execution.'
+    : 'Execution assumptions were not recorded or are not recognized. Alignment with current paper execution is unverified.'
 
 // Compute target cash from the active allocator's weights, never from the separate legacy book.
 const PlannedCash = ({record, paused}: {record: DeskRecord; paused: boolean}) => {
@@ -946,6 +950,7 @@ const TrackRecord = ({ curve, latest }: { curve: DeskCurve | undefined; latest: 
         </p>
       </div>
       <SimulationSummary latest={latest} backtest={backtest} />
+      <p aria-label="Simulation execution assumptions" className="mb-3 text-xs text-amber-800">{simulationExecutionNote(backtest)}</p>
       <p aria-label="Simulation funding assumptions" className="mb-3 text-xs text-amber-800">{describeSimulationFunding(backtest.funding_model).assumptions}</p>
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {cells.map((c) => (
@@ -2857,12 +2862,19 @@ const TodayLine = ({exchange, event, boardEvent, orders, plan}: {
   // The paper account's orders by where they are, in the board's own words.
   const count = (states: string[]) => (plan ?? []).filter(o => states.includes(o.state)).length
   const pieces = [
-    [count(['planned', 'queued']), 'planned'],
+    [count(['planned']), 'planned'],
+    [count(['queued']), 'queued'],
     [count(['waiting']), 'waiting for their level'],
-    [count(['due', 'sent']), 'sent'],
-    [count(['filled', 'partial']), 'filled'],
+    [count(['due']), 'due'],
+    [count(['sent']), 'sent'],
+    [count(['partial']), 'partially filled'],
+    [count(['filled']), 'filled'],
+    [count(['held']), 'held'],
     [count(['missed', 'problem', 'rejected', 'cancelled']), 'need attention'],
   ].filter(([n]) => (n as number) > 0).map(([n, word]) => `${n} ${word}`)
+  const knownStates = ['planned', 'queued', 'waiting', 'due', 'sent', 'partial', 'filled', 'held', 'missed', 'problem', 'rejected', 'cancelled']
+  const unknown = (plan ?? []).filter(o => !knownStates.includes(o.state)).length
+  if (unknown) pieces.push(`${unknown} status unknown`)
   const action = plan === null ? 'Paper orders loading.'
     : plan.length === 0 ? 'No paper orders.'
     : `Paper orders: ${pieces.join(' · ')}.`
@@ -2878,7 +2890,7 @@ const PaperOrderCard = ({ticker, row, session}: {ticker: string; row: BoardRow; 
   <section aria-label={`${ticker} paper order`} className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
     <h4 className="mb-1 font-medium text-[#6e6e73]">Paper account</h4>
     <p className="text-base">
-      <span className={`font-semibold ${WORD_STYLE[row.word]}`}>{row.word}</span>
+      <span className={`font-semibold ${row.done ? 'text-[#6e6e73]' : WORD_STYLE[row.word]}`}>{row.word}</span>
       {row.orders.length > 0 && <span className="ml-2 text-[#1d1d1f]">{row.combined ? `${sharesText(row.qty)} ${row.sizeLabel}` : `${row.orders.length} orders · see below`}{row.notional !== null ? ` · ${dollars(row.notional)}` : ''}{row.weight !== null ? ` · ${percent(row.weight)} of current equity` : ''}</span>}
     </p>
     <p className="text-xs text-[#6e6e73]">{row.why}</p>

@@ -111,7 +111,7 @@ test('the board shows the paper account’s orders mid-session', async ({page}, 
   await expect(page.getByLabel('NVDA order status')).toContainText('Today · 15-min close ≥ $232.30 (1% over the $230.00 open), else at the close')
   // A buy whose level was reached on this candle.
   await expect(page.getByLabel('AAOI strategy intent')).toHaveText('BUY')
-  await expect(page.getByLabel('AAOI order status')).toContainText('Level hit: the 10:15 AM close ($99.60) · sending now')
+  await expect(page.getByLabel('AAOI order status')).toContainText('Level hit: the 10:15 AM close ($99.60) · order due')
   // Two orders on one name add up.
   await expect(page.getByLabel('HPE size')).toContainText('9 sh')
   await expect(page.getByLabel('HPE action status')).toHaveText('Finish last session’s buy (cash was short) + Reinvest an exit’s proceeds'.replaceAll('’', "'"))
@@ -130,6 +130,31 @@ test('the board shows the paper account’s orders mid-session', async ({page}, 
   for (const word of ['Blocked', 'Strategy: buy', 'Cash needed', 'Unavailable']) await expect(board).not.toContainText(word)
   await board.screenshot({path: testInfo.outputPath('board-thursday.png')})
   await page.screenshot({path: testInfo.outputPath('page-thursday.png'), fullPage: true})
+  expect(diagnostics.writes).toEqual([])
+  expect(diagnostics.errors).toEqual([])
+})
+
+// The summary distinguishes an unsent due order from a submission and a partial fill.
+test('the summary never promotes due or partially filled orders', async ({page}) => {
+  const due = fixture.thursday.orders.find((o: {state: string}) => o.state === 'due')
+  const partial = {...fixture.thursday.orders.find((o: {state: string}) => o.state === 'sent'), state: 'partial', filled_qty: 2, status: 'Bought 2 of 6 so far'}
+  const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', orders: [due, partial]})
+  await page.goto('/#desk')
+  await expect(page.getByLabel('Today')).toContainText('Paper orders: 1 due · 1 partially filled.')
+  await expect(page.getByLabel('Today')).not.toContainText('1 sent')
+  await expect(page.getByLabel('Today')).not.toContainText('1 filled')
+  expect(diagnostics.writes).toEqual([])
+  expect(diagnostics.errors).toEqual([])
+})
+
+// Every remaining state contributes once, including held and unknown states.
+test('the summary retains held and unknown order states', async ({page}) => {
+  const base = fixture.thursday.orders[0]
+  const states = ['queued', 'sent', 'filled', 'held', 'future-state']
+  const orders = states.map((state, i) => ({...base, state, client_order_id: `summary-${i}`}))
+  const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', orders})
+  await page.goto('/#desk')
+  await expect(page.getByLabel('Today')).toContainText('Paper orders: 1 queued · 1 sent · 1 filled · 1 held · 1 status unknown.')
   expect(diagnostics.writes).toEqual([])
   expect(diagnostics.errors).toEqual([])
 })
@@ -237,7 +262,7 @@ test('the levels and a rejected first bar are shown, not acted on', async ({page
   // The flag is a description, not an instruction, and the order stands as it was.
   expect(await page.getByLabel('AAOI level flag').textContent()).not.toMatch(/buy|sell|trim|hold/i)
   await expect(page.getByLabel('AAOI strategy intent')).toHaveText('BUY')
-  await expect(page.getByLabel('AAOI order status')).toContainText('Level hit: the 10:15 AM close ($99.60) · sending now')
+  await expect(page.getByLabel('AAOI order status')).toContainText('Level hit: the 10:15 AM close ($99.60) · order due')
   await page.getByRole('region', {name: 'Stocks and cash'}).screenshot({path: testInfo.outputPath('board-levels.png')})
   await page.getByRole('button', {name: 'AAOI', exact: true}).click()
   const panel = page.getByRole('dialog', {name: 'AAOI history'})
@@ -278,6 +303,7 @@ for (const [state, word] of [['filled', 'BUY'], ['cancelled', 'BUY'], ['rejected
     const card = page.getByRole('region', {name: 'AAOI paper order'})
     await expect(card).toContainText(word)
     await expect(card).toContainText('5 sh')
+    await expect(card.getByText(word, {exact: true})).toHaveClass(/text-\[#6e6e73\]/)
     expect(diagnostics.writes).toEqual([])
     expect(diagnostics.errors).toEqual([])
   })

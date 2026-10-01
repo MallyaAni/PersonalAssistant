@@ -160,15 +160,15 @@ def test_summary_statistics_share_the_same_definition():
     assert bench["drawdown"] == pytest.approx(sim["drawdown"])
 
 
-# A reset cannot bypass the funding and whole-share cap used between resets.
-def test_rebalance_is_cash_and_cap_bounded():
+# A reset remains cash bounded but honors allocation targets above the entry cap.
+def test_rebalance_is_cash_bounded_and_preserves_target_sizing():
     orders, _, _ = paper.plan(
         "2026-09-04",
         paper.PaperState(),
         100000,
         {},
         {"A": 103.7, "B": 100},
-        {"A": 0.8, "B": 0.2},
+        {"A": 0.25, "B": 0.2},
         {"A": "A", "B": "A"},
         cash=1000,
     )
@@ -180,8 +180,9 @@ def test_rebalance_is_cash_and_cap_bounded():
         100000,
         {},
         {"A": 103.7},
-        {"A": 0.8},
+        {"A": 0.25},
         {"A": "A"},
         cash=100000,
     )
-    assert orders[0].qty * 103.7 <= 15000
+    assert orders[0].qty == round(25000 / 103.7)
+    assert abs(orders[0].qty * 103.7 - 25000) <= 103.7 / 2

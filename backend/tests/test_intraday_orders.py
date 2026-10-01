@@ -373,6 +373,11 @@ def test_the_board_reads_each_order_in_one_vocabulary(tmp_path):
     assert waiting["when"] == (
         "Today · 15-min close ≤ $40.59 (1% under the $41.00 open), else at the close"
     )
+    # An unsent close-window order is due, not evidence of a submission.
+    due = intraday_orders.board_row(row(), broker=None, now=ny(15, 35), **common)
+    assert due["state"] == "due"
+    assert "due" in due["status"]
+    assert "sending" not in due["status"]
     # Sent at the trigger, then filled.
     sent_row = row(sent={"at": ny(10, 16).isoformat(), "how": "market", "qty": 10})
     sent = intraday_orders.board_row(sent_row, broker=None, now=ny(10, 17), **common)

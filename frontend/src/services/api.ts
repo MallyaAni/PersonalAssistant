@@ -1979,6 +1979,11 @@ export interface DeskCurve {
     // The `simulate.run` options the rules lines were priced with, and
     // whether the executor's idle-cash redeploy was among them.
     execution_options?: Record<string, boolean | number>;
+    execution_policy?: string;
+    execution_matches_live?: boolean;
+    execution_note?: string;
+    live_execution_policy?: string;
+    live_execution_timing?: string;
     redeploy_priced?: boolean;
     // The `/4` candidate policy on the same point-in-time book, priced
     // plain (next-open fills, no live executor): the scorecard's measured
