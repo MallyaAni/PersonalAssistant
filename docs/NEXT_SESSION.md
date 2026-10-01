@@ -1,5 +1,45 @@
 # Next session
 
+## 2026-10-01 — Review corrections verified on branches, not deployed
+
+Implementation `33ac6c71`, branch `fix/review-consistency-20261001`, from
+latest reviewed main `95424784`. Verified source was mounted at Spark
+`/home/animallya96/scratch/review-fixes.7geh0o`, frontend port 5192.
+
+- Reset sizing preserves `/5` allocation targets instead of imposing the
+  15% mid-cycle entry cap. Planner stamp becomes
+  `cash-bounded-breakout-rotation/5`; active `graded-equal-weight/5` and
+  intraday timing unchanged. No unscheduled reset or live order was sent.
+- Historical curve now identifies `daily-open-close/1`; dashboard removes
+  false live-executor claims for new and old records. Historical numerical
+  results unchanged. Full current intraday parity remains UNVERIFIED.
+- Dashboard counts due/sent, partial/filled, held/unknown separately and
+  greys terminal actions consistently. Triggered unsent orders say due.
+- 6-K audit fails empty and incomplete coverage. Existing NBIS data is
+  correctly CHECK (0 admitted, 53 refused); ASML/SIMO/TSM also have gaps.
+  No classifier/data repair or rescore was performed.
+- VERIFIED: 382 backend cases across the test image and torch venv;
+  138 browser cases; TypeScript, production build, fixture consistency,
+  no new Ruff findings, 33 diagram pairs and published architecture page.
+
+Separate research branch `fix/research-gross-execution-20261001`, code
+`647d289f`, documented at `c2c69e46`, fixes lost mid-cycle gross changes.
+54 tests passed including cash/NAV/fee reconstruction and obsolete-retry
+cancellation. `gross_path` plus FOMC lifecycle is refused until coordinated;
+no market study rerun and no outperformance claim. Never merge that whole
+research branch into live main as part of this correction release.
+
+Read [verification, limitations and next boundary](research/review-corrections-2026-10-01.md).
+Next: integrate/release-review the main-based branch and deploy only from
+Spark through `scripts/deploy.sh` and its normal gates. Shared Spark checkout
+was on `eefe06e` with unrelated untracked `scratch/`; it was not pulled,
+reset or stashed. The deploy checkout has intentional `data`/`secrets`
+symlinks. Preserve the old dirty `fix/rebalance-target-sizing-20260930`
+worktree. No main merge or deployment occurred in this correction session.
+
+Diagram impact: NONE — internal logic/presentation changes; architecture
+relationships unchanged and synchronization checks passed.
+
 ## 2026-09-30, 22:09 ET — DEPLOYED `2fe7ac3a`: 6-K tone coverage, board Levels column, order-evidence fixes; seven structure rules and Kronos measured, all RECORD
 
 **Live since 22:09 ET** (`deploy.sh`: unit 8,288 passed / 7 xfailed, routing
