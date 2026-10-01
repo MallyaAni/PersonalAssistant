@@ -22,7 +22,7 @@ import { SessionPrice } from './StockBoard'
 
 // The four words a row can say, and the dash for a name the account neither
 // holds nor trades.
-export type BoardWord = 'BUY' | 'SELL' | 'TRIM' | 'HOLD' | '—' | 'BOUGHT' | 'SOLD' | 'TRIMMED' | 'CANCELLED' | 'REJECTED' | 'MISSED' | 'NOT SENT' | 'BUY SENT' | 'SELL SENT' | 'PART FILLED' | 'ORDERS'
+export type BoardWord = 'BUY' | 'SELL' | 'TRIM' | 'HOLD' | '—' | 'ORDERS'
 
 // One name on the board, with everything its row and its details show.
 export type BoardRow = {
@@ -163,16 +163,6 @@ export const WORD_STYLE: Record<BoardWord, string> = {
   SELL: 'text-[#b42318]',
   TRIM: 'text-[#b25e00]',
   HOLD: 'text-[#6e6e73]',
-  BOUGHT: 'text-[#6e6e73]',
-  SOLD: 'text-[#6e6e73]',
-  TRIMMED: 'text-[#6e6e73]',
-  CANCELLED: 'text-[#6e6e73]',
-  REJECTED: 'text-[#b42318]',
-  MISSED: 'text-[#b42318]',
-  'NOT SENT': 'text-[#b42318]',
-  'BUY SENT': 'text-[#0071e3]',
-  'SELL SENT': 'text-[#0071e3]',
-  'PART FILLED': 'text-[#b25e00]',
   ORDERS: 'text-[#6e6e73]',
   '—': 'text-[#86868b]',
 }

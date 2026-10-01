@@ -1431,20 +1431,23 @@ def save(root: Path, data: dict, allow_overwrite: bool = False) -> Path:
     return path
 
 
-# The track record as a curve: the desk's own rules walked forward against
-# SPY and QQQ, with the headline numbers. Computed once at record time so
-# the page shows what the rules actually earned without running the desk
-# again (the backend serving the page has no torch).
+# Publish the preserved daily-price simulation with its own execution identity.
+# This is not the paper account's intraday executor or its realized track record.
 def curve_block(report, store) -> dict | None:
     """Return the backtest curve block, or None when it cannot be drawn."""
-    from backend.agents.trading.desk import event_risk, live_policy, policy_v4, simulate
+    from backend.agents.trading.desk import (
+        event_risk,
+        intraday_orders,
+        live_policy,
+        policy_v4,
+        simulate,
+    )
     from backend.agents.trading.desk import paper as paper_rules
 
     panel = report.panel
     try:
-        # The published curve runs the live execution policy - the band
-        # blocker on buys, sells at the close, the green-day hold - not the
-        # bare rebalance, so what the page shows is what the account runs.
+        # Preserve the historical daily-price conventions. Since the live
+        # switch to dip/pop-or-close, these are not the account's fill rules.
         # At the cadence the account actually runs. `simulate.run` defaults to
         # `simulate.REBALANCE` (20) and this call did not override it, so the
         # track record on the page was a different strategy from the one in
@@ -1490,9 +1493,15 @@ def curve_block(report, store) -> dict | None:
         "funding_model": simulate.FUNDING_MODEL,
         "valuation_model": simulate.VALUATION_MODEL,
         "strategy_policy": live_policy.ACTIVE,
-        # The executor's conventions, separate from the allocation policy
-        # above: the same executor runs whichever targets it is given.
-        "execution_policy": paper_rules.POLICY_VERSION,
+        # Never stamp the live planner's identity onto unchanged daily fills.
+        "execution_policy": DAILY_EXECUTION_POLICY,
+        "execution_matches_live": False,
+        "execution_note": DAILY_EXECUTION_NOTE,
+        "live_execution_policy": paper_rules.POLICY_VERSION,
+        "live_execution_timing": (
+            intraday_orders.INTRADAY_TIMING
+            if intraday_orders.INTRADAY_EXECUTION else "next_open"
+        ),
         # The `simulate.run` flags this line was actually priced with. Under
         # the graded equal-weight policy (`/4`, `/5` since 2026-09-29) they
         # are `LIVE_POLICY` plus the executor's redeploy of idle cash
@@ -1558,7 +1567,14 @@ def curve_block(report, store) -> dict | None:
 HINDSIGHT_RULES_LABEL = (
     "today's names back-cast to 2015 (hindsight universe); not an expectation"
 )
-POINT_IN_TIME_LABEL = "names known at the time, live executor"
+POINT_IN_TIME_LABEL = "names known at the time, daily-price execution model"
+DAILY_EXECUTION_POLICY = "daily-open-close/1"
+DAILY_EXECUTION_NOTE = (
+    "Daily-price model: ordinary next-open buys and next-close sells with "
+    "green-open sell suppression; FOMC adjustments follow their separate "
+    "lifecycle. Fractional adjusted units. Does not simulate the current "
+    "paper account's dip/pop-or-close execution, whole-share sizing or feed latency."
+)
 
 
 # The membership mask of the hindsight universe: every name in today's
@@ -1573,8 +1589,7 @@ def _hindsight_mask(panel) -> np.ndarray:
     return mask
 
 
-# The `simulate.run` keyword options the published rules lines are priced
-# with. Always the live execution policy on the account's reset clock with
+# The preserved daily-simulation options on the account's reset clock with
 # the FOMC lifecycle (`market_pit_scorecard._live_options`, spelled out here
 # so this module's guarantee does not depend on the scorecard's). When the
 # active allocation policy is a graded equal-weight one (`/4`, and `/5`
@@ -1588,7 +1603,7 @@ def _hindsight_mask(panel) -> np.ndarray:
 # the FOMC path and the non-policy fixed arguments are left out, the way
 # `execution_options` has always been written.
 def _live_rules_options(panel, describe: bool = False) -> dict:
-    """Return the keyword options for `simulate.run`, or their record form."""
+    """Return historical daily execution options, not live intraday parity."""
     from backend.agents.trading.desk import event_risk, live_policy, simulate
     from backend.agents.trading.desk import paper as paper_rules
 
@@ -1608,7 +1623,7 @@ def _live_rules_options(panel, describe: bool = False) -> dict:
 
 
 # One published rules line: the active allocation policy's targets on
-# `mask`, priced by the live executor (`_live_rules_options`). Under a
+# `mask`, priced by the legacy daily model (`_live_rules_options`). Under a
 # graded equal-weight policy the targets are `live_policy.allocator(mask)`
 # (`policy_v5.allocator` since 2026-09-29) - the same callable the
 # scorecard's `graded_arm` and the mid-cycle study hand `simulate.run` at
@@ -1618,7 +1633,7 @@ def _live_rules_options(panel, describe: bool = False) -> dict:
 # through only when given, so the call `curve_block` made before this
 # helper existed is reproduced exactly.
 def _live_rules_run(report, mask: np.ndarray, since=None):
-    """Return the SimResult of the active policy under the live executor."""
+    """Return the active allocation's historical daily-price simulation."""
     from backend.agents.trading.desk import live_policy, simulate
 
     options = _live_rules_options(report.panel)

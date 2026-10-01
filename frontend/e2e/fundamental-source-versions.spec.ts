@@ -6,7 +6,7 @@ const PRIOR = 'fundamentals-features/2'
 // The strategy the record says the account runs (`targets.policy`), and
 // the strip's label for a simulation of it.
 const POLICY = 'graded-equal-weight/4'
-const LABEL = 'Policy simulation · names known at the time · live executor'
+const LABEL = 'Policy simulation · names known at the time'
 const OLDER_INPUTS = `${LABEL} · older fundamental inputs`
 const UNVERIFIED_INPUTS = `${LABEL} · fundamental inputs unverified`
 const CURRENT_NOTICE = 'Fundamentals: stored filing versions; reporting-period safeguard applied.'
@@ -20,7 +20,7 @@ const ABSENT_FUNDING = 'Funding model was not recorded; cash-only funding is unv
 const PRIOR_POLICY = 'Uses an earlier recorded strategy policy (cash-bounded-breakout-rotation/2); not the active strategy (graded-equal-weight/4).'
 const UNKNOWN_POLICY = 'Recorded strategy policy is not recognized; alignment with the active strategy is unverified.'
 const ABSENT_POLICY = 'Strategy policy was not recorded; alignment with the active strategy is unverified.'
-type Case = {name: string; record?: string; backtest?: string; notice: string; curveLabel: string; curveNote: string; policy?: string | null; funding?: string | null; fundingNote?: string; cashCapped?: boolean; phone?: boolean}
+type Case = {name: string; record?: string; backtest?: string; notice: string; curveLabel: string; curveNote: string; policy?: string | null; funding?: string | null; fundingNote?: string; cashCapped?: boolean; phone?: boolean; execution?: string}
 
 // Keep the latest recorded input source independent of the immutable historical simulation source.
 async function install(page: Page, frontendURL: string, scenario: Case) {
@@ -31,17 +31,27 @@ async function install(page: Page, frontendURL: string, scenario: Case) {
     // The stored (hindsight) line ends at +3%, the point-in-time line at +2%: the strip must show the latter.
     curve: {backtest: {label: 'Saved simulation', asof: '2026-09-23', dates: ['2026-09-22', '2026-09-23'], rules: [0, .03], rules_point_in_time: [0, .02], stats_point_in_time: {cagr: .1, volatility: .2, drawdown: -.01, total: .02}, spy: [0, .01], qqq: [0, .015], stats: {cagr: .15, volatility: .2, drawdown: -.01, total: .03}, strategy_policy: scenario.policy === null ? undefined : scenario.policy ?? POLICY, fundamentals_source: scenario.backtest, funding_model: scenario.funding === null ? undefined : scenario.funding ?? 'cash-at-fill-v1'}},
   }
+  Object.assign(latest.curve.backtest, {execution_policy: scenario.execution})
   const original = JSON.stringify(latest)
   const diagnostics = {consoleErrors: [] as string[], pageErrors: [] as string[], failedRequests: [] as string[], badResponses: [] as string[], unexpectedRequests: [] as string[], forbiddenWrites: [] as string[]}
+  const cancelledConversationReads = new Set<string>()
+  const completedConversationReads = new Set<string>()
   const reads: string[] = []
   // Retain console failures even if the expected provenance text renders.
   page.on('console', message => {if (message.type() === 'error') diagnostics.consoleErrors.push(message.text())})
   // A partial chart render must not conceal a page exception.
   page.on('pageerror', error => diagnostics.pageErrors.push(error.message))
-  // Detect required requests that fail before receiving a response.
-  page.on('requestfailed', request => diagnostics.failedRequests.push(request.url()))
+  // StrictMode can cancel and repeat an unrelated conversation GET after reload.
+  // Require its successful replacement below; every failed desk read remains fatal.
+  page.on('requestfailed', request => {
+    if (request.method() === 'GET' && new URL(request.url()).pathname.startsWith('/api/v1/conversations/') && request.failure()?.errorText === 'net::ERR_ABORTED') cancelledConversationReads.add(request.url())
+    else diagnostics.failedRequests.push(`${request.url()} (${request.failure()?.errorText})`)
+  })
   // Detect HTTP errors independently of runtime exceptions.
-  page.on('response', response => {if (response.status() >= 400) diagnostics.badResponses.push(`${response.status()} ${response.url()}`)})
+  page.on('response', response => {
+    if (response.status() >= 400) diagnostics.badResponses.push(`${response.status()} ${response.url()}`)
+    if (response.ok() && response.request().method() === 'GET' && new URL(response.url()).pathname.startsWith('/api/v1/conversations/')) completedConversationReads.add(response.url())
+  })
   await page.clock.install({time: new Date('2026-09-24T14:00:00Z')})
   // Stabilize appearance without reading the operator's browser preferences.
   await page.addInitScript(() => localStorage.setItem('anios.theme', 'light'))
@@ -71,13 +81,14 @@ async function install(page: Page, frontendURL: string, scenario: Case) {
     else if (url.pathname === `${base}/mine`) json = {rows: [], grades_live: {}, decisions: {rows: {AAPL: {action: 'Hold', strategy_action: 'Hold', move_weight: 0, reason: 'Waiting'}}}}
     else if (url.pathname === `${base}/entries` || url.pathname === `${base}/intraday`) json = {rows: [], top_buys: [], changed: []}
     else if (url.pathname === `${base}/paper`) json = {reason: 'unavailable'}
+    else if (url.pathname === `${base}/paper/history`) json = {user_id: USER, rows: []}
     else {
       diagnostics.unexpectedRequests.push(`${request.method()} ${url.pathname}`)
       return route.fulfill({status: 418, json: {detail: 'Unspecified request'}})
     }
     return route.fulfill({json})
   })
-  return {latest, original, diagnostics, reads}
+  return {latest, original, diagnostics, reads, cancelledConversationReads, completedConversationReads}
 }
 
 // Record all strict browser boundaries and prove no source tag or historical result was rewritten.
@@ -85,10 +96,14 @@ async function finish(testInfo: TestInfo, fixture: Awaited<ReturnType<typeof ins
   await testInfo.attach('browser-diagnostics', {body: JSON.stringify(fixture.diagnostics, null, 2), contentType: 'application/json'})
   await testInfo.attach('source-and-reads', {body: JSON.stringify({latest: fixture.latest, reads: fixture.reads}, null, 2), contentType: 'application/json'})
   for (const [category, errors] of Object.entries(fixture.diagnostics)) expect.soft(errors, category).toEqual([])
+  for (const url of fixture.cancelledConversationReads) expect(fixture.completedConversationReads.has(url), `cancelled GET must have a successful replacement: ${url}`).toBe(true)
   expect(JSON.stringify(fixture.latest)).toBe(fixture.original)
 }
 
 const cases: Case[] = [
+  {name: 'recognized daily execution model', execution: 'daily-open-close/1', record: CURRENT, backtest: CURRENT, notice: CURRENT_NOTICE, curveLabel: LABEL, curveNote: 'cash capped after costs'},
+  {name: 'old planner stamp does not prove execution parity', execution: 'cash-bounded-breakout-rotation/4', record: CURRENT, backtest: CURRENT, notice: CURRENT_NOTICE, curveLabel: LABEL, curveNote: 'cash capped after costs'},
+  {name: 'unknown execution model', execution: 'future-model/99', record: CURRENT, backtest: CURRENT, notice: CURRENT_NOTICE, curveLabel: LABEL, curveNote: 'cash capped after costs'},
   {name: 'current record and simulation', record: CURRENT, backtest: CURRENT, notice: CURRENT_NOTICE, curveLabel: LABEL, curveNote: 'cash capped after costs'},
   {name: 'prior record and simulation', record: PRIOR, backtest: PRIOR, notice: PRIOR_NOTICE, curveLabel: OLDER_INPUTS, curveNote: PRIOR_NOTE},
   {name: 'earlier record and simulation', record: 'fundamentals-features/1', backtest: 'fundamentals-features/1', notice: 'Fundamentals: stored filing versions (earlier margin calculation).', curveLabel: OLDER_INPUTS, curveNote: 'Uses the earlier stored-filing calculation, before margin period dates were checked.'},
@@ -129,12 +144,20 @@ for (const scenario of cases) {
         const detailSource = page.getByLabel('Fundamental data source', {exact: true})
         await expect(detailSource).toHaveText(scenario.notice)
         await expect(detailSource).toHaveAttribute('title', `Recorded fundamental source: ${scenario.record || 'not recorded'}.`)
-        await page.locator('summary', {hasText: 'Practice account'}).click()
-        const glance = page.getByLabel('The desk at a glance')
-        await expect(glance.getByLabel('Summary fundamental data source')).toHaveText(scenario.notice)
-        await expect(glance.getByLabel('Summary fundamental data source')).toHaveAttribute('title', `Recorded fundamental source: ${scenario.record || 'not recorded'}.`)
+        // Simulation provenance moved out of the paper-account summary.
+        await page.locator('details[aria-label="Historical simulation"] > summary').click()
+        const glance = page.getByLabel('Historical simulation summary')
         const curve = glance.getByText(scenario.curveLabel, {exact: true})
         await expect(curve).toBeVisible()
+        await expect(curve).not.toContainText('live executor')
+        const execution = page.getByLabel('Simulation execution assumptions', {exact: true})
+        if (scenario.execution === 'daily-open-close/1') {
+          await expect(execution).toContainText('Does not reproduce current paper execution.')
+          await expect(execution).toContainText('next open')
+          await expect(execution).toContainText('green-open sells held')
+        } else {
+          await expect(execution).toHaveText('Execution assumptions were not recorded or are not recognized. Alignment with current paper execution is unverified.')
+        }
         await expect(curve).toHaveAttribute('title', `Recorded simulation fundamental source: ${scenario.backtest || 'not recorded'}.`)
         await expect(glance).toContainText(scenario.curveNote)
         if (scenario.backtest === PRIOR && scenario.cashCapped !== false) {
@@ -162,7 +185,7 @@ for (const scenario of cases) {
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
       if (scenario.phone || scenario.name === 'current record and simulation') {
         await page.screenshot({path: testInfo.outputPath('fundamental-provenance.png'), fullPage: true})
-        await page.getByLabel('The desk at a glance').screenshot({path: testInfo.outputPath('simulation-provenance.png')})
+        await page.getByLabel('Historical simulation summary').screenshot({path: testInfo.outputPath('simulation-provenance.png')})
       }
     } finally {await finish(testInfo, fixture)}
   })

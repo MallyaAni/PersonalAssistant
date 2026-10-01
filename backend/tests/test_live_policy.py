@@ -135,7 +135,9 @@ def test_record_and_curve_block_name_the_active_policy():
     curve = market_daily.curve_block(report, None)
     if curve is not None:
         assert curve["strategy_policy"] == live_policy.ACTIVE
-        assert curve["execution_policy"] == paper.POLICY_VERSION
+        assert curve["execution_policy"] == market_daily.DAILY_EXECUTION_POLICY
+        assert curve["live_execution_policy"] == paper.POLICY_VERSION
+        assert curve["execution_matches_live"] is False
 
 
 # The board reads the active policy's weights as its book; a record from
@@ -272,6 +274,7 @@ def test_a_v3_era_state_rebalances_once_into_the_active_policy(
     # its close window), which fills them.
     bought = {o["symbol"] for o in entry["planned"] if o["side"] == "buy"}
     assert bought == {"SNDK"}
+    assert next(o["qty"] for o in entry["planned"] if o["symbol"] == "SNDK") == 250
     assert entry["orders"] == []
     broker.is_open = True
     intraday_orders.send_due(

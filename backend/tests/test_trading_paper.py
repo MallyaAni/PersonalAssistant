@@ -1105,8 +1105,8 @@ def test_the_session_after_a_reset_redeploys_the_unpaid_buys():
     grades = {"OLD": "C", "AAA": "A+", "BBB": "A+", "CCC": "A+", "DDD": "A+"}
     targets = {"AAA": 0.2, "BBB": 0.2, "CCC": 0.2, "DDD": 0.2}
     # A 100,000 book: 800 OLD (80,000) and 20,000 cash. The reset sells OLD
-    # and asks for 200 of each name, which `bound_orders` cuts to 150 (the
-    # 15% entry cap, the leak's second channel); the cash pays for a third.
+    # and asks for 200 of each name under the allocation targets. Cash pays
+    # for a quarter; the mid-cycle entry cap does not cut the reset's buys.
     reset, after_reset, what = paper.plan(
         "2026-09-04", paper.PaperState(), 100_000.0, {"OLD": 800.0}, prices,
         targets, grades, finished={}, entry_blocked=set(), entries={}, cash=20_000.0,
@@ -1118,7 +1118,7 @@ def test_the_session_after_a_reset_redeploys_the_unpaid_buys():
         ("OLD", "sell", 800), ("AAA", "buy", 50), ("BBB", "buy", 50),
         ("CCC", "buy", 50), ("DDD", "buy", 50),
     }
-    assert after_reset.deferred_buys == {s: 100.0 for s in targets}
+    assert after_reset.deferred_buys == {s: 150.0 for s in targets}
     # The next session: OLD's 80,000 has arrived, the book holds 50 of each.
     # The retry is capped at 15% (150 shares a name, 100 more each) and
     # band-blocked on DDD; the redeploy takes the rest to 20% - AAA, BBB and
@@ -1217,11 +1217,10 @@ def test_state_files_without_rebalance_targets_still_load(tmp_path):
 
 
 # The rule is on, its buffer is the simulator's, and the execution policy
-# version says so: /4 is the redeploy, and a record or a board reading /3
-# was written by an executor without it.
-def test_the_redeploy_is_on_and_the_execution_policy_is_v4():
+# version says so: /5 retains the redeploy and corrects reset sizing.
+def test_the_redeploy_is_on_and_the_execution_policy_is_v5():
     from backend.agents.trading.desk import simulate
 
     assert paper.REDEPLOY_IDLE_CASH is True
     assert paper.REDEPLOY_BUFFER == simulate.REDEPLOY_BUFFER == 0.02
-    assert paper.POLICY_VERSION == "cash-bounded-breakout-rotation/4"
+    assert paper.POLICY_VERSION == "cash-bounded-breakout-rotation/5"

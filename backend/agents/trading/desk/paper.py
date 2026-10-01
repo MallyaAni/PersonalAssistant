@@ -200,8 +200,10 @@ REDEPLOY_KIND = "redeploy"
 # cash above. /3 was the cash-bounded book: rotation out of downgraded
 # names with the proceeds pro rata into the held names, band-breakout
 # entries paid from cash, one deferred retry of unpaid buys, sells at the
-# close - all of which /4 keeps unchanged.
-POLICY_VERSION = "cash-bounded-breakout-rotation/4"
+# close - all of which /4 keeps unchanged. /5 corrects reset sizing: policy
+# targets are funded without the unrelated 15% mid-cycle entry cap. Selection,
+# mid-cycle rules and the separately versioned intraday clock do not change.
+POLICY_VERSION = "cash-bounded-breakout-rotation/5"
 # The band reading the size curve is anchored to: the trigger the sizing was
 # measured at, kept as its own constant so the trigger can move without
 # reshaping the curve. `entry_size` explains why.
@@ -1014,15 +1016,22 @@ def plan(
             if retry
             else "redeploy"
         )
-    # Sells first, so the buys have the cash.
+    # Keep sell orders first; only cash already on hand funds these planned buys.
     orders.sort(key=lambda o: (o.side != "sell", -o.qty))
     if cash is not None:
-        orders = bound_orders(orders, held, prices, equity, cash, unfunded=unfunded)
+        orders = bound_orders(
+            orders, held, prices, equity, cash, unfunded=unfunded,
+            rebalance=rebalance,
+        )
     new.deferred_buys = {s: q for s, q in unfunded.items() if q > 0}
     return orders, new, what
 
 
-# Keep the combined whole-share order basket within cash and decision-price caps.
+# Fund the whole-share basket, applying the entry cap only between resets.
+# Reset orders already reflect the allocation targets and nearest-share rounding;
+# imposing the entry cap again would discard wanted shares without a cash retry.
+# Rounding may exceed a target by half a share before cash scaling: a target is
+# not a continuously enforced mark-to-market holding limit.
 # The cap is applied first, so the shares it removes are not a cash shortfall;
 # `unfunded`, when a dict is given, receives only the buy shares the cash
 # could not pay for, per symbol, for the next session to retry. A redeploy
@@ -1030,18 +1039,18 @@ def plan(
 # counted every other buy of the plan toward the name), the policy's cap
 # included, so it passes the ENTRY_NAME_CAP here and reserves nothing
 # against the other legs: the 15% is the entry leg's cap, a redeploy to a
-# 20% target must not be cut to 15% on the way out (the reset's leak it
-# exists to close), and the retry, rotation and entry legs must be capped
+# 20% target must not be cut to 15% on the way out, and the retry, rotation
+# and entry legs must be capped
 # exactly as they were without it, or a redeploy sorted ahead of them would
 # push them out of their own room and leave the name short of its target.
-def bound_orders(orders, held, prices, equity, cash, unfunded=None):
+def bound_orders(orders, held, prices, equity, cash, unfunded=None, *, rebalance=False):
     if not math.isfinite(equity) or equity <= 0 or not math.isfinite(cash):
         raise ValueError("A finite account equity and cash balance are required")
     reserved = dict(held)
     capped = []
     for order in orders:
         qty = order.qty
-        if order.side == "buy" and order.kind != REDEPLOY_KIND:
+        if not rebalance and order.side == "buy" and order.kind != REDEPLOY_KIND:
             price = prices[order.symbol]
             room = max(
                 0, ENTRY_NAME_CAP * equity / price - reserved.get(order.symbol, 0)

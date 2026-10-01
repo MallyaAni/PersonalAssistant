@@ -163,7 +163,7 @@
         "sent_how": null,
         "side": "buy",
         "state": "due",
-        "status": "Level hit: the 10:15 AM close ($99.60) \u00b7 sending now",
+        "status": "Level hit: the 10:15 AM close ($99.60) \u00b7 order due",
         "submitted_qty": null,
         "symbol": "AAOI",
         "terminal": false,

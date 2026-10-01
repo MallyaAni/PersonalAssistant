@@ -33,13 +33,13 @@ function order(symbol: string, side: 'buy' | 'sell', action: 'BUY' | 'SELL' | 'T
 const WAITING = order('AAPL', 'buy', 'BUY', 51, 178.2, 'Enters the book at 9.1%',
   {state: 'waiting', status: 'Waiting for $178.20 or the close (3:30 PM window)', open: 180, level: 178.2})
 const TRIGGERED = order('AAPL', 'buy', 'BUY', 51, 178.05, 'Enters the book at 9.1%',
-  {state: 'due', status: 'Level hit: the 10:30 AM close ($178.05) · sending now', open: 180, level: 178.2})
+  {state: 'due', status: 'Level hit: the 10:30 AM close ($178.05) · order due', open: 180, level: 178.2})
 const CLOSING = order('AAPL', 'buy', 'BUY', 51, 179, 'Enters the book at 9.1%',
-  {state: 'due', status: 'Close window · sending market-on-close now', open: 180, level: 178.2})
+  {state: 'due', status: 'Close window · market-on-close due', open: 180, level: 178.2})
 const EXIT = order('AMD', 'sell', 'SELL', 28, 181.9, 'Exit: the grade fell to B',
-  {state: 'due', status: 'Level hit: the 10:30 AM close ($181.90) · sending now', open: 180, level: 181.8})
+  {state: 'due', status: 'Level hit: the 10:30 AM close ($181.90) · order due', open: 180, level: 181.8})
 const TRIM = order('MSFT', 'sell', 'TRIM', 27, 181.9, 'Trim to its 9.1% target',
-  {state: 'due', status: 'Level hit: the 10:30 AM close ($181.90) · sending now', open: 180, level: 181.8})
+  {state: 'due', status: 'Level hit: the 10:30 AM close ($181.90) · order due', open: 180, level: 181.8})
 
 // Serve the desk, a live candle whose `as_of` can move, and the paper
 // account with the given orders and holdings; record the order of
@@ -105,13 +105,13 @@ test('a /4 buy waiting for its level shows BUY with the level it waits for', asy
   expect(errors).toEqual([])
 })
 
-// A 15-minute close reached the level: the order is going in now.
+// A 15-minute close reached the level: the order is due, not confirmed sent.
 test('a triggered /4 buy is BUY at its level', async ({page}) => {
   const {errors, board} = await setup(page, {orders: [TRIGGERED]})
   await expect(board.getByLabel('AAPL strategy intent')).toHaveText('BUY')
   await expect(board.getByLabel('AAPL size')).toContainText('51 sh')
-  await expect(board.getByLabel('AAPL order status')).toContainText('Level hit: the 10:30 AM close ($178.05) · sending now')
-  await expect(page.getByLabel('Today', {exact: true})).toContainText('Paper orders: 1 sent.')
+  await expect(board.getByLabel('AAPL order status')).toContainText('Level hit: the 10:30 AM close ($178.05) · order due')
+  await expect(page.getByLabel('Today', {exact: true})).toContainText('Paper orders: 1 due.')
   expect(errors).toEqual([])
 })
 
@@ -120,7 +120,7 @@ test('the close window is BUY at the close', async ({page}) => {
   const {errors, board} = await setup(page, {orders: [CLOSING]})
   await expect(board.getByLabel('AAPL strategy intent')).toHaveText('BUY')
   await expect(board.getByLabel('AAPL size')).toContainText('51 sh')
-  await expect(board.getByLabel('AAPL order status')).toContainText('Close window · sending market-on-close now')
+  await expect(board.getByLabel('AAPL order status')).toContainText('Close window · market-on-close due')
   await expect(board.getByLabel('AAPL order status')).toContainText('else at the close')
   expect(errors).toEqual([])
 })
@@ -134,7 +134,7 @@ test('a downgrade on a pop is SELL, a trim is TRIM, a band-blocked buy says so',
   await expect(board.getByLabel('AMD action status')).toHaveText('Exit: the grade fell to B')
   await expect(board.getByLabel('AMD size')).toContainText('28 sh')
   await expect(board.getByLabel('AMD size')).toContainText('$5,093 · 5.1%')
-  await expect(board.getByLabel('AMD order status')).toContainText('Level hit: the 10:30 AM close ($181.90) · sending now')
+  await expect(board.getByLabel('AMD order status')).toContainText('Level hit: the 10:30 AM close ($181.90) · order due')
   await expect(board.getByLabel('AMD order status')).toContainText('Today · 15-min close ≥ $181.80 (1% over the $180.00 open), else at the close')
   await expect(board.getByLabel('AMD displayed grade', {exact: true})).toHaveText('B')
   await expect(board.getByLabel('MSFT strategy intent')).toHaveText('TRIM')
@@ -145,7 +145,7 @@ test('a downgrade on a pop is SELL, a trim is TRIM, a band-blocked buy says so',
   await expect(board.getByLabel('NVDA strategy intent')).toHaveText('—')
   await expect(board.getByLabel('NVDA action status')).toHaveText('In the book · no buy while its daily rejects the upper band')
   await expect(board.getByLabel('NVDA size')).toHaveText('—')
-  await expect(page.getByLabel('Today', {exact: true})).toContainText('Paper orders: 2 sent.')
+  await expect(page.getByLabel('Today', {exact: true})).toContainText('Paper orders: 2 due.')
   expect(errors).toEqual([])
 })
 

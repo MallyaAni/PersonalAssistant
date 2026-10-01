@@ -762,11 +762,9 @@ def test_curve_block_reports_an_unavailable_benchmark_instead_of_drawing_it(
     assert set(none["benchmark_notes"]) == {"SPY", "QQQ"}
 
 
-# The published backtest must run the same execution policy as the live
-# paper account, or the curve silently measures a book nobody trades. Every
-# flag in simulate.LIVE_POLICY is passed through curve_block; a policy that
-# adds a rule without this test knowing is a backtest that has drifted.
-def test_curve_block_runs_the_live_execution_policy(monkeypatch):
+# Keep registered daily execution options stable; disclosure tests separately
+# ensure they are not described as the current paper executor.
+def test_curve_block_preserves_the_daily_execution_options(monkeypatch):
     from backend.agents.trading.desk import simulate as sim_module
 
     report = _report()
@@ -1746,8 +1744,8 @@ def test_the_redeploy_switch_off_plans_nothing(tmp_path, monkeypatch, capsys):
 # idle cash is among them - passed explicitly, never through `LIVE_POLICY`
 # (which every study's control is priced from) - and the record says so
 # (`redeploy_priced` True, the option and its buffer in
-# `execution_options`). The record labels the executor /4 in the same
-# block, and the line's allocator is the active policy's: SNDK, the one A+
+# `execution_options`). The daily model has its own identity, separate from
+# the live executor, and its allocator is active: SNDK, the one A+
 # name, at `/5`'s quarter.
 def test_curve_block_prices_the_redeploy_under_the_active_policy(monkeypatch):
     from backend.agents.trading.desk import live_policy, paper, policy_v5
@@ -1773,8 +1771,10 @@ def test_curve_block_prices_the_redeploy_under_the_active_policy(monkeypatch):
     monkeypatch.setattr(sim_module, "run", fake_run)
     block = market_daily.curve_block(report, None)
     assert block["strategy_policy"] == "graded-equal-weight/5"
-    assert block["execution_policy"] == paper.POLICY_VERSION
-    assert paper.POLICY_VERSION == "cash-bounded-breakout-rotation/4"
+    assert block["execution_policy"] == market_daily.DAILY_EXECUTION_POLICY
+    assert block["live_execution_policy"] == paper.POLICY_VERSION
+    assert block["execution_matches_live"] is False
+    assert paper.POLICY_VERSION == "cash-bounded-breakout-rotation/5"
     assert block["execution_options"] == {
         **sim_module.LIVE_POLICY,
         "midcycle_redeploy": True,
@@ -1839,7 +1839,7 @@ def test_curve_block_keeps_the_v3_call_unchanged(monkeypatch):
 
 # The record names both rules lines for what they are: the hindsight line
 # is today's names back-cast and is not an expectation; the point-in-time
-# line is the names known at the time under the live executor.
+# line is the names known at the time under the daily-price execution model.
 def test_curve_block_labels_the_hindsight_and_point_in_time_lines(monkeypatch):
     from backend.agents.trading.desk import simulate as sim_module
 
@@ -1860,7 +1860,9 @@ def test_curve_block_labels_the_hindsight_and_point_in_time_lines(monkeypatch):
         "today's names back-cast to 2015 (hindsight universe); not an expectation"
     )
     assert block["point_in_time_label"] == market_daily.POINT_IN_TIME_LABEL
-    assert block["point_in_time_label"] == "names known at the time, live executor"
+    assert block["point_in_time_label"] == (
+        "names known at the time, daily-price execution model"
+    )
 
 
 # The guarantee behind the published rules lines: element for element, both
@@ -1871,7 +1873,7 @@ def test_curve_block_labels_the_hindsight_and_point_in_time_lines(monkeypatch):
 # stats are those runs' stats. Before 2026-09-27 a record labelled `/4`
 # carried the `/3` book's curve under the `/4` name; the last check here is
 # that the `/5` line is not `/4`'s relabelled either.
-def test_rules_lines_are_the_active_policy_under_the_live_executor(
+def test_rules_lines_are_the_active_policy_under_daily_execution(
     monkeypatch, tmp_path
 ):
     from backend.agents.trading.desk import (
