@@ -1,0 +1,23 @@
+== G1 (peer_rally_defer, downgrade)
+   model: +0.054 bp/session (t +1.31); drift-adjusted +0.052 (t +1.29); per re-timed sell +256.4 bp (t +1.47) over 3 of 375
+   2024-2026: +0.071 bp/session (t +1.30); drift-adjusted +0.062 (t +1.27); per re-timed sell +141.0 bp (t +2.64) over 2 of 136
+   positive at 20 of 20; criteria {'1_floor': False, '2_next_bar': False, '3_not_negative_2024_2026': True, '4_deflated_sharpe': False, '5_drift_adjusted': False, '6_offsets_positive': True}
+   verdict RECORD (recomputed RECORD)
+== G2 (peer_rally_close, downgrade)
+   model: -0.016 bp/session (t -0.74); drift-adjusted -0.016 (t -0.74); per re-timed sell -75.6 bp (t -0.99) over 4 of 375
+   2024-2026: -0.060 bp/session (t -0.53); drift-adjusted -0.060 (t -0.53); per re-timed sell -13.8 bp (t -0.27) over 7 of 136
+   positive at 0 of 20; criteria {'1_floor': False, '2_next_bar': False, '3_not_negative_2024_2026': False, '4_deflated_sharpe': False, '5_drift_adjusted': False, '6_offsets_positive': False}
+   verdict RECORD (recomputed RECORD)
+== G3 (peer_rally_defer, not_b)
+   model: +0.055 bp/session (t +1.35); drift-adjusted +0.054 (t +1.34); per re-timed sell +253.6 bp (t +1.43) over 3 of 375
+   2024-2026: +0.000 bp/session (t +nan); drift-adjusted +0.000 (t +nan); per re-timed sell +nan bp (t +nan) over 0 of 136
+   positive at 20 of 20; criteria {'1_floor': False, '2_next_bar': False, '3_not_negative_2024_2026': True, '4_deflated_sharpe': False, '5_drift_adjusted': False, '6_offsets_positive': True}
+   verdict RECORD (recomputed RECORD)
+== peer groups: 627 sell rows recomputed, 0 mismatches
+   COHR on 2026-09-30: LITE +0.87, GLW +0.83, FN +0.78, AAOI +0.76, CIEN +0.73; sigma_g 0.0372
+   AAOI on 2026-09-30: LITE +0.82, GLW +0.77, COHR +0.76, MU +0.71, TER +0.66; sigma_g 0.0388
+   NVDA on 2026-09-30: KLAC +0.38, LITE +0.37, TER +0.37, COHR +0.36, AVGO +0.36; sigma_g 0.0341
+   OKLO on 2026-09-30: SMR +0.84, IREN +0.52, INTC +0.47, MRVL +0.47, APLD +0.47; sigma_g 0.0356
+   case COHR 2026-09-30: R_g +nan sigma_g 0.0372 (payload +nan)
+offsets: {'registered': 20, 'priced': 20, 'median': 10, 'smoke': False, 'starts': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]}
+independent check: OK

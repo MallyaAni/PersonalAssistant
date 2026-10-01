@@ -1,0 +1,30 @@
+/home/animallya96/scratch/wt-ss/backend/agents/trading/desk/regime.py:136: RuntimeWarning: Mean of empty slice
+  out[t] = np.nanmean(window, axis=0)
+/home/animallya96/scratch/wt-ss/backend/agents/trading/desk/regime.py:226: RuntimeWarning: All-NaN slice encountered
+  ai_part = np.nanmedian(np.where(is_ai[None, :], part, np.nan), axis=1)
+/home/animallya96/scratch/wt-ss/backend/agents/trading/desk/regime.py:227: RuntimeWarning: All-NaN slice encountered
+  sw_part = np.nanmedian(np.where(is_sw[None, :], part, np.nan), axis=1)
+/home/animallya96/scratch/wt-ss/backend/market/levels.py:64: RuntimeWarning: All-NaN slice encountered
+  is_low = np.isfinite(low[t]) & (low[t] < np.nanmin(window_low, axis=0))
+/home/animallya96/scratch/wt-ss/backend/market/levels.py:65: RuntimeWarning: All-NaN slice encountered
+  is_high = np.isfinite(high[t]) & (high[t] > np.nanmax(window_high, axis=0))
+/home/animallya96/scratch/wt-ss/backend/market/levels.py:83: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmax(candidates, axis=0) if len(window) else np.nan
+/home/animallya96/scratch/wt-ss/backend/market/levels.py:86: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmin(candidates, axis=0) if len(window) else np.nan
+/home/animallya96/scratch/wt-ss/backend/market/levels.py:129: RuntimeWarning: Mean of empty slice
+  middle = np.nanmean(piece, axis=0)
+/home/animallya96/research-venv/lib/python3.12/site-packages/numpy/lib/_nanfunctions_impl.py:1997: RuntimeWarning: Degrees of freedom <= 0 for slice.
+  var = nanvar(a, axis=axis, dtype=dtype, out=out, ddof=ddof,
+/home/animallya96/scratch/wt-ss/backend/market/levels.py:278: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmax(window, axis=0) if largest else np.nanmin(window, axis=0)
+[    265 s] desk: 2953 sessions x 95 names
+[    266 s] cubes: 94 of 94 names
+[    267 s] edgar: 94 names (266 s)
+/home/animallya96/scratch/wt-ss/backend/market/bands.py:25: RuntimeWarning: Mean of empty slice
+  out[t] = np.nanmean(close[t - window + 1 : t + 1], axis=0)
+/home/animallya96/research-venv/lib/python3.12/site-packages/numpy/lib/_nanfunctions_impl.py:1997: RuntimeWarning: Degrees of freedom <= 0 for slice.
+  var = nanvar(a, axis=axis, dtype=dtype, out=out, ddof=ddof,
+[    273 s]   offset 0: 2547 orders from session 0
+null test (docs/research/sector-sells-plan-2026-10-01.md): rules that never fire against the control on 204162 priced cells x 2 fill modes and 625 sells of offset 0; 94 names with a cube
+null test verdict: PASS, reproduced to the bit

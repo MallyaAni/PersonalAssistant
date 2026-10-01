@@ -1,0 +1,66 @@
+/home/animallya96/scratch/wt-ss/backend/agents/trading/desk/regime.py:136: RuntimeWarning: Mean of empty slice
+  out[t] = np.nanmean(window, axis=0)
+/home/animallya96/scratch/wt-ss/backend/agents/trading/desk/regime.py:226: RuntimeWarning: All-NaN slice encountered
+  ai_part = np.nanmedian(np.where(is_ai[None, :], part, np.nan), axis=1)
+/home/animallya96/scratch/wt-ss/backend/agents/trading/desk/regime.py:227: RuntimeWarning: All-NaN slice encountered
+  sw_part = np.nanmedian(np.where(is_sw[None, :], part, np.nan), axis=1)
+/home/animallya96/scratch/wt-ss/backend/market/levels.py:64: RuntimeWarning: All-NaN slice encountered
+  is_low = np.isfinite(low[t]) & (low[t] < np.nanmin(window_low, axis=0))
+/home/animallya96/scratch/wt-ss/backend/market/levels.py:65: RuntimeWarning: All-NaN slice encountered
+  is_high = np.isfinite(high[t]) & (high[t] > np.nanmax(window_high, axis=0))
+/home/animallya96/scratch/wt-ss/backend/market/levels.py:83: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmax(candidates, axis=0) if len(window) else np.nan
+/home/animallya96/scratch/wt-ss/backend/market/levels.py:86: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmin(candidates, axis=0) if len(window) else np.nan
+/home/animallya96/scratch/wt-ss/backend/market/levels.py:129: RuntimeWarning: Mean of empty slice
+  middle = np.nanmean(piece, axis=0)
+/home/animallya96/research-venv/lib/python3.12/site-packages/numpy/lib/_nanfunctions_impl.py:1997: RuntimeWarning: Degrees of freedom <= 0 for slice.
+  var = nanvar(a, axis=axis, dtype=dtype, out=out, ddof=ddof,
+/home/animallya96/scratch/wt-ss/backend/market/levels.py:278: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmax(window, axis=0) if largest else np.nanmin(window, axis=0)
+[    259 s] desk: 2953 sessions x 95 names
+[    259 s] cubes: 94 of 94 names
+[    260 s] edgar: 94 names (260 s)
+[    262 s] fills: 94 names with a cube; 211923 name-sessions with a peer group; 209943 with R_g
+/home/animallya96/scratch/wt-ss/backend/market/bands.py:25: RuntimeWarning: Mean of empty slice
+  out[t] = np.nanmean(close[t - window + 1 : t + 1], axis=0)
+/home/animallya96/research-venv/lib/python3.12/site-packages/numpy/lib/_nanfunctions_impl.py:1997: RuntimeWarning: Degrees of freedom <= 0 for slice.
+  var = nanvar(a, axis=axis, dtype=dtype, out=out, ddof=ddof,
+[    265 s]   offset 0: 2547 orders from session 0
+[    268 s]   offset 1: 2568 orders from session 1
+[    271 s]   offset 2: 2483 orders from session 2
+[    275 s]   offset 3: 2502 orders from session 3
+[    279 s]   offset 4: 2567 orders from session 4
+[    282 s]   offset 5: 2568 orders from session 5
+[    285 s]   offset 6: 2603 orders from session 6
+[    289 s]   offset 7: 2558 orders from session 7
+[    293 s]   offset 8: 2654 orders from session 8
+[    296 s]   offset 9: 2626 orders from session 9
+[    307 s]   offset 10: 2552 orders from session 10
+[    317 s]   offset 11: 2646 orders from session 11
+[    330 s]   offset 12: 2666 orders from session 12
+[    334 s]   offset 13: 2696 orders from session 13
+[    337 s]   offset 14: 2511 orders from session 14
+[    341 s]   offset 15: 2673 orders from session 15
+[    344 s]   offset 16: 2673 orders from session 16
+[    348 s]   offset 17: 2621 orders from session 17
+[    352 s]   offset 18: 2672 orders from session 18
+[    355 s]   offset 19: 2553 orders from session 19
+sector sells (docs/research/sector-sells-plan-2026-10-01.md) as of 2026-09-30: 3 candidates on the executed sells of ew-redeploy under graded-equal-weight/5 against dip_or_close; 20 of 20 offsets, statistics at offset 10; model window 2018-01-02..2023-12-29; Newey-West lag 20
+orders at the median offset: model 375 sells over 1509 sessions; 2024-2026 136 sells over 688 sessions
+drift: model +8.15 bp/session over 9719 A/A+ name-days; 2024-2026 +18.41 bp/session over 3401 A/A+ name-days
+peers: model: mean peer corr +0.39, kept +0.93, defer fires +0.07, close fires +0.20 of 115099 name-sessions; 2024-2026: mean peer corr +0.41, kept +0.93, defer fires +0.08, close fires +0.24 of 61927 name-sessions
+
+RECORD: no candidate clears every criterion; the board keeps its sell rule
+  G1 (peer_rally_defer, downgrade): model window +0.1 bp/session (t +1.31); next-bar +0.1 (t +1.31) fails; 2024-2026 +0.1 bp/session; deflated Sharpe +0.70 at N = 3 (+0.00 at 485); drift-adjusted +0.1 (t +1.29); positive at 20 of 20 offsets; per re-timed sell +256.4 bp (t +1.47) over 3 of 375 sells; fired on 1% of 253 in scope; waited 1%; oracle capture 2% - RECORD
+  G2 (peer_rally_close, downgrade): model window -0.0 bp/session (t -0.74); next-bar -0.0 (t -0.74) fails; 2024-2026 -0.1 bp/session; deflated Sharpe +0.03 at N = 3 (+0.00 at 485); drift-adjusted -0.0 (t -0.74); positive at 0 of 20 offsets; per re-timed sell -75.6 bp (t -0.99) over 4 of 375 sells; fired on 2% of 253 in scope; waited 0%; oracle capture -1% - RECORD
+  G3 (peer_rally_defer, not_b): model window +0.1 bp/session (t +1.35); next-bar +0.1 (t +1.35) fails; 2024-2026 +0.0 bp/session; deflated Sharpe +0.74 at N = 3 (+0.00 at 485); drift-adjusted +0.1 (t +1.34); positive at 20 of 20 offsets; per re-timed sell +253.6 bp (t +1.43) over 3 of 375 sells; fired on 2% of 172 in scope; waited 1%; oracle capture 2% - RECORD
+
+peer groups on 2026-09-30:
+  COHR: LITE +0.87, GLW +0.83, FN +0.78, AAOI +0.76, CIEN +0.73; sigma_g +3.72%; R_g n/a%
+  AAOI: LITE +0.82, GLW +0.77, COHR +0.76, MU +0.71, TER +0.66; sigma_g +3.88%; R_g n/a%
+  NVDA: KLAC +0.38, LITE +0.37, TER +0.37, COHR +0.36, AVGO +0.36; sigma_g +3.41%; R_g n/a%
+  OKLO: SMR +0.84, IREN +0.52, INTC +0.47, MRVL +0.47, APLD +0.47; sigma_g +3.56%; R_g n/a%
+case COHR decided 2026-09-30 (grade 1), executed None: control n/a (bar -1); peer_rally_defer fired False fill n/a g n/a bp; peer_rally_close fired False fill n/a g n/a bp
+2026 sells changed at the median offset: 4
+wrote docs/research/scorecards/sector-sells/sector_sells.json
