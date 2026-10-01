@@ -10,10 +10,12 @@ merely better: what may be read out of memory at all, that the query skeleton an
 budget are unchanged, and that every failure lands exactly on the old behaviour.
 """
 
+import ast
 import json
 import os
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -642,8 +644,29 @@ async def test_an_empty_memory_leaves_the_order_alone():
 # --- one whole sweep --------------------------------------------------------
 
 
+# Every clock a sweep reads has to agree with the find's written date, and
+# there are two. The sweep's own `now` names the query month
+# (`WebEventSource._queries`), bounds the 60-day lead-time window
+# (`relevance.within_lead_time`, through the ranker, the memory re-ranker and
+# the spread) and dates the memory read. The wall clock is read in
+# `sources.web._to_event`, which refuses a stated date before today, and by
+# the describer. A fixed rehearsal moment with a written date passes only
+# until the wall clock reaches that date: "September 30, 2026" against
+# 2026-08-01 sat inside the window and rotted on 2026-10-01, and moving the
+# sweep's `now` alone cannot help, because a date the wall clock accepts is
+# then outside a window measured from the old moment. So this sweep's moment
+# is today and the find is ten days after it, written the way a listing
+# writes a date.
+def _relative_sweep_clock() -> tuple[datetime, str, str]:
+    """Return (the sweep's moment, the find's written date, the query month)."""
+    moment = datetime.now(UTC).replace(hour=12, minute=0, second=0, microsecond=0)
+    when = moment + timedelta(days=10)
+    written = f"{when:%B} {when.day}, {when.year}"
+    month = (moment + timedelta(days=7)).strftime("%B %Y")
+    return moment, written, month
+
+
 @pytest.mark.asyncio
-@pytest.mark.xfail(reason="date rot since 2026-10-01 UTC: the fixture find 'September 30, 2026' is in the past while the sweep clock is pinned to 2026-08-01; needs a fixture relative to both clocks", strict=False)
 async def test_a_sweep_searches_and_ranks_with_what_memory_knows(monkeypatch):
     from backend.config.settings import settings
 
@@ -651,11 +674,12 @@ async def test_a_sweep_searches_and_ranks_with_what_memory_knows(monkeypatch):
     monkeypatch.setattr(settings, "DISCOVERY_MEMORY_RERANK_ENABLED", True)
     monkeypatch.setattr(settings, "DISCOVERY_WEB_SEARCH_ENABLED", True)
 
+    now, written, month = _relative_sweep_clock()
     user_id = f"pc_{uuid.uuid4().hex[:12]}"
     search = _StubSearch(
         [
             (
-                "Beginner group run September 30, 2026",
+                f"Beginner group run {written}",
                 "https://runs.example/beginner",
                 "An easy weekend run for anyone starting out.",
             ),
@@ -712,14 +736,12 @@ async def test_a_sweep_searches_and_ranks_with_what_memory_knows(monkeypatch):
                 ),
             )
 
-            result = await runner.sweep(user_id, profile, now=_NOW, persist=False)
+            result = await runner.sweep(user_id, profile, now=now, persist=False)
 
         # The query is about this person, in the skeleton that was measured. The
-        # month is the sweep's own clock, read from the fixed rehearsal moment.
-        assert (
-            f"casual weekend group runs Arlington, Virginia {_aug}"
-            in search.queries
-        )
+        # month is the sweep's own clock: the first interest query names the
+        # month one window step after the sweep's moment.
+        assert f"casual weekend group runs Arlington, Virginia {month}" in search.queries
         # And the vector a candidate was scored against is no longer two words.
         assert "relaxed weekend group runs for beginners" in embeddings.texts
         assert "Run Clubs" not in embeddings.texts
@@ -787,3 +809,59 @@ async def test_a_sweep_with_the_flags_off_searches_the_bare_label(monkeypatch):
         assert writer.prompts == []
     finally:
         await _cleanup(user_id)
+
+
+# --- dates that rot -----------------------------------------------------------
+
+
+# Every calendar date written into a module's source: each string literal
+# read by the production parser's year-bearing forms (`backend.core.dates`,
+# the one `WebEventSource` refuses past finds with), and each literal
+# `date(...)`/`datetime(...)` constructor. Dates computed at run time are not
+# literals and are not found, which is the point.
+def _written_dates(source: str) -> list[tuple[date, str]]:
+    """Return (date, text) for every literal calendar date in `source`."""
+    from backend.core import dates
+
+    found: list[tuple[date, str]] = []
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            for pattern in dates._DATE_PATTERNS:
+                for match in pattern.finditer(node.value):
+                    parsed = dates.stated_date(match.group(0))
+                    if parsed is not None:
+                        found.append((parsed.date(), match.group(0)))
+        elif (
+            isinstance(node, ast.Call)
+            and getattr(node.func, "id", None) in ("date", "datetime")
+            and len(node.args) >= 3
+            and all(
+                isinstance(arg, ast.Constant) and isinstance(arg.value, int)
+                for arg in node.args[:3]
+            )
+        ):
+            year, month, day = (arg.value for arg in node.args[:3])
+            found.append((date(year, month, day), ast.unparse(node)))
+    return found
+
+
+# A fixture dated after `_NOW` is "upcoming" to the fixed clock and becomes
+# "past" to the wall clock the day the calendar reaches it, so it passes for
+# a while and then fails with no change in the code - which is how the sweep
+# test above rotted on 2026-10-01. Dates on or before `_NOW` cannot rot (both
+# clocks already agree they have passed), so only later ones are refused. The
+# guard is shown to fail on the date that rotted, built here at run time so
+# this module's own source stays clean.
+def test_no_fixture_here_is_dated_after_the_fixed_clock():
+    source = Path(__file__).read_text(encoding="utf-8")
+    later = [(d, text) for d, text in _written_dates(source) if d > _NOW.date()]
+    assert later == [], f"dated after {_NOW.date()}, so it will rot: {later}"
+    rotted = _NOW + timedelta(days=60)
+    sample = f'title = "Beginner group run {rotted:%B} {rotted.day}, {rotted.year}"'
+    assert _written_dates(sample) == [
+        (rotted.date(), f"{rotted:%B} {rotted.day}, {rotted.year}")
+    ]
+    assert _written_dates(f"when = date({rotted.year}, 9, 30)") == [
+        (rotted.date(), f"date({rotted.year}, 9, 30)")
+    ]
+    assert _written_dates('title = f"Beginner group run {written}"') == []
