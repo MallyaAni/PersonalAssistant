@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-10-01 — Research gross changes survive mid-cycle execution (not promoted)
+
+`647d289f`: gross changes take precedence over ordinary planning, deferred
+retries and green-open suppression, with next-open fills. Unsupported FOMC
+lifecycle combinations fail explicitly. 54 tests passed, including cash/NAV
+reconciliation at 25/100 bp and old-retry cancellation; Ruff passed. No
+economic superiority or current intraday-executor parity established. See
+[evidence and limitations](research/gross-execution-correction-2026-10-01.md).
+
 ## 2026-09-30 — Deployed `2fe7ac3a`: board Levels column, order-evidence fixes, 6-K tone coverage
 
 - `desk/structure.py`, `market_balancer` `structure` block, `TradeBoard`

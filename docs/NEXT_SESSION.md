@@ -1,5 +1,23 @@
 # Next session
 
+## 2026-10-01 — Gross-risk execution correction, branch only
+
+Verified implementation `647d289f` on
+`fix/research-gross-execution-20261001`, from `bb5f0e61`. Gross changes now
+survive the ordinary mid-cycle planner and fill next open, including green
+opens; old unpaid buys are cleared on a risk change. 54 tests passed,
+including 11 new execution/accounting cases. Ruff passed. No live change,
+market backtest, model promotion or old-result rewrite.
+
+Read [the correction and verification](research/gross-execution-correction-2026-10-01.md).
+`gross_path` plus `event_lifecycle=True` is refused, not integrated. Next:
+coordinate the two risk controllers and prove null parity before measuring
+against the full current control. Do not merge this research branch into
+live main. The dashboard/reset/audit fixes are on the separate branch
+`fix/review-consistency-20261001` based on `95424784`.
+
+Diagram impact: NONE — internal research logic, unchanged architectural flows.
+
 ## 2026-09-30, 22:09 ET — DEPLOYED `2fe7ac3a`: 6-K tone coverage, board Levels column, order-evidence fixes; seven structure rules and Kronos measured, all RECORD
 
 **Live since 22:09 ET** (`deploy.sh`: unit 8,288 passed / 7 xfailed, routing
