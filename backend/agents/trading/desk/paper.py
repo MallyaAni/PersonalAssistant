@@ -1245,6 +1245,18 @@ def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
                 **s.execution,
             },
         }
+        if "execution_policy" in prior:
+            journal[s.client_order_id].update(
+                {
+                    key: prior.get(key)
+                    for key in (
+                        "execution_policy",
+                        "execute_on",
+                        "execution_timing",
+                        "reason",
+                    )
+                }
+            )
     new.journal = [journal[k] for k in sorted(journal)]
     still_working = {
         s.client_order_id

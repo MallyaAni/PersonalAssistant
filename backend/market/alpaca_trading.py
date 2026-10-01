@@ -235,6 +235,43 @@ class AlpacaTradingClient:
             )
         return outcomes
 
+    # Submit a price-protected paper attempt that cannot rest or become a market order.
+    def submit_limit_ioc(
+        self, symbol: str, qty: int, side: str, limit_price, client_order_id: str
+    ) -> dict[str, Any]:
+        from backend.market.bounded_execution import limit_text
+
+        if self.base_url != PAPER_URL:
+            raise AlpacaTradingError("Bounded execution is paper-only")
+        if (
+            isinstance(qty, bool)
+            or not isinstance(qty, int)
+            or qty <= 0
+            or not symbol
+            or not client_order_id
+        ):
+            raise AlpacaTradingError(
+                "A symbol, whole-share quantity and order id are required"
+            )
+        try:
+            price = limit_text(limit_price, side)
+        except ValueError as exc:
+            raise AlpacaTradingError(str(exc)) from exc
+        return self._call(
+            "POST",
+            "/orders",
+            {
+                "symbol": symbol,
+                "qty": str(qty),
+                "side": side,
+                "type": "limit",
+                "limit_price": price,
+                "time_in_force": "ioc",
+                "extended_hours": False,
+                "client_order_id": client_order_id,
+            },
+        )
+
     # A whole-share market order for the next open.
     # A market order queued for the open. It is submitted after the close
     # with time in force "day", which the broker holds until the next
