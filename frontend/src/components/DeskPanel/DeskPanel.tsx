@@ -2885,9 +2885,10 @@ const TodayLine = ({exchange, event, boardEvent, orders, plan}: {
     [count(['partial']), 'partially filled'],
     [count(['filled']), 'filled'],
     [count(['held']), 'held'],
+    [count(['deferred']), 'held by the peer-group rule'],
     [count(['missed', 'problem', 'rejected', 'cancelled']), 'need attention'],
   ].filter(([n]) => (n as number) > 0).map(([n, word]) => `${n} ${word}`)
-  const knownStates = ['planned', 'queued', 'waiting', 'due', 'sent', 'partial', 'filled', 'held', 'missed', 'problem', 'rejected', 'cancelled']
+  const knownStates = ['planned', 'queued', 'waiting', 'due', 'sent', 'partial', 'filled', 'held', 'deferred', 'missed', 'problem', 'rejected', 'cancelled']
   const unknown = (plan ?? []).filter(o => !knownStates.includes(o.state)).length
   if (unknown) pieces.push(`${unknown} status unknown`)
   const action = plan === null ? 'Paper orders loading.'
@@ -2912,6 +2913,7 @@ const PaperOrderCard = ({ticker, row, session}: {ticker: string; row: BoardRow; 
     {row.orders.map(o => <div key={o.client_order_id} className="mt-2 text-xs">
       {row.orders.length > 1 && <p className="font-medium text-[#1d1d1f]">{orderWord(o)} {sharesText(o.qty)} {quantityLabel(o)} · {o.why}</p>}
       {o.planned_qty !== undefined && o.planned_qty !== o.qty && <p>Originally planned: {sharesText(o.planned_qty)}</p>}
+      {o.note && <p aria-label={`${ticker} peer note`} className="text-[#6e6e73]">{o.note}</p>}
       <p className="text-[#1d1d1f]">{o.status}</p>
       <p className="text-[#6e6e73]">{o.when}</p>
     </div>)}

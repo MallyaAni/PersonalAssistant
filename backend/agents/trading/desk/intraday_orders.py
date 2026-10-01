@@ -29,6 +29,11 @@ nothing. The balancer calls `send_due` on every 15-minute candle, right after
 it latches the candle. FOMC event orders keep their own next-open treatment
 (`event_execution.py`) and never pass through here.
 
+The sector-aware sell rules (`peer_sells`, switch `SECTOR_SELLS`, off by
+default) may, when switched on, hold an ordinary sell for its session or move
+it from the 1% pop to the close, from its peer group's first bar; with the
+switch off nothing in this module changes.
+
 `board_orders` is the same state read back for the dashboard: every order
 with its size, why, when, and what has happened to it, worded once here so
 the board, the ticker panel and the chart say the same thing.
@@ -44,7 +49,7 @@ from typing import Any
 
 import numpy as np
 
-from backend.agents.trading.desk import execution_evidence, paper
+from backend.agents.trading.desk import execution_evidence, paper, peer_sells
 from backend.market import calendar, entry_timing
 
 # The off switch. True: the nightly writes its ordinary orders down for the
@@ -57,6 +62,8 @@ INTRADAY_TIMING = "dip_or_close"
 # The two ways an order is sent from here.
 MARKET = "market"
 MOC = "moc"
+# The board's state for a sell the peer rule held for its session.
+DEFERRED = "deferred"
 NEW_YORK = calendar.NEW_YORK
 
 # The broker statuses of an order that has been accepted and may still fill.
@@ -181,9 +188,60 @@ def _ready(
             now,
             today,
         )
+        if peer_sells.at_close(row):
+            # The peer rule moved this sell to the close: the pop trigger
+            # does not send it; the control's own close-window order does.
+            verdict = {
+                "send": peer_sells.close_only(verdict["timed"], now, today),
+                "timed": verdict["timed"],
+            }
         if verdict["send"]:
             ready.append((row, verdict))
     return ready
+
+
+# The peer rule's verdicts for today's unsent sells (`peer_sells.review`),
+# recorded on the rows and saved, when the SECTOR_SELLS switch is on; the
+# rows still to consider (a deferred sell is not sent today) and the log
+# lines. With the switch off this returns `rows` untouched and no lines;
+# a verdict recorded earlier in the session is honoured whatever the switch
+# says now, so the board and the orders never disagree about a row.
+def _peer_review(
+    root: Path,
+    state: paper.PaperState,
+    rows: list[dict],
+    snapshot: dict | None,
+    now: datetime,
+    today: date,
+) -> tuple[list[dict], list[str]]:
+    """Return (rows to consider sending, log lines)."""
+    lines: list[str] = []
+    mode, problem = peer_sells.mode()
+    if problem:
+        lines.append(f"peer rule: {problem}")
+    if mode != peer_sells.OFF:
+        latch = entry_timing.load(root, today)
+        quotes = (snapshot or {}).get("quotes") or {}
+
+        # Whether a row's own session open is known yet (past pre-open).
+        def opened(row: dict) -> bool:
+            symbol = str(row.get("symbol"))
+            timed = entry_timing.timing(
+                entry_timing.row_for(latch, symbol, today),
+                quotes.get(symbol),
+                str(row.get("side")),
+                now,
+                today,
+            )
+            return timed["state"] not in (entry_timing.PRE_OPEN, entry_timing.CLOSED)
+
+        judged = peer_sells.review(
+            rows, root, latch, mode, now, INTRADAY_TIMING, opened
+        )
+        if judged:
+            paper.save_state(root, state)
+            lines.extend(judged)
+    return [row for row in rows if not peer_sells.deferred(row)], lines
 
 
 # The body of `send_due`, run while the paper state is locked.
@@ -198,14 +256,16 @@ def _send_due_locked(
     from backend.market import alpaca_trading
 
     state = paper.load_state(root)
-    ready = _ready(due(state, today), root, snapshot, now, today)
+    rows, notes = _peer_review(root, state, due(state, today), snapshot, now, today)
+    ready = _ready(rows, root, snapshot, now, today)
     if not ready:
-        return []
+        return notes
     try:
         client = client_factory()
         if not bool((client.clock() or {}).get("is_open")):
             return [
-                "intraday orders: the broker reports the market closed; nothing sent"
+                *notes,
+                "intraday orders: the broker reports the market closed; nothing sent",
             ]
         known = {
             str(o.get("client_order_id") or ""): o
@@ -213,10 +273,13 @@ def _send_due_locked(
         }
         held = {p.symbol: float(p.qty) for p in client.positions()}
     except (alpaca_trading.AlpacaTradingError, OSError, ValueError) as exc:
-        return [f"intraday orders: broker unavailable ({exc}); nothing sent"]
+        return [*notes, f"intraday orders: broker unavailable ({exc}); nothing sent"]
     return [
-        _send_one(root, state, row, verdict, client, known, held, now)
-        for row, verdict in ready
+        *notes,
+        *(
+            _send_one(root, state, row, verdict, client, known, held, now)
+            for row, verdict in ready
+        ),
     ]
 
 
@@ -565,9 +628,19 @@ def board_row(
     )
     out["state"] = state_word
     out["status"] = sentence
+    # The grey note under a sell the peer rule held or moved to the close
+    # (`peer_sells.board_note`); None on every other row.
+    out["note"] = peer_sells.board_note(row)
     # A fill is historical execution value; an unfilled order is only an
     # estimate at the displayed quote. Never price an old fill at today's quote.
-    terminal = state_word in ("filled", "cancelled", "rejected", "held", "missed")
+    terminal = state_word in (
+        "filled",
+        "cancelled",
+        "rejected",
+        "held",
+        "missed",
+        DEFERRED,
+    )
     out["terminal"] = terminal if terminal or known or not row.get("sent") else None
     if terminal:
         out["remaining_qty"] = 0.0
@@ -584,13 +657,18 @@ def board_row(
     out["weight"] = (
         out["notional"] / equity if out["notional"] is not None and equity else None
     )
-    out["when"] = _when(side, timing, execute_on, today, out)
+    out["when"] = _when(side, timing, execute_on, today, out, peer_sells.action(row))
     return out
 
 
 # The rule an order executes under, for its session, in one line.
 def _when(
-    side: str, timing: str, execute_on: str | None, today: date, out: dict
+    side: str,
+    timing: str,
+    execute_on: str | None,
+    today: date,
+    out: dict,
+    peer: str | None = None,
 ) -> str:
     """Return the session and the rule, e.g. "Wed Sep 30 · on a 15-min close ..."."""
     day = (
@@ -600,6 +678,11 @@ def _when(
         if execute_on
         else "Next session"
     )
+    # A sell the peer rule decided on: held for the session, or at the close.
+    if timing == INTRADAY_TIMING and peer == peer_sells.DEFER:
+        return f"{day} · not sent: held by the peer-group rule"
+    if timing == INTRADAY_TIMING and peer == peer_sells.CLOSE:
+        return f"{day} · at the close, not on the 1% pop (peer-group rule)"
     if timing == INTRADAY_TIMING:
         return f"{day} · {rule_text(side, out.get('open'), out.get('level'))}"
     if timing == "event":
@@ -624,6 +707,9 @@ def _status(
     now: datetime,
 ) -> tuple[str, str]:
     """Return (state, sentence) for one row and fill `out`'s price fields."""
+    if peer_sells.deferred(row) and not row.get("sent") and not broker:
+        # The peer rule held the sell for the session; the nightly re-plans it.
+        return DEFERRED, "Not sent today · re-planned tonight"
     recorded = _recorded_status(row, out, broker, qty, timing)
     if recorded:
         return recorded
@@ -699,6 +785,19 @@ def _clock_status(
     out["level"] = timed.get("level")
     state = timed["state"]
     clock = entry_timing.session_clock(today)
+    if peer_sells.at_close(row) and state in (
+        entry_timing.WAITING,
+        entry_timing.TRIGGERED,
+        entry_timing.CLOSE,
+    ):
+        # The peer rule moved it to the close: no level is waited for.
+        out["level"] = None
+        how = peer_sells.close_only(timed, now, today)
+        if how is None:
+            cutoff = entry_timing._clock(clock["cutoff"])
+            return "waiting", f"Waiting for the close ({cutoff} window)"
+        words = "market-on-close" if how == MOC else "market order"
+        return "due", f"Close window · {words} due"
     if state == entry_timing.PRE_OPEN:
         if now >= clock["open"] + entry_timing.BAR:
             return "planned", "Waiting for today's opening price"
@@ -789,6 +888,7 @@ def board_orders(
         "held",
         "missed",
         "problem",
+        DEFERRED,
     )
     return sorted(
         rows,

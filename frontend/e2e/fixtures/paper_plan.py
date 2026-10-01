@@ -12,6 +12,9 @@ The scenario is the live paper account of 2026-09-29 carried to Thursday
 the reinvest/deferred buys planned on Wednesday night are at every stage of
 their life (waiting for the level, level reached, sent, filled), and the
 same account read on Wednesday evening, when all of them are only planned.
+`peer_g1` and `peer_g2` are Thursday with the sector-aware sell rule's
+verdict (`peer_sells`) on the NVDA exit: held for the session, or moved to
+the close.
 """
 
 import json
@@ -19,7 +22,7 @@ import sys
 from datetime import UTC, date, datetime
 from pathlib import Path
 
-from backend.agents.trading.desk import intraday_orders, paper, plainly
+from backend.agents.trading.desk import intraday_orders, paper, peer_sells, plainly
 
 DECIDED = "2026-09-30"
 TODAY = date(2026, 10, 1)
@@ -92,12 +95,33 @@ def pending() -> list[dict]:
     ]
 
 
-# Thursday 10:20 AM: what the balancer has done so far and what the broker says.
-def thursday() -> list[dict]:
+# The peer rule's verdict on the NVDA exit under `mode`, from the real
+# `peer_sells.judge`: its five peers opened 3% over their 2026-09-30 closes
+# on the first bar, against a usual daily move of 2.4%.
+def peer_verdict(mode: str) -> dict:
+    """Return the verdict the executor records on the NVDA sell."""
+    peers = ["AMD", "AVGO", "MRVL", "TSM", "ARM"]
+    block = {
+        "session": DECIDED,
+        "names": {
+            "NVDA": {"scope_grade": "B", "peers": peers, "sigma_g": 0.024},
+        },
+        "closes": {p: 100.0 for p in peers},
+    }
+    latch = {"symbols": {p: {"first_bar": {"close": 103.0}} for p in peers}}
+    row = {"symbol": "NVDA", "side": "sell", "session": DECIDED}
+    return peer_sells.judge(row, block, latch, mode, ny(9, 46))
+
+
+# Thursday 10:20 AM: what the balancer has done so far and what the broker
+# says; `peer` puts that peer-rule mode's verdict on the NVDA exit.
+def thursday(peer: str | None = None) -> list[dict]:
     """Return board_orders for the in-session read."""
     state = paper.PaperState(last_rebalance="2026-09-28", sessions_since_rebalance=2)
     rows = pending()
     by = {(r["symbol"], r["qty"]): r for r in rows}
+    if peer:
+        by[("NVDA", 67)][peer_sells.ROW_KEY] = peer_verdict(peer)
     sent = {
         ("ANET", 32): ny(9, 46),
         ("HPE", 6): ny(10, 16),
@@ -185,6 +209,8 @@ def produce() -> dict:
         ],
         "thursday": {**plan, "orders": thursday()},
         "wednesday": {**plan, "orders": wednesday()},
+        "peer_g1": {**plan, "orders": thursday("g1")},
+        "peer_g2": {**plan, "orders": thursday("g2")},
     }
 
 

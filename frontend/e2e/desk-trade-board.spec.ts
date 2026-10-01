@@ -134,6 +134,48 @@ test('the board shows the paper account’s orders mid-session', async ({page}, 
   expect(diagnostics.errors).toEqual([])
 })
 
+// The sector-aware sell rule keeps the action cell to the word and the size
+// and adds one grey sentence of its own numbers, only on the sell it held
+// (G1) or moved to the close (G2); without a verdict there is no sentence.
+test('a sell the peer-group rule held or moved keeps its word and says why', async ({page}) => {
+  await page.setViewportSize({width: 1440, height: 1000})
+  const held = await scenario(page, {now: THURSDAY, plan: 'thursday', orders: fixture.peer_g1.orders})
+  await page.goto('/#desk')
+  await expect(page.getByLabel('NVDA strategy intent')).toHaveText('SELL')
+  await expect(page.getByLabel('NVDA strategy intent')).toHaveClass(/text-\[#6e6e73\]/)
+  await expect(page.getByLabel('NVDA size')).toContainText('67 sh')
+  await expect(page.getByLabel('NVDA peer note')).toHaveText('Held: its peer group (AMD, AVGO, MRVL, TSM, ARM) opened +3.0%, above its usual daily move 2.4%; sale re-planned tonight')
+  await expect(page.getByLabel('NVDA order status')).toContainText('Not sent today · re-planned tonight')
+  await expect(page.getByLabel('Today')).toContainText('1 held by the peer-group rule')
+  await expect(page.getByLabel('ANET peer note')).toHaveCount(0)
+  expect(held.writes).toEqual([])
+  expect(held.errors).toEqual([])
+})
+
+// G2: the sell waits for the close instead of the pop, and says so.
+test('a sell the peer-group rule moved to the close says so', async ({page}) => {
+  await page.setViewportSize({width: 1440, height: 1000})
+  const moved = await scenario(page, {now: THURSDAY, plan: 'thursday', orders: fixture.peer_g2.orders})
+  await page.goto('/#desk')
+  await expect(page.getByLabel('NVDA strategy intent')).toHaveText('SELL')
+  await expect(page.getByLabel('NVDA peer note')).toHaveText('Selling at the close: its peer group (AMD, AVGO, MRVL, TSM, ARM) opened +3.0%')
+  await expect(page.getByLabel('NVDA order status')).toContainText('Waiting for the close (3:30 PM window)')
+  await expect(page.getByLabel('NVDA order status')).toContainText('Today · at the close, not on the 1% pop (peer-group rule)')
+  await expect(page.getByLabel('NVDA order status')).not.toContainText('$232.30')
+  expect(moved.writes).toEqual([])
+  expect(moved.errors).toEqual([])
+})
+
+// Without a peer verdict no order carries the sentence.
+test('no peer-group sentence without a verdict', async ({page}) => {
+  const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday'})
+  await page.goto('/#desk')
+  await expect(page.getByLabel('NVDA strategy intent')).toHaveText('SELL')
+  await expect(page.getByLabel(/peer note$/)).toHaveCount(0)
+  expect(diagnostics.writes).toEqual([])
+  expect(diagnostics.errors).toEqual([])
+})
+
 // The summary distinguishes an unsent due order from a submission and a partial fill.
 test('the summary never promotes due or partially filled orders', async ({page}) => {
   const due = fixture.thursday.orders.find((o: {state: string}) => o.state === 'due')

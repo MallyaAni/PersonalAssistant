@@ -46,6 +46,7 @@ export type BoardRow = {
   status: string
   state: string
   when: string
+  note: string
 }
 
 // The views a trader switches between: what the account is trading today,
@@ -177,6 +178,7 @@ const STATE_DOT: Record<string, string> = {
   filled: 'bg-[#248a3d]',
   partial: 'bg-[#ff9f0a]',
   held: 'bg-[#86868b]',
+  deferred: 'bg-[#86868b]',
   cancelled: 'bg-[#b42318]',
   rejected: 'bg-[#b42318]',
   missed: 'bg-[#b42318]',
@@ -187,7 +189,7 @@ const STATE_DOT: Record<string, string> = {
 // still to happen rather than the one already done.
 const PROGRESS: Record<string, number> = {
   problem: 0, missed: 0, rejected: 0, due: 1, waiting: 2, planned: 3, queued: 3, sent: 4,
-  partial: 5, cancelled: 6, held: 6, filled: 7,
+  partial: 5, cancelled: 6, held: 6, deferred: 6, filled: 7,
 }
 
 // The board's word for an order is the paper account's action (BUY, SELL,
@@ -288,6 +290,7 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
       status,
       state: lead?.state ?? '',
       when: lead?.when ?? '',
+      note: [...new Set(mine.map(o => o.note).filter((n): n is string => Boolean(n)))].join(' · '),
     }
   })
 }
@@ -298,7 +301,7 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
 const band = (row: BoardRow): number =>
   !row.orders.length ? row.word === 'HOLD' ? 3 : 4
   : ['problem', 'missed', 'rejected'].includes(row.state) ? 0
-  : ['filled', 'held', 'cancelled'].includes(row.state) ? 2
+  : ['filled', 'held', 'deferred', 'cancelled'].includes(row.state) ? 2
   : 1
 
 // The default ranking: by band, then the biggest order or holding first, then
@@ -359,6 +362,7 @@ const RowDetails = ({row, latest, myAccount, onOpen, extra}: {row: BoardRow; lat
           <p><span className={`font-semibold ${isDone(order) ? 'text-[#6e6e73]' : WORD_STYLE[word]}`}>{word}</span> {shares(order.qty)} {quantityLabel(order)}{order.notional !== null ? ` · ${dollars(order.notional)}` : ''}{order.weight !== null ? ` · ${percent(order.weight)} of current equity` : ''}{mine !== null ? ` · ref. ${shares(mine)}` : ''}</p>
           {order.planned_qty !== undefined && order.planned_qty !== order.qty && <p className="text-[#6e6e73]">Originally planned: {shares(order.planned_qty)}</p>}
           <p className="text-[#6e6e73]">{order.why}</p>
+          {order.note && <p aria-label={`${order.symbol} peer note`} className="text-[#6e6e73]">{order.note}</p>}
           <p><span className={`mr-1 inline-block h-2 w-2 rounded-full ${STATE_DOT[order.state] ?? 'bg-[#86868b]'}`} aria-hidden="true" />{order.status}</p>
           <p className="text-[#6e6e73]">{order.when}</p>
         </div>
@@ -503,6 +507,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
               <td className="max-w-56 py-2 text-xs">
                 <span aria-label={`${row.ticker} strategy intent`} className={`font-semibold ${row.done ? 'text-[#6e6e73]' : WORD_STYLE[row.word]}`}>{row.word}</span>
                 <div aria-label={`${row.ticker} action status`} className="whitespace-normal text-[10px] text-[#6e6e73]">{row.why}</div>
+                {row.note && <div aria-label={`${row.ticker} peer note`} className="whitespace-normal text-[10px] text-[#6e6e73]">{row.note}</div>}
                 {age && <div aria-label={`${row.ticker} price age`} className="whitespace-nowrap text-[10px] text-[#86868b]">{age}</div>}
               </td>
               <td className="py-2 text-xs" aria-label={`${row.ticker} size`}>

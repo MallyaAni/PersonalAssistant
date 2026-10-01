@@ -337,6 +337,37 @@ already recorded it refuses (and `--force` would rewrite that record):
 use it only on a copy of the store (`--data-dir <copy>`) or before the
 nightly has run.
 
+### The sector-aware sell switch (`SECTOR_SELLS`, off by default)
+
+`backend/agents/trading/desk/peer_sells.py` holds the live form of the S2
+rules registered in `docs/research/sector-sells-plan-2026-10-01.md`; the peer
+group, sigma_g, R_g, the triggers and every constant come from
+`backend/market/peer_groups.py`, the module the study prices them with. The
+switch is `peer_sells.SECTOR_SELLS` (`off`), overridden by the environment
+variable `SECTOR_SELLS` (`off`, `g1`, `g2`, `g3`) in the process that runs the
+balancer. The cron launchers on spark1 (`~/desk_intraday.sh`,
+`~/desk_daily.sh`) export only the two Alpaca values and do not source
+`.env`, so a value in `.env` reaches nothing: set it with an
+`export SECTOR_SELLS=g1` line in both launchers, or change the constant and
+deploy.
+
+- The nightly writes `<record folder>/sector-peers.json` (each book name's
+  five peers, sigma_g, scope grade, and the peers' closes) whatever the switch
+  says. `python -m backend.cli.market_peer_groups [--session D]` writes it for
+  a record made before this code was deployed (point in time: refuses a panel
+  that does not end on the session).
+- On the first balancer candle after the opening bar, each ordinary
+  intraday sell in the mode's scope gets one verdict on its pending row
+  (`peer_rule`): `defer` (G1/G3: not sent today; it settles as missing, so the
+  nightly re-plans it and a name regraded A is not sold), `close` (G2: sent
+  by the control's own close-window order, not on the pop), or `control`
+  with the reason. The balancer log prints a `peer rule G1: ...` line per
+  verdict. A missing peer file, another session's file, no group, fewer than
+  3 of 5 peers' first bars latched, or an exception is `control`.
+- The board keeps SELL/TRIM and the size and adds one grey sentence
+  (`note`) only on a `defer` or `close` row. The nightly record's
+  `paper.peer_sells` says what happened to each held sell.
+
 ### The board's timed actions: the entry-timing latch
 
 The board shows the paper order's BUY/SELL/TRIM intent separately from its

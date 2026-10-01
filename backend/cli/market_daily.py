@@ -315,6 +315,7 @@ def _reconcile(client, state, store_root: Path, live: bool):
                     f"{row.status} ({row.filled_qty} filled)"
                 )
     updated = paper.apply_settlements(state, settled)
+    _keep_peer_verdicts(state, updated)
     if updated.last_rebalance != state.last_rebalance:
         print(
             "  the last rebalance did not fill; the clock is put back so the "
@@ -323,6 +324,28 @@ def _reconcile(client, state, store_root: Path, live: bool):
     if live:
         paper.save_state(store_root, updated)
     return updated, settled
+
+
+# Carry the peer rule's verdict (`peer_sells.ROW_KEY`) from each settled
+# pending row onto its journal entry, so the journal says why a sell the
+# rule held never reached the broker (it settles as "missing", which rolls
+# an unconfirmed rebalance back so the nightly re-plans it). A row without a
+# verdict leaves its journal entry exactly as `apply_settlements` wrote it.
+def _keep_peer_verdicts(before, after) -> None:
+    """Copy each pending row's peer verdict onto its journal entry, in place."""
+    from backend.agents.trading.desk import peer_sells
+
+    verdicts = {
+        str(row.get("client_order_id") or ""): row[peer_sells.ROW_KEY]
+        for row in before.pending
+        if peer_sells.ROW_KEY in row
+    }
+    if not verdicts:
+        return
+    for entry in after.journal:
+        verdict = verdicts.get(str(entry.get("client_order_id") or ""))
+        if verdict is not None:
+            entry[peer_sells.ROW_KEY] = verdict
 
 
 # Whether the broker ever acknowledged a pending order: its execution block
@@ -780,6 +803,9 @@ def _paper_trade(
     # An accepted order is not a filled one, and a rebalance whose orders
     # did not fill has not happened - so this runs first and can put the
     # clock back before the plan is made.
+    pending_before = {
+        str(row.get("client_order_id") or ""): row for row in state.pending
+    }
     state, settled = _reconcile(client, state, store_root, live)
     policy = event_risk.decision(panel)
     # Withdraw every pending leg before replacing it, this session's included
@@ -907,6 +933,7 @@ def _paper_trade(
         else "next_open"
     )
     entry["refused"] = refused
+    _record_peer_sells(entry, pending_before, orders, grades)
     entry["plan"] = what
     entry["event_risk"] = {
         **policy,
@@ -952,6 +979,57 @@ def _paper_trade(
         f"{entry['pl']:+,.0f} ({entry['pl_pct'] * 100:+.1f}%)"
     )
     return entry
+
+
+# The record's account of the peer rule (`peer_sells`): the switch's value
+# and, for each sell it held last session, what tonight's plan did with it
+# (sold again, not sold because the name was regraded A, or not sold for
+# another reason), printed in the nightly log. None - nothing on the record -
+# when the switch is off and nothing was held, so the off record is unchanged.
+def _peer_replanned(pending_before, orders, grades) -> dict | None:
+    """Return the record's peer_sells block, or None."""
+    from backend.agents.trading.desk import peer_sells
+
+    mode, problem = peer_sells.mode()
+    held = peer_sells.replanned(pending_before, orders, grades)
+    if mode == peer_sells.OFF and not held:
+        if problem:
+            print(f"  peer rule: {problem}")
+        return None
+    print(f"  peer rule: SECTOR_SELLS={mode}")
+    for item in held:
+        print(
+            f"    held last session: sell {item['qty']} {item['symbol']} -> "
+            f"{item['outcome']}"
+        )
+    return {"mode": mode, "problem": problem, "replanned": held}
+
+
+# Put the peer rule's account (`_peer_replanned`) on the night's paper
+# entry, only when there is one.
+def _record_peer_sells(entry: dict, pending_before, orders, grades) -> None:
+    """Set entry["peer_sells"] when the switch is on or a sell was held."""
+    peer = _peer_replanned(pending_before, orders, grades)
+    if peer is not None:
+        entry["peer_sells"] = peer
+
+
+# The peer groups beside tonight's record (`peer_sells.from_report`): each
+# book name's five peers, sigma_g, scope grade and the closes its peers'
+# first-bar returns are measured from, so tomorrow's executor needs only the
+# first 15-minute bars. Written whatever the switch says (it decides no
+# order); a failure is printed and never stops the nightly.
+def _write_peer_groups(root: Path, report) -> None:
+    """Write the session's sector-peers file; never raise."""
+    from backend.agents.trading.desk import peer_sells
+
+    try:
+        block = peer_sells.from_report(report)
+        written = peer_sells.write(root, block, overwrite=True)
+        grouped = sum(1 for e in block["names"].values() if e["peers"])
+        print(f"peer groups: {grouped} of {len(block['names'])} names -> {written}")
+    except Exception as exc:  # noqa: BLE001 - the record stands without them
+        print(f"peer groups: not written ({type(exc).__name__}: {exc})")
 
 
 # The frozen ML observer, gated on the data it needs: today's bars for
@@ -2255,6 +2333,7 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
         print("the existing record is kept; nothing was changed")
         return
     print(f"\nrecord written: {path}")
+    _write_peer_groups(Path(store.root), report)
     # Archive only an ordinary current decision; historical/forced runs must
     # never fabricate an original observation or revise an earlier capture.
     if current and not args.force:

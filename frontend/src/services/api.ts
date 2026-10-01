@@ -2932,11 +2932,14 @@ export interface DeskPaperOrder {
   filled_qty?: number | null;
   filled_price?: number | null;
   filled_at?: string | null;
-  // planned, waiting, due, sent, queued, filled, partial, held, cancelled,
-  // rejected, missed, problem.
+  // planned, waiting, due, sent, queued, filled, partial, held, deferred,
+  // cancelled, rejected, missed, problem.
   state: string;
   status: string;
   when: string;
+  // A plain sentence when the peer-group sell rule held the sell for its
+  // session or moved it to the close; absent or null otherwise.
+  note?: string | null;
 }
 
 // The paper account's plan: its orders, the rule they execute on and the reset clock.
