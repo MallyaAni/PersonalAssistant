@@ -125,8 +125,8 @@ def parse_index_page(html: str) -> list[tuple[str, str, str]]:
 
 # The archive URL of the first EX-99.1 (or any EX-99) document, or None.
 # With `main_document`, a filing with no EX-99 falls back to the form's own
-# document (type "6-K"): TSMC's 6-Ks before 2019-10 carried the release
-# there rather than as an exhibit.
+# document (type "6-K"): TSMC's 6-Ks until 2019-07, and again in 2020-04,
+# carried the release there rather than as an exhibit.
 def press_release_href(
     documents: Sequence[tuple[str, str, str]], main_document: str | None = None
 ) -> str | None:
@@ -150,8 +150,9 @@ def _archive_url(href: str) -> str:
 
 
 # The plain text of an event's press release, or None when the filing has
-# no EX-99 exhibit (nor, for a filer whose older 6-Ks carried the release
-# as the main document, that document).
+# no EX-99 exhibit. A 6-K without one is read from its own document (some
+# filers put the release there, after the cover page, which is removed);
+# an 8-K without one has no release.
 def fetch_release_text(
     cik: int,
     event: EarningsEvent,
@@ -168,13 +169,18 @@ def fetch_release_text(
         pacer,
         sleep,
     )
-    from backend.market.edgar import release_in_main_document
+    from backend.market.edgar import strip_form_cover
 
-    main = event.form if release_in_main_document(cik, event) else None
-    href = press_release_href(parse_index_page(page), main)
+    documents = parse_index_page(page)
+    href = press_release_href(documents)
+    if href is not None:
+        return html_to_text(_get_text(href, transport, pacer, sleep))
+    if event.form != "6-K":
+        return None
+    href = press_release_href(documents, event.form)
     if href is None:
         return None
-    return html_to_text(_get_text(href, transport, pacer, sleep))
+    return strip_form_cover(html_to_text(_get_text(href, transport, pacer, sleep)))
 
 
 # --- storage ---------------------------------------------------------------

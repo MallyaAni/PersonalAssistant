@@ -1,5 +1,105 @@
 # Changelog
 
+## 2026-10-01 — Form 6-K classifier widened to the filings' real headlines: BUILT, not deployed, not re-run
+
+The 2026-09-30 backfill's `--audit-6k` flagged NBIS 0 of 53 6-Ks admitted,
+ASML 3 a year (2021-2025), SIMO's newest release 2025-07-31 and TSM 2020 with
+3. Read against EDGAR on 2026-10-01 (filing indexes and exhibit heads of the
+results 6-Ks of the last two years plus the refused kinds), the per-issuer
+headline table `RESULTS_HEADLINES` was the cause, four ways:
+
+- **NBIS** (EX-99.1 `tmNNNNNNNdN_ex99-1.htm`): the releases are titled
+  "Nebius reports second quarter financial results and raises ARR guidance"
+  (2025-08-07, `0001104659-25-075028`), "Nebius Group N.V. announces first
+  quarter 2025 financial results" (2025-05-20), "Nebius reports fourth
+  quarter and full-year 2025 financial results" (2026-02-12); the table's
+  "Nebius Group Announces ... Results" matched none (the "N.V." and the
+  lower-case "reports"). Eight releases 2024-10-31 to 2026-08-12 refused.
+- **ASML** (EX-99.1 `pressreleasequarterlyresul.htm`, 2026
+  `pressreleasefinancialresul.htm`): the January release reads "ASML
+  reports €28.3 billion total net sales and €7.6 billion net income in 2024"
+  (`0000937966-25-000003`), with no "Q4 2024" within the table's 120
+  characters; refused every year. Before 2020 the titles differ again
+  ("Stronger than expected demand drives ASML Q1 sales", 2017; a block of
+  media contacts before the headline, 2015), and the sampled 2015 and 2017
+  releases fail the table too.
+- **SIMO** (EX-99.1 `dNNNNNNdex991.htm` throughout, no naming change): the
+  2025-10-31 release (`0001193125-25-259296`) carries its title with
+  `&nbsp;` entities between the words, which `html_to_text` left undecoded,
+  so "Silicon Motion Announces Results" never read as words; from 2026-02-04
+  the title is "Announces Results for the Fourth Quarter and Year Ended" /
+  "for the Quarterly Period Ended", not "for the Period Ended". Four
+  releases refused.
+- **TSM**: the 2020-04-16 release (`0001564590-20-016960`) was filed with no
+  exhibit, the release inside the 6-K's own document after the cover page,
+  and the main-document fallback stopped at 2019-10; and every 2015 to
+  2019-07 release has the same shape, with the headline 1,800 characters
+  in, past the 600 the classifier read — so TSM's admitted history began
+  2019-10-17 (27 releases), not 2015. The audit did not flag 2015-2019
+  because its first admitted year was 2019.
+
+The fix, `backend/market/edgar.py`, `language.py`, `cli/market_edgar.py`:
+
+- One general rule replaces the per-issuer table. `RESULTS_6K_ISSUERS`
+  (the same five CIKs) gates candidates; `results_headline` admits when the
+  text around the first reporting verb (reports/announces/publishes, 120
+  characters before to 200 after) in the first 800 characters names a
+  period (a quarter, Q1-Q4, full/fiscal year, "period ended", "net income
+  in 2024") and a result (results, EPS, net sales, revenue, net income) and
+  neither that headline nor the first 300 characters name another kind of
+  filing (`NOT_A_RELEASE`: conference call/webcast/"plans to release",
+  dividend, buyback/repurchase, AGM, annual report, investor day,
+  offering/placement/notes, financial statements, "Operating and Financial
+  Review", "Revenue Report", board resolutions). It returns the reason.
+- `html_to_text` decodes HTML entities and maps no-break and zero-width
+  spaces to spaces (this also changes the text the tone reader is handed
+  for releases scored from now on; stored scores are not re-read).
+- A 6-K with no EX-99 exhibit is read from its own document for every
+  issuer, with the Form 6-K cover removed (`strip_form_cover`: down to the
+  signature block, or the last check-mark line); an 8-K without an exhibit
+  still has no release. `RELEASE_IN_MAIN_DOC_UNTIL` and
+  `release_in_main_document` are gone. A TSM refresh therefore reads
+  roughly one more page per exhibit-less 6-K (board notes, monthly
+  revenue), about 700 reads at the pacer.
+- `market_edgar --refresh --reclassify-6k` drops the carried `classified_6k`
+  refusals for the named tickers (admissions stay) so the refresh re-reads
+  what the old rule refused; without the flag the carry-forward is as
+  before.
+- Verified against 40 real documents (22 results releases of the four
+  filers 2015-2026 admitted, 18 other 6-Ks refused: TSM monthly revenue,
+  TIFRS statements, board resolutions, notes pricing; ASML investor day;
+  SIMO call notice, dividend, repurchase; NBIS interim "Operating and
+  Financial Review", placement, Microsoft agreement, Avride, ATM
+  agreement). ARM's refused 6-Ks were not re-read (its 12/22 is fine today)
+  and TSMC's 2002-2014 and 2021-2026 non-results 6-Ks were not sampled, so
+  a false admission there is possible and the audit will show it as a
+  year above four.
+- `edgar.py` is hashed into the opportunity shadow's identity:
+  `opportunity_shadow_migrations.json` declares the continuation from the
+  deployed `e8f98a43` (and `4b5e7110`, `df47189d`, `dc1d5fa6`, `19f933ff`)
+  into `884a9418`; the shadow's reads are untouched.
+
+Tests: `backend/tests/test_market_edgar_6k.py` rewritten (44 cases, no
+network): fixtures carry each filer's real exhibit file names and titles
+with synthetic bodies; every results headline shape admitted and every
+refused kind refused with its reason; entities inside a title decoded; the
+cover stripped (signed and unsigned); the 6-K main-document fallback and
+the 8-K non-fallback; TSM's 2015 and 2020-04 releases read from the main
+document; decisions cached and not re-read; `--reclassify-6k` drops
+refusals only; `--audit-6k` shows four a year for NBIS 2025, ASML
+2021-2025 and SIMO 2025 with no CHECK. Not run against SEC's live
+submissions; not deployed; no store touched.
+
+**After deploy** (operator, off-hours): `market_edgar --refresh
+--reclassify-6k --tickers NBIS,ASML,SIMO,TSM` (new partition; roughly 2,000
+index reads and 2,000 document reads at the pacer, ten minutes), then
+`market_tone --refresh --tickers NBIS,ASML,SIMO,TSM` on the Sparks' reader
+(about 60 new releases for the four names plus TSM's 2015-2019), then
+`--audit-6k`. This is a second data-vintage change for these names
+(grade-parity drift banners again).
+
+Diagram impact: NONE — the EDGAR layer's boundaries are unchanged.
+
 ## 2026-09-30 — Deployed `2fe7ac3a`: board Levels column, order-evidence fixes, 6-K tone coverage
 
 - `desk/structure.py`, `market_balancer` `structure` block, `TradeBoard`

@@ -12,12 +12,13 @@ Three things are read per company:
   with their acceptance timestamp. A release accepted after the close
   moves the next session, which is where the reaction is measured. A
   foreign private issuer files Form 6-K instead, with no item codes, so a
-  6-K is admitted only for a listed issuer and only when the filing's
-  press release opens with that issuer's results headline
-  (`RESULTS_HEADLINES`, `classify_6k`); the many other 6-Ks such issuers
-  file (monthly revenue, full statements a month later, call-date
-  notices, financings) are refused, and each decision is cached so a
-  refresh reads only the filings it has not seen.
+  6-K is admitted only for a listed issuer (`RESULTS_6K_ISSUERS`) and only
+  when the filing's press release opens with a results headline: a
+  reporting verb, a period and a result together, and no word of another
+  kind of filing (`results_headline`, `classify_6k`); the many other 6-Ks
+  such issuers file (monthly revenue, full statements a month later,
+  call-date notices, dividends, financings) are refused, and each decision
+  is cached so a refresh reads only the filings it has not seen.
 - **Quarterly fundamentals** — revenue, net income, diluted EPS, capital
   expenditure, operating cash flow and gross profit from the company-facts
   API, kept as the *earliest-filed* value for each period so a later
@@ -42,6 +43,7 @@ import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
+from html import unescape
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -143,65 +145,109 @@ NO_FACT_SESSIONS = 400
 # --- Form 6-K results releases ---------------------------------------------
 #
 # A 6-K carries no item code, so the only way to tell a results release
-# from the rest of an issuer's 6-Ks is the document itself. Each listed
-# issuer's release opens with a fixed headline; the filing is admitted when
-# the head of its press release matches. This is a test of a document's
-# shape (its title), decided per issuer from EDGAR, not a judgement of
-# intent: an unlisted CIK admits nothing. Verified 2026-09-30 against the
-# 2015-2026 filings of each issuer (docs: 6k-tone-spec-2026-09-30).
-RESULTS_HEADLINES: dict[int, tuple[re.Pattern[str], ...]] = {
-    # TSMC: "TSMC Reports Third Quarter EPS of NT$17.44" (0001046179-25-000116).
-    # Monthly revenue 6-Ks open "TSMC ... Revenue for <month>", the full
-    # TIFRS statements a month later carry no headline at all.
-    1046179: (
-        re.compile(r"TSMC Reports (First|Second|Third|Fourth) Quarter EPS", re.I),
-    ),
-    # ASML: "ASML reports €7.5 billion total net sales ... in Q3 2025"
-    # (0001628280-25-045043); annual reports and buyback notices differ.
-    937966: (
-        re.compile(
-            r"ASML reports .{0,160}?(net sales|financial results)"
-            r".{0,120}?Q[1-4] 20\d\d",
-            re.I | re.S,
-        ),
-    ),
-    # Arm: "Arm Holdings plc Reports Results for the Second Quarter of the
-    # Fiscal Year Ending March 31, 2026" (0001973239-25-000042).
-    1973239: (
-        re.compile(r"Arm Holdings plc Reports Results for the .{0,40}?Quarter", re.I),
-    ),
-    # Silicon Motion: "Silicon Motion Announces Results for the Period Ended
-    # September 30, 2025" (0001193125-25-259296); the call-date notice three
-    # weeks earlier says "Announces ... Conference Call" and is refused.
-    1329394: (
-        re.compile(r"Silicon Motion Announces Results for the Period Ended", re.I),
-    ),
-    # Nebius: "Nebius Group Announces Second Quarter 2025 Financial Results"
-    # (0001104659-25-075028); financings say "Announces ... Offering".
-    1513845: (
-        re.compile(
-            r"Nebius Group Announces .{0,60}?(Quarter|Full[- ]Year).{0,60}?Results",
-            re.I | re.S,
-        ),
-    ),
-}
+# from the rest of an issuer's 6-Ks is the document itself. A results
+# release opens with a headline of a fixed shape, whoever files it: a
+# reporting verb ("reports", "announces", "publishes"), a period (a quarter,
+# a full or fiscal year, a period ended) and a result (results, EPS, net
+# sales, revenue, net income) within a few lines of each other, and no
+# word of the other kinds of 6-K (a call notice, a dividend, a buyback, an
+# offering, an annual general meeting, the statements themselves). This is
+# a test of the document's shape, not a judgement of intent, and it applies
+# only to the issuers listed below: an unlisted CIK admits nothing.
+#
+# Read 2026-10-01 against the filings themselves (NBIS 2024-10 to 2026-08,
+# ASML 2015-2026, SIMO 2025-2026, TSM 2015 and 2019-2020); the previous
+# per-issuer headline table refused NBIS entirely ("Nebius reports ...",
+# "Nebius Group N.V. announces ..."), ASML's fourth-quarter release ("... net
+# income in 2024", no "Q4 2024"), SIMO's 2025-10 release (non-breaking
+# spaces as HTML entities inside the title) and its "Fourth Quarter and
+# Year Ended" wording, and every TSMC release carried in the 6-K's main
+# document (2015 to 2019-07, and 2020-04), where the cover page precedes
+# the headline.
+RESULTS_6K_ISSUERS: frozenset[int] = frozenset(
+    {
+        1046179,  # TSMC: "TSMC Reports Third Quarter EPS of NT$17.44"
+        937966,  # ASML: "ASML reports €7.7 billion total net sales ... in Q1 2025"
+        1973239,  # Arm: "Arm Holdings plc Reports Results for the Second Quarter ..."
+        1329394,  # Silicon Motion: "... Announces Results for the Period Ended ..."
+        1513845,  # Nebius: "Nebius reports second quarter financial results"
+    }
+)
 
 # The first 6-K date admitted per issuer. Nebius reports under the CIK
 # Yandex N.V. used until 2024; Yandex's releases are another business.
 EARLIEST_6K: dict[int, date] = {1513845: date(2024, 10, 1)}
-
-# Issuers whose older 6-Ks carried the release as the main document rather
-# than as EX-99.1: TSMC until its 2019-10-17 filing. Value: the first
-# filing date from which EX-99.1 is used.
-RELEASE_IN_MAIN_DOC_UNTIL: dict[int, date] = {1046179: date(2019, 10, 1)}
 
 # Issuers whose releases state their figures in a currency other than the
 # US dollar. The tone reader's financial fields are dollar amounts, so for
 # these the fields are left unread (the five tone scores are kept).
 REPORTING_CURRENCY: dict[int, str] = {1046179: "TWD", 937966: "EUR"}
 
-# How much of a document's text the headline is looked for in.
-HEADLINE_CHARS = 600
+# How much of a document's text the headline is looked for in, after the
+# Form 6-K cover page (when the release is the main document) is removed.
+# ASML's 2015 releases open with a block of media contacts; 800 covers it.
+HEADLINE_CHARS = 800
+# The title zone: the opening of the document, where the kind of a
+# non-release (an interim report, the statements) is named.
+TITLE_CHARS = 300
+# The headline is the text around the first reporting verb: this many
+# characters before it and after it.
+HEADLINE_BEFORE = 120
+HEADLINE_AFTER = 200
+
+REPORTING_VERB = re.compile(
+    r"\b(?:reports|reported|announces|announced|publishes|published"
+    r"|releases|released)\b",
+    re.I,
+)
+PERIOD_WORDS = re.compile(
+    r"\b(?:(?:first|second|third|fourth)[ -]quarter|q[1-4]\b|[1-4]q(?:\d{2}|\d{4})?\b"
+    r"|(?:quarter(?:ly)?(?: period)?|period|year|months)\s+ended"
+    r"|full[- ]year|half[- ]year|fiscal (?:year|20\d\d)"
+    r"|(?:three|six|nine|twelve) months"
+    # "net income in 2024": a full-year figure named by its year.
+    r"|(?:net sales|net income|net profit|revenues?|results)[^.]{0,20}?"
+    r"\b(?:in|for) (?:fiscal |fy ?)?20\d\d\b)",
+    re.I,
+)
+RESULT_WORDS = re.compile(
+    r"\b(?:results|earnings|eps|net sales|net income|net profit|net loss"
+    r"|revenues?)\b",
+    re.I,
+)
+# The other kinds of 6-K, by the words their titles carry: the call-date
+# notice ("Announces Third Quarter 2025 Earnings Conference Call", "plans
+# to release"), dividends, buybacks and repurchases, the AGM, the annual
+# report, an investor day, financings (offerings, placements, notes), the
+# statements and interim reports ("Operating and Financial Review and
+# Prospects"), TSMC's monthly "Revenue Report" and board resolutions.
+NOT_A_RELEASE = re.compile(
+    r"\b(?:conference call|earnings call|webcast"
+    r"|(?:will|plans? to|to) (?:announce|report|release|host|hold|publish)"
+    r"|dividends?|buy-?backs?|repurchases?|annual general meeting|general meeting"
+    r"|agm|annual report|investor day|prospectus"
+    r"|(?:public|private|secondary|notes?|debt|equity|share|ads|follow-on) offering"
+    r"|offering of|private placement|convertible|notes due"
+    r"|senior (?:unsecured )?notes"
+    r"|financial statements|operating and financial review|discussion and analysis"
+    r"|interim report|revenue report|monthly|board of directors|resolutions?)\b",
+    re.I,
+)
+
+# The Form 6-K cover page, when the release is the 6-K's own document: it
+# ends with the signature block ("... duly caused this report to be signed
+# ... By /s/ Name, Chief Financial Officer") or, unsigned, with the last
+# check-mark line.
+_COVER_MARK = re.compile(r"REPORT OF FOREIGN PRIVATE ISSUER", re.I)
+_COVER_SIGNATURE = re.compile(
+    r"the registrant has duly caused this report to be signed.{0,400}?/s/.{0,160}?"
+    r"\b(?:Officer|Director|President|Secretary|Counsel|CFO|CEO|Treasurer|Chairman)\b",
+    re.I | re.S,
+)
+_COVER_CHECKMARK = re.compile(
+    r"Indicate by check mark[^\u2610\u2612]{0,400}?[\u2610\u2612]|82:[\s_]*\.?\)",
+    re.I,
+)
 
 
 class EdgarUnavailableError(RuntimeError):
@@ -347,7 +393,7 @@ def parse_cik_map(payload: Mapping[str, Any]) -> dict[str, int]:
 
 # Pure: one submissions block (recent or an older file) into events. An
 # 8-K is an event when it carries item 2.02. A 6-K is a *candidate* only
-# for an issuer in RESULTS_HEADLINES (and not before its EARLIEST_6K date);
+# for an issuer in RESULTS_6K_ISSUERS (and not before its EARLIEST_6K date);
 # whether it is a results release is decided later by `classify_6k` from
 # the document itself, since the submissions block has no exhibit titles.
 def parse_submissions_block(
@@ -366,7 +412,7 @@ def parse_submissions_block(
             if "2.02" not in row_items:
                 continue
         elif form == "6-K":
-            if cik is None or cik not in RESULTS_HEADLINES:
+            if cik is None or cik not in RESULTS_6K_ISSUERS:
                 continue
         else:
             continue
@@ -390,27 +436,55 @@ def parse_submissions_block(
     return events
 
 
-# Whether an issuer's 6-K of this date carries the release as the main
-# document rather than as an EX-99.1 exhibit.
-def release_in_main_document(cik: int, event: EarningsEvent) -> bool:
-    """Return True when the event's press release is the 6-K itself."""
-    until = RELEASE_IN_MAIN_DOC_UNTIL.get(cik)
-    return event.form == "6-K" and until is not None and event.filed < until
+# Pure: the text of a 6-K's main document with its Form 6-K cover page
+# removed, so the headline search starts at the release. A document
+# without the cover is returned as it is.
+def strip_form_cover(text: str) -> str:
+    """Return `text` after the Form 6-K cover page and signature block."""
+    if not _COVER_MARK.search(text[:2000]):
+        return text
+    signed = _COVER_SIGNATURE.search(text[:3500])
+    if signed:
+        return text[signed.end() :].lstrip()
+    marks = list(_COVER_CHECKMARK.finditer(text[:3000]))
+    return text[marks[-1].end() :].lstrip() if marks else text
 
 
-# Pure: whether the head of a release's text opens with the issuer's
-# results headline. Only the first HEADLINE_CHARS are read, so a later
-# mention of a past quarter in a monthly-revenue note does not match.
+# Pure: whether a release's text opens with a results headline, and why
+# not. The headline is the text around the first reporting verb in the
+# head of the document; it must name a period and a result, and neither
+# it nor the document's title zone may name another kind of filing.
+def results_headline(text: str) -> tuple[bool, str]:
+    """Return (admitted, reason) for the head of a release's text."""
+    head = strip_form_cover(text)[:HEADLINE_CHARS]
+    verb = REPORTING_VERB.search(head)
+    if verb is None:
+        return False, "no reporting verb in the head"
+    headline = head[
+        max(0, verb.start() - HEADLINE_BEFORE) : verb.end() + HEADLINE_AFTER
+    ]
+    other = NOT_A_RELEASE.search(headline) or NOT_A_RELEASE.search(head[:TITLE_CHARS])
+    if other is not None:
+        return False, f"not a results release: {other.group(0)!r}"
+    if PERIOD_WORDS.search(headline) is None:
+        return False, "no period in the headline"
+    if RESULT_WORDS.search(headline) is None:
+        return False, "no result in the headline"
+    return True, headline
+
+
+# Pure: whether the head of a listed issuer's release opens with a results
+# headline. An unlisted CIK admits nothing, whatever the text says.
 def is_results_headline(cik: int, text: str) -> bool:
-    """Return True when `text` opens with the issuer's results headline."""
-    head = text[:HEADLINE_CHARS]
-    return any(p.search(head) for p in RESULTS_HEADLINES.get(cik, ()))
+    """Return True when `text` opens with a results headline (listed CIK)."""
+    return cik in RESULTS_6K_ISSUERS and results_headline(text)[0]
 
 
 # Decide whether one 6-K is a results release: read its filing index,
-# take the press-release document (EX-99.1, or the main document for a
-# filer that used to put the release there), and match its head against
-# the issuer's headline. A filing with no such document is refused.
+# take the press-release document (EX-99.1, or the 6-K's own document when
+# the filing has no exhibit, where TSMC put its releases until 2019 and
+# again in 2020-04), and test its head for a results headline. A filing
+# with no document at all is refused.
 def classify_6k(
     cik: int,
     event: EarningsEvent,
@@ -1102,4 +1176,8 @@ def html_to_text(html: str) -> str:
     """Return the visible text of an HTML document, whitespace collapsed."""
     text = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", html, flags=re.S | re.I)
     text = re.sub(r"<[^>]+>", " ", text)
+    # Entities become their characters (a filer's "&nbsp;" inside a title
+    # must not break it), and the no-break and zero-width spaces that
+    # filers put between words become ordinary spaces.
+    text = unescape(text).replace("\u00a0", " ").replace("\u200b", " ")
     return re.sub(r"\s+", " ", text).strip()

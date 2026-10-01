@@ -4,6 +4,7 @@
     python -m backend.cli.market_edgar --refresh --roles focus
     python -m backend.cli.market_edgar --status
     python -m backend.cli.market_edgar --audit-6k --tickers TSM,ASML,ARM,NBIS,SIMO
+    python -m backend.cli.market_edgar --refresh --reclassify-6k --tickers NBIS,ASML
 
 `--refresh` resolves each ticker to its CIK, fetches its 8-K item 2.02
 events (and, for a listed foreign issuer, its 6-K results releases) and
@@ -12,7 +13,10 @@ company facts, and stores both as immutable frames in today's partition
 already holds. A refused or unknown ticker is reported per ticker and the
 run continues. The 6-K decisions (accession -> admitted) ride on the
 events frame's metadata as `classified_6k` and are carried into the next
-refresh so only new 6-Ks are read. `--status` reports, per ticker, how
+refresh so only new 6-Ks are read; `--reclassify-6k` drops the carried
+refusals (the admissions stay) so a refresh re-reads every 6-K the previous
+rule refused, which is what a widened classifier needs. `--status` reports,
+per ticker, how
 many events and quarterly facts the newest partition holds. `--audit-6k`
 lists the admitted 6-K releases per name per year from the stored frames
 and flags any full year without four, which is what a results filer
@@ -39,6 +43,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--refresh", action="store_true")
     parser.add_argument("--status", action="store_true")
     parser.add_argument("--audit-6k", action="store_true")
+    parser.add_argument("--reclassify-6k", action="store_true")
     parser.add_argument("--tickers", default="")
     parser.add_argument("--roles", default="")
     parser.add_argument("--asof", type=date.fromisoformat, default=None)
@@ -58,7 +63,10 @@ def _select(args: argparse.Namespace) -> tuple[str, ...]:
 
 # Fetch and store every ticker not already in the partition.
 def refresh(
-    store: MarketStore, tickers: tuple[str, ...], asof: date
+    store: MarketStore,
+    tickers: tuple[str, ...],
+    asof: date,
+    reclassify_6k: bool = False,
 ) -> tuple[str, ...]:
     """Fetch events and facts per ticker into the as-of partition.
 
@@ -66,6 +74,8 @@ def refresh(
     filing still writes today's partition (the same facts, a new source
     time); a failed fetch writes nothing, and the store keeps serving that
     name's last successful partition, which is the cached-data policy.
+    With `reclassify_6k`, the 6-K refusals carried from the previous
+    partition are dropped, so every refused 6-K is read again.
     """
     pacer = edgar.Pacer()
     cik_map = edgar.fetch_cik_map(pacer=pacer)
@@ -83,10 +93,11 @@ def refresh(
             failed += 1
             failed_names.append(ticker)
             continue
+        decisions = prior_decisions(store, ticker, asof)
+        if reclassify_6k:
+            decisions = {k: v for k, v in decisions.items() if v}
         try:
-            record = edgar.fetch_company(
-                ticker, cik, pacer=pacer, decisions=prior_decisions(store, ticker, asof)
-            )
+            record = edgar.fetch_company(ticker, cik, pacer=pacer, decisions=decisions)
         except edgar.EdgarUnavailableError as exc:
             print(f"{ticker:6} FAILED  {exc}", flush=True)
             failed += 1
@@ -203,7 +214,7 @@ def main() -> None:
     store = MarketStore(args.data_dir)
     asof = args.asof or datetime.now(tz=UTC).date()
     if args.refresh:
-        refresh(store, tickers, asof)
+        refresh(store, tickers, asof, reclassify_6k=args.reclassify_6k)
     if args.audit_6k:
         if not audit_6k(store, tickers, args.asof):
             raise SystemExit(1)

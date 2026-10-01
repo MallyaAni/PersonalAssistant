@@ -76,5 +76,35 @@
   "to": "e8f98a4324df6172abcd6b1d5b9c45ecd6e5bbe46a7f91588d532862ea74e22e",
   "declared": "2026-09-30",
   "reason": "Chains the already-declared continuations from 19f933ff (2026-09-23, 2026-09-24, 2026-09-26) into the current identity. Revision trading/tone-6k (edgar admits Form 6-K results releases: EarningsEvent.form with default 8-K, parse_submissions_block takes an optional cik and keeps 8-K item 2.02 exactly as before, classify_6k, RESULTS_HEADLINES, events_from_columns, decisions metadata) changed hashed edgar.py. The shadow reads stored frames through record_from_frames, which now delegates to events_from_columns and returns the same events for every frame written so far (no form column reads as 8-K); trailing_levels, _known_series, the model, features, execution, price inputs, target construction and funded ledger are unchanged. No 6-K has been fetched or stored; once the five foreign issuers are backfilled their events frames gain rows, which is a data-vintage change recorded in docs/CHANGELOG.md, not a code migration. The deployed ledger continues; archived transitions are not rewritten."
+ },
+ {
+  "from": "e8f98a4324df6172abcd6b1d5b9c45ecd6e5bbe46a7f91588d532862ea74e22e",
+  "to": "884a9418c7d1fda8768755494162ddcc8ce0123d3442396dd9aabf1df10bbdf1",
+  "declared": "2026-10-01",
+  "reason": "Revision fix/6k-classifier changed edgar.py only in the Form 6-K results-release classifier (RESULTS_6K_ISSUERS replaces the per-issuer RESULTS_HEADLINES table; results_headline, strip_form_cover; html_to_text decodes HTML entities) and language.py's main-document fallback. The shadow's reads are unchanged: edgar._known_series, _known_quarters, record_from_frames, parse_company_facts and the features are untouched; the 8-K event path (item 2.02) is untouched. The model, features, execution, price inputs, target construction and funded ledger are unchanged. The deployed ledger (policy e8f98a43, revision 2fe7ac3a) continues; archived transitions are not rewritten. Once the 6-K backfill re-runs, the edgar_events frames of ARM, ASML, NBIS, SIMO and TSM gain releases, which is a data-vintage change recorded in the CHANGELOG, not a code-identity change."
+ },
+ {
+  "from": "4b5e711070e9ecbad73f179de89a5aac68a9d8d4bde4796dc29088c11477baac",
+  "to": "884a9418c7d1fda8768755494162ddcc8ce0123d3442396dd9aabf1df10bbdf1",
+  "declared": "2026-10-01",
+  "reason": "Revision fix/6k-classifier changed edgar.py only in the Form 6-K results-release classifier (RESULTS_6K_ISSUERS replaces the per-issuer RESULTS_HEADLINES table; results_headline, strip_form_cover; html_to_text decodes HTML entities) and language.py's main-document fallback. The shadow's reads are unchanged: edgar._known_series, _known_quarters, record_from_frames, parse_company_facts and the features are untouched; the 8-K event path (item 2.02) is untouched. The model, features, execution, price inputs, target construction and funded ledger are unchanged. The deployed ledger (policy e8f98a43, revision 2fe7ac3a) continues; archived transitions are not rewritten. Once the 6-K backfill re-runs, the edgar_events frames of ARM, ASML, NBIS, SIMO and TSM gain releases, which is a data-vintage change recorded in the CHANGELOG, not a code-identity change."
+ },
+ {
+  "from": "df47189d60dd11b108a0e29ece29a07f452ea8bece337baba9326b549aa7665a",
+  "to": "884a9418c7d1fda8768755494162ddcc8ce0123d3442396dd9aabf1df10bbdf1",
+  "declared": "2026-10-01",
+  "reason": "Revision fix/6k-classifier changed edgar.py only in the Form 6-K results-release classifier (RESULTS_6K_ISSUERS replaces the per-issuer RESULTS_HEADLINES table; results_headline, strip_form_cover; html_to_text decodes HTML entities) and language.py's main-document fallback. The shadow's reads are unchanged: edgar._known_series, _known_quarters, record_from_frames, parse_company_facts and the features are untouched; the 8-K event path (item 2.02) is untouched. The model, features, execution, price inputs, target construction and funded ledger are unchanged. The deployed ledger (policy e8f98a43, revision 2fe7ac3a) continues; archived transitions are not rewritten. Once the 6-K backfill re-runs, the edgar_events frames of ARM, ASML, NBIS, SIMO and TSM gain releases, which is a data-vintage change recorded in the CHANGELOG, not a code-identity change."
+ },
+ {
+  "from": "dc1d5fa6a445b8d0fcfaddc0886fcd13d2025f26b771ece3a6fb37aab574fbed",
+  "to": "884a9418c7d1fda8768755494162ddcc8ce0123d3442396dd9aabf1df10bbdf1",
+  "declared": "2026-10-01",
+  "reason": "Revision fix/6k-classifier changed edgar.py only in the Form 6-K results-release classifier (RESULTS_6K_ISSUERS replaces the per-issuer RESULTS_HEADLINES table; results_headline, strip_form_cover; html_to_text decodes HTML entities) and language.py's main-document fallback. The shadow's reads are unchanged: edgar._known_series, _known_quarters, record_from_frames, parse_company_facts and the features are untouched; the 8-K event path (item 2.02) is untouched. The model, features, execution, price inputs, target construction and funded ledger are unchanged. The deployed ledger (policy e8f98a43, revision 2fe7ac3a) continues; archived transitions are not rewritten. Once the 6-K backfill re-runs, the edgar_events frames of ARM, ASML, NBIS, SIMO and TSM gain releases, which is a data-vintage change recorded in the CHANGELOG, not a code-identity change."
+ },
+ {
+  "from": "19f933ffc785a21c1275fe3f00e822fb755184e234f41fcee466c3128e5bd34f",
+  "to": "884a9418c7d1fda8768755494162ddcc8ce0123d3442396dd9aabf1df10bbdf1",
+  "declared": "2026-10-01",
+  "reason": "Revision fix/6k-classifier changed edgar.py only in the Form 6-K results-release classifier (RESULTS_6K_ISSUERS replaces the per-issuer RESULTS_HEADLINES table; results_headline, strip_form_cover; html_to_text decodes HTML entities) and language.py's main-document fallback. The shadow's reads are unchanged: edgar._known_series, _known_quarters, record_from_frames, parse_company_facts and the features are untouched; the 8-K event path (item 2.02) is untouched. The model, features, execution, price inputs, target construction and funded ledger are unchanged. The deployed ledger (policy e8f98a43, revision 2fe7ac3a) continues; archived transitions are not rewritten. Once the 6-K backfill re-runs, the edgar_events frames of ARM, ASML, NBIS, SIMO and TSM gain releases, which is a data-vintage change recorded in the CHANGELOG, not a code-identity change."
  }
 ]
