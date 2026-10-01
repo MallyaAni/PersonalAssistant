@@ -28,11 +28,26 @@ added.
   or filing dated after the record is new data; a past one that was not there
   is a vintage change (first reading when the name had none, else more
   releases read), as is a re-scored or dropped release; the nightly's
-  identical re-fetch is nothing. Decided by partition dates, as
+  identical re-fetch is nothing. A filing is compared as the desk reads it
+  (reaction session, filing date, items, form), not by its raw acceptance
+  text: CIEN's 2011-2012 8-Ks were stored five hours apart on 09-21 and
+  back on 09-23, both before the open, which no grade can see, while WDAY's
+  2026-09-29 8-K moved from 12:01 to 16:01 New York on 09-30, which moves
+  its reaction a session and counts. Decided by partition dates, as
   `tone_revisions` is; file times only ever withhold a claim (a newer
   partition already on disk when the record was written was that record's
   input), so a store copied without its times cannot make every name read
   "for the first time".
+- Checked read-only against the live store on spark1 (no write): against
+  the 09-30 record it names exactly ARM, ASML, SIMO and TSM, first reading
+  (tone 0 to 12, 18, 39 and 27 releases), not NBIS (0 to 0), in 0.5 s for
+  94 names, giving "ARM, ASML, SIMO, TSM: grades recomputed after their
+  earnings releases were read for the first time (data update after the
+  2026-09-30 record)" for those whose grade moves tonight. Replayed over all
+  18 live records (09-04 to 09-30) it is empty on ordinary nights and fires
+  only on the known updates: every name's first reading (09-08), the
+  `release_tone/2` and `/3` re-scores (09-11, 09-14 to 09-16), GLW's first
+  reading (09-21), WDAY's 8-K (09-30).
 - The nightly carries `record["data_vintage"]` against the previous record:
   the names whose letter moved between the two records *and* whose own
   earnings data changed in between, with one plain line per kind of change.
