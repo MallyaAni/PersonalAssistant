@@ -1,5 +1,99 @@
 # Changelog
 
+## 2026-10-01 — Grades that moved on a data update say so; the discovery sweep test no longer dates itself: BUILT, not deployed
+
+Branch `desk/vintage-banner` on `8046f0c9` (fix/6k-classifier). Two small
+reliability fixes for the live board.
+
+**D3 — a grade move that coincides with a data-vintage change.** What grade
+parity actually does, end to end: the nightly (`market_daily._grade_parity`)
+compares tonight's record with the point-in-time replay of the *same*
+report, so it is parity by construction and a data update can never show
+there as a mismatch. The live `desk/grade_parity.json` agrees: 09-25, 09-28,
+09-29 and 09-30 are all `ok`, parity mode, 94 names, and the 6-K backfill of
+09-30 22:20 ET put no banner on the board. A drift banner appears only when
+`market_grade_parity` is re-run by hand after the store moved (nothing
+schedules that). What the operator does see after a data update is the next
+record's grades: ARM, ASML, SIMO and TSM are graded on 6-K release tone for
+the first time by the 10-01 nightly, and NBIS, ASML, SIMO and TSM again by
+the 10-02 nightly after tonight's re-read, listed as upgrades and downgrades
+under "What changed" with no cause given. The re-read marker
+(`tone_revisions`) does not fire for a first reading or for older releases
+added.
+
+- `backend/market/data_vintage.py` (new): the point-in-time signal. The store
+  is immutable and `read_frame(kind, t, d)` is exactly what a run on `d`
+  read, so per name and for `edgar_tone` and `edgar_events` it compares the
+  frame as of the record's session with the newer one, by content: a release
+  or filing dated after the record is new data; a past one that was not there
+  is a vintage change (first reading when the name had none, else more
+  releases read), as is a re-scored or dropped release; the nightly's
+  identical re-fetch is nothing. Decided by partition dates, as
+  `tone_revisions` is; file times only ever withhold a claim (a newer
+  partition already on disk when the record was written was that record's
+  input), so a store copied without its times cannot make every name read
+  "for the first time".
+- The nightly carries `record["data_vintage"]` against the previous record:
+  the names whose letter moved between the two records *and* whose own
+  earnings data changed in between, with one plain line per kind of change.
+  Printed as `data vintage since <session>: ...`; never fatal.
+- The parity CLI path (`grade_parity.run` from the store) adds `vintage` to
+  the context; a grade or target row of a name whose own data changed after
+  the record is marked `explained`, and the result's `data_vintage` names
+  them with the same line (the CLI prints `data update: <line>`). `ok`,
+  `mode`, the log line and the exit code are unchanged; membership and
+  session rows are never explained; nothing is explained in parity mode (the
+  red banner is never thinned); with no change the result is exactly as
+  before.
+- The board: a plain grey `Data updates` note (role status) above the board
+  shows the record's lines, and on a parity re-run the explained names'
+  lines; the amber or red banner keeps every other row, unchanged in words
+  and colour, and is not drawn when no row is left (the note then adds "The
+  board shows <date>'s grades; the next nightly record re-grades on current
+  code and data."). The words, for example: "ARM, ASML, SIMO, TSM: grades
+  recomputed after their earnings releases were read for the first time
+  (data update after the 2026-09-30 record)"; for one name "NBIS: grade
+  recomputed after its earnings releases were read for the first time (data
+  update after the 2026-10-01 record)"; the other kinds read "more of their
+  earnings releases were read", "their earnings releases were re-read",
+  "some of their earnings releases were dropped", "their earnings filings
+  were re-read". The date is the record the update came after, which is what
+  the store can prove; no advice words.
+- Not the minimum-honest fallback (a `data_updates.json` written by the
+  updating CLIs): the immutable store attributes the change point in time,
+  per name, including the 09-30 backfill that ran on code which could not
+  have recorded it.
+
+**D4 — the date-rotted discovery test.**
+`test_a_sweep_searches_and_ranks_with_what_memory_knows` is no longer xfail.
+It read two clocks: the sweep's own `now` (query month, the 60-day lead-time
+window through the ranker, the memory re-ranker and the spread) and the wall
+clock in `sources.web._to_event`, which refuses a stated date before today.
+"September 30, 2026" against `_NOW` 2026-08-01 sat inside the window until
+the wall clock reached it; moving `now` alone puts any date the wall clock
+accepts outside a window measured from the old moment. The sweep now runs at
+today's noon UTC with the find dated ten days later and the expected query
+month computed from that moment. A guard,
+`test_no_fixture_here_is_dated_after_the_fixed_clock`, reads every string
+literal of the module with the production date parser (and literal
+`date(...)`/`datetime(...)` calls) and refuses any date after `_NOW`; it is
+shown to catch the date that rotted, and catches the three such literals in
+the previous version of the file. Discovery code unchanged.
+
+Tests: `backend/tests/test_data_vintage.py` (10: first reading detected;
+more/re-read/dropped/filings each with its words; new data, identical
+re-fetch, no newer partition not detected; a partition on disk before the
+record not claimed; the nightly block names only moves with a data change
+(mixed); parity rows explained when the name's data changed (detected),
+unchanged without (not detected), only those names and never membership
+(mixed); the CLI reads it from a store and still exits 3; the nightly hook
+never raises). `frontend/e2e/desk-grade-parity.spec.ts` +3 (mixed: note for
+AAPL, amber banner keeps MSFT and the store row; every row explained: note
+only, no alert; parity OK with the record's note). Gate results below.
+
+Diagram impact: NONE — no component, store, dependency or data flow added;
+the nightly and the parity CLI read the same EDGAR frames they already read.
+
 ## 2026-10-01 — Form 6-K classifier widened to the filings' real headlines: BUILT, not deployed, not re-run
 
 The 2026-09-30 backfill's `--audit-6k` flagged NBIS 0 of 53 6-Ks admitted,
