@@ -1,0 +1,106 @@
+{
+  "c": 1.0,
+  "selection": {
+    "chosen": 1.0,
+    "given": false,
+    "auc_in_sample": {
+      "0.1": 0.5970320351758794,
+      "1.0": 0.6372094849246231
+    },
+    "rows": 718,
+    "grid": [
+      0.1,
+      1.0
+    ],
+    "year": 2018
+  },
+  "refits": [
+    {
+      "year": 2018,
+      "fit_session": "2018-01-02",
+      "train_rows": 718,
+      "test_rows": 262,
+      "fitted": true,
+      "vocabulary": 12200,
+      "positives": 398
+    },
+    {
+      "year": 2019,
+      "fit_session": "2019-01-02",
+      "train_rows": 976,
+      "test_rows": 266,
+      "fitted": true,
+      "vocabulary": 15657,
+      "positives": 535
+    },
+    {
+      "year": 2020,
+      "fit_session": "2020-01-02",
+      "train_rows": 1241,
+      "test_rows": 287,
+      "fitted": true,
+      "vocabulary": 23338,
+      "positives": 677
+    },
+    {
+      "year": 2021,
+      "fit_session": "2021-01-04",
+      "train_rows": 1533,
+      "test_rows": 299,
+      "fitted": true,
+      "vocabulary": 28618,
+      "positives": 824
+    },
+    {
+      "year": 2022,
+      "fit_session": "2022-01-03",
+      "train_rows": 1831,
+      "test_rows": 318,
+      "fitted": true,
+      "vocabulary": 32434,
+      "positives": 960
+    },
+    {
+      "year": 2023,
+      "fit_session": "2023-01-03",
+      "train_rows": 2145,
+      "test_rows": 322,
+      "fitted": true,
+      "vocabulary": 36004,
+      "positives": 1134
+    },
+    {
+      "year": 2024,
+      "fit_session": "2024-01-02",
+      "train_rows": 2468,
+      "test_rows": 336,
+      "fitted": true,
+      "vocabulary": 39590,
+      "positives": 1308
+    },
+    {
+      "year": 2025,
+      "fit_session": "2025-01-02",
+      "train_rows": 2801,
+      "test_rows": 357,
+      "fitted": true,
+      "vocabulary": 43388,
+      "positives": 1483
+    },
+    {
+      "year": 2026,
+      "fit_session": "2026-01-02",
+      "train_rows": 3158,
+      "test_rows": 270,
+      "fitted": true,
+      "vocabulary": 47511,
+      "positives": 1646
+    }
+  ],
+  "texts": 3451,
+  "labelled": 3439,
+  "scored": 2717,
+  "purge": 20,
+  "min_df": 20,
+  "first_refit_year": 2018
+}
