@@ -41,6 +41,15 @@ function imageArtifactRecord(
   }
 }
 
+// Say whether a browser URL is the given API path on whichever origin the app
+// was built to call. A plain `npm run dev` leaves VITE_API_URL unset, so the app
+// calls http://localhost:8000; the spark1 browser gate serves it with the
+// variable empty, so the same call goes to the dev server's own origin. The
+// deterministic mocks below are written as `**/api/...` for the same reason.
+function isApiPath(url: string, path: string) {
+  return new URL(url).pathname === path
+}
+
 function observeBlockingBrowserErrors(page: Page) {
   const consoleErrors: string[] = []
   const pageErrors: string[] = []
@@ -413,7 +422,7 @@ function imageMatchEventStream(
 // Give deterministic tests one server-derived identity and empty owned history.
 test.beforeEach(async ({ page }, testInfo) => {
   if (testInfo.title.includes('@live')) return
-  await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
+  await page.route('**/api/v1/auth/session', route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
@@ -423,28 +432,28 @@ test.beforeEach(async ({ page }, testInfo) => {
       is_admin: false,
     }),
   }))
-  await page.route('http://localhost:8000/api/v1/conversations/ani.mallya', route =>
+  await page.route('**/api/v1/conversations/ani.mallya', route =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ conversations: [] }),
     }),
   )
-  await page.route('http://localhost:8000/api/v1/discovery/ani.mallya/subscription', route =>
+  await page.route('**/api/v1/discovery/ani.mallya/subscription', route =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ subscription: null, egress_enabled: false }),
     }),
   )
-  await page.route('http://localhost:8000/api/v1/discovery/ani.mallya/runs?limit=5', route =>
+  await page.route('**/api/v1/discovery/ani.mallya/runs?limit=5', route =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ runs: [] }),
     }),
   )
-  await page.route('http://localhost:8000/api/v1/discovery/ani.mallya/search-usage', route =>
+  await page.route('**/api/v1/discovery/ani.mallya/search-usage', route =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -460,15 +469,15 @@ test.beforeEach(async ({ page }, testInfo) => {
 test('requires invite credentials before showing the private workspace', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   let authenticated = false
-  await page.unroute('http://localhost:8000/api/v1/auth/session')
-  await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
+  await page.unroute('**/api/v1/auth/session')
+  await page.route('**/api/v1/auth/session', route => route.fulfill({
     status: authenticated ? 200 : 401,
     contentType: 'application/json',
     body: JSON.stringify(authenticated
       ? { authentication_required: true, user_id: 'friend.user', expires_at: '2026-08-09T00:00:00Z' }
       : { detail: 'Authentication required' }),
   }))
-  await page.route('http://localhost:8000/api/v1/auth/login', async route => {
+  await page.route('**/api/v1/auth/login', async route => {
     const body = route.request().postDataJSON() as { username: string; password: string }
     if (body.username !== 'friend.user' || body.password !== 'correct test password') {
       await route.fulfill({
@@ -490,7 +499,7 @@ test('requires invite credentials before showing the private workspace', async (
       }),
     })
   })
-  await page.route('http://localhost:8000/api/v1/auth/logout', async route => {
+  await page.route('**/api/v1/auth/logout', async route => {
     authenticated = false
     await route.fulfill({ status: 204 })
   })
@@ -526,13 +535,13 @@ test('requires invite credentials before showing the private workspace', async (
 test('records an access request instead of creating an account outright', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   let requestPayload: Record<string, unknown> | null = null
-  await page.unroute('http://localhost:8000/api/v1/auth/session')
-  await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
+  await page.unroute('**/api/v1/auth/session')
+  await page.route('**/api/v1/auth/session', route => route.fulfill({
     status: 401,
     contentType: 'application/json',
     body: JSON.stringify({ detail: 'Authentication required' }),
   }))
-  await page.route('http://localhost:8000/api/v1/auth/request-access', async route => {
+  await page.route('**/api/v1/auth/request-access', async route => {
     requestPayload = route.request().postDataJSON() as Record<string, unknown>
     await route.fulfill({
       status: 201,
@@ -846,7 +855,7 @@ for (const width of [700, 640, 500, 390]) {
 test('shows mobile account identity and logout in the navigation drawer', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.route('http://localhost:8000/api/v1/auth/logout', route => route.fulfill({
+  await page.route('**/api/v1/auth/logout', route => route.fulfill({
     status: 204,
   }))
 
@@ -872,7 +881,7 @@ test('ignores client-stored user spoofing and scopes conversations by authentica
     localStorage.setItem('anios_conversation_id', conversation)
     localStorage.setItem('anios_conversation_id:attacker.user', '22222222-2222-4222-8222-222222222222')
   }, { conversation: legacyConversation })
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     requests.push({
       user_id: payload.user_id,
@@ -887,7 +896,7 @@ test('ignores client-stored user spoofing and scopes conversations by authentica
 
   // Keep transcript restoration inside the authenticated deterministic boundary.
   await page.route(
-    'http://localhost:8000/api/v1/conversations/ani.mallya/*',
+    '**/api/v1/conversations/ani.mallya/*',
     async route => {
       const conversationId = route.request().url().split('/').pop()
       await route.fulfill({
@@ -949,7 +958,7 @@ test('renders a completed deterministic chat stream and clears loading state', a
     requestObserved = resolve
   })
 
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     requestPayload = route.request().postDataJSON()
     requestObserved()
     await responseGate
@@ -967,7 +976,7 @@ test('renders a completed deterministic chat stream and clears loading state', a
   await page.goto('/')
   const { textarea, sendButton } = chatControls(page)
   const responsePromise = page.waitForResponse(
-    response => response.url() === 'http://localhost:8000/api/v1/chat',
+    response => isApiPath(response.url(), '/api/v1/chat'),
   )
 
   await textarea.fill(uniqueMessage)
@@ -1011,7 +1020,7 @@ test('renders a completed deterministic chat stream and clears loading state', a
 test('renders markdown links and bare URLs in an answer as tappable links', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   let requestPayload: unknown
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     requestPayload = route.request().postDataJSON()
     await route.fulfill({
       status: 200,
@@ -1054,7 +1063,7 @@ test('an unknown event mid-stream does not kill the answer', async ({ page }) =>
   const errors = observeBlockingBrowserErrors(page)
   let requestPayload: { conversation_id: string } | undefined
 
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     requestPayload = route.request().postDataJSON()
     const conversationId = requestPayload!.conversation_id
     // An unfamiliar frame deliberately placed BETWEEN two deltas, so a parser
@@ -1104,7 +1113,7 @@ test('an unknown event mid-stream does not kill the answer', async ({ page }) =>
 test('shows the MCP tool used for a completed chat answer', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   let requestPayload: { conversation_id: string } | undefined
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     requestPayload = route.request().postDataJSON()
     await route.fulfill({
       status: 200,
@@ -1130,7 +1139,7 @@ test('shows the MCP tool used for a completed chat answer', async ({ page }) => 
 // Verify specialist delegation and its exact model remain visible after queuing.
 test('shows a background PresentationAgent handoff in chat', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON() as { conversation_id: string }
     await route.fulfill({
       status: 200,
@@ -1162,7 +1171,7 @@ test('shows a background PresentationAgent handoff in chat', async ({ page }) =>
 test('shows Google source attribution for an internet MCP response', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
 
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON() as { conversation_id: string }
     await route.fulfill({
       status: 200,
@@ -1194,7 +1203,7 @@ test('shows Google source attribution for an internet MCP response', async ({ pa
 // Verify a refused MCP call is visible and does not leave chat loading.
 test('shows an MCP refusal while the local answer still completes', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     await route.fulfill({
       status: 200,
@@ -1228,7 +1237,7 @@ test('renders assistant markdown without interpreting raw HTML', async ({ page }
     '<img src="invalid" onerror="window.markdownInjected = true">',
   ]
 
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     const frames = [
       'event: start',
@@ -1287,7 +1296,7 @@ test('renders a completed diagram artifact and preserves it across tab navigatio
   const artifactId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
   let requestPayload: Record<string, unknown> = {}
 
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     requestPayload = route.request().postDataJSON()
     await route.fulfill({
       status: 200,
@@ -1300,7 +1309,7 @@ test('renders a completed diagram artifact and preserves it across tab navigatio
       ),
     })
   })
-  await page.route('http://localhost:8000/api/v1/memory/**', route =>
+  await page.route('**/api/v1/memory/**', route =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -1316,7 +1325,7 @@ test('renders a completed diagram artifact and preserves it across tab navigatio
   await page.goto('/')
   const { textarea, sendButton } = chatControls(page)
   const responsePromise = page.waitForResponse(
-    response => response.url() === 'http://localhost:8000/api/v1/chat',
+    response => isApiPath(response.url(), '/api/v1/chat'),
   )
   await textarea.fill(uniqueMessage)
   await sendButton.click()
@@ -1356,8 +1365,8 @@ test('restores a completed diagram artifact after a full browser reload', async 
   const query = 'Create the reload validation flowchart'
   let persisted = false
 
-  await page.unroute('http://localhost:8000/api/v1/auth/session')
-  await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
+  await page.unroute('**/api/v1/auth/session')
+  await page.route('**/api/v1/auth/session', route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
@@ -1369,7 +1378,7 @@ test('restores a completed diagram artifact after a full browser reload', async 
   await page.addInitScript(({ user, conversation }) => {
     localStorage.setItem(`anios_conversation_id:${user}`, conversation)
   }, { user: userId, conversation: conversationId })
-  await page.route(`http://localhost:8000/api/v1/conversations/${userId}/${conversationId}`, route =>
+  await page.route(`**/api/v1/conversations/${userId}/${conversationId}`, route =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -1402,7 +1411,7 @@ test('restores a completed diagram artifact after a full browser reload', async 
       }),
     }),
   )
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     persisted = true
     await route.fulfill({
       status: 200,
@@ -1440,7 +1449,7 @@ test('manages visual artifact history and local exports', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const artifactId = 'ffffffff-ffff-4fff-8fff-ffffffffffff'
   let deleted = false
-  await page.route('http://localhost:8000/api/v1/artifacts/ani.mallya', route =>
+  await page.route('**/api/v1/artifacts/ani.mallya', route =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -1462,7 +1471,7 @@ test('manages visual artifact history and local exports', async ({ page }) => {
       }]),
     }),
   )
-  await page.route(`http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}`, route => {
+  await page.route(`**/api/v1/artifacts/ani.mallya/${artifactId}`, route => {
     deleted = true
     return route.fulfill({
       status: 200,
@@ -1494,7 +1503,7 @@ test('manages visual artifact history and local exports', async ({ page }) => {
 
 // Verify artifact history load failures are visible instead of appearing empty.
 test('shows a visible visual artifact history failure', async ({ page }) => {
-  await page.route('http://localhost:8000/api/v1/artifacts/ani.mallya', route =>
+  await page.route('**/api/v1/artifacts/ani.mallya', route =>
     route.fulfill({
       status: 503,
       contentType: 'application/json',
@@ -1512,7 +1521,7 @@ test('shows a diagram artifact failure and clears loading state', async ({ page 
   const errors = observeBlockingBrowserErrors(page)
   const uniqueMessage = `Create a failed flowchart E2E_DIAGRAM_FAILURE_${Date.now()}`
 
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     await route.fulfill({
       status: 200,
@@ -1540,7 +1549,7 @@ test('shows a diagram artifact failure and clears loading state', async ({ page 
 })
 
 test('disables message and manual-memory actions until they have content', async ({ page }) => {
-  await page.route('http://localhost:8000/api/v1/memory/**', route =>
+  await page.route('**/api/v1/memory/**', route =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -1580,7 +1589,7 @@ test('shows every agent memory form with live user-scoped counts', async ({ page
   const errors = observeBlockingBrowserErrors(page)
   const requested: string[] = []
   let exportRequests = 0
-  await page.route('http://localhost:8000/api/v1/memory/ani.mallya/agent', async route => {
+  await page.route('**/api/v1/memory/ani.mallya/agent', async route => {
     requested.push('agent')
     await route.fulfill({
       status: 200,
@@ -1597,7 +1606,7 @@ test('shows every agent memory form with live user-scoped counts', async ({ page
       }),
     })
   })
-  await page.route('http://localhost:8000/api/v1/memory/ani.mallya/tools', async route => {
+  await page.route('**/api/v1/memory/ani.mallya/tools', async route => {
     requested.push('tools')
     await route.fulfill({
       status: 200,
@@ -1605,7 +1614,7 @@ test('shows every agent memory form with live user-scoped counts', async ({ page
       body: JSON.stringify({ descriptors: [{ id: 'one' }], preferences: [], outcomes: [] }),
     })
   })
-  await page.route('http://localhost:8000/api/v1/memory/ani.mallya', async route => {
+  await page.route('**/api/v1/memory/ani.mallya', async route => {
     requested.push('personal')
     await route.fulfill({
       status: 200,
@@ -1618,7 +1627,7 @@ test('shows every agent memory form with live user-scoped counts', async ({ page
       }),
     })
   })
-  await page.route('http://localhost:8000/api/v1/memory/ani.mallya/export', async route => {
+  await page.route('**/api/v1/memory/ani.mallya/export', async route => {
     exportRequests += 1
     await route.fulfill({
       status: 200,
@@ -1690,7 +1699,7 @@ test('renders a visible error and clears loading state when chat fails', async (
     rejectRequest = resolve
   })
 
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     await rejectionGate
     await route.abort('connectionrefused')
   })
@@ -1723,7 +1732,7 @@ test('renders a visible error and clears loading state when chat fails', async (
 test('shows an auto-saved preferred-name proposal from chat', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
 
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     await route.fulfill({
       status: 200,
@@ -1744,7 +1753,7 @@ test('shows an auto-saved preferred-name proposal from chat', async ({ page }) =
 test('shows an auto-saved response-style proposal from chat', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
 
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     await route.fulfill({
       status: 200,
@@ -1903,7 +1912,7 @@ test('shows auto-saved home locality and interest proposals from chat', async ({
   const errors = observeBlockingBrowserErrors(page)
   let chatCount = 0
 
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     const proposal = chatCount++ === 0
       ? { kind: 'discovery_locality', label: 'Arlington', region: 'Virginia' }
@@ -1938,7 +1947,7 @@ test('shows auto-saved home locality and interest proposals from chat', async ({
 test('shows an auto-saved semantic interest list for Scout from chat', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
 
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     await route.fulfill({
       status: 200,
@@ -1975,7 +1984,7 @@ test('clears the saved-memory notice on the next question', async ({ page }) => 
   const errors = observeBlockingBrowserErrors(page)
   let turn = 0
 
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     turn += 1
     await route.fulfill({
@@ -2006,7 +2015,7 @@ test('clears the saved-memory notice on the next question', async ({ page }) => 
 test('shows every auto-saved memory from one chat turn', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
 
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     await route.fulfill({
       status: 200,
@@ -2041,7 +2050,7 @@ test('shows every auto-saved memory from one chat turn', async ({ page }) => {
 // Parse and display a semantically selected general fact without dropping the stream.
 test('shows an auto-saved semantic fact proposal from chat', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     await route.fulfill({
       status: 200,
@@ -2069,7 +2078,7 @@ test('shows an auto-saved semantic fact proposal from chat', async ({ page }) =>
 
 test('reuses a conversation ID and rotates it only for a new conversation', async ({ page }) => {
   const conversationIds: string[] = []
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     conversationIds.push(route.request().postDataJSON().conversation_id)
     await route.fulfill({
       status: 200,
@@ -2102,7 +2111,7 @@ test('keeps the visible transcript when navigating to memory and back', async ({
   const userMessage = `navigation message ${Date.now()}`
   const assistantMessage = `navigation response ${Date.now()}`
 
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     await route.fulfill({
       status: 200,
@@ -2114,7 +2123,7 @@ test('keeps the visible transcript when navigating to memory and back', async ({
       ),
     })
   })
-  await page.route('http://localhost:8000/api/v1/memory/**', route =>
+  await page.route('**/api/v1/memory/**', route =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -2147,7 +2156,7 @@ test('keeps the visible transcript when navigating to memory and back', async ({
 test('opens a fresh chat when starting a conversation from memory', async ({ page }) => {
   const userMessage = `conversation to replace ${Date.now()}`
 
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     await route.fulfill({
       status: 200,
@@ -2155,7 +2164,7 @@ test('opens a fresh chat when starting a conversation from memory', async ({ pag
       body: chatEventStream('new-conversation-trace', payload.conversation_id, 'ok'),
     })
   })
-  await page.route('http://localhost:8000/api/v1/memory/**', route =>
+  await page.route('**/api/v1/memory/**', route =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -2184,7 +2193,7 @@ test('opens a fresh chat when starting a conversation from memory', async ({ pag
 
 test('does not let browser state switch the authenticated account', async ({ page }) => {
   const requests: Array<{ user_id: string; conversation_id: string; query: string }> = []
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     requests.push(payload)
     await route.fulfill({
@@ -2193,7 +2202,7 @@ test('does not let browser state switch the authenticated account', async ({ pag
       body: chatEventStream('test', payload.conversation_id, 'ok'),
     })
   })
-  await page.route('http://localhost:8000/api/v1/memory/**', async route => {
+  await page.route('**/api/v1/memory/**', async route => {
     const userId = decodeURIComponent(new URL(route.request().url()).pathname.split('/').at(-1)!)
     await route.fulfill({
       status: 200,
@@ -2239,7 +2248,7 @@ test('manages persisted personal memory through the browser', async ({ page }) =
     facts: [] as Array<Record<string, unknown>>,
   }
 
-  await page.route('http://localhost:8000/api/v1/memory/**', async route => {
+  await page.route('**/api/v1/memory/**', async route => {
     const request = route.request()
     if (request.method() === 'GET' && request.url().endsWith('/export')) {
       await route.fulfill({
@@ -2344,7 +2353,7 @@ test('shows auto-saved entity, procedure, and knowledge proposals from chat', as
   ]
   let proposalIndex = 0
 
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     await route.fulfill({
       status: 200,
@@ -2768,7 +2777,7 @@ test('generates, restores, and deletes an owned image artifact', async ({ page }
   // Generation now runs inside the chat stream: the main model decides to
   // create the picture and the browser learns about it through the same
   // artifact_started/artifact_ready events a diagram uses.
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     conversationId = String(payload.conversation_id)
     artifact = imageArtifactRecord('generated_image', artifactId, conversationId, {
@@ -2789,17 +2798,17 @@ test('generates, restores, and deletes an owned image artifact', async ({ page }
     })
   })
   await page.route(
-    `http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}/content`,
+    `**/api/v1/artifacts/ani.mallya/${artifactId}/content`,
     route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
   )
-  await page.route('http://localhost:8000/api/v1/artifacts/ani.mallya', route =>
+  await page.route('**/api/v1/artifacts/ani.mallya', route =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify(artifact ? [artifact] : []),
     }),
   )
-  await page.route('http://localhost:8000/api/v1/conversations/ani.mallya/**', route =>
+  await page.route('**/api/v1/conversations/ani.mallya/**', route =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -2807,7 +2816,7 @@ test('generates, restores, and deletes an owned image artifact', async ({ page }
     }),
   )
   let deleted = false
-  await page.route(`http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}`, route => {
+  await page.route(`**/api/v1/artifacts/ani.mallya/${artifactId}`, route => {
     deleted = true
     return route.fulfill({
       status: 200,
@@ -2819,7 +2828,7 @@ test('generates, restores, and deletes an owned image artifact', async ({ page }
   await page.goto('/')
   const textarea = page.getByLabel('Message DeepMatter')
   await textarea.fill(prompt)
-  const responsePromise = page.waitForResponse('http://localhost:8000/api/v1/chat')
+  const responsePromise = page.waitForResponse('**/api/v1/chat')
   await page.getByRole('button', { name: 'Send message' }).click()
   expect((await responsePromise).status()).toBe(200)
 
@@ -2858,7 +2867,7 @@ test('shows a recalled image as a compact thumbnail that expands on click', asyn
   const artifactId = '34343434-3434-4434-8434-343434343434'
   let conversationId = ''
 
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     conversationId = String(payload.conversation_id)
     await route.fulfill({
@@ -2873,7 +2882,7 @@ test('shows a recalled image as a compact thumbnail that expands on click', asyn
     })
   })
   await page.route(
-    `http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}/content`,
+    `**/api/v1/artifacts/ani.mallya/${artifactId}/content`,
     route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
   )
 
@@ -2911,11 +2920,11 @@ test('asks which owned image to edit when an unselected reference is ambiguous',
 
   for (const artifactId of [firstId, secondId]) {
     await page.route(
-      `http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}/content`,
+      `**/api/v1/artifacts/ani.mallya/${artifactId}/content`,
       route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
     )
   }
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     chatBody = route.request().postDataJSON() as Record<string, unknown>
     const artifacts = [
       imageArtifactRecord('uploaded_image', firstId, conversationId),
@@ -2970,7 +2979,7 @@ test('routes an image followup question to chat without regenerating', async ({ 
   // Both turns go through the same chat endpoint now; the second body's own
   // fields prove the followup reused the image as context instead of the
   // main model choosing to generate a second one.
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON() as Record<string, unknown>
     chatBodies.push(payload)
     conversationId = conversationId || String(payload.conversation_id)
@@ -2996,7 +3005,7 @@ test('routes an image followup question to chat without regenerating', async ({ 
     })
   })
   await page.route(
-    `http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}/content`,
+    `**/api/v1/artifacts/ani.mallya/${artifactId}/content`,
     route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
   )
 
@@ -3007,7 +3016,7 @@ test('routes an image followup question to chat without regenerating', async ({ 
   await expect(page.getByLabel('Image: Generated image')).toBeVisible()
 
   await textarea.fill(question)
-  const responsePromise = page.waitForResponse('http://localhost:8000/api/v1/chat')
+  const responsePromise = page.waitForResponse('**/api/v1/chat')
   await page.getByRole('button', { name: 'Send message' }).click()
   expect((await responsePromise).status()).toBe(200)
 
@@ -3036,13 +3045,13 @@ test('selects and clears image context when several images are visible', async (
 
   for (const artifactId of artifactIds) {
     await page.route(
-      `http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}/content`,
+      `**/api/v1/artifacts/ani.mallya/${artifactId}/content`,
       route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
     )
   }
   // The first two turns are the model choosing to generate a picture; every
   // turn after that is an ordinary answer using whichever image is selected.
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const body = route.request().postDataJSON() as Record<string, unknown>
     chatBodies.push(body)
     const conversationId = String(body.conversation_id)
@@ -3109,17 +3118,17 @@ test('asks about a selected generated image from the main composer', async ({ pa
   const chatBodies: Record<string, unknown>[] = []
 
   await page.route(
-    `http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}/content`,
+    `**/api/v1/artifacts/ani.mallya/${artifactId}/content`,
     route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
   )
-  await page.route('http://localhost:8000/api/v1/conversations/ani.mallya/**', route =>
+  await page.route('**/api/v1/conversations/ani.mallya/**', route =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ conversation_id: conversationId, turns: [], artifacts: [] }),
     }),
   )
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const body = route.request().postDataJSON() as Record<string, unknown>
     chatBodies.push(body)
     conversationId = conversationId || String(body.conversation_id)
@@ -3156,7 +3165,7 @@ test('asks about a selected generated image from the main composer', async ({ pa
 
   await expect(page.getByLabel(`Using image in chat: Generated image`)).toBeVisible()
   await textarea.fill(question)
-  const chatResponse = page.waitForResponse('http://localhost:8000/api/v1/chat')
+  const chatResponse = page.waitForResponse('**/api/v1/chat')
   await page.getByRole('button', { name: 'Send message' }).click()
   expect((await chatResponse).status()).toBe(200)
 
@@ -3182,14 +3191,14 @@ test('keeps auto-following the newest image after deleting the active one', asyn
   let deletedId = ''
 
   await page.route(
-    `http://localhost:8000/api/v1/artifacts/ani.mallya/${firstId}/content`,
+    `**/api/v1/artifacts/ani.mallya/${firstId}/content`,
     route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
   )
   await page.route(
-    `http://localhost:8000/api/v1/artifacts/ani.mallya/${secondId}/content`,
+    `**/api/v1/artifacts/ani.mallya/${secondId}/content`,
     route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
   )
-  await page.route(`http://localhost:8000/api/v1/artifacts/ani.mallya/${firstId}`, route => {
+  await page.route(`**/api/v1/artifacts/ani.mallya/${firstId}`, route => {
     deletedId = firstId
     return route.fulfill({
       status: 200,
@@ -3197,7 +3206,7 @@ test('keeps auto-following the newest image after deleting the active one', asyn
       body: JSON.stringify({ status: 'deleted', id: firstId }),
     })
   })
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const body = route.request().postDataJSON() as Record<string, unknown>
     chatBodies.push(body)
     conversationId = conversationId || String(body.conversation_id)
@@ -3240,7 +3249,7 @@ test('keeps auto-following the newest image after deleting the active one', asyn
   await expect(page.getByLabel('Image: Generated image')).toBeVisible()
 
   await textarea.fill('what do you think of it?')
-  const followupResponse = page.waitForResponse('http://localhost:8000/api/v1/chat')
+  const followupResponse = page.waitForResponse('**/api/v1/chat')
   await page.getByRole('button', { name: 'Send message' }).click()
   expect((await followupResponse).status()).toBe(200)
 
@@ -3267,14 +3276,14 @@ test('routes can-you image edits to refinement instead of vision Q&A', async ({ 
   const chatBodies: Record<string, unknown>[] = []
 
   await page.route(
-    `http://localhost:8000/api/v1/artifacts/ani.mallya/${originalId}/content`,
+    `**/api/v1/artifacts/ani.mallya/${originalId}/content`,
     route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
   )
   await page.route(
-    `http://localhost:8000/api/v1/artifacts/ani.mallya/${revisionId}/content`,
+    `**/api/v1/artifacts/ani.mallya/${revisionId}/content`,
     route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
   )
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const body = route.request().postDataJSON() as Record<string, unknown>
     chatBodies.push(body)
     conversationId = conversationId || String(body.conversation_id)
@@ -3319,7 +3328,7 @@ test('routes can-you image edits to refinement instead of vision Q&A', async ({ 
   const originalCard = page.getByLabel('Image: Generated image').first()
   await expect(originalCard.getByRole('button', { name: 'Using in chat' })).toBeVisible()
   await textarea.fill(feedback)
-  const responsePromise = page.waitForResponse('http://localhost:8000/api/v1/chat')
+  const responsePromise = page.waitForResponse('**/api/v1/chat')
   await page.getByRole('button', { name: 'Send message' }).click()
   expect((await responsePromise).status()).toBe(200)
 
@@ -3353,14 +3362,14 @@ test('does not surface the post-edit re-observation as an answer nobody asked fo
   const chatBodies: Record<string, unknown>[] = []
 
   await page.route(
-    `http://localhost:8000/api/v1/artifacts/ani.mallya/${originalId}/content`,
+    `**/api/v1/artifacts/ani.mallya/${originalId}/content`,
     route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
   )
   await page.route(
-    `http://localhost:8000/api/v1/artifacts/ani.mallya/${revisionId}/content`,
+    `**/api/v1/artifacts/ani.mallya/${revisionId}/content`,
     route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
   )
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const body = route.request().postDataJSON() as Record<string, unknown>
     chatBodies.push(body)
     conversationId = conversationId || String(body.conversation_id)
@@ -3409,7 +3418,7 @@ test('does not surface the post-edit re-observation as an answer nobody asked fo
   const originalCard = page.getByLabel('Image: Generated image').first()
   await expect(originalCard.getByRole('button', { name: 'Using in chat' })).toBeVisible()
   await textarea.fill(feedback)
-  const responsePromise = page.waitForResponse('http://localhost:8000/api/v1/chat')
+  const responsePromise = page.waitForResponse('**/api/v1/chat')
   await page.getByRole('button', { name: 'Send message' }).click()
   expect((await responsePromise).status()).toBe(200)
 
@@ -3433,7 +3442,7 @@ test('uploads, analyzes, and source-refines an image with visible results', asyn
   let releaseAnalysis = () => {}
   const analysisGate = new Promise<void>(resolve => { releaseAnalysis = resolve })
 
-  await page.route('http://localhost:8000/api/v1/vision/analyze', async route => {
+  await page.route('**/api/v1/vision/analyze', async route => {
     multipartBody = route.request().postDataBuffer()?.toString('utf8') || ''
     const conversationMatch = multipartBody.match(/name="conversation_id"\r\n\r\n([^\r]+)/)
     const artifact = imageArtifactRecord(
@@ -3450,16 +3459,16 @@ test('uploads, analyzes, and source-refines an image with visible results', asyn
     })
   })
   await page.route(
-    `http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}/content`,
+    `**/api/v1/artifacts/ani.mallya/${artifactId}/content`,
     route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
   )
   await page.route(
-    `http://localhost:8000/api/v1/artifacts/ani.mallya/${refinedId}/content`,
+    `**/api/v1/artifacts/ani.mallya/${refinedId}/content`,
     route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
   )
   // The followup edit now runs through the same chat stream every message
   // takes; the main model chose edit_image, not a client-side guess.
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const body = route.request().postDataJSON() as Record<string, unknown>
     chatBodies.push(body)
     conversationId = conversationId || String(body.conversation_id)
@@ -3489,7 +3498,7 @@ test('uploads, analyzes, and source-refines an image with visible results', asyn
   })
   const textarea = page.getByLabel('Message DeepMatter')
   await textarea.fill('Describe the subject and color.')
-  const responsePromise = page.waitForResponse('http://localhost:8000/api/v1/vision/analyze')
+  const responsePromise = page.waitForResponse('**/api/v1/vision/analyze')
   await page.getByRole('button', { name: 'Send message' }).click()
   await expect(page.getByText('Analyzing image...', { exact: true })).toBeVisible()
   releaseAnalysis()
@@ -3540,7 +3549,7 @@ test('edits an uploaded image when the same message asks for an edit', async ({ 
   let analyzedPrompt = ''
   let refinementBody: Record<string, unknown> = {}
 
-  await page.route('http://localhost:8000/api/v1/vision/analyze', async route => {
+  await page.route('**/api/v1/vision/analyze', async route => {
     const body = route.request().postDataBuffer()?.toString('utf8') || ''
     analyzedPrompt = body.match(/name="prompt"\r\n\r\n([^\r]+)/)?.[1] || ''
     const conversationId = body.match(/name="conversation_id"\r\n\r\n([^\r]+)/)?.[1] || ''
@@ -3562,12 +3571,12 @@ test('edits an uploaded image when the same message asks for an edit', async ({ 
   })
   for (const id of [artifactId, refinedId]) {
     await page.route(
-      `http://localhost:8000/api/v1/artifacts/ani.mallya/${id}/content`,
+      `**/api/v1/artifacts/ani.mallya/${id}/content`,
       route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
     )
   }
   await page.route(
-    `http://localhost:8000/api/v1/images/${artifactId}/refine`,
+    `**/api/v1/images/${artifactId}/refine`,
     async route => {
       refinementBody = route.request().postDataJSON() as Record<string, unknown>
       await route.fulfill({
@@ -3623,7 +3632,7 @@ test('shows an image failure, clears loading, and can be resent', async ({ page 
   const artifactId = '78787878-7878-4878-8878-787878787878'
   let attempts = 0
 
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     attempts += 1
     if (attempts === 1) {
       await route.fulfill({
@@ -3647,7 +3656,7 @@ test('shows an image failure, clears loading, and can be resent', async ({ page 
     })
   })
   await page.route(
-    `http://localhost:8000/api/v1/artifacts/ani.mallya/${artifactId}/content`,
+    `**/api/v1/artifacts/ani.mallya/${artifactId}/content`,
     route => route.fulfill({ status: 200, contentType: 'image/png', body: TEST_PNG }),
   )
 
@@ -3682,7 +3691,7 @@ test('shows every documented image-analysis failure contract', async ({ page }) 
     },
   ]
 
-  await page.route('http://localhost:8000/api/v1/vision/analyze', route =>
+  await page.route('**/api/v1/vision/analyze', route =>
     route.fulfill({
       status,
       contentType: 'application/json',
@@ -4526,7 +4535,7 @@ test('@live delete all personal memory also deletes owned artifacts', async ({ p
 test('Enter sends from the composer and Shift+Enter writes a new line', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const sent: string[] = []
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     const payload = route.request().postDataJSON()
     sent.push(payload.query)
     await route.fulfill({
@@ -5108,7 +5117,7 @@ test('@live renders future-safe Scout wording for the signed-in profile', async 
 test('an over-length message is refused in the browser with the reason', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   let chatRequests = 0
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     chatRequests += 1
     await route.fulfill({ status: 422, contentType: 'application/json', body: '{}' })
   })
@@ -5132,7 +5141,7 @@ test('an over-length message is refused in the browser with the reason', async (
 // to survive the trip back rather than being flattened to the status code.
 test('a server validation reason is shown rather than the bare status', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     await route.fulfill({
       status: 422,
       contentType: 'application/json',
