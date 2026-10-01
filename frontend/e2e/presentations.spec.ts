@@ -3,7 +3,7 @@ import { expect, test, type Page, type Route } from '@playwright/test'
 // Give deterministic presentation tests the authenticated primary identity.
 test.beforeEach(async ({ page }, testInfo) => {
   if (testInfo.title.includes('@live')) return
-  await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
+  await page.route('**/api/v1/auth/session', route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
@@ -630,7 +630,7 @@ test('keeps chat responsive while a presentation job runs in the background', as
     }
     await fulfillJson(route, {}, 404)
   })
-  await page.route('http://localhost:8000/api/v1/chat', async route => {
+  await page.route('**/api/v1/chat', async route => {
     chatRequests += 1
     const payload = route.request().postDataJSON() as { conversation_id: string }
     await route.fulfill({
