@@ -1,0 +1,26 @@
+2026-10-01T22:24:32Z start rev 6af4874d4a85f2c3249eb0bedcec978394808988 root /home/animallya96/deploy/anios/data/market
+2026-10-01T22:24:38Z tests exit 0 (19 passed in 5.50s)
+2026-10-01T22:24:39Z null test (hard) start
+2026-10-01T22:33:16Z null test (hard) exit 0:  readings the arm would change on this store: 4013  verdict: PASS, reproduced to the bit 
+2026-10-01T22:33:16Z null test (decay) start
+2026-10-01T22:40:58Z null test (decay) exit 0:  readings the arm would change on this store: 11928  verdict: PASS, reproduced to the bit 
+2026-10-01T22:40:58Z control start
+2026-10-01T22:46:30Z control exit 0
+2026-10-01T22:46:30Z hard start
+2026-10-01T22:51:41Z hard exit 0
+2026-10-01T22:51:42Z decay start
+2026-10-01T22:57:32Z decay exit 0
+2026-10-01T22:57:32Z verdict exit 0
+A5-hard (hard): REPLACES
+  2016-2023: IC h20 +0.0012 (t +1.13, 101 periods); IC h60 +0.0017 (t +0.89, 34 periods); book +0.13 bp/session (NW t +0.81, 2012 sessions); median CAGR +28.0% against +28.0% (+0.0 points); all pass
+    affected cells h20: 55 on 44 dates, IC -0.163 incumbent vs +0.000 arm (paired t +1.36)
+  2024-2026: IC h20 +0.0023 (t +0.98, 33 periods); IC h60 +0.0038 (t +0.88, 10 periods); book +0.01 bp/session (NW t +0.98, 689 sessions); median CAGR +45.1% against +45.3% (-0.2 points); all pass
+    affected cells h20: 41 on 25 dates, IC -0.173 incumbent vs +0.000 arm (paired t +0.80)
+A5-decay (decay): REPLACES
+  2016-2023: IC h20 +0.0021 (t +1.53, 101 periods); IC h60 +0.0034 (t +1.33, 34 periods); book -0.03 bp/session (NW t -0.16, 2012 sessions); median CAGR +28.0% against +28.0% (-0.0 points); all pass
+    affected cells h20: 305 on 86 dates, IC -0.020 incumbent vs +0.064 arm (paired t +1.87)
+  2024-2026: IC h20 +0.0041 (t +1.69, 33 periods); IC h60 +0.0095 (t +2.33, 10 periods); book +0.51 bp/session (NW t +1.38, 689 sessions); median CAGR +46.5% against +45.3% (+1.2 points); all pass
+    affected cells h20: 130 on 30 dates, IC -0.028 incumbent vs +0.097 arm (paired t +1.67)
+proposed: A5-hard
+wrote docs/research/scorecards/tone-expiry/tone_expiry_verdict.json
+2026-10-01T22:57:32Z check exit 0 (independent check: OK)
