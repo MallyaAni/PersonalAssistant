@@ -30,8 +30,9 @@ newest, or the replay's own as-of), for the two kinds that carry it,
 Replayed over the 18 live records of 2026-09-04 to 09-30 it is empty on
 ordinary nights and names exactly the known updates: every name's releases
 read for the first time (09-08), the `release_tone/2` and `/3` re-scores
-(09-11, 09-14 to 09-16), GLW's first reading (09-21), WDAY's 8-K moved past
-the close (09-30), and ARM, ASML, SIMO, TSM after the 6-K backfill.
+(09-11, 09-14 to 09-16), GLW's first reading and CIEN's one filing moved
+across the close (09-21, back on 09-23), WDAY's 8-K moved past the close
+(09-30), and ARM, ASML, SIMO, TSM after the 6-K backfill.
 
 The comparison is decided by partition dates, as `tone_revisions` does, not
 by file times: a store copied without its modification times must never make
@@ -76,10 +77,11 @@ TONE_FIELDS = (
 # What the desk reads from an earnings filing: the session the market could
 # first react (`EarningsEvent.reaction_date`, from the acceptance time in New
 # York), the filing date, the items and the form. The raw acceptance time is
-# not compared: CIEN's 2011-2012 8-Ks were stored five hours apart on
-# 2026-09-21 and back on 09-23, both before the open, which no grade can see;
-# WDAY's 2026-09-29 8-K moved from 12:01 to 16:01 New York on 09-30, which
-# moves its reaction to the next session and is a change.
+# not compared: all 91 of CIEN's 8-Ks were stored four or five hours apart on
+# 2026-09-21 and back on 09-23, and only one of them (2015-05-04, 13:23 or
+# 17:23 New York) crossed the close and moved its reaction session - that
+# one is a change, the other ninety no grade can see. WDAY's 2026-09-29 8-K
+# moved from 12:01 to 16:01 New York on 09-30, a session later: a change.
 EVENT_FIELDS = ("reaction_date", "filed", "items", "form")
 # What changed, in the order the lines are written; one phrase each, for one
 # name and for several.
