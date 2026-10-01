@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 
 // Give the workspace one server-derived identity and empty owned history.
 test.beforeEach(async ({ page }) => {
-  await page.route('http://localhost:8000/api/v1/auth/session', route => route.fulfill({
+  await page.route('**/api/v1/auth/session', route => route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({
@@ -13,10 +13,10 @@ test.beforeEach(async ({ page }) => {
     }),
   }))
   for (const [url, body] of [
-    ['http://localhost:8000/api/v1/conversations/ani.mallya', { conversations: [] }],
-    ['http://localhost:8000/api/v1/discovery/ani.mallya/subscription', { subscription: null, egress_enabled: false }],
-    ['http://localhost:8000/api/v1/discovery/ani.mallya/runs?limit=5', { runs: [] }],
-    ['http://localhost:8000/api/v1/discovery/ani.mallya/search-usage', {
+    ['**/api/v1/conversations/ani.mallya', { conversations: [] }],
+    ['**/api/v1/discovery/ani.mallya/subscription', { subscription: null, egress_enabled: false }],
+    ['**/api/v1/discovery/ani.mallya/runs?limit=5', { runs: [] }],
+    ['**/api/v1/discovery/ani.mallya/search-usage', {
       today: { used: 0, limit: 10, remaining: 10 },
       month: { used: 0, limit: 1000, remaining: 1000 },
     }],
