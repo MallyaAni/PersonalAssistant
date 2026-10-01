@@ -2047,6 +2047,33 @@ def _data_vintage(store: MarketStore, core: dict, asof: date | None) -> dict | N
     return block
 
 
+# Whether each book name's earnings releases are still being read: per name,
+# its newest scored release, its usual gap between releases and its newest
+# earnings filing, read point in time at the record's session from the store
+# the desk read (`asof`, None for tonight), flagged when it has no reading,
+# a filing it never read, or a reading older than its usual gap allows
+# (`backend/market/release_coverage.py`). Carried on the record so the board
+# can show the flagged names. Printed; never fatal, and None when the store
+# could not be read. It changes no grade, score or order.
+def _release_coverage(store: MarketStore, core: dict, asof: date | None) -> dict | None:
+    """Return the record's `release_coverage` block, having printed it."""
+    from backend.market import release_coverage
+
+    try:
+        block = release_coverage.check(
+            store, list(core.get("grades") or {}), core["session"], asof
+        )
+        heading = release_coverage.summary(block)
+        shown = [str(text) for text in block["lines"]]
+    except Exception as exc:  # noqa: BLE001 - reporting must not stop the record
+        print(f"release coverage: skipped ({type(exc).__name__}: {exc})")
+        return None
+    print(heading)
+    for text in shown:
+        print(f"  {text}")
+    return block
+
+
 # The ML observer's receipt for the record, whichever way it was reached.
 # The observer returns its ledger state either way, so the receipt says
 # whether that state is tonight's session or an earlier one it fell back to.
@@ -2201,6 +2228,9 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
     # Which names' earnings data changed since the previous record, and whose
     # grade moved with it, on the record so the board can say so.
     core["data_vintage"] = _data_vintage(store, core, args.asof)
+    # Whether every book name's earnings releases are still being read, on
+    # the record so the board can name the ones that are not.
+    core["release_coverage"] = _release_coverage(store, core, args.asof)
     # Tonight's grades and targets against the point-in-time replay, on the
     # record before it is saved so the board reads the verdict with the
     # decision it applies to.

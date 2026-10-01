@@ -1917,6 +1917,10 @@ export interface DeskRecord {
   // The names whose grade moved since the previous record while their own
   // stored earnings data changed in between. Absent on older records.
   data_vintage?: DataVintage | null;
+  // Whether every book name's earnings releases are still being read, with
+  // the plain lines the board shows for the names flagged. Absent on older
+  // records; null when the nightly could not run the check.
+  release_coverage?: ReleaseCoverage | null;
   regime: {
     ai_participation: number;
     software_participation: number;
@@ -2212,6 +2216,40 @@ export interface GradeParityMismatch {
   // after the record (a data update): the board says so in a plain line
   // instead of listing the row in the banner. Absent everywhere else.
   explained?: boolean;
+}
+
+// One book name in the nightly's earnings coverage check: its state, why,
+// and the dates behind it - the newest scored release (`last_read`), its
+// newest earnings filing, its usual gap between releases (its own, or the
+// book's when its history is short) and the days since its newest reading.
+// An `unchecked` name carries only its state, reason and the error.
+export interface ReleaseCoverageName {
+  state: 'ok' | 'no_reading' | 'unscored' | 'overdue' | 'unchecked';
+  reason: string | null;
+  last_read?: string | null;
+  releases?: number;
+  filings?: number;
+  newest_filing?: string | null;
+  cadence_days?: number | null;
+  cadence_from?: 'own' | 'book' | null;
+  days_since?: number | null;
+  error?: string;
+}
+
+// The nightly's earnings coverage check for one record: every book name's
+// state at the session, the book's usual gap and the reader's normal lag it
+// was judged by (both measured from the store; null when there was nothing
+// to measure), the names flagged and the plain lines the board shows.
+export interface ReleaseCoverage {
+  session: string;
+  tolerance: number;
+  book_cadence_days: number | null;
+  read_lag_days: number | null;
+  read_lag_releases: number;
+  checked: number;
+  flagged: string[];
+  lines: string[];
+  names?: Record<string, ReleaseCoverageName>;
 }
 
 // The names whose grade moved and whose own stored earnings data (release

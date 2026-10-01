@@ -46,6 +46,7 @@ import {
   type DeskPayload,
   type DeskQuote,
   type DeskRecord,
+  type ReleaseCoverage,
   type TradingAutopsy,
 } from '../../services/api'
 
@@ -753,6 +754,19 @@ function DataVintageNote({vintage, children}: {vintage?: DataVintage | null; chi
   return <div role="status" aria-label="Data updates" className="border-b border-black/[0.06] bg-[#f5f5f7] px-3 py-2 text-sm text-[#1d1d1f]">
     {lines.map(line => <p key={line}>{line}</p>)}
     {children}
+  </div>
+}
+
+// Plain grey lines, not a warning: the book names whose earnings reading the
+// nightly's coverage check flagged - no reading at all, a filing left unread,
+// a reading older than the name's usual gap allows, or data that could not be
+// read - in the words the backend wrote. Nothing when every name is read as
+// usual, when the check could not run, or on a record from before it existed.
+function ReleaseCoverageNote({coverage}: {coverage?: ReleaseCoverage | null}) {
+  const lines = coverage?.lines ?? []
+  if (lines.length === 0) return null
+  return <div role="status" aria-label="Earnings coverage" className="border-b border-black/[0.06] px-3 py-1.5 text-xs text-[#6e6e73]">
+    {lines.map(line => <p key={line}>{line}</p>)}
   </div>
 }
 
@@ -1535,6 +1549,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {latest && <div className="flex flex-col sm:max-h-[75vh]">
       <GradeParityBanner parity={payload.grade_parity} />
       <DataVintageNote vintage={latest.data_vintage} />
+      <ReleaseCoverageNote coverage={latest.release_coverage} />
       <TradeBoard latest={latest} live={live} paper={paperLive} now={now} onOpen={setOpenName} closes={closes} paused={eventPaused}
         footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">No automatic price stops. Your own brokerage account is never traded from here.</p>} />
       </div>}
