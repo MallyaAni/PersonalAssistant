@@ -556,6 +556,10 @@ test('records an access request instead of creating an account outright', async 
   await page.getByLabel('Username').fill('new.friend')
   await page.getByLabel('Password', { exact: true }).fill('a sufficiently long password')
   await page.getByLabel('Confirm password').fill('a different long password')
+  // A phone number is required since 015f09c5: it is what the iMessage bridge
+  // recognises an approved person by, so the request cannot be sent without one.
+  await expect(page.getByRole('button', { name: 'Request access' })).toBeDisabled()
+  await page.getByLabel('Phone number').fill('+1 202 555 0100')
   await page.getByRole('button', { name: 'Request access' }).click()
   await expect(page.getByRole('alert')).toContainText('Passwords do not match')
 
@@ -572,6 +576,7 @@ test('records an access request instead of creating an account outright', async 
     display_name: 'New Friend',
     username: 'new.friend',
     password: 'a sufficiently long password',
+    phone: '+1 202 555 0100',
     reason: null,
   })
   expect(errors.pageErrors).toEqual([])
@@ -763,6 +768,11 @@ test('@live password login keeps one conversation private from another account',
 
 test('renders a responsive search-first chat shell', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
+  // The colours below are the light theme's. Left on automatic, the theme
+  // follows the browser's clock and is dark from 19:00 to 07:00; the spark1
+  // gate's browser runs in UTC, so this check failed there from mid-afternoon
+  // ET on. The dark theme is covered in theme.spec.ts.
+  await page.addInitScript(() => window.localStorage.setItem('anios.theme', 'light'))
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
 
