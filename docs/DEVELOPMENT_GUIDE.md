@@ -144,6 +144,18 @@ the store's `asof=` dates; a `grade` or `targets` row with neither of those is
 a code-path drift between `market_daily.record`, `point_in_time` and
 `live_policy` and needs the commit found before the next session.
 
+A data update (a name's earnings releases read for the first time, more of
+its old releases admitted, a release re-scored) never shows as a nightly
+parity mismatch: the nightly compares the record with its own report. It
+shows as grades moving between two records, and the nightly writes
+`record["data_vintage"]` (`backend/market/data_vintage.py`): the names whose
+grade moved while their own `edgar_tone` / `edgar_events` reading changed
+after the previous record, with the plain line the board's `Data updates`
+note shows. A by-hand re-run of the parity CLI after such an update reports
+drift (exit 3) as before, marks those names' grade and target rows
+`explained` and prints them as `data update:` lines; every other row stays
+in the banner.
+
 The line and the exit code say which of two things a mismatch is. **Parity
 mismatch** (`GRADE PARITY MISMATCH`, exit 1, red banner): the replay ran on
 the record's own code and store and still disagrees - stop, do not trade

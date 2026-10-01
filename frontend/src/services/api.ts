@@ -1914,6 +1914,9 @@ export interface DeskRecord {
   };
   session: string;
   written: string;
+  // The names whose grade moved since the previous record while their own
+  // stored earnings data changed in between. Absent on older records.
+  data_vintage?: DataVintage | null;
   regime: {
     ai_participation: number;
     software_participation: number;
@@ -2200,6 +2203,21 @@ export interface GradeParityMismatch {
   live?: string | number | null;
   replay?: string | number | null;
   detail?: string;
+  // True on a grade or target row of a name whose own earnings data changed
+  // after the record (a data update): the board says so in a plain line
+  // instead of listing the row in the banner. Absent everywhere else.
+  explained?: boolean;
+}
+
+// The names whose grade moved and whose own stored earnings data (release
+// reading or earnings filings) changed after the record for `since`, with the
+// plain lines the board shows for them. Carried by a parity result re-run
+// after a data update, and by a record against the previous record.
+export interface DataVintage {
+  since: string | null;
+  names: string[];
+  lines: string[];
+  changes?: Record<string, {what: string; partition?: string}>;
 }
 
 // The nightly's grade parity verdict for one session. `mode` says what a
@@ -2217,6 +2235,8 @@ export interface GradeParity {
   code?: {record: string | null; replay: string | null};
   // Store partitions newer than the record, as "<kind>/asof=<date>".
   moved_inputs?: string[];
+  // The drifting names whose own earnings data changed after the record.
+  data_vintage?: DataVintage | null;
   note?: string;
 }
 

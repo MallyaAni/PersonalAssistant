@@ -10,6 +10,10 @@ import {expect, test, type Page, type TestInfo} from '@playwright/test'
 // check passed, or the record predates the check, nothing is shown. The verdict is a read-only view of
 // what the nightly wrote, so every endpoint is answered from fixtures. The
 // helpers follow desk-candidate-line.spec.ts, which must stay as it is.
+// A drifting name whose own earnings data changed after the record (the
+// backend marks its row `explained`) is said in a plain "Data updates" note
+// instead, and the banner keeps every other row; a record whose grades moved
+// on a data update since the previous record carries the same note.
 
 const USER = 'ani.mallya'
 const SESSION = '2026-09-25'
@@ -20,6 +24,9 @@ const STANCES = {fundamental: 1, technical: 1, sentiment: 0, value: 0, rotation:
 const BANNER = 'Grade parity'
 const HEADLINE = `Grade parity failed for ${SESSION}: 2 names — do not trade from this board`
 const DRIFT_HEADLINE = `Grades have moved since ${SESSION}'s record — 2 names`
+const NOTE = 'Data updates'
+const STALE = `The board shows ${SESSION}'s grades; the next nightly record re-grades on current code and data.`
+const AAPL_LINE = `AAPL: grade recomputed after its earnings releases were read for the first time (data update after the ${SESSION} record)`
 type Parity = Record<string, unknown> | null
 
 // A failed verdict: one grade flip, one name the membership history does
@@ -47,10 +54,37 @@ function driftParity(): Parity {
   }
 }
 
+// The drift above with AAPL's grade row explained by a data update after the
+// record: the note carries AAPL, the banner keeps MSFT and the store row.
+function mixedParity(): Parity {
+  const drift = driftParity() as {mismatches: Record<string, unknown>[]}
+  return {
+    ...drift,
+    mismatches: drift.mismatches.map(m => m.ticker === 'AAPL' ? {...m, explained: true} : m),
+    data_vintage: {since: SESSION, names: ['AAPL'], lines: [AAPL_LINE]},
+  }
+}
+
+// A drift in which both names' grade rows coincide with a change in their own
+// earnings data and nothing else differs: no banner row is left.
+function explainedParity(): Parity {
+  return {
+    ok: false, date: SESSION, names: 2, mode: 'drift',
+    code: {record: '8046f0c9', replay: '8046f0c9'},
+    moved_inputs: ['edgar_events/asof=2026-09-26', 'edgar_tone/asof=2026-09-26'],
+    mismatches: [
+      {kind: 'grade', ticker: 'AAPL', live: 'A', replay: 'B', detail: 'live grade differs from the point-in-time replay', explained: true},
+      {kind: 'grade', ticker: 'MSFT', live: 'A+', replay: 'A', detail: 'live grade differs from the point-in-time replay', explained: true},
+    ],
+    data_vintage: {since: SESSION, names: ['AAPL', 'MSFT'], lines: [`AAPL, MSFT: grades recomputed after their earnings releases were read for the first time (data update after the ${SESSION} record)`]},
+  }
+}
+
 // Answer every desk endpoint locally with the given parity verdict and refuse any provider request or persisted write.
-async function installParity(page: Page, frontendURL: string, parity: Parity) {
+async function installParity(page: Page, frontendURL: string, parity: Parity, recorded: Record<string, unknown> = {}) {
   const market = {exchange: 'XNYS', as_of: NOW, session: '2026-09-26', calendar_known: true, is_session: true, open: true, phase: 'open', opens_at: null, closes_at: null}
   const latest = {
+    ...recorded,
     session: SESSION, written: WRITTEN, provenance: {rule: {inputs: ['expectations-gap']}, data: {fundamentals: 'fundamentals-features/3'}},
     regime: {ai_participation: .5, software_participation: .5, participation_percentile: .5, ai_vs_software_correlation: 0, correlation_z: 0, novelty_z: 0, rotation_leader: 'none', rotation_spread: 0, ai_drawdown: .1, selection_confidence: .6, exposure: 1, flags: []},
     grades: {
@@ -158,6 +192,66 @@ test('shows the amber drift banner with the code pair and moved inputs', async (
     await expect(banner).not.toContainText('do not trade')
     await expect(banner).toHaveCSS('background-color', 'rgb(255, 251, 235)')
     await banner.screenshot({path: testInfo.outputPath('grade-parity-drift.png')})
+  } finally {
+    await recordDiagnostics(testInfo, diagnostics)
+  }
+})
+
+// Mixed: AAPL's drift coincides with a data update, so it is said in the
+// plain note; MSFT's membership row and the store row stay in the amber
+// banner, which counts one name and no longer lists AAPL.
+test('explains the drift of a name whose earnings data changed and keeps the banner for the rest', async ({page, baseURL}, testInfo) => {
+  const diagnostics = await installParity(page, baseURL!, mixedParity())
+  try {
+    await openBoard(page)
+    const note = page.getByRole('status', {name: NOTE, exact: true})
+    await expect(note).toBeVisible()
+    await expect(note).toContainText(AAPL_LINE)
+    const banner = page.getByRole('alert', {name: BANNER, exact: true})
+    await expect(banner).toBeVisible()
+    await expect(banner).toContainText(`Grades have moved since ${SESSION}'s record — 1 name`)
+    await expect(banner).toContainText('MSFT (membership: live A+, replay C)')
+    await expect(banner).toContainText('session: the rebuilt report ends 2026-09-26')
+    await expect(banner).not.toContainText('AAPL')
+    await expect(banner).toHaveCSS('background-color', 'rgb(255, 251, 235)')
+    await note.screenshot({path: testInfo.outputPath('grade-parity-explained-mixed.png')})
+  } finally {
+    await recordDiagnostics(testInfo, diagnostics)
+  }
+})
+
+// Every drifting row explained by a data update: no alert at all, the plain
+// note with its line and the sentence that the board still shows the
+// record's grades until the next nightly.
+test('shows only the plain data-update note when every drift is explained', async ({page, baseURL}, testInfo) => {
+  const diagnostics = await installParity(page, baseURL!, explainedParity())
+  try {
+    await openBoard(page)
+    const note = page.getByRole('status', {name: NOTE, exact: true})
+    await expect(note).toBeVisible()
+    await expect(note).toContainText(`AAPL, MSFT: grades recomputed after their earnings releases were read for the first time (data update after the ${SESSION} record)`)
+    await expect(note).toContainText(STALE)
+    await expect(page.getByRole('alert', {name: BANNER, exact: true})).toHaveCount(0)
+    await expect(page.getByText('do not trade from this board')).toHaveCount(0)
+    await note.screenshot({path: testInfo.outputPath('grade-parity-explained.png')})
+  } finally {
+    await recordDiagnostics(testInfo, diagnostics)
+  }
+})
+
+// The nightly path: parity passed, and the record says AAPL's grade moved
+// since the previous record while its earnings releases were read for the
+// first time in between. The note shows; no banner does.
+test('shows the record data-update note when a grade moved on a data update', async ({page, baseURL}, testInfo) => {
+  const line = 'AAPL: grade recomputed after its earnings releases were read for the first time (data update after the 2026-09-24 record)'
+  const recorded = {data_vintage: {since: '2026-09-24', names: ['AAPL'], lines: [line]}}
+  const diagnostics = await installParity(page, baseURL!, {ok: true, date: SESSION, names: 2, mismatches: []}, recorded)
+  try {
+    await openBoard(page)
+    const note = page.getByRole('status', {name: NOTE, exact: true})
+    await expect(note).toBeVisible()
+    await expect(note).toHaveText(line)
+    await expect(page.getByRole('alert', {name: BANNER, exact: true})).toHaveCount(0)
   } finally {
     await recordDiagnostics(testInfo, diagnostics)
   }

@@ -27,6 +27,7 @@ import {
   getDeskSessionPrices,
   getTradingAutopsy,
   putDeskHoldings,
+  type DataVintage,
   type DeskCurve,
   type DeskDecisions,
   type DeskBrief,
@@ -698,28 +699,56 @@ function RecordStatus({status, prose, session}: {status?: DeskPayload['record_st
 // store that has gained partitions since the record) it is amber: the
 // board shows the record's grades, and the next nightly re-grades. Nothing
 // is rendered when the check passed or when the record predates the check.
+// A row the backend marked `explained` - a name whose own earnings data
+// changed after the record, so its drift coincides with a data update - is
+// said in the plain Data updates note above instead; every other row stays
+// in the banner exactly as before, and with no row left the banner is not
+// drawn. Rows are only taken out in drift mode and when the note has words
+// for them; the red parity banner is never thinned.
 function GradeParityBanner({parity}: {parity?: DeskPayload['grade_parity']}) {
   if (!parity || parity.ok) return null
-  const names = [...new Set(parity.mismatches.map(m => m.ticker).filter((t): t is string => !!t))].sort()
-  const others = parity.mismatches.filter(m => !m.ticker)
+  const note = parity.mode === 'drift' && (parity.data_vintage?.lines?.length ?? 0) > 0 ? parity.data_vintage : null
+  const open = note ? parity.mismatches.filter(m => !m.explained) : parity.mismatches
   const date = parity.date ?? 'this session'
+  const stale = `The board shows ${date}'s grades; the next nightly record re-grades on current code and data.`
+  if (open.length === 0) return <DataVintageNote vintage={note}><p className="text-xs">{stale}</p></DataVintageNote>
+  const names = [...new Set(open.map(m => m.ticker).filter((t): t is string => !!t))].sort()
+  const others = open.filter(m => !m.ticker)
   const count = `${names.length} ${names.length === 1 ? 'name' : 'names'}`
-  const rows = names.length > 0 && <p className="text-xs">{parity.mismatches.filter(m => m.ticker).map(m => `${m.ticker} (${m.kind}: live ${m.live ?? '—'}, replay ${m.replay ?? '—'})`).join(' · ')}</p>
+  const rows = names.length > 0 && <p className="text-xs">{open.filter(m => m.ticker).map(m => `${m.ticker} (${m.kind}: live ${m.live ?? '—'}, replay ${m.replay ?? '—'})`).join(' · ')}</p>
   const details = others.map(m => <p key={`${m.kind}:${m.detail}`} className="text-xs">{m.kind}: {m.detail}</p>)
   if (parity.mode === 'drift') {
     const moved = parity.moved_inputs ?? []
-    return <div role="alert" aria-label="Grade parity" className="border-b border-[#b45309]/30 bg-[#fffbeb] px-3 py-2 text-sm text-[#92400e]">
-      <p className="font-semibold">Grades have moved since {date}'s record — {count}</p>
-      <p className="text-xs">code {parity.code?.record ?? '—'} → {parity.code?.replay ?? '—'}; inputs moved: {moved.length > 0 ? moved.join(', ') : 'none'}</p>
-      {rows}
-      {details}
-      <p className="text-xs">The board shows {date}'s grades; the next nightly record re-grades on current code and data.</p>
-    </div>
+    return <>
+      <DataVintageNote vintage={note} />
+      <div role="alert" aria-label="Grade parity" className="border-b border-[#b45309]/30 bg-[#fffbeb] px-3 py-2 text-sm text-[#92400e]">
+        <p className="font-semibold">Grades have moved since {date}'s record — {count}</p>
+        <p className="text-xs">code {parity.code?.record ?? '—'} → {parity.code?.replay ?? '—'}; inputs moved: {moved.length > 0 ? moved.join(', ') : 'none'}</p>
+        {rows}
+        {details}
+        <p className="text-xs">{stale}</p>
+      </div>
+    </>
   }
   return <div role="alert" aria-label="Grade parity" className="border-b border-[#b42318]/30 bg-[#fef2f2] px-3 py-2 text-sm text-[#b42318]">
     <p className="font-semibold">Grade parity failed for {date}: {count} — do not trade from this board</p>
     {rows}
     {details}
+  </div>
+}
+
+// A plain note, not a warning: the names whose grade moved while their own
+// stored earnings data changed after the record it names (a release read for
+// the first time, more of a name's releases read, a re-read), one line per
+// kind of change, in the words the backend wrote. Shown for a record against
+// the previous record, and for a parity re-run's explained rows; `children`
+// is any sentence the caller adds. Nothing when there is no line.
+function DataVintageNote({vintage, children}: {vintage?: DataVintage | null; children?: ReactNode}) {
+  const lines = vintage?.lines ?? []
+  if (lines.length === 0) return null
+  return <div role="status" aria-label="Data updates" className="border-b border-black/[0.06] bg-[#f5f5f7] px-3 py-2 text-sm text-[#1d1d1f]">
+    {lines.map(line => <p key={line}>{line}</p>)}
+    {children}
   </div>
 }
 
@@ -1500,6 +1529,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {/* On phones, diagnostics use page scrolling instead of a tiny nested viewport. */}
       {latest && <div className="flex flex-col sm:max-h-[75vh]">
       <GradeParityBanner parity={payload.grade_parity} />
+      <DataVintageNote vintage={latest.data_vintage} />
       <TradeBoard latest={latest} live={live} paper={paperLive} now={now} onOpen={setOpenName} closes={closes} paused={eventPaused}
         footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">No automatic price stops. Your own brokerage account is never traded from here.</p>} />
       </div>}

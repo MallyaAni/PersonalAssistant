@@ -79,6 +79,22 @@ moved, else "drift". `ok` is False on any mismatch in either mode; the
 line and the banner differ (red "do not trade" against amber "the board is
 stale; the next nightly re-grades"), and the CLI exits 3 on drift rather
 than 1. The nightly path is parity by construction.
+
+**A drift that coincides with a data update.** A data-vintage change - a
+name's earnings releases read for the first time, more of its old releases
+admitted, a release re-scored - lands in a partition dated after the record
+and moves that name's replayed grade with no news and no code change; the
+6-K backfill of 2026-09-30 and the re-read of 2026-10-01 are two. On the CLI
+path the context also carries `vintage` (`data_vintage.changes`: per name,
+its own `edgar_tone` / `edgar_events` reading as of the record's session
+against the replay's), and a grade or target row for a name whose own data
+changed is marked `explained`; the result's `data_vintage` block names them
+and gives the plain line the board shows instead of the banner row. The rows
+themselves, `ok`, `mode` and the exit code are unchanged, and a membership or
+session row is never explained. The nightly path compares a record with its
+own report, so a data update cannot appear there as a mismatch at all; the
+nightly instead carries `data_vintage` on the record against the previous
+record (`market_daily._data_vintage`).
 """
 
 from __future__ import annotations
@@ -105,6 +121,10 @@ KINDS = (SESSION, MEMBERSHIP, GRADE, TARGETS)
 # disagreement), or a later checkout or store (the board has gone stale).
 PARITY = "parity"
 DRIFT = "drift"
+# The row kinds a data update can explain: a replayed grade and the target
+# that follows it. Membership is the membership file's, a session row the
+# store's calendar; neither is ever put down to a data update.
+EXPLAINABLE = frozenset({GRADE, TARGETS})
 # Top-level folders under the root that are outputs, never replay inputs;
 # a dated directory under one of them is not a moved input.
 NOT_INPUTS = frozenset({"desk", "history", "research"})
@@ -307,7 +327,30 @@ def compare(
             "targets = live_policy.targets on the same report"
         ),
         "mismatches": mismatches,
+        **_explain_vintage(mismatches, ctx, day_text),
     }
+
+
+# Mark the grade and target rows of names whose own earnings data changed
+# after the record (`ctx["vintage"]`, from `data_vintage.changes`) as
+# explained, in place, and return {"data_vintage": block} naming them with
+# the board's lines; {} when the context carried no change at all, so a
+# result without one is exactly what it was before this existed. Only ever
+# in drift mode: a parity mismatch ran on the record's own code and store,
+# so nothing changed after the record and nothing in it is explained.
+def _explain_vintage(mismatches: list[dict], ctx: dict, since: str) -> dict:
+    """Return the result's `data_vintage` field, having marked its rows."""
+    from backend.market import data_vintage
+
+    vintage = ctx.get("vintage")
+    if not vintage or mode_of(ctx) != DRIFT:
+        return {}
+    moved = set()
+    for m in mismatches:
+        if m.get("kind") in EXPLAINABLE and m.get("ticker") in vintage:
+            m["explained"] = True
+            moved.add(m["ticker"])
+    return {"data_vintage": data_vintage.explain(moved, vintage, since)}
 
 
 # The result when the check itself could not run: never `ok`, and the
@@ -424,10 +467,15 @@ def moved_inputs(root: Path, record: dict) -> list[str]:
 
 # The context for a replay: the record's code revision, the running
 # checkout's (read the way `market_daily` stamps `provenance`, once per
-# process) and the partitions that moved. On the nightly path the report
-# is the record's own, so the code is the same and nothing has moved.
-def context_for(root: Path, record: dict, *, nightly: bool) -> dict:
-    """Return {"record_code", "replay_code", "moved_inputs"} for `record`."""
+# process), the partitions that moved and, per name, whose own earnings data
+# changed since the record (`vintage`). On the nightly path the report is
+# the record's own, so the code is the same and nothing has moved. `asof` is
+# the replay's own as-of (None: the newest), so the data compared is the
+# data the replay read.
+def context_for(
+    root: Path, record: dict, *, nightly: bool, asof: _date | None = None
+) -> dict:
+    """Return {"record_code", "replay_code", "moved_inputs", "vintage"}."""
     from backend.cli import market_daily
 
     record_code = (record.get("provenance") or {}).get("code_revision")
@@ -441,7 +489,28 @@ def context_for(root: Path, record: dict, *, nightly: bool) -> dict:
         "record_code": record_code,
         "replay_code": market_daily._git_revision(),
         "moved_inputs": moved_inputs(root, record),
+        "vintage": vintage_since(root, record, asof),
     }
+
+
+# Per name on the record, whether its own release reading or earnings
+# filings changed after the record (`data_vintage.changes`). A store that
+# cannot be read explains nothing, so every row keeps its banner.
+def vintage_since(root: Path, record: dict, asof: _date | None = None) -> dict:
+    """Return {ticker: change} for the record's names, or {} when unreadable."""
+    from backend.market import data_vintage
+    from backend.market.store import MarketStore
+
+    try:
+        return data_vintage.changes(
+            MarketStore(root),
+            list(record.get("grades") or {}),
+            _date.fromisoformat(str(record["session"])),
+            asof,
+            data_vintage.written_at(record),
+        )
+    except Exception:  # noqa: BLE001 - an explanation is never worth a failed check
+        return {}
 
 
 # The file's rows, oldest first; a missing or unreadable file is no rows.
@@ -533,7 +602,9 @@ def run(
         # the same way.
         asof = None if date is None else _date.fromisoformat(session)
         report = market_daily.desk_report(store, asof)
-    context = context_for(root, record, nightly=nightly)
+    else:
+        asof = None
+    context = context_for(root, record, nightly=nightly, asof=asof)
     result = compare(record, report, session, history_path, context)
     write(root, result)
     return result

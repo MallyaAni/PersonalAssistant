@@ -16,6 +16,9 @@ and the store's latest partition dates); 2 when the check could not run (no
 record for the date, the store unreadable); 3 on drift - the checkout or
 the store has moved on since the record (the line names the code pair and
 the partitions), so the board is stale and the next nightly re-grades.
+A name whose drift coincides with a change in its own earnings data after
+the record (a release read for the first time or re-read) is printed again
+as a `data update:` line; the exit code does not change.
 """
 
 from __future__ import annotations
@@ -66,6 +69,10 @@ def main(argv: list[str] | None = None) -> int:
     for m in result["mismatches"]:
         who = f"{m['ticker']}: " if m.get("ticker") else ""
         print(f"  {m['kind']}: {who}{m.get('detail', '')}")
+    # The names whose drift coincides with a change in their own earnings
+    # data after the record, in the words the board shows.
+    for text in (result.get("data_vintage") or {}).get("lines") or []:
+        print(f"  data update: {text}")
     print(f"written: {grade_parity.path(Path(args.root))}")
     if result["ok"]:
         return OK

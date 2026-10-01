@@ -2000,6 +2000,38 @@ def _tone_revisions(store: MarketStore, report) -> dict[str, dict]:
     return found
 
 
+# The names whose stored earnings data (release reading or filings) changed
+# after the previous record, and of those the ones whose grade moved with it:
+# a data-vintage change such as a release read for the first time, carried
+# on the record so the board can say why those grades moved. The previous
+# record is the newest one before tonight's session. Printed; never fatal,
+# and None when there is no earlier record or the store could not be read.
+def _data_vintage(store: MarketStore, core: dict, asof: date | None) -> dict | None:
+    """Return the record's `data_vintage` block, having printed it."""
+    from backend.market import data_vintage
+
+    try:
+        root = Path(store.root)
+        earlier = [s for s in deskrecord.sessions(root) if s < core["session"]]
+        previous = deskrecord.load(root, earlier[-1]) if earlier else None
+        block = data_vintage.since_previous(store, core, previous, asof)
+    except Exception as exc:  # noqa: BLE001 - reporting must not stop the record
+        print(f"data vintage: skipped ({type(exc).__name__}: {exc})")
+        return None
+    if block is None:
+        print("data vintage: no earlier record to compare with")
+        return None
+    changed = ", ".join(sorted(block["changes"])) or "none"
+    moved = ", ".join(block["names"]) or "none"
+    print(
+        f"data vintage since {block['since']}: earnings data changed for {changed}; "
+        f"grade moved with it: {moved}"
+    )
+    for text in block["lines"]:
+        print(f"  {text}")
+    return block
+
+
 # The ML observer's receipt for the record, whichever way it was reached.
 # The observer returns its ledger state either way, so the receipt says
 # whether that state is tonight's session or an earlier one it fell back to.
@@ -2151,6 +2183,9 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
         revisions=revisions,
         policy_shadows=policy_shadows,
     )
+    # Which names' earnings data changed since the previous record, and whose
+    # grade moved with it, on the record so the board can say so.
+    core["data_vintage"] = _data_vintage(store, core, args.asof)
     # Tonight's grades and targets against the point-in-time replay, on the
     # record before it is saved so the board reads the verdict with the
     # decision it applies to.
