@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-01 — Grades that moved on a data update say so; the discovery sweep test no longer dates itself: BUILT, not deployed
+## 2026-10-01 — Grades that moved on a data update say so; the discovery sweep test no longer dates itself: BUILT and gated, not deployed
 
 Branch `desk/vintage-banner` on `8046f0c9` (fix/6k-classifier). Two small
 reliability fixes for the live board.
@@ -109,7 +109,31 @@ unchanged without (not detected), only those names and never membership
 (mixed); the CLI reads it from a store and still exits 3; the nightly hook
 never raises). `frontend/e2e/desk-grade-parity.spec.ts` +3 (mixed: note for
 AAPL, amber banner keeps MSFT and the store row; every row explained: note
-only, no alert; parity OK with the record's note). Gate results below.
+only, no alert; parity OK with the record's note).
+
+**Validation, on spark1.**
+
+- **Unit gate** on `ac8a6fe2` (`unitgate.sh`, `anios_gate`): 8,321 passed,
+  70 skipped, 6 xfailed, exit 0, 404 s. The base `8046f0c9` gave 8,309, 70
+  and 7: the 12 more are the 10 vintage tests, the date guard and the sweep
+  test that was xfail. The later commits change only the frontend and docs,
+  which the unit gate does not mount.
+- **Types:** `tsc --noEmit` passed on `ac8a6fe2` and on `454ad313`.
+- **Browser**, full suite (`run_int_e2e.sh`, mocks), twice: `ac8a6fe2` and
+  `454ad313` each 280 passed, 130 failed, 24 skipped (39.3 and 39.4 min),
+  the same failures both times. All 130 are the known environmental ones:
+  chat 68, fundamental-period-eligibility 21, fundamental-source-versions
+  25, theme 4, presentations 3, desk-options-isolation 3,
+  desk-options-provenance 2, background-session-prices 2, hash-routing 2.
+  None is new against the last full run of main (`g6_e2e.log`, 2026-09-30,
+  on `f14ca14d`: 273 passed, 134 failed; its `g6.json` was overwritten by a
+  later run in that worktree), and four of that run's failures pass here
+  (desk.spec 2, desk-history-accuracy 1, desk-paper-account-history 1).
+- **Targeted specs:** desk-grade-parity 7/7 (the 4 existing unchanged, 3
+  new), desk-trade-board 10/10, simple-actions 7/7, desk.spec 67/67.
+- Nothing deployed was exercised. The signal ran read-only against the
+  live store; the parity CLI was not run against it, because it writes
+  `desk/grade_parity.json` and would put a drift row on the live board.
 
 Diagram impact: NONE — no component, store, dependency or data flow added;
 the nightly and the parity CLI read the same EDGAR frames they already read.
