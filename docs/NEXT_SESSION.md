@@ -36,6 +36,20 @@ No live orders, dashboard, model-service or production-data changes. CPU only.
 Do not refit old mean models, rerun baselines or alter mounted active sources.
 Diagram impact NONE: existing internal research boundary, no new service/store.
 
+Verified checkpoint `a0622b054cbb40db77ab5fc43a16f9f6daf6177a`: native 41 pass,
+Ruff clean; exact source-image 41 pass (read-only cache warning only), image
+`sha256:5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d`.
+Test log `/tmp/codex-execution-risk-source-tests-20261002.log` on Spark.
+Exactly one risk fit is active as `codex-execution-risk-fit-a0622b05`, CPU2,
+memory4GB, network disabled, private output
+`/home/animallya96/scratch/learned-execution-risk-results-20261002-a0622b05`.
+Its source `/home/animallya96/codex-worktrees/learned-execution-risk-20261002-a0622b05`
+and original inputs/cubes/results are mounted read-only. Inspect compact
+fit.log/progress before acting; NEVER restart active fit or edit its source.
+After COMPLETE, run the reviewed `market_execution_risk evaluate` exactly once
+with this risk head, original boosting/Ridge receipts and original authenticated
+boosting evaluation.json. Independently verify artifacts without resimulating.
+
 ## 2026-10-02 — learned entry/exit and sizing: COMPLETE, no live adoption
 
 User's main focus: replace arbitrary 1% timing and equal 9% allocations with
