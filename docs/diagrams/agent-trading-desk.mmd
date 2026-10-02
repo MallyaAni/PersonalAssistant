@@ -30,7 +30,8 @@ flowchart TB
     Records -->|Completed candles and causal latches| ExecutionCapture
     ExecutionCapture --> ExecutionArchive[(Separate immutable execution cohort<br/>code hashes, budgets, retained opportunities)]
     ExecutionArchive --> ExecutionCompare[Funded paired quote diagnostic<br/>incumbent versus explicit bounded contracts<br/>10/25 bp, SPY/QQQ references, no promotion]
-    DelayedQuotes[Historical SIP endpoint quotes<br/>read only after the delay<br/>outcome labels, never decision inputs] --> ExecutionLabels[(Separate original valuation pages<br/>request and response hashes, source times)]
+    DelayedQuotes[Historical SIP endpoint quotes<br/>read only after the delay<br/>outcome labels, never decision inputs] --> ExecutionLabels[(Separate valuation and closing evidence<br/>original bytes, identities and receipt times)]
+    Broker -->|GET-only matched terminal auction receipts<br/>expired orders remain unfilled| ExecutionLabels
     ExecutionLabels -->|Consolidated endpoint marks<br/>missing NAV remains unavailable| ExecutionCompare
     Research --> Evidence[Forward evaluation<br/>grade outcomes and funded target trackers]
     Store --> Evidence

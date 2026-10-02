@@ -39,6 +39,18 @@ full-policy test needs carried selections, cash and corporate actions, not a
 fixed-intent component report. Preserve unrelated Wi-Fi/bundle changes and model
 services. Main/live release `8a77c116` remains independently verified.
 
+Scheduled continuation is ACTIVE in the existing thread heartbeat, weekdays
+09:46 and 16:46 New York, bounded to October 5–9. It targets five prospective
+earlier-session cohorts, disclosed excluded/sent intents, read-only collection
+through actual calendar close, matched paper receipts and fixed delayed endpoint
+labels. It must pause after the fifth cohort/October 9 report, preserve missing
+sessions, and never tune or imply compounded performance from daily resets.
+No collector is currently active. This scheduled evidence work is not a promise
+of a better policy or continuous background model computation over the weekend.
+Diagram impact: UPDATED — trading desk's separate read-only closing evidence
+path. All 33 diagram and published-page checks pass; unchanged platform SVG
+bytes were retained only after their render-input fingerprints matched.
+
 ## 2026-10-02 — ACTIVE: consolidated endpoint labels; no outcome scored yet
 
 Research branch is pushed to GitHub and present on Spark at `3dca4c81`.
