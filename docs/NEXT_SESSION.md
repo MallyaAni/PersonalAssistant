@@ -1,5 +1,54 @@
 # Next session
 
+## 2026-10-01, 20:24 ET — LIVE: `1a6eab2a`, A5-hard tone expiry (a stale earnings reading no longer counts)
+
+`scripts/deploy.sh` on Spark: unit 8,383 passed / 71 skipped / 6 xfailed,
+routing 100/100, backup, migrations, restart, post-deploy cheap checks ok
+(`data/.post-deploy-status`: `1a6eab2a ok`). Code `44d53b03` on
+`desk/tone-expiry-live` (study `research/tone-expiry`, plan `b774f46e`,
+results `f5c56ae5`), merged `--no-ff` as `1a6eab2a`; the merge tree is the
+gated tree. tsc and the desk e2e specs (`desk-tone-expiry`,
+`desk-release-coverage`, `desk-grade-parity`: 16/16) passed on spark1; the
+full browser suite was not run.
+
+- **What:** the sentiment analyst's newest release reading is treated as
+  missing once its age exceeds 1.5 x the name's usual gap between releases
+  (the earnings-coverage check's own "overdue" rule). One switch:
+  `TONE_EXPIRY = HARD` in `backend/market/tone_expiry.py` (a code default:
+  the cron launchers export only the broker keys, so no env flag reaches the
+  nightly). Study A5: both arms REPLACE on the registered non-inferiority
+  criteria; A5-hard proposed (IC h20 +0.0012 t +1.13 and +0.0023 t +0.98;
+  book +0.13 bp/session; CAGR 28.0 vs 28.0 and 45.1 vs 45.3).
+- **First record under it: 10-02 (tonight's 10-01 record was decided with
+  it off).** The record carries `tone_expiry` (`mode`, each expired name's
+  reading date, age, usual gap, the grade given and the grade with the
+  reading counted, and `also_moved` for any other name whose letter moved
+  with it). The board shows a grey "Earnings tone expired" note with those
+  lines, nothing when no reading expired.
+- **Expected on the 10-02 record** (dry run, read-only, on the store after
+  tonight's nightly, session 10-01; `record_block` agreed with an
+  independent expiry-off desk run name for name): OKLO expired (last read
+  2025-03-25, 555 days, usual 91 days across the book) - graded C either
+  way; SIMO expired (last read 2025-07-31, 427 days, its own usual 92 days)
+  - **A+ -> B**; no other letter moved (1 of 11 A/A+ names). SIMO depends on
+  tonight's 6-K re-read: if it admits and scores SIMO's 2025-2026 releases,
+  SIMO's reading is current again and it does not expire.
+- **Grade parity:** the CLI replay rebuilds a record under the mode it
+  carries; records without the stamp (everything up to 10-01) replay with
+  the expiry off, so no false drift. The nightly path compares a record
+  with its own report (unchanged). The shadow-ledger and ML-observer
+  identity hashes cover no file this change touched.
+- **Research runs:** every `desk.run` (and the `+tone` extras of
+  `market_train`/`market_sweep`/`market_book`/`market_xsect_net`) now ages
+  readings; `market_pit_scorecard` without `--tone-expiry` is the live
+  desk, `--tone-expiry off` the desk before A5 (the study's control).
+- **Turn off:** set `TONE_EXPIRY = None` in `backend/market/tone_expiry.py`,
+  gate, and deploy through `scripts/deploy.sh`. Records already written keep
+  their stamp and replay as decided.
+- **Order of tonight's jobs:** the deploy ran 20:09-20:24 ET after the
+  nightly finished, before the 20:05 6-K re-read task had started (it is
+  queued to the main session); the re-read runs on `1a6eab2a`.
+
 ## 2026-10-01, 16:32 ET — LIVE: `d17f1632` (earnings coverage) on `4384ea77` (12:07 ET: 6-K classifier, data-vintage note, discovery test) and `6b85cfe0` (10:33 ET: reset sizing)
 
 Three deploys today, all through `scripts/deploy.sh` on Spark:
