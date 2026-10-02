@@ -1,5 +1,49 @@
 # Next session
 
+## 2026-10-02 — LIVE: chart/Levels release `5b2b3d74`; bounded acceptance complete
+
+Checkpoint `82008d76` is merged on GitHub/Spark main at `5b2b3d74` and deployed
+through `scripts/deploy.sh --wait-post`. Unit gate: **8,595 passed, 92 skipped,
+six xfailed**. Routing gate: **100 passed**. Postdeploy is green. Six actual
+backend source hashes match the commit; three captured model containers retain
+their IDs/images/start times. Gateway image is
+`sha256:f29409e241dae9c598a63d2a8d8982ac549156e781c5dc0c990f3e9a6e7259e1`;
+public bundle `index-BPmzRsFK.js` hashes to
+`d665863653871a59381193a8d3e3324012b98317f648c6088305771d3ec85b02`.
+
+**VERIFIED:** all 96 browser acceptance cases pass against the deployed bundle.
+An authenticated GET-only browser sweep opened **all 94 stocks in all three
+timeframes (282 charts)**, checked original latest grades against the table,
+stock-specific hovers, candle/indicator shape, canvas rendering, and explicit
+policy replay provenance; no page/console errors or failed required requests.
+Independent actual-HTTP/store comparison found **94/94 completed daily closes
+match the store**. Deployed cash/auth safeguards, four causal checks and five
+timing browser cases also pass; holdings unchanged. Public `deep-matter.com`
+manual check shows AAOI grade B and planned Sell in both row and chart, with
+its earlier paper fills separate and completed candle $107.32 preserved.
+
+Spark evidence: `/tmp/codex-chart-completion-proof-20261002.json`,
+`/tmp/codex-chart-release-proof-20261002.json`,
+`/tmp/codex-chart-cohort-browser-20261002.json`,
+`/tmp/codex-chart-completed-close-proof-20261002.json`, and
+`/tmp/codex-chart-all-deployed-browser-20261002.log`.
+
+**UNVERIFIED:** economic exit improvement or strategy superiority. The October-1
+COHR sale followed its A-to-B technical downgrade while AAOI was A+; both are B
+in the latest October-1 close record. Same-sector membership does not establish
+an action mismatch or validate that sale. No sector rule, selection threshold or
+strategy adoption changed. Continue the predeclared funded execution evaluation
+only with observable inputs; no COHR-specific tuning or old baseline repetition.
+
+Remaining display coverage: retained structure levels exist for only 13 stocks;
+the other 81 now explicitly say unavailable rather than inventing levels. The
+balancer annotates its holdings/board rows, not the entire graded universe.
+Current chart indicators and prior-session board reference levels are distinct
+computations. No guarantee is made about future provider/model-generated text.
+Bounded chart/timing delivery is complete; pause its heartbeat to conserve usage.
+Docs-only handoff updates do not require redeployment. Preserve unrelated Wi-Fi
+watchdog files, bundle, scratch, data/secrets and model services.
+
 ## 2026-10-02 — Timing release live; chart consistency acceptance in progress
 
 Main/GitHub/Spark and the deployed backend are `c9f34e94`. Guarded deployment
