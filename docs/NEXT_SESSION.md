@@ -21,6 +21,11 @@ The original Ridge numerical failure is independently reproduced and corrected
 by exact convex certificates; interrupted run has no completed score. No model
 parameter, economic threshold or acceptance assertion was relaxed.
 
+Final report/coverage checkpoint `2450b992` preserves the exercised comparison
+script hash below: eight comparison/artifact cases pass, Ruff and diff checks
+are clean, and the persisted summary matches original report/source SHA256s.
+Subsequent checkpoint annotation changes this handoff only, not execution.
+
 Original snapshot SHA256
 `8670c86dd268fdf25ec16b44be86dcd40b840f703b7721ef319bc40e0e22ea58`;
 prepared `c759ecb607e755631dacc0d28a147511a1eaa7e54e3cbcb23bdff4aafe8b76bf`.
