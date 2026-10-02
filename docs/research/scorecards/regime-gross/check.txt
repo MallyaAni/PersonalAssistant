@@ -1,0 +1,80 @@
+controls: ew_graded_cap25 and ew_graded_cap25 + vt20 (tag vt20), as of 2026-10-01
+rg30_g50: threshold 0.3, g_low 0.5, combined with None, registered True
+  against_control (ew_graded_cap25):
+    2016-2023: paired -0.0869 bp/session (t -0.752) over 2012 sessions; verdict -0.0869 (t -0.752) over 2012: OK
+    2016-2023: rows' medians - drawdown -44.9% vs -45.5%, CAGR +27.8% vs +28.0%, Sharpe 0.98 vs 0.98: OK
+    2024-2026: paired -0.7025 bp/session (t -1.342) over 690 sessions; verdict -0.7025 (t -1.342) over 690: OK
+    2024-2026: rows' medians - drawdown -29.1% vs -26.4%, CAGR +44.1% vs +46.7%, Sharpe 1.21 vs 1.26: OK
+    above at 0 of 20 offsets: OK
+    clears the trade: False; verdict RECORD: OK
+  against_vol_target (ew_graded_cap25 + vt20):
+    2016-2023: paired +3.1992 bp/session (t +2.145) over 2012 sessions; verdict +3.1992 (t +2.145) over 2012: OK
+    2016-2023: rows' medians - drawdown -44.9% vs -24.6%, CAGR +27.8% vs +21.7%, Sharpe 0.98 vs 1.09: OK
+    2024-2026: paired +5.8713 bp/session (t +1.980) over 690 sessions; verdict +5.8713 (t +1.980) over 690: OK
+    2024-2026: rows' medians - drawdown -29.1% vs -24.3%, CAGR +44.1% vs +24.8%, Sharpe 1.21 vs 1.12: OK
+    above at 20 of 20 offsets: OK
+    clears the trade: False; verdict RECORD: OK
+  2016-2023: median-offset CAGR +28.38% (row's offset 10: +28.38%), worst drawdown -43.64%, Sharpe 0.986: OK
+  2024-2026: median-offset CAGR +39.91% (row's offset 10: +39.91%), worst drawdown -29.29%, Sharpe 1.152: OK
+  gross path from the recorded p(t-1): fired on 0.5% of sessions (p defined on 71%, max p 0.385); recorded path matches
+  criteria: clears the control False, clears the vol target False -> RECORD; verdict RECORD: OK
+rg50_g50: threshold 0.5, g_low 0.5, combined with None, registered True
+  against_control (ew_graded_cap25):
+    2016-2023: paired +0.0000 bp/session (t +nan) over 2012 sessions; verdict +0.0000 (t +nan) over 2012: OK
+    2016-2023: rows' medians - drawdown -45.5% vs -45.5%, CAGR +28.0% vs +28.0%, Sharpe 0.98 vs 0.98: OK
+    2024-2026: paired +0.0000 bp/session (t +nan) over 690 sessions; verdict +0.0000 (t +nan) over 690: OK
+    2024-2026: rows' medians - drawdown -26.4% vs -26.4%, CAGR +46.7% vs +46.7%, Sharpe 1.26 vs 1.26: OK
+    above at 0 of 20 offsets: OK
+    clears the trade: False; verdict RECORD: OK
+  against_vol_target (ew_graded_cap25 + vt20):
+    2016-2023: paired +3.2861 bp/session (t +2.174) over 2012 sessions; verdict +3.2861 (t +2.174) over 2012: OK
+    2016-2023: rows' medians - drawdown -45.5% vs -24.6%, CAGR +28.0% vs +21.7%, Sharpe 0.98 vs 1.09: OK
+    2024-2026: paired +6.5738 bp/session (t +2.284) over 690 sessions; verdict +6.5738 (t +2.284) over 690: OK
+    2024-2026: rows' medians - drawdown -26.4% vs -24.3%, CAGR +46.7% vs +24.8%, Sharpe 1.26 vs 1.12: OK
+    above at 20 of 20 offsets: OK
+    clears the trade: False; verdict RECORD: OK
+  2016-2023: median-offset CAGR +28.62% (row's offset 10: +28.62%), worst drawdown -44.51%, Sharpe 0.990: OK
+  2024-2026: median-offset CAGR +42.34% (row's offset 10: +42.34%), worst drawdown -26.70%, Sharpe 1.199: OK
+  gross path from the recorded p(t-1): fired on 0.0% of sessions (p defined on 71%, max p 0.385); recorded path matches
+  criteria: clears the control False, clears the vol target False -> RECORD; verdict RECORD: OK
+rg50_g00: threshold 0.5, g_low 0.0, combined with None, registered True
+  against_control (ew_graded_cap25):
+    2016-2023: paired +0.0000 bp/session (t +nan) over 2012 sessions; verdict +0.0000 (t +nan) over 2012: OK
+    2016-2023: rows' medians - drawdown -45.5% vs -45.5%, CAGR +28.0% vs +28.0%, Sharpe 0.98 vs 0.98: OK
+    2024-2026: paired +0.0000 bp/session (t +nan) over 690 sessions; verdict +0.0000 (t +nan) over 690: OK
+    2024-2026: rows' medians - drawdown -26.4% vs -26.4%, CAGR +46.7% vs +46.7%, Sharpe 1.26 vs 1.26: OK
+    above at 0 of 20 offsets: OK
+    clears the trade: False; verdict RECORD: OK
+  against_vol_target (ew_graded_cap25 + vt20):
+    2016-2023: paired +3.2861 bp/session (t +2.174) over 2012 sessions; verdict +3.2861 (t +2.174) over 2012: OK
+    2016-2023: rows' medians - drawdown -45.5% vs -24.6%, CAGR +28.0% vs +21.7%, Sharpe 0.98 vs 1.09: OK
+    2024-2026: paired +6.5738 bp/session (t +2.284) over 690 sessions; verdict +6.5738 (t +2.284) over 690: OK
+    2024-2026: rows' medians - drawdown -26.4% vs -24.3%, CAGR +46.7% vs +24.8%, Sharpe 1.26 vs 1.12: OK
+    above at 20 of 20 offsets: OK
+    clears the trade: False; verdict RECORD: OK
+  2016-2023: median-offset CAGR +28.62% (row's offset 10: +28.62%), worst drawdown -44.51%, Sharpe 0.990: OK
+  2024-2026: median-offset CAGR +42.34% (row's offset 10: +42.34%), worst drawdown -26.70%, Sharpe 1.199: OK
+  gross path from the recorded p(t-1): fired on 0.0% of sessions (p defined on 71%, max p 0.385); recorded path matches
+  criteria: clears the control False, clears the vol target False -> RECORD; verdict RECORD: OK
+rg50_g50_vt25: threshold 0.5, g_low 0.5, combined with 0.25, registered False
+  against_control (ew_graded_cap25):
+    2016-2023: paired -2.0543 bp/session (t -1.704) over 2012 sessions; verdict -2.0543 (t -1.704) over 2012: OK
+    2016-2023: rows' medians - drawdown -30.1% vs -45.5%, CAGR +24.4% vs +28.0%, Sharpe 1.08 vs 0.98: OK
+    2024-2026: paired -4.6800 bp/session (t -2.285) over 690 sessions; verdict -4.6800 (t -2.285) over 690: OK
+    2024-2026: rows' medians - drawdown -26.1% vs -26.4%, CAGR +31.2% vs +46.7%, Sharpe 1.19 vs 1.26: OK
+    above at 0 of 20 offsets: OK
+    clears the trade: False; verdict RECORD: OK
+  against_vol_target (ew_graded_cap25 + vt20):
+    2016-2023: paired +1.2319 bp/session (t +2.834) over 2012 sessions; verdict +1.2319 (t +2.834) over 2012: OK
+    2016-2023: rows' medians - drawdown -30.1% vs -24.6%, CAGR +24.4% vs +21.7%, Sharpe 1.08 vs 1.09: OK
+    2024-2026: paired +1.8938 bp/session (t +1.884) over 690 sessions; verdict +1.8938 (t +1.884) over 690: OK
+    2024-2026: rows' medians - drawdown -26.1% vs -24.3%, CAGR +31.2% vs +24.8%, Sharpe 1.19 vs 1.12: OK
+    above at 20 of 20 offsets: OK
+    clears the trade: False; verdict RECORD: OK
+  2016-2023: median-offset CAGR +24.56% (row's offset 10: +24.56%), worst drawdown -30.20%, Sharpe 1.088: OK
+  2024-2026: median-offset CAGR +29.76% (row's offset 10: +29.76%), worst drawdown -25.22%, Sharpe 1.133: OK
+  gross path from the recorded p(t-1): fired on 0.0% of sessions (p defined on 71%, max p 0.385); recorded path matches
+  criteria: clears the control False, clears the vol target False -> REPORTED; verdict REPORTED: OK
+null test (threshold 1.0 against the control): rows True, paired True, curves True, gross all one True, every p below 1 True: OK
+regime control against B1's control: rows True, curves True: OK
+independent check: OK

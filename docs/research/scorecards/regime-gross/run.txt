@@ -1,0 +1,29 @@
+2026-10-02T00:40:15Z repo /home/animallya96/dspark-commit
+/home/animallya96/scratch/rg.bundle is okay
+The bundle contains this ref:
+bb5f0e610f585a3e61514e4ffedded001e8edd2b refs/heads/research/regime-gross
+The bundle requires this ref:
+d8a38ad6c9bddfb23a8271b7f448312743bf6ee2 
+The bundle uses this hash algorithm: sha1
+From /home/animallya96/scratch/rg.bundle
+ * [new branch]        research/regime-gross -> refs/bundles/rg
+Already up to date.
+2026-10-02T00:40:15Z start rev bb5f0e610f585a3e61514e4ffedded001e8edd2b dirty 0
+2026-10-02T00:40:24Z tests exit 0 (15 passed in 7.08s)
+2026-10-02T00:40:24Z null_test start
+2026-10-02T00:44:23Z null_test exit 0
+2026-10-02T00:44:23Z null start
+2026-10-02T00:50:07Z null exit 0
+2026-10-02T00:50:07Z registered start
+2026-10-02T00:56:44Z registered exit 0
+2026-10-02T00:56:44Z reported_vt25 start
+2026-10-02T01:02:31Z reported_vt25 exit 0
+2026-10-02T01:02:31Z B1's best registered target: vt20
+2026-10-02T01:02:31Z as of: B1 2026-09-30, B2 2026-10-01
+2026-10-02T01:02:31Z the store moved since B1 ran; re-running sigma* = 20% on this session's store as the second control
+2026-10-02T01:02:31Z vt_best start
+2026-10-02T01:08:33Z vt_best exit 0
+2026-10-02T01:08:33Z verdict start
+2026-10-02T01:08:34Z verdict exit 0
+2026-10-02T01:08:34Z check start
+2026-10-02T01:08:34Z check exit 0 (independent check: OK)
