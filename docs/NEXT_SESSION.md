@@ -1,5 +1,45 @@
 # Next session
 
+## 2026-10-02 — Personal current-entry permission; release pending
+
+Code checkpoint `699e6c16` on `codex/current-entry-permission-20261002` corrects
+fresh manual dip entries without changing paper execution or stock selection.
+The historical completed-bar trigger stays recorded, but personal guidance
+checks a qualified current ask against the original dip ceiling, rounded down
+to an executable tick, **before** allocating cash. An above-limit or expired
+quote cannot authorize a new Buy. Saved personal receipts retain this check.
+The previously disconnected personal API is now reachable through the collapsed
+**Personal portfolio** controls and **Personal action** in stock details; the
+main table remains explicitly the paper account's orders.
+
+**FAILED on prior source:** a recovered price still authorized a personal Buy
+because the original trigger stayed latched. This was intentional historical
+timing, incorrectly reused as permission for a fresh manual entry. API-only
+correction was insufficient: the mounted table did not request personal advice.
+
+**VERIFIED before release:** 278 backend checks, zero skips, against the exact
+changed source mounted in the Spark test image. Authenticated POST exercises
+Hold at ask $106.01 after a $98.90 trigger / $99.00 ceiling, then a funded Buy
+below the ceiling; originals and holdings remain unchanged. Fourteen browser
+checks pass with no page, console or request errors. The new personal-entry
+case additionally passes after adding cash-context stale-response acceptance:
+an older Buy cannot return after cash becomes zero. Typecheck and all 33
+registered diagram/page checks pass. Diagram impact: NONE; this connects the
+existing personal advice/quotes/holdings/receipt path. No new provider or store.
+Existing broad-file API/history lint debt is outside this patch; changed-line
+checks pass. Local browser dependencies were restored from the existing lock
+with integrity checks; no dependency manifest or lock changes.
+
+**UNVERIFIED:** deployment, net profit improvement, premature-exit improvement,
+historical NBBO fills or neural superiority. The close fallback, paper orders,
+grades, selection, sell rules and existing snapshot-based risk sizing are
+unchanged. This is a manual-entry price safeguard, not a new alpha model.
+Guarded release must use `scripts/deploy.sh`, then actual API/browser/artifact
+proof. Do not repeat the earlier economic study: its fixed entry/exit candidates
+did not justify adoption. Preserve unrelated Wi-Fi watchdog files, bundle,
+scratch, data/secrets and model services; do not submit real orders or rewrite
+frozen histories. The completed automation remains paused.
+
 ## 2026-10-02 — LIVE: chart/Levels release `5b2b3d74`; bounded acceptance complete
 
 Checkpoint `82008d76` is merged on GitHub/Spark main at `5b2b3d74` and deployed
