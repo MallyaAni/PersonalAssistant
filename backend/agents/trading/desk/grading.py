@@ -19,6 +19,14 @@ the side of the book is information none of the other analysts had.
 
 The rotation analyst's stance counts half a vote: it is a view about the
 side, not the name. `calibrate` in desk.py reports what each grade earned.
+
+An `extra` stance (a research table read point in time, `stance_table.py`)
+is a sixth vote under the same rule: it carries a full vote in the sum and
+nothing else - it is not the release, it is not one of the two "strong
+agreement" analysts, and it never vetoes. The thresholds do not move, so
+a bullish sixth vote lowers by one the votes a name needs from the five
+for B (0.5), A (2) and A+ (the release and 2), and a bearish one raises
+them by one without capping the grade.
 """
 
 from dataclasses import dataclass
@@ -153,8 +161,14 @@ def grade(
     value: Opinion | None = None,
     weights: dict[str, float] | None = None,
     veto: bool = True,
+    extra: dict[str, Opinion] | None = None,
 ) -> Graded:
-    """Return the Graded panel; `weights` per analyst, equal when None."""
+    """Return the Graded panel; `weights` per analyst, equal when None.
+
+    `extra` names further opinions that vote as a sixth analyst each
+    (`grade_stances`' `extra`): a full vote, no veto, no role in the
+    release or strong-agreement clauses.
+    """
     convictions = {
         "fundamental": fundamental.conviction(),
         "technical": technical.conviction(),
@@ -171,6 +185,11 @@ def grade(
         rotation_stances = rotation.stances()
         gated = np.isnan(np.asarray(rotation.scores, dtype=float)).all(axis=1)
         rotation_stances = np.where(gated[:, None], 0, rotation_stances)
+    extra_stances = None
+    if extra:
+        extra_stances = {name: opinion.stances() for name, opinion in extra.items()}
+        for name, opinion in extra.items():
+            convictions[name] = opinion.conviction()
     return grade_stances(
         fundamental.stances(),
         technical.stances(),
@@ -180,6 +199,7 @@ def grade(
         convictions,
         weights,
         veto,
+        extra=extra_stances,
     )
 
 
@@ -227,6 +247,20 @@ def analyst_weights(weights: dict[str, float] | None, names) -> dict[str, float]
     return {n: w * scale for n, w in raw.items()}
 
 
+# The extra stances checked: none may be named after one of the five, and
+# each is shaped like the panel.
+def _extra_stances(
+    extra: dict[str, np.ndarray] | None, shape: tuple[int, ...]
+) -> dict[str, np.ndarray]:
+    """Return `extra` as given, or raise ValueError on a bad name or shape."""
+    for name, stance in (extra or {}).items():
+        if name in ANALYST_WEIGHTS:
+            raise ValueError(f"an extra stance cannot be named {name!r}: an analyst is")
+        if np.shape(stance) != shape:
+            raise ValueError(f"extra stance {name!r} must be shaped like the panel")
+    return dict(extra or {})
+
+
 # The rule itself, on stances already taken.
 def grade_stances(
     f: np.ndarray,
@@ -237,13 +271,20 @@ def grade_stances(
     convictions: dict[str, np.ndarray] | None = None,
     weights: dict[str, float] | None = None,
     veto: bool = True,
+    extra: dict[str, np.ndarray] | None = None,
 ) -> Graded:
-    """Return the Graded panel from (T, N) stance arrays; `veto` caps on a bear."""
+    """Return the Graded panel from (T, N) stance arrays; `veto` caps on a bear.
+
+    `extra` maps further analyst names to (T, N) stances that each carry a
+    full vote (`analyst_weights` gives any name but rotation 1.0) and never
+    veto; a name that collides with the five is refused.
+    """
     stances = {"fundamental": f, "technical": t, "sentiment": s}
     if r is not None:
         stances["rotation"] = r
     if v is not None:
         stances["value"] = v
+    stances.update(_extra_stances(extra, np.shape(f)))
     w = analyst_weights(weights, tuple(stances))
     votes = np.zeros(f.shape, dtype=float)
     for name, stance in stances.items():

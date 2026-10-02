@@ -426,3 +426,149 @@ def test_graded_arm_and_concentration(history):
     # The CLI tag for a cap names the percent.
     assert sc.main.__doc__  # entry point exists; the tag rule is pinned below
     assert f"ew_graded_cap{round(0.15 * 100):02d}" == "ew_graded_cap15"
+
+
+# A benchmark series of zeros for every index, so the scorecard prices
+# without a store.
+def _flat_benchmarks(monkeypatch):
+    monkeypatch.setattr(
+        benchmarks,
+        "load_benchmark",
+        lambda store, symbol, sessions, **kwargs: benchmarks.BenchmarkSeries(
+            symbol,
+            True,
+            np.zeros(len(sessions)),
+            np.ones(len(sessions)),
+            np.asarray(sessions),
+        ),
+    )
+
+
+# A stance table on disk: every name bullish on odd sessions, bearish on
+# even ones, from the panel's second month.
+def _stance_file(path, panel, names=("AAA", "BBB", "CCC", "DDD", "EEE", "FFF")):
+    rows = ["session,ticker,stance"]
+    for t in range(20, len(panel.dates)):
+        for name in names:
+            rows.append(f"{panel.dates[t]},{name},{1 if t % 2 else -1}")
+    path.write_text("\n".join(rows) + "\n", encoding="utf-8")
+    return path
+
+
+# The stance-table gate on the scorecard: a desk graded by its own rule from
+# real opinions is re-graded with the table's rows zeroed and reproduces
+# the plain desk to the bit (the null test passes), the table itself moves
+# the grades on this panel (so the null is not vacuous and would say FAIL),
+# --stance-table writes the tagged payload with each table's sha256, the
+# mode, the grade moves per window, the rank IC, the per-offset CAGRs, the
+# worst drawdown and the median-offset curves, replace mode is tagged by
+# the analyst, --output is honoured, and the bad command lines are refused.
+def test_stance_table_null_test_and_payload(history, monkeypatch, tmp_path):
+    import hashlib
+
+    from backend.agents.trading.desk import desk, stance_table
+    from backend.tests.test_stance_table import desk_report
+
+    report = desk_report(seed=7, sessions=T)
+    monkeypatch.setattr(desk, "run", lambda store, asof, **kwargs: report)
+    monkeypatch.setattr(desk, "calibrate", lambda report, horizon: ([], SimpleNamespace(
+        mean_ic=0.01 * horizon, ic_tstat=1.5, net_sharpe=0.9
+    )))
+    _flat_benchmarks(monkeypatch)
+    table = _stance_file(tmp_path / "A2.csv", report.panel)
+    digest = hashlib.sha256(table.read_bytes()).hexdigest()
+    common = [
+        "--root", str(tmp_path), "--graded-cap", "0.10", "--costs", "10",
+        "--membership", str(history),
+    ]
+    assert sc.main([*common, "--stance-table", str(table), "--null-test"]) == 0
+    # Not vacuous: the table itself moves the grades, and the null test
+    # reports the mismatch.
+    aligned = sc.load_stance_tables([table], report)
+    assert aligned[0].record["sha256"] == digest
+    regraded = stance_table.regrade(report, aligned, "sixth")
+    assert not np.array_equal(regraded.graded.grades, report.graded.grades)
+    arm = sc.graded_arm(0.10)
+    verdict = sc.null_test(report, regraded, object(), history, 1, (10.0,), arm)
+    assert not verdict["ok"]
+    assert not verdict["grades_and_scores_equal"]
+    assert "FAIL" in sc.render_null_test(verdict)
+    null = stance_table.regrade(report, [stance_table.zeroed(aligned[0])], "sixth")
+    verdict = sc.null_test(report, null, object(), history, 1, (10.0,), arm)
+    assert verdict["ok"]
+    assert len(verdict["lines"]) == 6
+    assert "PASS, reproduced to the bit" in sc.render_null_test(verdict)
+    # The sixth-mode payload.
+    out = tmp_path / "gate" / "pit_scorecard_A2.json"
+    arguments = [*common, "--offsets", "2", "--rank-ic", "--stance-table", str(table)]
+    assert sc.main([*arguments, "--output", str(out)]) == 0
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert payload["arm"] == "ew_graded_cap10 + stance_sixth"
+    assert payload["membership"] == str(history)
+    block = payload["stance_tables"]
+    assert block["mode"] == "sixth"
+    (recorded,) = block["tables"]
+    assert recorded["sha256"] == digest
+    assert recorded["path"] == str(table)
+    assert recorded["name"] == "table:A2"
+    assert recorded["rows_used"] == recorded["rows"]
+    assert set(block["grades"]) == set(sc.WINDOWS)
+    moves = block["grades"]["all"]
+    assert moves["moved"] > 0
+    assert moves["moved"] == moves["moved_up"] + moves["moved_down"]
+    assert sum(moves["before"].values()) == moves["eligible_name_sessions"]
+    assert set(payload["rank_ic"]) == {"h20", "h60"}
+    assert payload["rank_ic"]["h60"]["rank_ic"] == pytest.approx(0.6)
+    rows = [r for r in payload["rows"] if r["line"] == sc.RULE_PIT]
+    assert all(len(r["cagrs"]) == 2 for r in rows)
+    assert all(r["worst_drawdown"] <= r["median_drawdown"] for r in rows)
+    curves = payload["curves"]["10"]
+    assert curves["offset"] == 1
+    assert set(curves["lines"]) == {
+        sc.RULE_TODAY, sc.RULE_PIT, sc.EW_PIT, sc.EW_TODAY, "SPY", "QQQ"
+    }
+    assert len(curves["dates"]) == len(curves["lines"][sc.RULE_PIT]) == T - 1
+    text = sc.render(payload)
+    assert "stance tables, mode sixth" in text
+    assert "table:A2" in text
+    # Replace mode is tagged by the analyst and takes the default file name.
+    assert sc.main([
+        *common, "--offsets", "1", "--stance-table", str(table),
+        "--stance-mode", "replace:sentiment",
+    ]) == 0
+    replaced_name = "pit_scorecard_ew_graded_cap10_stance_replace_sentiment.json"
+    replaced = json.loads((tmp_path / "desk" / replaced_name).read_text())
+    assert replaced["arm"] == "ew_graded_cap10 + stance_replace_sentiment"
+    assert replaced["stance_tables"]["mode"] == "replace:sentiment"
+    # Two tables in sixth mode are two votes, both recorded.
+    second = _stance_file(tmp_path / "A4.csv", report.panel, names=("AAA",))
+    assert sc.main([
+        *common, "--offsets", "1", "--stance-table", str(table), "--stance-table",
+        str(second), "--output", str(tmp_path / "two.json"),
+    ]) == 0
+    two = json.loads((tmp_path / "two.json").read_text(encoding="utf-8"))
+    names = [t["name"] for t in two["stance_tables"]["tables"]]
+    assert names == ["table:A2", "table:A4"]
+    # The control run has no block and no tag.
+    assert sc.main([*common, "--offsets", "1"]) == 0
+    control = json.loads(
+        (tmp_path / "desk" / "pit_scorecard_ew_graded_cap10.json").read_text()
+    )
+    assert "stance_tables" not in control
+    assert "rank_ic" not in control
+    assert control["arm"] == "ew_graded_cap10"
+    assert "curves" in control
+    # Refused: a null test without a table, a bad mode, replace with two
+    # tables, a table that is not there.
+    for bad in (
+        [*common, "--null-test"],
+        [*common, "--stance-table", str(table), "--stance-mode", "replace:tone"],
+        [*common, "--stance-table", str(table), "--stance-mode", "seventh"],
+        [
+            *common, "--stance-table", str(table), "--stance-table", str(second),
+            "--stance-mode", "replace:sentiment",
+        ],
+        [*common, "--stance-table", str(tmp_path / "missing.csv")],
+    ):
+        with pytest.raises(SystemExit):
+            sc.main(bad)
