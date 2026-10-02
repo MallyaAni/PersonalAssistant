@@ -411,7 +411,7 @@ def test_the_green_day_rule_leaves_intraday_sells_alone(tmp_path: Path, monkeypa
 
 # Every candle hands the snapshot it latched to the intraday order leg, and a
 # candle with no quotes still calls it (the close window needs no quote), so
-# a market-on-close order is never missed because a quote fetch failed. A
+# the close window's market order is never missed because a quote fetch failed. A
 # failure inside the leg is logged and never stops the balancer.
 @pytest.mark.parametrize("with_quotes", [True, False])
 def test_every_candle_sends_the_due_paper_orders(

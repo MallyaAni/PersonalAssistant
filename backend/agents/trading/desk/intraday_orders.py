@@ -12,11 +12,15 @@ suggestions"), and chose the board's timing over the old next-open one.
   - a buy goes to the market on the first completed 15-minute bar of the
     session whose close is at or under the session's open less 1%, and a
     sell or trim on the first one at or over the open plus 1%;
-  - with no such bar, the order goes in as a market-on-close order in the
-    close window (from 30 minutes before the close), before the exchange's
-    market-on-close cutoff (10 minutes before the close);
-  - after that cutoff and before the close, a late order goes to the market
-    so the session is never silently missed.
+  - with no such bar, the order goes to the market from the last 15-minute
+    candle before the close (3:45 PM ET on a 4:00 close; `entry_timing.
+    FINAL_LEAD`), the last balancer run inside the session. Until 2026-10-02
+    it went in market-on-close at 3:30 PM, but the Alpaca paper venue expired
+    8 of the 9 such buys unfilled at 4:00 PM while every market order filled,
+    leaving 4-5% of the account idle for a session each time
+    (`docs/research/paper-moc-fills-2026-10-02.md`). A plain market order
+    fifteen minutes before the close is the nearest order the paper venue
+    reliably fills.
 
 Measured on the `/4` policy's own orders the rule earned -0.1 bp a session
 (t -0.2) on 2016-2023 and +1.0 bp (t 2.2) on 2024-2026 against the next open
@@ -60,7 +64,8 @@ from backend.market import bounded_execution, calendar, entry_timing, execution_
 INTRADAY_EXECUTION = True
 # The execution timing written on every ordinary order the nightly plans.
 INTRADAY_TIMING = "dip_or_close"
-# The two ways an order is sent from here.
+# The way an order is sent from here: a day market order. MOC is kept only
+# to read back rows sent market-on-close before 2026-10-05.
 MARKET = "market"
 MOC = "moc"
 NEW_YORK = calendar.NEW_YORK
@@ -98,9 +103,9 @@ def due(state: paper.PaperState, today: date) -> list[dict]:
 
 
 # What one row should do at `now`: send a market order (its level was
-# reached, or the market-on-close cutoff has passed), send a market-on-close
-# order (the close window), or nothing yet. Explicit candidate contracts use
-# bounded execution instead; malformed contracts never fall back to the legacy rule.
+# reached, or the close window's last candle has come), or nothing yet.
+# Explicit candidate contracts use bounded execution instead; malformed
+# contracts never fall back to the legacy rule.
 def decide(
     row: dict, latch_row: dict | None, quote: dict | None, now: datetime, today: date
 ) -> dict[str, Any]:
@@ -123,16 +128,14 @@ def decide(
         send = MARKET
     elif state == entry_timing.CLOSE:
         clock = entry_timing.session_clock(today)
-        if now < clock["moc"]:
-            send = MOC
-        elif now < clock["close"]:
+        if clock["final"] <= now < clock["close"]:
             send = MARKET
     return {"send": send, "timed": timed}
 
 
 # Submit the decided order type, preserving an explicit candidate's price bound.
 def _submit(client, row: dict, how: str, qty: int, verdict: dict) -> dict:
-    """Submit `row` as a market or market-on-close order for `qty` shares."""
+    """Submit `row` as a day market order (or a candidate's IOC limit)."""
     symbol = str(row["symbol"])
     side = str(row["side"])
     cid = str(row["client_order_id"])
@@ -140,8 +143,6 @@ def _submit(client, row: dict, how: str, qty: int, verdict: dict) -> dict:
         return client.submit_limit_ioc(
             symbol, qty, side, verdict["guard"]["limit_price"], cid
         )
-    if how == MOC:
-        return client.submit_market_on_close(symbol, qty, side, cid)
     return client.submit_market(symbol, qty, side, cid)
 
 
@@ -167,8 +168,8 @@ def _why_sent(timed: dict[str, Any], how: str, now: datetime) -> dict[str, Any]:
 # broker acknowledgement is recorded. An order the broker already holds under
 # the row's id (an earlier run that died before recording) is adopted, not
 # sent twice. Nothing is sent unless the broker's own clock says the market is
-# open: a market-on-close order sent after the close would queue for the NEXT
-# session's close. A sell is never sent for more shares than the account holds.
+# open: an order sent after the close would queue for the NEXT session. A sell
+# is never sent for more shares than the account holds.
 # Returns the log lines.
 def send_due(
     root: Path | str,
@@ -373,7 +374,10 @@ def _send_one(
             row["send_error"] = conflict
             paper.save_state(root, state)
             return f"{line}: not sent ({conflict})"
-        row["sent"] = {**_why_sent(timed, how, now), "adopted": True}
+        # Record what the broker holds: a market-on-close order an older
+        # build sent earlier in the session stays market-on-close on the board.
+        held_how = MOC if known[cid].get("time_in_force") == "cls" else how
+        row["sent"] = {**_why_sent(timed, held_how, now), "adopted": True}
         row["execution"] = {
             **(row.get("execution") or {}),
             **execution_evidence.broker_evidence(known[cid]),
@@ -753,6 +757,11 @@ def _from_broker(row: dict, broker: dict, qty: int) -> tuple[str, str] | None:
     if status in _CANCELLED:
         if row.get("hold_requested"):
             return "held", "Held: it opened above the last close"
+        if status == "expired" and broker.get("tif") == "cls":
+            # The paper venue's failure mode for market-on-close orders.
+            return "cancelled", (
+                "Not filled: the broker expired the market-on-close order at the close"
+            )
         return "cancelled", f"Not filled: the order was {status.replace('_', ' ')}"
     if status in _WORKING or status.startswith("pending"):
         return None
@@ -1029,8 +1038,10 @@ def _clock_status(
     if state == entry_timing.TRIGGERED:
         return "due", f"Level hit: {_trigger(timed)} · order due"
     if state == entry_timing.CLOSE:
-        how = "market-on-close" if now < clock["moc"] else "market order"
-        return "due", f"Close window · {how} due"
+        if now < clock["final"]:
+            final = entry_timing._clock(clock["final"])
+            return "waiting", f"Close window · market order at {final} ET"
+        return "due", "Close window · market order due"
     return "missed", "Not sent: the session closed before the order went out"
 
 

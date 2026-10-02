@@ -5,9 +5,9 @@ side by side and they must never disagree:
 
 * an order is sent exactly when the board's `entry_timing` says BUY/SELL/TRIM
   stands: a market order on the first 15-minute close through the 1% level,
-  a market-on-close order in the close window before the cutoff, a market
-  order late in the window after it, and nothing before the open, while
-  waiting, or after the close;
+  else a market order from the close window's last candle (3:45 PM ET; never
+  market-on-close, which the paper venue expired), and nothing before the
+  open, while waiting, or after the close;
 * it is written down as being sent before the request leaves, sent once
   (a second candle, or an order an earlier run already placed, sends nothing),
   never while the broker says the market is closed, and a sell never for
@@ -174,7 +174,9 @@ def test_only_todays_unsent_ordinary_rows_are_due():
         (ny(9, 20), None, None),  # before the open
         (ny(10, 16), None, None),  # waiting for the level
         (ny(10, 16), "buy", intraday_orders.MARKET),  # level reached
-        (ny(15, 35), None, intraday_orders.MOC),  # close window
+        (ny(15, 35), None, None),  # close window, before its last candle
+        (ny(15, 35), "buy", intraday_orders.MARKET),  # a dip still sends now
+        (ny(15, 45), None, intraday_orders.MARKET),  # the last candle
         (ny(15, 52), None, intraday_orders.MARKET),  # past the MOC cutoff
         (ny(16, 5), None, None),  # the session has closed
     ],
@@ -219,8 +221,9 @@ def test_a_triggered_buy_is_sent_once(tmp_path):
     assert len(broker.sent) == 1
 
 
-# A buy still waiting sends nothing; in the close window it goes in as a
-# market-on-close order, and a sell with a pop goes to the market.
+# A buy still waiting sends nothing; in the close window it waits for the
+# last candle and goes in as a market order, and a sell with a pop goes to
+# the market.
 def test_waiting_close_window_and_a_sell_pop(tmp_path):
     save(tmp_path, row("AAA"), row("BBB", side="sell", qty=5, reason="leaves the book"))
     latch(tmp_path, symbol="AAA")
@@ -229,27 +232,32 @@ def test_waiting_close_window_and_a_sell_pop(tmp_path):
     snapshot = {"quotes": {"BBB": quote(101.2, ny(11, 0))}}
     lines = intraday_orders.send_due(tmp_path, snapshot, ny(11, 16), lambda: broker)
     assert lines == ["sell 5 BBB (market, triggered): sent"]
-    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 31), lambda: broker)
-    assert lines == ["buy 10 AAA (moc, close): sent"]
+    assert intraday_orders.send_due(tmp_path, {}, ny(15, 31), lambda: broker) == []
+    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 46), lambda: broker)
+    assert lines == ["buy 10 AAA (market, close): sent"]
     assert [s[:4] for s in broker.sent] == [
         ("market", "sell", "BBB", 5),
-        ("moc", "buy", "AAA", 10),
+        ("market", "buy", "AAA", 10),
     ]
+    kept = {r["symbol"]: r for r in paper.load_state(tmp_path).pending}
+    assert kept["AAA"]["sent"]["how"] == intraday_orders.MARKET
+    assert kept["AAA"]["execution"]["time_in_force"] == "day"
 
 
 # Nothing is sent while the broker reports the market closed, whatever the
-# calendar says: a market-on-close order then would queue for the next close.
+# calendar says: an order then would queue for the next session.
 def test_nothing_is_sent_while_the_broker_is_closed(tmp_path):
     save(tmp_path, row("AAA"))
     broker = Broker(is_open=False)
-    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 31), lambda: broker)
+    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 46), lambda: broker)
     assert "market closed" in lines[0]
     assert broker.sent == []
     assert "sent" not in paper.load_state(tmp_path).pending[0]
 
 
 # An order the broker already holds under the row's id (a run that died after
-# sending) is adopted, not sent twice.
+# sending, or a market-on-close order an older build sent at 3:30 PM) is
+# adopted, not sent twice, and recorded as the order type the broker holds.
 def test_an_order_already_at_the_broker_is_adopted(tmp_path):
     save(tmp_path, row("AAA"))
     existing = [
@@ -261,10 +269,12 @@ def test_an_order_already_at_the_broker_is_adopted(tmp_path):
         }
     ]
     broker = Broker(existing=existing)
-    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 35), lambda: broker)
-    assert lines == ["buy 10 AAA (moc, close): already at the broker, recorded"]
+    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 46), lambda: broker)
+    assert lines == ["buy 10 AAA (market, close): already at the broker, recorded"]
     assert broker.sent == []
-    assert paper.load_state(tmp_path).pending[0]["sent"]["adopted"] is True
+    sent = paper.load_state(tmp_path).pending[0]["sent"]
+    assert sent["adopted"] is True
+    assert sent["how"] == intraday_orders.MOC
 
 
 # A sell is capped at the shares held, and with none held it is not sent.
@@ -275,11 +285,11 @@ def test_a_sell_never_exceeds_the_position(tmp_path):
         row("BBB", side="sell", qty=4, reason="leaves the book"),
     )
     broker = Broker(held={"AAA": 6})
-    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 35), lambda: broker)
+    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 46), lambda: broker)
     assert broker.sent == [
-        ("moc", "sell", "AAA", 6, row("AAA", side="sell")["client_order_id"])
+        ("market", "sell", "AAA", 6, row("AAA", side="sell")["client_order_id"])
     ]
-    assert "sell 4 BBB (moc, close): not sent (no shares to sell)" in lines
+    assert "sell 4 BBB (market, close): not sent (no shares to sell)" in lines
     kept = {r["symbol"]: r for r in paper.load_state(tmp_path).pending}
     assert kept["AAA"]["sent"]["qty"] == 6
     assert kept["BBB"]["send_error"] == "no shares to sell"
@@ -289,14 +299,14 @@ def test_a_sell_never_exceeds_the_position(tmp_path):
 def test_a_refused_order_is_retried(tmp_path):
     save(tmp_path, row("AAA"))
     refusing = Broker(refuse="insufficient buying power")
-    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 31), lambda: refusing)
-    assert lines == ["buy 10 AAA (moc, close): REFUSED insufficient buying power"]
+    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 46), lambda: refusing)
+    assert lines == ["buy 10 AAA (market, close): REFUSED insufficient buying power"]
     kept = paper.load_state(tmp_path).pending[0]
     assert kept["send_error"] == "insufficient buying power"
     assert "sent" not in kept
     broker = Broker()
-    assert intraday_orders.send_due(tmp_path, {}, ny(15, 46), lambda: broker) == [
-        "buy 10 AAA (moc, close): sent"
+    assert intraday_orders.send_due(tmp_path, {}, ny(15, 52), lambda: broker) == [
+        "buy 10 AAA (market, close): sent"
     ]
     assert "send_error" not in paper.load_state(tmp_path).pending[0]
 
@@ -384,11 +394,16 @@ def test_the_board_reads_each_order_in_one_vocabulary(tmp_path):
     assert waiting["when"] == (
         "Today · 15-min close ≤ $40.59 (1% under the $41.00 open), else at the close"
     )
-    # An unsent close-window order is due, not evidence of a submission.
-    due = intraday_orders.board_row(row(), broker=None, now=ny(15, 35), **common)
+    # An unsent close-window order waits for the last candle, then is due;
+    # neither is evidence of a submission.
+    early = intraday_orders.board_row(row(), broker=None, now=ny(15, 35), **common)
+    assert (early["state"], early["status"]) == (
+        "waiting",
+        "Close window · market order at 3:45 PM ET",
+    )
+    due = intraday_orders.board_row(row(), broker=None, now=ny(15, 46), **common)
     assert due["state"] == "due"
-    assert "due" in due["status"]
-    assert "sending" not in due["status"]
+    assert due["status"] == "Close window · market order due"
     # Sent at the trigger, then filled.
     sent_row = row(sent={"at": ny(10, 16).isoformat(), "how": "market", "qty": 10})
     sent = intraday_orders.board_row(sent_row, broker=None, now=ny(10, 17), **common)
@@ -614,14 +629,17 @@ def test_adopted_broker_quantity_overrides_plan():
     assert (shown["qty"], shown["remaining_qty"], shown["submitted_qty"]) == (5, 5, 5)
 
 
-# The dashboard uses the same MOC cutoff as execution, including early closes.
+# The dashboard uses the same close-window clock as execution, including
+# early closes: it waits for the last candle, then a market order is due.
 @pytest.mark.parametrize(
     ("day", "hour", "minute", "how"),
     [
-        (TODAY, 15, 30, "moc"),
+        (TODAY, 15, 30, None),
+        (TODAY, 15, 45, "market"),
         (TODAY, 15, 50, "market"),
         (TODAY, 15, 55, "market"),
-        (date(2026, 11, 27), 12, 30, "moc"),
+        (date(2026, 11, 27), 12, 30, None),
+        (date(2026, 11, 27), 12, 45, "market"),
         (date(2026, 11, 27), 12, 50, "market"),
     ],
 )
@@ -641,5 +659,227 @@ def test_close_window_words_match_actual_order_type(day, hour, minute, how):
         now=now,
     )
     assert verdict["send"] == how
-    order_type = "market-on-close" if how == "moc" else "market order"
-    assert shown["status"] == f"Close window · {order_type} due"
+    if how is None:
+        final = "3:45 PM" if day == TODAY else "12:45 PM"
+        assert (shown["state"], shown["status"]) == (
+            "waiting",
+            f"Close window · market order at {final} ET",
+        )
+    else:
+        assert (shown["state"], shown["status"]) == (
+            "due",
+            "Close window · market order due",
+        )
+
+
+# ----------------------------------------------------------------------------
+# The close window's order is a market order (2026-10-02): the paper venue
+# expired 8 of the 9 market-on-close buys the balancer sent from 3:30 PM.
+# ----------------------------------------------------------------------------
+
+
+# Every minute of a session from before the open to after the close, as New
+# York instants on `day`.
+def _minutes(day: date) -> list[datetime]:
+    """Return each minute from 9:00 AM to 4:10 PM New York on `day`."""
+    start = ny(9, 0, day)
+    return [start + timedelta(minutes=m) for m in range(0, 7 * 60 + 11)]
+
+
+# The rule this change replaced, kept here only to prove what did not change:
+# a trigger sends a market order; the close window sent market-on-close until
+# the exchange cutoff and a market order after it.
+def _pre_fix_rule(timed: dict, now: datetime, day: date) -> str | None:
+    """Return what the pre-2026-10-05 `decide` sent for a legacy row."""
+    clock = entry_timing.session_clock(day)
+    if timed["state"] == entry_timing.TRIGGERED:
+        return intraday_orders.MARKET
+    if timed["state"] == entry_timing.CLOSE:
+        if now < clock["moc"]:
+            return intraday_orders.MOC
+        if now < clock["close"]:
+            return intraday_orders.MARKET
+    return None
+
+
+# On a synthetic clock (a full day and an early close), an untriggered row is
+# sent at the market exactly from the close window's last candle to the
+# close, and no minute of any session decides market-on-close.
+@pytest.mark.parametrize("day", [TODAY, date(2026, 11, 27)])
+@pytest.mark.parametrize("side", ["buy", "sell"])
+def test_the_close_window_sends_a_market_order_from_its_last_candle(day, side):
+    clock = entry_timing.session_clock(day)
+    assert clock["final"] == clock["close"] - timedelta(minutes=15)
+    pending = row(side=side, execute_on=day.isoformat())
+    latch_row = {"open": 100.0, "buy_trigger": None, "sell_trigger": None}
+    sent_at = []
+    for now in _minutes(day):
+        verdict = intraday_orders.decide(pending, latch_row, None, now, day)
+        assert verdict["send"] in (None, intraday_orders.MARKET)
+        if verdict["send"]:
+            sent_at.append(now)
+    assert sent_at[0] == clock["final"]
+    assert sent_at[-1] == clock["close"] - timedelta(minutes=1)
+    assert len(sent_at) == 15
+
+
+# A dip- or pop-triggered row decides exactly what it decided before the
+# change at every minute of the session, the close window included; only an
+# untriggered row in the close window moved from market-on-close to the
+# last candle's market order.
+@pytest.mark.parametrize("side", ["buy", "sell"])
+@pytest.mark.parametrize("bar_hour", [10, 15])
+def test_a_triggered_row_decides_as_it_did_before(side, bar_hour):
+    trigger = {
+        "bar": ny(bar_hour, 0).isoformat(),
+        "price": 98.9 if side == "buy" else 101.1,
+        "seen_at": ny(bar_hour, 15).isoformat(),
+    }
+    latch_row = {
+        "open": 100.0,
+        "buy_trigger": trigger if side == "buy" else None,
+        "sell_trigger": trigger if side == "sell" else None,
+    }
+    pending = row(side=side)
+    clock = entry_timing.session_clock(TODAY)
+    triggered = 0
+    for now in _minutes(TODAY):
+        verdict = intraday_orders.decide(pending, latch_row, None, now, TODAY)
+        timed = verdict["timed"]
+        before = _pre_fix_rule(timed, now, TODAY)
+        if timed["state"] == entry_timing.CLOSE:
+            expected = intraday_orders.MARKET if now >= clock["final"] else None
+            assert verdict["send"] == expected
+        else:
+            assert verdict["send"] == before
+        triggered += timed["state"] == entry_timing.TRIGGERED
+    # The trigger is seen at bar_hour:15 and stands to the close.
+    assert triggered == (16 * 60) - (bar_hour * 60 + 15)
+
+
+# A whole session of balancer candles (every 15 minutes, 30 s past) sends a
+# triggered buy at its trigger and an untriggered buy and sell at 3:45 PM,
+# all as day market orders; the broker never sees market-on-close.
+def test_a_session_of_candles_never_sends_market_on_close(tmp_path):
+    save(
+        tmp_path,
+        row("AAA"),
+        row("BBB"),
+        row("CCC", side="sell", qty=5, reason="leaves the book"),
+    )
+    path = entry_timing.latch_path(tmp_path, TODAY)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    plain = {"open": 100.0, "buy_trigger": None, "sell_trigger": None}
+    dipped = {
+        **plain,
+        "buy_trigger": {
+            "bar": ny(11, 0).isoformat(),
+            "price": 98.9,
+            "seen_at": ny(11, 15).isoformat(),
+        },
+    }
+    path.write_text(
+        json.dumps(
+            {
+                "session": TODAY.isoformat(),
+                "symbols": {"AAA": dipped, "BBB": plain, "CCC": plain},
+            }
+        ),
+        encoding="utf-8",
+    )
+    broker = Broker(held={"CCC": 5})
+    log = []
+    for minutes in range(0, 7 * 60 + 1, 15):
+        now = ny(9, 30) + timedelta(minutes=minutes, seconds=30)
+        broker.is_open = now < ny(16, 0)
+        for line in intraday_orders.send_due(tmp_path, {}, now, lambda: broker):
+            log.append((now.astimezone(NY).strftime("%H:%M"), line))
+    assert [(at, line) for at, line in log if "sent" in line] == [
+        ("11:15", "buy 10 AAA (market, triggered): sent"),
+        ("15:45", "buy 10 BBB (market, close): sent"),
+        ("15:45", "sell 5 CCC (market, close): sent"),
+    ]
+    assert {how for how, *_ in broker.sent} == {"market"}
+
+
+# `_submit` sends a day market order for a legacy row whatever it is handed,
+# never the market-on-close order the paper venue expires.
+def test_submit_sends_a_market_order():
+    broker = Broker()
+    response = intraday_orders._submit(broker, row(), intraday_orders.MARKET, 10, {})
+    assert response["time_in_force"] == "day"
+    assert broker.sent == [("market", "buy", "AAA", 10, row()["client_order_id"])]
+
+
+# A market-on-close order the broker expired is noticed, recorded and shown,
+# never treated as done: the board shows it as not filled (an order needing
+# attention), the balancer does not send it twice, the nightly settles it as
+# dead (terminal, not DONE), and a rebalance leg that died puts the
+# rebalance clock back so the next session plans it again.
+def test_an_expired_market_on_close_order_is_not_done(tmp_path):
+    sent_row = row(
+        "HPE",
+        qty=31,
+        sent={"at": ny(15, 30).isoformat(), "how": "moc", "qty": 31},
+    )
+    expired = {
+        "client_order_id": sent_row["client_order_id"],
+        "symbol": "HPE",
+        "side": "buy",
+        "qty": "31",
+        "filled_qty": "0",
+        "filled_avg_price": None,
+        "status": "expired",
+        "time_in_force": "cls",
+        "expired_at": "2026-09-30T20:01:28Z",
+    }
+    shown = intraday_orders.board_row(
+        sent_row,
+        broker=expired,
+        latch=None,
+        quote=None,
+        held=0.0,
+        price=36.0,
+        equity=100_000.0,
+        now=ny(16, 5),
+    )
+    assert (shown["state"], shown["status"]) == (
+        "cancelled",
+        "Not filled: the broker expired the market-on-close order at the close",
+    )
+    assert shown["terminal"] is True
+    assert shown["sent_how"] == "moc"
+    # A partial before the expiry reads as such, not as filled.
+    partial = intraday_orders.board_row(
+        sent_row,
+        broker={**expired, "filled_qty": "14", "filled_avg_price": "36.10"},
+        latch=None,
+        quote=None,
+        held=14.0,
+        price=36.0,
+        equity=100_000.0,
+        now=ny(16, 5),
+    )
+    assert partial["state"] == "cancelled"
+    assert "Bought 14 of 31" in partial["status"]
+    assert "the rest did not fill" in partial["status"]
+    # The balancer never re-sends a sent row, even inside the final window.
+    save(tmp_path, sent_row)
+    broker = Broker(existing=[expired])
+    assert intraday_orders.send_due(tmp_path, {}, ny(15, 46), lambda: broker) == []
+    assert broker.sent == []
+    # The nightly settles it as dead: terminal, recorded, not done.
+    state = paper.load_state(tmp_path)
+    state.unconfirmed_rebalance = DECIDED
+    state.last_rebalance = DECIDED
+    state.previous_rebalance = "2026-09-01"
+    settled = paper.settle(state.pending, [expired])
+    assert [(s.status, s.terminal, s.filled_qty) for s in settled] == [
+        ("dead", True, 0)
+    ]
+    assert "dead" not in paper.DONE
+    after = paper.apply_settlements(state, settled)
+    assert after.pending == []
+    assert [(e["symbol"], e["status"]) for e in after.journal] == [("HPE", "dead")]
+    assert after.last_rebalance == "2026-09-01"
+    assert after.sessions_since_rebalance == paper.REBALANCE_EVERY

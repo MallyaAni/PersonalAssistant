@@ -1043,7 +1043,7 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
         <dd className="text-[#6e6e73]">
           The nightly plan decides the orders after the close. The next session, a buy goes in on the first 15-minute
           close 1% or more under the day&apos;s open, a sell or trim on one 1% or more over it; with none, the order goes in
-          market-on-close from 3:30 PM ET. The status shows where each order is: planned, waiting for its level, sent,
+          as a market order at 3:45 PM ET, just before the close. The status shows where each order is: planned, waiting for its level, sent,
           filled.
         </dd>
       </div>
@@ -1677,7 +1677,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           <div className="space-y-3 px-4 pb-4">
             <p aria-label="Paper account execution timing" className="text-xs text-[#6e6e73]">{paperLive?.plan?.rule === 'next_open'
               ? 'The paper account sends its buys for the next open and its sells for the next close.'
-              : 'The paper account sends the Stock rankings orders on the board’s rule: a buy on a 15-minute close 1% under the day’s open, a sell 1% over it, otherwise market-on-close from 3:30 PM ET. FOMC risk orders go in at the open.'}</p>
+              : 'The paper account sends the Stock rankings orders on the board’s rule: a buy on a 15-minute close 1% under the day’s open, a sell 1% over it, otherwise a market order at 3:45 PM ET. FOMC risk orders go in at the open.'}</p>
             <SummaryStrip latest={latest} paperLive={paperLive} />
             <PaperAccountHistory key={userId} userId={userId} session={latest.session} />
             {paperLive && paperLive.reason === undefined && paperLive.equity !== undefined && <LivePositions paper={paperLive} equity={paperLive.equity} />}
