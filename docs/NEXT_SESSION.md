@@ -1,5 +1,40 @@
 # Next session
 
+## 2026-10-02 — LIVE: personal quote refresh and decision-price UI verified
+
+VERIFIED deployed checkpoint `8a77c1168dcee36df7ceb262a2d52d73f502d909`
+is on GitHub main, Spark source main and the public gateway. deploy.sh selected
+its frontend-only path; typecheck/build and postdeploy checks passed. Exact source
+hashes/public bundle and authenticated API/browser acceptance passed. The 16
+personal freshness, cash, expiry, stale-context and ranking browser cases pass on
+the deployed bundle; the three corrected screenshot/reader fixtures also pass.
+No order/holdings writes occurred. The three captured model containers are
+unchanged. Proof: `/tmp/codex-personal-refresh-release-proof-20261002.json` on
+Spark; correction log `/tmp/codex-personal-refresh-fixture-corrections-20261002.log`.
+The logged-in user tab was intentionally refreshed and its visible personal
+stock selector, result and manual/non-broker budget wording were checked.
+
+User explicitly challenged the remaining fixed 1% rule. The answer is that no
+stronger entry/exit policy has been established or activated: this checkpoint
+fixes guidance freshness and display accuracy, not alpha. Stored adaptive-entry
+results remain RECORD for all three candidates; their volatility-scaled levels
+missed rebounds and did not clear the predeclared economic criteria. Do not
+describe these UI fixes, a synthetic execution diagnostic or code tests as
+evidence of improved profit.
+
+The focused unresolved path is already documented in the entry/exit audit:
+compare the existing explicit bounded execution candidate with unchanged
+selection/funding, preserving missed attempts, quote/receipt evidence and cash.
+Separate entry, trim and full-exit intent; do not silently activate optional
+IOC contracts or select their budgets from recovered examples. Historical bar
+touches cannot establish IOC fills; the existing quote replay explicitly lacks
+the archived data needed for funded multi-session SPY/QQQ gain claims. No new
+strategy scoring, parameter search or old baseline rerun was done in this release.
+
+Mac main is clean for owned files; pre-existing Wi-Fi watchdog files and bundle
+remain untracked. Spark scratch/data/secrets remain untouched. This completion
+note is docs-only and requires no redeploy.
+
 ## 2026-10-02 — exact decision-price release verified; personal refresh next
 
 VERIFIED: 8722db85 is live. Required full gate passed 8,629 unit tests
