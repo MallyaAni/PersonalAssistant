@@ -1,5 +1,44 @@
 # Next session
 
+## 2026-10-02 — DONE: first funded diagnostic; candidate does not win
+
+This entry supersedes the older ACTIVE collector/watcher notes below. The
+collector exited normally: 233 observations, five frozen opportunities,
+15:00:15–15:59:45 New York. The obsolete finalizer watcher was stopped before
+scoring; never restart it. Evaluation and receipt validation at `6b9ddfa8`
+ran once, with the original `93c63ab6` recording bytes preserved.
+
+VERIFIED: paired candidate gain is −$7.80698 at 10 bp and −$6.10745 at 25 bp.
+The candidate made one conditional full-exit fill and missed four entries.
+Matched closing paper receipts show two control fills and three expired orders.
+The auction-terminal replay defect is corrected in both engines; the original
+unsupported proxy remains separate from the observed closing supplement.
+No live policy change or production deployment: the candidate remains research.
+
+The actual end SIP request retained six pages / 55,039 rows; the original start
+page / 8,533 rows was reused. NTAP's missing starting mark remains missing.
+Total return, turnover fraction, SPY/QQQ excess return and drawdown are UNVERIFIED,
+not zero; identical NTAP holdings cancel only in the paired absolute difference.
+No selection, bounds, costs or windows were changed after outcomes.
+
+Exact `6b9ddfa8` source-image checks: 192 pass / 17 optional native skips;
+pinned native checks: 82 pass / no skips. Ruff/format pass. Independent artifact
+verification checks original/evaluation hashes, receipt bytes/clocks, both SIP
+pagination chains, cash/share invariants, terminal outcomes and missing metrics
+without rerunning the economics. Proof and result are in the private Spark
+`scratch/execution-forward-20261002` directory; see
+[result and limitations](research/funded-execution-result-2026-10-02.md).
+Report SHA256 `de51edbd77d9acfd45de6f9986f74abbb9d46d8b15ac5306487cfd69784e0a41`.
+
+Continue only bounded prospective earlier-session evidence for this same fixed
+candidate; disclose sent/excluded intents and partial sessions. Do not refetch
+the October 2 archive, rescore it, mine another budget, concatenate daily resets
+as compounded performance or imply that code tests prove better trading.
+Capture remains read-only; private output is outside production data. Any future
+full-policy test needs carried selections, cash and corporate actions, not a
+fixed-intent component report. Preserve unrelated Wi-Fi/bundle changes and model
+services. Main/live release `8a77c116` remains independently verified.
+
 ## 2026-10-02 — ACTIVE: consolidated endpoint labels; no outcome scored yet
 
 Research branch is pushed to GitHub and present on Spark at `3dca4c81`.
