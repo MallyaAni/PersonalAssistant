@@ -95,6 +95,12 @@ async def test_real_financial_document_conversion(monkeypatch):
     assert "|" in parsed.markdown
     for cell in ("Q1", "125.4", "18.2%", "Q2", "132.8", "19.1%"):
         assert cell in parsed.markdown
+    table_rows = [
+        [cell.strip() for cell in line.strip().strip("|").split("|")]
+        for line in parsed.markdown.splitlines() if line.strip().startswith("|")
+    ]
+    assert ["Q1", "125.4", "18.2%"] in table_rows
+    assert ["Q2", "132.8", "19.1%"] in table_rows
     chunks = KnowledgeStore._paged_chunks(parsed.markdown, chunk_size=60)
     assert any("125.4" in text and "19.1%" in text for text, page in chunks)
     assert all(page >= 1 for text, page in chunks)
