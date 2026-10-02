@@ -66,3 +66,29 @@ with every other implementation hash still matching, and reports recording and
 evaluation identities separately. This is a correctness fix, not a strategy or
 budget change. Actual paper-broker receipts are the next evidence boundary;
 auction prices must not be inferred from bars or ordinary quotes.
+
+## Observed closing-outcome supplement before gain calculations
+
+The matched GET-only paper receipts show two filled `market/cls` orders and three
+expired orders, submitted after the cohort began. Their prices have not been used
+for gain calculations. Retain the original unsupported-auction comparison, and
+add a separately identified closing supplement using these actual terminal
+receipts. Validate raw byte hashes, client identity, symbol/side, quantities,
+submission/filled/receipt clocks and terminal status. Missing or still-working
+orders stay unknown. Expired zero-fill orders remain zero-fill outcomes.
+
+Apply recorded average execution prices and quantities only to the control's
+previously unsupported auctions, with the same 10/25-bp stress and starting cash.
+Stress resizing is explicit: reported broker quantity and modelled funded
+quantity remain distinct. Treat the closing auctions as one funding batch:
+their sale proceeds do not fund that batch's buys. The candidate still uses only
+the original observed IEX evidence and conditional displayed-liquidity attempts.
+No new candidate attempt is invented for the unsampled last 15 seconds.
+
+For this separately named supplement, value both resulting books at the fixed
+regular closing instant using delayed SIP endpoint labels. Original sampled
+interval and unsupported proxy results remain unchanged and separate. This is a
+fixed-intent component comparison, not an exact full live-policy reconstruction,
+actual candidate fills or an adoption test. The original missing NTAP starting
+mark still prevents total-return/wealth-based benchmark claims; identifiable
+paired absolute gain remains separate. No budgets or strategy windows are tuned.
