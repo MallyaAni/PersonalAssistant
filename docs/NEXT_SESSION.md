@@ -1,5 +1,22 @@
 # Next session
 
+## 2026-10-02 — personal quote-refresh gap; isolated follow-up
+
+FAILED: browser acceptance demonstrated no personal-advice reread within 21
+seconds despite execution quotes expiring after 30 seconds; the interval was
+60 seconds. The open visible personal panel now polls every 20 seconds, with
+the original interval retained when closed and faster polling paused while hidden.
+Foreground resume and all existing context/request guards remain in place.
+Quote deadlines are never extended in the browser. The original expiry, rebound,
+zero-cash and obsolete-response cases remain; renewed dated evidence is now checked
+across the original 30-second boundary. Synthetic time advancement must await the
+network responses it starts, rather than expiring the test transport mid-response.
+This fixes guidance freshness, not alpha or the fixed 1% paper execution rule.
+VERIFIED: 16 browser cases pass, typecheck/build pass; expiry, zero cash, newer
+context and renewed-evidence assertions all remain strict. No backend/model/diagram
+boundary changes. Follow-up exact deployed browser acceptance remains pending;
+do not advance Spark main until the ongoing 8722db85 exact-artifact proof finishes.
+
 ## 2026-10-02 — decision prices and direct personal preview; release pending
 
 Objective: distinguish actual outstanding order triggers from generic technical

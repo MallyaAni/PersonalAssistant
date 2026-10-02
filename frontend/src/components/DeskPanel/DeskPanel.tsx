@@ -1313,10 +1313,14 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     return () => { alive = false }
   }, [userId])
 
+  // Reread visible personal guidance before its 30-second quotes expire, without extending evidence validity.
   useEffect(() => {
     let active = true
     void poll(() => active)
-    const timer = window.setInterval(() => void poll(() => active), POLL_MS)
+    // Pause the faster personal polling while hidden; foreground resume rereads immediately.
+    const timer = window.setInterval(() => {
+      if (!personalOpen || !document.hidden) void poll(() => active)
+    }, personalOpen ? 20_000 : POLL_MS)
     // Recheck immediately when a background tab returns to the foreground.
     const resume = () => { if (!document.hidden) void poll(() => active) }
     document.addEventListener('visibilitychange', resume)

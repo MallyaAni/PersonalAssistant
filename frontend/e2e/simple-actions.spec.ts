@@ -133,6 +133,8 @@ test('a recovered personal entry shows Hold and retains its grade', async ({page
   let ask = 106.01
   let quoteAt = at
   let expires = '2026-09-24T14:00:30Z'
+  let advanceQuoteOnRead = false
+  let personalReads = 0
   let delayed: Promise<void> | null = null
   let releaseOlder!: () => void
   let olderStarted = false
@@ -143,6 +145,12 @@ test('a recovered personal entry shows Hold and retains its grade', async ({page
     }}))
     // Answer the read-only personal preview without saving advice or positions.
     await page.route('**/desk/mine', async route => {
+      personalReads += 1
+      if (advanceQuoteOnRead) {
+        const current = await page.evaluate(() => Date.now())
+        quoteAt = new Date(current).toISOString()
+        expires = new Date(current + 30000).toISOString()
+      }
       const body = route.request().postDataJSON()
       expect(body.record_history).toBe(false)
       const funded = body.available_cash > 0
@@ -197,7 +205,12 @@ test('a recovered personal entry shows Hold and retains its grade', async ({page
   await page.getByLabel('Personal action stock', {exact: true}).selectOption('AAPL')
   await expect(preview).toContainText('Entry limit')
   await expect(personal.getByLabel('AAPL strategy intent', {exact: true})).toHaveAttribute('title', limitReason)
-  await page.clock.runFor(31000)
+  const expiringPoll = page.waitForResponse(response => response.url().endsWith('/desk/mine'))
+  const expiringPrices = page.waitForResponse(response => response.url().endsWith('/desk/session-prices'))
+  await page.clock.runFor(21000)
+  await (await expiringPoll).finished()
+  await (await expiringPrices).finished()
+  await page.clock.runFor(10000)
   await expect(personal).toContainText('Unavailable')
   await expect(personal).not.toContainText('Entry limit')
   ask = 98.99
@@ -231,6 +244,21 @@ test('a recovered personal entry shows Hold and retains its grade', async ({page
   await expect(personal.getByLabel('AAPL personal entry limit')).toHaveText('Limit $0.4951')
   await personal.getByText('Recorded allocation & execution quote', {exact: true}).click()
   await expect(personal).toContainText('$0.4950 bid / $0.4951 ask')
+  // Fresh provider evidence must be reread before the 30-second permission expires.
+  advanceQuoteOnRead = true
+  const refreshReply = page.waitForResponse(response => response.url().endsWith('/desk/mine'))
+  await page.getByRole('button', {name: 'Refresh', exact: true}).click()
+  await (await refreshReply).finished()
+  const beforePoll = personalReads
+  const renewedReply = page.waitForResponse(response => response.url().endsWith('/desk/mine'))
+  const renewedPrices = page.waitForResponse(response => response.url().endsWith('/desk/session-prices'))
+  await page.clock.runFor(21000)
+  await (await renewedReply).finished()
+  await (await renewedPrices).finished()
+  await expect.poll(() => personalReads).toBeGreaterThan(beforePoll)
+  await page.clock.runFor(10000)
+  await expect(preview.getByLabel('AAPL strategy intent', {exact: true})).toContainText('BUY')
+  await expect(preview).not.toContainText('Unavailable')
   expect(errors).toEqual([])
 })
 
