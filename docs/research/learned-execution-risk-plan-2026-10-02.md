@@ -22,7 +22,8 @@ explicitly forbidden as a substitute. Same 64 iterations/15 leaves/lr.05/
 minimum leaf200/seed0/no early stopping as the frozen HGB, five original
 training clocks, minimum504 and maximum756 preceding exchange sessions,
 monthly refit. Retain the original conservative ten-session maturity/purge and
-August17 holdout cutoff. Prediction eligibility depends only on causal input,
+August17 holdout cutoff. Risk training requires finite waiting labels only,
+independently of missing ten-session return labels. Prediction eligibility depends only on causal input,
 not whether its future waiting outcome is present. Record target/config/source,
 all input array hashes, fit dates/endpoints/model files and prediction bytes.
 No hyperparameter, window, stock, risk multiplier or clock selection afterwards.

@@ -1,5 +1,41 @@
 # Next session
 
+## 2026-10-02 — stock-conditioned short-horizon execution risk: IN PROGRESS
+
+The user's new instruction supersedes the prior completed-study stop below:
+replace the universal 1% timing trigger with stock-conditioned forecasting and
+volatility. Work stays on `codex/learned-entry-risk-20261002`; live is unchanged.
+Read [the frozen timing-only protocol](research/learned-execution-risk-plan-2026-10-02.md).
+It was committed at `e62bc2b1` before new outcomes. Exactly one new monthly HGB
+head forecasts the squared one-decision waiting advantage; reuse the original
+HGB/Ridge waiting means, source inputs and all saved control/SPY/QQQ curves.
+The candidate holds v5 grading/target plans fixed to isolate entry/exit timing.
+The shared model conditions on each stock's causal volatility and structure;
+it is not 94 separately fitted models or a ten-session risk substitution.
+
+VERIFIED independent synthetic acceptance: 9/9, including both trade sides,
+order-notional/risk utility, maturity and horizon, missing first-price lock,
+partial-fill expiry, prior-plan boundary and full 2-method/20-phase/3-cost
+report persistence. Original acceptance
+`/tmp/test_execution_risk_review_edges.py` SHA256
+`bbeb3c29accad47b92926e4d704e9aefff8797501fba48a2d8e8d811e177664f`.
+FAILED then corrected before real fitting: missing execution prices retried
+later bars, and first=0 borrowed the final future row as the preceding plan.
+The first chosen action now locks before seeing its proxy price; no retries or
+auction fallback after a missing/partial attempt. Repository tests that had
+incorrectly expected a retry were corrected; independent assertions unchanged.
+Actual artifact-readback additionally found JSON tuple/list identity drift;
+canonical comparison preserves the exact input/source guard.
+
+UNVERIFIED: new full-book fit, economic advantage, short-risk calibration and
+live adapter/broker fills. The old results are already observed and therefore
+the new comparison is a reused diagnostic, not fresh held-out proof. The
+closing-window deadline remains a lifecycle constraint; utility is a one-step
+approximation, not exact optimal stopping or calibrated epistemic confidence.
+No live orders, dashboard, model-service or production-data changes. CPU only.
+Do not refit old mean models, rerun baselines or alter mounted active sources.
+Diagram impact NONE: existing internal research boundary, no new service/store.
+
 ## 2026-10-02 — learned entry/exit and sizing: COMPLETE, no live adoption
 
 User's main focus: replace arbitrary 1% timing and equal 9% allocations with
