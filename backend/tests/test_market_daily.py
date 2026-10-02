@@ -1662,7 +1662,7 @@ def test_a_dry_run_plans_the_redeploy_without_submitting(tmp_path, monkeypatch, 
 # nothing: the balancer sends it on the board's rule. The row carries its
 # kind, the board's timing and the session it executes on; the record lists
 # it as planned. In that session no 15-minute close reaches the 1% level, so
-# the close window sends it market-on-close; once the broker reports it
+# the close window's last candle sends it at the market; once the broker reports it
 # filled, the next nightly settles it with its kind, the fills history reads
 # it, and the book reads fully invested but for the policy's own idle share
 # (SNDK at its 25% cap; nothing else is graded).
@@ -1689,13 +1689,17 @@ def test_a_live_redeploy_carries_its_kind_to_the_record_and_the_fills(
         intraday_orders.INTRADAY_TIMING
     ]
     assert entry["idle_cash_share"] == pytest.approx(0.75)
-    # The next session's close window (3:35 PM ET), with no trigger all day.
+    # The next session's close window: nothing at 3:35 PM ET, then the last
+    # candle (3:45 PM ET) sends it, with no trigger all day.
     broker.is_open = True
-    sent = intraday_orders.send_due(
+    assert intraday_orders.send_due(
         tmp_path, {}, datetime(2026, 9, 4, 19, 35, tzinfo=UTC), lambda: broker
+    ) == []
+    sent = intraday_orders.send_due(
+        tmp_path, {}, datetime(2026, 9, 4, 19, 45, 30, tzinfo=UTC), lambda: broker
     )
     broker.is_open = False
-    assert sent == ["buy 150 SNDK (moc, close): sent"]
+    assert sent == ["buy 150 SNDK (market, close): sent"]
     assert broker.sent == [("buy", "SNDK", 150)]
     # Filled overnight: the book holds 250 SNDK and 75,000 cash.
     broker.held["SNDK"] = 250

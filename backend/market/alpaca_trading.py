@@ -309,8 +309,8 @@ class AlpacaTradingClient:
 
     # A whole-share market order for right now, inside the regular session:
     # the paper account's intraday leg (`desk/intraday_orders.py`) sends one
-    # the moment the board's level is reached, or late in the close window
-    # after the market-on-close cutoff. The body is the queued-for-the-open
+    # the moment the board's level is reached, or on the close window's last
+    # 15-minute candle (3:45 PM ET). The body is the queued-for-the-open
     # order's (a day market order); the name says what it does at the time it
     # is sent, which is the only difference between them.
     def submit_market(
@@ -325,6 +325,10 @@ class AlpacaTradingClient:
     # sell queued this way can be cancelled any time up to the close, which
     # is what the intraday green-day rule relies on: a name that is up at
     # the open has its exit cancelled rather than sold into the rally.
+    # Since 2026-10-05 only the nightly's off-switch path (`INTRADAY_EXECUTION`
+    # False) sends one: the paper venue expired 8 of the 9 market-on-close
+    # buys the intraday leg sent from 3:30 PM, so that leg now sends a market
+    # order at 3:45 PM instead (`docs/research/paper-moc-fills-2026-10-02.md`).
     def submit_market_on_close(
         self, symbol: str, qty: int, side: str, client_order_id: str | None = None
     ) -> dict[str, Any]:

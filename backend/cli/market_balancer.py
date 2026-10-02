@@ -234,9 +234,9 @@ def _latch_entry_timing(data_dir: Path, live: dict) -> None:
 
 # Send the paper account's orders that the board's rule makes due on this
 # candle (`intraday_orders.send_due`): a market order when a 15-minute close
-# reached the 1% level, a market-on-close order in the close window. It runs
-# right after the latch, before anything slower, so the close window's order
-# is in well ahead of the market-on-close cutoff. A failure is printed and
+# reached the 1% level, else a market order on the close window's last candle
+# (3:45 PM ET). It runs right after the latch, before anything slower, so that
+# order is in well ahead of the close. A failure is printed and
 # logged; it never stops the balancer, and the nightly settles whatever was
 # not sent as missing.
 def _send_paper_orders(data_dir: Path, live: dict, log_path: Path) -> None:
@@ -453,7 +453,7 @@ def run(data_dir: Path, equity: float) -> Path:
     else:
         # No quotes this candle: the latch keeps the day's open and triggers
         # from earlier candles, and the close window needs no quote at all, so
-        # a market-on-close order is still sent on time.
+        # the close window's market order is still sent on time.
         _send_paper_orders(data_dir, {}, data_dir / "desk" / INTRADAY_LOG)
     with (data_dir / "desk" / INTRADAY_LOG).open("a", encoding="utf-8") as handle:
         grades = ",".join(

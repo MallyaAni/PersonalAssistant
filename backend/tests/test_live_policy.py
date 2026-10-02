@@ -270,15 +270,15 @@ def test_a_v3_era_state_rebalances_once_into_the_active_policy(
     assert state.last_rebalance == "2026-09-03"
     # The orders are the active policy's: SNDK is the one A+ name, so it is
     # bought at the cap and nothing else is. They are planned for the next
-    # session on the board's rule and sent then by the intraday leg (here in
-    # its close window), which fills them.
+    # session on the board's rule and sent then by the intraday leg (here on
+    # its close window's last candle), which fills them.
     bought = {o["symbol"] for o in entry["planned"] if o["side"] == "buy"}
     assert bought == {"SNDK"}
     assert next(o["qty"] for o in entry["planned"] if o["symbol"] == "SNDK") == 250
     assert entry["orders"] == []
     broker.is_open = True
     intraday_orders.send_due(
-        tmp_path, {}, datetime(2026, 9, 4, 19, 35, tzinfo=UTC), lambda: broker
+        tmp_path, {}, datetime(2026, 9, 4, 19, 45, 30, tzinfo=UTC), lambda: broker
     )
     broker.is_open = False
     assert {o["symbol"] for o in broker.orders} == {"SNDK"}
@@ -320,7 +320,7 @@ def test_a_v4_state_moves_to_v5_without_a_forced_rebalance(
     assert "paper book (graded-equal-weight/5; redeploy)" in out
     assert entry["plan"] == "redeploy"
     # Planned for the next session on the board's rule, sent by the intraday
-    # leg (here in its close window), nothing sent at night.
+    # leg (here on its close window's last candle), nothing sent at night.
     assert broker.sent == []
     assert entry["orders"] == []
     assert [(o["symbol"], o["qty"], o["kind"]) for o in entry["planned"]] == [
@@ -328,7 +328,7 @@ def test_a_v4_state_moves_to_v5_without_a_forced_rebalance(
     ]
     broker.is_open = True
     intraday_orders.send_due(
-        tmp_path, {}, datetime(2026, 9, 4, 19, 35, tzinfo=UTC), lambda: broker
+        tmp_path, {}, datetime(2026, 9, 4, 19, 45, 30, tzinfo=UTC), lambda: broker
     )
     broker.is_open = False
     assert broker.sent == [("buy", "SNDK", 50)]

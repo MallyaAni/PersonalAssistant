@@ -2,8 +2,8 @@ import {expect, test, type Page} from '@playwright/test'
 
 // The board's clock, as the paper account's orders report it (backend
 // `intraday_orders.board_row`): a buy waits for a 15-minute close 1% under
-// the day's open, a sell for one 1% over it, otherwise market-on-close from
-// the 3:30 PM window. The action cell says BUY / SELL / TRIM with the size
+// the day's open, a sell for one 1% over it, otherwise a market order at
+// 3:45 PM ET, the close window's last candle. The action cell says BUY / SELL / TRIM with the size
 // beside it whatever the stage; the status column says where the order is
 // (waiting for its level, level hit, close window, sent); a name whose daily
 // rejects the upper band has no buy and says so; the grade column shows the
@@ -35,7 +35,7 @@ const WAITING = order('AAPL', 'buy', 'BUY', 51, 178.2, 'Enters the book at 9.1%'
 const TRIGGERED = order('AAPL', 'buy', 'BUY', 51, 178.05, 'Enters the book at 9.1%',
   {state: 'due', status: 'Level hit: the 10:30 AM close ($178.05) · order due', open: 180, level: 178.2})
 const CLOSING = order('AAPL', 'buy', 'BUY', 51, 179, 'Enters the book at 9.1%',
-  {state: 'due', status: 'Close window · market-on-close due', open: 180, level: 178.2})
+  {state: 'due', status: 'Close window · market order due', open: 180, level: 178.2})
 const EXIT = order('AMD', 'sell', 'SELL', 28, 181.9, 'Exit: the grade fell to B',
   {state: 'due', status: 'Level hit: the 10:30 AM close ($181.90) · order due', open: 180, level: 181.8})
 const TRIM = order('MSFT', 'sell', 'TRIM', 27, 181.9, 'Trim to its 9.1% target',
@@ -115,12 +115,12 @@ test('a triggered /4 buy is BUY at its level', async ({page}) => {
   expect(errors).toEqual([])
 })
 
-// The close window with no trigger: BUY at the close, market-on-close.
+// The close window with no trigger: BUY at the close, a market order on its last candle.
 test('the close window is BUY at the close', async ({page}) => {
   const {errors, board} = await setup(page, {orders: [CLOSING]})
   await expect(board.getByLabel('AAPL strategy intent')).toHaveText('BUY')
   await expect(board.getByLabel('AAPL size')).toContainText('51 sh')
-  await expect(board.getByLabel('AAPL order status')).toContainText('Close window · market-on-close due')
+  await expect(board.getByLabel('AAPL order status')).toContainText('Close window · market order due')
   await expect(board.getByLabel('AAPL order status')).toContainText('else at the close')
   expect(errors).toEqual([])
 })
