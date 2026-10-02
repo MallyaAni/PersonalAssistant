@@ -379,13 +379,7 @@ def attempt(book, row, quote, cost, liquidity, available_cash, mode):
         qty = min(qty, math.floor((available_cash + 1e-10) / (worst * (1 + cost))))
     else:
         qty = min(qty, book["holdings"].get(symbol, 0))
-    notional, fee = qty * price, qty * price * cost
-    book["cash"] += -notional - fee if side == "buy" else notional - fee
-    book["holdings"][symbol] = book["holdings"].get(symbol, 0) + (
-        qty if side == "buy" else -qty
-    )
-    book["fees"] += fee
-    book["turnover"] += notional
+    notional, fee = post_fill(book, symbol, side, qty, price, cost)
     liquidity[key] = liquidity.get(key, 0) + qty
     return {
         "status": "filled" if qty == row["qty"] else "partial" if qty else "unfilled",
@@ -394,6 +388,18 @@ def attempt(book, row, quote, cost, liquidity, available_cash, mode):
         "price": price,
         "fee": fee,
     }, notional + fee if side == "buy" else 0
+
+
+# Apply only an already funded covered fill to the shared cash and share ledger.
+def post_fill(book, symbol, side, qty, price, cost):
+    notional, fee = qty * price, qty * price * cost
+    book["cash"] += -notional - fee if side == "buy" else notional - fee
+    book["holdings"][symbol] = book["holdings"].get(symbol, 0) + (
+        qty if side == "buy" else -qty
+    )
+    book["fees"] += fee
+    book["turnover"] += notional
+    return notional, fee
 
 
 # Replay one arm with frozen starting shares, common intents and causal sale funding.

@@ -2,6 +2,8 @@
 
 import hashlib
 import json
+import math
+from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlencode
@@ -10,11 +12,117 @@ from backend.market import alpaca, alpaca_trading, entry_timing
 from backend.market import bounded_execution as bounded
 from backend.market import execution_forward as forward
 
-VERSION = "execution-endpoint-labels/2"
+VERSION = "execution-endpoint-labels/3"
 PLAN = (
     Path(__file__).parents[2] / "docs/research/funded-execution-valuation-2026-10-02.md"
 )
 URL = "https://data.alpaca.markets/v2/stocks/quotes"
+
+
+# Validate original receipt bytes and terminal closing outcomes before using prices.
+def auction_receipt(receipt, order, start, close):
+    if receipt["http_status"] != 200:
+        return None
+    body = receipt["body"].encode()
+    if hashlib.sha256(body).hexdigest() != receipt["body_sha256"]:
+        raise ValueError("Paper receipt bytes changed")
+    row = json.loads(receipt["body"])
+    submitted = bounded.instant(row.get("submitted_at"))
+    received = bounded.instant(receipt.get("received_at"))
+    if (
+        any(row.get(k) != order[k] for k in ("client_order_id", "symbol", "side"))
+        or row.get("type") != "market"
+        or row.get("time_in_force") != "cls"
+        or submitted is None
+        or not start <= submitted < close
+        or received is None
+        or received < close
+    ):
+        raise ValueError("Receipt is not this cohort's closing order")
+    if row.get("status") not in ("filled", "expired", "canceled", "rejected"):
+        return None
+    qty = forward.amount(row.get("filled_qty"), whole=True)
+    requested = forward.amount(row.get("qty"), whole=True)
+    if qty > requested or requested > order["qty"]:
+        raise ValueError("Broker quantities exceed the frozen opportunity")
+    price = bounded.positive(row.get("filled_avg_price"))
+    filled = bounded.instant(row.get("filled_at"))
+    if qty and (price is None or filled is None or not submitted <= filled <= close):
+        raise ValueError("Closing fill price/time unavailable")
+    if row["status"] == "filled" and not qty:
+        raise ValueError("Filled receipt has no shares")
+    return {
+        "qty": qty,
+        "price": price,
+        "status": row["status"],
+        "filled_at": row.get("filled_at"),
+    }
+
+
+# Resolve only unsupported auctions from matched receipts under unchanged cash stress.
+def observed_auctions(frozen, proxy, receipts):
+    if not receipts["complete"] or receipts["manifest_sha256"] != forward.digest(
+        frozen
+    ):
+        raise ValueError("Complete matched paper receipt evidence required")
+    rows = {row["client_order_id"]: row for row in receipts["receipts"]}
+    expected = {op["order"]["client_order_id"] for op in frozen["opportunities"]}
+    if len(rows) != len(receipts["receipts"]) or set(rows) != expected:
+        raise ValueError("Common receipt opportunity identities required")
+    result = deepcopy(proxy)
+    start = bounded.instant(frozen["started_at"])
+    close = entry_timing.session_clock(start.astimezone(entry_timing.NEW_YORK).date())[
+        "close"
+    ]
+    for arm in result["results"]:
+        if arm["mode"] != "incumbent":
+            continue
+        book, cash, spent = arm["book"], arm["book"]["cash"], 0.0
+        for op in frozen["opportunities"]:
+            order = op["order"]
+            outcome = arm["opportunities"][order["client_order_id"]]
+            if outcome["status"] != "unsupported_auction":
+                continue
+            observed = auction_receipt(
+                rows[order["client_order_id"]], order, start, close
+            )
+            if observed is None:
+                continue
+            qty, used = auction_fill(
+                book, order, observed, arm["cost_bps"] / 10000, max(0, cash - spent)
+            )
+            spent += used
+            outcome.update(
+                status="observed_auction_" + observed["status"],
+                observed_filled_qty=observed["qty"],
+                filled_qty=qty,
+                unfilled_qty=order["qty"] - qty,
+                filled_at=observed["filled_at"],
+            )
+        arm["execution_complete"] = not any(
+            o["status"] == "unsupported_auction" for o in arm["opportunities"].values()
+        )
+    result["valuation_horizon"] = "regular_close_with_observed_paper_auctions"
+    result["observed_quote_ended_at"] = proxy["ended_at"]
+    result["ended_at"] = close.isoformat()
+    result["paper_receipt_sha256"] = forward.digest(receipts)
+    return result
+
+
+# Apply observed auction quantities without borrowing or same-batch sale funding.
+def auction_fill(book, order, observed, rate, cash):
+    qty, price = observed["qty"], observed["price"]
+    if qty and order["side"] == "buy":
+        qty = min(qty, math.floor(cash / (price * (1 + rate))))
+    elif qty:
+        qty = min(qty, book["holdings"].get(order["symbol"], 0))
+    used = 0
+    if qty:
+        notional, fee = forward.post_fill(
+            book, order["symbol"], order["side"], qty, price, rate
+        )
+        used = notional + fee if order["side"] == "buy" else 0
+    return qty, used
 
 
 # Preserve paper-broker receipts for frozen IDs using GET only, without headers.
@@ -256,7 +364,11 @@ def supplement(frozen, proxy, first_packet, last_packet):
     closing = entry_timing.session_clock(
         start.astimezone(entry_timing.NEW_YORK).date()
     )["close"]
-    final_at = min(end, closing - timedelta(microseconds=1))
+    final_at = (
+        closing
+        if proxy.get("valuation_horizon")
+        else min(end, closing - timedelta(microseconds=1))
+    )
     if (
         end < start
         or end.astimezone(entry_timing.NEW_YORK).date()
@@ -351,10 +463,15 @@ def supplement(frozen, proxy, first_packet, last_packet):
         "missing_starting_marks": missing,
         "unavailable_quotes": {"start": first_missing, "end": last_missing},
         "packet_sha256": [forward.digest(first_packet), forward.digest(last_packet)],
+        "paper_receipt_sha256": proxy.get("paper_receipt_sha256"),
         "results": results,
         "adoption_eligible": False,
         "method": (
-            "Delayed SIP endpoint valuation only; "
+            "Delayed SIP closing valuation; "
+            "observed paper auctions under cash/cost stress; "
+            "bounded attempts remain conditional"
+            if proxy.get("paper_receipt_sha256")
+            else "Delayed SIP endpoint valuation only; "
             "original conditional IEX attempts unchanged"
         ),
     }

@@ -756,6 +756,191 @@ def test_receipt_failure_and_missing_outcomes_are_explicit(tmp_path, status):
             assert not json.loads(output.read_text())["complete"]
 
 
+# Supply matched terminal broker evidence without executing or mutating any account.
+def broker_labels(frozen, *, statuses=None, price=110):
+    import hashlib
+
+    rows = []
+    for op in frozen["opportunities"]:
+        order = op["order"]
+        status = (statuses or {}).get(order["client_order_id"], "filled")
+        row = {
+            "client_order_id": order["client_order_id"],
+            "symbol": order["symbol"],
+            "side": order["side"],
+            "qty": str(order["qty"]),
+            "type": "market",
+            "time_in_force": "cls",
+            "submitted_at": ny(15, 36).isoformat(),
+            "status": status,
+            "filled_qty": str(order["qty"] if status == "filled" else 0),
+            "filled_avg_price": str(price) if status == "filled" else None,
+            "filled_at": ny(15, 59).isoformat() if status == "filled" else None,
+        }
+        body = forward.encoded(row)
+        rows.append(
+            {
+                "client_order_id": order["client_order_id"],
+                "http_status": 200,
+                "received_at": ny(16, 1).isoformat(),
+                "body": body.decode(),
+                "body_sha256": hashlib.sha256(body).hexdigest(),
+            }
+        )
+    return {
+        "manifest_sha256": forward.digest(frozen),
+        "complete": True,
+        "receipts": rows,
+    }
+
+
+# Recorded closing fills resolve uncertainty without changing the original comparison.
+def test_observed_auction_stress_resolves_only_matched_outcomes(tmp_path):
+    first = obs(ny(15, 35), ask=110, bid=109.9)
+    first["latch"]["symbols"]["AAA"].pop("buy_trigger")
+    first["snapshot"]["quotes"]["AAA"]["last"] = 100
+    frozen = cohort(tmp_path, cash=1200, first=first)
+    proxy = forward.compare(tmp_path)
+    original = forward.encoded(proxy)
+    result = labels.observed_auctions(frozen, proxy, broker_labels(frozen))
+    assert forward.encoded(proxy) == original
+    assert result["ended_at"] == ny(16).isoformat()
+    for arm in result["results"]:
+        assert arm["execution_complete"] is True
+        if arm["mode"] == "incumbent":
+            assert arm["book"]["holdings"] == {"AAA": 10}
+            assert arm["book"]["cash"] == pytest.approx(
+                100 - 1100 * arm["cost_bps"] / 10000
+            )
+            assert arm["opportunities"]["a"]["observed_filled_qty"] == 10
+            assert arm["opportunities"]["a"]["status"] == "observed_auction_filled"
+
+
+# Expired broker orders stay missed and cannot acquire a later market fill.
+def test_observed_auction_expired_order_stays_zero_fill(tmp_path):
+    first = obs(ny(15, 35))
+    first["latch"]["symbols"]["AAA"].pop("buy_trigger")
+    first["snapshot"]["quotes"]["AAA"]["last"] = 100
+    frozen = cohort(tmp_path, first=first)
+    result = labels.observed_auctions(
+        frozen,
+        forward.compare(tmp_path),
+        broker_labels(frozen, statuses={"a": "expired"}),
+    )
+    for arm in result["results"]:
+        if arm["mode"] == "incumbent":
+            assert arm["execution_complete"] is True
+            assert arm["book"]["cash"] == 1000
+            assert arm["opportunities"]["a"]["filled_qty"] == 0
+            assert arm["opportunities"]["a"]["status"] == "observed_auction_expired"
+
+
+# Auction sale proceeds cannot fund a simultaneous stress-modelled purchase.
+def test_observed_auction_cash_and_covered_share_constraints(tmp_path):
+    first = obs(ny(15, 35), symbols=("AAA", "BBB", "SPY", "QQQ"))
+    for symbol in ("AAA", "BBB"):
+        first["latch"]["symbols"][symbol].pop("buy_trigger")
+        first["snapshot"]["quotes"][symbol]["last"] = 100
+    frozen = cohort(
+        tmp_path,
+        cash=0,
+        holdings={"AAA": 2},
+        first=first,
+        rows=[order(side="sell", qty=2), order("BBB", qty=1, cid="b")],
+    )
+    result = labels.observed_auctions(
+        frozen, forward.compare(tmp_path), broker_labels(frozen, price=100)
+    )
+    for arm in result["results"]:
+        if arm["mode"] == "incumbent":
+            assert arm["book"]["holdings"].get("BBB", 0) == 0
+            assert arm["opportunities"]["b"]["observed_filled_qty"] == 1
+            assert arm["opportunities"]["b"]["filled_qty"] == 0
+            assert arm["book"]["cash"] == pytest.approx(
+                200 * (1 - arm["cost_bps"] / 10000)
+            )
+
+
+# Changed receipt bytes, mismatched identity and future fills cannot create outcomes.
+@pytest.mark.parametrize("defect", ["bytes", "future", "identity"])
+def test_observed_auction_source_is_enforced(tmp_path, defect):
+    import hashlib
+
+    first = obs(ny(15, 35))
+    first["latch"]["symbols"]["AAA"].pop("buy_trigger")
+    first["snapshot"]["quotes"]["AAA"]["last"] = 100
+    frozen = cohort(tmp_path, first=first)
+    receipts = broker_labels(frozen)
+    entry = receipts["receipts"][0]
+    if defect == "bytes":
+        entry["body"] += " "
+    else:
+        row = json.loads(entry["body"])
+        row["filled_at" if defect == "future" else "symbol"] = (
+            ny(16, 1).isoformat() if defect == "future" else "OTHER"
+        )
+        entry["body"] = forward.encoded(row).decode()
+        entry["body_sha256"] = hashlib.sha256(entry["body"].encode()).hexdigest()
+    with pytest.raises(ValueError, match="changed|cohort|time"):
+        labels.observed_auctions(frozen, forward.compare(tmp_path), receipts)
+
+
+# Run closing valuation while ensuring delayed labels never create entries.
+def test_receipt_valuation_workflow_preserves_candidate_causality(tmp_path):
+    source = tmp_path / "cohort"
+    source.mkdir()
+    first = obs(ny(15, 35), ask=110, bid=109.9)
+    first["latch"]["symbols"]["AAA"].pop("buy_trigger")
+    first["snapshot"]["quotes"]["AAA"]["last"] = 100
+    frozen = cohort(source, cash=1200, first=first)
+    receipts = tmp_path / "receipts.json"
+    receipts.write_bytes(forward.encoded(broker_labels(frozen)))
+    original = receipts.read_bytes()
+
+    # Return later consolidated prices only through the outcome-label transport.
+    def request(url, headers):
+        query = parse_qs(urlsplit(url).query)
+        at = forward.bounded.instant(query["end"][0])
+        bid = 100 if at == ny(15, 35) else 120
+        return 200, forward.encoded(
+            {
+                "quotes": {
+                    s: [label_row(at, bid=bid, ask=bid + 0.1)]
+                    for s in query["symbols"][0].split(",")
+                },
+                "next_page_token": None,
+            }
+        )
+
+    result = valuate(
+        source,
+        tmp_path / "result.json",
+        receipts_path=receipts,
+        request=request,
+        headers={"test": "only"},
+        clock=lambda: ny(16, 30),
+    )
+    assert receipts.read_bytes() == original
+    assert result["consolidated"]["valuation_ended_at"] == ny(16).isoformat()
+    assert result["consolidated"]["paper_receipt_sha256"] == forward.digest(
+        broker_labels(frozen)
+    )
+    for raw, final in zip(
+        result["observed_auction_supplement"]["results"],
+        result["consolidated"]["results"],
+        strict=True,
+    ):
+        if final["mode"] == "bounded":
+            assert raw["book"]["holdings"] == {}
+            assert final["total_gain"] == 0
+            assert final["gain_vs_incumbent"] < 0
+        else:
+            assert final["total_gain"] == pytest.approx(
+                100 - 1100 * final["cost_bps"] / 10000
+            )
+    assert result["consolidated"]["adoption_eligible"] is False
+
+
 # Exercise the CLI's full frozen comparison and label valuation without changing inputs.
 def test_consolidated_workflow_retains_fills_and_missing_marks(tmp_path):
     source = tmp_path / "cohort"

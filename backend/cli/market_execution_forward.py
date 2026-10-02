@@ -88,6 +88,7 @@ def main(argv=None):
     parser.add_argument("--seconds", type=int, default=0)
     parser.add_argument("--interval", type=int, default=15)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--paper-receipts", type=Path)
     args = parser.parse_args(argv)
     if args.mode in ("initialize", "record") and not args.data_dir:
         parser.error("--data-dir required for read-only capture")
@@ -117,7 +118,7 @@ def main(argv=None):
     elif args.mode == "value":
         if not args.output or args.output.exists():
             parser.error("--output must name a new report artifact")
-        result = valuate(args.folder, args.output)
+        result = valuate(args.folder, args.output, receipts_path=args.paper_receipts)
         summary = {
             "status": "diagnostic",
             "observations": result["proxy"]["observations"],
@@ -138,7 +139,9 @@ def main(argv=None):
 
 
 # Capture fixed delayed endpoint labels and evaluate the frozen cohort only once.
-def valuate(folder, output, *, request=None, headers=None, clock=None):
+def valuate(
+    folder, output, *, request=None, headers=None, clock=None, receipts_path=None
+):
     from datetime import timedelta
 
     from backend.market import bounded_execution as bounded
@@ -154,6 +157,8 @@ def valuate(folder, output, *, request=None, headers=None, clock=None):
         bounded.instant(observations[-1]["observed_at"]),
         closing - timedelta(microseconds=1),
     )
+    if receipts_path:
+        end = closing
     if clock() < end + timedelta(minutes=16):
         raise ValueError("Wait for both delayed SIP endpoint windows")
     output = Path(output)
@@ -170,9 +175,17 @@ def valuate(folder, output, *, request=None, headers=None, clock=None):
         for label, at in (("start", start), ("end", end))
     ]
     proxy = forward.compare(folder)
+    evaluated = (
+        execution_marks.observed_auctions(
+            frozen, proxy, json.loads(Path(receipts_path).read_text())
+        )
+        if receipts_path
+        else proxy
+    )
     result = {
         "proxy": proxy,
-        "consolidated": execution_marks.supplement(frozen, proxy, *packets),
+        "consolidated": execution_marks.supplement(frozen, evaluated, *packets),
+        "observed_auction_supplement": evaluated if receipts_path else None,
     }
     forward.exclusive(output, result)
     return result
