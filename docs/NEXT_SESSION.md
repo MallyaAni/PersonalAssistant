@@ -1,5 +1,28 @@
 # Next session
 
+## 2026-10-02 — exact decision-price release verified; personal refresh next
+
+VERIFIED: 8722db85 is live. Required full gate passed 8,629 unit tests
+(93 skips, 6 xfails) and 100 routing/model cases. Exact backend source hashes,
+public gateway bundle, actual authenticated personal API/browser, cash/input/user
+boundaries, automatic ranking/reset and D/W/15m chart/fill paths passed. Three
+captured model containers are unchanged; postdeploy status is green.
+
+The deployed browser sweep initially passed 159 of 162 cases. Two screenshot
+paths wrote into a read-only mount and a reader fixture sent unmocked protected
+reads anonymously. Those three fixture paths are corrected without weakening
+their assertions and pass against the same deployed bundle. Original failure
+evidence is retained; the combined proof is
+`/tmp/codex-decision-points-combined-proof-20261002.json` on Spark1, with the
+original sweep and correction logs referenced there. No product failure is
+concealed by the fixture corrections.
+
+Next release is the independently tested e5c36335 visible-personal refresh plus
+these fixture corrections. It changes no timing policy: fixed 1% remains the
+paper rule, and the tested alternatives have not established better entry/exit
+performance. Ship through deploy.sh and verify the exact new artifact; do not
+repeat unchanged backend/model gates for this frontend/test/doc-only diff.
+
 ## 2026-10-02 — personal quote-refresh gap; isolated follow-up
 
 FAILED: browser acceptance demonstrated no personal-advice reread within 21
@@ -15,7 +38,7 @@ This fixes guidance freshness, not alpha or the fixed 1% paper execution rule.
 VERIFIED: 16 browser cases pass, typecheck/build pass; expiry, zero cash, newer
 context and renewed-evidence assertions all remain strict. No backend/model/diagram
 boundary changes. Follow-up exact deployed browser acceptance remains pending;
-do not advance Spark main until the ongoing 8722db85 exact-artifact proof finishes.
+the preceding 8722db85 exact-artifact proof is now complete as recorded above.
 
 ## 2026-10-02 — decision prices and direct personal preview; release pending
 

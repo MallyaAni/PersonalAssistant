@@ -1483,7 +1483,7 @@ test('a zero day P/L reads flat, not as an up move', async ({ page }) => {
 })
 
 // The main stock list owns diagnostics, including on legacy detail links, without a second list.
-test('one stock list preserves per-stock diagnostics and legacy detail links', async ({page}) => {
+test('one stock list preserves per-stock diagnostics and legacy detail links', async ({page}, testInfo) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.route(`**/market/${USER}/desk/live`, route => route.fulfill({json: {
     as_of: '2026-09-09T14:00:00Z', data_at: '2026-09-09T13:45:00Z',
@@ -1514,7 +1514,7 @@ test('one stock list preserves per-stock diagnostics and legacy detail links', a
   const msft = await stockDetails(page, 'MSFT')
   await expect(msft.getByLabel('MSFT grade', {exact: true})).toContainText('Grade C')
   await expect(msft.getByLabel('MSFT position', {exact: true})).toContainText('Not held')
-  await page.screenshot({path: 'test-results/desk-consolidated-desktop.png', fullPage: true})
+  await page.screenshot({path: testInfo.outputPath('desk-consolidated-desktop.png'), fullPage: true})
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
@@ -2189,7 +2189,7 @@ const noSidewaysScroll = async (page: Page, where: string) => {
   expect(widths.scroll, `${where}: page`).toBeLessThanOrEqual(widths.client + 1)
   expect(widths.main, `${where}: main`).toBeLessThanOrEqual(widths.client + 1)
 }
-test('the desk fits a phone without sideways scrolling', async ({page}) => {
+test('the desk fits a phone without sideways scrolling', async ({page}, testInfo) => {
   const errors = observeBlockingBrowserErrors(page)
   await page.route('**/api/v1/conversations/**', route => route.request().method() === 'GET' ? route.fulfill({json: {messages: [], conversations: []}}) : route.fulfill({json: {}}))
   await page.setViewportSize({width: 400, height: 800})
@@ -2204,7 +2204,7 @@ test('the desk fits a phone without sideways scrolling', async ({page}) => {
   await expect(page.getByLabel('AAPL grade', {exact: true})).toBeVisible()
   await expect(page.getByText('Chart and full history')).toBeVisible()
   await noSidewaysScroll(page, 'row open')
-  await page.screenshot({path: 'test-results/desk-consolidated-mobile.png', fullPage: true})
+  await page.screenshot({path: testInfo.outputPath('desk-consolidated-mobile.png'), fullPage: true})
   await page.goto('/?deskDetails=1#desk')
   await expect(page.getByRole('table', {name: 'Ranked stocks and cash'})).toBeVisible()
   await noSidewaysScroll(page, 'details open')
@@ -2240,6 +2240,10 @@ test('the Desk icon appears for an allowlisted account and stays hidden for a gu
   await page.route('**/api/v1/market/vjmallya/desk', route => route.fulfill({
     status: 200, contentType: 'application/json', body: deskBody,
   }))
+  // Reader fixtures must answer their own protected reads rather than contacting a live backend anonymously.
+  await page.route('**/api/v1/market/vjmallya/desk/holdings', route => route.fulfill({json: {holdings: []}}))
+  await page.route('**/api/v1/market/vjmallya/desk/live', route => route.fulfill({json: {quotes: {}, technical: {}, technical_detail: {}}}))
+  await page.route('**/api/v1/market/vjmallya/desk/paper', route => route.fulfill({json: {equity: 100000, cash: 100000, positions: [], orders: [], plan: paperPlan([])}}))
   await page.goto('/')
   await expect(page.getByRole('button', {name: 'Desk', exact: true})).toBeVisible()
   await page.getByRole('button', {name: 'Desk', exact: true}).click()
