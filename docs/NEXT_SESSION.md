@@ -1,5 +1,67 @@
 # Next session
 
+## 2026-10-02 — Paper target tracking: planner `/6` deployed (17:22 ET); MOC expiry is the open leak
+
+The operator: the account "doesn't know when to buy and sell" (30% cash,
+NTAP 16.8% / SMCI 15.2% against eleven 9.09% targets, SIMO/INTC/ALAB at
+1%). Project doc `claude/paper-target-tracking-2026-10-02.md` has the full
+evidence; the short version:
+
+- **Where the 31,422 of cash was (10-02 close, reconciled from the broker's
+  orders):** 22,056 that day's rotation sales (AAOI 127, LITE 4, ANET 18 -
+  by design, redeployed by the next plan; the simulator does the same),
+  4,461 market-on-close buys the paper broker **expired unfilled** (HPE 31,
+  SWKS 21, ALAB 2), the 2% buffer, and 2,653 the 10-01 redeploy left beyond
+  the buffer (1,294 whole-share flooring, 1,359 legs under the 0.5% floor).
+- **Why NTAP/SMCI are heavy:** the forced `/3`->`/4` reset on 09-28 sold
+  SMCI 134, NVDA 67, NTAP 34, ANET 32; the green-day rule held all four on
+  09-29 (`intraday.log`), a held reset sell counts as done (`paper.DONE`),
+  so the reset's buys were paid from 26k of cash (~3.8% each instead of
+  9.09%) and the overweights wait for the next reset. Same rules as the
+  simulator; between resets the promoted policy never trims.
+- **Live vs the /5 simulation (09-04..10-01 invested):** the published run
+  sits at 97.6% from 09-23 and a fresh 09-04 run at 100%, against the
+  account's 97/80/86/70% since the 09-28 reset (the account ran `/3` sizing
+  before 09-27). The simulation is just as lopsided in names (from 09-04 it
+  holds seven names at 12.5-16% and none of NTAP/SWKS/INTC/ALAB/SIMO).
+- **Fully tracking the targets measured worse** (point in time, 25 bp,
+  policy_v5): promoted 24.2% / -45.4% and 54.0% / -28.4% (2016-2023 /
+  2024-2026); reset every 5 sessions 22.2% / -47.3% and 48.7% / -31.1%;
+  every session 20.7% / -47.2% and 47.6% / -31.1%. Not shipped; a
+  registered study is needed to revisit.
+- **Fixed (live/sim mismatch):** `paper._whole_share_fill` - the redeploy
+  spends its whole-share remainder instead of flooring a dear name's slice
+  to nothing. 10-01 replay (reproduces the orders the account sent):
+  4,111 of the simulator's 4,188 (was 2,894); 10-02 account 29,240 of
+  29,325 (was 26,949). Stamp `cash-bounded-breakout-rotation/6`. Tests:
+  `backend/tests/test_paper_target_tracking.py` on the real 10-01/10-02
+  books (`fixtures/paper_target_tracking_2026-10.json`).
+- **Gate:** `unitgate.sh` on `9256fe93`: 8,646 passed / 93 skipped / 6
+  xfailed, exit 0 (`~/scratch/gate_ptt.log`). Merged `7634deaf`, pushed.
+  `scripts/deploy.sh` (gate-first) on `7634deaf`: unit 8,646 passed, routing
+  100/100, backup mirrored, migrations, restart, verify; `deployed
+  7634deaf` at 17:22 ET, post-deploy `ok (cheap)`. `~/deploy/anios` HEAD =
+  `data/.deployed-commit` = `7634deaf`, `paper.POLICY_VERSION` = `/6`. The
+  19:30 ET nightly of 10-02 plans under `/6` (orders execute Monday 10-05).
+- **Dry run of tonight (fixed code, copy of the real state, live=False, 10-01
+  closes, re-made grades: SIMO B, ten 10% targets):** SELL 4 SIMO; BUY 51
+  INTC, 43 HPE, 38 SWKS, 18 ALAB, 4 MU, 3 STX, 2 SNDK (redeploy 29,274; /5
+  26,928). After: 95.5% invested (/5 93.3%), cash 2.0% + 1.0% SIMO at the
+  close; NTAP 16.0, SMCI 14.6, MDB 10.1, HPE 8.6, SNDK 8.5, SWKS 8.4, STX
+  8.1, MU 7.3, ALAB 7.1, INTC 6.9. Re-run from the deployed checkout after
+  the deploy: identical orders; the real `paper/state.json` unchanged
+  (sha256 matches the 16:34 copy).
+
+**Open, highest value next:** market-on-close orders expire on the paper
+broker. Since the intraday clock went live, 9 MOC buys were sent and 1
+filled (8 expired: MDB 09-30; INTC 10, MDB 5, MDB 3, LITE 1 on 10-01; HPE 31,
+SWKS 21, ALAB 2 on 10-02); every dip-triggered market order filled. That is
+4-5% of equity idle for a session each time (the next redeploy re-buys it).
+The fix is in `intraday_orders.decide`'s close-window branch (send a market
+order at the last tick before the cutoff, or re-send at market when the
+MOC is unworkable) and changes the board's "else at the close" wording, so
+it needs the operator's agreement. UNVERIFIED: why the broker expires them.
+
 ## 2026-10-02 — LIVE: deploy.sh gates before it touches anything (all sessions read this)
 
 VERIFIED deployed `130432a8` (merge of `ops/deploy-gate-first`, head
