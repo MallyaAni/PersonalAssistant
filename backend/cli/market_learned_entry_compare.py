@@ -160,6 +160,24 @@ def compare(panel, grades, eligible, cubes, dataset, forecasts, evidence, output
     if path.exists():
         raise FileExistsError("a completed common-clock comparison already exists")
     grids = {name: common_clock(values, dataset) for name, values in forecasts.items()}
+    stock_mask = np.array([name not in ("SPY", "QQQ") for name in panel.tickers])
+    cohort = (panel.dates >= np.datetime64("2026-08-17")) & (
+        panel.dates <= np.datetime64("2026-09-30")
+    )
+    requested = int(cohort.sum() * stock_mask.sum())
+    coverage = {
+        name: {
+            "requested_stock_sessions": requested,
+            "available_forecasts": int(
+                np.isfinite(values[cohort, 9][:, stock_mask]).all(axis=-1).sum()
+            ),
+            "replay_counter_scope": (
+                "quarter-hour account observations; only bar9 permits trades; "
+                "forecast coverage counts stock/session opportunities once"
+            ),
+        }
+        for name, values in grids.items()
+    }
     prices = replay.control_prices(panel, cubes)
     spy = panel.adj_close[:, panel.tickers.index("SPY")]
     result = {
@@ -172,6 +190,7 @@ def compare(panel, grades, eligible, cubes, dataset, forecasts, evidence, output
         "source": source_identity(),
         "comparison_source_sha256": sha256(__file__),
         "forecast_evidence": evidence,
+        "forecast_coverage": coverage,
         "missing_data": dataset["diagnostics"],
         "costs": [],
     }

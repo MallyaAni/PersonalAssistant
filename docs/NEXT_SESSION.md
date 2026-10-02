@@ -1,86 +1,70 @@
 # Next session
 
-## 2026-10-02 — learned entry/exit and sizing: fixed parallel runs active
+## 2026-10-02 — learned entry/exit and sizing: COMPLETE, no live adoption
 
-User explicitly rejects fixed 1% execution and equal 9% allocations; main scope
-is learned timing, exits and risk sizing, with parallel model approaches. Source
-checkpoint `ee13b97fc005431c358cd60c8b335d9530bff3be` is pushed on research
-branch `codex/learned-entry-risk-20261002`. Do not activate it on main/live.
-Live `/6` below is preserved; no dashboard, broker or model-service changes.
+User's main focus: replace arbitrary 1% timing and equal 9% allocations with
+learned entries/exits/risk sizing. Fixed boosting, Ridge and pinned Chronos
+implementations and funded backtests are complete on research branch
+`codex/learned-entry-risk-20261002`; production main/live /6 is unchanged.
 
-VERIFIED: frozen specification predates real outcomes; three-head monthly
-boosting and fixed Ridge enforce mature ten-session labels, purge and frozen
-holdout. Stock training excludes SPY/QQQ. Inputs/labels use distinct causal/raw
-prefix and adjusted accounting units. Learned growth weights use log-to-
-arithmetic second-order conversion, correlations and cost penalty, not equal
-targets; side-specific waiting has no fixed price-distance trigger. Shared
-funded ledger excludes same-day sale proceeds from every buy batch.
+Read [results](research/learned-entry-results-2026-10-02.md) and its
+[machine-readable evidence](research/learned-entry-results-2026-10-02.json).
+All fits/collectors/evaluations have exited. DO NOT restart, refit, rescore,
+refetch, tune from outcomes, initialize old October5 cohorts, or rerun unchanged
+model gates. The bounded hourly completion automation is to be paused.
 
-Exact source-image acceptance: 62 passed, 1 optional pinned-model skip, log
-`/tmp/codex-learned-entry-source-acceptance-20261002.log` on Spark. Separate
-real pinned Chronos CPU acceptance: 19 passed, zero skips; proof
-`/tmp/codex-chronos-entry-real-proof-20261002.json` on Mac. Independent seven
-input/optimizer/funding and four artifact-boundary checks are included in the
-source-image count. Model tests include actual 504-session fits whose hidden
-August/September outcome mutation leaves holdout predictions unchanged.
+VERIFIED source-image acceptance: 72 pass, 1 optional pinned-model skip at
+corrected execution `9bec943b1f8138d3b7f52ac7269fc49b46502b97`; real pinned
+Chronos CPU: 19 pass, zero skips; final comparison metadata/artifact path:
+8 pass, Ruff clean. Training source `ee13b97fc005431c358cd60c8b335d9530bff3be`.
+The original Ridge numerical failure is independently reproduced and corrected
+by exact convex certificates; interrupted run has no completed score. No model
+parameter, economic threshold or acceptance assertion was relaxed.
 
-Frozen snapshot `8670c86dd268fdf25ec16b44be86dcd40b840f703b7721ef319bc40e0e22ea58`,
-96 original cube hashes, 94-stock book plus benchmarks, 5,083,225 available
-completed-prefix observations. Current-vintage grades/membership, missing and
-early-close cubes, fractional NAV1 and bar-open/auction proxies are explicit
-limitations. Historical fundamentals/earnings observations are unavailable.
-No claim of exact historical live strategy or broker/midpoint fills.
+Original snapshot SHA256
+`8670c86dd268fdf25ec16b44be86dcd40b840f703b7721ef319bc40e0e22ea58`;
+prepared `c759ecb607e755631dacc0d28a147511a1eaa7e54e3cbcb23bdff4aafe8b76bf`.
+Both regressors: 104 monthly fits, 2018-02..2026-09, September's latest label
+endpoint August14. SPY/QQQ excluded from stock training. Independent saved-byte
+proofs authenticate original source/data/predictions and recompute funded
+curves, metrics, cash/costs/stock reconciliation without replay/refit.
 
-Existing jobs, never restart or modify executable/protocol mounts:
-- Spark boosting container `codex-learned-boosting-20261002`, isolated source
-  `/home/animallya96/codex-worktrees/learned-entry-risk-20261002`, private results
-  `/home/animallya96/scratch/learned-entry-results-20261002`. Supervisor agent
-  `learned_model_training` verifies completion and launches the same frozen
-  CLI evaluation once, CPU2/memory4GB/network-none; no GPU/model changes.
-- Mac Ridge fit COMPLETE: 104 fitted months, 2018-02..2026-09; latest training
-  outcome 2026-08-14. Forecast file SHA256
-  `0db54bdc92584711e189a9a40dc88b8ed4e7fac81a5de145fa03dc37cdf8219a`.
-  Its first continuous funded evaluation stopped on an optimizer failure; log
-  `/tmp/codex-learned-ridge-evaluate-20261002.log`. Private model results
-  `/tmp/codex-learned-entry-results-20261002/ridge`.
-- Mac pinned Chronos-2 fixed bar9 holdout inference is active, supervised by
-  `pretrained_entry_model`; `/tmp/codex-learned-chronos-holdout-20261002.log`.
-  Exclusive output `/tmp/codex-learned-entry-results-20261002/chronos-predictions.npz`.
-  Weights revision 95a9710e.. predates holdout; pretraining cutoff unknown,
-  marginal-quantile risk and regular-close endpoint are approximate.
+Continuous 2018-02-01..2026-09-30, 2177 sessions, costs0/10/25bp:
+boosting gain +885.33/+600.31/+296.30%, beats17/3/0 of20 fixed controls.
+Ridge +499.06/+276.17/+217.65%, beats0/20 at every cost. Control medians
++773.02/+723.38/+654.15%. At10bp SPY+209.52%, QQQ+364.83%.
+Boosting frozen carried holdout loses5.33%; this does not justify adoption.
 
-Root common-clock comparison independently reproduces and fixes two artifact
-gaps: altered prepared arrays despite unchanged provenance, and integer
-reinterpretation passing a bytes-only pretrained hash. Actual inference output,
-prepared SHA and adapter-source receipt are checked. Compare fresh NAV1
-Aug17..Sep30 across all three at fixed bar9, all20 controls and SPY/QQQ; don't
-splice this into continuous wealth or pick a better phase/clock. Compare total
-compounded gain first, then DD, Sharpe, costs/turnover, missed/cash-limited
-attempts, per-stock contribution and prior-only regime diagnostics. Full
-learned evaluation uses every completed regular bar at costs0/10/25bp.
+Fresh NAV1 common-clock bar9 holdout Aug17..Sep30, 32 sessions, at10bp:
+Chronos+3.79%, Ridge+1.65%, boosting-5.83%, SPY-1.60%, QQQ+0.93%;
+median20-phase control+5.65%. Chronos beats8/20 phases, drawdown4.51%.
+94 stocks ×32 sessions =3008 opportunities; available2975/2975/2411.
+Chronos562 invalid-or-crossing quantile refusals,33 shared-input gaps,2
+insufficient contexts are retained. No favorable availability subset selected.
+Real inference19.7minutes/1.12GB/CPU only; pretraining cutoff unknown.
 
-UNVERIFIED: actual economic superiority/adoption. Finish actual artifact
-verification/report, commit only verified new code/evidence and push selective
-branch handoff. No fitting/window/model mining, old Oct2 quote rescore, source
-rewrites, new cohorts, old repeated gates or unrelated UI work. Updated hourly
-heartbeat supervises this bounded completion and pauses after reports.
-Diagram impact NONE: existing internal market research/model/account boundary;
-no new runtime agent, service or production persistent store.
+FAILED: evidence for unconditional live replacement or durable superiority over
+the declared control. UNVERIFIED: exact historical whole-share live-policy
+parity, broker/midpoint fills, point-in-time fundamentals/earnings, future edge.
+Current-vintage reconstructed grades/universe, missing/early closes and
+fractional NAV1 are disclosed; control is the price/grade component. No orders,
+production holdings writes, model-service changes or dashboard changes.
 
-Numerical correction, no refit or parameter selection: original zero-cost Ridge
-replay stopped at daily row1165/bar12. The six upper bounds included a tiny
-7.47e-17 holding, all were below/current holdings except necessary cap trims.
-SLSQP returned status8 at the true constrained optimum. Original input arrays
-are persisted at `/tmp/codex-learned-solver-failure-inputs-20261002.npz`; private
-one-boundary reproduction confirmed it. A convex supporting-gradient certificate
-now returns the mathematically optimal all-upper/all-zero solutions directly.
-Other uncertified solver outputs preserve the account and increment an explicit
-optimizer-unavailable counter; no assertion/tolerance was relaxed. Original
-numerical input acceptance passes. Model/data/protocol hashes stay frozen;
-training source and corrected execution source are recorded separately. Do NOT
-change the active Spark training mount or restart it; run its reviewed evaluation
-from a new corrected source worktree after fit completion. The interrupted Ridge
-evaluation has no completed score and must run the corrected acceptance path.
+Durable private originals:
+`/home/animallya96/scratch/learned-entry-results-20261002`
+(boosting/ridge/common-clock/chronos); report/forecast/proof hashes in JSON.
+Primary report SHA256: boosting f340f1329ec67645ba4f534eb9c34afde5cee5e47d85ce88dab7de87ab72f608;
+Ridge a52433cf4f658254b428c9f0622a27d5589e4d1e070d1ede7f329b97da86c27f;
+common 3875b43a91b6508251cc662bd0ebb7ce8f7ca495ca4bad9ba8e9ad5c2b0dc7ee.
+Exact comparison script SHA256
+`faa73d7b97b1d5b697725f2620821231ab66f8b069ad8bc0d9d657e053afb009`.
+
+Next adoption work would need a separately frozen prospective Chronos coverage
+and funded execution test plus actual carried whole-share policy/broker
+evidence. Existing results cannot be a new holdout after method selection.
+No further experiment is automatically authorized by this completion handoff.
+Diagram impact NONE: existing internal research/account boundary, no new
+runtime agent, service or persistent production store.
 
 ## 2026-10-02 — Paper target tracking: planner `/6` deployed (17:22 ET); MOC expiry is the open leak
 
