@@ -1,5 +1,35 @@
 # Next session
 
+## 2026-10-02 — Entry/exit focus restored; fixed A2/B2 candidates fail the screen
+
+User explicitly prioritizes economic entry/exit improvement over dashboard work.
+Branch `codex/entry-exit-timing-20261002` adds one fixed supplied-cache runner
+and its CLI/tests, reusing the actual funded `_Book`, `/5` targets and existing
+metric arithmetic. No production caller or live policy changed. The registered
+specification and full result are in `docs/research/entry-exit-audit-2026-10-01.md`.
+
+**VERIFIED:** actual CLI evaluated 96 immutable SIP cubes, frozen daily snapshot,
+2,700 return sessions, all 20 reset phases and 10/25 bp costs. Fifteen new tests
+pass (zero skips), Ruff passes; source and four dependency hashes match the
+actual runtime artifact. Related funding/policy subset: 31 pass, one optional-data
+skip. The root review corrected scheduled-versus-executed fill counting; every
+economic metric remains identical across the two exclusive artifacts.
+
+**FAILED improvement screen:** at 25 bp, dip confirmation improves net gain in
+7/20 phases, trailing-pop exit in 8/20; median paired CAGR changes −0.104 and
+−0.020 percentage points. The trailing exit wins all phases in 2016–20 but loses
+all phases in 2021–26, increasing median drawdown. No promotion or retrospective
+regime switch. Do not repeat this run, tune thresholds on these results, or
+use the diagnostic's nominal CAGR as dashboard/account performance.
+
+**UNVERIFIED:** exact live policy/receipt/auction parity and future advantage.
+This conditional reset-plus-downgrade book deliberately omits mid-cycle entry,
+redeploy and event lifecycle; these results cannot prove a new live strategy.
+Measured evidence: `/tmp/codex-entry-exit-study-reviewed-20261002.json` on both
+Mac/Spark, SHA256 `7882e9c41b7886408d3807aed152da099ae6bed4b662322f40cb89e7a2c50580`.
+Live release remains `5b2b3d74`; no deploy for this inert research branch.
+Preserve unrelated Wi-Fi files, bundle, scratch, models, accounts and caches.
+
 ## 2026-10-02 — LIVE: chart/Levels release `5b2b3d74`; bounded acceptance complete
 
 Checkpoint `82008d76` is merged on GitHub/Spark main at `5b2b3d74` and deployed

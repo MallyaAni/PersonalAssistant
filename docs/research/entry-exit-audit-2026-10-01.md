@@ -78,6 +78,77 @@ new expiry threshold or claiming missed profits.
 
 ## Next economic test
 
+### Fixed bar diagnostic, registered October 2 before outcomes
+
+Test A2 and B2 from the existing scenario catalogue separately, never combine
+or tune them. A2: after the first completed 1% dip bar, buy only after a later
+bar closes above that dip bar's low. B2: after the first completed 1% pop bar,
+sell after a later bar closes below the immediately preceding bar's low.
+Each signal executes at the next bar open; absent confirmation, use the
+official session close. A last-bar signal also uses the official close as an
+explicit closing-execution assumption. Neither convention proves broker fills.
+
+Use the already frozen `open-source-inputs-20261001/portfolio.npz` and its
+provenance, through September 30, plus existing SIP cubes read without rebuilding.
+No desk/model rerun or provider fetch. The cash accounts share current-vintage
+grades, declared membership, `/5` targets at 20-session resets, daily removal
+of downgraded/ineligible names, and close-sized orders. This fixed selection
+diagnostic omits the live mid-cycle entry/redeploy, event-order lifecycle and
+receipt latency; it is not an exact live-policy backtest. Start January 4, 2016;
+report all 20 reset phases and costs 10/25 bp. Nightly cash alone funds that
+session's buys; later sale proceeds cannot fund earlier or same-day entries.
+
+Missing/incomplete/early-close cube sessions use the same explicit official-close
+fallback in every timing arm and are counted separately. Require raw-to-adjusted
+session scaling, immutable inputs, chronological fills, no shorting/borrowing,
+future-prefix invariance and shared-ledger tests before reading real outcomes.
+Primary metric: compounded funded net gain; report CAGR, drawdown, Sharpe,
+exposure, realized turnover, fees and rolling wins against both SPY and QQQ.
+Report 2016–20 and 2021–26 continuously, without resetting the accounts. Results
+are reused-history diagnostics and cannot by themselves authorize adoption.
+
+**Measured result:** both candidates fail this screen. The executable CLI ran
+against 96 existing cubes and 2,700 return sessions, with all 20 reset phases
+at both costs. At 25 bp, the median **paired** CAGR difference is −0.104
+percentage points for dip confirmation and −0.020 points for the trailing exit.
+They improve compounded net gain at only 7/20 and 8/20 phases respectively.
+Do not compare unpaired medians to claim improvement: the identity of the
+middle-performing phase differs across accounts.
+
+| Cost | Candidate | Median paired CAGR change, all | Phases improving net gain | 2016–20 paired CAGR change / wins | 2021–26 paired CAGR change / wins |
+|---|---|---:|---:|---:|---:|
+| 10 bp | Dip confirmation | −0.103 pp | 7/20 | −0.072 pp / 9 | −0.018 pp / 10 |
+| 10 bp | Trailing pop exit | −0.015 pp | 8/20 | +0.298 pp / 20 | −0.337 pp / 0 |
+| 25 bp | Dip confirmation | −0.104 pp | 7/20 | −0.073 pp / 9 | −0.019 pp / 10 |
+| 25 bp | Trailing pop exit | −0.020 pp | 8/20 | +0.298 pp / 20 | −0.323 pp / 0 |
+
+The later-period reversal is not permission to retrospectively select regimes.
+Median trailing-exit drawdown loss rises from the control's 36.95% to 37.38%
+at 25 bp. At that cost the conditional control's median CAGR is 24.99%, against
+SPY 15.05% and QQQ 20.29%; these are this simplified current-vintage diagnostic's
+numbers, **not validated performance of the dashboard or an exact live account**.
+The complete artifact includes per-phase compounded gains, CAGR, positive
+drawdown losses, Sharpe, fees, realized turnover, exposure and rolling SPY/QQQ
+wins. In the predeclared middle phase (10), control/entry/exit each retain twelve
+missing-cube close fallbacks; cash-scaled/unfilled counts are 348/348/347.
+
+Artifact on Mac/Spark: `/tmp/codex-entry-exit-study-reviewed-20261002.json`,
+SHA256 `7882e9c41b7886408d3807aed152da099ae6bed4b662322f40cb89e7a2c50580`.
+Frozen daily input SHA256
+`8670c86dd268fdf25ec16b44be86dcd40b840f703b7721ef319bc40e0e22ea58`.
+It binds all cube bytes and four shared implementation dependencies. Root review
+corrected an executed-fill counter that initially counted scheduled opportunities;
+the exclusive second artifact preserves every economic result and source hash
+from the original run. No threshold, selection rule or funding assumption was
+changed after outcomes. Both original artifacts remain intact.
+
+**VERIFIED:** 15 new tests, no skips, including actual CLI, immutable sources,
+next-bar execution, future-prefix invariance, split-scale equivalence, downgrade
+exits and actual funded wealth; Ruff passes. The related funding/policy subset
+has 31 passes and one optional-data skip; that skipped path remains unverified.
+**UNVERIFIED:** exact live parity, quote/latency/auction fills and future profit.
+No live imports, policy activation, orders, data rewrites or dashboard changes.
+
 The dependency boundary matters when deciding which earlier evidence needs
 revalidation:
 
