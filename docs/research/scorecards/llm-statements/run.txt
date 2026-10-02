@@ -1,0 +1,21 @@
+2026-10-02T02:48:22Z repo /home/animallya96/dspark-commit
+/home/animallya96/scratch/ls.bundle is okay
+The bundle contains this ref:
+d6852a8aa9045d662840c4e76fcddbff886a5759 refs/heads/research/llm-statements
+The bundle requires this ref:
+95424784651ab5c9ac3dcc1c32f4f2a39ad093f3 
+The bundle uses this hash algorithm: sha1
+Already up to date.
+2026-10-02T02:48:23Z start rev 7ff4f2494da961a3036e518f959fc6166460116f dirty 0 stage all
+2026-10-02T02:48:24Z tests exit 0 (38 passed in 0.53s)
+2026-10-02T02:48:24Z plan start
+2026-10-02T02:48:26Z plan exit 0 (3057 model calls over 89 names)
+2026-10-02T02:48:27Z anonymity exit 0 (3057 blocks, 0 with a leak)
+2026-10-02T02:48:27Z score start: deepseek-v4-flash at http://127.0.0.1:8000, concurrency 4, deadline in 401 minutes
+2026-10-02T04:59:26Z score exit 0 (partition 2026-10-02: 2916 observations scored in 131.0 min)
+2026-10-02T04:59:26Z some names are incomplete; rerun this script the next night (it resumes from the partials) and then STAGE=evaluate
+2026-10-02T04:59:27Z status: 3 names missing of 94
+2026-10-02T04:59:27Z evaluate start
+2026-10-02T04:59:55Z evaluate exit 0
+2026-10-02T04:59:55Z check start
+2026-10-02T05:00:24Z check exit 1 (3 MISMATCHES)

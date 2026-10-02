@@ -1,0 +1,96 @@
+AAOI   ok       47 scored,  47 stored,   117s
+AAPL   ok       47 scored,  47 stored,   118s
+ACN    ok       46 scored,  46 stored,   116s
+ADBE   ok       48 scored,  48 stored,   117s
+ADI    ok       47 scored,  47 stored,   110s
+ADSK   ok       46 scored,  46 stored,   110s
+ALAB   ok        7 scored,   7 stored,    18s
+AMAT   ok       47 scored,  47 stored,   112s
+AMD    ok       47 scored,  47 stored,   114s
+AMZN   ok       47 scored,  47 stored,   109s
+ANET   ok       43 scored,  43 stored,   104s
+APLD   ok        5 scored,   5 stored,    13s
+ARM    ok        6 scored,   6 stored,    17s
+ASML   kept
+AVGO   ok        4 scored,   4 stored,    10s
+BE     ok       17 scored,  17 stored,    44s
+CDNS   ok       46 scored,  46 stored,   105s
+CEG    ok       15 scored,  15 stored,    39s
+CIEN   ok       41 scored,  41 stored,   100s
+CIFR   ok       11 scored,  11 stored,    28s
+COHR   ok       47 scored,  47 stored,   108s
+CORZ   ok       15 scored,  15 stored,    38s
+CRDO   ok       14 scored,  14 stored,    34s
+CRM    ok       47 scored,  47 stored,   111s
+CRWD   ok       23 scored,  23 stored,    55s
+CRWV   ok        3 scored,   3 stored,     9s
+CSCO   ok       47 scored,  47 stored,   113s
+DDOG   ok       23 scored,  23 stored,    57s
+DELL   ok       39 scored,  39 stored,    99s
+ETN    ok       24 scored,  24 stored,    56s
+FFIV   ok       47 scored,  47 stored,   116s
+FICO   ok       47 scored,  47 stored,   113s
+FN     ok       47 scored,  47 stored,   120s
+FSLR   ok       47 scored,  47 stored,   118s
+FTNT   ok       47 scored,  47 stored,   116s
+GEN    ok       46 scored,  46 stored,   116s
+GEV    ok        7 scored,   7 stored,    18s
+GLW    ok       47 scored,  47 stored,   118s
+GLXY   ok        3 scored,   3 stored,     8s
+GOOGL  ok       39 scored,  39 stored,    92s
+HPE    ok       40 scored,  40 stored,   102s
+HUT    ok        9 scored,   9 stored,    24s
+IBM    ok       44 scored,  44 stored,   126s
+INTC   ok       47 scored,  47 stored,   120s
+INTU   ok       47 scored,  47 stored,   112s
+IREN   ok        1 scored,   1 stored,     6s
+KLAC   ok       47 scored,  47 stored,   117s
+LITE   ok       42 scored,  42 stored,   101s
+LRCX   ok       41 scored,  41 stored,   100s
+MCHP   ok       47 scored,  47 stored,   113s
+MDB    ok       31 scored,  31 stored,    76s
+statements: META: statements incomplete (1 failures); partial results retained for retry
+MOD    ok       47 scored,  47 stored,   118s
+statements: MPWR: statements incomplete (1 failures); partial results retained for retry
+MRVL   ok       19 scored,  19 stored,    52s
+MSFT   ok       47 scored,  47 stored,   126s
+MSI    ok       47 scored,  47 stored,   115s
+MU     ok       47 scored,  47 stored,   109s
+NBIS   kept
+NET    ok       23 scored,  23 stored,    58s
+NOW    ok       47 scored,  47 stored,   116s
+NTAP   ok       31 scored,  31 stored,    81s
+NVDA   ok       47 scored,  47 stored,   128s
+NXPI   ok       22 scored,  22 stored,    60s
+OKLO   ok       11 scored,  11 stored,    27s
+ON     ok       47 scored,  47 stored,   121s
+ORCL   ok       47 scored,  47 stored,   117s
+PANW   ok       47 scored,  47 stored,   120s
+PLTR   ok       19 scored,  19 stored,    55s
+POWL   ok       47 scored,  47 stored,   147s
+PTC    ok       47 scored,  47 stored,   149s
+Q      kept
+QCOM   ok       47 scored,  47 stored,   155s
+SIMO   kept
+SMCI   ok       38 scored,  38 stored,   138s
+SMR    ok       15 scored,  15 stored,    64s
+SNDK   ok        5 scored,   5 stored,    24s
+SNOW   ok       19 scored,  19 stored,    80s
+SNPS   ok       36 scored,  36 stored,   127s
+STX    ok       47 scored,  47 stored,   109s
+statements: SWKS: statements incomplete (1 failures); partial results retained for retry
+TEAM   ok       13 scored,  13 stored,    34s
+TER    ok       45 scored,  45 stored,   109s
+TLN    ok        5 scored,   5 stored,    14s
+TRMB   ok       45 scored,  45 stored,   116s
+TSM    kept
+TXN    ok       47 scored,  47 stored,   113s
+TYL    ok       47 scored,  47 stored,   118s
+VRT    ok       28 scored,  28 stored,    68s
+VST    ok       27 scored,  27 stored,    69s
+WDAY   ok       23 scored,  23 stored,    55s
+WDC    ok       47 scored,  47 stored,   114s
+WULF   ok       39 scored,  39 stored,   101s
+ZS     ok       29 scored,  29 stored,    73s
+statements: 3 names incomplete (META, MPWR, SWKS); retried next run
+partition 2026-10-02: 2916 observations scored in 131.0 min
