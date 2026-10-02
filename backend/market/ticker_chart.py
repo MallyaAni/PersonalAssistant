@@ -313,7 +313,15 @@ def build(
     if live_bar:
         session = live_bar.get("session")
         last = live_bar.get("last")
-        if session is not None and last is not None and np.isfinite(float(last)):
+        # Completed store observations outrank an earlier intraday quote of that day.
+        if (
+            session is not None
+            and last is not None
+            and np.isfinite(float(last))
+            and history.complete_through is not None
+            and np.datetime64(str(session), "D")
+            > np.datetime64(history.complete_through, "D")
+        ):
             stamp = np.datetime64(str(session), "D")
             price = float(last)
             fields = (

@@ -1,5 +1,40 @@
 # Next session
 
+## 2026-10-02 — Timing release live; chart consistency acceptance in progress
+
+Main/GitHub/Spark and the deployed backend are `c9f34e94`. Guarded deployment
+passed 8,545 unit tests (92 skipped, six xfailed) and all 100 routing checks.
+Exact deployed hashes match five timing/account source files. Actual guidance
+returned 94 rows with no funded Buy for unknown or zero cash; invalid cash
+returned 422, cross-account access 403, holdings unchanged. Four deployed causal
+checks and five deployed browser timing cases passed. Three captured model
+containers retain their IDs/images/start times; postdeploy status is green.
+Evidence: `/tmp/codex-entry-exit-release-proof-20261002.json` on Spark.
+
+User's COHR/AAOI economic concern remains **UNVERIFIED**: different original
+grades explain October-1 actions, not exit quality. No selection thresholds,
+sector rules or strategy adoption changed. The timing correction validates
+observable evidence; it does not prove a profitable exit improvement.
+
+Branch `codex/levels-chart-consistency-20261002` owns the bounded follow-up:
+stock-specific Levels hovers and displayed-price distances; retain completed
+daily/weekly store candles over intraday snapshots; identify historical action
+replay separately from recorded grades and paper fills. Initial read-only audit
+found 188 stale daily/weekly quote overlays across 94 stocks. Independent review
+also reproduced six contradictory quote-receipt cases; corrected chart/backend
+acceptance now has 100 passing cases, zero skips. Production build and typecheck
+pass. All 96 production-preview browser cases pass, including actual canvas
+grade/fill markers, daily/weekly/15-minute views, mobile, and asynchronous
+extended-hours refresh/failure paths. Browser diagnostics reject errors and
+unexpected writes. Changed Python lines pass Ruff; 21 legacy broad-file
+diagnostics remain outside this patch. These changes are not deployed yet.
+Evidence: `/tmp/codex-chart-reviewed-backend-20261002.log` and
+`/tmp/codex-chart-final-browser-20261002.log` on Spark. Development-only checks
+first exposed stale wording expectations and a same-origin test environment
+mismatch; no product assertion or time limit was weakened. Preserve unrelated
+Wi-Fi watchdog files, bundle and scratch.
+Do not restart active releases or recopy exited worker sources.
+
 ## 2026-10-02 — Causal timing checkpoint; guarded release in progress
 
 User requested continued entry/exit improvement and challenged the reliability

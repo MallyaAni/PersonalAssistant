@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { DeskLevelTag, DeskLive, DeskPaperLive, DeskPaperOrder, DeskRecord, DeskStructure } from '../../services/api'
-import { SessionPrice } from './StockBoard'
+import { displayedBoardPrice, SessionPrice } from './StockBoard'
 
 // The Stock rankings board, rebuilt around one question a trader asks of it:
 // what is the paper account doing about each name, how big, and when.
@@ -133,6 +133,17 @@ export const levelLines = (structure: DeskStructure | undefined, price: number |
     lines.push(`${LEVEL_NAME.high_20} ${levelPrice(structure.high_20)}${away(structure.high_20)}`)
   }
   return lines
+}
+
+// Explain this stock's actual level relationships without implying an order or forecast.
+export const levelDescription = (ticker: string, structure: DeskStructure | undefined, displayed: ReturnType<typeof displayedBoardPrice>): string => {
+  const levels = (['ema_21', 'high_20'] as const).filter(key => typeof structure?.[key] === 'number' && Number.isFinite(structure[key]) && structure[key]! > 0)
+  if (!levels.length) return `${ticker}: reference levels unavailable.`
+  if (!displayed) return `${ticker}: price unavailable; level distances unavailable. Reference levels only.`
+  const relationships = levels.map(key => `${displayed.price > structure![key]! ? 'above' : displayed.price < structure![key]! ? 'below' : 'at'} ${LEVEL_NAME[key]}`).join('; ')
+  const slope = structure?.ema_21_slope_5
+  const trend = typeof slope === 'number' && Number.isFinite(slope) ? ` EMA ${slope > 0 ? 'rising' : slope < 0 ? 'falling' : 'flat'} over five sessions.` : ''
+  return `${ticker}: ${relationships}.${trend} Compared with ${displayed.current ? '' : 'last known '}${displayed.word} price ${price(displayed.price)}. Reference levels only; not order prices.`
 }
 
 // The flag for a first bar that reached a level from below and closed back
@@ -470,7 +481,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
             <Head label="Stock" column="ticker" sort={sort} onSort={onSort} />
             <Head label="Grade" column="grade" sort={sort} onSort={onSort} title="The desk's grade at the last close; A and A+ are in the book." />
             <Head label="Position" column="position" sort={sort} onSort={onSort} title="Paper-account shares and share of the account, against the policy's target." />
-            <Head label="Levels" sort={sort} onSort={onSort} title="The 21-session EMA and the 20-session high, with the distance from the last price and the EMA's five-session slope; a flag when the session's first 15-minute bar reached a level from below and closed back under it. Shown, not acted on." />
+            <Head label="Levels" sort={sort} onSort={onSort} title="Reference levels. Distances use the displayed price; arrows show the EMA’s five-session slope. Hover a stock’s levels for its assessment. Not order prices." />
             <Head label="Action" sort={sort} onSort={onSort} title="The paper account's order for the name. HOLD: no order, the position stays. A finished order keeps its word, greyed; the status column says what happened to it." />
             <Head label="Size" column="size" sort={sort} onSort={onSort} title="Planned or submitted sizes use a price estimate; filled sizes use execution prices. Percentages use current paper equity." />
             <Head label="When / status" sort={sort} onSort={onSort} title="The order's rule for its session and what has happened to it." />
@@ -481,7 +492,8 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
           const unit = row.orders[0]?.price ?? live.quotes[row.ticker]?.last ?? null
           const mine = row.orders.length && row.orders.every(canScale) ? myShares(row.weight, myAccount, unit) : null
           const structure = live.structure?.[row.ticker]
-          const levels = levelLines(structure, live.quotes[row.ticker]?.last ?? closes?.[row.ticker] ?? null)
+          const displayed = displayedBoardPrice(live, row.ticker, now, closes?.[row.ticker], latest.session)
+          const levels = levelLines(structure, displayed?.price ?? null)
           const flag = levelFlag(structure)
           const age = priceAge(structure, now)
           return <Fragment key={row.ticker}>
@@ -496,7 +508,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
                 {row.held > 0 ? <>{shares(row.held)}{row.heldWeight !== null ? ` · ${percent(row.heldWeight)}` : ''}</> : <span className="text-[#86868b]">none</span>}
                 {row.target !== null && row.target > 0 && <div className="text-[10px] text-[#6e6e73]">target {percent(row.target)}</div>}
               </td>
-              <td className="py-2 text-[11px]" aria-label={`${row.ticker} levels`}>
+              <td className="py-2 text-[11px]" aria-label={`${row.ticker} levels`} title={levelDescription(row.ticker, structure, displayed)}>
                 {levels.length ? levels.map(line => <div key={line} className="whitespace-nowrap text-[#6e6e73]">{line}</div>) : <span className="text-[#86868b]">—</span>}
                 {flag && <div aria-label={`${row.ticker} level flag`} className="whitespace-nowrap font-medium text-[#1d1d1f]">{flag}</div>}
               </td>

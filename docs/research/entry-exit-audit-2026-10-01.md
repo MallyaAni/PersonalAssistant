@@ -78,6 +78,21 @@ new expiry threshold or claiming missed profits.
 
 ## Next economic test
 
+The dependency boundary matters when deciding which earlier evidence needs
+revalidation:
+
+| Path | Relationship to this correction | Evidence status |
+|---|---|---|
+| Personal guidance and paper intraday submission | Both call the shared timing reader | Corrected causal cases pass; occurrence in historical submitted orders remains unknown |
+| Optional native quote replay | Reuses the actual intraday decision and timing guard | 49 native/executor cases pass against main `c9f34e94`; this proves engineering behavior, not an economic edge |
+| `fill_timing` convention studies | Separate bar-based pricing engine; does not call the shared reader | Results are convention simulations and cannot establish receipt-time or broker-fill fidelity |
+| Daily forecast and allocation ledgers | Separate daily execution path | This defect does not by itself invalidate their numbers or certify their other assumptions |
+
+No old result is upgraded to live execution proof by fixing the reader today.
+In particular, tests with supplied valid receipt times cannot create missing
+historical receipt evidence. Future observation capture and frozen input hashes
+are necessary to check the affected path without inventing a past account.
+
 Keep recorded stock selection and account funding fixed. Evaluate the existing
 opt-in bounded-execution contract against the unchanged timing rule, retaining
 unfilled opportunities, actual receipt times and causally spendable cash. Its

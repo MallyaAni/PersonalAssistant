@@ -1,5 +1,6 @@
 """The drill-down chart: the bars, the lines, and the basis they share."""
 
+from dataclasses import replace
 from datetime import date, timedelta
 
 import numpy as np
@@ -277,6 +278,36 @@ def test_ignored_old_quote_has_no_snapshot_timestamp():
     assert built["quote_bar"] is None
     assert built["bars"][-1]["close"] == 100.0
     assert built["overlays"]["ema9"][-1] == pytest.approx(100.0)
+
+
+# A completed stored session keeps its candle and indicators even with a same-day quote.
+@pytest.mark.parametrize("timeframe", ticker_chart.TIMEFRAMES)
+def test_completed_stored_session_is_not_replaced_by_a_quote(timeframe):
+    store = _store([100.0] * 320, factor=0.5)
+    session = store.read("AAA").complete_through.isoformat()
+    baseline = ticker_chart.payload(store, "AAA", 30, timeframe)
+    quoted = ticker_chart.payload(store, "AAA", 30, timeframe, {
+        "session": session, "bar": f"{session}T19:45:00+00:00",
+        "last": 150.0, "open": 110.0, "high": 151.0, "low": 99.0,
+    })
+    assert quoted == baseline
+
+
+# A stored forming session remains replaceable when the completion boundary is earlier.
+@pytest.mark.parametrize("timeframe", ticker_chart.TIMEFRAMES)
+def test_quote_can_update_an_uncompleted_stored_session(monkeypatch, timeframe):
+    store = _store([100.0] * 321)
+    history = store.read("AAA")
+    current = history.bars[-1].session_date.isoformat()
+    pending = replace(history, complete_through=history.bars[-2].session_date)
+    monkeypatch.setattr(store, "read", lambda ticker: pending)
+    quoted = ticker_chart.payload(store, "AAA", 30, timeframe, {
+        "session": current, "bar": f"{current}T14:00:00+00:00",
+        "last": 150.0, "open": 100.0, "high": 151.0, "low": 99.0,
+    })
+    assert quoted["bars"][-1]["close"] == 150.0
+    assert quoted["overlays"]["ema9"][-1] == pytest.approx(110.0)
+    assert quoted["last_bar_complete"] is False
 
 
 # A completed 15-minute candle does not make the whole session or Friday complete.

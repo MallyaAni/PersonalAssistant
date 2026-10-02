@@ -1,7 +1,7 @@
 import {expect, test, type Page, type TestInfo} from '@playwright/test'
 
 const USER = 'chart-wording-fixture'
-const LEGEND = 'Arrows are grade changes (up green, down red).'
+const LEGEND = 'Arrows: grade changes, labelled Saved or Recalculated when known.'
 type CanvasState = Window & {__gradeDraws: {text: string; timeframe: string | null}[]}
 type GradeRow = {date: string; grade: string; said?: unknown}
 
@@ -104,7 +104,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await expect(chart).toContainText('Grade B (saved)→A (recalculated)')
       await expect(chart.locator('[aria-label="Chart legend"]')).toContainText(LEGEND)
       await expect(chart).not.toContainText('snapshot')
-      await expect(chart).not.toContainText('replay')
+      await expect(chart.getByRole('checkbox', {name: 'Policy replay'})).not.toBeChecked()
       await expect(chart).not.toContainText('below A')
       await expect.poll(() => page.evaluate(() => (window as unknown as CanvasState).__gradeDraws.filter(row => row.timeframe === 'D').map(row => row.text))).toEqual(expect.arrayContaining(['Saved grade A→B', 'Grade B (saved)→A (recalculated)']))
       await chart.getByRole('button', {name: 'W', exact: true}).click()
@@ -201,7 +201,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
           {date: '2026-09-14', grade: 'A', said: unknownFirst ? missing.value : true},
           {date: '2026-09-15', grade: 'B', said: unknownFirst ? true : missing.value},
         ])
-        const label = unknownFirst ? 'Grade A (recorded)→B (saved)' : 'Grade A (saved)→B (recorded)'
+        const label = unknownFirst ? 'Grade A (source unknown)→B (saved)' : 'Grade A (saved)→B (source unknown)'
         try {
           await page.goto('/#desk')
           await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
@@ -218,19 +218,21 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
     }
   }
 
-  // Two unknown sources remain explicitly unknown in both the caption and the actual canvas text.
-  test(`chart marks both grade sources unverified at ${viewport.width}px`, async ({page, baseURL}, testInfo) => {
+  // Unknown sources stay distinct from saved grades in the caption and real canvas.
+  test(`chart preserves unknown and mixed grade sources at ${viewport.width}px`, async ({page, baseURL}, testInfo) => {
     await page.setViewportSize(viewport)
     const fixture = await install(page, baseURL!, [
       {date: '2026-09-14', grade: 'A'},
       {date: '2026-09-15', grade: 'B', said: 'true'},
+      {date: '2026-09-16', grade: 'A', said: true},
     ])
     try {
       await page.goto('/#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
-      await expect(chart).toContainText('1 grade change marked: Grade A→B.')
+      await expect(chart).toContainText('2 grade changes marked: Grade A→B, Grade B (source unknown)→A (saved).')
       await expect.poll(() => page.evaluate(() => (window as unknown as CanvasState).__gradeDraws.map(row => row.text))).toContain('Grade A→B')
+      await expect.poll(() => page.evaluate(() => (window as unknown as CanvasState).__gradeDraws.map(row => row.text))).toContain('Grade B (source unknown)→A (saved)')
     } finally {await finish(testInfo, fixture)}
   })
 }
