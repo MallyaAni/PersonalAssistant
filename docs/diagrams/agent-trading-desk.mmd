@@ -30,6 +30,8 @@ flowchart TB
     Records -->|Completed candles and causal latches| ExecutionCapture
     ExecutionCapture --> ExecutionArchive[(Separate immutable execution cohort<br/>code hashes, budgets, retained opportunities)]
     ExecutionArchive --> ExecutionCompare[Funded paired quote diagnostic<br/>incumbent versus explicit bounded contracts<br/>10/25 bp, SPY/QQQ references, no promotion]
+    DelayedQuotes[Historical SIP endpoint quotes<br/>read only after the delay<br/>outcome labels, never decision inputs] --> ExecutionLabels[(Separate original valuation pages<br/>request and response hashes, source times)]
+    ExecutionLabels -->|Consolidated endpoint marks<br/>missing NAV remains unavailable| ExecutionCompare
     Research --> Evidence[Forward evaluation<br/>grade outcomes and funded target trackers]
     Store --> Evidence
     Evidence --> View
@@ -51,8 +53,8 @@ flowchart TB
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
-    class Store,Journal,Records,Holdings,Research,PersonalHistory,DisplaySnapshot,PolicyShadow,ExecutionArchive data;
-    class Providers,Broker,Quotes external;
+    class Store,Journal,Records,Holdings,Research,PersonalHistory,DisplaySnapshot,PolicyShadow,ExecutionArchive,ExecutionLabels data;
+    class Providers,Broker,Quotes,DelayedQuotes external;
     class Models model;
     class View interface;
     class DisplayCollector,ExecutionCapture,ExecutionCompare application;

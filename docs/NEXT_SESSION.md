@@ -1,5 +1,44 @@
 # Next session
 
+## 2026-10-02 — ACTIVE: consolidated endpoint labels; no outcome scored yet
+
+Research branch is pushed to GitHub and present on Spark at `3dca4c81`.
+The original collector/decision identity remains `93c63ab6`; new label code
+does not change its decisions, bounds or recorded bytes. The actual SIP request
+is allowed under existing entitlement after a 16-minute wait and preserves all
+responses outside the production root. Start-window evidence is already frozen
+at `cohort-20261002-consolidated.evidence/start` alongside the private cohort.
+Do not refetch it. The updated CLI `value` reuses validated completed windows.
+
+VERIFIED provider boundary: HTTP 200, one page, 8,533 original records. The first
+validator failed on 64 differing earlier records with equal timestamps; timestamp
+alone is not unique event identity. Corrected version `execution-endpoint-labels/2`
+retains latest-timestamp ambiguity as an unavailable mark and allows a later
+unique event. It validates the original page without a second request: 13
+symbols qualified, NTAP unavailable (25.84 bp spread against the fixed 25 bp
+budget). Do not loosen the budget or choose an older convenient quote.
+
+NTAP is a starting holding, so total initial NAV, total return and same-capital
+SPY/QQQ gain comparisons remain unavailable unless that original mark is known.
+Paired absolute gains can remain identifiable: identical unpriced holdings cancel
+algebraically, but every differing holding requires its own ending mark. Tests
+pin both cancellation and the missing-difference case. No annualized metrics,
+consolidated drawdown or policy promotion. Native conditional fills remain IEX
+proxies, not broker executions.
+
+Latest broader source-image acceptance at `3dca4c81`: 170 pass, four optional
+native skips; all 47 forward cases pass in the pinned native environment,
+including the paired-missing-mark cases. Ruff and all 33 diagram/page checks
+pass. Actual execution evidence through 15:38:59 has 151 observations and no
+conflicting/out-of-order received events; this is integrity proof, not a score.
+Logs are under
+`/tmp/codex-funded-forward-*-20261002.log` on Spark. After close, wait for delayed
+endpoint availability, run `python -m backend.cli.market_execution_forward value
+--folder /research/cohort-20261002 --output
+/research/cohort-20261002-consolidated.json` once with the source and private
+research mounts, then inspect actual artifacts. Preserve the initial failure
+and missing metrics; do not call running collection or synthetic tests alpha.
+
 ## 2026-10-02 — ACTIVE: funded entry/exit evidence on an isolated branch
 
 Branch `codex/funded-execution-forward-20261002` starts at main `14f61a0f`.
