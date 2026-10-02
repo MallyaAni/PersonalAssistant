@@ -1,0 +1,9 @@
+T-S1 gate, A1 candidates against ew_graded_cap25 as of 2026-10-01, 25 bp, trials 471, trial variance 6.07e-05
+pit_scorecard_A1-1_change_plus_level (ew_graded_cap25 + stance_replace_sentiment): paired 2016-2023 +0.22 bp/session (t +0.24, 2012 sessions); 2024-2026 -2.11 (t -0.85, 690); above the control at 13 of 20; DSR 0.21 at 471
+  2016-2023: CAGR +28.9% vs +28.0%; worst drawdown -45.7% vs -45.5%; Sharpe 1.01 vs 0.98
+  2024-2026: CAGR +44.7% vs +46.7%; worst drawdown -27.1% vs -26.4%; Sharpe 1.25 vs 1.26
+  GATE FAILS (+2 bp at t>=2 (2016-2023); not negative 2024-2026; >= 15 of 20 offsets; DSR >= 0.95) -> RECORD
+pit_scorecard_A1-1_change_gated (ew_graded_cap25 + stance_replace_sentiment): paired 2016-2023 +0.97 bp/session (t +0.77, 2012 sessions); 2024-2026 +4.07 (t +1.41, 690); above the control at 20 of 20; DSR 0.38 at 471
+  2016-2023: CAGR +32.0% vs +28.0%; worst drawdown -44.3% vs -45.5%; Sharpe 1.10 vs 0.98
+  2024-2026: CAGR +67.8% vs +46.7%; worst drawdown -25.3% vs -26.4%; Sharpe 1.60 vs 1.26
+  GATE FAILS (+2 bp at t>=2 (2016-2023); DSR >= 0.95) -> RECORD

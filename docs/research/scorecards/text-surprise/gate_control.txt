@@ -1,0 +1,102 @@
+/home/animallya96/scratch/wt-ts/backend/agents/trading/desk/regime.py:136: RuntimeWarning: Mean of empty slice
+  out[t] = np.nanmean(window, axis=0)
+/home/animallya96/scratch/wt-ts/backend/agents/trading/desk/regime.py:226: RuntimeWarning: All-NaN slice encountered
+  ai_part = np.nanmedian(np.where(is_ai[None, :], part, np.nan), axis=1)
+/home/animallya96/scratch/wt-ts/backend/agents/trading/desk/regime.py:227: RuntimeWarning: All-NaN slice encountered
+  sw_part = np.nanmedian(np.where(is_sw[None, :], part, np.nan), axis=1)
+/home/animallya96/scratch/wt-ts/backend/market/levels.py:64: RuntimeWarning: All-NaN slice encountered
+  is_low = np.isfinite(low[t]) & (low[t] < np.nanmin(window_low, axis=0))
+/home/animallya96/scratch/wt-ts/backend/market/levels.py:65: RuntimeWarning: All-NaN slice encountered
+  is_high = np.isfinite(high[t]) & (high[t] > np.nanmax(window_high, axis=0))
+/home/animallya96/scratch/wt-ts/backend/market/levels.py:83: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmax(candidates, axis=0) if len(window) else np.nan
+/home/animallya96/scratch/wt-ts/backend/market/levels.py:86: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmin(candidates, axis=0) if len(window) else np.nan
+/home/animallya96/scratch/wt-ts/backend/market/levels.py:129: RuntimeWarning: Mean of empty slice
+  middle = np.nanmean(piece, axis=0)
+/home/animallya96/research-venv/lib/python3.12/site-packages/numpy/lib/_nanfunctions_impl.py:1997: RuntimeWarning: Degrees of freedom <= 0 for slice.
+  var = nanvar(a, axis=axis, dtype=dtype, out=out, ddof=ddof,
+/home/animallya96/scratch/wt-ts/backend/market/levels.py:278: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmax(window, axis=0) if largest else np.nanmin(window, axis=0)
+point-in-time scorecard as of 2026-10-01
+book: 94 names today; eligible per session 0 at the start, 94 at the end, median 30
+
+10 bp, 2016-2023  (median / worst across 20 offsets)
+  line                                  CAGR   worst   maxDD  Sharpe  >EW-PIT   >QQQ
+  rule / today's book                  29.4%   27.1%  -45.3%    1.03       16     20
+  rule / point-in-time                 29.8%   26.7%  -44.8%    1.03       19     20
+  equal weight / point-in-time         27.9%   26.7%  -37.7%    1.06        0     20
+  equal weight / today's book          28.6%   27.9%  -37.1%    1.11       19     20
+  SPY                                  13.2%   13.2%  -33.7%    0.76        0      0
+  QQQ                                  18.6%   18.6%  -35.1%    0.86        0      0
+  paired rule / point-in-time minus equal weight / point-in-time: +1.1 bp/day, HAC t 0.80, PSR 0.77
+  paired rule / point-in-time minus QQQ: +4.6 bp/day, HAC t 2.50, PSR 0.99
+  paired rule / today's book minus QQQ: +4.1 bp/day, HAC t 2.29, PSR 0.98
+  paired equal weight / point-in-time minus QQQ: +3.5 bp/day, HAC t 2.78, PSR 0.99
+
+10 bp, 2024-2026  (median / worst across 20 offsets)
+  line                                  CAGR   worst   maxDD  Sharpe  >EW-PIT   >QQQ
+  rule / today's book                  90.0%   84.4%  -42.8%    1.68       20     20
+  rule / point-in-time                 48.8%   36.0%  -25.6%    1.30       20     20
+  equal weight / point-in-time         30.7%   29.0%  -26.0%    1.16        0     20
+  equal weight / today's book          64.3%   62.6%  -31.0%    1.76       20     20
+  SPY                                  20.3%   20.3%  -18.8%    1.27        0      0
+  QQQ                                  24.9%   24.9%  -22.8%    1.17        0      0
+  paired rule / point-in-time minus equal weight / point-in-time: +4.9 bp/day, HAC t 1.17, PSR 0.83
+  paired rule / point-in-time minus QQQ: +7.2 bp/day, HAC t 1.51, PSR 0.90
+  paired rule / today's book minus QQQ: +19.4 bp/day, HAC t 2.78, PSR 1.00
+  paired equal weight / point-in-time minus QQQ: +2.2 bp/day, HAC t 1.18, PSR 0.82
+
+10 bp, all  (median / worst across 20 offsets)
+  line                                  CAGR   worst   maxDD  Sharpe  >EW-PIT   >QQQ
+  rule / today's book                  39.1%   38.0%  -45.3%    1.18       20     20
+  rule / point-in-time                 30.7%   28.1%  -44.8%    1.05       20     20
+  equal weight / point-in-time         26.0%   25.0%  -37.7%    1.04        0     20
+  equal weight / today's book          34.2%   33.5%  -37.1%    1.25       20     20
+  SPY                                  13.9%   13.7%  -33.7%    0.83        0      0
+  QQQ                                  19.4%   19.2%  -35.1%    0.92        0      0
+  paired rule / point-in-time minus equal weight / point-in-time: +1.9 bp/day, HAC t 1.40, PSR 0.89
+  paired rule / point-in-time minus QQQ: +4.4 bp/day, HAC t 2.51, PSR 0.99
+  paired rule / today's book minus QQQ: +7.3 bp/day, HAC t 3.38, PSR 1.00
+  paired equal weight / point-in-time minus QQQ: +2.5 bp/day, HAC t 2.31, PSR 0.97
+
+25 bp, 2016-2023  (median / worst across 20 offsets)
+  line                                  CAGR   worst   maxDD  Sharpe  >EW-PIT   >QQQ
+  rule / today's book                  27.6%   25.3%  -46.0%    0.98        8     20
+  rule / point-in-time                 28.0%   24.9%  -45.5%    0.98       12     20
+  equal weight / point-in-time         27.7%   26.6%  -37.9%    1.05        0     20
+  equal weight / today's book          28.5%   27.9%  -37.2%    1.11       19     20
+  SPY                                  13.2%   13.2%  -33.7%    0.76        0      0
+  QQQ                                  18.6%   18.6%  -35.1%    0.86        0      0
+  paired rule / point-in-time minus equal weight / point-in-time: +0.6 bp/day, HAC t 0.45, PSR 0.66
+  paired rule / point-in-time minus QQQ: +4.0 bp/day, HAC t 2.19, PSR 0.97
+  paired rule / today's book minus QQQ: +3.6 bp/day, HAC t 1.99, PSR 0.97
+  paired equal weight / point-in-time minus QQQ: +3.4 bp/day, HAC t 2.72, PSR 0.99
+
+25 bp, 2024-2026  (median / worst across 20 offsets)
+  line                                  CAGR   worst   maxDD  Sharpe  >EW-PIT   >QQQ
+  rule / today's book                  87.3%   81.8%  -43.1%    1.65       20     20
+  rule / point-in-time                 46.7%   34.1%  -26.4%    1.26       20     20
+  equal weight / point-in-time         30.6%   28.9%  -25.9%    1.15        0     20
+  equal weight / today's book          64.1%   62.3%  -31.1%    1.76       20     20
+  SPY                                  20.3%   20.3%  -18.8%    1.27        0      0
+  QQQ                                  24.9%   24.9%  -22.8%    1.17        0      0
+  paired rule / point-in-time minus equal weight / point-in-time: +4.4 bp/day, HAC t 1.04, PSR 0.80
+  paired rule / point-in-time minus QQQ: +6.7 bp/day, HAC t 1.40, PSR 0.89
+  paired rule / today's book minus QQQ: +18.8 bp/day, HAC t 2.70, PSR 1.00
+  paired equal weight / point-in-time minus QQQ: +2.3 bp/day, HAC t 1.19, PSR 0.82
+
+25 bp, all  (median / worst across 20 offsets)
+  line                                  CAGR   worst   maxDD  Sharpe  >EW-PIT   >QQQ
+  rule / today's book                  37.2%   36.1%  -46.0%    1.13       20     20
+  rule / point-in-time                 29.1%   26.5%  -45.5%    1.01       20     20
+  equal weight / point-in-time         25.9%   24.8%  -37.9%    1.03        0     20
+  equal weight / today's book          34.1%   33.4%  -37.2%    1.24       20     20
+  SPY                                  13.9%   13.7%  -33.7%    0.83        0      0
+  QQQ                                  19.4%   19.2%  -35.1%    0.92        0      0
+  paired rule / point-in-time minus equal weight / point-in-time: +1.5 bp/day, HAC t 1.06, PSR 0.82
+  paired rule / point-in-time minus QQQ: +3.9 bp/day, HAC t 2.23, PSR 0.97
+  paired rule / today's book minus QQQ: +6.7 bp/day, HAC t 3.13, PSR 1.00
+  paired equal weight / point-in-time minus QQQ: +2.4 bp/day, HAC t 2.27, PSR 0.97
+
+wrote docs/research/scorecards/text-surprise/pit_scorecard_control.json
