@@ -335,6 +335,10 @@ def summarise(
                     # Every offset's CAGR, in offset order, so two runs can
                     # be compared offset by offset.
                     "cagrs": [float(c) for c in cagrs],
+                    # Every offset's worst drawdown, in offset order (the
+                    # cluster-cap study counts the offsets an arm is
+                    # shallower at).
+                    "drawdowns": [float(s["drawdown"]) for s in per_label[label]],
                     "median_sharpe": _nanmedian(
                         np.array([s["sharpe"] for s in per_label[label]])
                     ),
