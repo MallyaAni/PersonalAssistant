@@ -257,7 +257,7 @@ def replay_class(api, context):
 def observe_native(strategy, api, ctx, data):
     row, evidence = ctx.rows[data.cid], data.evidence
     result = ctx.outcomes[data.cid]
-    if data.cid in strategy.orders:
+    if data.cid in strategy.orders or result["status"] == "unsupported_closing_auction":
         return
     now = bounded.instant(evidence["observed_at"]).astimezone(entry_timing.NEW_YORK)
     candle = deepcopy(evidence.get("candle") or {})
@@ -283,6 +283,7 @@ def observe_native(strategy, api, ctx, data):
         return
     if verdict["send"] == intraday_orders.MOC:
         receipt["state"] = "unsupported_closing_auction"
+        result["status"] = "unsupported_closing_auction"
         return
     submit_native(strategy, api, ctx, data, row, quote, receipt)
 
@@ -404,6 +405,10 @@ def native_report(api, ctx, engine, strategy, quote_keys, last_quotes):
     digest = hashlib.sha256(
         json.dumps(ctx.payload, sort_keys=True, allow_nan=False).encode()
     ).hexdigest()
+    complete = not any(
+        result["status"] == "unsupported_closing_auction"
+        for result in ctx.outcomes.values()
+    )
     return {
         "schema": SCHEMA,
         "engine": "nautilus_trader",
@@ -412,9 +417,12 @@ def native_report(api, ctx, engine, strategy, quote_keys, last_quotes):
         "input_sha256": digest,
         "opportunities": list(ctx.outcomes.values()),
         "starting_cash": ctx.payload["starting_cash"],
-        "ending_cash": cash,
-        "ending_holdings": holdings,
-        "ending_bid_marked_equity": marked,
+        "execution_complete": complete,
+        "known_cash": cash,
+        "known_holdings": holdings,
+        "ending_cash": cash if complete else None,
+        "ending_holdings": holdings if complete else None,
+        "ending_bid_marked_equity": marked if complete else None,
         "commissions": sum(strategy.commissions),
         "distinct_quote_events": len(quote_keys),
         "fill_evidence": "conditional_displayed_liquidity_simulation",

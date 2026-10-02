@@ -79,7 +79,9 @@ def record(root, folder, seconds, interval):
 # Expose explicit initialization, bounded recording and exclusive report creation.
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("initialize", "record", "compare", "value"))
+    parser.add_argument(
+        "mode", choices=("initialize", "record", "compare", "value", "receipts")
+    )
     parser.add_argument("--data-dir", type=Path)
     parser.add_argument("--folder", type=Path, required=True)
     parser.add_argument("--revision")
@@ -100,6 +102,18 @@ def main(argv=None):
         }
     elif args.mode == "record":
         summary = record(args.data_dir, args.folder, args.seconds, args.interval)
+    elif args.mode == "receipts":
+        from backend.market import execution_marks
+
+        if not args.output or args.output.exists():
+            parser.error("--output must name a new receipt artifact")
+        frozen, _ = forward.load(args.folder)
+        result = execution_marks.capture_receipts(frozen, args.output)
+        summary = {
+            "status": "receipts_recorded",
+            "count": len(result["receipts"]),
+            "complete": result["complete"],
+        }
     elif args.mode == "value":
         if not args.output or args.output.exists():
             parser.error("--output must name a new report artifact")

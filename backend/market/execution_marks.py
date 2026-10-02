@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlencode
 
-from backend.market import alpaca, entry_timing
+from backend.market import alpaca, alpaca_trading, entry_timing
 from backend.market import bounded_execution as bounded
 from backend.market import execution_forward as forward
 
@@ -15,6 +15,60 @@ PLAN = (
     Path(__file__).parents[2] / "docs/research/funded-execution-valuation-2026-10-02.md"
 )
 URL = "https://data.alpaca.markets/v2/stocks/quotes"
+
+
+# Preserve paper-broker receipts for frozen IDs using GET only, without headers.
+def capture_receipts(frozen, output, *, client=None, clock=None):
+    output = Path(output)
+    if output.exists():
+        raise FileExistsError(output)
+    client = client or alpaca_trading.client_from_env()
+    if client.base_url != alpaca_trading.PAPER_URL:
+        raise ValueError("Paper-only receipt evidence required")
+    clock = clock or (lambda: datetime.now(UTC))
+    rows = []
+    for opportunity in frozen["opportunities"]:
+        order = opportunity["order"]
+        query = urlencode({"client_order_id": order["client_order_id"]})
+        status, body = client.transport(
+            "GET",
+            client.base_url + "/orders:by_client_order_id?" + query,
+            client.headers,
+            None,
+        )
+        row = {
+            "client_order_id": order["client_order_id"],
+            "received_at": clock().isoformat(),
+            "http_status": status,
+            "body_sha256": hashlib.sha256(body).hexdigest(),
+            "body": body.decode("utf-8"),
+        }
+        rows.append(row)
+        if status not in (200, 404):
+            forward.exclusive(
+                output,
+                {
+                    "manifest_sha256": forward.digest(frozen),
+                    "complete": False,
+                    "receipts": rows,
+                },
+            )
+            raise ValueError(f"Paper receipt unavailable: HTTP {status}")
+        if status == 200:
+            payload = json.loads(row["body"])
+            if any(
+                payload.get(k) != order[k]
+                for k in ("client_order_id", "symbol", "side")
+            ):
+                raise ValueError("Paper receipt does not match the frozen order")
+    result = {
+        "manifest_sha256": forward.digest(frozen),
+        "complete": True,
+        "receipts": rows,
+        "role": "Observed paper-broker outcomes only; never new orders",
+    }
+    forward.exclusive(output, result)
+    return result
 
 
 # Preserve sub-microsecond quote ordering without floating-point epoch conversion.
@@ -228,6 +282,8 @@ def supplement(frozen, proxy, first_packet, last_packet):
     for original in proxy["results"]:
         book = original["book"]
         ending, missing_end = forward.equity(book, last)
+        if not original["execution_complete"]:
+            ending = None
         benchmarks = {}
         for symbol in ("SPY", "QQQ"):
             ref = (
@@ -253,9 +309,10 @@ def supplement(frozen, proxy, first_packet, last_packet):
                 "total_return": gain / initial
                 if gain is not None and initial
                 else None,
-                "ending_cash": book["cash"],
+                "execution_complete": original["execution_complete"],
+                "ending_cash": book["cash"] if original["execution_complete"] else None,
                 "ending_exposure": (ending - book["cash"]) / ending if ending else None,
-                "fees": book["fees"],
+                "fees": book["fees"] if original["execution_complete"] else None,
                 "turnover_one_way": book["turnover"] / initial if initial else None,
                 "missing_ending_marks": missing_end,
                 "benchmarks": benchmarks,
@@ -276,6 +333,13 @@ def supplement(frozen, proxy, first_packet, last_packet):
         result["gain_vs_incumbent"], result["missing_pair_marks"] = difference(
             candidate["book"], control["book"], last
         )
+        if not candidate["execution_complete"] or not control["execution_complete"]:
+            result["gain_vs_incumbent"] = None
+        result["unsupported_auction_orders"] = [
+            cid
+            for cid, outcome in candidate["opportunities"].items()
+            if outcome["status"] == "unsupported_auction"
+        ]
     return {
         "version": VERSION,
         "manifest_sha256": forward.digest(frozen),

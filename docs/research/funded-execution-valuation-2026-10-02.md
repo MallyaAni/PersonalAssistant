@@ -49,3 +49,20 @@ still be identified when missing holdings have identical quantities in both
 arms: cancel those common positions algebraically, and require ending marks for
 every quantity difference. This does not provide a percentage return, benchmark
 comparison or missing stock price. The accounting case is pinned separately.
+
+## Auction state correction before scoring
+
+The full clock-path acceptance reproduced a v1 replay defect: a qualified MOC
+decision was recorded as unsupported, but a later observation could invent a
+market fallback although the live order would already be queued. All five real
+cohort opportunities encounter that boundary. No real policy score was produced;
+the pending v1 scoring watcher was stopped, while recording completed normally.
+
+Evaluation version 2 makes unsupported auction outcomes terminal and withholds
+the affected ending wealth, return and paired gain. The native-engine adapter
+has the same terminal guard. Raw recording version 1 and its hashes remain
+unchanged; the reader accepts only the exact verified original recorder hash
+with every other implementation hash still matching, and reports recording and
+evaluation identities separately. This is a correctness fix, not a strategy or
+budget change. Actual paper-broker receipts are the next evidence boundary;
+auction prices must not be inferred from bars or ordinary quotes.

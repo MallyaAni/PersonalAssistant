@@ -186,6 +186,29 @@ def test_native_rebound_control_and_same_input_hash():
     assert result["bounded"]["input_sha256"] == result["incumbent"]["input_sha256"]
 
 
+# A queued unsupported auction must never become a later hypothetical market fill.
+@NATIVE
+def test_native_auction_is_terminal_and_portfolio_outcome_unknown():
+    observations = []
+    for now in (ny(15, 35), ny(15, 51)):
+        candle = snapshot(now)["quotes"]["AAA"]
+        candle["last"] = 100
+        observations.append(
+            {
+                "observed_at": now.isoformat(),
+                "candle": candle,
+                "execution_quote": candle["execution_quote"],
+            }
+        )
+    result = execution.run(packet(observations=observations), mode="incumbent")
+    assert result["opportunities"][0]["status"] == "unsupported_closing_auction"
+    assert result["opportunities"][0]["filled_qty"] == 0
+    assert result["execution_complete"] is False
+    assert result["ending_bid_marked_equity"] is None
+    assert result["ending_cash"] is None
+    assert result["known_cash"] == 1000
+
+
 # Preserve sequential cash and holdings constraints across shared book orders.
 @NATIVE
 def test_native_cash_shared_and_sell_cannot_short():

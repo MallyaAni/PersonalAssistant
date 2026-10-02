@@ -18,6 +18,9 @@ from backend.market import bounded_execution as bounded
 from backend.market import calendar, entry_timing, execution_quotes
 
 VERSION = "funded-execution-forward/1"
+EVALUATION_VERSION = "funded-execution-evaluation/2"
+# The verified v1 recorder has the same archive shape; its auction replay is corrected.
+V1_RECORDER_SHA256 = "34a1b4406232ac6ebaf1e2ef71e47174501a0e25b7d5ef3a75b97c059c6773db"
 PLAN = (
     Path(__file__).parents[2] / "docs/research/funded-execution-forward-2026-10-02.md"
 )
@@ -240,7 +243,12 @@ def append(folder, obs):
 def load(folder):
     folder = Path(folder)
     frozen = json.loads((folder / "manifest.json").read_text())
-    if frozen["version"] != VERSION or frozen["implementation"] != identity():
+    current = identity()
+    compatible = {**current, "execution_forward.py": V1_RECORDER_SHA256}
+    if frozen["version"] != VERSION or frozen["implementation"] not in (
+        current,
+        compatible,
+    ):
         raise ValueError("Experiment version or code identity changed")
     prior, observations = frozen, [frozen["first"]]
     for i, path in enumerate(sorted(folder.glob("[0-9]*.json")), 1):
@@ -428,6 +436,8 @@ def replay(frozen, observations, mode, bps):
             send, reason, quote = decision(opportunity, obs, mode, now, day)
             if not send:
                 result["blocked"][reason] = result["blocked"].get(reason, 0) + 1
+                if reason == "Closing auction unsupported":
+                    result.update(status="unsupported_auction", unfilled_qty=row["qty"])
                 continue
             fill, used = attempt(
                 book,
@@ -448,6 +458,9 @@ def replay(frozen, observations, mode, bps):
         "book": book,
         "opportunities": outcomes,
         "marks": marks,
+        "execution_complete": not any(
+            r["status"] == "unsupported_auction" for r in outcomes.values()
+        ),
     }
 
 
@@ -473,7 +486,9 @@ def compare(folder):
     for cost in COSTS:
         for mode in ("incumbent", "bounded"):
             result = replay(frozen, observations, mode, cost)
-            final = result["marks"][-1]["equity"]
+            final = (
+                result["marks"][-1]["equity"] if result["execution_complete"] else None
+            )
             result["total_gain"] = (
                 final - initial if initial is not None and final is not None else None
             )
@@ -483,7 +498,11 @@ def compare(folder):
                 else None
             )
             values = [m["equity"] for m in result["marks"]]
-            complete = initial is not None and all(v is not None for v in values)
+            complete = (
+                result["execution_complete"]
+                and initial is not None
+                and all(v is not None for v in values)
+            )
             peak, loss = initial or 0, 0.0
             for value in values if complete else []:
                 peak = max(peak, value)
@@ -509,6 +528,9 @@ def compare(folder):
             results.append(result)
     return {
         "version": VERSION,
+        "evaluation_version": EVALUATION_VERSION,
+        "recording_implementation": frozen["implementation"],
+        "evaluation_implementation": identity(),
         "manifest_sha256": digest(frozen),
         "observations": len(observations),
         "started_at": frozen["started_at"],

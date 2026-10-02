@@ -1,5 +1,6 @@
 """Funded forward acceptance; synthetic outcomes do not establish alpha."""
 
+import json
 from datetime import date, timedelta
 from decimal import Decimal
 from importlib.util import find_spec
@@ -315,9 +316,56 @@ def test_incumbent_moc_is_explicitly_unsupported(tmp_path):
     first["latch"]["symbols"]["AAA"].pop("buy_trigger")
     first["snapshot"]["quotes"]["AAA"]["last"] = 100
     cohort(tmp_path, first=first)
+    later = obs(ny(15, 51))
+    later["latch"]["symbols"]["AAA"].pop("buy_trigger")
+    later["snapshot"]["quotes"]["AAA"]["last"] = 100
+    forward.append(tmp_path, later)
     incumbent = forward.compare(tmp_path)["results"][0]
     assert "Closing auction unsupported" in incumbent["opportunities"]["a"]["blocked"]
     assert incumbent["opportunities"]["a"]["filled_qty"] == 0
+    assert incumbent["opportunities"]["a"]["status"] == "unsupported_auction"
+    assert incumbent["execution_complete"] is False
+    assert incumbent["total_gain"] is None
+    assert incumbent["total_return"] is None
+
+
+# A known prior recorder remains readable, while arbitrary changed code is refused.
+@pytest.mark.parametrize("approved", [True, False])
+def test_recording_code_compatibility_is_exact(tmp_path, approved):
+    frozen = cohort(tmp_path)
+    frozen["implementation"]["execution_forward.py"] = (
+        forward.V1_RECORDER_SHA256 if approved else "unrecognized-source"
+    )
+    (tmp_path / "manifest.json").write_bytes(forward.encoded(frozen))
+    if approved:
+        assert (
+            forward.load(tmp_path)[0]["implementation"]["execution_forward.py"]
+            == forward.V1_RECORDER_SHA256
+        )
+    else:
+        with pytest.raises(ValueError, match="identity"):
+            forward.load(tmp_path)
+
+
+# Unknown auction fills cannot become a paired profit from cancellation arithmetic.
+def test_auction_uncertainty_withholds_consolidated_pnl(tmp_path):
+    at = ny(15, 35)
+    first = obs(at)
+    first["latch"]["symbols"]["AAA"].pop("buy_trigger")
+    first["snapshot"]["quotes"]["AAA"]["last"] = 100
+    frozen = cohort(tmp_path, first=first)
+    proxy = forward.compare(tmp_path)
+    rows = {s: [label_row(at)] for s in ("AAA", "SPY", "QQQ")}
+    start = label_packet(tmp_path / "start", at, rows)
+    end = label_packet(tmp_path / "end", at, rows)
+    result = labels.supplement(frozen, proxy, start, end)
+    for final in result["results"]:
+        assert final["gain_vs_incumbent"] is None
+        if final["mode"] == "incumbent":
+            assert final["unsupported_auction_orders"] == ["a"]
+            assert final["ending_value"] is None
+            assert final["ending_cash"] is None
+            assert final["fees"] is None
 
 
 # Calendar boundaries reject weekends and the already closed early-close session.
@@ -642,6 +690,70 @@ def test_differing_unpriced_position_keeps_pair_gain_missing():
     )
     assert delta is None
     assert missing == ["AAA"]
+
+
+# The receipt workflow exposes reads only and persists exact matched broker outcomes.
+def test_paper_receipts_are_get_only_and_match_frozen_ids(tmp_path):
+    frozen = cohort(tmp_path)
+    calls = []
+
+    # Return a paper fill while asserting that no body or write method can be sent.
+    def transport(method, url, headers, body):
+        calls.append(method)
+        assert method == "GET"
+        assert body is None
+        assert parse_qs(urlsplit(url).query)["client_order_id"] == ["a"]
+        return 200, forward.encoded(
+            {
+                "client_order_id": "a",
+                "symbol": "AAA",
+                "side": "buy",
+                "status": "filled",
+                "filled_qty": "10",
+                "filled_avg_price": "99",
+            }
+        )
+
+    client = SimpleNamespace(
+        base_url=labels.alpaca_trading.PAPER_URL,
+        transport=transport,
+        headers={"test": "read-only"},
+    )
+    output = tmp_path / "receipts.json"
+    result = labels.capture_receipts(
+        frozen, output, client=client, clock=lambda: ny(16, 1)
+    )
+    assert calls == ["GET"]
+    assert result["complete"] is True
+    assert result["manifest_sha256"] == forward.digest(frozen)
+    assert output.read_bytes() == forward.encoded(result)
+    assert "headers" not in result["receipts"][0]
+    with pytest.raises(FileExistsError):
+        labels.capture_receipts(frozen, output, client=client)
+
+
+# A refused or mismatched receipt cannot be counted as a fill for another order.
+@pytest.mark.parametrize("status", [401, 404, 200])
+def test_receipt_failure_and_missing_outcomes_are_explicit(tmp_path, status):
+    frozen = cohort(tmp_path)
+    client = SimpleNamespace(
+        base_url=labels.alpaca_trading.PAPER_URL,
+        headers={},
+        transport=lambda *args: (status, b'{"client_order_id":"wrong"}'),
+    )
+    output = tmp_path / "receipts.json"
+    if status == 404:
+        result = labels.capture_receipts(
+            frozen, output, client=client, clock=lambda: ny(16, 1)
+        )
+        assert result["receipts"][0]["http_status"] == 404
+    else:
+        with pytest.raises(ValueError, match="HTTP 401|match"):
+            labels.capture_receipts(
+                frozen, output, client=client, clock=lambda: ny(16, 1)
+            )
+        if status == 401:
+            assert not json.loads(output.read_text())["complete"]
 
 
 # Exercise the CLI's full frozen comparison and label valuation without changing inputs.
