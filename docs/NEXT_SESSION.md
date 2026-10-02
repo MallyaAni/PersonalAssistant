@@ -1,5 +1,32 @@
 # Next session
 
+## 2026-10-02 — automatic paper buy ranking; release pending
+
+The previous default ranked open orders mostly by notional, putting larger
+sells or lower-grade plans ahead of higher-grade buys. The board now puts
+exceptions first, then sized unsubmitted A/A+ buys that are due, then waiting
+buy plans. Within each buy group: grade, remaining planned notional, ticker.
+Submitted orders, completed receipts and holdings remain separate. A past fill
+does not inflate a remaining buy plan's ranking. **Auto rank** restores the
+default after column sorting; incoming paper status refreshes rerank automatically.
+This ranks the existing policy's paper opportunities, not expected returns,
+personal account permission or the quality of an intraday news-driven dip.
+
+VERIFIED: the original browser acceptance failed with a due sell ahead of the
+buys; the targeted correction passes. Fifteen desk/poll browser checks pass,
+and the expanded ranking case additionally passes terminal-state, submitted-size,
+zero-share, previous-fill and exception transitions. Typecheck and production
+build pass. Diagram impact: NONE — internal presentation ordering only; no new
+provider, store, execution rule or component boundary. Release verification pending.
+
+Actual authenticated browser inspection: Oct 1 close STX A (F+/T+, other
+votes neutral), WDC C (all votes neutral), WDC target zero/no orders/position;
+STX paper bought one share Oct 2 at 11:00 AM for $801.70. Neither grade incorporates
+today's Toshiba HDD-capacity news: sentiment scores earnings-release tone, and
+the paper dip trigger does not classify news-driven declines. Do not interpret
+last-close grades or a filled Buy as a fresh manual entry recommendation.
+No strategy, model, account or historical-data changes in this task.
+
 ## 2026-10-02 — LIVE: personal entry permission `6f8bb836`; acceptance complete
 
 Code checkpoint `699e6c16`, released with precision/artifact fixes at `6f8bb836`,

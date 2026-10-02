@@ -259,8 +259,7 @@ test('ticker panels disclose chart gaps and retain the board decision', async ({
   expect(errors).toEqual([])
 })
 
-// The default ranking: orders still to happen first (biggest first), then orders done today,
-// then holdings by weight, then the other graded names by grade; the Size heading re-sorts.
+// Automatic ranking prioritizes eligible buy plans by grade before size; manual sorting remains available.
 test('default ranking follows order stage, size, position and grade', async ({page}) => {
   const grades = {
     NVDA: {grade: 'B', score: .99}, AAPL: {grade: 'A+', score: .9},
@@ -282,16 +281,66 @@ test('default ranking follows order stage, size, position and grade', async ({pa
   const order_ = () => board.locator('tbody tr').filter({has: page.getByLabel(/displayed grade$/)}).locator('td:nth-child(2) button').allTextContents()
   await expect(board.getByLabel('NVDA displayed grade', {exact: true})).toHaveText('B')
   // The board opens on the portfolio: the orders and the holdings.
-  await expect.poll(order_).toEqual(['NVDA', 'AAPL', 'MSFT', 'AMZN'])
+  await expect.poll(order_).toEqual(['AAPL', 'NVDA', 'MSFT', 'AMZN'])
   await page.getByRole('group', {name: 'Board view'}).getByRole('button', {name: /All names/}).click()
-  await expect.poll(order_).toEqual(['NVDA', 'AAPL', 'MSFT', 'AMZN', 'AMD'])
+  await expect.poll(order_).toEqual(['AAPL', 'NVDA', 'MSFT', 'AMZN', 'AMD'])
   await board.getByRole('button', {name: 'Size', exact: true}).click()
   await expect.poll(order_).toEqual(['MSFT', 'NVDA', 'AAPL', 'AMZN', 'AMD'])
   await board.getByRole('button', {name: 'Size', exact: true}).click()
   await expect.poll(order_).toEqual(['AMZN', 'AMD', 'AAPL', 'NVDA', 'MSFT'])
   await board.getByRole('button', {name: 'Size', exact: true}).click()
-  await expect.poll(order_).toEqual(['NVDA', 'AAPL', 'MSFT', 'AMZN', 'AMD'])
+  await expect.poll(order_).toEqual(['AAPL', 'NVDA', 'MSFT', 'AMZN', 'AMD'])
   await expect(board.getByLabel('NVDA size', {exact: true})).toContainText('$4,000 · 4.0%')
+  expect(errors).toEqual([])
+})
+
+// Refreshing paper status promotes due buys and removes filled, terminal or unfunded plans from the buy priority.
+test('automatic buy ranking updates with paper readiness and completion', async ({page}) => {
+  let account = paper([
+    order('AAPL', 'buy', 'BUY', 10, 100, 'Entry'),
+    order('MSFT', 'buy', 'BUY', 20, 100, 'Entry'),
+    order('NVDA', 'buy', 'BUY', 30, 100, 'Entry'),
+    order('AMD', 'buy', 'BUY', 40, 100, 'Entry', {state: 'due', status: 'Level hit · order due'}),
+    order('AMZN', 'buy', 'BUY', 90, 100, 'Entry', {state: 'filled', status: 'Bought 90 · 11:00 AM'}),
+    order('META', 'sell', 'SELL', 100, 100, 'Exit', {state: 'due', status: 'Level hit · order due'}),
+    order('ZERO', 'buy', 'BUY', 0, 100, 'No funded shares', {state: 'due', status: 'Level hit · order due'}),
+  ])
+  const {errors} = await setup(page, {account, beforeNavigate: async () => {
+    await page.route('**/desk/paper', route => route.fulfill({json: account}))
+    await page.route('**/desk', route => route.fulfill({json: {latest: {
+      session, written, regime: {exposure: 1, flags: []},
+      grades: Object.fromEntries(['AAPL', 'MSFT', 'NVDA', 'AMD', 'AMZN', 'META', 'ZERO'].map(ticker => [ticker, {grade: ticker === 'AMD' ? 'A' : 'A+'}])),
+      targets: {policy: POLICY, weights: {}}, book: [], actions: [], briefs: {},
+    }, sessions: [session]}}))
+  }})
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  // Read the visible stock order independently of expanded details.
+  const names = () => board.locator('tbody tr').filter({has: page.getByLabel(/displayed grade$/)}).locator('td:nth-child(2) button').allTextContents()
+  await expect.poll(names).toEqual(['AMD', 'NVDA', 'MSFT', 'AAPL', 'META', 'ZERO', 'AMZN'])
+  await expect(page.getByRole('button', {name: 'Auto rank', exact: true})).toHaveAttribute('aria-pressed', 'true')
+  account = structuredClone(account)
+  account.plan.orders.find(o => o.symbol === 'AMD')!.state = 'filled'
+  account.plan.orders.find(o => o.symbol === 'MSFT')!.state = 'due'
+  await page.getByRole('button', {name: 'Refresh', exact: true}).click()
+  await expect.poll(names).toEqual(['MSFT', 'NVDA', 'AAPL', 'META', 'ZERO', 'AMZN', 'AMD'])
+  await board.getByRole('button', {name: 'Size', exact: true}).click()
+  await expect.poll(names).toEqual(['META', 'AMZN', 'AMD', 'NVDA', 'MSFT', 'AAPL', 'ZERO'])
+  await page.getByRole('button', {name: 'Auto rank', exact: true}).click()
+  await expect.poll(names).toEqual(['MSFT', 'NVDA', 'AAPL', 'META', 'ZERO', 'AMZN', 'AMD'])
+  // A terminal flag outranks a stale due state; submitted shares are already working orders.
+  Object.assign(account.plan.orders.find(o => o.symbol === 'MSFT')!, {terminal: true})
+  Object.assign(account.plan.orders.find(o => o.symbol === 'NVDA')!, {submitted_qty: 30, sent_at: at})
+  await page.getByRole('button', {name: 'Refresh', exact: true}).click()
+  await expect.poll(names).toEqual(['AAPL', 'META', 'NVDA', 'ZERO', 'AMZN', 'AMD', 'MSFT'])
+  // A large previous fill cannot inflate the size of the remaining buy plan.
+  account.plan.orders.push({...account.plan.orders.find(o => o.symbol === 'AAPL')!,
+    client_order_id: 'AAPL-previous-fill', qty: 100, notional: 10000, state: 'filled'})
+  Object.assign(account.plan.orders.find(o => o.symbol === 'NVDA')!, {submitted_qty: null, sent_at: null})
+  await page.getByRole('button', {name: 'Refresh', exact: true}).click()
+  await expect.poll(names).toEqual(['NVDA', 'AAPL', 'META', 'ZERO', 'AMZN', 'AMD', 'MSFT'])
+  Object.assign(account.plan.orders.find(o => o.symbol === 'ZERO')!, {state: 'problem', status: 'Not sent'})
+  await page.getByRole('button', {name: 'Refresh', exact: true}).click()
+  await expect.poll(names).toEqual(['ZERO', 'NVDA', 'AAPL', 'META', 'AMZN', 'AMD', 'MSFT'])
   expect(errors).toEqual([])
 })
 

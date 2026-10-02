@@ -303,23 +303,37 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
   })
 }
 
-// Where a row sits in the default ranking: an order that needs attention,
-// then orders still to happen, then orders done today, then holdings, then
-// names the account neither holds nor trades.
-const band = (row: BoardRow): number =>
-  !row.orders.length ? row.word === 'HOLD' ? 3 : 4
-  : ['problem', 'missed', 'rejected'].includes(row.state) ? 0
-  : ['filled', 'held', 'cancelled'].includes(row.state) ? 2
-  : 1
+// Find sized, unsubmitted buy plans in the graded book; completed fills are never new entries.
+const pendingBuys = (row: BoardRow): DeskPaperOrder[] =>
+  row.word !== 'BUY' || !['A', 'A+'].includes(row.grade) ? []
+    : row.orders.filter(order => !isDone(order) && canScale(order)
+      && Number.isFinite(order.qty) && order.qty > 0
+      && typeof order.notional === 'number' && Number.isFinite(order.notional) && order.notional > 0)
 
-// The default ranking: by band, then the biggest order or holding first, then
-// the grade and the ticker.
-const ranked = (rows: BoardRow[]) => [...rows].sort((a, b) =>
-  band(a) - band(b)
-  || (b.notional ?? 0) - (a.notional ?? 0)
-  || (b.heldWeight ?? 0) - (a.heldWeight ?? 0)
-  || (GRADE_RANK[b.grade] ?? -1) - (GRADE_RANK[a.grade] ?? -1)
-  || a.ticker.localeCompare(b.ticker))
+// Put exceptions first, then due and waiting buy plans, other working orders, receipts and holdings.
+const band = (row: BoardRow): number => {
+  if (!row.orders.length) return row.word === 'HOLD' ? 5 : 6
+  if (['problem', 'missed', 'rejected'].includes(row.state)) return 0
+  const buys = pendingBuys(row)
+  if (buys.some(order => order.state === 'due')) return 1
+  if (buys.length) return 2
+  return row.orders.every(order => isDone(order) || order.state === 'held') ? 4 : 3
+}
+
+// Rank buy plans by grade and their remaining planned size; keep receipts and holdings separate.
+const ranked = (rows: BoardRow[]) => [...rows].sort((a, b) => {
+  const stage = band(a), other = band(b)
+  if (stage !== other) return stage - other
+  const grade = (GRADE_RANK[b.grade] ?? -1) - (GRADE_RANK[a.grade] ?? -1)
+  if (stage === 1 || stage === 2) {
+    const size = pendingBuys(b).reduce((sum, order) => sum + order.notional!, 0)
+      - pendingBuys(a).reduce((sum, order) => sum + order.notional!, 0)
+    return grade || size || a.ticker.localeCompare(b.ticker)
+  }
+  return (b.notional ?? 0) - (a.notional ?? 0)
+    || (b.heldWeight ?? 0) - (a.heldWeight ?? 0)
+    || grade || a.ticker.localeCompare(b.ticker)
+})
 
 // A proportional reference size only; it does not know personal holdings or cash.
 const myShares = (weight: number | null, myAccount: number | null, unit: number | null) =>
@@ -469,6 +483,9 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
               {label} <span className="tabular-nums">{counts[value]}</span>
             </button>)}
         </div>
+        <button type="button" aria-pressed={sort === null} onClick={() => setSort(null)}
+          title="Due paper buys, then waiting buy plans: grade, then planned size. Exceptions remain first. Completed orders are history, not new entries. This is not a return forecast."
+          className={`rounded-md px-2 py-0.5 text-xs ${sort === null ? 'bg-[#e8f2ff] text-[#0071e3]' : 'text-[#6e6e73] hover:text-[#0071e3]'}`}>Auto rank</button>
         <input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search a ticker" aria-label="Search the stock list"
           className="w-full max-w-44 rounded-md border border-black/[0.08] bg-white px-2 py-0.5 text-sm text-[#1d1d1f]" />
       </div>
