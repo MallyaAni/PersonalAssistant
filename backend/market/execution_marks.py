@@ -265,14 +265,16 @@ def supplement(frozen, proxy, first_packet, last_packet):
     for result in results:
         control = next(
             r
-            for r in results
+            for r in proxy["results"]
             if r["mode"] == "incumbent" and r["cost_bps"] == result["cost_bps"]
         )
-        result["gain_vs_incumbent"] = (
-            result["ending_value"] - control["ending_value"]
-            if result["ending_value"] is not None
-            and control["ending_value"] is not None
-            else None
+        candidate = next(
+            r
+            for r in proxy["results"]
+            if r["mode"] == result["mode"] and r["cost_bps"] == result["cost_bps"]
+        )
+        result["gain_vs_incumbent"], result["missing_pair_marks"] = difference(
+            candidate["book"], control["book"], last
         )
     return {
         "version": VERSION,
@@ -292,3 +294,21 @@ def supplement(frozen, proxy, first_packet, last_packet):
             "original conditional IEX attempts unchanged"
         ),
     }
+
+
+# Cancel identical holdings when measuring paired gain without inventing total NAV.
+def difference(candidate, control, quotes):
+    quantities = {
+        symbol: candidate["holdings"].get(symbol, 0)
+        - control["holdings"].get(symbol, 0)
+        for symbol in set(candidate["holdings"]) | set(control["holdings"])
+    }
+    missing = sorted(s for s, qty in quantities.items() if qty and s not in quotes)
+    delta = (
+        candidate["cash"]
+        - control["cash"]
+        + sum(qty * quotes[s]["bid"] for s, qty in quantities.items() if qty)
+        if not missing
+        else None
+    )
+    return delta, missing

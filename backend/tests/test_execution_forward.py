@@ -612,6 +612,38 @@ def test_earlier_tied_quotes_do_not_override_latest_endpoint(tmp_path):
     assert missing == {}
 
 
+# Equal unpriced holdings cancel in paired gain while neither total NAV is fabricated.
+def test_common_missing_holdings_do_not_hide_identifiable_paired_gain(tmp_path):
+    frozen = cohort(
+        tmp_path, cash=1200, holdings={"UNPRICED": 3}, first=obs(ask=110, bid=109.9)
+    )
+    proxy = forward.compare(tmp_path)
+    at = ny(10, 16)
+    rows = {s: [label_row(at, bid=115, ask=115.1)] for s in ("AAA", "SPY", "QQQ")}
+    rows["UNPRICED"] = []
+    first = label_packet(tmp_path / "first", at, rows)
+    last = label_packet(tmp_path / "last", at, rows)
+    result = labels.supplement(frozen, proxy, first, last)
+    assert result["starting_value"] is None
+    for value in result["results"]:
+        assert value["ending_value"] is None
+        assert value["total_return"] is None
+        assert value["benchmarks"]["SPY"]["excess_gain"] is None
+        assert value["missing_pair_marks"] == []
+        if value["mode"] == "bounded":
+            expected = 1100 * (1 + value["cost_bps"] / 10000) - 1150
+            assert value["gain_vs_incumbent"] == pytest.approx(expected)
+
+
+# A missing mark for a differing position still prevents a paired gain claim.
+def test_differing_unpriced_position_keeps_pair_gain_missing():
+    delta, missing = labels.difference(
+        {"cash": 100, "holdings": {"AAA": 2}}, {"cash": 90, "holdings": {"AAA": 1}}, {}
+    )
+    assert delta is None
+    assert missing == ["AAA"]
+
+
 # Exercise the CLI's full frozen comparison and label valuation without changing inputs.
 def test_consolidated_workflow_retains_fills_and_missing_marks(tmp_path):
     source = tmp_path / "cohort"

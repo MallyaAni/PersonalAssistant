@@ -41,3 +41,11 @@ at the latest timestamp make that symbol's mark explicitly ambiguous/unavailable
 No row-order tie-break or favorable-price selection. The start response is reused
 without another request. This corrects source interpretation, not a budget or
 strategy threshold. The frozen execution implementation remains unchanged.
+
+The start window leaves NTAP unavailable under the fixed spread budget; it is a
+starting holding. Total NAV/return and same-capital benchmark gains therefore
+remain unavailable if that starting mark is missing. Paired absolute gain can
+still be identified when missing holdings have identical quantities in both
+arms: cancel those common positions algebraically, and require ending marks for
+every quantity difference. This does not provide a percentage return, benchmark
+comparison or missing stock price. The accounting case is pinned separately.
