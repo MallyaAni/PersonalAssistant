@@ -1,0 +1,19 @@
+clusters on 2026-09-30 (graded-equal-weight/5): 12 target names
+  rho* 0.6:
+    AAOI INTC LITE MU SNDK STX (50.0%, mean residual corr +0.68)
+    ALAB (8.3%)
+    HPE NTAP (16.7%, mean residual corr +0.60)
+    MDB (8.3%)
+    SMCI (8.3%)
+    SWKS (8.3%)
+  rho* 0.5:
+    AAOI ALAB INTC LITE MU SNDK STX (58.3%, mean residual corr +0.65)
+    HPE NTAP (16.7%, mean residual corr +0.60)
+    MDB (8.3%)
+    SMCI (8.3%)
+    SWKS (8.3%)
+  cc35_r60: binds; AAOI 8.3%->5.8%, ALAB 8.3%->10.8%, HPE 8.3%->10.8%, INTC 8.3%->5.8%, LITE 8.3%->5.8%, MDB 8.3%->10.8%, MU 8.3%->5.8%, NTAP 8.3%->10.8%, SMCI 8.3%->10.8%, SNDK 8.3%->5.8%, STX 8.3%->5.8%, SWKS 8.3%->10.8%; cash 0.0%
+  cc50_r60: does not bind
+  cc35_r50: binds; AAOI 8.3%->5.0%, ALAB 8.3%->5.0%, HPE 8.3%->13.0%, INTC 8.3%->5.0%, LITE 8.3%->5.0%, MDB 8.3%->13.0%, MU 8.3%->5.0%, NTAP 8.3%->13.0%, SMCI 8.3%->13.0%, SNDK 8.3%->5.0%, STX 8.3%->5.0%, SWKS 8.3%->13.0%; cash 0.0%
+
+wrote docs/research/scorecards/cluster-cap/clusters_2026-09-30.json

@@ -1,0 +1,400 @@
+{
+  "plan": "docs/research/cluster-cap-plan-2026-10-02.md",
+  "study": "cluster_cap",
+  "trials": {
+    "registered": 3,
+    "cumulative": 488
+  },
+  "trial_variance": 0.00016056854939349693,
+  "cost_bps": 25.0,
+  "control": {
+    "arm": "ew_graded_cap25",
+    "asof": "2026-10-01",
+    "offsets": 20,
+    "membership": "/home/animallya96/scratch/wt-cc/backend/market/data/membership_history.csv"
+  },
+  "indexes": {
+    "SPY": {
+      "2016-2023": {
+        "cagr": 0.13165460458353695,
+        "drawdown": -0.33717283511569346,
+        "sharpe": 0.7647692408995834
+      },
+      "2024-2026": {
+        "cagr": 0.20332418623039428,
+        "drawdown": -0.18755229084676656,
+        "sharpe": 1.2683140669669042
+      }
+    },
+    "QQQ": {
+      "2016-2023": {
+        "cagr": 0.18558978188016417,
+        "drawdown": -0.3511871757744286,
+        "sharpe": 0.8643982769985856
+      },
+      "2024-2026": {
+        "cagr": 0.2489958683785618,
+        "drawdown": -0.2276831645530048,
+        "sharpe": 1.17068678215126
+      }
+    }
+  },
+  "arms": {
+    "cc35_r60": {
+      "label": "RECORD",
+      "windows": {
+        "2016-2023": {
+          "drawdown": -0.42371499309870375,
+          "drawdown_control": -0.44863342802423994,
+          "drawdown_gain": 0.024918434925536193,
+          "cagr": 0.2814122230219146,
+          "cagr_control": 0.2826280409134655,
+          "cagr_difference": -0.0012158178915508966,
+          "sharpe": 1.0033220206727838,
+          "sharpe_control": 0.9868364040861016,
+          "sharpe_difference": 0.016485616586682128,
+          "offsets": 20,
+          "offsets_above": 13,
+          "offsets_shallower": 19
+        },
+        "2024-2026": {
+          "drawdown": -0.26491920831730753,
+          "drawdown_control": -0.26394509217971684,
+          "drawdown_gain": -0.0009741161375906859,
+          "cagr": 0.45139220138046576,
+          "cagr_control": 0.45890744366104974,
+          "cagr_difference": -0.007515242280583978,
+          "sharpe": 1.2475638909105726,
+          "sharpe_control": 1.265444540297291,
+          "sharpe_difference": -0.017880649386718295,
+          "offsets": 20,
+          "offsets_above": 8,
+          "offsets_shallower": 9
+        }
+      },
+      "paired": {
+        "2016-2023": {
+          "window": "2016-2023",
+          "sessions": 2012,
+          "mean_daily_bp": -0.00840604072856533,
+          "hac_t": -0.026661306337027686,
+          "sharpe": -0.0005557177884708896,
+          "skew": -0.18044516130222235,
+          "kurtosis": 62.4826150873349,
+          "length": 2012
+        },
+        "2024-2026": {
+          "window": "2024-2026",
+          "sessions": 690,
+          "mean_daily_bp": -0.35941196062779257,
+          "hac_t": -0.9817991600503474,
+          "sharpe": -0.0295612456893725,
+          "skew": 0.5144699776328102,
+          "kurtosis": 30.09260363344722,
+          "length": 690
+        }
+      },
+      "dsr": 0.039592328940073196,
+      "trials": 488,
+      "trial_variance": 0.00016056854939349693,
+      "cost_bps": 25.0,
+      "cluster_cap": {
+        "cap": 0.35,
+        "rho": 0.6,
+        "tag": "cc35_r60",
+        "registered": true,
+        "name_cap": 0.25,
+        "corr_sessions": 60,
+        "linkage": "average",
+        "residual": "to the benchmark with an intercept (peer_groups.residuals)",
+        "unplaced": "cash"
+      },
+      "binding": {
+        "2016-2023": {
+          "sessions_with_targets": 2012,
+          "sessions_binding": 325,
+          "share_binding": 0.16153081510934394,
+          "mean_clusters_capped_when_binding": 1.0492307692307692,
+          "mean_weight_moved_when_binding": 0.13150183150183153,
+          "mean_cash_when_binding": 0.060615384615384627,
+          "max_cash": 0.4000000000000001,
+          "mean_cash_all_sessions": 0.009791252485089465,
+          "median_largest_cluster_before": 0.25,
+          "median_largest_cluster_after": 0.25,
+          "max_largest_cluster_before": 0.8,
+          "median_names_in_clusters": 0.0
+        },
+        "2024-2026": {
+          "sessions_with_targets": 686,
+          "sessions_binding": 94,
+          "share_binding": 0.13702623906705538,
+          "mean_clusters_capped_when_binding": 1.0,
+          "mean_weight_moved_when_binding": 0.10095649031819252,
+          "mean_cash_when_binding": 0.059574468085106386,
+          "max_cash": 0.4,
+          "mean_cash_all_sessions": 0.00816326530612245,
+          "median_largest_cluster_before": 0.25,
+          "median_largest_cluster_after": 0.25,
+          "max_largest_cluster_before": 0.75,
+          "median_names_in_clusters": 0.0
+        }
+      },
+      "candidate_arm": "ew_graded_cap25 + cc35_r60",
+      "control_arm": "ew_graded_cap25",
+      "criteria": {
+        "drawdown_points": 0.03,
+        "immaterial_points": 0.01,
+        "cagr_give_up": 0.01,
+        "offsets_shallower": 15,
+        "hac_lag": 20,
+        "dsr_gate_reported": 0.95
+      },
+      "lines": [
+        "C = 35% at rho* = 0.6 (cc35_r60): paired 2016-2023 -0.0 bp/session (t -0.03) over 2012 sessions; 2024-2026 -0.4 bp/session (t -0.98); deflated Sharpe +0.04 at 488",
+        "  2016-2023: median worst drawdown -42.4% against -44.9% (+2.5 points), shallower at 19 of 20 offsets; CAGR +28.1% against +28.3% (-0.1 points), above at 13 of 20; Sharpe 1.00 against 0.99; the cap binds on 16% of sessions",
+        "  2024-2026: median worst drawdown -26.5% against -26.4% (-0.1 points), shallower at 9 of 20 offsets; CAGR +45.1% against +45.9% (-0.8 points), above at 8 of 20; Sharpe 1.25 against 1.27; the cap binds on 14% of sessions",
+        "  RECORD"
+      ]
+    },
+    "cc50_r60": {
+      "label": "RECORD",
+      "windows": {
+        "2016-2023": {
+          "drawdown": -0.4352225184359103,
+          "drawdown_control": -0.44863342802423994,
+          "drawdown_gain": 0.013410909588329634,
+          "cagr": 0.2860980343999967,
+          "cagr_control": 0.2826280409134655,
+          "cagr_difference": 0.0034699934865312088,
+          "sharpe": 0.9977597030899028,
+          "sharpe_control": 0.9868364040861016,
+          "sharpe_difference": 0.010923299003801179,
+          "offsets": 20,
+          "offsets_above": 19,
+          "offsets_shallower": 16
+        },
+        "2024-2026": {
+          "drawdown": -0.2639450921797188,
+          "drawdown_control": -0.26394509217971684,
+          "drawdown_gain": -1.942890293094024e-15,
+          "cagr": 0.4562339828519313,
+          "cagr_control": 0.45890744366104974,
+          "cagr_difference": -0.0026734608091184553,
+          "sharpe": 1.257425579302741,
+          "sharpe_control": 1.265444540297291,
+          "sharpe_difference": -0.008018960994550017,
+          "offsets": 20,
+          "offsets_above": 8,
+          "offsets_shallower": 7
+        }
+      },
+      "paired": {
+        "2016-2023": {
+          "window": "2016-2023",
+          "sessions": 2012,
+          "mean_daily_bp": 0.08195407731387912,
+          "hac_t": 0.5473808342948774,
+          "sharpe": 0.011006489301595167,
+          "skew": -0.055428087935910496,
+          "kurtosis": 128.00658916221144,
+          "length": 2012
+        },
+        "2024-2026": {
+          "window": "2024-2026",
+          "sessions": 690,
+          "mean_daily_bp": -4.8270566288050286e-14,
+          "hac_t": -1.5699997855758074,
+          "sharpe": -0.028055803559745095,
+          "skew": 0.2312629514910104,
+          "kurtosis": 3.32603439572324,
+          "length": 690
+        }
+      },
+      "dsr": 0.10858128872739886,
+      "trials": 488,
+      "trial_variance": 0.00016056854939349693,
+      "cost_bps": 25.0,
+      "cluster_cap": {
+        "cap": 0.5,
+        "rho": 0.6,
+        "tag": "cc50_r60",
+        "registered": true,
+        "name_cap": 0.25,
+        "corr_sessions": 60,
+        "linkage": "average",
+        "residual": "to the benchmark with an intercept (peer_groups.residuals)",
+        "unplaced": "cash"
+      },
+      "binding": {
+        "2016-2023": {
+          "sessions_with_targets": 2012,
+          "sessions_binding": 46,
+          "share_binding": 0.02286282306163022,
+          "mean_clusters_capped_when_binding": 1.0,
+          "mean_weight_moved_when_binding": 0.15539164941338857,
+          "mean_cash_when_binding": 0.09239130434782612,
+          "max_cash": 0.25000000000000006,
+          "mean_cash_all_sessions": 0.0021123260437375755,
+          "median_largest_cluster_before": 0.25,
+          "median_largest_cluster_after": 0.25,
+          "max_largest_cluster_before": 0.8,
+          "median_names_in_clusters": 0.0
+        },
+        "2024-2026": {
+          "sessions_with_targets": 686,
+          "sessions_binding": 5,
+          "share_binding": 0.007288629737609329,
+          "mean_clusters_capped_when_binding": 1.0,
+          "mean_weight_moved_when_binding": 0.1230769230769232,
+          "mean_cash_when_binding": 0.1,
+          "max_cash": 0.25,
+          "mean_cash_all_sessions": 0.0007288629737609329,
+          "median_largest_cluster_before": 0.25,
+          "median_largest_cluster_after": 0.25,
+          "max_largest_cluster_before": 0.75,
+          "median_names_in_clusters": 0.0
+        }
+      },
+      "candidate_arm": "ew_graded_cap25 + cc50_r60",
+      "control_arm": "ew_graded_cap25",
+      "criteria": {
+        "drawdown_points": 0.03,
+        "immaterial_points": 0.01,
+        "cagr_give_up": 0.01,
+        "offsets_shallower": 15,
+        "hac_lag": 20,
+        "dsr_gate_reported": 0.95
+      },
+      "lines": [
+        "C = 50% at rho* = 0.6 (cc50_r60): paired 2016-2023 +0.1 bp/session (t +0.55) over 2012 sessions; 2024-2026 -0.0 bp/session (t -1.57); deflated Sharpe +0.11 at 488",
+        "  2016-2023: median worst drawdown -43.5% against -44.9% (+1.3 points), shallower at 16 of 20 offsets; CAGR +28.6% against +28.3% (+0.3 points), above at 19 of 20; Sharpe 1.00 against 0.99; the cap binds on 2% of sessions",
+        "  2024-2026: median worst drawdown -26.4% against -26.4% (-0.0 points), shallower at 7 of 20 offsets; CAGR +45.6% against +45.9% (-0.3 points), above at 8 of 20; Sharpe 1.26 against 1.27; the cap binds on 1% of sessions",
+        "  RECORD"
+      ]
+    },
+    "cc35_r50": {
+      "label": "RECORD",
+      "windows": {
+        "2016-2023": {
+          "drawdown": -0.41768520725758046,
+          "drawdown_control": -0.44863342802423994,
+          "drawdown_gain": 0.030948220766659484,
+          "cagr": 0.27142049981802185,
+          "cagr_control": 0.2826280409134655,
+          "cagr_difference": -0.01120754109544364,
+          "sharpe": 0.9812323788544883,
+          "sharpe_control": 0.9868364040861016,
+          "sharpe_difference": -0.005604025231613297,
+          "offsets": 20,
+          "offsets_above": 2,
+          "offsets_shallower": 20
+        },
+        "2024-2026": {
+          "drawdown": -0.24208055726859234,
+          "drawdown_control": -0.26394509217971684,
+          "drawdown_gain": 0.0218645349111245,
+          "cagr": 0.44384943618542116,
+          "cagr_control": 0.45890744366104974,
+          "cagr_difference": -0.015058007475628576,
+          "sharpe": 1.2602533278019799,
+          "sharpe_control": 1.265444540297291,
+          "sharpe_difference": -0.0051912124953110705,
+          "offsets": 20,
+          "offsets_above": 6,
+          "offsets_shallower": 18
+        }
+      },
+      "paired": {
+        "2016-2023": {
+          "window": "2016-2023",
+          "sessions": 2012,
+          "mean_daily_bp": -0.3603621989489631,
+          "hac_t": -0.6067258957270474,
+          "sharpe": -0.01430515887448465,
+          "skew": 0.009039584850904928,
+          "kurtosis": 26.644402584738486,
+          "length": 2012
+        },
+        "2024-2026": {
+          "window": "2024-2026",
+          "sessions": 690,
+          "mean_daily_bp": -0.9860289544289838,
+          "hac_t": -1.565242145406196,
+          "sharpe": -0.05234803375579349,
+          "skew": -0.877051833485731,
+          "kurtosis": 14.712573996489494,
+          "length": 690
+        }
+      },
+      "dsr": 0.008888568337969416,
+      "trials": 488,
+      "trial_variance": 0.00016056854939349693,
+      "cost_bps": 25.0,
+      "cluster_cap": {
+        "cap": 0.35,
+        "rho": 0.5,
+        "tag": "cc35_r50",
+        "registered": true,
+        "name_cap": 0.25,
+        "corr_sessions": 60,
+        "linkage": "average",
+        "residual": "to the benchmark with an intercept (peer_groups.residuals)",
+        "unplaced": "cash"
+      },
+      "binding": {
+        "2016-2023": {
+          "sessions_with_targets": 2012,
+          "sessions_binding": 665,
+          "share_binding": 0.3305168986083499,
+          "mean_clusters_capped_when_binding": 1.1097744360902255,
+          "mean_weight_moved_when_binding": 0.1590954200352697,
+          "mean_cash_when_binding": 0.07090225563909776,
+          "max_cash": 0.65,
+          "mean_cash_all_sessions": 0.023434393638170976,
+          "median_largest_cluster_before": 0.2857142857142857,
+          "median_largest_cluster_after": 0.2857142857142857,
+          "max_largest_cluster_before": 1.0,
+          "median_names_in_clusters": 2.0
+        },
+        "2024-2026": {
+          "sessions_with_targets": 686,
+          "sessions_binding": 235,
+          "share_binding": 0.3425655976676385,
+          "mean_clusters_capped_when_binding": 1.0170212765957447,
+          "mean_weight_moved_when_binding": 0.12737099779652974,
+          "mean_cash_when_binding": 0.07851063829787237,
+          "max_cash": 0.4,
+          "mean_cash_all_sessions": 0.02689504373177843,
+          "median_largest_cluster_before": 0.25,
+          "median_largest_cluster_after": 0.25,
+          "max_largest_cluster_before": 0.75,
+          "median_names_in_clusters": 2.0
+        }
+      },
+      "candidate_arm": "ew_graded_cap25 + cc35_r50",
+      "control_arm": "ew_graded_cap25",
+      "criteria": {
+        "drawdown_points": 0.03,
+        "immaterial_points": 0.01,
+        "cagr_give_up": 0.01,
+        "offsets_shallower": 15,
+        "hac_lag": 20,
+        "dsr_gate_reported": 0.95
+      },
+      "lines": [
+        "C = 35% at rho* = 0.5 (cc35_r50): paired 2016-2023 -0.4 bp/session (t -0.61) over 2012 sessions; 2024-2026 -1.0 bp/session (t -1.57); deflated Sharpe +0.01 at 488",
+        "  2016-2023: median worst drawdown -41.8% against -44.9% (+3.1 points), shallower at 20 of 20 offsets; CAGR +27.1% against +28.3% (-1.1 points), above at 2 of 20; Sharpe 0.98 against 0.99; the cap binds on 33% of sessions",
+        "  2024-2026: median worst drawdown -24.2% against -26.4% (+2.2 points), shallower at 18 of 20 offsets; CAGR +44.4% against +45.9% (-1.5 points), above at 6 of 20; Sharpe 1.26 against 1.27; the cap binds on 34% of sessions",
+        "  RECORD"
+      ]
+    }
+  },
+  "sources": {
+    "control": "docs/research/scorecards/cluster-cap/control.json",
+    "arms": {
+      "cc35_r60": "docs/research/scorecards/cluster-cap/cc35_r60.json",
+      "cc50_r60": "docs/research/scorecards/cluster-cap/cc50_r60.json",
+      "cc35_r50": "docs/research/scorecards/cluster-cap/cc35_r50.json"
+    }
+  }
+}

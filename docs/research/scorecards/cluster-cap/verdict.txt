@@ -1,0 +1,17 @@
+cluster cap (R1) against ew_graded_cap25 as of 2026-10-01, 20 offsets, 25 bp; trials 488 cumulative, trial variance 0.000161
+  2016-2023 (CAGR / worst drawdown / Sharpe): control 28.3% / -44.9% / 0.99; SPY 13.2% / -33.7% / 0.76; QQQ 18.6% / -35.1% / 0.86
+  2024-2026 (CAGR / worst drawdown / Sharpe): control 45.9% / -26.4% / 1.27; SPY 20.3% / -18.8% / 1.27; QQQ 24.9% / -22.8% / 1.17
+C = 35% at rho* = 0.6 (cc35_r60): paired 2016-2023 -0.0 bp/session (t -0.03) over 2012 sessions; 2024-2026 -0.4 bp/session (t -0.98); deflated Sharpe +0.04 at 488
+  2016-2023: median worst drawdown -42.4% against -44.9% (+2.5 points), shallower at 19 of 20 offsets; CAGR +28.1% against +28.3% (-0.1 points), above at 13 of 20; Sharpe 1.00 against 0.99; the cap binds on 16% of sessions
+  2024-2026: median worst drawdown -26.5% against -26.4% (-0.1 points), shallower at 9 of 20 offsets; CAGR +45.1% against +45.9% (-0.8 points), above at 8 of 20; Sharpe 1.25 against 1.27; the cap binds on 14% of sessions
+  RECORD
+C = 50% at rho* = 0.6 (cc50_r60): paired 2016-2023 +0.1 bp/session (t +0.55) over 2012 sessions; 2024-2026 -0.0 bp/session (t -1.57); deflated Sharpe +0.11 at 488
+  2016-2023: median worst drawdown -43.5% against -44.9% (+1.3 points), shallower at 16 of 20 offsets; CAGR +28.6% against +28.3% (+0.3 points), above at 19 of 20; Sharpe 1.00 against 0.99; the cap binds on 2% of sessions
+  2024-2026: median worst drawdown -26.4% against -26.4% (-0.0 points), shallower at 7 of 20 offsets; CAGR +45.6% against +45.9% (-0.3 points), above at 8 of 20; Sharpe 1.26 against 1.27; the cap binds on 1% of sessions
+  RECORD
+C = 35% at rho* = 0.5 (cc35_r50): paired 2016-2023 -0.4 bp/session (t -0.61) over 2012 sessions; 2024-2026 -1.0 bp/session (t -1.57); deflated Sharpe +0.01 at 488
+  2016-2023: median worst drawdown -41.8% against -44.9% (+3.1 points), shallower at 20 of 20 offsets; CAGR +27.1% against +28.3% (-1.1 points), above at 2 of 20; Sharpe 0.98 against 0.99; the cap binds on 33% of sessions
+  2024-2026: median worst drawdown -24.2% against -26.4% (+2.2 points), shallower at 18 of 20 offsets; CAGR +44.4% against +45.9% (-1.5 points), above at 6 of 20; Sharpe 1.26 against 1.27; the cap binds on 34% of sessions
+  RECORD
+
+wrote docs/research/scorecards/cluster-cap/cluster_cap_verdict.json

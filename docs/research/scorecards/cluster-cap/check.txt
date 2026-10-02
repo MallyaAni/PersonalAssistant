@@ -1,0 +1,29 @@
+cc35_r60: C 0.35, rho* 0.6
+  2016-2023: paired -0.0084 bp/session (t -0.027) over 2012; verdict -0.0084 (t -0.027): OK
+  2016-2023: offset 10 CAGR +29.20%, worst drawdown -40.10% against the row's: OK
+  2016-2023: drawdown -42.37% vs -44.86% (+2.49 points, shallower at 19), CAGR -0.12 points (above at 13): OK
+  2024-2026: paired -0.3594 bp/session (t -0.982) over 690; verdict -0.3594 (t -0.982): OK
+  2024-2026: offset 10 CAGR +41.52%, worst drawdown -26.85% against the row's: OK
+  2024-2026: drawdown -26.49% vs -26.39% (-0.10 points, shallower at 9), CAGR -0.75 points (above at 8): OK
+  label RECORD (re-derived RECORD): OK
+  cap redone on 419 binding sessions: largest weight gap 2.8e-17, 0 failing: OK
+cc50_r60: C 0.5, rho* 0.6
+  2016-2023: paired +0.0820 bp/session (t +0.547) over 2012; verdict +0.0820 (t +0.547): OK
+  2016-2023: offset 10 CAGR +29.34%, worst drawdown -42.62% against the row's: OK
+  2016-2023: drawdown -43.52% vs -44.86% (+1.34 points, shallower at 16), CAGR +0.35 points (above at 19): OK
+  2024-2026: paired -0.0000 bp/session (t -1.570) over 690; verdict -0.0000 (t -1.570): OK
+  2024-2026: offset 10 CAGR +42.60%, worst drawdown -26.70% against the row's: OK
+  2024-2026: drawdown -26.39% vs -26.39% (-0.00 points, shallower at 7), CAGR -0.27 points (above at 8): OK
+  label RECORD (re-derived RECORD): OK
+  cap redone on 51 binding sessions: largest weight gap 1.4e-17, 0 failing: OK
+cc35_r50: C 0.35, rho* 0.5
+  2016-2023: paired -0.3604 bp/session (t -0.607) over 2012; verdict -0.3604 (t -0.607): OK
+  2016-2023: offset 10 CAGR +28.34%, worst drawdown -40.54% against the row's: OK
+  2016-2023: drawdown -41.77% vs -44.86% (+3.09 points, shallower at 20), CAGR -1.12 points (above at 2): OK
+  2024-2026: paired -0.9860 bp/session (t -1.565) over 690; verdict -0.9860 (t -1.565): OK
+  2024-2026: offset 10 CAGR +39.57%, worst drawdown -27.18% against the row's: OK
+  2024-2026: drawdown -24.21% vs -26.39% (+2.19 points, shallower at 18), CAGR -1.51 points (above at 6): OK
+  label RECORD (re-derived RECORD): OK
+  cap redone on 900 binding sessions: largest weight gap 5.6e-17, 0 failing: OK
+null (C = 100%): rows, paired, curves equal to the control's and never binds: OK
+independent check: OK
