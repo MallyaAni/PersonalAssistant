@@ -24,6 +24,12 @@ flowchart TB
     PersonalHistory -->|Owned history, export and deletion| View
     Records --> Research[(Immutable research decisions<br/>entry states and candidate allocations)]
     Quotes --> Research
+    Journal -->|Read-only frozen unsent intents| ExecutionCapture[Optional forward execution collector<br/>starting cash and shares checked twice<br/>no account actions]
+    Broker -->|Read-only account and positions| ExecutionCapture
+    Quotes -->|Original source and receipt times| ExecutionCapture
+    Records -->|Completed candles and causal latches| ExecutionCapture
+    ExecutionCapture --> ExecutionArchive[(Separate immutable execution cohort<br/>code hashes, budgets, retained opportunities)]
+    ExecutionArchive --> ExecutionCompare[Funded paired quote diagnostic<br/>incumbent versus explicit bounded contracts<br/>10/25 bp, SPY/QQQ references, no promotion]
     Research --> Evidence[Forward evaluation<br/>grade outcomes and funded target trackers]
     Store --> Evidence
     Evidence --> View
@@ -45,8 +51,8 @@ flowchart TB
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
-    class Store,Journal,Records,Holdings,Research,PersonalHistory,DisplaySnapshot,PolicyShadow data;
+    class Store,Journal,Records,Holdings,Research,PersonalHistory,DisplaySnapshot,PolicyShadow,ExecutionArchive data;
     class Providers,Broker,Quotes external;
     class Models model;
     class View interface;
-    class DisplayCollector application;
+    class DisplayCollector,ExecutionCapture,ExecutionCompare application;

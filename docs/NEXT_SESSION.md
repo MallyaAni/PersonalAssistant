@@ -1,5 +1,42 @@
 # Next session
 
+## 2026-10-02 — ACTIVE: funded entry/exit evidence on an isolated branch
+
+Branch `codex/funded-execution-forward-20261002` starts at main `14f61a0f`.
+Protocol `092bf50d` was committed before outcomes; implementation `93c63ab6`
+is frozen in the Spark worktree of the same branch. The new read-only CLI retains
+ordinary unsent plans, twice-checked starting cash/whole-share holdings, original
+quote/receipt and candle/latch evidence, source hashes and a hash-linked archive.
+It compares the actual incumbent with the existing optional bounded execution
+contract: reject recovered entry prices, distinguish full exits from trims,
+retain unavailable/partial opportunities, and prohibit same-observation sale
+funding. Both arms use fixed 10/25 bp costs and SPY/QQQ quote references.
+No live policy or production input is changed; this is not a strategy adoption.
+
+VERIFIED: 106 relevant cases pass in the actual test image with source mounted
+(four optional native cases skipped there); all 28 forward cases, including those
+four independent Nautilus checks, pass in the pinned native runtime. Shares agree;
+fractional cost allowances are explicitly normalized to native USD cents when
+comparing cash/fees. Ruff passes. The detailed trading diagram and architecture
+page describe the separate read-only archive; all 33 diagram checks pass.
+
+Actual capture began October 2 at 15:00:15 New York with five opportunities
+(one exit, four entries), all initial anchors present, using IEX. The collector
+`codex_execution_forward_20261002` runs until the regular close; do not restart it
+or change its mounted implementation/protocol. Private archive:
+`/home/animallya96/scratch/execution-forward-20261002/cohort-20261002`.
+Log: `/tmp/codex-funded-forward-record-20261002.log`. Source worktree:
+`/home/animallya96/codex-worktrees/funded-execution-forward-20261002`.
+The production market mount is read-only and outputs are outside it.
+
+UNVERIFIED: real cohort outcomes, economic superiority, broker fills and robust
+multi-session gain. After the collector exits, validate the final receipt times,
+session boundary and whole evidence chain, then create one exclusive comparison
+report with the frozen implementation. Preserve missing marks and unsupported
+closing-auction outcomes. Do not annualize this partial session, infer midpoint
+fills, tune budgets or activate the candidate from it. Read-only evidence tools
+on a research branch do not require production deployment/model gates.
+
 ## 2026-10-02 — LIVE: personal quote refresh and decision-price UI verified
 
 VERIFIED deployed checkpoint `8a77c1168dcee36df7ceb262a2d52d73f502d909`
