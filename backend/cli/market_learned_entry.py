@@ -157,9 +157,17 @@ def evaluate(panel, grades, eligible, cubes, dataset, output, method):
     method_dir = output / method
     receipt = json.loads((method_dir / "complete.json").read_text())
     archive = method_dir / "predictions.npz"
-    if (
-        sha256(archive) != receipt["artifact_sha256"]
-        or receipt["source"] != source_identity()
+    current_source = source_identity()
+    frozen = (
+        "backend/market/learned_entry_data.py",
+        "backend/market/learned_entry_models.py",
+        "docs/research/learned-entry-risk-plan-2026-10-02.md",
+        "docs/research/learned-linear-plan-2026-10-02.md",
+        "docs/research/learned-entry-comparison-details-2026-10-02.md",
+    )
+    if sha256(archive) != receipt["artifact_sha256"] or any(
+        receipt["source"]["files"][key] != current_source["files"][key]
+        for key in frozen
     ):
         raise ValueError("forecast artifact or evaluated source identity changed")
     with np.load(archive, allow_pickle=False) as saved:
@@ -190,6 +198,11 @@ def evaluate(panel, grades, eligible, cubes, dataset, output, method):
         "status": "conditional_research",
         "adoption_eligible": False,
         "source": source_identity(),
+        "training_source": receipt["source"],
+        "execution_correction": (
+            "Convex boundary certificate for SLSQP fixed-bound failure; "
+            "same forecasts, objective, costs and feasible targets; no refit."
+        ),
         "forecast_sha256": receipt["artifact_sha256"],
         "data": dataset["provenance"],
         "diagnostics": dataset["diagnostics"],

@@ -115,6 +115,7 @@ def learned_account(panel, dataset, forecasts, first, cost_bps):
         "inconsistent_moments": 0,
         "fills": 0,
         "cash_limited_attempts": 0,
+        "optimizer_unavailable": 0,
     }
     trades_by_stock = np.zeros(n, dtype=int)
     for day in range(first, len(panel.dates)):
@@ -143,6 +144,8 @@ def learned_account(panel, dataset, forecasts, first, cost_bps):
             for name in ("waiting", "unknown", "inconsistent_moments"):
                 counts[name] += detail.get(name, 0)
             if detail["status"] != "decided":
+                if detail["status"] == "hold_optimizer_unavailable":
+                    counts["optimizer_unavailable"] += 1
                 continue
             wanted = book.shares.copy()
             known = np.isfinite(observed) & (observed > 0)

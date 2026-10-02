@@ -161,3 +161,31 @@ def test_log_moment_conversion_preserves_single_asset_growth():
     mean, cross, _ = growth_parameters(f, np.ones((1, 1)))
     assert mean[0] - 0.5 * cross[0, 0] == pytest.approx(f[0, 0])
     assert cross[0, 0] == pytest.approx(f[0, 1])
+
+
+# Certify optimal capped holdings despite a tiny fixed position and forced cap trim.
+def test_degenerate_upper_bounds_have_exact_convex_certificate():
+    current = np.array([0.1143, 0.2435, 0.2521, 0.2511, 0.1377, 7.47e-17])
+    upper = np.minimum(current, 0.25)
+    mean = np.array([0.0253, 0.0205, 0.0259, 0.0239, 0.0250, 0.0210])
+    matrix = np.full((6, 6), 0.002)
+    np.fill_diagonal(matrix, 0.007)
+    result = growth_weights(mean, matrix, current, upper, 0)
+    np.testing.assert_array_equal(result, upper)
+    assert np.all(matrix @ result - mean < 0)
+
+
+# Solver failure preserves the entire funded account with an explicit unavailable state.
+def test_solver_unavailable_never_becomes_a_trade(monkeypatch):
+    from backend.market import learned_entry_policy as policy
+
+    # Reproduce an uncertified optimizer without changing its acceptance assertions.
+    def unavailable(*args, **kwargs):
+        raise policy.OptimizationUnavailableError("uncertified numerical solution")
+
+    monkeypatch.setattr(policy, "growth_weights", unavailable)
+    previous = np.array([0.1, 0.05, 0.0])
+    forecasts = np.array([[0.03, 0.1, 0], [0.02, 0.1, 0], [0.01, 0.1, 0]])
+    target, details = decide(forecasts, history(), previous, np.ones(3, bool), 10)
+    np.testing.assert_array_equal(target, previous)
+    assert details["status"] == "hold_optimizer_unavailable"

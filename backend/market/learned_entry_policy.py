@@ -15,6 +15,10 @@ POLICY = "learned-entry-risk/1-research"
 CAP = 0.25
 
 
+class OptimizationUnavailableError(RuntimeError):
+    """No certified feasible optimum; a caller must preserve the funded account."""
+
+
 # Estimate correlation only from fully observed preceding adjusted daily prices.
 def correlation(history):
     history = np.asarray(history, dtype=float)
@@ -52,6 +56,15 @@ def growth_weights(mean, covariance, current, upper, cost):
         or np.linalg.eigvalsh(covariance).min() < -1e-10
     ):
         raise ValueError("invalid funded growth optimization inputs")
+    # A convex objective with a supporting gradient directed into every upper
+    # bound is globally minimized there. Certify it directly instead of asking
+    # SLSQP to line-search through near-zero fixed-position bounds.
+    at_upper = covariance @ upper - mean + cost * np.where(upper <= current, -1, 1)
+    if upper.sum() <= 1 and np.all(at_upper[upper > 0] <= 0):
+        return upper.copy()
+    at_zero = -mean + cost * np.where(current > 0, -1, 1)
+    if np.all(at_zero[upper > 0] >= 0):
+        return np.zeros(n)
 
     # The second half bounds absolute trades, making the objective differentiable.
     def objective(x):
@@ -95,7 +108,9 @@ def growth_weights(mean, covariance, current, upper, cost):
         or objective(solved.x)
         > objective(np.r_[initial, np.abs(initial - current)]) + 1e-8
     ):
-        raise RuntimeError("growth optimizer did not establish a feasible improvement")
+        raise OptimizationUnavailableError(
+            "growth optimizer did not establish a feasible improvement"
+        )
     w = np.clip(w, 0, upper)
     if w.sum() > 1:
         w /= w.sum()
@@ -138,7 +153,10 @@ def decide(forecasts, history, current, may_add, cost_bps):
     mean, second_moment, inconsistent = growth_parameters(f, corr)
     previous = current[selected]
     upper = np.where(may_add[selected], CAP, np.minimum(CAP, previous))
-    weights = growth_weights(mean, second_moment, previous, upper, cost_bps / 1e4)
+    try:
+        weights = growth_weights(mean, second_moment, previous, upper, cost_bps / 1e4)
+    except OptimizationUnavailableError:
+        return current.copy(), {"status": "hold_optimizer_unavailable"}
     delta = weights - previous
     waiting = ((delta > 0) & (f[:, 2] > 0)) | ((delta < 0) & (f[:, 2] < 0))
     target = current.copy()
