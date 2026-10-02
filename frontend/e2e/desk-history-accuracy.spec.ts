@@ -22,7 +22,7 @@ async function installScenario(page: Page, frontendURL: string, options: Scenari
   const exit = {client_order_id: 'AAOI-exit', symbol: 'AAOI', side: 'sell', action: 'SELL', qty: 100, price: 98.25, notional: 9825, weight: .09825, leg: 'exit',
     why: 'Exit: the grade fell to B', reason: null, timing: 'dip_or_close', decided: SESSION, execute_on: '2026-09-25', open: null, level: null,
     sent_at: null, sent_how: null, filled_qty: null, filled_price: null, filled_at: null,
-    state: 'planned', status: 'Planned', when: 'Fri Sep 25 · 15-min close 1% over the open, else at the close'}
+    state: 'planned', status: 'Planned', when: 'Fri Sep 25 · 15-min close 1% over the open, else at market in the last 15 minutes'}
   const paper = {as_of: now, equity: 100000, cash: 90000, day_pl: 0, pl_pct: 0, day_pl_pct: 0, orders: [], activity: {complete: true, fills: []},
     positions: options.overnight ? [{symbol: 'AAOI', qty: 100, avg_entry_price: 95, current_price: 98.25, market_value: 9825, unrealized_pl: 325}] : [],
     plan: {rule: 'dip_or_close', until_rebalance: 7, orders: options.overnight ? [exit] : []}}
@@ -167,7 +167,7 @@ test('keeps a planned Sell on its session clock alongside a fresh overnight quot
     await expect(board.getByLabel('AAOI strategy intent', {exact: true})).toHaveText('SELL')
     await expect(board.getByLabel('AAOI action status', {exact: true})).toHaveText('Exit: the grade fell to B')
     await expect(board.getByLabel('AAOI order status', {exact: true})).toContainText('Planned')
-    await expect(board.getByLabel('AAOI order status', {exact: true})).toContainText('Fri Sep 25 · 15-min close 1% over the open, else at the close')
+    await expect(board.getByLabel('AAOI order status', {exact: true})).toContainText('Fri Sep 25 · 15-min close 1% over the open, else at market in the last 15 minutes')
     await expect(board.getByLabel('AAOI order status', {exact: true})).not.toContainText('sending')
     await expect(page.getByLabel('Today', {exact: true})).toContainText('Paper orders: 1 planned.')
     await page.getByRole('button', {name: 'details for AAOI', exact: true}).click()

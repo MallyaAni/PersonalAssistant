@@ -10,16 +10,16 @@ type Order = {symbol: string; side: 'buy' | 'sell'; action: 'BUY' | 'SELL' | 'TR
 
 // One order as `/desk/paper` lists it, in the backend's own words for its stage.
 function order(symbol: string, side: 'buy' | 'sell', action: 'BUY' | 'SELL' | 'TRIM', qty: number, price: number, why: string,
-  stage: {state: string; status: string; when?: string} = {state: 'waiting', status: `Waiting for $${(price * (side === 'buy' ? .99 : 1.01)).toFixed(2)} or the close (3:30 PM window)`}): Order {
+  stage: {state: string; status: string; when?: string} = {state: 'waiting', status: `Waiting for $${(price * (side === 'buy' ? .99 : 1.01)).toFixed(2)}, else a market order at 3:45 PM`}): Order {
   return {symbol, side, action, qty, price, why, state: stage.state, status: stage.status,
-    when: stage.when ?? `Today · 15-min close 1% ${side === 'buy' ? 'under' : 'over'} the open, else at the close`}
+    when: stage.when ?? `Today · 15-min close 1% ${side === 'buy' ? 'under' : 'over'} the open, else at market in the last 15 minutes`}
 }
 
 // The paper account: its money, its positions and the orders the board lists.
 function paper(orders: Order[], held: Record<string, number> = {}, untilReset = 12) {
   return {user_id: 'ani.mallya', as_of: at, equity: EQUITY, cash: 20000, orders: [], activity: {session, complete: true, fills: []},
     positions: Object.entries(held).map(([symbol, qty]) => ({symbol, qty, avg_entry_price: 90, current_price: 100, market_value: qty * 100, unrealized_pl: qty * 10})),
-    plan: {rule: 'dip_or_close', rule_text: {buy: '15-min close 1% under the open, else at the close', sell: '15-min close 1% over the open, else at the close'},
+    plan: {rule: 'dip_or_close', rule_text: {buy: '15-min close 1% under the open, else at market in the last 15 minutes', sell: '15-min close 1% over the open, else at market in the last 15 minutes'},
       until_rebalance: untilReset, last_rebalance: '2026-09-10', reason: null,
       orders: orders.map((o, i) => ({client_order_id: `${o.symbol}-${i}`, symbol: o.symbol, side: o.side, action: o.action, qty: o.qty, price: o.price,
         notional: o.qty * o.price, weight: o.qty * o.price / EQUITY, leg: o.side === 'buy' ? 'entry' : 'exit', why: o.why, reason: null,
@@ -266,16 +266,16 @@ test('a recovered personal entry shows Hold and retains its grade', async ({page
 // the status says so, and the row never claims every venue is closed.
 test('a planned order with the market closed keeps its word and size', async ({page}) => {
   const {errors} = await setup(page, {open: false, account: paper([
-    order('AAPL', 'buy', 'BUY', 20, 100, 'Enters the book at 2.0%', {state: 'planned', status: 'Planned', when: 'Thu Sep 25 · 15-min close 1% under the open, else at the close'}),
-    order('NVDA', 'sell', 'SELL', 10, 100, 'Exit: the grade fell to B', {state: 'planned', status: 'Planned', when: 'Thu Sep 25 · 15-min close 1% over the open, else at the close'}),
+    order('AAPL', 'buy', 'BUY', 20, 100, 'Enters the book at 2.0%', {state: 'planned', status: 'Planned', when: 'Thu Sep 25 · 15-min close 1% under the open, else at market in the last 15 minutes'}),
+    order('NVDA', 'sell', 'SELL', 10, 100, 'Exit: the grade fell to B', {state: 'planned', status: 'Planned', when: 'Thu Sep 25 · 15-min close 1% over the open, else at market in the last 15 minutes'}),
   ], {NVDA: 10})})
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(board.getByLabel('AAPL strategy intent')).toHaveText('BUY')
   await expect(board.getByLabel('AAPL size')).toContainText('20 sh')
   await expect(board.getByLabel('AAPL order status')).toContainText('Planned')
-  await expect(board.getByLabel('AAPL order status')).toContainText('Thu Sep 25 · 15-min close 1% under the open, else at the close')
+  await expect(board.getByLabel('AAPL order status')).toContainText('Thu Sep 25 · 15-min close 1% under the open, else at market in the last 15 minutes')
   await expect(board.getByLabel('NVDA strategy intent')).toHaveText('SELL')
-  await expect(board.getByLabel('NVDA order status')).toContainText('Thu Sep 25 · 15-min close 1% over the open, else at the close')
+  await expect(board.getByLabel('NVDA order status')).toContainText('Thu Sep 25 · 15-min close 1% over the open, else at market in the last 15 minutes')
   await expect(page.getByLabel('Today', {exact: true})).toContainText('Paper orders: 2 planned.')
   await expect(board).not.toContainText('Market closed')
   expect(errors).toEqual([])

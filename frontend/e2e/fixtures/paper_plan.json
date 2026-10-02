@@ -132,13 +132,13 @@
         "sent_how": null,
         "side": "sell",
         "state": "waiting",
-        "status": "Waiting for $232.30 or the close (3:30 PM window)",
+        "status": "Waiting for $232.30, else a market order at 3:45 PM",
         "submitted_qty": null,
         "symbol": "NVDA",
         "terminal": false,
         "timing": "dip_or_close",
         "weight": 0.15346897656487926,
-        "when": "Today \u00b7 15-min close \u2265 $232.30 (1% over the $230.00 open), else at the close",
+        "when": "Today \u00b7 15-min close \u2265 $232.30 (1% over the $230.00 open), else at market in the last 15 minutes",
         "why": "Exit: the grade fell to B"
       },
       {
@@ -169,7 +169,7 @@
         "terminal": false,
         "timing": "dip_or_close",
         "weight": 0.003987271924146651,
-        "when": "Today \u00b7 15-min close \u2264 $99.79 (1% under the $100.80 open), else at the close",
+        "when": "Today \u00b7 15-min close \u2264 $99.79 (1% under the $100.80 open), else at market in the last 15 minutes",
         "why": "Reinvest an exit's proceeds"
       },
       {
@@ -200,7 +200,7 @@
         "terminal": false,
         "timing": "dip_or_close",
         "weight": 0.003662331258312232,
-        "when": "Today \u00b7 15-min close 1% under the open, else at the close",
+        "when": "Today \u00b7 15-min close 1% under the open, else at market in the last 15 minutes",
         "why": "Finish last session's buy (cash was short)"
       },
       {
@@ -225,13 +225,13 @@
         "sent_how": null,
         "side": "buy",
         "state": "waiting",
-        "status": "Waiting for $334.62 or the close (3:30 PM window)",
+        "status": "Waiting for $334.62, else a market order at 3:45 PM",
         "submitted_qty": null,
         "symbol": "MDB",
         "terminal": false,
         "timing": "dip_or_close",
         "weight": 0.0033643856631779038,
-        "when": "Today \u00b7 15-min close \u2264 $334.62 (1% under the $338.00 open), else at the close",
+        "when": "Today \u00b7 15-min close \u2264 $334.62 (1% under the $338.00 open), else at market in the last 15 minutes",
         "why": "Finish last session's buy (cash was short)"
       },
       {
@@ -256,13 +256,13 @@
         "sent_how": null,
         "side": "buy",
         "state": "waiting",
-        "status": "Waiting for $293.04 or the close (3:30 PM window)",
+        "status": "Waiting for $293.04, else a market order at 3:45 PM",
         "submitted_qty": null,
         "symbol": "COHR",
         "terminal": false,
         "timing": "dip_or_close",
         "weight": 0.002940663034929822,
-        "when": "Today \u00b7 15-min close \u2264 $293.04 (1% under the $296.00 open), else at the close",
+        "when": "Today \u00b7 15-min close \u2264 $293.04 (1% under the $296.00 open), else at market in the last 15 minutes",
         "why": "Finish last session's buy (cash was short)"
       },
       {
@@ -293,7 +293,7 @@
         "terminal": false,
         "timing": "dip_or_close",
         "weight": 0.001831165629156116,
-        "when": "Today \u00b7 15-min close 1% under the open, else at the close",
+        "when": "Today \u00b7 15-min close 1% under the open, else at market in the last 15 minutes",
         "why": "Reinvest an exit's proceeds"
       },
       {
@@ -318,13 +318,13 @@
         "sent_how": null,
         "side": "buy",
         "state": "waiting",
-        "status": "Waiting for $41.18 or the close (3:30 PM window)",
+        "status": "Waiting for $41.18, else a market order at 3:45 PM",
         "submitted_qty": null,
         "symbol": "SMCI",
         "terminal": false,
         "timing": "dip_or_close",
         "weight": 0.0008268490173694284,
-        "when": "Today \u00b7 15-min close \u2264 $41.18 (1% under the $41.60 open), else at the close",
+        "when": "Today \u00b7 15-min close \u2264 $41.18 (1% under the $41.60 open), else at market in the last 15 minutes",
         "why": "Reinvest an exit's proceeds"
       },
       {
@@ -355,7 +355,7 @@
         "terminal": true,
         "timing": "dip_or_close",
         "weight": 0.0656200177847525,
-        "when": "Today \u00b7 15-min close 1% over the open, else at the close",
+        "when": "Today \u00b7 15-min close 1% over the open, else at market in the last 15 minutes",
         "why": "Exit: the grade fell to B"
       },
       {
@@ -386,7 +386,7 @@
         "terminal": true,
         "timing": "dip_or_close",
         "weight": 0.0034753653982782747,
-        "when": "Today \u00b7 15-min close 1% under the open, else at the close",
+        "when": "Today \u00b7 15-min close 1% under the open, else at market in the last 15 minutes",
         "why": "Finish last session's buy (cash was short)"
       },
       {
@@ -417,15 +417,15 @@
         "terminal": true,
         "timing": "dip_or_close",
         "weight": 0.0017378826626258045,
-        "when": "Today \u00b7 15-min close 1% under the open, else at the close",
+        "when": "Today \u00b7 15-min close 1% under the open, else at market in the last 15 minutes",
         "why": "Reinvest an exit's proceeds"
       }
     ],
     "reason": null,
     "rule": "dip_or_close",
     "rule_text": {
-      "buy": "15-min close 1% under the open, else at the close",
-      "sell": "15-min close 1% over the open, else at the close"
+      "buy": "15-min close 1% under the open, else at market in the last 15 minutes",
+      "sell": "15-min close 1% over the open, else at market in the last 15 minutes"
     },
     "until_rebalance": 18
   },
@@ -466,7 +466,7 @@
         "terminal": false,
         "timing": "dip_or_close",
         "weight": 0.1528861829829873,
-        "when": "Thu Oct 1 \u00b7 15-min close 1% over the open, else at the close",
+        "when": "Thu Oct 1 \u00b7 15-min close 1% over the open, else at market in the last 15 minutes",
         "why": "Exit: the grade fell to B"
       },
       {
@@ -497,7 +497,7 @@
         "terminal": false,
         "timing": "dip_or_close",
         "weight": 0.06490334864853678,
-        "when": "Thu Oct 1 \u00b7 15-min close 1% over the open, else at the close",
+        "when": "Thu Oct 1 \u00b7 15-min close 1% over the open, else at market in the last 15 minutes",
         "why": "Exit: the grade fell to B"
       },
       {
@@ -528,7 +528,7 @@
         "terminal": false,
         "timing": "dip_or_close",
         "weight": 0.004049260605013524,
-        "when": "Thu Oct 1 \u00b7 15-min close 1% under the open, else at the close",
+        "when": "Thu Oct 1 \u00b7 15-min close 1% under the open, else at market in the last 15 minutes",
         "why": "Reinvest an exit's proceeds"
       },
       {
@@ -559,7 +559,7 @@
         "terminal": false,
         "timing": "dip_or_close",
         "weight": 0.003701324138212363,
-        "when": "Thu Oct 1 \u00b7 15-min close 1% under the open, else at the close",
+        "when": "Thu Oct 1 \u00b7 15-min close 1% under the open, else at market in the last 15 minutes",
         "why": "Finish last session's buy (cash was short)"
       },
       {
@@ -590,7 +590,7 @@
         "terminal": false,
         "timing": "dip_or_close",
         "weight": 0.0035369541521718135,
-        "when": "Thu Oct 1 \u00b7 15-min close 1% under the open, else at the close",
+        "when": "Thu Oct 1 \u00b7 15-min close 1% under the open, else at market in the last 15 minutes",
         "why": "Finish last session's buy (cash was short)"
       },
       {
@@ -621,7 +621,7 @@
         "terminal": false,
         "timing": "dip_or_close",
         "weight": 0.0033643856631779038,
-        "when": "Thu Oct 1 \u00b7 15-min close 1% under the open, else at the close",
+        "when": "Thu Oct 1 \u00b7 15-min close 1% under the open, else at market in the last 15 minutes",
         "why": "Finish last session's buy (cash was short)"
       },
       {
@@ -652,7 +652,7 @@
         "terminal": false,
         "timing": "dip_or_close",
         "weight": 0.002940663034929822,
-        "when": "Thu Oct 1 \u00b7 15-min close 1% under the open, else at the close",
+        "when": "Thu Oct 1 \u00b7 15-min close 1% under the open, else at market in the last 15 minutes",
         "why": "Finish last session's buy (cash was short)"
       },
       {
@@ -683,7 +683,7 @@
         "terminal": false,
         "timing": "dip_or_close",
         "weight": 0.0018506620691061816,
-        "when": "Thu Oct 1 \u00b7 15-min close 1% under the open, else at the close",
+        "when": "Thu Oct 1 \u00b7 15-min close 1% under the open, else at market in the last 15 minutes",
         "why": "Reinvest an exit's proceeds"
       },
       {
@@ -714,7 +714,7 @@
         "terminal": false,
         "timing": "dip_or_close",
         "weight": 0.0017684770760859067,
-        "when": "Thu Oct 1 \u00b7 15-min close 1% under the open, else at the close",
+        "when": "Thu Oct 1 \u00b7 15-min close 1% under the open, else at market in the last 15 minutes",
         "why": "Reinvest an exit's proceeds"
       },
       {
@@ -745,15 +745,15 @@
         "terminal": false,
         "timing": "dip_or_close",
         "weight": 0.0008238495650694184,
-        "when": "Thu Oct 1 \u00b7 15-min close 1% under the open, else at the close",
+        "when": "Thu Oct 1 \u00b7 15-min close 1% under the open, else at market in the last 15 minutes",
         "why": "Reinvest an exit's proceeds"
       }
     ],
     "reason": null,
     "rule": "dip_or_close",
     "rule_text": {
-      "buy": "15-min close 1% under the open, else at the close",
-      "sell": "15-min close 1% over the open, else at the close"
+      "buy": "15-min close 1% under the open, else at market in the last 15 minutes",
+      "sell": "15-min close 1% over the open, else at market in the last 15 minutes"
     },
     "until_rebalance": 18
   }

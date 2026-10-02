@@ -309,6 +309,7 @@ def test_the_clock_on_a_regular_session(hour, minute, with_quote, expected):
     timed = entry_timing.timing(None, q, "buy", now, SESSION)
     assert timed["state"] == expected, timed
     assert timed["close_cutoff"] == ny(SESSION, 15, 30).isoformat()
+    assert timed["close_order_at"] == ny(SESSION, 15, 45).isoformat()
     assert timed["moc_deadline"] == ny(SESSION, 15, 50).isoformat()
     if expected == entry_timing.WAITING:
         assert timed["open"] == 100.0
@@ -316,7 +317,8 @@ def test_the_clock_on_a_regular_session(hour, minute, with_quote, expected):
         assert "$99.00 (1% under today's open $100.00)" in timed["reason"]
 
 
-# On an early close the window opens at 12:30 and the session ends at 13:00.
+# On an early close the window opens at 12:30, the market order goes in on
+# the 12:45 candle and the session ends at 13:00.
 def test_the_close_window_follows_an_early_close():
     assert calendar.session_close(EARLY).hour == 13
     q = quote(100.3, ny(EARLY, 10))
@@ -325,7 +327,8 @@ def test_the_close_window_follows_an_early_close():
     close = at(None, q, "buy", ny(EARLY, 12, 30), EARLY)
     assert close["state"] == entry_timing.CLOSE
     assert close["close_cutoff"] == ny(EARLY, 12, 30).isoformat()
-    assert "before 12:50 PM ET" in close["reason"]
+    assert close["close_order_at"] == ny(EARLY, 12, 45).isoformat()
+    assert "a market order at 12:45 PM ET, in the last 15 minutes" in close["reason"]
     assert at(None, q, "buy", ny(EARLY, 13, 0), EARLY)["state"] == entry_timing.CLOSED
 
 
@@ -389,7 +392,7 @@ def test_the_sentences_say_what_is_planned_and_why_now():
     waiting = entry_timing.timing(None, q, "buy", at, SESSION)
     assert entry_timing.planned("Buy", 1 / 11, waiting) == (
         "Buy 9.1% planned: on a 15-minute close at or under $178.20 "
-        "(1% under today's open $180.00), else at the close"
+        "(1% under today's open $180.00), else at market in the last 15 minutes"
     )
     q = quote(97.2, ny(SESSION, 10), opened=97.13)
     sell = entry_timing.timing(None, q, "sell", at, SESSION)
@@ -400,8 +403,8 @@ def test_the_sentences_say_what_is_planned_and_why_now():
     q = quote(179.5, ny(SESSION, 15), opened=180.0)
     closing = entry_timing.timing(None, q, "buy", ny(SESSION, 15, 31), SESSION)
     assert entry_timing.acting("Buy", closing) == (
-        "Buy at the close: no 15-minute close reached $178.20 today; "
-        "market-on-close before 3:50 PM ET"
+        "Buy near the close: no 15-minute close reached $178.20 today; "
+        "a market order at 3:45 PM ET, in the last 15 minutes"
     )
     q = quote(178.1, ny(SESSION, 10), opened=180.0)
     hit = entry_timing.timing(None, q, "buy", at, SESSION)

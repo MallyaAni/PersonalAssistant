@@ -1,4 +1,4 @@
-"""Paper orders sent on the board's rule: a 1% dip or pop, else the close.
+"""Paper orders sent on the board's rule: a 1% dip or pop, else near the close.
 
 Since 2026-09-30 the paper account trades exactly what the Stock rankings
 board shows, on the board's clock. The operator asked for that in so many
@@ -12,11 +12,18 @@ suggestions"), and chose the board's timing over the old next-open one.
   - a buy goes to the market on the first completed 15-minute bar of the
     session whose close is at or under the session's open less 1%, and a
     sell or trim on the first one at or over the open plus 1%;
-  - with no such bar, the order goes in as a market-on-close order in the
-    close window (from 30 minutes before the close), before the exchange's
-    market-on-close cutoff (10 minutes before the close);
-  - after that cutoff and before the close, a late order goes to the market
-    so the session is never silently missed.
+  - with no such bar, the order goes to the market on the balancer's last
+    candle before the close (`entry_timing.CLOSE_ORDER_LEAD`: 3:45 PM ET, or
+    12:45 PM on a calendar early close), "in the last 15 minutes".
+
+Until 2026-10-02 the close-window order was a market-on-close order sent at
+3:30 PM. The paper broker expired 12 of the 18 it was sent with nothing
+filled (it treats one as a market order in the closing seconds and never
+fills it at the auction), while every market order filled within seconds, so
+the account sat in cash. An MOC sent by the older code and found cancelled or
+expired with nothing filled before the close is replaced by a market order
+under a derived id (`_replace_close_order`); an expiry the broker reports
+only after the close cannot be replaced, and the next nightly re-plans it.
 
 Measured on the `/4` policy's own orders the rule earned -0.1 bp a session
 (t -0.2) on 2016-2023 and +1.0 bp (t 2.2) on 2024-2026 against the next open
@@ -60,9 +67,15 @@ from backend.market import bounded_execution, calendar, entry_timing, execution_
 INTRADAY_EXECUTION = True
 # The execution timing written on every ordinary order the nightly plans.
 INTRADAY_TIMING = "dip_or_close"
-# The two ways an order is sent from here.
+# How an order is sent from here. MOC is no longer sent; it names the
+# market-on-close orders the older code sent, which the board still reads.
 MARKET = "market"
 MOC = "moc"
+# The suffix of the id a replacement market order goes under: the broker
+# refuses a second order under an id it has seen.
+REPLACED_SUFFIX = "-m"
+# The broker statuses that end an order the desk may replace when nothing filled.
+_ENDED = ("canceled", "cancelled", "expired", "done_for_day")
 NEW_YORK = calendar.NEW_YORK
 
 # The broker statuses of an order that has been accepted and may still fill.
@@ -98,9 +111,10 @@ def due(state: paper.PaperState, today: date) -> list[dict]:
 
 
 # What one row should do at `now`: send a market order (its level was
-# reached, or the market-on-close cutoff has passed), send a market-on-close
-# order (the close window), or nothing yet. Explicit candidate contracts use
-# bounded execution instead; malformed contracts never fall back to the legacy rule.
+# reached, or it is the balancer's last candle before the close), or nothing
+# yet (waiting, or the close window before that last candle). Explicit
+# candidate contracts use bounded execution instead; malformed contracts never
+# fall back to the legacy rule.
 def decide(
     row: dict, latch_row: dict | None, quote: dict | None, now: datetime, today: date
 ) -> dict[str, Any]:
@@ -123,16 +137,14 @@ def decide(
         send = MARKET
     elif state == entry_timing.CLOSE:
         clock = entry_timing.session_clock(today)
-        if now < clock["moc"]:
-            send = MOC
-        elif now < clock["close"]:
+        if clock["market"] <= now < clock["close"]:
             send = MARKET
     return {"send": send, "timed": timed}
 
 
 # Submit the decided order type, preserving an explicit candidate's price bound.
 def _submit(client, row: dict, how: str, qty: int, verdict: dict) -> dict:
-    """Submit `row` as a market or market-on-close order for `qty` shares."""
+    """Submit `row` as a market or IOC limit order for `qty` shares."""
     symbol = str(row["symbol"])
     side = str(row["side"])
     cid = str(row["client_order_id"])
@@ -140,8 +152,6 @@ def _submit(client, row: dict, how: str, qty: int, verdict: dict) -> dict:
         return client.submit_limit_ioc(
             symbol, qty, side, verdict["guard"]["limit_price"], cid
         )
-    if how == MOC:
-        return client.submit_market_on_close(symbol, qty, side, cid)
     return client.submit_market(symbol, qty, side, cid)
 
 
@@ -166,9 +176,10 @@ def _why_sent(timed: dict[str, Any], how: str, now: datetime) -> dict[str, Any]:
 # request leaves (so a crash in between is visible), then sent, then its
 # broker acknowledgement is recorded. An order the broker already holds under
 # the row's id (an earlier run that died before recording) is adopted, not
-# sent twice. Nothing is sent unless the broker's own clock says the market is
-# open: a market-on-close order sent after the close would queue for the NEXT
-# session's close. A sell is never sent for more shares than the account holds.
+# sent twice. A market-on-close order the older code sent that the broker has
+# already ended with nothing filled is replaced at market when the row's rule
+# says to act. Nothing is sent unless the broker's own clock says the market is
+# open. A sell is never sent for more shares than the account holds.
 # Returns the log lines.
 def send_due(
     root: Path | str,
@@ -229,8 +240,9 @@ def _send_due_locked(
     started = time.monotonic()
     _observe_bounded(root, state, rows, snapshot, now, today)
     ready = _ready(rows, root, snapshot, now, today)
+    replaceable = _ready(close_orders_sent(state, today), root, snapshot, now, today)
     recovering = [r for r in rows if "execution_policy" in r and r.get("sending")]
-    if not ready and not recovering:
+    if not ready and not recovering and not replaceable:
         return []
     try:
         client = client_factory()
@@ -272,10 +284,77 @@ def _send_due_locked(
         return recovered + [
             "intraday orders: the broker reports the market closed; nothing sent"
         ]
+    ready += _replaced(root, state, replaceable, known, now)
     return recovered + [
         _send_one(root, state, row, verdict, client, known, held, now, started)
         for row, verdict in ready
     ]
+
+
+# The market-on-close rows the broker has ended unfilled, each rewritten for
+# its replacement market order and saved before anything is sent.
+def _replaced(
+    root: Path,
+    state: paper.PaperState,
+    candidates: list[tuple[dict, dict[str, Any]]],
+    known: dict[str, dict],
+    now: datetime,
+) -> list[tuple[dict, dict[str, Any]]]:
+    """Return [(row, verdict)] for the rows to send as replacements."""
+    out = []
+    for row, verdict in candidates:
+        if _replace_close_order(row, known.get(str(row["client_order_id"])), now):
+            paper.save_state(root, state)
+            out.append((row, verdict))
+    return out
+
+
+# The ordinary rows for `today` that the older code sent market-on-close and
+# have not been replaced: the only rows a replacement market order can be for.
+# A sell the green-day rule held is never one of them.
+def close_orders_sent(state: paper.PaperState, today: date) -> list[dict]:
+    """Return today's sent market-on-close rows, unreplaced."""
+    return [
+        row
+        for row in state.pending
+        if row.get("execution_timing") == INTRADAY_TIMING
+        and not row.get("event_id")
+        and "execution_policy" not in row
+        and row.get("execute_on") == today.isoformat()
+        and (row.get("sent") or {}).get("how") == MOC
+        and not row.get("replaced")
+        and not row.get("hold_requested")
+        and row.get("status") != paper.SKIPPED
+    ]
+
+
+# Turn a market-on-close row the broker ended with nothing filled into an
+# unsent row under a derived id, keeping what happened to the first order, so
+# `_send_one` sends it at market (or adopts it, if an earlier run already did).
+# Returns False, changing nothing, while the order may still fill or when any
+# of it filled: a partial's remainder is left to the nightly's re-plan, so the
+# settlement never loses a fill it has to record under the first id.
+def _replace_close_order(row: dict, order: dict | None, now: datetime) -> bool:
+    """Rewrite `row` for a replacement market order; return whether it did."""
+    if not order or str(order.get("status") or "").lower() not in _ENDED:
+        return False
+    try:
+        filled = float(order.get("filled_qty") or 0)
+    except (TypeError, ValueError):
+        return False
+    if filled != 0:
+        return False
+    first = str(row["client_order_id"])
+    row["replaced"] = {
+        "client_order_id": first,
+        "status": str(order.get("status")).lower(),
+        "sent": row.pop("sent"),
+        "at": now.isoformat(timespec="seconds"),
+    }
+    row["client_order_id"] = first + REPLACED_SUFFIX
+    row.pop("sending", None)
+    row.pop("send_error", None)
+    return True
 
 
 # Fetch only missing candidate quotes; legacy orders make no additional data requests.
@@ -677,20 +756,22 @@ def rule_text(
 ) -> str:
     """Return the rule's sentence, with the level once the open is known.
 
-    "15-min close ≤ $40.55 (1% under the $40.96 open), else at the close" for
-    a buy with its open; "15-min close 1% under the open, else at the close"
-    before the open is known. A sell reads ≥ and over.
+    "15-min close ≤ $40.55 (1% under the $40.96 open), else at market in the
+    last 15 minutes" for a buy with its open; "15-min close 1% under the open,
+    else at market in the last 15 minutes" before the open is known. A sell
+    reads ≥ and over.
     """
     way = "under" if side == "buy" else "over"
     sign = "≤" if side == "buy" else "≥"
     pct = f"{entry_timing.LEVEL:.0%}"
     shown = _level_text(level, side)
+    otherwise = f"else at market {entry_timing.last_minutes()}"
     if opened is not None and shown is not None:
         return (
             f"15-min close {sign} {shown} ({pct} {way} the {_money(opened)} open), "
-            "else at the close"
+            f"{otherwise}"
         )
-    return f"15-min close {pct} {way} the open, else at the close"
+    return f"15-min close {pct} {way} the open, {otherwise}"
 
 
 # Parse nonnegative share quantities without treating missing evidence as zero.
@@ -984,6 +1065,8 @@ def _recorded_status(
         bounded_execution.LIMIT_IOC: "IOC limit; fill unconfirmed",
         MOC: "market-on-close",
     }.get(how, "market order")
+    if row.get("replaced"):
+        label += ", replacing an unfilled market-on-close"
     words = f"Sent{stamp} · {label}"
     return "sent", words if known else f"{words} · broker status unavailable"
 
@@ -1022,15 +1105,16 @@ def _clock_status(
         if now >= clock["open"] + entry_timing.BAR:
             return "planned", "Waiting for today's opening price"
         return "planned", "Waiting for the 9:30-9:45 AM bar to set the open"
+    at = entry_timing._clock(clock["market"])
     if state == entry_timing.WAITING:
         shown = _level_text(timed.get("level"), side)
-        cutoff = entry_timing._clock(clock["cutoff"])
-        return "waiting", f"Waiting for {shown} or the close ({cutoff} window)"
+        return "waiting", f"Waiting for {shown}, else a market order at {at}"
     if state == entry_timing.TRIGGERED:
         return "due", f"Level hit: {_trigger(timed)} · order due"
     if state == entry_timing.CLOSE:
-        how = "market-on-close" if now < clock["moc"] else "market order"
-        return "due", f"Close window · {how} due"
+        if now < clock["market"]:
+            return "waiting", f"No level hit · market order at {at}"
+        return "due", f"Close window · market order due ({at} run)"
     return "missed", "Not sent: the session closed before the order went out"
 
 

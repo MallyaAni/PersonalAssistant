@@ -8,8 +8,8 @@ import { displayedBoardPrice, SessionPrice } from './StockBoard'
 // Every action on this board is the paper account's own order, read from
 // `/desk/paper` (`plan.orders`), and the paper account sends exactly those
 // orders on exactly the rule the board prints: a buy on a 15-minute close 1%
-// under the day's open, a sell 1% over it, otherwise market-on-close from the
-// 3:30 PM window. The wording of each order (why, when, what happened) comes
+// under the day's open, a sell 1% over it, otherwise a market order on the
+// last 15-minute run before the close (3:45 PM ET). The wording of each order (why, when, what happened) comes
 // from the backend in one place, so this board, the ticker panel and the
 // chart cannot tell different stories. A name with no order is HOLD when the
 // account holds it and a dash when it does not.
@@ -478,7 +478,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
     current?.key !== key ? {key, down: key !== 'ticker'} : current.down === (key !== 'ticker') ? {key, down: !current.down} : null)
   const ruleText = paper?.plan?.rule === 'next_open'
     ? 'Buys go in at the next open and sells at the next close.'
-    : 'Buys wait for a 15-minute close at least 1% under the day’s open; sells wait for one at least 1% over. Otherwise, market-on-close orders are due 30 minutes before the regular close; late orders use market execution before the close.'
+    : 'Buys wait for a 15-minute close at least 1% under the day’s open; sells wait for one at least 1% over. Otherwise, a market order goes in on the last 15-minute run before the close (3:45 PM ET; 12:45 PM on an early close).'
   return <section aria-label="Stocks and cash" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-black/[0.08] bg-white [container-type:inline-size]">
     <div className="shrink-0 space-y-2 border-b border-black/[0.06] px-3 py-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">

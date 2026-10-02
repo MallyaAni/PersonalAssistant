@@ -34,8 +34,9 @@ into one of five states for one name and one side:
   waiting    today's open is known and no close has reached the level
   triggered  a 15-minute close reached the level today: act now
   close      the close window (session close - 30 minutes, 15:30 ET or
-             12:30 ET on an early close) with no trigger: act at the close,
-             market-on-close before its entry cutoff (close - 10 minutes)
+             12:30 ET on an early close) with no trigger: act near the close,
+             a market order on the balancer's last candle before it
+             (close - 15 minutes, 15:45 ET or 12:45 ET on an early close)
   closed     the session is over; its decisions are finished
 
 Only `triggered` and `close` let a BUY/SELL/TRIM stand (`ACTING`).
@@ -72,6 +73,12 @@ BAR = timedelta(minutes=15)
 CLOSE_WINDOW = timedelta(minutes=30)
 # The exchange's market-on-close entry cutoff (3:50 PM ET on a 4:00 close).
 MOC_LEAD = timedelta(minutes=10)
+# How long before the close the desk's close-window order goes in, at market:
+# the balancer runs once a candle, so this is its last run before the close
+# (3:45 PM ET on a 4:00 close). The desk stopped sending market-on-close
+# orders on 2026-10-02: the paper broker expired 12 of the 18 it was sent
+# unfilled, while every market order filled within seconds.
+CLOSE_ORDER_LEAD = BAR
 PRE_OPEN = "pre-open"
 WAITING = "waiting"
 TRIGGERED = "triggered"
@@ -353,15 +360,17 @@ def _is_session(day: date) -> bool:
 
 
 # The instants that bound one session's decisions: its open, the close
-# window's start (close - 30 minutes), the market-on-close entry cutoff
-# (close - 10 minutes) and its close, all in New York time. The close is the
-# calendar's, so an early close moves all three.
+# window's start (close - 30 minutes), the desk's close-window market order
+# (close - 15 minutes, the balancer's last candle), the exchange's
+# market-on-close entry cutoff (close - 10 minutes) and its close, all in New
+# York time. The close is the calendar's, so an early close moves them all.
 def session_clock(session: date) -> dict[str, datetime]:
-    """Return {"open", "cutoff", "moc", "close"} for `session`."""
+    """Return {"open", "cutoff", "market", "moc", "close"} for `session`."""
     closes = datetime.combine(session, calendar.session_close(session), NEW_YORK)
     return {
         "open": datetime.combine(session, calendar.REGULAR_OPEN, NEW_YORK),
         "cutoff": closes - CLOSE_WINDOW,
+        "market": closes - CLOSE_ORDER_LEAD,
         "moc": closes - MOC_LEAD,
         "close": closes,
     }
@@ -513,6 +522,7 @@ def timing(
         "trigger_bar": None,
         "trigger_price": None,
         "close_cutoff": clock["cutoff"].isoformat(),
+        "close_order_at": clock["market"].isoformat(),
         "moc_deadline": clock["moc"].isoformat(),
     }
 
@@ -610,7 +620,7 @@ def _in_session(
         out["trigger_price"] = float(trigger["price"])
         return TRIGGERED, f"Triggered: {_trigger_text(out)}"
     if now >= clock["cutoff"]:
-        return CLOSE, f"At the close: {_close_text(out)}"
+        return CLOSE, f"Near the close: {_close_text(out)}"
     if opened is None:
         return PRE_OPEN, (
             "No opening bar yet today: the first 15-minute bar sets the open; the "
@@ -646,16 +656,28 @@ def _trigger_text(timed: dict[str, Any]) -> str:
     )
 
 
-# "no 15-minute close reached $99.00 today; market-on-close before 3:50 PM
-# ET": what acting at the close means, with the level when there is one.
+# "no 15-minute close reached $99.00 today; a market order at 3:45 PM ET, in
+# the last 15 minutes": what acting near the close means, with the level when
+# there is one.
 def _close_text(timed: dict[str, Any]) -> str:
-    """Return the sentence for acting at the close."""
-    moc = _instant(timed.get("moc_deadline"))
-    order = f"market-on-close before {_clock(moc)} ET" if moc else "market-on-close"
+    """Return the sentence for acting near the close."""
+    at = _instant(timed.get("close_order_at"))
+    order = (
+        f"a market order at {_clock(at)} ET, {last_minutes()}"
+        if at
+        else f"a market order {last_minutes()}"
+    )
     if timed.get("level") is None:
         return order
     level = _level_text(timed["level"], timed["side"])
     return f"no 15-minute close reached {level} today; {order}"
+
+
+# "in the last 15 minutes": when the close-window order goes in, in words.
+def last_minutes(whose: str = "the") -> str:
+    """Return the close-window order's timing as a phrase."""
+    minutes = int(CLOSE_ORDER_LEAD.total_seconds() // 60)
+    return f"in {whose} last {minutes} minutes"
 
 
 # The sentence a timed Hold carries in place of a BUY/SELL/TRIM that is not
@@ -671,22 +693,22 @@ def planned(word: str, size: float, timed: dict[str, Any]) -> str:
     if timed.get("open") is not None and timed.get("level") is not None:
         return (
             f"{head}: on a 15-minute close at or {way} {_where(timed)}, "
-            "else at the close"
+            f"else at market {last_minutes()}"
         )
     if timed.get("trading_day"):
         return (
             f"{head}: on a 15-minute close {pct} or more {way} today's open "
-            "(the 9:30 AM ET bar), else at the close"
+            f"(the 9:30 AM ET bar), else at market {last_minutes()}"
         )
     return (
         f"{head}: on a 15-minute close {pct} or more {way} the next session's "
-        "open, else at its close"
+        f"open, else at market {last_minutes('its')}"
     )
 
 
 # The sentence a timed BUY/SELL/TRIM carries while it stands: why now.
 def acting(word: str, timed: dict[str, Any]) -> str:
-    """Return e.g. "Buy now: the 10:30 AM ET ..." or "Buy at the close: ..."."""
+    """Return e.g. "Buy now: the 10:30 AM ET ..." or "Buy near the close: ..."."""
     if timed["state"] == TRIGGERED:
         return f"{word} now: {_trigger_text(timed)}"
-    return f"{word} at the close: {_close_text(timed)}"
+    return f"{word} near the close: {_close_text(timed)}"

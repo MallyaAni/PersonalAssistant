@@ -124,7 +124,7 @@ test('distinguishes unavailable paper history from an empty record set', async (
 const FILLED = {client_order_id: 'AAOI-1', symbol: 'AAOI', side: 'buy', action: 'BUY', qty: 2, price: 98.74, notional: 197.48, weight: 197.48 / 105000, leg: 'entry',
   why: 'Enters the book at 10.0%', reason: null, timing: 'dip_or_close', decided: SESSION, execute_on: '2026-09-29', open: 98, level: 97.02,
   sent_at: '2026-09-29T13:30:10Z', sent_how: 'market', filled_qty: 2, filled_price: 98.74, filled_at: '2026-09-29T13:30:18Z',
-  state: 'filled', status: 'Bought 2 @ $98.74 · 9:30 AM', when: 'Today · 15-min close ≤ $97.02 (1% under the $98.00 open), else at the close'}
+  state: 'filled', status: 'Bought 2 @ $98.74 · 9:30 AM', when: 'Today · 15-min close ≤ $97.02 (1% under the $98.00 open), else at market in the last 15 minutes'}
 
 for (const [name, order, word, detail, size] of [
   // A fill in the broker's activity is not an order of the plan: the board says nothing for the name.
@@ -144,7 +144,7 @@ for (const [name, order, word, detail, size] of [
     if (order) await expect(board.getByLabel('AAOI order status', {exact: true})).toContainText('Bought 2 @ $98.74 · 9:30 AM')
     await page.locator('summary', {hasText: 'Paper account'}).click()
     await expect(page.getByLabel('Paper execution', {exact: true})).toContainText('Bought 2 AAOI @ $98.74')
-    await expect(page.getByLabel('Paper account execution timing')).toContainText('a buy on a 15-minute close 1% under the day’s open, a sell 1% over it, otherwise market-on-close from 3:30 PM ET')
+    await expect(page.getByLabel('Paper account execution timing')).toContainText('a buy on a 15-minute close 1% under the day’s open, a sell 1% over it, otherwise at market in the last 15 minutes (3:45 PM ET)')
     await expect(board.getByLabel('AAOI strategy intent', {exact: true})).toHaveText(word)
     expect(diagnostics.writes).toEqual([])
     expect(diagnostics.errors).toEqual([])

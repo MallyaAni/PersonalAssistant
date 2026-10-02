@@ -109,7 +109,10 @@ def test_waiting_is_a_hold_with_the_level_in_the_reason(tmp_path):
     assert row["reason"].startswith(
         "Buy 9.1% planned: on a 15-minute close at or under $"
     )
-    assert f"(1% under today's open ${opened:,.2f}), else at the close" in row["reason"]
+    assert (
+        f"(1% under today's open ${opened:,.2f}), else at market in the last 15 minutes"
+        in row["reason"]
+    )
     assert "Buy to 9.1% target (policy graded-equal-weight/4)" in row["reason"]
     assert row["structure_gate"] == decision_view.CLEAR
 
@@ -195,7 +198,8 @@ def test_current_entry_cash_is_shared_only_by_names_still_inside_the_limit(tmp_p
     assert row["reason"].startswith("Buy limit $")
 
 
-# The close window with no trigger: BUY, at the close, market-on-close.
+# The close window with no trigger: BUY near the close, the market order the
+# paper desk sends on the last candle (3:45 PM ET) named.
 def test_the_close_window_is_a_buy(tmp_path):
     record, snapshot, quoted, now = v4(at(15, 31), move=-0.004)
     row = board(
@@ -204,8 +208,9 @@ def test_the_close_window_is_a_buy(tmp_path):
     assert row["action"] == "Buy"
     assert row["move_weight"] == pytest.approx(1 / 11, abs=1e-6)
     assert row["timing"]["state"] == entry_timing.CLOSE
-    assert row["reason"].startswith("Buy at the close: no 15-minute close reached $")
-    assert "market-on-close before 3:50 PM ET" in row["reason"]
+    assert row["reason"].startswith("Buy near the close: no 15-minute close reached $")
+    assert "a market order at 3:45 PM ET, in the last 15 minutes" in row["reason"]
+    assert "market-on-close" not in row["reason"]
 
 
 # A held name the record downgraded (close grade B, target zero) is the
@@ -284,7 +289,7 @@ def test_before_the_opening_bar_is_a_hold():
     assert row["timing"]["state"] == entry_timing.PRE_OPEN
     assert row["reason"].startswith(
         "Buy 9.1% planned: on a 15-minute close 1% or more under today's open "
-        "(the 9:30 AM ET bar), else at the close"
+        "(the 9:30 AM ET bar), else at market in the last 15 minutes"
     )
 
 

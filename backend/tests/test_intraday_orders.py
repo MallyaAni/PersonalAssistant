@@ -5,9 +5,9 @@ side by side and they must never disagree:
 
 * an order is sent exactly when the board's `entry_timing` says BUY/SELL/TRIM
   stands: a market order on the first 15-minute close through the 1% level,
-  a market-on-close order in the close window before the cutoff, a market
-  order late in the window after it, and nothing before the open, while
-  waiting, or after the close;
+  a market order on the balancer's last candle before the close (3:45 PM ET)
+  without one, and nothing before the open, while waiting, in the close
+  window before that last candle, or after the close;
 * it is written down as being sent before the request leaves, sent once
   (a second candle, or an order an earlier run already placed, sends nothing),
   never while the broker says the market is closed, and a sell never for
@@ -174,8 +174,9 @@ def test_only_todays_unsent_ordinary_rows_are_due():
         (ny(9, 20), None, None),  # before the open
         (ny(10, 16), None, None),  # waiting for the level
         (ny(10, 16), "buy", intraday_orders.MARKET),  # level reached
-        (ny(15, 35), None, intraday_orders.MOC),  # close window
-        (ny(15, 52), None, intraday_orders.MARKET),  # past the MOC cutoff
+        (ny(15, 35), None, None),  # close window, before the last candle
+        (ny(15, 45), None, intraday_orders.MARKET),  # the last candle
+        (ny(15, 52), None, intraday_orders.MARKET),  # a late run, still open
         (ny(16, 5), None, None),  # the session has closed
     ],
 )
@@ -219,8 +220,8 @@ def test_a_triggered_buy_is_sent_once(tmp_path):
     assert len(broker.sent) == 1
 
 
-# A buy still waiting sends nothing; in the close window it goes in as a
-# market-on-close order, and a sell with a pop goes to the market.
+# A buy still waiting sends nothing; a sell with a pop goes to the market; the
+# close window waits for its last candle, which sends the buy at market.
 def test_waiting_close_window_and_a_sell_pop(tmp_path):
     save(tmp_path, row("AAA"), row("BBB", side="sell", qty=5, reason="leaves the book"))
     latch(tmp_path, symbol="AAA")
@@ -229,20 +230,21 @@ def test_waiting_close_window_and_a_sell_pop(tmp_path):
     snapshot = {"quotes": {"BBB": quote(101.2, ny(11, 0))}}
     lines = intraday_orders.send_due(tmp_path, snapshot, ny(11, 16), lambda: broker)
     assert lines == ["sell 5 BBB (market, triggered): sent"]
-    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 31), lambda: broker)
-    assert lines == ["buy 10 AAA (moc, close): sent"]
+    assert intraday_orders.send_due(tmp_path, {}, ny(15, 31), lambda: broker) == []
+    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 46), lambda: broker)
+    assert lines == ["buy 10 AAA (market, close): sent"]
     assert [s[:4] for s in broker.sent] == [
         ("market", "sell", "BBB", 5),
-        ("moc", "buy", "AAA", 10),
+        ("market", "buy", "AAA", 10),
     ]
 
 
 # Nothing is sent while the broker reports the market closed, whatever the
-# calendar says: a market-on-close order then would queue for the next close.
+# calendar says.
 def test_nothing_is_sent_while_the_broker_is_closed(tmp_path):
     save(tmp_path, row("AAA"))
     broker = Broker(is_open=False)
-    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 31), lambda: broker)
+    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 46), lambda: broker)
     assert "market closed" in lines[0]
     assert broker.sent == []
     assert "sent" not in paper.load_state(tmp_path).pending[0]
@@ -256,13 +258,13 @@ def test_an_order_already_at_the_broker_is_adopted(tmp_path):
         {
             "client_order_id": row()["client_order_id"],
             "status": "accepted",
-            "time_in_force": "cls",
-            "submitted_at": "2026-09-30T19:31:00Z",
+            "time_in_force": "day",
+            "submitted_at": "2026-09-30T19:46:00Z",
         }
     ]
     broker = Broker(existing=existing)
-    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 35), lambda: broker)
-    assert lines == ["buy 10 AAA (moc, close): already at the broker, recorded"]
+    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 47), lambda: broker)
+    assert lines == ["buy 10 AAA (market, close): already at the broker, recorded"]
     assert broker.sent == []
     assert paper.load_state(tmp_path).pending[0]["sent"]["adopted"] is True
 
@@ -275,11 +277,11 @@ def test_a_sell_never_exceeds_the_position(tmp_path):
         row("BBB", side="sell", qty=4, reason="leaves the book"),
     )
     broker = Broker(held={"AAA": 6})
-    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 35), lambda: broker)
+    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 46), lambda: broker)
     assert broker.sent == [
-        ("moc", "sell", "AAA", 6, row("AAA", side="sell")["client_order_id"])
+        ("market", "sell", "AAA", 6, row("AAA", side="sell")["client_order_id"])
     ]
-    assert "sell 4 BBB (moc, close): not sent (no shares to sell)" in lines
+    assert "sell 4 BBB (market, close): not sent (no shares to sell)" in lines
     kept = {r["symbol"]: r for r in paper.load_state(tmp_path).pending}
     assert kept["AAA"]["sent"]["qty"] == 6
     assert kept["BBB"]["send_error"] == "no shares to sell"
@@ -289,14 +291,14 @@ def test_a_sell_never_exceeds_the_position(tmp_path):
 def test_a_refused_order_is_retried(tmp_path):
     save(tmp_path, row("AAA"))
     refusing = Broker(refuse="insufficient buying power")
-    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 31), lambda: refusing)
-    assert lines == ["buy 10 AAA (moc, close): REFUSED insufficient buying power"]
+    lines = intraday_orders.send_due(tmp_path, {}, ny(15, 46), lambda: refusing)
+    assert lines == ["buy 10 AAA (market, close): REFUSED insufficient buying power"]
     kept = paper.load_state(tmp_path).pending[0]
     assert kept["send_error"] == "insufficient buying power"
     assert "sent" not in kept
     broker = Broker()
-    assert intraday_orders.send_due(tmp_path, {}, ny(15, 46), lambda: broker) == [
-        "buy 10 AAA (moc, close): sent"
+    assert intraday_orders.send_due(tmp_path, {}, ny(15, 51), lambda: broker) == [
+        "buy 10 AAA (market, close): sent"
     ]
     assert "send_error" not in paper.load_state(tmp_path).pending[0]
 
@@ -362,7 +364,8 @@ def test_the_board_reads_each_order_in_one_vocabulary(tmp_path):
     assert planned["state"] == "planned"
     assert planned["status"] == "Planned"
     assert planned["when"] == (
-        "Wed Sep 30 · 15-min close 1% under the open, else at the close"
+        "Wed Sep 30 · 15-min close 1% under the open, "
+        "else at market in the last 15 minutes"
     )
     assert planned["notional"] == pytest.approx(400.0)
     assert planned["weight"] == pytest.approx(0.004)
@@ -380,12 +383,19 @@ def test_the_board_reads_each_order_in_one_vocabulary(tmp_path):
         now=ny(10, 20),
     )
     assert waiting["state"] == "waiting"
-    assert waiting["status"] == "Waiting for $40.59 or the close (3:30 PM window)"
+    assert waiting["status"] == "Waiting for $40.59, else a market order at 3:45 PM"
     assert waiting["when"] == (
-        "Today · 15-min close ≤ $40.59 (1% under the $41.00 open), else at the close"
+        "Today · 15-min close ≤ $40.59 (1% under the $41.00 open), "
+        "else at market in the last 15 minutes"
     )
-    # An unsent close-window order is due, not evidence of a submission.
-    due = intraday_orders.board_row(row(), broker=None, now=ny(15, 35), **common)
+    # The close window before its last candle is still waiting.
+    window = intraday_orders.board_row(row(), broker=None, now=ny(15, 35), **common)
+    assert (window["state"], window["status"]) == (
+        "waiting",
+        "No level hit · market order at 3:45 PM",
+    )
+    # An unsent last-candle order is due, not evidence of a submission.
+    due = intraday_orders.board_row(row(), broker=None, now=ny(15, 46), **common)
     assert due["state"] == "due"
     assert "due" in due["status"]
     assert "sending" not in due["status"]
@@ -614,18 +624,32 @@ def test_adopted_broker_quantity_overrides_plan():
     assert (shown["qty"], shown["remaining_qty"], shown["submitted_qty"]) == (5, 5, 5)
 
 
-# The dashboard uses the same MOC cutoff as execution, including early closes.
+# The board's words for a last-candle order that is due on a regular session.
+DUE_AT_345 = "Close window · market order due (3:45 PM run)"
+# A calendar early close (1 PM), and the board's words before and on its last candle.
+EARLY_CLOSE = date(2026, 11, 27)
+WAIT_AT_1245 = "No level hit · market order at 12:45 PM"
+DUE_AT_1245 = "Close window · market order due (12:45 PM run)"
+
+
+# The dashboard says what execution does in the close window, including on
+# the calendar's early closes: nothing until the last candle, then a market order.
 @pytest.mark.parametrize(
-    ("day", "hour", "minute", "how"),
+    ("day", "hour", "minute", "how", "state", "status"),
     [
-        (TODAY, 15, 30, "moc"),
-        (TODAY, 15, 50, "market"),
-        (TODAY, 15, 55, "market"),
-        (date(2026, 11, 27), 12, 30, "moc"),
-        (date(2026, 11, 27), 12, 50, "market"),
+        (TODAY, 15, 30, None, "waiting", "No level hit · market order at 3:45 PM"),
+        (TODAY, 15, 44, None, "waiting", "No level hit · market order at 3:45 PM"),
+        (TODAY, 15, 45, "market", "due", DUE_AT_345),
+        (TODAY, 15, 50, "market", "due", DUE_AT_345),
+        (TODAY, 15, 55, "market", "due", DUE_AT_345),
+        (EARLY_CLOSE, 12, 30, None, "waiting", WAIT_AT_1245),
+        (EARLY_CLOSE, 12, 45, "market", "due", DUE_AT_1245),
+        (EARLY_CLOSE, 12, 50, "market", "due", DUE_AT_1245),
     ],
 )
-def test_close_window_words_match_actual_order_type(day, hour, minute, how):
+def test_close_window_words_match_actual_order_type(
+    day, hour, minute, how, state, status
+):
     now = ny(hour, minute, day)
     pending = row(execute_on=day.isoformat())
     latch_row = {"open": 100.0}
@@ -641,5 +665,5 @@ def test_close_window_words_match_actual_order_type(day, hour, minute, how):
         now=now,
     )
     assert verdict["send"] == how
-    order_type = "market-on-close" if how == "moc" else "market order"
-    assert shown["status"] == f"Close window · {order_type} due"
+    assert (shown["state"], shown["status"]) == (state, status)
+    assert "market-on-close" not in shown["when"]

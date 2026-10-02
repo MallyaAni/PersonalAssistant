@@ -38,7 +38,7 @@ async function allNames(page: Page) {
 const NVDA_PLANNED = {client_order_id: 'NVDA-1', symbol: 'NVDA', side: 'buy', action: 'BUY', qty: 10, price: 130, notional: 1300, weight: 1300 / 104200, leg: 'entry',
   why: 'Grade rose to A', reason: null, timing: 'dip_or_close', decided: '2026-09-08', execute_on: '2026-09-09', open: null, level: null,
   sent_at: null, sent_how: null, filled_qty: null, filled_price: null, filled_at: null,
-  state: 'planned', status: 'Planned', when: 'Wed Sep 9 · 15-min close 1% under the open, else at the close'}
+  state: 'planned', status: 'Planned', when: 'Wed Sep 9 · 15-min close 1% under the open, else at market in the last 15 minutes'}
 const paperPlan = (orders: object[] = [NVDA_PLANNED]) => ({rule: 'dip_or_close', until_rebalance: 18, last_rebalance: '2026-08-12', reason: null, orders})
 
 // Unsupported historical returns stay hidden while the original record remains archived.
@@ -75,7 +75,7 @@ test('account wording distinguishes allocation from profit and paper from person
   await expect(page.getByText(/BUY, SELL and TRIM are the paper account's orders/)).toBeVisible()
   await expect(page.getByText(/HOLD means no order: the position stays/)).toBeVisible()
   await expect(page.getByText('Enter your account size once', {exact: false})).toBeVisible()
-  await expect(page.getByText('market-on-close from 3:30 PM ET', {exact: false}).first()).toBeVisible()
+  await expect(page.getByText('at market in the last 15 minutes (3:45 PM ET)', {exact: false}).first()).toBeVisible()
   await expect(page.getByRole('button', {name: 'Size', exact: true})).toHaveAttribute('title', /Planned or submitted sizes use a price estimate/)
   await expect(await stockDetails(page, 'AAPL')).toContainText('Paper position')
   await expect(page.locator('body')).not.toContainText('same whatever you have recorded')
