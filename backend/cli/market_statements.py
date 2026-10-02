@@ -346,12 +346,18 @@ def current_frame_exists(
     if not store.has_frame(statements.KIND, asof, ticker):
         return False
     columns, metadata = store.read_frame(statements.KIND, ticker, asof)
+    records = records_from_frame(columns)
+    # A name with no observations stores an empty frame: no model answered
+    # anything in it, so it is compatible with every model and prompt
+    # (a run under the wrong model must not leave it blocking the rerun).
+    if not records:
+        return True
     if (
         metadata.get("prompt_version") != PROMPT_VERSION
         or metadata.get("model") != model
         or any(
             r.prompt_version != PROMPT_VERSION or r.model != model
-            for r in records_from_frame(columns)
+            for r in records
         )
     ):
         raise RuntimeError(

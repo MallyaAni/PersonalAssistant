@@ -6,7 +6,9 @@ with the partial removed; a rerun resumes from the partial and calls only
 the unscored quarters; a failed call keeps the successes in the partial,
 writes no frame and raises; a past deadline calls nothing; a prior
 partition under another prompt version carries nothing forward and an
-incompatible frame in the partition is refused rather than overwritten;
+incompatible frame in the partition is refused rather than overwritten,
+while an empty frame (a name with no observations) is kept whatever
+model wrote it;
 the plan step counts one call per observation; the null test passes on a
 constant arm and the evaluate step measures a real arm against its
 comparators on shared cells with the plan's criteria; the accuracy report
@@ -200,6 +202,29 @@ def test_an_incompatible_frame_in_the_partition_is_refused(tmp_path):
     )
     with pytest.raises(RuntimeError, match="incompatible"):
         ms.current_frame_exists(store, "AAA", ASOF, "m")
+
+
+def test_an_empty_frame_is_kept_whatever_model_wrote_it(tmp_path):
+    # A name with no observations holds an empty frame; a rerun under the
+    # registered model keeps it instead of refusing the whole partition.
+    store = FakeStore(tmp_path, filer())
+    store.write_frame(
+        st.KIND,
+        ASOF,
+        "AAA",
+        ms.statement_frame([]),
+        {"prompt_version": "statements/1", "model": "other"},
+    )
+    assert ms.current_frame_exists(store, "AAA", ASOF, "m") is True
+    store.write_frame(
+        st.KIND,
+        ASOF,
+        "BBB",
+        ms.statement_frame([record()]),
+        {"prompt_version": "statements/1", "model": "other"},
+    )
+    with pytest.raises(RuntimeError, match="incompatible"):
+        ms.current_frame_exists(store, "BBB", ASOF, "m")
 
 
 def test_a_name_without_versions_is_reported_not_scored(tmp_path):
