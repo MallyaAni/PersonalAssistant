@@ -237,6 +237,7 @@ def is_opening_bar(bar: datetime) -> bool:
 # opening bar, the quote's session high and last close are that bar's own
 # high and close, and they are kept as `first_bar` for the board's level
 # tags (`structure.level_tag`), which the later candles can no longer show.
+# Receipt times and trigger revisions preserve what earlier decision clocks knew.
 def _merge(
     row: dict | None,
     opened: float,
@@ -247,10 +248,17 @@ def _merge(
 ) -> dict:
     """Return the latch row after this bar."""
     out = dict(row or {})
+    out.setdefault("history_started_at", seen)
     if _price(out.get("open")) is None:
         out["open"] = opened
+        out["open_seen_at"] = seen
     if high is not None and is_opening_bar(bar) and "first_bar" not in out:
-        out["first_bar"] = {"high": high, "close": last, "bar": bar.isoformat()}
+        out["first_bar"] = {
+            "high": high,
+            "close": last,
+            "bar": bar.isoformat(),
+            "seen_at": seen,
+        }
     base = float(out["open"])
     out["buy_level"] = level_for(base, "buy")
     out["sell_level"] = level_for(base, "sell")
@@ -262,9 +270,17 @@ def _merge(
         key = f"{side}_trigger"
         out.setdefault(key, None)
         if crosses(last, base, side):
-            out[key] = _first(
-                out.get(key), {"bar": bar.isoformat(), "price": last, "seen_at": seen}
+            before = out.get(key)
+            after = _first(
+                before, {"bar": bar.isoformat(), "price": last, "seen_at": seen}
             )
+            if after != before:
+                versions = list(out.get(f"{key}_versions") or [])
+                if before is not None and before not in versions:
+                    versions.append(before)
+                versions.append(after)
+                out[f"{key}_versions"] = versions
+            out[key] = after
     return out
 
 
@@ -274,29 +290,23 @@ def _merge(
 # New York date of the bar; the session's file is read, each name's row is
 # merged (`_merge`), and the file is written atomically only when something
 # changed, so running the same snapshot twice writes nothing the second time.
-# A bar that would not be complete at `now` is ignored. Returns the paths
+# Only received, completed regular-session bars are admitted. Returns the paths
 # written. Raises only on a filesystem failure; the balancer's call wraps it.
 def update(root: Path | str, snapshot: dict | None, now: datetime) -> list[Path]:
     """Latch opens and first level crossings; return the latch files written."""
     if now.tzinfo is None:
         raise ValueError("update requires a timezone-aware now")
     seen = str((snapshot or {}).get("as_of") or now.isoformat())
+    observed = _instant(seen)
+    if observed is None or observed > now:
+        return []
     by_session: dict[date, dict[str, tuple[float, float, datetime, float | None]]] = {}
     for symbol, quote in ((snapshot or {}).get("quotes") or {}).items():
-        if not isinstance(quote, dict):
-            continue
-        bar = _instant(quote.get("bar"))
-        opened = _price(quote.get("open"))
-        last = _price(quote.get("last"))
-        if bar is None or opened is None or last is None or bar + BAR > now:
-            continue
-        session = bar.astimezone(NEW_YORK).date()
-        by_session.setdefault(session, {})[str(symbol)] = (
-            opened,
-            last,
-            bar,
-            _price(quote.get("high")),
-        )
+        values = _completed_quote(quote, observed)
+        if values is not None:
+            by_session.setdefault(values[2].astimezone(NEW_YORK).date(), {})[
+                str(symbol)
+            ] = values
     folder = Path(root) / "desk" / LATCH_DIR
     written: list[Path] = []
     if not by_session:
@@ -386,6 +396,48 @@ def _way(side: str) -> str:
     return "under" if side == "buy" else "over"
 
 
+# Check both market time and observation time before a completed regular bar is usable.
+def _observable(bar: datetime | None, seen: Any, now: datetime, session: date) -> bool:
+    observed = _instant(seen)
+    clock = session_clock(session)
+    return bool(
+        bar is not None
+        and observed is not None
+        and clock["open"] <= bar < bar + BAR <= clock["close"]
+        and bar + BAR <= observed <= now
+        and (bar - clock["open"]).total_seconds() % BAR.total_seconds() == 0
+    )
+
+
+# Admit a quote for persistence only after its completed bar and receipt are observable.
+def _completed_quote(quote, now):
+    if not isinstance(quote, dict):
+        return None
+    bar = _instant(quote.get("bar"))
+    opened, last = _price(quote.get("open")), _price(quote.get("last"))
+    if bar is None or opened is None or last is None:
+        return None
+    session = bar.astimezone(NEW_YORK).date()
+    if _is_session(session) and _observable(bar, quote.get("as_of"), now, session):
+        return opened, last, bar, _price(quote.get("high"))
+    return None
+
+
+# Select the earliest observed crossing, retaining revised historical prefixes.
+def _observed_trigger(row, opened, side, now, session):
+    key = f"{side}_trigger"
+    candidates = [row.get(key), *(row.get(f"{key}_versions") or [])]
+    valid = [
+        found
+        for found in candidates
+        if isinstance(found, dict)
+        and _price(found.get("price")) is not None
+        and _observable(_instant(found.get("bar")), found.get("seen_at"), now, session)
+        and crosses(float(found["price"]), opened, side)
+    ]
+    return min(valid, key=lambda found: _instant(found["bar"]), default=None)
+
+
 # The opening price and this side's trigger for one name on `session`, from
 # the latch first and the current quote second. The quote counts only when
 # its bar belongs to `session` and was complete at `now`; a quote whose own
@@ -396,17 +448,15 @@ def _open_and_trigger(
 ) -> tuple[float | None, dict | None]:
     """Return (the session's open, this side's trigger) or Nones."""
     opened = _price((latch_row or {}).get("open"))
+    if "open_seen_at" in (latch_row or {}):
+        seen = _instant(latch_row["open_seen_at"])
+        if seen is None or seen > now:
+            opened = None
     trigger = None
     if opened is not None:
-        found = (latch_row or {}).get(f"{side}_trigger")
-        if isinstance(found, dict) and _price(found.get("price")) is not None:
-            trigger = found
+        trigger = _observed_trigger(latch_row or {}, opened, side, now, session)
     bar = _instant((quote or {}).get("bar"))
-    if (
-        bar is not None
-        and bar.astimezone(NEW_YORK).date() == session
-        and bar + BAR <= now
-    ):
+    if _observable(bar, (quote or {}).get("as_of"), now, session):
         quote_open = _price(quote.get("open"))
         quote_last = _price(quote.get("last"))
         if opened is None:

@@ -52,7 +52,9 @@ def quote(last: float, bar: datetime, opened: float = 100.0, symbol: str = "AAA"
 def snapshot(*quotes, as_of: datetime | None = None) -> dict:
     """Return a live.json-shaped snapshot."""
     return {
-        "as_of": (as_of or ny(SESSION, 10, 16)).astimezone(UTC).isoformat(),
+        "as_of": (as_of or max(datetime.fromisoformat(q["as_of"]) for q in quotes))
+        .astimezone(UTC)
+        .isoformat(),
         "quotes": {q["symbol"]: q for q in quotes},
     }
 
