@@ -58,6 +58,13 @@ def test_funded_paths_preserve_account_and_complete_denominator():
     assert np.all(account["positions"] >= 0)
     assert account["nav"][0] == 1
     assert account["fees"].sum() > 0
+    idle = [
+        row
+        for row in account["decisions"]
+        if abs(row["planned_delta_adjusted_units"]) <= 1e-14
+    ]
+    assert idle
+    assert all(row["funded_status"] == "no_intent" for row in idle)
     assert account["fill_proof"] is False
     assert account["no_funding_retry"]
 

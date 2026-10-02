@@ -352,7 +352,9 @@ def account(  # noqa: C901 - retain explicit plan, fill and mark order
             for j, row in enumerate(batch_rows):
                 row["executed_adjusted_units"] = float(book.shares[j] - before[j])
                 row["funded_status"] = (
-                    "filled"
+                    "no_intent"
+                    if abs(row["planned_delta_adjusted_units"]) <= 1e-14
+                    else "filled"
                     if abs(
                         row["executed_adjusted_units"]
                         - row["planned_delta_adjusted_units"]

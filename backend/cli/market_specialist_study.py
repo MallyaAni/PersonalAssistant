@@ -2,7 +2,7 @@
 
 import argparse
 import hashlib
-import importlib.metadata
+import importlib
 import json
 import subprocess
 from pathlib import Path
@@ -115,8 +115,14 @@ def main():
             for path in implementation
         },
         "runtime": {
-            name: importlib.metadata.version(name)
-            for name in ("numpy", "cvxpy", "skfolio", "scikit-learn", "clarabel")
+            name: str(importlib.import_module(module).__version__)
+            for name, module in (
+                ("numpy", "numpy"),
+                ("cvxpy", "cvxpy"),
+                ("skfolio", "skfolio"),
+                ("scikit-learn", "sklearn"),
+                ("clarabel", "clarabel"),
+            )
         },
     }
     paths = [args.input, args.portfolio, args.provenance, *args.baselines, *args.joint]
