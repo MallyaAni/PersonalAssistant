@@ -254,6 +254,19 @@ def _opt_float(column: list | None, i: int) -> float | None:
     return float(value) if value is not None else None
 
 
+# The stored release readings of `tickers` that have a tone frame, from the
+# newest partitions on or before `asof` (the desk's loader reads the same).
+def stored_records(store, tickers, asof: date | None = None) -> dict[str, tuple]:
+    """Return {ticker: ToneRecords, oldest first} for the names with a frame."""
+    records: dict[str, tuple] = {}
+    for ticker in tickers:
+        frame = store.read_frame(TONE_KIND, ticker, asof)
+        if frame is None:
+            continue
+        records[ticker] = records_from_frame(frame[0])
+    return records
+
+
 # The partial file a long run appends to, one JSON record per line.
 def partial_path(root: Path, asof: date, ticker: str) -> Path:
     """Return the path of a ticker's in-progress tone file."""
@@ -354,6 +367,7 @@ __all__ = [
     "press_release_href",
     "read_partial",
     "records_from_frame",
+    "stored_records",
     "tone_features",
     "tone_frame",
     "_get_json",

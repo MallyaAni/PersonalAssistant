@@ -1,0 +1,4 @@
+A5-hard: REPLACES
+A5-decay: REPLACES
+proposed: A5-hard
+independent check: OK
