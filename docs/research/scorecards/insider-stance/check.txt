@@ -1,0 +1,56 @@
+/home/animallya96/scratch/wt-ins/backend/agents/trading/desk/regime.py:136: RuntimeWarning: Mean of empty slice
+  out[t] = np.nanmean(window, axis=0)
+/home/animallya96/scratch/wt-ins/backend/agents/trading/desk/regime.py:226: RuntimeWarning: All-NaN slice encountered
+  ai_part = np.nanmedian(np.where(is_ai[None, :], part, np.nan), axis=1)
+/home/animallya96/scratch/wt-ins/backend/agents/trading/desk/regime.py:227: RuntimeWarning: All-NaN slice encountered
+  sw_part = np.nanmedian(np.where(is_sw[None, :], part, np.nan), axis=1)
+/home/animallya96/scratch/wt-ins/backend/market/levels.py:64: RuntimeWarning: All-NaN slice encountered
+  is_low = np.isfinite(low[t]) & (low[t] < np.nanmin(window_low, axis=0))
+/home/animallya96/scratch/wt-ins/backend/market/levels.py:65: RuntimeWarning: All-NaN slice encountered
+  is_high = np.isfinite(high[t]) & (high[t] > np.nanmax(window_high, axis=0))
+/home/animallya96/scratch/wt-ins/backend/market/levels.py:83: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmax(candidates, axis=0) if len(window) else np.nan
+/home/animallya96/scratch/wt-ins/backend/market/levels.py:86: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmin(candidates, axis=0) if len(window) else np.nan
+/home/animallya96/scratch/wt-ins/backend/market/levels.py:129: RuntimeWarning: Mean of empty slice
+  middle = np.nanmean(piece, axis=0)
+/home/animallya96/research-venv/lib/python3.12/site-packages/numpy/lib/_nanfunctions_impl.py:1997: RuntimeWarning: Degrees of freedom <= 0 for slice.
+  var = nanvar(a, axis=axis, dtype=dtype, out=out, ddof=ddof,
+/home/animallya96/scratch/wt-ins/backend/market/levels.py:278: RuntimeWarning: All-NaN slice encountered
+  out[t] = np.nanmax(window, axis=0) if largest else np.nanmin(window, axis=0)
+OK rows known after their filing: 157380 rows, 0 known on or before
+OK sign of dollars follows the code
+OK null: 0 defined ICs
+OK h20 in_window cells 161590 vs 161590
+OK h20 in_window A4-opp opportunistic insiders: IC -0.0061 (t -0.50) vs payload -0.0061 (t -0.50), 101 periods
+OK h20 in_window A4-all all insiders: IC -0.0240 (t -1.54) vs payload -0.0240 (t -1.54), 101 periods
+OK h20 in_window D desk (five analysts): IC +0.0601 (t +3.73) vs payload +0.0601 (t +3.73), 101 periods
+OK h20 first_half cells 74583 vs 74583
+OK h20 first_half A4-opp opportunistic insiders: IC +0.0034 (t +0.18) vs payload +0.0034 (t +0.18), 51 periods
+OK h20 first_half A4-all all insiders: IC -0.0330 (t -1.39) vs payload -0.0330 (t -1.39), 51 periods
+OK h20 first_half D desk (five analysts): IC +0.0715 (t +3.20) vs payload +0.0715 (t +3.20), 51 periods
+OK h20 second_half cells 87007 vs 87007
+OK h20 second_half A4-opp opportunistic insiders: IC -0.0112 (t -0.87) vs payload -0.0112 (t -0.87), 51 periods
+OK h20 second_half A4-all all insiders: IC -0.0067 (t -0.32) vs payload -0.0067 (t -0.32), 51 periods
+OK h20 second_half D desk (five analysts): IC +0.0441 (t +2.02) vs payload +0.0441 (t +2.02), 51 periods
+OK h20 out_of_window cells 17672 vs 17672
+OK h20 out_of_window A4-opp opportunistic insiders: IC +0.0390 (t +1.50) vs payload +0.0390 (t +1.50), 9 periods
+OK h20 out_of_window A4-all all insiders: IC +0.0178 (t +0.44) vs payload +0.0178 (t +0.44), 9 periods
+OK h20 out_of_window D desk (five analysts): IC +0.1611 (t +2.20) vs payload +0.1611 (t +2.20), 9 periods
+OK h60 in_window cells 161590 vs 161590
+OK h60 in_window A4-opp opportunistic insiders: IC -0.0018 (t -0.09) vs payload -0.0018 (t -0.09), 34 periods
+OK h60 in_window A4-all all insiders: IC -0.0188 (t -0.71) vs payload -0.0188 (t -0.71), 34 periods
+OK h60 in_window D desk (five analysts): IC +0.0618 (t +2.27) vs payload +0.0618 (t +2.27), 34 periods
+OK h60 first_half cells 74583 vs 74583
+OK h60 first_half A4-opp opportunistic insiders: IC +0.0074 (t +0.26) vs payload +0.0074 (t +0.26), 17 periods
+OK h60 first_half A4-all all insiders: IC -0.0433 (t -0.95) vs payload -0.0433 (t -0.95), 17 periods
+OK h60 first_half D desk (five analysts): IC +0.0582 (t +1.57) vs payload +0.0582 (t +1.57), 17 periods
+OK h60 second_half cells 87007 vs 87007
+OK h60 second_half A4-opp opportunistic insiders: IC -0.0084 (t -0.31) vs payload -0.0084 (t -0.31), 17 periods
+OK h60 second_half A4-all all insiders: IC +0.0098 (t +0.34) vs payload +0.0098 (t +0.34), 17 periods
+OK h60 second_half D desk (five analysts): IC +0.0707 (t +1.82) vs payload +0.0707 (t +1.82), 17 periods
+OK h60 out_of_window cells 17672 vs 17672
+OK h60 out_of_window A4-opp opportunistic insiders: IC +0.0462 (t +3.37) vs payload +0.0462 (t +3.37), 3 periods
+OK h60 out_of_window A4-all all insiders: IC +0.0842 (t +1.56) vs payload +0.0842 (t +1.56), 3 periods
+OK h60 out_of_window D desk (five analysts): IC +0.1218 (t +0.69) vs payload +0.1218 (t +0.69), 3 periods
+ALL OK

@@ -1,0 +1,44 @@
+2026-10-01T20:32:50Z repo /home/animallya96/dspark-commit
+/home/animallya96/scratch/ins.bundle is okay
+The bundle contains this ref:
+3f823048f7b63eba9fda3a193cadaa813d622d2b refs/heads/research/insider-stance
+The bundle requires this ref:
+95424784651ab5c9ac3dcc1c32f4f2a39ad093f3 
+The bundle uses this hash algorithm: sha1
+From /home/animallya96/scratch/ins.bundle
+ * [new branch]        research/insider-stance -> refs/bundles/ins
+Already up to date.
+2026-10-01T20:32:51Z start rev 3f823048f7b63eba9fda3a193cadaa813d622d2b dirty 0
+2026-10-01T20:32:55Z tests exit 0 (21 passed in 3.59s)
+2026-10-01T20:32:55Z waiting for the fetch (SEC off-peak) (New York 1632 is inside 0600-2100)
+2026-10-01T20:47:55Z waiting for the fetch (SEC off-peak) (New York 1647 is inside 0600-2100)
+2026-10-01T21:02:55Z waiting for the fetch (SEC off-peak) (New York 1702 is inside 0600-2100)
+2026-10-01T21:17:55Z waiting for the fetch (SEC off-peak) (New York 1717 is inside 0600-2100)
+2026-10-01T21:32:55Z waiting for the fetch (SEC off-peak) (New York 1732 is inside 0600-2100)
+2026-10-01T21:47:55Z waiting for the fetch (SEC off-peak) (New York 1747 is inside 0600-2100)
+2026-10-01T22:02:55Z waiting for the fetch (SEC off-peak) (New York 1802 is inside 0600-2100)
+2026-10-01T22:17:55Z waiting for the fetch (SEC off-peak) (New York 1817 is inside 0600-2100)
+2026-10-01T22:32:55Z waiting for the fetch (SEC off-peak) (New York 1832 is inside 0600-2100)
+2026-10-01T22:47:55Z waiting for the fetch (SEC off-peak) (New York 1847 is inside 0600-2100)
+2026-10-01T23:02:55Z waiting for the fetch (SEC off-peak) (New York 1902 is inside 0600-2100)
+2026-10-01T23:17:55Z waiting for the fetch (SEC off-peak) (New York 1917 is inside 0600-2100)
+2026-10-01T23:32:55Z waiting for the fetch (SEC off-peak) (New York 1932 is inside 0600-2100)
+2026-10-01T23:47:55Z waiting for the fetch (SEC off-peak) (New York 1947 is inside 0600-2100)
+2026-10-02T00:02:55Z waiting for the fetch (SEC off-peak) (New York 2002 is inside 0600-2100)
+2026-10-02T00:17:55Z waiting for the fetch (SEC off-peak) (New York 2017 is inside 0600-2100)
+2026-10-02T00:32:55Z waiting for the fetch (SEC off-peak) (New York 2032 is inside 0600-2100)
+2026-10-02T00:47:55Z waiting for the fetch (SEC off-peak) (New York 2047 is inside 0600-2100)
+2026-10-02T01:02:55Z fetch attempt 1 start
+2026-10-02T01:05:27Z fetch attempt 1 exit 1 (partition 2026-10-02: 82 stored, 0 kept, 2 failed in 2.5 min)
+2026-10-02T01:15:27Z fetch attempt 2 start
+2026-10-02T01:15:29Z fetch attempt 2 exit 1 (partition 2026-10-02: 0 stored, 82 kept, 2 failed in 0.0 min)
+2026-10-02T01:25:29Z fetch attempt 3 start
+2026-10-02T01:25:29Z fetch attempt 3 exit 1 (partition 2026-10-02: 0 stored, 82 kept, 2 failed in 0.0 min)
+2026-10-02T01:35:36Z quarters stored: 82 of 84
+2026-10-02T01:35:36Z fetch left failures after 3 attempts; building on what is stored (see fetch.txt)
+2026-10-02T01:35:36Z build start
+2026-10-02T01:36:59Z build exit 0
+2026-10-02T01:36:59Z evaluate start
+2026-10-02T01:37:40Z evaluate exit 0
+2026-10-02T01:37:40Z check start
+2026-10-02T01:38:19Z check exit 0 (ALL OK)

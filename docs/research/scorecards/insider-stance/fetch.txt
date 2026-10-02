@@ -1,0 +1,3 @@
+2026q3 FAILED  https://www.sec.gov/files/structureddata/data/insider-transactions-data-sets/2026q3_form345.zip: refused (HTTP 404)
+2026q4 FAILED  https://www.sec.gov/files/structureddata/data/insider-transactions-data-sets/2026q4_form345.zip: refused (HTTP 404)
+partition 2026-10-02: 0 stored, 82 kept, 2 failed in 0.0 min

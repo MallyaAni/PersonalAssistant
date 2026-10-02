@@ -1,0 +1,581 @@
+{
+  "quarters": [
+    "2006q1",
+    "2006q2",
+    "2006q3",
+    "2006q4",
+    "2007q1",
+    "2007q2",
+    "2007q3",
+    "2007q4",
+    "2008q1",
+    "2008q2",
+    "2008q3",
+    "2008q4",
+    "2009q1",
+    "2009q2",
+    "2009q3",
+    "2009q4",
+    "2010q1",
+    "2010q2",
+    "2010q3",
+    "2010q4",
+    "2011q1",
+    "2011q2",
+    "2011q3",
+    "2011q4",
+    "2012q1",
+    "2012q2",
+    "2012q3",
+    "2012q4",
+    "2013q1",
+    "2013q2",
+    "2013q3",
+    "2013q4",
+    "2014q1",
+    "2014q2",
+    "2014q3",
+    "2014q4",
+    "2015q1",
+    "2015q2",
+    "2015q3",
+    "2015q4",
+    "2016q1",
+    "2016q2",
+    "2016q3",
+    "2016q4",
+    "2017q1",
+    "2017q2",
+    "2017q3",
+    "2017q4",
+    "2018q1",
+    "2018q2",
+    "2018q3",
+    "2018q4",
+    "2019q1",
+    "2019q2",
+    "2019q3",
+    "2019q4",
+    "2020q1",
+    "2020q2",
+    "2020q3",
+    "2020q4",
+    "2021q1",
+    "2021q2",
+    "2021q3",
+    "2021q4",
+    "2022q1",
+    "2022q2",
+    "2022q3",
+    "2022q4",
+    "2023q1",
+    "2023q2",
+    "2023q3",
+    "2023q4",
+    "2024q1",
+    "2024q2",
+    "2024q3",
+    "2024q4",
+    "2025q1",
+    "2025q2",
+    "2025q3",
+    "2025q4",
+    "2026q1",
+    "2026q2"
+  ],
+  "stored_rows": 3502773,
+  "book_rows": 202250,
+  "admitted": 157383,
+  "refused": {
+    "not_form_4_original": 1297,
+    "not_purchase_or_sale": 0,
+    "not_officer_or_director": 6561,
+    "plan_trade": 37007,
+    "no_shares": 2
+  },
+  "dated": 157380,
+  "classification": {
+    "opportunistic": 16109,
+    "routine": 34047,
+    "unclassified": 79735
+  },
+  "names_mapped": 94,
+  "names_unmapped": [],
+  "names_without_rows": [
+    "ASML"
+  ],
+  "per_name": {
+    "AAOI": {
+      "rows": 281,
+      "opportunistic": 66,
+      "purchases": 33
+    },
+    "AAPL": {
+      "rows": 2067,
+      "opportunistic": 72,
+      "purchases": 22
+    },
+    "ACN": {
+      "rows": 1247,
+      "opportunistic": 162,
+      "purchases": 1
+    },
+    "ADBE": {
+      "rows": 1078,
+      "opportunistic": 140,
+      "purchases": 17
+    },
+    "ADI": {
+      "rows": 1012,
+      "opportunistic": 242,
+      "purchases": 36
+    },
+    "ADSK": {
+      "rows": 2140,
+      "opportunistic": 168,
+      "purchases": 7
+    },
+    "ALAB": {
+      "rows": 204,
+      "opportunistic": 0,
+      "purchases": 3
+    },
+    "AMAT": {
+      "rows": 380,
+      "opportunistic": 33,
+      "purchases": 30
+    },
+    "AMD": {
+      "rows": 1039,
+      "opportunistic": 17,
+      "purchases": 16
+    },
+    "AMZN": {
+      "rows": 4429,
+      "opportunistic": 1489,
+      "purchases": 103
+    },
+    "ANET": {
+      "rows": 3355,
+      "opportunistic": 975,
+      "purchases": 0
+    },
+    "APLD": {
+      "rows": 106,
+      "opportunistic": 6,
+      "purchases": 54
+    },
+    "ARM": {
+      "rows": 22,
+      "opportunistic": 0,
+      "purchases": 0
+    },
+    "ASML": {
+      "rows": 0,
+      "opportunistic": 0,
+      "purchases": 0
+    },
+    "AVGO": {
+      "rows": 983,
+      "opportunistic": 207,
+      "purchases": 32
+    },
+    "BE": {
+      "rows": 300,
+      "opportunistic": 34,
+      "purchases": 11
+    },
+    "CDNS": {
+      "rows": 1042,
+      "opportunistic": 159,
+      "purchases": 44
+    },
+    "CEG": {
+      "rows": 4,
+      "opportunistic": 0,
+      "purchases": 1
+    },
+    "CIEN": {
+      "rows": 2884,
+      "opportunistic": 37,
+      "purchases": 3
+    },
+    "CIFR": {
+      "rows": 25,
+      "opportunistic": 6,
+      "purchases": 1
+    },
+    "COHR": {
+      "rows": 1042,
+      "opportunistic": 132,
+      "purchases": 22
+    },
+    "CORZ": {
+      "rows": 44,
+      "opportunistic": 0,
+      "purchases": 19
+    },
+    "CRDO": {
+      "rows": 243,
+      "opportunistic": 0,
+      "purchases": 3
+    },
+    "CRM": {
+      "rows": 32393,
+      "opportunistic": 552,
+      "purchases": 70
+    },
+    "CRWD": {
+      "rows": 1795,
+      "opportunistic": 29,
+      "purchases": 9
+    },
+    "CRWV": {
+      "rows": 111,
+      "opportunistic": 0,
+      "purchases": 5
+    },
+    "CSCO": {
+      "rows": 1097,
+      "opportunistic": 111,
+      "purchases": 9
+    },
+    "DDOG": {
+      "rows": 2714,
+      "opportunistic": 121,
+      "purchases": 27
+    },
+    "DELL": {
+      "rows": 3123,
+      "opportunistic": 7,
+      "purchases": 24
+    },
+    "ETN": {
+      "rows": 347,
+      "opportunistic": 68,
+      "purchases": 20
+    },
+    "FFIV": {
+      "rows": 1202,
+      "opportunistic": 49,
+      "purchases": 4
+    },
+    "FICO": {
+      "rows": 1158,
+      "opportunistic": 288,
+      "purchases": 34
+    },
+    "FN": {
+      "rows": 328,
+      "opportunistic": 71,
+      "purchases": 2
+    },
+    "FSLR": {
+      "rows": 3010,
+      "opportunistic": 211,
+      "purchases": 24
+    },
+    "FTNT": {
+      "rows": 1024,
+      "opportunistic": 108,
+      "purchases": 2
+    },
+    "GEN": {
+      "rows": 2648,
+      "opportunistic": 412,
+      "purchases": 177
+    },
+    "GEV": {
+      "rows": 5,
+      "opportunistic": 0,
+      "purchases": 0
+    },
+    "GLW": {
+      "rows": 910,
+      "opportunistic": 149,
+      "purchases": 25
+    },
+    "GLXY": {
+      "rows": 31,
+      "opportunistic": 0,
+      "purchases": 11
+    },
+    "GOOGL": {
+      "rows": 9748,
+      "opportunistic": 206,
+      "purchases": 1
+    },
+    "HPE": {
+      "rows": 309,
+      "opportunistic": 29,
+      "purchases": 1
+    },
+    "HUT": {
+      "rows": 19,
+      "opportunistic": 0,
+      "purchases": 0
+    },
+    "IBM": {
+      "rows": 3980,
+      "opportunistic": 1810,
+      "purchases": 42
+    },
+    "INTC": {
+      "rows": 762,
+      "opportunistic": 80,
+      "purchases": 82
+    },
+    "INTU": {
+      "rows": 1869,
+      "opportunistic": 158,
+      "purchases": 4
+    },
+    "IREN": {
+      "rows": 2,
+      "opportunistic": 0,
+      "purchases": 0
+    },
+    "KLAC": {
+      "rows": 575,
+      "opportunistic": 77,
+      "purchases": 5
+    },
+    "LITE": {
+      "rows": 270,
+      "opportunistic": 51,
+      "purchases": 0
+    },
+    "LRCX": {
+      "rows": 472,
+      "opportunistic": 102,
+      "purchases": 3
+    },
+    "MCHP": {
+      "rows": 695,
+      "opportunistic": 110,
+      "purchases": 6
+    },
+    "MDB": {
+      "rows": 2039,
+      "opportunistic": 0,
+      "purchases": 6
+    },
+    "META": {
+      "rows": 10678,
+      "opportunistic": 4395,
+      "purchases": 1
+    },
+    "MOD": {
+      "rows": 167,
+      "opportunistic": 6,
+      "purchases": 32
+    },
+    "MPWR": {
+      "rows": 5521,
+      "opportunistic": 123,
+      "purchases": 0
+    },
+    "MRVL": {
+      "rows": 94,
+      "opportunistic": 3,
+      "purchases": 8
+    },
+    "MSFT": {
+      "rows": 3723,
+      "opportunistic": 146,
+      "purchases": 16
+    },
+    "MSI": {
+      "rows": 826,
+      "opportunistic": 451,
+      "purchases": 7
+    },
+    "MU": {
+      "rows": 1737,
+      "opportunistic": 66,
+      "purchases": 7
+    },
+    "NBIS": {
+      "rows": 8,
+      "opportunistic": 0,
+      "purchases": 0
+    },
+    "NET": {
+      "rows": 1594,
+      "opportunistic": 0,
+      "purchases": 3
+    },
+    "NOW": {
+      "rows": 2938,
+      "opportunistic": 40,
+      "purchases": 8
+    },
+    "NTAP": {
+      "rows": 644,
+      "opportunistic": 136,
+      "purchases": 11
+    },
+    "NVDA": {
+      "rows": 1368,
+      "opportunistic": 204,
+      "purchases": 24
+    },
+    "NXPI": {
+      "rows": 66,
+      "opportunistic": 1,
+      "purchases": 6
+    },
+    "OKLO": {
+      "rows": 65,
+      "opportunistic": 0,
+      "purchases": 2
+    },
+    "ON": {
+      "rows": 709,
+      "opportunistic": 190,
+      "purchases": 23
+    },
+    "ORCL": {
+      "rows": 2227,
+      "opportunistic": 137,
+      "purchases": 31
+    },
+    "PANW": {
+      "rows": 1903,
+      "opportunistic": 140,
+      "purchases": 53
+    },
+    "PLTR": {
+      "rows": 822,
+      "opportunistic": 75,
+      "purchases": 0
+    },
+    "POWL": {
+      "rows": 493,
+      "opportunistic": 9,
+      "purchases": 13
+    },
+    "PTC": {
+      "rows": 1125,
+      "opportunistic": 138,
+      "purchases": 8
+    },
+    "Q": {
+      "rows": 8,
+      "opportunistic": 0,
+      "purchases": 2
+    },
+    "QCOM": {
+      "rows": 4579,
+      "opportunistic": 524,
+      "purchases": 16
+    },
+    "SIMO": {
+      "rows": 6,
+      "opportunistic": 0,
+      "purchases": 0
+    },
+    "SMCI": {
+      "rows": 605,
+      "opportunistic": 105,
+      "purchases": 10
+    },
+    "SMR": {
+      "rows": 136,
+      "opportunistic": 2,
+      "purchases": 6
+    },
+    "SNDK": {
+      "rows": 7,
+      "opportunistic": 0,
+      "purchases": 0
+    },
+    "SNOW": {
+      "rows": 595,
+      "opportunistic": 1,
+      "purchases": 5
+    },
+    "SNPS": {
+      "rows": 777,
+      "opportunistic": 159,
+      "purchases": 7
+    },
+    "STX": {
+      "rows": 2040,
+      "opportunistic": 128,
+      "purchases": 18
+    },
+    "SWKS": {
+      "rows": 988,
+      "opportunistic": 171,
+      "purchases": 5
+    },
+    "TEAM": {
+      "rows": 4974,
+      "opportunistic": 0,
+      "purchases": 0
+    },
+    "TER": {
+      "rows": 655,
+      "opportunistic": 195,
+      "purchases": 6
+    },
+    "TLN": {
+      "rows": 13,
+      "opportunistic": 0,
+      "purchases": 12
+    },
+    "TRMB": {
+      "rows": 882,
+      "opportunistic": 211,
+      "purchases": 22
+    },
+    "TSM": {
+      "rows": 107,
+      "opportunistic": 0,
+      "purchases": 106
+    },
+    "TXN": {
+      "rows": 1194,
+      "opportunistic": 140,
+      "purchases": 14
+    },
+    "TYL": {
+      "rows": 1364,
+      "opportunistic": 264,
+      "purchases": 111
+    },
+    "VRT": {
+      "rows": 141,
+      "opportunistic": 0,
+      "purchases": 8
+    },
+    "VST": {
+      "rows": 222,
+      "opportunistic": 47,
+      "purchases": 125
+    },
+    "WDAY": {
+      "rows": 2730,
+      "opportunistic": 163,
+      "purchases": 22
+    },
+    "WDC": {
+      "rows": 961,
+      "opportunistic": 58,
+      "purchases": 1
+    },
+    "WULF": {
+      "rows": 106,
+      "opportunistic": 11,
+      "purchases": 75
+    },
+    "ZS": {
+      "rows": 1019,
+      "opportunistic": 9,
+      "purchases": 5
+    }
+  },
+  "window": 90,
+  "min_volume_sessions": 45
+}
