@@ -155,9 +155,9 @@ const pct = (value: number) => `${(value * 100).toFixed(1)}%`
 const signed = (value: number) => `${value >= 0 ? '+' : ''}${(value * 100).toFixed(1)}%`
 const money = (value: number) =>
   value.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
-// Preserve cents in per-share prices while account totals remain rounded for scanning.
+// Preserve the executable equity tick: cents at $1+, four decimals below $1.
 const priceMoney = (value: number) =>
-  value.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  value.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: value < 1 ? 4 : 2, maximumFractionDigits: value < 1 ? 4 : 2 })
 // A dollar P/L with the sign, the direction and the currency, so a live
 // figure reads as money rather than as a bare number.
 const signedMoney = (value: number) =>

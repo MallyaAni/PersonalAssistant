@@ -99,6 +99,7 @@ test('visible grades and concise actions expose diagnostics only on request', as
 // Personal entry permission is separate from the paper order already shown on the main board.
 test('a recovered personal entry shows Hold and retains its grade', async ({page}) => {
   const limitReason = 'SIP ask $106.01 exceeds $99.00 entry limit'
+  let limit = 99
   let ask = 106.01
   let quoteAt = at
   let expires = '2026-09-24T14:00:30Z'
@@ -115,7 +116,8 @@ test('a recovered personal entry shows Hold and retains its grade', async ({page
       const body = route.request().postDataJSON()
       expect(body.record_history).toBe(false)
       const funded = body.available_cash > 0
-      const allowed = ask <= 99
+      const allowed = ask <= limit
+      const limitText = `Buy limit $${limit.toFixed(limit < 1 ? 4 : 2)}`
       const blocker = !funded ? body.available_cash === 0 ? 'no available cash' : 'available cash is unknown' : allowed ? null : limitReason
       const payload = {session, rows: [], decisions: {
         session, written, as_of: quoteAt, equity: EQUITY, holdings: {},
@@ -124,14 +126,14 @@ test('a recovered personal entry shows Hold and retains its grade', async ({page
           action: funded && allowed ? 'Buy' : 'Hold', move_weight: funded && allowed ? .0909 : 0,
           strategy_action: 'Buy', strategy_move_weight: .0909,
           target_weight: .0909, current_weight: 0, delta_weight: .0909,
-          executable: funded && allowed, blocker, reason: blocker ?? 'Buy limit $99.00', grade: 'A',
+          executable: funded && allowed, blocker, reason: blocker ?? limitText, grade: 'A',
           valid_until: expires, entry_status: 'available',
-          quote: {eligible: true, spread_verified: true, feed: 'sip', ask, at: quoteAt, valid_until: expires},
+          quote: {eligible: true, spread_verified: true, feed: 'sip', bid: ask - (ask < 1 ? .0001 : .01), ask, at: quoteAt, valid_until: expires},
           timing: {rule: 'dip_or_close', state: 'triggered', side: 'buy', session,
-            open: 100, level: 99, trigger_bar: '2026-09-24T13:30:00Z', trigger_price: 98.9,
+            open: limit / .99, level: limit, trigger_bar: '2026-09-24T13:30:00Z', trigger_price: limit * .99899,
             reason: 'Recorded dip at $98.90'},
-          entry_guard: {policy: 'current-dip-limit/1', allowed, limit_price: 99,
-            ask, quote_at: quoteAt, valid_until: expires, feed: 'sip', reason: allowed ? 'Buy limit $99.00' : limitReason},
+          entry_guard: {policy: 'current-dip-limit/1', allowed, limit_price: limit,
+            ask, quote_at: quoteAt, valid_until: expires, feed: 'sip', reason: allowed ? limitText : limitReason},
         }},
       }}
       if (delayed) {
@@ -180,6 +182,14 @@ test('a recovered personal entry shows Hold and retains its grade', async ({page
   await page.clock.runFor(50)
   await expect(personal).toContainText('Blocked')
   await expect(personal.getByLabel('AAPL personal trade size')).toHaveCount(0)
+  // A sub-dollar execution ceiling must retain its four-decimal tick precision.
+  limit = .4951
+  ask = .4951
+  await page.getByLabel('Personal available cash', {exact: true}).fill('10000')
+  await page.getByRole('button', {name: 'Apply', exact: true}).click()
+  await expect(personal.getByLabel('AAPL personal entry limit')).toHaveText('Limit $0.4951')
+  await personal.getByText('Recorded allocation & execution quote', {exact: true}).click()
+  await expect(personal).toContainText('$0.4950 bid / $0.4951 ask')
   expect(errors).toEqual([])
 })
 
