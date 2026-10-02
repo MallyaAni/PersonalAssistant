@@ -62,7 +62,12 @@ All twelve declared symbols at both resets remain in the denominator. A
 unit-sized permission probes the price bound only; the shared ledger funds
 the actual fractional adjusted research units with NAV 1. This is not a
 broker whole-share account. Compare a next-open control, a control restricted
-to causally prepared/valid model permissions, and the bounded path candidate.
+to causally prepared/valid model permissions at the first strictly later open
+after permission observation (normally 10:00), and the bounded path candidate.
+The matched control cannot fill at 09:30 before its 09:45 permission exists.
+Process proxies in chronological batches: an earlier purchase cannot be resized
+using a later opening price. Quarantine all same-session sales from the fixed
+session-start buy budget. These are accounting corrections before outcomes.
 No additional retry or close fallback is introduced on any of those lines.
 Convert RAW proxy prices to common adjusted economics only after the decision,
 using the daily adjusted close divided by the cube's official session close.
