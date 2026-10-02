@@ -56,6 +56,21 @@ realized turnover. Decisions never use that day's eventual official close to
 adjust RAW prefixes. Split-discontinuous raw history is unavailable unless a
 dated, causal corporate-action reconciliation is supplied.
 
+The funded timing diagnostic uses the same prior-close adjusted-unit intents
+at September 3 and September 18, executed September 4 and September 21.
+All twelve declared symbols at both resets remain in the denominator. A
+unit-sized permission probes the price bound only; the shared ledger funds
+the actual fractional adjusted research units with NAV 1. This is not a
+broker whole-share account. Compare a next-open control, a control restricted
+to causally prepared/valid model permissions, and the bounded path candidate.
+No additional retry or close fallback is introduced on any of those lines.
+Convert RAW proxy prices to common adjusted economics only after the decision,
+using the daily adjusted close divided by the cube's official session close.
+That label-only conversion never enters intent sizing or forecast permissions.
+If its source is unavailable, retain the opportunity as unavailable; do not
+infer a ratio from a different time or a later price. This small diagnostic
+cannot establish intraday live parity or a midpoint fill.
+
 ## Risk and scenario selection
 
 Ledoit-Wolf uses preceding 252 adjusted-close returns. Long-only weights have
@@ -65,6 +80,12 @@ at one and compares the predicted mean squared return to the trailing
 20-session counterpart. Include a gross-matched incumbent control to isolate
 composition from cash. Missing risk evidence retains incumbent sizing with a
 recorded fallback rather than creates fictitious confidence.
+The fixed sizing objective minimizes covariance divided by its trace plus
+the squared distance from the incumbent weights times the risk multiplier,
+with distance coefficient one. TTM marginal variances preserve the estimated
+correlation matrix; the multiplier compares aggregate forecast risk with
+aggregate trailing risk. This is anchored risk adjustment, not pure minimum
+variance or a fitted return-maximization claim.
 
 Scenario features are SPY's trailing 60-session return sign and trailing
 20-session realized volatility relative to the median of preceding 252
