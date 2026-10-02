@@ -1,5 +1,84 @@
 # Next session
 
+## 2026-10-01 — Open-source engineering release verified; specialist edges unproven
+
+User authorized merging the verified branch and guarded deployment. Main
+merge `f621597bbbc221d6c8871920fcb3dabc4adc092f` preserves upstream
+`2f31012e` and its already-live tone-expiry policy. Mac main, GitHub main,
+Spark `/home/animallya96/anios` and deploy checkout matched this code revision
+at deployment. Concurrent EDGAR-only upstream `0e817741` arrived afterwards;
+it is not part of this release's runtime proof. Do not redeploy that additional
+code merely to align a documentation checkpoint.
+Unrelated untracked Wi-Fi watchdog files, bundle and Spark scratch are preserved.
+
+- **VERIFIED:** combined-source acceptance: 408 backend cases passed, 26
+  skipped (optional/native and existing integrations); isolated actual research
+  runtime: 179 passed. No economic evaluation or inference was repeated.
+- **VERIFIED:** `scripts/deploy.sh --wait-post`, serial model-gate concurrency,
+  unit 8,505 passed / 92 skipped / 6 xfailed; real-model gate 100 passed.
+  Deployment marker is `f621597b`. No gate assertions or settings weakened.
+- **VERIFIED:** 48 browser fixtures passed on the gateway bundle: trade board,
+  terminal/partial orders, paper history, history accuracy, grade parity and
+  tone expiry. Separate actual authenticated browser/API proof passed: current
+  `/5` targets, paper plan/cash, AAOI archived history and 260 daily bars,
+  board/grade/chart rendering, no required-request failures/page/console errors,
+  anonymous/cross-account refusals, and no writes made by that acceptance path.
+- **VERIFIED:** all seven changed production Python hashes match the deployed
+  backend image `sha256:d135c0976f5ad3d046d64b4ab643c8a705df73e10d414ad3c27c4ff4cfa18bd6`.
+  Gateway image `sha256:8ad4c5c4e6f144c134daa57ee407a640bb9082a621c6dcd479dedc8de7b379d1`
+  is unchanged; frontend source matches its prior release. Inference container
+  IDs and start times on both Sparks match the pre-deploy capture.
+- **VERIFIED:** full post-deploy journey sweep passed; 79 traced turns for 47
+  routed journeys, cleanup reported no gaps.
+- **VERIFIED:** full post-deploy search scenarios passed, including account
+  cleanup. Exact persisted verdict `2026-10-02T01:57:56Z f621597b ok` records
+  both `sweep_journeys OK;exercise_search_scenarios OK`.
+  Log `/tmp/codex-open-source-release-20261001.log`, verdict
+  `data/.post-deploy-status`. Actual release proof is under private
+  `/tmp/codex-open-source-live-20261001/release.json`; temporary auth was deleted.
+
+Research modules are merged, not activated as live decision makers. Current
+`graded-equal-weight/5`, incumbent timing and upstream tone expiry remain;
+bounded execution still requires explicit per-order opt-in. No nightly binding,
+model replacement, real order, strategy parameter change or history rewrite.
+Document conversion now refuses malformed evidence; the unused weekly helper
+is removed. No alpha candidate met the replacement criterion.
+
+User explicitly questioned regime-specific edges and COHR's October-1 sale.
+**VERIFIED read-only paper-account chronology:** COHR changed A to B at the
+September-30 close when its technical vote turned negative; AAOI stayed A+.
+COHR's broker fill was 10:00:39 ET, not the opening auction. The original
+15-minute latch records a sell trigger observed at 10:00:37 ET. This explains
+the action but does not establish economic merit; same-sector membership alone
+is not the exit condition. Private original audit is
+`/tmp/codex-cohr-aaoi-audit-20261001.json`; no account state changed.
+
+**UNVERIFIED:** a profitable regime selector, or robust live exit timing.
+2016–20/2021–26 splits are not regime-conditioned proof; the forecast slice
+has only two resets and cannot qualify a regime edge. Forecast accounts also
+have different cash exposure. Evaluate each proposed contribution separately,
+define observable regimes before outcomes, and assess a combined selector
+with chronological/purged training and untouched forward funded portfolios,
+both benchmarks, costs, common opportunities and the full incumbent executor.
+Do not choose a regime switch from retrospective winners or tune for COHR.
+
+User asks for documented specialist edges, especially 2026 releases. The
+post-result section of `docs/research/open-source-integrations-2026-10-01.md`
+records primary sources and separates author task evidence from desk scenario
+hypotheses. Source inspection confirms Chronos/TimesFM adapters were univariate;
+joint sector/market forecasting remains untested. TTM's risk diagnostic is not
+an exposure-policy return result. Chroma (ICLR 2026) supports validation-selected
+specialists methodologically. KiT (September 28 preprint) matches the candle-path
+question but has no released inference code/weights yet; do not invent an
+adapter or accept its comparisons without review. No new policy or score run.
+
+Independent evaluation review found no demonstrated funded-ledger arithmetic
+or causal-prefix defect in scope; it did identify a completeness gap in the
+fixed forecast CLI, whose `artifacts nargs="+"` permits an omitted model.
+The published four-model run includes all four and is unaffected. Generic
+single-model fixtures may retain subset support; a future fixed-protocol CLI
+guard should require exactly four artifacts. No production edit made for this.
+
 ## 2026-10-01 — Open-source integration branch: completed fixed comparisons
 
 User authorized parallel implementation/backtests on a branch, with net

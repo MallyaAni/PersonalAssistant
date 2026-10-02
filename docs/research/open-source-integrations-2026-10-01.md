@@ -81,3 +81,54 @@ Implementation, dependency acceptance and favorable economic results are
 different claims. No candidate is automatically adopted from this protocol.
 Publish unfavorable and unavailable outcomes as well as wins. New live use
 needs a separate funded forward comparison and guarded release.
+
+## Post-result literature review: specialist roles
+
+Reviewed 2026-10-01 after the fixed comparisons. This section does not amend
+their frozen protocol or scores, activate a policy, or establish a market-regime
+edge. Publication supports a stated task under the authors' evaluation, not
+automatic profitability on this desk. The following roles are research
+hypotheses unless explicitly identified as measured here.
+
+| Integration | Evidence-backed capability | Appropriate desk question and remaining gap |
+| --- | --- | --- |
+| Chronos-2 | Group attention supports related series and covariates, with benchmark gains on multivariate tasks. [Original paper](https://arxiv.org/abs/2510.15821). | Can joint stock, sector and SPY context improve relative-return forecasts? Our adapter supplied one close series at a time, so the fixed result did not test this capability. Sector-rotation advantage remains unverified. |
+| Kronos | Financial OHLCV modelling; authors evaluate returns, volatility and generated candles. [Original paper](https://arxiv.org/abs/2508.02739). | Can candle-path or volatility information improve entry/exit timing conditional on existing grades? Our fixed adapter read only predicted closes from its OHLCV output. No validated 15-minute timing or bull/bear specialization follows from that result. |
+| Tiny Time Mixers | Compact CPU forecasting and cross-channel/exogenous modelling during fine-tuning. [NeurIPS paper](https://arxiv.org/abs/2401.03955). | Can a low-cost risk forecast improve exposure without sacrificing compounded gain? Our squared-return error improvement is a measured diagnostic, not a learned trading brake or profit result. No cross-channel fine-tuning was tested. |
+| TimesFM-3 | Native joint multivariate forecasting and covariates; released August 31, 2026. [Google release](https://research.google/blog/timesfm-3-a-zero-shot-foundation-model-for-multivariate-forecasting/). | A research comparator for the joint-context question. Our adapter was univariate. Downloaded weights and outputs are restricted to non-commercial, non-production use under the [actual license](https://huggingface.co/google/timesfm-3.0-pytorch/blob/main/LICENSE); do not feed production decisions from this checkpoint. |
+| skfolio / Ledoit-Wolf | Covariance shrinkage addresses estimation noise in portfolio optimization. [Authors' research](https://ledoit.net/research.htm). | Can correlation-aware constraints reduce concentration or tail losses while preserving net gain? The tested minimum-variance replacement lost CAGR versus the incumbent. It was not a regime-conditioned risk overlay and does not predict winning stocks. |
+| NautilusTrader | Event-driven matching and accounting with supplied market data. [Official data requirements](https://nautilustrader.io/docs/latest/concepts/backtesting/data-and-venues/). | Validate a selected policy's cash, partial fills, cancellations and timing. It supplies no directional edge; bar data cannot establish spreads, queue position or exact intrabar order. |
+
+Three 2026 sources are relevant without adding more live models:
+
+- **Chroma, ICLR 2026:** [Test-Time Efficient Pretrained Model Portfolios for
+  Time Series Forecasting](https://cdn.amazon.science/17/d9/c04a2190493fb3a1fdf6000c66f9/mert-amazon-project.pdf)
+  supports domain/frequency specialists and validation-selected ensembles on
+  forecasting benchmarks. This is a methodological precedent for the user's
+  specialist idea, not evidence that our models have distinct profitable market
+  regimes. Its selection uses validation data, not future test winners.
+- **KiT, September 28, 2026 preprint:** [paper](https://arxiv.org/abs/2609.34507)
+  generates joint OHLCV paths with continuous flow matching, including
+  15-minute resolution. The authors report return and volatility ranking gains
+  and an A-share backtest; these do not establish US-stock next-open performance
+  against SPY/QQQ. Its [repository](https://github.com/Luciferbobo/KiT) currently
+  contains documentation/assets and says code will be available soon, so native
+  inference cannot yet be reproduced. Appendix A.2 also explicitly selects a
+  fine-tuned Kronos comparator by test-set scores; audit the evaluation before
+  treating headline comparisons as adoption evidence.
+- **June 25, 2026 US-equity study:** [Pretrained Time-Series Foundation Models
+  for Financial Return Forecasting](https://arxiv.org/abs/2606.27100) finds
+  strong rankings among neural models but sparse statistically significant
+  improvements over random walk on its five equities. This supports testing
+  asset/task specificity and simple controls rather than assuming publication
+  establishes reliable alpha.
+
+Priority is to test the existing models' intended contributions, not fit a
+retrospective winner switch. For entry/exit evaluation, hold grades and funding
+constant and isolate timing; for risk evaluation, include exposure-matched
+controls and realized tail losses. Any combined selector needs point-in-time
+features, only matured training outcomes, chronological purging, an untouched
+forward window, common opportunity denominators and the full incumbent
+executor. Judge total compounded gain net of costs versus the incumbent, SPY
+and QQQ, with drawdown and turnover reported. An uncertain scenario may retain
+the incumbent; every specialist need not be used.
