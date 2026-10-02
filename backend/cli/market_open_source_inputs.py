@@ -42,7 +42,7 @@ def future_sessions():
 def source_inputs(root):
     store = MarketStore(root)
     signals = sorted((root / "history").glob("*.json"))
-    symbols = sorted({p.stem for p in signals} | {"SPY", "QQQ"})
+    symbols = sorted({p.stem for p in signals} | set(COHORT))
     histories, hashes, origins, grades = {}, {}, {}, {}
     for symbol in sorted(set(symbols) | set(COHORT)):
         asof = store.latest_asof(symbol, CUTOFF)
@@ -182,16 +182,105 @@ def export(root, output, revision):
     return provenance["snapshot_sha256"], digest(output / "forecasts.json")
 
 
+# Align frozen cohort prices without fabricating missing grades or book membership.
+def cohort_arrays(source, panel, grades, eligible):
+    days = np.array(source["decisions"], dtype="datetime64[D]")
+    if list(source["decisions"]) != sorted(set(source["decisions"])):
+        raise ValueError("Ordered unique decision sessions required")
+    shape = len(days), len(COHORT)
+    arrays = {key: np.full(shape, np.nan) for key in ("open", "close", "adj_close")}
+    new_grades = np.full(shape, -1, dtype=np.int16)
+    membership = point_in_time.eligibility(days, COHORT)
+    membership[:, -2:] = False
+    indexed = {(row["session"], row["symbol"]): row for row in source["rows"]}
+    if len(indexed) != len(source["rows"]):
+        raise ValueError("Duplicate frozen price row")
+    for i, day in enumerate(days):
+        old_rows = np.flatnonzero(panel.dates == day)
+        if len(old_rows) != 1:
+            raise ValueError("Cohort calendar is absent from original snapshot")
+        old_row = int(old_rows[0])
+        for j, symbol in enumerate(COHORT):
+            row = indexed.get((str(day), symbol))
+            if row is None:
+                raise ValueError("Missing frozen cohort price")
+            arrays["open"][i, j] = row["open"]
+            arrays["close"][i, j] = arrays["adj_close"][i, j] = row["close"]
+            if symbol not in panel.tickers:
+                continue
+            old_col = panel.tickers.index(symbol)
+            new_grades[i, j] = grades[old_row, old_col]
+            if membership[i, j] != eligible[old_row, old_col]:
+                raise ValueError("Original and supplied membership masks disagree")
+            if not np.isclose(
+                row["close"], panel.adj_close[old_row, old_col], rtol=1e-9
+            ):
+                raise ValueError("Frozen price vintages disagree")
+    return days, arrays, new_grades, membership
+
+
+# Add forecast-only names using frozen prices and explicit archived membership rules.
+def cohort_snapshot(forecast_path, portfolio_path, provenance_path, output, revision):
+    from backend.market.open_source_portfolio import load_snapshot
+
+    panel, grades, eligible, provenance = load_snapshot(portfolio_path, provenance_path)
+    source = json.loads(Path(forecast_path).read_bytes())
+    if source.get("price_basis") != "adjusted_ohlcv":
+        raise ValueError("Frozen forecast prices must be adjusted OHLCV")
+    membership_hashes = [
+        value for key, value in provenance["source_hashes"].items()
+        if Path(key).name == "membership_history.csv"
+    ]
+    if membership_hashes != [digest(universe.MEMBERSHIP_HISTORY_PATH)]:
+        raise ValueError("Membership bytes differ from the original frozen snapshot")
+    days, arrays, new_grades, membership = cohort_arrays(
+        source, panel, grades, eligible
+    )
+    output = Path(output)
+    output.mkdir(parents=True, exist_ok=False)
+    np.savez_compressed(
+        output / "portfolio.npz", dates=days, symbols=np.array(COHORT),
+        grades=new_grades, eligible=membership, **arrays,
+    )
+    manifest = {
+        **provenance,
+        "snapshot_sha256": digest(output / "portfolio.npz"),
+        "source_revision": revision,
+        "parent_snapshot_sha256": provenance["snapshot_sha256"],
+        "forecast_snapshot_sha256": digest(forecast_path),
+        "price_representation": "already adjusted; close equals adjusted_close",
+        "absent_original_grade_symbols": [s for s in COHORT if s not in panel.tickers],
+        "membership_rule": "Original hashed intervals; no interval means excluded",
+    }
+    (output / "portfolio.json").write_text(
+        json.dumps(manifest, indent=2, allow_nan=False) + "\n"
+    )
+    return manifest["snapshot_sha256"]
+
+
 # Run the frozen export explicitly; the live store remains read-only throughout.
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root", type=Path, required=True)
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--root", type=Path)
+    source.add_argument("--cohort-from", type=Path)
+    parser.add_argument("--portfolio", type=Path)
+    parser.add_argument("--provenance", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--source-revision", required=True)
     args = parser.parse_args()
     if not args.source_revision.strip():
         parser.error("source revision is required")
-    print(json.dumps(export(args.root, args.output, args.source_revision)))
+    if args.cohort_from:
+        if not args.portfolio or not args.provenance:
+            parser.error("cohort mode requires --portfolio and --provenance")
+        result = cohort_snapshot(
+            args.cohort_from, args.portfolio, args.provenance,
+            args.output, args.source_revision,
+        )
+    else:
+        result = export(args.root, args.output, args.source_revision)
+    print(json.dumps(result))
 
 
 if __name__ == "__main__":

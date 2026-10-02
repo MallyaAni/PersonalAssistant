@@ -1,5 +1,6 @@
 """Protect research exports against changed price bases and fabricated availability."""
 
+import json
 from datetime import date
 from types import SimpleNamespace
 
@@ -70,3 +71,42 @@ def test_output_boundary_preserves_source(tmp_path, inside_source):
     with pytest.raises((ValueError, FileExistsError)):
         exporter.export(source, output, "fixed-source")
     assert original.read_text() == "frozen source"
+
+
+# Preserve unknown grades and exclusion when a forecast name lacks book history.
+def test_additive_cohort_does_not_fabricate_grades_or_membership(tmp_path, monkeypatch):
+    days = np.array(["2026-09-03", "2026-09-04"], dtype="datetime64[D]")
+    panel = tmp_path / "original.npz"
+    np.savez_compressed(
+        panel, dates=days, symbols=np.array(["AAPL", "SPY", "QQQ"]),
+        open=np.full((2, 3), 10.0), close=np.full((2, 3), 10.0),
+        adj_close=np.full((2, 3), 9.0), grades=np.full((2, 3), 3),
+        eligible=np.tile([True, False, False], (2, 1)),
+    )
+    manifest = tmp_path / "original.json"
+    manifest.write_text(json.dumps({
+        "snapshot_sha256": exporter.digest(panel),
+        "price_basis": "close-ratio-adjusted",
+        "eligibility_mode": "recomputed-current-vintage",
+        "source_hashes": {str(exporter.universe.MEMBERSHIP_HISTORY_PATH):
+                          exporter.digest(exporter.universe.MEMBERSHIP_HISTORY_PATH)},
+    }))
+    forecast = tmp_path / "forecast.json"
+    forecast.write_text(json.dumps({
+        "price_basis": "adjusted_ohlcv", "decisions": days.astype(str).tolist(),
+        "rows": [{"symbol": s, "session": str(d), "open": 9, "close": 9}
+                 for d in days for s in exporter.COHORT],
+    }))
+    monkeypatch.setattr(
+        exporter.point_in_time, "eligibility",
+        lambda dates, symbols: np.tile([s == "AAPL" for s in symbols], (2, 1)),
+    )
+    originals = [exporter.digest(p) for p in (panel, manifest, forecast)]
+    output = tmp_path / "cohort"
+    exporter.cohort_snapshot(forecast, panel, manifest, output, "test-source")
+    with np.load(output / "portfolio.npz", allow_pickle=False) as result:
+        tsla = result["symbols"].tolist().index("TSLA")
+        assert (result["grades"][:, tsla] == -1).all()
+        assert not result["eligible"][:, tsla].any()
+        assert (result["open"] == result["adj_close"]).all()
+    assert [exporter.digest(p) for p in (panel, manifest, forecast)] == originals
