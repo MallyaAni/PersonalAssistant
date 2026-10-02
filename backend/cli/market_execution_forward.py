@@ -79,7 +79,7 @@ def record(root, folder, seconds, interval):
 # Expose explicit initialization, bounded recording and exclusive report creation.
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("initialize", "record", "compare"))
+    parser.add_argument("mode", choices=("initialize", "record", "compare", "value"))
     parser.add_argument("--data-dir", type=Path)
     parser.add_argument("--folder", type=Path, required=True)
     parser.add_argument("--revision")
@@ -87,7 +87,7 @@ def main(argv=None):
     parser.add_argument("--interval", type=int, default=15)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
-    if args.mode != "compare" and not args.data_dir:
+    if args.mode in ("initialize", "record") and not args.data_dir:
         parser.error("--data-dir required for read-only capture")
     if args.mode == "initialize":
         if not args.revision:
@@ -100,6 +100,15 @@ def main(argv=None):
         }
     elif args.mode == "record":
         summary = record(args.data_dir, args.folder, args.seconds, args.interval)
+    elif args.mode == "value":
+        if not args.output or args.output.exists():
+            parser.error("--output must name a new report artifact")
+        result = valuate(args.folder, args.output)
+        summary = {
+            "status": "diagnostic",
+            "observations": result["proxy"]["observations"],
+            "adoption_eligible": False,
+        }
     else:
         if not args.output or args.output.exists():
             parser.error("--output must name a new report artifact")
@@ -112,6 +121,47 @@ def main(argv=None):
         }
     print(json.dumps(summary))
     return 0
+
+
+# Capture fixed delayed endpoint labels and evaluate the frozen cohort only once.
+def valuate(folder, output, *, request=None, headers=None, clock=None):
+    from datetime import timedelta
+
+    from backend.market import bounded_execution as bounded
+    from backend.market import execution_marks
+
+    clock = clock or (lambda: datetime.now(UTC))
+    frozen, observations = forward.load(folder)
+    start = bounded.instant(frozen["started_at"])
+    closing = entry_timing.session_clock(
+        start.astimezone(entry_timing.NEW_YORK).date()
+    )["close"]
+    end = min(
+        bounded.instant(observations[-1]["observed_at"]),
+        closing - timedelta(microseconds=1),
+    )
+    if clock() < end + timedelta(minutes=16):
+        raise ValueError("Wait for both delayed SIP endpoint windows")
+    output = Path(output)
+    if output.exists():
+        raise FileExistsError(output)
+    evidence = output.with_suffix(".evidence")
+    evidence.mkdir(mode=0o700, exist_ok=True)
+    symbols = set(frozen["starting"]["holdings"]) | {"SPY", "QQQ"}
+    symbols |= {o["order"]["symbol"] for o in frozen["opportunities"]}
+    packets = [
+        execution_marks.endpoint(
+            symbols, at, evidence / label, request=request, headers=headers, clock=clock
+        )
+        for label, at in (("start", start), ("end", end))
+    ]
+    proxy = forward.compare(folder)
+    result = {
+        "proxy": proxy,
+        "consolidated": execution_marks.supplement(frozen, proxy, *packets),
+    }
+    forward.exclusive(output, result)
+    return result
 
 
 if __name__ == "__main__":

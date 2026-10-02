@@ -1,0 +1,280 @@
+"""Delayed consolidated outcome labels, separate from frozen execution decisions."""
+
+import hashlib
+import json
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from urllib.parse import urlencode
+
+from backend.market import alpaca, entry_timing
+from backend.market import bounded_execution as bounded
+from backend.market import execution_forward as forward
+
+VERSION = "execution-endpoint-labels/1"
+PLAN = (
+    Path(__file__).parents[2] / "docs/research/funded-execution-valuation-2026-10-02.md"
+)
+URL = "https://data.alpaca.markets/v2/stocks/quotes"
+
+
+# Preserve sub-microsecond quote ordering without floating-point epoch conversion.
+def nanos(value):
+    moment = bounded.instant(value)
+    if moment is None:
+        raise ValueError("Aware source timestamp required")
+    tail = value.partition(".")[2]
+    fraction = tail.split("+")[0].split("-")[0].rstrip("Z") if tail else ""
+    if fraction and (not fraction.isdigit() or len(fraction) > 9):
+        raise ValueError("Invalid source timestamp precision")
+    delta = moment.astimezone(UTC) - datetime(1970, 1, 1, tzinfo=UTC)
+    return (
+        (delta.days * 86400 + delta.seconds) * 1_000_000_000
+        + delta.microseconds * 1000
+        + int(fraction[6:9].ljust(3, "0") or "0")
+    )
+
+
+# Retain every original page and enforce the exact historical SIP request chain.
+def fetch_window(symbols, at, folder, *, request=None, headers=None, clock=None):
+    clock = clock or (lambda: datetime.now(UTC))
+    request = request or alpaca.alpaca_transport
+    if at.utcoffset() is None or clock() < at + timedelta(minutes=16):
+        raise ValueError("Wait at least 16 minutes for delayed SIP outcome labels")
+    folder = Path(folder)
+    folder.mkdir(mode=0o700)
+    params = {
+        "symbols": ",".join(sorted(symbols)),
+        "start": (at - timedelta(seconds=forward.AGE)).isoformat(),
+        "end": at.isoformat(),
+        "feed": "sip",
+        "asof": "-",
+        "currency": "USD",
+        "sort": "asc",
+        "limit": 10000,
+    }
+    pages, seen, token = [], set(), None
+    for index in range(100):
+        query = {**params, **({"page_token": token} if token else {})}
+        status, body = request(
+            URL + "?" + urlencode(query), headers or alpaca.credentials()
+        )
+        received = clock()
+        page = {
+            "request": query,
+            "received_at": received.isoformat(),
+            "status": status,
+            "body_sha256": hashlib.sha256(body).hexdigest(),
+            "body": body.decode("utf-8"),
+        }
+        forward.exclusive(folder / f"{index:04d}.json", page)
+        if status != 200:
+            raise ValueError(f"Historical SIP unavailable: HTTP {status}")
+        payload = json.loads(page["body"])
+        if not isinstance(payload.get("quotes"), dict):
+            raise ValueError("Historical quote mapping required")
+        pages.append(page)
+        token = payload.get("next_page_token")
+        if token is None:
+            packet = {"at": at.isoformat(), "pages": pages, "request": params}
+            forward.exclusive(folder / "complete.json", packet)
+            return packet
+        if not isinstance(token, str) or not token or token in seen:
+            raise ValueError("Invalid or repeated pagination token")
+        seen.add(token)
+    raise ValueError("Historical quote pagination incomplete")
+
+
+# Validate complete response bytes, actual label availability and pagination links.
+def pages(packet, at):
+    expected = packet["request"]
+    token, seen = None, set()
+    if not 1 <= len(packet["pages"]) <= 100:
+        raise ValueError("Bounded complete quote pages required")
+    for index, page in enumerate(packet["pages"]):
+        query = {**expected, **({"page_token": token} if token else {})}
+        body = page["body"].encode()
+        received = bounded.instant(page["received_at"])
+        if (
+            page["request"] != query
+            or page["status"] != 200
+            or hashlib.sha256(body).hexdigest() != page["body_sha256"]
+            or received is None
+            or received < at + timedelta(minutes=16)
+        ):
+            raise ValueError("Quote page provenance inconsistent")
+        payload = json.loads(page["body"])
+        if not isinstance(payload.get("quotes"), dict):
+            raise ValueError("Historical quote mapping required")
+        token = payload.get("next_page_token")
+        if token is None and index != len(packet["pages"]) - 1:
+            raise ValueError("Disconnected historical quote pages")
+        if token is not None and (
+            not isinstance(token, str) or not token or token in seen
+        ):
+            raise ValueError("Invalid quote pagination chain")
+        if token:
+            seen.add(token)
+        yield payload["quotes"]
+    if token is not None:
+        raise ValueError("Incomplete historical quote pages")
+
+
+# Reuse only a completed validated immutable window, never refetch its source bytes.
+def endpoint(symbols, at, folder, **kwargs):
+    folder = Path(folder)
+    if folder.exists():
+        packet = json.loads((folder / "complete.json").read_text())
+        if packet["at"] != at.isoformat():
+            raise ValueError("Existing endpoint belongs to another observation")
+        marks(packet, symbols)
+        return packet
+    packet = fetch_window(symbols, at, folder, **kwargs)
+    marks(packet, symbols)
+    return packet
+
+
+# Keep the latest event while refusing future rows or conflicting event identities.
+def latest_events(packet, at, symbols):
+    start = nanos((at - timedelta(seconds=forward.AGE)).isoformat())
+    end = nanos(at.isoformat())
+    latest, events = {}, {}
+    for quotes in pages(packet, at):
+        for symbol, rows in quotes.items():
+            if symbol not in symbols or not isinstance(rows, list):
+                raise ValueError("Unexpected symbol or quote rows")
+            for row in rows:
+                stamp = nanos(row.get("t"))
+                if not start <= stamp <= end:
+                    raise ValueError("Quote event outside the declared endpoint window")
+                key = (symbol, stamp)
+                if key in events and events[key] != row:
+                    raise ValueError("Conflicting quote event identity")
+                events[key] = row
+                if symbol not in latest or stamp > latest[symbol][0]:
+                    latest[symbol] = (stamp, row)
+    return latest
+
+
+# Qualify the latest consolidated quote without skipping invalid or wide events.
+def marks(packet, symbols):
+    at = bounded.instant(packet.get("at"))
+    expected = packet.get("request", {})
+    if at is None or expected.get("feed") != "sip" or expected.get("asof") != "-":
+        raise ValueError("Explicit consolidated raw symbol provenance required")
+    if (
+        expected.get("start") != (at - timedelta(seconds=forward.AGE)).isoformat()
+        or expected.get("end") != at.isoformat()
+        or expected.get("symbols") != ",".join(sorted(symbols))
+        or expected.get("currency") != "USD"
+        or expected.get("sort") != "asc"
+        or expected.get("limit") != 10000
+    ):
+        raise ValueError("Endpoint request does not match frozen symbols/time")
+    latest = latest_events(packet, at, symbols)
+    qualified, missing = {}, {}
+    for symbol in sorted(symbols):
+        row = latest.get(symbol, (None, {}))[1]
+        bid, ask = bounded.positive(row.get("bp")), bounded.positive(row.get("ap"))
+        if (
+            not bid
+            or not ask
+            or bid > ask
+            or bounded.positive(row.get("bs")) is None
+            or bounded.positive(row.get("as")) is None
+        ):
+            missing[symbol] = "Latest consolidated quote missing, invalid or crossed"
+        elif (ask - bid) / ((ask + bid) / 2) * 10000 > forward.SPREAD:
+            missing[symbol] = "Latest consolidated spread exceeds fixed 25 bp"
+        else:
+            qualified[symbol] = {"bid": bid, "ask": ask, "at": row["t"]}
+    return qualified, missing
+
+
+# Value unchanged execution books using labels that were unavailable to decisions.
+def supplement(frozen, proxy, first_packet, last_packet):
+    if proxy["manifest_sha256"] != forward.digest(frozen):
+        raise ValueError("Proxy report does not belong to the frozen cohort")
+    symbols = set(frozen["starting"]["holdings"]) | {"SPY", "QQQ"}
+    symbols |= {o["order"]["symbol"] for o in frozen["opportunities"]}
+    start = bounded.instant(frozen["started_at"])
+    end = bounded.instant(proxy["ended_at"])
+    closing = entry_timing.session_clock(
+        start.astimezone(entry_timing.NEW_YORK).date()
+    )["close"]
+    final_at = min(end, closing - timedelta(microseconds=1))
+    if (
+        end < start
+        or end.astimezone(entry_timing.NEW_YORK).date()
+        != start.astimezone(entry_timing.NEW_YORK).date()
+    ):
+        raise ValueError("Single ordered session required")
+    if any(
+        bounded.instant(outcome["attempted_at"]) > final_at
+        for result in proxy["results"]
+        for outcome in result["opportunities"].values()
+        if outcome.get("attempted_at")
+    ):
+        raise ValueError("Execution after the regular valuation endpoint")
+    if (
+        first_packet["at"] != start.isoformat()
+        or last_packet["at"] != final_at.isoformat()
+    ):
+        raise ValueError("Valuation endpoints do not match the frozen experiment")
+    first, first_missing = marks(first_packet, symbols)
+    last, last_missing = marks(last_packet, symbols)
+    initial, missing = forward.equity(frozen["starting"], first)
+    results = []
+    for original in proxy["results"]:
+        book = original["book"]
+        ending, missing_end = forward.equity(book, last)
+        benchmarks = {}
+        for symbol in ("SPY", "QQQ"):
+            ref = (
+                initial
+                * last[symbol]["bid"]
+                / (first[symbol]["ask"] * (1 + original["cost_bps"] / 10000))
+                if initial and symbol in first and symbol in last
+                else None
+            )
+            benchmarks[symbol] = {
+                "ending_reference_value": ref,
+                "excess_gain": ending - ref
+                if ending is not None and ref is not None
+                else None,
+            }
+        gain = ending - initial if initial is not None and ending is not None else None
+        results.append(
+            {
+                "mode": original["mode"],
+                "cost_bps": original["cost_bps"],
+                "ending_value": ending,
+                "total_gain": gain,
+                "total_return": gain / initial
+                if gain is not None and initial
+                else None,
+                "ending_cash": book["cash"],
+                "fees": book["fees"],
+                "turnover_one_way": book["turnover"] / initial if initial else None,
+                "missing_ending_marks": missing_end,
+                "benchmarks": benchmarks,
+                "max_drawdown_loss": None,
+            }
+        )
+    return {
+        "version": VERSION,
+        "manifest_sha256": forward.digest(frozen),
+        "source_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "protocol_sha256": hashlib.sha256(PLAN.read_bytes()).hexdigest(),
+        "started_at": start.isoformat(),
+        "valuation_ended_at": final_at.isoformat(),
+        "starting_value": initial,
+        "missing_starting_marks": missing,
+        "unavailable_quotes": {"start": first_missing, "end": last_missing},
+        "packet_sha256": [forward.digest(first_packet), forward.digest(last_packet)],
+        "results": results,
+        "adoption_eligible": False,
+        "method": (
+            "Delayed SIP endpoint valuation only; "
+            "original conditional IEX attempts unchanged"
+        ),
+    }

@@ -4,12 +4,14 @@ from datetime import date, timedelta
 from decimal import Decimal
 from importlib.util import find_spec
 from types import SimpleNamespace
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
-from backend.cli.market_execution_forward import initialize
+from backend.cli.market_execution_forward import initialize, valuate
 from backend.market import entry_timing
 from backend.market import execution_forward as forward
+from backend.market import execution_marks as labels
 from backend.tests.test_intraday_orders import TODAY, ny
 
 
@@ -418,3 +420,231 @@ def test_flat_funding_matches_native_engine(tmp_path, cost, mode):
         + result["book"]["holdings"]["AAA"] * candle["execution_quote"]["bid"]
     )
     assert native_mark == pytest.approx(reference["ending_bid_marked_equity"])
+
+
+# Provide raw consolidated endpoint events without accessing credentials or providers.
+def label_row(at, *, bid=100, ask=100.1):
+    return {"t": at.isoformat(), "bp": bid, "ap": ask, "bs": 100, "as": 100}
+
+
+# Exercise actual paginated capture and preserve the original provider bytes.
+def label_packet(tmp_path, at, quotes, *, token=None):
+    return labels.fetch_window(
+        set(quotes),
+        at,
+        tmp_path,
+        request=lambda url, headers: (
+            200,
+            forward.encoded({"quotes": quotes, "next_page_token": token}),
+        ),
+        headers={"test": "read-only"},
+        clock=lambda: at + timedelta(minutes=17),
+    )
+
+
+# Read the raw response back after capture and verify consolidated endpoint selection.
+def test_delayed_label_capture_preserves_bytes_and_request(tmp_path):
+    at = ny(10, 16)
+    row = label_row(at)
+    packet = label_packet(tmp_path / "labels", at, {"AAA": [row]})
+    qualified, missing = labels.marks(packet, {"AAA"})
+    assert qualified["AAA"]["bid"] == 100
+    assert missing == {}
+    assert (
+        packet["pages"][0]["body"]
+        == forward.encoded({"quotes": {"AAA": [row]}, "next_page_token": None}).decode()
+    )
+    assert (tmp_path / "labels/complete.json").read_bytes() == forward.encoded(packet)
+    assert packet["request"]["feed"] == "sip"
+    assert packet["request"]["asof"] == "-"
+    with pytest.raises(FileExistsError):
+        label_packet(tmp_path / "labels", at, {"AAA": [row]})
+
+
+# Reject premature label access before any request or output directory is created.
+def test_sip_delay_is_structural(tmp_path):
+    called = []
+    at = ny(10, 16)
+    with pytest.raises(ValueError, match="16 minutes"):
+        labels.fetch_window(
+            {"AAA"},
+            at,
+            tmp_path / "premature",
+            request=lambda *args: called.append(args),
+            clock=lambda: at + timedelta(minutes=15),
+        )
+    assert called == []
+    assert not (tmp_path / "premature").exists()
+
+
+# A completed endpoint resumes from its original bytes without another provider call.
+def test_completed_endpoint_is_reused_without_refetch(tmp_path):
+    at = ny(10, 16)
+    packet = label_packet(tmp_path / "labels", at, {"AAA": [label_row(at)]})
+    calls = []
+    reused = labels.endpoint(
+        {"AAA"}, at, tmp_path / "labels", request=lambda *args: calls.append(args)
+    )
+    assert reused == packet
+    assert calls == []
+    with pytest.raises(ValueError, match="another observation"):
+        labels.endpoint({"AAA"}, at + timedelta(seconds=1), tmp_path / "labels")
+
+
+# An incomplete refused capture cannot be silently replaced during a later valuation.
+def test_refused_endpoint_preserves_failure_and_does_not_retry(tmp_path):
+    at = ny(10, 16)
+    folder = tmp_path / "labels"
+    with pytest.raises(ValueError, match="HTTP 403"):
+        labels.endpoint(
+            {"AAA"},
+            at,
+            folder,
+            request=lambda *args: (403, b'{"message":"not permitted"}'),
+            headers={"test": "only"},
+            clock=lambda: at + timedelta(minutes=17),
+        )
+    assert (folder / "0000.json").exists()
+    with pytest.raises(FileNotFoundError):
+        labels.endpoint({"AAA"}, at, folder)
+
+
+# The latest invalid or wide event cannot be replaced with an older convenient mark.
+@pytest.mark.parametrize("change", [{"bp": 0}, {"bp": 90}, {"bs": 0}, {"bp": 101}])
+def test_invalid_latest_label_does_not_fall_back(tmp_path, change):
+    at = ny(10, 16)
+    latest = {**label_row(at), **change}
+    packet = label_packet(
+        tmp_path / "labels", at, {"AAA": [label_row(at - timedelta(seconds=1)), latest]}
+    )
+    qualified, missing = labels.marks(packet, {"AAA"})
+    assert qualified == {}
+    assert "AAA" in missing
+
+
+# Preserve nanosecond ordering and reject an event just after the endpoint.
+def test_quote_nanoseconds_cannot_round_into_the_past(tmp_path):
+    at = ny(10, 16).replace(microsecond=123456)
+    row = label_row(at)
+    row["t"] = row["t"].replace(".123456", ".123456001")
+    packet = label_packet(tmp_path / "labels", at, {"AAA": [row]})
+    assert labels.nanos(row["t"]) == labels.nanos(at.isoformat()) + 1
+    with pytest.raises(ValueError, match="outside"):
+        labels.marks(packet, {"AAA"})
+
+
+# Missing or disconnected pagination and changed response bytes cannot silently pass.
+@pytest.mark.parametrize(
+    "defect", ["body", "missing_page", "disconnected", "early_receipt"]
+)
+def test_label_provenance_is_enforced(tmp_path, defect):
+    at = ny(10, 16)
+    packet = label_packet(tmp_path / "labels", at, {"AAA": [label_row(at)]})
+    page = packet["pages"][0]
+    if defect == "body":
+        page["body"] += " "
+    elif defect == "missing_page":
+        page["body"] = forward.encoded(
+            {"quotes": {}, "next_page_token": "missing"}
+        ).decode()
+        import hashlib
+
+        page["body_sha256"] = hashlib.sha256(page["body"].encode()).hexdigest()
+    elif defect == "disconnected":
+        packet["pages"].append(dict(page))
+    else:
+        page["received_at"] = at.isoformat()
+    with pytest.raises(ValueError, match="provenance|Incomplete|Disconnected"):
+        labels.marks(packet, {"AAA"})
+
+
+# Follow actual continuation tokens across all symbols and reject repeated tokens.
+def test_label_pagination_covers_later_symbols(tmp_path):
+    at = ny(10, 16)
+    seen = []
+
+    # Return a second symbol only when the caller follows the provider's token.
+    def request(url, headers):
+        token = parse_qs(urlsplit(url).query).get("page_token", [None])[0]
+        seen.append(token)
+        body = {
+            "quotes": {"AAA" if token is None else "BBB": [label_row(at)]},
+            "next_page_token": "second" if token is None else None,
+        }
+        return 200, forward.encoded(body)
+
+    packet = labels.fetch_window(
+        {"AAA", "BBB"},
+        at,
+        tmp_path / "labels",
+        request=request,
+        headers={"test": "only"},
+        clock=lambda: at + timedelta(minutes=17),
+    )
+    assert seen == [None, "second"]
+    assert set(labels.marks(packet, {"AAA", "BBB"})[0]) == {"AAA", "BBB"}
+    with pytest.raises(ValueError, match="repeated"):
+        label_packet(tmp_path / "repeated", at, {"AAA": []}, token="loop")
+
+
+# Two incompatible records with one source event identity cannot create a label.
+def test_conflicting_consolidated_events_are_refused(tmp_path):
+    at = ny(10, 16)
+    packet = label_packet(
+        tmp_path / "labels", at, {"AAA": [label_row(at), label_row(at, bid=99)]}
+    )
+    with pytest.raises(ValueError, match="Conflicting"):
+        labels.marks(packet, {"AAA"})
+
+
+# Exercise the CLI's full frozen comparison and label valuation without changing inputs.
+def test_consolidated_workflow_retains_fills_and_missing_marks(tmp_path):
+    source = tmp_path / "cohort"
+    source.mkdir()
+    frozen = cohort(source, cash=1000)
+    forward.append(source, obs(ny(10, 17), ask=105, bid=104.9))
+    originals = {p.name: p.read_bytes() for p in source.glob("*.json")}
+    received = ny(10, 40)
+
+    # Return endpoint labels for each requested symbol, withholding QQQ explicitly.
+    def request(url, headers):
+        query = parse_qs(urlsplit(url).query)
+        at = forward.bounded.instant(query["end"][0])
+        bid = 100 if at == ny(10, 16) else 110
+        quotes = {
+            s: [label_row(at, bid=bid, ask=bid + 0.1)]
+            for s in query["symbols"][0].split(",")
+            if s != "QQQ"
+        }
+        return 200, forward.encoded({"quotes": quotes, "next_page_token": None})
+
+    output = tmp_path / "result.json"
+    result = valuate(
+        source,
+        output,
+        request=request,
+        headers={"test": "only"},
+        clock=lambda: received,
+    )
+    assert output.read_bytes() == forward.encoded(result)
+    assert originals == {p.name: p.read_bytes() for p in source.glob("*.json")}
+    assert result["proxy"]["manifest_sha256"] == forward.digest(frozen)
+    for proxy, final in zip(
+        result["proxy"]["results"], result["consolidated"]["results"], strict=True
+    ):
+        assert proxy["book"]["holdings"] == {"AAA": 10}
+        assert final["ending_value"] == pytest.approx(proxy["book"]["cash"] + 1100)
+        assert final["total_gain"] == pytest.approx(final["ending_value"] - 1000)
+        assert final["fees"] == proxy["book"]["fees"]
+        assert final["max_drawdown_loss"] is None
+        assert final["benchmarks"]["QQQ"]["excess_gain"] is None
+        assert final["benchmarks"]["SPY"]["excess_gain"] is not None
+    assert result["consolidated"]["adoption_eligible"] is False
+    with pytest.raises(FileExistsError):
+        valuate(
+            source,
+            output,
+            request=request,
+            headers={"test": "only"},
+            clock=lambda: received,
+        )
