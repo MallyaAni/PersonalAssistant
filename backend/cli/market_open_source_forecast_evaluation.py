@@ -15,7 +15,7 @@ def main():
     parser.add_argument("input", type=Path)
     parser.add_argument("portfolio", type=Path)
     parser.add_argument("provenance", type=Path)
-    parser.add_argument("artifacts", nargs="+", type=Path)
+    parser.add_argument("artifacts", nargs=4, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     if args.output.exists():
