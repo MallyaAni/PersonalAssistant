@@ -62,7 +62,7 @@ async function setup(page: Page, {open = true, paused = false, account, beforeNa
 }
 
 // Keep the primary board small while preserving the evidence and the paper position on request.
-test('visible grades and concise actions expose diagnostics only on request', async ({page}) => {
+test('visible grades and concise actions expose diagnostics only on request', async ({page}, testInfo) => {
   const {errors} = await setup(page)
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   const headers = board.locator('thead tr').last().getByRole('columnheader')
@@ -92,7 +92,7 @@ test('visible grades and concise actions expose diagnostics only on request', as
   await expect(why).toBeVisible()
   await expect(why).toBeInViewport()
   await expect(why).toContainText('Enters the book at 2.0%')
-  await page.screenshot({path: '/tmp/simple-actions-mobile.png', fullPage: true})
+  await page.screenshot({path: testInfo.outputPath('simple-actions-mobile.png'), fullPage: true})
   expect(errors).toEqual([])
 })
 
