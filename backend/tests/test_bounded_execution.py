@@ -218,7 +218,11 @@ def test_close_fallback_remains_bounded():
 # Keep an expired trigger historical even when a fresh quote is within the bound.
 def test_old_trigger_requires_new_permission_not_silent_renewal():
     now = ny(14)
-    trigger = {"bar": ny(9, 30).isoformat(), "price": 98.5}
+    trigger = {
+        "bar": ny(9, 30).isoformat(),
+        "price": 98.5,
+        "seen_at": ny(9, 45).isoformat(),
+    }
     verdict = intraday_orders.decide(
         candidate(),
         {"open": 100, "buy_trigger": trigger},

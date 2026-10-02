@@ -567,8 +567,16 @@ def _triggered(snapshot, now):
         "symbols": {
             name: {
                 "open": quote["last"],
-                "buy_trigger": {"bar": quote["bar"], "price": quote["last"]},
-                "sell_trigger": {"bar": quote["bar"], "price": quote["last"]},
+                "buy_trigger": {
+                    "bar": quote["bar"],
+                    "price": quote["last"] * 0.99,
+                    "seen_at": now.isoformat(),
+                },
+                "sell_trigger": {
+                    "bar": quote["bar"],
+                    "price": quote["last"] * 1.01,
+                    "seen_at": now.isoformat(),
+                },
             }
             for name, quote in snapshot["quotes"].items()
         },

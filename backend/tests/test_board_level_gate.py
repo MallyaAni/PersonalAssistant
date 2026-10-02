@@ -56,6 +56,7 @@ def v4(when=None, move=-0.005, until_rebalance=10):
     for q in snapshot["quotes"].values():
         q["bar"] = bar.astimezone(UTC).isoformat()
         q["open"] = q["last"] / (1.0 + move)
+        q["as_of"] = now.isoformat()
     for q in quoted["quotes"].values():
         q["t"] = now.isoformat()
     return record, snapshot, quoted, now

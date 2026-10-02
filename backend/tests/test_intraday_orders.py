@@ -182,7 +182,11 @@ def test_only_todays_unsent_ordinary_rows_are_due():
 def test_the_decision_is_the_boards_clock(at, trigger, expected):
     latch_row = {"open": 100.0, "buy_trigger": None, "sell_trigger": None}
     if trigger:
-        latch_row["buy_trigger"] = {"bar": ny(10, 0).isoformat(), "price": 98.9}
+        latch_row["buy_trigger"] = {
+            "bar": ny(10, 0).isoformat(),
+            "price": 98.9,
+            "seen_at": ny(10, 15).isoformat(),
+        }
     verdict = intraday_orders.decide(row(), latch_row, None, at, TODAY)
     assert verdict["send"] == expected
 
@@ -192,7 +196,14 @@ def test_the_decision_is_the_boards_clock(at, trigger, expected):
 # sends nothing.
 def test_a_triggered_buy_is_sent_once(tmp_path):
     save(tmp_path, row("AAA"))
-    latch(tmp_path, buy={"bar": ny(10, 0).isoformat(), "price": 98.9})
+    latch(
+        tmp_path,
+        buy={
+            "bar": ny(10, 0).isoformat(),
+            "price": 98.9,
+            "seen_at": ny(10, 15).isoformat(),
+        },
+    )
     broker = Broker()
     lines = intraday_orders.send_due(tmp_path, {}, ny(10, 16), lambda: broker)
     assert lines == ["buy 10 AAA (market, triggered): sent"]
