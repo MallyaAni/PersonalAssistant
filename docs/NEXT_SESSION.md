@@ -1,5 +1,53 @@
 # Next session
 
+## 2026-10-01, 20:44 ET — 6-K re-read on `1a6eab2a`: SIMO and TSM falsely admit; tone NOT re-scored
+
+`market_edgar --refresh --reclassify-6k --tickers NBIS,ASML,SIMO,TSM`
+ran 20:27-20:39 ET (12.2 min; events partition 2026-10-02: 4 stored, 0
+failed; NBIS 8, ASML 77, SIMO 89, TSM 101 events). `--audit-6k` (with ARM)
+at 20:42 ET. Admitted results 6-Ks per year (the first year and 2026 are
+partial):
+
+- NBIS ok: 2024:1 2025:4 2026:3 (was 0 admitted).
+- ARM ok: 2023:1 2024:4 2025:4 2026:3.
+- ASML CHECK (too few, no year above four): 2003-2010 4/3/1/2/4/4/4/4,
+  2011:3 2012:4 2013:3 2014:3 2015:3 2016:2 2017:4 2018:3 2019:1 2020:3
+  **2021:3** 2022:4 2023:4 2024:4 2025:4 2026:3. 2022-2025 are now four;
+  2021 is still three (no January 2021 release admitted).
+- SIMO CHECK: 2005:1, 2006-2008 four, **2009:5 2010:6**, 2011-2015 four,
+  **2016:6**, 2017-2025 four, 2026:3 (2025-2026 releases now admitted).
+- TSM CHECK: 2003:4 2004:3 2005:4 **2006:5 2007:5 2008:5 2009:6**
+  2010-2012 four **2013:5** 2014:4 **2015:5**, 2016-2025 four, 2026:3.
+
+**Defect: completed years above four, so `market_tone` was not run** (the
+stop rule). Off-cadence admissions, the likely false ones (by date; the
+documents were not opened):
+
+- TSM: 0001145549-06-000468 (2006-04-10), 0001145549-07-000018
+  (2007-01-10), 0001145549-08-000036 (2008-01-10), 0001145549-09-000038
+  (2009-01-09), 0001145549-09-000422 (2009-03-10), 0001193125-13-109931
+  (2013-03-15), 0001193125-15-325877 (2015-09-23). The ~10th-of-month
+  filings match TSM's monthly-revenue 6-Ks.
+- SIMO: 0001193125-09-076245 (2009-04-09), 0001193125-09-146321
+  (2009-07-09), 0001193125-10-085081 (2010-04-16), 0001193125-10-155642
+  (2010-07-08), 0001193125-16-535109 (2016-04-08), 0001193125-16-734636
+  (2016-10-11). Early-in-quarter filings, likely preliminary results or
+  guidance updates. 2009 also lacks a Q3 release.
+
+Tone store unchanged (`edgar_tone/asof=2026-10-01`): NBIS 0 scored; ASML
+newest 2026-07-15; **SIMO newest 2025-07-31**; TSM newest 2026-07-16;
+ARM 2026-07-30. So SIMO's reading stays stale and **A5 tone expiry
+applies to it on the 10-02 record (A+ -> B expected)**. NBIS still has no
+earnings reading. The 10-02 nightly record carries a `data_vintage` block,
+and the board shows a grey "Data updates" note for any name whose grade
+letter moved (the events store changed, the tone store did not).
+
+Next: tighten the 6-K classifier for TSM monthly-revenue 6-Ks and SIMO
+preliminary-results 6-Ks (test on the accessions above), re-run
+`--reclassify-6k` and `--audit-6k`, then the tone re-score if no completed
+year is above four. Logs: `~/scratch/6k_reclassify_1001.log`,
+`~/scratch/6k_audit_pre_1001.log`.
+
 ## 2026-10-01, 20:24 ET — LIVE: `1a6eab2a`, A5-hard tone expiry (a stale earnings reading no longer counts)
 
 `scripts/deploy.sh` on Spark: unit 8,383 passed / 71 skipped / 6 xfailed,
