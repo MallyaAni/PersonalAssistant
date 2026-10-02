@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-10-02 — Paper planner `/6`: the redeploy spends its whole-share remainder (fix/paper-target-tracking)
+
+- Why: the operator reported the account "doesn't know when to buy and
+  sell": 30% cash and a lopsided book (NTAP 16.8%, SMCI 15.2%, SIMO, INTC,
+  ALAB at 1%) against eleven 9.1% targets. Reconciled from the broker's
+  orders, the 31,422 of cash at the 10-02 close is 22,056 of that day's
+  rotation sales (AAOI, LITE, ANET; delivered at the close by design and
+  redeployed by the next plan), 4,461 of market-on-close buys the paper
+  broker expired unfilled (HPE 31, SWKS 21, ALAB 2), the 2% buffer, and
+  2,653 the 10-01 redeploy left beyond the buffer - 1,294 of it the
+  whole-share floor, 1,359 legs under the 0.5% trade floor (fill prices
+  account for the last ~200).
+- `paper._redeploy_orders` with whole shares now goes through
+  `_whole_share_fill`: legs are floored, then the flooring's remainder buys
+  one share at a time (largest unspent remainder first) in a leg still
+  short of its own dollars whose next share fits its room to target. The
+  total never passes the simulator's dollars, no name passes its target,
+  fractional mode (the simulator parity path) is unchanged.
+- Replayed on the real books (`backend/tests/fixtures/paper_target_tracking_2026-10.json`):
+  10-01 reproduces the orders the account sent; the redeploy becomes 4,111
+  of the simulator's 4,188 (was 2,894: MU's 767 slice at 1,097 a share
+  floored away); on the 10-02 account 29,240 of 29,325 (was 26,949).
+- Not changed, and why: the overweights (NTAP, SMCI) are untrimmed between
+  resets by the promoted policy itself; in the simulator, tracking the
+  targets every session or every five sessions earned less (20.7% / 47.6%
+  and 22.2% / 48.7% CAGR on 2016-2023 / 2024-2026 at 25 bp, against 24.2%
+  / 54.0% for the promoted executor, with deeper drawdowns). The expired
+  market-on-close orders are the intraday executor's, not the planner's.
+- Stamp `cash-bounded-breakout-rotation/5` -> `/6`. Diagram impact: NONE.
+
 ## 2026-10-01 — Form 6-K false admissions: a month's sales, a guidance update, a preliminary figure, the audited year (fix/6k-false-admissions)
 
 - Why: the 20:27 ET `--reclassify-6k` re-read counted completed years above
