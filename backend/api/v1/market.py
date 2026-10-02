@@ -1161,6 +1161,7 @@ def _paper_plan(client, state, positions, equity: float) -> dict[str, object]:
         except (alpaca_trading.AlpacaTradingError, OSError, ValueError, AttributeError):
             reason = "The broker's order status could not be read"
     snapshot = _live_snapshot() or {}
+    snapshot, now = intraday_orders.qualify_snapshot(state.pending, snapshot, now)
     quotes = snapshot.get("quotes") or {}
     prices = {
         str(symbol): float(q["last"])

@@ -1,5 +1,107 @@
 # Next session
 
+## 2026-10-01 — Open-source integration branch: completed fixed comparisons
+
+User authorized parallel implementation/backtests on a branch, with net
+compounded gain against BOTH SPY and QQQ as the objective. Starting main
+`9ab75e85`; final verified code checkpoint `a9f8a7781151b75be69fa8a1b2a7f2fe6324562d`
+on `codex/open-source-research-20261001`. No main merge, deployment, real orders,
+model-service changes or GPU training. Earlier bounded execution is included.
+
+- **VERIFIED:** optional pinned skfolio covariance sizing, four actual CPU
+  forecast adapters (Chronos-2, Kronos-small, TimesFM-3, daily TTM), native
+  Nautilus execution comparison, hash-bound exports and funded scorecard CLIs.
+  Production does not import these new research candidates. Dependencies are
+  isolated, with a separate `requirements-open-source-research.txt`.
+- **VERIFIED:** 179 integrated research tests passed in 6.20 s; 328 existing
+  backend compatibility cases passed in 3.83 s, five skipped. These suites
+  overlap and must not be summed. Real Docling conversion separately passed:
+  20 cases, four unrelated existing integrations skipped. Financial values
+  retain their quarter/column associations and table chunk. Malformed provider
+  JSON/objects/numbers are refused, not ingested as text. New research files
+  pass Ruff; pre-existing whole-parser/API lint findings were not waived.
+- **VERIFIED:** runtime exercised the exact hashes of all 23 changed Python
+  files relative to starting main. Test image `anios-functional-tests` SHA256
+  `c8964e1233e1142b77e6ac2b24fda67ee110a0f8e4c95482c4799d8617e17fb0`;
+  source mount `/home/animallya96/scratch/open-source-source-20261001`.
+  Native/forecast/optimizer runtime is the isolated
+  `/home/animallya96/scratch/open-source-runtime-20261001`, CPU only.
+- **VERIFIED:** all four checkpoints produced 228 forecasts each (912 total),
+  no inference errors, cache-cleared actual repeats bit-identical. Original
+  inputs/results are immutable under
+  `/home/animallya96/scratch/open-source-inputs-20261001`. The additive cohort
+  export keeps TSLA prices/forecasts but unknown grades and explicit exclusion
+  under the original hash-verified membership intervals. No history rewritten.
+- **FAILED adoption criterion:** qualified covariance CAGR at 10 bp was
+  23.10%, `/5` target control 31.66%, SPY 15.07%, QQQ 20.30%; at 25 bp,
+  21.14%, 29.65%, 15.05%, 20.29%. Same continuous 2016-01-04..2026-09-30
+  funded accounts and declared cadence. Independent direct-QP correction
+  preserved objective/constraints/tolerances: all 101 fits OPTIMAL, analytic
+  captured-case certificate and 497 applicable tests passed. Initial inaccurate
+  solver result remains explicitly superseded, not qualified or overwritten.
+- **FAILED adoption criterion:** September 3–30 forecast accounts at 10 bp:
+  Chronos +0.612%, Kronos -3.385%, TimesFM -0.077%, SPY -1.068%, QQQ +2.843%.
+  None beats QQQ. The dated equal-weight control returned +3.930%; the changed
+  10-session `/5` grade control -2.151%. This is not exact live-policy parity.
+  All models retain 228 opportunities, 165 eligible, 108 mature/120 immature
+  labels; 75 eligible labels score and overlap. TTM risk MSE improves 9.23%
+  over trailing-20, not evidence of trading gains. No retuning or adoption.
+- **VERIFIED cleanup:** one uncalled weekly helper removed, 62 relevant tests
+  passed; 1,330,560 actual technical feature values byte-identical before/after.
+  No further deletion was justified. Tests and failed-experiment evidence remain.
+- **UNVERIFIED:** profitable new live policy, untouched holdout, checkpoint
+  training membership/cutoffs, original historical publication, live IOC or
+  midpoint fills. No archived quote dataset supports historical execution
+  profitability; native partial/unfilled/cash/expiry behavior is verified instead.
+  TimesFM is noncommercial research only and cannot feed live recommendations.
+  No UI change or browser/release claim in this task. No candidate earned
+  promotion; the live strategy remains unchanged.
+
+Result sources: [portfolio certificate and full cost/split table](research/portfolio-solver-review-2026-10-01.md),
+[funded forecast scorecard](research/open-source-forecast-scorecard-2026-10-01.md),
+[actual checkpoint/runtime hashes](research/open-source-forecasts-2026-10-01.md),
+[native execution acceptance](research/open-source-execution-2026-10-01.md),
+[document evidence](research/document-evidence-2026-10-01.md),
+[cleanup proof](research/trading-cleanup-2026-10-01.md).
+Parent independently checked immutable hashes and all fourteen economic rows'
+NAV gains, drawdowns and differences against both benchmarks without rescoring.
+Unrelated Wi-Fi watchdog files and `trader-board.bundle` remain untouched.
+Do not repeat completed inference/backtests or deploy these failed alpha
+candidates. Subsequent promotion requires separately registered funded forward
+evidence. Engineering fixes can be reviewed independently for guarded release.
+
+## 2026-10-01 — Experimental bounded execution branch
+
+User authorized implementation on a branch, not live adoption. Starting main
+`9ab75e85`; verified source checkpoint `5d5566e6` on
+`codex/bounded-execution-20261001`. No deployment or orders sent.
+
+- **VERIFIED:** `bounded-execution/1` is explicitly opt-in per paper pending
+  order. `bounded_execution.bind` requires price, decision/expiry, quote source,
+  freshness, trigger-age and spread budgets, and entry/trim/exit intent. No
+  automatic nightly binding or fitted defaults. Allocation and grades unchanged.
+- **VERIFIED:** board and dispatcher share fresh, timestamped bid/ask guards,
+  using the existing quote reader with explicit SIP/IEX identity. Stale or
+  recovered triggers cannot override price bounds. Urgent exits bypass bounce
+  timing, retaining a sell floor. Paper-only IOC transport; no market fallback.
+- **VERIFIED:** actual cash/share reservations include other batch attempts and
+  unknown responses; no assumed sale funding. Accepted requests are not fills.
+  Recovery, partial fills and blocked opportunity receipts survive reconciliation.
+- **VERIFIED:** 290 tests passed in 3.48s, covering the new bounded module and
+  existing timing, paper funding/allocation, planner, board and daily API paths.
+  Isolated Spark checkout `/home/animallya96/scratch/bounded-execution.dTUEcK`,
+  read-only mount, network disabled, test mode, image `anios-functional-tests`
+  SHA256 `c8964e1233e1142b77e6ac2b24fda67ee110a0f8e4c95482c4799d8617e17fb0`.
+  All six tested source hashes matched the branch. Five changed module/test
+  files pass Ruff; formatting and diff checks pass.
+- **FAILED (existing baseline):** whole-file API Ruff reports C901 on unchanged
+  `_desk_mine_payload` at line 677, also reproduced from starting main. The API
+  change is one quote-qualification line in `_paper_plan`; no lint rules waived.
+- **UNVERIFIED:** live provider/IOC behavior, rendered browser, deployment and
+  economic advantage. Next acceptance is an untouched forward shadow/funded
+  comparison retaining missed opportunities and partial fills, before adoption.
+  Limits can miss fills or delay exits; midpoint fills cannot be assumed.
+  Unrelated Wi-Fi watchdog files and `trader-board.bundle` remain untouched.
 ## 2026-10-01, 20:44 ET — 6-K re-read on `1a6eab2a`: SIMO and TSM falsely admit; tone NOT re-scored
 
 `market_edgar --refresh --reclassify-6k --tickers NBIS,ASML,SIMO,TSM`

@@ -32,20 +32,26 @@ it latches the candle. FOMC event orders keep their own next-open treatment
 `board_orders` is the same state read back for the dashboard: every order
 with its size, why, when, and what has happened to it, worded once here so
 the board, the ticker panel and the chart say the same thing.
+
+An explicitly tagged `bounded-execution/1` candidate instead uses a qualified
+raw bid/ask quote and an IOC limit. The active nightly does not tag orders;
+its existing behavior remains unchanged. Candidate budgets must be supplied
+before evaluation; only candidate rows request the existing bid/ask reader.
 """
 
 from __future__ import annotations
 
 import math
+import time
 from collections.abc import Callable
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 
 from backend.agents.trading.desk import execution_evidence, paper
-from backend.market import calendar, entry_timing
+from backend.market import bounded_execution, calendar, entry_timing, execution_quotes
 
 # The off switch. True: the nightly writes its ordinary orders down for the
 # balancer to send on the board's rule. False: the nightly queues them itself
@@ -93,13 +99,24 @@ def due(state: paper.PaperState, today: date) -> list[dict]:
 
 # What one row should do at `now`: send a market order (its level was
 # reached, or the market-on-close cutoff has passed), send a market-on-close
-# order (the close window), or nothing yet. The timing is entry_timing's, the
-# function the board reads, so a row is sent exactly when the board says so.
+# order (the close window), or nothing yet. Explicit candidate contracts use
+# bounded execution instead; malformed contracts never fall back to the legacy rule.
 def decide(
     row: dict, latch_row: dict | None, quote: dict | None, now: datetime, today: date
 ) -> dict[str, Any]:
-    """Return {"send": MARKET | MOC | None, "timed": entry_timing.timing(...)}."""
+    """Return legacy timing or an opt-in IOC decision with its execution guard."""
+    if "execution_policy" in row and row.get("side") not in ("buy", "sell"):
+        return {
+            "send": None,
+            "timed": {},
+            "guard": {"state": "invalid_contract", "reason": "Invalid order side"},
+        }
     timed = entry_timing.timing(latch_row, quote, str(row.get("side")), now, today)
+    if "execution_policy" in row:
+        guard = bounded_execution.evaluate(
+            row, timed, (quote or {}).get("execution_quote"), now, today
+        )
+        return {"send": guard["send"], "timed": timed, "guard": guard}
     state = timed["state"]
     send: str | None = None
     if state == entry_timing.TRIGGERED:
@@ -113,12 +130,16 @@ def decide(
     return {"send": send, "timed": timed}
 
 
-# Send one row to the broker the way `decide` said; return the broker's answer.
-def _submit(client, row: dict, how: str, qty: int) -> dict:
+# Submit the decided order type, preserving an explicit candidate's price bound.
+def _submit(client, row: dict, how: str, qty: int, verdict: dict) -> dict:
     """Submit `row` as a market or market-on-close order for `qty` shares."""
     symbol = str(row["symbol"])
     side = str(row["side"])
     cid = str(row["client_order_id"])
+    if how == bounded_execution.LIMIT_IOC:
+        return client.submit_limit_ioc(
+            symbol, qty, side, verdict["guard"]["limit_price"], cid
+        )
     if how == MOC:
         return client.submit_market_on_close(symbol, qty, side, cid)
     return client.submit_market(symbol, qty, side, cid)
@@ -154,6 +175,8 @@ def send_due(
     snapshot: dict | None,
     now: datetime,
     client_factory: Callable[[], Any],
+    *,
+    quote_reader: Callable | None = None,
 ) -> list[str]:
     """Send the orders the board's timing makes due now; return log lines."""
     if now.tzinfo is None:
@@ -161,7 +184,9 @@ def send_due(
     today = now.astimezone(NEW_YORK).date()
     root = Path(root)
     with paper.transaction(root):
-        return _send_due_locked(root, snapshot, now, today, client_factory)
+        return _send_due_locked(
+            root, snapshot, now, today, client_factory, quote_reader
+        )
 
 
 # The due rows that `decide` says to send on this candle, with its verdict.
@@ -193,17 +218,24 @@ def _send_due_locked(
     now: datetime,
     today: date,
     client_factory: Callable[[], Any],
+    quote_reader: Callable | None,
 ) -> list[str]:
     """Send due rows with the paper lock held; return log lines."""
     from backend.market import alpaca_trading
 
     state = paper.load_state(root)
-    ready = _ready(due(state, today), root, snapshot, now, today)
-    if not ready:
+    rows = due(state, today)
+    snapshot, now = qualify_snapshot(rows, snapshot, now, quote_reader)
+    started = time.monotonic()
+    _observe_bounded(root, state, rows, snapshot, now, today)
+    ready = _ready(rows, root, snapshot, now, today)
+    recovering = [r for r in rows if "execution_policy" in r and r.get("sending")]
+    if not ready and not recovering:
         return []
     try:
         client = client_factory()
-        if not bool((client.clock() or {}).get("is_open")):
+        market_open = bool((client.clock() or {}).get("is_open"))
+        if not market_open and not recovering:
             return [
                 "intraday orders: the broker reports the market closed; nothing sent"
             ]
@@ -214,10 +246,105 @@ def _send_due_locked(
         held = {p.symbol: float(p.qty) for p in client.positions()}
     except (alpaca_trading.AlpacaTradingError, OSError, ValueError) as exc:
         return [f"intraday orders: broker unavailable ({exc}); nothing sent"]
-    return [
-        _send_one(root, state, row, verdict, client, known, held, now)
+    # Recover accepted attempts even if their price permission has since expired.
+    recovered = []
+    for row in recovering:
+        cid = str(row["client_order_id"])
+        if cid in known and not any(r is row for r, _ in ready):
+            conflict = _adoption_error(row, known[cid])
+            if conflict:
+                row["send_error"] = conflict
+                paper.save_state(root, state)
+                recovered.append(f"{row['symbol']}: {conflict}")
+                continue
+            row["sent"] = {
+                "at": row["sending"],
+                "how": bounded_execution.LIMIT_IOC,
+                "adopted": True,
+            }
+            row["execution"] = {
+                **(row.get("execution") or {}),
+                **execution_evidence.broker_evidence(known[cid]),
+            }
+            paper.save_state(root, state)
+            recovered.append(f"{row['symbol']}: accepted IOC attempt recovered")
+    if not market_open:
+        return recovered + [
+            "intraday orders: the broker reports the market closed; nothing sent"
+        ]
+    return recovered + [
+        _send_one(root, state, row, verdict, client, known, held, now, started)
         for row, verdict in ready
     ]
+
+
+# Fetch only missing candidate quotes; legacy orders make no additional data requests.
+def qualify_snapshot(rows, snapshot, now, quote_reader=None):
+    quotes = (snapshot or {}).get("quotes") or {}
+    today = now.astimezone(NEW_YORK).date()
+    symbols = set()
+    for row in rows:
+        if "execution_policy" not in row or row.get("sent"):
+            continue
+        symbol = str(row.get("symbol"))
+        bar = quotes.get(symbol) or {}
+        verdict = decide(row, None, bar, now, today)
+        if "execution_quote" not in bar and verdict["guard"]["state"] in (
+            "quote_unavailable",
+            "waiting",
+        ):
+            symbols.add(symbol)
+    if not symbols:
+        return snapshot or {}, now
+    started = time.monotonic()
+    try:
+        evidence = (quote_reader or execution_quotes.fetch)(sorted(symbols))
+    except Exception:  # noqa: BLE001 - unavailable evidence must not expose credentials
+        evidence = None
+    result = bounded_execution.with_quotes(snapshot, evidence)
+    return result, now + timedelta(seconds=max(0.0, time.monotonic() - started))
+
+
+# Preserve every candidate opportunity, including blocked attempts, once per candle.
+def _observe_bounded(root, state, rows, snapshot, now, today):
+    latch = entry_timing.load(root, today)
+    quotes = (snapshot or {}).get("quotes") or {}
+    bucket = (
+        now.astimezone(NEW_YORK)
+        .replace(
+            minute=now.astimezone(NEW_YORK).minute // 15 * 15,
+            second=0,
+            microsecond=0,
+        )
+        .isoformat()
+    )
+    changed = False
+    for row in rows:
+        if "execution_policy" not in row:
+            continue
+        execution = row.setdefault("execution", {})
+        observations = execution.setdefault("bounded_observations", [])
+        if any(o["bucket"] == bucket for o in observations):
+            continue
+        symbol = str(row.get("symbol"))
+        verdict = decide(
+            row,
+            entry_timing.row_for(latch, symbol, today),
+            quotes.get(symbol),
+            now,
+            today,
+        )
+        observations.append(
+            {
+                "bucket": bucket,
+                "observed_at": now.isoformat(),
+                "guard": verdict["guard"],
+            }
+        )
+        execution["execution_policy"] = row["execution_policy"]
+        changed = True
+    if changed:
+        paper.save_state(root, state)
 
 
 # Send one due row, or adopt the order an earlier run already placed for it,
@@ -231,6 +358,7 @@ def _send_one(
     known: dict[str, dict],
     held: dict[str, float],
     now: datetime,
+    started: float,
 ) -> str:
     """Send `row` as `verdict` says and record it on `state`; return a log line."""
     from backend.market import alpaca_trading
@@ -241,6 +369,10 @@ def _send_one(
     line = f"{row['side']} {row['qty']} {row['symbol']} ({how}, {timed['state']})"
     if cid in known:
         # An earlier run sent it and stopped before writing that down.
+        if conflict := _adoption_error(row, known[cid]):
+            row["send_error"] = conflict
+            paper.save_state(root, state)
+            return f"{line}: not sent ({conflict})"
         row["sent"] = {**_why_sent(timed, how, now), "adopted": True}
         row["execution"] = {
             **(row.get("execution") or {}),
@@ -249,30 +381,199 @@ def _send_one(
         paper.save_state(root, state)
         return f"{line}: already at the broker, recorded"
     qty = int(row.get("qty") or 0)
-    if row.get("side") == "sell":
+    if how == bounded_execution.LIMIT_IOC:
+        try:
+            qty, verdict, now = _prepare_bounded(
+                row, verdict, client, known, held, now, started
+            )
+        except (alpaca_trading.AlpacaTradingError, OSError, ValueError) as exc:
+            row["send_error"] = str(exc)
+            paper.save_state(root, state)
+            return f"{line}: not sent ({exc})"
+    elif row.get("side") == "sell":
         qty = min(qty, int(math.floor(held.get(str(row["symbol"]), 0.0))))
     if qty <= 0:
         row["send_error"] = (
-            "no shares to sell" if row.get("side") == "sell" else "no quantity"
+            "no shares to sell"
+            if row.get("side") == "sell"
+            else "no funded quantity"
+            if how == bounded_execution.LIMIT_IOC
+            else "no quantity"
         )
         paper.save_state(root, state)
         return f"{line}: not sent ({row['send_error']})"
     row["sending"] = now.isoformat(timespec="seconds")
     paper.save_state(root, state)
     try:
-        response = _submit(client, row, how, qty)
+        response = _submit(client, row, how, qty, verdict)
     except alpaca_trading.AlpacaTradingError as exc:
         row["send_error"] = str(exc)
+        # A failed response need not prove that the broker refused the request.
+        known[cid] = {
+            "symbol": row["symbol"],
+            "side": row["side"],
+            "qty": qty,
+            "filled_qty": 0,
+            "status": "pending_new",
+            "limit_price": (verdict.get("guard") or {}).get("limit_price"),
+            "_uncertain": True,
+        }
         paper.save_state(root, state)
-        return f"{line}: REFUSED {exc}"
+        status = (
+            f"submission unconfirmed ({exc})"
+            if how == bounded_execution.LIMIT_IOC
+            else f"REFUSED {exc}"
+        )
+        return f"{line}: {status}"
     row["sent"] = {**_why_sent(timed, how, now), "qty": qty}
     row.pop("send_error", None)
     row["execution"] = {
         **(row.get("execution") or {}),
         **execution_evidence.broker_evidence(response),
     }
+    if how == bounded_execution.LIMIT_IOC:
+        # Reserve the maximum attempted cash/shares until the broker reconciles.
+        known[cid] = {
+            **response,
+            "symbol": row["symbol"],
+            "side": row["side"],
+            "qty": qty,
+            "filled_qty": 0,
+            "limit_price": verdict["guard"]["limit_price"],
+            "status": "pending_new",
+        }
+    else:
+        # Later bounded rows must also reserve attempts made by the legacy policy.
+        known[cid] = {
+            **response,
+            "symbol": row["symbol"],
+            "side": row["side"],
+            "qty": qty,
+            "filled_qty": 0,
+            "status": "pending_new",
+        }
     paper.save_state(root, state)
     return f"{line}: sent"
+
+
+# Adopt confirmed legacy orders or an IOC matching its bounded execution permission.
+def _adoption_error(row, order):
+    if order.get("_uncertain"):
+        return "Submission remains unconfirmed"
+    if "execution_policy" not in row:
+        return None
+    error = bounded_execution.contract_error(row, row.get("execution_policy"))
+    if error:
+        return error
+    expected = {
+        "symbol": row["symbol"],
+        "side": row["side"],
+        "type": "limit",
+        "time_in_force": "ioc",
+    }
+    qty = bounded_execution.positive(order.get("qty"))
+    price = bounded_execution.positive(order.get("limit_price"))
+    cap = float(
+        bounded_execution.limit_text(
+            row["execution_policy"]["limit_price"], row["side"]
+        )
+    )
+    protected = price is not None and (
+        price <= cap if row["side"] == "buy" else price >= cap
+    )
+    if (
+        any(order.get(k) != v for k, v in expected.items())
+        or qty is None
+        or qty > row["qty"]
+        or not protected
+    ):
+        return "Broker order does not confirm this bounded attempt"
+    return None
+
+
+# Revalidate funds, reservations, price and expiry immediately before an IOC attempt.
+def _prepare_bounded(row, verdict, client, known, held, now, started):
+    row["execution"] = {
+        **(row.get("execution") or {}),
+        "execution_policy": row["execution_policy"],
+    }
+    qty = int(row["qty"])
+    if row["side"] == "buy":
+        try:
+            cash = _bounded_cash(client, known)
+        except (ValueError, OSError) as exc:
+            raise ValueError(f"Cash unavailable: {exc}") from exc
+        qty = min(qty, int(math.floor(cash / float(verdict["guard"]["limit_price"]))))
+    else:
+        qty = min(
+            qty, int(math.floor(_bounded_shares(str(row["symbol"]), held, known)))
+        )
+    attempted_at = now + timedelta(seconds=max(0.0, time.monotonic() - started))
+    guard = bounded_execution.evaluate(
+        row,
+        verdict["timed"],
+        verdict["guard"].get("quote"),
+        attempted_at,
+        now.astimezone(NEW_YORK).date(),
+    )
+    row["execution"]["bounded_attempt"] = {
+        **guard,
+        "approved_at": attempted_at.isoformat(),
+    }
+    if not guard["send"]:
+        raise ValueError(guard["reason"])
+    return qty, {**verdict, "guard": guard}, attempted_at
+
+
+# Reserve other working buys against actual cash, never promised sale proceeds.
+def _bounded_cash(client, known: dict) -> float:
+    account = client.account()
+    cash, buying_power = float(account.cash), float(account.buying_power)
+    if not math.isfinite(cash) or not math.isfinite(buying_power):
+        raise ValueError("Non-finite account funds")
+    reserved = 0.0
+    for order in known.values():
+        status = str(order.get("status") or "").lower()
+        if order.get("side") != "buy" or status in _CANCELLED + _REJECTED + ("filled",):
+            continue
+        qty = _remaining(order)
+        price = bounded_execution.positive(order.get("limit_price"))
+        if not math.isfinite(qty) or qty < 0 or (qty > 0 and price is None):
+            raise ValueError("Working buy reservation is unknown")
+        reserved += max(0, qty) * (price or 0)
+    return max(0.0, min(cash - reserved, buying_power))
+
+
+# Reserve working sells so another row cannot sell the same long shares twice.
+def _bounded_shares(symbol, held, known):
+    shares = float(held.get(symbol, 0))
+    if not math.isfinite(shares) or shares < 0:
+        raise ValueError("Held shares are unknown")
+    for order in known.values():
+        status = str(order.get("status") or "").lower()
+        if (
+            order.get("symbol") != symbol
+            or order.get("side") != "sell"
+            or status in _CANCELLED + _REJECTED + ("filled",)
+        ):
+            continue
+        remaining = _remaining(order)
+        if not math.isfinite(remaining) or remaining < 0:
+            raise ValueError("Working sell reservation is unknown")
+        shares -= remaining
+    return max(0.0, shares)
+
+
+# Read a working order's remaining quantity without treating missing data as zero.
+def _remaining(order):
+    qty = bounded_execution.positive(order.get("qty"))
+    try:
+        filled = float(order.get("filled_qty", 0))
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError("Working order quantity is unknown") from exc
+    if qty is None or not math.isfinite(filled) or not 0 <= filled <= qty:
+        raise ValueError("Working order quantity is unknown")
+    return qty - filled
 
 
 # ----------------------------------------------------------------------------
@@ -585,6 +886,13 @@ def board_row(
         out["notional"] / equity if out["notional"] is not None and equity else None
     )
     out["when"] = _when(side, timing, execute_on, today, out)
+    if "execution_policy" in row:
+        out["execution_policy"] = (
+            row["execution_policy"]
+            if bounded_execution.contract_error(row, row["execution_policy"]) is None
+            else {"version": bounded_execution.VERSION, "valid": False}
+        )
+        out["when"] = "Bounded IOC limit; no market fallback"
     return out
 
 
@@ -672,10 +980,11 @@ def _recorded_status(
     at = _clock(sent.get("at")) if sent else None
     stamp = f" {at}" if at else ""
     how = sent.get("how") or (MOC if known and known.get("tif") == "cls" else MARKET)
-    if how == MOC:
-        words = f"Sent{stamp} · market-on-close"
-    else:
-        words = f"Sent{stamp} · market order"
+    label = {
+        bounded_execution.LIMIT_IOC: "IOC limit; fill unconfirmed",
+        MOC: "market-on-close",
+    }.get(how, "market order")
+    words = f"Sent{stamp} · {label}"
     return "sent", words if known else f"{words} · broker status unavailable"
 
 
@@ -692,9 +1001,19 @@ def _clock_status(
     """Return (state, sentence) for an unsent row on its own session."""
     side = str(row.get("side") or "")
     symbol = str(row.get("symbol") or "")
-    timed = entry_timing.timing(
-        entry_timing.row_for(latch, symbol, today), quote, side, now, today
-    )
+    verdict = decide(row, entry_timing.row_for(latch, symbol, today), quote, now, today)
+    timed = verdict["timed"]
+    if "guard" in verdict:
+        guard = verdict["guard"]
+        out["execution_guard"] = guard
+        state = (
+            "due"
+            if verdict["send"]
+            else "missed"
+            if guard["state"] in ("expired", "closed")
+            else "waiting"
+        )
+        return state, guard["reason"]
     out["open"] = timed.get("open")
     out["level"] = timed.get("level")
     state = timed["state"]

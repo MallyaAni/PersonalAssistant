@@ -133,6 +133,7 @@ def mark_pictures(markdown: str) -> str:
     return marked.replace(PICTURE_PLACEHOLDER, "").strip()
 
 
+# Convert validated source bytes and reject malformed provider output as unreadable.
 async def parse_document(filename: str, content: bytes) -> ParsedDocument:
     media_type = classify(filename, content)
     if media_type.startswith("text/"):
@@ -165,11 +166,19 @@ async def parse_document(filename: str, content: bytes) -> ParsedDocument:
                 },
             )
             response.raise_for_status()
-            payload = response.json()
+            try:
+                payload = response.json()
+            except ValueError as exc:
+                raise ParseError("The document parser returned invalid data.") from exc
     except httpx.HTTPError as exc:
         logger.warning("Docling unreachable or failed for %s", filename, exc_info=True)
         raise ParseUnavailable(PARSER_AWAY) from exc
-    markdown = mark_pictures(str(((payload.get("document") or {}).get("md_content")) or "").strip())
+    if not isinstance(payload, dict) or not isinstance(payload.get("document"), dict):
+        raise ParseError("The document parser returned invalid data.")
+    content = payload["document"].get("md_content")
+    if not isinstance(content, str):
+        raise ParseError("The document parser returned invalid data.")
+    markdown = mark_pictures(content.strip())
     if payload.get("status") not in (None, "success") or not markdown:
         raise ParseError(f'I could not get any readable text out of "{filename}".')
     pages = markdown.count(PAGE_BREAK) + 1

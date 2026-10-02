@@ -152,26 +152,6 @@ def _crossover(fast: np.ndarray, slow: np.ndarray, window: int) -> np.ndarray:
     return out
 
 
-# Weekly closes carried forward daily: the last session of each calendar
-# week is the weekly close; between weekly closes the value is the last
-# completed week's, so nothing from the current week leaks in.
-def _weekly_series(panel: Panel, values: np.ndarray) -> np.ndarray:
-    dates = panel.dates.astype("datetime64[D]")
-    # ISO week number changes mark week boundaries.
-    weeks = (dates.astype("datetime64[W]")).astype(int)
-    rows = values.shape[0]
-    weekly_close = np.full_like(values, np.nan)
-    last_week_value = np.full(values.shape[1], np.nan)
-    for t in range(rows):
-        ends_week = t + 1 == rows or weeks[t + 1] != weeks[t]
-        if ends_week:
-            last_week_value = np.where(
-                np.isfinite(values[t]), values[t], last_week_value
-            )
-        weekly_close[t] = last_week_value
-    return weekly_close
-
-
 # EMA over weekly closes, evaluated only at week ends and carried forward.
 #
 # The last row of the panel is NOT treated as a week end. Live, the panel
