@@ -35,7 +35,7 @@ const record = () => {
 }
 
 // Route every desk read to the scenario at `now`; any write or unknown read fails the test.
-async function scenario(page: Page, {now, plan, orders}: {now: string; plan: 'thursday' | 'wednesday'; orders?: object[]}) {
+async function scenario(page: Page, {now, plan, orders, sessionQuotes = {}}: {now: string; plan: 'thursday' | 'wednesday'; orders?: object[]; sessionQuotes?: Record<string, number>}) {
   const errors: string[] = []
   const writes: string[] = []
   page.on('pageerror', error => errors.push(error.message))
@@ -74,7 +74,7 @@ async function scenario(page: Page, {now, plan, orders}: {now: string; plan: 'th
     else if (url.pathname.startsWith('/api/v1/conversations/')) json = {conversations: [], messages: []}
     else if (url.pathname === base) json = {latest: record(), sessions: [SESSION]}
     else if (url.pathname === `${base}/live`) json = {as_of: now, data_at: bar, stale: false, market_status: market, quotes, technical: {}, technical_detail: {}, structure}
-    else if (url.pathname === `${base}/session-prices`) json = {session: open ? 'regular' : 'post-market', as_of: now, signal_scope: 'regular-session', quotes: {}}
+    else if (url.pathname === `${base}/session-prices`) json = {session: open ? 'regular' : 'post-market', as_of: now, signal_scope: 'regular-session', quotes: Object.fromEntries(Object.entries(sessionQuotes).map(([ticker, price]) => [ticker, {price, feed: 'iex', at: now, status: 'fresh', session: open ? 'regular' : 'post-market', valid_until: new Date(Date.parse(now) + 60000).toISOString()}]))}
     else if (url.pathname === `${base}/holdings`) json = {holdings: []}
     else if (url.pathname === `${base}/paper`) json = paper
     else if (url.pathname === `${base}/paper/history`) json = {user_id: USER, rows: []}
@@ -90,6 +90,20 @@ async function scenario(page: Page, {now, plan, orders}: {now: string; plan: 'th
 // The row for one name, found by its ticker button.
 const rowOf = (page: Page, ticker: string) =>
   page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('row').filter({has: page.getByRole('button', {name: ticker, exact: true})})
+
+// Stock-specific level hovers and distances must use the same dated price shown in the row.
+test('level hovers distinguish stocks and use the displayed session price', async ({page}) => {
+  const diagnostics = await scenario(page, {now: WEDNESDAY, plan: 'wednesday', sessionQuotes: {NVDA: 240, AAOI: 110}})
+  await page.goto('/#desk')
+  await expect(page.getByLabel('NVDA session price', {exact: true})).toContainText('$240.00')
+  await expect(page.getByLabel('NVDA levels')).toContainText('21-EMA 238.7 (+0.5%) ↓')
+  await expect(page.getByLabel('AAOI levels')).toContainText('21-EMA 104.4 (+5.4%) ↑')
+  await expect(page.getByLabel('NVDA levels')).toHaveAttribute('title', /NVDA: above 21-EMA; below 20-day high\. EMA falling over five sessions\. Compared with post-market price \$240\.00\./)
+  await expect(page.getByLabel('AAOI levels')).toHaveAttribute('title', /AAOI: above 21-EMA; below 20-day high\. EMA rising over five sessions\. Compared with post-market price \$110\.00\./)
+  await expect(page.getByLabel('SMCI levels')).toHaveAttribute('title', 'SMCI: reference levels unavailable.')
+  expect(diagnostics.writes).toEqual([])
+  expect(diagnostics.errors).toEqual([])
+})
 
 // In the session, every order reads what, how big, why and where it is, in the
 // backend's own words; a name with two orders adds them up.

@@ -3,6 +3,7 @@ import {expect, test, type Page, type TestInfo} from '@playwright/test'
 const USER = 'chart-15m-fixture'
 const POLICY = 'graded-equal-weight/4'
 const NOTE = 'signals at each close; sizes are % of the account'
+const DISPLAY_NOTE = 'Recalculated close decisions; not recorded recommendations or fills. Sizes are portfolio weights.'
 type CanvasState = Window & {__markerDraws: {text: string; timeframe: string | null}[]}
 const REBALANCE_NOTE = 'reset sessions from the paper state\'s rebalance clock and the nightly records; add/trim markers only on those, target drift between resets is not traded'
 type DecisionRow = {date: string; grade: string; action?: string; target_weight?: number; delta_weight?: number; rebalance?: boolean}
@@ -183,8 +184,9 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await expect(chart.locator('[aria-label="AAPL strategy signals"]')).toHaveCount(0)
       // Shown, the signal is listed with the close it was made at and drawn on the 15:45 bar, in the
       // backend's words; where it fills is the paper account's own trade, never a projected marker.
-      const signalsBox = chart.getByRole('checkbox', {name: 'Strategy signals'})
+      const signalsBox = chart.getByRole('checkbox', {name: 'Policy replay'})
       await signalsBox.check()
+      await expect(chart.locator('[aria-label="Policy decision note"]')).toHaveText(`${POLICY}: ${DISPLAY_NOTE}`)
       const listed = chart.locator('[aria-label="AAPL strategy signals"] li')
       await expect(listed).toHaveCount(1)
       await expect(listed.nth(0)).toHaveText('Sep 14 · BUY signal 14%')

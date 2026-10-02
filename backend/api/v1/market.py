@@ -1417,17 +1417,52 @@ async def desk_chart(
         )
     capped = max(20, min(int(sessions or ticker_chart.DEFAULT_SESSIONS), 2000))
     # The same candle the board reads, so the averages and bands include
-    # today rather than ending at the last close while the price moves.
+    # today only when the retained snapshot still contains valid current evidence.
     snap = _live_snapshot() or {}
-    quote = (snap.get("quotes") or {}).get(ticker.upper()) or {}
+    snap = snap if isinstance(snap, dict) else {}
+    quotes = snap.get("quotes") or {}
+    quote = quotes.get(ticker.upper()) if isinstance(quotes, dict) else None
+    quote = quote if isinstance(quote, dict) else {}
+    now = datetime.now(UTC)
+    written = desk_freshness.timestamp(snap.get("as_of"))
+    # An explicit quote receipt outranks the envelope's legacy receipt fallback.
+    received = desk_freshness.timestamp(quote.get("as_of", snap.get("as_of")))
+    observed = desk_freshness.timestamp(quote.get("bar"))
+    status = exchange_calendar.exchange_status(now)
+    opens = desk_freshness.timestamp(status.get("opens_at"))
+    closes = desk_freshness.timestamp(status.get("closes_at"))
+    prices = [quote.get(key) for key in ("last", "open", "high", "low")]
+    valid_prices = all(
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(value)
+        and value > 0
+        for value in prices
+    )
     live_bar = None
-    if quote.get("last") is not None and quote.get("bar"):
+    if (
+        written is not None
+        and received is not None
+        and observed is not None
+        and opens is not None
+        and closes is not None
+        and status["calendar_known"]
+        and status["is_session"]
+        and 0 <= (now - written).total_seconds() < desk_freshness.SNAPSHOT_SECONDS
+        and not desk_freshness.quote_status(quote, now)["stale"]
+        and received <= written
+        and (received - observed).total_seconds() >= desk_freshness.SNAPSHOT_SECONDS
+        and opens <= observed
+        and (closes - observed).total_seconds() >= desk_freshness.SNAPSHOT_SECONDS
+        and observed.minute % 15 == 0
+        and observed.second == observed.microsecond == 0
+        and valid_prices
+        and quote["low"] <= min(quote["open"], quote["last"])
+        and quote["high"] >= max(quote["open"], quote["last"])
+    ):
         live_bar = {
             "bar": quote["bar"],
-            "session": datetime.fromisoformat(str(quote["bar"]))
-            .astimezone(desk_freshness.NEW_YORK)
-            .date()
-            .isoformat(),
+            "session": status["session"],
             "last": quote.get("last"),
             "open": quote.get("open"),
             "high": quote.get("high"),

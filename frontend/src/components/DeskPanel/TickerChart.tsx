@@ -310,12 +310,10 @@ const gradeMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], ti
       position: up ? 'belowBar' : 'aboveBar',
       color: belowA ? '#b42318' : GRADE_COLOR[now] ?? '#6e6e73',
       shape: up ? 'arrowUp' : 'arrowDown',
-      // Without explicit provenance the change is simply the change: the
-      // saved/recalculated words only appear when the record says which it
-      // was, and a marker never calls its own source unverified.
+      // Missing provenance must not be described as an original saved reading.
       text: previousSource === nextSource
         ? nextSource ? `${nextSource} grade ${before}→${now}` : `Grade ${before}→${now}`
-        : `Grade ${before} (${(previousSource ?? 'recorded').toLowerCase()})→${now} (${(nextSource ?? 'recorded').toLowerCase()})`,
+        : `Grade ${before} (${(previousSource ?? 'source unknown').toLowerCase()})→${now} (${(nextSource ?? 'source unknown').toLowerCase()})`,
       size: rows[i].said ? 2 : 1,
     })
   }
@@ -337,7 +335,7 @@ const DECISION_SELL = '#b42318'
 // The paper account's trades, in the board's colours: BUY green, SELL red.
 const TRADE_BUY = '#248a3d'
 const TRADE_SELL = '#b42318'
-const DECISION_NOTE = 'signals at each close; sizes are % of the account'
+const DECISION_NOTE = 'Recalculated close decisions; not recorded recommendations or fills. Sizes are portfolio weights.'
 // The equal-weight policy, whose add and trim are the reset's rebalance rather
 // than a sizing change: a held name's target drifts with the count of A/A+
 // names and only the twenty-session reset trades it, so the markers show
@@ -349,7 +347,7 @@ const EQUAL_WEIGHT_POLICIES: ReadonlySet<string> = new Set([
   'graded-equal-weight/4',
   'graded-equal-weight/5',
 ])
-const EQUAL_WEIGHT_LEGEND = 'Strategy signals: BUY = the name enters the A/A+ book at its target; SELL = it leaves the book; RESET ±% = the 20-session reset moves it back to target. Drift between resets is not a signal.'
+const EQUAL_WEIGHT_LEGEND = 'Policy replay: BUY enters the A/A+ book; SELL leaves it; RESET rebalances to target. These are simulated decisions.'
 
 // A paper trade as the board writes it: BUY 2 @ $1,752.25.
 const tradeText = (side: string, qty: number, price: number) =>
@@ -899,13 +897,13 @@ export const TickerChart = ({
             <input type="checkbox" checked={showRecommendations} onChange={event => setShowRecommendations(event.target.checked)} />
             Saved recommendations
           </label>}
-          <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]">
+          <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]" title="Saved nightly grades where available; otherwise recalculated grades. Markers identify their source, not a trade.">
             <input type="checkbox" checked={showSignals} onChange={event => setShowSignals(event.target.checked)} />
             Grade changes
           </label>
-          <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]">
+          <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]" title="Historical decisions recalculated under the displayed policy. These are not recorded live recommendations or paper fills.">
             <input type="checkbox" checked={showDecisions} onChange={event => setShowDecisions(event.target.checked)} />
-            Strategy signals
+            Policy replay
           </label>
           {fills.length > 0 && <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]">
             <input type="checkbox" checked={showFills} onChange={event => setShowFills(event.target.checked)} />
@@ -988,7 +986,7 @@ export const TickerChart = ({
             ? <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Fifteen-minute chart caption">
               Newest stored session: {data.bars[data.bars.length - 1]?.date ?? 'unavailable'}.{' '}
               {data.sessions} complete session{data.sessions === 1 ? '' : 's'} of fifteen-minute (15m) bars loaded ({merged.bars.length} bars, New York time, closing auction included where stored); pan or zoom for history.
-              Trades are marked on the bar they filled in; strategy signals, when shown, on the last bar before the close they were made at.
+              Paper fills use their recorded time. Policy replay uses the last regular bar of its decision session.
             </p>
             : <p className="mt-1 text-[11px] text-[#6e6e73]">
             {merged.live && summary?.last.close !== null
@@ -1000,10 +998,10 @@ export const TickerChart = ({
             {merged.bars.length} {timeframe === 'weekly' ? 'weeks' : 'sessions'} loaded; pan or zoom for history.
           </p>}
           <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Chart legend">
-            Circles are the paper account’s trades (BUY green, SELL red). Arrows are grade changes (up green, down red).{showDecisions ? ' Labelled arrows marked “signal” or “RESET” are the strategy’s decisions at each close.' : ''}
+            Circles: paper fills. Arrows: grade changes, labelled Saved or Recalculated when known.{showDecisions ? ' Signal and RESET labels: policy replay, not recorded recommendations.' : ''}
           </p>
           {showDecisions && history?.policy && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy decision note">
-            {history.policy}: {history.decision_note || DECISION_NOTE}
+            {history.policy}: {DECISION_NOTE}
           </p>}
           {/* What the markers mean under the equal-weight policy, and how the
               reset sessions were found: without a clock on file no session is
@@ -1024,7 +1022,7 @@ export const TickerChart = ({
               ))}
             </ul>}
             {showDecisions && (recentDecisions.length === 0
-              ? <p className="mt-1">No strategy signal in the loaded history.</p>
+              ? <p className="mt-1">No policy replay action in the loaded history.</p>
               : <ul className="mt-1" aria-label={`${ticker} strategy signals`}>
                 {recentDecisions.map(row => {
                   const price = closeOn(row.date, merged.bars, timeframe)

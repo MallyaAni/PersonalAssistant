@@ -95,6 +95,16 @@ export const boardFallback = ({lastPrice, observed, word, regular, lastClose, cl
   return {kind, price, at, word: label}
 }
 
+// Select the same dated price for the compact quote and its level comparisons.
+export const displayedBoardPrice = (live: DeskLive, ticker: string, now: number, close?: number | null, closeSession?: string | null) => {
+  const {quote, state, observed, session} = sessionPrice(live, ticker, now)
+  if (state === 'fresh') return {kind: 'midpoint' as const, price: quote!.price!, at: observed, word: (session ?? 'quote').toLowerCase(), current: true}
+  const lastPrice = state === 'stale' && typeof quote?.price === 'number' && Number.isFinite(quote.price) && quote.price > 0 ? quote.price : null
+  const lastClose = typeof close === 'number' && Number.isFinite(close) && close > 0 ? close : null
+  const fallback = boardFallback({lastPrice, observed, word: (session ?? 'quote').toLowerCase(), regular: live.quotes[ticker], lastClose, closeSession})
+  return fallback ? {...fallback, current: fallback.kind === 'regular' && now - fallback.at < 20 * 60_000} : null
+}
+
 // Show the current midpoint, or the last observed one dated by its own time, or the
 // last close; never a stale price styled or worded as current, and never nothing when
 // a dated price exists. Execution and candle evidence are untouched.
@@ -111,7 +121,7 @@ export const SessionPrice = ({live, ticker, now, compact = false, close, closeSe
   const lastPrice = state === 'stale' && typeof quote?.price === 'number' && Number.isFinite(quote.price) && quote.price > 0 ? quote.price : null
   const lastClose = typeof close === 'number' && Number.isFinite(close) && close > 0 ? close : null
   const staleCaveat = state === 'stale' ? ' Last observed price; not a current quote.' : ''
-  const fallback = compact ? boardFallback({lastPrice, observed, word: (session ?? 'quote').toLowerCase(), regular, lastClose, closeSession}) : null
+  const fallback = compact ? displayedBoardPrice(live, ticker, now, close, closeSession) : null
   const regularCurrent = fallback?.kind === 'regular' && now - fallback.at < 20 * 60_000
   return <div aria-label={`${ticker} session price`} title={`${quote?.at ? `Last observed ${at} ET. ` : ''}${source}. ${regularText}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${quote?.at ?? 'unavailable'}. Expected schedule: ${currentSchedule}; not proof of venue availability. For display only; execution checks are separate.${displayReason ? ` ${displayReason}` : ''}${staleCaveat}`}>
     {compact
