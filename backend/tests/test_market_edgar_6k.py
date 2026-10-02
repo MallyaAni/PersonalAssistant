@@ -242,6 +242,124 @@ HEADS = {
         "Equity Distribution Agreement for an at-the-market program of up to "
         "25,000,000 Class A shares, and filed a prospectus supplement."
     ),
+    # The filings beside a quarter's release, read 2026-10-01: each one was
+    # admitted by the shape test and made a completed year count five or
+    # six. The heads are the filings' own text, cut short.
+    # TSMC 0001145549-06-000468 (2006-04-10): a month's sales report.
+    "tsm_month_sales": (
+        "TSMC March 2006 Sales Report Hsinchu, Taiwan, R.O.C. — April 10, "
+        "2006 — TSMC (TAIEX: 2330, NYSE: TSM) today announced that net sales "
+        "for March 2006 totaled NT$27,107 million. Revenues for the first quarter "
+        "of 2006 were NT$77,293 million, higher than the first quarter guidance of "
+        "between NT$73 billion and NT$76 billion."
+    ),
+    # TSMC 0001145549-08-000036 (2008-01-10): the December report, with the
+    # year's sales, behind a table of contents.
+    "tsm_december_sales": (
+        "TABLE OF CONTENTS TSMC December 2007 Sales Report Taiwan Semiconductor "
+        "Manufacturing Company Limited January 10, 2008 SIGNATURES Table of "
+        "Contents TSMC December 2007 Sales Report Hsinchu, Taiwan, R.O.C. — "
+        "January 10, 2008 — TSMC (TAIEX: 2330, NYSE: TSM) today announced its "
+        "net sales for December 2007: on an unconsolidated basis, sales were "
+        "NT$29,120 million, a decrease of 3.4 percent from November 2007. "
+        "Full-year sales for 2007 totaled NT$313,648 million."
+    ),
+    # TSMC 0001145549-09-000422 (2009-03-10): a month's sales and a revised
+    # quarter's guidance in one title.
+    "tsm_sales_and_guidance": (
+        "TSMC Announces February 2009 Sales Report and Revises First-Quarter "
+        "Business Guidance Hsinchu, Taiwan, R.O.C. — March 10, 2009 — TSMC "
+        "(TAIEX: 2330, NYSE: TSM) today announced its net sales for February "
+        "2009: on an unconsolidated basis, sales were approximately NT$11.50 "
+        "billion, a decrease of 7.5 percent from January 2009."
+    ),
+    # TSMC 0001145549-05-001022 (2005-06-10).
+    "tsm_sales_revise_upward": (
+        "TSMC Announce May 2005 Sales and Revise Upward 2Q2005 Guidance Hsinchu, "
+        "Taiwan, R.O.C. – June 9, 2005 — TSMC (TAIEX: 2330, NYSE: TSM) "
+        "today announced that net sales for May 2005 totaled NT$19,508 million, "
+        "and that revenues for January through May 2005 were NT$94,064 million."
+    ),
+    # TSMC 0001193125-13-109931 (2013-03-15): the audited year, two months
+    # after the fourth-quarter release.
+    "tsm_audited_year": (
+        "TSMC Announces 2012 Fiscal Year-End Results Hsinchu, Taiwan, R.O.C. "
+        "– March 15, 2013 –Taiwan Semiconductor Manufacturing Company Ltd. "
+        "(“TSMC”) (TAIEX: 2330, NYSE: TSM), announced today the audited "
+        "consolidated results for the fiscal year ended 2012. SELECTED FINANCIAL "
+        "DATA The selected income statement data, cash flow data and other "
+        "financial data for the years ended December 31, 2008, 2009, 2010, 2011 "
+        "and 2012"
+    ),
+    # TSMC 0001193125-15-325877 (2015-09-23): an outlook mid-quarter.
+    "tsm_outlook": (
+        "TSMC Fourth Quarter and Full Year 2015 Revenue Outlook Hsinchu, Taiwan, "
+        "R.O.C. – September 23, 2015 — TSMC today announced that its "
+        "third-quarter revenue will exceed the company’s guidance given on July "
+        "16, 2015 due to a more favorable US dollar exchange rate to the NT dollar."
+    ),
+    # TSMC 0001145549-06-000546 (2006-04-27): the quarter's own release,
+    # two weeks after the March sales report; still admitted.
+    "tsm_results_2006": (
+        "TSMC Reports First Quarter EPS of NT$1.32 Hsin-Chu, Taiwan, R.O.C., "
+        "April 27, 2006 — TSMC today announced, on an unconsolidated basis, "
+        "revenue of NT$77.29 billion, net income of NT$32.61 billion, and fully "
+        "diluted earnings per share of NT$1.32 (US$0.20 per ADS unit) for the "
+        "first quarter ended March 31, 2006."
+    ),
+    # ASML 0001193125-13-400734 (2013-10-16): a real release whose title
+    # confirms an outlook; it says the quarter's results are published, so
+    # the outlook words do not refuse it.
+    "asml_confirms_outlook": (
+        "ASML confirms 2013 outlook and sees H2 2013 sales levels continuing in H1 "
+        "2014 VELDHOVEN, the Netherlands, 16 October 2013 - ASML Holding N.V. "
+        "(ASML) today publishes 2013 third-quarter results. • ASML reports Q3 "
+        "2013 results as guided and confirms a 2013 full year net sales outlook "
+        "of up to EUR 5.2 billion, including Cymer"
+    ),
+    # Silicon Motion 0001193125-09-076245 (2009-04-09): a guidance update.
+    "simo_guidance_update": (
+        "PRESS RELEASE ISSUED BY THE COMPANY ON APRIL 7, 2009 Press Release "
+        "issued by the Company on April 7, 2009 Exhibit 99.1 Silicon Motion "
+        "Technology Corporation Updates First Quarter 2009 Guidance TAIPEI, "
+        "Taiwan, Apr. 8, 2009 — Silicon Motion Technology Corporation "
+        "(NasdaqGS: SIMO; the “Company”), a leading fabless semiconductor "
+        "company that designs, develops, and markets universally compatible, "
+        "high-performance, low-power semiconductor solutions for the multimedia "
+        "consumer electronics market, today announced an update to its first "
+        "quarter 2009 financial guidance. The Company now expects: Q1 2009 "
+        "revenue New guidance: down 30 to 35% sequentially"
+    ),
+    # Silicon Motion 0001193125-07-266515 (2007-12-17).
+    "simo_confirms_guidance": (
+        "Press Release Exhibit 99.1 Press Release Source: Silicon Motion "
+        "Technology Corporation Silicon Motion Technology Corporation Confirms "
+        "Previously Released Guidance for Fourth Quarter 2007 Monday December 17, "
+        "7:00 am ET TAIPEI, Taiwan, Dec. 17 /Xinhua-PRNewswire-FirstCall/ — "
+        "Silicon Motion Technology Corporation (Nasdaq: SIMO; the “Company”) "
+        "today confirmed its top-line guidance for the fourth quarter of 2007."
+    ),
+    # Silicon Motion 0001193125-10-085081 (2010-04-16).
+    "simo_preliminary_revenue": (
+        "Press Release Exhibit 99.1 Silicon Motion Announces Preliminary 1Q 2010 "
+        "Revenue Taipei, Taiwan, April 16, 2010 – Silicon Motion Technology "
+        "Corporation (NasdaqGS: SIMO; the “Company”), a leading fabless "
+        "semiconductor company that designs, develops and markets semiconductor "
+        "solutions for multimedia consumer electronics, today announced that "
+        "expected revenue in the first quarter of 2010 will be stronger than the "
+        "Company’s previous outlook."
+    ),
+    # Silicon Motion 0001193125-16-535109 (2016-04-08): no title at all,
+    # the preliminary figure in the opening sentence.
+    "simo_preliminary_untitled": (
+        "Exhibit 99.1 Taipei, Taiwan, April 7, 2016 – Silicon Motion "
+        "Technology Corporation (NasdaqGS: SIMO)(“Silicon Motion” or the "
+        "“Company”), a global leader in designing and marketing NAND flash "
+        "controllers for solid state storage devices and specialty RF IC "
+        "solutions for mobile devices, announces that based upon its preliminary "
+        "first quarter financial results, sequential revenue growth is expected "
+        "to be 14% to 15%, significantly higher than its original guidance range."
+    ),
 }
 
 
@@ -276,6 +394,18 @@ HEADS = {
         ("nbis_offering", False, "Offering of"),
         ("nbis_agreement", False, "no period"),
         ("nbis_atm", False, "prospectus"),
+        ("tsm_month_sales", False, "March 2006 Sales"),
+        ("tsm_december_sales", False, "December 2007 Sales"),
+        ("tsm_sales_and_guidance", False, "February 2009 Sales"),
+        ("tsm_sales_revise_upward", False, "sales for May 2005"),
+        ("tsm_audited_year", False, "audited"),
+        ("tsm_outlook", False, "Revenue Outlook"),
+        ("tsm_results_2006", True, ""),
+        ("asml_confirms_outlook", True, ""),
+        ("simo_guidance_update", False, "update to its first quarter 2009"),
+        ("simo_confirms_guidance", False, "Confirms Previously Released Guidance"),
+        ("simo_preliminary_revenue", False, "Preliminary"),
+        ("simo_preliminary_untitled", False, "preliminary"),
     ],
 )
 # Every results release of every filer is admitted by the shape of its
@@ -320,6 +450,28 @@ def test_html_entities_inside_a_title_are_decoded():
     )
     assert "ASML reports €7.5 billion total net sales in Q3 2025" in text
     assert edgar.is_results_headline(SIMO, text) is True
+
+
+# ASML's 2021-01-20 release (0000937966-21-000003) splits words across
+# styled runs ("n</font><font ...>et income"); the text layer joins a word
+# split that way, so its full-year headline is read and admitted, while
+# tags with a space or a non-letter beside them still separate.
+def test_a_word_split_across_inline_tags_is_joined():
+    style = "<font style=\"font-family:'HelveticaNeueLT W1G 95 Blk';font-size:10pt\">"
+    html = (
+        f"<div>{style}ASML reports </font>{style}&#8364;14.0 billion net sales "
+        f"and</font>{style} </font>{style}&#8364;3.6 billion n</font>{style}et "
+        "income in 2020 </font></div><div>Continued growth expected in 2021</div>"
+    )
+    text = edgar.html_to_text(html)
+    assert text.startswith(
+        "ASML reports €14.0 billion net sales and €3.6 billion net income in 2020 "
+        "Continued growth"
+    )
+    assert edgar.is_results_headline(ASML, text) is True
+    assert edgar.html_to_text("<p>Revenue</p><p>Net income</p>") == "Revenue Net income"
+    assert edgar.html_to_text("net sales<sup>1</sup> up") == "net sales 1 up"
+    assert edgar.html_to_text("<b>$1.2B</b>, up") == "$1.2B , up"
 
 
 # The Form 6-K cover page is removed down to the signature block when the
@@ -633,10 +785,11 @@ def test_form_and_decisions_round_trip_and_legacy_frames_read_as_8k(tmp_path):
     assert edgar.decisions_from_metadata({"cik": "1"}) == {}
 
 
-# `--reclassify-6k` drops the carried refusals and keeps the admissions,
-# so a refresh re-reads exactly the 6-Ks the previous rule refused; without
-# it every carried decision is kept.
-def test_reclassify_drops_carried_refusals_only(tmp_path, monkeypatch):
+# `--reclassify-6k` drops every carried decision, admissions included, so a
+# tightened rule can revoke what the old one admitted (TSMC's monthly sales
+# reports, Silicon Motion's guidance updates); without it every carried
+# decision is kept.
+def test_reclassify_drops_every_carried_decision(tmp_path, monkeypatch):
     store = MarketStore(tmp_path)
     asof = date(2026, 10, 2)
     store.write_frame(
@@ -674,8 +827,105 @@ def test_reclassify_drops_carried_refusals_only(tmp_path, monkeypatch):
     )
     seen.clear()
     assert market_edgar.refresh(store2, ("NBIS",), asof, reclassify_6k=True) == ()
-    assert seen == [{"yes": True}]
+    assert seen == [{}]
     assert market_edgar.build_parser().parse_args(["--reclassify-6k"]).reclassify_6k
+
+
+# A partition is immutable: when the as-of partition already holds the
+# name, `--reclassify-6k` cannot rewrite it and says so (the name is
+# returned as failed and nothing is fetched); a plain refresh keeps it.
+def test_reclassify_reports_a_name_the_partition_already_holds(
+    tmp_path, monkeypatch, capsys
+):
+    store = MarketStore(tmp_path)
+    asof = date(2026, 10, 2)
+    empty = {"accepted": [], "filed": [], "accession": [], "items": [], "form": []}
+    store.write_frame("edgar_events", asof, "SIMO", empty, {"cik": str(SIMO)})
+    fetched: list[str] = []
+
+    # A fetch that records the name and returns an empty record.
+    def fake_company(ticker, cik, pacer=None, decisions=None, **_):
+        fetched.append(ticker)
+        return edgar.CompanyRecord(
+            ticker, cik, (), (), datetime(2026, 10, 2, tzinfo=UTC), {}
+        )
+
+    monkeypatch.setattr(edgar, "fetch_cik_map", lambda pacer=None: {"SIMO": SIMO})
+    monkeypatch.setattr(edgar, "fetch_company", fake_company)
+    assert market_edgar.refresh(store, ("SIMO",), asof, reclassify_6k=True) == ("SIMO",)
+    assert "not reclassified: partition 2026-10-02 already holds it" in (
+        capsys.readouterr().out
+    )
+    assert market_edgar.refresh(store, ("SIMO",), asof) == ()
+    assert fetched == []
+
+
+# A completed year as TSMC (2006) and Silicon Motion (2016) filed it: the
+# four quarterly releases and, beside them, a month's sales reports, an
+# outlook, a guidance update and two preliminary figures. Only the four
+# releases are events, so the audit counts four, not five or six.
+def test_filings_beside_the_release_leave_four_a_year():
+    tsm = {
+        "0001145549-06-000125": _filing(
+            date(2006, 1, 26), [("6-K", "t1.htm", TSM_COVER + HEADS["tsm_results"])]
+        ),
+        "0001145549-06-000468": _filing(
+            date(2006, 4, 10), [("6-K", "t2.htm", TSM_COVER + HEADS["tsm_month_sales"])]
+        ),
+        "0001145549-06-000546": _filing(
+            date(2006, 4, 27),
+            [("6-K", "t3.htm", TSM_COVER + HEADS["tsm_results_2006"])],
+        ),
+        "0001145549-06-001084": _filing(
+            date(2006, 7, 27), [("6-K", "t4.htm", TSM_COVER + HEADS["tsm_results"])]
+        ),
+        "0001145549-06-002000": _filing(
+            date(2006, 9, 10), [("6-K", "t5.htm", TSM_COVER + HEADS["tsm_outlook"])]
+        ),
+        "0000950123-06-012974": _filing(
+            date(2006, 10, 26), [("6-K", "t6.htm", TSM_COVER + HEADS["tsm_results"])]
+        ),
+        "0001145549-07-000018": _filing(
+            date(2007, 1, 10),
+            [("6-K", "t7.htm", TSM_COVER + HEADS["tsm_december_sales"])],
+        ),
+    }
+    ex = "EX-99.1"
+    simo = {
+        "0001193125-16-443289": _filing(
+            date(2016, 1, 29), [(ex, "s1.htm", HEADS["simo_results"])]
+        ),
+        "0001193125-16-535109": _filing(
+            date(2016, 4, 8), [(ex, "s2.htm", HEADS["simo_preliminary_untitled"])]
+        ),
+        "0001193125-16-568103": _filing(
+            date(2016, 4, 29), [(ex, "s3.htm", HEADS["simo_results"])]
+        ),
+        "0001193125-16-600000": _filing(
+            date(2016, 6, 1), [(ex, "s4.htm", HEADS["simo_guidance_update"])]
+        ),
+        "0001193125-16-654710": _filing(
+            date(2016, 7, 22), [(ex, "s5.htm", HEADS["simo_results"])]
+        ),
+        "0001193125-16-734636": _filing(
+            date(2016, 10, 11), [(ex, "s6.htm", HEADS["simo_preliminary_revenue"])]
+        ),
+        "0001193125-16-751232": _filing(
+            date(2016, 10, 28), [(ex, "s7.htm", HEADS["simo_results"])]
+        ),
+    }
+    for cik, filings, year in ((TSM, tsm, 2006), (SIMO, simo, 2016)):
+        events, decided = _fetch(cik, FakeEdgar(cik, filings))
+        assert len(decided) == len(filings)
+        admitted = sorted(a for a, ok in decided.items() if ok)
+        assert len(admitted) == 4, admitted
+        columns, _facts = edgar.record_frames(
+            edgar.CompanyRecord(
+                "X", cik, events, (), datetime(2026, 10, 2, tzinfo=UTC), decided
+            )
+        )
+        counts, _short = market_edgar.audit_6k_frame(columns)
+        assert counts[year] == 4, counts
 
 
 # --- four a year ------------------------------------------------------------

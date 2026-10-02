@@ -17,7 +17,11 @@ Three things are read per company:
   reporting verb, a period and a result together, and no word of another
   kind of filing (`results_headline`, `classify_6k`); the many other 6-Ks
   such issuers file (monthly revenue, full statements a month later,
-  call-date notices, dividends, financings) are refused, and each decision
+  call-date notices, dividends, financings) are refused, and so are the
+  filings that sit beside a quarter's release without being it (a month's
+  sales, a preliminary figure, the audited year restated later:
+  `BESIDE_THE_RELEASE`; a guidance update or outlook that reports no
+  results: `OUTLOOK_ONLY`); each decision
   is cached so a refresh reads only the filings it has not seen.
 - **Quarterly fundamentals** — revenue, net income, diluted EPS, capital
   expenditure, operating cash flow and gross profit from the company-facts
@@ -231,6 +235,55 @@ NOT_A_RELEASE = re.compile(
     r"|senior (?:unsecured )?notes"
     r"|financial statements|operating and financial review|discussion and analysis"
     r"|interim report|revenue report|monthly|board of directors|resolutions?)\b",
+    re.I,
+)
+# A calendar month's name, for a month's sales ("March 2006 Sales Report").
+_MONTH = (
+    r"(?:january|february|march|april|may|june|july|august|september|october"
+    r"|november|december)"
+)
+# The filings that sit beside a quarter's results release without being
+# it, read 2026-10-01 against every admitted 6-K of the five filers: a
+# month's sales ("TSMC March 2006 Sales Report", "net sales for December
+# 2008", "TSMC Announce May 2005 Sales and Revise Upward 2Q2005
+# Guidance"); a preliminary figure ("Announces Preliminary 1Q 2010
+# Revenue", "based upon its preliminary first quarter financial results,
+# sequential revenue growth is expected to be ..."); and the audited year
+# restated months after the fourth-quarter release ("TSMC Announces 2012
+# Fiscal Year-End Results ... the audited consolidated results ...
+# SELECTED FINANCIAL DATA"). Each names a period and a figure, so the
+# shape test alone admitted them beside the quarter's own release (TSMC
+# and Silicon Motion counted five or six releases in a completed year).
+# "unaudited" is not "audited".
+BESIDE_THE_RELEASE = re.compile(
+    rf"\b(?:{_MONTH}\s+(?:19|20)\d\d\s+(?:net\s+)?(?:sales|revenues?)"
+    rf"|(?:sales|revenues?)\s+(?:for|in)\s+(?:the\s+month\s+of\s+)?{_MONTH}"
+    r"\s+(?:19|20)\d\d"
+    r"|(?:sales|revenues?) report"
+    r"|preliminary"
+    r"|audited|selected financial data)\b",
+    re.I,
+)
+# A guidance update, revision or confirmation, or an outlook ("Updates
+# First Quarter 2009 Guidance", "an update to its fourth quarter 2008
+# financial guidance", "Confirms Previously Released Guidance", "TSMC
+# Fourth Quarter and Full Year 2015 Revenue Outlook"). These words also
+# appear in real releases ("ASML confirms 2013 outlook ... today publishes
+# 2013 third-quarter results", "Nebius reports second quarter financial
+# results and raises ARR guidance"), so they refuse only a headline that
+# does not also say results are published (`RESULTS_REPORTED`).
+OUTLOOK_ONLY = re.compile(
+    r"\b(?:(?:updates?|update to|updated|revises?|revised|confirms?|confirmed"
+    r"|reaffirms?|reaffirmed)\b[^.]{0,60}?\bguidance"
+    r"|(?:revenue|sales|earnings|business|financial) outlook)\b",
+    re.I,
+)
+# A headline that says the period's results are out: a reporting verb with
+# "results" a few words on ("today publishes 2013 third-quarter results",
+# "announced its unaudited financial results"), or "EPS of".
+RESULTS_REPORTED = re.compile(
+    r"\b(?:(?:publish|report|announc|releas)\w*\s+(?:\S+\s+){0,6}?results"
+    r"|eps of)\b",
     re.I,
 )
 
@@ -466,6 +519,15 @@ def results_headline(text: str) -> tuple[bool, str]:
     other = NOT_A_RELEASE.search(headline) or NOT_A_RELEASE.search(head[:TITLE_CHARS])
     if other is not None:
         return False, f"not a results release: {other.group(0)!r}"
+    beside = BESIDE_THE_RELEASE.search(headline) or BESIDE_THE_RELEASE.search(
+        head[:TITLE_CHARS]
+    )
+    if beside is None and RESULTS_REPORTED.search(headline) is None:
+        beside = OUTLOOK_ONLY.search(headline) or OUTLOOK_ONLY.search(
+            head[:TITLE_CHARS]
+        )
+    if beside is not None:
+        return False, f"not the quarter's results release: {beside.group(0)!r}"
     if PERIOD_WORDS.search(headline) is None:
         return False, "no period in the headline"
     if RESULT_WORDS.search(headline) is None:
@@ -1171,10 +1233,20 @@ def release_facts(records: Mapping[str, Sequence]) -> dict[str, list[QuarterFact
     return out
 
 
+# A run of inline formatting tags between two letters with no space: the
+# filer's editor split one word across styled runs ("n</font><font ...>et
+# income", ASML's 2021-01-20 release), so the tags join, not separate.
+_SPLIT_WORD = re.compile(
+    r"(?<=[A-Za-z])(?:</?(?:font|span|b|i|u|em|strong|small)\b[^>]*>)+(?=[A-Za-z])",
+    re.I,
+)
+
+
 # Strip an HTML press release to text for the language pass.
 def html_to_text(html: str) -> str:
     """Return the visible text of an HTML document, whitespace collapsed."""
     text = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", html, flags=re.S | re.I)
+    text = _SPLIT_WORD.sub("", text)
     text = re.sub(r"<[^>]+>", " ", text)
     # Entities become their characters (a filer's "&nbsp;" inside a title
     # must not break it), and the no-break and zero-width spaces that
