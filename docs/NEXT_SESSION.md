@@ -1,5 +1,44 @@
 # Next session
 
+## 2026-10-02 — Causal timing checkpoint; guarded release in progress
+
+User requested continued entry/exit improvement and challenged the reliability
+of research built on shared foundations. Code `4c365d04` is merged on main at
+`73ec5aa8`, pushed to GitHub and Spark `/home/animallya96/anios`.
+
+**VERIFIED:** 296 targeted tests, zero skips, with exact source mounted in the
+Spark test image. New cases exercise completed-bar and receipt-time causality,
+actual crossing prices, early closes, writer/read/decision behavior and the
+personal board. Ruff and all 33 registered diagrams pass. Receipt metadata and
+trigger revisions preserve evidence for future prefixes; legacy history is not
+rewritten. The unchanged live selection and timing thresholds remain in force.
+
+**FAILED on prior main:** shared timing accepted future/uncompleted or
+non-crossing latch evidence; the writer could persist a future session open.
+Actual submitted-order occurrence is UNVERIFIED. The full deployment gate also
+found `test_board_level_gate_api.py` missing per-quote receipt times. Supplying
+the fixture's existing observation time preserves every assertion; both HTTP
+cases pass in the test image. Import order is corrected in the touched file.
+
+**UNVERIFIED:** new economic advantage and exact historical account replay.
+The frozen audit retains 16,224 observations across 95 stocks and ten original
+policy groups, with zero fully verified legacy timing prefixes. The separate
+conditional diagnostic identifies recovered triggers, not funded trades or
+profits. Results and limitations are in
+`docs/research/entry-exit-audit-2026-10-01.md`; do not repeat old model sampling,
+economic baselines or tune an expiry to those observations. Next economic test:
+fixed selection and funding, predeclared bounded execution versus the incumbent,
+funded net gain against SPY/QQQ at 10/25 bp, explicit missed fills.
+
+Release log `/tmp/codex-entry-exit-deploy-20261001.log`, serial guarded
+`scripts/deploy.sh --wait-post`: initial unit gate finished with 8,544 passed,
+one fixture failure, 92 skipped and six xfailed; it stopped before restart.
+The fixture correction has two passing HTTP cases. Live marker remains
+`0e817741` until exact release proof says otherwise. Never restart an active
+deploy or skip gates. Rerun the guarded script after this correction is pushed.
+Preserve unrelated Wi-Fi watchdog files, bundle, scratch, data/secrets
+and model services. No real orders, account writes or new strategy adoption.
+
 ## 2026-10-01, 22:31 ET — LIVE: `0e817741` (6-K false admissions fixed); 6-K re-read and tone re-score done; SIMO's reading current
 
 **Live code is `0e817741`, deployed 21:58-22:12 ET through `scripts/deploy.sh`

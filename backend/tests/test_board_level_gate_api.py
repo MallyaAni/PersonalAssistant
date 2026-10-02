@@ -15,9 +15,9 @@ pytest.importorskip("httpx")
 from httpx import ASGITransport, AsyncClient  # noqa: E402
 
 from backend.api.v1 import market  # noqa: E402
+from backend.core.auth import issue_user_token  # noqa: E402
 from backend.main import app  # noqa: E402
 from backend.market import entry_timing  # noqa: E402
-from backend.core.auth import issue_user_token  # noqa: E402
 from backend.tests.test_personal_guidance_api import (  # noqa: E402
     personal_context as personal_context,
 )
@@ -60,6 +60,7 @@ async def test_the_desk_mine_payload_carries_the_timing(personal_context):
     for name, quote in snapshot["quotes"].items():
         move = -0.015 if name == "S10" else -0.005
         quote["open"] = quote["last"] / (1.0 + move)
+        quote["as_of"] = now.isoformat()
     entry_timing.update(root, snapshot, now)
     body = await _mine(auth)
     decisions = body["decisions"]
