@@ -1,0 +1,15 @@
+# Optional isolated Linux research environment; never the production image.
+# Tested on Python 3.12 / Linux aarch64. Native wheels vary by platform.
+numpy==2.5.2
+scipy==1.18.1
+scikit-learn==1.7.2
+skfolio==1.4.10
+cvxpy-base==1.9.3
+clarabel==0.11.1
+nautilus_trader==1.231.0
+torch==2.11.0
+chronos-forecasting==2.3.2
+granite-tsfm==0.3.9
+timesfm @ git+https://github.com/google-research/timesfm.git@e51928e27119cb17bebc005be2696b75e0a9e688
+# Kronos uses its audited official checkout, not a similarly named PyPI package.
+# Code/weights pins, licensing guards and CPU commands are in the reports.
