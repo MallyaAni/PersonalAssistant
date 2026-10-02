@@ -95,6 +95,16 @@ session row is never explained. The nightly path compares a record with its
 own report, so a data update cannot appear there as a mismatch at all; the
 nightly instead carries `data_vintage` on the record against the previous
 record (`market_daily._data_vintage`).
+
+**The tone-expiry mode is replayed as recorded.** Since 2026-10-01 the desk
+expires a stale release reading (`tone_expiry.TONE_EXPIRY`, "hard"), and
+every record stamps the mode it was decided under (`record["tone_expiry"]
+["mode"]`). The CLI replay rebuilds the report under that stamp - a record
+from before the stamp existed is replayed with the expiry off, as it was
+decided - so switching the rule on never shows as drift on an older record,
+and a record decided with it on is replayed with it on. The mode replayed is
+on the result as `tone_expiry`. The nightly path compares a record with its
+own report and needs no stamp.
 """
 
 from __future__ import annotations
@@ -592,6 +602,9 @@ def run(
     if date is not None and str(date) != session:
         raise ValueError(f"the record under {root} is for {session}, not {date}")
     nightly = report is not None
+    from backend.market import tone_expiry
+
+    expiry = tone_expiry.stamp_of(record)
     if report is None:
         from backend.cli import market_daily
         from backend.market.store import MarketStore
@@ -601,10 +614,15 @@ def run(
         # historical run; the replay mirrors that so partitions are bounded
         # the same way.
         asof = None if date is None else _date.fromisoformat(session)
-        report = market_daily.desk_report(store, asof)
+        # The record is replayed under the tone-expiry mode it was decided
+        # under (off for a record from before the stamp), never the
+        # checkout's current default.
+        with tone_expiry.using(expiry):
+            report = market_daily.desk_report(store, asof)
     else:
         asof = None
     context = context_for(root, record, nightly=nightly, asof=asof)
     result = compare(record, report, session, history_path, context)
+    result["tone_expiry"] = expiry
     write(root, result)
     return result

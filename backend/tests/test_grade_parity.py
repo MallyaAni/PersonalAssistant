@@ -632,3 +632,51 @@ def test_cli_exits_three_on_drift(tmp_path, monkeypatch, capsys, fff_left):
     monkeypatch.setattr(market_daily, "_git_revision", lambda: "879abc56")
     assert market_grade_parity.main(args) == 1
     assert "GRADE PARITY MISMATCH" in capsys.readouterr().out
+
+
+# The replay rebuilds a record under the tone-expiry mode the record was
+# decided under, never the checkout's default: a record from before the
+# stamp (no `tone_expiry`) is replayed with the expiry off, a stamped one
+# with its own mode; the flag is the live default again afterwards, the
+# mode replayed is on the result, and a record whose replay matches its own
+# report reads OK under either - so switching the rule on raises no alarm
+# on an older record. The nightly path compares a record with its own
+# report and rebuilds nothing.
+def test_the_replay_honours_the_records_tone_expiry_stamp(
+    tmp_path, monkeypatch, full_history
+):
+    from backend.market import tone_expiry
+
+    report = _report()
+    seen = []
+
+    def fake_desk_report(store, asof):
+        seen.append(tone_expiry.TONE_EXPIRY)
+        return report
+
+    monkeypatch.setattr(market_daily, "desk_report", fake_desk_report)
+    live = tone_expiry.TONE_EXPIRY
+    assert live == tone_expiry.HARD
+    old = _record(report)
+    assert "tone_expiry" not in old
+    market_daily.save(tmp_path, old)
+    result = grade_parity.run(tmp_path, history_path=full_history)
+    assert seen == [None]
+    assert result["ok"] is True
+    assert result["tone_expiry"] is None
+    assert live == tone_expiry.TONE_EXPIRY
+    stamped = {**_record(report), "tone_expiry": {"mode": "hard", "expired": {}}}
+    result = grade_parity.run(tmp_path, record=stamped, history_path=full_history)
+    assert seen == [None, "hard"]
+    assert result["ok"] is True
+    assert result["tone_expiry"] == "hard"
+    assert live == tone_expiry.TONE_EXPIRY
+    nightly = grade_parity.run(
+        tmp_path, LAST, report=report, record=stamped, history_path=full_history
+    )
+    assert seen == [None, "hard"], "the nightly path rebuilds nothing"
+    assert nightly["ok"] is True
+    unknown = {**stamped, "tone_expiry": {"mode": "soft"}}
+    with pytest.raises(ValueError, match="not one of"):
+        grade_parity.run(tmp_path, record=unknown, history_path=full_history)
+    assert seen == [None, "hard"]

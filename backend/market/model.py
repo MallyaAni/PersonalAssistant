@@ -1102,19 +1102,17 @@ def load_edgar_features(store, panel, asof=None):
 
 
 # The release-tone feature array for a panel from stored frames, or None.
+# The tone expiry (`tone_expiry.TONE_EXPIRY`, "hard" on the live desk since
+# 2026-10-01) is applied here, on the desk's sentiment input; with the flag
+# off the array is `tone_features`' own, untouched.
 def load_tone_features(store, panel, asof=None):
     """Return language.tone_features(panel, records) from stored frames, or None."""
-    from backend.market import language
+    from backend.market import language, tone_expiry
 
-    records = {}
-    for ticker in panel.tickers:
-        frame = store.read_frame(language.TONE_KIND, ticker, asof)
-        if frame is None:
-            continue
-        records[ticker] = language.records_from_frame(frame[0])
+    records = language.stored_records(store, panel.tickers, asof)
     if not records:
         return None
-    return language.tone_features(panel, records)
+    return tone_expiry.on_load(language.tone_features(panel, records), panel, records)
 
 
 # The concatenated extra array a feature set names ("alpha+edgar+tone"),

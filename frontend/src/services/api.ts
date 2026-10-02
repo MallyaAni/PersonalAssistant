@@ -1921,6 +1921,10 @@ export interface DeskRecord {
   // the plain lines the board shows for the names flagged. Absent on older
   // records; null when the nightly could not run the check.
   release_coverage?: ReleaseCoverage | null;
+  // The tone-expiry mode the grades were decided under and the book names
+  // whose stale earnings reading no longer counted, with the plain lines the
+  // board shows. Absent on records from before the expiry went live.
+  tone_expiry?: ToneExpiry | null;
   regime: {
     ai_participation: number;
     software_participation: number;
@@ -2250,6 +2254,31 @@ export interface ReleaseCoverage {
   flagged: string[];
   lines: string[];
   names?: Record<string, ReleaseCoverageName>;
+}
+
+// One book name whose earnings release reading no longer counted in full at
+// the record's session, with the grade it was given and the grade the same
+// desk gives it with the reading counted.
+export interface ToneExpiryName {
+  last_read: string;
+  days_since: number;
+  cadence_days: number;
+  cadence_from: 'own' | 'book';
+  weight: number;
+  grade: string;
+  grade_if_counted: string;
+}
+
+// The nightly's tone-expiry block for one record: the mode the grades were
+// decided under ('hard' live; null off), the names whose reading expired
+// (null when they could not be listed), any other name whose letter moved
+// with them, and the plain lines the board shows.
+export interface ToneExpiry {
+  mode: 'hard' | 'decay' | null;
+  expired: Record<string, ToneExpiryName> | null;
+  also_moved?: Record<string, {grade: string; grade_if_counted: string}>;
+  lines: string[];
+  note?: string;
 }
 
 // The names whose grade moved and whose own stored earnings data (release

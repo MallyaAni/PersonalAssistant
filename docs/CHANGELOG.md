@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-10-01 — Deployed `1a6eab2a` (20:24 ET): A5-hard tone expiry
+
+- `backend/market/tone_expiry.py`: `TONE_EXPIRY = HARD`. A book name's
+  newest earnings release reading no longer counts for the sentiment
+  analyst once it is older than 1.5 x the name's usual gap between releases
+  (its own median with four or more releases, else the book's) - the
+  earnings-coverage check's "overdue". Why: OKLO's reading was 555 days old
+  (its later quarters came only as 10-Q/10-K) and was graded on as current.
+  Study A5 (`docs/research/tone-expiry-plan-2026-10-01.md`, payloads in
+  `docs/research/scorecards/tone-expiry/`): A5-hard REPLACES on both windows.
+- The nightly record carries `tone_expiry` (mode; expired names with date,
+  age, usual gap, grade and grade with the reading counted; `also_moved`);
+  a failure to list the names keeps the record and puts one line saying so
+  on the board. `grade_parity.run` replays a record under its stamp (none:
+  off). `market_pit_scorecard --tone-expiry off` is the pre-A5 desk.
+- Board: grey "Earnings tone expired" note (`ToneExpiryNote`), shown only
+  when a reading expired.
+- Names on today's store: OKLO (C either way) and SIMO (A+ -> B, unless
+  tonight's 6-K re-read brings its readings up to date).
+- Tests: `test_tone_expiry_live.py` (8), `test_grade_parity.py` +1, the A5
+  rule/study tests moved to the new default; `e2e/desk-tone-expiry.spec.ts`
+  (5). Unit 8,383/71/6, routing 100/100, desk e2e 16/16, tsc; full browser
+  suite not run.
+- Turn off: `TONE_EXPIRY = None`, then `scripts/deploy.sh`.
+- Diagram impact: NONE - a rule on an existing input and a new field on the
+  existing record, read by the existing desk panel.
+
 ## 2026-10-01 — Deployed `6b85cfe0` (10:33 ET), `4384ea77` (12:07 ET) and `d17f1632` (16:32 ET)
 
 - `6b85cfe0` (other session): reset sizing under `/5`, execution wording,

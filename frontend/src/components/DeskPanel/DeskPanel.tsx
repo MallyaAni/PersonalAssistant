@@ -47,6 +47,7 @@ import {
   type DeskQuote,
   type DeskRecord,
   type ReleaseCoverage,
+  type ToneExpiry,
   type TradingAutopsy,
 } from '../../services/api'
 
@@ -766,6 +767,20 @@ function ReleaseCoverageNote({coverage}: {coverage?: ReleaseCoverage | null}) {
   const lines = coverage?.lines ?? []
   if (lines.length === 0) return null
   return <div role="status" aria-label="Earnings coverage" className="border-b border-black/[0.06] px-3 py-1.5 text-xs text-[#6e6e73]">
+    {lines.map(line => <p key={line}>{line}</p>)}
+  </div>
+}
+
+// Plain grey lines, not a warning: the book names whose earnings release
+// reading had expired at the record's session (older than the name's usual
+// gap allows) and so no longer counted, each with the grade it was given and
+// the grade it would have had with the reading counted, and any other name
+// whose letter moved with them - in the words the backend wrote. Nothing
+// when no reading expired, with the expiry off, or on a record from before it.
+function ToneExpiryNote({expiry}: {expiry?: ToneExpiry | null}) {
+  const lines = expiry?.lines ?? []
+  if (lines.length === 0) return null
+  return <div role="status" aria-label="Earnings tone expired" className="border-b border-black/[0.06] px-3 py-1.5 text-xs text-[#6e6e73]">
     {lines.map(line => <p key={line}>{line}</p>)}
   </div>
 }
@@ -1550,6 +1565,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       <GradeParityBanner parity={payload.grade_parity} />
       <DataVintageNote vintage={latest.data_vintage} />
       <ReleaseCoverageNote coverage={latest.release_coverage} />
+      <ToneExpiryNote expiry={latest.tone_expiry} />
       <TradeBoard latest={latest} live={live} paper={paperLive} now={now} onOpen={setOpenName} closes={closes} paused={eventPaused}
         footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">No automatic price stops. Your own brokerage account is never traded from here.</p>} />
       </div>}

@@ -1,0 +1,292 @@
+{
+  "plan": "docs/research/tone-expiry-plan-2026-10-01.md",
+  "trials": {
+    "registered": 2,
+    "cumulative": 482
+  },
+  "cost_bps": 25.0,
+  "floors": {
+    "ic_t": -1.0,
+    "book_t": -1.0,
+    "cagr": -0.005
+  },
+  "asof": "2026-09-30",
+  "arms": {
+    "A5-hard": {
+      "arm": "A5-hard",
+      "mode": "hard",
+      "label": "REPLACES",
+      "windows": {
+        "2016-2023": {
+          "ic": {
+            "h20": {
+              "n": 101,
+              "mean": 0.001213270753911971,
+              "t": 1.1295272679749637
+            },
+            "h60": {
+              "n": 34,
+              "mean": 0.0016795395772834906,
+              "t": 0.888380383310063
+            }
+          },
+          "book": {
+            "sessions": 2012,
+            "mean_daily_bp": 0.1276276107038999,
+            "hac_t": 0.8133679922718011
+          },
+          "cagr_arm": 0.2803199607160479,
+          "cagr_control": 0.27990857550312565,
+          "cagr_difference": 0.00041138521292227725,
+          "drawdown_arm": -0.45317400454980494,
+          "drawdown_control": -0.4548892558637373,
+          "worst_drawdown_arm": -0.47272883629514195,
+          "worst_drawdown_control": -0.47931932670177757,
+          "offsets_above_control": 16,
+          "affected": {
+            "h20": {
+              "dates": 44,
+              "cells": 55,
+              "incumbent_mean": -0.1629332093269088,
+              "arm_mean": 0.0,
+              "paired": {
+                "n": 44,
+                "mean": 0.1629332093269088,
+                "t": 1.3553343526694792
+              }
+            },
+            "h60": {
+              "dates": 16,
+              "cells": 21,
+              "incumbent_mean": -0.3220097938630835,
+              "arm_mean": 0.0,
+              "paired": {
+                "n": 16,
+                "mean": 0.3220097938630835,
+                "t": 1.4043044439735073
+              }
+            }
+          },
+          "checks": {
+            "ic_h20": true,
+            "ic_h60": true,
+            "book_t": true,
+            "cagr": true
+          }
+        },
+        "2024-2026": {
+          "ic": {
+            "h20": {
+              "n": 33,
+              "mean": 0.0023047197197464727,
+              "t": 0.9844974278766295
+            },
+            "h60": {
+              "n": 10,
+              "mean": 0.003827672605865946,
+              "t": 0.881010607441692
+            }
+          },
+          "book": {
+            "sessions": 689,
+            "mean_daily_bp": 0.014931904766769729,
+            "hac_t": 0.9794024163084278
+          },
+          "cagr_arm": 0.45112088870906264,
+          "cagr_control": 0.45286027270619855,
+          "cagr_difference": -0.0017393839971359126,
+          "drawdown_arm": -0.2535092720622113,
+          "drawdown_control": -0.25350927206221197,
+          "worst_drawdown_arm": -0.3198503466786883,
+          "worst_drawdown_control": -0.3198503466786884,
+          "offsets_above_control": 5,
+          "affected": {
+            "h20": {
+              "dates": 25,
+              "cells": 41,
+              "incumbent_mean": -0.17294328975433781,
+              "arm_mean": 0.0,
+              "paired": {
+                "n": 25,
+                "mean": 0.17294328975433781,
+                "t": 0.7975532201515748
+              }
+            },
+            "h60": {
+              "dates": 7,
+              "cells": 12,
+              "incumbent_mean": -0.14020278902983924,
+              "arm_mean": 0.0,
+              "paired": {
+                "n": 7,
+                "mean": 0.14020278902983924,
+                "t": 0.2757841975077495
+              }
+            }
+          },
+          "checks": {
+            "ic_h20": true,
+            "ic_h60": true,
+            "book_t": true,
+            "cagr": true
+          }
+        }
+      },
+      "better": false
+    },
+    "A5-decay": {
+      "arm": "A5-decay",
+      "mode": "decay",
+      "label": "REPLACES",
+      "windows": {
+        "2016-2023": {
+          "ic": {
+            "h20": {
+              "n": 101,
+              "mean": 0.0021380297015652513,
+              "t": 1.530587197597621
+            },
+            "h60": {
+              "n": 34,
+              "mean": 0.0034111516956641277,
+              "t": 1.3290834749494176
+            }
+          },
+          "book": {
+            "sessions": 2012,
+            "mean_daily_bp": -0.03187799764426079,
+            "hac_t": -0.16161325113538513
+          },
+          "cagr_arm": 0.27952569771018665,
+          "cagr_control": 0.27990857550312565,
+          "cagr_difference": -0.00038287779293899593,
+          "drawdown_arm": -0.4548249204917359,
+          "drawdown_control": -0.4548892558637373,
+          "worst_drawdown_arm": -0.4693669213807855,
+          "worst_drawdown_control": -0.47931932670177757,
+          "offsets_above_control": 13,
+          "affected": {
+            "h20": {
+              "dates": 86,
+              "cells": 305,
+              "incumbent_mean": -0.01982612517133799,
+              "arm_mean": 0.06408790184555894,
+              "paired": {
+                "n": 86,
+                "mean": 0.08391402701689693,
+                "t": 1.8653141872157155
+              }
+            },
+            "h60": {
+              "dates": 32,
+              "cells": 85,
+              "incumbent_mean": -0.1559405589867545,
+              "arm_mean": 0.03817941890737518,
+              "paired": {
+                "n": 32,
+                "mean": 0.19411997789412966,
+                "t": 1.6015019193790883
+              }
+            }
+          },
+          "checks": {
+            "ic_h20": true,
+            "ic_h60": true,
+            "book_t": true,
+            "cagr": true
+          }
+        },
+        "2024-2026": {
+          "ic": {
+            "h20": {
+              "n": 33,
+              "mean": 0.004124177556783993,
+              "t": 1.693604962440576
+            },
+            "h60": {
+              "n": 10,
+              "mean": 0.009508866303579604,
+              "t": 2.327225211708547
+            }
+          },
+          "book": {
+            "sessions": 689,
+            "mean_daily_bp": 0.5138766142591313,
+            "hac_t": 1.384399617780142
+          },
+          "cagr_arm": 0.46516157677463954,
+          "cagr_control": 0.45286027270619855,
+          "cagr_difference": 0.012301304068440988,
+          "drawdown_arm": -0.2535092720622117,
+          "drawdown_control": -0.25350927206221197,
+          "worst_drawdown_arm": -0.31573342779411917,
+          "worst_drawdown_control": -0.3198503466786884,
+          "offsets_above_control": 15,
+          "affected": {
+            "h20": {
+              "dates": 30,
+              "cells": 130,
+              "incumbent_mean": -0.027772000558255867,
+              "arm_mean": 0.09657172524771994,
+              "paired": {
+                "n": 30,
+                "mean": 0.12434372580597583,
+                "t": 1.670344878750359
+              }
+            },
+            "h60": {
+              "dates": 9,
+              "cells": 62,
+              "incumbent_mean": -0.10613098563004067,
+              "arm_mean": 0.08859091241823712,
+              "paired": {
+                "n": 9,
+                "mean": 0.19472189804827778,
+                "t": 1.4967230890453969
+              }
+            }
+          },
+          "checks": {
+            "ic_h20": true,
+            "ic_h60": true,
+            "book_t": true,
+            "cagr": true
+          }
+        }
+      },
+      "better": false
+    }
+  },
+  "proposed": "A5-hard",
+  "lines": [
+    "A5-hard (hard): REPLACES",
+    "  2016-2023: IC h20 +0.0012 (t +1.13, 101 periods); IC h60 +0.0017 (t +0.89, 34 periods); book +0.13 bp/session (NW t +0.81, 2012 sessions); median CAGR +28.0% against +28.0% (+0.0 points); all pass",
+    "    affected cells h20: 55 on 44 dates, IC -0.163 incumbent vs +0.000 arm (paired t +1.36)",
+    "  2024-2026: IC h20 +0.0023 (t +0.98, 33 periods); IC h60 +0.0038 (t +0.88, 10 periods); book +0.01 bp/session (NW t +0.98, 689 sessions); median CAGR +45.1% against +45.3% (-0.2 points); all pass",
+    "    affected cells h20: 41 on 25 dates, IC -0.173 incumbent vs +0.000 arm (paired t +0.80)",
+    "A5-decay (decay): REPLACES",
+    "  2016-2023: IC h20 +0.0021 (t +1.53, 101 periods); IC h60 +0.0034 (t +1.33, 34 periods); book -0.03 bp/session (NW t -0.16, 2012 sessions); median CAGR +28.0% against +28.0% (-0.0 points); all pass",
+    "    affected cells h20: 305 on 86 dates, IC -0.020 incumbent vs +0.064 arm (paired t +1.87)",
+    "  2024-2026: IC h20 +0.0041 (t +1.69, 33 periods); IC h60 +0.0095 (t +2.33, 10 periods); book +0.51 bp/session (NW t +1.38, 689 sessions); median CAGR +46.5% against +45.3% (+1.2 points); all pass",
+    "    affected cells h20: 130 on 30 dates, IC -0.028 incumbent vs +0.097 arm (paired t +1.67)",
+    "proposed: A5-hard"
+  ],
+  "files": {
+    "control": {
+      "file": "docs/research/scorecards/tone-expiry/control.json",
+      "sha256": "a0b3f89ff23f8413b0114d3a400721eea7a5f9c46e1c13f5f1a311de728126bc"
+    },
+    "A5-hard": {
+      "file": "docs/research/scorecards/tone-expiry/hard.json",
+      "sha256": "10eceea4cc4b56116e317ebedaab079e7a43e9d39c1e9b00001c36763e494a5a"
+    },
+    "A5-decay": {
+      "file": "docs/research/scorecards/tone-expiry/decay.json",
+      "sha256": "dec7e679c42fe612366841b8e13aa5a3bf586bd42b4be7d700b0ee6110dd1bcb"
+    }
+  },
+  "revision": {
+    "commit": "6af4874d4a85f2c3249eb0bedcec978394808988",
+    "dirty": false
+  }
+}

@@ -102,6 +102,102 @@ User authorized implementation on a branch, not live adoption. Starting main
   comparison retaining missed opportunities and partial fills, before adoption.
   Limits can miss fills or delay exits; midpoint fills cannot be assumed.
   Unrelated Wi-Fi watchdog files and `trader-board.bundle` remain untouched.
+## 2026-10-01, 20:44 ET — 6-K re-read on `1a6eab2a`: SIMO and TSM falsely admit; tone NOT re-scored
+
+`market_edgar --refresh --reclassify-6k --tickers NBIS,ASML,SIMO,TSM`
+ran 20:27-20:39 ET (12.2 min; events partition 2026-10-02: 4 stored, 0
+failed; NBIS 8, ASML 77, SIMO 89, TSM 101 events). `--audit-6k` (with ARM)
+at 20:42 ET. Admitted results 6-Ks per year (the first year and 2026 are
+partial):
+
+- NBIS ok: 2024:1 2025:4 2026:3 (was 0 admitted).
+- ARM ok: 2023:1 2024:4 2025:4 2026:3.
+- ASML CHECK (too few, no year above four): 2003-2010 4/3/1/2/4/4/4/4,
+  2011:3 2012:4 2013:3 2014:3 2015:3 2016:2 2017:4 2018:3 2019:1 2020:3
+  **2021:3** 2022:4 2023:4 2024:4 2025:4 2026:3. 2022-2025 are now four;
+  2021 is still three (no January 2021 release admitted).
+- SIMO CHECK: 2005:1, 2006-2008 four, **2009:5 2010:6**, 2011-2015 four,
+  **2016:6**, 2017-2025 four, 2026:3 (2025-2026 releases now admitted).
+- TSM CHECK: 2003:4 2004:3 2005:4 **2006:5 2007:5 2008:5 2009:6**
+  2010-2012 four **2013:5** 2014:4 **2015:5**, 2016-2025 four, 2026:3.
+
+**Defect: completed years above four, so `market_tone` was not run** (the
+stop rule). Off-cadence admissions, the likely false ones (by date; the
+documents were not opened):
+
+- TSM: 0001145549-06-000468 (2006-04-10), 0001145549-07-000018
+  (2007-01-10), 0001145549-08-000036 (2008-01-10), 0001145549-09-000038
+  (2009-01-09), 0001145549-09-000422 (2009-03-10), 0001193125-13-109931
+  (2013-03-15), 0001193125-15-325877 (2015-09-23). The ~10th-of-month
+  filings match TSM's monthly-revenue 6-Ks.
+- SIMO: 0001193125-09-076245 (2009-04-09), 0001193125-09-146321
+  (2009-07-09), 0001193125-10-085081 (2010-04-16), 0001193125-10-155642
+  (2010-07-08), 0001193125-16-535109 (2016-04-08), 0001193125-16-734636
+  (2016-10-11). Early-in-quarter filings, likely preliminary results or
+  guidance updates. 2009 also lacks a Q3 release.
+
+Tone store unchanged (`edgar_tone/asof=2026-10-01`): NBIS 0 scored; ASML
+newest 2026-07-15; **SIMO newest 2025-07-31**; TSM newest 2026-07-16;
+ARM 2026-07-30. So SIMO's reading stays stale and **A5 tone expiry
+applies to it on the 10-02 record (A+ -> B expected)**. NBIS still has no
+earnings reading. The 10-02 nightly record carries a `data_vintage` block,
+and the board shows a grey "Data updates" note for any name whose grade
+letter moved (the events store changed, the tone store did not).
+
+Next: tighten the 6-K classifier for TSM monthly-revenue 6-Ks and SIMO
+preliminary-results 6-Ks (test on the accessions above), re-run
+`--reclassify-6k` and `--audit-6k`, then the tone re-score if no completed
+year is above four. Logs: `~/scratch/6k_reclassify_1001.log`,
+`~/scratch/6k_audit_pre_1001.log`.
+
+## 2026-10-01, 20:24 ET — LIVE: `1a6eab2a`, A5-hard tone expiry (a stale earnings reading no longer counts)
+
+`scripts/deploy.sh` on Spark: unit 8,383 passed / 71 skipped / 6 xfailed,
+routing 100/100, backup, migrations, restart, post-deploy cheap checks ok
+(`data/.post-deploy-status`: `1a6eab2a ok`). Code `44d53b03` on
+`desk/tone-expiry-live` (study `research/tone-expiry`, plan `b774f46e`,
+results `f5c56ae5`), merged `--no-ff` as `1a6eab2a`; the merge tree is the
+gated tree. tsc and the desk e2e specs (`desk-tone-expiry`,
+`desk-release-coverage`, `desk-grade-parity`: 16/16) passed on spark1; the
+full browser suite was not run.
+
+- **What:** the sentiment analyst's newest release reading is treated as
+  missing once its age exceeds 1.5 x the name's usual gap between releases
+  (the earnings-coverage check's own "overdue" rule). One switch:
+  `TONE_EXPIRY = HARD` in `backend/market/tone_expiry.py` (a code default:
+  the cron launchers export only the broker keys, so no env flag reaches the
+  nightly). Study A5: both arms REPLACE on the registered non-inferiority
+  criteria; A5-hard proposed (IC h20 +0.0012 t +1.13 and +0.0023 t +0.98;
+  book +0.13 bp/session; CAGR 28.0 vs 28.0 and 45.1 vs 45.3).
+- **First record under it: 10-02 (tonight's 10-01 record was decided with
+  it off).** The record carries `tone_expiry` (`mode`, each expired name's
+  reading date, age, usual gap, the grade given and the grade with the
+  reading counted, and `also_moved` for any other name whose letter moved
+  with it). The board shows a grey "Earnings tone expired" note with those
+  lines, nothing when no reading expired.
+- **Expected on the 10-02 record** (dry run, read-only, on the store after
+  tonight's nightly, session 10-01; `record_block` agreed with an
+  independent expiry-off desk run name for name): OKLO expired (last read
+  2025-03-25, 555 days, usual 91 days across the book) - graded C either
+  way; SIMO expired (last read 2025-07-31, 427 days, its own usual 92 days)
+  - **A+ -> B**; no other letter moved (1 of 11 A/A+ names). SIMO depends on
+  tonight's 6-K re-read: if it admits and scores SIMO's 2025-2026 releases,
+  SIMO's reading is current again and it does not expire.
+- **Grade parity:** the CLI replay rebuilds a record under the mode it
+  carries; records without the stamp (everything up to 10-01) replay with
+  the expiry off, so no false drift. The nightly path compares a record
+  with its own report (unchanged). The shadow-ledger and ML-observer
+  identity hashes cover no file this change touched.
+- **Research runs:** every `desk.run` (and the `+tone` extras of
+  `market_train`/`market_sweep`/`market_book`/`market_xsect_net`) now ages
+  readings; `market_pit_scorecard` without `--tone-expiry` is the live
+  desk, `--tone-expiry off` the desk before A5 (the study's control).
+- **Turn off:** set `TONE_EXPIRY = None` in `backend/market/tone_expiry.py`,
+  gate, and deploy through `scripts/deploy.sh`. Records already written keep
+  their stamp and replay as decided.
+- **Order of tonight's jobs:** the deploy ran 20:09-20:24 ET after the
+  nightly finished, before the 20:05 6-K re-read task had started (it is
+  queued to the main session); the re-read runs on `1a6eab2a`.
 
 ## 2026-10-01, 16:32 ET — LIVE: `d17f1632` (earnings coverage) on `4384ea77` (12:07 ET: 6-K classifier, data-vintage note, discovery test) and `6b85cfe0` (10:33 ET: reset sizing)
 
