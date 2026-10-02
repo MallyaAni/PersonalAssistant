@@ -154,9 +154,26 @@ database=()
 if $unit; then
     ignores+=(--ignore=/app/backend/tests/functional)
     parallel=()
-    "${compose[@]}" up -d --wait redis db >/dev/null
+    # deploy.sh brings db and redis up from the deploy checkout before it
+    # runs this from a separate gate worktree, and sets ANIOS_GATE_SKIP_INFRA
+    # so a compose change in the commit under test cannot recreate the live
+    # database while it is only being gated.
+    if [[ "${ANIOS_GATE_SKIP_INFRA:-0}" != 1 ]]; then
+        "${compose[@]}" up -d --wait redis db >/dev/null
+    fi
     # The suite's own database: created once, migrated every run.
-    gate_db="anios_gate"
+    #
+    # ANIOS_GATE_DB names it (default anios_gate). Two gates on one database
+    # each failed one queue test on 2026-10-02 (test_agent_runs and
+    # test_runs_api_isolation): a research unit gate and a deploy's gate
+    # overlapped for 70 s and claimed or deleted each other's rows. deploy.sh
+    # therefore gates on anios_gate_deploy, and holds a lock so no two
+    # deploys share it either.
+    gate_db="${ANIOS_GATE_DB:-anios_gate}"
+    if [[ ! "$gate_db" =~ ^[a-z_][a-z0-9_]*$ ]]; then
+        echo "ANIOS_GATE_DB must be a plain lower-case database name" >&2
+        exit 2
+    fi
     exists="$("${compose[@]}" exec -T db sh -c \
         "psql -U \"\$POSTGRES_USER\" -d postgres -tAc \"SELECT 1 FROM pg_database WHERE datname='$gate_db'\"")"
     if [ "$exists" != "1" ]; then

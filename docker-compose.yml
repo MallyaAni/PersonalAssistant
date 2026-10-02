@@ -106,7 +106,9 @@ services:
     build:
       context: .
       target: test
-    image: anios-functional-tests
+    # deploy.sh sets this to a tag of its own, so gating a commit that has
+    # not been deployed builds no image any other command picks up.
+    image: ${ANIOS_FUNCTIONAL_TESTS_IMAGE:-anios-functional-tests}
     extra_hosts: *spark-hosts
     environment:
       # backend/tests/conftest.py sets ANIOS_TEST_MODE=1, which makes settings

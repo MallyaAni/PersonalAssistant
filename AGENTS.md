@@ -636,6 +636,20 @@ can still be stale UI.
   project, `anios`, so it recreates the running containers; `data` and
   `secrets` are symlinks to the shared checkout's). Never stash or move the
   other agent's files to get a pull through.
+- **Never `git pull`, `git merge` or `git checkout` in `~/deploy/anios` by
+  hand.** The market balancer (every 15 minutes, 09:00-16:00 ET) and the
+  19:30 ET nightly run Python straight from that checkout, and
+  `anios_frontend` serves its `frontend/`, so a hand pull puts ungated code
+  live at once. On 2026-10-02 a branch was merged there during market hours,
+  and a failed gate left the checkout and the `:latest` images on the failed
+  `0dfdcd89` while the containers ran `8be5ecbe`. Since then `deploy.sh`
+  gates the target commit in its own worktree (`~/deploy/.gate/<sha>`, test
+  database `anios_gate_deploy`) before touching anything, holds
+  `data/.deploy.lock`, waits for a running balancer, refuses 19:20-19:55 ET,
+  and tags the images with the SHA. It warns at start when the checkout's
+  HEAD is not `data/.deployed-commit`; `bash scripts/deploy.sh --restore`
+  puts the checkout back, and `--dry-run --deploy-dir=<clone>` gates
+  without changing anything.
 - **Docker's build log says `DONE` on every layer.** A waiter that greps a
   deploy log for the bare word fires mid-build, and the next deploy in the
   chain collides with the one still building. Key waiters and pollers on
