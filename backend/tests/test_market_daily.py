@@ -1774,7 +1774,7 @@ def test_curve_block_prices_the_redeploy_under_the_active_policy(monkeypatch):
     assert block["execution_policy"] == market_daily.DAILY_EXECUTION_POLICY
     assert block["live_execution_policy"] == paper.POLICY_VERSION
     assert block["execution_matches_live"] is False
-    assert paper.POLICY_VERSION == "cash-bounded-breakout-rotation/5"
+    assert paper.POLICY_VERSION == "cash-bounded-breakout-rotation/6"
     assert block["execution_options"] == {
         **sim_module.LIVE_POLICY,
         "midcycle_redeploy": True,

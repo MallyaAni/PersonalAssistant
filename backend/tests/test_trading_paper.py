@@ -843,7 +843,8 @@ def _redeploy_inputs(held_weights: dict[str, float], cash_share: float):
 # 1e-9, and those dollars are each name's shortfall to its target weight
 # times equity, scaled by the one fill ratio. Then with whole shares, on a
 # session with nothing else to buy, the live plan's redeploy is the
-# simulator's leg floored to shares, name for name.
+# simulator's leg in whole shares: within one share a name, never more in
+# total, never a name past its target (`paper._whole_share_fill`).
 def test_the_live_redeploy_matches_the_simulator_to_1e_9():
     from backend.agents.trading.desk import simulate
 
@@ -915,11 +916,19 @@ def test_the_live_redeploy_matches_the_simulator_to_1e_9():
         [], held, prices, equity, grades, {}, targets, at_rebalance,
         cash, simulate.REDEPLOY_BUFFER, session, paper.PaperState(),
     )
-    import math
-
-    assert {o.symbol: o.qty for o in orders} == {
-        o.symbol: math.floor(o.qty + 1e-10) for o in sim_plain
-    }
+    # Whole shares spend the simulator's dollars to within a share a name:
+    # never more in total, never a name past its target, and what is left
+    # unspent is less than the cheapest share that would still fit a leg.
+    sim_by = {o.symbol: o.qty * prices[o.symbol] for o in sim_plain}
+    live_by = {o.symbol: o.qty * prices[o.symbol] for o in orders}
+    assert set(live_by) <= set(sim_by)
+    assert all(float(o.qty).is_integer() and o.qty > 0 for o in orders)
+    for symbol, dollars in live_by.items():
+        assert abs(dollars - sim_by[symbol]) < prices[symbol] + 1e-9, symbol
+        final = (held.get(symbol, 0.0) * prices[symbol] + dollars) / equity
+        assert final <= targets[symbol] + 1e-9, symbol
+    assert sum(live_by.values()) <= sum(sim_by.values()) + 1e-9
+    assert sum(sim_by.values()) - sum(live_by.values()) < max(prices.values())
     assert all(o.kind == paper.REDEPLOY_KIND for o in orders)
     assert sum(o.qty * prices[o.symbol] for o in orders) <= cash - 0.02 * equity
     assert after.deferred_buys == {}
@@ -1217,10 +1226,11 @@ def test_state_files_without_rebalance_targets_still_load(tmp_path):
 
 
 # The rule is on, its buffer is the simulator's, and the execution policy
-# version says so: /5 retains the redeploy and corrects reset sizing.
-def test_the_redeploy_is_on_and_the_execution_policy_is_v5():
+# version says so: /6 keeps /5 (the redeploy, the reset sizing) and spends
+# the redeploy's whole-share rounding remainder.
+def test_the_redeploy_is_on_and_the_execution_policy_is_v6():
     from backend.agents.trading.desk import simulate
 
     assert paper.REDEPLOY_IDLE_CASH is True
     assert paper.REDEPLOY_BUFFER == simulate.REDEPLOY_BUFFER == 0.02
-    assert paper.POLICY_VERSION == "cash-bounded-breakout-rotation/5"
+    assert paper.POLICY_VERSION == "cash-bounded-breakout-rotation/6"

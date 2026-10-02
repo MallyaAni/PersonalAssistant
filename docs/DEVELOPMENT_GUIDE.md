@@ -294,7 +294,10 @@ The nightly (`~/desk_daily.sh` on spark1, `market_daily --paper-trade`)
 plans the paper book once a session. On a rebalance session it brings the
 book toward `live_policy.targets`, subject to cash, rounding and the band
 gate. Planner `cash-bounded-breakout-rotation/5` preserves reset targets
-instead of clipping them to the separate 15% mid-cycle entry limit. This
+instead of clipping them to the separate 15% mid-cycle entry limit, and `/6`
+(2026-10-02) spends the redeploy's whole-share rounding remainder, so the
+redeploy invests the simulator's dollars to within one share a name instead
+of flooring a high-priced name's slice to nothing. This
 does not change the active `graded-equal-weight/5` allocator or trigger an
 unscheduled reset. On every other session it retries last
 night's unpaid buys, rotates out of names graded below A, enters band

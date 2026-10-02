@@ -187,11 +187,13 @@ ENTRY_MIN_GRADE = ("A", "A+")
 # nothing deferred: what does not fit tonight is cash again tomorrow. It
 # is `simulate._redeploy_orders` (the study's `mc-redeploy` variant)
 # semantics for semantics, asserted equal to 1e-9 by test_trading_paper;
-# the one difference is the broker's whole shares. Measured at 25 bp on
-# the point-in-time book: 24.8% / 60.2% CAGR against 23.2% / 52.6% for
-# the executor without it (2016-2023 / 2024-2026), drawdown -43% / -21%
-# against -36% / -17% - the same book at 91% invested instead of 78%. To
-# switch it off, set REDEPLOY_IDLE_CASH to False and redeploy.
+# the one difference is the broker's whole shares, which since /6 spend the
+# simulator's dollars to within a share a name rather than floor them away.
+# Measured at 25 bp on the point-in-time book: 24.8% / 60.2% CAGR against
+# 23.2% / 52.6% for the executor without it (2016-2023 / 2024-2026),
+# drawdown -43% / -21% against -36% / -17% - the same book at 91% invested
+# instead of 78%. To switch it off, set REDEPLOY_IDLE_CASH to False and
+# redeploy.
 REDEPLOY_IDLE_CASH = True
 REDEPLOY_BUFFER = 0.02
 REDEPLOY_KIND = "redeploy"
@@ -203,7 +205,14 @@ REDEPLOY_KIND = "redeploy"
 # close - all of which /4 keeps unchanged. /5 corrects reset sizing: policy
 # targets are funded without the unrelated 15% mid-cycle entry cap. Selection,
 # mid-cycle rules and the separately versioned intraday clock do not change.
-POLICY_VERSION = "cash-bounded-breakout-rotation/5"
+# /6 (2026-10-02) spends the redeploy's whole-share rounding remainder
+# (`_whole_share_fill`): /5 floored each pro-rata leg, so a leg priced above
+# its slice bought nothing and every other leg lost up to a share. On the
+# account's 2026-10-01 plan /5 sent 2,894 of the simulator's 4,188 (MU's 767
+# slice at 1,097 a share floored to nothing); on the 10-02 account 26,949 of
+# 29,325. The simulator the policy was promoted on invests those dollars; /6
+# does too, within one share a name (4,111 and 29,240). Nothing else changes.
+POLICY_VERSION = "cash-bounded-breakout-rotation/6"
 # The band reading the size curve is anchored to: the trigger the sizing was
 # measured at, kept as its own constant so the trigger can move without
 # reshaping the curve. `entry_size` explains why.
@@ -676,8 +685,10 @@ def _deferred_orders(
 # when the same rule runs. A leg under MIN_TRADE of equity is not sent, and
 # neither is the whole redeploy when the spare cash is under it. This is
 # `simulate._redeploy_orders` line for line, with the broker's whole shares
-# (floored, so a leg is never a share over what the cash pays for); the
-# parity test in test_trading_paper holds the two equal to 1e-9 in dollars.
+# (`_whole_share_fill`: floored, then the flooring's remainder spent a share
+# at a time, so the legs together never pass the simulator's dollars and no
+# leg passes its target); the parity test in test_trading_paper holds the
+# two equal to 1e-9 in dollars on fractional shares.
 #
 # `at_rebalance` None means the state predates the field (no reset has been
 # planned since the redeploy existed), so which names are new cannot be
@@ -735,12 +746,19 @@ def _redeploy_orders(  # noqa: C901 - the takers, their room and the fill in one
     if total <= 0:
         return []
     fill = min(1.0, spare / total)
+    wants = {
+        symbol: value * fill
+        for symbol, value in room.items()
+        if value * fill >= MIN_TRADE * equity
+    }
+    if whole_shares:
+        shares = _whole_share_fill(wants, room, prices)
+    else:
+        shares = {s: w / float(prices[s]) for s, w in wants.items()}
     out: list[PaperOrder] = []
-    for symbol, value in sorted(room.items()):
-        price = float(prices[symbol])
-        want = value * fill
-        qty = math.floor(want / price + 1e-10) if whole_shares else want / price
-        if qty <= 0 or want < MIN_TRADE * equity:
+    for symbol in sorted(shares):
+        qty = shares[symbol]
+        if qty <= 0:
             continue
         seq = state.order_seq
         state.order_seq += 1
@@ -756,6 +774,41 @@ def _redeploy_orders(  # noqa: C901 - the takers, their room and the fill in one
         )
         state.opened.setdefault(symbol, session)
     return out
+
+
+# The redeploy's dollars in whole shares, spent as the simulator spends them.
+# Each leg is first floored to whole shares; the dollars the flooring left
+# behind (`sum(wants) - spent`, never more) then buy one more share at a
+# time, largest unspent remainder first, in any leg still short of its own
+# dollars whose next share fits both the remainder and the name's room to
+# its target - so every leg ends within one share of the simulator's. Flooring
+# alone dropped every leg priced above its pro-rata dollars: on 2026-10-01 the
+# simulator's 4,188 went out as 2,894, MU's 767 slice at 1,097 a share
+# floored to nothing (test_paper_target_tracking replays that night). The
+# total never exceeds the simulator's dollars and no name passes its target,
+# so the redeploy's bounds are unchanged.
+def _whole_share_fill(
+    wants: dict[str, float], room: dict[str, float], prices: dict[str, float]
+) -> dict[str, int]:
+    """Return {symbol: whole shares} spending at most sum(wants) within each room."""
+    shares = {s: math.floor(w / float(prices[s]) + 1e-10) for s, w in wants.items()}
+    left = sum(wants.values()) - sum(q * float(prices[s]) for s, q in shares.items())
+    while True:
+        open_legs = [
+            s
+            for s in wants
+            if wants[s] - shares[s] * float(prices[s]) > 1e-9
+            and float(prices[s]) <= left + 1e-9
+            and (shares[s] + 1) * float(prices[s]) <= room[s] + 1e-9
+        ]
+        if not open_legs:
+            return shares
+        best = max(
+            open_legs,
+            key=lambda s: (wants[s] - shares[s] * float(prices[s]), s),
+        )
+        shares[best] += 1
+        left -= float(prices[best])
 
 
 # Reserve name capacity jointly and fund opening buys only from existing cash.
