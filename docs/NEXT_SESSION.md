@@ -1,5 +1,91 @@
 # Next session
 
+## 2026-10-01, 22:31 ET — LIVE: `0e817741` (6-K false admissions fixed); 6-K re-read and tone re-score done; SIMO's reading current
+
+**Live code is `0e817741`, deployed 21:58-22:12 ET through `scripts/deploy.sh`
+after the other session's `f621597b` deploy had finished** (its entry below,
+written before this deploy, says not to redeploy `0e817741`; this deploy was
+the operator's request for the 6-K fix and is gated on its own). Unit 8,520
+passed / 92 skipped / 6 xfailed on the merged tree, routing 100/100, backup,
+migrations, restart, post-deploy cheap checks ok
+(`data/.post-deploy-status`: `0e817741 ok (cheap)`). Code `f49988d1` on
+`fix/6k-false-admissions` (unit gate on spark1: 8,398 / 71 / 6), merged
+`--no-ff` onto `f621597b` (the merge tree is not the branch's gated tree;
+the deploy gate ran on the merge tree). Log `~/scratch/deploy-1001f.log`.
+
+**What the flagged filings were** (each opened on EDGAR):
+- TSM: monthly sales reports - "TSMC March 2006 Sales Report", "December
+  2006/2007/2008 Sales Report", "February 2009 Sales Report and Revises
+  First-Quarter Business Guidance" (and 2005-06-10 "May 2005 Sales and
+  Revise Upward 2Q2005 Guidance", which hid a missing Q4 2004 release);
+  2013-03-15 "TSMC Announces 2012 Fiscal Year-End Results" (the audited
+  year, two months after the Q4 release); 2015-09-23 "TSMC Fourth Quarter
+  and Full Year 2015 Revenue Outlook" (mid-quarter outlook).
+- SIMO: guidance updates ("Updates First Quarter / Second Quarter 2009
+  Guidance", and 2008-12-22 "Updates Fourth Quarter 2008 Guidance", which
+  hid the missing Q4 2007 release) and preliminary figures ("Announces
+  Preliminary 1Q 2010 / Second Quarter 2010 Revenue", 2016-04 and 2016-10
+  untitled "based upon its preliminary ... results, sequential revenue
+  growth is expected to be ...").
+- ASML 2021: the 2021-01-20 full-year release was refused for "no period":
+  its HTML splits "n</font><font>et income", so "net income in 2020" never
+  read.
+
+**The rule (general, no accession/ticker/date in code):** `edgar.py`
+`BESIDE_THE_RELEASE` refuses a month's sales, a preliminary figure and the
+audited year; `OUTLOOK_ONLY` refuses a guidance update/revision/confirmation
+or an outlook unless the headline also says results are published
+(`RESULTS_REPORTED`: ASML's "confirms 2013 outlook ... publishes 2013
+third-quarter results" and Nebius's "raises ARR guidance" stay admitted).
+`html_to_text` joins a word split across inline formatting tags with no
+space. `market_edgar --reclassify-6k` now drops every carried decision
+(it kept admissions, so a tightened rule could not revoke one) and reports
+a name the as-of partition already holds as FAILED instead of silently
+keeping it. Tests +15 (13 real-headline cases, a split word, a TSMC 2006
+and SIMO 2016 year leaving four, reclassify, held partition).
+
+**Measured before deploy:** every 6-K the five filers have on EDGAR, old
+rule against new, sandbox (cached, SEC pace) and a read-only spark1 dry run
+from the worktree (`~/scratch/dryrun_6kfa.log`) agree: only the 15 false
+admissions go (TSM 8, SIMO 7) and ASML 2021-01-20 is added; the old rule
+reproduces the 20:42 ET audit exactly.
+
+**Re-read on `0e817741` (22:13-22:25 ET, 11.6 min):** the 2026-10-02
+`edgar_events`/`edgar_facts` frames the 20:27 ET run wrote for NBIS, ASML,
+SIMO, TSM were moved to `~/scratch/edgar_superseded_1002/` (partitions are
+immutable; a re-run would otherwise have kept them), then
+`--refresh --reclassify-6k`: NBIS 8, ASML 78, SIMO 82, TSM 93 events.
+`--audit-6k` (`~/scratch/6k_audit_post_1001.log`): **no completed year above
+four.** NBIS ok 2024:1 2025:4 2026:3; ARM ok; TSM 2006-2025 four each,
+CHECK [2004, 2005] three (Q1 2004 and Q4 2004 releases refused, unchanged
+by this fix); SIMO four each, CHECK [2008, 2009] three (the Q4 2007 and Q3
+2009 releases were never filed on EDGAR); ASML 2021-2025 four, earlier
+years short as before (exit 1 is these "too few" years only).
+
+**Tone re-scored (22:27-22:31 ET, `~/scratch/tone_1002.sh`, log
+`~/scratch/tone_1002.log`):** the A2 scorer had already exited at 22:14 ET
+(`ls exit 0`, but 0 observations scored: it asked for `qwen/qwen3.5-4b`
+while the server at :8000 serves `deepseek-v4-flash` - its own config, not
+this work; A2 did not run tonight). `market_tone --refresh --tickers
+NBIS,ASML,SIMO,TSM` on deepseek-v4-flash, `release_tone/3`: 57 releases
+scored, 0 failures, into `edgar_tone/asof=2026-10-02`. Newest scored: NBIS
+2026-08-12 (first NBIS readings: 8), ASML 2026-07-15, **SIMO 2026-07-30**
+(Q2 2026; 2025-10-31, 2026-02-04, 2026-04-29 also scored), TSM 2026-07-16,
+ARM 2026-07-30. No scored row is for an accession that is no longer an
+event.
+
+**Expected on the 10-02 record:** SIMO's reading is 64 days old against its
+usual 92-day gap, so A5 tone expiry should no longer expire it (the A+ -> B
+downgrade was caused by the data gap). Not verified: no desk dry run was
+made; the 10-02 nightly decides SIMO's grade with the new readings
+(scores 1.0/1.0 on guidance and demand for the 2025-10 to 2026-07 releases).
+The data-vintage note will name names whose letter moved. NBIS now has an
+earnings reading.
+
+Next: TSM's refused Q1 2004 / Q4 2004 releases and ASML's short years before
+2021 are "too few" cases (not false admissions) if older history matters.
+Branch `fix/6k-false-admissions` can be deleted once nothing refers to it.
+
 ## 2026-10-01 — Open-source engineering release verified; specialist edges unproven
 
 User authorized merging the verified branch and guarded deployment. Main
