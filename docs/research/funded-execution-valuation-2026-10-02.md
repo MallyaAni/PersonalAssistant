@@ -29,3 +29,15 @@ partial session. Original IEX proxy metrics remain separate and unchanged.
 Provider contract: [historical quotes](https://docs.alpaca.markets/us/reference/stockquotes-1)
 requires complete pagination; [data FAQ](https://docs.alpaca.markets/us/docs/market-data-faq)
 explains the 15-minute recent-SIP restriction and IEX/SIP coverage difference.
+
+## Provider correction before scoring
+
+The first actual start-window request returned HTTP 200 and 8,533 records in one
+page. Version 1 rejected 64 differing records sharing an earlier timestamp;
+timestamps are not unique provider event identities. No endpoint outcome or
+policy score was produced. Version 2 preserves the same immutable response:
+earlier timestamp ties do not invalidate a later unique event; differing records
+at the latest timestamp make that symbol's mark explicitly ambiguous/unavailable.
+No row-order tie-break or favorable-price selection. The start response is reused
+without another request. This corrects source interpretation, not a budget or
+strategy threshold. The frozen execution implementation remains unchanged.

@@ -10,7 +10,7 @@ from backend.market import alpaca, entry_timing
 from backend.market import bounded_execution as bounded
 from backend.market import execution_forward as forward
 
-VERSION = "execution-endpoint-labels/1"
+VERSION = "execution-endpoint-labels/2"
 PLAN = (
     Path(__file__).parents[2] / "docs/research/funded-execution-valuation-2026-10-02.md"
 )
@@ -133,11 +133,11 @@ def endpoint(symbols, at, folder, **kwargs):
     return packet
 
 
-# Keep the latest event while refusing future rows or conflicting event identities.
+# Keep latest source events and retain ambiguity when their timestamps tie.
 def latest_events(packet, at, symbols):
     start = nanos((at - timedelta(seconds=forward.AGE)).isoformat())
     end = nanos(at.isoformat())
-    latest, events = {}, {}
+    latest = {}
     for quotes in pages(packet, at):
         for symbol, rows in quotes.items():
             if symbol not in symbols or not isinstance(rows, list):
@@ -146,12 +146,10 @@ def latest_events(packet, at, symbols):
                 stamp = nanos(row.get("t"))
                 if not start <= stamp <= end:
                     raise ValueError("Quote event outside the declared endpoint window")
-                key = (symbol, stamp)
-                if key in events and events[key] != row:
-                    raise ValueError("Conflicting quote event identity")
-                events[key] = row
                 if symbol not in latest or stamp > latest[symbol][0]:
                     latest[symbol] = (stamp, row)
+                elif stamp == latest[symbol][0] and latest[symbol][1] != row:
+                    latest[symbol] = (stamp, None)
     return latest
 
 
@@ -174,6 +172,9 @@ def marks(packet, symbols):
     qualified, missing = {}, {}
     for symbol in sorted(symbols):
         row = latest.get(symbol, (None, {}))[1]
+        if row is None:
+            missing[symbol] = "Latest timestamp has ambiguous consolidated quotes"
+            continue
         bid, ask = bounded.positive(row.get("bp")), bounded.positive(row.get("ap"))
         if (
             not bid
@@ -253,12 +254,25 @@ def supplement(frozen, proxy, first_packet, last_packet):
                 if gain is not None and initial
                 else None,
                 "ending_cash": book["cash"],
+                "ending_exposure": (ending - book["cash"]) / ending if ending else None,
                 "fees": book["fees"],
                 "turnover_one_way": book["turnover"] / initial if initial else None,
                 "missing_ending_marks": missing_end,
                 "benchmarks": benchmarks,
                 "max_drawdown_loss": None,
             }
+        )
+    for result in results:
+        control = next(
+            r
+            for r in results
+            if r["mode"] == "incumbent" and r["cost_bps"] == result["cost_bps"]
+        )
+        result["gain_vs_incumbent"] = (
+            result["ending_value"] - control["ending_value"]
+            if result["ending_value"] is not None
+            and control["ending_value"] is not None
+            else None
         )
     return {
         "version": VERSION,

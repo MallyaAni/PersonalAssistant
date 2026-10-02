@@ -587,14 +587,29 @@ def test_label_pagination_covers_later_symbols(tmp_path):
         label_packet(tmp_path / "repeated", at, {"AAA": []}, token="loop")
 
 
-# Two incompatible records with one source event identity cannot create a label.
+# Tied latest timestamps cannot select a favorable record or create a label.
 def test_conflicting_consolidated_events_are_refused(tmp_path):
     at = ny(10, 16)
     packet = label_packet(
         tmp_path / "labels", at, {"AAA": [label_row(at), label_row(at, bid=99)]}
     )
-    with pytest.raises(ValueError, match="Conflicting"):
-        labels.marks(packet, {"AAA"})
+    qualified, missing = labels.marks(packet, {"AAA"})
+    assert qualified == {}
+    assert "ambiguous" in missing["AAA"]
+
+
+# Earlier timestamp ties cannot invalidate a later unambiguous endpoint event.
+def test_earlier_tied_quotes_do_not_override_latest_endpoint(tmp_path):
+    at = ny(10, 16)
+    earlier = at - timedelta(seconds=1)
+    packet = label_packet(
+        tmp_path / "labels",
+        at,
+        {"AAA": [label_row(earlier), label_row(earlier, bid=99), label_row(at)]},
+    )
+    qualified, missing = labels.marks(packet, {"AAA"})
+    assert qualified["AAA"]["bid"] == 100
+    assert missing == {}
 
 
 # Exercise the CLI's full frozen comparison and label valuation without changing inputs.
@@ -636,6 +651,8 @@ def test_consolidated_workflow_retains_fills_and_missing_marks(tmp_path):
         assert final["ending_value"] == pytest.approx(proxy["book"]["cash"] + 1100)
         assert final["total_gain"] == pytest.approx(final["ending_value"] - 1000)
         assert final["fees"] == proxy["book"]["fees"]
+        assert final["ending_exposure"] == pytest.approx(1100 / final["ending_value"])
+        assert final["gain_vs_incumbent"] == 0
         assert final["max_drawdown_loss"] is None
         assert final["benchmarks"]["QQQ"]["excess_gain"] is None
         assert final["benchmarks"]["SPY"]["excess_gain"] is not None
