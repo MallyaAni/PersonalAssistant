@@ -13,7 +13,12 @@ the plan step counts one call per observation; the null test passes on a
 constant arm and the evaluate step measures a real arm against its
 comparators on shared cells with the plan's criteria; the accuracy report
 tallies the model against the realised direction and the persistence
-baseline.
+baseline. A2b (the stance variants): the stated direction signs the
+stance and |2p - 1| sizes it, a down call with p < 0.5 stays bearish, the
+default variant is A2's arithmetic to the bit, an unknown direction or
+variant is refused, the arm is measured under its own name, the payload
+comparison finds a one-ulp difference and nothing else, and the replay
+of a committed payload passes on itself and fails on a changed number.
 """
 
 from datetime import date, timedelta
@@ -85,11 +90,16 @@ class Reader:
         )
 
 
-def record(quarter_end=date(2016, 12, 31), probability=0.7, version="statements/1"):
+def record(
+    quarter_end=date(2016, 12, 31),
+    probability=0.7,
+    version="statements/1",
+    direction=None,
+):
     return ms.StatementRecord(
         quarter_end=quarter_end,
         available=quarter_end + timedelta(days=41),
-        direction="up" if probability >= 0.5 else "down",
+        direction=direction or ("up" if probability >= 0.5 else "down"),
         probability=probability,
         rationale="Trend up. Margins hold. Risk is seasonality.",
         block_sha256="abc",
@@ -405,3 +415,125 @@ def test_arm_stances_align_records_to_the_panel():
     assert arm[9, 1] == pytest.approx(-0.3)
     assert np.isnan(arm[:, 0]).all()  # N0 is available after the panel ends
     assert np.isnan(arm[:, 2]).all()
+
+
+# A2b's stance: the direction signs it, |2p - 1| sizes it.
+def test_the_variants_sign_by_the_stated_direction():
+    up = record(probability=0.62, direction="up")
+    down_confident = record(probability=0.62, direction="down")
+    down_coherent = record(probability=0.3, direction="down")
+    assert ms.variant_stance(up, ms.VARIANT_A2) == up.probability - 0.5
+    assert ms.variant_stance(down_confident, ms.VARIANT_A2) > 0  # A2's defect
+    assert ms.variant_stance(up, ms.VARIANT_A2B) == pytest.approx(0.24)
+    assert ms.variant_stance(down_confident, ms.VARIANT_A2B) == pytest.approx(-0.24)
+    # p < 0.5 on a down call: bearish with confidence 1 - p under either reading.
+    assert ms.variant_stance(down_coherent, ms.VARIANT_A2B) == pytest.approx(-0.4)
+    assert ms.variant_stance(up, ms.VARIANT_A2B_DIRECTION) == 1.0
+    assert ms.variant_stance(down_coherent, ms.VARIANT_A2B_DIRECTION) == -1.0
+    with pytest.raises(ValueError, match="not a stated direction"):
+        ms.variant_stance(record(direction="flat"), ms.VARIANT_A2B)
+    with pytest.raises(ValueError, match="unknown stance variant"):
+        ms.variant_stance(up, "a3")
+
+
+# The default and the explicit a2 variant are A2's stance, byte for byte.
+def test_the_default_variant_is_a2_to_the_bit():
+    panel = _panel(rows=60, names=16)
+    records = {
+        "N1": (
+            record(date(2023, 11, 30), 0.62, direction="down"),
+            record(date(2023, 12, 10), 0.78, direction="up"),
+        ),
+        "N2": (record(date(2023, 11, 25), 0.3, direction="down"),),
+    }
+    default = ms.arm_stances(panel, records)
+    replay = ms.arm_stances(panel, records, ms.VARIANT_A2)
+    assert default.tobytes() == replay.tobytes()
+    signed = ms.arm_stances(panel, records, ms.VARIANT_A2B)
+    finite = np.isfinite(default)
+    assert (np.isfinite(signed) == finite).all()
+    # Only the inconsistent down call changes sign; magnitudes double.
+    assert signed[9, 1] == pytest.approx(-0.24)
+    assert default[9, 1] > 0
+    assert np.allclose(np.abs(signed[finite]), 2 * np.abs(default[finite]))
+
+
+# A variant is measured and judged under its own arm name.
+def test_evaluate_measures_a_variant_under_its_own_name(monkeypatch):
+    panel = _panel()
+    monkeypatch.setattr(ms, "WINDOWS", _windows(panel))
+    rng = np.random.default_rng(2)
+    shape = panel.close.shape
+    arm = rng.uniform(-1, 1, size=shape)
+    arm[:, -1] = np.nan
+    comparators = {
+        ms.ARM_FUNDAMENTAL: rng.uniform(0, 1, size=shape),
+        ms.ARM_VALUE: rng.uniform(0, 1, size=shape),
+    }
+    sides = {t: "ai" for t in panel.tickers if t != "SPY"}
+    payload = ms.evaluate_arm(panel, sides, arm, comparators, ms.ARM_A2B)
+    window = payload["horizons"]["20"]["in_window"]
+    assert ms.ARM_A2B in window["arms"]
+    assert ms.ARM_A2 not in window["arms"]
+    reference = ms.evaluate_arm(panel, sides, arm, comparators)
+    ours = window["arms"][ms.ARM_A2B]
+    assert (
+        ours["ic"] == reference["horizons"]["20"]["in_window"]["arms"][ms.ARM_A2]["ic"]
+    )
+    assert payload["criteria"]["ic_in_window"] == ours["ic"]
+    look = ms.second_look({"t_in_window": 2.1, "1_clears_ic_floor": True})
+    assert not look["clears_two_look_floor"]
+    assert not look["decides"]
+    assert ms.second_look({"t_in_window": 2.3, "1_clears_ic_floor": True})[
+        "clears_two_look_floor"
+    ]
+
+
+# The payload comparison sees a one-ulp change and nothing else.
+def test_payload_differences_are_to_the_bit():
+    base = {"a": [0.1, float("nan"), 3], "b": {"c": True, "d": "RECORD"}}
+    assert ms.payload_differences(base, json_round_trip(base)) == []
+    nudged = json_round_trip(base)
+    nudged["a"][0] = float(np.nextafter(0.1, 1.0))
+    assert ms.payload_differences(base, nudged) == ["/a[0]"]
+    flipped = json_round_trip(base)
+    flipped["b"]["c"] = False
+    assert ms.payload_differences(base, flipped) == ["/b/c"]
+    assert ms.payload_differences({"a": 1}, {"a": 1.0}) == []
+    assert ms.payload_differences({"a": 1}, {}) == ["/a (missing on one side)"]
+
+
+# The replay passes on its own payload and fails on a changed number.
+def test_the_replay_passes_on_itself_and_fails_on_a_changed_number(
+    monkeypatch, tmp_path
+):
+    import json
+
+    panel = _panel()
+    monkeypatch.setattr(ms, "WINDOWS", _windows(panel))
+    rng = np.random.default_rng(3)
+    shape = panel.close.shape
+    arm = rng.uniform(-0.5, 0.5, size=shape)
+    arm[:, -1] = np.nan
+    comparators = {
+        ms.ARM_FUNDAMENTAL: rng.uniform(0, 1, size=shape),
+        ms.ARM_VALUE: rng.uniform(0, 1, size=shape),
+    }
+    sides = {t: "ai" for t in panel.tickers if t != "SPY"}
+    payload = ms.evaluate_arm(panel, sides, arm, comparators)
+    reference = tmp_path / "ref.json"
+    reference.write_text(json.dumps(payload, indent=2, default=float))
+    assert ms.reproduce(payload, reference)["pass"]
+    changed = json.loads(reference.read_text())
+    changed["horizons"]["20"]["in_window"]["arms"][ms.ARM_A2]["t"] += 1e-12
+    reference.write_text(json.dumps(changed))
+    replay = ms.reproduce(payload, reference)
+    assert not replay["pass"]
+    assert replay["differences"] == [f"/horizons/20/in_window/arms/{ms.ARM_A2}/t"]
+
+
+# A value as JSON writes and reads it back.
+def json_round_trip(value):
+    import json
+
+    return json.loads(json.dumps(value))

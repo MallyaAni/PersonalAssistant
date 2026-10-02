@@ -14,6 +14,14 @@
 #   python docs/research/scorecards/llm-statements/llm_statements_check.py \
 #       --root data/market --payload <evaluate json> --blocks <plan jsonl>
 # Read-only; prints OK or MISMATCH per line and exits 1 on any mismatch.
+#
+# A2b (docs/research/llm-statements-a2b-plan-2026-10-02.md): `--variant`
+# rebuilds the stance from the frames' direction and probability columns
+# with its own sign rule (a2: p - 0.5; a2b: sign x |2p - 1|; a2b-direction:
+# the sign), and the check also recomputes the paired difference against the
+# fundamental analyst, the correlations, the three criteria and the verdict
+# at 20 sessions. Names are counted as the payload counts them: every name
+# with a frame, empty or not (A2's recorded 86-vs-91 line).
 import argparse
 import hashlib
 import json
@@ -34,6 +42,45 @@ ARM = "A2 statement reader"
 FUNDAMENTAL = "fundamental analyst"
 VALUE = "value analyst"
 POST_START = date(2025, 6, 1)
+# The arm's payload name per variant, and the plan's floors.
+ARMS = {
+    "a2": "A2 statement reader",
+    "a2b": "A2b direction-signed reader",
+    "a2b-direction": "A2b-dir stated direction",
+}
+IC_FLOOR, T_FLOOR, NOT_NEGATIVE_T, LOW_CORRELATION = 0.02, 2.0, -1.0, 0.3
+
+
+# One answer's stance under a variant, from the rule in the A2b plan.
+def stance_of(direction, probability, variant):
+    if variant == "a2":
+        return probability - 0.5
+    sign = {"up": 1.0, "down": -1.0}[direction]
+    if variant == "a2b":
+        return sign * abs(2.0 * probability - 1.0)
+    return sign
+
+
+# Mean and t of per-period differences b - a on periods both define.
+def paired_diff(a, b):
+    keys = [k for k in a if k in b and np.isfinite(a[k]) and np.isfinite(b[k])]
+    d = np.asarray([b[k] - a[k] for k in keys])
+    if len(d) < 2 or not d.std(ddof=1):
+        return (float(d.mean()) if len(d) else math.nan), math.nan
+    return float(d.mean()), float(d.mean() / (d.std(ddof=1) / math.sqrt(len(d))))
+
+
+# Mean per-session Spearman of two score matrices over cells, >= min names.
+def mean_corr(a, b, cells, min_names):
+    both = cells & np.isfinite(a) & np.isfinite(b)
+    values = []
+    for t in range(a.shape[0]):
+        cols = np.flatnonzero(both[t])
+        if len(cols) >= min_names:
+            rho = spearman(a[t, cols], b[t, cols])
+            if np.isfinite(rho):
+                values.append(rho)
+    return float(np.mean(values)) if values else math.nan
 
 
 # Average ranks, 0-based, ties sharing their mean, written from the rule.
@@ -156,7 +203,9 @@ def main():  # noqa: C901 - one pass over the payload's lines
     parser.add_argument("--payload", required=True, type=Path)
     parser.add_argument("--blocks", type=Path, default=None)
     parser.add_argument("--min-names", type=int, default=15)
+    parser.add_argument("--variant", choices=tuple(ARMS), default="a2")
     args = parser.parse_args()
+    arm_key = ARMS[args.variant]
     payload = json.loads(args.payload.read_text())
     store = MarketStore(args.root)
     panel, sides = book_panel(store)
@@ -165,20 +214,26 @@ def main():  # noqa: C901 - one pass over the payload's lines
     excluded = np.zeros(len(tickers), dtype=bool)
     excluded[panel.index(panel.benchmark)] = True
 
-    # The arm from the stored frames: probability less one half, carried.
+    # The arm from the stored frames under the variant's rule, carried.
     rows = {}
     records = {}
+    framed = 0
     for ticker in tickers:
         frame = store.read_frame(KIND, ticker)
         if frame is None:
             continue
+        framed += ticker in sides
         columns = frame[0]
         items = []
         for i in range(len(columns["quarter_end"])):
             items.append(
                 (
                     date.fromisoformat(columns["available"][i]),
-                    float(columns["probability"][i]) - 0.5,
+                    stance_of(
+                        columns["direction"][i],
+                        float(columns["probability"][i]),
+                        args.variant,
+                    ),
                 )
             )
             records.setdefault(ticker, []).append(
@@ -197,11 +252,20 @@ def main():  # noqa: C901 - one pass over the payload's lines
     from backend.cli.market_statements import comparator_ranks
 
     comparators = comparator_ranks(store, panel, sides)
-    arms = {ARM: arm, FUNDAMENTAL: comparators[FUNDAMENTAL], VALUE: comparators[VALUE]}
+    arms = {
+        arm_key: arm,
+        FUNDAMENTAL: comparators[FUNDAMENTAL],
+        VALUE: comparators[VALUE],
+    }
 
     failures = 0
-    print(f"names scored {len(records)} payload {payload['names_scored']}")
-    failures += len(records) != payload["names_scored"]
+    ok = framed == payload["names_scored"]
+    failures += not ok
+    print(
+        f"{'OK' if ok else 'MISMATCH'} names with a frame {framed} "
+        f"({len(records)} with answers) payload {payload['names_scored']}"
+    )
+    mine = {}
     for horizon, windows in payload["horizons"].items():
         h = int(horizon)
         residual = panel.forward_residual(h)
@@ -214,6 +278,7 @@ def main():  # noqa: C901 - one pass over the payload's lines
                 masked = np.where(cells, scores, np.nan)
                 ics = period_ics(masked, residual, excluded, h, args.min_names)
                 ic, t = summary(ics)
+                mine[(h, name, arm_name)] = (ic, t, ics, cells)
                 got = block["arms"][arm_name]
                 ok = (
                     same(ic, got["ic"])
@@ -229,6 +294,60 @@ def main():  # noqa: C901 - one pass over the payload's lines
             ok = int(cells.sum()) == block["cells"]
             failures += not ok
             print(f"{'OK' if ok else 'MISMATCH'} h{h} {name} cells {int(cells.sum())}")
+
+    # The criteria and the verdict at 20 sessions, from this check's numbers.
+    ic, t, ics_arm, cells = mine[(20, "in_window", arm_key)]
+    ic_post, t_post, _, _ = mine[(20, "post_window", arm_key)]
+    delta, delta_t = paired_diff(mine[(20, "in_window", FUNDAMENTAL)][2], ics_arm)
+    corr = {
+        c: mean_corr(arms[c], arms[arm_key], cells, args.min_names)
+        for c in (FUNDAMENTAL, VALUE)
+    }
+    c1 = bool(np.isfinite(ic) and ic >= IC_FLOOR and np.isfinite(t) and t >= T_FLOOR)
+    c2 = not (
+        np.isfinite(ic_post)
+        and ic_post < 0
+        and np.isfinite(t_post)
+        and t_post <= NOT_NEGATIVE_T
+    )
+    c3 = not (
+        np.isfinite(delta)
+        and delta < 0
+        and np.isfinite(delta_t)
+        and delta_t <= NOT_NEGATIVE_T
+    )
+    low = all(np.isfinite(v) and v < LOW_CORRELATION for v in corr.values())
+    crit = payload["criteria"]
+    for label, a, b in (
+        ("paired delta vs fundamental", delta, crit["paired_delta_vs_fundamental"]),
+        ("paired t vs fundamental", delta_t, crit["paired_t_vs_fundamental"]),
+        (
+            "correlation with fundamental",
+            corr[FUNDAMENTAL],
+            crit["correlation_with"][FUNDAMENTAL],
+        ),
+        ("correlation with value", corr[VALUE], crit["correlation_with"][VALUE]),
+    ):
+        ok = same(a, b)
+        failures += not ok
+        print(
+            f"{'OK' if ok else 'MISMATCH'} {label}: {f(a):+.4f} (payload {f(b):+.4f})"
+        )
+    for label, a, b in (
+        ("criterion 1 IC floor", c1, crit["1_clears_ic_floor"]),
+        ("criterion 2 post-cutoff", c2, crit["2_post_window_not_negative"]),
+        ("criterion 3 paired", c3, crit["3_not_worse_than_fundamental"]),
+        ("role sixth analyst", low, crit["role"] == "sixth analyst"),
+    ):
+        ok = a == b
+        failures += not ok
+        print(f"{'OK' if ok else 'MISMATCH'} {label}: {a} (payload {b})")
+    verdict = "CANDIDATE" if (c1 and c2 and c3) else "RECORD"
+    ok = payload["verdict"].split(" ")[0].rstrip(":") == verdict
+    failures += not ok
+    print(
+        f"{'OK' if ok else 'MISMATCH'} verdict {verdict} (payload {payload['verdict']})"
+    )
 
     # The accuracy report, recounted from the rendered blocks, and every
     # scored record's digest against the block it was scored on.

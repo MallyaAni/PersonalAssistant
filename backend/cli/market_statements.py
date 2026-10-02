@@ -30,11 +30,21 @@ a constant 0.5 probability must read as a scoreless signal (no defined
 period IC, an empty stance table). The direction-accuracy report follows,
 deciding nothing. The step writes the stance table for the book gate and
 prints the follow-up command.
+
+`evaluate --stance-variant` picks the stance built from the same stored
+answers (`docs/research/llm-statements-a2b-plan-2026-10-02.md`): `a2`, the
+registered probability less one half (the default, unchanged); `a2b`, the
+stated direction times |2p - 1| (A2b's primary); `a2b-direction`, the stated
+direction alone (A2b's secondary, deciding nothing). `--reproduce PAYLOAD`
+compares the run with a committed payload to the bit and exits 1 on any
+difference: A2b's null test is `--stance-variant a2 --reproduce` on A2's.
 """
 
 import argparse
 import json
 import math
+import struct
+import sys
 import time
 from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
@@ -82,6 +92,31 @@ NOT_NEGATIVE_T = -1.0
 SIXTH_ANALYST_CORRELATION = 0.3
 PAPER_ACCURACY = 0.604
 ARM_A2 = "A2 statement reader"
+ARM_A2B = "A2b direction-signed reader"
+ARM_A2B_DIRECTION = "A2b-dir stated direction"
+# The stance variants over the same stored answers: the arm's name in the
+# payload and its stance table's file stem, per variant (the A2b plan).
+VARIANT_A2 = "a2"
+VARIANT_A2B = "a2b"
+VARIANT_A2B_DIRECTION = "a2b-direction"
+VARIANTS: dict[str, tuple[str, str]] = {
+    VARIANT_A2: (ARM_A2, "A2"),
+    VARIANT_A2B: (ARM_A2B, "A2b"),
+    VARIANT_A2B_DIRECTION: (ARM_A2B_DIRECTION, "A2b-dir"),
+}
+# A2b's reported second-look floor: the t at which the registered floor's
+# one-sided tail (t 2, 2.28%) is split over the two looks at these answers.
+TWO_LOOK_T = 2.28
+# The payload blocks `--reproduce` compares to the bit.
+REPRODUCED_KEYS: tuple[str, ...] = (
+    "null_test",
+    "horizons",
+    "criteria",
+    "verdict",
+    "names_scored",
+    "observations_scored",
+    "inconsistent_answers",
+)
 ARM_NULL = "A2-0 constant 0.5 (null)"
 ARM_FUNDAMENTAL = "fundamental analyst"
 ARM_VALUE = "value analyst"
@@ -118,6 +153,30 @@ class StatementRecord:
     @property
     def stance(self) -> float:
         return self.probability - 0.5
+
+
+# The stated direction as a sign: +1 for "up", -1 for "down".
+def direction_sign(direction: str) -> int:
+    """Return +1 or -1 for a stated direction; raise on anything else."""
+    if direction == "up":
+        return 1
+    if direction == "down":
+        return -1
+    raise ValueError(f"not a stated direction: {direction!r}")
+
+
+# One stored answer's stance under a variant: A2's p - 0.5 (the record's own
+# property, so the replay is the same arithmetic), A2b's d * |2p - 1|, or
+# the direction alone.
+def variant_stance(record: StatementRecord, variant: str) -> float:
+    """Return the stance of `record` under `variant`."""
+    if variant == VARIANT_A2:
+        return record.stance
+    if variant == VARIANT_A2B:
+        return direction_sign(record.direction) * abs(2.0 * record.probability - 1.0)
+    if variant == VARIANT_A2B_DIRECTION:
+        return float(direction_sign(record.direction))
+    raise ValueError(f"unknown stance variant: {variant!r}")
 
 
 # The command line: plan, score, evaluate, status.
@@ -167,6 +226,19 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=None,
         help="where the stance table goes (default: <out dir>/stances)",
+    )
+    e.add_argument(
+        "--stance-variant",
+        choices=tuple(VARIANTS),
+        default=VARIANT_A2,
+        help="a2: p - 0.5 (registered); a2b: direction x |2p - 1|; "
+        "a2b-direction: direction alone",
+    )
+    e.add_argument(
+        "--reproduce",
+        type=Path,
+        default=None,
+        help="a committed payload this run must reproduce to the bit (exit 1 if not)",
     )
     return parser
 
@@ -355,10 +427,7 @@ def current_frame_exists(
     if (
         metadata.get("prompt_version") != PROMPT_VERSION
         or metadata.get("model") != model
-        or any(
-            r.prompt_version != PROMPT_VERSION or r.model != model
-            for r in records
-        )
+        or any(r.prompt_version != PROMPT_VERSION or r.model != model for r in records)
     ):
         raise RuntimeError(
             f"{ticker}: incompatible statements frame at {asof}; "
@@ -613,14 +682,22 @@ def stored_records(
     return out
 
 
-# The arm's (T, N) stance from the records: probability less one half,
-# carried forward from the availability date.
-def arm_stances(panel, records: Mapping[str, Sequence[StatementRecord]]) -> np.ndarray:
+# The arm's (T, N) stance from the records under a variant (A2's
+# probability less one half by default), carried forward from the
+# availability date.
+def arm_stances(
+    panel,
+    records: Mapping[str, Sequence[StatementRecord]],
+    variant: str = VARIANT_A2,
+) -> np.ndarray:
     """Return the (T, N) carried-forward stance of the arm."""
     return statements.aligned_stances(
         panel.dates,
         panel.tickers,
-        {t: [(r.available, r.stance) for r in rs] for t, rs in records.items()},
+        {
+            t: [(r.available, variant_stance(r, variant)) for r in rs]
+            for t, rs in records.items()
+        },
     )
 
 
@@ -769,14 +846,14 @@ def null_test(panel, observed: np.ndarray, in_book: np.ndarray) -> dict[str, Any
 
 
 # The plan's criteria at the primary horizon, and the role.
-def criteria(windows: Mapping[str, Any]) -> dict[str, Any]:
+def criteria(windows: Mapping[str, Any], arm: str = ARM_A2) -> dict[str, Any]:
     """Return the evaluated criteria from the primary horizon's windows."""
     inside = windows["in_window"]
     post = windows["post_window"]
-    r = inside["arms"][ARM_A2]
-    r_post = post["arms"].get(ARM_A2, {})
+    r = inside["arms"][arm]
+    r_post = post["arms"].get(arm, {})
     pair = inside["paired_vs_fundamental"].get(
-        ARM_A2, {"delta": float("nan"), "t": float("nan")}
+        arm, {"delta": float("nan"), "t": float("nan")}
     )
     ic, t = r["ic"], r["t"]
     ic_post, t_post = r_post.get("ic", float("nan")), r_post.get("t", float("nan"))
@@ -796,7 +873,7 @@ def criteria(windows: Mapping[str, Any]) -> dict[str, Any]:
         and pair["t"] <= NOT_NEGATIVE_T
     )
     corr = {
-        comparator: block.get(ARM_A2, {}).get("mean", float("nan"))
+        comparator: block.get(arm, {}).get("mean", float("nan"))
         for comparator, block in inside["correlation_with"].items()
     }
     low = [
@@ -969,12 +1046,13 @@ def evaluate_arm(
     sides: Mapping[str, str],
     arm: np.ndarray,
     comparators: Mapping[str, np.ndarray],
+    arm_name: str = ARM_A2,
 ) -> dict[str, Any]:
     """Return the study payload: null test, windows per horizon, criteria, verdict."""
     in_book = np.array([t in sides for t in panel.tickers])
     observed = np.isfinite(arm) & in_book[None, :]
     null = null_test(panel, observed, in_book)
-    arms = {ARM_A2: Opinion(ARM_A2, arm).ranks(), **comparators}
+    arms = {arm_name: Opinion(arm_name, arm).ranks(), **comparators}
     payload: dict[str, Any] = {
         "windows": {
             k: [s.isoformat(), e.isoformat() if e else None]
@@ -989,9 +1067,81 @@ def evaluate_arm(
             inside = window_mask(panel.dates, start, end)[:, None] & in_book[None, :]
             per_window[name] = measure_window(arms, inside, panel, horizon)
         payload["horizons"][str(horizon)] = per_window
-    payload["criteria"] = criteria(payload["horizons"][str(PRIMARY_HORIZON)])
+    payload["criteria"] = criteria(payload["horizons"][str(PRIMARY_HORIZON)], arm_name)
     payload["verdict"] = verdict(payload["criteria"], null["pass"])
     return payload
+
+
+# A2b's reported second-look line: does the in-window t also clear the
+# two-look floor? Decides nothing.
+def second_look(crit: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the two-look floor and whether the in-window t clears it."""
+    t = crit["t_in_window"]
+    return {
+        "two_look_t_floor": TWO_LOOK_T,
+        "t_in_window": t,
+        "clears_two_look_floor": bool(
+            crit["1_clears_ic_floor"] and np.isfinite(t) and t >= TWO_LOOK_T
+        ),
+        "decides": False,
+    }
+
+
+# Two numbers equal to the bit: integers exactly, floats by their IEEE-754
+# bytes, every NaN alike (JSON writes them all as NaN).
+def _same_number(a: float, b: float) -> bool:
+    if isinstance(a, int) and isinstance(b, int):
+        return a == b
+    a, b = float(a), float(b)
+    if math.isnan(a) and math.isnan(b):
+        return True
+    return struct.pack("<d", a) == struct.pack("<d", b)
+
+
+# Two JSON values equal to the bit: floats by their IEEE-754 bytes (every
+# NaN alike, as JSON writes it), containers element by element; returns
+# the paths that differ.
+def payload_differences(mine: Any, theirs: Any, path: str = "") -> list[str]:
+    """Return the paths at which `mine` and `theirs` differ."""
+    if isinstance(mine, bool) or isinstance(theirs, bool):
+        return [] if mine is theirs else [path]
+    if isinstance(mine, (int, float)) and isinstance(theirs, (int, float)):
+        return [] if _same_number(mine, theirs) else [path]
+    if isinstance(mine, dict) and isinstance(theirs, dict):
+        out: list[str] = []
+        for key in sorted(set(mine) | set(theirs)):
+            if key not in mine or key not in theirs:
+                out.append(f"{path}/{key} (missing on one side)")
+                continue
+            out.extend(payload_differences(mine[key], theirs[key], f"{path}/{key}"))
+        return out
+    if isinstance(mine, list) and isinstance(theirs, list):
+        if len(mine) != len(theirs):
+            return [f"{path} (length {len(mine)} vs {len(theirs)})"]
+        out = []
+        for i, (a, b) in enumerate(zip(mine, theirs, strict=True)):
+            out.extend(payload_differences(a, b, f"{path}[{i}]"))
+        return out
+    return [] if mine == theirs else [path]
+
+
+# The replay: this run's payload (as JSON writes it) against a committed
+# one, on the blocks that carry every number the verdict reads.
+def reproduce(payload: Mapping[str, Any], reference: Path) -> dict[str, Any]:
+    """Return {"pass", "differences", "keys"} comparing `payload` with `reference`."""
+    theirs = json.loads(reference.read_text())
+    mine = json.loads(json.dumps(payload, default=float))
+    differences: list[str] = []
+    for key in REPRODUCED_KEYS:
+        differences.extend(
+            payload_differences(mine.get(key), theirs.get(key), f"/{key}")
+        )
+    return {
+        "pass": not differences,
+        "differences": differences,
+        "keys": list(REPRODUCED_KEYS),
+        "reference": str(reference),
+    }
 
 
 # The payload, printed.
@@ -1041,11 +1191,42 @@ def print_payload(payload: Mapping[str, Any]) -> None:
                 f"sequential {block['sequential_accuracy']:.3f} "
                 f"(paper {acc['paper_accuracy']:.3f})"
             )
+    look = payload.get("second_look")
+    if look:
+        print(
+            f"\nsecond look (decides nothing): in-window t {look['t_in_window']:+.2f} "
+            f"against the two-look floor {look['two_look_t_floor']:.2f}: "
+            f"{'clears' if look['clears_two_look_floor'] else 'does not clear'}"
+        )
     print(f"\nVERDICT: {payload['verdict']}")
+    print_replay(payload.get("reproduce"))
+
+
+# The replay's outcome, printed (nothing when the run was not a replay).
+def print_replay(replay: Mapping[str, Any] | None) -> None:
+    """Print PASS or FAIL and the first differing paths."""
+    if not replay:
+        return
+    print(
+        f"\nreproduce {replay['reference']}: "
+        + (
+            "PASS, reproduced to the bit"
+            if replay["pass"]
+            else f"FAIL, {len(replay['differences'])} differences"
+        )
+    )
+    for line in replay["differences"][:20]:
+        print(f"  differs: {line}")
 
 
 # Read the store, measure, write the payload and the stance table.
-def run_evaluate(root: Path, out: Path, stances: Path | None) -> dict[str, Any]:
+def run_evaluate(
+    root: Path,
+    out: Path,
+    stances: Path | None,
+    variant: str = VARIANT_A2,
+    reference: Path | None = None,
+) -> dict[str, Any]:
     """Evaluate the stored statements frames; return the payload."""
     from backend.agents.trading.desk.desk import book_panel
 
@@ -1055,8 +1236,11 @@ def run_evaluate(root: Path, out: Path, stances: Path | None) -> dict[str, Any]:
     records = stored_records(store, book)
     if not records:
         raise SystemExit("no edgar_statements frames in the store")
-    arm = arm_stances(panel, records)
-    payload = evaluate_arm(panel, sides, arm, comparator_ranks(store, panel, sides))
+    arm_name, stem = VARIANTS[variant]
+    arm = arm_stances(panel, records, variant)
+    payload = evaluate_arm(
+        panel, sides, arm, comparator_ranks(store, panel, sides), arm_name
+    )
     rows = {t: observations_for(store, t) or [] for t in records}
     payload["accuracy"] = accuracy_report(records, rows)
     payload["names_scored"] = len(records)
@@ -1065,12 +1249,17 @@ def run_evaluate(root: Path, out: Path, stances: Path | None) -> dict[str, Any]:
         1 for rs in records.values() for r in rs if not r.consistent
     )
     stance_root = stances or out.parent / STANCE_DIR
-    table_path = stance_root / "A2.parquet"
-    write_table(table_path, stance_table(panel, Opinion(ARM_A2, arm).ranks()))
+    table_path = stance_root / f"{stem}.parquet"
+    write_table(table_path, stance_table(panel, Opinion(arm_name, arm).ranks()))
     payload["stance_table"] = str(table_path)
     payload["scorecard_follow_up"] = SCORECARD_FOLLOW_UP.format(
-        table=table_path, output=out.parent / "pit_scorecard_A2.json"
+        table=table_path, output=out.parent / f"pit_scorecard_{stem}.json"
     )
+    if variant != VARIANT_A2:
+        payload["stance_variant"] = variant
+        payload["second_look"] = second_look(payload["criteria"])
+    if reference is not None:
+        payload["reproduce"] = reproduce(payload, reference)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, indent=2, default=float))
     print_payload(payload)
@@ -1082,7 +1271,11 @@ def main() -> None:
     """Entry point: one subcommand per step of the study."""
     args = build_parser().parse_args()
     if args.command == "evaluate":
-        run_evaluate(args.root, args.out, args.stances)
+        payload = run_evaluate(
+            args.root, args.out, args.stances, args.stance_variant, args.reproduce
+        )
+        if "reproduce" in payload and not payload["reproduce"]["pass"]:
+            sys.exit(1)
         return
     store = MarketStore(args.root)
     tickers = select_tickers(args)
