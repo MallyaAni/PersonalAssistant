@@ -96,6 +96,93 @@ test('visible grades and concise actions expose diagnostics only on request', as
   expect(errors).toEqual([])
 })
 
+// Personal entry permission is separate from the paper order already shown on the main board.
+test('a recovered personal entry shows Hold and retains its grade', async ({page}) => {
+  const limitReason = 'SIP ask $106.01 exceeds $99.00 entry limit'
+  let ask = 106.01
+  let quoteAt = at
+  let expires = '2026-09-24T14:00:30Z'
+  let delayed: Promise<void> | null = null
+  let releaseOlder!: () => void
+  let olderStarted = false
+  const {errors} = await setup(page, {beforeNavigate: async () => {
+    // This test previews advice and refuses history or position persistence.
+    await page.route('**/api/v1/auth/session', route => route.fulfill({json: {
+      authentication_required: true, user_id: 'ani.mallya', is_admin: true, desk_write: false,
+    }}))
+    // Answer the read-only personal preview without saving advice or positions.
+    await page.route('**/desk/mine', async route => {
+      const body = route.request().postDataJSON()
+      expect(body.record_history).toBe(false)
+      const funded = body.available_cash > 0
+      const allowed = ask <= 99
+      const blocker = !funded ? body.available_cash === 0 ? 'no available cash' : 'available cash is unknown' : allowed ? null : limitReason
+      const payload = {session, rows: [], decisions: {
+        session, written, as_of: quoteAt, equity: EQUITY, holdings: {},
+        timing: {rule: 'dip_or_close', level: .01, session, latched: true},
+        rows: {AAPL: {
+          action: funded && allowed ? 'Buy' : 'Hold', move_weight: funded && allowed ? .0909 : 0,
+          strategy_action: 'Buy', strategy_move_weight: .0909,
+          target_weight: .0909, current_weight: 0, delta_weight: .0909,
+          executable: funded && allowed, blocker, reason: blocker ?? 'Buy limit $99.00', grade: 'A',
+          valid_until: expires, entry_status: 'available',
+          quote: {eligible: true, spread_verified: true, feed: 'sip', ask, at: quoteAt, valid_until: expires},
+          timing: {rule: 'dip_or_close', state: 'triggered', side: 'buy', session,
+            open: 100, level: 99, trigger_bar: '2026-09-24T13:30:00Z', trigger_price: 98.9,
+            reason: 'Recorded dip at $98.90'},
+          entry_guard: {policy: 'current-dip-limit/1', allowed, limit_price: 99,
+            ask, quote_at: quoteAt, valid_until: expires, feed: 'sip', reason: allowed ? 'Buy limit $99.00' : limitReason},
+        }},
+      }}
+      if (delayed) {
+        const pending = delayed
+        delayed = null
+        olderStarted = true
+        await pending
+      }
+      await route.fulfill({json: payload})
+    })
+  }})
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  await expect(board.getByLabel('AAPL strategy intent', {exact: true})).toHaveText('BUY')
+  await expect(page.getByLabel('AAPL displayed grade', {exact: true})).toHaveText('A')
+  await page.getByLabel('Personal portfolio', {exact: true}).locator(':scope > summary').click()
+  await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
+  const personal = page.getByRole('region', {name: 'AAPL personal guidance', exact: true})
+  await expect(personal).toContainText('Cash needed')
+  await page.getByLabel('Personal available cash', {exact: true}).fill('10000')
+  await page.getByRole('button', {name: 'Apply', exact: true}).click()
+  await expect(personal).toContainText('Hold')
+  await expect(personal).toContainText('Entry limit')
+  await expect(personal.getByLabel('AAPL strategy intent', {exact: true})).toHaveAttribute('title', limitReason)
+  await page.clock.runFor(31000)
+  await expect(personal).toContainText('Unavailable')
+  await expect(personal).not.toContainText('Entry limit')
+  ask = 98.99
+  quoteAt = '2026-09-24T14:00:31Z'
+  expires = '2026-09-24T14:01:01Z'
+  await page.getByRole('button', {name: 'Refresh', exact: true}).click()
+  await expect(personal.getByLabel('AAPL personal trade size')).toHaveText('9.1% of account')
+  await expect(personal.getByLabel('AAPL personal entry limit')).toHaveText('Limit $99.00')
+  await expect(personal.getByLabel('AAPL strategy intent', {exact: true})).toContainText('BUY')
+  await expect(board.getByLabel('AAPL displayed grade', {exact: true})).toHaveText('A')
+  // Complete an older funded reply only after the person confirms zero cash.
+  delayed = new Promise<void>(resolve => {releaseOlder = resolve})
+  const olderResponse = page.waitForResponse(response => response.url().includes('/desk/mine')
+    && response.request().postDataJSON()?.available_cash === 10000)
+  await page.getByRole('button', {name: 'Refresh', exact: true}).click()
+  await expect.poll(() => olderStarted).toBe(true)
+  await page.getByLabel('Personal available cash', {exact: true}).fill('0')
+  await page.getByRole('button', {name: 'Apply', exact: true}).click()
+  await expect(personal).toContainText('Blocked')
+  releaseOlder()
+  await (await olderResponse).finished()
+  await page.clock.runFor(50)
+  await expect(personal).toContainText('Blocked')
+  await expect(personal.getByLabel('AAPL personal trade size')).toHaveCount(0)
+  expect(errors).toEqual([])
+})
+
 // With the market shut the order is planned for the next session: the word and the size stay,
 // the status says so, and the row never claims every venue is closed.
 test('a planned order with the market closed keeps its word and size', async ({page}) => {

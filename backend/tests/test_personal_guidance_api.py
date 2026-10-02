@@ -10,7 +10,14 @@ from backend.api.v1 import market
 from backend.config.settings import settings
 from backend.core.auth import issue_user_token
 from backend.main import app
-from backend.market import desk_freshness, event_status, execution_quotes, holdings
+from backend.market import (
+    desk_freshness,
+    entry_timing,
+    event_status,
+    execution_quotes,
+    holdings,
+    personal_history,
+)
 from backend.tests.test_decision_view import setup
 
 
@@ -248,6 +255,77 @@ async def test_a_pending_buy_order_suppresses_the_buy(personal_context):
 def post_auth() -> dict[str, str]:
     token = issue_user_token("desk_user", scopes=["memory:write"])
     return {"Authorization": f"Bearer {token}"}
+
+
+# The page's actual POST cannot turn a past dip into a new purchase at a recovered ask.
+@pytest.mark.asyncio
+async def test_personal_http_current_entry_retains_signal_but_blocks_chasing(
+    personal_context, monkeypatch
+):
+    record, quoted, now, root, _ = personal_context
+    snapshot = market._live_snapshot()
+    # Isolate the standing target entry; a separate breakout has its own size.
+    monkeypatch.setattr(
+        market.live_technical, "entry_now", lambda *args: {"S11": {"band_z": 0}}
+    )
+    record["targets"] = {
+        "policy": "graded-equal-weight/5",
+        "weights": {s: 0.25 if s == "S11" else 0 for s in record["grades"]},
+    }
+    record["levels"] = {s: {"rejecting_band": False} for s in record["grades"]}
+    quote = snapshot["quotes"]["S11"]
+    quote.update(open=100, last=106)
+    session = now.astimezone(entry_timing.NEW_YORK).date()
+    trigger = {"bar": quote["bar"], "price": 98.9, "seen_at": now.isoformat()}
+    latch = {
+        "session": session.isoformat(),
+        "symbols": {"S11": {"open": 100, "buy_trigger": trigger}},
+    }
+    monkeypatch.setattr(entry_timing, "load", lambda *args: latch)
+    quoted["quotes"]["S11"].update(bp=105.99, ap=106.01)
+    before = (
+        deepcopy(record),
+        deepcopy(latch),
+        holdings.holdings_path(root).read_bytes(),
+    )
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test", headers=post_auth()
+    ) as client:
+        response = await client.post(
+            "/api/v1/market/desk_user/desk/mine",
+            json={"equity": 100000, "available_cash": 10000},
+        )
+        assert response.status_code == 200, response.text
+        decisions = response.json()["decisions"]
+        row = decisions["rows"]["S11"]
+        assert row["action"] == "Hold"
+        assert row["executable"] is False
+        assert row["move_weight"] == 0
+        assert row["strategy_action"] == "Buy"
+        assert row["grade"] == "A+"
+        assert row["timing"]["trigger_price"] == 98.9
+        assert row["entry_guard"]["limit_price"] == 99
+        assert row["entry_guard"]["ask"] == 106.01
+        assert "entry limit" in row["reason"]
+        # The receipt retains the bound that generated the original advice,
+        # rather than reconstructing it from a later market price.
+        saved = personal_history.project(decisions, record, snapshot, {"S11": 1.5})
+        assert saved["rows"]["S11"]["entry_guard"] == row["entry_guard"]
+        quoted["quotes"]["S11"].update(bp=98.98, ap=98.99)
+        returned = await client.post(
+            "/api/v1/market/desk_user/desk/mine",
+            json={"equity": 100000, "available_cash": 10000},
+        )
+    assert returned.status_code == 200, returned.text
+    current = returned.json()["decisions"]["rows"]["S11"]
+    assert current["action"] == "Buy"
+    assert current["move_weight"] == pytest.approx(0.1)
+    assert current["entry_guard"]["limit_price"] == 99
+    assert current["reason"].startswith("Buy limit $99.00")
+    assert saved["rows"]["S11"]["entry_guard"]["ask"] == 106.01
+    assert record == before[0]
+    assert latch == before[1]
+    assert holdings.holdings_path(root).read_bytes() == before[2]
 
 
 @pytest.mark.asyncio

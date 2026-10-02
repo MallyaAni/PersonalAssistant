@@ -20,6 +20,7 @@ decision and `strategy_action` stays the intent the charts draw:
 And every `/3` board is identical to `main`'s (`board_v3_scenarios`).
 """
 
+from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -133,6 +134,65 @@ def test_a_triggered_level_is_a_buy_and_survives_the_recovery(tmp_path):
     assert row["move_weight"] == pytest.approx(1 / 11, abs=1e-6)
     assert row["timing"]["state"] == entry_timing.TRIGGERED
     assert row["timing"]["trigger_bar"] == "2026-09-14T14:15:00+00:00"
+
+
+# A historical dip cannot authorize a new personal purchase above its entry ceiling.
+def test_current_personal_entry_blocks_recovered_ask_and_keeps_original_signal(
+    tmp_path,
+):
+    record, snapshot, quoted, now = v4(at(10, 31), move=-0.015)
+    latch = latched(tmp_path, snapshot, now)
+    record, snapshot, quoted, now = v4(at(11, 1), move=-0.015)
+    price = snapshot["quotes"]["S11"]["open"] * 1.002
+    snapshot["quotes"]["S11"]["last"] = price
+    quoted["quotes"]["S11"].update(bp=price - 0.01, ap=price + 0.01)
+    before = deepcopy((record, snapshot, quoted, latch))
+    row = board(
+        record, snapshot, quoted, now, timing_latch=latch, protect_entry_price=True
+    )["S11"]
+    assert row["action"] == "Hold"
+    assert row["executable"] is False
+    assert row["move_weight"] == 0
+    assert row["strategy_action"] == "Buy"
+    assert row["strategy_move_weight"] == pytest.approx(1 / 11)
+    assert row["grade"] == record["grades"]["S11"]["grade"]
+    assert row["timing"]["state"] == entry_timing.TRIGGERED
+    assert row["timing"]["trigger_bar"] == "2026-09-14T14:15:00+00:00"
+    assert row["entry_guard"]["ask"] > row["entry_guard"]["limit_price"]
+    assert "entry limit" in row["reason"]
+    assert (record, snapshot, quoted, latch) == before
+
+
+# A missed entry consumes no cash; returning inside the limit permits an entry.
+def test_current_entry_cash_is_shared_only_by_names_still_inside_the_limit(tmp_path):
+    record, snapshot, quoted, now = v4(at(10, 31), move=-0.015)
+    for symbol, raw in quoted["quotes"].items():
+        price = snapshot["quotes"][symbol]["last"]
+        raw.update(bp=price - 0.01, ap=price + 0.01)
+    latch = latched(tmp_path, snapshot, now)
+    quoted["quotes"]["S11"].update(bp=110, ap=110.01)
+    rows = board(
+        record,
+        snapshot,
+        quoted,
+        now,
+        cash=10000,
+        timing_latch=latch,
+        protect_entry_price=True,
+    )
+    assert rows["S11"]["action"] == "Hold"
+    assert rows["S11"]["move_weight"] == 0
+    buys = [r for r in rows.values() if r["action"] == "Buy"]
+    assert len(buys) == 10
+    assert sum(r["move_weight"] * EQUITY for r in buys) == pytest.approx(10000)
+    assert all(r["move_weight"] == pytest.approx(0.01) for r in buys)
+    quoted["quotes"]["S11"].update(bp=99.99, ap=100.01)
+    row = board(
+        record, snapshot, quoted, now, timing_latch=latch, protect_entry_price=True
+    )["S11"]
+    assert row["action"] == "Buy"
+    assert row["entry_guard"]["allowed"] is True
+    assert row["reason"].startswith("Buy limit $")
 
 
 # The close window with no trigger: BUY, at the close, market-on-close.

@@ -1147,6 +1147,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const historyCapture = useRef(false)
   historyCapture.current = canWrite && !research
   const [editing, setEditing] = useState(false)
+  const [personalOpen, setPersonalOpen] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [openName, setOpenName] = useState<string | null>(null)
   const [autopsy, setAutopsy] = useState(false)
@@ -1262,6 +1263,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     } catch {
       if (current()) setPaperLive({ reason: 'unreachable' })
     }
+    // Collect personal advice only while requested and after positions load.
+    if (current() && personalOpen && holdingsReady) await refreshMine(current)
   }
 
   // Confirm the personal account figures the board should be computed
@@ -1323,7 +1326,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       document.removeEventListener('visibilitychange', resume)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, equity, cash, riskBudgetPct, holdings, payload?.latest?.session])
+  }, [userId, equity, cash, riskBudgetPct, holdings, payload?.latest?.session, personalOpen, holdingsReady])
 
   useEffect(() => {
     // A different account is a different context: confirmed cash never
@@ -1567,7 +1570,17 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       <ReleaseCoverageNote coverage={latest.release_coverage} />
       <ToneExpiryNote expiry={latest.tone_expiry} />
       <TradeBoard latest={latest} live={live} paper={paperLive} now={now} onOpen={setOpenName} closes={closes} paused={eventPaused}
-        footer={<p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">No automatic price stops. Your own brokerage account is never traded from here.</p>} />
+        extra={personalOpen ? ticker => <section aria-label={`${ticker} personal guidance`} className="mt-3 border-t border-black/[0.08] pt-2">
+          <h4 className="font-medium text-[#6e6e73]">Personal action</h4>
+          <DecisionCell ticker={ticker} decisions={decisions} latest={latest} now={now} />
+        </section> : undefined}
+        footer={<>
+          <details aria-label="Personal portfolio" onToggle={event => setPersonalOpen(event.currentTarget.open)} className="border-t border-black/[0.05] px-3 py-2 text-xs">
+            <summary className="cursor-pointer font-medium">Personal portfolio</summary>
+            {planToolbar}
+          </details>
+          <p className="border-t border-black/[0.05] px-3 py-2 text-[11px] text-[#6e6e73]">No automatic price stops. Your own brokerage account is never traded from here.</p>
+        </>} />
       </div>}
       {latest && <details aria-label="Strategy details" className="rounded-xl border border-black/[0.08] bg-white p-3 text-xs"><summary className="cursor-pointer font-medium">Strategy details</summary>
       <p className="mt-2" aria-label="Recorded allocation policy">Allocation policy: {latest.targets?.policy ?? 'Not recorded'} · decision {latest.session}</p>
@@ -2375,6 +2388,10 @@ const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = 
   // reads the word, and asks why only for the one row he stops on.
   return <div className="min-w-24" aria-label={`${ticker} strategy intent`} title={actOnIt(blocker ?? reason) ?? blocker ?? reason}>
     <div className="font-medium">{presentation.word}</div>
+    {(action === 'Buy' || action === 'Sell') && row.executable === true && !expired && !blocked &&
+      <div aria-label={`${ticker} personal trade size`} className="text-xs">{pct(Math.abs(row.move_weight))} of account</div>}
+    {action === 'Buy' && row.entry_guard?.allowed === true && row.entry_guard.limit_price !== null && !expired && !blocked &&
+      <div aria-label={`${ticker} personal entry limit`} className="text-xs">Limit {priceMoney(row.entry_guard.limit_price)}</div>}
     {presentation.detail && <div className="text-[10px] text-[#6e6e73]">{presentation.detail}</div>}
     {executionStatus}
     {spreadCaveat}

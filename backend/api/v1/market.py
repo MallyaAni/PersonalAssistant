@@ -754,6 +754,7 @@ async def _desk_mine_payload(
         risk_budget_pct=risk_budget_pct,
         entry_readings=reads,
         timing_latch=latch,
+        protect_entry_price=True,
     )
     if history_context is not None:
         from backend.market import personal_history

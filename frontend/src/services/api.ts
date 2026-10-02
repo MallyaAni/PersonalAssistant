@@ -2801,6 +2801,10 @@ export interface DeskDecisions {
     // `/4` only: the timing of the row's trade, the executor's band gate,
     // the close grade the action is based on and the candle's re-grade.
     timing?: DeskRowTiming | null;
+    entry_guard?: {
+      policy: string; allowed: boolean; limit_price: number | null; ask: number | null;
+      quote_at: string | null; valid_until: string | null; feed: string | null; reason: string;
+    };
     structure_gate?: 'rejecting' | 'clear' | 'unrecorded';
     grade?: string | null;
     grade_intraday?: string | null;

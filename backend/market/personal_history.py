@@ -104,6 +104,7 @@ def source_fingerprint() -> dict[str, str]:
         "backend/market/decision_view.py",
         # The `/4` board's timing and the measured level it reuses.
         "backend/market/entry_timing.py",
+        "backend/market/bounded_execution.py",
         "backend/market/fill_timing.py",
         "backend/market/personal_risk.py",
         "backend/market/holdings.py",
@@ -164,6 +165,11 @@ def project(decisions: dict, record: dict, snapshot: dict, entries: dict) -> dic
         )
         rows[ticker] = {
             **{key: decision.get(key) for key in ROW_FIELDS},
+            **(
+                {"entry_guard": decision["entry_guard"]}
+                if "entry_guard" in decision
+                else {}
+            ),
             "quote": {key: quote.get(key) for key in QUOTE_FIELDS},
             "grade": grade,
             "grade_basis": basis,

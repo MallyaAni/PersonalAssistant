@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from backend.market import calendar, entry_timing, fill_timing
+from backend.market import calendar, entry_timing, execution_quotes, fill_timing
 
 NY = ZoneInfo("America/New_York")
 # Monday 2026-09-28: a regular session closing at 16:00.
@@ -64,6 +64,80 @@ def test_the_level_is_the_measured_dip():
     assert entry_timing.LEVEL is fill_timing.DIP
     assert entry_timing.level_for(100.0, "buy") == 100.0 * (1.0 - fill_timing.DIP)
     assert entry_timing.level_for(100.0, "sell") == 100.0 * (1.0 + fill_timing.DIP)
+
+
+# A newly submitted purchase needs the current ask inside the recorded dip ceiling.
+@pytest.mark.parametrize(
+    ("ask", "allowed"), [(98.99, True), (99.0, True), (99.01, False)]
+)
+def test_current_entry_permission_uses_the_ask_boundary(ask, allowed):
+    now = ny(SESSION, 14, 16)
+    timed = entry_timing.timing(None, quote(98.9, ny(SESSION, 14)), "buy", now, SESSION)
+    evidence = execution_quotes.describe(
+        {"bp": ask - 0.01, "ap": ask, "bs": 10, "as": 10, "t": now.isoformat()},
+        "sip",
+        True,
+        now,
+    )
+    permission = entry_timing.buy_permission(timed, evidence, now)
+    assert permission["allowed"] is allowed
+    assert permission["limit_price"] == 99.0
+    assert permission["ask"] == ask
+    assert timed["state"] == entry_timing.TRIGGERED
+
+
+# An old or future quote cannot substitute for a currently payable ask.
+@pytest.mark.parametrize("age", [-1, 30, 31])
+def test_current_entry_permission_rejects_unobservable_quotes(age):
+    now = ny(SESSION, 14, 16)
+    timed = entry_timing.timing(None, quote(98.9, ny(SESSION, 14)), "buy", now, SESSION)
+    evidence = execution_quotes.describe(
+        {
+            "bp": 98.98,
+            "ap": 98.99,
+            "bs": 10,
+            "as": 10,
+            "t": (now - timedelta(seconds=age)).isoformat(),
+        },
+        "sip",
+        True,
+        now,
+    )
+    assert entry_timing.buy_permission(timed, evidence, now)["allowed"] is False
+
+
+# Round the ceiling conservatively, including the sub-dollar price increment.
+@pytest.mark.parametrize(
+    ("level", "ask", "limit"), [(99.009, 99.005, 99.0), (0.99999, 0.99995, 0.9999)]
+)
+def test_current_entry_permission_never_rounds_the_limit_up(level, ask, limit):
+    now = ny(SESSION, 14, 16)
+    timed = {"state": entry_timing.TRIGGERED, "side": "buy", "level": level}
+    evidence = execution_quotes.describe(
+        {"bp": ask * 0.9999, "ap": ask, "bs": 10, "as": 10, "t": now.isoformat()},
+        "sip",
+        True,
+        now,
+    )
+    permission = entry_timing.buy_permission(timed, evidence, now)
+    assert permission["limit_price"] == limit
+    assert permission["allowed"] is False
+
+
+# Entry protection leaves sells and the no-trigger close fallback unchanged.
+@pytest.mark.parametrize(
+    ("side", "state"),
+    [
+        ("sell", entry_timing.TRIGGERED),
+        ("buy", entry_timing.CLOSE),
+        ("buy", entry_timing.WAITING),
+    ],
+)
+def test_current_entry_permission_applies_only_to_triggered_buys(side, state):
+    assert (
+        entry_timing.buy_permission({"side": side, "state": state}, {}, ny(SESSION, 14))
+        is None
+    )
 
 
 # Exactly at the level triggers (<= for a buy, >= for a sell), as

@@ -174,6 +174,13 @@ export const actionPresentation = (plan: PlanAction, decision: DeskDecisions['ro
     ? {word: 'Unavailable', detail: 'Entry data missing'}
     : {word: 'Hold', detail: null}
   const detail = `Strategy: ${actionWord(intent, decision).toLowerCase()}`
+  if (decision.action === 'Hold' && decision.entry_guard?.allowed === false
+    && decision.blocker === decision.entry_guard.reason) {
+    const expiry = Date.parse(decision.valid_until ?? '')
+    return Number.isFinite(expiry) && expiry > now
+      ? {word: 'Hold', detail: 'Entry limit'}
+      : {word: 'Unavailable', detail: 'Refresh price check'}
+  }
   if (decision.executable === false) return decision.blocker === 'available cash is unknown'
     ? {word: 'Cash needed', detail: 'Confirm available cash'}
     : {word: 'Blocked', detail}

@@ -1053,7 +1053,9 @@ def _time_the_board(result, record, snapshot, readings, intents, latch, now):
             continue
         word = _timed_word(row, side)
         if timed["state"] in entry_timing.ACTING:
-            row["reason"] = f"{entry_timing.acting(word, timed)}; {row['reason']}"
+            guard = row.get("entry_guard")
+            prefix = guard["reason"] if guard else entry_timing.acting(word, timed)
+            row["reason"] = f"{prefix}; {row['reason']}"
             continue
         size = abs(row["move_weight"])
         row["reason"] = f"{entry_timing.planned(word, size, timed)}; {row['reason']}"
@@ -1066,7 +1068,9 @@ def _time_the_board(result, record, snapshot, readings, intents, latch, now):
 # other rows); they are funded beside the band entries. Under the active
 # policy a name the executor's band gate blocks is never bought today, so it
 # takes no share of the cash bound, and the funded board is then held to the
-# measured level (`_time_the_board`). Without the active policy this is the
+# measured level (`_time_the_board`). The current-entry option additionally
+# checks the executable ask against the dip ceiling before allocating cash;
+# historical signal timing stays latched. Without the active policy this is the
 # `/3` board's funding call exactly as it was.
 def _plan_personal_board(
     result,
@@ -1083,13 +1087,43 @@ def _plan_personal_board(
     toward_targets,
     readings,
     timing_latch,
+    protect_entry_price=False,
 ):
-    """Fund the personal rows in place and time them on the `/4` board."""
+    """Check optional entry bounds, fund personal rows and apply their timing."""
     blocked = (
         {s for s in intents if _structure_gate(record, s) == REJECTING}
         if toward_targets
         else set()
     )
+    if toward_targets and protect_entry_price:
+        from backend.market import entry_timing
+
+        session = now.astimezone(desk_freshness.NEW_YORK).date()
+        quotes = (snapshot or {}).get("quotes") or {}
+        for symbol, row in result.items():
+            if row["strategy_action"] is not Action.BUY:
+                continue
+            timed = entry_timing.timing(
+                entry_timing.row_for(timing_latch, symbol, session),
+                quotes.get(symbol),
+                "buy",
+                now,
+                session,
+            )
+            guard = entry_timing.buy_permission(timed, row["quote"], now)
+            if guard is None:
+                continue
+            row["entry_guard"] = guard
+            # Reject before funding, so a missed entry consumes none of the
+            # person's cash. Existing cash/data/risk blockers keep precedence.
+            if row["executable"] and not guard["allowed"]:
+                row.update(
+                    action=Action.HOLD,
+                    move_weight=0.0,
+                    executable=False,
+                    blocker=guard["reason"],
+                    reason=guard["reason"],
+                )
     apply_personal_account_plan(
         result,
         held,
@@ -1148,9 +1182,12 @@ def build(
     risk_budget_pct=None,
     entry_readings=None,
     timing_latch=None,
+    protect_entry_price=False,
 ):
     # `timing_latch` is today's `entry_timing` latch document (or None); only
     # the `/4` board reads it, through `_time_the_board`.
+    # `protect_entry_price` is the personal HTTP channel's entry permission,
+    # not a change to historical signal reconstruction or paper execution.
     now = now or datetime.now(UTC)
     # A personal cash figure that cannot bound a plan is a caller error, not a
     # reason to fall back to the per-row opinions (which would silently claim
@@ -1401,6 +1438,7 @@ def build(
             toward_targets=toward_targets,
             readings=readings,
             timing_latch=timing_latch,
+            protect_entry_price=protect_entry_price,
         )
     return {
         "version": VERSION,
@@ -1413,7 +1451,8 @@ def build(
             "Experimental targets; adopted gates; manual execution"
             if targets is not None
             else "Nightly targets timed by the measured level (dip-or-close); "
-            "personal execution is manual"
+            + ("current-dip-limit/1 entry permission; " if protect_entry_price else "")
+            + "personal execution is manual"
             if toward_targets
             else "Scheduled next-open strategy; personal execution is manual"
         ),

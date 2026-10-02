@@ -80,6 +80,7 @@ CLOSED = "closed"
 STATES = (PRE_OPEN, WAITING, TRIGGERED, CLOSE, CLOSED)
 # The states in which a timed BUY/SELL/TRIM stands.
 ACTING = (TRIGGERED, CLOSE)
+CURRENT_ENTRY = "current-dip-limit/1"
 SIDES = ("buy", "sell")
 _SESSION_FILE = re.compile(r"^\d{4}-\d{2}-\d{2}\.json$")
 
@@ -538,6 +539,52 @@ def timing(
     out["state"] = state
     out["reason"] = reason
     return out
+
+
+# Keep a recorded dip separate from permission to make a new purchase at today's ask.
+def buy_permission(timed: dict, evidence: dict, now: datetime) -> dict | None:
+    """Bound a fresh personal entry; preserve the historical timing unchanged."""
+    if timed.get("side") != "buy" or timed.get("state") != TRIGGERED:
+        return None
+    from backend.market.bounded_execution import limit_text
+
+    level = _price(timed.get("level"))
+    try:
+        label = limit_text(level, "buy") if level else None
+    except ValueError:
+        label = None
+    limit = float(label) if label else None
+    ask = _price(evidence.get("ask"))
+    observed = _instant(evidence.get("at"))
+    expires = _instant(evidence.get("valid_until"))
+    ready = (
+        evidence.get("eligible") is True
+        and ask is not None
+        and limit is not None
+        and observed is not None
+        and expires is not None
+        and observed <= now < expires
+    )
+    allowed = bool(ready and ask <= limit)
+    ask_label = f"{ask:,.2f}" if ask and ask >= 1 else f"{ask:.4f}" if ask else None
+    feed = str(evidence.get("feed") or "Quote").upper()
+    reason = (
+        f"Buy limit ${label}"
+        if allowed
+        else f"{feed} ask ${ask_label} exceeds ${label} entry limit"
+        if ready
+        else "Current entry quote unavailable"
+    )
+    return {
+        "policy": CURRENT_ENTRY,
+        "allowed": allowed,
+        "limit_price": limit,
+        "ask": ask,
+        "quote_at": evidence.get("at"),
+        "valid_until": evidence.get("valid_until"),
+        "feed": evidence.get("feed"),
+        "reason": reason,
+    }
 
 
 # The state of one name inside the regular session, filling `out`'s open,
