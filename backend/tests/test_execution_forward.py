@@ -404,4 +404,6 @@ def test_flat_funding_matches_native_engine(tmp_path, cost, mode):
     result = forward.replay(frozen, [first], mode, cost)
     assert result["book"]["cash"] == pytest.approx(reference["ending_cash"])
     assert result["book"]["holdings"]["AAA"] == reference["ending_holdings"]["AAA"]
-    assert result["marks"][-1]["equity"] == pytest.approx(reference["ending_equity"])
+    assert result["marks"][-1]["equity"] == pytest.approx(
+        reference["ending_bid_marked_equity"]
+    )
