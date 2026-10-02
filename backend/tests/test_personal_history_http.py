@@ -174,6 +174,61 @@ async def test_capture_acknowledge_export_delete_is_persistent_and_nontrading(
     assert (root / "paper/state.json").read_text() == '{"sentinel":"no-orders"}'
 
 
+# Read a captured entry guard from encrypted storage after a later price permits buying.
+@pytest.mark.asyncio
+async def test_original_entry_guard_survives_price_changes_in_saved_advice(
+    environment, monkeypatch
+):
+    from backend.api.v1 import market
+    from backend.market import entry_timing
+
+    client, owner, record, snapshot, quoted, now, root = environment
+    record["targets"] = {
+        "policy": "graded-equal-weight/5",
+        "weights": {s: 0.25 if s == "S11" else 0 for s in record["grades"]},
+    }
+    record["levels"] = {s: {"rejecting_band": False} for s in record["grades"]}
+    monkeypatch.setattr(
+        market.live_technical, "entry_now", lambda *args: {"S11": {"band_z": 0}}
+    )
+    bar = snapshot["quotes"]["S11"]
+    bar.update(open=100, last=106)
+    latch = {
+        "session": now.astimezone(entry_timing.NEW_YORK).date().isoformat(),
+        "symbols": {"S11": {"open": 100, "buy_trigger": {
+            "bar": bar["bar"], "price": 98.9, "seen_at": now.isoformat(),
+        }}},
+    }
+    monkeypatch.setattr(entry_timing, "load", lambda *args: latch)
+    quoted["quotes"]["S11"].update(bp=105.99, ap=106.01)
+    base = f"/api/v1/market/{owner}/desk"
+    body = {"equity": 100000, "available_cash": 10000, "record_history": True}
+    response = await client.post(base + "/mine", json=body)
+    assert response.status_code == 200, response.text
+    original = response.json()["decisions"]["rows"]["S11"]
+    assert original["action"] == "Hold"
+    receipt_id = response.json()["history_receipt"]["id"]
+    path = base + f"/personal-history/{receipt_id}"
+    saved = (await client.get(path)).json()["payload"]
+    assert saved["rows"]["S11"]["entry_guard"] == original["entry_guard"]
+    async with AsyncSessionLocal() as db:
+        stored = await db.get(PersonalDecisionReceipt, uuid.UUID(receipt_id))
+        assert json.loads(stored.payload) == saved
+        raw = await db.scalar(
+            text("select payload from personal_decision_receipts where id=:id"),
+            {"id": uuid.UUID(receipt_id)},
+        )
+        assert raw.startswith("enc:1:")
+    quoted["quotes"]["S11"].update(bp=98.98, ap=98.99)
+    fresh = await client.post(base + "/mine", json=body)
+    assert fresh.status_code == 200, fresh.text
+    assert fresh.json()["decisions"]["rows"]["S11"]["action"] == "Buy"
+    assert (await client.get(path)).json()["payload"] == saved
+    assert saved["rows"]["S11"]["entry_guard"]["ask"] == 106.01
+    assert (root / "desk/holdings.json").read_text() == "[]"
+    assert (root / "paper/state.json").read_text() == '{"sentinel":"no-orders"}'
+
+
 # Enforce primary ownership, token scope, record identity, expiry and absent encryption.
 @pytest.mark.asyncio
 async def test_receipts_fail_closed_on_access_context_expiry_and_encryption(

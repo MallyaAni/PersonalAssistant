@@ -1,9 +1,9 @@
 # Next session
 
-## 2026-10-02 — Personal current-entry permission; release pending
+## 2026-10-02 — LIVE: personal entry permission `6f8bb836`; acceptance complete
 
-Code checkpoint `699e6c16` on `codex/current-entry-permission-20261002` corrects
-fresh manual dip entries without changing paper execution or stock selection.
+Code checkpoint `699e6c16`, released with precision/artifact fixes at `6f8bb836`,
+corrects fresh manual dip entries without changing paper execution or selection.
 The historical completed-bar trigger stays recorded, but personal guidance
 checks a qualified current ask against the original dip ceiling, rounded down
 to an executable tick, **before** allocating cash. An above-limit or expired
@@ -17,25 +17,53 @@ because the original trigger stayed latched. This was intentional historical
 timing, incorrectly reused as permission for a fresh manual entry. API-only
 correction was insufficient: the mounted table did not request personal advice.
 
-**VERIFIED before release:** 278 backend checks, zero skips, against the exact
+**VERIFIED:** 278 targeted backend checks, zero skips, against the exact
 changed source mounted in the Spark test image. Authenticated POST exercises
 Hold at ask $106.01 after a $98.90 trigger / $99.00 ceiling, then a funded Buy
-below the ceiling; originals and holdings remain unchanged. Fourteen browser
-checks pass with no page, console or request errors. The new personal-entry
-case additionally passes after adding cash-context stale-response acceptance:
-an older Buy cannot return after cash becomes zero. Typecheck and all 33
+below the ceiling; originals and holdings remain unchanged. All 14 browser
+checks pass against the final deployed bundle, including cash-context stale
+responses, expiry and exact sub-dollar limit/bid/ask precision. No unexpected
+page, console or network failures. An older Buy cannot return after cash becomes
+zero. Typecheck/build and all 33
 registered diagram/page checks pass. Diagram impact: NONE; this connects the
 existing personal advice/quotes/holdings/receipt path. No new provider or store.
 Existing broad-file API/history lint debt is outside this patch; changed-line
-checks pass. Local browser dependencies were restored from the existing lock
-with integrity checks; no dependency manifest or lock changes.
+checks pass. No dependency manifest or lock changes; missing local chart
+dependencies were restored with lockfile integrity checks. Final deployed
+browser acceptance uses the existing pinned Playwright container.
 
-**UNVERIFIED:** deployment, net profit improvement, premature-exit improvement,
+Guarded backend deployment `43600e6c` passed **8,609 unit tests**, 92 skips,
+six xfails, and **100 routing checks**. The first attempt stopped before restart
+at 99/100: document-edit routing scored 1/3; isolated three-repetition evidence
+scored 6/9 (2/3 each), and the unchanged full retry passed. No floor, assertion,
+case, timeout or model setting was weakened. Precision release `6f8bb836` used
+the script's frontend-only path. Source hashes match five backend files; actual
+authenticated API and mounted personal workflow pass, with 94 stock rows,
+unknown/zero cash authorizing no Buy, invalid cash 422, cross-account 403 and
+holdings unchanged. Nine deployed causal/current-entry checks pass. Three
+captured model containers retain their IDs/images/start times; postdeploy green.
+Public bundle `/assets/index-B4NR_vXZ.js` matches gateway bytes at SHA-256
+`f7884c4a4eabb21d1edb972a56de6c5a26b509fcbfbf280e0381e797aae20647`.
+
+Read-only proof: Spark `/tmp/codex-current-entry-final-release-proof-20261002.json`;
+browser log `/tmp/codex-current-entry-final-deployed-browser-20261002.log`.
+Initial probe errors were a first-row locator changing NTAP to ANET after live
+reranking (now selects the exact ticker), and a shared screenshot-file permission
+collision (now uses the per-test output path). All original assertions retained.
+**Six isolated Postgres/HTTP receipt checks pass**, including the new entry guard
+roundtrip: encrypted stored advice remains unchanged after a later price permits
+Buy. Database `test_history_entry_20261002_1059` is disposable, never `anios_db`;
+fixture owners cleaned up, real holdings/paper files untouched. Evidence:
+`/tmp/codex-current-entry-history-20261002.log`. The follow-up changes tests/docs
+only: main can be ahead of the live marker; do not redeploy or repeat model gates.
+
+**UNVERIFIED:** net profit improvement, premature-exit improvement,
 historical NBBO fills or neural superiority. The close fallback, paper orders,
 grades, selection, sell rules and existing snapshot-based risk sizing are
 unchanged. This is a manual-entry price safeguard, not a new alpha model.
-Guarded release must use `scripts/deploy.sh`, then actual API/browser/artifact
-proof. Do not repeat the earlier economic study: its fixed entry/exit candidates
+Both releases used `scripts/deploy.sh`; no real orders or actual advice-history
+writes were issued by release verification. Do not repeat the earlier economic
+study: its fixed entry/exit candidates
 did not justify adoption. Preserve unrelated Wi-Fi watchdog files, bundle,
 scratch, data/secrets and model services; do not submit real orders or rewrite
 frozen histories. The completed automation remains paused.
