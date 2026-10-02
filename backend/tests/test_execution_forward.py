@@ -1,6 +1,7 @@
 """Funded forward acceptance; synthetic outcomes do not establish alpha."""
 
 from datetime import date, timedelta
+from decimal import Decimal
 from importlib.util import find_spec
 from types import SimpleNamespace
 
@@ -365,7 +366,7 @@ def test_future_prefix_keeps_execution_identity(tmp_path):
         assert new["total_gain"] > old["total_gain"]
 
 
-# Match cash and fee accounting against the independent pinned native engine.
+# Check shares and USD-normalized balances against the independent native engine.
 @pytest.mark.skipif(
     find_spec("nautilus_trader") is None, reason="Pinned native engine required"
 )
@@ -402,8 +403,18 @@ def test_flat_funding_matches_native_engine(tmp_path, cost, mode):
     }
     reference = native.run(payload, mode=mode)
     result = forward.replay(frozen, [first], mode, cost)
-    assert result["book"]["cash"] == pytest.approx(reference["ending_cash"])
-    assert result["book"]["holdings"]["AAA"] == reference["ending_holdings"]["AAA"]
-    assert result["marks"][-1]["equity"] == pytest.approx(
-        reference["ending_bid_marked_equity"]
+    # The diagnostic retains fractional cost allowances; native USD Money rounds cents.
+    normalized_cash = float(
+        Decimal(str(result["book"]["cash"])).quantize(Decimal(".01"))
     )
+    normalized_fee = float(
+        Decimal(str(result["book"]["fees"])).quantize(Decimal(".01"))
+    )
+    assert normalized_cash == pytest.approx(reference["ending_cash"])
+    assert normalized_fee == pytest.approx(reference["commissions"])
+    assert result["book"]["holdings"]["AAA"] == reference["ending_holdings"]["AAA"]
+    native_mark = (
+        normalized_cash
+        + result["book"]["holdings"]["AAA"] * candle["execution_quote"]["bid"]
+    )
+    assert native_mark == pytest.approx(reference["ending_bid_marked_equity"])

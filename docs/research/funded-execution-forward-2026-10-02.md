@@ -37,6 +37,9 @@ blocked opportunities, partial fills and unfilled quantities. SPY and QQQ are
 fractional buy-and-hold quote references from the same starting marked wealth,
 paying the same entry cost. They are reference returns, not liquidity simulations.
 Missing starting or ending quotes leave benchmark results unavailable.
+Cost allowances retain full arithmetic precision, rather than claiming a broker
+commission schedule. Independent native-engine checks normalize cash and fees
+to its USD-cent representation while requiring identical share quantities.
 
 An intraday cohort has no meaningful CAGR or annualized Sharpe; neither will be
 reported. The first partial session is an engineering/forward diagnostic and
