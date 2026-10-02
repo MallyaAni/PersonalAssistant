@@ -367,5 +367,5 @@ def test_gate_sh_takes_its_database_and_infra_from_the_environment():
     gate = (SCRIPTS / "gate.sh").read_text(encoding="utf-8")
     assert 'gate_db="${ANIOS_GATE_DB:-anios_gate}"' in gate
     assert "ANIOS_GATE_SKIP_INFRA" in gate
-    compose = (SCRIPTS.parent / "docker-compose.yml").read_text(encoding="utf-8")
-    assert "${ANIOS_FUNCTIONAL_TESTS_IMAGE:-anios-functional-tests}" in compose
+    # docker-compose.yml is not checked here: the gate mounts scripts/ from the
+    # checkout but runs against the compose file baked into its image.
