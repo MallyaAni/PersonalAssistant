@@ -1,0 +1,9 @@
+T-S1 gate, A2b (sixth analyst) against ew_graded_cap25 as of 2026-10-01, 25 bp, trials 490, trial variance 3.38e-05 (pooled over 3 stance-gate candidates)
+  pool: pit_scorecard_A1-1_change_plus_level 2016-2023 paired Sharpe +0.0060 (mean +0.22 bp, t +0.24)
+  pool: pit_scorecard_A1-1_change_gated 2016-2023 paired Sharpe +0.0170 (mean +0.97 bp, t +0.77)
+  pool: A2b 2016-2023 paired Sharpe +0.0147
+A2b (ew_graded_cap25 + stance_sixth): paired 2016-2023 +0.46 bp/session (t +0.71, 2012 sessions); 2024-2026 -0.30 (t -0.18, 690); above the control at 16 of 20 (2024-2026: 12 of 20); DSR 0.45 at 490
+  reported: DSR at the A1-only variance 6.07e-05: 0.34; PSR against zero (no trial penalty): 0.75
+  2016-2023: CAGR +30.8% vs +28.3%; worst drawdown -46.1% vs -45.5%; Sharpe 1.04 vs 1.00
+  2024-2026: CAGR +44.8% vs +47.0%; worst drawdown -26.7% vs -26.4%; Sharpe 1.25 vs 1.28
+  GATE FAILS (+2 bp at t>=2 (2016-2023); not negative 2024-2026; DSR >= 0.95) -> RECORD

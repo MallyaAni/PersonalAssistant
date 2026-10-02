@@ -1,5 +1,12 @@
 # LLM statement reading, second look (A2b): results (2026-10-02)
 
+**Book gate (2026-10-02, after the close): FAILS → A2b is RECORD.** As a
+sixth analyst on the point-in-time scorecard, A2b adds +0.46 bp a session
+on 2016-2023 (t +0.71; the gate needs +2.00 at t ≥ 2), −0.30 bp on
+2024-2026 (must not be negative), is above the control at 16 of 20
+offsets (passes), and has a deflated Sharpe of 0.45 at 490 trials (needs
+0.95). Nothing is proposed for the board. See "The book gate" below.
+
 **Verdict: CANDIDATE (sixth analyst), pending the book gate.** The stored
 answers, re-signed by the model's stated direction (`d × |2p − 1|`), clear
 all three registered criteria at 20 sessions: in-window IC **+0.0418
@@ -219,3 +226,125 @@ test, not a formality.
   running alongside and was not touched.
 - **The outputs** were committed on spark1 as `ea456e4f`, fetched back by
   bundle, and pushed with this note.
+
+## The book gate (T-S1): FAILS, so A2b is RECORD
+
+Run on spark1 on 2026-10-02, 20:41:57-20:56:53Z (**16:41-16:56 ET, after
+the close**, before the 19:20-19:55 nightly window), by
+`docs/research/scorecards/llm-statements/a2b_gate.sh` at nice 19 on CPU,
+store `~/deploy/anios/data/market` (as of the 2026-10-01 session), read
+only. Tree: `~/scratch/wt-a2b` at `19461329`, clean: `desk/stance-table`
+(`e67213d1`) merged in at `7a517783`, then the runner and the pairing
+script committed and pushed **before** the gate ran. No deploy or nightly
+was running at the start.
+
+**Steps, per `stance-table-gate.md`:**
+
+1. **Null test** (`--stance-table stances/A2b.parquet --null-test`):
+   "112098 rows, 112098 on the panel" (rows_used = 112,098, none dropped
+   or redirected); "grades and scores equal: True / lines compared: 24 /
+   verdict: PASS, reproduced to the bit". Table sha256
+   `b784327212a62c07bbb1338deb56f0c3e79be15769195163b7e4821cfed22791`.
+2. **Control**, fresh on the same tree and store (`--rank-ic`):
+   `pit_scorecard_control.json`.
+3. **Candidate**, `--stance-mode sixth --rank-ic`:
+   `pit_scorecard_A2b.json` (arm `ew_graded_cap25 + stance_sixth`).
+4. **Pairing**: `a2b_gate_pair.py`, the pattern of last night's A1 gate
+   (`ts_gate_pair.py`, `research/text-surprise` `e1a8286e`), using
+   `backend.market.vol_target`'s paired-difference and offset helpers
+   from `research/vol-target` (`e6ff1ee2`). Rule line at 25 bp, median
+   offset, Newey-West t at lag 20.
+
+**The gate**, against the fresh control:
+
+| Criterion | Needs | A2b | Result |
+|---|---|---|---|
+| Paired 2016-2023 | ≥ +2.00 bp a session at t ≥ 2 | **+0.46 bp (t +0.71)**, 2012 sessions | fails |
+| Paired 2024-2026 | mean not negative | **−0.30 bp (t −0.18)**, 690 sessions | fails |
+| CAGR above the control, 2016-2023 | ≥ 15 of 20 offsets | **16 of 20** (2024-2026: 12 of 20, reported) | passes |
+| Deflated Sharpe at 490 | ≥ 0.95 | **0.45** | fails |
+
+The verdict, verbatim (`gate_verdict.txt`):
+
+```
+T-S1 gate, A2b (sixth analyst) against ew_graded_cap25 as of 2026-10-01, 25 bp, trials 490, trial variance 3.38e-05 (pooled over 3 stance-gate candidates)
+  pool: pit_scorecard_A1-1_change_plus_level 2016-2023 paired Sharpe +0.0060 (mean +0.22 bp, t +0.24)
+  pool: pit_scorecard_A1-1_change_gated 2016-2023 paired Sharpe +0.0170 (mean +0.97 bp, t +0.77)
+  pool: A2b 2016-2023 paired Sharpe +0.0147
+A2b (ew_graded_cap25 + stance_sixth): paired 2016-2023 +0.46 bp/session (t +0.71, 2012 sessions); 2024-2026 -0.30 (t -0.18, 690); above the control at 16 of 20 (2024-2026: 12 of 20); DSR 0.45 at 490
+  reported: DSR at the A1-only variance 6.07e-05: 0.34; PSR against zero (no trial penalty): 0.75
+  2016-2023: CAGR +30.8% vs +28.3%; worst drawdown -46.1% vs -45.5%; Sharpe 1.04 vs 1.00
+  2024-2026: CAGR +44.8% vs +47.0%; worst drawdown -26.7% vs -26.4%; Sharpe 1.25 vs 1.28
+  GATE FAILS (+2 bp at t>=2 (2016-2023); not negative 2024-2026; DSR >= 0.95) -> RECORD
+```
+
+**CAGR and worst drawdown**, rule line at 25 bp, median of 20 offsets
+(from `gate_control.txt` and `gate_A2b.txt`):
+
+| Line | 2016-2023 CAGR | Worst DD | Sharpe | 2024-2026 CAGR | Worst DD | Sharpe |
+|---|---|---|---|---|---|---|
+| Control (`ew_graded_cap25`) | +28.3% | −45.5% | 1.00 | +47.0% | −26.4% | 1.28 |
+| A2b as sixth analyst | +30.8% | −46.1% | 1.04 | +44.8% | −26.7% | 1.25 |
+| Difference | +2.5 pts | 0.6 pts deeper | +0.04 | −2.2 pts | 0.3 pts deeper | −0.03 |
+| SPY | +13.2% | −33.7% | 0.76 | +20.3% | −18.8% | 1.27 |
+| QQQ | +18.6% | −35.1% | 0.86 | +24.9% | −22.8% | 1.17 |
+
+**What the sixth vote did to the grades** (the payload's
+`stance_tables`; eligible name-sessions):
+
+| Window | Moved | Up | Down | A+ before → after | A before → after |
+|---|---|---|---|---|---|
+| 2016-2023 | 10,258 of 58,794 (17%) | 5,972 | 4,286 | 8,318 → 8,053 | 4,922 → 5,792 |
+| 2024-2026 | 3,661 of 29,551 (12%) | 2,140 | 1,521 | 2,060 → 1,906 | 1,382 → 1,695 |
+
+### What this means in plain words
+
+The LLM's reading of the quarterly statements does rank stocks a little
+(the IC test), but adding it as a sixth vote does not make the book
+better by a margin anyone could rely on. It changed about one grade in
+six and, on 2016-2023, earned about half a basis point a day more than
+the book without it. That is a quarter of the bar, and statistically
+indistinguishable from zero (t 0.71). On 2024-2026 it earned slightly
+less (−0.3 bp a day, −2.2 CAGR points). In both windows the worst fall
+was slightly deeper. It beat the control's CAGR at 16 of 20 start dates
+on 2016-2023, so the in-window gain is consistent across start dates, but
+it is small. It reverses in the recent window, where the model could not
+have read the future. **A2b is not worth proposing for live.**
+
+### Disclosures
+
+1. **The trial variance for the deflated Sharpe.** With one A2b
+   candidate, there is no variance across its own candidates. The rule
+   was fixed in `a2b_gate_pair.py` and committed (`19461329`) before any
+   A2b book number existed. The rule is the sample variance of the
+   2016-2023 paired Sharpes of every stance-table book-gate candidate run
+   to date: A1-1 change_plus_level, A1-1 change_gated and A2b, each
+   against its own control. That variance is 3.38e-05, giving a DSR of
+   0.45. The result does not hinge on this choice: at A1's own variance
+   (6.07e-05) the DSR is 0.34, and with no trial penalty at all (PSR
+   against zero) it is 0.75. No trial variance would reach 0.95.
+2. **The A1 payloads in the pool are not committed.** They come from last
+   night's A1 gate (2026-10-02 00:45-01:10Z) on `~/scratch/wt-ts` at
+   `e1a8286e`, and that gate's outputs are still untracked there. sha256:
+   - control `8ce18f11742d6abc02aaccc227c1e9fddfe417df4f3061ee148e2d27361a3ff3`
+   - change_plus_level `1d8196c3a54362c14f38a196bb42d426492102bc46d82379f13d90692fd8fdc3`
+   - change_gated `04a69b45fa207b9b0678c97dba14428e0f381b2889a2971c0855d792a7ec337a`
+3. **The control differs slightly from the A1 gate's control.** Both read
+   the store as of 2026-10-01, on different trees. This control:
+   2016-2023 +28.3% / −45.5% / Sharpe 1.00, 2024-2026 +47.0% / −26.4% /
+   1.28. A1's: +28.0% / −45.5% / 0.98 and +46.7% / −26.4% / 1.26. The
+   cause was not traced. The gate pairs A2b only with the control from
+   its own run, on the same tree and store.
+4. **Store writes during the run.** Four files changed, all under the live
+   desk's state (`desk/intraday.json`, `desk/live.json`,
+   `desk/intraday.log`, `desk/event-live.json`). The price bars and
+   corporate actions were not written during the run.
+5. **Files.** These are under `docs/research/scorecards/llm-statements/`:
+   - `gate_run.txt`, `gate_null_A2b.txt`, `gate_control.txt`,
+     `gate_A2b.txt` and `gate_verdict.txt`
+   - `pit_scorecard_control.json` (sha256 `e64e5b5fc2c76d38f6ec7b03415445b1c586cd145389754ffa86a9ef3876ed32`)
+   - `pit_scorecard_A2b.json` (sha256 `7f91f5ebe8896b7c25c776f9c050d05c79d1f77c5d20cc7b17e05937e2a7ac6d`)
+   - `a2b_gate.sh` and `a2b_gate_pair.py`
+6. **Trials.** None are added here. The gate is the book test of the
+   registered A2b primary, and its deflated Sharpe is charged at the
+   cumulative 490.
