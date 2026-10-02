@@ -1,0 +1,54 @@
+null test (constant 0.5 reads as scoreless): PASS over 5 checks
+
+=== horizon 20, in_window: 104,817 cells ===
+arm                        rank IC       t  net Sharpe  periods
+A2 statement reader        +0.0275   +1.78       +0.40       86
+fundamental analyst        +0.0243   +1.16       +0.15       86
+value analyst              +0.0334   +1.56       +0.54       86
+  A2 statement reader - fundamental: +0.0032 (paired t +0.14)
+  value analyst - fundamental: +0.0091 (paired t +0.25)
+  rank correlation of A2 statement reader with fundamental analyst: +0.144
+  rank correlation of A2 statement reader with value analyst: -0.030
+
+=== horizon 20, post_window: 26,608 cells ===
+arm                        rank IC       t  net Sharpe  periods
+A2 statement reader        +0.0112   +0.43       +0.56       16
+fundamental analyst        -0.0251   -0.90       -0.09       16
+value analyst              +0.0759   +2.21       +1.04       16
+  A2 statement reader - fundamental: +0.0363 (paired t +0.91)
+  value analyst - fundamental: +0.1011 (paired t +2.25)
+  rank correlation of A2 statement reader with fundamental analyst: +0.194
+  rank correlation of A2 statement reader with value analyst: -0.063
+
+=== horizon 60, in_window: 104,817 cells ===
+arm                        rank IC       t  net Sharpe  periods
+A2 statement reader        +0.0291   +1.31       +0.47       29
+fundamental analyst        -0.0077   -0.23       +0.18       29
+value analyst              +0.0689   +1.73       +0.34       29
+  A2 statement reader - fundamental: +0.0367 (paired t +1.17)
+  value analyst - fundamental: +0.0766 (paired t +1.19)
+  rank correlation of A2 statement reader with fundamental analyst: +0.144
+  rank correlation of A2 statement reader with value analyst: -0.030
+
+=== horizon 60, post_window: 26,608 cells ===
+arm                        rank IC       t  net Sharpe  periods
+A2 statement reader        +0.0425   +0.87       +1.19        5
+fundamental analyst        -0.0105   -0.16       -0.03        5
+value analyst              +0.0877   +1.94       +1.71        5
+  A2 statement reader - fundamental: +0.0530 (paired t +0.85)
+  value analyst - fundamental: +0.0982 (paired t +1.76)
+  rank correlation of A2 statement reader with fundamental analyst: +0.194
+  rank correlation of A2 statement reader with value analyst: -0.063
+
+=== criteria (primary horizon) ===
+IC in-window +0.0275 (t +1.78); post +0.0112 (t +0.43); paired vs fundamental +0.0032 (t +0.14); role sixth analyst
+
+=== direction accuracy (decides nothing) ===
+all          n=2812 model 0.739 persistence 0.694 sequential 0.456 (paper 0.604)
+post_window  n= 322 model 0.764 persistence 0.745 sequential 0.543 (paper 0.604)
+in_window    n=2490 model 0.736 persistence 0.687 sequential 0.445 (paper 0.604)
+
+VERDICT: RECORD
+
+reproduce docs/research/scorecards/llm-statements/llm_statements.json: PASS, reproduced to the bit
+stance table A2 replayed: 71962 rows, committed 71962: IDENTICAL

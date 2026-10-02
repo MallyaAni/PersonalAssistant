@@ -1,0 +1,28 @@
+OK names with a frame 91 (86 with answers) payload 91
+OK h20 in_window A2 statement reader: IC +0.0275 t +1.78 periods 86 (payload +0.0275 +1.78 86)
+OK h20 in_window fundamental analyst: IC +0.0243 t +1.16 periods 86 (payload +0.0243 +1.16 86)
+OK h20 in_window value analyst: IC +0.0334 t +1.56 periods 86 (payload +0.0334 +1.56 86)
+OK h20 in_window cells 104817
+OK h20 post_window A2 statement reader: IC +0.0112 t +0.43 periods 16 (payload +0.0112 +0.43 16)
+OK h20 post_window fundamental analyst: IC -0.0251 t -0.90 periods 16 (payload -0.0251 -0.90 16)
+OK h20 post_window value analyst: IC +0.0759 t +2.21 periods 16 (payload +0.0759 +2.21 16)
+OK h20 post_window cells 26608
+OK h60 in_window A2 statement reader: IC +0.0291 t +1.31 periods 29 (payload +0.0291 +1.31 29)
+OK h60 in_window fundamental analyst: IC -0.0077 t -0.23 periods 29 (payload -0.0077 -0.23 29)
+OK h60 in_window value analyst: IC +0.0689 t +1.73 periods 29 (payload +0.0689 +1.73 29)
+OK h60 in_window cells 104817
+OK h60 post_window A2 statement reader: IC +0.0425 t +0.87 periods 5 (payload +0.0425 +0.87 5)
+OK h60 post_window fundamental analyst: IC -0.0105 t -0.16 periods 5 (payload -0.0105 -0.16 5)
+OK h60 post_window value analyst: IC +0.0877 t +1.94 periods 5 (payload +0.0877 +1.94 5)
+OK h60 post_window cells 26608
+OK paired delta vs fundamental: +0.0032 (payload +0.0032)
+OK paired t vs fundamental: +0.1409 (payload +0.1409)
+OK correlation with fundamental: +0.1441 (payload +0.1441)
+OK correlation with value: -0.0297 (payload -0.0297)
+OK criterion 1 IC floor: False (payload False)
+OK criterion 2 post-cutoff: True (payload True)
+OK criterion 3 paired: True (payload True)
+OK role sixth analyst: True (payload True)
+OK verdict RECORD (payload RECORD)
+blocks JSONL not given: accuracy and digests not rechecked
+ALL OK

@@ -1,0 +1,53 @@
+null test (constant 0.5 reads as scoreless): PASS over 5 checks
+
+=== horizon 20, in_window: 104,817 cells ===
+arm                        rank IC       t  net Sharpe  periods
+A2b direction-signed reader   +0.0418   +2.38       +0.13       86
+fundamental analyst        +0.0243   +1.16       +0.15       86
+value analyst              +0.0334   +1.56       +0.54       86
+  A2b direction-signed reader - fundamental: +0.0175 (paired t +0.89)
+  value analyst - fundamental: +0.0091 (paired t +0.25)
+  rank correlation of A2b direction-signed reader with fundamental analyst: +0.223
+  rank correlation of A2b direction-signed reader with value analyst: -0.038
+
+=== horizon 20, post_window: 26,608 cells ===
+arm                        rank IC       t  net Sharpe  periods
+A2b direction-signed reader   +0.0408   +1.73       +1.93       16
+fundamental analyst        -0.0251   -0.90       -0.09       16
+value analyst              +0.0759   +2.21       +1.04       16
+  A2b direction-signed reader - fundamental: +0.0660 (paired t +1.70)
+  value analyst - fundamental: +0.1011 (paired t +2.25)
+  rank correlation of A2b direction-signed reader with fundamental analyst: +0.174
+  rank correlation of A2b direction-signed reader with value analyst: -0.041
+
+=== horizon 60, in_window: 104,817 cells ===
+arm                        rank IC       t  net Sharpe  periods
+A2b direction-signed reader   +0.0103   +0.32       -0.45       29
+fundamental analyst        -0.0077   -0.23       +0.18       29
+value analyst              +0.0689   +1.73       +0.34       29
+  A2b direction-signed reader - fundamental: +0.0180 (paired t +0.53)
+  value analyst - fundamental: +0.0766 (paired t +1.19)
+  rank correlation of A2b direction-signed reader with fundamental analyst: +0.223
+  rank correlation of A2b direction-signed reader with value analyst: -0.038
+
+=== horizon 60, post_window: 26,608 cells ===
+arm                        rank IC       t  net Sharpe  periods
+A2b direction-signed reader   +0.0810   +2.41       +2.17        5
+fundamental analyst        -0.0105   -0.16       -0.03        5
+value analyst              +0.0877   +1.94       +1.71        5
+  A2b direction-signed reader - fundamental: +0.0915 (paired t +1.63)
+  value analyst - fundamental: +0.0982 (paired t +1.76)
+  rank correlation of A2b direction-signed reader with fundamental analyst: +0.174
+  rank correlation of A2b direction-signed reader with value analyst: -0.041
+
+=== criteria (primary horizon) ===
+IC in-window +0.0418 (t +2.38); post +0.0408 (t +1.73); paired vs fundamental +0.0175 (t +0.89); role sixth analyst
+
+=== direction accuracy (decides nothing) ===
+all          n=2812 model 0.739 persistence 0.694 sequential 0.456 (paper 0.604)
+post_window  n= 322 model 0.764 persistence 0.745 sequential 0.543 (paper 0.604)
+in_window    n=2490 model 0.736 persistence 0.687 sequential 0.445 (paper 0.604)
+
+second look (decides nothing): in-window t +2.38 against the two-look floor 2.28: clears
+
+VERDICT: CANDIDATE (sixth analyst): clears the IC floor in-window, the post-cutoff window does not contradict it, not worse than the fundamental analyst; proposed as a stance only if the T-S1 book gate holds (pending)

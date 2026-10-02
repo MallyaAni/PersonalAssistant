@@ -1,0 +1,11 @@
+2026-10-02T18:45:04Z start rev a18d7846
+2026-10-02T18:45:05Z tests exit 0 (43 passed in 1.06s)
+2026-10-02T18:45:05Z null test start
+2026-10-02T18:45:35Z null test exit 0, table 0 (reproduce docs/research/scorecards/llm-statements/llm_statements.json: PASS, reproduced to the bit)
+2026-10-02T18:45:35Z evaluate a2b start
+2026-10-02T18:46:00Z evaluate a2b exit 0
+2026-10-02T18:46:00Z evaluate a2b-direction start
+2026-10-02T18:46:25Z evaluate a2b-direction exit 0
+2026-10-02T18:46:48Z check a2b exit 0 (ALL OK)
+2026-10-02T18:47:10Z check a2b-direction exit 0 (ALL OK)
+2026-10-02T18:47:32Z check a2 replay exit 0 (ALL OK)
