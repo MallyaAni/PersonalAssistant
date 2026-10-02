@@ -7,6 +7,12 @@ Branch `codex/entry-exit-timing-20261002` adds one fixed supplied-cache runner
 and its CLI/tests, reusing the actual funded `_Book`, `/5` targets and existing
 metric arithmetic. No production caller or live policy changed. The registered
 specification and full result are in `docs/research/entry-exit-audit-2026-10-01.md`.
+Verified code checkpoint: `b40a53743279ece73aa14463d3ddb9ed53e30245`, pushed
+to GitHub. Its exact study/dependency bytes match the actual CLI artifact;
+the synthetic CLI and funding acceptance paths passed on those bytes.
+All 33 architecture diagrams and the published page are synchronized.
+Diagram impact: NONE — existing frozen-input studies/shared-ledger path only;
+no live component, store, provider or ownership boundary changed.
 
 **VERIFIED:** actual CLI evaluated 96 immutable SIP cubes, frozen daily snapshot,
 2,700 return sessions, all 20 reset phases and 10/25 bp costs. Fifteen new tests
