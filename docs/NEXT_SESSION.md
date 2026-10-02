@@ -1,5 +1,55 @@
 # Next session
 
+## 2026-10-01 — All implementable specialist contributions tested on a branch
+
+User authorized implementing all specialist contributions. Branch
+`codex/specialist-contributions-20261001` is pushed. Code checkpoint
+`12f14e39197c4b0f151d96d68662efcc86ffd7bc`; Spark isolated checkout
+`/home/animallya96/scratch/specialist-study-source-20261001` matches its clean
+tree. Shared Spark main and live deployment were not changed by this task.
+Unrelated untracked Wi-Fi watchdog files, bundle and scratch are preserved.
+
+- **VERIFIED:** joint Chronos-2 and research-only TimesFM-3, raw intraday Kronos
+  path permissions, TTM/Ledoit–Wolf anchored risk sizing, causal trend/volatility
+  partitions and monthly matured-utility convex selection. No production import,
+  broker request, GPU training or model-service change. KiT official code and
+  weights remain unreleased; no fabricated KiT implementation.
+- **VERIFIED:** 189 relevant tests pass on exact `12f14e39` without skips
+  (20.36s), including all eleven timing-account cases. Ruff/diff checks pass. Native CPU
+  evidence: 456 joint forecasts; 24 timing cases, six coherent, sixteen
+  malformed OHLC refusals preserving every path, two missing TSLA prefixes.
+  No sample repair/redraw. Runtime reports bind exact inference sources/pins.
+- **VERIFIED:** actual CLI and independent artifact acceptance on `12f14e39`:
+  all fourteen source hashes and thirteen frozen input hashes match. Result
+  `/home/animallya96/scratch/specialist-runtime-20261001/funded-study.json`,
+  SHA256 `15ff07ee1a354e10234b89e99a5c59b307561d9e2741668fe1f06f10aa6e1960`.
+  Reuse it; no repeated inference/scoring or threshold mining.
+- **MEASURED, not adoption proof:** eighteen September returns all `up_low`.
+  Incumbent `/5` cohort/cadence control −2.1508%, TTM risk −1.7903%, its
+  matched-gross control identical, joint lines cash 0%, SPY −1.0684%, QQQ
+  +2.8430%, membership equal weight +3.9302% at 10 bp. At 25 bp: incumbent
+  −2.1894%, risk −1.8224%, SPY −1.2167%, QQQ +2.6891%, equal weight +3.5939%.
+  Only one funded AAOI intent. Kronos refuses it for inconsistent OHLC;
+  timing's 0% is missing-evidence abstention, not timing superiority.
+- **UNVERIFIED:** robust regime edge, full live parity, untouched holdout,
+  historical availability/training cutoff and actual fills. Selector has no
+  qualified real fit: one zero-utility matured reset cannot meet twenty samples
+  across three months. Fixed study rejects unverified external history. No live
+  promotion or deployment; incumbent remains. Do not silently wire these into
+  personal/paper actions or the neural nightly job.
+- **VERIFIED:** diagram impact NONE; all 33 diagrams and published page
+  synchronized. Scope uses existing research/account/artifact boundaries.
+
+See [full results](research/specialist-results-2026-10-01.md) and the frozen
+protocol/runtime reports. First CLI attempt failed only on missing optional
+distribution metadata before writing results; actual imported-module versions
+fixed provenance. No original frozen file, strategy parameter or model sample
+changed. A future qualification task needs genuinely dated wider eligible
+opportunities across scenarios and authenticated prospective funded utilities.
+
+Earlier release information below remains historical evidence, not a claim
+that this branch is live.
+
 ## 2026-10-01 — Open-source engineering release verified; specialist edges unproven
 
 User authorized merging the verified branch and guarded deployment. Main
