@@ -1,5 +1,46 @@
 # Next session
 
+## 2026-10-02 — decision prices and direct personal preview; release pending
+
+Objective: distinguish actual outstanding order triggers from generic technical
+references, shorten the Action column, and make personal planning produce a visible
+result without requiring a separate stock expansion. User reversed removal of
+manual sorting: keep it; **Reset ranking** restores automatic status-driven order.
+
+FAILED on prior live artifact: Levels always listed the 21-EMA/20-day high instead
+of the pending paper order's price; personal results were hidden in expanded rows,
+and the balance notice always said $100,000 initial placeholder even after Apply.
+VERIFIED locally: Levels now reads supplied `order.level`, with the same buy-floor/
+sell-ceiling cents as the backend, and excludes completed or submitted orders.
+Unavailable triggers stay missing; no predicted support or targets are invented.
+Technical references and reasons remain in stock details and hover; chart references
+are labelled explicitly as references, not triggers. Strategy bar age sits beside
+the stock price, separate from its quote's timestamp. Personal portfolio includes
+a stock selector and live personal result. Entered cash is labelled a manual budget;
+planning inputs do not claim broker verification. Cash generation, expiry and stale
+response protections remain intact; no account, history or order writes.
+
+Acceptance: 26 relevant browser cases pass, including the original action/structure
+paths, trigger rounding, completed/missing prices, manual sort/reset, automatic
+status transitions, direct personal preview, changed cash and stale replies.
+The broader desk run passed 91 cases before the final presentation corrections;
+its two failures were reproduced and corrected in the unchanged workflows above.
+Typecheck/build pass. Diagram impact NONE: existing view/control boundaries only.
+Exact deployed bundle/browser/API verification remains pending.
+
+Prior 0dfdcd89 full deploy stopped before restart: 8,628 unit passes, 93 skips,
+6 xfails and one agent-run FK failure. The unchanged failing case passes in
+isolation (0.83s); cause is not proven. A separate unit job was observed using
+the same `anios_gate` database. Do not weaken assertions or claim the full gate
+passed. Retry only when no other unit job is active. Live remains 8be5ecbe until
+the deployment marker and proof establish a new artifact.
+
+Strategy limitation: no timing policy change. The fixed 1% remains in paper;
+personal current-ask permission already prevents chasing a recovered dip.
+Existing adaptive-entry results reject both volatility-scaled thresholds and
+the gap guard; Stage 3 rejects its learned timing candidates. These dashboard
+changes do not establish better trading performance or a replacement policy.
+
 ## 2026-10-02 — immediate actions and current charts; release pending
 
 User clarified that both Buy and Sell actions must rank by immediate readiness.

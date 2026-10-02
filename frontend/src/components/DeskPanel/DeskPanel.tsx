@@ -1124,6 +1124,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [cash, setCash] = useState<number | null>(null)
   const [riskBudgetPct, setRiskBudgetPct] = useState<number | null>(null)
   const [cashStatus, setCashStatus] = useState('')
+  const [personalTicker, setPersonalTicker] = useState('')
   // A monotonic context generation. Every desk/mine request captures it before
   // awaiting; when the response returns, if the generation has moved on the
   // caller's cash/equity/user/holdings context changed meanwhile, so the old
@@ -1281,10 +1282,10 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     setRiskBudgetPct(riskValue)
     setDecisions(undefined)
     setCashStatus(cashValue === null
-      ? 'Available cash unknown; buys stay unfunded until you confirm it.'
+      ? 'Cash budget unknown · buys unfunded.'
       : cashValue === 0
-        ? 'Available cash confirmed at $0; no funded buys.'
-        : `Available cash confirmed at ${money(cashValue)}; buys can be funded up to this budget.`)
+        ? 'Cash budget $0 · buys unfunded.'
+        : `Cash budget ${money(cashValue)} · entered manually.`)
   }
 
   useEffect(() => {
@@ -1460,7 +1461,9 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       </div>
     </section>
   }
-  // The account's controls sit above the list: the plan is a column of it.
+  const personalNames = Object.keys(latest?.grades ?? {}).sort()
+  const previewTicker = personalNames.includes(personalTicker) ? personalTicker : personalNames[0] ?? ''
+  // Show account inputs and one directly selectable personal result, separate from paper orders.
   const planToolbar = latest ? <div className="shrink-0 border-b border-black/[0.06] px-3 py-2">
           <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
             {live.reason && <p className="text-xs text-amber-800">{live.reason}</p>}
@@ -1475,6 +1478,17 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             </div>
           </div>
           <AccountInputs equity={equity} cash={cash} riskBudgetPct={riskBudgetPct} cashStatus={cashStatus} onApply={applyAccount} />
+          {personalOpen && <div className="mb-2 flex flex-wrap items-start gap-3" aria-label="Personal action preview">
+            <label className="flex items-center gap-2 text-xs">Stock
+              <select aria-label="Personal action stock" value={previewTicker}
+                onChange={event => setPersonalTicker(event.target.value)} className="rounded border border-black/[0.12] bg-white px-2 py-1">
+                {personalNames.map(ticker => <option key={ticker} value={ticker}>{ticker}</option>)}
+              </select>
+            </label>
+            <div><p className="mb-1 text-xs text-[#6e6e73]">Personal action</p>
+              <DecisionCell ticker={previewTicker} decisions={decisions} latest={latest} now={now} />
+            </div>
+          </div>}
           {intraday && intraday.session === latest.session && now - Date.parse(intraday.as_of) <= CANDLE_MS && intraday.changed && intraday.changed.length > 0 && (
             <p className="mb-2 text-xs text-[#9a6200]">
               Since the last plan: {intraday.changed.join(' · ')}
@@ -2218,7 +2232,7 @@ const AccountInputs = ({ equity, cash, riskBudgetPct, cashStatus, onApply }: Acc
       {error ? <p role="alert" className="text-xs text-[#b42318]">{error}</p> : cashStatus
         ? <p className="text-xs text-[#6e6e73]" aria-label="Available cash status">{cashStatus}</p>
         : <p className="text-xs text-[#6e6e73]">Confirm cash to fund buys.</p>}
-      <p className="w-full text-[11px] text-[#6e6e73]" title="Planning equity is a browser input for sizing, not a broker-verified balance. Replace the initial $100,000 placeholder with your account equity.">Unverified balance · $100,000 initial placeholder.</p>
+      <p className="w-full text-[11px] text-[#6e6e73]">Planning inputs · not broker verified.</p>
     </div>
   )
 }
@@ -2418,7 +2432,7 @@ const DeskGuide = ({latest, open}: {latest: DeskRecord; open: boolean}) => {
         <summary className="cursor-pointer font-medium">Desk guide · ranking and timing</summary>
       <details className="mt-3">
         <summary className="cursor-pointer text-[#0071e3]">How ranking and sizing work</summary>
-        <p className="mt-2">{TRIGGER_LEGEND} Numbers beside these letters are rounded cross-sectional percentiles, not individual letter grades or probabilities of profit. A+/A/B/C is the combined grade. The default stock order is grade (highest first), then action (Buy, Sell, Hold), then executable size (largest first). Ties use grade score (highest first), then ticker alphabetically. Column headings can change the order. Intraday inputs update where available; other votes and theses remain from the evening decision.</p>
+        <p className="mt-2">{TRIGGER_LEGEND} Numbers beside these letters are rounded cross-sectional percentiles, not individual letter grades or probabilities of profit. A+/A/B/C is the combined grade. Default ranking puts exceptions first, then outstanding paper actions by readiness, grade-based action priority and planned size. Reset ranking restores automatic ordering after column sorting. Intraday inputs update where available; other votes and theses remain from the evening decision.</p>
         <p className="mt-2">Current voting rules: growth &amp; margins, price trend, earnings-release tone and relative valuation each carry one vote;
           rotation carries half a vote. A bearish core analyst caps the grade at B.
           Position sizes also depend on volatility, grade multipliers, concentration limits and market exposure.</p>

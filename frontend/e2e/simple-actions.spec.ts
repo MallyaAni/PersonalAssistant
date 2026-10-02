@@ -23,7 +23,7 @@ function paper(orders: Order[], held: Record<string, number> = {}, untilReset = 
       until_rebalance: untilReset, last_rebalance: '2026-09-10', reason: null,
       orders: orders.map((o, i) => ({client_order_id: `${o.symbol}-${i}`, symbol: o.symbol, side: o.side, action: o.action, qty: o.qty, price: o.price,
         notional: o.qty * o.price, weight: o.qty * o.price / EQUITY, leg: o.side === 'buy' ? 'entry' : 'exit', why: o.why, reason: null,
-        timing: 'dip_or_close', decided: '2026-09-23', execute_on: session, open: null, level: null, sent_at: null, sent_how: null,
+        timing: 'dip_or_close', decided: '2026-09-23', execute_on: session, open: null as number | null, level: null as number | null, sent_at: null, sent_how: null,
         filled_qty: null, filled_price: null, filled_at: null, state: o.state, status: o.status, when: o.when}))}}
 }
 
@@ -90,9 +90,39 @@ test('visible grades and concise actions expose diagnostics only on request', as
   await board.scrollIntoViewIfNeeded()
   const why = board.getByLabel('AAPL action status', {exact: true})
   await expect(why).toBeVisible()
+  await why.scrollIntoViewIfNeeded()
   await expect(why).toBeInViewport()
   await expect(why).toContainText('Enters the book at 2.0%')
   await page.screenshot({path: testInfo.outputPath('simple-actions-mobile.png'), fullPage: true})
+  expect(errors).toEqual([])
+})
+
+// Decision levels show supplied outstanding triggers without fabricating targets for fills or holds.
+test('levels show actual paper triggers and omit completed or unavailable prices', async ({page}) => {
+  let account = paper([
+    order('AAPL', 'buy', 'BUY', 20, 100, 'Cash allocation'),
+    order('NVDA', 'sell', 'SELL', 10, 208, 'Grade exit'),
+    order('MSFT', 'buy', 'BUY', 10, 100, 'Entry', {state: 'filled', status: 'Bought 10 @ $99.00'}),
+  ], {NVDA: 10, MSFT: 10})
+  account.plan.orders[0].level = 99.009
+  account.plan.orders[1].level = 208.521
+  account.plan.orders[2].level = 99
+  const {errors} = await setup(page, {account, beforeNavigate: async () => {
+    await page.route('**/desk/paper', route => route.fulfill({json: account}))
+  }})
+  await expect(page.getByLabel('AAPL levels', {exact: true})).toHaveText('Buy ≤ $99.00')
+  await expect(page.getByLabel('NVDA levels', {exact: true})).toHaveText('Sell ≥ $208.53')
+  await expect(page.getByLabel('MSFT levels', {exact: true})).toHaveText('—')
+  await expect(page.getByLabel('AAPL strategy intent', {exact: true}).locator('..')).toHaveAttribute('title', 'Cash allocation')
+  await expect(page.getByLabel('AAPL action status', {exact: true})).toHaveCount(0)
+  account = structuredClone(account)
+  account.plan.orders[0].level = null
+  account.plan.orders[1].state = 'filled'
+  await page.getByRole('button', {name: 'Refresh', exact: true}).click()
+  await expect(page.getByLabel('AAPL levels', {exact: true})).toHaveText('—')
+  await expect(page.getByLabel('NVDA levels', {exact: true})).toHaveText('—')
+  await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
+  await expect(page.getByLabel('AAPL action status', {exact: true})).toHaveText('Cash allocation')
   expect(errors).toEqual([])
 })
 
@@ -156,6 +186,16 @@ test('a recovered personal entry shows Hold and retains its grade', async ({page
   await page.getByRole('button', {name: 'Apply', exact: true}).click()
   await expect(personal).toContainText('Hold')
   await expect(personal).toContainText('Entry limit')
+  const preview = page.getByLabel('Personal action preview', {exact: true})
+  await expect(preview).toContainText('Hold')
+  await expect(preview).toContainText('Entry limit')
+  await expect(page.getByLabel('Available cash status')).toHaveText('Cash budget $10,000 · entered manually.')
+  await expect(page.getByText('Planning inputs · not broker verified.', {exact: true})).toBeVisible()
+  await expect(page.getByText('Unverified balance · $100,000 initial placeholder.', {exact: true})).toHaveCount(0)
+  await page.getByLabel('Personal action stock', {exact: true}).selectOption('MSFT')
+  await expect(preview).toContainText('Unavailable')
+  await page.getByLabel('Personal action stock', {exact: true}).selectOption('AAPL')
+  await expect(preview).toContainText('Entry limit')
   await expect(personal.getByLabel('AAPL strategy intent', {exact: true})).toHaveAttribute('title', limitReason)
   await page.clock.runFor(31000)
   await expect(personal).toContainText('Unavailable')
@@ -177,6 +217,7 @@ test('a recovered personal entry shows Hold and retains its grade', async ({page
   await page.getByLabel('Personal available cash', {exact: true}).fill('0')
   await page.getByRole('button', {name: 'Apply', exact: true}).click()
   await expect(personal).toContainText('Blocked')
+  await expect(preview).toContainText('Blocked')
   releaseOlder()
   await (await olderResponse).finished()
   await page.clock.runFor(50)
@@ -240,7 +281,7 @@ test('ticker panels disclose chart gaps and retain the board decision', async ({
     }})
   })
   await page.getByRole('group', {name: 'Board view'}).getByRole('button', {name: /All names/}).click()
-  await expect(page.getByLabel('MSFT action status', {exact: true})).toHaveText('In the book at 9.1% · no order tonight')
+  await expect(page.getByLabel('MSFT strategy intent', {exact: true}).locator('..')).toHaveAttribute('title', 'In the book at 9.1% · no order tonight')
   await page.getByRole('button', {name: 'MSFT', exact: true}).click()
   const card = page.getByRole('region', {name: 'MSFT paper order'})
   await expect(card).toContainText('In the book at 9.1% · no order tonight')
@@ -318,7 +359,7 @@ test('automatic action ranking updates with paper readiness and completion', asy
   // Read the visible stock order independently of expanded details.
   const names = () => board.locator('tbody tr').filter({has: page.getByLabel(/displayed grade$/)}).locator('td:nth-child(2) button').allTextContents()
   await expect.poll(names).toEqual(['META', 'AMD', 'NVDA', 'MSFT', 'AAPL', 'ZERO', 'AMZN'])
-  await expect(page.getByRole('button', {name: 'Auto rank', exact: true})).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', {name: 'Reset ranking', exact: true})).toHaveAttribute('aria-pressed', 'true')
   account = structuredClone(account)
   account.plan.orders.find(o => o.symbol === 'AMD')!.state = 'filled'
   account.plan.orders.find(o => o.symbol === 'MSFT')!.state = 'due'
@@ -326,7 +367,7 @@ test('automatic action ranking updates with paper readiness and completion', asy
   await expect.poll(names).toEqual(['META', 'MSFT', 'NVDA', 'AAPL', 'ZERO', 'AMZN', 'AMD'])
   await board.getByRole('button', {name: 'Size', exact: true}).click()
   await expect.poll(names).toEqual(['META', 'AMZN', 'AMD', 'NVDA', 'MSFT', 'AAPL', 'ZERO'])
-  await page.getByRole('button', {name: 'Auto rank', exact: true}).click()
+  await page.getByRole('button', {name: 'Reset ranking', exact: true}).click()
   await expect.poll(names).toEqual(['META', 'MSFT', 'NVDA', 'AAPL', 'ZERO', 'AMZN', 'AMD'])
   // A terminal flag outranks a stale due state; submitted shares are already working orders.
   Object.assign(account.plan.orders.find(o => o.symbol === 'MSFT')!, {terminal: true})
@@ -351,15 +392,15 @@ test('a held name without an order says where it stands against its target', asy
   const {errors} = await setup(page, {open: false, account: paper([], {NVDA: 91, MSFT: 140}, 5)})
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(board.getByLabel('NVDA strategy intent')).toHaveText('HOLD')
-  await expect(board.getByLabel('NVDA action status')).toHaveText('Near its 9.1% target')
+  await expect(board.getByLabel('NVDA strategy intent').locator('..')).toHaveAttribute('title', 'Near its 9.1% target')
   await expect(board.getByLabel('NVDA size')).toHaveText('—')
   await expect(board.getByLabel('NVDA position', {exact: true})).toContainText('91 sh · 9.1%')
   await expect(board.getByLabel('MSFT strategy intent')).toHaveText('HOLD')
-  await expect(board.getByLabel('MSFT action status')).toHaveText('Above its 9.1% target · trimmed at the reset in 5 sessions')
+  await expect(board.getByLabel('MSFT strategy intent').locator('..')).toHaveAttribute('title', 'Above its 9.1% target · trimmed at the reset in 5 sessions')
   await expect(board.getByLabel('MSFT size')).toHaveText('—')
   await page.getByRole('group', {name: 'Board view'}).getByRole('button', {name: /All names/}).click()
   await expect(board.getByLabel('AAPL strategy intent')).toHaveText('—')
-  await expect(board.getByLabel('AAPL action status')).toHaveText('In the book at 9.1% · no order tonight')
+  await expect(board.getByLabel('AAPL strategy intent').locator('..')).toHaveAttribute('title', 'In the book at 9.1% · no order tonight')
   await expect(board.getByLabel('AAPL size')).toHaveText('—')
   await expect(page.getByLabel('Today', {exact: true})).toContainText('No paper orders.')
   await page.getByRole('button', {name: 'details for MSFT', exact: true}).click()
@@ -379,11 +420,11 @@ test('a trim reads as TRIM with its reason, an exit stays SELL', async ({page}) 
   ], {MSFT: 140, NVDA: 50})})
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(board.getByLabel('MSFT strategy intent')).toHaveText('TRIM')
-  await expect(board.getByLabel('MSFT action status')).toHaveText('Trim to its 9.1% target')
+  await expect(board.getByLabel('MSFT strategy intent').locator('..')).toHaveAttribute('title', 'Trim to its 9.1% target')
   await expect(board.getByLabel('MSFT size')).toContainText('49 sh')
   await expect(board.getByLabel('MSFT size')).toContainText('$4,900 · 4.9%')
   await expect(board.getByLabel('NVDA strategy intent')).toHaveText('SELL')
-  await expect(board.getByLabel('NVDA action status')).toHaveText('Exit: the grade fell to B')
+  await expect(board.getByLabel('NVDA strategy intent').locator('..')).toHaveAttribute('title', 'Exit: the grade fell to B')
   await page.getByRole('button', {name: 'details for MSFT', exact: true}).click()
   await expect(board.getByLabel('MSFT orders', {exact: true})).toContainText('TRIM 49 sh planned · $4,900 · 4.9% of current equity')
   await expect(board.getByLabel('MSFT orders', {exact: true})).toContainText('Trim to its 9.1% target')

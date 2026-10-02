@@ -14,11 +14,8 @@ import { displayedBoardPrice, SessionPrice } from './StockBoard'
 // chart cannot tell different stories. A name with no order is HOLD when the
 // account holds it and a dash when it does not.
 //
-// The Levels column is the structure the desk does not act on (S0 of the
-// trading scenarios): the 21-EMA and the 20-day high from the balancer's
-// `live.structure`, the distance to each, the EMA's slope, and a plain flag
-// when the session's first bar rejected a level. The action cell also says
-// how old the price behind the row is.
+// Levels shows the account's unsubmitted price triggers. Technical references
+// belong in stock details; a reference indicator is never an order price.
 
 // The four words a row can say, and the dash for a name the account neither
 // holds nor trades.
@@ -218,6 +215,16 @@ export const isDone = (order: DeskPaperOrder): boolean =>
 const canScale = (order: DeskPaperOrder) =>
   ['planned', 'waiting', 'due'].includes(order.state) && !order.sent_at && order.submitted_qty == null
 
+// Show only outstanding paper price triggers, rounded exactly as the backend's timing text.
+const decisionLevels = (row: BoardRow): string[] => [...new Set(row.orders
+  .filter(order => !isDone(order) && canScale(order) && order.timing === 'dip_or_close'
+    && typeof order.level === 'number' && Number.isFinite(order.level) && order.level > 0)
+  .map(order => {
+    const cents = order.level! * 100
+    const rounded = (order.side === 'buy' ? Math.floor(cents + 1e-6) : Math.ceil(cents - 1e-6)) / 100
+    return `${order.side === 'buy' ? 'Buy ≤' : 'Sell ≥'} ${price(rounded)}`
+  }))]
+
 // Label the quantity basis, including older API responses without the new field.
 export const quantityLabel = (order: DeskPaperOrder): string =>
   order.quantity_basis ?? (order.state === 'filled' ? 'filled' : ['sent', 'queued', 'partial'].includes(order.state) ? 'submitted' : 'planned')
@@ -378,19 +385,21 @@ const AccountStrip = ({paper, orders}: {paper: DeskPaperLive | null | undefined;
 
 // The details under a row: every order for the name with its own status, the
 // position against its target, and why the desk grades it as it does.
-const RowDetails = ({row, latest, myAccount, onOpen, extra}: {row: BoardRow; latest: DeskRecord; myAccount: number | null; onOpen: (ticker: string) => void; extra?: ReactNode}) => {
+const RowDetails = ({row, latest, myAccount, onOpen, extra, structure, displayed}: {row: BoardRow; latest: DeskRecord; myAccount: number | null; onOpen: (ticker: string) => void; extra?: ReactNode; structure?: DeskStructure; displayed: ReturnType<typeof displayedBoardPrice>}) => {
   const grade = latest.grades[row.ticker]
+  const references = levelLines(structure, displayed?.price ?? null)
+  const flag = levelFlag(structure)
   return <div aria-label={`${row.ticker} details`} className="grid gap-3 text-xs sm:grid-cols-3">
     <section aria-label={`${row.ticker} orders`}>
       <h4 className="font-medium text-[#6e6e73]">{row.orders.length ? `Order${row.orders.length > 1 ? 's' : ''}` : 'No order'}</h4>
-      {row.orders.length === 0 && <p>{row.why}</p>}
+      <p aria-label={`${row.ticker} action status`}>{row.why}</p>
       {row.orders.map(order => {
         const mine = canScale(order) ? myShares(order.weight, myAccount, order.price) : null
         const word = orderWord(order)
         return <div key={order.client_order_id} className="mb-2">
           <p><span className={`font-semibold ${isDone(order) ? 'text-[#6e6e73]' : WORD_STYLE[word]}`}>{word}</span> {shares(order.qty)} {quantityLabel(order)}{order.notional !== null ? ` · ${dollars(order.notional)}` : ''}{order.weight !== null ? ` · ${percent(order.weight)} of current equity` : ''}{mine !== null ? ` · ref. ${shares(mine)}` : ''}</p>
           {order.planned_qty !== undefined && order.planned_qty !== order.qty && <p className="text-[#6e6e73]">Originally planned: {shares(order.planned_qty)}</p>}
-          <p className="text-[#6e6e73]">{order.why}</p>
+          {row.orders.length > 1 && <p className="text-[#6e6e73]">{order.why}</p>}
           <p><span className={`mr-1 inline-block h-2 w-2 rounded-full ${STATE_DOT[order.state] ?? 'bg-[#86868b]'}`} aria-hidden="true" />{order.status}</p>
           <p className="text-[#6e6e73]">{order.when}</p>
         </div>
@@ -403,6 +412,11 @@ const RowDetails = ({row, latest, myAccount, onOpen, extra}: {row: BoardRow; lat
         {row.avgCost !== null && <p className="text-[#6e6e73]">average cost {price(row.avgCost)}{row.unrealized !== null ? <> · <span className={row.unrealized >= 0 ? 'text-[#248a3d]' : 'text-[#b42318]'}>{row.unrealized >= 0 ? '+' : '−'}{dollars(Math.abs(row.unrealized))}</span> unrealized</> : ''}</p>}
       </> : <p>Not held</p>}
       <p className="text-[#6e6e73]">Target {row.target !== null ? percent(row.target) : '—'} ({latest.targets?.policy ?? 'the active policy'})</p>
+      <div aria-label={`${row.ticker} reference levels`} title={levelDescription(row.ticker, structure, displayed)} className="mt-2 text-[#6e6e73]">
+        <h4 className="font-medium">Technical references</h4>
+        {references.length ? references.map(line => <p key={line}>{line}</p>) : <p>—</p>}
+        {flag && <p aria-label={`${row.ticker} level flag`}>{flag}</p>}
+      </div>
     </section>
     <section aria-label={`${row.ticker} grade`}>
       <h4 className="font-medium text-[#6e6e73]">Grade {row.grade || '—'} <span className="font-normal">· {latest.session} close</span></h4>
@@ -495,8 +509,8 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
             </button>)}
         </div>
         <button type="button" aria-pressed={sort === null} onClick={() => setSort(null)}
-          title="Immediate paper actions, then waiting plans. A+ buys and C exits precede A buys and B exits; planned size breaks ties. Exceptions remain first. Filled orders are history. Priority is not confidence or a return forecast."
-          className={`rounded-md px-2 py-0.5 text-xs ${sort === null ? 'bg-[#e8f2ff] text-[#0071e3]' : 'text-[#6e6e73] hover:text-[#0071e3]'}`}>Auto rank</button>
+          title="Restores automatic ranking after column sorting. Immediate paper actions, then waiting plans. A+ buys and C exits precede A buys and B exits; planned size breaks ties. Exceptions remain first. Filled orders are history. Priority is not confidence or a return forecast."
+          className={`rounded-md px-2 py-0.5 text-xs ${sort === null ? 'bg-[#e8f2ff] text-[#0071e3]' : 'text-[#6e6e73] hover:text-[#0071e3]'}`}>Reset ranking</button>
         <input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search a ticker" aria-label="Search the stock list"
           className="w-full max-w-44 rounded-md border border-black/[0.08] bg-white px-2 py-0.5 text-sm text-[#1d1d1f]" />
       </div>
@@ -509,7 +523,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
             <Head label="Stock" column="ticker" sort={sort} onSort={onSort} />
             <Head label="Grade" column="grade" sort={sort} onSort={onSort} title="The desk's grade at the last close; A and A+ are in the book." />
             <Head label="Position" column="position" sort={sort} onSort={onSort} title="Paper-account shares and share of the account, against the policy's target." />
-            <Head label="Levels" sort={sort} onSort={onSort} title="Reference levels. Distances use the displayed price; arrows show the EMA’s five-session slope. Hover a stock’s levels for its assessment. Not order prices." />
+            <Head label="Levels" sort={sort} onSort={onSort} title="Outstanding paper order triggers, tested on completed 15-minute closes. Technical references are in stock details. Not guaranteed fill prices." />
             <Head label="Action" sort={sort} onSort={onSort} title="The paper account's order for the name. HOLD: no order, the position stays. A finished order keeps its word, greyed; the status column says what happened to it." />
             <Head label="Size" column="size" sort={sort} onSort={onSort} title="Planned or submitted sizes use a price estimate; filled sizes use execution prices. Percentages use current paper equity." />
             <Head label="When / status" sort={sort} onSort={onSort} title="The order's rule for its session and what has happened to it." />
@@ -521,8 +535,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
           const mine = row.orders.length && row.orders.every(canScale) ? myShares(row.weight, myAccount, unit) : null
           const structure = live.structure?.[row.ticker]
           const displayed = displayedBoardPrice(live, row.ticker, now, closes?.[row.ticker], latest.session)
-          const levels = levelLines(structure, displayed?.price ?? null)
-          const flag = levelFlag(structure)
+          const levels = decisionLevels(row)
           const age = priceAge(structure, now)
           return <Fragment key={row.ticker}>
             <tr className="border-t border-black/[0.05] align-top">
@@ -530,20 +543,18 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
               <td className="py-2">
                 <button type="button" className="font-semibold text-[#1d1d1f] hover:text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}</button>
                 <div className="text-[11px] text-[#6e6e73]"><SessionPrice live={live} ticker={row.ticker} now={now} compact close={closes?.[row.ticker]} closeSession={latest.session} /></div>
+                {age && <div aria-label={`${row.ticker} price age`} title="Completed regular-session bar used by the strategy; the displayed quote has its own timestamp." className="whitespace-nowrap text-[10px] text-[#86868b]">{age}</div>}
               </td>
               <td className="py-2 text-xs" aria-label={`${row.ticker} displayed grade`}><span className={`font-semibold ${row.grade === 'A+' || row.grade === 'A' ? 'text-[#248a3d]' : row.grade === 'C' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{row.grade || '—'}</span></td>
               <td className="py-2 text-xs" aria-label={`${row.ticker} position`}>
                 {row.held > 0 ? <>{shares(row.held)}{row.heldWeight !== null ? ` · ${percent(row.heldWeight)}` : ''}</> : <span className="text-[#86868b]">none</span>}
                 {row.target !== null && row.target > 0 && <div className="text-[10px] text-[#6e6e73]">target {percent(row.target)}</div>}
               </td>
-              <td className="py-2 text-[11px]" aria-label={`${row.ticker} levels`} title={levelDescription(row.ticker, structure, displayed)}>
+              <td className="py-2 text-[11px]" aria-label={`${row.ticker} levels`} title={levels.length ? `${row.ticker}: outstanding paper trigger on a completed 15-minute close; not a limit order or predicted support. ${row.when}` : `${row.ticker}: no outstanding price trigger. Technical references are in details.`}>
                 {levels.length ? levels.map(line => <div key={line} className="whitespace-nowrap text-[#6e6e73]">{line}</div>) : <span className="text-[#86868b]">—</span>}
-                {flag && <div aria-label={`${row.ticker} level flag`} className="whitespace-nowrap font-medium text-[#1d1d1f]">{flag}</div>}
               </td>
-              <td className="max-w-56 py-2 text-xs">
+              <td className="py-2 text-xs" title={row.why}>
                 <span aria-label={`${row.ticker} strategy intent`} className={`font-semibold ${row.done ? 'text-[#6e6e73]' : WORD_STYLE[row.word]}`}>{row.word}</span>
-                <div aria-label={`${row.ticker} action status`} className="whitespace-normal text-[10px] text-[#6e6e73]">{row.why}</div>
-                {age && <div aria-label={`${row.ticker} price age`} className="whitespace-nowrap text-[10px] text-[#86868b]">{age}</div>}
               </td>
               <td className="py-2 text-xs" aria-label={`${row.ticker} size`}>
                 {row.orders.length ? <>
@@ -560,7 +571,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
               </td>
             </tr>
             {open && <tr><td colSpan={8} className="border-t border-black/[0.05] bg-[#f0f7ff] px-3 py-2"><div className="w-[calc(100cqw-1.5rem)] whitespace-normal">
-              <RowDetails row={row} latest={latest} myAccount={myAccount} onOpen={onOpen} extra={extra?.(row.ticker)} />
+              <RowDetails row={row} latest={latest} myAccount={myAccount} onOpen={onOpen} extra={extra?.(row.ticker)} structure={structure} displayed={displayed} />
             </div></td></tr>}
           </Fragment>
         })}</tbody>

@@ -1030,7 +1030,7 @@ export const TickerChart = ({
           out here, worded as the board's Levels column words them, whether or
           not the picture has loaded. */}
       {boardLevels(levels).length > 0 && <p className="text-[11px] text-[#6e6e73]" aria-label={`${ticker} board levels`}>
-        Dashed lines are the board’s levels: {boardLevels(levels).map(level => `${LEVEL_NAME[level.key]} ${level.price.toFixed(1)}`).join(' · ')}.
+        Technical references: {boardLevels(levels).map(level => `${LEVEL_NAME[level.key]} ${level.price.toFixed(1)}`).join(' · ')}. Not order triggers.
       </p>}
 
       {data && (
