@@ -10,7 +10,25 @@ from backend.api.v1 import market
 from backend.config.settings import settings
 from backend.core.auth import issue_user_token
 from backend.main import app
+from backend.market import live_chart
 from backend.tests.test_market_ticker_chart import _Store, _store
+
+
+# Isolate retained-snapshot cases from the current chart provider.
+@pytest.fixture(autouse=True)
+def _no_current_provider(monkeypatch):
+    monkeypatch.setattr(
+        live_chart,
+        "read",
+        lambda ticker: {
+            "bars": [],
+            "session": None,
+            "as_of": None,
+            "feed": "iex",
+            "reason": "Current IEX candles unavailable",
+            "complete": False,
+        },
+    )
 
 
 # Freeze the route's evidence clock without changing token or database clocks.
@@ -34,6 +52,98 @@ def _current_store(factor=1.0, include_current=False):
             replace(bar, session_date=bar.session_date + shift) for bar in store._bars
         )
     )
+
+
+# Current IEX candles update daily and weekly OHLC with one coherent observation.
+@pytest.mark.asyncio
+@pytest.mark.parametrize("timeframe", ["daily", "weekly"])
+async def test_chart_http_current_candles_update_the_whole_snapshot(
+    monkeypatch, timeframe
+):
+    from datetime import timedelta
+
+    from backend.market.alpaca import IntradayBar
+
+    now = datetime(2026, 9, 21, 14, 16, tzinfo=UTC)
+    opening = datetime(2026, 9, 21, 13, 30, tzinfo=UTC)
+    bars = [
+        IntradayBar(opening + timedelta(minutes=15 * i), 100, 153, 98, 152, 10)
+        for i in range(4)
+    ]
+    _freeze_clock(monkeypatch, now)
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "chart_user")
+    monkeypatch.setattr(settings, "AUTH_REQUIRED", True)
+    monkeypatch.setattr(market, "MarketStore", lambda root: _current_store())
+    monkeypatch.setattr(market, "_live_snapshot", lambda: {})
+    monkeypatch.setattr(
+        live_chart,
+        "read",
+        lambda ticker: {
+            "bars": bars,
+            "session": "2026-09-21",
+            "as_of": now.isoformat(),
+            "reason": None,
+            "complete": False,
+        },
+    )
+    auth = {"Authorization": f"Bearer {issue_user_token('chart_user')}"}
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test", headers=auth
+    ) as client:
+        response = await client.get(
+            "/api/v1/market/chart_user/desk/chart/AAA", params={"timeframe": timeframe}
+        )
+    assert response.status_code == 200, response.text
+    chart = response.json()
+    assert chart["bars"][-1]["close"] == 152
+    assert chart["bars"][-1]["high"] == 153
+    assert chart["quote_bar"] == bars[-1].start.isoformat()
+    assert chart["live_feed"] == "iex"
+    assert chart["live_as_of"] == now.isoformat()
+    assert chart["last_bar_complete"] is False
+    assert chart["overlays"]["ema9"][-1] != 100
+
+
+# Display today's forming 15m session before a nightly partition exists.
+@pytest.mark.asyncio
+async def test_chart_http_current_intraday_without_frozen_partition(
+    monkeypatch, tmp_path
+):
+    from backend.market.alpaca import IntradayBar
+    from backend.market.store import MarketStore
+
+    now = datetime(2026, 9, 21, 13, 31, tzinfo=UTC)
+    bar = IntradayBar(datetime(2026, 9, 21, 13, 30, tzinfo=UTC), 100, 102, 99, 101, 10)
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "chart_user")
+    monkeypatch.setattr(settings, "AUTH_REQUIRED", True)
+    monkeypatch.setattr(market, "_root", lambda: tmp_path)
+    monkeypatch.setattr(market, "MarketStore", MarketStore)
+    monkeypatch.setattr(
+        live_chart,
+        "read",
+        lambda ticker: {
+            "bars": [bar],
+            "session": "2026-09-21",
+            "as_of": now.isoformat(),
+            "reason": None,
+            "complete": False,
+            "last_bar_complete": False,
+        },
+    )
+    auth = {"Authorization": f"Bearer {issue_user_token('chart_user')}"}
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test", headers=auth
+    ) as client:
+        response = await client.get(
+            "/api/v1/market/chart_user/desk/chart/AAA", params={"timeframe": "15m"}
+        )
+    assert response.status_code == 200, response.text
+    chart = response.json()
+    assert len(chart["bars"]) == 1
+    assert chart["bars"][0]["time"] == "2026-09-21T09:30:00-04:00"
+    assert chart["live_feed"] == "iex"
+    assert chart["last_bar_complete"] is False
+    assert not list(tmp_path.rglob("*.parquet"))
 
 
 # Exercise the route and chart builder with one quote and no provider calls.
@@ -271,6 +381,9 @@ async def test_chart_http_preserves_completed_store_candle(monkeypatch, timefram
     from backend.market import ticker_chart
 
     expected = ticker_chart.payload(store, "AAA", timeframe=timeframe)
+    expected.update(
+        live_as_of=None, live_feed=None, live_reason="Current IEX candles unavailable"
+    )
     chart = response.json()
     chart.pop("user_id")
     assert chart == expected

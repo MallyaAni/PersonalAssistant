@@ -245,10 +245,10 @@ const ratings = (ranks: Record<string, number> | undefined, stances: Record<stri
 const AnalystRatings = ({ranks, stances, session}: {ranks?: Record<string, number>; stances: Record<string, number>; session: string}) => (
   <div className="mt-2 text-xs text-[#6e6e73]">
     <p className="font-mono text-[11px]" title={TRIGGER_LEGEND}>{ratings(ranks, stances) || 'Analyst parts not recorded.'}</p>
-    <p className="mt-1 text-[11px]">{ANALYST_MEANINGS} + for, · neutral, − against; the number is its percentile across the book.</p>
     {/* The fine print is kept once, folded: what the numbers and votes are not. */}
     <details className="mt-1 text-[11px]">
       <summary className="cursor-pointer text-[#0071e3]">How to read the votes</summary>
+      <p className="mt-1">{ANALYST_MEANINGS} + for, · neutral, − against; the number is its percentile across the book.</p>
       <p className="mt-1">Analyst percentiles and votes · intraday where available; otherwise {session} close</p>
       <p className="mt-1">Numbers are rounded percentiles (0–100); signs are votes, not individual letter grades or probabilities of profit. No number means no valid percentile is available. ? means the vote is missing or invalid.</p>
       <p className="mt-1">{EVENING_VOTE_CONTEXT}</p>
@@ -766,9 +766,10 @@ function DataVintageNote({vintage, children}: {vintage?: DataVintage | null; chi
 function ReleaseCoverageNote({coverage}: {coverage?: ReleaseCoverage | null}) {
   const lines = coverage?.lines ?? []
   if (lines.length === 0) return null
-  return <div role="status" aria-label="Earnings coverage" className="border-b border-black/[0.06] px-3 py-1.5 text-xs text-[#6e6e73]">
+  return <details aria-label="Earnings coverage" className="border-b border-black/[0.06] px-3 py-1.5 text-xs text-[#6e6e73]">
+    <summary className="cursor-pointer">Earnings coverage · {lines.length} notes</summary>
     {lines.map(line => <p key={line}>{line}</p>)}
-  </div>
+  </details>
 }
 
 // Plain grey lines, not a warning: the book names whose earnings release
@@ -1727,6 +1728,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           userId={userId}
           order={latest ? boardRows(latest, paperLive).find(r => r.ticker === openName) ?? null : null}
           personalHistory={false}
+          paperActivity={paperLive?.activity}
           historyGeneration={accountGen.current}
           personalReceiptId={historyContext?.userId === userId
             && historyContext.generation === accountGen.current
@@ -2968,6 +2970,7 @@ const NameDetail = ({
   equity = 0,
   personalHistory = false,
   historyGeneration = 0,
+  paperActivity,
   personalReceiptId,
   order = null,
   lastClose = null,
@@ -2994,17 +2997,32 @@ const NameDetail = ({
   equity?: number
   personalHistory?: boolean
   historyGeneration?: number
+  paperActivity?: DeskPaperLive['activity']
   personalReceiptId?: string
 }) => {
   const [history, setHistory] = useState<DeskHistory | null>(null)
   const [error, setError] = useState('')
   useEffect(() => {
     let alive = true
-    void getDeskHistory(userId, ticker)
-      .then((h) => alive && setHistory(h))
-      .catch((err) => alive && setError(err instanceof Error ? err.message : 'no history'))
+    let sequence = 0
+    let busy = false
+    setHistory(null)
+    setError('')
+    // Refresh immutable history while the panel is open; older responses cannot replace newer reads.
+    const refresh = () => {
+      if (busy) return
+      busy = true
+      const request = ++sequence
+      void getDeskHistory(userId, ticker)
+        .then(h => { if (alive && request === sequence) { setHistory(h); setError('') } })
+        .catch(err => { if (alive && request === sequence) setError(err instanceof Error ? err.message : 'no history') })
+        .finally(() => { busy = false })
+    }
+    refresh()
+    const timer = window.setInterval(() => { if (!document.hidden) refresh() }, 20_000)
     return () => {
       alive = false
+      window.clearInterval(timer)
     }
   }, [userId, ticker])
   const brief = latest.briefs?.[ticker]
@@ -3056,7 +3074,7 @@ const NameDetail = ({
             so it leads on a phone and holds the right two-fifths of a wide
             window, staying in place while the reasoning scrolls beside it. */}
         <div className="mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0">
-          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} />
+          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} paperActivity={paperActivity} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
         {order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}

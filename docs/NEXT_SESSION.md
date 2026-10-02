@@ -1,5 +1,39 @@
 # Next session
 
+## 2026-10-02 — immediate actions and current charts; release pending
+
+User clarified that both Buy and Sell actions must rank by immediate readiness.
+The default now orders exceptions, sized unsubmitted due actions, waiting plans,
+then working orders and historical fills/holdings. Within actionable groups,
+A+ buys/C exits precede A buys/B exits; remaining planned notional breaks ties.
+This is ordinal display priority, not calibrated confidence or expected return.
+Manual column sorting remains available; Auto rank restores the live ordering.
+
+FAILED on prior source: the 15m chart had only completed cached SIP sessions,
+and open charts never consumed today's broker activity. Current raw IEX regular
+candles now refresh through a bounded, read-only 20-second cache; D/W candles
+and overlays share that snapshot. Completed frozen partitions remain authoritative.
+Actual timestamped paper fills refresh into all three timeframes. No synthetic
+fills or nearest-bar substitutions, strategy changes, account writes or cache rewrites.
+Chart pan/zoom survives refresh; unavailable current evidence and refresh failures
+are disclosed. Regular-session candles do not claim overnight coverage.
+
+VERIFIED: 120 backend checks, no skips, source mounted in the Spark test image;
+new authenticated HTTP cases include today's 15m candles before a nightly partition,
+coherent D/W updates, early-close timing, invalid/gapped/future bars, cache boundaries,
+and bounded/redacted provider failure. Read-only real STX provider check returned
+12 current-session candles through 12:15 ET. Desktop/mobile browser cases verify
+new Buy/Sell fills and prices without reload across D/W/15m, archive overlap,
+execution multiplicity, refresh failure/recovery and automatic order transitions.
+The broad browser sweep found one stale pre-existing legend assertion; corrected
+to current provenance wording, with the full workflow passing. Typecheck/build pass.
+Technical definitions, order rules and earnings coverage are folded, with active
+FOMC restrictions still visible. Diagram impact: UPDATED detailed trading desk
+provider/broker display edges; whole-system boundaries unchanged. All 33 diagrams
+and the published page pass syntax/synchronization checks. Existing broad API lint
+debt (_desk_mine_payload complexity) is unchanged; new modules/tests are lint-clean.
+Guarded deployment and exact deployed API/browser/artifact verification pending.
+
 ## 2026-10-02 — automatic paper buy ranking; release pending
 
 The previous default ranked open orders mostly by notional, putting larger
@@ -18,6 +52,13 @@ and the expanded ranking case additionally passes terminal-state, submitted-size
 zero-share, previous-fill and exception transitions. Typecheck and production
 build pass. Diagram impact: NONE — internal presentation ordering only; no new
 provider, store, execution rule or component boundary. Release verification pending.
+
+Update: 8be5ecbec5cfbaacd368561bbb52c9940a2a6304 is LIVE. Guarded deploy and
+postdeploy are green; exact backend hashes, public gateway bytes, real authenticated
+API/browser and 15 deployed fixture cases pass. Three captured model containers
+unchanged; no holdings/history/order writes. Proof on Spark:
+`/tmp/codex-buy-ranking-release-proof-20261002.json`. The both-side ordering above
+supersedes this initial buy-only presentation; wait for its own release proof.
 
 Actual authenticated browser inspection: Oct 1 close STX A (F+/T+, other
 votes neutral), WDC C (all votes neutral), WDC target zero/no orders/position;

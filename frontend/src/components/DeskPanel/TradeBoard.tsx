@@ -303,32 +303,39 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
   })
 }
 
-// Find sized, unsubmitted buy plans in the graded book; completed fills are never new entries.
-const pendingBuys = (row: BoardRow): DeskPaperOrder[] =>
-  row.word !== 'BUY' || !['A', 'A+'].includes(row.grade) ? []
-    : row.orders.filter(order => !isDone(order) && canScale(order)
+// Find sized, unsubmitted actions; completed fills are never new instructions.
+const pendingActions = (row: BoardRow): DeskPaperOrder[] =>
+  row.orders.filter(order => !isDone(order) && canScale(order)
       && Number.isFinite(order.qty) && order.qty > 0
-      && typeof order.notional === 'number' && Number.isFinite(order.notional) && order.notional > 0)
+      && typeof order.notional === 'number' && Number.isFinite(order.notional) && order.notional > 0
+      && (order.side === 'sell' || ['A', 'A+'].includes(row.grade)))
 
-// Put exceptions first, then due and waiting buy plans, other working orders, receipts and holdings.
+// Give both sides the same readiness priority, with exceptions ahead of normal actions.
 const band = (row: BoardRow): number => {
   if (!row.orders.length) return row.word === 'HOLD' ? 5 : 6
   if (['problem', 'missed', 'rejected'].includes(row.state)) return 0
-  const buys = pendingBuys(row)
-  if (buys.some(order => order.state === 'due')) return 1
-  if (buys.length) return 2
+  const actions = pendingActions(row)
+  if (actions.some(order => order.state === 'due')) return 1
+  if (actions.length) return 2
   return row.orders.every(order => isDone(order) || order.state === 'held') ? 4 : 3
 }
 
-// Rank buy plans by grade and their remaining planned size; keep receipts and holdings separate.
+// Use the policy's grade-based entry and exit priority, never a probability of profit.
+const actionPriority = (row: BoardRow): number => {
+  if (row.word === 'SELL') return row.grade === 'C' ? 2 : row.grade === 'B' ? 1 : 0
+  if (row.word === 'BUY') return row.grade === 'A+' ? 2 : row.grade === 'A' ? 1 : 0
+  return 0
+}
+
+// Rank due actions before waiting plans, then policy priority and remaining planned size.
 const ranked = (rows: BoardRow[]) => [...rows].sort((a, b) => {
   const stage = band(a), other = band(b)
   if (stage !== other) return stage - other
   const grade = (GRADE_RANK[b.grade] ?? -1) - (GRADE_RANK[a.grade] ?? -1)
   if (stage === 1 || stage === 2) {
-    const size = pendingBuys(b).reduce((sum, order) => sum + order.notional!, 0)
-      - pendingBuys(a).reduce((sum, order) => sum + order.notional!, 0)
-    return grade || size || a.ticker.localeCompare(b.ticker)
+    const size = pendingActions(b).reduce((sum, order) => sum + order.notional!, 0)
+      - pendingActions(a).reduce((sum, order) => sum + order.notional!, 0)
+    return actionPriority(b) - actionPriority(a) || size || a.ticker.localeCompare(b.ticker)
   }
   return (b.notional ?? 0) - (a.notional ?? 0)
     || (b.heldWeight ?? 0) - (a.heldWeight ?? 0)
@@ -472,7 +479,11 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
         </label>
       </div>
       <AccountStrip paper={paper} orders={orders} />
-      <p aria-label="Execution rule" className="text-xs text-[#6e6e73]">{paused ? 'FOMC cycle: the paper account follows the FOMC risk rule; its orders say when. ' : ''}{ruleText} Paper order status is shown below; submitted or completed orders are not new trade instructions.</p>
+      {paused && <p role="status" aria-label="Trading restriction" className="text-xs text-[#b25e00]">FOMC cycle: the paper account follows the FOMC risk rule; its orders say when.</p>}
+      <details aria-label="Order rules" className="text-xs text-[#6e6e73]">
+        <summary className="cursor-pointer">Order rules</summary>
+        <p aria-label="Execution rule">{paused ? 'FOMC cycle: the paper account follows the FOMC risk rule; its orders say when. ' : ''}{ruleText} Paper order status is shown below; submitted or completed orders are not new trade instructions.</p>
+      </details>
       {myAccount !== null && <p className="text-xs text-[#6e6e73]">Reference sizes are proportional examples for unsent plans, not adjusted for your holdings or cash.</p>}
       {paper?.plan?.reason && <p className="text-xs text-[#b25e00]">{paper.plan.reason}; statuses may lag.</p>}
       <div className="flex flex-wrap items-center gap-2">
@@ -484,7 +495,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
             </button>)}
         </div>
         <button type="button" aria-pressed={sort === null} onClick={() => setSort(null)}
-          title="Due paper buys, then waiting buy plans: grade, then planned size. Exceptions remain first. Completed orders are history, not new entries. This is not a return forecast."
+          title="Immediate paper actions, then waiting plans. A+ buys and C exits precede A buys and B exits; planned size breaks ties. Exceptions remain first. Filled orders are history. Priority is not confidence or a return forecast."
           className={`rounded-md px-2 py-0.5 text-xs ${sort === null ? 'bg-[#e8f2ff] text-[#0071e3]' : 'text-[#6e6e73] hover:text-[#0071e3]'}`}>Auto rank</button>
         <input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search a ticker" aria-label="Search the stock list"
           className="w-full max-w-44 rounded-md border border-black/[0.08] bg-white px-2 py-0.5 text-sm text-[#1d1d1f]" />

@@ -2352,7 +2352,7 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   await expect(chart).toContainText('Grade B (saved)→A (recalculated)')
   await expect(chart).toContainText('Recalculated grade A→B')
   await expect(chart).not.toContainText('sell ·')
-  await expect(chart.locator('[aria-label="Chart legend"]')).toContainText('Arrows are grade changes (up green, down red).')
+  await expect(chart.locator('[aria-label="Chart legend"]')).toContainText('Arrows: grade changes, labelled Saved or Recalculated when known.')
   await showSignals.uncheck()
   await expect(chart).not.toContainText('3 grade changes marked')
   await expect(chart).not.toContainText('Recalculated grade A→B')
@@ -2365,6 +2365,7 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
   await expect(chart).toContainText('weeks loaded; pan or zoom for history.')
   await expect(chart).toContainText('15-minute bar starting Sep 8, 2026, 3:45 PM EDT')
   await chart.getByText('Original readings (0)', {exact: true}).click()
+  await chart.getByText('Indicators & price basis', {exact: true}).click()
   await expect(chart.getByText(/Indicators can update during a session; weekly overlays/)).toBeVisible()
 
   // Missing provenance stays explicitly stored; an unfinished week is not called completed.

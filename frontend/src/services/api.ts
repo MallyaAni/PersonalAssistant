@@ -2052,6 +2052,7 @@ export interface DeskHistoryFill {
   side: 'buy' | 'sell';
   qty: number;
   price: number;
+  filled_at?: string;
   // The plan leg the fill belongs to when the record names one:
   // 'redeploy' on a redeploy buy (idle cash back to the targets).
   kind?: string;
@@ -3246,6 +3247,9 @@ export interface DeskChart {
   timeframe: DeskChartTimeframe;
   timeframes?: string[];
   adjusted: boolean;
+  live_as_of?: string | null;
+  live_feed?: string | null;
+  live_reason?: string | null;
   data_status?: 'complete' | 'incomplete' | 'unavailable';
   data_reason?: string | null;
   missing_sessions?: string[];

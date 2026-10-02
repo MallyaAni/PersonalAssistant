@@ -360,15 +360,27 @@ def payload(
     ticker: str,
     sessions: int | None = DEFAULT_SESSIONS,
     history: dict[str, Any] | None = None,
+    current: dict | None = None,
 ) -> dict[str, object] | None:
     """Return the fifteen-minute chart of ``ticker`` as JSON-ready data, or None."""
     ticker = ticker.upper()
     wanted = clamp_sessions(sessions)
-    if not intraday_sip.sessions_available(store, ticker):
+    if not intraday_sip.sessions_available(store, ticker) and not (current or {}).get(
+        "bars"
+    ):
         return None
     if history is None:
         history = read_history(Path(root), ticker)
     per_session = _complete_sessions(store, ticker, wanted)
+    current_bars = (current or {}).get("bars") or []
+    if current_bars:
+        live_date = date.fromisoformat(current["session"])
+        # A stored completed partition remains authoritative for that session.
+        if not any(session == live_date for session, _regular, _auction in per_session):
+            per_session.append((live_date, current_bars, None))
+            per_session = per_session[-wanted:]
+        else:
+            current_bars = []
     drawn = [s for s, _r, _a in per_session]
     status, reason, missing, expected = _data_status(drawn)
     bars: list[dict[str, object]] = []
@@ -410,13 +422,20 @@ def payload(
         "timeframe": TIMEFRAME,
         "policy": policy if isinstance(policy, str) else None,
         "rebalance_note": rebalance_note if isinstance(rebalance_note, str) else None,
-        "last_bar_complete": True,
-        "quote_bar": None,
+        "last_bar_complete": current.get(
+            "last_bar_complete", current.get("complete", False)
+        )
+        if current_bars
+        else True,
+        "quote_bar": current_bars[-1].start.isoformat() if current_bars else None,
+        "live_as_of": (current or {}).get("as_of"),
+        "live_reason": (current or {}).get("reason"),
+        "live_feed": "iex" if current_bars else None,
         "data_status": status,
         "data_reason": reason,
         "missing_sessions": missing,
         "adjusted": False,
-        "basis": BASIS,
+        "basis": BASIS + "; current session: raw IEX" if current_bars else BASIS,
         "sessions": len(per_session),
         "sessions_requested": wanted,
         "bars": bars,

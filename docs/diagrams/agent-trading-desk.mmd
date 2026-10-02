@@ -14,6 +14,8 @@ flowchart TB
     Plan --> Records
     Records --> View[Desk API and dashboard<br/>dated advice and manual position recording]
     Journal --> View
+    Providers -->|Current regular IEX candles<br/>read-only chart refresh, 20s cache| View
+    Broker -->|Actual timestamped paper fills<br/>20s display refresh| View
     Quotes[Execution bid/ask and session clock<br/>SIP preferred; IEX identified] --> View
     DisplayCollector[Backend-lifetime display collection<br/>existing feeds; no account actions] --> DisplaySnapshot[(Bounded latest display snapshot<br/>original source and capture times)]
     DisplaySnapshot -->|Read-only API revalidates freshness| View

@@ -14,7 +14,7 @@ import {
   type UTCTimestamp,
 } from 'lightweight-charts'
 import { exportDeskPersonalReceipt, getDeskChart, getDeskPersonalHistory, DESK_CHART_DEFAULT_SESSIONS, type DeskPersonalReceipt, type DeskChart, type DeskChartBar, type DeskChartDecision, type DeskChartFill, type DeskChartTimeframe } from '../../services/api'
-import type { DeskHistory, DeskHistoryFill, DeskHistoryRow, DeskLive, DeskStructure } from '../../services/api'
+import type { DeskHistory, DeskHistoryFill, DeskHistoryRow, DeskLive, DeskPaperLive, DeskStructure } from '../../services/api'
 import { SessionPrice } from './StockBoard'
 import { LEVEL_NAME } from './TradeBoard'
 
@@ -423,6 +423,48 @@ const fillRows = (history: DeskHistory | undefined): DeskHistoryFill[] => {
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
+// Merge confirmed broker fills with archived fills as a multiset, retaining same-price separate executions.
+const currentFillRows = (history: DeskHistory | undefined, activity: DeskPaperLive['activity'], ticker: string, now: number): DeskHistoryFill[] => {
+  const archived = fillRows(history)
+  const matched = new Set<number>()
+  // Match old archive rows without an execution identity conservatively, without deduplicating distinct fills.
+  const identity = (fill: DeskHistoryFill) => `${fill.date}:${fill.side}:${fill.qty}:${fill.price}`
+  const fresh: DeskHistoryFill[] = []
+  for (const fill of activity?.fills ?? []) {
+    const instant = recordedInstant(fill.filled_at)
+    if (fill.symbol !== ticker || !instant || instant.getTime() > now
+      || !['buy', 'sell'].includes(fill.side) || !Number.isFinite(fill.qty) || fill.qty <= 0
+      || !Number.isFinite(fill.price) || fill.price <= 0) continue
+    const date = recordedSession(fill.filled_at)!
+    if (date !== activity?.session) continue
+    const row: DeskHistoryFill = {date, side: fill.side as 'buy' | 'sell', qty: fill.qty, price: fill.price, filled_at: fill.filled_at}
+    const index = archived.findIndex((saved, i) => !matched.has(i) && identity(saved) === identity(row)
+      && (!saved.filled_at || Date.parse(saved.filled_at) === instant.getTime()))
+    if (index >= 0) {
+      matched.add(index)
+      archived[index] = {...archived[index], filled_at: fill.filled_at}
+      continue
+    }
+    fresh.push(row)
+  }
+  return [...archived, ...fresh].sort((a, b) => a.date.localeCompare(b.date)
+    || (Date.parse(a.filled_at ?? '') || 0) - (Date.parse(b.filled_at ?? '') || 0))
+}
+
+// Place timestamped fills only on their containing 15-minute candle, never on a nearest substitute.
+const currentIntradayMarkers = (fills: DeskHistoryFill[], bars: DeskChartBar[]): ChartMarker[] =>
+  fills.flatMap(fill => {
+    const at = recordedInstant(fill.filled_at)?.getTime()
+    if (at == null) return []
+    const candle = bars.find(bar => {
+      const start = recordedInstant(bar.time)?.getTime()
+      return start != null && bar.date === fill.date && start <= at && at < start + 900_000 && drawableCandle(bar)
+    })
+    return candle ? [{time: instantStamp(candle.time!), position: fill.side === 'buy' ? 'belowBar' as const : 'aboveBar' as const,
+      color: fill.side === 'buy' ? TRADE_BUY : TRADE_SELL, shape: 'circle' as const,
+      text: tradeText(fill.side, fill.qty, fill.price), size: 2}] : []
+  })
+
 // Whether a fill is the executor's redeploy of idle cash rather than an entry
 // or a rotation, as the record names it.
 const isRedeploy = (fill: {kind?: string}) => fill.kind === 'redeploy'
@@ -521,6 +563,7 @@ export const TickerChart = ({
   userId,
   ticker,
   history,
+  paperActivity,
   quote,
   live,
   now = Date.now(),
@@ -534,6 +577,7 @@ export const TickerChart = ({
   userId: string
   ticker: string
   history?: DeskHistory
+  paperActivity?: DeskPaperLive['activity']
   quote?: LiveQuote
   live?: DeskLive
   now?: number
@@ -570,7 +614,9 @@ export const TickerChart = ({
   const [receiptFailures, setReceiptFailures] = useState<string[]>([])
   const [receiptReload, setReceiptReload] = useState(0)
   const [fullHistory, setFullHistory] = useState(false)
+  const [indicatorsOpen, setIndicatorsOpen] = useState(false)
   const [receivedData, setData] = useState<DeskChart | null>(null)
+  const [refreshFailed, setRefreshFailed] = useState(false)
   // A timeframe or ticker switch must not reinterpret the previous response while the next loads.
   const data = receivedData?.ticker === ticker && receivedData.timeframe === timeframe ? receivedData : null
   const [error, setError] = useState<string | null>(null)
@@ -578,6 +624,7 @@ export const TickerChart = ({
   const [drawFailed, setDrawFailed] = useState(false)
   const holder = useRef<HTMLDivElement | null>(null)
   const chartRef = useRef<IChartApi | null>(null)
+  const savedView = useRef<{scope: string; range: {from: number; to: number} | null} | null>(null)
   const markersRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null)
   // The candle series of the current chart, so the board's level lines can be
   // replaced in place when a candle moves them, without redrawing the chart.
@@ -646,6 +693,7 @@ export const TickerChart = ({
   useEffect(() => {
     setData(null)
     setError(null)
+    setRefreshFailed(false)
   }, [userId, ticker, timeframe, intradaySessions])
 
   useEffect(() => {
@@ -659,17 +707,26 @@ export const TickerChart = ({
           if (!live || sequence !== request) return
           setData(payload)
           setError(null)
+          setRefreshFailed(false)
         })
-        .catch((e: Error) => live && sequence === request && first && setError(e.message))
+        .catch((e: Error) => {
+          if (!live || sequence !== request) return
+          setRefreshFailed(true)
+          if (first) setError(e.message)
+        })
     }
     read(true)
     // The averages, bands and levels are computed on the server against the
     // live candle, so they only move if the payload is re-read. Without this
     // the candle walked while every line beside it stayed at the last close.
-    const timer = window.setInterval(() => read(false), 60_000)
+    const timer = window.setInterval(() => { if (!document.hidden) read(false) }, 20_000)
+    // Returning to the chart reads the latest snapshot immediately.
+    const resume = () => { if (!document.hidden) read(false) }
+    document.addEventListener('visibilitychange', resume)
     return () => {
       live = false
       window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', resume)
     }
   }, [userId, ticker, timeframe, intradaySessions, quote?.bar, quote?.last])
 
@@ -686,14 +743,27 @@ export const TickerChart = ({
   const actionMarkers = useMemo(() => recommendationMarkers(events, merged.bars, timeframe), [events, merged, timeframe])
   const changes = useMemo(() => gradeMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
   const decisions = useMemo(() => decisionMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
-  const fillMarks = useMemo(() => fillMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
-  const fills = useMemo(() => fillRows(history), [history])
+  const fills = useMemo(() => currentFillRows(history, paperActivity, ticker, now), [history, paperActivity, ticker, now])
+  const fillMarks = useMemo(() => fillMarkers({...history, fills} as DeskHistory, merged.bars, timeframe), [history, fills, merged, timeframe])
   // The fifteen-minute layers come timed from the payload rather than dated
   // from the history file, so they are empty on daily and weekly.
   // The 15m view marks the signal on the bar it was made; where a trade fills
   // is the paper account's own fill, drawn from the fills, never projected.
   const timedDecisions = useMemo(() => intradayDecisionMarkers(data), [data])
-  const timedFills = useMemo(() => intradayFillMarkers(data), [data])
+  const timedFills = useMemo(() => {
+    const recorded = intradayFillMarkers(data)
+    const current = currentIntradayMarkers(fills, merged.bars)
+    const counts = new Map<string, number>()
+    // Keep separate identical executions while avoiding the same fill arriving through both sources.
+    const key = (marker: ChartMarker) => `${marker.time}:${marker.text}`
+    recorded.forEach(marker => counts.set(key(marker), (counts.get(key(marker)) ?? 0) + 1))
+    return [...recorded, ...current.filter(marker => {
+      const id = key(marker), remaining = counts.get(id) ?? 0
+      if (!remaining) return true
+      counts.set(id, remaining - 1)
+      return false
+    })]
+  }, [data, fills, merged])
 
   useEffect(() => {
     if (!holder.current || !data || !merged.bars.length) return
@@ -798,20 +868,22 @@ export const TickerChart = ({
         chart.timeScale().setVisibleLogicalRange({from: Math.max(0, merged.bars.length - count), to: merged.bars.length + 1})
       }
     }
-    frameView()
-    const resize = new ResizeObserver(frameView)
-    resize.observe(holder.current)
+    const scope = `${userId}:${ticker}:${timeframe}:${fullHistory}:${intradaySessions}`
+    if (savedView.current?.scope === scope && savedView.current.range) {
+      chart.timeScale().setVisibleLogicalRange(savedView.current.range)
+    } else frameView()
+    // Auto sizing keeps the canvas responsive without resetting the trader's pan or zoom.
     setDrawFailed(false)
 
     return () => {
+      savedView.current = {scope, range: chart.timeScale().getVisibleLogicalRange()}
       chart.remove()
-      resize.disconnect()
       chartRef.current = null
       markersRef.current = null
       candlesRef.current = null
       drawn.length = 0
     }
-  }, [data, merged, timeframe, fullHistory])
+  }, [data, merged, timeframe, fullHistory, userId, ticker, intradaySessions])
 
   // The board's levels as horizontal lines labelled on the price axis, on
   // every timeframe (the 15m view draws no daily indicator, so this is the
@@ -984,8 +1056,8 @@ export const TickerChart = ({
           )}
           {timeframe === '15m'
             ? <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Fifteen-minute chart caption">
-              Newest stored session: {data.bars[data.bars.length - 1]?.date ?? 'unavailable'}.{' '}
-              {data.sessions} complete session{data.sessions === 1 ? '' : 's'} of fifteen-minute (15m) bars loaded ({merged.bars.length} bars, New York time, closing auction included where stored); pan or zoom for history.
+              Latest session: {data.bars[data.bars.length - 1]?.date ?? 'unavailable'}.{' '}
+              {data.sessions} {data.live_feed ? '' : 'complete '}session{data.sessions === 1 ? '' : 's'} of fifteen-minute (15m) bars loaded ({merged.bars.length} bars, New York time, closing auction included where stored); pan or zoom for history.
               Paper fills use their recorded time. Policy replay uses the last regular bar of its decision session.
             </p>
             : <p className="mt-1 text-[11px] text-[#6e6e73]">
@@ -1000,6 +1072,7 @@ export const TickerChart = ({
           <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Chart legend">
             Circles: paper fills. Arrows: grade changes, labelled Saved or Recalculated when known.{showDecisions ? ' Signal and RESET labels: policy replay, not recorded recommendations.' : ''}
           </p>
+          <p aria-label="Chart refresh status" role={refreshFailed ? 'status' : undefined} className="mt-1 text-[11px] text-[#6e6e73]">Regular-session chart · refresh 20s{data.live_feed ? ` · ${data.live_feed.toUpperCase()}` : ''}{data.live_as_of ? ` · checked ${recordedTime(data.live_as_of)}` : ''}{refreshFailed ? ' · Refresh failed; showing last snapshot' : data.live_reason ? ` · ${data.live_reason}` : ''}</p>
           {showDecisions && history?.policy && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy decision note">
             {history.policy}: {DECISION_NOTE}
           </p>}
@@ -1018,7 +1091,7 @@ export const TickerChart = ({
             <p className="font-medium text-[#1d1d1f]" aria-label={`${ticker} now`}>Now: {suggestion ? `${suggestion.word} · ${suggestion.detail}` : 'no paper order'}</p>
             {fills.length > 0 && <ul className="mt-1" aria-label={`${ticker} paper fills`}>
               {[...fills].reverse().slice(0, 12).map((fill, index) => (
-                <li key={`${fill.date}-${fill.side}-${fill.qty}-${index}`}>{sessionLabel(fill.date, currentYear)} · {tradeText(fill.side, fill.qty, fill.price)}{isRedeploy(fill) ? ' · idle cash put to work' : ''}</li>
+                <li key={`${fill.date}-${fill.side}-${fill.qty}-${index}`}>{sessionLabel(fill.date, currentYear)}{fill.filled_at ? ` · ${newYorkClock(Date.parse(fill.filled_at) / 1000, false)} ET` : ''} · {tradeText(fill.side, fill.qty, fill.price)}{isRedeploy(fill) ? ' · idle cash put to work' : ''}</li>
               ))}
             </ul>}
             {showDecisions && (recentDecisions.length === 0
@@ -1075,7 +1148,8 @@ export const TickerChart = ({
           </div>
 
           {summary && (
-            <>
+            <details aria-label="Chart indicators" open={indicatorsOpen} onToggle={event => setIndicatorsOpen(event.currentTarget.open)} className="mt-2 text-[11px] text-[#6e6e73]">
+            <summary className="cursor-pointer">Indicators &amp; price basis</summary>
             {timeframe === '15m'
               ? <p className="mt-2 text-[11px] text-[#6e6e73]" aria-label="Fifteen-minute price basis">Prices: {data.basis}; not adjusted for splits or dividends, so a fill can be checked against the print it crossed at. The daily averages, bands and levels are not drawn at this resolution.</p>
               : <p className="mt-2 text-[11px] text-[#6e6e73]">Prices: {data.basis}. Indicators can update during a session; weekly overlays include the forming week when present and can differ from a saved grade.</p>}
@@ -1089,7 +1163,7 @@ export const TickerChart = ({
               : <p>Session VWAP is the volume-weighted average of fifteen-minute bar closes since that session's open, restarting each session; the closing-auction bar continues the session it closes.</p>}
             </details>
             <p className="mt-1 text-[11px] text-[#6e6e73]">Price distance = (chart price − indicator value) ÷ indicator value × 100, rounded to one decimal; not a return.</p>
-            <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-2 text-[11px] sm:grid-cols-2 xl:grid-cols-3">
+            <dl aria-label="Indicator readings" className="mt-2 grid grid-cols-1 gap-x-4 gap-y-2 text-[11px] sm:grid-cols-2 xl:grid-cols-3">
               <div className="flex min-w-0 flex-wrap justify-between gap-x-2 gap-y-0.5">
                 <dt className="text-[#6e6e73]">{merged.live && summary.last.close !== null ? '15-minute bar close' : 'Newest stored candle price'}</dt>
                 <dd className="tabular-nums font-medium">
@@ -1110,7 +1184,7 @@ export const TickerChart = ({
                 </div>
               ))}
             </dl>
-            </>
+            </details>
           )}
 
           {showSignals && <p className="mt-2 text-[11px] text-[#6e6e73]">

@@ -119,8 +119,11 @@ test('shows the earnings coverage lines in grey when names are flagged', async (
   const diagnostics = await installRecord(page, baseURL!, {release_coverage: coverage(LINES)})
   try {
     await openBoard(page)
-    const note = page.getByRole('status', {name: NOTE, exact: true})
+    const note = page.locator('details[aria-label="Earnings coverage"]')
     await expect(note).toBeVisible()
+    await expect(note).not.toHaveAttribute('open', '')
+    await expect(note.locator('summary')).toHaveText('Earnings coverage · 3 notes')
+    await note.locator('summary').click()
     await expect(note.locator('p')).toHaveText(LINES)
     await expect(note).toHaveCSS('color', 'rgb(110, 110, 115)')
     await expect(page.getByRole('alert', {name: NOTE})).toHaveCount(0)
@@ -143,7 +146,7 @@ for (const [label, recorded] of [
     const diagnostics = await installRecord(page, baseURL!, recorded)
     try {
       await openBoard(page)
-      await expect(page.getByRole('status', {name: NOTE, exact: true})).toHaveCount(0)
+      await expect(page.locator('details[aria-label="Earnings coverage"]')).toHaveCount(0)
       await expect(page.getByText('Earnings reading overdue')).toHaveCount(0)
       await expect(page.getByText('No earnings reading')).toHaveCount(0)
     } finally {

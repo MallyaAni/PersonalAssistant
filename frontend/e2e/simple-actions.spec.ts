@@ -217,7 +217,8 @@ test('strategy details start collapsed while active trading restrictions remain 
   const {errors} = await setup(page, {paused: true})
   const details = page.locator('details[aria-label="Strategy details"]')
   await expect(details).not.toHaveAttribute('open', '')
-  await expect(page.getByLabel('Execution rule')).toContainText('FOMC cycle: the paper account follows the FOMC risk rule; its orders say when.')
+  await expect(page.getByLabel('Trading restriction')).toContainText('FOMC cycle: the paper account follows the FOMC risk rule; its orders say when.')
+  await expect(page.getByLabel('Trading restriction')).toBeVisible()
   await details.locator(':scope > summary').click()
   await expect(page.getByLabel('FOMC exposure policy')).toContainText('reduction pending')
   expect(errors).toEqual([])
@@ -294,8 +295,8 @@ test('default ranking follows order stage, size, position and grade', async ({pa
   expect(errors).toEqual([])
 })
 
-// Refreshing paper status promotes due buys and removes filled, terminal or unfunded plans from the buy priority.
-test('automatic buy ranking updates with paper readiness and completion', async ({page}) => {
+// Refreshing paper status prioritizes immediate buys and exits, without promoting completed or unfunded plans.
+test('automatic action ranking updates with paper readiness and completion', async ({page}) => {
   let account = paper([
     order('AAPL', 'buy', 'BUY', 10, 100, 'Entry'),
     order('MSFT', 'buy', 'BUY', 20, 100, 'Entry'),
@@ -309,38 +310,38 @@ test('automatic buy ranking updates with paper readiness and completion', async 
     await page.route('**/desk/paper', route => route.fulfill({json: account}))
     await page.route('**/desk', route => route.fulfill({json: {latest: {
       session, written, regime: {exposure: 1, flags: []},
-      grades: Object.fromEntries(['AAPL', 'MSFT', 'NVDA', 'AMD', 'AMZN', 'META', 'ZERO'].map(ticker => [ticker, {grade: ticker === 'AMD' ? 'A' : 'A+'}])),
+      grades: Object.fromEntries(['AAPL', 'MSFT', 'NVDA', 'AMD', 'AMZN', 'META', 'ZERO'].map(ticker => [ticker, {grade: ticker === 'META' ? 'C' : ticker === 'AMD' ? 'A' : 'A+'}])),
       targets: {policy: POLICY, weights: {}}, book: [], actions: [], briefs: {},
     }, sessions: [session]}}))
   }})
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   // Read the visible stock order independently of expanded details.
   const names = () => board.locator('tbody tr').filter({has: page.getByLabel(/displayed grade$/)}).locator('td:nth-child(2) button').allTextContents()
-  await expect.poll(names).toEqual(['AMD', 'NVDA', 'MSFT', 'AAPL', 'META', 'ZERO', 'AMZN'])
+  await expect.poll(names).toEqual(['META', 'AMD', 'NVDA', 'MSFT', 'AAPL', 'ZERO', 'AMZN'])
   await expect(page.getByRole('button', {name: 'Auto rank', exact: true})).toHaveAttribute('aria-pressed', 'true')
   account = structuredClone(account)
   account.plan.orders.find(o => o.symbol === 'AMD')!.state = 'filled'
   account.plan.orders.find(o => o.symbol === 'MSFT')!.state = 'due'
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect.poll(names).toEqual(['MSFT', 'NVDA', 'AAPL', 'META', 'ZERO', 'AMZN', 'AMD'])
+  await expect.poll(names).toEqual(['META', 'MSFT', 'NVDA', 'AAPL', 'ZERO', 'AMZN', 'AMD'])
   await board.getByRole('button', {name: 'Size', exact: true}).click()
   await expect.poll(names).toEqual(['META', 'AMZN', 'AMD', 'NVDA', 'MSFT', 'AAPL', 'ZERO'])
   await page.getByRole('button', {name: 'Auto rank', exact: true}).click()
-  await expect.poll(names).toEqual(['MSFT', 'NVDA', 'AAPL', 'META', 'ZERO', 'AMZN', 'AMD'])
+  await expect.poll(names).toEqual(['META', 'MSFT', 'NVDA', 'AAPL', 'ZERO', 'AMZN', 'AMD'])
   // A terminal flag outranks a stale due state; submitted shares are already working orders.
   Object.assign(account.plan.orders.find(o => o.symbol === 'MSFT')!, {terminal: true})
   Object.assign(account.plan.orders.find(o => o.symbol === 'NVDA')!, {submitted_qty: 30, sent_at: at})
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect.poll(names).toEqual(['AAPL', 'META', 'NVDA', 'ZERO', 'AMZN', 'AMD', 'MSFT'])
+  await expect.poll(names).toEqual(['META', 'AAPL', 'NVDA', 'ZERO', 'AMZN', 'AMD', 'MSFT'])
   // A large previous fill cannot inflate the size of the remaining buy plan.
   account.plan.orders.push({...account.plan.orders.find(o => o.symbol === 'AAPL')!,
     client_order_id: 'AAPL-previous-fill', qty: 100, notional: 10000, state: 'filled'})
   Object.assign(account.plan.orders.find(o => o.symbol === 'NVDA')!, {submitted_qty: null, sent_at: null})
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect.poll(names).toEqual(['NVDA', 'AAPL', 'META', 'ZERO', 'AMZN', 'AMD', 'MSFT'])
+  await expect.poll(names).toEqual(['META', 'NVDA', 'AAPL', 'ZERO', 'AMZN', 'AMD', 'MSFT'])
   Object.assign(account.plan.orders.find(o => o.symbol === 'ZERO')!, {state: 'problem', status: 'Not sent'})
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect.poll(names).toEqual(['ZERO', 'NVDA', 'AAPL', 'META', 'AMZN', 'AMD', 'MSFT'])
+  await expect.poll(names).toEqual(['ZERO', 'META', 'NVDA', 'AAPL', 'AMZN', 'AMD', 'MSFT'])
   expect(errors).toEqual([])
 })
 

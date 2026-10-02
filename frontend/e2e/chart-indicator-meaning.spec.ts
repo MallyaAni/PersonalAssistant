@@ -88,6 +88,7 @@ for (const scenario of scenarios) {
       await page.goto('/#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
+      await chart.getByText('Indicators & price basis', {exact: true}).click()
       await expect(chart.locator('dl')).toBeVisible()
       await expect(chart.locator('dl')).not.toContainText(/Infinity|NaN/)
       const label = scenario.key === 'band_lower' ? 'Lower Bollinger band' : '9-session EMA'

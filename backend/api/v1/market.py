@@ -1395,6 +1395,14 @@ async def desk_chart(
 ) -> dict[str, object]:
     """Return adjusted bars, overlay lines and levels for one name."""
     _operator_only(user_id)
+    from backend.market import live_chart
+
+    if timeframe not in (*ticker_chart.TIMEFRAMES, ticker_chart_intraday.TIMEFRAME):
+        allowed = (*ticker_chart.TIMEFRAMES, ticker_chart_intraday.TIMEFRAME)
+        raise HTTPException(
+            status_code=400, detail=f"timeframe must be one of {', '.join(allowed)}"
+        )
+    current = await asyncio.to_thread(live_chart.read, ticker.upper())
     if timeframe == ticker_chart_intraday.TIMEFRAME:
         root = _root()
         built = await asyncio.to_thread(
@@ -1404,18 +1412,13 @@ async def desk_chart(
             ticker.upper(),
             ticker_chart_intraday.clamp_sessions(sessions),
             ticker_chart_intraday.read_history(root, ticker.upper()),
+            current,
         )
         if built is None:
             raise HTTPException(
                 status_code=404, detail="no fifteen-minute bars stored for that name"
             )
         return {"user_id": user_id, **built}
-    if timeframe not in ticker_chart.TIMEFRAMES:
-        allowed = (*ticker_chart.TIMEFRAMES, ticker_chart_intraday.TIMEFRAME)
-        raise HTTPException(
-            status_code=400,
-            detail=f"timeframe must be one of {', '.join(allowed)}",
-        )
     capped = max(20, min(int(sessions or ticker_chart.DEFAULT_SESSIONS), 2000))
     # The same candle the board reads, so the averages and bands include
     # today only when the retained snapshot still contains valid current evidence.
@@ -1475,10 +1478,24 @@ async def desk_chart(
         ticker.upper(),
         capped,
         timeframe,
-        live_bar,
+        {
+            "session": current["session"],
+            "bar": current["bars"][-1].start.isoformat(),
+            "open": current["bars"][0].open,
+            "high": max(bar.high for bar in current["bars"]),
+            "low": min(bar.low for bar in current["bars"]),
+            "last": current["bars"][-1].close,
+        }
+        if current["bars"]
+        else live_bar,
     )
     if built is None:
         raise HTTPException(status_code=404, detail="no price history for that name")
+    built["live_as_of"] = current["as_of"]
+    built["live_reason"] = current["reason"]
+    built["live_feed"] = "iex" if current["bars"] and built.get("quote_bar") else None
+    if current["bars"] and built.get("quote_bar"):
+        built["last_bar_complete"] = current["complete"]
     return {"user_id": user_id, **built}
 
 

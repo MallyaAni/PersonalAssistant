@@ -7,6 +7,7 @@ const DISPLAY_NOTE = 'Recalculated close decisions; not recorded recommendations
 type CanvasState = Window & {__markerDraws: {text: string; timeframe: string | null}[]}
 const REBALANCE_NOTE = 'reset sessions from the paper state\'s rebalance clock and the nightly records; add/trim markers only on those, target drift between resets is not traded'
 type DecisionRow = {date: string; grade: string; action?: string; target_weight?: number; delta_weight?: number; rebalance?: boolean}
+type LiveFixture = {price: number; failNextChart?: boolean; fills: {symbol: string; side: string; qty: number; price: number; filled_at?: string}[]}
 
 // The equal-weight policy's replayed decisions in one name, as the nightly
 // classifies them: it enters the A/A+ book (a buy at 1/11), its target drifts
@@ -36,7 +37,7 @@ const FILLS = [
 ]
 
 // Serve one name's history with replayed decisions and paper fills behind the real chart, and record its paint calls.
-async function install(page: Page, frontendURL: string, options: {fills?: (typeof FILLS[number] & {kind?: string})[]; policy?: string; rows?: DecisionRow[]; rebalanceNote?: string | null} = {}) {
+async function install(page: Page, frontendURL: string, options: {fills?: (typeof FILLS[number] & {kind?: string; filled_at?: string})[]; policy?: string; rows?: DecisionRow[]; rebalanceNote?: string | null; live?: LiveFixture} = {}) {
   const rebalanceNote = options.rebalanceNote === undefined ? REBALANCE_NOTE : options.rebalanceNote
   const history = {
     ticker: 'AAPL', asof: '2026-09-18', horizon: 20,
@@ -103,15 +104,28 @@ async function install(page: Page, frontendURL: string, options: {fills?: (typeo
     else if (url.pathname === `${base}/personal-history`) json = {items: [], next_cursor: null}
     else if (url.pathname === `${base}/history/AAPL`) json = history
     else if (url.pathname === `${base}/chart/AAPL`) {
+      if (options.live?.failNextChart) {
+        options.live.failNextChart = false
+        return route.fulfill({status: 503, json: {detail: 'Synthetic chart outage'}})
+      }
+      if (options.live && url.searchParams.get('timeframe') === '15m') {
+        json = {ticker: 'AAPL', timeframe: '15m', adjusted: false, basis: 'raw prices; current IEX', sessions: 1,
+          bars: ['13:30', '13:45', '14:00'].map(time => ({date: '2026-09-24', time: `2026-09-24T${time}:00Z`, open: 100, high: 130, low: 90, close: options.live!.price, volume: 100})),
+          overlays: {session_vwap: [100, 101, options.live.price]}, levels: {}, entries: [],
+          live_as_of: new Date(await page.evaluate(() => Date.now())).toISOString(), live_feed: 'iex', data_status: 'complete', last_bar_complete: false,
+        }
+        return route.fulfill({json})
+      }
       const weekly = url.searchParams.get('timeframe') === 'weekly'
       const dates = weekly ? ['2026-09-11', '2026-09-18', '2026-09-24'] : ['2026-09-14', '2026-09-15', '2026-09-16', '2026-09-17', '2026-09-18', '2026-09-24']
       const series = (value: number) => dates.map(() => value)
-      json = {ticker: 'AAPL', timeframe: weekly ? 'weekly' : 'daily', adjusted: true, basis: 'synthetic adjusted prices', sessions: dates.length, bars: dates.map(date => ({date, open: 100, high: 120, low: 90, close: 110, volume: 100})), overlays: weekly
+      json = {ticker: 'AAPL', timeframe: weekly ? 'weekly' : 'daily', adjusted: true, basis: 'synthetic adjusted prices', sessions: dates.length, bars: dates.map(date => ({date, open: 100, high: 130, low: 90, close: options.live?.price ?? 110, volume: 100})), overlays: weekly
         ? {ema9: series(100), ema21: series(125)}
         : {ema9: series(100), ema21: series(125), ema50: series(110), ema200: series(100), band_upper: series(125), band_lower: series(0)},
       levels: weekly ? {} : {high_52w: series(140), low_52w: series(80)}, entries: [], data_status: 'complete', quote_bar: '2026-09-24T13:45:00Z', last_bar_complete: false}
     } else if (url.pathname === `${base}/entries` || url.pathname === `${base}/intraday`) json = {rows: [], top_buys: [], changed: []}
-    else if (url.pathname === `${base}/paper`) json = {reason: 'unavailable'}
+    else if (url.pathname === `${base}/paper`) json = options.live ? {equity: 100000, cash: 100000, orders: [], holdings: [],
+      targets: {weights: {}}, activity: {session: '2026-09-24', complete: true, fills: options.live.fills}} : {reason: 'unavailable'}
     else if (url.pathname === `${base}/earnings/AAPL`) json = {symbol: 'AAPL', read: null}
     else if (url.pathname === `${base}/live/read/AAPL`) json = {symbol: 'AAPL', read: null, lines: {short: [], medium: [], long: []}}
     else {
@@ -134,6 +148,78 @@ async function finish(testInfo: TestInfo, fixture: Awaited<ReturnType<typeof ins
 // Read the marker texts the canvas actually drew under one timeframe.
 const drawn = (page: Page, frame: string) => page.evaluate(selected =>
   (window as unknown as CanvasState).__markerDraws.filter(row => row.timeframe === selected).map(row => row.text), frame)
+
+for (const width of [1280, 390]) {
+  // A broker fill arriving after opening the chart appears in every timeframe without a reload.
+  test(`current paper fills and candles refresh across all timeframes at ${width}px`, async ({page, baseURL}, testInfo) => {
+    await page.setViewportSize({width, height: 900})
+    const live: LiveFixture = {price: 110, fills: []}
+    const fixture = await install(page, baseURL!, {live, fills: []})
+    try {
+      await page.goto('/#desk')
+      await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
+      const chart = page.getByRole('region', {name: 'AAPL price chart'})
+      await expect(chart.locator('details[aria-label="Chart indicators"]')).not.toHaveAttribute('open', '')
+      live.price = 111
+      live.fills.push({symbol: 'AAPL', side: 'buy', qty: 3, price: 111, filled_at: '2026-09-24T14:00:05Z'},
+        {symbol: 'AAPL', side: 'buy', qty: 9, price: 999, filled_at: '2026-09-24T15:00:00Z'},
+        {symbol: 'AAPL', side: 'buy', qty: 9, price: 999},
+        {symbol: 'OTHER', side: 'buy', qty: 9, price: 999, filled_at: '2026-09-24T14:00:05Z'})
+      await page.clock.runFor(21000)
+      const fills = chart.locator('[aria-label="AAPL paper fills"] li')
+      await expect(fills).toHaveCount(1)
+      await expect(fills).toContainText('10:00 AM ET · BUY 3 @ $111.00')
+      await expect.poll(() => drawn(page, 'D')).toContain('BUY 3 @ $111.00')
+      await chart.getByRole('button', {name: 'W', exact: true}).click()
+      await expect.poll(() => drawn(page, 'W')).toContain('BUY 3 @ $111.00')
+      await chart.getByRole('button', {name: '15m', exact: true}).click()
+      await expect.poll(() => drawn(page, '15m')).toContain('BUY 3 @ $111.00')
+      await expect(chart.getByLabel('Chart refresh status')).toContainText('refresh 20s · IEX')
+      await chart.getByText('Indicators & price basis', {exact: true}).click()
+      await expect(chart.getByLabel('Indicator readings')).toContainText('$111.00')
+      live.price = 112
+      live.fills.push({symbol: 'AAPL', side: 'sell', qty: 1, price: 112, filled_at: '2026-09-24T14:00:25Z'})
+      await page.clock.runFor(21000)
+      await expect(fills).toHaveCount(2)
+      await expect.poll(() => drawn(page, '15m')).toContain('SELL 1 @ $112.00')
+      await expect(chart.getByLabel('Indicator readings')).toContainText('$112.00')
+      await chart.getByRole('button', {name: 'D', exact: true}).click()
+      await expect.poll(() => drawn(page, 'D')).toContain('SELL 1 @ $112.00')
+      await expect(chart.getByLabel('Indicator readings')).toContainText('$112.00')
+      expect((await drawn(page, '15m')).some(text => text.includes('$999'))).toBe(false)
+      await chart.screenshot({path: testInfo.outputPath('current-paper-chart.png')})
+    } finally {await finish(testInfo, fixture)}
+  })
+}
+
+// Archive/live overlap enriches missing timestamps without merging distinct identical-price fills.
+test('current fills preserve execution multiplicity and disclose a failed refresh', async ({page, baseURL}, testInfo) => {
+  const live: LiveFixture = {price: 111, fills: []}
+  const fixture = await install(page, baseURL!, {live, fills: [{date: '2026-09-24', side: 'buy', qty: 3, price: 111}]})
+  try {
+    await page.goto('/#desk')
+    await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
+    const chart = page.getByRole('region', {name: 'AAPL price chart'})
+    live.fills.push({symbol: 'AAPL', side: 'buy', qty: 3, price: 111, filled_at: '2026-09-24T14:00:05Z'},
+      {symbol: 'AAPL', side: 'buy', qty: 3, price: 111, filled_at: '2026-09-24T14:00:15Z'})
+    await page.clock.runFor(21000)
+    await expect(chart.locator('[aria-label="AAPL paper fills"] li')).toHaveCount(2)
+    await chart.getByText('Indicators & price basis', {exact: true}).click()
+    await expect(chart.getByLabel('Indicator readings')).toContainText('$111.00')
+    live.failNextChart = true
+    await page.clock.runFor(21000)
+    await expect(chart.getByLabel('Chart refresh status')).toContainText('Refresh failed; showing last snapshot')
+    await expect(chart.getByLabel('Indicator readings')).toContainText('$111.00')
+    await page.clock.runFor(21000)
+    await expect(chart.getByLabel('Chart refresh status')).not.toContainText('Refresh failed')
+    expect(fixture.diagnostics.badResponses).toHaveLength(1)
+    expect(fixture.diagnostics.badResponses[0]).toMatch(/^503 .*\/desk\/chart\/AAPL/)
+    // This one injected HTTP failure is expected; all other browser diagnostics remain strict.
+    fixture.diagnostics.badResponses = []
+    expect(fixture.diagnostics.consoleErrors.every(text => text.includes('503'))).toBe(true)
+    fixture.diagnostics.consoleErrors = []
+  } finally {await finish(testInfo, fixture)}
+})
 
 for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) {
   // The chart speaks the board's words: the paper account's trades are BUY/SELL circles, listed newest
