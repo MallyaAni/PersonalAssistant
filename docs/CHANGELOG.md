@@ -1,5 +1,42 @@
 # Changelog
 
+## 2026-10-01 — Form 6-K false admissions: a month's sales, a guidance update, a preliminary figure, the audited year (fix/6k-false-admissions)
+
+- Why: the 20:27 ET `--reclassify-6k` re-read counted completed years above
+  four for TSMC (2006-2009, 2013, 2015) and Silicon Motion (2009, 2010,
+  2016), so the tone re-score was not run. Every flagged filing was opened
+  on EDGAR: TSMC's were monthly sales reports ("TSMC March 2006 Sales
+  Report", "December 2007 Sales Report", "February 2009 Sales Report and
+  Revises First-Quarter Business Guidance"), the audited 2012 year two
+  months after its fourth-quarter release, and a mid-quarter "Revenue
+  Outlook"; Silicon Motion's were guidance updates ("Updates First Quarter
+  2009 Guidance") and preliminary figures ("Announces Preliminary 1Q 2010
+  Revenue", 2016's untitled "based upon its preliminary first quarter
+  financial results").
+- `edgar.results_headline`: `BESIDE_THE_RELEASE` refuses a month's sales,
+  a preliminary figure and the audited year; `OUTLOOK_ONLY` refuses a
+  guidance update/revision/confirmation or an outlook unless the headline
+  also says results are published (`RESULTS_REPORTED`: "ASML confirms 2013
+  outlook ... today publishes 2013 third-quarter results" and "Nebius
+  reports ... and raises ARR guidance" stay admitted).
+- `edgar.html_to_text` joins a word split across inline formatting tags
+  with no space between ("n</font><font>et income"): ASML's 2021-01-20
+  full-year release now reads "net income in 2020" and is admitted.
+- `market_edgar --reclassify-6k` drops every carried decision (it kept the
+  admissions, so a tightened rule could not revoke one) and reports a name
+  the as-of partition already holds as failed instead of keeping it
+  silently.
+- Measured on every 6-K the five filers have on EDGAR (TSM 1,331, SIMO,
+  ASML, ARM, NBIS), old rule against new: the only changes are the 15
+  false admissions removed (TSM 8 including 2005-06-10, SIMO 7 including
+  2008-12-22) and ASML 2021-01-20 added. Completed years: TSM four each
+  2006-2025 (2004 and 2005 three: the Q1 2004 and Q4 2004 releases are
+  refused, unchanged); SIMO four each except 2008 and 2009 (three: the Q4
+  2007 and Q3 2009 releases were never filed on EDGAR); ASML 2021-2025
+  four; ARM and NBIS unchanged. No completed year above four.
+- Shadow identity continuation declared (884a9418 and earlier ->
+  39a7f99d). Diagram impact: NONE.
+
 ## 2026-10-01 — Deployed `1a6eab2a` (20:24 ET): A5-hard tone expiry
 
 - `backend/market/tone_expiry.py`: `TONE_EXPIRY = HARD`. A book name's

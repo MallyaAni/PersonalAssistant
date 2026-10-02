@@ -13,9 +13,14 @@ company facts, and stores both as immutable frames in today's partition
 already holds. A refused or unknown ticker is reported per ticker and the
 run continues. The 6-K decisions (accession -> admitted) ride on the
 events frame's metadata as `classified_6k` and are carried into the next
-refresh so only new 6-Ks are read; `--reclassify-6k` drops the carried
-refusals (the admissions stay) so a refresh re-reads every 6-K the previous
-rule refused, which is what a widened classifier needs. `--status` reports,
+refresh so only new 6-Ks are read; `--reclassify-6k` drops every carried
+decision, so a refresh re-reads every 6-K under the current rule: a widened
+rule admits what the old one refused, and a tightened one revokes what the
+old one admitted (keeping the admissions, as this flag first did, left
+TSMC's monthly sales reports and Silicon Motion's guidance updates admitted
+after the rule refused them). A partition is immutable, so a name the as-of
+partition already holds is not reclassified and is reported as failed.
+`--status` reports,
 per ticker, how
 many events and quarterly facts the newest partition holds. `--audit-6k`
 lists the admitted 6-K releases per name per year from the stored frames
@@ -75,8 +80,10 @@ def refresh(
     filing still writes today's partition (the same facts, a new source
     time); a failed fetch writes nothing, and the store keeps serving that
     name's last successful partition, which is the cached-data policy.
-    With `reclassify_6k`, the 6-K refusals carried from the previous
-    partition are dropped, so every refused 6-K is read again.
+    With `reclassify_6k`, every 6-K decision carried from the previous
+    partition is dropped, so every 6-K is read again under the current
+    rule; a name the partition already holds cannot be rewritten and is
+    returned as failed rather than silently kept.
     """
     pacer = edgar.Pacer()
     cik_map = edgar.fetch_cik_map(pacer=pacer)
@@ -85,6 +92,15 @@ def refresh(
     started = time.time()
     for ticker in tickers:
         if store.has_frame(EVENTS, asof, ticker):
+            if reclassify_6k:
+                print(
+                    f"{ticker:6} FAILED  not reclassified: partition {asof} "
+                    "already holds it (partitions are immutable)",
+                    flush=True,
+                )
+                failed += 1
+                failed_names.append(ticker)
+                continue
             skipped += 1
             continue
         # SEC lists class shares with a hyphen, the same as the market source.
@@ -94,9 +110,7 @@ def refresh(
             failed += 1
             failed_names.append(ticker)
             continue
-        decisions = prior_decisions(store, ticker, asof)
-        if reclassify_6k:
-            decisions = {k: v for k, v in decisions.items() if v}
+        decisions = {} if reclassify_6k else prior_decisions(store, ticker, asof)
         try:
             record = edgar.fetch_company(ticker, cik, pacer=pacer, decisions=decisions)
         except edgar.EdgarUnavailableError as exc:
