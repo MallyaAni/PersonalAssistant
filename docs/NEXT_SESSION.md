@@ -1,5 +1,76 @@
 # Next session
 
+## 2026-10-02 — LIVE: deploy.sh gates before it touches anything (all sessions read this)
+
+VERIFIED deployed `130432a8` (merge of `ops/deploy-gate-first`, head
+`6841411a`) at 16:30 ET through the old deploy.sh: unit 8,640 passed / 93
+skipped / 6 xfailed, routing 100/100, backup mirrored, migrations no-op,
+verify 401, post-deploy `ok (cheap)`. The diff is scripts, compose (the
+test image's name only), tests and AGENTS.md; nothing the desk imports
+changed. `~/deploy/anios` HEAD = `data/.deployed-commit` = `130432a8`.
+
+**Rule for every session: never `git pull`, `git merge` or `git checkout`
+in `~/deploy/anios` by hand, and never `docker compose up` there by hand.**
+The balancer (every 15 min, 09:00-16:00 ET) and the 19:30 ET nightly run
+Python straight from that checkout, and `anios_frontend` serves its
+`frontend/`. On 10-02 a branch was merged there at 10:14, and the 12:29
+deploy of `0dfdcd89` left the checkout and `anios-*:latest` on that
+failed-gate commit while the containers ran `8be5ecbe`. Push to GitHub
+main, then run `bash scripts/deploy.sh` in `~/deploy/anios`; nothing else.
+
+What `scripts/deploy.sh` does now (the next deploy is the first to run it):
+
+1. Takes `data/.deploy.lock` (flock, the shared `~/anios/data`); a second
+   deploy refuses with "Another deploy holds ...".
+2. Refuses to start 19:20-19:55 ET. Market-hours deploys stay allowed.
+3. Warns in a `!!!` banner when the checkout's HEAD is not
+   `data/.deployed-commit`, naming both SHAs.
+4. Fetches and resolves the target (what `pull --ff-only` would reach)
+   without touching the checkout.
+5. Gates the target in a fresh worktree `~/deploy/.gate/<sha>` (`.env`
+   symlinked in, compose project `anios`): unit suite on its own database
+   `anios_gate_deploy` (research `unitgate.sh` keeps `anios_gate`, so the
+   two no longer collide as they did at 12:24-12:30 today), then routing.
+   The test image is tagged `anios-functional-tests:deploy-gate`.
+   **A failed gate prints `NOTHING CHANGED` and exits 1; the checkout,
+   images and containers are as they were.**
+6. On pass: waits for any `[b]ackend.cli.market_(balancer|daily)` (and
+   for a balancer tick under a minute away), re-checks the nightly window
+   and that the checkout did not move during the gate, fast-forwards,
+   builds, and tags each image `:<sha>` as well as `:latest`.
+7. A failure before the restart (build, backup, migration) resets the
+   checkout and `:latest` back. After the restart, as before: verify,
+   marker, recovery activation, detached post-deploy checks (they no
+   longer inherit the lock).
+
+New flags: `--restore` (check the deployed commit out again, between
+balancer runs; images and containers untouched), `--dry-run` (fetch and
+gate for real, change nothing) and `--deploy-dir=DIR` (act on a throwaway
+clone; set `COMPOSE_PROJECT_NAME=anios` for a clone not named `anios`).
+`--no-pull` gates HEAD; uncommitted edits to tracked files are refused
+unless `--skip-gate`, because the gate cannot see them.
+
+Evidence: `backend/tests/test_deploy_gate_first.py` (10 tests on a temp
+git repo with stub gate/docker/curl/pgrep: failing gate untouched,
+passing gate updates checkout+tags+marker, lock refusal, balancer wait
+and timeout, nightly window, rollback after a failed migration,
+--restore, --dry-run, dirty refusal). `unitgate.sh` on `6841411a`: 8,640
+passed, exit 0 (`~/scratch/gate_dg2.log`). Dry run against
+`~/scratch/dg-clone` (8a77c116 -> 6841411a): unit 8,640 + routing 100
+passed in the gate worktree, `anios_db` not recreated, clone untouched
+(`~/scratch/dg_dryrun.log`). `test_agent_runs` + `test_runs_api_isolation`
+alone on main `14f61a0f`: 22 passed - today's 12:29 failure was the two
+overlapping gates. Deploy log `~/scratch/dg_deploy.log`.
+
+State at 16:32 ET: running images tagged by hand to match -
+`anios-{backend,discovery-worker,presentation-worker,local-capabilities,
+memory-maintenance,storage-collection}:130432a8` and
+`anios-{frontend,gateway}:8a77c116` (built 13:30 from it). `0dfdcd89`
+has been live since the 13:00 gated deploy of `8722db85`, so the D/W and
+15m charts already show IEX-only intraday highs/lows. Not yet exercised
+on spark1: the new script's real build/tag/restart path and its rollback
+(only the stub tests and the dry run cover them) - watch the next deploy.
+
 ## 2026-10-02 — LIVE: personal quote refresh and decision-price UI verified
 
 VERIFIED deployed checkpoint `8a77c1168dcee36df7ceb262a2d52d73f502d909`
@@ -782,7 +853,7 @@ expire? a registered study, not a quick change); SIMO (until tonight's
 re-read); WDAY (its 2026-09-29 8-K 2.02 was a restructuring filing with no
 release text; it clears at its next release).
 
-**Operational trap, not in AGENTS.md yet:** the cron jobs
+**Operational trap (fixed 10-02 16:30 by gate-first deploy.sh; see the top entry and AGENTS.md):** the cron jobs
 (`~/desk_intraday.sh` every 15 minutes in market hours, `~/desk_daily.sh`
 at 19:30 ET) run Python straight from `~/deploy/anios`. A `git pull` there
 changes what the next balancer run and the nightly execute at once,
