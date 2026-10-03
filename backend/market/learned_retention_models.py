@@ -32,6 +32,17 @@ class DailyForecasts:
     models: dict
 
 
+# Preserve original indices when a training-only column has no observations.
+@dataclass(frozen=True)
+class _ObservedHead:
+    estimator: object
+    columns: np.ndarray
+
+    # Apply the fitted observation mask without scoring-time feature selection.
+    def predict(self, features):
+        return self.estimator.predict(np.asarray(features)[:, self.columns])
+
+
 # Build completed-close features and separately available next-open return labels.
 def prepare(panel, grades, eligible, calendar, provenance):
     dates, prices, names, grades, eligible = learned_entry_data._validate_panel(
@@ -179,10 +190,17 @@ def _fit_head(x, labels, valid, days):
     }
     if len(distinct) < base.MIN_TRAIN_DAYS:
         return None, receipt
+    features = x[actual, stock]
+    columns = np.flatnonzero(np.isfinite(features).any(axis=0))
+    receipt["observed_feature_indices"] = columns.tolist()
+    if not len(columns):
+        receipt["status"] = "no_observed_training_features"
+        return None, receipt
     model = base._estimator("boosting")
-    model.fit(x[actual, stock], labels[actual, stock])
+    # The pinned sklearn binning fails on an empty all-NaN training column.
+    model.fit(features[:, columns], labels[actual, stock])
     receipt["status"] = "fitted"
-    return model, receipt
+    return _ObservedHead(model, columns), receipt
 
 
 # Score causal rows even when their future holding-return labels are unavailable.

@@ -95,3 +95,15 @@ No performance study until a separately reviewed daily account-aware adapter
 preserves resets, rotations, deferred funding and event exits. A missing
 forecast must reproduce its matched incumbent exactly. Old reset-only curves
 are not a control for this selection change and must not be recycled as one.
+
+### Pre-outcome estimator compatibility correction
+
+The first real run at a8bc36aa failed inside sklearn1.9 histogram binning on an
+all-missing SPY-only grade field, before saved fitted heads or account outcomes.
+An independent504-row, two-feature reproduction fails only with the all-NaN
+column; a constant observed column fits. Omit only columns with no finite value
+in that head's mature training rows. Store their original feature indices and
+apply the identical fitted mask at scoring; future availability cannot change
+the mask. Constant observed and partly missing columns remain unchanged. With
+no observed training feature, the head is unavailable. Labels, model config,
+fit windows and comparison arms stay fixed; no outcome-driven tuning occurred.

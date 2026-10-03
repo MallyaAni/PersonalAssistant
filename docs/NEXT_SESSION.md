@@ -1,5 +1,29 @@
 # Next session
 
+## 2026-10-03 — first funded fit stopped at an all-missing estimator column
+
+The user clarified the replacement is for BOTH buying and profit taking.
+Held-B sale-versus-hold is the current bounded comparison, not completion of
+that broader objective or a replacement for buy timing.
+
+a8bc36aa90f7d475bd9294b9be61b33adc9360ba passed242native and242pinnedCPU
+cases, no skips; original96parquet loading also passed with2953sessions and
+48062missing close cells retained. Source identity authenticates2271Git files,
+manifestSHAba13e19658efea723d0be38bdd99658e65ad5e059c68dee35e1555c96008774d.
+Source/image logSHA35d321835dac305a1f00f50f69f0ca8de22efcdd67a32d9c32e7b9e9ed46b68f.
+Loader receiptSHA8fdf047ee198d818527a6e55ca6fff684c9de16172efeda89c0d5453b7610be6.
+
+FAILED first real container0cf97e8b exited1 inside sklearn1.9 histogram binning
+on an all-NaN SPY feature. Preparation completed; no fit receipt, forecasts or
+account outcomes were published. Preserve private failed output and never restart
+that container. Tiny504row two-feature repro fails with an all-missing column
+and passes with a constant observed column. Targeted correction omits only
+training-wholly-unobserved fields; persisted per-head indices apply unchanged at
+scoring. Constant and partly missing columns remain.47native affected cases
+pass, including real fitted-head serialization and unchanged14review assertions.
+This compatibility change occurred before any funded outcomes, with model
+config, labels and clocks fixed. A new source/output identity is required.
+
 ## 2026-10-03 — funded held-B comparison source ready; real fits not yet run
 
 Objective: replace unconditional grade-rotation exits with stock-specific causal

@@ -8,6 +8,40 @@ import pytest
 from backend.market import learned_retention_models as m
 
 
+# Omit wholly missing fields using training rows, never future feature values.
+def test_real_head_handles_all_missing_training_column(tmp_path):
+    import joblib
+
+    x = np.full((504, 1, 13), np.nan)
+    x[:, 0, 0] = np.linspace(0, 1, 504)
+    x[:, 0, 3] = 0
+    labels = x[:, :, 0] * 0.1
+    head, receipt = m._fit_head(x, labels, np.ones((504, 1), bool), np.arange(504))
+    assert receipt["status"] == "fitted"
+    assert receipt["observed_feature_indices"] == [0, 3]
+    original = head.predict(x[:, 0])
+    assert np.isfinite(original).all()
+    assert original[0] < original[-1]
+    scored = x[:, 0].copy()
+    scored[:, 1] = 1e6
+    np.testing.assert_array_equal(head.predict(scored), original)
+    path = tmp_path / "private-model.joblib"
+    joblib.dump(head, path)
+    np.testing.assert_array_equal(joblib.load(path).predict(scored), original)
+
+
+# A wholly unobserved training matrix cannot fabricate a fitted forecast.
+def test_head_without_any_observed_training_feature_is_unavailable():
+    head, receipt = m._fit_head(
+        np.full((504, 1, 13), np.nan),
+        np.zeros((504, 1)),
+        np.ones((504, 1), bool),
+        np.arange(504),
+    )
+    assert head is None
+    assert receipt["status"] == "no_observed_training_features"
+
+
 # Provide aligned daily prices with a known stock and benchmark holding return.
 def panel_data(rows=330):
     dates = np.busday_offset(np.datetime64("2024-01-02"), np.arange(rows))
