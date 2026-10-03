@@ -33,8 +33,24 @@ Its actual synthetic fit/readback and60 funded phase pairs prove unchanged
 completed results are read, not silently rerun; saved ETFs are reused, not fit.
 All production-source files are root-owned. Evaluation reviewer owns only the
 private artifact verifier; independent model/account reviewer has completed.
-No new real model fits until CLI/source-image acceptance completes and exact
-source is frozen. Reuse original96 private cubes/prepared inputs and ETF curves; never
+Execution checkpointb37c2b689b903f7b37e506041ed542d77af175af is pushed;
+CLI source-image7 pass, total relevant native83/source-image83. Exact logs:
+`/tmp/codex-sequential-cli-tests-20261002.log` and source-tests log above.
+Independent CLI static review found no material blocker. Exactly one frozen
+fit then one comparison launched2026-10-03T03:32:04Z (October2 New York).
+Read-only execution source
+`/home/animallya96/codex-worktrees/sequential-execution-20261002-b37c2b68`.
+Private output `/home/animallya96/scratch/sequential-execution-results-20261002-b37c2b68`.
+Parent3577257, runner `/home/animallya96/scratch/run_sequential_execution_20261002.py`.
+Supervision receipt/logs in
+`/home/animallya96/scratch/sequential-execution-supervision-20261002`.
+Container `codex-sequential-fit-20261002-b37c2b68` is active; next stage evaluate
+starts only after fit exit0. CPU2/memory4GB/networknone, immutable inputs/source
+read-only; no production/model-service changes. NEVER restart an active job,
+alter its mounted source, or repeat completed fits/phase comparisons.
+Inspect compact receipt/progress first, then independent saved-byte verifier
+after completion. Economic evidence/live replacement remains UNVERIFIED.
+Reuse original96 private cubes/prepared inputs and ETF curves; never
 repeat old experiments or reuse the old auction-terminal controls as current.
 The original forward-cohort automation remains PAUSED; do not restart it.
 No GPU, real orders, dashboard, production cache or model-service changes.
