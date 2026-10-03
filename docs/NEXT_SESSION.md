@@ -27,6 +27,25 @@ SHA3c9147c8d7db2ba6b8090ec5348c25c6befe3e106172af3c5a644413075dfdb7,
 authenticates fitting/evaluation source separately and never fits or resimulates.
 UNVERIFIED economic advantage or live adoption. Live remains unchanged.
 
+Evaluation-only correction checkpointffa0a1578f03cdcf971b63baa59346e9d3a34a9d
+is pushed. Exact source-image CLI9 plus independent17 =26pass, log
+`/tmp/codex-sequential-evaluation-correction-tests-20261003.log` on Spark.
+Independent Git-object proof confirms only CLI changed among26 executable
+files; the other25 and frozen protocol are identical. Original fit remainsb37.
+Frozen corrected source
+`/home/animallya96/codex-worktrees/sequential-evaluation-20261003-ffa0a157`.
+Evaluation-only parent3650728 is active; original output directory reused,
+no fit stage. Receipt `evaluation-correction-run.json`, log
+`evaluation-correction.log`, actual Docker inspection
+`evaluation-correction-container.json` in the original supervision directory.
+New read-only proof watcher3652370 waits for that exact correction receipt;
+`correction-proof-watch.json`, `correction-verify.log` and
+`correction-summary.json` are its evidence. Do not start another evaluator,
+restart old parents/watchers or change mounted source. It checks unchanged
+fit-receipt/manifest/forecast hashes, both fitting/evaluation Git objects,
+all saved models, recorded fills and full metrics without refit/resimulation.
+Inspect proof and economic report before any conclusion or live change.
+
 ## 2026-10-02 — sequential entry/exit continuation ACTIVE
 
 User explicitly requests continued work toward replacing the universal 1% timing
