@@ -66,6 +66,9 @@ The original a1404a72 reference run remains active in its immutable checkout;
 full saved-prediction/account equivalence is still UNVERIFIED at publication.
 Do not restart it or call this pending check completed. Batched causal features
 already match the original bridge exactly in the synthetic acceptance path.
+A single bounded read-only watcher compares the two saved session objects
+when the original finishes; it performs no inference or account replay. Its
+proof will be `recorded-timing-saved-equivalence-20261003.json` under supervision.
 
 ## Limits
 

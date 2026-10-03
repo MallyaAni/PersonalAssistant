@@ -31,9 +31,14 @@ reference process `recorded-timing-evaluation-a1404a72` is still active, network
 none/CPU2/memory4GB. It redundantly prepares full history for 525 prefixes;
 NEVER restart it or edit its mounted checkout. Wait for original
 `/home/animallya96/scratch/recorded-timing-results-20261003-a1404a72/report.json`,
-then use `/tmp/verify-recorded-timing-batch-parity-20261003.py` against saved
-decisions/attempts and compare saved account results exactly. No new economic
-replay needed. Optimized source checkpoint is already synthetic-prefix exact
+then inspect the single bounded read-only watcher
+`/tmp/watch-recorded-timing-equivalence-20261003.py`. It compares both saved
+session objects exactly, including all predictions, attempts and 36 accounts;
+no inference or economic replay occurs. Claim prevents a duplicate launch.
+Proof output `recorded-timing-saved-equivalence-20261003.json` and watcher log
+`recorded-timing-saved-equivalence-watch-20261003.log` are under supervision.
+Do not launch another watcher. On PASS persist its hashes and mark equivalence
+verified; on failure inspect its first failing boundary. Optimized checkpoint is synthetic-prefix exact
 and future-invariant. Do not repeat either completed model study or the newly
 completed batched account evaluation; preserve source/data/model identities.
 Original reference log `recorded-timing-evaluation-a1404a72.log`.
