@@ -1,5 +1,46 @@
 # Next session
 
+## 2026-10-03 — nonlinear timing results independently verified; retention head next
+
+The new116monthly fits and60funded comparisons are COMPLETE, both containers
+exited0. Read [measured results](research/normalized-continuation-results-2026-10-03.md)
+and companion JSON. At10bp, paired nonlinear−1% gate median full-period gain
+is+13.16points,13/20phases; recent−0.949points,6/20. Drawdown is37.86% versus
+37.15%; nonlinear loses to earlier linear over the full period. No adoption.
+This does not prove1% optimal. Do not refit, rescore or tune this completed study.
+
+VERIFIED actual source7575711c1684f7fac48dc5e055d3a16855194cc4,111source-image
+tests/no skips, all116model receipts and60saved account ledgers/52282intent
+rows/50195fills, source/input/reference bytes and all metrics. No account
+resimulation or original-model re-verification. Source/protocol/input/model
+hashes remain fixed. Report SHAf11a413568e7d4f9b78633d842299426681e569c7d482bbcde5f275af5109646.
+Verifier SHA72863ceae736f4099723864d4cf6d6ed149e66a79cb231925387e2fe92e8a3b2;
+corrected log SHAaa1a3d2ad2dbd2fbedc0bd686f5d23f97ee0364c73769ffcdc7517ae03111d5c.
+First verifier FAILED reference counts/stocks because its curve conversion
+dropped metadata that production scoring keeps. Corrected that boundary only;
+20independent corruption cases pass, equality/tolerance unchanged. Failed
+log/first script preserved. Spark supervision receipt
+`normalized-independent-finalization-20261003.json` records exit0 and hashes.
+
+Next atomic work: the separately registered causal daily held-B forecast head,
+protocol2e1fce1c BEFORE fitting. It compares stock10-session SPY-relative log
+forecasts with actual destinations, including separate absoluteSPYcash units.
+Root is coding `learned_retention_models.py` and its test; independent review
+is active. No real daily-head fit/economic score/production import yet. Price
+validation first review boundary is being reproduced, not silently dismissed.
+Acceptance requires completed-close daily13features, next-open[t+1]→open[t+11],
+strict whole-date monthly purge, endpoints before Aug17 for later fits, each
+head's warmup, unavailable-outcome scoring and stock-only training.
+
+The necessary later matched replay must be daily account-aware at BOTHreset
+and midcycleplanning. Existing timing-only curves lack daily rotations and
+cannot be reused as retention controls. Both arms must carry their own actual
+cash/holdings/deferredbuys/reset/event state, use the same funding/execution,
+and missing forecasts must match incumbent exactly. Retention's immediate
+replacement-wealth formula is a forecast proxy, not actual deferred funding.
+No live policy, dashboard, orders, providers, production data or model service
+changed. Earlier "active nonlinear study" descriptions below are superseded.
+
 ## 2026-10-03 — stock-conditioned replacement implemented; one new study active
 
 User explicitly said keep trying solutions and replace the universal1% gate.
