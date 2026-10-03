@@ -1,5 +1,49 @@
 # Next session
 
+## 2026-10-03 — combined implementation and independent economic proof complete
+
+VERIFIED: evaluated source `63c21f682893e72552db9c3c1bac7f2c284f0e11`, branch
+`codex/learned-entry-risk-20261002`, pushed. Pinned source image 115 relevant
+checks/no skips. Actual producer completed 120 new accounts without refits or
+repeating original accounts/providers. Independent read-only verifier v3 exited
+0 (`014baa0c06d434c4a8018c53832de0e013b0f102ad2d53f16a786ffe90f42c9a`),
+after 37 native and 37 pinned-image acceptance cases. It reconciled 13,062 prior
+allocation resets, 52,160 intents, 51,468 fills, original bytes/source, cash,
+covered shares, fees, missing/expired outcomes, all arm scores and paired medians.
+No strategy/model was replayed by the audit. It reused old proofs and accounts.
+
+FAILED adoption evidence: at 10bp, combined median cumulative gain 476.01% versus
+723.39% for the equal-weight rule component; paired difference −236.787pp,
+2/20 winning phases. Sizing loses with either execution clock. Timing inside
+growth adds paired 8.250pp, 11/20, insufficient to offset sizing loss. At 25bp,
+combined paired difference −178.285pp, 1/20. Also loses at zero costs. These are
+20-session reset component books using reused/current-vintage data, not exact
+full live-policy parity or an untouched holdout. No promotion. Production policy,
+dashboard and model container IDs/start times unchanged (Spark main 14f61a0f).
+Reliable live replacement remains UNVERIFIED; implementation alone is complete.
+
+Readback: `docs/research/adaptive-timing-sizing-results-2026-10-03.md/.json`.
+Original report SHA256 258c4b87d899382acc90ecc26a4b7e94edd190a125b98aa090a5acb8ce518a97;
+published JSON c7167e49b103f587a95e0271e67573ce2cb6db337118d2729d83c57d8ab676ba.
+Actual proof `/home/animallya96/scratch/adaptive-sizing-verification-20261003-63c21f68/proof-v3.json`,
+SHA256 4d5db0ca9c3c3f437dedf78c9d13682664ef05e8ffe84b094d8032c017f0d7c1;
+complete log c6ff90932186320f0c44dc4e8f4f97740a8d2468ff678e6bf3611a62d241f47f.
+Verifier SHA256 9fcee0f2740e88d80f9b2dc9529bec1bb024e53230bb509aa0f51bf6f13fc1e0;
+tests 3e2c7d6ed3eebfa11f0ef25c85c8ad7ea8cb5716dd8c110690f4c514585b683c;
+image acceptance log c9bfd703e8411ebfeb436ad148ade999cac78ef4f6fbeb3cb29c5bd06f3a26fe.
+Whole source manifest remains b86461d5d50f0080526a6704c9d073d764bfa2f347daf06d3190dfe45545e254.
+
+Earlier v1/v2 failed audit evidence is preserved. Exact recorded counters exposed
+scalar versus vector carried cash, then full-grid versus held-only NAV summation.
+Targeted audit corrections reproduce the authenticated source arithmetic; strict
+counts and tolerances were unchanged. No source/account bytes were altered.
+DO NOT restart producers, re-score books, refit models or repeat completed gates.
+Root owns all integrated files. Next bounded work is to preregister saved-forecast
+calibration/horizon compatibility diagnostics before reading error cells,
+preserving missing labels and avoiding parameter mining. learned_causal_inputs is
+inspecting exact saved artifacts and label/basis contracts read-only; no outcome
+cells, implementation or further policy run is authorized in that subtask yet.
+
 ## 2026-10-03 — combined implementation pushed; all120 new accounts complete
 
 Authoritative evaluated source63c21f682893e72552db9c3c1bac7f2c284f0e11,
