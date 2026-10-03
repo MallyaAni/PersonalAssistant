@@ -1,5 +1,83 @@
 # Next session
 
+## 2026-10-03 — stock-conditioned replacement implemented; one new study active
+
+User explicitly said keep trying solutions and replace the universal1% gate.
+Read the preregistered [nonlinear continuation protocol](research/normalized-continuation-plan-2026-10-03.md)
+(200f4e7e before fits) and [held-B retention contract](research/learned-retention-plan-2026-10-03.md).
+Starting branch was clean `codex/learned-entry-risk-20261002` at e415bf92;
+origin/main204689db is an ancestor. Required pull/rebase conflicted in handoff;
+aborted safely, preserving published branch history. No force push/main edit.
+
+VERIFIED source checkpoint7575711c1684f7fac48dc5e055d3a16855194cc4:
+111 tests pass in pinned CPU image
+sha256:5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d,
+no skips, Ruff clean. Log on Spark supervision
+`normalized-retention-source-tests-7575711c.log`. The count includes independent
+28 timing and19 retention cases, actual small nonlinear fits and existing
+shared teacher/account checks. Source worktree
+`/home/animallya96/codex-worktrees/normalized-continuation-20261003-7575711c`.
+Native targeted runs: timing40; retention53. Optional host asyncio config and
+read-only image pytest-cache warnings only.
+
+FAILED then corrected with unchanged acceptance assertions: cached finite
+forecasts admitted for warmup/no-fitted-side; reset could add to a mutated
+retained holding and exceed cap; zero-fee zero-edge retention had roundoff;
+uncapped replacement destination accepted. Fixes validate model/forecast
+eligibility and exact side/status/paths/precision, retained quantity/mask and
+buy exclusion, use stable relative-wealth arithmetic without an economic
+epsilon, and reject uncapped destinations. One invalid cap-trim fixture had
+required42% in a23.5%-capped recipient; corrected only its declared basket to
+30%/30% plus40% cash/SPY0, preserving all quantity/cap assertions. No assertion,
+deadline or model-service setting weakened.
+
+Timing: two pooled HGB conditional-mean heads learn frozen held-session suffix
+price advantage, normalized by prior stock volatility and remaining time.
+No1% price gate, confidence cutoff or parameter search. Retain all21 causal
+features; original clocks0/3/9/19 train, score all24 ordinary clocks. Sparse
+late-clock extrapolation and normalized loss weighting are explicit. This is
+one improvement over a frozen nuisance policy, not a Bellman optimum or a
+calibrated distribution. Existing teacher labels and comparison books reused.
+
+ONE ACTIVE container `normalized-continuation-study-7575711c`, ID
+d793f523f669a893efd8e593d5a24624a8a6c8b26a48005ceb8ace6aaf4ff828,
+CPU2/memory4GB/network none, source and all inputs read-only, only new private
+output writable:
+`/home/animallya96/scratch/normalized-continuation-results-20261003-7575711c`.
+Never restart it or change its mounted source. Fixed116 monthly fits and
+new60 candidate accounts are underway; authenticated old1%/linear/first and
+SPY/QQQ accounts are NOT replayed. Original manifest, input/provenance and
+comparison bytes passed before fitting. Last compact status: running/noOOM,
+first2017 fits complete; about10-15seconds/month. Preserve source/protocol/data
+identities. Inspect compact logs/process/output before action.
+
+UNVERIFIED: new funded gain, regime usefulness, independent saved-artifact
+verification and adoption. Fixed2018-02-01..2026-09-30, all20 phases,0/10/25bp,
+recent32sessions reused, current-vintage universe/grade reconstruction, fractional
+v5-book component; early-close and broker-fill limits remain. No live policy,
+UI, production data or model services changed. ds4-head and embedding IDs/start
+times remain the same as prior entries. No GPU required.
+
+Parallel exit work: actual COHR intent was "graded B; the desk wants the money
+elsewhere". `learned_retention` is a verified PURE planner comparing a held B
+with its actual fee-bearing destination basket. It never adds to retained B,
+preserves C/event/thesis exits and reserves retained weight across resets.
+UNVERIFIED/SCAFFOLDED: supplied forecasts still need a separately registered
+mature daily head and funded daily-rotation comparison; this helper is not
+production imported. Timing alone does not solve sale-versus-hold selection.
+Do not call either live replacement solved or claim that losing models prove1%
+optimal. Continue necessary bounded implementation, not random model searches.
+
+VERIFIED finished optimization proof: original a1404a72 report now exists;
+one existing watcher exited PASS. All525 forecasts/opportunity packets and36
+accounts match beb79528 bit exactly, no additional inference/replay.
+Original report SHA5d18c9bc083101de9afbefe23498f9bd1b2e635e2edcf6d0c69345b0fb0a71ab;
+batched SHA4816cea5b3e53e143fdb92e49afd173214550728813a95deb044a006c3577880.
+`recorded-timing-saved-equivalence-20261003.json` under supervision; watcher
+SHA7b13cb0c88396279bf2ee367f1f9729d38e3c7909245c402339e66ce8b24f8e6.
+No original reference process remains to restart. Earlier active-reference
+descriptions below are superseded. Do not repeat completed old studies.
+
 ## 2026-10-03 — requested recorded-basket backtest complete
 
 User asked to backtest now instead of waiting. Read
