@@ -4,10 +4,16 @@ from __future__ import annotations
 
 import math
 from datetime import datetime, time, timedelta
+from types import SimpleNamespace
 
 import numpy as np
 
-from backend.market import calendar
+from backend.market import (
+    calendar,
+    entry_timing,
+    learned_entry_data,
+    sequential_execution_replay,
+)
 from backend.market import sequential_execution_shadow as shadow
 
 METHODS = ("learned", "gate", "first_available")
@@ -189,6 +195,71 @@ def replay(
     )
 
 
+# Prepare causal prefix features once, retaining no labels or execution prices.
+def _packets(inputs):
+    context = inputs.context
+    session = np.datetime64(inputs.session, "D")
+    dates = np.asarray(context.panel.dates, dtype="datetime64[D]")
+    hits = np.flatnonzero(dates == session)
+    if len(hits) != 1:
+        raise ValueError("One explicit current context session required")
+    stop = int(hits[0]) + 1
+    prices = np.asarray(context.panel.adj_close[:stop], dtype=float).copy()
+    prices[-1] = np.nan
+    past = SimpleNamespace(
+        dates=dates[:stop], tickers=context.panel.tickers, adj_close=prices
+    )
+    stamp = datetime.combine(inputs.session, time(9, 45), calendar.NEW_YORK)
+    if set(context.published_at) != {"history", "grades", "membership"} or any(
+        shadow._aware(value) > stamp for value in context.published_at.values()
+    ):
+        raise ValueError("Prior context must be published before the first prefix")
+    names = sorted({row["symbol"] for row in inputs.intents})
+    cubes = {name: inputs.cubes[name] for name in names}
+    for cube in cubes.values():
+        if (
+            len(cube.dates) != 1
+            or cube.dates[0] != session
+            or any(
+                np.asarray(getattr(cube, field)).shape != (1, 26)
+                for field in ("open", "high", "low", "close", "volume")
+            )
+        ):
+            raise ValueError("One explicit 26-slot current cube required")
+    prepared = learned_entry_data.prepare(
+        past, context.grades[:stop], context.eligible[:stop], cubes
+    )
+    supported = bool(sequential_execution_replay.supported_sessions([session])[0])
+    packets = {}
+    for symbol, cube in cubes.items():
+        stock = context.panel.tickers.index(symbol)
+        packets[symbol] = []
+        for clock in range(25):
+            received = stamp + timedelta(minutes=15 * clock)
+            raw = float(cube.close[0, clock])
+            packets[symbol].append(
+                shadow.Observation(
+                    str(session),
+                    clock,
+                    received.isoformat(),
+                    "sip",
+                    symbol,
+                    prepared["X"][-1, clock, stock].copy(),
+                    bool(prepared["valid"][-1, clock, stock]),
+                    raw if np.isfinite(raw) and raw > 0 else None,
+                    supported,
+                    {
+                        side: any(
+                            entry_timing.crosses(value, cube.open[0, 0], side)
+                            for value in cube.close[0, : clock + 1]
+                        )
+                        for side in ("buy", "sell")
+                    },
+                )
+            )
+    return packets
+
+
 # Freeze first attempts from completed prefixes before reading fill prices.
 def select_attempts(inputs, model):
     selected = {
@@ -199,21 +270,9 @@ def select_attempts(inputs, model):
         for symbol in sorted({row["symbol"] for row in inputs.intents})
     }
     decisions = []
+    packets = _packets(inputs)
     for symbol, intentions in rows.items():
-        cube = inputs.cubes[symbol]
-        for clock in range(25):
-            stamp = datetime.combine(inputs.session, time(9, 45), calendar.NEW_YORK)
-            stamp += timedelta(minutes=15 * clock)
-            observation = shadow.observe(
-                inputs.context.panel,
-                inputs.context.grades,
-                inputs.context.eligible,
-                cube,
-                clock,
-                stamp,
-                published_at=inputs.context.published_at,
-                feed="sip",
-            )
+        for clock, observation in enumerate(packets[symbol]):
             sides = {
                 side: shadow.decide(observation, model, side)
                 for side in sorted({row["side"] for row in intentions})
@@ -222,7 +281,7 @@ def select_attempts(inputs, model):
                 dict(
                     symbol=symbol,
                     clock=clock,
-                    hypothetical_observation_at=stamp.isoformat(),
+                    hypothetical_observation_at=observation.received_at,
                     valid=observation.valid,
                     observed_price=observation.raw_price,
                     legacy_triggered=observation.legacy_triggered,
