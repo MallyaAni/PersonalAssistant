@@ -156,28 +156,179 @@ def validate_account(
         raise ValueError("prediction/account calendars differ")
 
 
-# Replay unchanged target plans while only the timing policy chooses when to fill.
-def account(
-    panel, grades, eligible, dataset, forecasts, risk, closing, first, cost_bps, offset
+# Validate common funded-account inputs independently of a particular forecast family.
+def validate_replay(panel, grades, eligible, dataset, first, cost_bps, offset):
+    if (
+        isinstance(first, (bool, np.bool_))
+        or not isinstance(first, (int, np.integer))
+        or not 1 <= first < len(panel.dates)
+    ):
+        raise ValueError("first session must have an actual prior plan session")
+    if (
+        isinstance(offset, (bool, np.bool_))
+        or not isinstance(offset, (int, np.integer))
+        or not 0 <= offset < 20
+    ):
+        raise ValueError("a declared account phase is required")
+    if (
+        isinstance(cost_bps, (bool, np.bool_))
+        or not isinstance(cost_bps, (int, float, np.integer, np.floating))
+        or not np.isfinite(cost_bps)
+        or not 0 <= cost_bps < 1e4
+    ):
+        raise ValueError("finite nonnegative cost below 10000bp required")
+    shape = (len(panel.dates), len(panel.tickers))
+    if np.shape(grades) != shape or np.shape(eligible) != shape:
+        raise ValueError("grades and eligibility must match the source panel")
+    if any(
+        np.shape(dataset[key]) != (shape[0], 25, shape[1])
+        for key in ("current_close", "next_open")
+    ) or not np.array_equal(dataset["dates"], panel.dates):
+        raise ValueError("observations and execution outcomes must match the panel")
+
+
+# Open one trace per original intent using only its prior-close funded plan.
+def intent_traces(panel, day, offset, targets, nav, prior, initial, wanted, budget):
+    rows = {}
+    for stock in np.flatnonzero(np.abs(wanted - initial) > 1e-10):
+        rows[stock] = {
+            "intent_id": (f"{offset}/{panel.dates[day]}/{panel.tickers[stock]}"),
+            "date": str(panel.dates[day]),
+            "symbol": panel.tickers[stock],
+            "target_weight": float(targets[stock]),
+            "prior_nav": float(nav),
+            "prior_price": float(prior[stock]),
+            "initial_shares": float(initial[stock]),
+            "desired_shares": float(wanted[stock]),
+            "morning_cash": float(budget),
+            "side": "buy" if wanted[stock] > initial[stock] else "sell",
+            "attempt_clock": None,
+            "terminal_action": False,
+            "observed_price": None,
+            "realized_price": None,
+            "filled_delta": 0.0,
+            "fee": 0.0,
+        }
+    return rows
+
+
+# Record the first selected attempt before its future execution price is observed.
+def trace_attempts(rows, acting, clock, final, observed):
+    for stock, trace in rows.items():
+        if acting[stock]:
+            trace["attempt_clock"] = int(clock)
+            trace["terminal_action"] = final
+            trace["observed_price"] = float(observed[stock])
+
+
+# Attach actual price, quantity and fee evidence to the already locked attempt.
+def trace_fills(rows, acting, prices, before_fill, book, dollars):
+    for stock, trace in rows.items():
+        if acting[stock]:
+            price = prices[stock]
+            trace["realized_price"] = (
+                float(price) if np.isfinite(price) and price > 0 else None
+            )
+            trace["filled_delta"] = float(book.shares[stock] - before_fill[stock])
+            trace["fee"] = float(abs(dollars[stock]) * book.cost)
+
+
+# Settle every original intent into its completion, partial or unfilled category.
+def settle_intents(book, wanted, initial, intent, counts, rows):
+    remains = np.abs(wanted - book.shares) > 1e-10
+    changed = np.abs(initial - book.shares) > 1e-10
+    counts["completed_intents"] += int((intent & ~remains).sum())
+    counts["expired_partial"] += int((intent & remains & changed).sum())
+    counts["expired_unfilled"] += int((intent & remains & ~changed).sum())
+    for stock, trace in rows.items():
+        trace["outcome"] = (
+            "completed"
+            if not remains[stock]
+            else "partial"
+            if changed[stock]
+            else "unfilled"
+        )
+
+
+# Choose and lock a clock's actions before pricing and funding those attempts.
+def execute_clock(
+    book,
+    wanted,
+    intent,
+    attempted,
+    observed,
+    day,
+    clock,
+    terminal_clock,
+    budget,
+    cost_bps,
+    choose_actions,
+    execution_prices,
+    counts,
+    rows,
 ):
-    validate_account(
-        panel,
-        grades,
-        eligible,
-        dataset,
-        forecasts,
-        risk,
-        closing,
-        first,
-        cost_bps,
-        offset,
+    if np.any((book.shares > 0) & (~np.isfinite(observed) | (observed <= 0))):
+        counts["missing_held_observation"] += 1
+        return None
+    nav = book.equity(observed)
+    delta = wanted - book.shares
+    pending = intent & ~attempted & (np.abs(delta) > 1e-10)
+    known = np.isfinite(observed) & (observed > 0)
+    final = clock == terminal_clock
+    acting = np.asarray(
+        choose_actions(
+            day,
+            clock,
+            delta,
+            known,
+            pending,
+            observed,
+            nav,
+            budget,
+            cost_bps,
+            final,
+            counts,
+        )
     )
-    book = _Book(len(panel.tickers), 1, cost_bps, panel, None, None)
-    result = replay.account_arrays(panel, first)
-    result["nav"][0] = result["cash"][0] = 1
-    result["exposure"][0] = 0
-    cashflows = np.zeros(len(panel.tickers))
-    trades = np.zeros(len(panel.tickers), dtype=int)
+    if acting.dtype != bool or acting.shape != pending.shape:
+        raise ValueError("selector must return a boolean action per stock")
+    if np.any(acting & ~(pending & known)):
+        raise ValueError("selector cannot act on unknown or finished intents")
+    # Lock the first decision before observing whether its price exists.
+    attempted |= acting
+    trace_attempts(rows, acting, clock, final, observed)
+    prices = np.asarray(execution_prices(day, clock, final))
+    if prices.shape != pending.shape:
+        raise ValueError("execution prices must align with the stock book")
+    counts["missing_execution"] += int(
+        (acting & (~np.isfinite(prices) | (prices <= 0))).sum()
+    )
+    request = np.where(acting, wanted, book.shares)
+    before_fill = book.shares.copy() if rows else None
+    budget, dollars, fees = replay.funded_fill(
+        book, request, prices, budget, day, f"learned_timing_{clock}"
+    )
+    filled = np.abs(dollars) > 1e-12
+    counts["fills"] += int(filled.sum())
+    counts["closing_fills"] += int(filled.sum()) if final else 0
+    trace_fills(rows, acting, prices, before_fill, book, dollars)
+    return budget, dollars, fees, nav, filled
+
+
+# Validate terminal/session permissions and keep selector counters separate from fills.
+def replay_controls(panel, terminal_clock, supported_days, decision_counts):
+    if (
+        isinstance(terminal_clock, (bool, np.bool_))
+        or not isinstance(terminal_clock, (int, np.integer))
+        or not 0 <= terminal_clock < 25
+    ):
+        raise ValueError("terminal clock must belong to the declared session grid")
+    if supported_days is None:
+        supported_days = np.ones(len(panel.dates), dtype=bool)
+    else:
+        supported_days = np.asarray(supported_days)
+        if supported_days.dtype != bool or supported_days.shape != panel.dates.shape:
+            raise ValueError("session support must be explicit boolean calendar rows")
     counts = dict.fromkeys(
         (
             "intents",
@@ -185,15 +336,47 @@ def account(
             "expired_partial",
             "expired_unfilled",
             "fills",
-            "waiting_decisions",
-            "risk_refusals",
             "missing_execution",
             "missing_held_observation",
-            "cash_limited_attempts",
             "closing_fills",
         ),
         0,
     )
+    if decision_counts:
+        if set(decision_counts) & set(counts):
+            raise ValueError("selector counters cannot overwrite account counters")
+        counts.update(decision_counts)
+    return supported_days, counts
+
+
+# Carry one funded book through the same target plans while a selector sets its clock.
+def replay_account(
+    panel,
+    grades,
+    eligible,
+    dataset,
+    first,
+    cost_bps,
+    offset,
+    choose_actions,
+    execution_prices,
+    terminal_clock,
+    *,
+    supported_days=None,
+    record_intents=False,
+    decision_counts=None,
+):
+    validate_replay(panel, grades, eligible, dataset, first, cost_bps, offset)
+    supported_days, counts = replay_controls(
+        panel, terminal_clock, supported_days, decision_counts
+    )
+    book = _Book(len(panel.tickers), 1, cost_bps, panel, None, None)
+    result = replay.account_arrays(panel, first)
+    result["nav"][0] = result["cash"][0] = 1
+    result["exposure"][0] = 0
+    cashflows = np.zeros(len(panel.tickers))
+    trades = np.zeros(len(panel.tickers), dtype=int)
+    traces = []
     for day in range(first, len(panel.dates)):
         row = day - first + 1
         if (day - first) % 20 == offset:
@@ -210,55 +393,42 @@ def account(
             attempted = np.zeros(len(panel.tickers), dtype=bool)
             counts["intents"] += int(intent.sum())
             budget = book.cash
-            # Existing close window begins after the completed 15:30 bar.
-            for clock in range(24):
-                observed = dataset["current_close"][day, clock]
-                if np.any(
-                    (book.shares > 0) & (~np.isfinite(observed) | (observed <= 0))
-                ):
-                    counts["missing_held_observation"] += 1
-                    continue
-                nav = book.equity(observed)
-                delta = wanted - book.shares
-                pending = intent & ~attempted & (np.abs(delta) > 1e-10)
-                known = np.isfinite(observed) & (observed > 0)
-                acting = actions(
-                    delta,
-                    known,
-                    pending,
-                    observed,
-                    nav,
+            trace_rows = (
+                intent_traces(
+                    panel, day, offset, targets, nav, prior, initial, wanted, budget
+                )
+                if record_intents
+                else {}
+            )
+            traces.extend(trace_rows.values())
+            if not supported_days[day] and "unsupported_plan_sessions" in counts:
+                counts["unsupported_plan_sessions"] += 1
+            clocks = range(terminal_clock + 1) if supported_days[day] else ()
+            for clock in clocks:
+                execution = execute_clock(
+                    book,
+                    wanted,
+                    intent,
+                    attempted,
+                    dataset["current_close"][day, clock],
+                    day,
+                    clock,
+                    terminal_clock,
                     budget,
-                    forecasts[day, clock],
-                    risk[day, clock],
                     cost_bps,
-                    clock == 23,
+                    choose_actions,
+                    execution_prices,
                     counts,
+                    trace_rows,
                 )
-                # Lock the first decision before observing whether its price exists.
-                attempted |= acting
-                prices = (
-                    closing[day] if clock == 23 else dataset["next_open"][day, clock]
-                )
-                counts["missing_execution"] += int(
-                    (acting & (~np.isfinite(prices) | (prices <= 0))).sum()
-                )
-                request = np.where(acting, wanted, book.shares)
-                budget, dollars, fees = replay.funded_fill(
-                    book, request, prices, budget, day, f"learned_timing_{clock}"
-                )
-                filled = np.abs(dollars) > 1e-12
-                counts["fills"] += int(filled.sum())
-                counts["closing_fills"] += int(filled.sum()) if clock == 23 else 0
+                if execution is None:
+                    continue
+                budget, dollars, fees, nav, filled = execution
                 trades += filled
                 cashflows -= dollars + np.abs(dollars) * book.cost
                 result["fees"][row] += fees
                 result["turnover"][row] += float(np.abs(dollars).sum()) / nav
-            remains = np.abs(wanted - book.shares) > 1e-10
-            changed = np.abs(initial - book.shares) > 1e-10
-            counts["completed_intents"] += int((intent & ~remains).sum())
-            counts["expired_partial"] += int((intent & remains & changed).sum())
-            counts["expired_unfilled"] += int((intent & remains & ~changed).sum())
+            settle_intents(book, wanted, initial, intent, counts, trace_rows)
         result["nav"][row] = book.equity(panel.adj_close[day])
         result["cash"][row] = book.cash
         result["exposure"][row] = 1 - book.cash / result["nav"][row]
@@ -277,6 +447,8 @@ def account(
     ):
         raise RuntimeError("timing-only intent denominator does not reconcile")
     result["counts"] = counts
+    if record_intents:
+        result["intent_trace"] = traces
     result["stocks"] = {
         ticker: {
             "net_gain_initial_nav_units": float(contribution[stock]),
@@ -285,3 +457,61 @@ def account(
         for stock, ticker in enumerate(panel.tickers)
     }
     return result
+
+
+# Preserve the original one-step policy and auction-terminal accounting unchanged.
+def account(
+    panel, grades, eligible, dataset, forecasts, risk, closing, first, cost_bps, offset
+):
+    validate_account(
+        panel,
+        grades,
+        eligible,
+        dataset,
+        forecasts,
+        risk,
+        closing,
+        first,
+        cost_bps,
+        offset,
+    )
+
+    # Apply the original mean/risk decision at the supplied causal observation.
+    def select(
+        day, clock, delta, known, pending, observed, nav, budget, cost, final, counts
+    ):
+        return actions(
+            delta,
+            known,
+            pending,
+            observed,
+            nav,
+            budget,
+            forecasts[day, clock],
+            risk[day, clock],
+            cost,
+            final,
+            counts,
+        )
+
+    # Keep the old terminal auction proxy separate from ordinary next-open outcomes.
+    def prices_at(day, clock, final):
+        return closing[day] if final else dataset["next_open"][day, clock]
+
+    return replay_account(
+        panel,
+        grades,
+        eligible,
+        dataset,
+        first,
+        cost_bps,
+        offset,
+        select,
+        prices_at,
+        23,
+        decision_counts={
+            "waiting_decisions": 0,
+            "risk_refusals": 0,
+            "cash_limited_attempts": 0,
+        },
+    )

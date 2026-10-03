@@ -1,5 +1,39 @@
 # Next session
 
+## 2026-10-02 — sequential entry/exit continuation ACTIVE
+
+User explicitly requests continued work toward replacing the universal 1% timing
+gate. The completed experiment below remains immutable; this is a separately
+registered remaining-session hypothesis, frozen at6fa0eb1d before market fits.
+Read [protocol](research/sequential-execution-plan-2026-10-02.md). Work branch
+`codex/learned-entry-risk-20261002`, managed Mac checkout
+`/Users/animallya/.codex/worktrees/closing-window-backtest-20261002/PersonalAssistant`.
+Live remains621e28f0/current1% rule; origin/main204689db was merged without
+rewriting history. Preserve concurrent primary checkout and deployment changes.
+
+VERIFIED synthetic implementation: crossfitted whole-session nuisance chains,
+48 conditional stop-minus-wait heads, actual monthly Ridge fits, certificates,
+hidden/held-label invariance, missing first-price locks, covered sells, no same-day
+sale funding, terminal24 next-open and early-close missing opportunities.
+Native combined acceptance76 pass, Ruff clean. Independent acceptance30 pass:
+model22/account8. Model acceptance SHA
+7d7fbda676b7a31da403bf6e721af40222ad25196ab09a5b4fa8c675920306aa;
+account acceptance SHA73e4eebc05db9e64672e2ea509e95353659c5fe848ed327a17202235470d99b2.
+FAILED then corrected before fitting: equivalent float64 saved forecasts could
+pass float32 readback by value equality. Exact dtype/shape guards now precede
+comparison; independent assertion unchanged, repository regression added.
+UNVERIFIED: real full-book economic results and live replacement. No market fit
+or evaluation for this new policy has started at this checkpoint.
+
+Root owns models/replay/shared-account files after completed agent handoffs.
+Model agent currently owns only the new CLI and its test; evaluation reviewer
+owns only a private independent artifact verifier; causal reviewer private tests.
+No new real model fits until CLI/source acceptance completes and exact source
+is frozen. Reuse original96 private cubes/prepared inputs and ETF curves; never
+repeat old experiments or reuse the old auction-terminal controls as current.
+The original forward-cohort automation remains PAUSED; do not restart it.
+No GPU, real orders, dashboard, production cache or model-service changes.
+
 ## 2026-10-02 — duration-matched timing COMPLETE; no live promotion
 
 Completion here refers only to the experiment, not the user's live replacement.
