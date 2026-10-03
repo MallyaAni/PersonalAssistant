@@ -1,0 +1,257 @@
+"""Actual convex solves verify causal risk sizing and funded position boundaries."""
+
+import numpy as np
+import pytest
+
+from backend.market import adaptive_growth_policy as model
+
+
+# Build deterministic complete historical returns with unequal stock risks.
+def inputs():
+    rng = np.random.default_rng(12)
+    returns = rng.normal(size=(252, 4)) * [0.015, 0.035, 0.02, 0.01]
+    history = 100 * np.exp(np.vstack((np.zeros(4), np.cumsum(returns, axis=0))))
+    cov = model.covariance(history[:, :2])
+    means = np.array([0.0001, 0.0001, 0.0, 0.0])
+    means[:2] -= 0.5 * np.diag(cov)
+    return {
+        "history": history,
+        "grades": np.array([2, 3, 2, 2]),
+        "eligible": np.ones(4, dtype=bool),
+        "means": means,
+        "current_weights": np.zeros(4),
+        "cash_weight": 1.0,
+        "cost_bps": 0,
+        "benchmark_indices": np.array([2, 3]),
+    }
+
+
+# Equal expected arithmetic returns receive different interior quantities by risk.
+def test_actual_optimizer_changes_quantity_for_stock_volatility():
+    data = inputs()
+    target, receipt = model.allocate(**data)
+    assert receipt["status"] == "optimized"
+    assert receipt["certificate"]["certified"]
+    assert 0 < target[1] < target[0] < model.CAP
+    assert target[2:].sum() == 0
+    assert target.sum() <= 1
+
+
+# Raising a stock's mature expected return changes its target without a price gate.
+def test_expected_return_changes_target_and_negative_edge_leaves_cash():
+    data = inputs()
+    original, _ = model.allocate(**data)
+    data["means"][1] += 0.0005
+    raised, _ = model.allocate(**data)
+    assert raised[1] > original[1]
+    data["means"][:2] = -0.2
+    cash, receipt = model.allocate(**data)
+    assert receipt["status"] == "optimized"
+    np.testing.assert_allclose(cash, 0, atol=1e-12)
+
+
+# A shared return shock changes the joint solution through observed cross-risk.
+def test_correlation_changes_weights_with_other_inputs_fixed():
+    data = inputs()
+    first, _ = model.allocate(**data)
+    returns = np.diff(np.log(data["history"]), axis=0)
+    returns[:, 1] = returns[:, 0] * 2
+    data["history"] = 100 * np.exp(np.vstack((np.zeros(4), np.cumsum(returns, axis=0))))
+    changed, receipt = model.allocate(**data)
+    assert receipt["status"] == "optimized"
+    assert not np.allclose(first[:2], changed[:2], atol=1e-5)
+
+
+# Purchases and their fees fit original cash even while another position is sold.
+@pytest.mark.parametrize("cost", [0, 10, 25])
+def test_sale_proposal_cannot_fund_new_purchases(cost):
+    data = inputs()
+    data.update(
+        current_weights=np.array([0.4, 0, 0, 0]), cash_weight=0.03, cost_bps=cost
+    )
+    data["means"][:2] = [-0.1, 0.2]
+    target, receipt = model.allocate(**data)
+    assert receipt["status"] == "optimized"
+    assert target[0] < data["current_weights"][0]
+    assert target[1] > 0
+    purchases = np.maximum(target - data["current_weights"], 0).sum()
+    assert purchases * (1 + cost / 10000) <= data["cash_weight"] + 1e-10
+    assert np.all(target <= model.CAP + 1e-10)
+
+
+# An account without cash cannot purchase using a simultaneous mandatory exit.
+def test_no_cash_no_same_reset_reinvestment():
+    data = inputs()
+    data.update(current_weights=np.array([0.5, 0, 0, 0]), cash_weight=0.0)
+    data["grades"][0] = 0
+    data["means"][1] = 0.1
+    target, receipt = model.allocate(**data)
+    assert receipt["status"] == "optimized"
+    np.testing.assert_allclose(target, 0, atol=1e-10)
+    assert receipt["mandatory_exits"][0]
+
+
+# Unknown held forecasts or risk prevent new bets without erasing known ownership.
+@pytest.mark.parametrize("missing", ["mean", "history"])
+def test_missing_held_evidence_preserves_hold_and_cap_without_additions(missing):
+    data = inputs()
+    data.update(current_weights=np.array([0.3, 0.1, 0, 0]), cash_weight=0.6)
+    if missing == "mean":
+        data["means"][0] = np.nan
+    else:
+        data["history"][3, 0] = np.nan
+    target, receipt = model.allocate(**data)
+    assert receipt["status"] == "unavailable"
+    assert receipt["reason"] == "missing_held_cross_risk"
+    np.testing.assert_array_equal(target, [0.25, 0.1, 0, 0])
+    assert np.all(target <= data["current_weights"])
+
+
+# Missing evidence on an unheld stock excludes it without losing known decisions.
+def test_unheld_missing_evidence_is_not_imputed():
+    data = inputs()
+    data["means"][1] = np.nan
+    target, receipt = model.allocate(**data)
+    assert receipt["status"] == "optimized"
+    assert target[1] == 0
+    assert receipt["known"][1] is False
+
+
+# Missing ownership valuation is rejected instead of fabricating a funded target.
+def test_missing_held_weight_refuses_account():
+    data = inputs()
+    data["current_weights"][0] = np.nan
+    with pytest.raises(ValueError, match="current_weights"):
+        model.allocate(**data)
+
+
+# Only the last 253 completed closes determine allocation on a longer prefix.
+def test_unused_earlier_prefix_cannot_change_target():
+    data = inputs()
+    original, _ = model.allocate(**data)
+    data["history"] = np.vstack((np.full((31, 4), np.nan), data["history"]))
+    longer, _ = model.allocate(**data)
+    np.testing.assert_array_equal(original, longer)
+
+
+# Fees discourage an otherwise small favorable purchase by the actual objective.
+def test_cost_penalty_prevents_low_edge_turnover():
+    data = inputs()
+    free, _ = model.allocate(**data)
+    data["cost_bps"] = 25
+    costly, receipt = model.allocate(**data)
+    assert receipt["status"] == "optimized"
+    assert costly.sum() < free.sum()
+
+
+# Solver failure preserves positions and still respects mandatory grade exits.
+def test_solver_exception_is_unavailable_without_new_purchases(monkeypatch):
+    data = inputs()
+    data.update(current_weights=np.array([0.2, 0.1, 0, 0]), cash_weight=0.7)
+    data["grades"][1] = 0
+
+    # Simulate a numerical solver failure rather than a forecast or ledger mutation.
+    def failed(*args):
+        raise RuntimeError("numerical solve unavailable")
+
+    monkeypatch.setattr(model, "_solve", failed)
+    target, receipt = model.allocate(**data)
+    assert receipt["status"] == "unavailable"
+    np.testing.assert_array_equal(target, [0.2, 0, 0, 0])
+
+
+# A feasible-looking but nonoptimal returned point fails the global certificate.
+def test_global_certificate_rejects_uncertified_solver_output(monkeypatch):
+    data = inputs()
+
+    # Return a bounded point with a false certificate to exercise fail-closed routing.
+    def uncertified(*args):
+        return np.array([0.25, 0.25]), {
+            "certified": False,
+            "reason": "global_convex_gap",
+        }
+
+    monkeypatch.setattr(model, "_solve", uncertified)
+    target, receipt = model.allocate(**data)
+    assert receipt["status"] == "unavailable"
+    np.testing.assert_array_equal(target, 0)
+
+
+# An explicitly fixed position remains inside the quadratic's true cross-term.
+def test_fixed_known_position_changes_free_optimum_through_cross_term():
+    covariance = np.array([[0.1, 0.04], [0.04, 0.1]])
+    mean = np.array([0.0, 0.02])
+    target, proof = model._solve(
+        mean,
+        covariance,
+        np.array([0.2, 0]),
+        np.array([0.2, 0]),
+        np.array([0.2, 0.25]),
+        0.8,
+        0,
+    )
+    assert proof["certified"]
+    assert target[0] == 0.2
+    assert target[1] == pytest.approx((0.02 - 0.04 * 0.2) / 0.1, abs=1e-7)
+
+
+# The certificate itself rejects a feasible point with a materially improving direction.
+def test_linearized_gap_detects_nonoptimal_feasible_point():
+    matrix = np.array([[1.0]])
+    proof = model._certificate(
+        np.array([0.2]),
+        lambda x: np.array([-0.1]),
+        matrix,
+        np.array([0.25]),
+        [(0.0, 0.25)],
+    )
+    assert proof["gap"] == pytest.approx(0.005)
+    assert not proof["certified"]
+
+
+# Membership and below-A grades take priority over even very strong projections.
+@pytest.mark.parametrize("field", ["grades", "eligible"])
+def test_mandatory_exit_survives_missing_evidence_elsewhere(field):
+    data = inputs()
+    data.update(current_weights=np.array([0.2, 0.1, 0, 0]), cash_weight=0.7)
+    data["means"][1] = np.nan
+    data[field][0] = 0 if field == "grades" else False
+    target, receipt = model.allocate(**data)
+    assert receipt["status"] == "unavailable"
+    np.testing.assert_array_equal(target, [0, 0.1, 0, 0])
+
+
+# A fabricated feasible point violating original cash fails before optimality testing.
+def test_certificate_rejects_purchase_budget_violation():
+    proof = model._certificate(
+        np.array([0.1]),
+        lambda x: np.array([0.0]),
+        np.array([[1.0]]),
+        np.array([0.03]),
+        [(0.0, 0.25)],
+    )
+    assert not proof["certified"]
+    assert proof["reason"] == "infeasible"
+
+
+# Numerically overflowing finite projections are unavailable rather than clipped.
+def test_extreme_projection_does_not_fabricate_finite_second_moment():
+    data = inputs()
+    data["means"][0] = 1e300
+    target, receipt = model.allocate(**data)
+    assert receipt["status"] == "unavailable"
+    assert receipt["reason"] == "moment_numeric_range"
+    np.testing.assert_array_equal(target, 0)
+
+
+# Numerical tolerance cannot certify a negative or over-cap final holding.
+@pytest.mark.parametrize("weight", [-1e-10, 0.25 + 1e-10])
+def test_certificate_rejects_strict_final_bound_residue(weight):
+    proof = model._certificate(
+        np.array([weight]),
+        lambda x: np.array([0.0]),
+        np.array([[1.0]]),
+        np.array([1.0]),
+        [(0.0, 0.25)],
+    )
+    assert not proof["certified"]

@@ -72,6 +72,7 @@ def account(
     *,
     method="candidate",
     supported_days=None,
+    target_provider=None,
 ):
     shape = (len(panel.dates), 25, len(panel.tickers))
     if method not in ("candidate", "control"):
@@ -115,6 +116,7 @@ def account(
         TERMINAL,
         supported_days=supported_days,
         record_intents=True,
+        target_provider=target_provider,
         decision_counts={
             "waiting_decisions": 0,
             "forecast_unavailable": 0,

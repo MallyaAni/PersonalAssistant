@@ -1,5 +1,44 @@
 # Next session
 
+## 2026-10-03 — combined adaptive buy/sell timing and funded sizing implementation
+
+Current objective is IMPLEMENTATION of both timing and stock-specific sizing,
+not another explanation of the deployed constants. Fixed combined protocol at
+e04985b2: docs/research/adaptive-timing-sizing-plan-2026-10-03.md. No refits or
+model search: reuse authenticated monthly timing and ten-session holding means.
+New allocator uses prior-only 252-return shrinkage covariance, funded convex
+growth objective, 25% hold cap and purchase-plus-fees limited to pre-sale cash.
+Existing engine now has optional causal target-provider input; default is exact
+unchanged. Root owns integrated allocation/hook files; learned_causal_inputs
+owns NEW CLI/test until handoff. evaluation_review is reviewing read-only.
+Do not import active drafts, run accounts before source/acceptance review, or
+change production policy/dashboard. Four fixed arms; 120 new growth books only.
+
+VERIFIED native 29 allocator/actual funded hook cases; 18 independent exact
+pre-hook default engine parity cases at all three costs/both timing selectors,
+including missing executions and unsupported sessions. First new integration
+failure was an insufficient solver global optimality certificate; tightened
+SLSQP convergence from 1e-12 to 1e-14 without relaxing the fixed 1e-8 certificate
+or assertions, and the unchanged path passes. Missing held daily valuation
+fails at the existing ledger boundary; never invent zero marks/cross-risk.
+The old7575711c/current _Book class AST is exactly identical, SHA256
+7cc1d211747ddae23f20a97caaf74d9b01dee3098d18f8237ddd9db016637c79.
+Independent review additionally reproduced a certified tiny negative target;
+strict final bounds now reject it without clipping, with the unchanged seven
+independent cases passing. Native 111 applicable cases pass without skips,
+including all 18 exact-default parity cases; two permanent residue regressions
+added. Ruff clean. CLI/test ownership released and root reviewed; it never
+refits or reruns saved controls. Image acceptance and combined economic results
+remain UNVERIFIED pending the single new run.
+
+Prior attribution producer and finalizer have COMPLETED; stale active wording
+below is superseded. All 180 new ledgers, 1,440 paired contrasts, 240 interactions
+and summary fields independently reconciled. Published complete readback in
+docs/research/cash-selection-attribution-results-2026-10-03.md/.json. No refits
+or earlier account repeats. No adoption supported; all six intervals include
+zero. These daily selection effects did not test adaptive sizing/timing.
+
+
 ## 2026-10-03 — isolated buy/exit attribution running; no live promotion
 
 User requires BOTH buying and profit-taking. Source d936e1f425285025323607f016143692fe9bf33c

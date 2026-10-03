@@ -349,7 +349,55 @@ def replay_controls(panel, terminal_clock, supported_days, decision_counts):
     return supported_days, counts
 
 
-# Carry one funded book through the same target plans while a selector sets its clock.
+# Pass only completed observations and actual account funding to a target provider.
+def funded_targets(provider, panel, grades, eligible, day, book, cost_bps):
+    prior = panel.adj_close[day - 1]
+    known = np.isfinite(prior) & (prior > 0)
+    nav = book.equity(prior)
+    current = book.shares * np.where(known, prior, 0) / nav
+    targets, receipt = provider(
+        history=panel.adj_close[:day].copy(),
+        grades=grades[day - 1].copy(),
+        eligible=eligible[day - 1].copy(),
+        current_weights=current.copy(),
+        cash_weight=float(book.cash / nav),
+        cost_bps=cost_bps,
+        as_of=panel.dates[day - 1],
+    )
+    targets = np.asarray(targets, dtype=float)
+    if (
+        targets.shape != prior.shape
+        or not np.isfinite(targets).all()
+        or np.any(targets < 0)
+        or targets.sum() > 1 + 1e-8
+        or not isinstance(receipt, dict)
+        or receipt.get("as_of") != str(panel.dates[day - 1])
+        or receipt.get("status") not in ("optimized", "unavailable", "protected")
+    ):
+        raise ValueError("dated finite funded target receipt required")
+    # An unavailable plan may preserve drifted holdings but cannot increase risk.
+    upper = (
+        np.maximum(current, policy_v5.HOLD_CAP)
+        if receipt["status"] == "unavailable"
+        else np.full_like(current, policy_v5.HOLD_CAP)
+    )
+    if np.any(targets > upper + 1e-8):
+        raise ValueError("target exceeds existing hold cap or protected holding")
+    spend = float(np.maximum(targets - current, 0).sum()) * (1 + cost_bps / 1e4)
+    if spend > book.cash / nav + 1e-8:
+        raise ValueError("target purchases exceed cash before sales")
+    if receipt["status"] == "unavailable" and np.any(targets > current + 1e-8):
+        raise ValueError("unavailable allocation cannot add positions")
+    return targets, receipt
+
+
+# Add sizing evidence only when an explicit provider changed the target boundary.
+def allocation_evidence(result, provider, rows):
+    if provider is not None:
+        result["allocation_trace"] = rows
+
+
+# Carry one funded book with optional causal sizing while a selector sets its clock.
 def replay_account(
     panel,
     grades,
@@ -365,6 +413,7 @@ def replay_account(
     supported_days=None,
     record_intents=False,
     decision_counts=None,
+    target_provider=None,
 ):
     validate_replay(panel, grades, eligible, dataset, first, cost_bps, offset)
     supported_days, counts = replay_controls(
@@ -377,6 +426,7 @@ def replay_account(
     cashflows = np.zeros(len(panel.tickers))
     trades = np.zeros(len(panel.tickers), dtype=int)
     traces = []
+    allocation_trace = []
     for day in range(first, len(panel.dates)):
         row = day - first + 1
         if (day - first) % 20 == offset:
@@ -385,6 +435,20 @@ def replay_account(
                 grades[day - 1], prior, eligible[day - 1], panel.tickers.index("SPY")
             )
             nav = book.equity(prior)
+            if target_provider is not None:
+                targets, receipt = funded_targets(
+                    target_provider, panel, grades, eligible, day, book, cost_bps
+                )
+                allocation_trace.append(
+                    {
+                        "date": str(panel.dates[day]),
+                        "prior_nav": float(nav),
+                        "initial_cash": float(book.cash),
+                        "initial_shares": book.shares.tolist(),
+                        "target_weights": targets.tolist(),
+                        "receipt": receipt,
+                    }
+                )
             wanted = book.shares.copy()
             known = np.isfinite(prior) & (prior > 0)
             wanted[known] = targets[known] * nav / prior[known]
@@ -449,6 +513,7 @@ def replay_account(
     result["counts"] = counts
     if record_intents:
         result["intent_trace"] = traces
+    allocation_evidence(result, target_provider, allocation_trace)
     result["stocks"] = {
         ticker: {
             "net_gain_initial_nav_units": float(contribution[stock]),

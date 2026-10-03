@@ -28,8 +28,12 @@ sales; proposed sales cannot fund buys. Protected held positions are fixed
 inside the optimization, including their covariance cross-term. Only known,
 eligible A/A+ stocks may be increased; mandatory grade/membership exits remain
 zero. Missing forecast/history on an otherwise eligible held name preserves
-its weight up to the existing hold cap; missing held valuation or an
-uncertified solve returns an explicitly unavailable incumbent-safe plan.
+its weight up to the existing hold cap. Because missing held mean/history also
+leaves its portfolio cross-moment unknown, the entire solve is unavailable:
+preserve other positions without additions, retain mandatory exits/cap trims,
+and never substitute zero risk. Missing held valuation rejects the account
+explicitly at the existing ledger boundary without a fabricated mark;
+an uncertified solve also returns an explicitly unavailable safe plan.
 No future fill/open/close is visible to allocation. Desired quantities are
 frozen once and go through the existing funded fill, first-attempt lock,
 missing-outcome and expiration accounting unchanged.
