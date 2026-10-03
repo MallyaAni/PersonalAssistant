@@ -75,7 +75,7 @@ test('account wording distinguishes allocation from profit and paper from person
   await expect(page.getByText(/BUY, SELL and TRIM are the paper account's orders/)).toBeVisible()
   await expect(page.getByText(/HOLD means no order: the position stays/)).toBeVisible()
   await expect(page.getByText('Enter your account size once', {exact: false})).toBeVisible()
-  await expect(page.getByText('market-on-close from 3:30 PM ET', {exact: false}).first()).toBeVisible()
+  await expect(page.getByText('market order at 3:45 PM ET', {exact: false}).first()).toBeVisible()
   await expect(page.getByRole('button', {name: 'Size', exact: true})).toHaveAttribute('title', /Planned or submitted sizes use a price estimate/)
   await expect(await stockDetails(page, 'AAPL')).toContainText('Paper position')
   await expect(page.locator('body')).not.toContainText('same whatever you have recorded')

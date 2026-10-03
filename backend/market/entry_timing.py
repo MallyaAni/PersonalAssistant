@@ -72,6 +72,14 @@ BAR = timedelta(minutes=15)
 CLOSE_WINDOW = timedelta(minutes=30)
 # The exchange's market-on-close entry cutoff (3:50 PM ET on a 4:00 close).
 MOC_LEAD = timedelta(minutes=10)
+# When the close window's order goes in: a plain market order from the last
+# 15-minute candle before the close (3:45 PM ET on a 4:00 close), the last
+# balancer run inside the session. Not market-on-close: from 2026-09-30 to
+# 2026-10-02 the Alpaca paper venue expired 8 of the 9 market-on-close buys
+# the balancer sent, and 2 of its 3 such sells in full or in part, at 4:00 PM,
+# though each was a valid `cls` order sent at 3:30 PM; every intraday market
+# order filled (docs/research/paper-moc-fills-2026-10-02.md).
+FINAL_LEAD = BAR
 PRE_OPEN = "pre-open"
 WAITING = "waiting"
 TRIGGERED = "triggered"
@@ -353,15 +361,17 @@ def _is_session(day: date) -> bool:
 
 
 # The instants that bound one session's decisions: its open, the close
-# window's start (close - 30 minutes), the market-on-close entry cutoff
-# (close - 10 minutes) and its close, all in New York time. The close is the
-# calendar's, so an early close moves all three.
+# window's start (close - 30 minutes), the close window's market order
+# (close - 15 minutes), the market-on-close entry cutoff (close - 10 minutes)
+# and its close, all in New York time. The close is the calendar's, so an
+# early close moves them all.
 def session_clock(session: date) -> dict[str, datetime]:
-    """Return {"open", "cutoff", "moc", "close"} for `session`."""
+    """Return {"open", "cutoff", "final", "moc", "close"} for `session`."""
     closes = datetime.combine(session, calendar.session_close(session), NEW_YORK)
     return {
         "open": datetime.combine(session, calendar.REGULAR_OPEN, NEW_YORK),
         "cutoff": closes - CLOSE_WINDOW,
+        "final": closes - FINAL_LEAD,
         "moc": closes - MOC_LEAD,
         "close": closes,
     }
@@ -514,6 +524,7 @@ def timing(
         "trigger_price": None,
         "close_cutoff": clock["cutoff"].isoformat(),
         "moc_deadline": clock["moc"].isoformat(),
+        "close_order_at": clock["final"].isoformat(),
     }
 
     if not trading_day:
@@ -646,12 +657,17 @@ def _trigger_text(timed: dict[str, Any]) -> str:
     )
 
 
-# "no 15-minute close reached $99.00 today; market-on-close before 3:50 PM
-# ET": what acting at the close means, with the level when there is one.
+# "no 15-minute close reached $99.00 today; market order at 3:45 PM ET":
+# what acting at the close means, with the level when there is one. It names
+# the order the paper account actually sends (`FINAL_LEAD`).
 def _close_text(timed: dict[str, Any]) -> str:
     """Return the sentence for acting at the close."""
-    moc = _instant(timed.get("moc_deadline"))
-    order = f"market-on-close before {_clock(moc)} ET" if moc else "market-on-close"
+    final = _instant(timed.get("close_order_at"))
+    order = (
+        f"market order at {_clock(final)} ET"
+        if final
+        else "market order just before the close"
+    )
     if timed.get("level") is None:
         return order
     level = _level_text(timed["level"], timed["side"])

@@ -144,7 +144,7 @@ for (const [name, order, word, detail, size] of [
     if (order) await expect(board.getByLabel('AAOI order status', {exact: true})).toContainText('Bought 2 @ $98.74 · 9:30 AM')
     await page.locator('summary', {hasText: 'Paper account'}).click()
     await expect(page.getByLabel('Paper execution', {exact: true})).toContainText('Bought 2 AAOI @ $98.74')
-    await expect(page.getByLabel('Paper account execution timing')).toContainText('a buy on a 15-minute close 1% under the day’s open, a sell 1% over it, otherwise market-on-close from 3:30 PM ET')
+    await expect(page.getByLabel('Paper account execution timing')).toContainText('a buy on a 15-minute close 1% under the day’s open, a sell 1% over it, otherwise a market order at 3:45 PM ET')
     await expect(board.getByLabel('AAOI strategy intent', {exact: true})).toHaveText(word)
     expect(diagnostics.writes).toEqual([])
     expect(diagnostics.errors).toEqual([])

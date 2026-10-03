@@ -195,7 +195,8 @@ def test_current_entry_cash_is_shared_only_by_names_still_inside_the_limit(tmp_p
     assert row["reason"].startswith("Buy limit $")
 
 
-# The close window with no trigger: BUY, at the close, market-on-close.
+# The close window with no trigger: BUY, at the close, a market order on the
+# window's last candle (what the paper account sends).
 def test_the_close_window_is_a_buy(tmp_path):
     record, snapshot, quoted, now = v4(at(15, 31), move=-0.004)
     row = board(
@@ -205,7 +206,8 @@ def test_the_close_window_is_a_buy(tmp_path):
     assert row["move_weight"] == pytest.approx(1 / 11, abs=1e-6)
     assert row["timing"]["state"] == entry_timing.CLOSE
     assert row["reason"].startswith("Buy at the close: no 15-minute close reached $")
-    assert "market-on-close before 3:50 PM ET" in row["reason"]
+    assert "today; market order at 3:45 PM ET" in row["reason"]
+    assert "market-on-close" not in row["reason"]
 
 
 # A held name the record downgraded (close grade B, target zero) is the
