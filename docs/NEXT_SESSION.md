@@ -1,5 +1,41 @@
 # Next session
 
+## 2026-10-03 — learned timing comparison complete; live-intent bridge
+
+Read [verified results](research/sequential-execution-results-2026-10-03.md)
+and the companion JSON, published/pushed at10f644c7. All primary120 and new
+first-available60 carried accounts are independently reconciled, with original
+116monthly archives unchanged. No fitting/account replay or input refresh is
+needed. At10bp, learned−current full paired median+17.22points11/20 but recent
+−0.689points5/20; first-available−current full−13.60points8/20 and recent
+−1.251points5/20. No stable adoption evidence; live remains unchanged.
+First-available independent verifier SHA
+38ea2899796f83344fed4f2d6e7c72171942484c06f8fd4d75d7c0d56533ff04;
+receipt `first-available-independent-verification.json`, log SHA
+d80c74110feb345aea17501a69eeff97b9b8d774584f7e737c225333068c695d.
+Supplementary byte receipt `first-available-monthly-bytes-verification.json`.
+Compact summary SHA17ca69d030eb6158d4e4335d29d175b69b8d3194421fbd59b4e6a03c9b00fe65
+was independently checked from saved curves, all costs/windows/phases/ETFs.
+
+Root now owns NEW `sequential_execution_shadow.py` and its test: causal
+completed-prefix feature reuse; authenticated frozen September numeric heads;
+stable GET-only paper account/intents snapshot; original IDs/quantities;
+conditional cash/covered-share capacity; no sale-proceeds funding; no order
+submission. This is a read-only adapter, not a production collector or switch.
+Native21 and independent16 synthetic cases pass, Ruff clean. Independent file
+`/tmp/test_sequential_execution_shadow_review_edges.py`, SHA
+32651f5f4ff4749998ae03e0947d07667c2d30429430cffa83039bf7aca4c2c0.
+FAILED then corrected before shipping: falsey execution-policy contracts were
+admitted as ordinary; use key-presence exclusion matching live. Assertions
+unchanged; four repository regressions added. Receipt time is after all broker
+reads; stale/forming bars and unpublished history/grades/membership refuse.
+Frozen September carry-forward and IEX-versus-SIP domain differences are
+explicit. Early closes remain unsupported; these functions make no wealth or
+future-alpha claim. Exact source-image and actual saved-head parity are next.
+Do not change production submission, repeat economic runs, or call the live
+replacement solved. Full current-policy evidence requires real full OHLCV
+prefix receipts and actual intended orders; live.json summaries are insufficient.
+
 ## 2026-10-03 — completed primary evaluation; accounting proof active
 
 This entry supersedes older active-process descriptions below. All116 monthly
