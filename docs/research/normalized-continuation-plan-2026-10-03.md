@@ -27,6 +27,11 @@ suffix policy, divided by observed close. No hindsight best price. This is ONE
 policy-improvement regression over that frozen suffix; its suffix is not the
 new model's own Bellman continuation, and it is not optimal stopping proof.
 
+Sparse-clock scoring is an interpolation approximation; clocks20..23 are beyond
+the latest training clock19. Retain and report these clocks rather than claim
+all-clock training parity. Normalizing the loss changes its weighting across
+volatility levels; rescaling the output restores units, not the training loss.
+
 Two pooled heads, buy and sell. Fit only clocks0,3,9,19 from the original fixed
 training schedule (terminal24 has no continuation target). Retain all21 causal
 features. Divide the target by prior20-session daily log-return standard
