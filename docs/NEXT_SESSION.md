@@ -2,6 +2,23 @@
 
 ## 2026-10-03 — joint purchase/cash-exit selection implemented; funded evidence pending
 
+VERIFIED sourcee8505b221bdd4cd21f2c0a3b13e52d720ab93bea is committed/pushed:
+192pinned-image cases pass (177repository+9unchanged independent+6parent-source
+default-parity), no skips; five prior empty-slice warnings remain. LogSHA
+fa3774ae0c47e9199c932df1813b4260628f2199c381395b9a9316248fe71962.
+Independent reviewed-hook scope PASS. Source manifest2282filesSHA
+72e1d93ace033b2c172819be6bb02a52caac659a497095c9730570023a6357d8.
+
+The fixed60account producer is ACTIVE: cash-selection-funded-e8505b22-20261003,
+container55bc266b643d6421eaa50cf60f078aacca776ef6b3af6613910cd1259b0da719,
+started20:01:59UTC. Source:/home/animallya96/codex-worktrees/
+cash-selection-funded-20261003-e8505b22; output:/home/animallya96/scratch/
+cash-selection-funded-run-20261003-e8505b22/study. Never restart it or alter its
+mounted immutable source. All inputs/prior controls/source are read-only;
+CPU2,memory6GiB,networknone,noGPU. Both model container IDs/start times unchanged.
+Read compact status/process completion before touching any result. Require independent
+saved-journal/verdict/metric verification before reporting economic findings.
+
 Registered contract01ccf9d9 precedes the new source and any new account scores:
 docs/research/joint-cash-selection-plan-2026-10-03.md. Pure dated forecasts now
 block ordinary A/A+ purchases/adds when their absolute mean fails the cash/cost
@@ -14,7 +31,7 @@ six complete default-path journals match actual parent simulator source bit exac
 at0/10/25bp with/without FOMC. Nine unchanged independent cases pass. Review found
 and corrected a favorable-forecast tiny reset trim lost to the trade floor and
 two unsupported funding/event combinations; guards now refuse those combinations.
-No assertion weakened. Independent review completion and pinned-image proof pending.
+No assertion weakened. Independent review and pinned-image proof now PASS as above.
 
 New runner backend.cli.market_cash_selection_study runs ONLY60new joint accounts,
 authenticating saved95ee forecasts and180stock/sixETF control bytes. No model refit,
