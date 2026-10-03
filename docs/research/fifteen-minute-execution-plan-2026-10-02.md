@@ -16,6 +16,12 @@ HGB and certified Ridge for the15-minute log waiting advantage, and one HGB for
 its squared value. Keep all original estimator settings, min504/max756 preceding
 sessions, monthly refits, conservative10-session maturity and August17 cutoff.
 No estimator, window, grade, stock, phase, risk multiplier or threshold tuning.
+The original numerical certificate fixed the downstream allocation optimizer,
+not Ridge regression. This correction adds a new regression normal-equation
+and intercept-gradient certificate; it does not claim one already existed.
+Keep Ridge's existing Cholesky configuration, compute in float64, and require
+normalized gradient error at most1e-8. Refuse uncertified fits without solver
+or tolerance searches; record the certificate and actual numerical precision.
 
 Training uses the original clocks0/3/9/19/24 filtered by actual target duration
 equal to15 minutes; thus clock24's overnight label is ineligible. Four remaining
