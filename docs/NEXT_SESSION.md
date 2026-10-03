@@ -1,5 +1,37 @@
 # Next session
 
+## 2026-10-03 — funded held-B comparison source ready; real fits not yet run
+
+Objective: replace unconditional grade-rotation exits with stock-specific causal
+forecasts only if a funded comparison supports it. The fixed protocol is
+`docs/research/held-b-funded-comparison-plan-2026-10-03.md`; no old timing study
+is rerun. Three arms,20scheduled-reset offsets,0/10/25bp,2018-02-01..2026-09-30,
+SPY and QQQ next-open cash-budget buy-and-hold. Current-vintage grades/universe
+and legacy daily execution are explicit limitations, not exact live parity.
+
+VERIFIED native:242targeted cases pass, no skips, Ruffclean. The opt-in simulator
+adapter acts before actual reset/midcycle funding; all-NaN forecasts preserve
+complete account journals exactly. Independent review reproduced and corrected
+blocked-held-A reserve rejection and reset B trims below the ordinary minimum.
+Green-open suppression may defer submitted trims; do not claim an always-enforced
+marked cap. Original1777default and passthrough source paths still match across
+six cost/event fixtures. The generic planner's isolated minimum-trade diagnostic
+is retained unchanged; the corrected actual-loop acceptance passes.
+
+Authenticated parquet loading restores original daily high/low/volume without
+intraday conversion. Reviewed2015NYSE closures and early closes were added from
+official2013-12-20/2014-12-08 publications; other years unchanged. Fixed runner
+rejects an alternative snapshot or source-manifest mismatch before fits. Fitted
+monthly heads, forecasts, source hashes and all carried-account journals persist
+to a fresh private output. UNVERIFIED: actual96-source loading, pinnedCPU source
+acceptance, real daily fits and economic advantage. No promotion or deployment.
+
+StartingHEAD1777b65c was clean and contains fetched canonicalmain204689db.
+Required pull/rebase attempted to relinearize published merge history and
+conflicted; it was immediately aborted, preserving the starting tree/history.
+Sparkmain14f61a0f and its untracked scratch were not modified; its remote tracking
+ref alone was fetched. Model services, orders and frozen data remain untouched.
+
 ## 2026-10-03 — causal held-B model implemented and verified; no live replacement
 
 VERIFIED sourceb68682cf7ce5e872f6b5a5d8616857541b1a6493 implements the fixed

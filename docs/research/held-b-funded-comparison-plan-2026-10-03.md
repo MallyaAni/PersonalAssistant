@@ -16,7 +16,7 @@ models, rerun their old account controls or select subgroups from these results.
 
 Reuse the original snapshot SHA8670c86dd268fdf25ec16b44be86dcd40b840f703b7721ef319bc40e0e22ea58
 and its96original daily parquet source hashes (94stocks plusSPY/QQQ). Frozen
-vintage2026-09-30, supplied2016onward calendar, fixed evaluation2018-02-01 through
+vintage2026-09-30, reviewed2015onward calendar, fixed evaluation2018-02-01 through
 2026-09-30. The actual source OHLCV must match the snapshot open/close/adjusted
 close bytes numerically and cover the reviewed exchange calendar. Daily OHLC is
 already split-adjusted; adjusted_close/close is its remaining adjustment factor.
@@ -71,7 +71,10 @@ Three arms: unchanged incumbent, learned retention, unconditional eligible-B
 retention with the same mandatory overrides and cap. The third is a mechanism
 control; do not manufacture forecasts to implement it. No choice among arms
 after scoring. Twenty reset offsets0..19, NAV1, continuously carried fractional
-adjusted shares/cash, zero cash yield,0/10/25bp per side. Each arm has its own
+adjusted shares/cash, zero cash yield,0/10/25bp per side. Offsets shift the
+scheduled reset clock only: ordinary daily midcycle planning operates from the
+first evaluation session, including before the first scheduled reset. They are
+not twenty delayed initial-investment dates. Each arm has its own
 holdings, deferred purchases, reset clock and FOMC lifecycle state. Benchmarks
 SPY and QQQ are separately funded next-open buy-and-hold accounts over the same
 fixed dates. Do not compound independent reset books into an alleged live NAV.
@@ -100,6 +103,9 @@ counts and unavailable/missed opportunities. Fixed full,2018-20,2021-26 and reus
 recent windows. Report causal prior-SPY trend/volatility diagnostics as descriptive
 means, not retrospectively switchable compounded regime performance. Include
 unconditional retention to distinguish forecast value from simply selling less.
+Descriptive trend groups use the previous close versus its trailing200-session
+SPY mean. Report prior63-session annualized SPY return volatility for each group;
+no volatility threshold or regime policy is fit.
 
 No historical diagnostic alone promotes a policy. A credible replacement needs
 stable funded gains across offsets/costs/subperiods, acceptable drawdown/turnover,

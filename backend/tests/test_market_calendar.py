@@ -10,6 +10,22 @@ from backend.market.panel import panel_from_histories
 from backend.market.yahoo import DailyBar, TickerHistory
 
 
+# Pin the newly reviewed 2015 closures without inventing a July early close.
+def test_reviewed_2015_sessions_and_early_closes():
+    from datetime import time
+
+    sessions = calendar.reviewed_sessions()
+    assert 2015 in sessions[0]
+    exchange = sessions[1]
+    assert np.is_busday(np.datetime64("2015-01-02"), busdaycal=exchange)
+    for closed in ("2015-01-01", "2015-04-03", "2015-07-03"):
+        assert not np.is_busday(np.datetime64(closed), busdaycal=exchange)
+    assert calendar.session_close(date(2015, 7, 2)) == time(16, 0)
+    assert calendar.session_close(date(2015, 11, 27)) == time(13, 0)
+    assert calendar.session_close(date(2015, 12, 24)) == time(13, 0)
+    assert np.is_busday(np.datetime64("2015-12-31"), busdaycal=exchange)
+
+
 # A weekday-only flat history.
 def _history(ticker: str, first: date, sessions: int) -> TickerHistory:
     bars = []

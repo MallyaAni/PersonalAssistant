@@ -1,8 +1,38 @@
 {
-  "description": "Official NYSE/ICE published full-day cash-equity closures and 13:00 New York early closes, 2016-2025 inclusive, for the intraday comparison. Every date comes from an official NYSE Group press release on ir.theice.com (the scheduled multi-year holiday and early-closing calendars) or, for the 2025-01-09 National Day of Mourning, the NYSE exceptional-closure announcement. Dates were not inferred from recurring holiday rules, bond-market hours, or OHLC completeness. Early closes are 13:00 America/New_York cash-equity session closes (1:15 p.m. for eligible options only; not represented here). A year is listed only if its schedule was verified against the official publications below.",
-  "checked": "2026-09-27",
+  "description": "Official NYSE/ICE published full-day cash-equity closures and 13:00 New York early closes, 2015-2025 inclusive, for the market research calendar. Every date comes from an official NYSE Group press release on ir.theice.com (the scheduled multi-year holiday and early-closing calendars) or, for the 2025-01-09 National Day of Mourning, the NYSE exceptional-closure announcement. Dates were not inferred from recurring holiday rules, bond-market hours, or OHLC completeness. Early closes are 13:00 America/New_York cash-equity session closes (1:15 p.m. for eligible options only; not represented here). A year is listed only if its schedule was verified against the official publications below.",
+  "checked": "2026-10-03",
   "timezone": "America/New_York",
   "years": {
+    "2015": {
+      "full_closures": [
+        "2015-01-01",
+        "2015-01-19",
+        "2015-02-16",
+        "2015-04-03",
+        "2015-05-25",
+        "2015-07-03",
+        "2015-09-07",
+        "2015-11-26",
+        "2015-12-25"
+      ],
+      "early_closes": {
+        "2015-11-27": "13:00",
+        "2015-12-24": "13:00"
+      },
+      "sources": [
+        {
+          "url": "https://ir.theice.com/press/news-details/2013/NYSE-Euronext-Announces-2015-Holiday-Calendar-and-Early-Closings/default.aspx",
+          "published": "2013-12-20",
+          "note": "2015 holiday table and footnotes identify nine full closures and November 27/December 24 cash-equity early closes at 13:00. The July early-close footnote applies to 2014 only."
+        },
+        {
+          "url": "https://ir.theice.com/press/news-details/2014/NYSE-Group-2016-Holiday-Calendar-and-Early-Closings/default.aspx",
+          "published": "2014-12-08",
+          "note": "Republishes the same 2015 full closures and both 13:00 early closes."
+        }
+      ],
+      "coverage_notes": "July 3 was the observed full Independence Day closure; July 2 was a regular session. December 31 was a regular session. Verified 2026-10-03 against both official publications."
+    },
     "2016": {
       "full_closures": [
         "2016-01-01",
