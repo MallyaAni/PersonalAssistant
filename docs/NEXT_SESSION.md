@@ -1,5 +1,43 @@
 # Next session
 
+## 2026-10-03 — requested recorded-basket backtest complete
+
+User asked to backtest now instead of waiting. Read
+[fixed protocol](research/recorded-timing-plan-2026-10-03.md),
+[performance validation](research/recorded-timing-batch-validation-2026-10-03.md)
+and [results](research/recorded-timing-results-2026-10-03.md).
+Evaluated source beb79528ce80c246596de573df12f7ea8d97ca3d has 50 native and
+50 pinned-image cases passing. All 36 saved accounts independently reconcile
+to 275 original input files, two prior-night whole-share books and all 25
+planned intentions. No models fitted, providers called, orders submitted or
+live policy/UI changed. Model container IDs/start times remain unchanged.
+
+At 10 bp, learned−gate is +$156.22 on Oct1 but −$422.58 on Oct2 under the
+ideal next-open proxy; delayed case +$17.39/−$442.44. Both conventions fail
+to establish an advantage. Books beat gross SPY/QQQ references over these two
+dates, but these reset accounts do not prove full-policy/continuous benchmark
+outperformance. Keep this model experimental; neither these results nor the
+earlier recent32-session result justify replacing the live1% gate.
+
+Report SHA4816cea5b3e53e143fdb92e49afd173214550728813a95deb044a006c3577880
+at Spark `/home/animallya96/scratch/recorded-timing-batched-output-20261003-beb79528/results/report.json`.
+Independent verifier `/tmp/verify-recorded-timing-20261003_v2.py` SHA
+d1bba6757b725fccdf43c90eb9a414c347476125f68719d5adeb10b525eda877;
+passed all36 ledger/selection/mark checks without fitting/resimulating. Logs
+under existing `sequential-execution-supervision-20261002`.
+
+UNVERIFIED remaining optimization proof: original immutable source a1404a72
+reference process `recorded-timing-evaluation-a1404a72` is still active, network
+none/CPU2/memory4GB. It redundantly prepares full history for 525 prefixes;
+NEVER restart it or edit its mounted checkout. Wait for original
+`/home/animallya96/scratch/recorded-timing-results-20261003-a1404a72/report.json`,
+then use `/tmp/verify-recorded-timing-batch-parity-20261003.py` against saved
+decisions/attempts and compare saved account results exactly. No new economic
+replay needed. Optimized source checkpoint is already synthetic-prefix exact
+and future-invariant. Do not repeat either completed model study or the newly
+completed batched account evaluation; preserve source/data/model identities.
+Original reference log `recorded-timing-evaluation-a1404a72.log`.
+
 ## 2026-10-03 — actual-intent observation collector verified
 
 Source checkpoint99d235afb816645155c7ed42610f9b9b916e47c9 implements

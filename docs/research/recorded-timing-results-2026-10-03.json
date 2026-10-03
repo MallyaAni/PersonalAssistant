@@ -1,0 +1,844 @@
+{
+  "source_revision": "beb79528ce80c246596de573df12f7ea8d97ca3d",
+  "image": "sha256:5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d",
+  "report_sha256": "4816cea5b3e53e143fdb92e49afd173214550728813a95deb044a006c3577880",
+  "source_sha256": {
+    "backend/cli/market_recorded_timing.py": "520d2595c0f6d3530a6c7a7a06ea9e5fac1075a5467abcc7799081df5b8c47a9",
+    "backend/market/recorded_timing_inputs.py": "dc6b0900460c3a5745ed0306c18ac42946b20e84789ff5732c519560ff1095d8",
+    "backend/market/recorded_timing_replay.py": "ff9b828428d822e45a19c71a249251fe02f5257fdaa06cfc062b61e6c0bd437d",
+    "docs/research/recorded-timing-plan-2026-10-03.md": "832ff47d246422f2db15f41fcc38c21c0c8ca7a29b09ffa6b20c45609692be2e"
+  },
+  "model_manifest_sha256": "21afa50d2d36c1f03c20fa50dd4c18b05538865559ee80f7bf7ea553373a4c00",
+  "model_archive_sha256": "0f75cde156d4456f8d088c708c152e24e6d12648f21f910692d1108f8f889c55",
+  "interpretation": "Two independent prior-night reset accounts; historical price proxies, not broker fills or full-policy performance",
+  "accounts": [
+    {
+      "session": "2026-10-01",
+      "convention_cost": "delay1_cost0",
+      "method": "learned",
+      "opportunities": 15,
+      "initial_wealth": 100122.48449999999,
+      "end_wealth": 102582.63000000002,
+      "net_gain": 2460.145500000028,
+      "return_pct": 2.4571358893915862,
+      "fees": 0.0,
+      "turnover": 0.21698652513961542,
+      "filled_intentions": 15,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 2.2512234480831994,
+        "QQQ": 2.1597742976960976
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.20591244130838682,
+        "QQQ": 0.2973615916954886
+      }
+    },
+    {
+      "session": "2026-10-01",
+      "convention_cost": "delay1_cost0",
+      "method": "gate",
+      "opportunities": 15,
+      "initial_wealth": 100122.48449999999,
+      "end_wealth": 102426.94000000002,
+      "net_gain": 2304.4555000000255,
+      "return_pct": 2.301636352222188,
+      "fees": 0.0,
+      "turnover": 0.22223639486293417,
+      "filled_intentions": 15,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 2.0957239109138013,
+        "QQQ": 2.0042747605266995
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.20591244130838682,
+        "QQQ": 0.2973615916954886
+      }
+    },
+    {
+      "session": "2026-10-01",
+      "convention_cost": "delay1_cost0",
+      "method": "first_available",
+      "opportunities": 15,
+      "initial_wealth": 100122.48449999999,
+      "end_wealth": 102561.12000000001,
+      "net_gain": 2438.6355000000185,
+      "return_pct": 2.4356522035767285,
+      "fees": 0.0,
+      "turnover": 0.21677168828146687,
+      "filled_intentions": 15,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 2.2297397622683417,
+        "QQQ": 2.13829061188124
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.20591244130838682,
+        "QQQ": 0.2973615916954886
+      }
+    },
+    {
+      "session": "2026-10-01",
+      "convention_cost": "delay1_cost10",
+      "method": "learned",
+      "opportunities": 15,
+      "initial_wealth": 100122.48449999999,
+      "end_wealth": 102560.90477000002,
+      "net_gain": 2438.4202700000315,
+      "return_pct": 2.4354372368776285,
+      "fees": 21.72523,
+      "turnover": 0.21698652513961542,
+      "filled_intentions": 15,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 2.2295247955692417,
+        "QQQ": 2.13807564518214
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.20591244130838682,
+        "QQQ": 0.2973615916954886
+      }
+    },
+    {
+      "session": "2026-10-01",
+      "convention_cost": "delay1_cost10",
+      "method": "gate",
+      "opportunities": 15,
+      "initial_wealth": 100122.48449999999,
+      "end_wealth": 102404.68914000002,
+      "net_gain": 2282.2046400000254,
+      "return_pct": 2.2794127127358945,
+      "fees": 22.25086,
+      "turnover": 0.22223639486293417,
+      "filled_intentions": 15,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 2.0735002714275077,
+        "QQQ": 1.982051121040406
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.20591244130838682,
+        "QQQ": 0.2973615916954886
+      }
+    },
+    {
+      "session": "2026-10-01",
+      "convention_cost": "delay1_cost10",
+      "method": "first_available",
+      "opportunities": 15,
+      "initial_wealth": 100122.48449999999,
+      "end_wealth": 102539.41628000002,
+      "net_gain": 2416.931780000028,
+      "return_pct": 2.4139750347485918,
+      "fees": 21.703719999999997,
+      "turnover": 0.21677168828146687,
+      "filled_intentions": 15,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 2.208062593440205,
+        "QQQ": 2.116613443053103
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.20591244130838682,
+        "QQQ": 0.2973615916954886
+      }
+    },
+    {
+      "session": "2026-10-01",
+      "convention_cost": "delay1_cost25",
+      "method": "learned",
+      "opportunities": 15,
+      "initial_wealth": 100122.48449999999,
+      "end_wealth": 102528.31692500002,
+      "net_gain": 2405.8324250000296,
+      "return_pct": 2.402889258106684,
+      "fees": 54.313075000000005,
+      "turnover": 0.21698652513961542,
+      "filled_intentions": 15,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 2.1969768167982973,
+        "QQQ": 2.1055276664111955
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.20591244130838682,
+        "QQQ": 0.2973615916954886
+      }
+    },
+    {
+      "session": "2026-10-01",
+      "convention_cost": "delay1_cost25",
+      "method": "gate",
+      "opportunities": 15,
+      "initial_wealth": 100122.48449999999,
+      "end_wealth": 102371.31285000002,
+      "net_gain": 2248.8283500000252,
+      "return_pct": 2.246077253506454,
+      "fees": 55.62715,
+      "turnover": 0.22223639486293417,
+      "filled_intentions": 15,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 2.0401648121980673,
+        "QQQ": 1.9487156618109656
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.20591244130838682,
+        "QQQ": 0.2973615916954886
+      }
+    },
+    {
+      "session": "2026-10-01",
+      "convention_cost": "delay1_cost25",
+      "method": "first_available",
+      "opportunities": 15,
+      "initial_wealth": 100122.48449999999,
+      "end_wealth": 102506.86070000002,
+      "net_gain": 2384.376200000028,
+      "return_pct": 2.3814592815063715,
+      "fees": 54.25930000000001,
+      "turnover": 0.21677168828146687,
+      "filled_intentions": 15,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 2.1755468401979847,
+        "QQQ": 2.084097689810883
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.20591244130838682,
+        "QQQ": 0.2973615916954886
+      }
+    },
+    {
+      "session": "2026-10-01",
+      "convention_cost": "delay2_cost0",
+      "method": "learned",
+      "opportunities": 15,
+      "initial_wealth": 100122.48449999999,
+      "end_wealth": 102563.115,
+      "net_gain": 2440.630500000014,
+      "return_pct": 2.4376447630002773,
+      "fees": 0.0,
+      "turnover": 0.22004572809017742,
+      "filled_intentions": 15,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 2.2317323216918905,
+        "QQQ": 2.1402831713047887
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.20591244130838682,
+        "QQQ": 0.2973615916954886
+      }
+    },
+    {
+      "session": "2026-10-01",
+      "convention_cost": "delay2_cost0",
+      "method": "gate",
+      "opportunities": 15,
+      "initial_wealth": 100122.48449999999,
+      "end_wealth": 102533.71500000001,
+      "net_gain": 2411.2305000000197,
+      "return_pct": 2.40828072939003,
+      "fees": 0.0,
+      "turnover": 0.10006618443432652,
+      "filled_intentions": 8,
+      "partial_intentions": 0,
+      "unfilled_intentions": 7,
+      "benchmark_excess_pct": {
+        "SPY": 2.2023682880816433,
+        "QQQ": 2.1109191376945415
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.20591244130838682,
+        "QQQ": 0.2973615916954886
+      }
+    },
+    {
+      "session": "2026-10-01",
+      "convention_cost": "delay2_cost0",
+      "method": "first_available",
+      "opportunities": 15,
+      "initial_wealth": 100122.48449999999,
+      "end_wealth": 102556.36500000002,
+      "net_gain": 2433.8805000000284,
+      "return_pct": 2.430903020589774,
+      "fees": 0.0,
+      "turnover": 0.2199783106660722,
+      "filled_intentions": 15,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 2.2249905792813873,
+        "QQQ": 2.1335414288942856
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.20591244130838682,
+        "QQQ": 0.2973615916954886
+      }
+    },
+    {
+      "session": "2026-10-01",
+      "convention_cost": "delay2_cost10",
+      "method": "learned",
+      "opportunities": 15,
+      "initial_wealth": 100122.48449999999,
+      "end_wealth": 102541.08347500002,
+      "net_gain": 2418.59897500003,
+      "return_pct": 2.4156401901912754,
+      "fees": 22.031525000000002,
+      "turnover": 0.22004572809017742,
+      "filled_intentions": 15,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 2.2097277488828886,
+        "QQQ": 2.118278598495787
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.20591244130838682,
+        "QQQ": 0.2973615916954886
+      }
+    },
+    {
+      "session": "2026-10-01",
+      "convention_cost": "delay2_cost10",
+      "method": "gate",
+      "opportunities": 15,
+      "initial_wealth": 100122.48449999999,
+      "end_wealth": 102523.69612500002,
+      "net_gain": 2401.2116250000254,
+      "return_pct": 2.3982741109466033,
+      "fees": 10.018875000000001,
+      "turnover": 0.10006618443432652,
+      "filled_intentions": 8,
+      "partial_intentions": 0,
+      "unfilled_intentions": 7,
+      "benchmark_excess_pct": {
+        "SPY": 2.1923616696382164,
+        "QQQ": 2.1009125192511147
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.20591244130838682,
+        "QQQ": 0.2973615916954886
+      }
+    },
+    {
+      "session": "2026-10-01",
+      "convention_cost": "delay2_cost10",
+      "method": "first_available",
+      "opportunities": 15,
+      "initial_wealth": 100122.48449999999,
+      "end_wealth": 102534.34022500002,
+      "net_gain": 2411.8557250000304,
+      "return_pct": 2.408905189523169,
+      "fees": 22.024774999999998,
+      "turnover": 0.2199783106660722,
+      "filled_intentions": 15,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 2.202992748214782,
+        "QQQ": 2.1115435978276804
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.20591244130838682,
+        "QQQ": 0.2973615916954886
+      }
+    },
+    {
+      "session": "2026-10-01",
+      "convention_cost": "delay2_cost25",
+      "method": "learned",
+      "opportunities": 15,
+      "initial_wealth": 100122.48449999999,
+      "end_wealth": 102508.03618750002,
+      "net_gain": 2385.551687500032,
+      "return_pct": 2.3826333309777508,
+      "fees": 55.0788125,
+      "turnover": 0.22004572809017742,
+      "filled_intentions": 15,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 2.176720889669364,
+        "QQQ": 2.085271739282262
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.20591244130838682,
+        "QQQ": 0.2973615916954886
+      }
+    },
+    {
+      "session": "2026-10-01",
+      "convention_cost": "delay2_cost25",
+      "method": "gate",
+      "opportunities": 15,
+      "initial_wealth": 100122.48449999999,
+      "end_wealth": 102508.66781250002,
+      "net_gain": 2386.1833125000267,
+      "return_pct": 2.3832641832814554,
+      "fees": 25.047187500000003,
+      "turnover": 0.10006618443432652,
+      "filled_intentions": 8,
+      "partial_intentions": 0,
+      "unfilled_intentions": 7,
+      "benchmark_excess_pct": {
+        "SPY": 2.1773517419730686,
+        "QQQ": 2.085902591585967
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.20591244130838682,
+        "QQQ": 0.2973615916954886
+      }
+    },
+    {
+      "session": "2026-10-01",
+      "convention_cost": "delay2_cost25",
+      "method": "first_available",
+      "opportunities": 15,
+      "initial_wealth": 100122.48449999999,
+      "end_wealth": 102501.30306250002,
+      "net_gain": 2378.8185625000333,
+      "return_pct": 2.375908442923261,
+      "fees": 55.061937500000006,
+      "turnover": 0.2199783106660722,
+      "filled_intentions": 15,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 2.1699960016148743,
+        "QQQ": 2.0785468512277725
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.20591244130838682,
+        "QQQ": 0.2973615916954886
+      }
+    },
+    {
+      "session": "2026-10-02",
+      "convention_cost": "delay1_cost0",
+      "method": "learned",
+      "opportunities": 10,
+      "initial_wealth": 102717.1,
+      "end_wealth": 104614.61400000002,
+      "net_gain": 1897.5140000000101,
+      "return_pct": 1.8473204558929428,
+      "fees": 0.0,
+      "turnover": 0.30970710816407393,
+      "filled_intentions": 10,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 1.1117472454169057,
+        "QQQ": 0.835245635128568
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.7355732104760371,
+        "QQQ": 1.0120748207643748
+      }
+    },
+    {
+      "session": "2026-10-02",
+      "convention_cost": "delay1_cost0",
+      "method": "gate",
+      "opportunities": 10,
+      "initial_wealth": 102717.1,
+      "end_wealth": 105037.5076,
+      "net_gain": 2320.4075999999914,
+      "return_pct": 2.259027562109903,
+      "fees": 0.0,
+      "turnover": 0.31274809744433985,
+      "filled_intentions": 10,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 1.523454351633866,
+        "QQQ": 1.2469527413455284
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.7355732104760371,
+        "QQQ": 1.0120748207643748
+      }
+    },
+    {
+      "session": "2026-10-02",
+      "convention_cost": "delay1_cost0",
+      "method": "first_available",
+      "opportunities": 10,
+      "initial_wealth": 102717.1,
+      "end_wealth": 104614.61400000002,
+      "net_gain": 1897.5140000000101,
+      "return_pct": 1.8473204558929428,
+      "fees": 0.0,
+      "turnover": 0.30970710816407393,
+      "filled_intentions": 10,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 1.1117472454169057,
+        "QQQ": 0.835245635128568
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.7355732104760371,
+        "QQQ": 1.0120748207643748
+      }
+    },
+    {
+      "session": "2026-10-02",
+      "convention_cost": "delay1_cost10",
+      "method": "learned",
+      "opportunities": 10,
+      "initial_wealth": 102717.1,
+      "end_wealth": 104582.801784,
+      "net_gain": 1865.7017839999899,
+      "return_pct": 1.8163497450765158,
+      "fees": 31.812215999999996,
+      "turnover": 0.30970710816407393,
+      "filled_intentions": 10,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 1.0807765346004787,
+        "QQQ": 0.804274924312141
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.7355732104760371,
+        "QQQ": 1.0120748207643748
+      }
+    },
+    {
+      "session": "2026-10-02",
+      "convention_cost": "delay1_cost10",
+      "method": "gate",
+      "opportunities": 10,
+      "initial_wealth": 102717.1,
+      "end_wealth": 105005.38302240001,
+      "net_gain": 2288.2830224000063,
+      "return_pct": 2.227752752365484,
+      "fees": 32.124577599999995,
+      "turnover": 0.31274809744433985,
+      "filled_intentions": 10,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 1.4921795418894468,
+        "QQQ": 1.215677931601109
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.7355732104760371,
+        "QQQ": 1.0120748207643748
+      }
+    },
+    {
+      "session": "2026-10-02",
+      "convention_cost": "delay1_cost10",
+      "method": "first_available",
+      "opportunities": 10,
+      "initial_wealth": 102717.1,
+      "end_wealth": 104582.801784,
+      "net_gain": 1865.7017839999899,
+      "return_pct": 1.8163497450765158,
+      "fees": 31.812215999999996,
+      "turnover": 0.30970710816407393,
+      "filled_intentions": 10,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 1.0807765346004787,
+        "QQQ": 0.804274924312141
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.7355732104760371,
+        "QQQ": 1.0120748207643748
+      }
+    },
+    {
+      "session": "2026-10-02",
+      "convention_cost": "delay1_cost25",
+      "method": "learned",
+      "opportunities": 10,
+      "initial_wealth": 102717.1,
+      "end_wealth": 104535.08346000001,
+      "net_gain": 1817.983460000003,
+      "return_pct": 1.7698936788519175,
+      "fees": 79.53054,
+      "turnover": 0.30970710816407393,
+      "filled_intentions": 10,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 1.0343204683758804,
+        "QQQ": 0.7578188580875427
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.7355732104760371,
+        "QQQ": 1.0120748207643748
+      }
+    },
+    {
+      "session": "2026-10-02",
+      "convention_cost": "delay1_cost25",
+      "method": "gate",
+      "opportunities": 10,
+      "initial_wealth": 102717.1,
+      "end_wealth": 104957.196156,
+      "net_gain": 2240.0961559999996,
+      "return_pct": 2.1808405377488262,
+      "fees": 80.311444,
+      "turnover": 0.31274809744433985,
+      "filled_intentions": 10,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 1.4452673272727892,
+        "QQQ": 1.1687657169844514
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.7355732104760371,
+        "QQQ": 1.0120748207643748
+      }
+    },
+    {
+      "session": "2026-10-02",
+      "convention_cost": "delay1_cost25",
+      "method": "first_available",
+      "opportunities": 10,
+      "initial_wealth": 102717.1,
+      "end_wealth": 104535.08346000001,
+      "net_gain": 1817.983460000003,
+      "return_pct": 1.7698936788519175,
+      "fees": 79.53054,
+      "turnover": 0.30970710816407393,
+      "filled_intentions": 10,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 1.0343204683758804,
+        "QQQ": 0.7578188580875427
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.7355732104760371,
+        "QQQ": 1.0120748207643748
+      }
+    },
+    {
+      "session": "2026-10-02",
+      "convention_cost": "delay2_cost0",
+      "method": "learned",
+      "opportunities": 10,
+      "initial_wealth": 102717.1,
+      "end_wealth": 104902.28,
+      "net_gain": 2185.179999999993,
+      "return_pct": 2.1273770384872557,
+      "fees": 0.0,
+      "turnover": 0.31262769295472714,
+      "filled_intentions": 10,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 1.3918038280112186,
+        "QQQ": 1.1153022177228809
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.7355732104760371,
+        "QQQ": 1.0120748207643748
+      }
+    },
+    {
+      "session": "2026-10-02",
+      "convention_cost": "delay2_cost0",
+      "method": "gate",
+      "opportunities": 10,
+      "initial_wealth": 102717.1,
+      "end_wealth": 105337.4654,
+      "net_gain": 2620.365399999995,
+      "return_pct": 2.5510507987472337,
+      "fees": 0.0,
+      "turnover": 0.24197533419459855,
+      "filled_intentions": 6,
+      "partial_intentions": 0,
+      "unfilled_intentions": 4,
+      "benchmark_excess_pct": {
+        "SPY": 1.8154775882711967,
+        "QQQ": 1.538975977982859
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.7355732104760371,
+        "QQQ": 1.0120748207643748
+      }
+    },
+    {
+      "session": "2026-10-02",
+      "convention_cost": "delay2_cost0",
+      "method": "first_available",
+      "opportunities": 10,
+      "initial_wealth": 102717.1,
+      "end_wealth": 104902.28,
+      "net_gain": 2185.179999999993,
+      "return_pct": 2.1273770384872557,
+      "fees": 0.0,
+      "turnover": 0.31262769295472714,
+      "filled_intentions": 10,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 1.3918038280112186,
+        "QQQ": 1.1153022177228809
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.7355732104760371,
+        "QQQ": 1.0120748207643748
+      }
+    },
+    {
+      "session": "2026-10-02",
+      "convention_cost": "delay2_cost10",
+      "method": "learned",
+      "opportunities": 10,
+      "initial_wealth": 102717.1,
+      "end_wealth": 104870.16779,
+      "net_gain": 2153.067790000001,
+      "return_pct": 2.0961142691917907,
+      "fees": 32.112210000000005,
+      "turnover": 0.31262769295472714,
+      "filled_intentions": 10,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 1.3605410587157536,
+        "QQQ": 1.0840394484274158
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.7355732104760371,
+        "QQQ": 1.0120748207643748
+      }
+    },
+    {
+      "session": "2026-10-02",
+      "convention_cost": "delay2_cost10",
+      "method": "gate",
+      "opportunities": 10,
+      "initial_wealth": 102717.1,
+      "end_wealth": 105312.6103954,
+      "net_gain": 2595.5103953999933,
+      "return_pct": 2.526853265327772,
+      "fees": 24.855004600000004,
+      "turnover": 0.24197533419459855,
+      "filled_intentions": 6,
+      "partial_intentions": 0,
+      "unfilled_intentions": 4,
+      "benchmark_excess_pct": {
+        "SPY": 1.7912800548517351,
+        "QQQ": 1.5147784445633974
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.7355732104760371,
+        "QQQ": 1.0120748207643748
+      }
+    },
+    {
+      "session": "2026-10-02",
+      "convention_cost": "delay2_cost10",
+      "method": "first_available",
+      "opportunities": 10,
+      "initial_wealth": 102717.1,
+      "end_wealth": 104870.16779,
+      "net_gain": 2153.067790000001,
+      "return_pct": 2.0961142691917907,
+      "fees": 32.112210000000005,
+      "turnover": 0.31262769295472714,
+      "filled_intentions": 10,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 1.3605410587157536,
+        "QQQ": 1.0840394484274158
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.7355732104760371,
+        "QQQ": 1.0120748207643748
+      }
+    },
+    {
+      "session": "2026-10-02",
+      "convention_cost": "delay2_cost25",
+      "method": "learned",
+      "opportunities": 10,
+      "initial_wealth": 102717.1,
+      "end_wealth": 104821.999475,
+      "net_gain": 2104.8994749999983,
+      "return_pct": 2.0492201152485787,
+      "fees": 80.28052500000001,
+      "turnover": 0.31262769295472714,
+      "filled_intentions": 10,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 1.3136469047725416,
+        "QQQ": 1.037145294484204
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.7355732104760371,
+        "QQQ": 1.0120748207643748
+      }
+    },
+    {
+      "session": "2026-10-02",
+      "convention_cost": "delay2_cost25",
+      "method": "gate",
+      "opportunities": 10,
+      "initial_wealth": 102717.1,
+      "end_wealth": 105275.3278885,
+      "net_gain": 2558.227888499998,
+      "return_pct": 2.4905569651985866,
+      "fees": 62.13751150000001,
+      "turnover": 0.24197533419459855,
+      "filled_intentions": 6,
+      "partial_intentions": 0,
+      "unfilled_intentions": 4,
+      "benchmark_excess_pct": {
+        "SPY": 1.7549837547225495,
+        "QQQ": 1.4784821444342118
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.7355732104760371,
+        "QQQ": 1.0120748207643748
+      }
+    },
+    {
+      "session": "2026-10-02",
+      "convention_cost": "delay2_cost25",
+      "method": "first_available",
+      "opportunities": 10,
+      "initial_wealth": 102717.1,
+      "end_wealth": 104821.999475,
+      "net_gain": 2104.8994749999983,
+      "return_pct": 2.0492201152485787,
+      "fees": 80.28052500000001,
+      "turnover": 0.31262769295472714,
+      "filled_intentions": 10,
+      "partial_intentions": 0,
+      "unfilled_intentions": 0,
+      "benchmark_excess_pct": {
+        "SPY": 1.3136469047725416,
+        "QQQ": 1.037145294484204
+      },
+      "benchmarks_gross_return_pct": {
+        "SPY": 0.7355732104760371,
+        "QQQ": 1.0120748207643748
+      }
+    }
+  ]
+}
