@@ -85,6 +85,22 @@ and run `evaluate-intraday` once against the original authenticated baseline.
 No old models, controls or scores rerun. Global forecast and every monthly
 model/receipt use the explicit15-minute schema and original-input hashes.
 
+Verified duration checkpoint `21ee02e9bbb2024c79e202c614168a681a6322f9`:
+native60/source-image60 pass, Ruff clean; log
+`/tmp/codex-fifteen-minute-source-tests-20261002.log` on Spark. One ACTIVE
+CPU2/memory4GB/network-none fit `codex-fifteen-minute-fit-21ee02e9`, private
+output `/home/animallya96/scratch/fifteen-minute-moments-results-20261002-21ee02e9`.
+RO source `/home/animallya96/codex-worktrees/fifteen-minute-moments-20261002-21ee02e9`.
+Never restart the active process or alter its mounted source. Original cube
+and prepared hashes passed before fitting; arrays are already loaded. Because
+the normal20:30 SIP append may mutate the production cube directory, originals
+from Mac `/tmp/codex-learned-inputs-20261002/sip_cubes` were copied unchanged
+to private `/home/animallya96/scratch/frozen-learned-entry-cubes-20261002-8670c86d`.
+Authenticate required tickers against original prepared receipt, then mount
+this private frozen cube directory for evaluation; do not refetch, overwrite
+production data, or silently accept newly appended history. Existing causal
+review agent prepares a NEW independent verifier, not a modified old proof.
+
 ## 2026-10-02 — learned entry/exit and sizing: COMPLETE, no live adoption
 
 User's main focus: replace arbitrary 1% timing and equal 9% allocations with
