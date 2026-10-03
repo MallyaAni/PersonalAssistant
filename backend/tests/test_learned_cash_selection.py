@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from backend.market.learned_cash_selection import (
+    MODES,
     CashSelectionAdapter,
     select_cash_opportunities,
 )
@@ -30,6 +31,32 @@ def test_joint_purchase_and_exit_verdicts():
     np.testing.assert_array_equal(plan.cash_exit, [True, False, False])
     np.testing.assert_array_equal(plan.cash_exit_shares, [2, 0, 0])
     assert plan.reasons == ("forecast_cash_exit", "purchase_edge", "purchase_no_edge")
+
+
+# Attribution changes only declared masks, preserving the frozen forecast comparisons.
+@pytest.mark.parametrize(
+    ("mode", "denied", "exits"),
+    [
+        ("quantity_control", [False, False, False], [False, False, False]),
+        ("buy_only", [True, False, True], [False, False, False]),
+        ("exit_only", [True, False, False], [True, False, False]),
+    ],
+)
+def test_attribution_masks_preserve_forecast_values(mode, denied, exits):
+    joint = select_cash_opportunities(**inputs())
+    plan = select_cash_opportunities(**inputs(), mode=mode)
+    np.testing.assert_array_equal(plan.no_buy, denied)
+    np.testing.assert_array_equal(plan.cash_exit, exits)
+    np.testing.assert_array_equal(plan.cash_exit_shares, np.where(exits, [2, 1, 0], 0))
+    for key in ("absolute_mean", "buy_edge", "hold_edge"):
+        np.testing.assert_array_equal(getattr(plan, key), getattr(joint, key))
+
+
+# A diagnostic mode cannot be misspelled or inferred from truthiness.
+@pytest.mark.parametrize("mode", [None, True, "sell_only", ["joint"]])
+def test_invalid_attribution_mode_refuses(mode):
+    with pytest.raises(ValueError, match="supported cash-selection mode"):
+        select_cash_opportunities(**inputs(), mode=mode)
 
 
 # Blocking an addition never liquidates a held position with a positive hold edge.
@@ -160,7 +187,8 @@ def test_verdict_arrays_are_read_only():
 
 
 # Future model rows cannot change the same earlier stock/account verdict.
-def test_adapter_prefix_invariance():
+@pytest.mark.parametrize("mode", MODES)
+def test_adapter_prefix_invariance(mode):
     values = inputs()
     arrays = np.tile(values["relative"], (4, 1))
     eligible = np.ones((4, 3), dtype=bool)
@@ -171,6 +199,7 @@ def test_adapter_prefix_invariance():
         np.zeros(4),
         10,
         dates=np.arange("2026-01-05", "2026-01-09", dtype="datetime64[D]"),
+        mode=mode,
     )
     arrays[1:] = 100
     eligible[1:] = False
@@ -181,12 +210,14 @@ def test_adapter_prefix_invariance():
         np.zeros(4),
         10,
         dates=np.arange("2026-01-05", "2026-01-09", dtype="datetime64[D]"),
+        mode=mode,
     )
     args = (0, values["grades"], values["prices"], values["held"], values["nav"])
     one, two = first.decide(*args), second.decide(*args)
     np.testing.assert_array_equal(one.no_buy, two.no_buy)
     np.testing.assert_array_equal(one.cash_exit_shares, two.cash_exit_shares)
     assert first.events == second.events
+    assert all(e.get("mode", "joint") == mode for e in first.events)
 
 
 # Fitted stock heads never supply benchmark forecasts as purchase/exit evidence.

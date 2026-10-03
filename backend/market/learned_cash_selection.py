@@ -11,6 +11,7 @@ import numpy as np
 from backend.market.learned_retention import _mask, _numbers, _scalar
 
 POLICY = "learned-cash-selection/1"
+MODES = ("joint", "quantity_control", "buy_only", "exit_only")
 
 
 # Keep purchase permission separate from covered discretionary exit proposals.
@@ -37,7 +38,10 @@ def select_cash_opportunities(  # noqa: C901 - retain explicit evidence refusal/
     cost_bps,
     *,
     mandatory=None,
+    mode="joint",
 ):
+    if not isinstance(mode, str) or mode not in MODES:
+        raise ValueError("Explicit supported cash-selection mode required")
     raw = np.asarray(grades)
     if raw.ndim != 1 or not len(raw):
         raise ValueError("Nonempty ordinal grade vector required")
@@ -83,8 +87,16 @@ def select_cash_opportunities(  # noqa: C901 - retain explicit evidence refusal/
     buy_edge = absolute - np.log1p(cost)
     hold_edge = absolute - np.log1p(-cost)
     ordinary = eligible & (grades >= 2) & ~mandatory
-    no_buy = ordinary & known & (buy_edge <= 0)
-    cash_exit = ordinary & known & (held > 0) & (hold_edge < 0)
+    cash_exit = (
+        ordinary & known & (held > 0) & (hold_edge < 0)
+        if mode in ("joint", "exit_only")
+        else np.zeros(size, dtype=bool)
+    )
+    no_buy = (
+        ordinary & known & (buy_edge <= 0)
+        if mode in ("joint", "buy_only")
+        else cash_exit.copy()
+    )
     quantities = np.where(cash_exit, held, 0)
     reasons = []
     for column in range(size):
@@ -98,6 +110,10 @@ def select_cash_opportunities(  # noqa: C901 - retain explicit evidence refusal/
             reason = "forecast_cash_exit"
         elif no_buy[column]:
             reason = "purchase_no_edge"
+        elif mode == "quantity_control":
+            reason = "quantity_control"
+        elif mode == "exit_only":
+            reason = "exit_preserves_purchase"
         else:
             reason = "purchase_edge"
         reasons.append(reason)
@@ -111,7 +127,12 @@ def select_cash_opportunities(  # noqa: C901 - retain explicit evidence refusal/
 # Bind frozen model arrays to one account's selection receipts without fitting.
 class CashSelectionAdapter:
     # Preserve the declared stock/date grid and reject ambiguous forecast inputs.
-    def __init__(self, symbols, eligible, relative, spy, cost_bps, *, dates):
+    def __init__(
+        self, symbols, eligible, relative, spy, cost_bps, *, dates, mode="joint"
+    ):
+        if not isinstance(mode, str) or mode not in MODES:
+            raise ValueError("Explicit supported cash-selection mode required")
+        self.mode = mode
         self.symbols = tuple(symbols)
         raw_dates = np.asarray(dates)
         if raw_dates.ndim != 1 or raw_dates.dtype.kind != "M":
@@ -174,6 +195,7 @@ class CashSelectionAdapter:
             self.spy[t],
             self.cost_bps,
             mandatory=mandatory,
+            mode=self.mode,
         )
         for column in np.flatnonzero(np.asarray(grades) >= 2):
             self.events.append(
@@ -186,6 +208,7 @@ class CashSelectionAdapter:
                     "absolute_mean": float(plan.absolute_mean[column])
                     if np.isfinite(plan.absolute_mean[column])
                     else None,
+                    **({"mode": self.mode} if self.mode != "joint" else {}),
                 }
             )
         return plan

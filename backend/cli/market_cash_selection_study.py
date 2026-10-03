@@ -20,6 +20,9 @@ def main():
         "source-manifest",
     ):
         parser.add_argument(f"--{name}", required=True)
+    parser.add_argument("--attribution", action="store_true")
+    for name in ("joint-directory", "joint-proof", "joint-public"):
+        parser.add_argument(f"--{name}")
     args = parser.parse_args()
     run(
         args.snapshot,
@@ -31,6 +34,10 @@ def main():
         args.output,
         args.source_revision,
         args.source_manifest,
+        attribution=args.attribution,
+        joint_directory=args.joint_directory,
+        joint_proof=args.joint_proof,
+        joint_public=args.joint_public,
     )
 
 

@@ -163,3 +163,129 @@ def test_actual_joint_account_archive_uses_saved_models(tmp_path, monkeypatch):
     assert result["adoption"] is False
     with np.load(output / "curves.npz") as curves:
         np.testing.assert_array_equal(curves["joint-10-0"], np.ones(len(panel.dates)))
+
+
+# One matched cell pins incremental components and the explicit account interaction.
+def test_attribution_paired_arithmetic_and_missing_interaction(monkeypatch):
+    monkeypatch.setattr(study.prior, "COSTS", (10,))
+    monkeypatch.setattr(study.prior, "OFFSETS", (0,))
+    monkeypatch.setattr(study.prior, "WINDOWS", {"fixture": None})
+    rows = [
+        {
+            "arm": arm,
+            "cost_bps": 10,
+            "offset": 0,
+            "score": {"fixture": {"metrics": {"total": total}}},
+        }
+        for arm, total in (
+            ("quantity_control", 0.2),
+            ("buy_only", 0.4),
+            ("exit_only", 0.1),
+            ("joint", 0.35),
+            ("learned", 0.18),
+        )
+    ]
+    pairs, interaction = study.attribution_results(rows[:3], rows[3:4], rows[4:])
+    np.testing.assert_allclose(
+        [p["paired_total_gain"] for p in pairs], [0.2, -0.1, 0.15, -0.05, 0.25, 0.02]
+    )
+    assert interaction[0]["interaction_total_gain"] == pytest.approx(0.05)
+    rows[1]["score"]["fixture"]["metrics"] = None
+    pairs, interaction = study.attribution_results(rows[:3], rows[3:4], rows[4:])
+    assert pairs[0]["paired_total_gain"] is None
+    assert pairs[3]["paired_total_gain"] is None
+    assert interaction[0]["interaction_total_gain"] is None
+    with pytest.raises(ValueError, match="Duplicate"):
+        study.attribution_results(rows[:3] * 2, rows[3:4], rows[4:])
+
+
+# Joint controls must be byte-authenticated before they can be used as evidence.
+def test_joint_control_corruption_refuses(tmp_path):
+    (tmp_path / "result.json").write_text("{}")
+    with pytest.raises(ValueError, match="verified joint control bytes"):
+        study.authenticate_joint(tmp_path, "unused", "unused", np.array([]))
+
+
+# A partial control configuration is refused before a numerical workflow starts.
+@pytest.mark.parametrize(
+    "args",
+    [(True, None, None, None), (False, "directory", None, None), (1, None, None, None)],
+)
+def test_ambiguous_experiment_refuses(args):
+    with pytest.raises(ValueError, match="Boolean|requires all"):
+        study.experiment_arms(*args)
+
+
+# The actual three-arm runner writes funded ledgers without fitting or replaying joint.
+def test_actual_attribution_archives_all_declared_modes(tmp_path, monkeypatch):
+    panel, public = saved_fixture(tmp_path, monkeypatch)
+    grades = np.column_stack(
+        (report_fixture().graded.grades, np.zeros(len(panel.dates)))
+    )
+    eligible = np.ones(panel.close.shape, dtype=bool)
+    eligible[:, -2:] = False
+    joint = [{**public["accounts"][0], "arm": "joint", "account": "joint-10-0"}]
+    monkeypatch.setattr(
+        study.retention_inputs, "load", lambda *args: (panel, grades, eligible, {})
+    )
+    monkeypatch.setattr(
+        study, "authenticate_prior", lambda *args: (public, {"original_inputs": {}})
+    )
+    monkeypatch.setattr(study, "authenticate_joint", lambda *args: (joint, {}))
+    monkeypatch.setattr(study.prior, "authenticate_source", lambda *args: {})
+    snapshot = tmp_path / "snapshot"
+    snapshot.write_text("fixture")
+    monkeypatch.setattr(study.prior, "SNAPSHOT_SHA256", study.digest(snapshot))
+
+    # Fail rather than silently training a replacement head in this saved-output study.
+    def forbid_fit(*args, **kwargs):
+        raise AssertionError("Attribution must never refit models")
+
+    monkeypatch.setattr(study.prior, "fit", forbid_fit)
+    root = study.Path(study.__file__).resolve().parents[2]
+    files = study.prior.source_hashes()
+    for name in (
+        "backend/market/cash_selection_study.py",
+        "backend/market/learned_cash_selection.py",
+        "backend/cli/market_cash_selection_study.py",
+        "docs/research/joint-cash-selection-plan-2026-10-03.md",
+        "docs/research/cash-selection-attribution-plan-2026-10-03.md",
+    ):
+        files[name] = study.digest(root / name)
+    manifest = tmp_path / "source.json"
+    manifest.write_text(json.dumps({"files": files}))
+    output = tmp_path / "output"
+    result = study.run(
+        snapshot,
+        "unused",
+        "unused",
+        tmp_path,
+        "unused",
+        "unused",
+        output,
+        "fixture",
+        manifest,
+        attribution=True,
+        joint_directory="unused",
+        joint_proof="unused",
+        joint_public="unused",
+    )
+    assert [r["arm"] for r in result["accounts"]] == list(study.ATTRIBUTION_ARMS)
+    assert all(r["journal"]["proof"]["ok"] for r in result["accounts"])
+    assert len(result["paired_results"]) == 6
+    assert len(result["interactions"]) == 1
+    assert result["schema"] == "cash-selection-attribution-funded/1"
+    assert result["adoption"] is False
+    with np.load(output / "curves.npz") as curves:
+        np.testing.assert_array_equal(
+            curves["buy_only-10-0"], np.ones(len(panel.dates))
+        )
+    fees = {
+        r["arm"]: r["score"]["fixture"]["fees_nav1"]
+        for r in result["accounts"]
+    }
+    assert fees["exit_only"] > fees["quantity_control"] > fees["buy_only"] == 0
+    for arm in study.ATTRIBUTION_ARMS:
+        records = json.loads((output / f"{arm}-10-0-decisions.json").read_text())
+        assert records["selection"]
+        assert all(r["mode"] == arm for r in records["selection"])

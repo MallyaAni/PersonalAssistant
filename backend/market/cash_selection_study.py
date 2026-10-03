@@ -7,6 +7,7 @@ This measures reconstructed daily selection, not the current intraday executor.
 import hashlib
 import json
 from collections import Counter
+from itertools import product
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -29,6 +30,111 @@ PRIOR_ARTIFACTS = {
     "fit.json": "726c272444e60c748eb2254e5daa33f7a2b6cbc3cc5d694041c8144c515ae42b",
     "inputs.json": "5d556a2fc4d2e4e52121e0039e11f2cfc07eb5d5f53acbb3a6240f5fcf2d171a",
 }
+JOINT_REVISION = "e8505b221bdd4cd21f2c0a3b13e52d720ab93bea"
+JOINT_RESULT = "8bb4cb5d9ca2ac797395be88f69d693d9f9ee4df592ce419dd4d738b246eebb7"
+JOINT_PROOF = "cc31794054ab02b90c9df75865643a092352cb00a482f92e3f1b3ff6978803f3"
+JOINT_PUBLIC = "1c83155fdf5c90a7b2922899757dfbefd25247caf49c7f6fd6e526004fad818a"
+JOINT_CURVES = "f4af0f4d6d32ffe5325101c0723170caf5a3aa778bd8d7db3e57c21f9ed3060a"
+ATTRIBUTION_ARMS = ("quantity_control", "buy_only", "exit_only")
+ATTRIBUTION_CONTRASTS = (
+    ("buy_only", "quantity_control"),
+    ("exit_only", "quantity_control"),
+    ("joint", "quantity_control"),
+    ("joint", "buy_only"),
+    ("joint", "exit_only"),
+    ("quantity_control", "learned"),
+)
+
+
+# Reuse the exact verified joint scores and curves without replaying those accounts.
+def authenticate_joint(directory, proof_path, public_path, dates):
+    directory = Path(directory)
+    for path, expected in (
+        (directory / "result.json", JOINT_RESULT),
+        (directory / "curves.npz", JOINT_CURVES),
+        (Path(proof_path), JOINT_PROOF),
+        (Path(public_path), JOINT_PUBLIC),
+    ):
+        if digest(path) != expected:
+            raise ValueError("Exact verified joint control bytes required")
+    proof = json.loads(Path(proof_path).read_text())
+    public = json.loads(Path(public_path).read_text())
+    if (
+        proof.get("ok") is not True
+        or proof.get("source_revision") != JOINT_REVISION
+        or proof.get("result_sha256") != JOINT_RESULT
+        or public.get("source_revision") != JOINT_REVISION
+        or public.get("result_sha256") != JOINT_RESULT
+        or public.get("independent_proof_sha256") != JOINT_PROOF
+    ):
+        raise ValueError("Joint proof/control identity mismatch")
+    expected = {f"joint-{c}-{o}" for c in prior.COSTS for o in prior.OFFSETS}
+    rows = public["accounts"]
+    if len(rows) != len(expected) or {r["account"] for r in rows} != expected:
+        raise ValueError("Complete unique joint control grid required")
+    if any(
+        r["arm"] != "joint" or r["account"] != f"joint-{r['cost_bps']}-{r['offset']}"
+        for r in rows
+    ):
+        raise ValueError("Joint control row identity mismatch")
+    with np.load(directory / "curves.npz", allow_pickle=False) as saved:
+        if set(saved.files) != expected | {"dates"} or not np.array_equal(
+            saved["dates"], dates
+        ):
+            raise ValueError("Joint control curve clock/grid mismatch")
+        curves = {key: saved[key].copy() for key in expected}
+    for row in rows:
+        nav = curves[row["account"]]
+        if (
+            nav.shape != dates.shape
+            or not np.isfinite(nav).all()
+            or np.any(nav <= 0)
+            or _array_hash(nav) != row["nav_sha256"]
+        ):
+            raise ValueError("Joint control NAV differs from verified score")
+    return rows, curves
+
+
+# Preserve each preregistered paired difference and the carried-book interaction.
+def attribution_results(accounts, joint, controls):
+    rows = accounts + joint + controls
+    lookup = {(r["arm"], r["cost_bps"], r["offset"]): r for r in rows}
+    if len(lookup) != len(rows):
+        raise ValueError("Duplicate attribution/control account identity")
+    paired, interactions = [], []
+    for cost, offset, window in product(prior.COSTS, prior.OFFSETS, prior.WINDOWS):
+        values = {
+            arm: lookup[arm, cost, offset]["score"][window]["metrics"]
+            for arm in (*ATTRIBUTION_ARMS, "joint", "learned")
+        }
+        for left, right in ATTRIBUTION_CONTRASTS:
+            paired.append(
+                {
+                    "cost_bps": cost,
+                    "offset": offset,
+                    "window": window,
+                    "left": left,
+                    "right": right,
+                    "paired_total_gain": None
+                    if values[left] is None or values[right] is None
+                    else values[left]["total"] - values[right]["total"],
+                }
+            )
+        required = [values[a] for a in (*ATTRIBUTION_ARMS, "joint")]
+        interactions.append(
+            {
+                "cost_bps": cost,
+                "offset": offset,
+                "window": window,
+                "interaction_total_gain": None
+                if any(v is None for v in required)
+                else values["joint"]["total"]
+                - values["buy_only"]["total"]
+                - values["exit_only"]["total"]
+                + values["quantity_control"]["total"],
+            }
+        )
+    return paired, interactions
 
 
 # Authenticate large original artifacts incrementally without loading their payloads.
@@ -135,7 +241,19 @@ def paired_results(accounts, controls):
     return result
 
 
-# Run only the sixty preregistered joint accounts from immutable saved model outputs.
+# Reject ambiguous experiment/control combinations before reading account evidence.
+def experiment_arms(attribution, joint_directory, joint_proof, joint_public):
+    if type(attribution) is not bool:
+        raise ValueError("Boolean attribution mode required")
+    supplied = (joint_directory, joint_proof, joint_public)
+    if (attribution and any(p is None for p in supplied)) or (
+        not attribution and any(p is not None for p in supplied)
+    ):
+        raise ValueError("Attribution alone requires all verified joint control paths")
+    return ATTRIBUTION_ARMS if attribution else ("joint",)
+
+
+# Run only the registered new joint or attribution accounts from saved forecasts.
 def run(
     snapshot,
     provenance_path,
@@ -146,7 +264,13 @@ def run(
     output,
     source_revision,
     source_manifest,
+    *,
+    attribution=False,
+    joint_directory=None,
+    joint_proof=None,
+    joint_public=None,
 ):
+    arms = experiment_arms(attribution, joint_directory, joint_proof, joint_public)
     identity = prior.authenticate_source(source_revision, source_manifest)
     root = Path(__file__).resolve().parents[2]
     files = prior.source_hashes()
@@ -156,6 +280,9 @@ def run(
         "backend/cli/market_cash_selection_study.py",
         "docs/research/joint-cash-selection-plan-2026-10-03.md",
     ):
+        files[name] = digest(root / name)
+    if attribution:
+        name = "docs/research/cash-selection-attribution-plan-2026-10-03.md"
         files[name] = digest(root / name)
     manifest = json.loads(Path(source_manifest).read_text())
     if any(manifest["files"].get(name) != value for name, value in files.items()):
@@ -169,6 +296,12 @@ def run(
     if panel.dates[-1] != prior.END or prior.START not in panel.dates:
         raise ValueError("Original complete fixed evaluation window required")
     relative, spy, curves = saved_arrays(old_directory, panel, public, inputs, original)
+    first = int(np.searchsorted(panel.dates, prior.START))
+    joint_rows = []
+    if attribution:
+        joint_rows, _ = authenticate_joint(
+            joint_directory, joint_proof, joint_public, panel.dates[first:]
+        )
     output = Path(output)
     output.mkdir(exist_ok=False)
     (output / "journals").mkdir()
@@ -185,6 +318,17 @@ def run(
         "adoption": False,
         "selection": "reconstructed_current_vintage_not_historical_publications",
         "execution": "legacy_daily_not_current_intraday_or_broker_parity",
+        **(
+            {
+                "attribution_modes": ATTRIBUTION_ARMS,
+                "joint_result_sha256": JOINT_RESULT,
+                "joint_proof_sha256": JOINT_PROOF,
+                "joint_public_sha256": JOINT_PUBLIC,
+                "joint_curves_sha256": JOINT_CURVES,
+            }
+            if attribution
+            else {}
+        ),
     }
     _write_json(output / "inputs.json", provenance)
     _write_json(
@@ -195,7 +339,6 @@ def run(
             "source_revision": source_revision,
         },
     )
-    first = int(np.searchsorted(panel.dates, prior.START))
     report = SimpleNamespace(panel=panel, graded=prior._Grades(grades))
     options = dict(
         simulate.LIVE_POLICY,
@@ -209,73 +352,72 @@ def run(
         since=str(prior.START),
     )
     accounts, new_curves = [], {}
-    for cost in prior.COSTS:
+    count = len(arms) * len(prior.COSTS) * len(prior.OFFSETS)
+    for arm, cost, offset in product(arms, prior.COSTS, prior.OFFSETS):
         benchmarks = {name: curves[f"{name}-{cost}"] for name in ("SPY", "QQQ")}
-        for offset in prior.OFFSETS:
-            key = f"joint-{cost}-{offset}"
-            retention = RetentionAdapter(panel.tickers, eligible, relative, spy, cost)
-            selection = CashSelectionAdapter(
-                panel.tickers,
-                eligible,
-                relative,
-                spy,
-                cost,
-                dates=panel.dates,
-            )
-            journal = prior._journal(panel, cost, key, provenance)
-            result = simulate.run(
-                report,
-                **options,
-                cost_bps=cost,
-                rebalance_offset=offset,
-                retention_adapter=retention,
-                cash_selection_adapter=selection,
-                journal=journal,
-            )
-            archive = prior._archive(journal, output / "journals" / key)
-            traded, fees = prior._flows(journal, first)
-            decisions = {"selection": selection.events, "retention": retention.events}
-            _write_json(output / f"{key}-decisions.json", decisions)
-            new_curves[key] = result.equity
-            accounts.append(
-                {
-                    "account": key,
-                    "arm": "joint",
-                    "cost_bps": cost,
-                    "offset": offset,
-                    "score": prior.score(
-                        result.dates, result.equity, traded, fees, benchmarks
-                    ),
-                    "journal": archive,
-                    "nav_sha256": _array_hash(result.equity),
-                    "decisions_sha256": digest(output / f"{key}-decisions.json"),
-                    "decision_counts": {
-                        leg: dict(
-                            Counter(e.get("reason", e.get("boundary")) for e in events)
-                        )
-                        for leg, events in decisions.items()
-                    },
-                }
-            )
-            _write_json(
-                output / "status.json",
-                {
-                    "stage": "accounts",
-                    "completed": len(accounts),
-                    "last": key,
-                    "source_revision": source_revision,
+        key = f"{arm}-{cost}-{offset}"
+        retention = RetentionAdapter(panel.tickers, eligible, relative, spy, cost)
+        selection = CashSelectionAdapter(
+            panel.tickers, eligible, relative, spy, cost, dates=panel.dates, mode=arm
+        )
+        journal = prior._journal(panel, cost, key, provenance)
+        result = simulate.run(
+            report,
+            **options,
+            cost_bps=cost,
+            rebalance_offset=offset,
+            retention_adapter=retention,
+            cash_selection_adapter=selection,
+            journal=journal,
+        )
+        archive = prior._archive(journal, output / "journals" / key)
+        traded, fees = prior._flows(journal, first)
+        decisions = {"selection": selection.events, "retention": retention.events}
+        _write_json(output / f"{key}-decisions.json", decisions)
+        new_curves[key] = result.equity
+        accounts.append(
+            {
+                "account": key,
+                "arm": arm,
+                "cost_bps": cost,
+                "offset": offset,
+                "score": prior.score(
+                    result.dates, result.equity, traded, fees, benchmarks
+                ),
+                "journal": archive,
+                "nav_sha256": _array_hash(result.equity),
+                "decisions_sha256": digest(output / f"{key}-decisions.json"),
+                "decision_counts": {
+                    leg: dict(
+                        Counter(e.get("reason", e.get("boundary")) for e in events)
+                    )
+                    for leg, events in decisions.items()
                 },
-            )
-            print(f"reconciled {key}: {len(accounts)}/60", flush=True)
+            }
+        )
+        _write_json(
+            output / "status.json",
+            {
+                "stage": "accounts",
+                "completed": len(accounts),
+                "last": key,
+                "source_revision": source_revision,
+            },
+        )
+        print(f"reconciled {key}: {len(accounts)}/{count}", flush=True)
     np.savez_compressed(output / "curves.npz", dates=panel.dates[first:], **new_curves)
     result = {
-        "schema": "joint-cash-selection-funded/1",
+        "schema": "cash-selection-attribution-funded/1"
+        if attribution
+        else "joint-cash-selection-funded/1",
         "source_revision": source_revision,
         "source_sha256": files,
         "saved_forecast_source": PRIOR_REVISION,
         "adoption": False,
         "accounts": accounts,
-        "paired_results": paired_results(accounts, public["accounts"]),
+        "paired_results": []
+        if attribution
+        else paired_results(accounts, public["accounts"]),
         "reused_controls": {
             "public_sha256": PRIOR_PUBLIC,
             "result_sha256": PRIOR_RESULT,
@@ -284,6 +426,15 @@ def run(
             name: digest(output / name) for name in ("inputs.json", "curves.npz")
         },
     }
+    if attribution:
+        paired, interactions = attribution_results(
+            accounts, joint_rows, public["accounts"]
+        )
+        result.update(
+            paired_results=paired,
+            interactions=interactions,
+            reused_joint={"public_sha256": JOINT_PUBLIC, "result_sha256": JOINT_RESULT},
+        )
     _write_json(output / "result.json", result)
     _write_json(
         output / "status.json",
