@@ -41,8 +41,11 @@ Report all, 2018–20, 2021–26 and the explicitly reused 2026-08-17..09-30 win
 For stock heads, also report fixed low/middle/high volatility terciles using
 cross-sectional mean-rank of each eligible stock's preceding 252 daily log
 returns, ending at the decision close. Only complete positive prior prices may
-establish a volatility group; missing history remains an explicit group. Ties
-share a rank. Groups use no outcome, later price or later membership. No group
+establish a volatility group; missing history remains an explicit group. The
+fixed midpoint empirical mean-rank is (number strictly lower + half the number
+equal) / known-history eligible count: low <=1/3, middle <=2/3, otherwise high.
+Ties share a group; an all-tied cross-section is middle. Groups use no outcome,
+later price or later membership. No group
 will select a policy. Per-stock full-period diagnostics retain all 94 symbols,
 including unavailable ones; no selective winner list.
 
