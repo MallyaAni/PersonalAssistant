@@ -1,5 +1,43 @@
 # Next session
 
+## 2026-10-03 — combined implementation pushed; all120 new accounts complete
+
+Authoritative evaluated source63c21f682893e72552db9c3c1bac7f2c284f0e11,
+branchcodex/learned-entry-risk-20261002, pushed. Whole2293Git files authenticated;
+manifestb86461d5d50f0080526a6704c9d073d764bfa2f347daf06d3190dfe45545e254.
+Pinned image115pass/no skips (including unchanged7independent+18default parity),
+log42dc0312d4f0158d383a53462624e9c84b96c200f2b2751ec8cb0a5bce4f7e51.
+Native applicable tests pass; original113full plus19updatedCLI checks verified.
+Image NumPy2.5.3,SciPy1.18.1,sklearn1.9.1. Models IDs/start times unchanged.
+
+Producer9eec8cbbc1708df9cb201cea3582ae4a4af96d2616bcb19da300bf5210fab93d
+(adaptive-timing-sizing-funded-63c21f68) exited0 at22:57:28UTC after120new
+accounts. No model fits, original books or providers repeated. Original report
+258c4b87d899382acc90ecc26a4b7e94edd190a125b98aa090a5acb8ce518a97 at
+/home/animallya96/scratch/adaptive-sizing-results-20261003-63c21f68/study.
+Original source archive/caches read-only. NEVER restart or rescore these books.
+
+Final economic acceptance remains UNVERIFIED. New private independent verifier
+verify_adaptive_timing_sizing_20261003.py SHA4478737bfeb4346f4207564387a995198e914623251ab0fccb5d326d1be17bc6
+passes32native/32image corruption cases; imagelog7c7e73f285d475ea59bfbf3a104b4834a7610d55b65ad1a1e1f8489f69e64acb.
+First actual launch stopped on isolated Git ownership; setting ONLY the ephemeral
+safe.directory=/objects.git resolved it. Second stopped after ledger checks on
+cash_limited_decisions recorded1314 vs independently derived1315. evaluation_review
+owns NEW /tmp/verify_adaptive_timing_sizing_20261003_v2.py/test correction, investigating
+first floating aggregation boundary without changing core source, counts assertion,
+prices, forecasts or strategy. Old audit_pending uses scalar sum where the actual
+selector uses full-grid NumPy sum; binding cash can distinguish these orders.
+Preserve all failed verifier bytes/logs/containers. Require unchanged corruption
+assertions plus actual120-ledger/score/summary proof before publishing results.
+
+Source objects: /home/animallya96/scratch/adaptive-sizing-source-objects-63c21f68.git;
+proof/helpers: /home/animallya96/scratch/adaptive-sizing-acceptance-20261003-63c21f68;
+proof output: /home/animallya96/scratch/adaptive-sizing-verification-20261003-63c21f68.
+Local completed report /tmp/adaptive-sizing-evaluation-63c21f68.json; example phase
+/tmp/adaptive-sizing-phase-10-0-63c21f68.json. Production policy/UI untouched.
+Combined timing/sizing is implemented; a reliable live replacement is NOT yet
+established. Do not promote based on implementation tests or reused component scores.
+
 ## 2026-10-03 — combined source 45d6b5a6 verified; first run blocked before accounts
 
 Native and pinned image BOTH113pass/no skips. Whole2293Git file manifest SHA
