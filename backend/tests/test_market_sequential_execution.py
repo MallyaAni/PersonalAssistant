@@ -138,7 +138,13 @@ def test_actual_evaluation_retains_all_phases_traces_and_never_refits(
     output.mkdir()
     cli.write_json(output / "fit-complete.json", {"fixture": True})
     monkeypatch.setattr(
-        cli, "fitted", lambda *_: (forecasts, {}, {"forecast_sha256": "synthetic-test"})
+        cli,
+        "fitted",
+        lambda *_, **__: (
+            forecasts,
+            {},
+            {"forecast_sha256": "synthetic-test", "source": cli.source_identity()},
+        ),
     )
     monkeypatch.setattr(cli.models, "walk_forward", _forbidden)
     monkeypatch.setattr(cli.scoring, "benchmark_account", _forbidden)
@@ -227,3 +233,36 @@ def test_real_cli_fit_then_saved_forecasts_no_refit(tmp_path, monkeypatch):
     monkeypatch.setattr(cli.models, "walk_forward", _forbidden)
     loaded, _ = cli.fit(data, tmp_path)
     np.testing.assert_array_equal(before, loaded)
+
+
+# Retain every execution date while keeping unreviewed context history out of clocks.
+def test_calendar_checks_only_declared_execution_cohort():
+    dates = np.array(
+        ["2015-01-02", "2018-01-31", "2018-02-01", "2026-09-30"], dtype="datetime64[D]"
+    )
+    panel = SimpleNamespace(dates=dates)
+    first = cli.comparison_first(panel)
+    np.testing.assert_array_equal(
+        cli.execution_support(panel, first), [False, False, True, True]
+    )
+    panel.dates[2] = np.datetime64("2018-02-19")
+    with pytest.raises(ValueError, match="exchange"):
+        cli.execution_support(panel, first)
+
+
+# An evaluation-only CLI correction cannot authorize refitting or changed model code.
+def test_pinned_evaluation_lineage_keeps_all_training_boundaries():
+    old = {
+        "source_revision": cli.FIT_REVISION,
+        "files": {cli.CLI_FILE: cli.FIT_CLI_SHA256, "model": "unchanged"},
+    }
+    current = {
+        "source_revision": "calendar-correction",
+        "files": {cli.CLI_FILE: "new-cli", "model": "unchanged"},
+    }
+    cli.validate_fit_source(old, current, evaluation_only=True)
+    with pytest.raises(ValueError, match="source changed"):
+        cli.validate_fit_source(old, current)
+    current["files"]["model"] = "changed"
+    with pytest.raises(ValueError, match="source changed"):
+        cli.validate_fit_source(old, current, evaluation_only=True)

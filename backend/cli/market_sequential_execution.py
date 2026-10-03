@@ -24,6 +24,9 @@ START = np.datetime64("2018-02-01", "D")
 END = np.datetime64("2026-09-30", "D")
 COSTS = (0, 10, 25)
 CURVES = ("nav", "cash", "exposure", "turnover", "fees")
+FIT_REVISION = "b37c2b689b903f7b37e506041ed542d77af175af"
+FIT_CLI_SHA256 = "9f81cb4f036b0d1b012d1dba744fe76349c2279e6e200c813ccfd9f014da3d4e"
+CLI_FILE = "backend/cli/market_sequential_execution.py"
 
 
 # Pin the whole research execution boundary, including the unchanged target and ledger.
@@ -147,12 +150,31 @@ def fit(dataset, output):
     return forecasts, manifest
 
 
-# Authenticate the completed fit without refitting or altering outputs.
-def fitted(dataset, output):
+# Permit only the pinned evaluation-boundary correction, never altered model inputs.
+def validate_fit_source(training, current, *, evaluation_only=False):
+    if training == current:
+        return
+    old, new = training.get("files", {}), current.get("files", {})
+    accepted = (
+        evaluation_only
+        and training.get("source_revision") == FIT_REVISION
+        and old.get(CLI_FILE) == FIT_CLI_SHA256
+        and old.keys() == new.keys()
+        and all(old[key] == new[key] for key in old if key != CLI_FILE)
+    )
+    if not accepted:
+        raise ValueError("Fitted execution source changed")
+
+
+# Authenticate completed model bytes, with an explicit evaluation-only source lineage.
+def fitted(dataset, output, *, evaluation_only=False):
     output = Path(output)
     receipt = json.loads((output / "fit-complete.json").read_text())
-    if receipt["status"] != "fitted" or receipt["source"] != source_identity():
+    if receipt["status"] != "fitted":
         raise ValueError("Fitted execution source changed")
+    validate_fit_source(
+        receipt["source"], source_identity(), evaluation_only=evaluation_only
+    )
     if receipt["manifest_sha256"] != sha256(output / "models/manifest.json") or receipt[
         "forecast_sha256"
     ] != sha256(output / "models/predictions.npz"):
@@ -174,6 +196,13 @@ def comparison_first(panel):
             "Fixed2018-02-01 through2026-09-30 comparison calendar required"
         )
     return int(matches[0])
+
+
+# Validate execution clocks only for the registered account cohort, not context warmup.
+def execution_support(panel, first):
+    supported = np.zeros(len(panel.dates), dtype=bool)
+    supported[first:] = replay.supported_sessions(panel.dates[first:])
+    return supported
 
 
 # Validate saved ETF wealth and fees against the original entry and daily marks.
@@ -351,13 +380,14 @@ def _report(output, name, report):
 # Evaluate every fixed paired phase once, using saved forecasts and original ETF curves.
 def evaluate(panel, grades, eligible, cubes, dataset, output, baseline):
     output = Path(output)
-    forecasts, _, receipt = fitted(dataset, output)
+    forecasts, _, receipt = fitted(dataset, output, evaluation_only=True)
     first = comparison_first(panel)
     refs = references(panel, first, baseline)
     opens = session_opens(panel, cubes)
-    supported = replay.supported_sessions(panel.dates)
+    supported = execution_support(panel, first)
     identity = {
         "source": source_identity(),
+        "training_source": receipt["source"],
         "fit_receipt_sha256": sha256(output / "fit-complete.json"),
         "forecast_sha256": receipt["forecast_sha256"],
         "baseline_sha256": sha256(baseline),
@@ -393,6 +423,11 @@ def evaluate(panel, grades, eligible, cubes, dataset, output, baseline):
         control=replay.CONTROL,
         status="reused_conditional_research",
         adoption_eligible=False,
+        evaluation_correction=(
+            "Validate exchange clocks only for the preregistered execution cohort; "
+            "2015 context warmup is outside reviewed calendar coverage and has "
+            "zero valid training prefixes. No model, data, date or fit changed."
+        ),
         runtime=runtime_identity(),
         dates=panel.dates[first - 1 :].astype(str).tolist(),
         limitations=[

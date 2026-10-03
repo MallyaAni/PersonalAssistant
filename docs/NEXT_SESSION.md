@@ -1,5 +1,32 @@
 # Next session
 
+## 2026-10-03 — evaluation-only calendar correction
+
+All116 original monthly fits completed successfully at frozen source b37c2b68.
+FAILED first evaluation boundary before any phase was scored: the full input
+calendar includes2522015 warmup dates outside the reviewed2016–2028 NYSE
+calendar. Every2015 prepared prefix is invalid; these dates are not in the fixed
+2018-02-01..2026-09-30 comparison. No economic results exist yet.
+
+Targeted correction scopes execution-calendar validation to the declared
+comparison, retaining full-shaped false support before its first date. Unknown
+years/holidays inside the comparison still fail. The original116 fits, model
+inputs, forecasts, targets and evaluation dates remain unchanged; do not refit.
+Evaluation accepts the pinned b37c2b68 fitting lineage only with its original
+CLI hash9f81cb4f036b0d1b012d1dba744fe76349c2279e6e200c813ccfd9f014da3d4e
+and identical other25 source hashes. Fit-source checking remains strict.
+
+VERIFIED native CLI9pass and immutable independent scope/lineage17pass.
+Independent cases /tmp/test_sequential_scope_lineage_review_edges.py,
+SHAe64c1908166f499cd68e285c70b11a170c9b2d75baeae80cacc637b6ffb35082.
+Original runner3577257 and watcher3590915 exited on the evaluation failure;
+never restart them. Next step is a new frozen evaluation-only source/container
+against the existing private output, then independent v2 artifact verification.
+V2 verifier /tmp/verify_sequential_execution_evidence_v2.py,
+SHA3c9147c8d7db2ba6b8090ec5348c25c6befe3e106172af3c5a644413075dfdb7,
+authenticates fitting/evaluation source separately and never fits or resimulates.
+UNVERIFIED economic advantage or live adoption. Live remains unchanged.
+
 ## 2026-10-02 — sequential entry/exit continuation ACTIVE
 
 User explicitly requests continued work toward replacing the universal 1% timing
