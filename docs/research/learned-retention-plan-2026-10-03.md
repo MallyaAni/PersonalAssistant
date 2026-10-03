@@ -51,3 +51,47 @@ direction; cash units; full missing-recipient rejection; no retained-B additions
 event/thesis override; hard-cap trim; reset reserve; invalid NAV/weights refused.
 No automatic live promotion, orders, provider calls, GPU/model-service changes,
 frozen-history writes or repeated old timing evaluation. Diagram impact NONE.
+
+## Next atomic deliverable: causal daily forecast head
+
+Objective: supply genuinely learned forecasts to this planner instead of
+invented values. VERIFIED: the pure planner's 53 native and 111 combined-image
+acceptance checks. FAILED: timing-only improvements have not established a
+recent replacement advantage. UNVERIFIED: held-B retention forecasts, funded
+benefit, daily-rotation replay and live integration. This deliverable changes
+only a pure training module and its tests; it does not claim adoption.
+
+Freeze before real fitting: use exactly the existing first13 daily context
+features, shifted to include completed decision-close t. No intraday features,
+new range feature, new price provider or model selection. Scale daily opens
+with the existing adjusted_open helper: panel daily OHLC already carries its
+split basis; do not convert a raw intraday cube with a dividend-only factor.
+The stock label is log(open[t+11]/open[t+1]) minus SPY over exactly those opens.
+The separate SPY head predicts its absolute matching log return. Labels become
+available at opening t+11 on the supplied complete exchange-session calendar.
+Training endpoints must precede the month's first decision session strictly;
+freeze endpoints before2026-08-17 for later fits, since that recent interval
+has already been repeatedly inspected. Missing future labels never suppress
+scoring eligibility. Historical membership and grades remain a current-vintage
+reconstruction; no original publication-time claim is introduced.
+
+One pooled stock HGB and one SPY HGB, using the existing registered config
+(64iterations,15leaves,.05learning,minleaf200,no early stopping,seed0).
+Use the last756 eligible calendar decision rows, require504 distinct mature
+feature-valid dates separately for each head; unavailable heads preserve the
+incumbent. Train only declared stock membership with known grade and finite
+labels, excluding SPY/QQQ; score any eligible held-B or declared destination
+with valid causal features. Do not condition training on future account
+holdings or buy decisions. Squared-error log forecasts are plug-in comparison
+inputs, not a probability, guaranteed gain or expected arithmetic wealth.
+
+Acceptance before fitting: exact next-open/ten-session endpoint and SPY
+subtraction; split-basis invariance; monthly purge and reused-holdout cutoff;
+future-prefix invariance; no future-label dependence in score eligibility;
+head-specific warmup; stock-only training membership; rejection of invalid
+calendar/shape/grades/prices; real small-model fit and deterministic scoring.
+Publish input and training-row hashes, fit-date/cutoff and unavailable reasons.
+No performance study until a separately reviewed daily account-aware adapter
+preserves resets, rotations, deferred funding and event exits. A missing
+forecast must reproduce its matched incumbent exactly. Old reset-only curves
+are not a control for this selection change and must not be recycled as one.
