@@ -47,6 +47,11 @@ OLD_HOOKS = {
 SIMULATOR = "backend/agents/trading/desk/simulate.py"
 OLD_SIMULATOR_SHA = "5f96e77c70f26b5fcd2ac1e8241e8ca20c3f3d67fd8acb63748e52f9aa1b5cf6"
 BOOK_AST_SHA = "7cc1d211747ddae23f20a97caaf74d9b01dee3098d18f8237ddd9db016637c79"
+CALENDAR_FILE = "backend/market/data/nyse_historical_sessions.json"
+OLD_CALENDAR_SHA = "8d92cab790021f8fac3211bffa4f928559461515de171b7053578411716f36c9"
+EXPANDED_CALENDAR_SHA = (
+    "5660668dc3b2f29684694de2dcbd66af2eaa69e83e6dd2d2c1e402cd01b6ffa6"
+)
 ARMS = ("equal_gate", "equal_adaptive", "growth_gate", "growth_adaptive")
 NEW_ARMS = {"growth_gate": "control", "growth_adaptive": "candidate"}
 WINDOW_NAMES = {"2016-20": "2018-20", "frozen_holdout": "reused_recent"}
@@ -89,6 +94,12 @@ def historical_source(files, current, root):
     for name, digest in files.items():
         if name in OLD_HOOKS:
             require(digest == OLD_HOOKS[name], "Unknown historical target hook")
+        elif name == CALENDAR_FILE:
+            # Only 2015 was added; evaluated 2018+ support is separately pinned.
+            require(
+                digest == OLD_CALENDAR_SHA and current[name] == EXPANDED_CALENDAR_SHA,
+                "Unreviewed historical calendar transition",
+            )
         elif name == SIMULATOR:
             require(
                 digest == OLD_SIMULATOR_SHA

@@ -1,5 +1,20 @@
 # Next session
 
+## 2026-10-03 — combined source 45d6b5a6 verified; first run blocked before accounts
+
+Native and pinned image BOTH113pass/no skips. Whole2293Git file manifest SHA
+e3c33b86cc3341b4136b1a61efbc307181b9c00b677a60cfdb5ae62737c33c22.
+Image acceptance log47ec555304aa72d6bb85fcf48c3483dbd3d5b020f5d207c82cf525715a2ab6fb;
+NumPy2.5.3,SciPy1.18.1,sklearn1.9.1. First economic launch exited before creating
+any accounts: historical_source refused the already-reviewed calendar's2015
+extension. Inspected Git diff confirms2016–2025 year entries unchanged. Root
+adds an exact old/new calendar SHA transition; original evaluated2018+ session
+support and open-price array hashes must STILL match before replay. No model,
+threshold, acceptance assertion or evaluated calendar changed. Preserve failed
+container0694622f87742e8016369da4a14a4e0908c55e1cdb696f970fb5d71f0536ae77
+and archive45d6b5a6; do not restart/change its mounted source. New corrected
+source needs fresh acceptance and source identity before its first accounts.
+
 ## 2026-10-03 — combined adaptive buy/sell timing and funded sizing implementation
 
 Current objective is IMPLEMENTATION of both timing and stock-specific sizing,

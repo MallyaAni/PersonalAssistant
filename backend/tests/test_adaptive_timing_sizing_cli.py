@@ -64,7 +64,21 @@ def historical_files(current):
     files = dict(current)
     files.update(cli.OLD_HOOKS)
     files[cli.SIMULATOR] = cli.OLD_SIMULATOR_SHA
+    files[cli.CALENDAR_FILE] = cli.OLD_CALENDAR_SHA
     return files
+
+
+# Only the inspected calendar extension may accompany reused original controls.
+@pytest.mark.parametrize("changed", ["old", "new"])
+def test_calendar_lineage_rejects_an_unreviewed_transition(changed):
+    current = cli.primary.source_identity()["files"]
+    old = historical_files(current)
+    if changed == "old":
+        old[cli.CALENDAR_FILE] = "unreviewed"
+    else:
+        current[cli.CALENDAR_FILE] = "unreviewed"
+    with pytest.raises(ValueError, match="calendar transition"):
+        cli.historical_source(old, current, Path(cli.__file__).resolve().parents[2])
 
 
 # Pin synthetic normalized artifacts for an actual saved-evidence loader test.
