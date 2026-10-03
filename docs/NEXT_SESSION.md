@@ -1,6 +1,40 @@
 # Next session
 
-## 2026-10-02 — execution-risk comparison COMPLETE; duration correction IN PROGRESS
+## 2026-10-02 — duration-matched timing COMPLETE; no live promotion
+
+Latest bounded continuation is complete on `codex/learned-entry-risk-20261002`.
+Read [results](research/fifteen-minute-execution-results-2026-10-02.md) and JSON.
+Execution source 21ee02e9: native 60/source-image 60 pass. Exactly one new fit and
+evaluation exited 0; 104 monthly three-head fits/312 actual model artifacts,
+120 candidate and 66 reused reference curves verified independently without
+refitting, unpickling or resimulating. All 17 executed/shared source hashes
+match exact Git objects. Original 96 required cubes were copied unchanged into
+private frozen inputs before evaluation; no production-cache writes/refetches.
+Private output `/home/animallya96/scratch/fifteen-minute-moments-results-20261002-21ee02e9`,
+proofs `/home/animallya96/scratch/fifteen-minute-independent-20261002`.
+Report SHA 8789004debeaf28207f2ccfab7e7ed9801a746c811587498ac68742d9e604cf8;
+forecast SHA b797bc49c33c23b70c75b5217aa052ad99f2bdae86df722e6badd12ece40917a;
+independent proof SHA acfce242c26b57d04442bd448ead524feeef113d705bc9b9e6443ed0ab223147.
+
+Risk calibration improved: aggregate predicted/observed second moment 1.053,
+clock 22 from ~40 to 1.372. Price RMSE remains slightly worse than zero prediction.
+At 10 bp full paired median gain differences HGB −6.28 pp/Ridge −9.87 pp, wins 8/20,
+7/20; recent reused 32-session differences −0.979/−0.678 pp, wins 5/20, 7/20.
+VERIFIED implementation/artifacts/accounting; FAILED adoption evidence.
+Future/broker/midpoint fills/exact live-policy parity remain UNVERIFIED.
+The candidate replaces 1% timing on the branch, not 9% allocations or live policy.
+No outcomes-selected phase/regime, no new variant or live promotion.
+
+All jobs have exited. DO NOT restart/refit/rescore/refetch, repeat baselines,
+tune from these outcomes, alter frozen sources, initialize old October 5 cohorts
+or rerun model gates for research/docs-only work. The old bounded automation
+remains PAUSED. No UI, real orders, production data or model-service changes.
+Stock-conditioned volatility is useful risk information; it has not supplied
+the missing price-timing edge. A further evaluation needs a separately defined
+causal hypothesis and fresh evidence, not another unregistered model search.
+Diagram impact NONE: internal research, no new service/store.
+
+## 2026-10-02 — prior implementation log, superseded by completion above
 
 The user's new instruction supersedes the prior completed-study stop below:
 replace the universal 1% timing trigger with stock-conditioned forecasting and
