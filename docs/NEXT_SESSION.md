@@ -1,5 +1,42 @@
 # Next session
 
+## 2026-10-03 — both buy and cash-exit evidence verified; attribution next
+
+This supersedes the pending/active status below. Sourcee8505b22 completed all60
+joint accounts once at20:19:55UTC; independent saved-artifact proof and compact
+readback now PASS. No refits, old-account replays or missing NAV returns.
+Read docs/research/joint-cash-selection-results-2026-10-03.md/.json.
+PublicSHA1c83155fdf5c90a7b2922899757dfbefd25247caf49c7f6fd6e526004fad818a;
+originalSHA8bb4cb5d9ca2ac797395be88f69d693d9f9ee4df592ce419dd4d738b246eebb7;
+proofSHAcc31794054ab02b90c9df75865643a092352cb00a482f92e3f1b3ff6978803f3.
+Proof covers2,282source files,60ledgers/verdict archives and720paired contrasts.
+Producer/verifier/reader finished; never restart or rerun them.
+
+At10bp joint−learned B full paired net gain−183.38percentage points(5/20wins),
+recent+2.519points(18/20); joint−incumbent full−113.10points(9/20).
+Median drawdown37.04% versus43.25%learned B, but traded notional/NAV/year
+23.57 versus15.25. All nine full uncertainty intervals span zero. Do not infer
+improvement by subtracting table medians or selecting the recent window.
+No live adoption; current1% scheduler/source/UI unchanged. User explicitly
+requires BOTH buying and profit-taking. Cash exits lack cost basis and must
+not be labelled realized profits.
+
+Preserved first proof failure: sell-only FOMC reduction wrongly flagged by a
+budget guard. Narrow verifier correction constrains actual purchases plus fees
+to original cash; original23assertions unchanged,3boundary cases added,
+26native/image cases pass. Actual proof logSHA
+a4b794b3714d149bd7093c2ce44803700250ccc7cd9def0f264f25f365b7c391.
+Six corrected-schema reader cases pass native/image; source acceptance192image
+cases already verified, do not repeat unchanged gates. Models unchanged.
+
+Next bounded task: preregister attribution AFTER these read outcomes. Same
+frozen forecasts/inputs/costs/phases/windows; no fitting/tuning. Compare buy-veto
+only and covered-exit only against a quantity-control arm preserving the shared
+known-A/A+ reset-trim correction with neither discretionary decision. Reuse
+joint and prior controls. Never let exit-only rebuy its exiting names or spend
+proposed proceeds. This isolates useful components without claiming an untouched
+test or inferring full intraday performance from separate daily studies.
+
 ## 2026-10-03 — joint purchase/cash-exit selection implemented; funded evidence pending
 
 VERIFIED sourcee8505b221bdd4cd21f2c0a3b13e52d720ab93bea is committed/pushed:
