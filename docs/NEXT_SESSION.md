@@ -1,6 +1,6 @@
 # Next session
 
-## 2026-10-02 — stock-conditioned short-horizon execution risk: IN PROGRESS
+## 2026-10-02 — execution-risk comparison COMPLETE; duration correction IN PROGRESS
 
 The user's new instruction supersedes the prior completed-study stop below:
 replace the universal 1% timing trigger with stock-conditioned forecasting and
@@ -27,8 +27,9 @@ incorrectly expected a retry were corrected; independent assertions unchanged.
 Actual artifact-readback additionally found JSON tuple/list identity drift;
 canonical comparison preserves the exact input/source guard.
 
-UNVERIFIED: new full-book fit, economic advantage, short-risk calibration and
-live adapter/broker fills. The old results are already observed and therefore
+VERIFIED: full-book fit and saved curves; recent edge and risk calibration fail
+the adoption standard. Live adapter/broker fills remain UNVERIFIED.
+The old results are already observed and therefore
 the new comparison is a reused diagnostic, not fresh held-out proof. The
 closing-window deadline remains a lifecycle constraint; utility is a one-step
 approximation, not exact optimal stopping or calibrated epistemic confidence.
@@ -40,15 +41,36 @@ Verified checkpoint `a0622b054cbb40db77ab5fc43a16f9f6daf6177a`: native 41 pass,
 Ruff clean; exact source-image 41 pass (read-only cache warning only), image
 `sha256:5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d`.
 Test log `/tmp/codex-execution-risk-source-tests-20261002.log` on Spark.
-Exactly one risk fit is active as `codex-execution-risk-fit-a0622b05`, CPU2,
+Exactly one risk fit and one timing evaluation completed and exited, CPU2,
 memory4GB, network disabled, private output
 `/home/animallya96/scratch/learned-execution-risk-results-20261002-a0622b05`.
 Its source `/home/animallya96/codex-worktrees/learned-execution-risk-20261002-a0622b05`
-and original inputs/cubes/results are mounted read-only. Inspect compact
-fit.log/progress before acting; NEVER restart active fit or edit its source.
-After COMPLETE, run the reviewed `market_execution_risk evaluate` exactly once
-with this risk head, original boosting/Ridge receipts and original authenticated
-boosting evaluation.json. Independently verify artifacts without resimulating.
+and original inputs/cubes/results were mounted read-only. Never restart or
+repeat these completed fits, evaluation or baselines. Read
+[results](research/learned-execution-risk-results-2026-10-02.md) and JSON.
+Independent saved-byte verification: 104 monthly fits, 120 candidate/66
+reference curves; no refit/resimulation/pickle loading. Raw report SHA256
+`b878bd3d7a44d071358f20ecf11e2617489f9b8cd1245e6592549ad7f409ad8e`,
+independent proof `49b7fe5ddb52b28ae9e6920587bd136c70f517464726ce08e859c4b41746eac9`.
+At10bp HGB median gain751.03% vs control723.38%, paired wins12/20,
+median CAGR28.13% vs27.64%. Recent reused32sessions: HGB1.27%,
+matched-control difference−0.87pp, wins6/20; Ridge1.45%,−1.01pp, wins9/20.
+No live adoption. Second-moment calibration: clock22 about40x observed;
+training mixes15-minute and overnight one-decision labels. This is not leakage,
+but near-terminal leaves can pool incompatible elapsed durations.
+
+User's main focus continues with exactly one duration correction:
+[frozen protocol](research/fifteen-minute-execution-plan-2026-10-02.md),
+259116cf then clarified numerical certificate at a931422b, both before new fits.
+Existing agent learned_model_training owns NEW learned_intraday_moments.py and
+its test; root owns CLI integration/review. Do not import drafts or modify those
+active-owned files. Fit HGB/Ridge waiting means plus common HGB second moment
+using only original training clocks with actual15-minute duration (0/3/9/19;
+overnight24 excluded). Same settings, windows, funding/targets/phases/costs;
+no tuning based on outcomes. Existing Ridge regression had no certificate;
+the older numerical fix was the allocation optimizer. The new protocol
+explicitly adds a float64 normal-equation certificate without solver changes.
+All real duration-matched fits/evaluations remain UNVERIFIED and unstarted.
 
 ## 2026-10-02 — learned entry/exit and sizing: COMPLETE, no live adoption
 
