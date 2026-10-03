@@ -507,7 +507,30 @@ def _retention_midcycle_inputs(
     return changed.copy(), blocked.copy(), bounded
 
 
-# Replay shared rotation and entry orders with optional research B retention.
+# Validate an opt-in cash selection before it can touch funding or owned shares.
+def _cash_selection_decision(adapter, t, grades, prices, held, nav):
+    from backend.market.learned_cash_selection import CashSelection
+
+    plan = adapter.decide(t, grades.copy(), prices.copy(), held.copy(), nav)
+    size = len(held)
+    if not isinstance(plan, CashSelection):
+        raise ValueError("cash selection must return a CashSelection verdict")
+    for mask in (plan.no_buy, plan.cash_exit):
+        if mask.shape != (size,) or mask.dtype.kind != "b":
+            raise ValueError("cash selection requires aligned boolean verdicts")
+    ordinary = adapter.eligible[t] & (grades >= 2)
+    if np.any((plan.no_buy | plan.cash_exit) & ~ordinary):
+        raise ValueError("cash selection cannot change mandatory or ineligible names")
+    if (
+        plan.cash_exit_shares.shape != (size,)
+        or not np.array_equal(plan.cash_exit_shares, np.where(plan.cash_exit, held, 0))
+        or np.any(plan.cash_exit & ((held <= 0) | ~plan.no_buy))
+    ):
+        raise ValueError("cash selection exits require exact covered shares and no buy")
+    return plan
+
+
+# Replay shared rotation and entry orders with optional research selection.
 # `deferred` retries the prior unpaid buys first; `unfunded` receives new ones.
 # `variant` routes research entry/redeploy options through the shared planner.
 # Retention is applied before those legs, so cash and deferred funding are rebuilt.
@@ -521,11 +544,24 @@ def _live_midcycle(
     unfunded=None,
     variant=None,
     retention_adapter=None,
+    cash_selection=None,
 ):
     from backend.agents.trading.desk import paper
 
     panel = report.panel
     prices, held, grades, finished, excluded = _paper_inputs(book, report, t, blocked)
+    if cash_selection is not None:
+        excluded |= {s for j, s in enumerate(panel.tickers) if cash_selection.no_buy[j]}
+        for j in np.flatnonzero(cash_selection.cash_exit):
+            finished.setdefault(panel.tickers[j], "forecast cash exit")
+        if variant is not None and cash_selection.no_buy.any():
+            from dataclasses import replace
+
+            # Redeployment reads targets directly; remove denied takers before funding.
+            variant = replace(
+                variant,
+                today={s: w for s, w in variant.today.items() if s not in excluded},
+            )
     entries = {
         s: float(bands[t, j])
         for j, s in enumerate(panel.tickers)
@@ -1159,6 +1195,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     reset_topup: bool = False,
     midcycle_trims: bool = False,
     retention_adapter=None,
+    cash_selection_adapter=None,
     rebalance_offset: int = 0,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
@@ -1387,6 +1424,42 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             getattr(retention_adapter, "midcycle", None)
         ):
             raise ValueError("retention adapter requires reset and midcycle callbacks")
+    if cash_selection_adapter is not None:
+        from backend.market.learned_cash_selection import CashSelectionAdapter
+
+        if not isinstance(cash_selection_adapter, CashSelectionAdapter):
+            raise ValueError("cash selection requires a dated CashSelectionAdapter")
+        if (
+            funded_allocation
+            or weight_filter is not None
+            or not live_midcycle
+            or not midcycle_exits
+            or use_exits
+            or exits is not None
+            or reset_topup
+            or midcycle_trims
+            or dip is not None
+            or band_dip_buy
+            or trend_gated_exit
+            or trend_brake
+            or brake_path_override is not None
+            or midcycle_sweep
+            or midcycle_entries != MIDCYCLE_BREAKOUT
+            or not exit_at_close
+            or not deferred_buys
+            or (event_exposure is not None and not event_lifecycle)
+        ):
+            raise ValueError(
+                "cash selection requires the ordinary tested live_midcycle path"
+            )
+        if (
+            cash_selection_adapter.symbols != tuple(report.panel.tickers)
+            or not np.array_equal(cash_selection_adapter.dates, report.panel.dates)
+            or cash_selection_adapter.cost_bps != cost_bps
+        ):
+            raise ValueError(
+                "cash selection symbol/calendar/cost identity must match account"
+            )
     decide = allocator or _targets
     if midcycle_entries not in MIDCYCLE_ENTRIES:
         raise ValueError(
@@ -1746,6 +1819,16 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             book.observe_mark(t + 1, equity[t + 1])
             continue
         # Decided on t's close, filled at t+1's open.
+        selection = None
+        if cash_selection_adapter is not None:
+            selection = _cash_selection_decision(
+                cash_selection_adapter,
+                t,
+                report.graded.grades[t],
+                closes[t],
+                book.shares,
+                book.equity(closes[t]),
+            )
         rebalanced = t >= next_rebalance
         if rebalanced:
             next_rebalance = t + rebalance
@@ -1759,6 +1842,16 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                     (book.shares * closes[t]) / total if total > 0 else np.zeros(names)
                 )
                 target = _gated_targets(target, fired, blocked, weights, t)
+            selection_blocked = (
+                np.zeros(names, dtype=bool) if blocked is None else blocked[t].copy()
+            )
+            if selection is not None:
+                weights = np.where(
+                    book.shares > 0, book.shares * closes[t], 0
+                ) / book.equity(closes[t])
+                target = np.where(selection.no_buy, np.minimum(target, weights), target)
+                target = np.where(selection.cash_exit, 0.0, target)
+                selection_blocked |= selection.no_buy
             if retention_adapter is not None:
                 target = _retention_reset(
                     retention_adapter,
@@ -1768,7 +1861,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                     book.shares,
                     book.cash,
                     report.graded.grades[t],
-                    np.zeros(names, dtype=bool) if blocked is None else blocked[t],
+                    selection_blocked,
                 )
             reason = "rebalanced out"
             rebalances += 1
@@ -1878,6 +1971,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                 unfunded=unfunded if deferred_buys and not reduced else None,
                 variant=variant,
                 retention_adapter=retention_adapter,
+                cash_selection=selection,
             )
             reason = "shared paper rotation and entry policy"
             if trimmed is not None and trimmed.any():
@@ -1917,6 +2011,22 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         if event_paused:
             # Live FOMC execution owns the cycle and cannot add positions.
             order = np.minimum(order, book.shares)
+        if selection is not None and not event_changed and not event_paused:
+            # Permission blocks additions, never an incumbent reduction or covered exit.
+            order = np.where(selection.no_buy, np.minimum(order, book.shares), order)
+            if rebalanced:
+                priced = np.isfinite(closes[t]) & (closes[t] > 0)
+                known = (
+                    np.isfinite(selection.absolute_mean)
+                    & cash_selection_adapter.eligible[t]
+                    & (report.graded.grades[t] >= 2)
+                )
+                capped = (selection.no_buy | known) & priced
+                order[capped] = np.minimum(
+                    order[capped],
+                    target[capped] * book.equity(closes[t]) / closes[t, capped],
+                )
+            order[selection.cash_exit] = 0.0
         if deferred_buys and rebalanced and not event_changed and not reduced:
             pending_deferred = _unpaid_buys(book, order, closes[t])
         buy_prices = opens[t + 1]
@@ -1939,6 +2049,23 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                 "braked": bool(braked),
                 "sell_at_close": bool(exit_at_close and not event_changed),
                 "deferred_units": dict(pending_deferred),
+                **(
+                    {
+                        "cash_selection": {
+                            "no_buy": [
+                                panel.tickers[j]
+                                for j in np.flatnonzero(selection.no_buy)
+                            ],
+                            "cash_exit": [
+                                panel.tickers[j]
+                                for j in np.flatnonzero(selection.cash_exit)
+                            ],
+                        }
+                    }
+                    if selection is not None
+                    and (selection.no_buy.any() or selection.cash_exit.any())
+                    else {}
+                ),
             },
         )
         # Event-risk changes are explicitly next-open orders, including a green open.

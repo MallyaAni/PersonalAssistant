@@ -1,5 +1,28 @@
 # Next session
 
+## 2026-10-03 — joint purchase/cash-exit selection implemented; funded evidence pending
+
+Registered contract01ccf9d9 precedes the new source and any new account scores:
+docs/research/joint-cash-selection-plan-2026-10-03.md. Pure dated forecasts now
+block ordinary A/A+ purchases/adds when their absolute mean fails the cash/cost
+comparison and propose exact covered cash exits when holding loses that comparison.
+These are forecast exits, not asserted profitable sales. Missing forecasts preserve
+entire incumbent/held-B journals; mandatory FOMC owns its cycle. No live deployment.
+
+Native acceptance:177cases pass (five pre-existing empty-slice warnings);
+six complete default-path journals match actual parent simulator source bit exactly
+at0/10/25bp with/without FOMC. Nine unchanged independent cases pass. Review found
+and corrected a favorable-forecast tiny reset trim lost to the trade floor and
+two unsupported funding/event combinations; guards now refuse those combinations.
+No assertion weakened. Independent review completion and pinned-image proof pending.
+
+New runner backend.cli.market_cash_selection_study runs ONLY60new joint accounts,
+authenticating saved95ee forecasts and180stock/sixETF control bytes. No model refit,
+old-account replay or repeated old scoring. Full/recent evidence for both buying
+and discretionary A exits remains UNVERIFIED until this run and artifact review.
+Do not promote this daily component as the deployed1% scheduler replacement.
+All original retention producer/finalizer/verifier processes are complete; never restart.
+
 ## 2026-10-03 — funded held-B result independently verified; full replacement unfinished
 
 VERIFIED evaluated source95ee87086ac336ea81e80f6b29a693a62d686602 completed
