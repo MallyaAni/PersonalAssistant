@@ -40,9 +40,12 @@ counts and tolerances were unchanged. No source/account bytes were altered.
 DO NOT restart producers, re-score books, refit models or repeat completed gates.
 Root owns all integrated files. Next bounded work is to preregister saved-forecast
 calibration/horizon compatibility diagnostics before reading error cells,
-preserving missing labels and avoiding parameter mining. learned_causal_inputs is
-inspecting exact saved artifacts and label/basis contracts read-only; no outcome
-cells, implementation or further policy run is authorized in that subtask yet.
+preserving missing labels and avoiding parameter mining. learned_causal_inputs
+confirmed read-only that holding means target close-t-conditioned adjusted
+open[t+11]/open[t+1] log returns: a fixed 09:30 entry, not selected intraday fills
+or twenty-session inventory. Exact calibration, horizon compatibility and account
+returns must stay distinct. It inspected source/fit clocks/hashes, not outcome
+errors; no new model fitting or further policy run occurred.
 
 ## 2026-10-03 — combined implementation pushed; all120 new accounts complete
 

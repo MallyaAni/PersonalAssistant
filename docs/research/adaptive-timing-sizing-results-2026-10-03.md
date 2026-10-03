@@ -68,15 +68,19 @@ These are reconstructed twenty-session reset component accounts, not exact
 live-policy parity. Historical grades and the stock book use current-vintage
 reconstruction, not original historical publications. Earlier experiments have
 already used this data and the recent window; there is no untouched holdout
-claim. The ten-session return forecast versus twenty-session target resets was
-declared before the run and remains unresolved. Missing opportunities and
+claim. The holding means target the next 09:30 open through the opening ten
+sessions later; candidate fills use a selected intraday next-bar open. Their
+entry-clock compatibility requires separate validation. The ten-session forecast
+versus twenty-session target resets was declared before the run and remains
+unresolved. Missing opportunities and
 unsupported early-close sessions remain explicit. No winning stock, regime,
 threshold, cost level or reset phase was selected for deployment.
 
 The allocation ablation identifies where performance deteriorates, but does not
 prove whether return calibration, covariance estimation or horizon mismatch
 caused it. The next bounded investigation is a read-only check of saved forecasts
-against matured ten-session outcomes and their twenty-session extension. It must
+against their exact matured 09:30 ten-session outcomes and their twenty-session
+extension, without treating either as realized intraday account returns. It must
 fix groups and denominators before reading errors, preserve unavailable labels,
 and avoid adjusting parameters from these results. This finding rejects this
 candidate; it does not establish that equal sizing or the existing timing rule
