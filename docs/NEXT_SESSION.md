@@ -1,5 +1,41 @@
 # Next session
 
+## 2026-10-03 — funded comparison running on corrected immutable source
+
+VERIFIED source95ee87086ac336ea81e80f6b29a693a62d686602:47affected native
+and47pinned-image cases pass, no skips; the prior242case simulator/input
+acceptance remains applicable to unchanged files. Image logSHA
+86a635a285afdac20def26e5ebda2482ba641a5233a34037d2bf7581ec5417e6.
+Independent saved-artifact verifier has21native and21image corruption/acceptance
+cases passing. Its first image invocation had the private script at the wrong
+mount path and stopped at collection; correcting that invocation changed no
+code or assertions. Economic evidence is not verified merely by these tests.
+
+Actual monthly fits completed:141month receipts,104stock and104SPY heads,
+first fitted2018-02. FitJSONSHA
+726c272444e60c748eb2254e5daa33f7a2b6cbc3cc5d694041c8144c515ae42b.
+The one active funded producer isretention-funded-95ee8708-20261003,
+container1565569ca33a6fcddc0bf85cf9f19927053b6005d92ad6582706a8d4dd7c8c62.
+Output:/home/animallya96/scratch/retention-funded-run-20261003-95ee8708/study.
+Read status/process first; never restart it or alter its mounted source.
+It has2CPUs,no network,read-only source/inputs and a private output. Only its
+memory limit was raised4→6GiB without restart for final ledger serialization.
+Model service IDs and start times remain unchanged. Finish all180accounts and
+sixETF ledgers, then independently authenticate original result bytes, saved
+predictions and all186journals without refitting or strategy resimulation.
+UNVERIFIED: complete funded metrics, independent actual-artifact proof and
+economic advantage. Do not score partial accounts or select a favorable phase.
+
+User scope is BOTH buying and profit-taking. Actual deployed source621e28f0
+uses the1% executor to time already selected purchases AND sales against the
+session open; it does not choose a1% position profit target. Existing learned
+timing also schedules selected intents. This held-B study changes one
+sale-versus-hold selection boundary; it neither selects new purchases nor
+initiates profit-taking from heldA/A+ positions. Neither is a complete
+replacement. Broader selection and scheduling need explicit distinct verdicts,
+actual funded counterfactuals and their own measured acceptance before adoption.
+Live selection, executor and UI have not changed in this research checkpoint.
+
 ## 2026-10-03 — first funded fit stopped at an all-missing estimator column
 
 The user clarified the replacement is for BOTH buying and profit taking.
