@@ -1,5 +1,61 @@
 # Next session
 
+## 2026-10-03 — causal held-B model implemented and verified; no live replacement
+
+VERIFIED sourceb68682cf7ce5e872f6b5a5d8616857541b1a6493 implements the fixed
+daily head contract registered at2e1fce1c. `learned_retention_models` builds
+completed-close13features, exact next-open[t+1]→open[t+11] stock-minusSPYlog
+labels and a separate absoluteSPYhead. Monthly fitting purges whole decision
+dates; endpoints must strictly precede the fit and stay before Aug17 for
+later fits. Each head requires504distinct mature feature-valid dates within
+the last756calendar decision rows. Score eligibility never requires future
+labels. Actual runtime versions and all five source/protocol hashes are pinned.
+Returns actual monthly heads plus forecasts/receipts; no provider/order/data
+write, persistence loader, account replay, production import or adoption.
+
+88tests pass natively and in pinnedCPUimage, no skips; Ruff clean. This includes
+21new repo cases,14unchanged independent cases,34planner and19planner review
+cases. Actual small HGB models fit in repo cases; independent full504/756clock
+checks use recording estimators and prove causal row selection, not market
+predictive quality. Independent reviewer separately reran unchanged14PASS and
+read back all5 source hashes/4 runtime versions. New model SHA
+69d54964642e412d3bc30526f23204ee53a95b8432f4a04c74b9bd07e0a3dfc2;
+independent cases SHA291a2d50106ae1c8dca42b5f5a23a1f5092866c39f38a7e630cf703769edd43e.
+
+FAILED then corrected with unchanged assertions: infinite raw daily close or
+negative open/close/adjustedclose could silently turn labels unavailable. Root
+reproduced all4failures, now validates aligned numeric positive-or-NaN daily
+prices before adjustment. Genuine missing future opens still leave causal
+current forecasts scoreable. Five repo regressions added; no assertion softened.
+
+Spark immutable source `learned-retention-models-20261003-b68682cf` is installed,
+not deployed. Test containerade021f689f3a332d0ddd64d2d5006aec79611f5dc80e1ac3180090a200c7397
+exited0. Supervision `retention-model-source-proof-b68682cf.json` and
+`retention-model-source-tests-b68682cf.log`, log SHA
+e028165eede0bf953a89dae73b51e0bb136589b8dd42e91fb19899fcd993a3c9.
+Model services' IDs/start times exactly unchanged; no GPU needed.
+
+UNVERIFIED: real market daily heads, predictive edge, authenticated persistence,
+funded retention benefit and live adoption. Next REQUIRED boundary is the
+account-aware daily planning adapter across both reset and midcycle rotations,
+with own carried holdings/cash/deferredbuy/event state and identical funding.
+Source `_paper_trade` still invokes legacy `paper.plan` without optional
+allocation_context and passes `_downgraded`; this supports the observed B
+rotation cause. Do not accidentally evaluate the optional funded-allocation
+branch (which treats finished as company exclusion) as that incumbent.
+Missing forecasts must reproduce this matched incumbent exactly. Retention
+forecast's immediate replacement mixture is not the actual deferred cashflow.
+No real fits or new economic runs started before this adapter is reviewed.
+
+The nonlinear timing study below is independently complete, not active. Its
+modest historical benefit/recent shortfall neither justifies promotion nor
+proves the universal1% gate optimal. Compact public JSON SHA
+11cdde12457e38d05088e0a29cd74973c63605fe05b4b01b8205320516eb458f.
+Both deliverables are pushed to codex/learned-entry-risk-20261002. Main remains
+204689db957b06c5debaaa03c9642d4ec88a4e45 at last fetch, untouched. User's main
+Mac/Spark work and production data/services are preserved. This handoff
+supersedes earlier "head being reviewed" status. No complete/live-solved claim.
+
 ## 2026-10-03 — nonlinear timing results independently verified; retention head next
 
 The new116monthly fits and60funded comparisons are COMPLETE, both containers
