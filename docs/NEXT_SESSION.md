@@ -1,5 +1,33 @@
 # Next session
 
+## 2026-10-03 — focused forecast calibration code in progress
+
+Combined results are independently verified and published at `4775dc2f`, clock
+compatibility clarified at `85629f17`; evaluated source remains `63c21f68`.
+The candidate underperforms the saved rule component; no live replacement or
+deployment. Current branch `codex/learned-entry-risk-20261002` now has the fixed
+next diagnostic protocol at `6642030e`, pushed BEFORE any forecast error cells.
+See `docs/research/daily-forecast-calibration-plan-2026-10-03.md`.
+
+learned_causal_inputs exclusively owns NEW
+`backend/market/daily_forecast_diagnostics.py` and its NEW test. evaluation_review
+owns only private `/tmp/test_daily_forecast_diagnostics_review.py` acceptance.
+Root owns artifact authentication/orchestration/private runner
+`/tmp/run_daily_forecast_diagnostics_20261003.py` and handoff/report. Never import
+active drafts. Require reviewed code and synthetic acceptance, then original
+data readout once with original bytes and complete calendar. No fits, account
+replay, provider requests, error-based parameter choices or production changes.
+
+Inputs are the exact source95ee8708 daily study, relative/SPY forecasts, prepared
+labels and fit receipts already authenticated. Actual original daily parquets
+live at `/home/animallya96/anios/data/market/bars/asof=2026-09-30`, mount read-only;
+assembled arrays and every source hash must match saved original `inputs.json`.
+Use daily open * adjusted_close / close exactly once. No SIP scale conversion.
+Simulated monthly maturity is documented; historical publication clocks do not
+exist. Keep exact ten-session calibration separate from twenty-session horizon
+compatibility and actual intraday account returns. No outcome statistics from
+this new diagnostic have been read yet.
+
 ## 2026-10-03 — combined implementation and independent economic proof complete
 
 VERIFIED: evaluated source `63c21f682893e72552db9c3c1bac7f2c284f0e11`, branch
