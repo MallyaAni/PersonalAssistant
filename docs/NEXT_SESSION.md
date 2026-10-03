@@ -19,14 +19,30 @@ accounts and metrics without resimulation. Parent3740456 is active; inspect
 `ledger-v3-finalization.json` and `ledger-v3-verify.log` in Spark supervision
 `/home/animallya96/scratch/sequential-execution-supervision-20261002`.
 Never restart older failed watchers/finalizers or active verification.
-UNVERIFIED: complete economic verification, model advantage or live adoption.
+Ledger-only v3 completed successfully:120 account curves,103342 intent rows,
+90842 fills and six benchmark curves independently reconciled; verifier and
+compact-summary exit0. Log SHA
+a1b64fd00c1a6954d7a26171cf22902676c2ed191d6c14e5e8acc5785786c968.
+VERIFIED economic measurement; UNVERIFIED dependable advantage/live adoption.
+At10bp, model-minus-current paired median full-period gain is+17.22percentage
+points,11/20 phases; recent32 sessions is-0.689points,5/20. Rolling252-session
+median win rate against current is49.45%. These overlapping phases are not
+independent observations. Do not promote on full-period headline alone.
 
 One post-result [first-available interpretation control](research/sequential-first-available-plan-2026-10-03.md)
 was registered before its outcomes. It tests whether forecasts add value beyond
 removing the delay, keeping stocks, funding and costs unchanged. New CLI/test
 are root-owned; native8 and independent19 synthetic cases pass, Ruff clean.
-Run only60 new accounts after original proof succeeds, reusing authenticated
-original candidate/current-gate/ETF evidence; no real control scores yet.
+Checkpoint248bf5ad is pushed; exact source-image27 pass, log
+`first-available-source-tests-fixed.log` in the same supervision directory.
+Acceptance SHA8339adf6ccb3eddff5204b8ae9a99432095fff763ddfe4f18f6172a015daf443.
+Parent3747898 now runs only60 new accounts after original proof succeeded,
+reusing authenticated original candidate/current-gate/ETF evidence. Read
+`first-available-run.json`/`first-available-evaluation.log`. Frozen source
+`/home/animallya96/codex-worktrees/sequential-first-available-20261003-248bf5ad-source`,
+private output `/home/animallya96/scratch/sequential-first-available-results-20261003`.
+Never restart active accounts or change mounted source. New economic results
+await completion and independent recorded-account verification.
 The original primary protocol's exact bytes are restored at3595e497.
 Live policy and dashboard are unchanged. No promotion from reused diagnostic
 data, overlapping phases or hypothetical next-open execution prices.
