@@ -1,5 +1,36 @@
 # Next session
 
+## 2026-10-03 — completed primary evaluation; accounting proof active
+
+This entry supersedes older active-process descriptions below. All116 monthly
+fits and120 carried candidate/current-gate account curves are complete, frozen
+at fittingb37c2b68/evaluationffa0a157. Report SHA
+2a8276f0c5e677292a600c260e87016d39029ee33359cdfae9c228c70fe22f11.
+No fits, primary curves, references or input fetches may be repeated.
+
+VERIFIED: independent v2 passed all116 monthly model checks. FAILED: its first
+ledger comparison narrowed execution products/running cash to NumPy float32.
+The ledger uses float64; casting the verifier's price to Python float matches
+the recorded first balance exactly. Original verifier and failed logs remain;
+tolerances and acceptance assertions are unchanged. Ledger-only v3 SHA
+73946b7624930d32a16e82bb6d2c882bb80ad47405289575dcf8b1099c8c5e2a
+authenticates and reuses completed model proof, then checks all recorded
+accounts and metrics without resimulation. Parent3740456 is active; inspect
+`ledger-v3-finalization.json` and `ledger-v3-verify.log` in Spark supervision
+`/home/animallya96/scratch/sequential-execution-supervision-20261002`.
+Never restart older failed watchers/finalizers or active verification.
+UNVERIFIED: complete economic verification, model advantage or live adoption.
+
+One post-result [first-available interpretation control](research/sequential-first-available-plan-2026-10-03.md)
+was registered before its outcomes. It tests whether forecasts add value beyond
+removing the delay, keeping stocks, funding and costs unchanged. New CLI/test
+are root-owned; native8 and independent19 synthetic cases pass, Ruff clean.
+Run only60 new accounts after original proof succeeds, reusing authenticated
+original candidate/current-gate/ETF evidence; no real control scores yet.
+The original primary protocol's exact bytes are restored at3595e497.
+Live policy and dashboard are unchanged. No promotion from reused diagnostic
+data, overlapping phases or hypothetical next-open execution prices.
+
 ## 2026-10-03 — evaluation-only calendar correction
 
 All116 original monthly fits completed successfully at frozen source b37c2b68.
