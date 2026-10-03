@@ -22,8 +22,8 @@ account acceptance SHA73e4eebc05db9e64672e2ea509e95353659c5fe848ed327a1720223547
 FAILED then corrected before fitting: equivalent float64 saved forecasts could
 pass float32 readback by value equality. Exact dtype/shape guards now precede
 comparison; independent assertion unchanged, repository regression added.
-UNVERIFIED: real full-book economic results and live replacement. No market fit
-or evaluation for this new policy has started at this checkpoint.
+UNVERIFIED: real full-book economic results and live replacement. The frozen
+run below is active; source/testing checkpoints do not prove an economic edge.
 
 Model/replay/shared ledger checkpoint6f3edea3 is pushed, native76 and exact
 Spark source-image76 pass (log `/tmp/codex-sequential-source-tests-20261002.log`).
@@ -50,6 +50,16 @@ read-only; no production/model-service changes. NEVER restart an active job,
 alter its mounted source, or repeat completed fits/phase comparisons.
 Inspect compact receipt/progress first, then independent saved-byte verifier
 after completion. Economic evidence/live replacement remains UNVERIFIED.
+Read-only proof watcher3590915 is also active, waiting for the existing parent:
+`watch_sequential_execution_20261002.py` in the supervision directory. It does
+not restart or rerun jobs. On successful completion it validates every saved
+model/curve/intent and publishes `verify.log`, `summary.json` and
+`proof-watch.json`; on run/proof failure it stops. Verifier SHA
+21fd2142ba7aca3010fba6a8ca4e6d53a1ade1d0ce5dd1d97614320246de5ed2.
+Its private bare Git object store authenticates b37c2b68 files and frozen6fa
+protocol; all original inputs/results are mounted read-only. Do not launch a
+second watcher. Root still must inspect proof/report and publish concise honest
+economic results; `verified_pending_root_review` is not live adoption.
 Reuse original96 private cubes/prepared inputs and ETF curves; never
 repeat old experiments or reuse the old auction-terminal controls as current.
 The original forward-cohort automation remains PAUSED; do not restart it.
