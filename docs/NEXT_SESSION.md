@@ -11,6 +11,16 @@ covered exit names; it is not an independent sell-only toggle. Quantity control
 isolates the shared known-forecast tiny-reset-trim correction. Default joint
 verdicts and receipts unchanged; simulator itself unchanged.
 
+User identifies1% and approximately9.1% as two fixed numbers. Runtime trace
+VERIFIED on deployed image1970c294/source621e28f0:entry_timing.LEVEL=.01 is
+session-open timing for both selected buys and selected sells; policy/5 targets
+min(1/eligible-A-count,.25), so11names gives9.0909%portfolio allocation. The
+displayed9.1% action size is not a hard-coded realized-profit target. Both module
+hashes match actual621e28f0Git objects. Do not invent/remove a nonexistent9.1%
+profit constant. Risk-aware sizing is a separate outstanding user objective;
+this attribution intentionally leaves sizing unchanged to isolate buying/exits.
+Keep all active source/models/protocols fixed; no mid-run sizing changes.
+
 VERIFIED191native and191pinned-image cases pass without skips, including all
 nine unchanged independent and six actual-parent default-journal parity cases.
 Ruff clean. Source image SHA5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
