@@ -150,6 +150,8 @@ def test_declared_cap_trim_is_bounded_and_whole_share_aware():
     data = inputs()
     data["held"][0] = 30
     data["prices"][0] = 11
+    data["recipient_weights"] = np.array([0.0, 0.1, 0.7])
+    data["spy_forecast"] = 0.0
     assert plan_retention(**data).reasons[0] == "hard_cap_requires_trim"
     data["trim_to_cap"] = True
     plan = plan_retention(**data)
@@ -231,3 +233,23 @@ def test_reset_rechecks_held_quantity_identity():
     plan.retained_shares[0] = 0
     with pytest.raises(ValueError, match="must be held"):
         reset_targets([0.0, 0.25, 0.25], plan, hard_cap=0.25)
+
+
+# An exactly equal gross outlook has no advantage to retain when fees are zero.
+def test_zero_edge_remains_incumbent_exit():
+    data = inputs()
+    data["held"][1] = 0
+    data["forecasts"][:] = 0
+    data["cost_bps"] = 0
+    data["recipient_weights"] = np.array([0.0, 0.7, 0.3])
+    plan = plan_retention(**data)
+    assert plan.edge[0] == 0
+    assert not plan.retain_mask[0]
+
+
+# Reject an uncapped replacement proposal rather than changing its comparison weights.
+def test_destination_capacity_is_checked_against_existing_holdings():
+    data = inputs()
+    data["recipient_weights"] = np.array([0.0, 1.0, 0.0])
+    with pytest.raises(ValueError, match="destination.*cap"):
+        plan_retention(**data)

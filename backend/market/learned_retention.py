@@ -73,6 +73,16 @@ def _wealth_edge(own, forecasts, weights, cost, spy_forecast):
     else:
         destination = forecasts
     positive = weights > 0
+    # Compare relative excess wealth so equal forecasts and zero fees remain zero.
+    with np.errstate(over="ignore", invalid="ignore", under="ignore"):
+        invested_ratio = invested + np.dot(
+            weights[positive], np.expm1(destination[positive] - own)
+        )
+        cash_ratio = cash_weight * np.exp(-own) if cash_weight > 1e-12 else 0.0
+        ratio = (1 - cost) * (invested_ratio / (1 + cost) + cash_ratio)
+    if np.isfinite(ratio) and ratio > 0:
+        return float(-np.log(ratio))
+    # Extreme finite log forecasts need a log-domain mixture to avoid overflow.
     terms = destination[positive] + np.log(weights[positive]) - np.log1p(cost)
     if cash_weight > 1e-12:
         terms = np.append(terms, np.log(cash_weight))
@@ -148,6 +158,17 @@ def plan_retention(  # noqa: C901 - preserve explicit validation and fallback re
     if np.any(weights < 0) or np.any(weights.sum(axis=1) > 1 + 1e-12):
         raise ValueError("recipient weights must be nonnegative and sum to <=1")
     buy_eligible = eligible & (grades >= 2) & ~blocked & ~event & ~thesis
+    for stock in np.flatnonzero((held > 0) & (grades == 1)):
+        required = weights[stock] > 0
+        proposed = (
+            marked
+            + weights[stock]
+            * marked[stock]
+            * (1 - cost_bps / 1e4)
+            / (1 + cost_bps / 1e4)
+        ) / nav
+        if np.any(required & (proposed > hard_cap + 1e-12)):
+            raise ValueError("Replacement destination exceeds the existing hard cap")
     retained = np.zeros(size)
     mask = np.zeros(size, dtype=bool)
     edge = np.full(size, np.nan)
@@ -219,11 +240,7 @@ def reset_targets(base_targets, retention, *, hard_cap, stock_budget=1.0):
     base = _numbers(base_targets, shape, "base_targets")
     cap = _scalar(hard_cap, "hard_cap", 0, 1, lower_inclusive=False)
     budget = _scalar(stock_budget, "stock_budget", 0, 1)
-    if (
-        np.any(base < 0)
-        or base.sum() > 1 + 1e-12
-        or np.any((base > 0) & ~buy_eligible)
-    ):
+    if np.any(base < 0) or base.sum() > 1 + 1e-12 or np.any((base > 0) & ~buy_eligible):
         raise ValueError("base targets must be a valid eligible A/A+ basket")
     reserved = _numbers(retention.retained_weights, shape, "retained_weights")
     if np.any(reserved < 0) or np.any(reserved > cap + 1e-12):

@@ -102,3 +102,31 @@ def test_wrong_teacher_is_rejected_before_fit(tmp_path):
     (tmp_path / "manifest.json").write_text("{}")
     with pytest.raises(ValueError, match="original continuation"):
         model.validate_teacher(tmp_path, data())
+
+
+# Reject fabricated finite forecasts for a month or side without a fitted model.
+@pytest.mark.parametrize("status", ["insufficient_mature_history", "fitted"])
+def test_resume_requires_a_fitted_side(tmp_path, status):
+    days = np.array([0], dtype=np.int64)
+    values = np.full((1, 25, 1, 2), np.nan, np.float32)
+    values[0, 0, 0, 0] = 0.01
+    arrays = {"days": days, "predictions": values}
+    path = tmp_path / "2026-09-predictions.npz"
+    model.teacher._save_npz(path, arrays)
+    receipt = {
+        "identity_sha256": "synthetic",
+        "score_days": [0],
+        "models": [],
+        "status": status,
+        "month": "2026-09",
+        "heads": [{"status": "no_finite_targets"}] * 2,
+        "forecast": {
+            "file": path.name,
+            "sha256": model.teacher._file_hash(path),
+            "arrays": {
+                key: model.base._array_hash(value) for key, value in arrays.items()
+            },
+        },
+    }
+    with pytest.raises(ValueError, match="Unfitted"):
+        model.resume(tmp_path, receipt, days, "synthetic", np.full_like(values, np.nan))

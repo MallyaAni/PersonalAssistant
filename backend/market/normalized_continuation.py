@@ -131,11 +131,17 @@ def predict(heads, dataset, days):
     return result
 
 
-# Restore only authenticated forecasts and fitted estimator bytes, without unpickling.
-def resume(directory, receipt, days, digest, predictions):
-    output = Path(directory)
-    if receipt["identity_sha256"] != digest or receipt["score_days"] != days.tolist():
-        raise ValueError("Saved monthly forecast identity or dates changed")
+# Check that saved side models match their fit status and authenticated byte records.
+def _fitted_sides(output, receipt):
+    if receipt["status"] not in ("fitted", "insufficient_mature_history"):
+        raise ValueError("Saved monthly fit status changed")
+    if receipt["status"] == "fitted" and (
+        len(receipt["heads"]) != 2
+        or any(
+            h["status"] not in ("fitted", "no_finite_targets") for h in receipt["heads"]
+        )
+    ):
+        raise ValueError("Saved side status changed")
     expected_heads = (
         [i for i, head in enumerate(receipt["heads"]) if head["status"] == "fitted"]
         if receipt["status"] == "fitted"
@@ -150,6 +156,15 @@ def resume(directory, receipt, days, digest, predictions):
             or teacher._file_hash(path) != model["sha256"]
         ):
             raise ValueError("Saved estimator bytes changed")
+    return expected_heads
+
+
+# Restore only authenticated forecasts and fitted estimator bytes, without unpickling.
+def resume(directory, receipt, days, digest, predictions):
+    output = Path(directory)
+    if receipt["identity_sha256"] != digest or receipt["score_days"] != days.tolist():
+        raise ValueError("Saved monthly forecast identity or dates changed")
+    expected_heads = _fitted_sides(output, receipt)
     if receipt["forecast"]["file"] != f"{receipt['month']}-predictions.npz":
         raise ValueError("Saved forecast path changed")
     values = teacher._read_npz(
@@ -168,6 +183,12 @@ def resume(directory, receipt, days, digest, predictions):
         raise ValueError("Saved forecast shape or precision changed")
     if np.isinf(values["predictions"]).any():
         raise ValueError("Saved forecast contains infinity")
+    for side in range(2):
+        if (
+            side not in expected_heads
+            and np.isfinite(values["predictions"][..., side]).any()
+        ):
+            raise ValueError("Unfitted side cannot contain a finite forecast")
     predictions[days] = values["predictions"]
 
 
