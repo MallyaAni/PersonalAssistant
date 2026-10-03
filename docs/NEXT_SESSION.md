@@ -1,5 +1,70 @@
 # Next session
 
+## 2026-10-03 — actual-intent observation collector verified
+
+Source checkpoint99d235afb816645155c7ed42610f9b9b916e47c9 implements
+`market_sequential_shadow`, `sequential_shadow_context` and
+`sequential_shadow_prefix`. Read the [bounded source contract](research/sequential-shadow-contract-2026-10-03.md)
+and [measured result](research/sequential-execution-results-2026-10-03.md).
+No new fitting, economic replay, model/service change, deployment or order
+submission occurred. Live1% gate remains unchanged; the recent result still
+does not justify adoption.
+
+VERIFIED:96 native and96 pinned-source-image cases pass, no skips; Ruff clean.
+Independent acceptance files: context10, prefix11, collector21, under
+`/tmp/test_sequential_shadow_*_review_edges.py`. Collector acceptance SHA
+7d4ecf93cb4bc21d65e176182dcf0fba7b6f567e9b191e6a4c2e82ab13ee1a8a;
+context SHA780b63198f7ec6b59d3ea8e90ac5075e7ce2d31681f47c2d79411fef7e9f373d;
+prefix SHA64ba3156d051a37995a6fd4e902e7c22dee5ff98e895ce87ed6fa6e16d9b22cb.
+Initial image run90pass/6fail was an independent fixture's hardcoded `/tmp`
+import missing from the mount. Original failed log remains; adding the exact
+fixture read-only at that path gives96pass without source/assertion changes.
+Final log `shadow-collector-source-tests-fixturemount.log`, SHA
+6bbfbdfa05c6dd24bfa3fec4b418e31f279d839897990540b2065112d542c131.
+
+VERIFIED: prior bridgef4b45b2f has37 source-image checks. Actual saved
+September heads reproduce50stored AAOI/COHR prefix packets and96forecasts
+exactly, with explicitly synthetic receipt clocks. Evidence
+`shadow-saved-head-parity.json`, SHA
+7707c3cf14d5c59cc99bb6ec26029e7a422b25f00e37e6bda430d3a834b0c208.
+No original models, curves or parameter certificates were rerun.
+
+VERIFIED: actual collector CLI source99d235af exited0 in pinned image
+sha256:5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d,
+CPU2/memory4GB/user1000, production/source/model mounts read-only. Saturday
+Oct3 found0eligible/13excluded intents, persisted a private no-op and made no
+market request/model load. `cli-read-only-acceptance-20261003/observation.json`
+SHAa29b5829afb646b3f6f6127d8bd8ae96b8071ecb27678873d010b231a083deb0.
+Earlier actual broker receipt verified six stable GETs, not a trading decision.
+All artifacts/logs are under Spark supervision
+`/home/animallya96/scratch/sequential-execution-supervision-20261002`.
+
+FAILED then corrected: between-page receipt rollback and later transport
+disconnect lost original evidence. Unchanged independent cases now pass.
+The context loader also retains exchange days missing from ALL source names,
+so feature windows cannot silently shorten. Paired provider split/raw anchors
+require exact current OHLCV/missingness equality; no ratio fitting. Anchor is
+explicitly an IEX prior regular-bar proxy, different from training. Current
+recorded grades/book and frozen September carry-forward are domain differences.
+
+UNVERIFIED: active eligible-intent runtime decisions, actual current-prefix
+source equivalence, fills, dependable timing advantage and live promotion.
+Full current-policy evidence still requires a fixed initial cohort retained
+after actual orders disappear, first-attempt locks, carried funding/holdings,
+honest prices after model completion, missing opportunities and SPY/QQQ.
+Do not turn this one-observation compatibility tool into a wealth result.
+
+One new thread heartbeat `verify-learned-timing-against-actual-live-intents`
+is scheduled MondayOctober5 at09:46NewYork for ONLY one actual compatibility
+observation, then pauses. Frozen source is
+`/home/animallya96/codex-worktrees/sequential-shadow-collector-20261003-99d235af`;
+explicit prior record/partitionOct2, original fitted model directory unchanged.
+Private exclusive output `actual-intent-observation-20261005` under supervision.
+Inspect existing output/process before action; no restart, overwrite, retries
+selecting another window, new cohorts, old scoring or implicit promotion.
+Old completed experiment automation remains paused. No active research process
+needs restarting. Preserve concurrent main/data/secrets/model services.
+
 ## 2026-10-03 — learned timing comparison complete; live-intent bridge
 
 Read [verified results](research/sequential-execution-results-2026-10-03.md)
