@@ -1,5 +1,47 @@
 # Next session
 
+## 2026-10-03 — isolated buy/exit attribution running; no live promotion
+
+User requires BOTH buying and profit-taking. Source d936e1f425285025323607f016143692fe9bf33c
+is committed/pushed. Preregistered after joint outcomes at7ddb0de4:
+docs/research/cash-selection-attribution-plan-2026-10-03.md. Three new modes
+quantity_control/buy_only/exit_only reuse exact saved monthly forecasts, learned-B
+retention and simulator. Exit-only includes required no-rebuy permission on its
+covered exit names; it is not an independent sell-only toggle. Quantity control
+isolates the shared known-forecast tiny-reset-trim correction. Default joint
+verdicts and receipts unchanged; simulator itself unchanged.
+
+VERIFIED191native and191pinned-image cases pass without skips, including all
+nine unchanged independent and six actual-parent default-journal parity cases.
+Ruff clean. Source image SHA5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+Image logSHAf08b3fb5a65664367bc7503ccf106e03c648f6a08d63408e15b783b60badb666.
+All2,285archived Git file hashes verified against manifestSHA
+075148fe3e071eb9c42f12b5321fc01d44b55ae321ea5ef4f09d7383ccac4079.
+
+ACTIVE producer cash-attribution-funded-d936e1f4-20261003,
+ID83247e7eac552b939115cd105124dc3bbefc2dc937cbf3fd0b99fe3fa9c7ef05,
+started20:55:18UTC.180new accounts,3modes×0/10/25bp×20offsets. Do not restart,
+change mounted source, inspect partial scores or repeat saved controls/fits.
+Read compact process/status first. Immutable source:
+/home/animallya96/codex-worktrees/cash-selection-attribution-20261003-d936e1f4.
+Output:/home/animallya96/scratch/cash-attribution-funded-run-20261003-d936e1f4/study.
+Original source/inputs/old+joint controls read-only; CPU2/networknone/noGPU.
+Model container IDs and start times unchanged. Production source/UI untouched.
+
+Independent verifier native46/image46 cases PASS; readback native9/image9 PASS,
+both independently reviewed, Ruff clean. Combined image logSHA
+3f64bdca9f35477d9fd46501bf2075141fc42ebee56604700fd424707c5f0323.
+New private verifier verify_cash_selection_attribution_20261003.py SHA
+d1a869c9dc8b9c2082779d3785bf8f2cf5cb2e52751e094f1d397b8dff134a9d;
+reader summarize_cash_attribution_20261003.py SHA
+b4215c9468d1c171aeb414df4d89683078ffc482cb3b812f3103b269467f7abf.
+Helpers live under /home/animallya96/scratch/sequential-execution-supervision-20261002.
+Require actual saved-artifact proof of all180ledgers/verdicts,1440contrasts,
+240interactions and source/model/control clocks before economic readback.
+All prior joint and retention jobs are complete; never rerun them. New economic
+outcomes remain UNVERIFIED. This diagnostic is post-result reuse, not a new holdout.
+No live replacement justified by tests alone or by selecting a favorable window.
+
 ## 2026-10-03 — both buy and cash-exit evidence verified; attribution next
 
 This supersedes the pending/active status below. Sourcee8505b22 completed all60
