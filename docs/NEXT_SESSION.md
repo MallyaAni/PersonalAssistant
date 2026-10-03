@@ -1,5 +1,50 @@
 # Next session
 
+## 2026-10-03 — funded held-B result independently verified; full replacement unfinished
+
+VERIFIED evaluated source95ee87086ac336ea81e80f6b29a693a62d686602 completed
+180stock accounts and sixETF accounts once. Producer exited0 at18:56:51UTC;
+original962303748byte resultSHAd9781a5910cb5d5893ce88e42a8e29ce4507cfc57049e012745b61e0b24017b7.
+Independent saved-evidence verification passes2271source files,96parquets,
+preparation/labels/whole-date purge,208actual fitted heads,exact prediction
+readback(error0),186journal archives,primary metrics and480paired contrasts.
+No refit or strategy resimulation; all declared evaluated return counts have
+zero missing NAV returns. ProofSHAd855eea0eb910748f01142a3b44f027079f1665afd9570d95c0d0f1a879a238f;
+logSHA031e39787e3be6cb43fa829eeaa13aeaf25474c49fcea1e64f1cac266a0f09bd.
+Privateoutput:/home/animallya96/scratch/retention-funded-run-20261003-95ee8708/study.
+Proofdirectory:/home/animallya96/scratch/retention-funded-verification-20261003-95ee8708.
+All producer/finalizer/verifier work is COMPLETE; never restart or repeat it.
+
+At10bp, median paired learned−rule cumulative net gain is+159.35percentage
+points fullperiod(16/20offsets) and+1.158points recent(20/20). Against simpleB
+retention:+257.86points full(18/20),but−0.706points recent(4/20) and−30.82points
+in2018–20(1/20). Median full CAGR41.56% versus39.30% rule; median drawdown43.25%
+versus43.06%; normalized turnover15.25 versus16.61/year. Differences of table
+medians are not paired deltas. Common selection is current-vintage reconstructed,
+legacydaily execution differs from current1% intraday; these are not live alpha.
+
+Supplemental paired uncertainty was frozen atd1a196cb before scores were read,
+after fitting/partial journals existed.11native and11image cases pass. Fixed
+63session circular blocks,2000replicates,seed0,same resampled clock for all20
+offsets. At10bp rule contrast has0.717annualized log-growth points with95%
+interval−0.598..+2.201; all six intervals include0. No regime/phase/threshold
+selection or model change. Source for analysis is private
+retention_uncertainty_20261003.py SHA8e8f81141045a6cc9e97bf1c2072693fc2a429d2f32c0ef24d005308cccd4a33.
+
+Read docs/research/held-b-funded-results-2026-10-03.md and its complete compact
+JSON(SHA55f15b8d713b675c23dbe711532833abc829fc5559cdf88f68f56cb16e7e1a90).
+Uncertainty JSONSHA4e3e391a0482d98e88f62f1d0c44bdee8a3857c657bc8b18b8064312a874f281.
+Model IDs/start times remain unchanged. No live deployment or account writes.
+
+User explicitly requires BOTH buying and profit-taking, not onlyB retention.
+This is a promising selection component,not a reliable full live replacement.
+The next atomic boundary is joint account-aware new-buy and heldA/A+ exit
+selection with explicit economic alternatives,then a matched funded comparison.
+Keep selection distinct from scheduling already selected intents; do not claim
+the existing timing models generate profit-taking decisions. Preserve mandatory
+event/risk exits,cash/covered quantities and unavailable fallback. No promotion,
+retuning of the just-scored candidate or outcome-chosen regime switching.
+
 ## 2026-10-03 — funded comparison running on corrected immutable source
 
 VERIFIED source95ee87086ac336ea81e80f6b29a693a62d686602:47affected native

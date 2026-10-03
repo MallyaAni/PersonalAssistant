@@ -1,0 +1,108 @@
+{
+  "adoption": false,
+  "analysis_source_sha256": "8e8f81141045a6cc9e97bf1c2072693fc2a429d2f32c0ef24d005308cccd4a33",
+  "contrasts": [
+    {
+      "annualized_mean_log_growth_spread": 0.006086381487942823,
+      "block_sessions": 63,
+      "control": "incumbent",
+      "cost_bps": 0,
+      "percentile_95_interval": [
+        -0.005898757154449527,
+        0.019620656453264877
+      ],
+      "phases": 20,
+      "phases_resampled_together": true,
+      "replicates": 2000,
+      "return_sessions": 2176,
+      "seed": 0
+    },
+    {
+      "annualized_mean_log_growth_spread": 0.01865576367504688,
+      "block_sessions": 63,
+      "control": "unconditional",
+      "cost_bps": 0,
+      "percentile_95_interval": [
+        -0.021772059666182,
+        0.06124525138822411
+      ],
+      "phases": 20,
+      "phases_resampled_together": true,
+      "replicates": 2000,
+      "return_sessions": 2176,
+      "seed": 0
+    },
+    {
+      "annualized_mean_log_growth_spread": 0.007169851942159924,
+      "block_sessions": 63,
+      "control": "incumbent",
+      "cost_bps": 10,
+      "percentile_95_interval": [
+        -0.0059849823065885,
+        0.022007509005131456
+      ],
+      "phases": 20,
+      "phases_resampled_together": true,
+      "replicates": 2000,
+      "return_sessions": 2176,
+      "seed": 0
+    },
+    {
+      "annualized_mean_log_growth_spread": 0.012916176377605702,
+      "block_sessions": 63,
+      "control": "unconditional",
+      "cost_bps": 10,
+      "percentile_95_interval": [
+        -0.02711520067396819,
+        0.05433488702806099
+      ],
+      "phases": 20,
+      "phases_resampled_together": true,
+      "replicates": 2000,
+      "return_sessions": 2176,
+      "seed": 0
+    },
+    {
+      "annualized_mean_log_growth_spread": 0.010252697883488083,
+      "block_sessions": 63,
+      "control": "incumbent",
+      "cost_bps": 25,
+      "percentile_95_interval": [
+        -0.0034598766167962896,
+        0.025807883615106435
+      ],
+      "phases": 20,
+      "phases_resampled_together": true,
+      "replicates": 2000,
+      "return_sessions": 2176,
+      "seed": 0
+    },
+    {
+      "annualized_mean_log_growth_spread": 0.006017412432079352,
+      "block_sessions": 63,
+      "control": "unconditional",
+      "cost_bps": 25,
+      "percentile_95_interval": [
+        -0.03293692842172026,
+        0.04628764297174161
+      ],
+      "phases": 20,
+      "phases_resampled_together": true,
+      "replicates": 2000,
+      "return_sessions": 2176,
+      "seed": 0
+    }
+  ],
+  "curves_sha256": "22d267b23af1ab8d66879130a6a6954952a4ce7e845059b967c19cf7d2ecffbb",
+  "independent_proof_sha256": "d855eea0eb910748f01142a3b44f027079f1665afd9570d95c0d0f1a879a238f",
+  "limitations": [
+    "circular joins and stationarity assumptions",
+    "overlapping phases, not independent trials",
+    "does not correct reconstructed grades, universe or prior model selection",
+    "not a future-win probability or an adoption test"
+  ],
+  "numpy_version": "2.5.3",
+  "registration_sha256": "d5f733027bc107aa9db5b6677552f4c3664ce2b4732e8743e0ac9d7e2db0b14b",
+  "schema": "held-b-paired-uncertainty/1",
+  "source_revision": "95ee87086ac336ea81e80f6b29a693a62d686602"
+}
