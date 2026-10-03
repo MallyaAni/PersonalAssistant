@@ -14,6 +14,7 @@ from backend.market import learned_entry_evaluation as replay
 from backend.market import learned_entry_models as original
 from backend.market import learned_execution_risk as risk_model
 from backend.market import learned_execution_timing as timing
+from backend.market import learned_intraday_moments as intraday
 
 CONTROL_REPORT = "f340f1329ec67645ba4f534eb9c34afde5cee5e47d85ce88dab7de87ab72f608"
 PLAN = "docs/research/learned-execution-risk-plan-2026-10-02.md"
@@ -31,6 +32,8 @@ def execution_source():
                 "backend/market/learned_execution_timing.py",
                 "backend/cli/market_execution_risk.py",
                 PLAN,
+                "backend/market/learned_intraday_moments.py",
+                "docs/research/fifteen-minute-execution-plan-2026-10-02.md",
             )
         }
     )
@@ -55,6 +58,36 @@ def fit(dataset, output):
     }
     write_json(output / "complete.json", receipt)
     return receipt
+
+
+# Publish the three duration-matched heads once after their actual fit artifacts exist.
+def fit_intraday(dataset, output):
+    output = Path(output)
+    if (output / "complete.json").exists():
+        raise FileExistsError("a completed intraday fit already exists")
+    _, _, manifest = intraday.walk_forward(dataset, output)
+    receipt = {
+        "status": "COMPLETE",
+        "source": execution_source(),
+        "artifact_sha256": sha256(output / "predictions.npz"),
+        "manifest": manifest,
+    }
+    write_json(output / "complete.json", receipt)
+    return receipt
+
+
+# Require the actual duration-matched fit and original causal inputs before replay.
+def load_intraday(directory, dataset):
+    directory = Path(directory)
+    receipt = json.loads((directory / "complete.json").read_text())
+    if receipt["status"] != "COMPLETE":
+        raise ValueError("completed intraday model receipt required")
+    if sha256(directory / "predictions.npz") != receipt["artifact_sha256"]:
+        raise ValueError("intraday prediction artifact bytes differ")
+    means, risk, manifest = intraday.validate_saved(directory, dataset)
+    if receipt["manifest"] != json.loads(json.dumps(manifest)):
+        raise ValueError("intraday completion and verified fit manifests differ")
+    return means, risk, receipt
 
 
 # Verify every monthly fit belongs to its prediction month and uses mature labels.
@@ -148,7 +181,18 @@ def calibration(dataset, risk, means, first):
 
 # Reuse immutable baseline curves and evaluate only the new same-plan timing accounts.
 def evaluate(
-    panel, grades, eligible, cubes, dataset, means, risk, receipts, reference, output
+    panel,
+    grades,
+    eligible,
+    cubes,
+    dataset,
+    means,
+    risk,
+    receipts,
+    reference,
+    output,
+    *,
+    policy=timing.POLICY,
 ):
     output = Path(output)
     if output.exists():
@@ -166,7 +210,7 @@ def evaluate(
     report = {
         "status": "reused_conditional_timing_diagnostic",
         "adoption_eligible": False,
-        "policy": timing.POLICY,
+        "policy": policy,
         "start": str(panel.dates[first]),
         "end": str(panel.dates[-1]),
         "source": execution_source(),
@@ -258,7 +302,9 @@ def evaluate(
 # Require existing original preparation and separate private outputs for this extension.
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("fit", "evaluate"))
+    parser.add_argument(
+        "mode", choices=("fit", "evaluate", "fit-intraday", "evaluate-intraday")
+    )
     parser.add_argument("--snapshot", required=True, type=Path)
     parser.add_argument("--provenance", required=True, type=Path)
     parser.add_argument("--cubes", required=True, type=Path)
@@ -282,6 +328,27 @@ def main():
     )
     if args.mode == "fit":
         fit(dataset, args.risk_directory)
+        return
+    if args.mode == "fit-intraday":
+        fit_intraday(dataset, args.risk_directory)
+        return
+    if args.mode == "evaluate-intraday":
+        if args.reference is None or args.output is None:
+            parser.error("intraday evaluation requires reference and output")
+        means, risk, receipt = load_intraday(args.risk_directory, dataset)
+        evaluate(
+            panel,
+            grades,
+            eligible,
+            cubes,
+            dataset,
+            means,
+            risk,
+            {"duration_matched": receipt},
+            args.reference,
+            args.output,
+            policy="fifteen-minute-execution/1",
+        )
         return
     if any(
         value is None

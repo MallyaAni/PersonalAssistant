@@ -7,7 +7,14 @@ import numpy as np
 import pytest
 
 from backend.cli import market_execution_risk as runner
-from backend.cli.market_execution_risk import fit, load_risk, verify_months
+from backend.cli.market_execution_risk import (
+    fit,
+    fit_intraday,
+    load_intraday,
+    load_risk,
+    verify_months,
+)
+from backend.market import learned_intraday_moments as intraday
 from backend.tests.test_learned_execution_risk import _dataset
 from backend.tests.test_learned_execution_timing import sample
 
@@ -19,6 +26,74 @@ def fitted(tmp_path_factory):
     data = _dataset()
     receipt = fit(data, directory)
     return data, directory, receipt
+
+
+# Fit one actual duration-matched distribution for all subsequent artifact checks.
+@pytest.fixture(scope="module")
+def intraday_fitted(tmp_path_factory):
+    directory = tmp_path_factory.mktemp("fifteen-minute-cli")
+    data = _dataset()
+    receipt = fit_intraday(data, directory)
+    return data, directory, receipt
+
+
+# Unknown outcomes retain predictions while unsupported overnight clocks stay absent.
+def test_actual_intraday_artifact_readback(intraday_fitted):
+    data, directory, receipt = intraday_fitted
+    means, risk, actual = load_intraday(directory, data)
+    assert actual["artifact_sha256"] == receipt["artifact_sha256"]
+    assert np.isfinite(risk[-10:, :23]).all()
+    assert np.isnan(risk[:, 23:]).all()
+    for values in means.values():
+        assert np.isfinite(values[-10:, :23, :, 2]).all()
+        assert np.isnan(values[:, 23:]).all()
+        assert np.isnan(values[..., :2]).all()
+
+
+# A completed distribution cannot be retrained under the same published run identity.
+def test_completed_intraday_fit_cannot_repeat(intraday_fitted):
+    data, directory, _ = intraday_fitted
+    with pytest.raises(FileExistsError, match="completed intraday fit"):
+        fit_intraday(data, directory)
+
+
+# Altered saved bytes cannot satisfy the duration-matched forecast contract.
+def test_intraday_byte_tampering_rejects(intraday_fitted, tmp_path):
+    import shutil
+
+    data, directory, _ = intraday_fitted
+    changed = tmp_path / "changed-distribution"
+    shutil.copytree(directory, changed)
+    archive = changed / "predictions.npz"
+    archive.write_bytes(archive.read_bytes() + b"altered")
+    with pytest.raises(ValueError, match="artifact bytes differ"):
+        load_intraday(changed, data)
+
+
+# Equal float64 numbers cannot impersonate declared float32 forecast artifacts.
+@pytest.mark.parametrize("monthly", [False, True])
+def test_intraday_representation_contract(intraday_fitted, tmp_path, monthly):
+    import shutil
+
+    data, directory, _ = intraday_fitted
+    changed = tmp_path / "changed-representation"
+    shutil.copytree(directory, changed)
+    manifest = json.loads((changed / "manifest.json").read_text())
+    row = next(r for r in manifest["months"] if r["status"] == "fitted")
+    receipt = row if monthly else manifest
+    archive = changed / receipt["prediction_file"]
+    with np.load(archive, allow_pickle=False) as saved:
+        arrays = {name: saved[name] for name in saved.files}
+    name = "means_boosting" if monthly else "risk"
+    arrays[name] = arrays[name].astype(np.float64)
+    with archive.open("wb") as handle:
+        np.savez(handle, **arrays)
+    receipt["prediction_file_sha256"] = hashlib.sha256(archive.read_bytes()).hexdigest()
+    if monthly:
+        (changed / (row["month"] + ".json")).write_text(json.dumps(row))
+    (changed / "manifest.json").write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match="dtype"):
+        intraday.validate_saved(changed, data)
 
 
 # Read actual fitted bytes and prove missing future labels never erased forecasts.

@@ -62,15 +62,28 @@ but near-terminal leaves can pool incompatible elapsed durations.
 User's main focus continues with exactly one duration correction:
 [frozen protocol](research/fifteen-minute-execution-plan-2026-10-02.md),
 259116cf then clarified numerical certificate at a931422b, both before new fits.
-Existing agent learned_model_training owns NEW learned_intraday_moments.py and
-its test; root owns CLI integration/review. Do not import drafts or modify those
-active-owned files. Fit HGB/Ridge waiting means plus common HGB second moment
+Duration module, test and CLI integration are now complete and root-owned.
+Native acceptance60 pass, Ruff clean, including unchanged prior9-case and
+new7-case independent acceptance. Actual504-session synthetic fits verify
+overnight-label mutation leaves all model hashes/predictions unchanged, hidden
+outcomes remain predicted, and Ridge coefficient/intercept corruption fails
+the certificate. A saved float64 archive incorrectly satisfied its float32
+contract; root reproduced it, added monthly/global representation checks and
+repeated the unchanged independent path7/7. Independent test
+`/tmp/test_duration_moment_review_edges.py` SHA256
+`8c0ab2dc26ba5159d0b7c3ffb1a844fbf34b81421439767e271734a905b96d8d`.
+Fit HGB/Ridge waiting means plus common HGB second moment
 using only original training clocks with actual15-minute duration (0/3/9/19;
 overnight24 excluded). Same settings, windows, funding/targets/phases/costs;
 no tuning based on outcomes. Existing Ridge regression had no certificate;
 the older numerical fix was the allocation optimizer. The new protocol
 explicitly adds a float64 normal-equation certificate without solver changes.
 All real duration-matched fits/evaluations remain UNVERIFIED and unstarted.
+After exact source-image acceptance, freeze source and launch exactly one
+`market_execution_risk fit-intraday`; after COMPLETE validate saved artifacts
+and run `evaluate-intraday` once against the original authenticated baseline.
+No old models, controls or scores rerun. Global forecast and every monthly
+model/receipt use the explicit15-minute schema and original-input hashes.
 
 ## 2026-10-02 — learned entry/exit and sizing: COMPLETE, no live adoption
 
