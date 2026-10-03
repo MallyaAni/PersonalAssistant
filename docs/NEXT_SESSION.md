@@ -25,11 +25,16 @@ comparison; independent assertion unchanged, repository regression added.
 UNVERIFIED: real full-book economic results and live replacement. No market fit
 or evaluation for this new policy has started at this checkpoint.
 
-Root owns models/replay/shared-account files after completed agent handoffs.
-Model agent currently owns only the new CLI and its test; evaluation reviewer
-owns only a private independent artifact verifier; causal reviewer private tests.
-No new real model fits until CLI/source acceptance completes and exact source
-is frozen. Reuse original96 private cubes/prepared inputs and ETF curves; never
+Model/replay/shared ledger checkpoint6f3edea3 is pushed, native76 and exact
+Spark source-image76 pass (log `/tmp/codex-sequential-source-tests-20261002.log`).
+Image sha256:5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+New CLI and its test are now root-owned after handoff; native7 pass, Ruff clean.
+Its actual synthetic fit/readback and60 funded phase pairs prove unchanged
+completed results are read, not silently rerun; saved ETFs are reused, not fit.
+All production-source files are root-owned. Evaluation reviewer owns only the
+private artifact verifier; independent model/account reviewer has completed.
+No new real model fits until CLI/source-image acceptance completes and exact
+source is frozen. Reuse original96 private cubes/prepared inputs and ETF curves; never
 repeat old experiments or reuse the old auction-terminal controls as current.
 The original forward-cohort automation remains PAUSED; do not restart it.
 No GPU, real orders, dashboard, production cache or model-service changes.
