@@ -28,6 +28,21 @@ Output:/home/animallya96/scratch/cash-attribution-funded-run-20261003-d936e1f4/s
 Original source/inputs/old+joint controls read-only; CPU2/networknone/noGPU.
 Model container IDs and start times unchanged. Production source/UI untouched.
 
+Detached bounded finalizer PID879224 is ACTIVE, awaiting that exact producer ID.
+Never launch another finalizer or restart the producer. Script
+/home/animallya96/scratch/sequential-execution-supervision-20261002/finalize_cash_attribution_20261003.py
+SHA c82700cbb77419e3ac9aa76c9f553598db0367dc916bf0c4f9da05aa4d9040a9.
+It authenticates all source/helper bytes and has exclusive ownership. On exact
+180-account completion it runs saved-artifact verification once, then the fixed
+readback once; failures stop and remain recorded. No model/account replay.
+Read cash-attribution-finalizer-20261003.json and its .log in that directory,
+then independently inspect final proof/public hashes, all paired evidence and
+model identities before publishing. Do not claim finalization from a live PID.
+Expected proof output directory:
+/home/animallya96/scratch/cash-attribution-verification-20261003-d936e1f4.
+After completion publish the complete compact result plus concise findings,
+review exact arithmetic and push selective docs; no deployment for research.
+
 Independent verifier native46/image46 cases PASS; readback native9/image9 PASS,
 both independently reviewed, Ruff clean. Combined image logSHA
 3f64bdca9f35477d9fd46501bf2075141fc42ebee56604700fd424707c5f0323.
