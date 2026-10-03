@@ -1,5 +1,86 @@
 # Next session
 
+## 2026-10-02 — LIVE 20:12 ET: the paper close window sends a market order at 3:45 PM, not market-on-close
+
+This fixes the open leak below ("market-on-close orders expire on the paper
+broker"). The operator authorised live fixes. Project doc:
+`claude/paper-moc-fills-2026-10-02.md`. Evidence:
+`docs/research/paper-moc-fills-2026-10-02.md`.
+
+- **Cause (VERIFIED from the broker's records):** `GET /v2/orders?status=all`
+  on the paper account, read only. Every close-window order was valid:
+  `type=market`, `time_in_force=cls`, `extended_hours=false`, sent at
+  15:30:37-48 ET, which is before Alpaca's documented 15:50 cutoff. None was
+  rejected and none has a `failed_at`. The paper venue filled `cls` orders
+  only in the last 2-4 s before 16:00 (15:59:56-58). The rest went
+  `expired` at 16:00:04-16:01:53.
+  - Of 9 market-on-close buys, 8 expired (HPE 31, SWKS 21 and ALAB 2 on
+    10-02) and 1 filled.
+  - Of 3 ANET sells, 1 filled, 1 filled 14 of 32, and 1 expired.
+  - All 23 intraday day market orders filled within 3 s.
+  - Alpaca staff on the forum (2026-06-24): paper treats MOC "as standard
+    market orders at close price", with deliberately frequent partial
+    fills.
+  - So this is a paper-broker limitation, not our tif, timing or
+    extended-hours flag. The opening auction (`opg`) failed the same way
+    earlier.
+- **Fix, `feeaadef` (merged `621e28f0`):**
+  - `entry_timing.session_clock` gains `"final"` = close − 15 min
+    (`FINAL_LEAD`). That is 15:45 on a normal day and 12:45 on an early
+    close, the last balancer run of the session (cron `*/15 9-16`).
+  - `intraday_orders.decide`: an untriggered close-window row sends a day
+    market order from `final` to the close. The old after-15:50 market
+    fallback falls inside that range.
+  - Dip- and pop-triggered rows are unchanged; a test proves it minute by
+    minute against the replaced rule.
+  - `_submit` no longer sends `cls`. An order an older build already sent
+    as `cls` is adopted and recorded as `moc`.
+- **Board wording:**
+  - The at-the-close reason changes from "market-on-close before 3:50 PM
+    ET" to "market order at 3:45 PM ET".
+  - The close-window status is "waiting · Close window · market order at
+    3:45 PM ET" until 3:45, then "due · Close window · market order due".
+  - An expired `cls` order reads "Not filled: the broker expired the
+    market-on-close order at the close".
+  - The TradeBoard and DeskPanel rule lines say "a market order at 3:45 PM
+    ET".
+  - `rule_text` "else at the close" is unchanged.
+- **An expired order is not treated as done (unchanged, now pinned):**
+  - `settle` gives it `dead`: terminal, and not in `paper.DONE`, so a reset
+    leg that died rolls the clock back.
+  - It is journalled.
+  - The board shows it as `cancelled` (need attention). After the nightly,
+    the Execution receipts show "closed without a fill".
+  - Tonight's 10-02 nightly printed "3 dead, 7 filled" for HPE, SWKS and
+    ALAB.
+- **Gate and deploy:** `scripts/deploy.sh` (gate-first) on `621e28f0`.
+  - Unit: 8,661 passed, 93 skipped, 6 xfailed.
+  - Routing: 100 passed.
+  - It built, backed up, migrated, restarted and verified; `deployed
+    621e28f0`; post-deploy `ok (cheap)`.
+  - `~/deploy/anios` HEAD = `data/.deployed-commit` = `621e28f0`. Log:
+    `~/scratch/deploy-moc.log`.
+  - The deploy started at 19:56 ET, after the nightly had finished.
+- **Dry run of Monday 10-05 on the deployed code (real state, read only;
+  sha256 unchanged):** all 13 rows due on 10-05 decide nothing at 15:31,
+  `market` at 15:45 and 15:52, and nothing after 16:00.
+- **UNVERIFIED / risks:**
+  - No fill under the new rule has been seen yet; Monday 10-05 is the
+    first. Check `intraday.log` for "(market, close): sent" at about
+    15:45:30, and the broker for `tif=day` fills.
+  - The order now has one chance (the 15:45 run) where it had two. A missed
+    run settles `missing`, and the next redeploy re-buys the cash.
+  - A fill about 14 minutes before the close is not the close price the
+    execution study measured.
+  - The frontend's static rule lines say 3:45 PM even on an early close.
+    The per-order backend strings say 12:45.
+  - Alpaca staff say live MOC needs the elite smart router, which bears on
+    any live mirror. This is not checked.
+- Housekeeping: the A1 text-surprise gate outputs in `~/scratch/wt-ts` are
+  committed and pushed as `research/text-surprise` `1fce9f01`. The three
+  payload sha256s match the A2b results doc. Both A1 candidates: GATE
+  FAILS -> RECORD.
+
 ## 2026-10-02 — Paper target tracking: planner `/6` deployed (17:22 ET); MOC expiry is the open leak
 
 The operator: the account "doesn't know when to buy and sell" (30% cash,
