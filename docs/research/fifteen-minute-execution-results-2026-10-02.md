@@ -5,7 +5,9 @@ The candidate combines a stock-conditioned price forecast with a forecast of
 the same fifteen-minute waiting risk. It compares the expected benefit of
 waiting with the funded order's risk, replacing the universal 1% timing trigger
 in this research controller. Existing grades, stock selection and v5 target
-plans remain fixed; this does not replace the 9% allocation rule.
+plans remain fixed; this does not change allocation sizing. Those v5 targets
+are equal weights across eligible A/A+ names, capped at 25% per name, not a
+hard-coded 9%. A target near 9% results when eleven names qualify.
 
 Both waiting means and risk now train only on actual fifteen-minute outcomes.
 The original fixed estimator settings, monthly refits, mature prior-only

@@ -2,6 +2,16 @@
 
 ## 2026-10-02 — duration-matched timing COMPLETE; no live promotion
 
+Completion here refers only to the experiment, not the user's live replacement.
+Current production review: deployed marker/source621e28f0, origin/main204689db;
+the new close-window paper rule sends a market order at close minus15 minutes,
+so the frozen observed-auction research baseline is not exact live parity.
+The fixed1% timing gate remains. Earlier claims of a fixed9% allocation were
+incorrect: activev5 targets are min(1/eligible_count,25%); breakout increments
+already vary with band strength and have a separate15% name cap. Retain these
+distinctions in any replacement; do not promote failed forecasts or equate
+same-plan diagnostics with the current cash-bounded/6 execution policy.
+
 Latest bounded continuation is complete on `codex/learned-entry-risk-20261002`.
 Read [results](research/fifteen-minute-execution-results-2026-10-02.md) and JSON.
 Execution source 21ee02e9: native 60/source-image 60 pass. Exactly one new fit and
@@ -22,7 +32,7 @@ At 10 bp full paired median gain differences HGB −6.28 pp/Ridge −9.87 pp, wi
 7/20; recent reused 32-session differences −0.979/−0.678 pp, wins 5/20, 7/20.
 VERIFIED implementation/artifacts/accounting; FAILED adoption evidence.
 Future/broker/midpoint fills/exact live-policy parity remain UNVERIFIED.
-The candidate replaces 1% timing on the branch, not 9% allocations or live policy.
+The candidate replaces 1% timing on the branch, not allocation sizing or live policy.
 No outcomes-selected phase/regime, no new variant or live promotion.
 
 All jobs have exited. DO NOT restart/refit/rescore/refetch, repeat baselines,
@@ -137,7 +147,7 @@ review agent prepares a NEW independent verifier, not a modified old proof.
 
 ## 2026-10-02 — learned entry/exit and sizing: COMPLETE, no live adoption
 
-User's main focus: replace arbitrary 1% timing and equal 9% allocations with
+User's main focus: replace arbitrary 1% timing and improve allocation sizing with
 learned entries/exits/risk sizing. Fixed boosting, Ridge and pinned Chronos
 implementations and funded backtests are complete on research branch
 `codex/learned-entry-risk-20261002`; production main/live /6 is unchanged.
