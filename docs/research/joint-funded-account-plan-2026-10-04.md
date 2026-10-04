@@ -57,3 +57,9 @@ initial cash and zero cash yield. Full, 2018–20, 2021–26 and reused Aug17–
 windows remain the same. Authenticate the existing reviewed original raw inputs
 and saved risk/bridge bytes; never rerun the ongoing rule/SPY/QQQ controls.
 Control pairing and independent artifact proof remain required after completion.
+
+The research override requires the private replay ledger, matching fees and
+exact observed decision clock before reconciliation or cancellation. Fresh
+inherited-position marks from that same ledger supplement the report's marks;
+they grant no grade or trading permission. Environment brokers cannot select
+this unadopted policy. This boundary is not permission to deploy a replacement.

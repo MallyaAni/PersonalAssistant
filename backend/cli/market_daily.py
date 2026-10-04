@@ -778,6 +778,27 @@ def paper_trade(
         )
 
 
+# Limit this unadopted policy to the actual private replay ledger and exact clock.
+def _holding_broker(policy, client, decision_at):
+    if policy is None:
+        return
+    from backend.market.replay_broker import ReplayBroker
+
+    if not isinstance(client, ReplayBroker) or client.cost_bps != policy.cost_bps:
+        raise ValueError(
+            "Joint research requires a private replay ledger with identical fees"
+        )
+    if datetime.fromisoformat(client.clock()["timestamp"]) != decision_at:
+        raise ValueError("Joint private ledger must observe the exact decision clock")
+
+
+# Preserve fresh inherited position marks without granting stock eligibility.
+def _holding_prices(policy, prices, positions):
+    if policy is None:
+        return prices
+    return {**{row.symbol: row.current_price for row in positions}, **prices}
+
+
 # Keep optional research identity separate from the default allocation display.
 def _holding_metadata(policy, event_plan, state, targets):
     from backend.agents.trading.desk import live_policy
@@ -831,6 +852,7 @@ def _paper_trade(
     from backend.market import alpaca_trading
 
     client = (client_factory or alpaca_trading.client_from_env)()
+    _holding_broker(holding_policy, client, decision_at)
     account = client.account()
     held = {p.symbol: p.qty for p in client.positions()}
     panel = report.panel
@@ -876,7 +898,9 @@ def _paper_trade(
         state, more = _reconcile(client, state, store_root, live)
         settled.extend(more)
     account = client.account()
-    held = {p.symbol: p.qty for p in client.positions()}
+    held_positions = client.positions()
+    held = {p.symbol: p.qty for p in held_positions}
+    prices = _holding_prices(holding_policy, prices, held_positions)
     # `finished` carries the names the desk has turned against, and nothing
     # else. The band exit that used to fill it cost 3.0% a year and stays
     # retired; every price-based rule measured worse than holding, because a

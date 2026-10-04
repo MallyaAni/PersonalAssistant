@@ -599,7 +599,7 @@ def run_account(
         publish_progress(on_session, sessions[-1])
     return plain(
         {
-            "policy": POLICY,
+            "policy": holding_policy.version if holding_policy is not None else POLICY,
             "first": str(inputs.dates[first]),
             "last": str(inputs.dates[last]),
             "initial_cash": initial_cash,

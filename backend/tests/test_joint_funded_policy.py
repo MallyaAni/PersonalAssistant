@@ -410,6 +410,7 @@ def test_chronological_runner_uses_joint_policy_on_every_ordinary_night(
         feature_reader=features,
     )
     assert len(result["sessions"]) == 3
+    assert result["policy"] == POLICY
     assert all(
         row["nav"] is not None and row["cash"] >= 0 for row in result["sessions"]
     )
@@ -454,3 +455,76 @@ def test_joint_policy_cannot_override_event_safety(reader, monkeypatch, known):
     else:
         assert not orders
         assert "calendar unavailable" in what
+
+
+# Fresh inherited marks preserve the asset without hiding a known company exit.
+def test_actual_nightly_inherited_mark_allows_only_known_company_exit(reader, tmp_path):
+    current = report(reader, day=len(reader.dates) - 2, grades=(0, 3))
+    session = str(current.panel.dates[-1])
+    now = datetime.combine(
+        current.panel.dates[-1].astype(object),
+        calendar.REGULAR_CLOSE,
+        calendar.NEW_YORK,
+    ) + timedelta(minutes=1)
+    broker = ReplayBroker(
+        10000.0,
+        10,
+        initial_holdings={"AAA": 10, "CHILD": 2},
+        initial_average_prices={"AAA": 90.0, "CHILD": 20.0},
+    )
+    broker.observe(now, {"AAA": 100.0, "BBB": 100.0, "CHILD": 20.0}, False)
+
+    # Reuse a declared ordinary event clock and no synthetic extra stock permission.
+    def features(kind, ignored):
+        return (
+            {"calendar_known": True, "factor": 1.0}
+            if kind == "event"
+            else (set(), {})
+            if kind == "blocked"
+            else {}
+        )
+
+    entry = market_daily.paper_trade(
+        current,
+        tmp_path,
+        session,
+        True,
+        client_factory=lambda: broker,
+        decision_at=now,
+        feature_reader=features,
+        holding_policy=JointFundedPolicy(reader, 10),
+    )
+    assert [(row["symbol"], row["side"], row["qty"]) for row in entry["orders"]] == [
+        ("AAA", "sell", 10)
+    ]
+    assert (
+        entry["joint_funded"]["receipt"]["reason"] == "protected_held_risk_unavailable"
+    )
+    assert entry["joint_funded"]["targets"]["CHILD"] > 0
+
+
+# A future private mark cannot cause cancellation, state writes or order submission.
+def test_joint_nightly_refuses_future_ledger_clock_before_side_effects(
+    reader, tmp_path
+):
+    current = report(reader, day=len(reader.dates) - 2)
+    day = current.panel.dates[-1].astype(object)
+    now = datetime.combine(day, calendar.REGULAR_CLOSE, calendar.NEW_YORK) + timedelta(
+        minutes=1
+    )
+    broker = ReplayBroker(10000.0, 10)
+    broker.observe(now + timedelta(minutes=1), {"AAA": 100.0, "BBB": 100.0}, False)
+    before = broker.ledger()
+    with pytest.raises(ValueError, match="exact decision clock"):
+        market_daily.paper_trade(
+            current,
+            tmp_path,
+            str(day),
+            True,
+            client_factory=lambda: broker,
+            decision_at=now,
+            holding_policy=JointFundedPolicy(reader, 10),
+        )
+    assert broker.ledger() == before
+    assert not broker.attempt_history
+    assert not paper.state_path(tmp_path).exists()
