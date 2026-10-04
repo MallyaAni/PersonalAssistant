@@ -29,7 +29,14 @@ is an actual liquidation receipt. Missing marks remain unavailable. Both
 fixed-study loader and independent verifier refuse this exact known-bad export
 BEFORE I/O/model restoration/account certification. No assertions relaxed.
 
-VERIFIED native194 focused cases15.56s, Ruff/diff clean. Exact original event
+VERIFIED checkpoint522e9ba3524bcb05b7720ed5da488ca7e2ad3727 pushed; native194
+focused cases15.56s, pinned-image402 cases16.93s/no skips, Ruff/diff clean.
+Image5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d;
+log:/home/animallya96/scratch/action-entitlement-repair-20261004-522e9ba3/proof/source-image-tests.log,
+sha a190f5ac955cd6e9695a00f47dc911a5d2eafb601ad67e11864d30a01c0a7394.
+Counts overlap; do not add them. Latest metadata correction names archive
+factors separately from economic share units; its new source check follows.
+Exact original event
 reproduction proves100 WDC incorrectly becomes132.3; corrected synthetic
 allocation preserves100 WDC,33 SNDK and1/3 unpriced cash entitlement. Allocation
 0.75 and prices in this reproduction are SYNTHETIC, not real WDC basis evidence.

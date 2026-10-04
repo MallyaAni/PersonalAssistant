@@ -1,6 +1,6 @@
 """Supplied-array raw-dollar inputs for whole-share live-policy research.
 
-Dated splits reverse the daily archive's declared split adjustment only.
+Dated archive factors recover raw prices independently of economic share grants.
 Dividend-adjusted closes and observed price ratios never set conversion factors.
 Future action facts describe archive units, not historical feature availability.
 """
@@ -461,14 +461,17 @@ def prepare(
             "daily_price_basis": DAILY_BASIS,
             "cube_price_basis": CUBE_BASIS,
             "raw_conversion": (
-                "daily_OHLC_times_product_of_splits_strictly_after_session_"
+                "daily_OHLC_times_product_of_archive_factors_strictly_after_session_"
                 "through_archive_basis"
             ),
+            "archive_factor_action_kinds": ("split", "archive_adjustment"),
+            "distribution_share_basis": "post_split_action_date_shares",
+            "distribution_fractional_cash": "unpriced_until_observed_payment_receipt",
             "dividend_adjustment": "adj_close_not_used_for_raw_prices",
             "dividend_source_basis": dividend_price_basis,
             "dividend_output_basis": "raw_ex_date_share_dollars",
             "dividend_cash_conversion": (
-                "explicit_split_adjusted_amount_times_dated_splits_strictly_after_"
+                "explicit_adjusted_amount_times_dated_archive_factors_strictly_after_"
                 "ex_date_through_archive_basis;_original_source_value_retained"
             ),
             "action_completeness": (

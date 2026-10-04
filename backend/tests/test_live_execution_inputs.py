@@ -159,6 +159,10 @@ def test_archive_adjustment_and_child_distribution_have_distinct_units():
     )
     result = adapter.prepare(**args)
     np.testing.assert_array_equal(result.split_factors[:, 0], [1.323, 1])
+    assert result.provenance["archive_factor_action_kinds"] == (
+        "split",
+        "archive_adjustment",
+    )
     assert result.actions["AAA"][1]["numerator"] == 1
     assert result.actions["AAA"][1]["denominator"] == 3
     assert result.daily_close[0, 0] == pytest.approx(50 * 1.323)
