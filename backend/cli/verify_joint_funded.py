@@ -1,0 +1,489 @@
+"""Independently verify saved funded accounts; never choose or simulate a trade.
+
+Partial progress is an authenticated prefix, not a completed study. Physical
+account arithmetic and receipt consistency do not prove predictive accuracy,
+broker fills, historical publication completeness or adoption eligibility.
+"""
+
+import argparse
+import json
+from datetime import datetime, timedelta
+from pathlib import Path
+from types import SimpleNamespace
+
+import numpy as np
+
+from backend.cli import verify_actual_policy_timing as ledger
+from backend.market import calendar
+
+POLICY = "joint-stock-risk-funded/1-research"
+HORIZON = "next_open_to_following_open_arithmetic_return"
+PROTOCOL = "docs/research/joint-funded-account-plan-2026-10-04.md"
+
+
+# Derive all candidate opportunities from the independently fixed original grid.
+def candidate_grid(dates):
+    return [
+        {**row, "arm": POLICY, "id": f"joint-{row['cost_bps']}-{row['start']}"}
+        for row in ledger.fixed_grid(dates)
+        if row["arm"] == "rule"
+    ]
+
+
+# Authenticate source bytes and actual image evidence without changing receipts.
+def source_proof(spec):
+    manifest = ledger.read_json(spec["manifest"], spec["manifest_sha256"])
+    ledger.require(
+        manifest["git_commit"] == spec["revision"]
+        and len(spec["revision"]) == 40
+        and len(manifest["files"]) >= 2300,
+        "Whole exact producer tree required",
+    )
+    root = Path(spec["source"])
+    for name, expected in manifest["files"].items():
+        relative = Path(name)
+        ledger.require(
+            not relative.is_absolute() and ".." not in relative.parts,
+            "Unsafe source manifest path",
+        )
+        ledger.same(ledger.digest(root / relative), expected, "producer member")
+    runtime = ledger.read_json(spec["inspection"], spec["inspection_sha256"])
+    ledger.require(
+        len(runtime) == 1
+        and runtime[0]["Id"] == spec["container_id"]
+        and runtime[0]["Image"] == spec["image_id"]
+        and runtime[0]["State"]["OOMKilled"] is False,
+        "Actual producer container/image evidence differs",
+    )
+    ledger.require(
+        runtime[0]["HostConfig"]["ReadonlyRootfs"] is True
+        and runtime[0]["HostConfig"]["NetworkMode"] == "none"
+        and any(
+            m["Destination"] == "/app"
+            and m["Source"] == spec["host_source"]
+            and m["RW"] is False
+            for m in runtime[0]["Mounts"]
+        ),
+        "Producer source mount or isolation differs",
+    )
+    return manifest
+
+
+# Read one atomic progress snapshot without hiding omitted or reordered accounts.
+def read_index(study, grid, identity, *, candidate):
+    study = Path(study)
+    path = study / (
+        "report.json" if (study / "report.json").exists() else "progress.json"
+    )
+    if not path.exists():
+        ledger.require(
+            not any((study / "accounts").glob("*.json.gz")),
+            "Saved accounts lack a progress index",
+        )
+        return [], {"status": "pending_first_account", "sha256": None}
+    digest = ledger.digest(path)
+    index = ledger.read_json(path, digest)
+    rows = index["accounts"]
+    complete = path.name == "report.json"
+    ledger.require(
+        identity["adoption_eligible"] is False, "Research limitation missing"
+    )
+    if candidate or complete:
+        ledger.require(index["adoption_eligible"] is False, "Index limitation missing")
+    if complete:
+        expected = (
+            "complete_candidate_unverified_controls"
+            if candidate
+            else "complete_pending_independent_verification"
+        )
+        ledger.require(
+            index["status"] == expected and len(rows) == len(grid),
+            "Incomplete final report",
+        )
+        ledger.same(index["policy"], POLICY if candidate else ledger.POLICY)
+    else:
+        ledger.require(index["status"] == "running", "Unexpected partial status")
+        ledger.same(index["completed"], len(rows), "completed count")
+    if candidate or not complete:
+        ledger.same(index["declared"], len(grid), "declared count")
+    if candidate:
+        ledger.same(index["source"], identity["source"], "candidate source")
+    if complete and not candidate:
+        ledger.same(index["identity_sha256"], ledger.digest(study / "identity.json"))
+    ledger.require(len(rows) <= len(grid), "Extra accounts")
+    for row, spec in zip(rows, grid, strict=False):
+        ledger.same({key: row[key] for key in spec}, spec, "exact declared prefix")
+    return rows, {"status": index["status"], "sha256": digest, "file": path.name}
+
+
+# Check original scenario maturity without generating predictions or outcomes.
+def scenario_receipt(sample, day, dates):
+    if sample is None:
+        return
+    ledger.same(sample["decision_date"], day)
+    chosen = sample.get("decision_indices", [])
+    ledger.require(
+        len(chosen) == len(set(chosen))
+        and all(type(i) is int and i >= 0 and i + 2 < len(dates) for i in chosen),
+        "Invalid historical scenario indices",
+    )
+    cutoff = np.datetime64(sample["label_end_before"])
+    ledger.require(
+        cutoff <= np.datetime64(day) and all(dates[i + 2] < cutoff for i in chosen),
+        "Unpublished scenario outcomes",
+    )
+    month = np.datetime64(day, "M")
+    opening = dates[np.flatnonzero(dates.astype("datetime64[M]") == month)[0]]
+    ledger.same(sample["fit_date"], str(opening), "Monthly scenario publication")
+    ledger.same(
+        sample["label_end_before"],
+        str(min(opening, np.datetime64("2026-08-17"))),
+        "Frozen monthly cutoff",
+    )
+    ledger.same(sample["joint_dates"], len(chosen), "Scenario row count")
+
+
+# Recover current weights from original marks, including valuation-only assets.
+def held_weights(row, index, data):
+    prices = dict(zip(data["names"], data["close"][index], strict=True))
+    if data.get("passive") is not None:
+        prices.update(
+            zip(data["passive"]["names"], data["passive"]["close"][index], strict=True)
+        )
+    return {
+        name: qty * prices[name] / row["nav"]
+        for name, qty in row["holdings"].items()
+        if qty > 0
+    }
+
+
+# Check ordinary receipts against original permissions and observed funded accounts.
+def candidate_receipts(account, data, source):
+    sessions = {row["session"]: row for row in account["sessions"]}
+    checked = events = 0
+    for night in account["nightlies"]:
+        day = night["session"]
+        clock = datetime.combine(
+            datetime.fromisoformat(day).date(),
+            calendar.session_close(datetime.fromisoformat(day).date()),
+            calendar.NEW_YORK,
+        ) + timedelta(minutes=1)
+        ledger.require(
+            ledger.aware(night["at"]) == clock, "Nightly decision clock differs"
+        )
+        if night["status"] != "planned":
+            ledger.require(
+                night["status"] == "nightly_broker_unavailable",
+                "Unknown nightly status",
+            )
+            continue
+        entry = night["entry"]
+        ledger.same(entry["policy"], POLICY, "nightly policy")
+        ledger.same(entry["session"], day)
+        state = entry["joint_funded"]
+        if state.get("status") == "event_priority":
+            ledger.same(state["policy"], POLICY)
+            events += 1
+            continue
+        receipt = state["receipt"]
+        ledger.same(state["policy"], POLICY)
+        ledger.same(state["as_of"], day)
+        ledger.same(state["targets"], receipt["targets"], "persisted targets")
+        ledger.same(receipt["policy"], POLICY)
+        ledger.same(
+            receipt["source_sha256"], source["backend/market/joint_funded_policy.py"]
+        )
+        ledger.same(receipt["protocol_sha256"], source[PROTOCOL])
+        ledger.same(receipt["horizon"], HORIZON)
+        ledger.same(receipt["session"], day)
+        ledger.same(receipt["cost_bps"], account["cost_bps"])
+        ledger.require(
+            receipt["adoption_eligible"] is False, "Candidate adoption flag differs"
+        )
+        row = sessions[day]
+        ledger.same(receipt["observed_cash"], row["cash"], "observed funding")
+        ledger.same(receipt["observed_equity"], row["nav"], "observed wealth")
+        index = int(np.flatnonzero(data["dates"] == np.datetime64(day))[0])
+        grades = {
+            name: int(data["grades"][index, column])
+            for column, name in enumerate(data["names"])
+            if name not in ("SPY", "QQQ")
+            and data["eligible"][index, column]
+            and data["grades"][index, column] >= 0
+            and np.isfinite(data["close"][index, column])
+        }
+        ledger.same(receipt["grades"], grades, "original grade permissions")
+        weights = receipt["current_weights"]
+        exits = sorted(name for name in weights if grades.get(name) == 0)
+        protected = sorted(name for name in weights if name not in grades)
+        ledger.same(receipt["company_exits"], exits)
+        ledger.same(receipt["protected_holdings"], protected)
+        if row["nav"] is not None and row["nav"] > 0:
+            expected = held_weights(row, index, data)
+            if receipt["reason"] != "held_mark_unavailable":
+                ledger.same(weights, expected, "observed held weights")
+                ledger.same(
+                    receipt["reserved_wealth"],
+                    row["nav"] - row["price_nav"],
+                    "unspendable wealth",
+                )
+        targets = receipt["targets"]
+        ledger.require(
+            all(np.isfinite(value) and value >= 0 for value in targets.values()),
+            "Invalid target weights",
+        )
+        for name, target in targets.items():
+            old = weights.get(name, 0)
+            ledger.require(
+                target <= old + 1e-10
+                or (grades.get(name, -1) >= 2 and name not in receipt["buy_blocked"]),
+                "Ordinary add violates permission",
+            )
+            if name in protected:
+                ledger.same(target, old, "Protected holding changed")
+        scenario_receipt(receipt.get("scenario"), day, data["dates"])
+        if receipt["status"] == "available" and receipt.get("optimizer") is not None:
+            optimizer = receipt["optimizer"]
+            ledger.require(
+                optimizer["status"] == "optimized"
+                and optimizer["certificate"]["certified"] is True,
+                "Missing optimizer certificate",
+            )
+        if receipt.get("execution") is not None:
+            ledger.require(
+                receipt["execution"]["projection_is_fill"] is False,
+                "Projection relabelled as fill",
+            )
+        checked += 1
+    return {"ordinary_receipts": checked, "event_priority_receipts": events}
+
+
+# Fold each completed saved account and independently recompute every declared score.
+def verify_rows(study, rows, data, *, candidate=False, source=None):
+    checked = []
+    for row in rows:
+        spec = {
+            key: row[key]
+            for key in (
+                "arm",
+                "cost_bps",
+                "start",
+                "first",
+                "last",
+                "first_session",
+                "id",
+            )
+        }
+        account = ledger.read_account(Path(study), row)
+        counts = ledger.reconcile_account(
+            account, spec, data, account_policy=POLICY if candidate else ledger.POLICY
+        )
+        receipt_counts = candidate_receipts(account, data, source) if candidate else {}
+        scores = {
+            name: ledger.independent_score(account, lower, upper)
+            for name, lower, upper in ledger.WINDOWS
+        }
+        ledger.same(row["scores"], scores, "independent account scores")
+        checked.append(
+            {
+                **spec,
+                "sha256": row["sha256"],
+                "scores": scores,
+                "counts": counts,
+                **receipt_counts,
+            }
+        )
+    return checked
+
+
+# Retain all fixed comparisons with explicit missing accounts or wealth paths.
+def paired_results(candidates, controls, grid):
+    candidate = {(row["cost_bps"], row["start"]): row for row in candidates}
+    control = {(row["cost_bps"], row["start"], row["arm"]): row for row in controls}
+    ledger.require(
+        len(candidate) == len(candidates) and len(control) == len(controls),
+        "Duplicate comparison accounts",
+    )
+    result = []
+    for spec in grid:
+        key = (spec["cost_bps"], spec["start"])
+        for reference in ("rule", "SPY", "QQQ"):
+            for window, _, _ in ledger.WINDOWS:
+                left, right = candidate.get(key), control.get((*key, reference))
+                a, b = (
+                    (left["scores"][window] if left else None),
+                    (right["scores"][window] if right else None),
+                )
+                status = (
+                    "pending_candidate"
+                    if a is None
+                    else "pending_control"
+                    if b is None
+                    else "paired_complete_wealth"
+                    if a["status"] == b["status"] == "complete"
+                    else "paired_incomplete_wealth"
+                )
+                gains = (
+                    a is not None
+                    and b is not None
+                    and a.get("total_gain") is not None
+                    and b.get("total_gain") is not None
+                )
+                if (
+                    reference in ledger.BENCHMARKS
+                    and b is not None
+                    and b.get("benchmark_reference_available") is not True
+                ):
+                    status = "benchmark_entry_unavailable"
+                    gains = False
+                result.append(
+                    {
+                        "cost_bps": key[0],
+                        "start": key[1],
+                        "reference": reference,
+                        "window": window,
+                        "status": status,
+                        "candidate": a,
+                        "control": b,
+                        "funded_gain_difference": a["total_gain"] - b["total_gain"]
+                        if gains
+                        else None,
+                    }
+                )
+    return result
+
+
+# Authenticate frozen sources and inputs around a saved-only account proof.
+def verify(config, output):
+    output = Path(output)
+    ledger.require(
+        not output.exists()
+        and not output.is_symlink()
+        and all(
+            not output.resolve().is_relative_to(Path(config[role]["study"]).resolve())
+            for role in ("candidate", "control")
+        ),
+        "Fresh external independent proof required",
+    )
+    manifests = {role: source_proof(config[role]) for role in ("candidate", "control")}
+    cstudy, study = Path(config["candidate"]["study"]), Path(config["control"]["study"])
+    identity = ledger.read_json(study / "identity.json")
+    admission = ledger.read_json(config["admission"], config["admission_sha256"])
+    inputs = ledger.read_json(cstudy / "inputs.json")
+    identity_hash = ledger.digest(study / "identity.json")
+    input_hash = ledger.digest(cstudy / "inputs.json")
+    ledger.require(
+        inputs["policy"] == POLICY and inputs["adoption_eligible"] is False,
+        "Candidate identity differs",
+    )
+    ledger.require(
+        identity["policy"] == ledger.POLICY
+        and identity["protocol_sha256"] == ledger.PROTOCOL_SHA
+        and identity["adoption_eligible"] is False
+        and identity["models_fitted"] == 0,
+        "Original research identity differs",
+    )
+    ledger.same(manifests["control"]["files"][ledger.PROTOCOL], ledger.PROTOCOL_SHA)
+    ledger.same(inputs["source"], admission["source"])
+    ledger.same(
+        identity["source"],
+        {
+            "git_commit": config["control"]["revision"],
+            "files": len(manifests["control"]["files"]),
+            "manifest_sha256": config["control"]["manifest_sha256"],
+        },
+    )
+    ledger.same(admission["source"]["source_revision"], config["candidate"]["revision"])
+    ledger.same(
+        admission["source"]["manifest_sha256"], config["candidate"]["manifest_sha256"]
+    )
+    ledger.same(
+        admission["source"]["source_files"], len(manifests["candidate"]["files"])
+    )
+    ledger.same(
+        admission["source"]["runner_sha256"],
+        ledger.digest(config["candidate"]["runner"]),
+    )
+    ledger.require(
+        admission["models_fitted"] == admission["models_restored"] == 0
+        and admission["candidate_accounts"] == 60
+        and admission["adoption_eligible"] is False,
+        "Candidate input limitations differ",
+    )
+    ledger.check_originals(admission["original_risk_files"])
+    ledger.same(ledger.digest(study / "identity.json"), identity_hash)
+    ledger.same(ledger.digest(cstudy / "inputs.json"), input_hash)
+    physical = admission["original_physical_files"]
+    ledger.require(
+        len(physical) == 103
+        and all(
+            identity["original_files"].get(name) == value
+            for name, value in physical.items()
+        ),
+        "Candidate/control original inputs differ",
+    )
+    ledger.same(inputs["raw_provenance"], identity["raw_input_provenance"])
+    args = SimpleNamespace(
+        **{name: Path(value) for name, value in config["input_arguments"].items()}
+    )
+    data = ledger.load_original_data(args, identity, reviewed=True)
+    with np.load(args.snapshot, allow_pickle=False) as archive:
+        data["grades"], data["eligible"] = (
+            archive["grades"].copy(),
+            archive["eligible"].copy(),
+        )
+    grid, original = candidate_grid(data["dates"]), ledger.fixed_grid(data["dates"])
+    ledger.same(inputs["accounts"], grid)
+    ledger.same(identity["accounts"], original)
+    candidates, cindex = read_index(cstudy, grid, inputs, candidate=True)
+    controls, index = read_index(study, original, identity, candidate=False)
+    left = verify_rows(
+        cstudy, candidates, data, candidate=True, source=manifests["candidate"]["files"]
+    )
+    right = verify_rows(study, controls, data)
+    for role in ("candidate", "control"):
+        source_proof(config[role])
+    ledger.check_originals(identity["original_files"])
+    ledger.check_originals(admission["original_risk_files"])
+    proof = {
+        "status": "VERIFIED_SAVED_PREFIX_ARITHMETIC",
+        "adoption_eligible": False,
+        "verifier_revision": config["verifier_revision"],
+        "sources": config,
+        "candidate_index": cindex,
+        "control_index": index,
+        "candidate_inputs_sha256": input_hash,
+        "control_identity_sha256": identity_hash,
+        "control_reported_runtime": identity["runtime"],
+        "verified_candidate_accounts": len(left),
+        "verified_control_accounts": len(right),
+        "pending_candidate_accounts": len(grid) - len(left),
+        "pending_control_accounts": len(original) - len(right),
+        "candidate_accounts": left,
+        "control_accounts": right,
+        "paired": paired_results(left, right, grid),
+        "limitations": [
+            "current_vintage_not_exact_live_reconstruction",
+            "conditional_raw_open_not_broker_fills",
+            "unspendable_dividend_claims",
+            "receipt_consistency_not_forecast_accuracy",
+            "partial_prefix_not_adoption_evidence",
+        ],
+    }
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(proof, indent=2, allow_nan=False) + "\n")
+    return proof
+
+
+# Execute saved-artifact checks using a hash-bound evidence configuration.
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--evidence", type=Path, required=True)
+    parser.add_argument("--evidence-sha256", required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args()
+    verify(ledger.read_json(args.evidence, args.evidence_sha256), args.output)
+
+
+if __name__ == "__main__":
+    main()

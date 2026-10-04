@@ -1552,8 +1552,8 @@ def check_valuation(row, data, global_index, observed, cash, held, dividends, re
     return missing_marks, unknown_claim_marks
 
 
-# Reconcile saved receipts to every session's cash, shares, basis and raw marked wealth.
-def reconcile_account(account, spec, data):
+# Fold recorded transactions under the caller's explicit account-policy identity.
+def reconcile_account(account, spec, data, *, account_policy=POLICY):
     require(
         account["adoption_eligible"] is False
         and account["economic_status"] == "conditional_current_vintage_private_proxy",
@@ -1570,7 +1570,7 @@ def reconcile_account(account, spec, data):
     benchmark = spec["arm"] in BENCHMARKS
     require(
         account["policy"]
-        == ("whole-share-buy-and-hold/1-research" if benchmark else POLICY),
+        == ("whole-share-buy-and-hold/1-research" if benchmark else account_policy),
         "Account policy differs",
     )
     if benchmark:
