@@ -1,5 +1,69 @@
 # Next session
 
+## 2026-10-03 — independent-support correction: actual results verified/published
+
+VERIFIED evaluatedde7a0059ceaa4ff0c4d6bccd360061f34db1c64d,2329-file manifest
+5e3ed548b9d9ba3c2b1588c3797b49100be0a483fb2aa8a4266d614708737df5.
+113 native/image implementation checks/no skips;33 native/image saved-verifier
+corruption cases/no skips. Producer7b0fe0b3 and proof931896b0 exited0.
+Actual saved-only proof87ecc525f2fe0642cd5d558fd79ccc05741fd97bd178f7b5f7d6306bbae3f60d;
+report491d90d52414ef6af25d7bf0c60dc4a84c042993fbaa47052d0280a2e7425929.
+One fixed learner,104 numeric heads/141 monthly receipts; firstscore2018-02-01.
+Explicit feature opportunities16,691 versusold13,070,added3,621. SAME common
+March2020 account anchor, no extra account-return history. Six NEW raw/band books
+with21 saved controls, no old model fit/scoring/account replay/repeated audits.
+Proof verifies new dated training hashes,raw numeric trees/predictions, genuine
+pastOOS error radii, certified funded targets,cash/shares/basis/profits/allmetrics.
+Totals9,930plans/29,667intents/26,516fullfills/3,151cashlimited/0missingopen/
+78allocatorunavailable. Daily radius support16,691:11,822available/4,869missing.
+
+Published direct-feature-support-results-2026-10-03.md/.json; exact original
+report/proof envelopes; JSONb65015f344e0b2fbe5e57cddc6bae33349cd9eb513d3d23debe3f6dda05e1674.
+Independent publication review matches all27 full-period rows,24 newwindow rows,
+6rolling rows/counts/units,94stocks+2zeroETF profit components. Raw gain at
+0/10/25bp894.53%/374.36%/336.59%, all improve earlierdirect and beat bothETFs.
+Dailyrule547.68%/447.18%/325.00%. FAILED rule advantage at10bp; band gains
+386.29%/292.49%/251.05% trailrule allcosts. Gross trading raw88.36/65.33/41.16
+andband34.73/26.19/16.79NAV/year; loweractivity alone notbettergain. No favorable
+arm/cost/regime/window selection or band tuning. All outcomes retained.
+
+Current research code replaces fixed entry/profit distance within the candidate
+with learned stock arithmetic means,covariance and funded allocation changes;
+operator grade/cash/cap constraints remain. Reliable FULL live replacement still
+UNVERIFIED: high raw trading,10bp rule gap, current-vintage eligibility and daily
+proxy versus full live/intraday/FOMC execution. Production policy/UI/data/models
+unchanged; model IDs/start times independently unchanged after actualproof.
+No research-only deploy/model gate. Never restart completed producer/proof,
+refit/rescore/replay old studies, mine windows/thresholds or rewrite frozen data.
+Source and all private helpers now root-owned/released; no draft imports.
+
+User's entry/exit improvement objective remains active, not complete. Further
+work must begin at a concrete model/decision weakness with a separately frozen
+bounded protocol, retaining all current controls and real funding. Do not assert
+that this conditional daily rule comparator reconstructs livepolicy. Do not
+mistake a grade-mandated exit for a learned profit-taking decision; audit actual
+held-stock eligibility/exit behavior before extending that component. No further
+market family/configuration/cost/window selection from these outcomes. DiagramNONE.
+
+## 2026-10-03 — independent-support source verified and fixed producer active
+
+Source de7a0059ceaa4ff0c4d6bccd360061f34db1c64d pushed. Immutable2329-file
+manifest5e3ed548b9d9ba3c2b1588c3797b49100be0a483fb2aa8a4266d614708737df5;
+archivee2767aec931977e9475451b2ebf1a0a7efb2b77278a1a04554e07233a64ae114.
+VERIFIED113 native applicable cases and113 exact pinned-image cases/no skips.
+Image693b5ee6 exited0,48.41s, loga053706c0760d826b237ca87d16cb42ac39e363819a1a620c47d282b61228ccb.
+Archive `/home/animallya96/codex-worktrees/direct-feature-support-20261003-de7a0059`.
+Evidence `/home/animallya96/scratch/direct-feature-acceptance-20261003-de7a0059`.
+Producer `feature-direct-funded-de7a0059` started from this exact RO source,
+2CPU8GB/nonetwork/alloriginalcontrolsRO; ONLY fresh private result mount writable.
+Study `/home/animallya96/scratch/direct-feature-results-20261003-de7a0059/study`.
+One fixed head/sixNEW raw+band books/21savedcontrols. Do not restart/refit/import
+drafts or alter mounted source. Economic outcomes/proof still UNVERIFIED.
+evaluation_review owns NEW private saved-only verifier/tests; root source stable.
+After completion freeze actual report, run verifier acceptance then actual saved
+proof without fit/predict/replay/oldmodelaudit; publish every fixed cell, not a
+selected arm/cost/window. Production/models/UI/data unchanged. DiagramNONE.
+
 ## 2026-10-03 — independent causal-support correction implemented; image/run next
 
 Frozen protocolf77b244e BEFORE new fits/outcomes. Root implements
