@@ -23,6 +23,17 @@ DAILY_BASIS = "split_adjusted_daily_store"
 CUBE_BASIS = "raw_session_dollars"
 
 
+# Keep raw prices for inherited assets outside selection, forecasts and execution grids.
+@dataclass(frozen=True)
+class PassiveMarks:
+    dates: np.ndarray
+    tickers: tuple[str, ...]
+    session_open: np.ndarray
+    observation_close: np.ndarray
+    daily_close: np.ndarray
+    provenance: Mapping
+
+
 # Carry unchanged calendar and membership alongside explicit raw execution prices.
 @dataclass(frozen=True)
 class RawExecutionInputs:
@@ -43,6 +54,7 @@ class RawExecutionInputs:
     split_factors: np.ndarray
     actions: Mapping
     provenance: Mapping
+    passive: PassiveMarks | None = None
 
 
 # Reject an unsupported source relationship before deriving any execution dollars.
@@ -119,6 +131,136 @@ def _freeze(value):
         "Finite provenance values required",
     )
     return value
+
+
+# Copy raw passive price arrays and keep their declared coverage and source identity.
+def prepare_passive(
+    dates,
+    selection_tickers,
+    tickers,
+    session_open,
+    observation_close,
+    daily_close,
+    *,
+    first_session,
+    complete_through,
+    provenance,
+    price_basis,
+):
+    dates, names = np.asarray(dates), tuple(tickers)
+    selected = tuple(selection_tickers)
+    _require(
+        dates.ndim == 1
+        and len(dates)
+        and dates.dtype == np.dtype("datetime64[D]")
+        and not np.isnat(dates).any()
+        and np.all(dates[1:] > dates[:-1])
+        and bool(names)
+        and len(names) == len(set(names))
+        and all(isinstance(name, str) and name for name in names)
+        and not set(names) & set(selected),
+        "Ordered passive sessions and distinct nonselection symbols required",
+    )
+    years, sessions = calendar.reviewed_sessions()
+    _require(
+        all(day.astype(object).year in years for day in dates)
+        and np.is_busday(dates, busdaycal=sessions).all()
+        and price_basis == CUBE_BASIS
+        and isinstance(provenance, Mapping)
+        and bool(provenance),
+        "Reviewed passive calendar, raw units and supplied provenance required",
+    )
+    first = _dates_by_name(first_session, names, "passive first session")
+    through = _dates_by_name(complete_through, names, "passive price coverage")
+    shape = (len(dates), len(names))
+    opening = _prices(session_open, shape, "passive opening")
+    observed = _prices(
+        observation_close, (len(dates), 26, len(names)), "passive completed bars"
+    )
+    closing = _prices(daily_close, shape, "passive daily close")
+    for column, name in enumerate(names):
+        _require(first[name] <= through[name], "Ordered passive coverage required")
+        outside = (dates < first[name]) | (dates > through[name])
+        _require(
+            all(
+                not np.isfinite(value[outside]).any()
+                for value in (
+                    opening[:, column],
+                    observed[:, :, column],
+                    closing[:, column],
+                )
+            ),
+            "Passive prices outside declared coverage cannot be carried forward",
+        )
+    for day, date_value in enumerate(dates):
+        count = int(
+            (
+                datetime.combine(
+                    date_value.astype(object),
+                    calendar.session_close(date_value.astype(object)),
+                )
+                - datetime.combine(date_value.astype(object), calendar.REGULAR_OPEN)
+            ).total_seconds()
+            // 900
+        )
+        _require(
+            not np.isfinite(observed[day, count:]).any(),
+            "Passive extended-hours bars cannot occupy regular-session slots",
+        )
+    dates = dates.copy()
+    contract = _freeze(
+        {
+            "price_basis": CUBE_BASIS,
+            "tickers": names,
+            "use": "valuation_only_not_selection_or_execution",
+            "availability": (
+                "declared_opening_proxy_completed_bar_end_after_actual_daily_close"
+            ),
+            "opening_proxy": (
+                "historical_first_regular_trade_not_proven_instantaneous_quote"
+            ),
+            "first_session": {name: str(first[name]) for name in names},
+            "complete_through": {name: str(through[name]) for name in names},
+            "source_authentication": "supplied_provenance_not_provider_verification",
+            "supplied": provenance,
+            "arrays": {
+                "dates": _hash(dates),
+                "session_open": _hash(opening),
+                "observation_close": _hash(observed),
+                "daily_close": _hash(closing),
+            },
+        }
+    )
+    for array in (dates, opening, observed, closing):
+        array.flags.writeable = False
+    return PassiveMarks(dates, names, opening, observed, closing, contract)
+
+
+# Require an unchanged passive contract aligned to the original selection calendar.
+def validate_passive(passive, dates, selection_tickers):
+    if passive is None:
+        return
+    _require(
+        isinstance(passive, PassiveMarks)
+        and np.array_equal(passive.dates, dates)
+        and not set(passive.tickers) & set(selection_tickers),
+        "Aligned passive prices cannot alter the selection universe",
+    )
+    fields = ("dates", "session_open", "observation_close", "daily_close")
+    _require(
+        all(
+            not getattr(passive, field).flags.writeable
+            and _hash(getattr(passive, field)) == passive.provenance["arrays"][field]
+            for field in fields
+        )
+        and passive.provenance["use"] == "valuation_only_not_selection_or_execution"
+        and passive.provenance["price_basis"] == CUBE_BASIS,
+        "Unchanged immutable raw passive source contract required",
+    )
+    _require(
+        tuple(passive.provenance["tickers"]) == passive.tickers,
+        "Unchanged passive security identities required",
+    )
 
 
 # Reject repeated JSON keys instead of silently accepting overwritten evidence.
@@ -452,7 +594,7 @@ def _validate_exchange_dependencies(normalized):
 
 
 # Separate archive price factors from dated economic share and cash entitlements.
-def _actions(actions, names, dates, basis, through, dividend_basis):
+def _actions(actions, names, dates, basis, through, dividend_basis, passive_names=()):
     _require(
         isinstance(actions, Mapping) and set(actions) == set(names),
         "Explicit action history required for every symbol",
@@ -500,7 +642,7 @@ def _actions(actions, names, dates, basis, through, dividend_basis):
             seen.add(key)
             previous = day
             if kind in ("stock_distribution", "security_exchange"):
-                rows.append(_economic_action(row, names, day, name))
+                rows.append(_economic_action(row, (*names, *passive_names), day, name))
                 continue
             value = row.get("value")
             _require(
@@ -655,6 +797,7 @@ def prepare(
     daily_price_basis=DAILY_BASIS,
     cube_price_basis=CUBE_BASIS,
     dividend_price_basis=None,
+    passive=None,
 ):
     _require(
         daily_price_basis == DAILY_BASIS and cube_price_basis == CUBE_BASIS,
@@ -682,6 +825,7 @@ def prepare(
         and np.is_busday(dates, busdaycal=sessions).all(),
         "Reviewed exchange session dates required",
     )
+    validate_passive(passive, dates, names)
     shape = (len(dates), len(names))
     grades, eligible = np.asarray(grades), np.asarray(eligible)
     _require(
@@ -700,7 +844,13 @@ def prepare(
     basis = _dates_by_name(basis_as_of, names, "split-adjustment basis")
     through = _dates_by_name(complete_through, names, "action completeness")
     factors, action_rows = _actions(
-        actions, names, dates, basis, through, dividend_price_basis
+        actions,
+        names,
+        dates,
+        basis,
+        through,
+        dividend_price_basis,
+        passive.tickers if passive is not None else (),
     )
     with np.errstate(over="ignore", under="ignore", invalid="ignore"):
         raw_daily = [value * factors for value in daily]
@@ -761,6 +911,11 @@ def prepare(
             },
             "grade_sha256": _hash(grades),
             "eligible_sha256": _hash(eligible),
+            **(
+                {"passive_provenance": passive.provenance}
+                if passive is not None
+                else {}
+            ),
         }
     )
     for array in (
@@ -792,4 +947,5 @@ def prepare(
         factors,
         action_rows,
         contract,
+        passive,
     )

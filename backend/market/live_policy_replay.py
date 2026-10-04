@@ -20,7 +20,7 @@ import numpy as np
 from backend.agents.trading.desk import intraday_orders, paper
 from backend.cli import market_daily
 from backend.market import alpaca_trading, calendar, entry_timing
-from backend.market.live_execution_inputs import RawExecutionInputs
+from backend.market.live_execution_inputs import RawExecutionInputs, validate_passive
 from backend.market.replay_broker import ReplayBroker
 
 POLICY = "actual-policy-timing/1-research"
@@ -47,6 +47,36 @@ def marks(names, prices):
         name: float(price) if np.isfinite(price) and price > 0 else None
         for name, price in zip(names, prices, strict=True)
     }
+
+
+# Expose inherited assets only at their current session's actual observation clock.
+def passive_marks(inputs, day, now):
+    passive = inputs.passive
+    if passive is None:
+        return {}
+    if now.tzinfo is None or now.utcoffset() is None:
+        raise ValueError("Aware passive observation clock required")
+    local = now.astimezone(calendar.NEW_YORK)
+    date = inputs.dates[day].astype(object)
+    if local.date() != date:
+        raise ValueError("Passive marks require the same observed session")
+    opening = instant(inputs.dates[day], calendar.REGULAR_OPEN)
+    closing = instant(inputs.dates[day], calendar.session_close(date))
+    prices = np.full(len(passive.tickers), np.nan)
+    if now == opening:
+        prices = passive.session_open[day]
+    elif now > closing:
+        prices = passive.daily_close[day]
+    elif opening < now <= closing:
+        seconds = (now - opening).total_seconds()
+        if seconds % 900 == 0:
+            prices = passive.observation_close[day, int(seconds // 900) - 1]
+    return marks(passive.tickers, prices)
+
+
+# Merge valuation-only marks without adding inherited symbols to any execution input.
+def account_marks(inputs, day, now, prices):
+    return {**marks(inputs.tickers, prices), **passive_marks(inputs, day, now)}
 
 
 # Create the actual New York observation clock without inferring a provider receipt.
@@ -160,6 +190,17 @@ def valuation(broker, inputs, day):
             }
         )
     closing_marks = marks(inputs.tickers, inputs.daily_close[day])
+    observed_at = ledger["observed_at"]
+    if observed_at is not None:
+        now = datetime.fromisoformat(observed_at)
+        closing = instant(
+            inputs.dates[day], calendar.session_close(inputs.dates[day].astype(object))
+        )
+        closing_marks.update(
+            passive_marks(inputs, day, now)
+            if now > closing
+            else dict.fromkeys(inputs.passive.tickers if inputs.passive else ())
+        )
     missing = [
         name
         for name, quantity in ledger["holdings"].items()
@@ -175,8 +216,7 @@ def valuation(broker, inputs, day):
             "holdings": ledger["holdings"],
         }
     price_nav = ledger["cash"] + sum(
-        quantity * closing_marks[name]
-        for name, quantity in ledger["holdings"].items()
+        quantity * closing_marks[name] for name, quantity in ledger["holdings"].items()
     )
     receivable = sum(row["amount"] for row in ledger["dividends"] if not row["paid"])
     return plain(
@@ -211,6 +251,7 @@ def auction_prices(cubes, names, day):
 def validate(panel, inputs, root, first, last, reader_builder, provider):
     if not isinstance(inputs, RawExecutionInputs):
         raise ValueError("Reviewed raw execution input contract required")
+    validate_passive(inputs.passive, inputs.dates, inputs.tickers)
     if (
         tuple(panel.tickers) != inputs.tickers
         or not np.array_equal(panel.dates, inputs.dates)
@@ -275,7 +316,7 @@ def nightly(
         inputs.dates[day], calendar.session_close(inputs.dates[day].astype(object))
     )
     now += timedelta(minutes=1)
-    broker.observe(now, marks(inputs.tickers, inputs.daily_close[day]), False)
+    broker.observe(now, account_marks(inputs, day, now, inputs.daily_close[day]), False)
     report = build_report(panel, inputs, inputs.grades, inputs.eligible, day)
     stream = io.StringIO()
     try:
@@ -363,7 +404,9 @@ def run_account(
         date = inputs.dates[day].astype(object)
         opening = instant(inputs.dates[day], calendar.REGULAR_OPEN)
         closing = instant(inputs.dates[day], calendar.session_close(date))
-        broker.observe(opening, marks(inputs.tickers, inputs.session_open[day]), True)
+        broker.observe(
+            opening, account_marks(inputs, day, opening, inputs.session_open[day]), True
+        )
         corporate_actions(broker, inputs, day, opening)
         broker.flush(
             opening, marks(inputs.tickers, inputs.session_open[day]), phase="open"
@@ -373,7 +416,9 @@ def run_account(
             now = opening + timedelta(minutes=15 * (clock + 1))
             live = snapshot(inputs, day, clock, now)
             broker.observe(
-                now, marks(inputs.tickers, inputs.observation_close[day, clock]), True
+                now,
+                account_marks(inputs, day, now, inputs.observation_close[day, clock]),
+                True,
             )
             # Match the live balancer's first-crossing latch before deciding requests.
             entry_timing.update(root, live, now)
@@ -478,6 +523,11 @@ def run_account(
             "nightlies": logs,
             "economic_status": "conditional_current_vintage_private_proxy",
             "adoption_eligible": False,
+            **(
+                {"passive_valuation_source": inputs.passive.provenance}
+                if inputs.passive is not None
+                else {}
+            ),
         }
     )
 
@@ -508,7 +558,9 @@ def run_benchmark(
     }
     for day in range(first, last + 1):
         opening = instant(inputs.dates[day], calendar.REGULAR_OPEN)
-        broker.observe(opening, marks(inputs.tickers, inputs.session_open[day]), True)
+        broker.observe(
+            opening, account_marks(inputs, day, opening, inputs.session_open[day]), True
+        )
         corporate_actions(broker, inputs, day, opening)
         if day == first:
             price = inputs.session_open[day, column]
@@ -529,7 +581,9 @@ def run_benchmark(
         closing = instant(
             inputs.dates[day], calendar.session_close(inputs.dates[day].astype(object))
         )
-        broker.observe(closing, marks(inputs.tickers, inputs.daily_close[day]), False)
+        broker.observe(
+            closing, account_marks(inputs, day, closing, inputs.daily_close[day]), False
+        )
         sessions.append(
             {
                 "session": str(inputs.dates[day]),
@@ -552,5 +606,10 @@ def run_benchmark(
             "broker": broker.ledger(),
             "economic_status": "conditional_current_vintage_private_proxy",
             "adoption_eligible": False,
+            **(
+                {"passive_valuation_source": inputs.passive.provenance}
+                if inputs.passive is not None
+                else {}
+            ),
         }
     )

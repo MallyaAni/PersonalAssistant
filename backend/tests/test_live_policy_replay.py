@@ -8,10 +8,12 @@ import pytest
 
 from backend.agents.trading.desk import paper
 from backend.market import calendar, entry_timing
-from backend.market.live_execution_inputs import prepare
+from backend.market.live_execution_inputs import CUBE_BASIS, prepare, prepare_passive
 from backend.market.live_policy_replay import (
+    account_marks,
     corporate_actions,
     instant,
+    passive_marks,
     run_account,
     run_benchmark,
     valuation,
@@ -80,6 +82,178 @@ def fixture(dates=("2026-09-01", "2026-09-02", "2026-09-03"), missing_fill=False
         provenance={"origin": "synthetic_actual_path"},
     )
     return panel, raw, cubes
+
+
+# Supply inherited assets without expanding selection or the original execution cubes.
+def passive_fixture(raw):
+    return prepare_passive(
+        raw.dates,
+        raw.tickers,
+        ("CHILD",),
+        np.full((len(raw.dates), 1), 20.0),
+        np.full((len(raw.dates), 26, 1), 21.0),
+        np.full((len(raw.dates), 1), 22.0),
+        first_session=str(raw.dates[0]),
+        complete_through=str(raw.dates[-1]),
+        provenance={"source": "synthetic_raw_child_prices"},
+        price_basis=CUBE_BASIS,
+    )
+
+
+# Only the completed current slot or a separately declared opening proxy is observable.
+@pytest.mark.parametrize(
+    ("minute", "expected"),
+    [(0, 20), (1, None), (15, 21), (16, None), (390, 21), (391, 22)],
+)
+def test_passive_marks_follow_actual_bar_and_daily_close_clock(minute, expected):
+    _, raw, _ = fixture()
+    raw = replace(raw, passive=passive_fixture(raw))
+    opening = instant(raw.dates[1], calendar.REGULAR_OPEN)
+    assert passive_marks(raw, 1, opening + timedelta(minutes=minute)) == {
+        "CHILD": expected
+    }
+
+
+# Later bar values and final daily prices cannot change an earlier observed mark.
+def test_passive_mark_is_future_prefix_invariant_and_keeps_missing_slot():
+    _, raw, _ = fixture()
+    original = passive_fixture(raw)
+    bars = original.observation_close.copy()
+    closing = original.daily_close.copy()
+    bars[:, 1:] = 999
+    closing[:] = 888
+    changed = prepare_passive(
+        raw.dates,
+        raw.tickers,
+        original.tickers,
+        original.session_open,
+        bars,
+        closing,
+        first_session=str(raw.dates[0]),
+        complete_through=str(raw.dates[-1]),
+        provenance={"source": "synthetic"},
+        price_basis=CUBE_BASIS,
+    )
+    now = instant(raw.dates[1], calendar.REGULAR_OPEN) + timedelta(minutes=15)
+    assert passive_marks(replace(raw, passive=original), 1, now) == {"CHILD": 21}
+    assert passive_marks(replace(raw, passive=changed), 1, now) == {"CHILD": 21}
+    bars[1, 0, 0] = np.nan
+    missing = prepare_passive(
+        raw.dates,
+        raw.tickers,
+        original.tickers,
+        original.session_open,
+        bars,
+        closing,
+        first_session=str(raw.dates[0]),
+        complete_through=str(raw.dates[-1]),
+        provenance={"source": "synthetic"},
+        price_basis=CUBE_BASIS,
+    )
+    assert passive_marks(replace(raw, passive=missing), 1, now) == {"CHILD": None}
+
+
+# A close-only inherited asset cannot use its final price in a morning account NAV.
+def test_passive_daily_valuation_waits_for_close_and_preserves_held_security():
+    _, raw, _ = fixture()
+    raw = replace(raw, passive=passive_fixture(raw))
+    broker = ReplayBroker(
+        1000,
+        0,
+        initial_holdings={"AAA": 10, "CHILD": 2},
+        initial_average_prices={"AAA": 60, "CHILD": 10},
+    )
+    opening = instant(raw.dates[1], calendar.REGULAR_OPEN)
+    broker.observe(opening, account_marks(raw, 1, opening, raw.session_open[1]), True)
+    assert broker.account().equity == 2040
+    assert valuation(broker, raw, 1)["nav"] is None
+    now = instant(raw.dates[1], calendar.REGULAR_CLOSE) + timedelta(minutes=1)
+    broker.observe(now, account_marks(raw, 1, now, raw.daily_close[1]), False)
+    assert valuation(broker, raw, 1)["nav"] == 2044
+    assert broker.ledger()["holdings"] == {"AAA": 10, "CHILD": 2}
+
+
+# Value inherited shares through the real planner without making them buy candidates.
+def test_actual_policy_journey_retains_inherited_security_without_ordering_it(tmp_path):
+    panel, raw, cubes = fixture()
+    actions = dict(raw.actions)
+    actions["AAA"] = (
+        {
+            "date": str(raw.dates[2]),
+            "kind": "stock_distribution",
+            "child": "CHILD",
+            "numerator": 1,
+            "denominator": 1,
+            "parent_basis_fraction": 0.75,
+        },
+    )
+    raw = replace(raw, actions=actions, passive=passive_fixture(raw))
+    result = run_account(panel, raw, cubes, tmp_path / "passive", 1, 2, 10)
+    assert result["broker"]["holdings"]["CHILD"] == 250
+    assert all(row["symbol"] != "CHILD" for row in result["attempts"])
+    assert all(row["symbol"] != "CHILD" for row in result["intents"])
+    assert result["sessions"][-1]["nav"] == pytest.approx(105725.25)
+    assert result["sessions"][-1]["nightly"]["status"] == "planned"
+    assert "CHILD" not in result["paper_state"]["rebalance_targets"]
+    assert all(row["symbol"] != "CHILD" for row in result["fills"])
+    assert result["passive_valuation_source"]["tickers"] == ["CHILD"]
+    assert (
+        result["passive_valuation_source"]["arrays"]["daily_close"]
+        == raw.passive.provenance["arrays"]["daily_close"]
+    )
+
+
+# Premarket, another session and timezone-free clocks cannot expose passive prices.
+def test_passive_marks_refuse_ambiguous_session_clocks():
+    _, raw, _ = fixture()
+    raw = replace(raw, passive=passive_fixture(raw))
+    opening = instant(raw.dates[1], calendar.REGULAR_OPEN)
+    assert passive_marks(raw, 1, opening - timedelta(minutes=1)) == {"CHILD": None}
+    with pytest.raises(ValueError, match="same observed session"):
+        passive_marks(raw, 1, opening + timedelta(days=1))
+    with pytest.raises(ValueError, match="Aware passive"):
+        passive_marks(raw, 1, opening.replace(tzinfo=None))
+
+
+# The child daily close becomes available after the exchange's shortened session.
+def test_passive_marks_follow_actual_early_close_instead_of_sixteen_hours():
+    _, raw, _ = fixture(dates=("2026-11-24", "2026-11-25", "2026-11-27"))
+    bars = np.full((3, 26, 1), 21.0)
+    bars[2, 14:] = np.nan
+    passive = prepare_passive(
+        raw.dates,
+        raw.tickers,
+        ("CHILD",),
+        np.full((3, 1), 20.0),
+        bars,
+        np.full((3, 1), 22.0),
+        first_session=str(raw.dates[0]),
+        complete_through=str(raw.dates[-1]),
+        provenance={"source": "synthetic"},
+        price_basis=CUBE_BASIS,
+    )
+    raw = replace(raw, passive=passive)
+    closing = instant(raw.dates[2], calendar.session_close(raw.dates[2].astype(object)))
+    assert passive_marks(raw, 2, closing) == {"CHILD": 21}
+    assert passive_marks(raw, 2, closing + timedelta(minutes=1)) == {"CHILD": 22}
+
+
+# Preserve unknown fractional cash even when the inherited shares have known prices.
+def test_passive_prices_never_hide_unpriced_fractional_cash():
+    _, raw, _ = fixture()
+    raw = replace(raw, passive=passive_fixture(raw))
+    broker = ReplayBroker(
+        1000, 0, initial_holdings={"AAA": 100}, initial_average_prices={"AAA": 60}
+    )
+    opening = instant(raw.dates[1], calendar.REGULAR_OPEN)
+    broker.observe(opening, account_marks(raw, 1, opening, raw.session_open[1]), True)
+    broker.apply_stock_distribution(
+        "AAA", "CHILD", 1, 3, opening, parent_basis_fraction=0.75
+    )
+    now = instant(raw.dates[1], calendar.REGULAR_CLOSE) + timedelta(minutes=1)
+    broker.observe(now, account_marks(raw, 1, now, raw.daily_close[1]), False)
+    assert valuation(broker, raw, 1)["status"] == "unknown_distribution_cash_in_lieu"
+    assert valuation(broker, raw, 1)["nav"] is None
 
 
 # Apply a separate share grant exactly once while the archive factor stays price-only.

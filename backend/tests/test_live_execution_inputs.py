@@ -49,6 +49,138 @@ def inputs():
     )
 
 
+# Supply passive prices separately from the original stock-selection universe.
+def passive_fixture(args):
+    dates = args["panel"].dates
+    return adapter.prepare_passive(
+        dates,
+        args["panel"].tickers,
+        ("CHILD",),
+        np.full((len(dates), 1), 20.0),
+        np.full((len(dates), 26, 1), 21.0),
+        np.full((len(dates), 1), 22.0),
+        first_session=str(dates[0]),
+        complete_through=str(dates[-1]),
+        provenance={"source": "synthetic_raw_passive_history"},
+        price_basis=adapter.CUBE_BASIS,
+    )
+
+
+# Inherited assets never become new candidates or alter original execution inputs.
+def test_passive_prices_preserve_selection_grades_and_execution_arrays():
+    args = inputs()
+    original = adapter.prepare(**args)
+    args["passive"] = passive_fixture(args)
+    result = adapter.prepare(**args)
+    assert result.tickers == original.tickers
+    assert "CHILD" not in result.tickers
+    for field in (
+        "grades",
+        "eligible",
+        "daily_close",
+        "observation_close",
+        "next_open",
+    ):
+        np.testing.assert_array_equal(getattr(result, field), getattr(original, field))
+    assert result.passive.tickers == ("CHILD",)
+    assert not result.passive.daily_close.flags.writeable
+    assert (
+        result.passive.provenance["use"] == "valuation_only_not_selection_or_execution"
+    )
+    assert "passive_provenance" not in original.provenance
+
+
+# Only an explicitly supplied passive history can cover an inherited child security.
+def test_distribution_child_can_be_covered_without_joining_selection_universe():
+    args = inputs()
+    args["actions"]["AAA"] = [
+        {
+            "date": "2026-09-15",
+            "kind": "stock_distribution",
+            "child": "CHILD",
+            "numerator": 1,
+            "denominator": 3,
+            "parent_basis_fraction": 0.75,
+            "basis_available_at": "2026-09-14T16:01:00-04:00",
+            "fractional_policy": "cash_in_lieu_unknown",
+            "share_basis": "post_split_action_date_shares",
+            "source_receipt": {"source": "synthetic_declared_entitlement"},
+        }
+    ]
+    with pytest.raises(ValueError, match="Covered child"):
+        adapter.prepare(**args)
+    args["passive"] = passive_fixture(args)
+    result = adapter.prepare(**args)
+    assert result.actions["AAA"][0]["child"] == "CHILD"
+    assert result.tickers == ("AAA", "SPY")
+    assert set(result.actions) == {"AAA", "SPY"}
+
+
+# Refuse passive price reuse across sessions, selection names, altered bytes and units.
+@pytest.mark.parametrize(
+    "defect", ["overlap", "identity", "dates", "mutable", "bytes", "units"]
+)
+def test_passive_contract_rejects_unaligned_or_changed_inputs(defect):
+    args = inputs()
+    passive = passive_fixture(args)
+    if defect == "overlap":
+        passive = replace(passive, tickers=("AAA",))
+    elif defect == "identity":
+        passive = replace(passive, tickers=("ANOTHER_CHILD",))
+    elif defect == "dates":
+        passive = replace(passive, dates=passive.dates + np.timedelta64(1, "D"))
+    elif defect in ("mutable", "bytes"):
+        closing = passive.daily_close.copy()
+        if defect == "bytes":
+            closing[0, 0] = 999
+            closing.flags.writeable = False
+        passive = replace(passive, daily_close=closing)
+    else:
+        passive = replace(
+            passive, provenance={**passive.provenance, "price_basis": "adjusted"}
+        )
+    args["passive"] = passive
+    with pytest.raises(ValueError, match="passive"):
+        adapter.prepare(**args)
+
+
+# Coverage boundaries preserve delisting and missing marks without forward filling.
+def test_passive_factory_rejects_prices_past_declared_terminal_session():
+    args = inputs()
+    with pytest.raises(ValueError, match="outside declared coverage"):
+        adapter.prepare_passive(
+            args["panel"].dates,
+            args["panel"].tickers,
+            ("CHILD",),
+            np.full((2, 1), 20.0),
+            np.full((2, 26, 1), 21.0),
+            np.full((2, 1), 22.0),
+            first_session="2026-09-14",
+            complete_through="2026-09-14",
+            provenance={"source": "synthetic"},
+            price_basis=adapter.CUBE_BASIS,
+        )
+
+
+# Reject extended-hours data in slots after the exchange's actual early close.
+def test_passive_factory_uses_reviewed_early_close_grid():
+    dates = np.array(["2026-11-27"], dtype="datetime64[D]")
+    bars = np.full((1, 26, 1), np.nan)
+    bars[:, :14] = 20
+    kwargs = dict(
+        first_session="2026-11-27",
+        complete_through="2026-11-27",
+        provenance={"source": "synthetic"},
+        price_basis=adapter.CUBE_BASIS,
+    )
+    adapter.prepare_passive(dates, ("AAA",), ("CHILD",), [[19]], bars, [[21]], **kwargs)
+    bars[0, 14, 0] = 20
+    with pytest.raises(ValueError, match="extended-hours"):
+        adapter.prepare_passive(
+            dates, ("AAA",), ("CHILD",), [[19]], bars, [[21]], **kwargs
+        )
+
+
 # Supply original archive bytes separately from reviewed economic declarations.
 def reviewed_action_fixture():
     original = {

@@ -1,5 +1,41 @@
 # Next session
 
+## 2026-10-04 — causal valuation-only inherited-asset input path
+
+Goal ACTIVE; no strategy promotion, main merge or deployment. New PassiveMarks
+contract keeps child prices outside the original selection/grade/forecast/
+execution arrays. Dates, names, units, declared first/terminal coverage,
+immutable array hashes and actual early-close slots are checked. Distribution
+children can be covered by this separate valuation universe without becoming
+new targets. Default inputs and provenance retain the original no-passive path.
+
+The actual private replay merges child marks only into broker observations:
+declared opening proxy, current completed regular bar, daily final close only
+after the actual exchange close. No missing-bar, premarket, future-day or
+post-delisting price fallback. The opening aggregate is explicitly a historical
+proxy, not proven instantaneous quote/publication. Execution snapshots and
+fill grids remain the original names. Child prices never enter the nightly
+planner's candidate price map; inherited holdings persist without fabricated
+liquidation. Unknown fractional cash still prevents complete NAV. Each replay
+with passive data records the actual passive input provenance.
+
+VERIFIED native208 relevant cases PASS, including unchanged external acceptance
+cases; Ruff/diff clean. Synthetic real-nightly/sender/broker journey retained
+250 child shares, valued them at supplied prices and created zero child orders,
+targets or fills. Completed-bar prefix invariance, actual early close, unchanged
+selection arrays, missing marks, coverage/identity/tamper refusal and unchanged
+default benchmark funding were tested. One new test initially asserted an
+unprovided nightly receipt key; corrected to the actual persisted rebalance
+targets and fill receipts, with economic/state assertions unchanged.
+Exact committed-image and actual captured-data assembly are PENDING.
+
+NEXT: pin this source and assemble separate passive arrays from the69 already
+audited response pages once. Preserve every gap and VMW terminal missingness;
+do not refetch, restore/fit models or score an economic account. Resolve the
+five remaining economic action/terminal processing boundaries before the fixed
+funded comparison. Both original invalid-export rejection gates remain intact.
+Diagram impact: NONE — existing private supplied-price/accounting boundaries.
+
 ## 2026-10-04 — passive source audited; uncovered holding valuation reproduced
 
 Goal ACTIVE. Named-exchange source80b72522 and its verified handoffd793c809
