@@ -11,6 +11,54 @@ from backend.market.store import MarketStore
 from backend.tests.test_trading_simulate import _report
 
 
+# Real historical calendar decisions release ordinary planning outside event windows.
+def test_real_historical_prefix_has_known_calendar_and_ordinary_dispatch():
+    from backend.agents.trading.desk import nightly_plan, paper
+
+    report = _report(np.full((6, 6), 100.0))
+    report.panel.dates[:] = np.asarray(
+        [
+            "2018-03-08",
+            "2018-03-09",
+            "2018-03-12",
+            "2018-03-13",
+            "2018-03-14",
+            "2018-03-15",
+        ],
+        dtype="datetime64[D]",
+    )
+    policy = event_risk.decision(report.panel)
+    assert policy["calendar_known"] is True
+    assert policy["decision_date"] == "2018-03-21"
+    assert policy["sessions_to_decision"] == 4
+    assert policy["factor"] == 1.0
+    assert nightly_plan.event_plan_required(paper.PaperState(), policy) is False
+
+
+# The same reviewed historical calendar still activates real pre-meeting weakness cuts.
+def test_real_historical_weakness_window_preserves_event_priority():
+    from backend.agents.trading.desk import nightly_plan, paper
+
+    values = np.tile(np.arange(100.0, 94.0, -1)[:, None], (1, 6))
+    report = _report(values)
+    report.panel.dates[:] = np.asarray(
+        [
+            "2018-03-12",
+            "2018-03-13",
+            "2018-03-14",
+            "2018-03-15",
+            "2018-03-16",
+            "2018-03-19",
+        ],
+        dtype="datetime64[D]",
+    )
+    policy = event_risk.decision(report.panel)
+    assert policy["calendar_known"] is True
+    assert policy["sessions_to_decision"] == 2
+    assert policy["factor"] == event_risk.REDUCED
+    assert nightly_plan.event_plan_required(paper.PaperState(), policy) is True
+
+
 # Protect the chosen pre-meeting days plus the meeting; release at the next open.
 def test_event_window_is_a_close_decision_for_the_next_session():
     report = _report(np.full((20, 6), 100.0))
