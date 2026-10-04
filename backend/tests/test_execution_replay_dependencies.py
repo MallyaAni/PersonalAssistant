@@ -1,7 +1,9 @@
 """Exercise explicit replay dependencies through actual planner and dispatcher."""
 
 from datetime import UTC, datetime
+from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 from backend.agents.trading.desk import intraday_orders, live_policy, paper
@@ -50,6 +52,42 @@ def test_nightly_invalid_explicit_clock_touches_nothing(tmp_path, instant):
         market_daily.paper_trade(
             _report(), tmp_path, "2026-09-03", True,
             client_factory=forbidden_broker, decision_at=instant,
+        )
+    assert not paper.state_path(tmp_path).exists()
+
+
+# Keep historical holidays, unreviewed years and pre-close private clocks rejected.
+@pytest.mark.parametrize(
+    "instant",
+    [
+        datetime(2018, 7, 4, 20, 1, tzinfo=UTC),
+        datetime(2018, 11, 23, 17, 59, tzinfo=UTC),
+        datetime(1900, 1, 31, 21, 1, tzinfo=UTC),
+    ],
+)
+def test_private_historical_calendar_still_rejects_invalid_clocks(tmp_path, instant):
+    session = instant.astimezone(intraday_orders.NEW_YORK).date().isoformat()
+    report = SimpleNamespace(
+        panel=SimpleNamespace(dates=np.array([session], "datetime64[D]"))
+    )
+    with pytest.raises(ValueError, match="Nightly decision"):
+        market_daily.paper_trade(
+            report, tmp_path, session, True,
+            client_factory=forbidden_broker, decision_at=instant,
+        )
+    assert not paper.state_path(tmp_path).exists()
+
+
+# Leave the environment broker's published-calendar boundary unchanged.
+def test_historical_clock_without_private_broker_is_not_enabled(tmp_path):
+    session = "2018-01-31"
+    report = SimpleNamespace(
+        panel=SimpleNamespace(dates=np.array([session], "datetime64[D]"))
+    )
+    with pytest.raises(ValueError, match="Nightly decision"):
+        market_daily.paper_trade(
+            report, tmp_path, session, True,
+            decision_at=datetime(2018, 1, 31, 21, 1, tzinfo=UTC),
         )
     assert not paper.state_path(tmp_path).exists()
 

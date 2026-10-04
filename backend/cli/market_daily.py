@@ -706,6 +706,7 @@ def _idle_cash_share(orders, prices, cash, equity) -> float | None:
 # the account. Explicit broker and decision-clock dependencies let a private
 # replay exercise this same lifecycle without contacting the real account;
 # its optional feature reader reuses account-independent prefix calculations.
+# Explicit private broker clocks use the complete reviewed historical calendar.
 def paper_trade(
     report,
     store_root: Path,
@@ -731,6 +732,14 @@ def paper_trade(
             raise ValueError("Explicit nightly decision requires an aware instant")
         local = decision_at.astimezone(calendar.NEW_YORK)
         schedule = calendar.exchange_status(local)
+        if client_factory is not None:
+            years, sessions = calendar.reviewed_sessions()
+            schedule = {
+                "calendar_known": local.year in years,
+                "is_session": bool(
+                    np.is_busday(np.datetime64(local.date()), busdaycal=sessions)
+                ),
+            }
         if (
             not schedule["calendar_known"]
             or not schedule["is_session"]

@@ -75,6 +75,19 @@ def fixture(dates=("2026-09-01", "2026-09-02", "2026-09-03"), missing_fill=False
     return panel, raw, cubes
 
 
+# Exercise the original study's first night through the actual historical planner.
+@pytest.mark.parametrize("days", [
+    ("2018-01-31", "2018-02-01", "2018-02-02"),
+    ("2018-11-21", "2018-11-23", "2018-11-26"),
+])
+def test_actual_policy_first_2018_night_uses_reviewed_calendar(tmp_path, days):
+    panel, raw, cubes = fixture(days)
+    result = run_account(panel, raw, cubes, tmp_path / "historical", 1, 2, 10)
+    assert [row["session"] for row in result["sessions"]] == list(days)
+    assert all(row["nightly"]["status"] == "planned" for row in result["sessions"])
+    assert paper.state_path(tmp_path / "historical").is_file()
+
+
 # Match whole-share ETF funding, actual fees and retained uninvested cash.
 @pytest.mark.parametrize("symbol", ["SPY", "QQQ"])
 def test_benchmark_matches_raw_whole_share_capital_and_cost(tmp_path, symbol):
