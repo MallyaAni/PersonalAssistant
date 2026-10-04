@@ -1,5 +1,64 @@
 # Next session
 
+## 2026-10-04 — joint distribution sizing/holding optimizer
+
+Goal ACTIVE; previous turn PROGRESS: independent original-input proof plus
+verified637-test sourceb5894a74 and fixed300-account study started. Starting
+branch codex/learned-entry-risk-20261002, HEADf6a6a59e, clean. Revalidated the
+exact study container/Pid2516653 running/OOMfalse; first account advanced from
+260sessions/2019-02-12 to840sessions/2021-06-02 at12:15:40 New York. No completed
+full account or economic result at those observations; no restart or mounted
+source edit. This turn adds a separate sizing/holding mechanism, not a new arm
+or changed allocation in that fixed timing study.
+
+Atomic objective: jointly size additions, retention, trims and exits by empirical
+expected log net wealth using simultaneous stock return scenarios. Previous
+quadratic sizing lost gain; execution CDF is not a holding-profit forecast.
+Acceptance: identical win probabilities with different losses yield different
+sizes, joint dependence affects exposure, positive/negative held-B utility can
+retain/exit without additions, fees can preserve exact ownership, no prospective
+sale funding, missing held risk prevents additions, valid total-loss scenarios
+retained, invalid units/probabilities refused, analytical growth solution and
+stock permutation agreement. Caller OOS/authentication still required.
+
+Registered docs/research/joint-distribution-allocation-plan-2026-10-04.md before
+new fits/economic outcomes; no new fit or historical scoring in this step.
+Extended existing adaptive_growth_policy with allocate_distribution rather
+than a duplicate allocator package. Reuses its grade/holding constraints and
+global convex certificate. The objective is weighted log(1 + joint portfolio
+return - both-side fees), not mean/variance truncation or probability times size.
+Auxiliary trade weights preserve original cash-only purchase funding and caps.
+Exact ownership/zero/bound kinks are recertified, not rounded. Missing held
+cross-risk retains conservative targets and mandatory exits. A one-session
+holding horizon cannot accept the unrelated one-decision execution forecast.
+Returns down to-1 retain genuine bankruptcy loss; impossible portfolio wealth
+is refused, never clipped. Probabilities are estimates, not confidence proof.
+
+VERIFIED native63tests2.03s/no skips including13new distribution cases.
+VERIFIED exact code70f429bc9df1e8d7672329075319537ddccc8cbb in pinned
+image5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d:
+114tests3.58s/no skips across optimizer, daily allocation, error-band, direct
+arithmetic and growth-objective paths. Ruff/format/diff clean. Whole2372-file
+mounted source unchanged after tests. Existing allocator source is an exact
+unchanged byte prefix (b15ce3e2238c31e137fda16dc991c4b011617e43a5b48168d417f0e95cfb837c),
+so its default functions and behavior were not rewritten. One added repository
+file is the required protocol; code/tests extend existing files.
+Evidence:/home/animallya96/scratch/joint-allocation-20261004-70f429bc/proof/tests.log.
+Manifestb9d6ad91133827ddace8bab94bd0940de738e69cff6d59557a106afa4b36d107;
+test logc7d5c4417b88ebbea69c81f57caea928d79399135cdee06ede49574313a2293a.
+Diagram impact NONE: pure optional research allocator, no production flow.
+
+UNVERIFIED: genuinely calibrated joint holding scenarios, live account/parity
+wiring, funded profit advantage and deployment. This is an implemented real
+optimizer with synthetic mathematical proof, not an installed live model or
+an economically proven policy. No holding fit, replay, baseline rescore,
+production write, order, service change or promotion occurred. Next implement
+and verify strictly mature OOS joint scenario construction from authenticated
+holding forecasts, keeping stock/date dependence and missing support explicit;
+then fixed funded timing×sizing/holding comparisons. Keep checking original
+reviewed-economic-study-b5894a74 by exact process and compact receipts; do not
+wait passively or change its original cohort/source/cost/model contract.
+
 ## 2026-10-04 — reviewed source gate and fixed economic study started
 
 Goal ACTIVE. Previous turn NO PROGRESS: next-step explanation only. This turn
