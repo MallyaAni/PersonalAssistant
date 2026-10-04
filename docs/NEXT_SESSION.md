@@ -1,5 +1,35 @@
 # Next session
 
+## 2026-10-03 — independent causal-support correction implemented; image/run next
+
+Frozen protocolf77b244e BEFORE new fits/outcomes. Root implements
+direct_feature_arithmetic.py and its six-book CLI, preserving old direct/default
+APIs. Explicit feature-valid/currentgrade/eligibility/completed-close mask,
+independent504/756/date-balanced matureD+2 monthlyHGB; old predictions never
+gate support. Same thirteen features/configuration/freeze/commonMarch2020anchor.
+New named raw/band lineage, SAME empirical error-band formula; no disguised old
+manifest.21 saved controls authenticated, six NEW accounts only, no old replay.
+Shared old error-statistics loop factored without changing old-path arithmetic.
+
+VERIFIED native acceptance:72 combined old/new source cases before final new-only
+guard;39 after guard(18 new source/21 independent private),54 old cases exercise
+unchanged source, plus20 unchanged old private cases=113 applicable current-tree
+cases, no skips. Ruff/diff clean. Private21SHA0bd955adad979ae3fab141937d05dd5022de54db2ff7e8fcfddee7e5f7718fb9.
+Root reproduced forgedwarmup failure unchanged, then one targeted guard rederives
+mature admitted dated rows/counts/labels/weights/endpoints and available fit
+status before accepting residuals; unchangedcase passes. OldforecastallNaN new
+actuallearner, strictpurge/freeze/futureprefix/earlyclose/missinglabel scoring and
+six actual funded syntheticbuy/coveredexit/cash/fee paths pass. No actual market
+fit or new economic outcome yet. Current new-source image acceptance UNVERIFIED.
+
+Next pin immutable source and run113 pinned-image cases; never modify mounted
+source. Then exactlyONE fixed learner/six accounts,2CPU8GB/nonetwork/privateoutput,
+reusing21 saved controls. evaluation_review ownsONLYNEW private saved-only
+verifier/tests; await release and run acceptance before actualproof. Preserve
+all fixed raw/band/cost/window/stock cells regardless of outcome. No tuning or
+live promotion from a conditional daily component. Services/data/UI untouched.
+DiagramNONE. Reliable full live replacement remains UNVERIFIED.
+
 ## 2026-10-03 — error-band implementation and actual saved proof complete
 
 VERIFIED evaluated0e563ccb:129 native/image checks,12 exact default comparisons

@@ -312,6 +312,22 @@ def calibrate(dates, symbols, forecasts, direct_manifest, bridge):
         "runtime": {"numpy": np.__version__},
         "calculation_precision": "float64",
     }
+    return freeze_rows(
+        dates,
+        names,
+        forecasts,
+        bridge.labels,
+        bridge.label_end_dates,
+        bridge.score_mask,
+        as_of,
+        identity,
+    )
+
+
+# Freeze supplied validated OOS residual rows using the registered unchanged formula.
+def freeze_rows(
+    dates, names, forecasts, labels, endpoints, score_mask, as_of, identity
+):
     manifest = {
         "identity": identity,
         "identity_sha256": base._json_hash(identity),
@@ -324,10 +340,7 @@ def calibrate(dates, symbols, forecasts, direct_manifest, bridge):
         first = int(scored[0])
         cutoff = min(dates[first], reference.FREEZE)
         days = np.arange(max(0, first - reference.MAX_DAYS), first, dtype=np.int64)
-        days = days[
-            ~np.isnat(bridge.label_end_dates[days])
-            & (bridge.label_end_dates[days] < cutoff)
-        ]
+        days = days[~np.isnat(endpoints[days]) & (endpoints[days] < cutoff)]
         receipt = {
             "month": str(month),
             "fit_date": str(dates[first]),
@@ -345,27 +358,27 @@ def calibrate(dates, symbols, forecasts, direct_manifest, bridge):
         )
         for stock, name in enumerate(names):
             chosen = days[
-                bridge.score_mask[days, stock]
+                score_mask[days, stock]
                 & np.isfinite(forecasts[days, stock])
-                & np.isfinite(bridge.labels[days, stock])
+                & np.isfinite(labels[days, stock])
             ]
             with np.errstate(over="ignore", invalid="ignore"):
-                errors = bridge.labels[chosen, stock] - forecasts[chosen, stock]
+                errors = labels[chosen, stock] - forecasts[chosen, stock]
             clusters = months[chosen]
             row = {
                 "symbol": name,
                 "observations": len(chosen),
                 "clusters": len(np.unique(clusters)),
-                "maximum_endpoint": str(bridge.label_end_dates[chosen].max())
+                "maximum_endpoint": str(endpoints[chosen].max())
                 if len(chosen)
                 else None,
                 "cluster_months": [str(value) for value in np.unique(clusters)],
                 "row_sha256": {
                     "decision_indices": reference._hash(chosen),
                     "forecasts": reference._hash(forecasts[chosen, stock]),
-                    "labels": reference._hash(bridge.labels[chosen, stock]),
+                    "labels": reference._hash(labels[chosen, stock]),
                     "residuals": reference._hash(errors),
-                    "endpoints": reference._hash(bridge.label_end_dates[chosen]),
+                    "endpoints": reference._hash(endpoints[chosen]),
                     "clusters": reference._hash(clusters),
                 },
             }
@@ -376,7 +389,7 @@ def calibrate(dates, symbols, forecasts, direct_manifest, bridge):
                 row["status"] = "fit_clock_unavailable"
             elif row["status"] == "available":
                 radii[scored, stock] = np.where(
-                    bridge.score_mask[scored, stock], row["radius"], np.nan
+                    score_mask[scored, stock], row["radius"], np.nan
                 )
             receipt["stocks"].append(row)
         receipt["radii_sha256"] = reference._hash(radii[scored])
@@ -385,8 +398,8 @@ def calibrate(dates, symbols, forecasts, direct_manifest, bridge):
     manifest["first_score_date"] = str(dates[finite[0]]) if len(finite) else None
     manifest["radii_sha256"] = reference._hash(radii)
     manifest["counts"] = {
-        "opportunities": int(bridge.score_mask.sum()),
+        "opportunities": int(score_mask.sum()),
         "available": int(np.isfinite(radii).sum()),
-        "unavailable": int((bridge.score_mask & ~np.isfinite(radii)).sum()),
+        "unavailable": int((score_mask & ~np.isfinite(radii)).sum()),
     }
     return ErrorBands(radii, manifest)
