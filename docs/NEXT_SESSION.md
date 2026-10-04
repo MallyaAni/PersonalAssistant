@@ -1,5 +1,71 @@
 # Next session
 
+## 2026-10-04 — reviewed original/passive input connection, no scores
+
+Goal ACTIVE. Previous goal turn NO PROGRESS: status and next-step explanation
+only. This turn PROGRESS: implemented and exercised the missing original-data
+connection. Starting branch codex/learned-entry-risk-20261002, HEAD2109d35e,
+clean; origin/main204689db remains preserved. Atomic objective: prepare the
+fixed96-name execution grid from original bytes plus reviewed economic grants
+and inherited passive marks without restoring a model, scoring an account or
+silently promoting the rejected action export. Acceptance: original dates,
+grades/membership and archive factors unchanged; separate KD/VMW valuation;
+explicit terminal claims and unknown payments; fixed300-account declaration;
+source/file checks before/after; no account/model side effects; legacy incorrect
+export score refusal intact. No strategy parameter, window or model changed.
+
+FAILED first boundary: independent loader acceptance raised AttributeError;
+no reviewed execution loader existed. Refactored the shared original-array
+loader and added --prepare-reviewed-inputs-only. The economic score path still
+refuses the known incorrect export. The input-only path requires exact review,
+passive-array and receipt hashes, rederives immutable passive contracts, checks
+cross-artifact dates, units, typed hashes and original selection binding. All
+source files retain their expected original hashes rather than accepting a
+changed hash after loading. Initial synthetic acceptance fixture needed its
+required off-session clock and the existing stock_distribution/archive_adjustment
+schema; those fixture corrections did not relax production rules. Final external
+acceptance remained unchanged throughout pinned-source verification.
+
+VERIFIED native242 tests12.96s/no skips; Ruff/format/diff clean. VERIFIED exact
+code1b94994e297235c9ce9b76c062986e0652ef3d68,2371-file manifest, pinned image
+5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d:
+604 tests19.75s/no skips including earlier unchanged external accounting,
+planner, study and share-exchange cases plus the new independent loader cases.
+Actual immutable-source CLI prepared the original2953-session/96-name snapshot,
+all original cubes/absences,1753 dividends and26 original price factors; economic
+records include18 share splits,1 consolidation,3 distributions,2 exchanges and
+the separate inherited VMW default cash claim. KD/VMW remain valuation-only.
+All300 original accounts are declared, zero created; zero predictors restored,
+fits or policy returns scored. Output readiness remains pending_declaration_receipts,
+not an economic performance result. No new downloads or old study resimulation.
+
+VERIFIED independent saved-only proof imports no AniOS producer, broker, calendar
+or model and resimulates nothing. It authenticates the whole source,103 original
+file entries, original grades/eligibility/OHLC typed hashes, all unchanged factors
+and converted dividends, separate passive array bytes/coverage, VMW terminal
+coverage and fixed account denominators. Original preparation bytes unchanged.
+Evidence:/home/animallya96/scratch/reviewed-inputs-20261004-1b94994e/proof.
+Manifest19a58b908d052453151ab47a8d67ed41f573f1fad1973cc47b3540c1792badc4;
+test loge6541ccc97f8a354de1332f15b8aced4bbee59b630feb71af5654e67cce9f2df;
+preparation4fce7c023d1ebbf8f92760d66f90bb860762d90592eab781e3d9a73c937f9aaf;
+independent proofe604f1cf6378f72f1bc050144f3d5544c8515a08288db654d4b8d9c5c3f414a8.
+Exact commands and helpers retained in codex-reviewed-inputs-execution-receipt-20261004.json.
+Counts overlap earlier sets. Live checkout621e28f0 remains unchanged. Diagram
+impact NONE: the existing private input boundary now reads its saved passive
+artifact; no new production dependency, service, UI, prompt or decision policy.
+
+NEXT: extend the independent funded-account verifier beyond old split/dividend
+arithmetic to reviewed grants, nullable basis, observed action clocks, passive
+marks and unpaid claims. Keep unchanged incorrect-export acceptance intact;
+do not run economic accounts before that verifier and exact source acceptance.
+Then enable the reviewed execution path and run the fixed same-sizing timing
+comparison once. Timing×confidence sizing and remaining-horizon profit exits
+still require their own funded proof before the requested live replacement.
+Manual primary URL review, current-vintage history and missing payment receipts
+remain explicit limitations; this input proof is not full-policy advantage or
+exact historical live reconstruction. Do not repeat completed fits/captures or
+the invalid stopped4ff85fbf study.
+
 ## 2026-10-04 — declared default share exchange and missing fractional cash
 
 Goal ACTIVE; previous turn PROGRESS, exact terminal-merger source3a756d20
