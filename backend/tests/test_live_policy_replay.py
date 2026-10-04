@@ -1,6 +1,7 @@
 """Chronological actual-policy journeys, not a copied account or planning engine."""
 
-from datetime import datetime
+from dataclasses import replace
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 import pytest
@@ -8,7 +9,7 @@ import pytest
 from backend.agents.trading.desk import paper
 from backend.market import calendar, entry_timing
 from backend.market.live_execution_inputs import prepare
-from backend.market.live_policy_replay import run_account
+from backend.market.live_policy_replay import run_account, run_benchmark
 from backend.market.live_probability_timing import build_reader
 from backend.market.panel import Panel
 from backend.market.sip_cube import SessionCube
@@ -72,6 +73,180 @@ def fixture(dates=("2026-09-01", "2026-09-02", "2026-09-03"), missing_fill=False
         provenance={"origin": "synthetic_actual_path"},
     )
     return panel, raw, cubes
+
+
+# Match whole-share ETF funding, actual fees and retained uninvested cash.
+@pytest.mark.parametrize("symbol", ["SPY", "QQQ"])
+def test_benchmark_matches_raw_whole_share_capital_and_cost(tmp_path, symbol):
+    panel, raw, _ = fixture()
+    result = run_benchmark(panel, raw, tmp_path / symbol, 1, 2, 10, symbol)
+    assert result["entry"]["status"] == "filled_opening_proxy"
+    assert result["fills"][0]["filled_qty"] == 999
+    assert result["fills"][0]["fee"] == pytest.approx(99.9)
+    assert result["broker"]["cash"] == pytest.approx(0.1)
+    assert result["broker"]["holdings"] == {symbol: 999}
+    assert result["sessions"][-1]["nav"] == pytest.approx(99900.1)
+    assert len(result["attempts"]) == len(result["fills"]) == 1
+
+
+# Preserve a dated share entitlement rather than realizing a false split loss.
+def test_benchmark_retains_split_entitlement_and_basis(tmp_path):
+    panel, raw, _ = fixture()
+    close, opening = raw.daily_close.copy(), raw.session_open.copy()
+    close[2, 1] = opening[2, 1] = 50.0
+    actions = dict(raw.actions)
+    actions["SPY"] = ({"date": "2026-09-03", "kind": "split", "value": 2.0},)
+    changed = replace(raw, daily_close=close, session_open=opening, actions=actions)
+    result = run_benchmark(panel, changed, tmp_path / "split", 1, 2, 10, "SPY")
+    assert result["broker"]["holdings"] == {"SPY": 1998.0}
+    assert result["broker"]["average_prices"] == {"SPY": 50.0}
+    assert result["sessions"][-1]["nav"] == pytest.approx(99900.1)
+    assert len(result["fills"]) == 1
+
+
+# Keep unknown-payment ETF dividends as wealth without financing another purchase.
+def test_benchmark_dividend_is_receivable_not_reinvested_cash(tmp_path):
+    panel, raw, _ = fixture()
+    actions = dict(raw.actions)
+    actions["SPY"] = ({"date": "2026-09-03", "kind": "dividend", "value": 0.5},)
+    result = run_benchmark(
+        panel, replace(raw, actions=actions), tmp_path / "dividend", 1, 2, 10, "SPY"
+    )
+    assert result["sessions"][-1]["dividend_receivable"] == 499.5
+    assert result["sessions"][-1]["nav"] == pytest.approx(100399.6)
+    assert result["broker"]["cash"] == pytest.approx(0.1)
+    assert result["broker"]["holdings"] == {"SPY": 999}
+    assert len(result["fills"]) == 1
+
+
+# Preserve unavailable benchmark entry and held marks without synthetic prices.
+def test_benchmark_missing_entry_and_missing_held_mark_are_explicit(tmp_path):
+    panel, raw, _ = fixture()
+    opening = raw.session_open.copy()
+    opening[1, 1] = np.nan
+    missing = run_benchmark(
+        panel,
+        replace(raw, session_open=opening),
+        tmp_path / "entry_gap",
+        1,
+        2,
+        10,
+        "SPY",
+    )
+    assert missing["entry"]["status"] == "opening_price_unavailable"
+    assert not missing["attempts"]
+    assert not missing["fills"]
+    assert missing["broker"]["cash"] == 100000
+    close = raw.daily_close.copy()
+    close[2, 1] = np.nan
+    held = run_benchmark(
+        panel, replace(raw, daily_close=close), tmp_path / "held_gap", 1, 2, 10, "SPY"
+    )
+    assert held["sessions"][-1]["nav"] is None
+    assert held["sessions"][-1]["status"] == "missing_held_close"
+    assert held["broker"]["holdings"] == {"SPY": 999}
+
+
+# Mark a carried benchmark at the actual early close without inventing intraday bars.
+def test_benchmark_uses_actual_early_close_calendar(tmp_path):
+    panel, raw, _ = fixture(dates=("2026-11-24", "2026-11-25", "2026-11-27"))
+    result = run_benchmark(panel, raw, tmp_path / "early", 1, 2, 0, "SPY")
+    observed = datetime.fromisoformat(result["broker"]["observed_at"])
+    assert observed.astimezone(calendar.NEW_YORK).strftime("%H:%M") == "13:00"
+    assert result["sessions"][-1]["nav"] == 100000
+
+
+# Refuse an undeclared stock control before allocating a private account folder.
+def test_benchmark_rejects_non_benchmark_symbol(tmp_path):
+    panel, raw, _ = fixture()
+    with pytest.raises(ValueError, match="SPY or QQQ"):
+        run_benchmark(panel, raw, tmp_path / "invalid", 1, 2, 0, "AAA")
+    assert not (tmp_path / "invalid").exists()
+
+
+# Verify private state reuse changes neither complete observations nor saved outcomes.
+def test_unchanged_state_reuse_matches_original_reader_paths(tmp_path, monkeypatch):
+    panel, raw, cubes = fixture()
+    started = datetime.now(UTC) - timedelta(seconds=1)
+    original_reader = paper.load_state
+    counts = []
+    reads = 0
+
+    # Count actual state reads while preserving the original parser and contents.
+    def counted(root):
+        nonlocal reads
+        reads += 1
+        return original_reader(root)
+
+    monkeypatch.setattr(paper, "load_state", counted)
+    old = run_account(
+        panel, raw, cubes, tmp_path / "old", 1, 2, 10, reuse_unchanged_state=False
+    )
+    counts.append(reads)
+    reads = 0
+    new = run_account(panel, raw, cubes, tmp_path / "new", 1, 2, 10)
+    counts.append(reads)
+    ended = datetime.now(UTC)
+    for result in (old, new):
+        for row in result["paper_state"]["history"]:
+            assert started <= datetime.fromisoformat(row.pop("written")) <= ended
+    for name in (
+        "sessions",
+        "intents",
+        "observations",
+        "fills",
+        "attempts",
+        "broker",
+        "paper_state",
+    ):
+        assert old[name] == new[name]
+    assert counts[1] < counts[0] / 2
+
+
+# Catch atomic replacements before reusing the next observation's pending rows.
+def test_state_cache_invalidates_on_actual_atomic_save(tmp_path):
+    from backend.market.live_policy_replay import read_private_state
+
+    root = tmp_path / "state"
+    paper.save_state(root, paper.PaperState(deferred_buys={"AAA": 3}))
+    before, revision = read_private_state(root, None, None)
+    assert before.deferred_buys == {"AAA": 3}
+    paper.save_state(root, paper.PaperState(deferred_buys={"AAA": 7}))
+    after, next_revision = read_private_state(root, before, revision)
+    assert after.deferred_buys == {"AAA": 7}
+    assert before.deferred_buys == {"AAA": 3}
+    assert next_revision != revision
+
+
+# Keep callback mutation and input errors outside the account's persistent state.
+def test_session_progress_is_detached_and_invalid_callback_is_rejected(tmp_path):
+    panel, raw, cubes = fixture()
+    seen = []
+
+    # Mutate the callback's copy to prove it cannot rewrite the account result.
+    def progress(row):
+        seen.append(row["session"])
+        row["nav"] = 999999999
+        row["holdings"]["invented"] = 3
+
+    result = run_account(
+        panel, raw, cubes, tmp_path / "progress", 1, 2, 10, on_session=progress
+    )
+    assert seen == ["2026-09-01", "2026-09-02", "2026-09-03"]
+    assert result["sessions"][-1]["nav"] == 100225.25
+    assert "invented" not in result["broker"]["holdings"]
+    with pytest.raises(ValueError, match="callable progress"):
+        run_account(
+            panel,
+            raw,
+            cubes,
+            tmp_path / "invalid_progress",
+            1,
+            2,
+            10,
+            on_session="invalid",
+        )
+    assert not (tmp_path / "invalid_progress").exists()
 
 
 # Preserve explicit unavailable forecasts rather than introducing a fixed gate.

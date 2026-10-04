@@ -10,6 +10,7 @@ from __future__ import annotations
 import contextlib
 import io
 import math
+from collections.abc import Mapping
 from dataclasses import asdict
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -25,9 +26,9 @@ from backend.market.replay_broker import ReplayBroker
 POLICY = "actual-policy-timing/1-research"
 
 
-# Preserve missing monetary values explicitly without serializing NaN as JSON evidence.
+# Copy immutable metadata and preserve missing money without serializing NaN.
 def plain(value):
-    if isinstance(value, dict):
+    if isinstance(value, Mapping):
         return {str(key): plain(item) for key, item in value.items()}
     if isinstance(value, (tuple, list)):
         return [plain(item) for item in value]
@@ -183,6 +184,32 @@ def validate(panel, inputs, root, first, last, reader_builder, provider):
         raise ValueError("Both explicit forecast provider and reader builder required")
 
 
+# Identify atomic state replacements in the exclusively owned private account folder.
+def state_revision(root):
+    path = paper.state_path(root)
+    if not path.exists():
+        return None
+    value = path.stat()
+    return value.st_ino, value.st_size, value.st_mtime_ns, value.st_ctime_ns
+
+
+# Reuse only unchanged private state and reject a concurrent replacement during reading.
+def read_private_state(root, cached, revision, *, reuse=True):
+    current = state_revision(root)
+    if reuse and cached is not None and current == revision:
+        return cached, current
+    value = paper.load_state(root)
+    if state_revision(root) != current:
+        raise ValueError("Private paper state changed during reading")
+    return value, current
+
+
+# Send detached completed-session evidence to an optional private progress writer.
+def publish_progress(callback, row):
+    if callback is not None:
+        callback(plain(row))
+
+
 # Execute real nightly planning and retain unavailable paths without invented plans.
 def nightly(
     panel, inputs, root, broker, day, build_report, intents, logs, feature_reader=None
@@ -221,7 +248,7 @@ def nightly(
     return {"status": status["status"], "excluded": plain(report.excluded)}
 
 
-# Carry one private account through real planning, timing, requests and settlement.
+# Carry a private account through real execution and detached progress receipts.
 def run_account(
     panel,
     inputs,
@@ -236,6 +263,8 @@ def run_account(
     provider=None,
     report_builder=None,
     feature_reader=None,
+    reuse_unchanged_state=True,
+    on_session=None,
 ):
     root = Path(root)
     validate(panel, inputs, root, first, last, reader_builder, provider)
@@ -245,6 +274,10 @@ def run_account(
         raise ValueError("Explicit nightly report builder required")
     if feature_reader is not None and not callable(feature_reader):
         raise ValueError("Explicit callable feature reader required")
+    if not isinstance(reuse_unchanged_state, bool) or (
+        on_session is not None and not callable(on_session)
+    ):
+        raise ValueError("Explicit state-reuse boolean and callable progress required")
     broker = ReplayBroker(initial_cash, cost_bps)
     root.mkdir(parents=True, exist_ok=False)
     intents, observations, sessions, logs, forecasts = {}, [], [], [], []
@@ -267,6 +300,8 @@ def run_account(
             "nightly": base,
         }
     )
+    publish_progress(on_session, sessions[-1])
+    cached_state, revision = None, None
     for day in range(first, last + 1):
         date = inputs.dates[day].astype(object)
         opening = instant(inputs.dates[day], calendar.REGULAR_OPEN)
@@ -285,7 +320,10 @@ def run_account(
             )
             # Match the live balancer's first-crossing latch before deciding requests.
             entry_timing.update(root, live, now)
-            before = paper.load_state(root)
+            before, revision = read_private_state(
+                root, cached_state, revision, reuse=reuse_unchanged_state
+            )
+            cached_state = before
             due = intraday_orders.due(before, date)
             reader = None
             if (
@@ -300,15 +338,22 @@ def run_account(
                     date,
                     now,
                     live,
-                    due,
+                    plain(due),
                     broker,
                     cost_bps,
                     forecasts,
                 )
-            lines = intraday_orders.send_due(
-                root, live, now, lambda: broker, timing_reader=reader
+            lines = (
+                intraday_orders.send_due(
+                    root, live, now, lambda: broker, timing_reader=reader
+                )
+                if due or not reuse_unchanged_state
+                else []
             )
-            after = paper.load_state(root)
+            after, revision = read_private_state(
+                root, cached_state, revision, reuse=reuse_unchanged_state
+            )
+            cached_state = after
             current = {row["client_order_id"]: row for row in after.pending}
             for row in due:
                 symbol = row["symbol"]
@@ -357,6 +402,7 @@ def run_account(
                 "nightly": result,
             }
         )
+        publish_progress(on_session, sessions[-1])
     return plain(
         {
             "policy": POLICY,
@@ -373,6 +419,80 @@ def run_account(
             "broker": broker.ledger(),
             "paper_state": asdict(paper.load_state(root)),
             "nightlies": logs,
+            "economic_status": "conditional_current_vintage_private_proxy",
+            "adoption_eligible": False,
+        }
+    )
+
+
+# Carry a matched whole-share ETF control without reinvesting unspendable dividends.
+def run_benchmark(
+    panel, inputs, root, first, last, cost_bps, symbol, *, initial_cash=100000.0
+):
+    root = Path(root)
+    validate(panel, inputs, root, first, last, None, None)
+    if symbol not in ("SPY", "QQQ") or symbol not in inputs.tickers:
+        raise ValueError("Declared SPY or QQQ control required")
+    broker = ReplayBroker(initial_cash, cost_bps)
+    root.mkdir(parents=True, exist_ok=False)
+    sessions = [
+        {
+            "session": str(inputs.dates[first - 1]),
+            "initial": True,
+            **valuation(broker, inputs, first - 1),
+        }
+    ]
+    column = inputs.tickers.index(symbol)
+    entry = {
+        "status": "opening_price_unavailable",
+        "symbol": symbol,
+        "session": str(inputs.dates[first]),
+        "qty": None,
+    }
+    for day in range(first, last + 1):
+        opening = instant(inputs.dates[day], calendar.REGULAR_OPEN)
+        broker.observe(opening, marks(inputs.tickers, inputs.session_open[day]), True)
+        corporate_actions(broker, inputs, day, opening)
+        if day == first:
+            price = inputs.session_open[day, column]
+            if np.isfinite(price) and price > 0:
+                quantity = math.floor(initial_cash / (price * (1 + cost_bps / 1e4)))
+                entry.update(qty=quantity, price=float(price))
+                if quantity:
+                    broker.submit_market_on_open(
+                        symbol,
+                        quantity,
+                        "buy",
+                        f"benchmark-{symbol}-{inputs.dates[day]}",
+                    )
+                    broker.flush(opening, {symbol: float(price)})
+                    entry["status"] = "filled_opening_proxy"
+                else:
+                    entry["status"] = "insufficient_cash_for_one_share"
+        closing = instant(
+            inputs.dates[day], calendar.session_close(inputs.dates[day].astype(object))
+        )
+        broker.observe(closing, marks(inputs.tickers, inputs.daily_close[day]), False)
+        sessions.append(
+            {
+                "session": str(inputs.dates[day]),
+                "initial": False,
+                **valuation(broker, inputs, day),
+            }
+        )
+    return plain(
+        {
+            "policy": "whole-share-buy-and-hold/1-research",
+            "symbol": symbol,
+            "first": str(inputs.dates[first]),
+            "last": str(inputs.dates[last]),
+            "cost_bps": cost_bps,
+            "initial_cash": initial_cash,
+            "entry": entry,
+            "sessions": sessions,
+            "fills": broker.fill_history,
+            "attempts": broker.attempt_history,
+            "broker": broker.ledger(),
             "economic_status": "conditional_current_vintage_private_proxy",
             "adoption_eligible": False,
         }
