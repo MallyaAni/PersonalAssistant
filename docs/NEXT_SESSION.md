@@ -1,5 +1,78 @@
 # Next session
 
+## 2026-10-04 — independent observed-entitlement/account arithmetic
+
+Goal ACTIVE; previous turn PROGRESS: input preflight1b94994e verified604tests
+and103 original files, pushed through18368f1b. Starting branch
+codex/learned-entry-risk-20261002, HEAD18368f1b, clean. Fetched origin/main204689db,
+preserving merge history and concurrent main. Atomic objective: independently
+reconcile the actual saved planner/broker accounts across reviewed grants,
+off-session effective clocks, inherited marks, nullable basis and unpaid cash,
+without importing a producer, creating a trade, restoring/fitting a predictor
+or inventing payment. Acceptance: unchanged legacy split/dividend/score-gate
+cases; seven actual synthetic saved account paths; forged receipt/NAV rejection;
+cash, quantities, acquisition bases and unknown marks reconciled independently.
+
+FAILED first boundary: unchanged external distribution case raised KeyError:
+the old verifier treated every non-split event as a dividend. Added independent
+conversion/distribution/terminal arithmetic with rational rounding, named
+security identities, separate fractional cost and declared unpaid cash.
+Observed events are indexed once per account by legal and application dates;
+opening events precede saved fills and off-session grants apply only at the
+actual nightly observation or subsequent opening. Archive factors do not grant
+shares. Acquisition cost stays null through additions until a full close and
+fresh purchase. Passive assets use separately supplied closing marks only
+after actual close; terminal quantities become known unpaid receivables rather
+than stale prices or buying cash. Missing fractions/marks remain null NAV.
+Exact receipt comparison and final ledger comparison reject invented payments,
+grant quantities, bases, earlier applied clocks and forged NAV.
+
+Development corrections: the first new arithmetic run exposed the existing
+child-qualified stock_distribution action identity; corrected the verifier to
+that identity. The next full saved-archive workflow exposed its missing new
+unknown-claim counter; added that counter without relaxing assertions. The
+unchanged external13 cases and old verifier suite then passed66tests. A new
+permanent fixture initially removed a terminal action while retaining its
+provenance and was correctly rejected; rebuilt the distribution-only fixture
+through prepare rather than bypassing that check. Native acceptance263tests
+16.95s/no skips; Ruff/format/diff clean. No production hypothesis or threshold
+was selected from economic outcomes.
+
+VERIFIED exact coded8c562cbabe52e8bd5911f26f3fb2f03d6fc15b6,2371-file
+manifest, pinned image5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d:
+625tests24.74s/no skips including all prior unchanged external acceptance and
+new13-case entitlement/tamper acceptance. Actual pinned-source producer saved
+seven fresh synthetic accounts: ordinary and fractional distributions,
+overnight grant, reverse consolidation, no-compensation exchange, share-default
+exchange and inherited terminal cash default. A separate1CPU/2GB/network-none
+verifier mounted saved accounts/arrays read-only, imported only the independent
+verifier/calendar, regenerated zero accounts and restored/fitted no model.
+All seven accounts reconcile. Original saved bytes and whole2371-file mounted
+source remain unchanged. Unpriced claims remain missing; known142.5 terminal
+consideration remains an unpaid claim. This is synthetic accounting proof,
+not a historical funded performance result or source/payment completeness.
+
+Evidence:/home/animallya96/scratch/entitlement-verifier-20261004-d8c562cb/proof.
+Manifest13e40ff6a3da3e9ab665f163b07388cdaeac3470320f45984d42380c5ba2089f;
+test logfd43a8cd7518779fa1bb80cd0edc00057171fb0b84003acaa4ad17e340de9682;
+saved journeys49bb964cc82d6a62101f285e2f3bc90b664e784cb82485d3cedea90702c2a8f7;
+saved-only proofb8d80a6eab2e0c314a9e2558ba2fd0f4581aeab78b5ce849f930e22b88c9143d.
+Exact commands/helpers are in codex-entitlement-verifier-execution-receipt-20261004.json.
+Counts overlap earlier sets. No original historical account scored, old model
+fit/capture/study repeated, live merge or deployment. Diagram impact NONE:
+existing private verifier/accounting boundaries; no production flow changes.
+
+NEXT: independently normalize/authenticate the reviewed original action and
+passive/terminal inputs in verify_actual_policy_timing.load_original_data;
+that loader still accepts only old split/dividend semantics and still refuses
+the known incorrect export. Add explicit reviewed-economic paths in producer
+and verifier while retaining unchanged direct legacy refusal tests. Require
+paired source preflight before the fixed300-account same-sizing timing run.
+Timing×confidence sizing and remaining-horizon profit exits remain separate
+requirements before the requested live replacement. Do not call the synthetic
+proof a completed full economic verifier or historical advantage; preserve
+manual declaration, current-vintage and missing payment limitations.
+
 ## 2026-10-04 — reviewed original/passive input connection, no scores
 
 Goal ACTIVE. Previous goal turn NO PROGRESS: status and next-step explanation
