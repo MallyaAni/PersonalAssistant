@@ -752,12 +752,16 @@ def paper_trade(
                     np.is_busday(np.datetime64(local.date()), busdaycal=sessions)
                 ),
             }
-        if (
-            not schedule["calendar_known"]
-            or not schedule["is_session"]
-            or str(report.panel.dates[-1]) != session
-            or local.date().isoformat() != session
-            or local.time().replace(tzinfo=None) < calendar.session_close(local.date())
+        forward_window = _forward_close_window(holding_policy, local, report)
+        if str(report.panel.dates[-1]) != session or (
+            not forward_window
+            and (
+                not schedule["calendar_known"]
+                or not schedule["is_session"]
+                or local.date().isoformat() != session
+                or local.time().replace(tzinfo=None)
+                < calendar.session_close(local.date())
+            )
         ):
             raise ValueError(
                 "Nightly decision must follow the reviewed report session close"
@@ -776,6 +780,17 @@ def paper_trade(
         return _paper_trade(
             report, store_root, session, live, rebalance_now, force, **dependencies
         )
+
+
+# Bind a current report before broker effects and keep its signal valid until next open.
+def _forward_close_window(policy, instant, report):
+    from backend.market.forward_arithmetic import ForwardVolatilityHoldingReader
+
+    if policy is not None and isinstance(policy.reader, ForwardVolatilityHoldingReader):
+        policy.reader.validate_clock(instant)
+        policy.reader.validate_report(report)
+        return True
+    return False
 
 
 # Limit this unadopted policy to the actual private replay ledger and exact clock.

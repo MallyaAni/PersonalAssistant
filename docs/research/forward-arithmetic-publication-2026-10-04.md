@@ -47,3 +47,10 @@ direct module after that artifact was produced; no inference formula changed.
 Original and consumer source maps remain separate in the reader receipt, and
 all original parent, input, support, monthly forecast and price hashes are still
 required. Changed producer hashes or forecasts refuse even with the option.
+
+The optional forward path admits the same completed close after midnight or over
+a weekend, strictly before its following reviewed exchange open. It validates
+the authenticated clock and complete report prefix before opening the private
+account transaction or contacting the broker. Default and frozen replay nightly
+clocks retain their existing same-session restrictions. This handles delayed
+shadow publication; it does not authorize retrospective orders or live adoption.

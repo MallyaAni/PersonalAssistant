@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 
 from backend.agents.trading.desk import grading, paper
+from backend.cli import market_daily
 from backend.market import calendar as exchange
 from backend.market import direct_error_band as errors
 from backend.market import forward_arithmetic as forward
@@ -15,6 +16,7 @@ from backend.market import learned_entry_data
 from backend.market import learned_retention_models as context
 from backend.market.joint_funded_policy import JointFundedPolicy
 from backend.market.panel import Panel
+from backend.market.replay_broker import ReplayBroker
 from backend.tests.test_direct_feature_arithmetic import risk_example_factory
 
 
@@ -352,3 +354,93 @@ def test_close_window_honors_early_close_and_holiday():
     assert opening.isoformat() == "2017-07-05T09:30:00-04:00"
     with pytest.raises(ValueError, match="Completed close"):
         forward._close_window(day, "2017-07-03T12:59:59-04:00")
+
+
+# A valid current forecast can persist a private decision after midnight before open.
+def test_actual_private_forward_decision_survives_midnight(example, tmp_path):
+    current = observation(example)
+    reader = forward.ForwardVolatilityHoldingReader(example[0], current)
+    panel, grades = example[3:5]
+    shown = report(panel, grades)
+    shown.sides = {"AAA": "long", "BBB": "long"}
+    shown.scores = grades.astype(float)
+    deadline = datetime.fromisoformat(current.receipt["identity"]["expires_at"])
+    now = deadline.replace(hour=1, minute=0)
+    assert now.date() > panel.dates[-1].astype(object)
+    reader.validate_clock(now)
+    broker = ReplayBroker(100000.0, 10)
+    prices = {s: float(panel.close[-1, i]) for i, s in enumerate(panel.tickers)}
+    broker.observe(now, prices, False)
+
+    # Reuse the ordinary private event and price-permission input contract.
+    def features(kind, ignored):
+        return (
+            {"calendar_known": True, "factor": 1.0}
+            if kind == "event"
+            else (set(), {})
+            if kind == "blocked"
+            else {}
+        )
+
+    args = dict(
+        client_factory=lambda: broker,
+        decision_at=now,
+        feature_reader=features,
+        holding_policy=JointFundedPolicy(reader, 10),
+    )
+    session = str(panel.dates[-1])
+    entry = market_daily.paper_trade(shown, tmp_path, session, True, **args)
+    saved = paper.load_state(tmp_path)
+    assert entry["policy"] == args["holding_policy"].version
+    assert saved.policy_version == entry["policy"]
+    assert saved.allocation_state["receipt"]["scenario"]["status"] == "available"
+    assert session in saved.sessions_seen
+    attempts = broker.attempt_history
+    market_daily.paper_trade(shown, tmp_path, session, True, **args)
+    assert broker.attempt_history == attempts
+    assert paper.load_state(tmp_path).pending == saved.pending
+    assert broker.account().cash == 100000.0
+
+
+# Expired forward rows fail before any private account persistence or order attempt.
+def test_actual_private_forward_expiry_has_no_side_effect(example, tmp_path):
+    current = observation(example)
+    reader = forward.ForwardVolatilityHoldingReader(example[0], current)
+    deadline = datetime.fromisoformat(current.receipt["identity"]["expires_at"])
+    broker = ReplayBroker(100000.0, 10)
+    broker.observe(deadline, {"AAA": 100.0}, True)
+    with pytest.raises(ValueError, match="Completed close|Nightly decision"):
+        market_daily.paper_trade(
+            report(example[3], example[4]),
+            tmp_path,
+            str(example[3].dates[-1]),
+            True,
+            client_factory=lambda: broker,
+            decision_at=deadline,
+            holding_policy=JointFundedPolicy(reader, 10),
+        )
+    assert not broker.attempt_history
+    assert not list(tmp_path.iterdir())
+
+
+# A mismatched price report is refused before ledger effects or durable planning.
+def test_actual_private_forward_report_mismatch_has_no_side_effect(example, tmp_path):
+    current = observation(example)
+    reader = forward.ForwardVolatilityHoldingReader(example[0], current)
+    now = example[-1]
+    broker = ReplayBroker(100000.0, 10)
+    broker.observe(now, {"AAA": 100.0}, False)
+    panel = deepcopy(example[3])
+    panel.adj_close[-1, 0] += 1
+    with pytest.raises(ValueError, match="published current close: prices"):
+        market_daily.paper_trade(
+            report(panel, example[4]),
+            tmp_path,
+            str(panel.dates[-1]),
+            True,
+            client_factory=lambda: broker,
+            decision_at=now,
+            holding_policy=JointFundedPolicy(reader, 10),
+        )
+    assert not broker.attempt_history
+    assert not list(tmp_path.iterdir())
