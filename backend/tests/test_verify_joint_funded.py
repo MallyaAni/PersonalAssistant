@@ -11,21 +11,20 @@ from backend.cli import verify_actual_policy_timing as ledger
 from backend.cli import verify_joint_funded as verifier
 from backend.cli.market_actual_policy_timing import archive_account
 from backend.market.direct_error_band import VolatilityHoldingReader
-from backend.market.joint_funded_policy import JointFundedPolicy
+from backend.market.joint_funded_policy import JointFundedPolicy, MaturityFundedPolicy
 from backend.market.live_policy_replay import run_account
 from backend.tests.test_direct_feature_arithmetic import risk_example_factory
 from backend.tests.test_live_policy_replay import fixture
 from backend.tests.test_verify_actual_policy_timing import direct_data
 
 
-# Build actual private-account artifacts once; verification never calls this producer.
-@pytest.fixture(scope="module")
-def saved(tmp_path_factory):
+# Build actual private accounts for a declared policy; verification never calls this.
+def saved_case(tmp_path_factory, policy_type):
     root = tmp_path_factory.mktemp("saved-funded")
     example = risk_example_factory(tmp_path_factory, with_volatility=True)
     reader = VolatilityHoldingReader(example[-1], example[1])
     panel, raw, cubes = fixture(tuple(map(str, reader.dates)))
-    policy = JointFundedPolicy(reader, 10)
+    policy = policy_type(reader, 10)
 
     # Isolate ordinary policy receipts from synthetic event calendar fixtures.
     def features(kind, report):
@@ -50,13 +49,13 @@ def saved(tmp_path_factory):
         feature_reader=features,
     )
     spec = {
-        "arm": verifier.POLICY,
+        "arm": policy.version,
         "cost_bps": 10,
         "start": 0,
         "first": first,
         "last": last,
         "first_session": str(reader.dates[first]),
-        "id": "joint-10-0",
+        "id": "joint-10-0" if policy_type is JointFundedPolicy else "maturity-10-0",
     }
     account["comparison_account"] = spec
     data = {
@@ -66,9 +65,21 @@ def saved(tmp_path_factory):
     }
     source = {
         "backend/market/joint_funded_policy.py": policy.identity["source_sha256"],
-        verifier.PROTOCOL: policy.identity["protocol_sha256"],
+        policy.protocol: policy.identity["protocol_sha256"],
     }
     return account, spec, data, source
+
+
+# Keep original producer acceptance available with its unchanged policy and IDs.
+@pytest.fixture(scope="module")
+def saved(tmp_path_factory):
+    return saved_case(tmp_path_factory, JointFundedPolicy)
+
+
+# Persist actual separate v2 accounts rather than relabelling a v1 archive.
+@pytest.fixture(scope="module")
+def maturity_saved(tmp_path_factory):
+    return saved_case(tmp_path_factory, MaturityFundedPolicy)
 
 
 # Persist a compressed immutable account and its independently recomputed score index.
@@ -104,6 +115,86 @@ def test_actual_saved_account_checks_without_producer(tmp_path, saved, monkeypat
     assert checked[0]["counts"]["sessions"] == 2
     with pytest.raises(ValueError, match="Account policy differs"):
         ledger.reconcile_account(account, spec, data)
+
+
+# Independently verify the named variant without forecasting or rerunning its ledger.
+def test_actual_maturity_saved_account_checks_without_producer(
+    tmp_path, maturity_saved, monkeypatch
+):
+    account, spec, data, source = maturity_saved
+    row = save(tmp_path, account, spec)
+
+    # Any model, qualification or simulation invocation invalidates a saved-only check.
+    def forbidden(*args, **kwargs):
+        raise AssertionError("No predictions or selection permitted")
+
+    monkeypatch.setattr(MaturityFundedPolicy, "_required_stocks", forbidden)
+    monkeypatch.setattr(VolatilityHoldingReader, "distribution", forbidden)
+    monkeypatch.setattr("backend.market.live_policy_replay.run_account", forbidden)
+    checked = verifier.verify_rows(
+        tmp_path,
+        [row],
+        data,
+        candidate=True,
+        source=source,
+        policy=verifier.MATURITY_POLICY,
+    )
+    assert checked[0]["ordinary_receipts"] == 3
+    assert checked[0]["counts"]["sessions"] == 2
+    with pytest.raises(ValueError, match="Account policy differs"):
+        verifier.verify_rows(tmp_path, [row], data, candidate=True, source=source)
+
+
+# Rehashed archives cannot falsify qualification, mandatory stocks or admitted exposure.
+@pytest.mark.parametrize(
+    "mutation", ["partition", "policy", "future_flag", "joint_omission", "permission"]
+)
+def test_saved_maturity_qualification_tampering_rejected(
+    tmp_path, maturity_saved, mutation
+):
+    original, spec, data, source = maturity_saved
+    account = copy.deepcopy(original)
+    receipt = account["nightlies"][-1]["entry"]["joint_funded"]["receipt"]
+    q = receipt["entry_qualification"]
+    if mutation == "partition":
+        q["admitted_entrants"].append("GHOST")
+    elif mutation == "policy":
+        q["policy"] = verifier.POLICY
+    elif mutation == "future_flag":
+        q["selection_uses_future_outcomes"] = True
+    elif mutation == "joint_omission":
+        receipt["scenario"]["symbols"] = []
+    else:
+        q["admitted_entrants"] = []
+        q["mandatory_held"] = []
+        q["considered_entrants"] = ["AAA"]
+        q["excluded_entries"] = {"AAA": {"reason": "buy_permission_blocked"}}
+    row = save(tmp_path, account, spec)
+    with pytest.raises(
+        ValueError, match="differs|Qualification|exclusion|qualified|required|Mandatory"
+    ):
+        verifier.verify_rows(
+            tmp_path,
+            [row],
+            data,
+            candidate=True,
+            source=source,
+            policy=verifier.MATURITY_POLICY,
+        )
+
+
+# Every declared v2 opportunity retains all five controls without hiding missing books.
+def test_maturity_pairing_and_grid_are_independent_of_producer():
+    from backend.market.joint_funded_accounts import candidate_grid
+
+    dates = np.arange(np.datetime64("2018-01-01"), np.datetime64("2026-10-01"))
+    grid = verifier.candidate_grid(dates, policy=verifier.MATURITY_POLICY)
+    assert grid == candidate_grid(dates, policy=verifier.MATURITY_POLICY)
+    references = ("rule", "boosting", "ridge", "SPY", "QQQ")
+    rows = verifier.paired_results([], [], grid, references=references)
+    assert len(rows) == 60 * 5 * 4
+    assert {row["reference"] for row in rows} == set(references)
+    assert all(row["status"] == "pending_candidate" for row in rows)
 
 
 # Rehashed archives cannot hide altered cash, shares, source prices or permissions.

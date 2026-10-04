@@ -17,8 +17,10 @@ from backend.market.direct_error_band import VolatilityHoldingReader
 from backend.market.forward_arithmetic import ForwardVolatilityHoldingReader
 
 POLICY = "joint-stock-risk-funded/1-research"
+MATURITY_POLICY = "joint-stock-risk-funded/2-maturity-shadow"
 HORIZON = "next_open_to_following_open_arithmetic_return"
 PROTOCOL = "docs/research/joint-funded-account-plan-2026-10-04.md"
+MATURITY_PROTOCOL = "docs/research/risk-qualified-funded-plan-2026-10-04.md"
 
 
 # Refuse ambiguous account values rather than treating missing funding as zero.
@@ -57,6 +59,7 @@ def _account(equity, held, prices, cash):
 # Bind the reviewed reader and fixed fees without fitting or contacting a broker.
 class JointFundedPolicy:
     version = POLICY
+    protocol = PROTOCOL
 
     # Admit original or published forward risk on the still-private funded path.
     def __init__(self, reader, cost_bps):
@@ -70,15 +73,26 @@ class JointFundedPolicy:
         self.cost_bps = float(cost_bps)
         root = Path(__file__).resolve().parents[2]
         self.identity = {
-            "policy": POLICY,
+            "policy": self.version,
             "source_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             "protocol_sha256": hashlib.sha256(
-                (root / PROTOCOL).read_bytes()
+                (root / self.protocol).read_bytes()
             ).hexdigest(),
             "cost_bps": self.cost_bps,
             "horizon": HORIZON,
             "adoption_eligible": False,
         }
+
+    # Require the entire original grade-eligible book without risk-based exclusions.
+    def _required_stocks(self, grades, current, day, blocked, *, refusal=None):
+        names = tuple(
+            sorted(
+                name
+                for name, grade in grades.items()
+                if grade >= 2 or (grade == 1 and current.get(name, 0) > 0)
+            )
+        )
+        return names, {}
 
     # Decide from actual refreshed account marks and this completed report only.
     def decide(self, session, report, equity, held, prices, cash, blocked):
@@ -127,13 +141,11 @@ class JointFundedPolicy:
         )
         if reason is None and protected:
             reason = "protected_held_risk_unavailable"
-        names = tuple(
-            sorted(
-                name
-                for name, grade in grades.items()
-                if grade >= 2 or (grade == 1 and current.get(name, 0) > 0)
-            )
+        names, qualification = self._required_stocks(
+            grades, current, int(hits[0]), blocked, refusal=reason
         )
+        reason = reason or qualification.pop("refusal_reason", None)
+        receipt.update(qualification)
         if reason is None and any(name not in self.reader.symbols for name in names):
             reason = "joint_symbol_unavailable"
         if reason is None and names:
@@ -190,7 +202,7 @@ class JointFundedPolicy:
         }
         if not account_reason:
             decision = allocation.AllocationDecision(
-                POLICY,
+                self.version,
                 session,
                 targets,
                 max(0.0, 1 - sum(targets.values())),
@@ -238,13 +250,13 @@ class JointFundedPolicy:
                     )
                 )
         new.sessions_seen = [*state.sessions_seen, session]
-        new.policy_version = POLICY
+        new.policy_version = self.version
         new.deferred_buys = {}
         new.opened = {
             name: day for name, day in state.opened.items() if held.get(name, 0) > 0
         }
         new.allocation_state = {
-            "policy": POLICY,
+            "policy": self.version,
             "as_of": session,
             "targets": targets,
             "receipt": receipt,
@@ -256,3 +268,57 @@ class JointFundedPolicy:
             if receipt["status"] == "available"
             else "joint-funded-unavailable",
         )
+
+
+# Qualify new exposure from mature risk without removing mandatory held stocks.
+class MaturityFundedPolicy(JointFundedPolicy):
+    version = MATURITY_POLICY
+    protocol = MATURITY_PROTOCOL
+
+    # Exclude only unheld entrants and then retain one simultaneous required book.
+    def _required_stocks(self, grades, current, day, blocked, *, refusal=None):
+        candidates, _ = super()._required_stocks(grades, current, day, blocked)
+        if refusal is not None:
+            return candidates, {
+                "entry_qualification": {
+                    "policy": self.version,
+                    "status": "not_evaluated",
+                    "reason": refusal,
+                }
+            }
+        required, admitted, retained, excluded = [], [], [], {}
+        for name in candidates:
+            if current.get(name, 0) > 0:
+                retained.append(name)
+                required.append(name)
+            elif name in blocked:
+                excluded[name] = {"reason": "buy_permission_blocked"}
+            else:
+                risk = self.reader.distribution(day, (name,))
+                if risk.receipt["status"] == "available":
+                    admitted.append(name)
+                    required.append(name)
+                else:
+                    excluded[name] = {
+                        "reason": "entry_risk_unavailable",
+                        "risk": risk.receipt,
+                    }
+        return tuple(required), {
+            "refusal_reason": "entry_risk_unavailable"
+            if not required
+            and any(
+                row["reason"] == "entry_risk_unavailable" for row in excluded.values()
+            )
+            else None,
+            "entry_qualification": {
+                "policy": self.version,
+                "considered_entrants": [
+                    name for name in candidates if name not in retained
+                ],
+                "admitted_entrants": admitted,
+                "mandatory_held": retained,
+                "excluded_entries": excluded,
+                "selection_uses_future_outcomes": False,
+                "joint_risk_still_required": True,
+            },
+        }

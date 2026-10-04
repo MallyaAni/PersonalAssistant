@@ -18,22 +18,40 @@ from backend.cli.market_actual_policy_timing import (
 )
 from backend.cli.market_learned_entry import write_json
 from backend.market import calendar
-from backend.market.joint_funded_policy import POLICY, JointFundedPolicy
+from backend.market.joint_funded_policy import (
+    MATURITY_POLICY,
+    POLICY,
+    JointFundedPolicy,
+    MaturityFundedPolicy,
+)
 from backend.market.live_policy_features import FeatureCache
 from backend.market.live_policy_replay import plain, run_account
 
 
+# Admit registered variants with separate IDs and the unchanged start/cost grid.
+def _variant(policy):
+    options = {
+        POLICY: (JointFundedPolicy, "joint"),
+        MATURITY_POLICY: (MaturityFundedPolicy, "maturity"),
+    }
+    if not isinstance(policy, str) or policy not in options:
+        raise ValueError("Registered funded candidate required")
+    return options[policy]
+
+
 # Declare the same twenty starts and three costs without rerunning existing controls.
-def candidate_grid(dates):
+def candidate_grid(dates, *, policy=POLICY):
+    _, prefix = _variant(policy)
     return [
-        {**row, "arm": POLICY, "id": f"joint-{row['cost_bps']}-{row['start']}"}
+        {**row, "arm": policy, "id": f"{prefix}-{row['cost_bps']}-{row['start']}"}
         for row in account_grid(dates)
         if row["arm"] == "rule"
     ]
 
 
 # Carry each predeclared private account and retain all requests, fills and missing NAV.
-def evaluate(panel, raw, cubes, reader, output, source_identity):
+def evaluate(panel, raw, cubes, reader, output, source_identity, *, policy=POLICY):
+    policy_type, _ = _variant(policy)
     if not np.array_equal(panel.dates, reader.dates) or tuple(panel.tickers) != tuple(
         reader.symbols
     ):
@@ -48,11 +66,11 @@ def evaluate(panel, raw, cubes, reader, output, source_identity):
     output.mkdir(parents=True, exist_ok=False)
     accounts = output / "accounts"
     accounts.mkdir()
-    grid = candidate_grid(panel.dates)
+    grid = candidate_grid(panel.dates, policy=policy)
     write_json(
         output / "inputs.json",
         {
-            "policy": POLICY,
+            "policy": policy,
             "source": source_identity,
             "accounts": grid,
             "raw_provenance": plain(raw.provenance),
@@ -88,7 +106,7 @@ def evaluate(panel, raw, cubes, reader, output, source_identity):
             spec["first"],
             spec["last"],
             spec["cost_bps"],
-            holding_policy=JointFundedPolicy(reader, spec["cost_bps"]),
+            holding_policy=policy_type(reader, spec["cost_bps"]),
             feature_reader=cache,
             on_session=progress,
         )
@@ -119,7 +137,7 @@ def evaluate(panel, raw, cubes, reader, output, source_identity):
         )
     report = {
         "status": "complete_candidate_unverified_controls",
-        "policy": POLICY,
+        "policy": policy,
         "source": source_identity,
         "accounts": rows,
         "declared": len(grid),

@@ -13,7 +13,12 @@ from backend.market import calendar
 from backend.market import direct_feature_arithmetic as feature
 from backend.market.direct_error_band import VolatilityHoldingReader
 from backend.market.joint_funded_accounts import candidate_grid
-from backend.market.joint_funded_policy import POLICY, JointFundedPolicy
+from backend.market.joint_funded_policy import (
+    MATURITY_POLICY,
+    POLICY,
+    JointFundedPolicy,
+    MaturityFundedPolicy,
+)
 from backend.market.live_policy_replay import run_account
 from backend.market.panel import Panel
 from backend.market.replay_broker import ReplayBroker
@@ -27,6 +32,27 @@ from backend.tests.test_nightly_plan import inputs as nightly_inputs
 def reader(tmp_path_factory):
     example = risk_example_factory(tmp_path_factory, with_volatility=True)
     return VolatilityHoldingReader(example[-1], example[1])
+
+
+# Reuse numeric heads while withholding an ungraded stock's early price history.
+@pytest.fixture(scope="module")
+def short_history(tmp_path_factory):
+    prepared, bridge, parent, heads, risk = risk_example_factory(
+        tmp_path_factory, with_volatility=True
+    )
+    prices = risk.prices.copy()
+    prices[:700, 1] = np.nan
+    expanded = feature.holding_risk_forecasts(
+        parent, bridge, prepared["X"], prepared["valid"], heads, prices=prices
+    )
+    return (
+        VolatilityHoldingReader(expanded, bridge),
+        prepared,
+        bridge,
+        parent,
+        heads,
+        prices,
+    )
 
 
 # Supply only a complete current prefix, original stock names and observed grades.
@@ -71,6 +97,196 @@ def analytic(monkeypatch, reader, values, cost=10):
 
     monkeypatch.setattr(reader, "distribution", sample)
     return policy
+
+
+# A real short-history entrant cannot freeze supported stocks, while v1 stays unchanged.
+def test_maturity_qualification_keeps_supported_unheld_entries(short_history):
+    reader = short_history[0]
+    shown = report(reader, grades=(3, 3))
+    session = str(shown.panel.dates[-1])
+    original, old = JointFundedPolicy(reader, 10).decide(
+        session, shown, 10000.0, {}, {"AAA": 100.0, "BBB": 100.0}, 10000.0, set()
+    )
+    targets, new = MaturityFundedPolicy(reader, 10).decide(
+        session, shown, 10000.0, {}, {"AAA": 100.0, "BBB": 100.0}, 10000.0, set()
+    )
+    assert original == {}
+    assert old["status"] == "unavailable"
+    assert "entry_qualification" not in old
+    assert new["policy"] == MATURITY_POLICY
+    assert new["status"] == "available"
+    assert new["grades"] == old["grades"]
+    assert new["scenario"]["symbols"] == ["AAA"]
+    assert new["scenario"]["joint_dates"] >= 252
+    assert new["optimizer"]["certificate"]["certified"]
+    assert set(targets) <= {"AAA"}
+    qualification = new["entry_qualification"]
+    assert qualification["considered_entrants"] == ["AAA", "BBB"]
+    assert qualification["admitted_entrants"] == ["AAA"]
+    assert qualification["excluded_entries"]["BBB"]["risk"]["joint_dates"] < 252
+    assert (
+        qualification["excluded_entries"]["BBB"]["risk"]["reason"]
+        == "insufficient_joint_history"
+    )
+
+
+# An unavailable held stock must still block additions without any forced liquidation.
+@pytest.mark.parametrize(("grade", "blocked"), [(3, set()), (1, {"BBB"}), (3, {"BBB"})])
+def test_maturity_qualification_never_removes_retained_risk(
+    short_history, grade, blocked
+):
+    reader = short_history[0]
+    shown = report(reader, grades=(3, grade))
+    orders, state, _ = MaturityFundedPolicy(reader, 10).plan(
+        str(shown.panel.dates[-1]),
+        paper.PaperState(),
+        10000.0,
+        {"BBB": 10},
+        {"AAA": 100.0, "BBB": 100.0},
+        shown,
+        9000.0,
+        blocked,
+    )
+    receipt = state.allocation_state["receipt"]
+    assert not orders
+    assert receipt["targets"] == {"BBB": 0.1}
+    assert receipt["reason"] == "joint_risk_unavailable"
+    assert receipt["entry_qualification"]["mandatory_held"] == ["BBB"]
+    assert "BBB" not in receipt["entry_qualification"]["excluded_entries"]
+    assert receipt["scenario"]["symbols"] == ["AAA", "BBB"]
+    assert state.policy_version == MATURITY_POLICY
+
+
+# A blocked unheld name needs no inferred risk and remains an explicit missed entrant.
+def test_maturity_qualification_honors_buy_permission_first(short_history, monkeypatch):
+    reader = short_history[0]
+    original, calls = reader.distribution, []
+
+    # Observe original requests without substituting forecasts or risk outcomes.
+    def inspect(day, symbols):
+        calls.append(tuple(symbols))
+        return original(day, symbols)
+
+    monkeypatch.setattr(reader, "distribution", inspect)
+    shown = report(reader, grades=(3, 3))
+    _, receipt = MaturityFundedPolicy(reader, 10).decide(
+        str(shown.panel.dates[-1]),
+        shown,
+        10000.0,
+        {},
+        {"AAA": 100.0, "BBB": 100.0},
+        10000.0,
+        {"BBB"},
+    )
+    assert receipt["status"] == "available"
+    assert receipt["entry_qualification"]["excluded_entries"]["BBB"] == {
+        "reason": "buy_permission_blocked"
+    }
+    assert calls == [("AAA",), ("AAA",)]
+
+
+# Individual qualification cannot replace a simultaneous book or trigger subset search.
+def test_maturity_qualification_still_requires_joint_intersection(reader, monkeypatch):
+    calls = []
+
+    # Supply a declared synthetic oracle with individually valid but absent joint risk.
+    def partial(day, symbols):
+        calls.append(tuple(symbols))
+        if len(symbols) == 1:
+            return feature.HoldingScenarios(
+                np.full((252, 1), 0.02),
+                np.full(252, 1 / 252),
+                tuple(symbols),
+                {"status": "available", "synthetic": True},
+            )
+        return feature.HoldingScenarios(
+            None,
+            None,
+            tuple(symbols),
+            {
+                "status": "unavailable",
+                "reason": "insufficient_joint_history",
+                "synthetic": True,
+            },
+        )
+
+    monkeypatch.setattr(reader, "distribution", partial)
+    shown = report(reader, grades=(3, 3))
+    targets, receipt = MaturityFundedPolicy(reader, 10).decide(
+        str(shown.panel.dates[-1]),
+        shown,
+        10000.0,
+        {},
+        {"AAA": 100.0, "BBB": 100.0},
+        10000.0,
+        set(),
+    )
+    assert calls == [("AAA",), ("BBB",), ("AAA", "BBB")]
+    assert targets == {}
+    assert receipt["reason"] == "joint_risk_unavailable"
+
+
+# Current-month outcomes cannot alter qualification or earlier risk rows.
+def test_maturity_qualification_does_not_read_current_month_labels(short_history):
+    from copy import deepcopy
+
+    from backend.market import daily_arithmetic_bridge as reference
+    from backend.market import learned_entry_models as base
+
+    reader, prepared, bridge, parent, heads, prices = short_history
+    parent, bridge = feature._copy_feature(parent), deepcopy(bridge)
+    bridge.labels[-3, 1] += 0.4
+    bridge.manifest["label_sha256"] = reference._hash(bridge.labels)
+    identity = parent.manifest["identity"]
+    identity["bridge_manifest_sha256"] = base._json_hash(bridge.manifest)
+    identity["input_sha256"]["labels"] = reference._hash(bridge.labels)
+    parent.manifest["identity_sha256"] = base._json_hash(identity)
+    changed = feature.holding_risk_forecasts(
+        parent, bridge, prepared["X"], prepared["valid"], heads, prices=prices
+    )
+    other = VolatilityHoldingReader(changed, bridge)
+    shown = report(reader, grades=(3, 3))
+    args = (
+        str(shown.panel.dates[-1]),
+        shown,
+        10000.0,
+        {},
+        {"AAA": 100.0, "BBB": 100.0},
+        10000.0,
+        set(),
+    )
+    targets, original = MaturityFundedPolicy(reader, 10).decide(*args)
+    same, receipt = MaturityFundedPolicy(other, 10).decide(*args)
+    assert same == targets
+    assert (
+        receipt["entry_qualification"]["admitted_entrants"]
+        == original["entry_qualification"]["admitted_entrants"]
+    )
+    assert (
+        receipt["scenario"]["decision_indices"]
+        == original["scenario"]["decision_indices"]
+    )
+    assert (
+        receipt["scenario"]["scenarios_sha256"]
+        == original["scenario"]["scenarios_sha256"]
+    )
+
+
+# Distinct candidate IDs preserve the full original twenty-start, three-cost cohort.
+def test_maturity_candidate_grid_cannot_replace_original_accounts():
+    dates = np.arange(np.datetime64("2018-01-01"), np.datetime64("2026-10-01"))
+    first = candidate_grid(dates)
+    variant = candidate_grid(dates, policy=MATURITY_POLICY)
+    assert len(first) == len(variant) == 60
+    assert {row["id"] for row in first}.isdisjoint({row["id"] for row in variant})
+    for a, b in zip(first, variant, strict=True):
+        assert a["arm"] == POLICY
+        assert b["arm"] == MATURITY_POLICY
+        assert {k: v for k, v in a.items() if k not in ("arm", "id")} == {
+            k: v for k, v in b.items() if k not in ("arm", "id")
+        }
+    with pytest.raises(ValueError, match="Registered funded"):
+        candidate_grid(dates, policy="unregistered")
 
 
 # Greater stock-specific dispersion lowers the exact mean-preserving growth position.
@@ -147,6 +363,7 @@ def test_protected_holding_blocks_adds_but_observed_c_exit_survives(
 
 
 # Unknown marks or inconsistent balances stop discretionary sizing.
+@pytest.mark.parametrize("policy_type", [JointFundedPolicy, MaturityFundedPolicy])
 @pytest.mark.parametrize(
     ("held", "prices", "cash", "equity", "reason"),
     [
@@ -163,9 +380,9 @@ def test_protected_holding_blocks_adds_but_observed_c_exit_survives(
     ],
 )
 def test_incomplete_actual_account_emits_no_orders(
-    reader, held, prices, cash, equity, reason
+    reader, held, prices, cash, equity, reason, policy_type
 ):
-    policy = JointFundedPolicy(reader, 10)
+    policy = policy_type(reader, 10)
     current = report(reader)
     orders, state, _ = policy.plan(
         str(current.panel.dates[-1]),
@@ -179,6 +396,31 @@ def test_incomplete_actual_account_emits_no_orders(
     )
     assert not orders
     assert state.allocation_state["receipt"]["reason"] == reason
+    if policy_type is MaturityFundedPolicy:
+        q = state.allocation_state["receipt"]["entry_qualification"]
+        assert q["status"] == "not_evaluated"
+        assert q["reason"] == reason
+
+
+# An entirely unsupported entrant pool reports unavailable without a false growth claim.
+def test_maturity_empty_risk_pool_remains_unavailable(reader):
+    shown = report(reader, day=300, grades=(3, 3))
+    orders, state, _ = MaturityFundedPolicy(reader, 10).plan(
+        str(shown.panel.dates[-1]),
+        paper.PaperState(),
+        10000.0,
+        {},
+        {"AAA": 100.0, "BBB": 100.0},
+        shown,
+        10000.0,
+        set(),
+    )
+    receipt = state.allocation_state["receipt"]
+    assert not orders
+    assert receipt["status"] == "unavailable"
+    assert receipt["reason"] == "entry_risk_unavailable"
+    assert receipt["entry_qualification"]["admitted_entrants"] == []
+    assert set(receipt["entry_qualification"]["excluded_entries"]) == {"AAA", "BBB"}
 
 
 # Grade B permits existing ownership but cannot create or increase a position.

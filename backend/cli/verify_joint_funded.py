@@ -17,14 +17,21 @@ from backend.cli import verify_actual_policy_timing as ledger
 from backend.market import calendar
 
 POLICY = "joint-stock-risk-funded/1-research"
+MATURITY_POLICY = "joint-stock-risk-funded/2-maturity-shadow"
 HORIZON = "next_open_to_following_open_arithmetic_return"
 PROTOCOL = "docs/research/joint-funded-account-plan-2026-10-04.md"
+CANDIDATES = {
+    POLICY: PROTOCOL,
+    MATURITY_POLICY: "docs/research/risk-qualified-funded-plan-2026-10-04.md",
+}
 
 
 # Derive all candidate opportunities from the independently fixed original grid.
-def candidate_grid(dates):
+def candidate_grid(dates, *, policy=POLICY):
+    ledger.require(policy in CANDIDATES, "Registered candidate policy required")
+    prefix = "joint" if policy == POLICY else "maturity"
     return [
-        {**row, "arm": POLICY, "id": f"joint-{row['cost_bps']}-{row['start']}"}
+        {**row, "arm": policy, "id": f"{prefix}-{row['cost_bps']}-{row['start']}"}
         for row in ledger.fixed_grid(dates)
         if row["arm"] == "rule"
     ]
@@ -70,7 +77,7 @@ def source_proof(spec):
 
 
 # Read one atomic progress snapshot without hiding omitted or reordered accounts.
-def read_index(study, grid, identity, *, candidate):
+def read_index(study, grid, identity, *, candidate, policy=POLICY):
     study = Path(study)
     path = study / (
         "report.json" if (study / "report.json").exists() else "progress.json"
@@ -100,7 +107,7 @@ def read_index(study, grid, identity, *, candidate):
             index["status"] == expected and len(rows) == len(grid),
             "Incomplete final report",
         )
-        ledger.same(index["policy"], POLICY if candidate else ledger.POLICY)
+        ledger.same(index["policy"], policy if candidate else ledger.POLICY)
     else:
         ledger.require(index["status"] == "running", "Unexpected partial status")
         ledger.same(index["completed"], len(rows), "completed count")
@@ -141,6 +148,111 @@ def scenario_receipt(sample, day, dates):
         "Frozen monthly cutoff",
     )
     ledger.same(sample["joint_dates"], len(chosen), "Scenario row count")
+    if sample["status"] == "available":
+        ledger.require(len(chosen) >= 252, "Insufficient available joint history")
+
+
+# Check qualification partitions and past support without predicting or selecting again.
+def qualification_receipt(receipt, day, dates, *, policy=MATURITY_POLICY):
+    if policy == POLICY:
+        return
+    q = receipt["entry_qualification"]
+    ledger.same(q["policy"], MATURITY_POLICY)
+    if q.get("status") == "not_evaluated":
+        ledger.require(
+            receipt["status"] == "unavailable"
+            and receipt["reason"]
+            in {
+                "account_cash_or_equity_unavailable",
+                "whole_share_holdings_unavailable",
+                "held_mark_unavailable",
+                "inconsistent_account_equity",
+                "protected_held_risk_unavailable",
+            },
+            "Fabricated qualification skip",
+        )
+        ledger.same(q["reason"], receipt["reason"], "Skipped eligibility reason")
+        return
+    grades, held, blocked = (
+        receipt["grades"],
+        receipt["current_weights"],
+        receipt["buy_blocked"],
+    )
+    candidates = sorted(
+        s
+        for s, grade in grades.items()
+        if grade >= 2 or (grade == 1 and held.get(s, 0) > 0)
+    )
+    mandatory = [s for s in candidates if held.get(s, 0) > 0]
+    considered = [s for s in candidates if s not in mandatory]
+    ledger.same(q["mandatory_held"], mandatory, "Mandatory held risk")
+    ledger.same(q["considered_entrants"], considered, "Original considered entries")
+    admitted, excluded = q["admitted_entrants"], q["excluded_entries"]
+    ledger.require(
+        admitted == sorted(set(admitted))
+        and set(admitted).isdisjoint(excluded)
+        and set(admitted).isdisjoint(blocked)
+        and sorted([*admitted, *excluded]) == considered,
+        "Qualification partition changed or held stock excluded",
+    )
+    ledger.require(
+        q["selection_uses_future_outcomes"] is False
+        and q["joint_risk_still_required"] is True,
+        "Qualification limitation missing",
+    )
+    for name, exclusion in excluded.items():
+        if exclusion["reason"] == "buy_permission_blocked":
+            ledger.require(
+                name in blocked and "risk" not in exclusion,
+                "Fabricated buy permission exclusion",
+            )
+        else:
+            ledger.same(exclusion["reason"], "entry_risk_unavailable")
+            ledger.require(
+                name not in blocked, "Permission exclusion relabelled as risk"
+            )
+            risk = exclusion["risk"]
+            ledger.same(risk["status"], "unavailable", "Excluded available stock")
+            ledger.same(risk["decision_date"], day)
+            ledger.same(risk["symbols"], [name])
+            ledger.require(
+                risk["reason"]
+                in {
+                    "uncovered_required_stock",
+                    "insufficient_joint_history",
+                    "missing_current_forecast",
+                    "unsupported_volatility_arithmetic",
+                    "unsupported_current_or_bank_volatility",
+                    "unsupported_scenario_arithmetic",
+                },
+                "Unknown risk exclusion",
+            )
+            if risk["reason"] != "uncovered_required_stock":
+                scenario_receipt(risk, day, dates)
+            if risk["reason"] == "insufficient_joint_history":
+                ledger.require(
+                    risk["joint_dates"] < 252, "Fabricated short-history exclusion"
+                )
+    sample = receipt.get("scenario")
+    if sample is not None:
+        ledger.same(
+            sample["symbols"],
+            sorted([*mandatory, *admitted]),
+            "Joint request omitted a required stock",
+        )
+    if receipt["status"] == "available" and (mandatory or admitted):
+        ledger.require(
+            sample is not None
+            and sample["status"] == "available"
+            and receipt.get("optimizer", {}).get("certificate", {}).get("certified")
+            is True,
+            "Qualified exposure lacks joint risk or optimizer certificate",
+        )
+    for name in excluded:
+        ledger.require(
+            receipt["targets"].get(name, 0) == 0,
+            "Excluded unheld stock received exposure",
+        )
 
 
 # Recover current weights from original marks, including valuation-only assets.
@@ -158,7 +270,7 @@ def held_weights(row, index, data):
 
 
 # Check ordinary receipts against original permissions and observed funded accounts.
-def candidate_receipts(account, data, source):
+def candidate_receipts(account, data, source, *, policy=POLICY):
     sessions = {row["session"]: row for row in account["sessions"]}
     checked = events = 0
     for night in account["nightlies"]:
@@ -178,22 +290,22 @@ def candidate_receipts(account, data, source):
             )
             continue
         entry = night["entry"]
-        ledger.same(entry["policy"], POLICY, "nightly policy")
+        ledger.same(entry["policy"], policy, "nightly policy")
         ledger.same(entry["session"], day)
         state = entry["joint_funded"]
         if state.get("status") == "event_priority":
-            ledger.same(state["policy"], POLICY)
+            ledger.same(state["policy"], policy)
             events += 1
             continue
         receipt = state["receipt"]
-        ledger.same(state["policy"], POLICY)
+        ledger.same(state["policy"], policy)
         ledger.same(state["as_of"], day)
         ledger.same(state["targets"], receipt["targets"], "persisted targets")
-        ledger.same(receipt["policy"], POLICY)
+        ledger.same(receipt["policy"], policy)
         ledger.same(
             receipt["source_sha256"], source["backend/market/joint_funded_policy.py"]
         )
-        ledger.same(receipt["protocol_sha256"], source[PROTOCOL])
+        ledger.same(receipt["protocol_sha256"], source[CANDIDATES[policy]])
         ledger.same(receipt["horizon"], HORIZON)
         ledger.same(receipt["session"], day)
         ledger.same(receipt["cost_bps"], account["cost_bps"])
@@ -242,6 +354,7 @@ def candidate_receipts(account, data, source):
             if name in protected:
                 ledger.same(target, old, "Protected holding changed")
         scenario_receipt(receipt.get("scenario"), day, data["dates"])
+        qualification_receipt(receipt, day, data["dates"], policy=policy)
         if receipt["status"] == "available" and receipt.get("optimizer") is not None:
             optimizer = receipt["optimizer"]
             ledger.require(
@@ -259,7 +372,7 @@ def candidate_receipts(account, data, source):
 
 
 # Fold each completed saved account and independently recompute every declared score.
-def verify_rows(study, rows, data, *, candidate=False, source=None):
+def verify_rows(study, rows, data, *, candidate=False, source=None, policy=POLICY):
     checked = []
     for row in rows:
         spec = {
@@ -276,9 +389,13 @@ def verify_rows(study, rows, data, *, candidate=False, source=None):
         }
         account = ledger.read_account(Path(study), row)
         counts = ledger.reconcile_account(
-            account, spec, data, account_policy=POLICY if candidate else ledger.POLICY
+            account, spec, data, account_policy=policy if candidate else ledger.POLICY
         )
-        receipt_counts = candidate_receipts(account, data, source) if candidate else {}
+        receipt_counts = (
+            candidate_receipts(account, data, source, policy=policy)
+            if candidate
+            else {}
+        )
         scores = {
             name: ledger.independent_score(account, lower, upper)
             for name, lower, upper in ledger.WINDOWS
@@ -297,7 +414,12 @@ def verify_rows(study, rows, data, *, candidate=False, source=None):
 
 
 # Retain all fixed comparisons with explicit missing accounts or wealth paths.
-def paired_results(candidates, controls, grid):
+def paired_results(candidates, controls, grid, *, references=("rule", "SPY", "QQQ")):
+    ledger.require(
+        len(references) == len(set(references))
+        and set(references) <= {"rule", "boosting", "ridge", "SPY", "QQQ"},
+        "Registered unique comparison arms required",
+    )
     candidate = {(row["cost_bps"], row["start"]): row for row in candidates}
     control = {(row["cost_bps"], row["start"], row["arm"]): row for row in controls}
     ledger.require(
@@ -307,7 +429,7 @@ def paired_results(candidates, controls, grid):
     result = []
     for spec in grid:
         key = (spec["cost_bps"], spec["start"])
-        for reference in ("rule", "SPY", "QQQ"):
+        for reference in references:
             for window, _, _ in ledger.WINDOWS:
                 left, right = candidate.get(key), control.get((*key, reference))
                 a, b = (
@@ -372,10 +494,15 @@ def verify(config, output):
     inputs = ledger.read_json(cstudy / "inputs.json")
     identity_hash = ledger.digest(study / "identity.json")
     input_hash = ledger.digest(cstudy / "inputs.json")
+    policy = config.get("candidate_policy", POLICY)
     ledger.require(
-        inputs["policy"] == POLICY and inputs["adoption_eligible"] is False,
+        policy in CANDIDATES
+        and inputs["policy"] == policy
+        and inputs["adoption_eligible"] is False,
         "Candidate identity differs",
     )
+    if policy == MATURITY_POLICY:
+        ledger.same(admission["candidate_policy"], policy, "Variant admission")
     ledger.require(
         identity["policy"] == ledger.POLICY
         and identity["protocol_sha256"] == ledger.PROTOCOL_SHA
@@ -432,13 +559,21 @@ def verify(config, output):
             archive["grades"].copy(),
             archive["eligible"].copy(),
         )
-    grid, original = candidate_grid(data["dates"]), ledger.fixed_grid(data["dates"])
+    grid, original = (
+        candidate_grid(data["dates"], policy=policy),
+        ledger.fixed_grid(data["dates"]),
+    )
     ledger.same(inputs["accounts"], grid)
     ledger.same(identity["accounts"], original)
-    candidates, cindex = read_index(cstudy, grid, inputs, candidate=True)
+    candidates, cindex = read_index(cstudy, grid, inputs, candidate=True, policy=policy)
     controls, index = read_index(study, original, identity, candidate=False)
     left = verify_rows(
-        cstudy, candidates, data, candidate=True, source=manifests["candidate"]["files"]
+        cstudy,
+        candidates,
+        data,
+        candidate=True,
+        source=manifests["candidate"]["files"],
+        policy=policy,
     )
     right = verify_rows(study, controls, data)
     for role in ("candidate", "control"):
@@ -446,6 +581,7 @@ def verify(config, output):
     ledger.check_originals(identity["original_files"])
     ledger.check_originals(admission["original_risk_files"])
     proof = {
+        "candidate_policy": policy,
         "status": "VERIFIED_SAVED_PREFIX_ARITHMETIC",
         "adoption_eligible": False,
         "verifier_revision": config["verifier_revision"],
@@ -461,7 +597,14 @@ def verify(config, output):
         "pending_control_accounts": len(original) - len(right),
         "candidate_accounts": left,
         "control_accounts": right,
-        "paired": paired_results(left, right, grid),
+        "paired": paired_results(
+            left,
+            right,
+            grid,
+            references=("rule", "boosting", "ridge", "SPY", "QQQ")
+            if policy == MATURITY_POLICY
+            else ("rule", "SPY", "QQQ"),
+        ),
         "limitations": [
             "current_vintage_not_exact_live_reconstruction",
             "conditional_raw_open_not_broker_fills",

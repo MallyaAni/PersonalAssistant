@@ -14,7 +14,7 @@ from backend.market import direct_error_band as errors
 from backend.market import forward_arithmetic as forward
 from backend.market import learned_entry_data
 from backend.market import learned_retention_models as context
-from backend.market.joint_funded_policy import JointFundedPolicy
+from backend.market.joint_funded_policy import JointFundedPolicy, MaturityFundedPolicy
 from backend.market.panel import Panel
 from backend.market.replay_broker import ReplayBroker
 from backend.tests.test_direct_feature_arithmetic import risk_example_factory
@@ -358,8 +358,9 @@ def test_close_window_honors_early_close_and_holiday():
 
 # A valid current forecast can persist a private decision after midnight before open.
 @pytest.mark.parametrize("learned_exit", [False, True])
+@pytest.mark.parametrize("policy_type", [JointFundedPolicy, MaturityFundedPolicy])
 def test_actual_private_forward_decision_survives_midnight(
-    example, tmp_path, learned_exit
+    example, tmp_path, learned_exit, policy_type
 ):
     panel = deepcopy(example[3])
     if learned_exit:
@@ -398,7 +399,7 @@ def test_actual_private_forward_decision_survives_midnight(
         client_factory=lambda: broker,
         decision_at=now,
         feature_reader=features,
-        holding_policy=JointFundedPolicy(reader, 10),
+        holding_policy=policy_type(reader, 10),
     )
     session = str(panel.dates[-1])
     entry = market_daily.paper_trade(shown, tmp_path, session, True, **args)
