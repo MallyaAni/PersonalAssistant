@@ -36,12 +36,32 @@ attempts, fills, plan state, account cash/shares and marked wealth. Only reporte
 cost, position P&L and entry-cost fields differ. Two initial new test assertions
 incorrectly compared cost-dependent history or read an absent summarized entry
 key; corrected to persisted records, keeping economic/decision assertions.
-External acceptance assertions are unchanged. Exact-source image/actual
-compilation/independent saved-artifact verification PENDING.
+External acceptance assertions are unchanged. VERIFIED exact source
+f15c0119a9b42dae7d73172be1722a62672a1e91,2371 archive files:512 tests17.71s,
+no skips, pinned image5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+Actual review-only CLI authenticated the source before/after and retained all96
+original action histories,26 archive factors and1753 dividends. Three physical
+distributions compile with explicit null allocation, sourced legal clocks and
+unproven delivery/payment flags; DELL2018 remains the one original uncompiled
+event. The saved-only independent checker imported no producer, broker or
+predictor and checked original bytes, all physical ratios, unknown allocations,
+clock distinctions and missing payment fields. No policy returns were scored.
+Proof:/home/animallya96/scratch/unallocated-distribution-20261004-f15c0119/proof.
+Test log47d05e29f1c74aa83bf9f8fd9d7513146438d625008d666e5f55027042f22b87;
+manifest977e80dfac4f02ccad2e4578f73674fb018327d840080803ebb5ec2f210950e1;
+compiled4106cb50e7e6f278d7b2a127c13f44213dae2b2a9bf9b20cb44211487a8058c7;
+independent19b4b8b5f2e9765d852e8d025160a1c335b2141ea72b3f5f78ca7f100cfb4e9a.
+Commands and verification helpers are saved there. Local disk filled during
+redundant archive extraction; initial unprepared remote launch EXIT4/no tests.
+Removed only owned derived duplicates (original Git/source/proofs retained),
+created the manifest directly from archive bytes, prepared the remote source,
+then ran the exact tests. Original failed launch log is preserved. Do not repeat
+that empty-source launch or allocate another local extracted tree unnecessarily.
 No economic account scored, predictor restored/refitted, old capture/assembly
 repeated, main merge or deployment. Existing passive marks111e0655 are reusable.
 Diagram impact: NONE, existing private action/accounting boundaries.
-NEXT: complete exact-source proof, then DELL2018/VMW2023 terminal processing,
+Read-only deployed source remains621e28f0f8407f511ff01202c8e5aaa6bcda9e40.
+NEXT: DELL2018/VMW2023 terminal processing,
 off-session observation boundary and fractional payment evidence before fixed
 funded timing comparison; adaptive sizing and holding/profit exits still follow.
 
