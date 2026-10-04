@@ -13,6 +13,7 @@ import math
 from contextlib import suppress
 from copy import deepcopy
 from datetime import UTC, datetime
+from fractions import Fraction
 
 import numpy as np
 
@@ -95,6 +96,7 @@ class ReplayBroker:
                 self._average[symbol] = _number(supplied[symbol], positive=True)
         self._orders, self._attempts, self._fills, self._actions = {}, [], [], {}
         self._dividends, self._marks, self._mark_times = [], {}, {}
+        self._security_distributions = []
         self._now = self._observed_at = None
         self._market_open = self._batch_open = False
         self._last_equity = self._cash
@@ -117,6 +119,11 @@ class ReplayBroker:
                 "holdings": self._held,
                 "average_prices": self._average,
                 "dividends": self._dividends,
+                **(
+                    {"security_distributions": self._security_distributions}
+                    if self._security_distributions
+                    else {}
+                ),
                 "observed_at": self._observed_at.isoformat()
                 if self._observed_at
                 else None,
@@ -162,6 +169,13 @@ class ReplayBroker:
     # Value actual cash, marked holdings and explicit unspendable dividend receivables.
     def account(self):
         self._observed()
+        if any(
+            row["fractional_qty"] > 0 and row["cash_in_lieu"] is None
+            for row in self._security_distributions
+        ):
+            raise AlpacaTradingError(
+                "Unknown distribution cash-in-lieu prevents full NAV"
+            )
         equity = self._cash + sum(
             qty * self._mark(symbol) for symbol, qty in self._held.items()
         )
@@ -511,6 +525,127 @@ class ReplayBroker:
             self._held[symbol] = quantity
             self._average[symbol] = basis
         self._actions[key] = ratio
+
+    # Credit child shares without changing parent quantity or inventing fractional cash.
+    def apply_stock_distribution(
+        self,
+        parent,
+        child,
+        numerator,
+        denominator,
+        effective_at,
+        *,
+        parent_basis_fraction,
+    ):
+        if (
+            not isinstance(child, str)
+            or not child
+            or child == parent
+            or any(
+                isinstance(value, (bool, np.bool_))
+                or not isinstance(value, (int, np.integer))
+                or value <= 0
+                for value in (numerator, denominator)
+            )
+        ):
+            raise ValueError(
+                "Distinct child symbol and positive integer share ratio required"
+            )
+        fraction = _number(parent_basis_fraction, positive=True)
+        if fraction >= 1:
+            raise ValueError(
+                "Explicit parent basis fraction strictly between zero and one required"
+            )
+        ratio = Fraction(int(numerator), int(denominator))
+        key, value, effective = self._action(
+            parent, f"stock_distribution/{child}", float(ratio), effective_at
+        )
+        if key in self._actions:
+            prior = next(
+                row for row in self._security_distributions if row["action_key"] == key
+            )
+            if prior["parent_basis_fraction"] != fraction:
+                raise ValueError("Conflicting distribution basis evidence")
+            return
+        if any(
+            row["symbol"] == child
+            and row["filled_qty"] > 0
+            and _instant(row["at"]) >= effective
+            for row in self._fills
+        ):
+            raise ValueError("Corporate action must precede affected child fills")
+        parent_qty = self._held.get(parent, 0)
+        entitlement = Fraction(str(parent_qty)) * ratio
+        whole = int(entitlement)
+        residual = float(entitlement - whole)
+        parent_basis = self._average.get(parent, 0)
+        child_basis = parent_basis * (1 - fraction) / value
+        previous = self._held.get(child, 0)
+        quantity = previous + whole
+        basis = (
+            (previous * self._average.get(child, 0) + whole * child_basis) / quantity
+            if quantity
+            else 0
+        )
+        amounts = (
+            child_basis,
+            quantity,
+            basis,
+            parent_basis * fraction,
+            residual * child_basis,
+        )
+        if any(not math.isfinite(amount) for amount in amounts):
+            raise ValueError(
+                "Finite distribution entitlements and acquisition bases required"
+            )
+        if parent_qty:
+            self._average[parent] = parent_basis * fraction
+        if whole:
+            self._held[child], self._average[child] = quantity, basis
+        self._security_distributions.append(
+            {
+                "action_key": key,
+                "parent": parent,
+                "child": child,
+                "parent_qty": parent_qty,
+                "numerator": ratio.numerator,
+                "denominator": ratio.denominator,
+                "whole_qty": whole,
+                "fractional_qty": residual,
+                "fractional_basis": residual * child_basis,
+                "parent_basis_fraction": fraction,
+                "cash_in_lieu": None,
+                "effective_at": effective.isoformat(),
+            }
+        )
+        self._actions[key] = value
+
+    # Post only observed cash-in-lieu evidence without inventing its amount or date.
+    def settle_distribution_cash(self, parent, child, effective_at, amount, pay_at):
+        self._observed()
+        effective, payment = _instant(effective_at), _instant(pay_at)
+        amount = _number(amount)
+        if payment < effective or payment > self._now:
+            raise ValueError("Observed distribution payment after entitlement required")
+        key = (parent, f"stock_distribution/{child}", effective.isoformat())
+        matching = [
+            row for row in self._security_distributions if row["action_key"] == key
+        ]
+        if len(matching) != 1 or matching[0]["fractional_qty"] <= 0:
+            raise ValueError("Existing fractional distribution entitlement required")
+        row = matching[0]
+        if row["cash_in_lieu"] is not None:
+            if row["cash_in_lieu"] != amount or row["paid_at"] != payment.isoformat():
+                raise ValueError("Conflicting distribution payment evidence")
+            return
+        if not math.isfinite(self._cash + amount):
+            raise ValueError("Finite distribution payment required")
+        self._cash += amount
+        row.update(
+            cash_in_lieu=amount,
+            paid_at=payment.isoformat(),
+            observed_payment_at=self._now.isoformat(),
+        )
 
     # Accrue a dividend without spending an unknown payment-date entitlement.
     def accrue_dividend(self, symbol, per_share, effective_at, *, pay_at=None):

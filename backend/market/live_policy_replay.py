@@ -87,21 +87,55 @@ def remember_intents(root, intents):
             intents[identity] = plain(row)
 
 
-# Apply dated split entitlements and explicitly unspendable dividend receivables.
+# Apply post-split share entitlements without letting symbol order change quantities.
 def corporate_actions(broker, inputs, day, opening):
-    for symbol in inputs.tickers:
-        for row in inputs.actions[symbol]:
-            if row["date"] != str(inputs.dates[day]):
+    due = [
+        (symbol, row)
+        for symbol in inputs.tickers
+        for row in inputs.actions[symbol]
+        if row["date"] == str(inputs.dates[day])
+    ]
+    supported = {"split", "dividend", "stock_distribution", "archive_adjustment"}
+    if any(row["kind"] not in supported for _, row in due):
+        raise ValueError("Unsupported economic corporate action")
+    for kind in ("split", "stock_distribution", "dividend"):
+        for symbol, row in due:
+            if row["kind"] != kind:
                 continue
             if row["kind"] == "split":
                 broker.apply_split(symbol, row["value"], opening)
-            else:
+            elif row["kind"] == "dividend":
                 broker.accrue_dividend(symbol, row["value"], opening)
+            elif row["kind"] == "stock_distribution":
+                broker.apply_stock_distribution(
+                    symbol,
+                    row["child"],
+                    row["numerator"],
+                    row["denominator"],
+                    opening,
+                    parent_basis_fraction=row["parent_basis_fraction"],
+                )
 
 
 # Value actual raw holdings separately from unknown-payment dividend receivables.
 def valuation(broker, inputs, day):
     ledger = broker.ledger()
+    unknown = [
+        row
+        for row in ledger.get("security_distributions", ())
+        if row["fractional_qty"] > 0 and row["cash_in_lieu"] is None
+    ]
+    if unknown:
+        return plain(
+            {
+                "nav": None,
+                "price_nav": None,
+                "status": "unknown_distribution_cash_in_lieu",
+                "unpriced_entitlements": unknown,
+                "cash": ledger["cash"],
+                "holdings": ledger["holdings"],
+            }
+        )
     missing = [
         name
         for name, quantity in ledger["holdings"].items()

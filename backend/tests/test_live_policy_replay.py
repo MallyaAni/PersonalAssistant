@@ -9,9 +9,16 @@ import pytest
 from backend.agents.trading.desk import paper
 from backend.market import calendar, entry_timing
 from backend.market.live_execution_inputs import prepare
-from backend.market.live_policy_replay import run_account, run_benchmark
+from backend.market.live_policy_replay import (
+    corporate_actions,
+    instant,
+    run_account,
+    run_benchmark,
+    valuation,
+)
 from backend.market.live_probability_timing import build_reader
 from backend.market.panel import Panel
+from backend.market.replay_broker import ReplayBroker
 from backend.market.sip_cube import SessionCube
 
 
@@ -75,11 +82,89 @@ def fixture(dates=("2026-09-01", "2026-09-02", "2026-09-03"), missing_fill=False
     return panel, raw, cubes
 
 
+# Separate a supplied archive price factor from actual child shares in the ledger.
+@pytest.mark.parametrize("quantity", [99, 100])
+def test_stock_distribution_journey_preserves_parent_and_missing_cash(quantity):
+    _, raw, _ = fixture()
+    actions = dict(raw.actions)
+    actions["AAA"] = (
+        {"date": str(raw.dates[1]), "kind": "archive_adjustment", "value": 1.323},
+        {
+            "date": str(raw.dates[1]),
+            "kind": "stock_distribution",
+            "child": "SPY",
+            "numerator": 1,
+            "denominator": 3,
+            "parent_basis_fraction": 0.75,
+        },
+    )
+    raw = replace(raw, actions=actions)
+    broker = ReplayBroker(
+        1000,
+        0,
+        initial_holdings={"AAA": quantity},
+        initial_average_prices={"AAA": 60},
+    )
+    opening = instant(raw.dates[1], calendar.REGULAR_OPEN)
+    broker.observe(opening, {name: 100 for name in raw.tickers}, True)
+    corporate_actions(broker, raw, 1, opening)
+    assert broker.ledger()["holdings"] == {"AAA": quantity, "SPY": 33}
+    assert broker.ledger()["cash"] == 1000
+    result = valuation(broker, raw, 1)
+    if quantity == 99:
+        assert result["nav"] == 14200
+        assert result["status"] == "marked_raw_close"
+    else:
+        assert result["nav"] is None
+        assert result["status"] == "unknown_distribution_cash_in_lieu"
+        assert len(result["unpriced_entitlements"]) == 1
+        broker.settle_distribution_cash("AAA", "SPY", opening, 7, opening)
+        assert valuation(broker, raw, 1)["nav"] == 14307
+
+
+# Child splits precede post-split distributions regardless of source symbol order.
+def test_distribution_does_not_split_new_child_shares_again():
+    _, raw, _ = fixture()
+    actions = dict(raw.actions)
+    actions["AAA"] = (
+        {
+            "date": str(raw.dates[1]),
+            "kind": "stock_distribution",
+            "child": "SPY",
+            "numerator": 1,
+            "denominator": 3,
+            "parent_basis_fraction": 0.75,
+        },
+    )
+    actions["SPY"] = (
+        {
+            "date": str(raw.dates[1]),
+            "kind": "split",
+            "value": 2,
+        },
+    )
+    raw = replace(raw, actions=actions)
+    broker = ReplayBroker(
+        0,
+        0,
+        initial_holdings={"AAA": 99, "SPY": 2},
+        initial_average_prices={"AAA": 60, "SPY": 10},
+    )
+    opening = instant(raw.dates[1], calendar.REGULAR_OPEN)
+    broker.observe(opening, {name: 100 for name in raw.tickers}, True)
+    corporate_actions(broker, raw, 1, opening)
+    assert broker.ledger()["holdings"] == {"AAA": 99, "SPY": 37}
+    assert broker.ledger()["average_prices"]["SPY"] == pytest.approx(1505 / 37)
+
+
 # Exercise the original study's first night through the actual historical planner.
-@pytest.mark.parametrize("days", [
-    ("2018-01-31", "2018-02-01", "2018-02-02"),
-    ("2018-11-21", "2018-11-23", "2018-11-26"),
-])
+@pytest.mark.parametrize(
+    "days",
+    [
+        ("2018-01-31", "2018-02-01", "2018-02-02"),
+        ("2018-11-21", "2018-11-23", "2018-11-26"),
+    ],
+)
 def test_actual_policy_first_2018_night_uses_reviewed_calendar(tmp_path, days):
     panel, raw, cubes = fixture(days)
     result = run_account(panel, raw, cubes, tmp_path / "historical", 1, 2, 10)

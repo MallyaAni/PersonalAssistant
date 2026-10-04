@@ -217,6 +217,101 @@ def test_split_entitlement_basis_and_pending_quantity():
     assert broker.ledger()["holdings"] == {"AAA": 20}
 
 
+# A child-stock distribution preserves parent shares and total acquisition basis.
+def test_stock_distribution_is_not_a_parent_split():
+    broker = ReplayBroker(
+        50,
+        0,
+        initial_holdings={"AAA": 99, "BBB": 2},
+        initial_average_prices={"AAA": 60, "BBB": 40},
+    )
+    broker.observe(NOW, {"AAA": 45, "BBB": 45}, True)
+    broker.apply_stock_distribution("AAA", "BBB", 1, 3, NOW, parent_basis_fraction=0.75)
+    ledger = broker.ledger()
+    assert ledger["holdings"] == {"AAA": 99, "BBB": 35}
+    assert ledger["average_prices"] == {"AAA": 45, "BBB": pytest.approx(1565 / 35)}
+    assert ledger["cash"] == 50
+    assert broker.account().equity == 6080
+    assert sum(
+        ledger["holdings"][s] * ledger["average_prices"][s] for s in ledger["holdings"]
+    ) == pytest.approx(6020)
+    broker.apply_stock_distribution("AAA", "BBB", 1, 3, NOW, parent_basis_fraction=0.75)
+    assert broker.ledger() == ledger
+    with pytest.raises(ValueError, match="Conflicting"):
+        broker.apply_stock_distribution(
+            "AAA", "BBB", 1, 3, NOW, parent_basis_fraction=0.70
+        )
+    assert broker.ledger() == ledger
+
+
+# Unknown cash-in-lieu stays an unpriced claim and cannot become shares or cash.
+def test_distribution_fraction_is_not_fabricated_funding_or_a_tradable_share():
+    broker = ReplayBroker(
+        0, 0, initial_holdings={"AAA": 100}, initial_average_prices={"AAA": 60}
+    )
+    broker.observe(NOW, {"AAA": 45, "BBB": 45}, True)
+    broker.apply_stock_distribution("AAA", "BBB", 1, 3, NOW, parent_basis_fraction=0.75)
+    ledger = broker.ledger()
+    assert ledger["holdings"] == {"AAA": 100, "BBB": 33}
+    claim = ledger["security_distributions"][0]
+    assert claim["fractional_qty"] == pytest.approx(1 / 3)
+    assert claim["fractional_basis"] == pytest.approx(15)
+    assert claim["cash_in_lieu"] is None
+    assert ledger["cash"] == 0
+    assert broker.positions()[0].qty == 100
+    assert broker.positions()[1].qty == 33
+    with pytest.raises(AlpacaTradingError, match="cash-in-lieu"):
+        broker.account()
+    with pytest.raises(AlpacaTradingError, match="cash-in-lieu"):
+        broker.submit_market("BBB", 34, "sell", "excess")
+    assert broker.ledger() == ledger
+
+
+# Observed cash-in-lieu closes the unpriced claim exactly once without future funding.
+def test_distribution_cash_requires_observed_receipt_and_is_idempotent():
+    broker = account(100, cost=0, holdings={"AAA": 10})
+    broker.apply_stock_distribution("AAA", "BBB", 1, 3, NOW, parent_basis_fraction=0.75)
+    before = broker.ledger()
+    with pytest.raises(ValueError, match="Observed distribution payment"):
+        broker.settle_distribution_cash("AAA", "BBB", NOW, 3, LATER)
+    assert broker.ledger() == before
+    broker.observe(LATER, {"AAA": 10, "BBB": 10}, True)
+    broker.settle_distribution_cash("AAA", "BBB", NOW, 3, LATER)
+    assert broker.account().cash == 103
+    assert broker.account().equity == 233
+    paid = broker.ledger()
+    broker.settle_distribution_cash("AAA", "BBB", NOW, 3, LATER)
+    assert broker.ledger() == paid
+    with pytest.raises(ValueError, match="Conflicting"):
+        broker.settle_distribution_cash("AAA", "BBB", NOW, 4, LATER)
+    assert broker.ledger() == paid
+
+
+# Invalid or late distribution facts must not partially change the account.
+@pytest.mark.parametrize(
+    "change", ["same_symbol", "zero", "boolean", "basis", "future"]
+)
+def test_invalid_stock_distribution_is_atomic(change):
+    broker = account(100, holdings={"AAA": 9})
+    child, numerator, fraction, when = "BBB", 1, 0.75, NOW
+    if change == "same_symbol":
+        child = "AAA"
+    elif change == "zero":
+        numerator = 0
+    elif change == "boolean":
+        numerator = True
+    elif change == "basis":
+        fraction = 1.1
+    else:
+        when = "2026-08-04T09:45:00-04:00"
+    before = broker.ledger()
+    with pytest.raises(ValueError, match="required"):
+        broker.apply_stock_distribution(
+            "AAA", child, numerator, 3, when, parent_basis_fraction=fraction
+        )
+    assert broker.ledger() == before
+
+
 # Fractional entitlements remain shares; invalid action clocks preserve the ledger.
 def test_fractional_split_and_invalid_action_clocks():
     broker = account(0, holdings={"AAA": 3})

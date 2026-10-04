@@ -13,6 +13,13 @@ from backend.market import calendar
 from backend.tests.test_live_policy_replay import fixture
 
 
+# Refuse known incorrect action bytes before any input or predictor loading.
+def test_known_bad_action_export_is_refused_before_loading(monkeypatch):
+    monkeypatch.setattr(study, "ACTIONS_SHA", study.REJECTED_ACTIONS_SHA)
+    with pytest.raises(ValueError, match="Known incorrect stock-distribution"):
+        study.load_inputs(None)
+
+
 # Supply reviewed exchange sessions spanning the entire fixed comparison range.
 def dates():
     _, sessions = calendar.reviewed_sessions()

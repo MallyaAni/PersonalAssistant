@@ -17,6 +17,13 @@ from backend.market import calendar
 from backend.tests.test_live_policy_replay import fixture
 
 
+# Authenticated bytes with a known false entitlement must not earn a proof certificate.
+def test_known_bad_action_export_cannot_be_certified(monkeypatch):
+    monkeypatch.setattr(verifier, "ACTIONS_SHA", verifier.REJECTED_ACTIONS_SHA)
+    with pytest.raises(ValueError, match="Known incorrect stock-distribution"):
+        verifier.load_original_data(None, {})
+
+
 # Give saved-only checks direct original arrays from a real synthetic account fixture.
 def direct_data(raw, cubes):
     return {

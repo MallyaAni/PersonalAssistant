@@ -1,5 +1,63 @@
 # Next session
 
+## 2026-10-04 — invalid economic action isolated; entitlement boundary repaired
+
+This supersedes ALL running-study statements below. Root deliberately stopped
+actual-policy-study-4ff85fbf for an independently established action-semantics
+failure, BEFORE evaluating any account returns. Authoritative Docker terminal:
+EXIT137, OOMfalse, finished2026-10-04T08:48:30.66570139Z. No completed account
+or report.json; last progress1740 sessions through2024-12-30. NEVER restart it
+or alter its source/inputs. No policy advantage/disadvantage can be inferred.
+
+FAILED original action export0e05a397f3719c61688e2eb79355eb5111961c05f31916db8a16ab6ff01dbcca
+labels WDC2025-02-24 as a1.323 same-stock split. The authoritative
+[SEC filing](https://www.sec.gov/Archives/edgar/data/106040/000010604025000012/wdc-20250220.htm)
+instead establishes one-third SNDK share per WDC share, unchanged WDC shares.
+The [information statement](https://www.sec.gov/Archives/edgar/data/106040/000119312525019294/d922460dex991.htm)
+explains regular-way entitlement transfer through distribution and fractional
+cash-in-lieu. The [Form8937](https://investor.wdc.com/static-files/d35450f5-0353-40dd-bbc9-a711c8d004e5)
+offers allocation examples using LATER prices; do NOT turn these into causal
+pre-event bases. No frozen history, ratios or economic outcomes were fitted.
+
+NEW private accounting support separates archive_adjustment from stock_distribution:
+original price factors cannot grant parent shares; rational child entitlements,
+explicit available-at basis allocation, same-day split ordering, total cost
+basis and duplicate/conflict guards. Fractional cash-in-lieu stays unpriced
+and unspendable until an actual observed amount/payment receipt. Full NAV is
+unavailable while such a claim remains unknown; never pretend its child mark
+is an actual liquidation receipt. Missing marks remain unavailable. Both
+fixed-study loader and independent verifier refuse this exact known-bad export
+BEFORE I/O/model restoration/account certification. No assertions relaxed.
+
+VERIFIED native194 focused cases15.56s, Ruff/diff clean. Exact original event
+reproduction proves100 WDC incorrectly becomes132.3; corrected synthetic
+allocation preserves100 WDC,33 SNDK and1/3 unpriced cash entitlement. Allocation
+0.75 and prices in this reproduction are SYNTHETIC, not real WDC basis evidence.
+First external probe failed only exact float equality; preserve its empty
+output and script. New numeric-comparison probe passed independently, hash
+0ba29f85380677f6a9d3ebeb88ecbed465e48f863497a053dd7ba6637c5f28c9.
+Evidence:/home/animallya96/scratch/actual-policy-study-20261004-4ff85fbf/proof.
+Stop reason07a3f36b9860ddbcf8756482d7da297651ce6087185061a64b82484354d01674;
+terminal550459bff9c3bff57608874618c8b16f4bc0bd41a92e546af39f8cdf6bef63f6.
+
+Verifier0e283748 is integrated/pushed/root-owned,52 native/image cases; original
+reader preflight verified bytes/price units ONLY, not economic action semantics.
+All earlier workers are finished/root-owned. Do not recopy/restart them. Pull
+--rebase origin main encountered historical merge-context conflict; aborted
+without edits/history loss, restoring exact0e283748 before these task changes.
+origin/main204689db remains an ancestor; no main rewrite or force push.
+
+NEXT bounded step: build reviewed separate action semantics/provenance against
+original bytes, inspect necessary non-share distributions, obtain or explicitly
+retain missing entitlement/basis/payment evidence; extend saved-only accounting
+verification for supported distributions BEFORE another economic run. Corrected
+generic ledger is not a completed original-data backtest. Preserve fixed model,
+cohort, cost and horizon decisions; do not select windows to hide this defect.
+Then isolate timing, sizing and holding exits toward funded compounded gain
+against rule/SPY/QQQ. Goal ACTIVE; live621e28f0 unchanged, no promotion/deploy,
+models/data/secrets preserved. Diagram impact: NONE — existing private research
+ledger and source boundary, no new agent/service/store or production flow.
+
 ## 2026-10-04 — historical-clock boundary corrected; fresh full run active
 
 Latest source4ff85fbfd458074b3d0174d414788a14b8547312 is pushed on

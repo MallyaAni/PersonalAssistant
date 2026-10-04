@@ -119,7 +119,82 @@ def _freeze(value):
     return value
 
 
-# Recover raw OHLC and cash-action units solely from explicit dated splits.
+# Validate sourced child entitlements and an allocation available at the action clock.
+def _distribution(row, names, day):
+    child = row.get("child")
+    numerator, denominator = row.get("numerator"), row.get("denominator")
+    _require(
+        child in names
+        and all(
+            isinstance(value, (int, np.integer))
+            and not isinstance(value, (bool, np.bool_))
+            and value > 0
+            for value in (numerator, denominator)
+        ),
+        "Covered child and explicit positive integer distribution ratio required",
+    )
+    fraction = row.get("parent_basis_fraction")
+    _require(
+        isinstance(fraction, (int, float, np.integer, np.floating))
+        and not isinstance(fraction, (bool, np.bool_))
+        and np.isfinite(fraction)
+        and 0 < fraction < 1,
+        "Explicit distribution basis allocation required",
+    )
+    available = row.get("basis_available_at")
+    _require(isinstance(available, str), "Aware distribution basis clock required")
+    available = datetime.fromisoformat(available)
+    opening = datetime.combine(
+        day.astype(object), calendar.REGULAR_OPEN, calendar.NEW_YORK
+    )
+    _require(
+        available.utcoffset() is not None and available <= opening,
+        "Distribution basis cannot use later evidence",
+    )
+    receipt = row.get("source_receipt")
+    _require(
+        isinstance(receipt, Mapping)
+        and bool(receipt)
+        and row.get("fractional_policy") == "cash_in_lieu_unknown",
+        "Explicit source receipt and unknown fractional cash policy required",
+    )
+    _require(
+        row.get("share_basis") == "post_split_action_date_shares",
+        "Explicit distribution share basis required",
+    )
+    return {
+        "date": str(day),
+        "kind": "stock_distribution",
+        "child": child,
+        "numerator": int(numerator),
+        "denominator": int(denominator),
+        "parent_basis_fraction": float(fraction),
+        "basis_available_at": available.isoformat(),
+        "source_receipt": _freeze(receipt),
+        "fractional_policy": "cash_in_lieu_unknown",
+        "share_basis": "post_split_action_date_shares",
+    }
+
+
+# Refuse same-day chains whose entitlement order is not established by the source.
+def _validate_distribution_dependencies(normalized):
+    parents_by_day = {}
+    for name, rows in normalized.items():
+        for row in rows:
+            if row["kind"] == "stock_distribution":
+                parents_by_day.setdefault(row["date"], set()).add(name)
+    _require(
+        all(
+            row["child"] not in parents_by_day[row["date"]]
+            for rows in normalized.values()
+            for row in rows
+            if row["kind"] == "stock_distribution"
+        ),
+        "Same-day chained distributions require additional entitlement evidence",
+    )
+
+
+# Separate archive price factors from dated economic share and cash entitlements.
 def _actions(actions, names, dates, basis, through, dividend_basis):
     _require(
         isinstance(actions, Mapping) and set(actions) == set(names),
@@ -142,19 +217,14 @@ def _actions(actions, names, dates, basis, through, dividend_basis):
         )
         for row in actions[name]:
             _require(
-                isinstance(row, Mapping) and {"date", "kind", "value"} <= set(row),
+                isinstance(row, Mapping) and {"date", "kind"} <= set(row),
                 "Dated split/dividend action records required",
             )
-            day, kind, value = _day(row["date"]), row["kind"], row["value"]
+            day, kind = _day(row["date"]), row["kind"]
             _require(
-                kind in ("split", "dividend")
-                and not isinstance(value, (bool, np.bool_)),
+                kind
+                in ("split", "dividend", "archive_adjustment", "stock_distribution"),
                 "Explicit split/dividend units required",
-            )
-            value = float(value)
-            _require(
-                np.isfinite(value) and value > 0,
-                "Positive corporate-action value required",
             )
             _require(
                 previous is None or day >= previous,
@@ -165,8 +235,25 @@ def _actions(actions, names, dates, basis, through, dividend_basis):
             _require(key not in seen, "Duplicate or conflicting corporate action")
             seen.add(key)
             previous = day
+            if kind == "stock_distribution":
+                _require(
+                    row.get("child") != name, "Distinct distribution child required"
+                )
+                rows.append(_distribution(row, names, day))
+                continue
+            value = row.get("value")
+            _require(
+                isinstance(value, (int, float, np.integer, np.floating))
+                and not isinstance(value, (bool, np.bool_)),
+                "Explicit split/dividend units required",
+            )
+            value = float(value)
+            _require(
+                np.isfinite(value) and value > 0,
+                "Positive corporate-action value required",
+            )
             rows.append({"date": str(day), "kind": kind, "value": value})
-            if kind == "split" and day <= basis[name]:
+            if kind in ("split", "archive_adjustment") and day <= basis[name]:
                 with np.errstate(over="ignore", under="ignore"):
                     factors[dates < day, stock] *= value
         rows.sort(key=lambda row: (row["date"], row["kind"] != "split"))
@@ -174,7 +261,8 @@ def _actions(actions, names, dates, basis, through, dividend_basis):
             if row["kind"] != "dividend":
                 continue
             _require(
-                dividend_basis in (
+                dividend_basis
+                in (
                     "raw_ex_date_share_dollars",
                     "split_adjusted_archive_share_dollars",
                 ),
@@ -183,16 +271,16 @@ def _actions(actions, names, dates, basis, through, dividend_basis):
             row["source_value"] = row["value"]
             if dividend_basis == "split_adjusted_archive_share_dollars":
                 for split in rows:
-                    if (
-                        split["kind"] == "split"
-                        and row["date"] < split["date"] <= str(basis[name])
-                    ):
+                    if split["kind"] in ("split", "archive_adjustment") and row[
+                        "date"
+                    ] < split["date"] <= str(basis[name]):
                         row["value"] *= split["value"]
             _require(
                 np.isfinite(row["value"]) and row["value"] > 0,
                 "Finite raw dividend amount required",
             )
         normalized[name] = tuple(MappingProxyType(row) for row in rows)
+    _validate_distribution_dependencies(normalized)
     _require(
         np.isfinite(factors).all() and (factors > 0).all(),
         "Finite positive dated split factors required",

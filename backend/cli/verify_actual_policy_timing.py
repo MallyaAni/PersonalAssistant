@@ -25,6 +25,10 @@ PROTOCOL_SHA = "8bb0b528f56dd4f43e72823e4efa8eee71631e90b6d84831c881247a70cbabcc
 SNAPSHOT_SHA = "8670c86dd268fdf25ec16b44be86dcd40b840f703b7721ef319bc40e0e22ea58"
 PROVENANCE_SHA = "529f59d10ca0b612b050a0eddd21b2fd7eee316346004130d035cdac4dbd9844"
 ACTIONS_SHA = "0e05a397f3719c61688e2eb79355eb5111961c05f31916db8a16ab6ff01dbcca"
+# Byte authentication cannot certify the known incorrect WDC share entitlement.
+REJECTED_ACTIONS_SHA = (
+    "0e05a397f3719c61688e2eb79355eb5111961c05f31916db8a16ab6ff01dbcca"
+)
 INPUT_RECEIPT_SHA = "9a367843ab2f529ba5123997967e435ae41481be5692314501e71f3aaad7be29"
 FORECAST_INPUT_HASHES = (
     "c759ecb607e755631dacc0d28a147511a1eaa7e54e3cbcb23bdff4aafe8b76bf",
@@ -357,8 +361,12 @@ def normalize_actions(names, dates, exported, dividend_basis):
     return normalized, factors
 
 
-# Read only raw price/accounting inputs without restoring any predictive model.
+# Refuse known bad economic actions before checking original price/accounting bytes.
 def load_original_data(args, identity):
+    require(
+        ACTIONS_SHA != REJECTED_ACTIONS_SHA,
+        "Known incorrect stock-distribution export; arithmetic is not economic proof",
+    )
     files = identity["original_files"]
     require(len(files) == 110, "Complete original input mapping required")
     for path, expected in ((args.snapshot, SNAPSHOT_SHA), (args.actions, ACTIONS_SHA)):

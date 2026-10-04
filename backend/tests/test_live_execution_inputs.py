@@ -74,10 +74,12 @@ def test_dividend_conversion_compounds_only_strictly_later_splits(ex_day, expect
     args = inputs()
     args["basis_as_of"] = args["complete_through"] = "2026-10-01"
     args["dividend_price_basis"] = "split_adjusted_archive_share_dollars"
-    args["actions"]["AAA"].extend([
-        {"date": ex_day, "kind": "dividend", "value": 0.2},
-        {"date": "2026-10-01", "kind": "split", "value": 3.0},
-    ])
+    args["actions"]["AAA"].extend(
+        [
+            {"date": ex_day, "kind": "dividend", "value": 0.2},
+            {"date": "2026-10-01", "kind": "split", "value": 3.0},
+        ]
+    )
     args["actions"]["AAA"].sort(key=lambda row: row["date"])
     result = adapter.prepare(**args)
     dividend = next(row for row in result.actions["AAA"] if row["kind"] == "dividend")
@@ -135,6 +137,34 @@ def test_dividend_not_used_as_split_or_price_ratio():
     np.testing.assert_array_equal(result.daily_close[:, 0], [100.0, 50.0])
     assert [row["kind"] for row in result.actions["AAA"]] == ["split", "dividend"]
     assert result.actions["AAA"][1]["value"] == 3.0
+
+
+# Price adjustments change archive units without granting extra parent shares.
+def test_archive_adjustment_and_child_distribution_have_distinct_units():
+    args = inputs()
+    args["actions"]["AAA"][0].update(kind="archive_adjustment", value=1.323)
+    args["actions"]["AAA"].append(
+        {
+            "date": "2026-09-15",
+            "kind": "stock_distribution",
+            "child": "SPY",
+            "numerator": 1,
+            "denominator": 3,
+            "parent_basis_fraction": 0.75,
+            "basis_available_at": "2026-09-15T09:30:00-04:00",
+            "fractional_policy": "cash_in_lieu_unknown",
+            "share_basis": "post_split_action_date_shares",
+            "source_receipt": {"source": "synthetic-explicit-entitlement"},
+        }
+    )
+    result = adapter.prepare(**args)
+    np.testing.assert_array_equal(result.split_factors[:, 0], [1.323, 1])
+    assert result.actions["AAA"][1]["numerator"] == 1
+    assert result.actions["AAA"][1]["denominator"] == 3
+    assert result.daily_close[0, 0] == pytest.approx(50 * 1.323)
+    args["actions"]["AAA"][1]["basis_available_at"] = "2026-09-15T16:00:00-04:00"
+    with pytest.raises(ValueError, match="later evidence"):
+        adapter.prepare(**args)
 
 
 # A coherently revised archive basis leaves historical raw decisions unchanged.
