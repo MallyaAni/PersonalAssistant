@@ -1,5 +1,61 @@
 # Next session
 
+## 2026-10-04 — authenticated joint holding scenarios
+
+Goal ACTIVE; this turn PROGRESS. Starting isolated branch
+codex/learned-entry-risk-20261002, HEAD788188fb, clean; fetched origin/main204689db
+without rewriting history or shared work. Atomic objective: connect the joint
+log-growth allocator to saved strictly mature OOS holding forecasts, preserving
+stock/date dependence and explicit unsupported books. Registered input diagnostic
+before reading results. No estimator restoration, historical fit, account replay,
+new score, production change or strategy adoption in the saved-data exercise.
+
+Extended existing direct_feature_arithmetic with HoldingScenarioReader; original
+forecast/band code is an unchanged byte prefix after removal of its new deepcopy
+import (prior SHA33258c3fc97ab2ced9822af12e64746918a10a4b887431673f6da08ef0076b58).
+Copied numeric inputs/lineage; verified actual calendar, monthly OOS receipts,
+publication and exact D+2 endpoints; cached strictly mature shared dated gross
+errors for each month/book, frozen before August17. Minimum252 joint dates,
+preceding756 sessions. No independent marginal sampling, recentering, tail
+clipping, row dropping or fabricated missing forecasts. Current realized labels
+cannot admit a request. Fresh output copies prevent caller mutation of cache.
+
+VERIFIED native117tests14.63s/no skips; exact source
+6f68c6b727697ed22fce80072c686e9d8b0fab1c in pinned image5c6c5605:
+148tests7.72s/no skips, including9 new dated-lineage, missing-support, immutable
+input/output, future-label invariance and actual log-optimizer acceptance cases.
+FAILED one newly written integration assertion assumed BBB must outrank AAA
+without that property in its synthetic forecasts; replaced it with independent
+objective comparison against all four feasible corner portfolios. No production
+logic or previous acceptance assertion was weakened. Ruff/format/diff clean.
+
+VERIFIED original saved-input read, network-none/1CPU/2GB, with original held and
+bridge reports, independent proofs, fits and forecast arrays authenticated before
+and after. Producer fit/prediction entrypoints refused. Independently recomputed
+joint dates, endpoint purge, scenario arithmetic and typed hashes; whole2372-file
+source unchanged. Frozen September30 scope:94 nonbenchmark singletons plus
+AAOI/COHR, STX/WDC, AVGO/NVDA.97requests:5available,92unavailable (65missing
+current forecasts,27insufficient joint history). AAOI/COHR had zero joint dates;
+STX/WDC lacked current forecasts; AVGO/NVDA had373 joint dates but missing current
+forecast. This exposes limited saved support; it is not a profitability result
+and must not be relaxed into invented evidence or silently promoted.
+
+Proof:/home/animallya96/scratch/joint-scenarios-20261004-6f68c6b7/proof/.
+Source manifestd1d1042557beedea36e3eaa541309ad0fae1390492c7237f1a4b84b618a79ec3;
+test log4bbdce2ee5353bf5f72e37a5a0859284f7d6b71ebb751e51e722b3692e17cbc1;
+original-input proof04a3f32699afd3b4a5428fceb91b8a97964ced67a86ce5c835f619ace249a8aa.
+Exact commands/hashes:/tmp/codex-joint-scenarios-execution-receipt-20261004.json
+and its remote proof copy. Diagram impact NONE: optional numeric research reader.
+
+Running fixed300-account timing study remains sourceb5894a74, original container
+reviewed-economic-study-b5894a74/Pid2516653, running/OOMfalse. At12:45:32 New York,
+rule-0-0 had1880sessions through2025-07-24; zero completed accounts. Never restart
+or change its mounted source/cohort/cost/model contract. UNVERIFIED: broad stock
+coverage, conditional joint calibration, funded profit advantage, live parity
+and deployment. Next address supported conditional stock-risk evidence without
+relaxing this fixed reader, then fixed funded sizing/holding comparisons and
+guarded adoption. No extra research methods or repetitions merely to stay busy.
+
 ## 2026-10-04 — joint distribution sizing/holding optimizer
 
 Goal ACTIVE; previous turn PROGRESS: independent original-input proof plus
