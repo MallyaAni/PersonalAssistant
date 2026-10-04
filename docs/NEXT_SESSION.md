@@ -1,5 +1,45 @@
 # Next session
 
+## 2026-10-04 — probabilistic execution diagnostic independently verified
+
+Source 4e77c48163f1bb5ff1e610d42c9a46a12d704bf3 is pushed. The new pure
+probabilistic module and isolated CLI passed61 native/image cases, no skips.
+Producer ba540dfa and saved-proof0e9bfd32 are COMPLETE/exited0; never restart,
+refit, rescore or replay these. Source archive/data/models remained read-only.
+Private verifier62b4fbee41b24941ac55955eed5e1f2fd2db316d984f6c11e25dc2dd719df5d2
+and tests6feefd581ba8baab12f41c59bf9fd58fd4cbcfba9b42203dd17181487ccac844
+passed25 native/image corruption cases; image25pass1.04s/no skips. Root reproduced
+one omitted CLI hashing/writer source dependency before actual proof, added
+its authentication, retained all existing assertions and pinned exact source set.
+Saved proof authenticates both residual/quantile/probability/reference archives,
+141monthly receipts and4windows×94stocks, source/input/report hashes before/after.
+No producer/model/account was called by proof. Proof
+c319fa57d520ae28189ba2158d2dc0b6f326f7dad1c671b6c3069ad9c34c2556.
+Report67084f65042a1defe87cfc5372ef5dd1de9e18e86a50b8c9d94b9d223681bf34.
+Evidence /home/animallya96/scratch/probabilistic-verification-20261004-4e77c481.
+Published probabilistic-execution-results-2026-10-04.md/.json, JSON
+ae9c816c628191ca704d9f4cdf228da21d810c9231165690fc720cf7a322df1d.
+
+VERIFIED supplied-input causal/funded decision arithmetic and saved forecast
+diagnostics. FAILED directional advantage: full-period Brier boosting0.251726,
+ridge0.251310 versus matched reference~0.249846; worse in every fixed aggregate
+window.80% intervals cover81.24%/81.07%, which is NOT conditional confidence.
+Each model has one wrong empirical certainty: infinite log loss retained.
+No outcome-based clipping/tuning/method/window/stock selection or adoption.
+UNVERIFIED funded timing profit, sizing improvement, exact live parity.
+Both model containers retain original IDs/start times; production untouched.
+
+Next bounded economic task: test the full waiting distribution using actual
+funded quantities with unchanged incumbent allocation; separately report
+fixed-quantity price attribution and carried-account gain/fees/drawdown/turnover
+versus SPY/QQQ. Authenticate saved baseline/intent support first, freeze protocol
+before new account outcomes; do not refit old heads or hide missing/cold-start
+opportunities. Probability accuracy alone does not prove profitable execution
+or justify confidence-weighted sizing. Existing63c21 factorial demonstrates
+allocation can swamp timing (+13.16pp timing, -212.86pp sizing at10bp paired
+medians). Full reliable replacement for BOTH entries/holding exits stays active.
+No live orders, UI/deploy/model changes, old studies or prospective-cohort edits.
+
 ## 2026-10-04 — probabilistic execution implementation; calibration next
 
 Frozen protocol89887d34 precedes code/calibration/outcomes. NEW pure
