@@ -12,7 +12,7 @@ import io
 import math
 from collections.abc import Mapping
 from dataclasses import asdict
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -117,68 +117,80 @@ def remember_intents(root, intents):
             intents[identity] = plain(row)
 
 
-# Apply post-split share entitlements without letting symbol order change quantities.
-def corporate_actions(broker, inputs, day, opening):
-    due = [
-        (symbol, row)
-        for symbol in inputs.tickers
-        for row in inputs.actions[symbol]
-        if row["date"] == str(inputs.dates[day])
-    ]
-    supported = {
-        "split",
-        "share_split",
-        "dividend",
-        "stock_distribution",
-        "archive_adjustment",
-        "security_exchange",
-        "share_consolidation",
-    }
-    if any(row["kind"] not in supported for _, row in due):
-        raise ValueError("Unsupported economic corporate action")
-    for kind in (
-        "split",
-        "share_split",
-        "security_exchange",
-        "share_consolidation",
-        "stock_distribution",
-        "dividend",
-    ):
-        for symbol, row in due:
-            if row["kind"] != kind:
+# Select actions already effective at this observation, separately from archive dates.
+def due_actions(inputs, day, now):
+    date = inputs.dates[day].astype(object)
+    if now.utcoffset() is None or now.astimezone(calendar.NEW_YORK).date() != date:
+        raise ValueError("Aware same-session corporate-action observation required")
+    due = []
+    for symbol in inputs.tickers:
+        for row in inputs.actions[symbol]:
+            clock = row.get("effective_at")
+            if clock is None and row["date"] != str(inputs.dates[day]):
                 continue
-            if row["kind"] in ("split", "share_split"):
-                broker.apply_split(symbol, row["value"], opening)
-            elif row["kind"] == "dividend":
-                broker.accrue_dividend(symbol, row["value"], opening)
-            elif row["kind"] == "share_consolidation":
-                broker.apply_share_consolidation(
-                    symbol,
-                    row["numerator"],
-                    row["denominator"],
-                    row["effective_at"],
-                    fractional_policy=row["fractional_policy"],
-                )
-            elif row["kind"] == "security_exchange":
-                broker.apply_security_exchange(
-                    symbol,
-                    row["numerator"],
-                    row["denominator"],
-                    opening,
-                    old_security_id=row["old_security_id"],
-                    new_security_id=row["new_security_id"],
-                    fractional_policy=row["fractional_policy"],
-                )
-            elif row["kind"] == "stock_distribution":
-                broker.apply_stock_distribution(
-                    symbol,
-                    row["child"],
-                    row["numerator"],
-                    row["denominator"],
-                    row.get("effective_at", opening),
-                    parent_basis_fraction=row["parent_basis_fraction"],
-                    basis_policy=row.get("basis_policy"),
-                )
+            effective = (
+                datetime.fromisoformat(clock)
+                if clock is not None
+                else instant(inputs.dates[day], calendar.REGULAR_OPEN)
+            )
+            if effective.utcoffset() is None:
+                raise ValueError("Aware corporate-action effective clock required")
+            if effective <= now and (
+                row["date"] == str(inputs.dates[day])
+                or effective.astimezone(calendar.NEW_YORK).date() == date
+            ):
+                due.append((symbol, row, effective))
+    order = (
+        "split",
+        "share_split",
+        "security_exchange",
+        "share_consolidation",
+        "stock_distribution",
+        "dividend",
+        "archive_adjustment",
+    )
+    if any(row["kind"] not in order for _, row, _ in due):
+        raise ValueError("Unsupported economic corporate action")
+    return sorted(due, key=lambda item: (item[2], order.index(item[1]["kind"])))
+
+
+# Apply each observed entitlement once with chronological and same-clock share ordering.
+def corporate_actions(broker, inputs, day, now):
+    if broker.clock()["timestamp"] != now.astimezone(UTC).isoformat():
+        raise ValueError("Corporate action requires the actual observed broker clock")
+    for symbol, row, effective in due_actions(inputs, day, now):
+        if row["kind"] in ("split", "share_split"):
+            broker.apply_split(symbol, row["value"], effective)
+        elif row["kind"] == "dividend":
+            broker.accrue_dividend(symbol, row["value"], effective)
+        elif row["kind"] == "share_consolidation":
+            broker.apply_share_consolidation(
+                symbol,
+                row["numerator"],
+                row["denominator"],
+                effective,
+                fractional_policy=row["fractional_policy"],
+            )
+        elif row["kind"] == "security_exchange":
+            broker.apply_security_exchange(
+                symbol,
+                row["numerator"],
+                row["denominator"],
+                effective,
+                old_security_id=row["old_security_id"],
+                new_security_id=row["new_security_id"],
+                fractional_policy=row["fractional_policy"],
+            )
+        elif row["kind"] == "stock_distribution":
+            broker.apply_stock_distribution(
+                symbol,
+                row["child"],
+                row["numerator"],
+                row["denominator"],
+                effective,
+                parent_basis_fraction=row["parent_basis_fraction"],
+                basis_policy=row.get("basis_policy"),
+            )
 
 
 # Value priced holdings and retain uncovered securities or unknown cash as missing NAV.
@@ -336,6 +348,7 @@ def nightly(
     )
     now += timedelta(minutes=1)
     broker.observe(now, account_marks(inputs, day, now, inputs.daily_close[day]), False)
+    corporate_actions(broker, inputs, day, now)
     report = build_report(panel, inputs, inputs.grades, inputs.eligible, day)
     stream = io.StringIO()
     try:

@@ -1,5 +1,43 @@
 # Next session
 
+## 2026-10-04 — observe legal grants before the overnight planner
+
+Goal ACTIVE. Previous goal turn PROGRESS: verified unallocated-basis source
+f15c0119 and pushed proof0f542aef. Atomic objective: the first actual replay
+observation at/after an off-session effective clock carries the grant, even when
+the archive price adjustment is dated at the next regular opening. Acceptance:
+no future grant, exactly-once shares, unchanged legacy split/dividend identity,
+actual regular/early-close clocks, and no future child prices or fabricated NAV.
+
+FAILED original acceptance:100 parent shares observed at16:01 still had no20
+child shares because dispatch filtered only the next archive/application date.
+Dispatch now uses the sourced effective clock at the current observation, sorts
+chronologically with existing same-clock split-before-distribution order, and
+checks the actual broker observation. Nightly invokes it before the real report
+and planner. Legacy unspecified clocks remain the scheduled regular opening,
+so a second evening observation cannot split shares or accrue dividends twice.
+Distribution receipts distinguish applied_at from effective_at. This records
+private action-date entitlement assumptions, not actual broker delivery.
+
+VERIFIED working-tree acceptance236 tests4.80s/no skips, including the unchanged
+external reproducer and actual nightly/sender/persistence journeys. A16:01 grant
+appears in that night's holdings; missing child prices produce explicit missing
+NAV and a skipped nightly. A17:00 grant waits until the next observed opening.
+Changing future child prices leaves the earlier session identical. Early-close
+13:01 and weekend-to-Monday application are checked. One new direct fixture
+initially marked SPY missing only in the broker while supplying its daily close;
+corrected the fixture to declare the same price gap in its original input. No
+production valuation assertion or external acceptance was weakened. Ruff/diff
+clean. Exact committed source-image verification is next, not yet claimed.
+
+No economic account scored, model restored/refitted, source capture repeated,
+main merge or deployment. Original invalid-export gates remain in place.
+Read-only deployed source621e28f0f8407f511ff01202c8e5aaa6bcda9e40 remains unchanged.
+Diagram impact: NONE, existing private action and planner boundaries.
+NEXT: complete DELL2018/VMW2023 handling and fractional payment evidence, wire
+reviewed inputs and independent verifier, then fixed funded same-sizing timing
+comparison; confidence sizing and remaining-horizon profit exits still follow.
+
 ## 2026-10-04 — physical distributions with explicitly unallocated cost
 
 Goal ACTIVE; previous goal turn PROGRESS (verified consolidationac540375 and

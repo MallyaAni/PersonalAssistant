@@ -883,6 +883,7 @@ class ReplayBroker:
                 ),
                 "cash_in_lieu": None,
                 "effective_at": effective.isoformat(),
+                "applied_at": self._now.isoformat(),
             }
         )
         self._actions[key] = value

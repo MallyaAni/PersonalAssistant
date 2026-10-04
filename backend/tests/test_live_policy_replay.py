@@ -12,6 +12,7 @@ from backend.market.live_execution_inputs import CUBE_BASIS, prepare, prepare_pa
 from backend.market.live_policy_replay import (
     account_marks,
     corporate_actions,
+    due_actions,
     instant,
     passive_marks,
     run_account,
@@ -281,6 +282,177 @@ def test_actual_policy_orders_and_wealth_do_not_depend_on_tax_basis_guess(tmp_pa
         for row in positions
     )
     assert all(row["symbol"] != "CHILD" for row in unknown["attempts"])
+
+
+# Observe overnight entitlements before their next regular price-adjustment date.
+@pytest.mark.parametrize(
+    "dates",
+    [
+        ("2026-09-01", "2026-09-02", "2026-09-03"),
+        ("2026-11-25", "2026-11-27", "2026-11-30"),
+    ],
+)
+def test_overnight_distribution_is_observed_once_on_actual_close_clock(dates):
+    _, raw, _ = fixture(dates)
+    closing = raw.daily_close.copy()
+    closing[1, 1] = np.nan
+    raw = replace(raw, daily_close=closing)
+    effective = instant(
+        raw.dates[1], calendar.session_close(raw.dates[1].astype(object))
+    ) + timedelta(minutes=1)
+    actions = dict(raw.actions)
+    actions["AAA"] = (
+        {
+            "date": str(raw.dates[2]),
+            "kind": "stock_distribution",
+            "child": "SPY",
+            "numerator": 1,
+            "denominator": 5,
+            "parent_basis_fraction": None,
+            "basis_policy": "unallocated_at_effective_clock",
+            "effective_at": effective.isoformat(),
+        },
+    )
+    raw = replace(raw, actions=actions)
+    broker = ReplayBroker(
+        1000, 0, initial_holdings={"AAA": 100}, initial_average_prices={"AAA": 60}
+    )
+    before = effective - timedelta(seconds=1)
+    broker.observe(before, {"AAA": 100, "SPY": None}, False)
+    corporate_actions(broker, raw, 1, before)
+    assert broker.ledger()["holdings"] == {"AAA": 100}
+    broker.observe(effective, {"AAA": 100, "SPY": None}, False)
+    corporate_actions(broker, raw, 1, effective)
+    receipt = broker.ledger()["security_distributions"][0]
+    assert broker.ledger()["holdings"] == {"AAA": 100, "SPY": 20}
+    assert receipt["effective_at"] == receipt["applied_at"] == effective.astimezone(
+        UTC
+    ).isoformat()
+    assert broker.ledger()["cash"] == 1000
+    assert valuation(broker, raw, 1)["nav"] is None
+    opening = instant(raw.dates[2], calendar.REGULAR_OPEN)
+    broker.observe(opening, {"AAA": 100, "SPY": 20}, True)
+    corporate_actions(broker, raw, 2, opening)
+    assert broker.ledger()["holdings"] == {"AAA": 100, "SPY": 20}
+    assert broker.ledger()["security_distributions"] == [receipt]
+
+
+# A real nightly skips unpriced inherited wealth rather than inventing a funded plan.
+@pytest.mark.parametrize("effective_minutes", [1, 60])
+def test_nightly_sees_only_effective_grants_without_future_child_marks(
+    tmp_path, effective_minutes
+):
+    panel, raw, cubes = fixture()
+    effective = instant(raw.dates[1], calendar.REGULAR_CLOSE) + timedelta(
+        minutes=effective_minutes
+    )
+    actions = dict(raw.actions)
+    actions["AAA"] = (
+        {
+            "date": str(raw.dates[2]),
+            "kind": "stock_distribution",
+            "child": "CHILD",
+            "numerator": 1,
+            "denominator": 1,
+            "parent_basis_fraction": None,
+            "basis_policy": "unallocated_at_effective_clock",
+            "effective_at": effective.isoformat(),
+        },
+    )
+    records = []
+    for price in (20.0, 999.0):
+        opening = np.full((len(raw.dates), 1), np.nan)
+        closing = opening.copy()
+        bars = np.full((len(raw.dates), 26, 1), np.nan)
+        opening[2] = closing[2] = price
+        bars[2] = price
+        passive = prepare_passive(
+            raw.dates,
+            raw.tickers,
+            ("CHILD",),
+            opening,
+            bars,
+            closing,
+            first_session=str(raw.dates[2]),
+            complete_through=str(raw.dates[2]),
+            provenance={"source": "synthetic_future_child_marks"},
+            price_basis=CUBE_BASIS,
+        )
+        records.append(
+            run_account(
+                panel,
+                replace(raw, actions=actions, passive=passive),
+                cubes,
+                tmp_path / str(price),
+                1,
+                2,
+                10,
+            )
+        )
+    assert records[0]["sessions"][1] == records[1]["sessions"][1]
+    for result in records:
+        first_night = result["sessions"][1]
+        assert first_night["holdings"]["AAA"] == 250
+        receipt = result["broker"]["security_distributions"][0]
+        assert receipt["parent_qty"] == receipt["whole_qty"] == 250
+        assert len(result["broker"]["security_distributions"]) == 1
+        assert all(row["symbol"] != "CHILD" for row in result["attempts"])
+        if effective_minutes == 1:
+            assert first_night["holdings"]["CHILD"] == 250
+            assert first_night["nav"] is None
+            assert first_night["missing_symbols"] == ["CHILD"]
+            assert first_night["nightly"]["status"] == "nightly_broker_unavailable"
+            assert receipt["applied_at"] == effective.astimezone(UTC).isoformat()
+        else:
+            assert "CHILD" not in first_night["holdings"]
+            assert first_night["nav"] is not None
+            assert first_night["nightly"]["status"] == "planned"
+            assert receipt["applied_at"] == instant(
+                raw.dates[2], calendar.REGULAR_OPEN
+            ).astimezone(UTC).isoformat()
+
+
+# Re-observing the same session cannot grant a split or accrue a dividend twice.
+def test_overnight_dispatch_keeps_legacy_opening_action_identity():
+    _, raw, _ = fixture()
+    actions = dict(raw.actions)
+    actions["AAA"] = (
+        {"date": str(raw.dates[1]), "kind": "split", "value": 2},
+        {"date": str(raw.dates[1]), "kind": "dividend", "value": 0.5},
+    )
+    raw = replace(raw, actions=actions)
+    broker = ReplayBroker(
+        1000, 0, initial_holdings={"AAA": 10}, initial_average_prices={"AAA": 60}
+    )
+    opening = instant(raw.dates[1], calendar.REGULAR_OPEN)
+    broker.observe(opening, {"AAA": 100}, True)
+    corporate_actions(broker, raw, 1, opening)
+    before = broker.ledger()
+    now = instant(raw.dates[1], calendar.REGULAR_CLOSE) + timedelta(minutes=1)
+    broker.observe(now, {"AAA": 100}, False)
+    corporate_actions(broker, raw, 1, now)
+    after = broker.ledger()
+    assert before["holdings"] == after["holdings"] == {"AAA": 20}
+    assert before["cash"] == after["cash"] == 1000
+    assert before["dividends"] == after["dividends"]
+    assert len(after["dividends"]) == 1
+    assert after["dividends"][0]["amount"] == 10
+
+
+# Ambiguous or unobserved clocks cannot authorize a corporate-action mutation.
+def test_action_dispatch_requires_an_aware_actual_broker_observation():
+    _, raw, _ = fixture()
+    now = instant(raw.dates[1], calendar.REGULAR_OPEN)
+    with pytest.raises(ValueError, match="Aware same-session"):
+        due_actions(raw, 1, now.replace(tzinfo=None))
+    with pytest.raises(ValueError, match="Aware same-session"):
+        due_actions(raw, 1, now + timedelta(days=1))
+    broker = ReplayBroker(1000, 0)
+    broker.observe(now, {"AAA": 100}, True)
+    before = broker.ledger()
+    with pytest.raises(ValueError, match="actual observed broker clock"):
+        corporate_actions(broker, raw, 1, now + timedelta(minutes=1))
+    assert broker.ledger() == before
 
 
 # Premarket, another session and timezone-free clocks cannot expose passive prices.
