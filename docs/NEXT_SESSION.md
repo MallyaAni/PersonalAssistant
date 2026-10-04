@@ -1,5 +1,36 @@
 # Next session
 
+## 2026-10-03 — daily arithmetic decision implementation ready for image acceptance
+
+Protocol `d7e6d016` frozen BEFORE bridge fits/outcomes. New pure
+`daily_arithmetic_bridge.py` uses the SAME saved OOS forecasts, monthly
+date-balanced affine shrinkage to one-session arithmetic returns, strict endpoint
+purge/freeze and504-date warmup. No new base model/provider. `daily_bridge_replay.py`
+refreshes funded targets daily, freezes prior-close shares, executes next official
+open, preserves presale funding/covered exits/missing intents and records exact
+fee-inclusive basis/realized/unrealized profit. CLI `market_daily_arithmetic_bridge`
+will fit ONCE and compute only9 new stock books plus6 matched ETF references;
+all0/10/25bp and calibrated/past-mean/equal-daily rule components. No real fit or
+new economic values have been read yet. Do not claim full live/FOMC/intraday parity.
+
+Root arithmetic/horizon1 allocator option preserves original defaultlog10 mode:
+100 native relevant cases pass/no skips, including19 unchanged independent bridge
+cases. Twelve additional exact historical-default target/receipt comparisons pass
+against source63c21f68. Ruff/diff clean. Independent code review found no blocker.
+Root reproduced one safe-plan share round-trip that created a2.775e-17 phantom
+addition; targeted exact-ownership preservation fixed it, unchanged strict20-case
+quantity regression passes. No epsilon/assertion weakened. All new source files
+are released/root-owned. evaluation_review owns only a NEW private saved-only
+artifact verifier/tests, not repository files. Never import its active draft.
+
+Next: commit/archive exact source, pinned-image100 acceptance, then authenticated
+original95ee8708 read-only input load and one bridge/nine-book producer. Require
+independent actual artifact proof before performance claims. No old producers,
+models, accounts, audits or provider requests repeated. Current live policy/UI,
+production data and model containers remain unchanged. No research-only deploy.
+Diagram impact: NONE — internal calibration/replay methods inside the existing
+isolated research, carried-account and artifact-verification boundary.
+
 ## 2026-10-03 — saved forecast diagnostic complete and independently verified
 
 Evaluated source `27c19d5e4df85b5115e2306da4786f75a06d64a3`, clean/pushed branch

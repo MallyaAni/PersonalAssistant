@@ -27,8 +27,14 @@ def _vector(value, size, name, *, missing=False):
     return array
 
 
-# Estimate an explicit historical ten-session covariance without forward prices.
-def covariance(history):
+# Estimate historical risk at the declared one- or ten-session forecast horizon.
+def covariance(history, *, horizon_sessions=HORIZON):
+    if (
+        isinstance(horizon_sessions, (bool, np.bool_))
+        or not isinstance(horizon_sessions, (int, np.integer))
+        or horizon_sessions not in (1, HORIZON)
+    ):
+        raise ValueError("Declared one- or ten-session risk horizon required")
     values = np.asarray(history, dtype=np.float64)
     if values.ndim != 2 or values.shape[0] < 253 or values.shape[1] == 0:
         raise ValueError("At least 253 completed closes required")
@@ -36,7 +42,7 @@ def covariance(history):
     if not np.isfinite(values).all() or np.any(values <= 0):
         raise ValueError("Covariance needs complete positive prior prices")
     returns = np.diff(np.log(values), axis=0)
-    result = LedoitWolf().fit(returns).covariance_ * HORIZON
+    result = LedoitWolf().fit(returns).covariance_ * horizon_sessions
     if not np.isfinite(result).all() or np.any(np.diag(result) <= 0):
         raise ValueError("Historical variation is unavailable")
     return (result + result.T) / 2
@@ -181,7 +187,7 @@ def _validated(
     return history, grades, eligible.copy(), means, current, benchmarks
 
 
-# Allocate known stocks while making missing evidence and mandatory exits explicit.
+# Allocate known stocks with matching forecast units, risk horizon and funded limits.
 def allocate(
     history,
     grades,
@@ -191,8 +197,18 @@ def allocate(
     cash_weight,
     cost_bps,
     benchmark_indices,
+    *,
+    mean_units="log",
+    horizon_sessions=HORIZON,
 ):
     """Return target weights and evidence; desired sales never become buying cash."""
+    if (
+        not isinstance(mean_units, str)
+        or isinstance(horizon_sessions, (bool, np.bool_))
+        or not isinstance(horizon_sessions, (int, np.integer))
+        or (mean_units, horizon_sessions) not in (("log", HORIZON), ("arithmetic", 1))
+    ):
+        raise ValueError("Matching declared mean units and risk horizon required")
     history, grades, eligible, means, current, benchmarks = _validated(
         history,
         grades,
@@ -211,8 +227,10 @@ def allocate(
     safe = np.where(mandatory, 0, np.minimum(current, CAP))
     protected = may_add & (current > 0) & ~known
     receipt = {
-        "policy": POLICY,
-        "horizon_sessions": HORIZON,
+        "policy": POLICY
+        if mean_units == "log"
+        else "adaptive-funded-growth/2-daily-arithmetic-research",
+        "horizon_sessions": horizon_sessions,
         "cap": CAP,
         "cash_weight": float(cash_weight),
         "cost_bps": float(cost_bps),
@@ -222,6 +240,8 @@ def allocate(
         "mandatory_exits": mandatory.tolist(),
         "current_weights": current.tolist(),
     }
+    if mean_units == "arithmetic":
+        receipt["mean_units"] = mean_units
     if protected.any():
         receipt.update(
             status="unavailable",
@@ -236,7 +256,7 @@ def allocate(
         )
         return safe, receipt
     try:
-        cov = covariance(history[:, selected])
+        cov = covariance(history[:, selected], horizon_sessions=horizon_sessions)
     except ValueError:
         receipt.update(
             status="unavailable",
@@ -244,7 +264,11 @@ def allocate(
             targets=safe.tolist(),
         )
         return safe, receipt
-    arithmetic = means[selected] + 0.5 * np.diag(cov)
+    arithmetic = (
+        means[selected] + 0.5 * np.diag(cov)
+        if mean_units == "log"
+        else means[selected].copy()
+    )
     with np.errstate(over="ignore", invalid="ignore"):
         second = cov + np.outer(arithmetic, arithmetic)
     if not np.isfinite(second).all():
