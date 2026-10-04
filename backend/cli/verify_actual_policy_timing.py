@@ -30,6 +30,9 @@ ACTIONS_SHA = "0e05a397f3719c61688e2eb79355eb5111961c05f31916db8a16ab6ff01dbcca"
 REJECTED_ACTIONS_SHA = (
     "0e05a397f3719c61688e2eb79355eb5111961c05f31916db8a16ab6ff01dbcca"
 )
+ACTION_REVIEW_SHA = "81106947ba049d0315d610719988a80da8e0efce9d87c52f789f2041901e95e8"
+PASSIVE_ARRAYS_SHA = "c07e4615e425e8778282f26c75f18437ca38fa88993a4bab9bfe4b4499e99411"
+PASSIVE_RECEIPT_SHA = "2bc957fcf9948981c4139c1868ad1336b0425d0bf5106460974ffb240a2869a9"
 INPUT_RECEIPT_SHA = "9a367843ab2f529ba5123997967e435ae41481be5692314501e71f3aaad7be29"
 FORECAST_INPUT_HASHES = (
     "c759ecb607e755631dacc0d28a147511a1eaa7e54e3cbcb23bdff4aafe8b76bf",
@@ -362,30 +365,384 @@ def normalize_actions(names, dates, exported, dividend_basis):
     return normalized, factors
 
 
-# Refuse known bad economic actions before checking original price/accounting bytes.
-def load_original_data(args, identity):
+# Validate a reviewed legal clock against its first actual regular application.
+def reviewed_opening(event):
+    effective = aware(event["effective_at"])
+    local = effective.astimezone(calendar.NEW_YORK)
+    years, sessions = calendar.reviewed_sessions()
+    require(local.year in years, "Reviewed action calendar required")
+    regular = bool(np.is_busday(np.datetime64(local.date()), busdaycal=sessions))
     require(
-        ACTIONS_SHA != REJECTED_ACTIONS_SHA,
-        "Known incorrect stock-distribution export; arithmetic is not economic proof",
+        not regular
+        or not calendar.REGULAR_OPEN
+        < local.time()
+        < calendar.session_close(local.date()),
+        "Intraday legal action requires unsupported ordering",
     )
-    files = identity["original_files"]
-    require(len(files) == 110, "Complete original input mapping required")
-    for path, expected in ((args.snapshot, SNAPSHOT_SHA), (args.actions, ACTIONS_SHA)):
+    application = np.busday_offset(
+        np.datetime64(local.date()),
+        int(regular and local.time() > calendar.REGULAR_OPEN),
+        roll="forward",
+        busdaycal=sessions,
+    )
+    require(str(application) == event["date"], "Action requires first regular opening")
+    return datetime.fromisoformat(event["effective_at"]).isoformat()
+
+
+# Require declaration availability before observing a private default election.
+def reviewed_default(event, election):
+    day = date.fromisoformat(event["date"])
+    years, sessions = calendar.reviewed_sessions()
+    require(
+        day.year in years and np.is_busday(np.datetime64(day), busdaycal=sessions),
+        "Reviewed default election session required",
+    )
+    boundary = datetime.combine(day, calendar.REGULAR_OPEN, calendar.NEW_YORK)
+    require(
+        event["election_policy"] == election
+        and event["legal_clock_precision"] == "completed_before_open_not_exact"
+        and aware(event["completed_before"]) == boundary
+        and aware(event["terms_available_at"]) < boundary
+        and aware(event["completion_available_at"]) <= boundary,
+        "Available-by private default election required",
+    )
+    require(
+        all(
+            isinstance(event.get(key), str) and event[key].startswith("https://")
+            for key in ("terms_source", "completion_source")
+        ),
+        "Declared default election sources required",
+    )
+
+
+# Derive physical grants from declarations independently of archive price conversion.
+def reviewed_grant(event):
+    require(
+        not any(
+            key in event
+            for key in ("paid", "payment_amount", "payment_date", "cash_credit")
+        ),
+        "Payment receipts cannot be inferred from declarations",
+    )
+    category, n, d = event["classification"], event["numerator"], event["denominator"]
+    require(
+        all(type(value) is int and value > 0 for value in (n, d)),
+        "Positive integer economic ratio required",
+    )
+    require(
+        isinstance(event.get("source"), str) and event["source"].startswith("https://"),
+        "Primary declaration URL required",
+    )
+    day = event["date"]
+    if category == "same_security_split" and n % d == 0:
+        require(n / d == event["archive_factor"], "Same-security ratio differs")
+        return {
+            "date": day,
+            "kind": "share_split",
+            "value": n / d,
+            "review_event": event.copy(),
+        }
+    base = {"date": day, "numerator": n, "denominator": d}
+    if category in ("same_security_split", "security_distribution"):
         require(
-            files.get(str(path)) == expected and digest(path) == expected,
-            "Fixed original snapshot/actions required",
+            event.get("fractional_policy") == "cash_in_lieu_unknown",
+            "Explicit unknown fractional payment required",
+        )
+        require(
+            all(
+                isinstance(event.get(key), str) and event[key].startswith("https://")
+                for key in ("effective_source", "fractional_source")
+            ),
+            "Effective and fractional source required",
+        )
+        base.update(
+            effective_at=reviewed_opening(event),
+            effective_source=event["effective_source"],
+            fractional_source=event["fractional_source"],
+            fractional_policy="cash_in_lieu_unknown",
+        )
+        receipt = {
+            key: event.get(key) for key in ("effective_source", "fractional_source")
+        }
+        receipt["declaration"] = event["source"]
+        if category == "same_security_split":
+            require(n < d and n / d == event["archive_factor"], "Reverse ratio differs")
+            receipt["effective_source_sha256"] = event.get("effective_source_sha256")
+            return {**base, "kind": "share_consolidation", "source_receipt": receipt}
+        require(
+            isinstance(event.get("child"), str)
+            and event["child"]
+            and event["child"] != event["symbol"]
+            and event.get("basis_policy") == "unallocated_at_effective_clock"
+            and event.get("parent_basis_fraction") is None
+            and event.get("basis_available_at") is None
+            and event.get("share_basis") == "post_split_action_date_shares",
+            "Explicit child, unallocated basis and share units required",
+        )
+        return {
+            **base,
+            "kind": "stock_distribution",
+            "child": event["child"],
+            "basis_policy": "unallocated_at_effective_clock",
+            "parent_basis_fraction": None,
+            "share_basis": "post_split_action_date_shares",
+            "source_receipt": receipt,
+            "entitlement_scope": (
+                "private_action_date_holdings_due_bill_assumption_not_broker_proof"
+            ),
+        }
+    require(category == "security_exchange", "Unsupported economic classification")
+    require(
+        all(
+            isinstance(event.get(key), str) and event[key]
+            for key in ("old_security_id", "new_security_id")
+        )
+        and event["old_security_id"] != event["new_security_id"]
+        and date.fromisoformat(event["terms_available_on"]) < date.fromisoformat(day),
+        "Distinct exchange identities and prior terms required",
+    )
+    fields = (
+        "old_security_id",
+        "new_security_id",
+        "fractional_policy",
+        "terms_available_on",
+    )
+    base.update({key: event[key] for key in fields})
+    fraction = event["fractional_policy"]
+    if fraction == "cash_in_lieu_unknown":
+        reviewed_default(event, "declared_no_election_default_shares")
+        require(
+            aware(event["terms_available_at"]).astimezone(calendar.NEW_YORK).date()
+            >= date.fromisoformat(event["terms_available_on"]),
+            "Premature exchange terms",
+        )
+        base.update(
+            {
+                key: event[key]
+                for key in (
+                    "completed_before",
+                    "terms_available_at",
+                    "completion_available_at",
+                    "legal_clock_precision",
+                    "election_policy",
+                    "terms_source",
+                    "completion_source",
+                    "fractional_source",
+                )
+            }
+        )
+    else:
+        require(
+            fraction == "floor_no_compensation"
+            and event.get("election_policy") is None,
+            "Explicit exchange fraction policy required",
         )
     require(
-        PROVENANCE_SHA in files.values() and INPUT_RECEIPT_SHA in files.values(),
-        "Original provenance/account receipt missing",
+        isinstance(event.get("fractional_source"), str)
+        and event["fractional_source"].startswith("https://"),
+        "Fractional declaration source required",
     )
+    receipt = {
+        key: event.get(key)
+        for key in (
+            "fractional_source",
+            "completion_source",
+            "terms_source",
+            "terms_source_sha256",
+        )
+    }
+    receipt.update(
+        declaration=event["source"],
+        election_scope="declared_private_policy_not_broker_election",
+    )
+    return {**base, "kind": "security_exchange", "source_receipt": receipt}
+
+
+# Preserve original factors and dividends while independently deriving reviewed grants.
+def normalize_reviewed_actions(
+    names, dates, exported, review, dividend_basis, *, original_sha
+):
+    require(
+        review.get("schema") == "actual-policy-action-semantics/1"
+        and review.get("adoption_eligible") is False
+        and review.get("original_actions_sha256") == original_sha,
+        "Reviewed original byte identity required",
+    )
+    first, last = review["first_session"], review["last_session"]
+    require(
+        date.fromisoformat(first) <= date.fromisoformat(last),
+        "Ordered review scope required",
+    )
+    original, factors = normalize_actions(names, dates, exported, dividend_basis)
+    indexed = {}
+    for event in review["events"]:
+        key = event["symbol"], event["date"]
+        require(
+            key not in indexed and key[0] in names and first <= key[1] <= last,
+            "Unique covered in-scope economic review required",
+        )
+        date.fromisoformat(key[1])
+        indexed[key] = event
+    result, covered = {}, set()
+    for name, rows in original.items():
+        output = []
+        for row in rows:
+            if row["kind"] != "split":
+                output.append(row)
+                continue
+            output.append({**row, "kind": "archive_adjustment"})
+            if not first <= row["date"] <= last:
+                continue
+            key = name, row["date"]
+            require(key in indexed, "Missing original economic review")
+            event = indexed[key]
+            require(
+                type(event.get("archive_factor")) in (int, float)
+                and event["archive_factor"] == row["value"],
+                "Reviewed archive factor differs",
+            )
+            output.append(reviewed_grant(event))
+            covered.add(key)
+        result[name] = output
+    require(covered == set(indexed), "Review event absent from original bytes")
+    children = {
+        event["child"]
+        for event in indexed.values()
+        if event["classification"] == "security_distribution"
+    }
+    inherited = {}
+    for event in review.get("inherited_events", []):
+        name, day = event["symbol"], event["date"]
+        require(
+            name in children
+            and name not in names
+            and name not in inherited
+            and first <= day <= last
+            and event["kind"] == "cash_merger"
+            and type(event["value"]) in (int, float)
+            and math.isfinite(event["value"])
+            and event["value"] > 0,
+            "Covered inherited terminal declaration required",
+        )
+        reviewed_default(event, "declared_no_election_default_cash")
+        row = {key: value for key, value in event.items() if key != "symbol"}
+        require(
+            set(row)
+            == {
+                "date",
+                "kind",
+                "value",
+                "old_security_id",
+                "election_policy",
+                "completed_before",
+                "legal_clock_precision",
+                "terms_available_at",
+                "completion_available_at",
+                "terms_source",
+                "completion_source",
+                "source_receipt",
+            }
+            and isinstance(row["old_security_id"], str)
+            and row["old_security_id"]
+            and isinstance(row["source_receipt"], dict)
+            and row["source_receipt"],
+            "Explicit terminal default without guessed payment required",
+        )
+        inherited[name] = [{**row, "value": float(row["value"])}]
+    return result, inherited, factors
+
+
+# Authenticate original typed array bytes without importing a producer's hash helper.
+def array_digest(array):
+    value = np.ascontiguousarray(array)
+    result = hashlib.sha256()
+    result.update(str(value.dtype).encode())
+    result.update(json.dumps(value.shape).encode())
+    result.update(value.tobytes())
+    return result.hexdigest()
+
+
+# Read valuation-only inherited marks while retaining their original missing cells.
+def load_original_passive(args, names, dates, provenance, files):
+    for path, expected in (
+        (args.passive_arrays, PASSIVE_ARRAYS_SHA),
+        (args.passive_receipt, PASSIVE_RECEIPT_SHA),
+    ):
+        require(
+            files.get(str(path)) == expected and digest(path) == expected,
+            "Fixed passive original input required",
+        )
+    receipt = read_json(args.passive_receipt, PASSIVE_RECEIPT_SHA)
+    require(
+        receipt["arrays_sha256"] == PASSIVE_ARRAYS_SHA
+        and receipt["selection_symbols"] == len(names)
+        and receipt["selection_universe_extended"] is False
+        and receipt["adoption_eligible"] is False,
+        "Passive marks cannot extend selection or authorize adoption",
+    )
+    contract = receipt["passive_provenance"]
+    same(provenance["passive_provenance"], contract, "Passive original contract")
+    require(
+        contract["price_basis"] == "raw_session_dollars"
+        and contract["supplied"]["snapshot_sha256"] == SNAPSHOT_SHA,
+        "Passive original monetary basis required",
+    )
+    with np.load(args.passive_arrays, allow_pickle=False) as archive:
+        require(
+            set(archive.files)
+            == {"dates", "symbols", "session_open", "observation_close", "daily_close"}
+            and np.array_equal(archive["dates"], dates),
+            "Passive original calendar required",
+        )
+        passive_names = tuple(archive["symbols"].tolist())
+        require(
+            len(passive_names) == len(set(passive_names))
+            and passive_names
+            and not set(passive_names).intersection(names),
+            "Passive-only security identities required",
+        )
+        for key, shape in (
+            ("session_open", (len(dates), len(passive_names))),
+            ("observation_close", (len(dates), 26, len(passive_names))),
+            ("daily_close", (len(dates), len(passive_names))),
+        ):
+            values = archive[key]
+            require(
+                values.shape == shape
+                and values.dtype.kind == "f"
+                and not np.isinf(values).any()
+                and (values[np.isfinite(values)] > 0).all(),
+                "Passive original price grid required",
+            )
+            require(
+                array_digest(values) == contract["arrays"][key],
+                "Passive typed byte identity differs",
+            )
+            for column, name in enumerate(passive_names):
+                outside = (dates < np.datetime64(contract["first_session"][name])) | (
+                    dates > np.datetime64(contract["complete_through"][name])
+                )
+                require(
+                    not np.isfinite(values[outside, ..., column]).any(),
+                    "Passive prices beyond source coverage",
+                )
+        require(
+            array_digest(archive["dates"]) == contract["arrays"]["dates"],
+            "Passive typed dates differ",
+        )
+        close = archive["daily_close"].copy()
+    require(
+        digest(args.passive_arrays) == PASSIVE_ARRAYS_SHA,
+        "Passive original changed while reading",
+    )
+    return {"names": passive_names, "close": close, "provenance": contract}
+
+
+# Check saved forecast bytes without restoring or recalibrating either predictor.
+def check_frozen_forecast_inputs(files):
     require(
         set(FORECAST_INPUT_HASHES) <= set(files.values()),
         "Frozen forecast evidence missing",
-    )
-    input_receipt = read_json(
-        next(name for name, value in files.items() if value == INPUT_RECEIPT_SHA),
-        INPUT_RECEIPT_SHA,
     )
     diagnostic_hash = FORECAST_INPUT_HASHES[-2]
     diagnostic_path = Path(
@@ -402,6 +759,41 @@ def load_original_data(args, identity):
                 == diagnostic["methods"][name][key],
                 "Frozen CDF byte receipt differs",
             )
+
+
+# Refuse legacy false grants and retain explicit reviewed source limitations.
+def load_original_data(args, identity, *, reviewed=False, input_only=False):
+    if not reviewed:
+        require(
+            ACTIONS_SHA != REJECTED_ACTIONS_SHA,
+            "Known incorrect stock-distribution export; "
+            "arithmetic is not economic proof",
+        )
+    require(
+        not input_only or reviewed,
+        "Input-only proof requires explicit reviewed sources",
+    )
+    files = identity["original_files"]
+    require(
+        len(files) == (103 if input_only else 113 if reviewed else 110),
+        "Complete original input mapping required",
+    )
+    check_originals(files)
+    for path, expected in ((args.snapshot, SNAPSHOT_SHA), (args.actions, ACTIONS_SHA)):
+        require(
+            files.get(str(path)) == expected and digest(path) == expected,
+            "Fixed original snapshot/actions required",
+        )
+    require(
+        PROVENANCE_SHA in files.values() and INPUT_RECEIPT_SHA in files.values(),
+        "Original provenance/account receipt missing",
+    )
+    input_receipt = read_json(
+        next(name for name, value in files.items() if value == INPUT_RECEIPT_SHA),
+        INPUT_RECEIPT_SHA,
+    )
+    if not input_only:
+        check_frozen_forecast_inputs(files)
     exported = read_json(args.actions, ACTIONS_SHA)
     require(
         exported["snapshot_sha256"] == SNAPSHOT_SHA
@@ -425,9 +817,57 @@ def load_original_data(args, identity):
         and provenance["cube_price_basis"] == "raw_session_dollars",
         "Original monetary bases differ",
     )
-    actions, factors = normalize_actions(
-        names, dates, exported, provenance["dividend_source_basis"]
-    )
+    passive, inherited = None, {}
+    if reviewed:
+        require(
+            files.get(str(args.action_review)) == ACTION_REVIEW_SHA,
+            "Fixed original review mapping required",
+        )
+        review = read_json(args.action_review, ACTION_REVIEW_SHA)
+        require(
+            (review["first_session"], review["last_session"])
+            == ("2018-02-01", "2026-09-30"),
+            "Frozen economic scope differs",
+        )
+        supplied = provenance["supplied"]
+        require(
+            supplied["reviewed_actions_sha256"] == ACTION_REVIEW_SHA
+            and supplied["passive_arrays_sha256"] == PASSIVE_ARRAYS_SHA
+            and supplied["passive_receipt_sha256"] == PASSIVE_RECEIPT_SHA
+            and supplied["execution_readiness"] == "pending_declaration_receipts"
+            and supplied["declaration_evidence"]
+            == "manual_primary_URL_review_not_authenticated_source_receipts",
+            "Reviewed declaration limitations required",
+        )
+        actions, inherited, factors = normalize_reviewed_actions(
+            names,
+            dates,
+            exported,
+            review,
+            provenance["dividend_source_basis"],
+            original_sha=ACTIONS_SHA,
+        )
+        passive = load_original_passive(args, names, dates, provenance, files)
+        require(
+            set(inherited) <= set(passive["names"]),
+            "Covered inherited terminal names required",
+        )
+        for name, rows in inherited.items():
+            require(
+                np.datetime64(rows[0]["date"]) in dates
+                and provenance["passive_provenance"]["complete_through"][name]
+                < rows[0]["date"],
+                "Terminal inherited marks must stop before conversion",
+            )
+        same(
+            provenance["inherited_actions"],
+            inherited,
+            "Original terminal source contract",
+        )
+    else:
+        actions, factors = normalize_actions(
+            names, dates, exported, provenance["dividend_source_basis"]
+        )
     close = close * factors
     require(
         not np.isinf(close).any() and (close[np.isfinite(close)] > 0).all(),
@@ -479,12 +919,14 @@ def load_original_data(args, identity):
             "Original raw cube shape differs",
         )
         cubes[name] = cube
+    check_originals(files)
     return {
         "dates": dates,
         "names": names,
         "close": close,
         "actions": actions,
         "cubes": cubes,
+        **({"passive": passive, "inherited_actions": inherited} if reviewed else {}),
     }
 
 

@@ -57,6 +57,160 @@ def direct_data(raw, cubes):
     }
 
 
+# Independently recover reviewed grants without turning archive factors into shares.
+def test_reviewed_original_actions_match_prepared_economic_contract():
+    from backend.market.live_execution_inputs import review_action_export
+    from backend.market.live_policy_replay import plain
+
+    review = verifier.read_json(
+        Path(__file__).resolve().parents[2]
+        / "docs/research/actual-policy-action-review-2026-10-04.json"
+    )
+    names = tuple(sorted({event["symbol"] for event in review["events"]}))
+    days = np.array(["2018-02-01", "2026-09-30"], dtype="datetime64[D]")
+    exported = {
+        "basis_as_of": "2026-09-30",
+        "complete_through": "2026-09-30",
+        "actions": {name: [] for name in names},
+    }
+    for event in review["events"]:
+        exported["actions"][event["symbol"]].append(
+            {"date": event["date"], "kind": "split", "value": event["archive_factor"]}
+        )
+    payload = json.dumps(exported).encode()
+    review["original_actions_sha256"] = hashlib.sha256(payload).hexdigest()
+    actual, inherited, factors = verifier.normalize_reviewed_actions(
+        names,
+        days,
+        exported,
+        review,
+        "split_adjusted_archive_share_dollars",
+        original_sha=hashlib.sha256(payload).hexdigest(),
+    )
+    compiled = review_action_export(payload, json.dumps(review).encode())
+    # Compare independently derived grants to the existing compiler's public records.
+    for name in names:
+        grants = [row for row in actual[name] if row["kind"] != "archive_adjustment"]
+        expected = [
+            row
+            for row in compiled["actions"][name]
+            if row["kind"] != "archive_adjustment"
+        ]
+        verifier.same(grants, expected)
+    verifier.same(inherited, plain(compiled["inherited_actions"]))
+    assert factors.shape == (2, len(names))
+    assert actual["DELL"][0]["value"] == 1.806
+    assert actual["DELL"][1]["numerator"] == 18066
+
+
+# Keep passive source clocks, missing cells and identities outside stock selection.
+@pytest.mark.parametrize("mutation", [None, "calendar", "selected", "coverage", "hash"])
+def test_independent_original_passive_loader(tmp_path, monkeypatch, mutation):
+    days = np.array(["2020-01-02", "2020-01-03"], dtype="datetime64[D]")
+    arrays = {
+        "dates": days,
+        "symbols": np.array(["CHILD"]),
+        "session_open": np.array([[np.nan], [20.0]]),
+        "observation_close": np.full((2, 26, 1), np.nan),
+        "daily_close": np.array([[np.nan], [21.0]]),
+    }
+    contract = {
+        "price_basis": "raw_session_dollars",
+        "supplied": {"snapshot_sha256": verifier.SNAPSHOT_SHA},
+        "first_session": {"CHILD": "2020-01-03"},
+        "complete_through": {"CHILD": "2020-01-03"},
+        "arrays": {
+            key: verifier.array_digest(value)
+            for key, value in arrays.items()
+            if key != "symbols"
+        },
+    }
+    if mutation == "calendar":
+        arrays["dates"] = days + np.timedelta64(1, "D")
+    elif mutation == "selected":
+        arrays["symbols"] = np.array(["PARENT"])
+    elif mutation == "coverage":
+        arrays["daily_close"][0, 0] = 19.0
+        contract["arrays"]["daily_close"] = verifier.array_digest(arrays["daily_close"])
+    elif mutation == "hash":
+        arrays["daily_close"][1, 0] = 22.0
+    archive, receipt_path = tmp_path / "passive.npz", tmp_path / "passive.json"
+    np.savez(archive, **arrays)
+    receipt = {
+        "arrays_sha256": verifier.digest(archive),
+        "selection_symbols": 1,
+        "selection_universe_extended": False,
+        "adoption_eligible": False,
+        "passive_provenance": contract,
+    }
+    receipt_path.write_text(json.dumps(receipt))
+    monkeypatch.setattr(verifier, "PASSIVE_ARRAYS_SHA", verifier.digest(archive))
+    monkeypatch.setattr(verifier, "PASSIVE_RECEIPT_SHA", verifier.digest(receipt_path))
+    args = SimpleNamespace(passive_arrays=archive, passive_receipt=receipt_path)
+    files = {str(path): verifier.digest(path) for path in (archive, receipt_path)}
+    if mutation is None:
+        result = verifier.load_original_passive(
+            args, ("PARENT",), days, {"passive_provenance": contract}, files
+        )
+        assert result["names"] == ("CHILD",)
+        assert np.isnan(result["close"][0, 0])
+        assert result["close"][1, 0] == 21.0
+    else:
+        with pytest.raises(ValueError, match="Passive"):
+            verifier.load_original_passive(
+                args, ("PARENT",), days, {"passive_provenance": contract}, files
+            )
+
+
+# Reject an economic review that misses, duplicates or changes an original price factor.
+@pytest.mark.parametrize(
+    "mutation", ["missing", "duplicate", "factor", "ratio", "paid"]
+)
+def test_reviewed_economic_source_refuses_inconsistent_declarations(mutation):
+    days = np.array(["2020-01-02", "2020-01-03"], dtype="datetime64[D]")
+    exported = {
+        "basis_as_of": "2020-01-03",
+        "complete_through": "2020-01-03",
+        "actions": {"AAA": [{"date": "2020-01-03", "kind": "split", "value": 4.0}]},
+    }
+    event = {
+        "symbol": "AAA",
+        "date": "2020-01-03",
+        "archive_factor": 4.0,
+        "classification": "same_security_split",
+        "numerator": 4,
+        "denominator": 1,
+        "source": "https://issuer.example/split",
+    }
+    review = {
+        "schema": "actual-policy-action-semantics/1",
+        "adoption_eligible": False,
+        "original_actions_sha256": "fixture",
+        "first_session": "2020-01-02",
+        "last_session": "2020-01-03",
+        "events": [event],
+    }
+    if mutation == "missing":
+        review["events"] = []
+    elif mutation == "duplicate":
+        review["events"].append(dict(event))
+    elif mutation == "factor":
+        event["archive_factor"] = 5.0
+    elif mutation == "ratio":
+        event["numerator"] = True
+    else:
+        event["payment_amount"] = 10.0
+    with pytest.raises(ValueError, match="review|factor|ratio|Payment"):
+        verifier.normalize_reviewed_actions(
+            ("AAA",),
+            days,
+            exported,
+            review,
+            "split_adjusted_archive_share_dollars",
+            original_sha="fixture",
+        )
+
+
 # Save the real policy across a distribution or named-security conversion boundary.
 def entitlement_account(tmp_path, kind):
     from backend.market.live_execution_inputs import prepare
