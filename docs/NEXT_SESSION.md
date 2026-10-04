@@ -28,7 +28,19 @@ Changing future child prices leaves the earlier session identical. Early-close
 initially marked SPY missing only in the broker while supplying its daily close;
 corrected the fixture to declare the same price gap in its original input. No
 production valuation assertion or external acceptance was weakened. Ruff/diff
-clean. Exact committed source-image verification is next, not yet claimed.
+clean. VERIFIED exact sourceb0348ce07d86547a8cb3b2ff1803ed3b1185a3fe,
+2371-file archive:519 tests17.84s/no skips in pinned image
+5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+Source authentication before/after four saved synthetic real planner journeys
+passed. A saved-only independent checker imported no producer/broker/calendar/
+model, resimulated nothing, and verified observed clock, grant quantity, cash/
+fees, missing value, intent isolation and future-price prefix invariance.
+Proof:/home/animallya96/scratch/overnight-actions-20261004-b0348ce0/proof.
+Test logdf6c707e5e78432dcb4ea3a15650cef24517b7c2dddb8ea7a3885f311cf5ff37;
+manifestb0b69c3595d15359cb87ed9f54c8a3599ecbd238b0f59cb89dd7731066bab43d;
+journeys011bb0cd160e99428400ff66338091ed892482067d0d1f4d5657faeec7c5c454;
+independent5adee2f797985c68f8de6f15f762b742c709f58ba5f9863173ac8d0dd61ac8e8.
+Exact commands/helpers are retained there. Counts overlap with prior source tests.
 
 No economic account scored, model restored/refitted, source capture repeated,
 main merge or deployment. Original invalid-export gates remain in place.
@@ -37,6 +49,24 @@ Diagram impact: NONE, existing private action and planner boundaries.
 NEXT: complete DELL2018/VMW2023 handling and fractional payment evidence, wire
 reviewed inputs and independent verifier, then fixed funded same-sizing timing
 comparison; confidence sizing and remaining-horizon profit exits still follow.
+
+Next-boundary primary evidence reviewed, not implemented: DELL's
+[completion disclosure](https://www.sec.gov/Archives/edgar/data/1571996/000119312518360943/d673794dex991.htm)
+states no-election ClassV holdings defaulted to1.8066 ClassC shares; cash
+elections were prorated and fractions paid cash. Do not apply the rounded
+archive1.806 as a same-security split. VMW's
+[Oct30 election result](https://www.sec.gov/Archives/edgar/data/1124610/000119312523266257/d573017dex991.htm)
+states cash/non-electing holders are entitled to142.50 per share. A declared
+private non-election can therefore specify the amount without choosing the
+stock election or inventing paid cash. Its
+[completion8-K](https://www.sec.gov/Archives/edgar/data/1124610/000119312523282097/d559518d8k.htm)
+states trading suspended before Nov22,2023 opening. The
+[conversion certificate](https://www.sec.gov/Archives/edgar/data/1124610/000119312523282097/d559518dex31.htm)
+is effective00:01 New York Nov22; that is the later LLC conversion, NOT an
+exact timestamp for the preceding first merger. First observed application
+and legal boundary must remain distinct. Actual cash-payment evidence and
+authenticated declaration bytes are still unverified. A receivable must not
+fund new buys or use VMW's last traded142.48 as a merger settlement price.
 
 ## 2026-10-04 — physical distributions with explicitly unallocated cost
 
