@@ -1,5 +1,28 @@
 # Next session
 
+## 2026-10-04 — funded probability timing implementation
+
+Frozen protocol78442ee5 precedes new accounts. Root owns NEW
+probabilistic_execution_replay.py, probabilistic_execution_saved.py and
+market_probabilistic_funded_timing.py with their tests. Native60 cases pass
+3.56s, including11 unchanged independent funding/locking cases;18 original
+default-engine parity cases pass1.56s, Ruff clean. Exact pinned-image acceptance
+and original saved-sample restoration remain pending before economic outcomes.
+VERIFIED supplied-array funding, unchanged allocation and ex-ante quantity
+attribution. UNVERIFIED actual funded advantage or live replacement.
+
+Loader authenticates saved monthly residual hashes and support without any
+fit, calibration call or old diagnostic regeneration; caches one month.
+Runner reuses60 original gate and6 ETF accounts, schedules exactly120 new
+Boosting/Ridge ×0/10/25bp ×20-phase books, unchanged target rule and terminal24.
+Decision traces distinguish observed cash-bounded intended fraction from later
+fill shares. Price attribution uses control prior-close desired-minus-initial
+shares, retains missing/opposite/unpaired plans and cash-limited flags; it is
+not investable compounded wealth. Actual original source/input/control parity
+is mandatory before run. No old accounts, outcomes, source or caches rewritten.
+Independent reviewer owns only /tmp funded acceptance/verifier helpers.
+All producer runs are still NOT STARTED. Production/policy/UI/models untouched.
+
 ## 2026-10-04 — probabilistic execution diagnostic independently verified
 
 Source 4e77c48163f1bb5ff1e610d42c9a46a12d704bf3 is pushed. The new pure
