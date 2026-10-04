@@ -341,6 +341,39 @@ def test_driver_archives_actual_accounts_without_real_broker_or_fit(
     assert json.loads((output / "progress.json").read_text())["completed"] == 5
 
 
+# Refuse unverified economic sources before loading any inputs or saved predictor.
+def test_reviewed_score_gate_precedes_execution_and_model_restoration(monkeypatch):
+    calls = []
+
+    # Make premature input/model loading observable at the first boundary.
+    def forbidden(*args, **kwargs):
+        calls.append("loaded")
+        raise AssertionError("Must not load before proof")
+
+    monkeypatch.setattr(study, "load_execution_inputs", forbidden)
+    monkeypatch.setattr(
+        study.forecasts,
+        "evidence",
+        lambda *args, **kwargs: {
+            "status": "unverified",
+            "original_files": 103,
+            "selection_symbols": 96,
+            "sessions": 2953,
+            "declared_accounts": 300,
+            "accounts_created": 0,
+            "models_restored": 0,
+            "models_fitted": 0,
+            "policy_returns_scored": 0,
+            "adoption_eligible": False,
+        },
+    )
+    with pytest.raises(ValueError, match="Independent original economic input proof"):
+        study.load_inputs(
+            SimpleNamespace(reviewed_economics=True, economic_input_proof="fixture")
+        )
+    assert calls == []
+
+
 # Keep an input-only preflight free of accounts, attempts and performance rows.
 def test_preflight_does_not_run_a_study_account(tmp_path, monkeypatch):
     panel, raw, cubes = fixture()

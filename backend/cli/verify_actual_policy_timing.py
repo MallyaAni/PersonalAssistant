@@ -33,6 +33,9 @@ REJECTED_ACTIONS_SHA = (
 ACTION_REVIEW_SHA = "81106947ba049d0315d610719988a80da8e0efce9d87c52f789f2041901e95e8"
 PASSIVE_ARRAYS_SHA = "c07e4615e425e8778282f26c75f18437ca38fa88993a4bab9bfe4b4499e99411"
 PASSIVE_RECEIPT_SHA = "2bc957fcf9948981c4139c1868ad1336b0425d0bf5106460974ffb240a2869a9"
+ECONOMIC_INPUT_PROOF_SHA = (
+    "2a8ef22bf20de7891b27ae80ab05570a0be20ca170d6176ab596d0ec20aec102"
+)
 INPUT_RECEIPT_SHA = "9a367843ab2f529ba5123997967e435ae41481be5692314501e71f3aaad7be29"
 FORECAST_INPUT_HASHES = (
     "c759ecb607e755631dacc0d28a147511a1eaa7e54e3cbcb23bdff4aafe8b76bf",
@@ -775,10 +778,16 @@ def load_original_data(args, identity, *, reviewed=False, input_only=False):
     )
     files = identity["original_files"]
     require(
-        len(files) == (103 if input_only else 113 if reviewed else 110),
+        len(files) == (103 if input_only else 114 if reviewed else 110),
         "Complete original input mapping required",
     )
     check_originals(files)
+    if reviewed and not input_only:
+        require(
+            files.get(str(args.economic_input_proof)) == ECONOMIC_INPUT_PROOF_SHA,
+            "Independent original source proof mapping required",
+        )
+        read_json(args.economic_input_proof, ECONOMIC_INPUT_PROOF_SHA)
     for path, expected in ((args.snapshot, SNAPSHOT_SHA), (args.actions, ACTIONS_SHA)):
         require(
             files.get(str(path)) == expected and digest(path) == expected,
@@ -1946,7 +1955,10 @@ def verify(args):
         source_root,
     )
     check_originals(identity["original_files"])
-    data = load_original_data(args, identity)
+    if getattr(args, "reviewed_economics", False):
+        data = load_original_data(args, identity, reviewed=True)
+    else:
+        data = load_original_data(args, identity)
     result = verify_saved(study, report, identity, data)
     check_originals(identity["original_files"])
     check_identity(
@@ -2037,7 +2049,39 @@ def main():
         "verifier-image",
     ):
         parser.add_argument("--" + name, required=True)
-    verify(parser.parse_args())
+    parser.add_argument("--reviewed-economics", action="store_true")
+    for name in (
+        "action-review",
+        "passive-arrays",
+        "passive-receipt",
+        "economic-input-proof",
+    ):
+        parser.add_argument("--" + name, type=Path)
+    args = parser.parse_args()
+    if args.reviewed_economics and any(
+        getattr(args, name) is None
+        for name in (
+            "action_review",
+            "passive_arrays",
+            "passive_receipt",
+            "economic_input_proof",
+        )
+    ):
+        parser.error(
+            "Reviewed economic verification requires "
+            "all original review/passive/proof paths"
+        )
+    if not args.reviewed_economics and any(
+        getattr(args, name) is not None
+        for name in (
+            "action_review",
+            "passive_arrays",
+            "passive_receipt",
+            "economic_input_proof",
+        )
+    ):
+        parser.error("Reviewed sources require explicit reviewed economic verification")
+    verify(args)
 
 
 if __name__ == "__main__":

@@ -43,6 +43,9 @@ REJECTED_ACTIONS_SHA = (
 )
 INPUT_RECEIPT_SHA = "9a367843ab2f529ba5123997967e435ae41481be5692314501e71f3aaad7be29"
 ACTION_REVIEW_SHA = "81106947ba049d0315d610719988a80da8e0efce9d87c52f789f2041901e95e8"
+ECONOMIC_INPUT_PROOF_SHA = (
+    "2a8ef22bf20de7891b27ae80ab05570a0be20ca170d6176ab596d0ec20aec102"
+)
 PASSIVE_ARRAYS_SHA = "c07e4615e425e8778282f26c75f18437ca38fa88993a4bab9bfe4b4499e99411"
 PASSIVE_RECEIPT_SHA = "2bc957fcf9948981c4139c1868ad1336b0425d0bf5106460974ffb240a2869a9"
 PANEL_SHAPE = (2953, 96)
@@ -276,7 +279,29 @@ def load_execution_inputs(args, *, reviewed=False):
 
 # Restore frozen predictors only after the separate execution-input score gate passes.
 def load_inputs(args):
-    panel, raw, cubes, source_files = load_execution_inputs(args)
+    reviewed = bool(getattr(args, "reviewed_economics", False))
+    if reviewed:
+        proof = forecasts.evidence(
+            args.economic_input_proof, ECONOMIC_INPUT_PROOF_SHA, json_file=True
+        )
+        require(
+            proof["status"] == "VERIFIED_INDEPENDENT_REVIEWED_ORIGINAL_INPUTS"
+            and proof["original_files"] == 103
+            and proof["selection_symbols"] == 96
+            and proof["sessions"] == 2953
+            and proof["declared_accounts"] == 300
+            and proof["accounts_created"]
+            == proof["models_restored"]
+            == proof["models_fitted"]
+            == proof["policy_returns_scored"]
+            == 0
+            and proof["adoption_eligible"] is False,
+            "Independent original economic input proof required "
+            "before model restoration",
+        )
+    panel, raw, cubes, source_files = load_execution_inputs(args, reviewed=reviewed)
+    if reviewed:
+        source_files[str(args.economic_input_proof)] = ECONOMIC_INPUT_PROOF_SHA
     diagnostic, _ = saved.diagnostic_evidence(args.diagnostic, args.probability_proof)
     loaded = forecasts.load_inputs(args.prepared, args.moments, args.fit_proof)
     require(
@@ -813,6 +838,8 @@ def main():
     parser.add_argument("--passive-arrays", type=Path)
     parser.add_argument("--passive-receipt", type=Path)
     parser.add_argument("--prepare-reviewed-inputs-only", action="store_true")
+    parser.add_argument("--reviewed-economics", action="store_true")
+    parser.add_argument("--economic-input-proof", type=Path)
     parser.add_argument("--review-actions-only", action="store_true")
     args = parser.parse_args()
     required = (
@@ -837,17 +864,32 @@ def main():
         if getattr(args, name.replace("-", "_")) is None:
             parser.error("--" + name + " is required")
     if args.prepare_reviewed_inputs_only:
-        if args.review_actions_only or args.preflight:
+        if (
+            args.review_actions_only
+            or args.preflight
+            or args.reviewed_economics
+            or args.economic_input_proof
+        ):
             parser.error("Reviewed-input preparation is a separate input-only mode")
         prepare_reviewed_inputs(args)
     elif args.review_actions_only:
-        if args.preflight:
+        if args.preflight or args.reviewed_economics or args.economic_input_proof:
             parser.error("Action review and model preflight are separate modes")
         review_inputs(args)
     else:
-        if any(
-            item is not None
-            for item in (args.action_review, args.passive_arrays, args.passive_receipt)
+        economic_paths = (
+            args.action_review,
+            args.passive_arrays,
+            args.passive_receipt,
+            args.economic_input_proof,
+        )
+        if args.reviewed_economics and any(path is None for path in economic_paths):
+            parser.error(
+                "Reviewed economic execution requires review, passive arrays/receipt "
+                "and independent input proof"
+            )
+        if not args.reviewed_economics and any(
+            item is not None for item in economic_paths
         ):
             parser.error("Action review is not an executable economic source")
         evaluate(args)
