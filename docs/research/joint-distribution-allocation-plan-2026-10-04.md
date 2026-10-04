@@ -94,3 +94,56 @@ row identity, strict endpoint purge and returned scenario/probability hashes.
 Do not select a winning stock, infer historical profit or use these diagnostics
 to change the fixed candidate. Subsequent calibration and funded testing remain
 required.
+
+## Separate risk inference from trading eligibility
+
+The original saved support diagnostic found a specific boundary: AAOI, COHR
+and STX have years of price outcomes but only18 grade-gated forecasts after
+September4; WDC has none. Do not relax joint-history requirements or fabricate
+grades. Freeze a new optional holding-price-inference/1-research artifact before
+new predictions: use the exact authenticated saved monthly held-model heads,
+original thirteen features, authenticated price prefixes, original publication clock
+and complete calendar. No fitting, additional model, hyperparameter, cost,
+horizon or training-row change. NaN grades stay NaN and follow saved tree routes.
+
+Source inspection corrected the first support assumption before saved inference:
+the prepared valid mask already includes membership and a recorded grade.
+Preserve and authenticate it as training provenance; it cannot define independent
+price support. Reconstruct the original253-session completed-close availability
+from authenticated adjusted closes, including SPY history, and require observed
+original price/market features and finite original breadth. Individual missing
+features, including grade, follow saved native tree routes. Keep incomplete price histories
+unavailable. No history imputation or recomputation of features from later prices.
+
+Inference support is that price-prefix availability, completed decision close,
+and a nonbenchmark symbol. It is independent of
+grade, membership and current/future labels. Trading eligibility remains the
+allocator's separate unchanged grade/membership/cash/safety gate. The original
+heads were trained on grade-qualified rows; scoring outside that population
+is a declared distribution-shift risk, not proof of generalization.
+
+Validate exact numeric model identities and complete monthly availability.
+Use no pickle or restored sklearn estimator: traverse the saved numeric nodes,
+including their actual missing routes, and retain unavailable heads/invalid
+returns. Check original supported predictions against the authenticated saved
+predictions within their existing numeric-verifier tolerance, then preserve
+those original values exactly in the new artifact. Retain original training
+support, dated purge and model receipts separately from expanded inference
+support. The old fit/forecast files must not be relabelled or overwritten.
+
+Bind original feature/valid hashes, adjusted-close hash, parent manifest, monthly model and prediction
+receipts, expanded mask and new source/protocol identities. Validate these before
+the joint scenario reader accepts expanded risk forecasts. Keep the same252
+joint dates,756 sessions and August17 calibration freeze; current labels cannot
+gate risk inference. Unavailable risk still prevents unsupported additions.
+
+Acceptance: real64-tree sklearn versus numeric prediction including NaNs;
+malformed numeric tree/config/identity rejection; original supported predictions
+preserved; unknown-grade/nonmember price histories receive risk forecasts without
+trading permission; unavailable months remain explicit; future feature/label
+suffix cannot change earlier predictions; feature/valid substitutions, wrong
+monthly head, forged expanded lineage and changed parent training rejected.
+After acceptance, one saved-head inference run and the same fixed97-request
+final-date input diagnostic, with independent model, arithmetic and source proof.
+No account scores, strategy promotion, conditional-calibration guarantee or
+claim of superiority from expanded coverage.

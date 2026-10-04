@@ -9,31 +9,12 @@ import pytest
 from sklearn.ensemble import HistGradientBoostingRegressor
 
 from backend.cli import market_direct_daily_arithmetic as cli
+from backend.market import direct_daily_arithmetic as direct
 
 
-# Reconstruct predictions directly from serialized numeric nodes, including NaNs.
-def tree_predictions(bundle, features):
-    selected = features[:, bundle["columns"]]
-    result = np.full(len(features), float(bundle["baseline"].ravel()[0]))
-    for stage in range(int(bundle["iterations"])):
-        nodes = bundle[f"nodes_{stage}"]
-        for row, values in enumerate(selected):
-            position = 0
-            while not nodes[position]["is_leaf"]:
-                node = nodes[position]
-                value = values[int(node["feature_idx"])]
-                left = (
-                    bool(node["missing_go_to_left"])
-                    if np.isnan(value)
-                    else value <= node["num_threshold"]
-                )
-                position = int(node["left"] if left else node["right"])
-            result[row] += nodes[position]["value"]
-    return result
-
-
-# Prove safe numeric snapshots reproduce the real fixed estimator's signed outputs.
-def test_numeric_model_snapshot_preserves_real_predictions(tmp_path):
+# Build one actual fixed fitted model for persistence and safe-loader acceptance.
+@pytest.fixture(scope="module")
+def fitted_numeric(tmp_path_factory):
     rng = np.random.default_rng(4)
     features = rng.normal(size=(1000, 13)).astype(np.float32)
     features[::11, 5] = np.nan
@@ -48,21 +29,70 @@ def test_numeric_model_snapshot_preserves_real_predictions(tmp_path):
         random_state=0,
     ).fit(features[:, columns], target)
     head = SimpleNamespace(estimator=estimator, columns=columns)
+    folder = tmp_path_factory.mktemp("numeric")
+    records = cli.save_models(folder, {"2026-09": head})
+    with np.load(folder / records["2026-09"]["file"], allow_pickle=False) as data:
+        bundle = {name: data[name].copy() for name in data.files}
+    return features, estimator, head, bundle
+
+
+# Prove safe numeric snapshots reproduce the real fixed estimator's signed outputs.
+def test_numeric_model_snapshot_preserves_real_predictions(tmp_path, fitted_numeric):
+    features, estimator, head, _ = fitted_numeric
     records = cli.save_models(tmp_path, {"2026-09": head})
     path = tmp_path / records["2026-09"]["file"]
     assert records["2026-09"]["sha256"] == cli.saved.digest(path)
     with np.load(path, allow_pickle=False) as bundle:
         assert len(bundle.files) == 196
-        np.testing.assert_array_equal(bundle["columns"], columns)
+        np.testing.assert_array_equal(bundle["columns"], head.columns)
         np.testing.assert_allclose(
-            tree_predictions(bundle, features),
-            estimator.predict(features[:, columns]),
+            direct.numeric_head(dict(bundle), direct.model_identity(head)).predict(
+                features
+            ),
+            estimator.predict(features[:, head.columns]),
             rtol=1e-12,
             atol=1e-14,
         )
-    assert estimator.predict(features[:, columns]).min() < 0
+    assert estimator.predict(features[:, head.columns]).min() < 0
     with pytest.raises(ValueError, match="Fresh model"):
         cli.save_models(tmp_path, {"2026-09": head})
+
+
+# Caller mutations cannot revise an admitted numeric head or its predictions.
+def test_numeric_head_copies_original_arrays(fitted_numeric):
+    features, _, original, saved = fitted_numeric
+    bundle = {key: value.copy() for key, value in saved.items()}
+    head = direct.numeric_head(bundle, direct.model_identity(original))
+    expected = head.predict(features)
+    bundle["baseline"][:] = 99
+    bundle["nodes_0"]["value"][:] = 17
+    np.testing.assert_array_equal(head.predict(features), expected)
+    assert not head.columns.flags.writeable
+    assert not head.trees[0][0].flags.writeable
+
+
+# An unauthenticated or structurally unsupported snapshot must not reach traversal.
+@pytest.mark.parametrize(
+    "failure", ["identity", "cycle", "columns", "category", "infinite", "iterations"]
+)
+def test_numeric_head_refuses_malformed_snapshot(fitted_numeric, failure):
+    _, _, original, saved = fitted_numeric
+    bundle = {key: value.copy() for key, value in saved.items()}
+    expected = direct.model_identity(original)
+    if failure == "identity":
+        bundle["baseline"] += 1
+    elif failure == "cycle":
+        bundle["nodes_0"]["left"][0] = 0
+    elif failure == "columns":
+        bundle["columns"][0] = 13
+    elif failure == "category":
+        bundle["nodes_0"]["is_categorical"][0] = 1
+    elif failure == "infinite":
+        bundle["nodes_0"]["value"][0] = np.inf
+    else:
+        bundle["iterations"][()] = 63
+    with pytest.raises(ValueError, match="identity|tree|columns"):
+        direct.numeric_head(bundle, expected)
 
 
 # Preserve unavailable warmup receipts without attempting to serialize no estimator.
@@ -115,7 +145,7 @@ def test_control_loader_authenticates_every_saved_book(tmp_path, monkeypatch):
         label_end_dates=np.full(2, np.datetime64("NaT", "D")),
         score_mask=np.zeros((2, 3), bool),
     )
-    (tmp_path / "bridge-fit.json").write_text('{}')
+    (tmp_path / "bridge-fit.json").write_text("{}")
     proof = {
         "ok": True,
         "source_revision": cli.CONTROL_SOURCE,
@@ -178,15 +208,11 @@ def test_direct_cli_creates_only_three_new_funded_books(tmp_path, monkeypatch):
     import backend.market
     from backend.market import daily_bridge_replay, direct_daily_arithmetic
 
-    dates = np.arange(
-        np.datetime64("2019-01-02"), np.datetime64("2020-03-10")
-    )
+    dates = np.arange(np.datetime64("2019-01-02"), np.datetime64("2020-03-10"))
     dates = dates[np.is_busday(dates)]
     first = int(np.flatnonzero(dates == np.datetime64("2020-03-02"))[0])
     day = np.arange(len(dates))[:, None]
-    prices = np.exp(0.0002 * day + 0.05 * np.sin(day / 13)) * np.array(
-        [10, 20, 30, 40]
-    )
+    prices = np.exp(0.0002 * day + 0.05 * np.sin(day / 13)) * np.array([10, 20, 30, 40])
     panel = SimpleNamespace(
         dates=dates,
         tickers=("A", "B", "SPY", "QQQ"),
@@ -271,9 +297,7 @@ def test_direct_cli_creates_only_three_new_funded_books(tmp_path, monkeypatch):
         bridge_proof=input_dir / "proof.json",
     )
     original = {"relative": forecasts.copy(), "spy": np.zeros(len(dates))}
-    report = cli.evaluate(
-        args, (panel, grades, eligible, original, {}, {}), source
-    )
+    report = cli.evaluate(args, (panel, grades, eligible, original, {}, {}), source)
     assert len(fits) == 1
     assert original_calls == [0, 10, 25]
     assert report["identity"]["new_stock_accounts"] == 3
@@ -281,9 +305,7 @@ def test_direct_cli_creates_only_three_new_funded_books(tmp_path, monkeypatch):
     assert report["adoption_eligible"] is False
     assert not list(args.output.glob("equal-*.npz"))
     for row in report["rows"]:
-        receipt = json.loads(
-            (args.output / row["direct"]["receipt_file"]).read_bytes()
-        )
+        receipt = json.loads((args.output / row["direct"]["receipt_file"]).read_bytes())
         intents = receipt["account"]["intent_trace"]
         assert any(intent["side"] == "buy" for intent in intents)
         assert any(intent["side"] == "sell" for intent in intents)

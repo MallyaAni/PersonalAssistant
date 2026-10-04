@@ -22,6 +22,8 @@ PROTOCOL = "docs/research/direct-feature-support-plan-2026-10-03.md"
 HELD_POLICY = "learned-held-exits/1-research"
 HELD_BAND_POLICY = "learned-held-exits-band/1-research"
 HELD_PROTOCOL = "docs/research/learned-held-exits-plan-2026-10-03.md"
+RISK_POLICY = "holding-price-inference/1-research"
+JOINT_PROTOCOL = "docs/research/joint-distribution-allocation-plan-2026-10-04.md"
 
 
 # Keep explicit causal opportunity support beside forecasts and numeric model evidence.
@@ -33,6 +35,20 @@ class FeatureForecasts:
     models: dict
     dates: np.ndarray
     symbols: tuple
+
+
+# Keep expanded inference distinct from the unchanged parent training artifacts.
+@dataclass(frozen=True)
+class HoldingRiskForecasts:
+    forecasts: np.ndarray
+    score_mask: np.ndarray
+    manifest: dict
+    dates: np.ndarray
+    symbols: tuple
+    parent: FeatureForecasts
+    features: np.ndarray
+    valid: np.ndarray
+    prices: np.ndarray
 
 
 # Derive causal forecasting support, optionally including B holding evidence.
@@ -438,6 +454,236 @@ def calibrate(result, bridge):
     )
 
 
+# Copy original numeric forecasts and lineage without retaining executable heads.
+def _copy_feature(result):
+    if not isinstance(result, FeatureForecasts):
+        raise ValueError("Explicit original FeatureForecasts required")
+    return FeatureForecasts(
+        result.forecasts.copy(),
+        result.score_mask.copy(),
+        deepcopy(result.manifest),
+        {},
+        result.dates.copy(),
+        tuple(result.symbols),
+    )
+
+
+# Bind original price features and validity before expanding any inference support.
+def _risk_features(parent, bridge, features, valid, prices):
+    dates, names, identity = _calibration_inputs(parent, bridge)
+    if not _holding_mode(identity):
+        raise ValueError("Original held-model training lineage required")
+    features, valid, prices = (
+        np.asarray(features),
+        np.asarray(valid),
+        np.asarray(prices),
+    )
+    if (
+        features.shape != (*parent.forecasts.shape, 13)
+        or features.dtype.kind not in "fiu"
+        or np.isinf(features).any()
+        or valid.shape != parent.forecasts.shape
+        or valid.dtype != np.dtype("bool")
+        or identity["input_sha256"]["features"] != reference._hash(features)
+        or identity["input_sha256"]["valid"] != reference._hash(valid)
+        or prices.shape != valid.shape
+        or prices.dtype != np.dtype("float64")
+        or np.isinf(prices).any()
+        or np.any(np.isfinite(prices) & (prices <= 0))
+    ):
+        raise ValueError("Exact original holding feature and valid bytes required")
+    as_of = errors._publication(dates, bridge)
+    completed = np.array(
+        [
+            datetime.combine(
+                day.astype(object),
+                exchange.session_close(day.astype(object)),
+                exchange.NEW_YORK,
+            )
+            <= as_of
+            for day in dates
+        ]
+    )
+    benchmark = np.array([name in ("SPY", "QQQ") for name in names])
+    mask = (
+        _price_risk_support(prices, features, names) & completed[:, None] & ~benchmark
+    )
+    if np.any(parent.score_mask & ~mask):
+        raise ValueError("Original trading support exceeds causal price support")
+    return dates, names, mask
+
+
+# Recover completed-close price availability without a grade or membership mask.
+def _price_risk_support(prices, features, names):
+    if "SPY" not in names:
+        raise ValueError("Original SPY price history required")
+    spy = names.index("SPY")
+    consecutive = np.zeros(len(names), dtype=np.int64)
+    support = np.zeros(prices.shape, dtype=bool)
+    observed = np.isfinite(features[:, :, [*range(8), *range(9, 13)]]).any(axis=2)
+    observed &= np.isfinite(features[:, :, 12])
+    for day in range(len(prices)):
+        good = np.isfinite(prices[day]) & (prices[day] > 0)
+        consecutive = np.where(good, consecutive + 1, 0)
+        support[day] = (consecutive >= 253) & (consecutive[spy] >= 253) & observed[day]
+    return support
+
+
+# Name expanded inference with exact original inputs and new source semantics.
+def _risk_identity(parent, prices):
+    root = Path(__file__).resolve().parents[2]
+    return {
+        "policy": RISK_POLICY,
+        "parent_manifest_sha256": base._json_hash(parent.manifest),
+        "training_policy": HELD_POLICY,
+        "target": parent.manifest["identity"]["target"],
+        "features_sha256": parent.manifest["identity"]["input_sha256"]["features"],
+        "valid_sha256": parent.manifest["identity"]["input_sha256"]["valid"],
+        "support": (
+            "253_complete_close_and_spy_prefixes_observed_completed_nonbenchmark"
+        ),
+        "prices_sha256": reference._hash(prices),
+        "price_basis": "caller_authenticated_original_adjusted_close",
+        "original_prediction_tolerance": {"rtol": 1e-12, "atol": 1e-14},
+        "new_fits": 0,
+        "grade_or_membership_permission": False,
+        "adoption_eligible": False,
+        "source_sha256": {
+            str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in (
+                Path(__file__).resolve(),
+                Path(direct.__file__).resolve(),
+                root / JOINT_PROTOCOL,
+            )
+        },
+    }
+
+
+# Reuse only the original month's authenticated numeric head on causal price support.
+def holding_risk_forecasts(parent, bridge, features, valid, heads, *, prices):
+    dates, names, mask = _risk_features(parent, bridge, features, valid, prices)
+    receipts = parent.manifest["months"]
+    if not isinstance(heads, dict) or list(heads) != [row["month"] for row in receipts]:
+        raise ValueError("Complete original monthly numeric-head schedule required")
+    forecasts = np.full(parent.forecasts.shape, np.nan, dtype=np.float64)
+    months = dates.astype("datetime64[M]")
+    identity = _risk_identity(parent, prices)
+    manifest = {
+        "identity": identity,
+        "identity_sha256": base._json_hash(identity),
+        "months": [],
+    }
+    for row in receipts:
+        head = heads[row["month"]]
+        if row["status"] == "fitted":
+            if (
+                not isinstance(head, direct.NumericHead)
+                or direct.numeric_identity(head) != row["model"]
+            ):
+                raise ValueError("Exact original month's numeric head required")
+        elif head is not None:
+            raise ValueError("Unavailable original month must have no numeric head")
+        scored = np.flatnonzero(months == np.datetime64(row["month"], "M"))
+        values, counts = direct.predict(
+            head, np.asarray(features)[scored], mask[scored]
+        )
+        original = parent.score_mask[scored]
+        if not np.allclose(
+            values[original],
+            parent.forecasts[scored][original],
+            rtol=1e-12,
+            atol=1e-14,
+            equal_nan=True,
+        ):
+            raise ValueError("Original supported prediction parity failed")
+        values[original] = parent.forecasts[scored][original]
+        forecasts[scored] = values
+        manifest["months"].append(
+            {
+                "month": row["month"],
+                "parent_receipt_sha256": base._json_hash(row),
+                "model_sha256": row.get("model", {}).get("sha256"),
+                "status": row["status"],
+                "prediction_sha256": reference._hash(values),
+                "inference_mask_sha256": reference._hash(mask[scored]),
+                "inference_features_sha256": reference._hash(
+                    np.asarray(features)[scored]
+                ),
+                "prediction_counts": counts,
+            }
+        )
+    manifest.update(
+        forecasts_sha256=reference._hash(forecasts),
+        score_mask_sha256=reference._hash(mask),
+    )
+    result = HoldingRiskForecasts(
+        forecasts,
+        mask,
+        manifest,
+        dates.copy(),
+        names,
+        _copy_feature(parent),
+        np.asarray(features).copy(),
+        np.asarray(valid).copy(),
+        np.asarray(prices).copy(),
+    )
+    _risk_lineage(result, bridge)
+    return result
+
+
+# Refuse expanded artifacts that obscure training, input support or monthly scoring.
+def _risk_lineage(result, bridge):
+    dates, names, expected_mask = _risk_features(
+        result.parent, bridge, result.features, result.valid, result.prices
+    )
+    expected_identity = _risk_identity(result.parent, result.prices)
+    if (
+        result.symbols != names
+        or result.dates.dtype != dates.dtype
+        or not np.array_equal(result.dates, dates)
+        or result.manifest["identity"] != expected_identity
+        or result.manifest["identity_sha256"] != base._json_hash(expected_identity)
+        or result.score_mask.dtype != np.dtype("bool")
+        or not np.array_equal(result.score_mask, expected_mask)
+        or result.forecasts.shape != expected_mask.shape
+        or result.forecasts.dtype != np.dtype("float64")
+        or np.isinf(result.forecasts).any()
+        or np.any(
+            np.isfinite(result.forecasts) & ((result.forecasts <= -1) | ~expected_mask)
+        )
+        or result.manifest["forecasts_sha256"] != reference._hash(result.forecasts)
+        or result.manifest["score_mask_sha256"] != reference._hash(expected_mask)
+        or not np.array_equal(
+            result.forecasts[result.parent.score_mask],
+            result.parent.forecasts[result.parent.score_mask],
+            equal_nan=True,
+        )
+    ):
+        raise ValueError(
+            "Expanded holding-risk lineage or original predictions mismatch"
+        )
+    original = result.parent.manifest["months"]
+    receipts = result.manifest["months"]
+    if [row["month"] for row in receipts] != [row["month"] for row in original]:
+        raise ValueError("Complete original risk-inference monthly schedule required")
+    months = dates.astype("datetime64[M]")
+    for row, parent in zip(receipts, original, strict=True):
+        scored = np.flatnonzero(months == np.datetime64(row["month"], "M"))
+        expected = {
+            "parent_receipt_sha256": base._json_hash(parent),
+            "model_sha256": parent.get("model", {}).get("sha256"),
+            "status": parent["status"],
+            "prediction_sha256": reference._hash(result.forecasts[scored]),
+            "inference_mask_sha256": reference._hash(expected_mask[scored]),
+            "inference_features_sha256": reference._hash(result.features[scored]),
+        }
+        if any(row.get(key) != value for key, value in expected.items()) or (
+            parent["status"] != "fitted" and np.isfinite(result.forecasts[scored]).any()
+        ):
+            raise ValueError("Expanded holding-risk monthly receipt mismatch")
+    return dates, names, result.parent.manifest["identity"]
+
+
 # Return an explicit joint forecast or unavailable evidence for the required book.
 @dataclass(frozen=True)
 class HoldingScenarios:
@@ -451,18 +697,10 @@ class HoldingScenarios:
 class HoldingScenarioReader:
     # Validate immutable copies without retaining any executable model or caller buffer.
     def __init__(self, result, bridge):
-        if not isinstance(result, FeatureForecasts) or not isinstance(
-            bridge, reference.BridgeForecasts
-        ):
+        if not isinstance(
+            result, (FeatureForecasts, HoldingRiskForecasts)
+        ) or not isinstance(bridge, reference.BridgeForecasts):
             raise ValueError("Explicit holding forecast and bridge artifacts required")
-        result = FeatureForecasts(
-            result.forecasts.copy(),
-            result.score_mask.copy(),
-            deepcopy(result.manifest),
-            {},
-            result.dates.copy(),
-            tuple(result.symbols),
-        )
         bridge = reference.BridgeForecasts(
             bridge.calibrated.copy(),
             bridge.past_mean.copy(),
@@ -471,7 +709,22 @@ class HoldingScenarioReader:
             bridge.score_mask.copy(),
             deepcopy(bridge.manifest),
         )
-        dates, names, identity = _calibration_inputs(result, bridge)
+        if isinstance(result, HoldingRiskForecasts):
+            result = HoldingRiskForecasts(
+                result.forecasts.copy(),
+                result.score_mask.copy(),
+                deepcopy(result.manifest),
+                result.dates.copy(),
+                tuple(result.symbols),
+                _copy_feature(result.parent),
+                result.features.copy(),
+                result.valid.copy(),
+                result.prices.copy(),
+            )
+            dates, names, identity = _risk_lineage(result, bridge)
+        else:
+            result = _copy_feature(result)
+            dates, names, identity = _calibration_inputs(result, bridge)
         if not _holding_mode(identity):
             raise ValueError("Holding-capable B/A/A+ forecast lineage required")
         if (
@@ -538,6 +791,11 @@ class HoldingScenarioReader:
             "confidence_guarantee": False,
             "adoption_eligible": False,
         }
+        if isinstance(result, HoldingRiskForecasts):
+            self.identity["risk_inference_policy"] = RISK_POLICY
+            self.identity["original_feature_manifest_sha256"] = base._json_hash(
+                result.parent.manifest
+            )
 
     # Cache strictly mature common OOS dates for the month and required stock order.
     def _bank(self, day, indices):

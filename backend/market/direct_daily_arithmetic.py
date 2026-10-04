@@ -44,6 +44,147 @@ class ObservedHead:
         return self.estimator.predict(np.asarray(values)[:, self.columns])
 
 
+# Score authenticated numeric trees without restoring an executable estimator.
+@dataclass(frozen=True)
+class NumericHead:
+    columns: np.ndarray
+    baseline: np.ndarray
+    trees: tuple
+
+    # Follow original numeric thresholds and missing routes for each saved tree.
+    def predict(self, values):
+        values = np.asarray(values, dtype=np.float64)
+        if values.ndim != 2 or values.shape[1] != 13 or np.isinf(values).any():
+            raise ValueError("Original thirteen finite-or-missing features required")
+        selected = values[:, self.columns]
+        result = np.full(len(values), float(self.baseline[0, 0]))
+        for nodes, _, _ in self.trees:
+            positions = np.zeros(len(values), dtype=np.int64)
+            active = ~nodes["is_leaf"][positions].astype(bool)
+            while active.any():
+                rows = np.flatnonzero(active)
+                current = nodes[positions[rows]]
+                value = selected[rows, current["feature_idx"]]
+                left = np.where(
+                    np.isnan(value),
+                    current["missing_go_to_left"].astype(bool),
+                    value <= current["num_threshold"],
+                )
+                positions[rows] = np.where(left, current["left"], current["right"])
+                active = ~nodes["is_leaf"][positions].astype(bool)
+            result += nodes["value"][positions]
+        return result
+
+
+# Recompute the same fitted identity from its non-executable numeric representation.
+def numeric_identity(head):
+    identity = {
+        "config": dict(base.MODEL_CONFIG["boosting"]),
+        "columns": reference._hash(head.columns),
+        "baseline": reference._hash(head.baseline),
+        "feature_count": len(head.columns),
+        "iterations": len(head.trees),
+        "trees": [
+            {
+                "nodes": reference._hash(nodes),
+                "raw_left_cat_bitsets": reference._hash(raw),
+                "binned_left_cat_bitsets": reference._hash(binned),
+            }
+            for nodes, raw, binned in head.trees
+        ],
+    }
+    identity["sha256"] = base._json_hash(identity)
+    return identity
+
+
+# Refuse malformed or cyclic graphs before an authenticated head may be scored.
+def _numeric_tree(nodes, raw, binned, features):
+    fields = {
+        "value",
+        "is_leaf",
+        "feature_idx",
+        "num_threshold",
+        "missing_go_to_left",
+        "left",
+        "right",
+        "is_categorical",
+    }
+    if (
+        nodes.ndim != 1
+        or not len(nodes)
+        or not fields.issubset(nodes.dtype.names or ())
+        or any(
+            nodes.dtype[key].kind not in "iu"
+            for key in fields - {"value", "num_threshold"}
+        )
+        or any(nodes.dtype[key].kind != "f" for key in ("value", "num_threshold"))
+        or not np.isfinite(nodes["value"]).all()
+        or not np.isin(nodes["is_leaf"], (0, 1)).all()
+        or not np.isin(nodes["missing_go_to_left"], (0, 1)).all()
+        or np.any(nodes["is_categorical"])
+        or any(
+            a.shape != (0, 8) or a.dtype != np.dtype("uint32") for a in (raw, binned)
+        )
+    ):
+        raise ValueError("Original finite numeric-only tree representation required")
+    branches = np.flatnonzero(~nodes["is_leaf"].astype(bool))
+    children = np.column_stack((nodes["left"][branches], nodes["right"][branches]))
+    if (
+        not np.isfinite(nodes["num_threshold"][branches]).all()
+        or np.any(nodes["feature_idx"][branches] >= features)
+        or np.any(nodes["feature_idx"][branches] < 0)
+        or np.any(children <= branches[:, None])
+        or np.any(children >= len(nodes))
+        or not np.array_equal(np.sort(children.ravel()), np.arange(1, len(nodes)))
+    ):
+        raise ValueError("Complete unique forward-child numeric tree required")
+
+
+# Copy a fixed64-tree snapshot only after its original fitted receipt agrees.
+def numeric_head(bundle, expected):
+    fields = {"columns", "baseline", "features", "iterations"} | {
+        prefix + str(stage)
+        for stage in range(64)
+        for prefix in ("nodes_", "raw_categories_", "binned_categories_")
+    }
+    if set(bundle) != fields:
+        raise ValueError("Exact fixed64-tree numeric snapshot fields required")
+    copied = {name: np.asarray(value).copy() for name, value in bundle.items()}
+    columns, baseline = copied["columns"], copied["baseline"]
+    if (
+        columns.ndim != 1
+        or not len(columns)
+        or columns.dtype != np.dtype("int64")
+        or not np.array_equal(columns, np.unique(columns))
+        or np.any((columns < 0) | (columns >= 13))
+        or baseline.shape != (1, 1)
+        or baseline.dtype != np.dtype("float64")
+        or not np.isfinite(baseline).all()
+        or any(
+            copied[name].shape != () or copied[name].dtype.kind not in "iu"
+            for name in ("features", "iterations")
+        )
+        or int(copied["features"]) != len(columns)
+        or int(copied["iterations"]) != 64
+    ):
+        raise ValueError("Registered columns, baseline and iteration count required")
+    trees = tuple(
+        tuple(
+            copied[prefix + str(stage)]
+            for prefix in ("nodes_", "raw_categories_", "binned_categories_")
+        )
+        for stage in range(64)
+    )
+    for nodes, raw, binned in trees:
+        _numeric_tree(nodes, raw, binned, len(columns))
+    head = NumericHead(columns, baseline, trees)
+    if numeric_identity(head) != expected:
+        raise ValueError("Original numeric fitted-model identity mismatch")
+    for array in copied.values():
+        array.setflags(write=False)
+    return head
+
+
 # Hash the numeric fitted baseline and trees without serializing executable objects.
 def model_identity(head):
     estimator = head.estimator

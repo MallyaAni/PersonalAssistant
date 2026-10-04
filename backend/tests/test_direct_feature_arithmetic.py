@@ -206,6 +206,210 @@ def test_joint_holding_scenarios_refuse_forged_monthly_prediction(joint_forecast
         feature.HoldingScenarioReader(result, parent)
 
 
+# Fit one pooled synthetic head while leaving the second stock's grades unknown.
+@pytest.fixture(scope="module")
+def risk_example(tmp_path_factory):
+    from backend.cli import market_direct_daily_arithmetic as cli
+
+    prepared, bridge, grades, eligible = fixture(count=1200, start="2021-01-04")
+    grades[:, 1], eligible[:, 1] = -1, False
+    prepared["valid"][:252] = False
+    prepared["X"][:, 1, 8] = np.nan
+    prepared["risk_prices"] = np.full(grades.shape, 100.0, dtype=np.float64)
+    parent = feature.walk_forward(prepared, bridge, grades, eligible, hold_b=True)
+    folder = tmp_path_factory.mktemp("risk-heads")
+    records = cli.save_models(folder, parent.models)
+    heads = {}
+    for row in parent.manifest["months"]:
+        month = row["month"]
+        if month not in records:
+            heads[month] = None
+            continue
+        with np.load(folder / records[month]["file"], allow_pickle=False) as bundle:
+            heads[month] = feature.direct.numeric_head(dict(bundle), row["model"])
+    risk = feature.holding_risk_forecasts(
+        parent,
+        bridge,
+        prepared["X"],
+        prepared["valid"],
+        heads,
+        prices=prepared["risk_prices"],
+    )
+    return prepared, bridge, parent, heads, risk
+
+
+# Risk inference covers price histories without fabricating a grade or refitting.
+def test_holding_risk_expands_without_trading_permission(risk_example, monkeypatch):
+    from backend.market import adaptive_growth_policy as allocator
+
+    prepared, bridge, parent, heads, original = risk_example
+
+    # Inference must never use the training entrypoint to manufacture coverage.
+    def forbidden(*args, **kwargs):
+        pytest.fail("Saved-head inference attempted a fit")
+
+    monkeypatch.setattr(feature.direct, "_fit", forbidden)
+    risk = feature.holding_risk_forecasts(
+        parent,
+        bridge,
+        prepared["X"],
+        prepared["valid"],
+        heads,
+        prices=prepared["risk_prices"],
+    )
+    assert not parent.score_mask[:, 1].any()
+    assert np.isnan(parent.forecasts[:, 1]).all()
+    assert np.isfinite(risk.forecasts[:, 1]).sum() > 252
+    assert not risk.score_mask[:, 2:].any()
+    assert not risk.manifest["identity"]["grade_or_membership_permission"]
+    assert risk.parent.models == {}
+    np.testing.assert_array_equal(risk.forecasts, original.forecasts)
+    sample = feature.HoldingScenarioReader(risk, bridge).distribution(
+        len(risk.dates) - 1, ("AAA", "BBB")
+    )
+    assert sample.receipt["status"] == "available"
+    target, _ = allocator.allocate_distribution(
+        sample.scenarios,
+        sample.probabilities,
+        np.array([2, -1]),
+        np.array([True, False]),
+        np.zeros(2),
+        1.0,
+        10,
+        np.array([], dtype=int),
+        horizon=sample.receipt["horizon"],
+    )
+    assert target[1] == 0
+
+
+# Expanded artifacts preserve original supported values and unavailable warmup heads.
+def test_holding_risk_preserves_original_training_and_forecasts(risk_example):
+    _, _, parent, _, risk = risk_example
+    np.testing.assert_array_equal(
+        risk.forecasts[parent.score_mask], parent.forecasts[parent.score_mask]
+    )
+    assert risk.parent.manifest == parent.manifest
+    months = risk.dates.astype("datetime64[M]")
+    for row in risk.manifest["months"]:
+        if row["status"] != "fitted":
+            assert np.isnan(
+                risk.forecasts[months == np.datetime64(row["month"], "M")]
+            ).all()
+
+
+# A substituted feature, validity mask or month's model cannot become risk evidence.
+@pytest.mark.parametrize("failure", ["features", "valid", "head", "schedule", "prices"])
+def test_holding_risk_refuses_changed_original_inputs(risk_example, failure):
+    prepared, bridge, parent, original_heads, _ = risk_example
+    x, valid, heads = (
+        prepared["X"].copy(),
+        prepared["valid"].copy(),
+        dict(original_heads),
+    )
+    prices = prepared["risk_prices"].copy()
+    if failure == "features":
+        x[-1, 1, 0] += 1
+    elif failure == "valid":
+        valid[-1, 1] = not valid[-1, 1]
+    elif failure == "schedule":
+        heads.pop(next(iter(heads)))
+    elif failure == "prices":
+        prices[-1, 1] = np.inf
+    else:
+        available = [month for month, head in heads.items() if head is not None]
+        heads[available[0]] = heads[available[-1]]
+    with pytest.raises(ValueError, match="original"):
+        feature.holding_risk_forecasts(parent, bridge, x, valid, heads, prices=prices)
+
+
+# Refreshing a new feature source's hashes cannot change already observed predictions.
+def test_holding_risk_future_feature_prefix_invariance(risk_example):
+    prepared, bridge, parent, heads, risk = risk_example
+    parent = feature._copy_feature(parent)
+    x = prepared["X"].copy()
+    x[-1, 1, 0] += 10
+    parent.manifest["identity"]["input_sha256"]["features"] = reference._hash(x)
+    parent.manifest["identity_sha256"] = base._json_hash(parent.manifest["identity"])
+    changed = feature.holding_risk_forecasts(
+        parent,
+        bridge,
+        x,
+        prepared["valid"],
+        heads,
+        prices=prepared["risk_prices"],
+    )
+    np.testing.assert_array_equal(changed.forecasts[:-1], risk.forecasts[:-1])
+
+
+# Current-month outcomes cannot alter predictions or earlier joint errors.
+def test_holding_risk_future_label_prefix_invariance(risk_example):
+    prepared, bridge, parent, heads, risk = risk_example
+    parent, bridge = feature._copy_feature(parent), deepcopy(bridge)
+    bridge.labels[-3, 1] += 0.4
+    bridge.manifest["label_sha256"] = reference._hash(bridge.labels)
+    parent.manifest["identity"]["bridge_manifest_sha256"] = base._json_hash(
+        bridge.manifest
+    )
+    parent.manifest["identity"]["input_sha256"]["labels"] = reference._hash(
+        bridge.labels
+    )
+    parent.manifest["identity_sha256"] = base._json_hash(parent.manifest["identity"])
+    changed = feature.holding_risk_forecasts(
+        parent,
+        bridge,
+        prepared["X"],
+        prepared["valid"],
+        heads,
+        prices=prepared["risk_prices"],
+    )
+    np.testing.assert_array_equal(changed.forecasts, risk.forecasts)
+    day = len(risk.dates) - 1
+    original = feature.HoldingScenarioReader(risk, risk_example[1]).distribution(
+        day, ("AAA", "BBB")
+    )
+    actual = feature.HoldingScenarioReader(changed, bridge).distribution(
+        day, ("AAA", "BBB")
+    )
+    np.testing.assert_array_equal(actual.scenarios, original.scenarios)
+
+
+# Fabricated inference support or training clocks fail before scenario construction.
+@pytest.mark.parametrize("failure", ["mask", "monthly", "training"])
+def test_holding_risk_reader_refuses_forged_lineage(risk_example, failure):
+    _, bridge, _, _, original = risk_example
+    risk = deepcopy(original)
+    if failure == "mask":
+        risk.score_mask[-1, 1] = False
+    elif failure == "monthly":
+        risk.manifest["months"][-1]["parent_receipt_sha256"] = "0" * 64
+    else:
+        risk.parent.manifest["months"][-1]["maximum_label_end"] = str(risk.dates[-1])
+    with pytest.raises(ValueError, match="lineage|receipt"):
+        feature.HoldingScenarioReader(risk, bridge)
+
+
+# Price history gaps reset causal support even when grade-free features are present.
+def test_price_risk_support_requires_complete_prefix_and_spy():
+    prices = np.full((600, 2), 100.0, dtype=np.float64)
+    x = np.ones((600, 2, 13), dtype=np.float32)
+    x[:, :, 8] = np.nan
+    whole = feature._price_risk_support(prices, x, ("AAA", "SPY"))
+    assert not whole[:252].any()
+    assert whole[252:].all()
+    prices[275, 0] = np.nan
+    missing = feature._price_risk_support(prices, x, ("AAA", "SPY"))
+    np.testing.assert_array_equal(missing[:275], whole[:275])
+    assert not missing[275:528, 0].any()
+    assert missing[528:, 0].all()
+    assert missing[275:528, 1].all()
+    prices[300, 1] = np.nan
+    assert not feature._price_risk_support(prices, x, ("AAA", "SPY"))[300:553].any()
+    x[590, 0, 0] = np.nan
+    assert feature._price_risk_support(prices, x, ("AAA", "SPY"))[590, 0]
+    x[590, 0, 12] = np.nan
+    assert not feature._price_risk_support(prices, x, ("AAA", "SPY"))[590, 0]
+
+
 # Explicit causal grades and membership gate opportunities without future labels.
 def test_support_gates_state_and_preserves_missing_outcome_tail():
     prepared, parent, grades, eligible = fixture(count=530)
