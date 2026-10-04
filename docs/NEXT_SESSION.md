@@ -1,5 +1,55 @@
 # Next session
 
+## 2026-10-04 — historical-clock boundary corrected; fresh full run active
+
+Latest source4ff85fbfd458074b3d0174d414788a14b8547312 is pushed on
+codex/learned-entry-risk-20261002. It supersedes the old b147 launch status
+below: b147 container EXITED1/no OOM before its first economic account. Only
+identity.json existed. Preserve its source, output, terminal log/inspect;
+NEVER restart it. The actual first night2018-01-31 reproduced rejection:
+market_daily's explicit clock used the narrower live published calendar,
+while the replay correctly validated the reviewed historical calendar.
+
+One targeted correction: ONLY an explicit supplied private broker's clock
+uses reviewed_sessions. Default environment-broker behavior is unchanged.
+Unchanged reproduction now passes; additional holiday, unreviewed-year,
+pre-early-close and nonprivate historical-clock rejection cases pass. Whole
+historical/early-close private planner journeys pass. Native53 focused PASS
+before added second early-close journey, then2 historical journeys PASS.
+Final pinned-image336 PASS/no skips11.08s. New test lint/diff clean; full
+market_daily retains3 preexisting unrelated Ruff diagnostics, independently
+compared with b147: identical codes/messages/source lines, zero introduced.
+No assertions, clocks, safety gates or published-calendar data weakened.
+
+Original initial-night acceptance exited0, uses all original authenticated
+inputs/saved models and actual planner at2018-01-31 16:01 New York. Persisted
+private state is read back, broker cash remains100000/holdings empty/no fills;
+zero economic accounts scored. Original bytes/source rechecked afterward.
+Source manifestc89104e30370e0453c010e639ccf91d78725e32681c5828456385e17fd081e45,
+2368 exact files. Image5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+Evidence:/home/animallya96/scratch/actual-policy-study-20261004-4ff85fbf/proof.
+Acceptanceb4f22e0205717780235b7b15291a3f97f03da093a2cb7efcae8e0ffa08a1a086;
+original-night-proof871740287b4c61d87f99139dd6d8308fc28eceb85820186fcc8fb4172b994cae;
+external acceptance-scriptab742e1b0266282637e9e8dc1568ac8e15522081ce71c16cb1edd08f3e033333.
+
+RUNNING NEW container actual-policy-study-4ff85fbf,
+ID94e4e8f3800eb6e11ca952c509a286fa27e4f63ae3b78000f3fb20d81b5ae252.
+Authoritative inspect/top confirmed running; immutable source/original mounts,
+same frozen300 accounts, CPU2/RAM8GB/nonetwork, fresh proof/study output.
+Never restart an active job or modify its source. Compact progress is
+proof/study/active-account.json and progress.json; authenticated loader may
+precede progress creation. Capture terminal exit/OOM/log and verify saved
+artifacts independently before interpreting results. No refit/recalibration,
+old study rescore, thresholds/windows selected or production deployment.
+Live main/image621e28f0 and model services remain unchanged; adoption UNVERIFIED.
+
+Verifier worker still exclusively owns its TWO new verifier/test files,
+root owns all existing source/docs. It will inspect producer4ff at the
+separate /producer-source mount; preserve exact original mount path names.
+Producer/saved-artifact verification identities stay separate. Full reliable
+live timing, holding/profit exits and sizing enhancements remain ACTIVE;
+passed software tests and current-vintage accounts alone cannot prove them.
+
 ## 2026-10-04 — fixed actual-policy comparison launched
 
 VERIFIED source checkpoint b147abde6b993e56d7b5341dabd8176beb2c6f37,
