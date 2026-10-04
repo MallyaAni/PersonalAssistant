@@ -158,6 +158,8 @@ def validate_models(models, manifest):
 
 # Save fitted numeric trees while retaining unavailable months only in receipts.
 def save_models(output, models):
+    from backend.market.direct_daily_arithmetic import numeric_snapshot
+
     records = {}
     for month, head in models.items():
         saved.require(
@@ -165,26 +167,7 @@ def save_models(output, models):
         )
         if head is None:
             continue
-        estimator = head.estimator
-        numeric = {
-            "columns": np.asarray(head.columns),
-            "baseline": np.asarray(estimator._baseline_prediction),
-            "features": np.asarray(estimator.n_features_in_),
-            "iterations": np.asarray(estimator.n_iter_),
-        }
-        saved.require(
-            len(estimator._predictors) == 64 and estimator.n_iter_ == 64,
-            "Exact registered iteration count",
-        )
-        for stage, trees in enumerate(estimator._predictors):
-            saved.require(len(trees) == 1, "One arithmetic regression output")
-            tree = trees[0]
-            saved.require(
-                not tree.nodes["is_categorical"].any(), "Numeric original features"
-            )
-            numeric[f"nodes_{stage}"] = tree.nodes
-            numeric[f"raw_categories_{stage}"] = tree.raw_left_cat_bitsets
-            numeric[f"binned_categories_{stage}"] = tree.binned_left_cat_bitsets
+        numeric = numeric_snapshot(head)
         path = output / f"model-{month}.npz"
         saved.require(not path.exists(), "Fresh model evidence required")
         np.savez_compressed(path, **numeric)

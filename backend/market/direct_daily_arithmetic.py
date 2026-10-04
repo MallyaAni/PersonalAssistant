@@ -210,6 +210,31 @@ def model_identity(head):
     return identity
 
 
+# Export and validate the same numeric trees used by saved and forward consumers.
+def numeric_snapshot(head):
+    estimator = head.estimator
+    if len(estimator._predictors) != 64 or estimator.n_iter_ != 64:
+        raise ValueError("Exact registered iteration count required")
+    bundle = {
+        "columns": np.asarray(head.columns).copy(),
+        "baseline": np.asarray(estimator._baseline_prediction).copy(),
+        "features": np.asarray(estimator.n_features_in_),
+        "iterations": np.asarray(estimator.n_iter_),
+    }
+    for stage, trees in enumerate(estimator._predictors):
+        if len(trees) != 1:
+            raise ValueError("One arithmetic regression output required")
+        tree = trees[0]
+        for prefix, values in (
+            ("nodes_", tree.nodes),
+            ("raw_categories_", tree.raw_left_cat_bitsets),
+            ("binned_categories_", tree.binned_left_cat_bitsets),
+        ):
+            bundle[prefix + str(stage)] = values.copy()
+    numeric_head(bundle, model_identity(head))
+    return bundle
+
+
 # Validate exact original feature and parent forecast representations before reuse.
 def _inputs(prepared, bridge):
     if not isinstance(bridge, reference.BridgeForecasts):
