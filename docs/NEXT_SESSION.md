@@ -1,5 +1,62 @@
 # Next session
 
+## 2026-10-04 — fixed actual-policy comparison launched
+
+VERIFIED source checkpoint b147abde6b993e56d7b5341dabd8176beb2c6f37,
+pushed on codex/learned-entry-risk-20261002. Adds the fixed study CLI,
+whole-share raw SPY/QQQ controls and bounded private state/progress reuse.
+Current production main/image621e28f0 remains unchanged; no live adoption.
+Previous goal turn made concrete progress: comparison diagnostics and unchanged
+independent missed-order acceptance now pass. Final source-image330 PASS/no
+skips(10.98s), native33 focused PASS(3.53s), Ruff/diff checks PASS. Counts
+overlap and must not be added. Whole-source manifest binds2368 exact files:
+215d02354057735a32d42f5d1e2729397281cd3a6263140723dff6c111f24b60.
+Pinned image5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+Evidence:/home/animallya96/scratch/actual-policy-study-20261004-b147abde/proof.
+Acceptance3c17318919d59fd8d3ed3b836249f3aa3106722e4754329776119c50047cb55f.
+
+Original-input preflight exited0 with zero accounts and declared300; exact
+original snapshot/cubes/actions/forecast receipts authenticated, BOTH saved
+CDFs restored in their original NumPy2.5.3 runtime, no fitting/recalibration.
+Identity4f715b4a9faad545f688f7e91b4243082ebf69bef82169d3983dc959f359b5df;
+preflight79133573cda416657bc22b8a6e0704c468808734101de121773b3a6641dfa63f.
+Old studies are input receipts only and were not resimulated or rescored.
+
+RUNNING exact container actual-policy-study-b147abde,
+ID9fe20c501815ee562d05c0ba0e53d678bc10c82d625c298363e5d026f12fb08d.
+Source and originals mounted read-only, CPU2/RAM8GB/networknone; private
+output proof/study. NEVER restart this active job, modify its mounted source,
+fit models, select phases or change frozen protocol8bb0b528f56dd4f43e72823e4efa8eee71631e90b6d84831c881247a70cbabcc.
+Inspect docker state/top plus compact active-account.json/progress.json;
+observation timeouts are not terminal. Producer retains exited container so
+exit/OOM status is observable. Final report remains UNVERIFIED until all300
+accounts finish and an independent saved-artifact verifier checks them.
+
+The matched controls preserve whole-share cash/fees, split entitlements and
+unspendable dividend receivables. Missing opening/held marks stay unavailable;
+they never become fabricated fills or a late substituted benchmark entry.
+Reported era misses stop at the era boundary: later fills cannot erase an
+unfinished original order. Quantity sums denote share attempts, not capital;
+retry and unique-intent counts are separate. Private read reuse is limited
+to unchanged atomic state versions in exclusively owned research folders;
+actual business sender loads its own persisted state. Full cached/uncached
+behavioral parity is verified, except honest runtime publication timestamps.
+Detached progress cannot alter account evidence. No production cache or API
+was changed. Diagram impact NONE: private research tools preserve live paths.
+
+NEXT: inspect this exact job, do not repeat completed tests/preflight. The
+existing actual_policy_review subagent exclusively owns NEW
+backend/cli/verify_actual_policy_timing.py and its NEW test. Root owns all
+producer files/docs; never overwrite concurrent verifier work. Verifier must
+authenticate immutable producer source at a separate /producer-source mount,
+saved hashes and original bytes, independently reconcile receipts/NAV/metrics
+without calling producer, fitting or simulating decisions. Its proof must
+distinguish arithmetic from still-unverified original action/payment and
+historical grade-publication completeness and actual broker fill execution.
+Then assess all fixed starts/costs/eras versus rule/SPY/QQQ. Holding/profit-exit
+models and stock-specific sizing are separate next comparisons; software tests
+do not establish their advantage. Persistent live-enhancement goal ACTIVE.
+
 ## 2026-10-04 — actual-policy runner and exact feature reuse verified
 
 VERIFIED checkpoints a81af83a (real chronological runner/report/CDF reader)
