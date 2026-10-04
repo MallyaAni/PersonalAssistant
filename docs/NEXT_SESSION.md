@@ -1,5 +1,73 @@
 # Next session
 
+## 2026-10-04 — actual-policy replay foundation verified
+
+Checkpoint dc8365a8 adds explicit private broker/decision-clock dependencies to
+the REAL market_daily.paper_trade and intraday_orders.send_due paths; defaults
+are unchanged and no production caller enables the custom timing reader.
+Verified exact indexed tree matches all2357 source files exercised in pinned
+image5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+Final image233 cases PASS/no skips(3.16s); native89 focused cases PASS before
+the final three dividend cases, then23 raw-input cases PASS. New/modified
+intraday and new source/test files Ruff clean, diff clean; pre-existing
+market_daily lint findings remain outside scope.25 independent private cases
+exercise real nightly planning, persisted pending rows, real sender, broker
+accepted-but-unfilled state, explicit later flush and next-night reconciliation.
+No health-only or mock-called verification. Diagram impact: NONE — private
+research dependencies retain the existing production flows/trust boundaries.
+
+VERIFIED behavior: before-write aware nightly clock checks; no env broker used
+when injected; custom timing cannot mutate stored quantities, override explicit
+execution-policy contracts or extend the real terminal deadline; covered sells,
+cash refusal/same-ID retry, reservations, whole submitted quantities, terminal
+partial receipts and split-created fractional entitlements remain explicit.
+Future fill prices enter broker.flush ONLY after an observed decision batch.
+Unspecified dividend payment dates accrue receivable NAV, never spendable cash.
+This deterministic private venue is not proof of actual broker fills or all
+broker corporate-action adjustments. The seam does not itself certify a custom
+forecast's causal inputs; the concrete model reader must enforce that.
+
+Raw-input acceptance also prepared ALL96 original names/2953 sessions, preserving
+grades/membership and missingness:209518 full-grid cells,71762 missing cube
+sessions,2208 unsupported early-close cells. No scoring/fit/refetch occurred.
+Evidence:/home/animallya96/scratch/actual-policy-foundation-20261004/proof-dividends.
+Final acceptance log922a6feedffb81b90e17b7c70b33997668b4bcd958d3b8d3f3773df05f1d6742;
+raw-input receipt8f61718116e211adf290cdd69134142dc04f5780fe6c9cc2730d900ea9d2655e;
+source manifestddfbfabb6629c79dc20cbde63767ad9a93906706a107e27c96ff0b64dae052c4.
+Original source and all input mounts read-only; output outside production data.
+Initial image attempts had a wrong test filename and a wrong temporary mount;
+no tests ran, corrected launch paths only. Initial private preflight loader
+exposed O/C only; supplied original H/L bytes restored, no source-price repairs.
+
+Dividend boundary reproduced and fixed BEFORE economic runs: the archive's
+historical amounts can be later split-adjusted, not raw ex-date-share dollars.
+Adapter now requires a declared dividend amount basis, mechanically reverses
+dated later splits when appropriate, and retains original source_value.
+The missing-basis regression first FAILED as required, then passed unchanged.
+Compound/same-date/raw-basis cases pass. Selected official declarations verify
+AAPL0.205×4=0.82, AVGO0.525×10=5.25, NVDA0.004×10=0.04 and×4×10=0.16.
+Audit0513c3fc76fc32e866eabed2c74c28a6fe186a2eedd4712697fa2f6a879be354 is
+codex-yahoo-dividend-units-audit-20261004.json in the evidence directory;
+all-name declaration/payment completeness and same-day ordering remain
+UNVERIFIED. No current live defect established or old evidence paths changed.
+Action export0e05a397f3719c61688e2eb79355eb5111961c05f31916db8a16ab6ff01dbcca:
+/home/animallya96/scratch/live-policy-inputs-20261004/frozen-actions/actions.json.
+Original snapshot/provenance hashes and dated partitions are pinned there.
+
+NEXT: freeze the full-policy comparison contract BEFORE new outcomes, then
+implement its chronological runner using actual nightly/sender/persistence
+paths, raw dollars, cash/whole shares, corporate actions and current rule.
+Sizing stays unchanged first to isolate buy/sell timing; evaluate sizing as a
+separate factorial afterward. Holding/profit exits need carried state, not an
+inference from a one-bar forecast. Preserve unknown eligibility, missing/early
+close outcomes, retries, source/publication limitations and all benchmarks.
+Historical grades/universe remain current-vintage, not exact historical live
+availability. No full-policy economics or live replacement verified yet.
+The120-account component evidence above/below remains COMPLETE: do not repeat
+fits, old diagnostics, accounts, source audits or scoring. All agents released
+files; root owns seven integrated files. No deployment, orders, model-service
+changes, UI work or adoption; the persistent user goal remains ACTIVE.
+
 ## 2026-10-04 — funded evidence complete; shared nightly planner verified
 
 The120-account producer and saved-only proof BOTH EXITED0/no OOM. Do not
