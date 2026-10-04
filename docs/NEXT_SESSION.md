@@ -56,6 +56,19 @@ and deployment. Next address supported conditional stock-risk evidence without
 relaxing this fixed reader, then fixed funded sizing/holding comparisons and
 guarded adoption. No extra research methods or repetitions merely to stay busy.
 
+Read-only first-boundary follow-up (support-boundary.log, same pinned source,
+original NPZ hashes retained): AAOI, COHR and STX have only18 saved forecasts,
+first September4,2026, and none before the August17 calibration freeze. WDC has
+no saved forecast/support at all. All four have2951 finite original holding
+labels beginning2015-01-02. AVGO has1373 saved forecasts,1368 before freeze;
+NVDA has1728/1694. Thus the shortage is the saved forecast-support path, not a
+lack of historical price labels. Next inspect separate, causal price/structure
+risk inference using the authenticated saved monthly pooled heads where valid,
+keeping original training lineage and action grade eligibility separate. Declare
+that new input/inference contract before new predictions or scores; do not
+invent historical grades, reinterpret expanded scores as old artifacts, relax
+252, assume calibration or repeat old fits merely to obtain coverage.
+
 ## 2026-10-04 — joint distribution sizing/holding optimizer
 
 Goal ACTIVE; previous turn PROGRESS: independent original-input proof plus
