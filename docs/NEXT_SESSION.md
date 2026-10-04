@@ -1,5 +1,46 @@
 # Next session
 
+## 2026-10-04 — learned held exits verified; intraday probability work remains
+
+VERIFIED source94130c30afa4b1bcd2db7bf4e5b01674a295b791,2332-file manifest
+14a41d177bc0d9f9ae2d9930664fee8f00d4d5f22a8d80579a2dcd893780f512.
+190 native/image cases/no skips;12 exact old default solver comparisons per
+runtime. Image d697af79 exited0,50.51s; log107cecbf86054f8b72a0f58bc433c4214fb9bb75f24f7c71b6f05e5b6d404a61.
+Producer22aad560 and proofb6a7282c COMPLETE/exited0. Final saved verifier
+4a6060d2d33c3f826fb27b9f62c9875325f561fcb672d2a67c927313f3a46bb8;
+42 native/image corruption cases/no skips. Actual proof
+bdc6efef13bd67be525e43fe3c077724300e315e5d589703c9225f779b3538c3
+authenticates all dated training/numeric trees/bands/targets/funded books/metrics.
+Report50150fe3a40a475e88d0fa9cc65f7c418676a9c5d8d22af6d1e73d9eda5c82f6.
+One fit,104heads/141receipts, six NEW books/27 saved controls; no old replay/fit.
+Counts9930plans/27790intents/24466full/3324cashlimited/0missing/81unavailable.
+Support33279, bands25445available/7834missing; source/protocol unchanged.
+
+Published learned-held-exits-results-2026-10-03.md/.json; JSON
+5c0e19cfd66e86d94564cfd35a0b37287414cee9d1804b2b388a406ef3e46693.
+Independent publicationPASS33 full rows/24new windows/6rolling/allstock grids.
+Raw0/10/25bp gain374.92%/101.46%/112.02%; band397.03%/348.61%/328.73%.
+Band beats bothETFs allcosts, daily rule only25bp. Raw failsrule allcosts,
+andbothETFs10/25bp. FAILED allcost rule advantage; high trading remains.
+Joint B training+holding change is NOT isolated holding alpha or intraday entry
+proof. No adoption/cell selection/tuning. Services IDs/start times unchanged.
+Never restart completed studies, rescore/refit/replay, rewrite caches or deploy
+research. All root/worker source/helpers are released/stable/root-owned.
+
+User emphasizes volatility/structure, calibrated probability for sizing and
+timing/sizing attribution. Current candidate predicts means with historical
+covariance and empirical error band, NOT calibrated probabilities. Buying/selling
+timing and sizing must be evaluated separately and jointly with real funding.
+Read aaoi-entry-episode-audit-2026-10-03.md: matching decline isSep28; paperfill
+09:34 precedes firstcompleted dip signal09:45:27 and predates currentexecutor.
+Original graded record preserved; later Friday re-recording changes23grades.
+SIP complete15m path is delayed retrospective regression, not PIT IEX receipts.
+Daily head cannot react to evolving intraday path. Full initial funding/IEX
+prefix evidence missing. No invented bottom/1m/midpoint fills. Further work must
+target causal15m stock-conditioned probability/return distribution and honest
+calibration/decision attribution, with a separately frozen bounded protocol.
+Full reliable live entry/exit replacement remains UNVERIFIED/active. DiagramNONE.
+
 ## 2026-10-03 — learned holding exits implemented; fixed image/account checks next
 
 Frozen protocol b127b106 BEFORE code/fits. Optional hold_b=False preserves
