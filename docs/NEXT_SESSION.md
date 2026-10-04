@@ -1,5 +1,41 @@
 # Next session
 
+## 2026-10-04 — prospective October model publication verified
+
+Goal ACTIVE; turn PROGRESS. Started clean ce0a2ee8; verified code50bed9fe486117c7c3f055fe9c3e456574f57e6a
+pushed on codex/learned-entry-risk-20261002. Fetched main204689db, still ancestor;
+no main/live/model-service or active-study source changes. Diagram impact NONE.
+
+New forward_arithmetic publishes one fixed held-B monthly head using the existing
+training selector/estimator/freeze; direct numeric export is now shared with the
+old saver. Complete reviewed calendar, mature labels, actual post-serialization
+publication clock, month expiry and hash-linked numeric-only reload enforced.
+Late writes cannot serve earlier decisions. Missing training remains unavailable.
+38native10.03s and106pinned12.39s/no skips; Ruff/diff clean. Gates exercise
+forward/direct/feature/joint-funded paths, not production policy adoption.
+
+Actual saved-input acceptance root /home/animallya96/scratch/forward-month-publication-20261004-50bed9fe:
+source2389files manifestSHAe8416796bd94c646375f22ffe0ceb04ffda1fcda0521be340295db831509b034.
+One NEW October head,722training dates/8825rows, maximum endpoint08-14 strictly
+before08-17freeze;96numeric predictions independently matched. Original inputs
+authenticated before/after;0old models refit/0accounts scored. Published10-04
+18:35:30.875637NY from original data ending09-30; NOT a current stock observation.
+proof/october/publication.json SHA858163d5e414ee658f28a10532a934528c72fe98fd1cb685e655d6d3a2c75825;
+model identity3affbac3ba7eb4297a374f33d0ca3b7b124ebcea4f3e6289823b41f7789a19f2.
+proof/real-publication-proof.json SHA9f166aef57d3491e6c8a229301bd88efaf489f2d01bfb2ef87ac538f410eab79;
+proof/execution.json SHA67048f768860d71fea31feca07d258455a6e55ad2abe27c774185b32e99c6951
+retains exact gate87589447/real-proof77a4fb8c Docker IDs, pinnedimage and mounts.
+
+Existing e396 candidate/control2bb2b921/2832af72 remain running/OOMfalse,
+0completed books at18:37NY;candidate1460sessions through2023-11-16,rule1440
+through2023-10-19. Both saved-proof watchers unchanged/no final artifacts yet.
+Never restart/rewrite those studies or refit the newly published October head.
+NEXT implement current completed-close observation and forward joint residual-bank
+publication using this saved numeric head, then shadow funded parity. Do not
+relax the ReplayBroker guard or represent frozen09-30 forecasts as live. Review
+completed cost/start/era/rule/SPY/QQQ artifacts when available; economic advantage,
+current forecast publication, live selection/deployment remain UNVERIFIED.
+
 ## 2026-10-04 — full-cohort saved proof scheduled; live refresh boundary identified
 
 Goal ACTIVE; previous turn PROGRESS, this turn PROGRESS plus verified waits.
