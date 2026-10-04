@@ -357,10 +357,17 @@ def test_close_window_honors_early_close_and_holiday():
 
 
 # A valid current forecast can persist a private decision after midnight before open.
-def test_actual_private_forward_decision_survives_midnight(example, tmp_path):
-    current = observation(example)
+@pytest.mark.parametrize("learned_exit", [False, True])
+def test_actual_private_forward_decision_survives_midnight(
+    example, tmp_path, learned_exit
+):
+    panel = deepcopy(example[3])
+    if learned_exit:
+        for key in ("open", "close", "adj_close", "high", "low"):
+            getattr(panel, key)[-1, 0] *= 0.5
+    current = observation(example, panel=panel)
     reader = forward.ForwardVolatilityHoldingReader(example[0], current)
-    panel, grades = example[3:5]
+    grades = example[4]
     shown = report(panel, grades)
     shown.sides = {"AAA": "long", "BBB": "long"}
     shown.scores = grades.astype(float)
@@ -368,7 +375,12 @@ def test_actual_private_forward_decision_survives_midnight(example, tmp_path):
     now = deadline.replace(hour=1, minute=0)
     assert now.date() > panel.dates[-1].astype(object)
     reader.validate_clock(now)
-    broker = ReplayBroker(100000.0, 10)
+    broker = ReplayBroker(
+        100000.0,
+        10,
+        initial_holdings={"AAA": 100} if learned_exit else {},
+        initial_average_prices={"AAA": float(panel.close[-1, 0]) * 0.8},
+    )
     prices = {s: float(panel.close[-1, i]) for i, s in enumerate(panel.tickers)}
     broker.observe(now, prices, False)
 
@@ -400,6 +412,26 @@ def test_actual_private_forward_decision_survives_midnight(example, tmp_path):
     assert broker.attempt_history == attempts
     assert paper.load_state(tmp_path).pending == saved.pending
     assert broker.account().cash == 100000.0
+    if learned_exit:
+        receipt = saved.allocation_state["receipt"]
+        assert grades[-1, 0] == 3
+        assert current.forecasts[0] < 0
+        assert receipt["company_exits"] == []
+        assert receipt["targets"]["AAA"] == 0
+        assert any(
+            row["symbol"] == "AAA" and row["side"] == "sell" for row in entry["orders"]
+        )
+        assert broker.positions()[0].qty == 100
+        broker.observe(deadline, prices, True)
+        broker.flush(deadline, prices, phase="open")
+        reconciled, settled = market_daily._reconcile(broker, saved, tmp_path, True)
+        assert settled
+        assert not reconciled.pending
+        assert not broker.positions()
+        assert broker.account().cash == pytest.approx(
+            100000.0 + 100 * prices["AAA"] * 0.999
+        )
+        assert paper.load_state(tmp_path).journal == reconciled.journal
 
 
 # Expired forward rows fail before any private account persistence or order attempt.
