@@ -1,5 +1,73 @@
 # Next session
 
+## 2026-10-04 — current forecast and durable shadow path verified; short-history gap isolated
+
+Goal ACTIVE; turn PROGRESS. Started clean859a536b on isolated
+codex/learned-entry-risk-20261002. Code443bf2a8/e2fda63c/2610c1aa,
+final test checkpoint94813cef54fc8357a802fdfab3d63c9c2a2da550 pushed.
+Main204689db remains ancestor; no main, UI, production, model-service, active
+study source or old model changes. Diagram impact NONE.
+
+VERIFIED: current completed-close features preserve original sentinel/benchmark
+support; dated numeric predictions reload without fitting. Forward volatility
+risk reuses original simultaneous OOS dates/purge/freeze and stock-specific
+mean-preserving transform. Exact price/grade prefixes and mechanical share
+conversion bind funded reports. Private nightly validation now admits an
+authenticated close after midnight/weekends until next actual open, checking
+clock/report BEFORE broker effects. Default/frozen replay clocks unchanged.
+Synthetic real fitted negative forecast sells an A+ holding below the name cap:
+actual private submission, next-open fill, fees, reconciliation/journal and
+repeat protection verified; no downgrade or fixed profit trigger needed.
+
+443 source287pinned; e2 source289pinned22.86s;2610 source292pinned25.21s,
+98native23.94s. New final acceptance4native11.17s/21pinned5.67s/no skips.
+Ruff/diff clean. Final archive2390files manifestSHA
+a00b70076aa2a55b310ab01fd89ecbcf290f1f80e99f214bfb803bcd90a60a83;
+forward-exit-20261004-94813cef/proof/execution.json SHA
+22a825e13918524af39e296e2e755c049ff23346074e0f56dd87a8b9037e7131
+proves only tests differ from the broader verified2610 production tree.
+
+Actual current-source acceptance e2 root /home/animallya96/scratch/
+forward-close-20261004-e2fda63c:93 finite stock forecasts/96 original names,
+latest completed10-02; no missing stored histories. Actual source clock10-02
+19:46:37NY, published10-04 19:20:45.648539NY, expires10-05 09:30NY.
+No old models refit, real orders or production writes. close.json SHA
+ad453bb89e808815b382a543922fc411b7ab88954b2596f58a12dcb3b9379ebf;
+execution.json SHA2421f2508cab1eca78e17a375fb07cb89c22401b25cdaf885aacb7a5505fb6f8.
+Original strict lineage refused changed serializer source before inference;
+explicit exact archived-origin admission now retains producer/consumer maps
+and all original numeric/input/monthly hashes. Never rewrite old risk metadata.
+
+Actual durable nightly shadow2610 root /home/animallya96/scratch/
+forward-shadow-20261004-2610c1aa, private hypothetical$100Kcash, original saved
+current rows, actual event/rejection calculations, separate private ledger:
+state reload/repeat PASS;0 attempts/0production writes/0fits. Configured proof
+34c79ad5 after original import-only failure for missing test SECRET_KEY; original
+failure preserved/no policy assertions weakened. execution.json SHA
+22a726dbe0b760da52811051f230b0e294cfe1d627e5c52cd4a36679dc9d71df;
+shadow-proof.json SHA53fb6ee2938b55ab9ddab3611cd9ffa5de0f526e44bfe5047839380fb9a9a95d.
+
+FAILED operational availability: eight eligible names have only123 common mature
+risk rows versus fixed252 requirement. Saved-only independent support audit
+cfae66e5f591dfacc4a5e7d77b715c40101cf91e67f277f14777fb8e39f7f968
+isolates SNDK123;ALAB349;HPE/MU/NTAP/SMCI/STX/SWKS722. No names removed,
+threshold relaxed, inference/optimizer repeated or outcome-based selection.
+Current plan safely unavailable; this is NOT a ready replacement or alpha proof.
+
+e396 studies2bb2b921/2832af72 and both existing saved-proof watchers unchanged,
+running/OOMfalse at19:34NY: candidate2000sessions through2026-01-14,
+rule2160 through2026-09-03;0completed books at that observation. Never restart,
+modify mounted source, repeat scoring or refit the published October model.
+UNVERIFIED: full funded advantage/rule/SPY/QQQ costs/eras and live adoption.
+NEXT inspect first completed saved artifacts and independent proofs. A bounded
+implementation remains: register a distinct causal risk-support eligibility
+variant BEFORE its outcomes, so an unheld short-history stock cannot silently
+freeze supported entrants; record exclusions explicitly, require risk for every
+retained holding, preserve the unchanged252 joint minimum/freeze and v1 study.
+Do not simply drop SNDK from existing cohorts, fabricate independent risks or
+promote from synthetic/private-path checks. Current forecast expires next open;
+never label it a real-time intraday prediction or reuse it afterward.
+
 ## 2026-10-04 — prospective October model publication verified
 
 Goal ACTIVE; turn PROGRESS. Started clean ce0a2ee8; verified code50bed9fe486117c7c3f055fe9c3e456574f57e6a
