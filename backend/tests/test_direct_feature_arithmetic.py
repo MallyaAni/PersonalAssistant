@@ -59,6 +59,153 @@ def test_actual_head_learns_without_original_predictor():
             assert row["model"]["iterations"] == 64
 
 
+# Build genuinely monthly synthetic forecasts once for joint OOS scenario acceptance.
+@pytest.fixture(scope="module")
+def joint_forecast():
+    prepared, parent, grades, eligible = fixture(count=850, start="2022-01-03")
+    result = feature.walk_forward(prepared, parent, grades, eligible, hold_b=True)
+    return result, parent
+
+
+# Same dated gross errors produce aligned joint scenarios without today's labels.
+def test_joint_holding_scenarios_preserve_dated_forecast_errors(joint_forecast):
+    result, parent = joint_forecast
+    reader = feature.HoldingScenarioReader(result, parent)
+    day = len(result.dates) - 1
+    actual = reader.distribution(day, ("AAA", "BBB"))
+    assert actual.receipt["status"] == "available"
+    chosen = np.asarray(actual.receipt["decision_indices"])
+    expected = (1 + result.forecasts[day, :2]) * (1 + parent.labels[chosen, :2]) / (
+        1 + result.forecasts[chosen, :2]
+    ) - 1
+    np.testing.assert_allclose(actual.scenarios, expected, rtol=1e-13, atol=1e-15)
+    assert np.all(
+        parent.label_end_dates[chosen]
+        < np.datetime64(actual.receipt["label_end_before"])
+    )
+    assert len(chosen) >= 252
+    np.testing.assert_allclose(actual.probabilities, 1 / len(chosen))
+    assert not actual.scenarios.flags.writeable
+    assert not actual.probabilities.flags.writeable
+    assert actual.receipt["confidence_guarantee"] is False
+
+
+# Cold joint history stays unavailable with its missing opportunity counts retained.
+def test_joint_holding_scenarios_do_not_invent_warmup(joint_forecast):
+    result, parent = joint_forecast
+    day = int(np.flatnonzero(np.isfinite(result.forecasts[:, 0]))[0])
+    actual = feature.HoldingScenarioReader(result, parent).distribution(
+        day, ("AAA", "BBB")
+    )
+    assert actual.scenarios is actual.probabilities is None
+    assert actual.receipt["status"] == "unavailable"
+    assert actual.receipt["reason"] == "insufficient_joint_history"
+    assert actual.receipt["joint_dates"] < 252
+
+
+# An excluded or unknown required stock cannot receive a fabricated marginal forecast.
+@pytest.mark.parametrize("symbol", ["SPY", "UNSEEN"])
+def test_joint_holding_scenarios_missing_required_stock(joint_forecast, symbol):
+    result, parent = joint_forecast
+    actual = feature.HoldingScenarioReader(result, parent).distribution(
+        len(result.dates) - 1, ("AAA", symbol)
+    )
+    assert actual.scenarios is None
+    assert actual.receipt["status"] == "unavailable"
+
+
+# Future labels and post-admission caller mutations cannot revise prior scenario bytes.
+def test_joint_holding_scenarios_freeze_caller_inputs(joint_forecast):
+    result, parent = deepcopy(joint_forecast)
+    reader = feature.HoldingScenarioReader(result, parent)
+    day = len(result.dates) - 1
+    first = reader.distribution(day, ("AAA", "BBB"))
+    result.forecasts[:] = np.nan
+    parent.labels[:] = np.nan
+    second = reader.distribution(day, ("AAA", "BBB"))
+    np.testing.assert_array_equal(first.scenarios, second.scenarios)
+    assert first.receipt == second.receipt
+
+
+# A freshly authenticated future label suffix cannot alter the prior month's bank.
+def test_joint_holding_scenarios_future_label_prefix_invariance(joint_forecast):
+    result, parent = deepcopy(joint_forecast)
+    months = result.dates.astype("datetime64[M]")
+    day = int(np.flatnonzero(months == months[-1])[0])
+    before = feature.HoldingScenarioReader(result, parent).distribution(
+        day, ("AAA", "BBB")
+    )
+    future = (np.arange(len(months)) >= day)[:, None] & np.isfinite(parent.labels)
+    parent.labels[future] = 0.05
+    parent.manifest["label_sha256"] = reference._hash(parent.labels)
+    identity = result.manifest["identity"]
+    identity["input_sha256"]["labels"] = reference._hash(parent.labels)
+    identity["bridge_manifest_sha256"] = base._json_hash(parent.manifest)
+    result.manifest["identity_sha256"] = base._json_hash(identity)
+    after = feature.HoldingScenarioReader(result, parent).distribution(
+        day, ("AAA", "BBB")
+    )
+    np.testing.assert_array_equal(before.scenarios, after.scenarios)
+    assert before.receipt["row_sha256"] == after.receipt["row_sha256"]
+
+
+# Returned mutable receipt copies cannot change the cached joint history.
+def test_joint_holding_scenarios_return_copies(joint_forecast):
+    result, parent = joint_forecast
+    reader = feature.HoldingScenarioReader(result, parent)
+    day = len(result.dates) - 1
+    before = reader.distribution(day, ("AAA", "BBB"))
+    expected = before.scenarios.copy()
+    before.receipt["decision_indices"].clear()
+    before.scenarios.setflags(write=True)
+    before.scenarios[:] = 0
+    after = reader.distribution(day, ("AAA", "BBB"))
+    np.testing.assert_array_equal(after.scenarios, expected)
+    assert len(after.receipt["decision_indices"]) >= 252
+
+
+# The admitted holding scenarios drive the actual funded optimizer without a fit.
+def test_joint_holding_scenarios_feed_actual_log_growth_optimizer(joint_forecast):
+    from backend.market import adaptive_growth_policy as allocator
+
+    result, parent = joint_forecast
+    sample = feature.HoldingScenarioReader(result, parent).distribution(
+        len(result.dates) - 1, ("AAA", "BBB")
+    )
+    target, receipt = allocator.allocate_distribution(
+        sample.scenarios,
+        sample.probabilities,
+        np.array([2, 2]),
+        np.ones(2, dtype=bool),
+        np.zeros(2),
+        1.0,
+        10,
+        np.array([], dtype=int),
+        horizon=sample.receipt["horizon"],
+    )
+    assert receipt["status"] == "optimized"
+    assert receipt["certificate"]["certified"]
+    assert target.sum() * 1.001 <= 1.0
+    utility = sample.probabilities @ np.log(
+        1 + sample.scenarios @ target - 0.001 * target.sum()
+    )
+    for first in (0, allocator.CAP):
+        for second in (0, allocator.CAP):
+            alternative = np.array([first, second])
+            corner = sample.probabilities @ np.log(
+                1 + sample.scenarios @ alternative - 0.001 * alternative.sum()
+            )
+            assert utility >= corner - allocator.CERTIFICATE_TOLERANCE
+
+
+# Corrupt monthly lineage is rejected before a scenario reader can be admitted.
+def test_joint_holding_scenarios_refuse_forged_monthly_prediction(joint_forecast):
+    result, parent = deepcopy(joint_forecast)
+    result.manifest["months"][-1]["prediction_sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="monthly prediction"):
+        feature.HoldingScenarioReader(result, parent)
+
+
 # Explicit causal grades and membership gate opportunities without future labels.
 def test_support_gates_state_and_preserves_missing_outcome_tail():
     prepared, parent, grades, eligible = fixture(count=530)

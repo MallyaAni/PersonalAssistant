@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -435,3 +436,211 @@ def calibrate(result, bridge):
         reference._as_of(identity["data_as_of"]),
         band_identity,
     )
+
+
+# Return an explicit joint forecast or unavailable evidence for the required book.
+@dataclass(frozen=True)
+class HoldingScenarios:
+    scenarios: np.ndarray | None
+    probabilities: np.ndarray | None
+    symbols: tuple[str, ...]
+    receipt: dict
+
+
+# Admit frozen OOS holding forecasts once and retain same-date joint error history.
+class HoldingScenarioReader:
+    # Validate immutable copies without retaining any executable model or caller buffer.
+    def __init__(self, result, bridge):
+        if not isinstance(result, FeatureForecasts) or not isinstance(
+            bridge, reference.BridgeForecasts
+        ):
+            raise ValueError("Explicit holding forecast and bridge artifacts required")
+        result = FeatureForecasts(
+            result.forecasts.copy(),
+            result.score_mask.copy(),
+            deepcopy(result.manifest),
+            {},
+            result.dates.copy(),
+            tuple(result.symbols),
+        )
+        bridge = reference.BridgeForecasts(
+            bridge.calibrated.copy(),
+            bridge.past_mean.copy(),
+            bridge.labels.copy(),
+            bridge.label_end_dates.copy(),
+            bridge.score_mask.copy(),
+            deepcopy(bridge.manifest),
+        )
+        dates, names, identity = _calibration_inputs(result, bridge)
+        if not _holding_mode(identity):
+            raise ValueError("Holding-capable B/A/A+ forecast lineage required")
+        if (
+            dates.ndim != 1
+            or dates.dtype != np.dtype("datetime64[D]")
+            or not len(dates)
+            or np.isnat(dates).any()
+            or np.any(dates[1:] <= dates[:-1])
+            or not names
+            or len(names) != len(set(names))
+        ):
+            raise ValueError("Unique complete chronological holding grid required")
+        years, calendar = exchange.reviewed_sessions()
+        whole = np.arange(dates[0], dates[-1] + np.timedelta64(1, "D"))
+        if any(
+            day.astype(object).year not in years for day in whole
+        ) or not np.array_equal(dates, whole[np.is_busday(whole, busdaycal=calendar)]):
+            raise ValueError("Actual complete exchange holding sessions required")
+        endpoints = np.full(len(dates), np.datetime64("NaT", "D"))
+        endpoints[:-2] = dates[2:]
+        if (
+            bridge.labels.shape != result.forecasts.shape
+            or bridge.labels.dtype != np.dtype("float64")
+            or np.isinf(bridge.labels).any()
+            or np.any(bridge.labels[np.isfinite(bridge.labels)] < -1)
+            or bridge.label_end_dates.dtype != endpoints.dtype
+            or not np.array_equal(
+                bridge.label_end_dates.view("i8"), endpoints.view("i8")
+            )
+        ):
+            raise ValueError(
+                "Aligned possible holding outcomes and exact D+2 endpoints required"
+            )
+        self.as_of = errors._publication(dates, bridge)
+        self.dates, self.symbols = dates, names
+        self.forecasts, self.labels = result.forecasts, bridge.labels
+        self.endpoints, self.support = bridge.label_end_dates, result.score_mask
+        for array in (
+            self.dates,
+            self.forecasts,
+            self.labels,
+            self.endpoints,
+            self.support,
+        ):
+            array.setflags(write=False)
+        self.months = dates.astype("datetime64[M]")
+        self.months.setflags(write=False)
+        self._cache = {}
+        root = Path(__file__).resolve().parents[2]
+        protocol = (
+            root / "docs/research/joint-distribution-allocation-plan-2026-10-04.md"
+        )
+        self.identity = {
+            "policy": "joint-holding-scenarios/1-research",
+            "horizon": "next_open_to_following_open_arithmetic_return",
+            "return_basis": "saved_adjusted_open_ratio_not_exact_broker_wealth",
+            "feature_manifest_sha256": base._json_hash(result.manifest),
+            "bridge_manifest_sha256": base._json_hash(bridge.manifest),
+            "source_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            "protocol_sha256": hashlib.sha256(protocol.read_bytes()).hexdigest(),
+            "minimum_joint_days": 252,
+            "maximum_days": reference.MAX_DAYS,
+            "freeze": str(reference.FREEZE),
+            "confidence_guarantee": False,
+            "adoption_eligible": False,
+        }
+
+    # Cache strictly mature common OOS dates for the month and required stock order.
+    def _bank(self, day, indices):
+        first = int(np.flatnonzero(self.months == self.months[day])[0])
+        key = (first, *indices)
+        if key in self._cache:
+            return self._cache[key]
+        cutoff = min(self.dates[first], reference.FREEZE)
+        candidates = np.arange(
+            max(0, first - reference.MAX_DAYS), first, dtype=np.int64
+        )
+        matured = candidates[
+            ~np.isnat(self.endpoints[candidates])
+            & (self.endpoints[candidates] < cutoff)
+        ]
+        mask = (
+            self.support[np.ix_(matured, indices)]
+            & np.isfinite(self.forecasts[np.ix_(matured, indices)])
+            & np.isfinite(self.labels[np.ix_(matured, indices)])
+        )
+        chosen = matured[mask.all(axis=1)]
+        past, outcomes = (
+            self.forecasts[np.ix_(chosen, indices)],
+            self.labels[np.ix_(chosen, indices)],
+        )
+        with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+            gross = (1 + outcomes) / (1 + past)
+        receipt = {
+            "fit_date": str(self.dates[first]),
+            "label_end_before": str(cutoff),
+            "candidate_dates": len(candidates),
+            "mature_dates": len(matured),
+            "joint_dates": len(chosen),
+            "unavailable_joint_dates": len(matured) - len(chosen),
+            "per_stock_available_dates": mask.sum(axis=0).tolist(),
+            "decision_indices": chosen.tolist(),
+            "maximum_endpoint": str(self.endpoints[chosen].max())
+            if len(chosen)
+            else None,
+            "row_sha256": {
+                "decision_indices": reference._hash(chosen),
+                "forecasts": reference._hash(past),
+                "labels": reference._hash(outcomes),
+                "gross_errors": reference._hash(gross),
+                "endpoints": reference._hash(self.endpoints[chosen]),
+            },
+        }
+        gross.setflags(write=False)
+        self._cache[key] = gross, receipt
+        return gross, receipt
+
+    # Form current simultaneous scenarios without consulting current or future outcomes.
+    def distribution(self, day, symbols):
+        if (
+            isinstance(day, (bool, np.bool_))
+            or not isinstance(day, (int, np.integer))
+            or not 0 <= day < len(self.dates)
+            or not isinstance(symbols, (list, tuple))
+            or not symbols
+            or any(not isinstance(s, str) or not s for s in symbols)
+            or len(symbols) != len(set(symbols))
+        ):
+            raise ValueError(
+                "Explicit current index and unique required stock identities required"
+            )
+        close = datetime.combine(
+            self.dates[day].astype(object),
+            exchange.session_close(self.dates[day].astype(object)),
+            exchange.NEW_YORK,
+        )
+        if close > self.as_of:
+            raise ValueError("Current completed holding forecast is not yet published")
+        names = tuple(symbols)
+        receipt = {
+            **deepcopy(self.identity),
+            "decision_date": str(self.dates[day]),
+            "symbols": list(names),
+            "status": "unavailable",
+        }
+        if any(name not in self.symbols for name in names):
+            receipt["reason"] = "uncovered_required_stock"
+            return HoldingScenarios(None, None, names, receipt)
+        indices = tuple(self.symbols.index(name) for name in names)
+        gross, bank = self._bank(int(day), indices)
+        receipt.update(deepcopy(bank))
+        current = self.forecasts[day, list(indices)]
+        if not np.isfinite(current).all() or not self.support[day, list(indices)].all():
+            receipt["reason"] = "missing_current_forecast"
+        elif len(gross) < 252:
+            receipt["reason"] = "insufficient_joint_history"
+        else:
+            with np.errstate(over="ignore", invalid="ignore"):
+                scenarios = (1 + current) * gross - 1
+            if not np.isfinite(scenarios).all() or np.any(scenarios < -1):
+                receipt["reason"] = "unsupported_scenario_arithmetic"
+            else:
+                probabilities = np.full(len(scenarios), 1 / len(scenarios))
+                scenarios.setflags(write=False)
+                probabilities.setflags(write=False)
+                receipt.update(
+                    status="available",
+                    scenarios_sha256=reference._hash(scenarios),
+                    probabilities_sha256=reference._hash(probabilities),
+                )
+                return HoldingScenarios(scenarios, probabilities, names, receipt)
+        return HoldingScenarios(None, None, names, receipt)
