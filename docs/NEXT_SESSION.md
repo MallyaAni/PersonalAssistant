@@ -48,7 +48,28 @@ The actual synthetic book carries250 old shares into451 whole new shares plus
 unknown0.65 fractional proceeds; cash reconciles to fills/fees, NAV stays missing
 and nightlies record broker incompleteness. Direct explicitly supplied synthetic
 payment restores NAV once; that is not historical payment evidence. Ruff/diff
-clean. Exact committed source-image/CLI/saved independent proof are next.
+clean. VERIFIED exact sourced1ab9a6aaf1aa5747c0a1e2bf88d4410a0481317:
+2371-file manifest, pinned image
+5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d,
+593 tests18.40s/no skips including all earlier unchanged external acceptance.
+Actual review-only CLI retained96 histories,26 original price factors and1753
+dividends; no original economic declaration remains uncompiled. Readiness is
+pending_declaration_receipts, not ready for economic scoring. Source hashes
+before/after the real synthetic planner journey match. Saved-only independent
+proof imported no producer/broker/calendar/model and resimulated nothing: whole
+entitlement, distinct price/share ratios, captured dated PDF hash, original
+bytes, cash/fees, missing fraction/NAV and deferred nightlies reconcile.
+Proof:/home/animallya96/scratch/share-exchange-20261004-d1ab9a6a/proof.
+Test logf9e89e00a7022d9705e62155dc20613a2b3e98af5038db8be8026471e2954071;
+manifest05c42758ff72ac869d41c52a1ec73dc4ef7aafc268ec22e525f8200b43d8446a;
+compiled0db210b210e2a27be36960362d8b8e6c1d3ac7fe7a971375008f5b2dd3d97cfc;
+journeyf33514536493b27cb4bcdfd43dc31549fc2579d99ec4d6c49b27e93510b2cffa;
+independentc0d899966c19c0365f30ef0f5a60da09c9c83ef2aeec9b4105f0ae9d292e72d6.
+Exact commands/runtime/helper and capture hashes are retained in
+codex-share-exchange-execution-receipt-20261004.json there. Counts overlap prior
+test sets. Deployed checkout621e28f0 remains unchanged. One local file-write
+failed before mutation while disk was nearly full; removed only three own
+redundant Git archives after matching their complete retained Spark hashes.
 No economic accounts scored, saved models restored/refitted, old captures
 repeated, protocol changed, main merge or live deployment. Original incorrect
 export score gates remain intact. Diagram impact: NONE — existing private
