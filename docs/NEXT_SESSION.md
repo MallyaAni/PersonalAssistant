@@ -31,8 +31,24 @@ separately; do not rewrite the original panel or change selection membership.
 WITHOUT predictors, model fits, accounts or returns. It does not lift the
 producer/verifier rejection of the known-bad economic export; passing an action
 review to the economic run is refused. Full execution remains incomplete.
-Native116 relevant cases PASS5.79s, including unchanged original independent
-acceptance cases; Ruff/diff clean. Pinned-image/full-source CLI proof pending.
+VERIFIED code checkpointc4c3793cb17ae07cb466d877e3b294863c21ea54:
+native116 relevant cases PASS5.79s, including unchanged original independent
+acceptance cases; Ruff/diff clean. Exact Git archive2371 files in pinned image
+5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d:
+423 relevant cases PASS16.77s/no skips. Counts overlap; do not sum them.
+Actual review-only CLI exited0 with original frozen actions mounted read-only,
+whole-tree authentication before/after and no predictive input loading.
+Saved-only independent verifier imported no brokers/predictors/resimulators:
+all96 symbols,1753 original dividends,26 price adjustments,18 separate grants
+and six unresolved events match. NOT complete economic execution readiness.
+Evidence:/home/animallya96/scratch/action-review-20261004-c4c3793c/proof.
+Test log d74239f5141f1ca490ea92659582dbe45e3aead5a963a5c6cef264df78e361f2;
+CLI artifact193f225a3ba12e32a68250b4bc50c1a53dbfc0487b492fad826f410f9a3c48e4;
+independent proof26ade30f3811ba1786eb9e924e31afaf46821a01439b494bb81c691e120468ab.
+Source manifest3d9bcfb4482188d81cd2c34fa360166de8328442944a34f98ce4c2ad4014dee4;
+review declarations896c8dbd1eda5adb840e44728be51bf1f7ab50b483f888ea30c8a2c715e1e7dc.
+Exact image/source command receipt and both primary-capture attempts are preserved
+there too. These checks do not authenticate every primary declaration receipt.
 
 Primary-page byte capture is separate from semantic review. First34 requests
 failed locally for missing default TLS CA; no disabled verification. A separately
@@ -43,8 +59,7 @@ sha4c715a88bcda288798bcf7278a1dac619f59fb01ed9678ca3c102527072b4010.
 Preserve both attempts; do not silently replace blocked responses with guessed
 URLs or claim every original source byte has been captured.
 
-NEXT: independently verify the pinned runtime and actual review-only CLI,
-preserve/push this checkpoint; then resolve the six economic action boundaries
+NEXT: resolve the six economic action boundaries
 and extend saved-only independent accounting verification before new scoring.
 Do not refit models, select a narrower cohort, change fixed costs/horizons or
 claim an entry/exit advantage from accounting tests. Subsequent comparisons
