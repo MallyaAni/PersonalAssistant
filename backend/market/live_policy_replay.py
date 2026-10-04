@@ -188,6 +188,7 @@ def corporate_actions(broker, inputs, day, now):
                 old_security_id=row["old_security_id"],
                 new_security_id=row["new_security_id"],
                 fractional_policy=row["fractional_policy"],
+                election_policy=row.get("election_policy"),
             )
         elif row["kind"] == "cash_merger":
             broker.apply_cash_merger(
@@ -223,12 +224,20 @@ def valuation(broker, inputs, day):
         if row["fractional_qty"] > 0 and row["cash_in_lieu"] is None
     ]
     unknown.extend(unknown_consolidations)
+    unknown_exchanges = [
+        row
+        for row in ledger.get("security_exchanges", ())
+        if row.get("fractional_qty", 0) > 0 and row["cash_in_lieu"] is None
+    ]
+    unknown.extend(unknown_exchanges)
     if unknown:
         return plain(
             {
                 "nav": None,
                 "price_nav": None,
-                "status": "unknown_consolidation_cash_in_lieu"
+                "status": "unknown_exchange_cash_in_lieu"
+                if unknown_exchanges
+                else "unknown_consolidation_cash_in_lieu"
                 if unknown_consolidations
                 else "unknown_distribution_cash_in_lieu",
                 "unpriced_entitlements": unknown,

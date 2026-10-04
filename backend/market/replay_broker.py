@@ -68,6 +68,41 @@ def _distribution_fraction(value, policy):
     return fraction
 
 
+# Require an explicit share-default election before retaining fractional cash claims.
+def _exchange_cash_policy(fractional_policy, election_policy):
+    if fractional_policy == "floor_no_compensation" and election_policy is None:
+        return False
+    if (
+        fractional_policy == "cash_in_lieu_unknown"
+        and election_policy == "declared_no_election_default_shares"
+    ):
+        return True
+    raise ValueError(
+        "Explicit security identities, ratio and fractional policy required"
+    )
+
+
+# Describe a forfeited fraction separately from an unknown payable cash fraction.
+def _exchange_fraction_record(cash_policy, residual, cost, effective, applied):
+    if cash_policy:
+        return {
+            "fractional_qty": residual,
+            "fractional_basis": cost,
+            "cash_in_lieu": None,
+            "completed_before": effective.isoformat(),
+            "legal_clock_precision": "completed_before_open_not_exact",
+            "applied_at": applied.isoformat(),
+            "election_policy": "declared_no_election_default_shares",
+            "basis_policy": "ratio_basis_with_separate_fractional_cost_not_tax_basis",
+        }
+    return {
+        "forfeited_fraction": residual,
+        "forfeited_basis": cost,
+        "effective_at": effective.isoformat(),
+        "basis_policy": "ratio_basis_with_separate_forfeited_cost_not_tax_basis",
+    }
+
+
 # Validate explicitly supplied raw marks without replacing missing prices.
 def _prices(values):
     if not isinstance(values, dict):
@@ -96,6 +131,15 @@ def _session(now):
         calendar.REGULAR_OPEN <= local.time() < calendar.session_close(local.date())
     )
     return is_session, is_open
+
+
+# Require a reviewed opening upper bound when the exchange uses a share default.
+def _exchange_boundary(effective, cash_policy):
+    if cash_policy and (
+        not _session(effective)[0]
+        or effective.astimezone(calendar.NEW_YORK).time() != calendar.REGULAR_OPEN
+    ):
+        raise ValueError("Declared share default requires a regular opening boundary")
 
 
 # Simulate the broker surface used by nightly and intraday dispatch.
@@ -225,6 +269,11 @@ class ReplayBroker:
             raise AlpacaTradingError(
                 "Unknown consolidation cash-in-lieu prevents full NAV"
             )
+        if any(
+            row.get("fractional_qty", 0) > 0 and row["cash_in_lieu"] is None
+            for row in self._security_exchanges
+        ):
+            raise AlpacaTradingError("Unknown exchange cash-in-lieu prevents full NAV")
         equity = self._cash + sum(
             qty * self._mark(symbol) for symbol, qty in self._held.items()
         )
@@ -689,7 +738,9 @@ class ReplayBroker:
         old_security_id,
         new_security_id,
         fractional_policy,
+        election_policy=None,
     ):
+        cash_policy = _exchange_cash_policy(fractional_policy, election_policy)
         if (
             any(
                 type(value) is not int or value <= 0
@@ -700,7 +751,6 @@ class ReplayBroker:
                 for value in (old_security_id, new_security_id)
             )
             or old_security_id == new_security_id
-            or fractional_policy != "floor_no_compensation"
         ):
             raise ValueError(
                 "Explicit security identities, ratio and fractional policy required"
@@ -709,6 +759,7 @@ class ReplayBroker:
         key, value, effective = self._action(
             symbol, "security_exchange", float(ratio), effective_at
         )
+        _exchange_boundary(effective, cash_policy)
         if key in self._actions:
             prior = next(
                 row for row in self._security_exchanges if row["action_key"] == key
@@ -717,7 +768,17 @@ class ReplayBroker:
                 prior["old_security_id"],
                 prior["new_security_id"],
                 prior["fractional_policy"],
-            ) != (old_security_id, new_security_id, fractional_policy):
+                prior.get("election_policy"),
+                prior["numerator"],
+                prior["denominator"],
+            ) != (
+                old_security_id,
+                new_security_id,
+                fractional_policy,
+                election_policy,
+                ratio.numerator,
+                ratio.denominator,
+            ):
                 raise ValueError("Conflicting security exchange evidence")
             return
         if any(
@@ -761,12 +822,11 @@ class ReplayBroker:
             "denominator": ratio.denominator,
             "quantity_before": previous,
             "quantity_after": quantity,
-            "forfeited_fraction": residual,
-            "forfeited_basis": forfeited_basis,
             "fractional_policy": fractional_policy,
             "cash_credit": 0,
-            "effective_at": effective.isoformat(),
-            "basis_policy": "ratio_basis_with_separate_forfeited_cost_not_tax_basis",
+            **_exchange_fraction_record(
+                cash_policy, residual, forfeited_basis, effective, self._now
+            ),
             "entitlement_scope": (
                 "private_holder_aggregate_not_broker_street_name_allocation"
             ),
@@ -1017,6 +1077,18 @@ class ReplayBroker:
             amount,
             pay_at,
             "consolidation",
+        )
+
+    # Credit share-exchange fractions only from an explicitly observed payment receipt.
+    def settle_exchange_cash(self, symbol, completed_before, amount, pay_at):
+        self._settle_fractional_cash(
+            [row for row in self._security_exchanges if "fractional_qty" in row],
+            symbol,
+            "security_exchange",
+            completed_before,
+            amount,
+            pay_at,
+            "exchange",
         )
 
     # Validate a dated fractional payment fully before changing either cash or receipt.

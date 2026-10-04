@@ -393,6 +393,168 @@ def test_named_security_exchange_floors_shares_and_records_forfeited_basis(quant
     assert len(broker.ledger()["security_exchanges"]) == 1
 
 
+# Apply the non-election share default without turning residuals into free cash.
+@pytest.mark.parametrize("quantity", [0, 1, 100, 5000])
+def test_share_default_exchange_keeps_whole_stock_and_unknown_fractional_cash(quantity):
+    broker = account(100, 0, holdings={"AAA": quantity})
+    broker.apply_security_exchange(
+        "AAA",
+        18066,
+        10000,
+        MERGER_BOUNDARY,
+        old_security_id="tracking-class",
+        new_security_id="operating-class",
+        fractional_policy="cash_in_lieu_unknown",
+        election_policy="declared_no_election_default_shares",
+    )
+    entitlement = quantity * 18066
+    whole, fractional = entitlement // 10000, (entitlement % 10000) / 10000
+    before = broker.ledger()
+    receipt = before["security_exchanges"][0]
+    assert before["holdings"] == ({"AAA": whole} if whole else {})
+    assert receipt["fractional_qty"] == fractional
+    assert "forfeited_fraction" not in receipt
+    assert receipt["cash_in_lieu"] is None
+    assert before["cash"] == 100
+    assert "effective_at" not in receipt
+    assert receipt["completed_before"] == "2026-08-03T13:30:00+00:00"
+    assert receipt["applied_at"] == "2026-08-03T13:45:00+00:00"
+    assert (
+        whole * before["average_prices"].get("AAA", 0) + receipt["fractional_basis"]
+    ) == pytest.approx(quantity * 8)
+    broker.apply_security_exchange(
+        "AAA",
+        9033,
+        5000,
+        MERGER_BOUNDARY,
+        old_security_id="tracking-class",
+        new_security_id="operating-class",
+        fractional_policy="cash_in_lieu_unknown",
+        election_policy="declared_no_election_default_shares",
+    )
+    assert broker.ledger() == before
+    if fractional:
+        with pytest.raises(AlpacaTradingError, match="Unknown exchange cash-in-lieu"):
+            broker.account()
+    else:
+        assert broker.account().equity == 100 + whole * 10
+        with pytest.raises(ValueError, match="Existing fractional exchange"):
+            broker.settle_exchange_cash("AAA", MERGER_BOUNDARY, 3, NOW)
+
+
+# Fractional cash uses matching observed evidence once and never a market-price guess.
+def test_share_default_exchange_cash_payment_is_observed_and_idempotent():
+    broker = account(100, 0, holdings={"AAA": 100})
+    broker.apply_security_exchange(
+        "AAA",
+        18066,
+        10000,
+        MERGER_BOUNDARY,
+        old_security_id="tracking-class",
+        new_security_id="operating-class",
+        fractional_policy="cash_in_lieu_unknown",
+        election_policy="declared_no_election_default_shares",
+    )
+    before = broker.ledger()
+    with pytest.raises(ValueError, match="Observed exchange payment"):
+        broker.settle_exchange_cash("AAA", MERGER_BOUNDARY, 3, LATER)
+    assert broker.ledger() == before
+    broker.observe(LATER, {"AAA": 10, "BBB": 10}, True)
+    broker.settle_exchange_cash("AAA", MERGER_BOUNDARY, 3, LATER)
+    paid = broker.ledger()
+    assert broker.account().cash == 103
+    assert broker.account().equity == 1903
+    assert paid["security_exchanges"][0]["cash_in_lieu"] == 3
+    broker.settle_exchange_cash("AAA", MERGER_BOUNDARY, 3, LATER)
+    assert broker.ledger() == paid
+    with pytest.raises(ValueError, match="Conflicting exchange payment"):
+        broker.settle_exchange_cash("AAA", MERGER_BOUNDARY, 4, LATER)
+    assert broker.ledger() == paid
+
+
+# Missing acquisition cost is preserved without changing the new share entitlement.
+def test_share_default_exchange_retains_unallocated_cost():
+    broker = account(100, 0, holdings={"AAA": 100})
+    broker.apply_stock_distribution(
+        "AAA",
+        "BBB",
+        1,
+        1,
+        MERGER_BOUNDARY,
+        parent_basis_fraction=None,
+        basis_policy="unallocated_at_effective_clock",
+    )
+    broker.apply_security_exchange(
+        "BBB",
+        18066,
+        10000,
+        MERGER_BOUNDARY,
+        old_security_id="tracking-class",
+        new_security_id="operating-class",
+        fractional_policy="cash_in_lieu_unknown",
+        election_policy="declared_no_election_default_shares",
+    )
+    ledger = broker.ledger()
+    assert ledger["holdings"] == {"AAA": 100, "BBB": 180}
+    assert ledger["average_prices"]["BBB"] is None
+    assert ledger["security_exchanges"][0]["fractional_basis"] is None
+
+
+# Unsupported elections and non-opening boundaries refuse mutation of cash or shares.
+@pytest.mark.parametrize(
+    "defect", ["cash_election", "missing_election", "forfeiture", "intraday", "weekend"]
+)
+def test_share_default_exchange_invalid_policy_or_clock_is_atomic(defect):
+    broker = account(100, 0, holdings={"AAA": 100})
+    terms = {
+        "old_security_id": "tracking-class",
+        "new_security_id": "operating-class",
+        "fractional_policy": "cash_in_lieu_unknown",
+        "election_policy": "declared_no_election_default_shares",
+    }
+    boundary = MERGER_BOUNDARY
+    if defect == "cash_election":
+        terms["election_policy"] = "cash_election_prorated"
+    elif defect == "missing_election":
+        terms.pop("election_policy")
+    elif defect == "forfeiture":
+        terms["fractional_policy"] = "floor_no_compensation"
+    elif defect == "intraday":
+        boundary = NOW
+    else:
+        boundary = "2026-08-01T09:30:00-04:00"
+    before = broker.ledger()
+    expected = (
+        "regular opening" if defect in ("intraday", "weekend") else "Explicit security"
+    )
+    with pytest.raises(ValueError, match=expected):
+        broker.apply_security_exchange("AAA", 18066, 10000, boundary, **terms)
+    assert broker.ledger() == before
+
+
+# Accepted orders and completed fills require explicit old-security handling.
+@pytest.mark.parametrize("filled", [False, True])
+def test_share_default_exchange_refuses_old_security_orders_and_fills(filled):
+    broker = account(100, 0, holdings={"AAA": 100})
+    broker.submit_market("AAA", 1, "buy", "old-class")
+    if filled:
+        broker.flush(LATER, {"AAA": 10})
+    before = broker.ledger()
+    expected = "Corporate action must precede" if filled else "Outstanding orders"
+    with pytest.raises(ValueError, match=expected):
+        broker.apply_security_exchange(
+            "AAA",
+            18066,
+            10000,
+            MERGER_BOUNDARY,
+            old_security_id="tracking-class",
+            new_security_id="operating-class",
+            fractional_policy="cash_in_lieu_unknown",
+            election_policy="declared_no_election_default_shares",
+        )
+    assert broker.ledger() == before
+
+
 # Invalid or conflicting security terms leave both holdings and cash unchanged.
 @pytest.mark.parametrize(
     "change",

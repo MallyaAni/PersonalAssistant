@@ -508,6 +508,106 @@ def test_reverse_split_fractional_processing_is_not_inferred_from_ratio():
     assert not any(row["kind"] == "share_split" for row in result["actions"]["AAA"])
 
 
+# Supply a declared non-election share exchange with dated, unpaid fraction terms.
+def share_default_fixture():
+    return {
+        "date": "2026-09-15",
+        "kind": "security_exchange",
+        "numerator": 18066,
+        "denominator": 10000,
+        "old_security_id": "synthetic-tracking-class",
+        "new_security_id": "synthetic-operating-class",
+        "fractional_policy": "cash_in_lieu_unknown",
+        "election_policy": "declared_no_election_default_shares",
+        "terms_available_on": "2026-09-14",
+        "terms_available_at": "2026-09-14T16:01:00-04:00",
+        "completed_before": "2026-09-15T09:30:00-04:00",
+        "completion_available_at": "2026-09-15T08:30:00-04:00",
+        "legal_clock_precision": "completed_before_open_not_exact",
+        "terms_source": "https://issuer.example/ratio-declaration",
+        "completion_source": "https://issuer.example/completion-before-open",
+        "fractional_source": "https://issuer.example/fractional-cash-policy",
+        "source_receipt": {"scope": "synthetic_share_default_declaration_not_payment"},
+    }
+
+
+# The archive ratio recovers prices while the separate declared ratio grants shares.
+def test_reviewed_share_default_retains_different_price_and_entitlement_ratios():
+    original, review = reviewed_action_fixture()
+    source = json.loads(original)
+    source["actions"]["AAA"][0]["value"] = 1.806
+    original = json.dumps(source).encode()
+    review["original_actions_sha256"] = hashlib.sha256(original).hexdigest()
+    review["events"][0] = {
+        **share_default_fixture(),
+        "symbol": "AAA",
+        "archive_factor": 1.806,
+        "classification": "security_exchange",
+        "source": "https://issuer.example/synthetic-completion",
+    }
+    result = adapter.review_action_export(original, json.dumps(review).encode())
+    assert result["unresolved"] == ()
+    assert result["execution_readiness"] == "pending_declaration_receipts"
+    assert result["actions"]["AAA"][0]["value"] == 1.806
+    economic = result["actions"]["AAA"][1]
+    assert economic["numerator"] / economic["denominator"] == 1.8066
+    assert economic["election_policy"] == "declared_no_election_default_shares"
+    args = inputs()
+    args["actions"] = result["actions"]
+    raw = adapter.prepare(**args)
+    np.testing.assert_allclose(raw.daily_close[:, 0], [90.3, 50], rtol=0, atol=1e-12)
+    np.testing.assert_array_equal(raw.grades, args["grades"])
+    np.testing.assert_array_equal(raw.eligible, args["eligible"])
+    assert raw.tickers == ("AAA", "SPY")
+    assert raw.actions["AAA"][1]["completed_before"] == "2026-09-15T09:30:00-04:00"
+    assert "cash_credit" not in raw.actions["AAA"][1]
+    with pytest.raises(TypeError):
+        raw.actions["AAA"][1]["source_receipt"]["declaration"] = "changed"
+    assert json.loads(original)["actions"]["AAA"][0]["value"] == 1.806
+
+
+# Missing or late evidence cannot silently select a different election or pay cash.
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    [
+        ({"election_policy": "cash_election"}, "Explicit exchange"),
+        ({"election_policy": None}, "Explicit exchange"),
+        ({"cash_credit": 3}, "without an invented cash"),
+        ({"paid": True}, "without an invented cash"),
+        (
+            {"payment_received_at": "2026-09-15T09:30:00-04:00"},
+            "without an invented cash",
+        ),
+        ({"pay_at": "2026-09-15T09:30:00-04:00"}, "without an invented cash"),
+        ({"effective_at": "2026-09-15T09:30:00-04:00"}, "without an invented cash"),
+        ({"legal_clock_precision": "exact"}, "Explicit default share"),
+        ({"completed_before": "2026-09-15T10:00:00-04:00"}, "Observed first opening"),
+        ({"completed_before": "2026-09-15T09:30:00"}, "Aware share exchange"),
+        ({"terms_available_at": "2026-09-15T09:31:00-04:00"}, "prior available"),
+        ({"terms_available_at": "2026-09-13T16:01:00-04:00"}, "dated terms"),
+        ({"completion_available_at": "2026-09-15T09:31:00-04:00"}, "prior available"),
+        ({"terms_available_on": "2026-09-15"}, "prior-day declaration"),
+        ({"terms_source": "file:///guessed"}, "declaration sources"),
+        ({"source_receipt": {}}, "source receipt"),
+    ],
+)
+def test_share_default_input_requires_causal_terms_and_no_invented_payment(
+    changes, message
+):
+    args = inputs()
+    args["actions"]["AAA"] = ({**share_default_fixture(), **changes},)
+    with pytest.raises(ValueError, match=message):
+        adapter.prepare(**args)
+
+
+# A weekend boundary cannot become a regular-way share exchange by default.
+def test_share_default_input_requires_a_reviewed_regular_exchange_session():
+    row = share_default_fixture()
+    row["completed_before"] = "2026-09-19T09:30:00-04:00"
+    with pytest.raises(ValueError, match="Reviewed regular share exchange"):
+        adapter._exchange(row, np.datetime64("2026-09-19"))
+
+
 # Supply sourced consolidation terms independently of the archive price factor.
 def consolidation_fixture():
     return {

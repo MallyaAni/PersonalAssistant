@@ -584,9 +584,12 @@ def _reviewed_grant(symbol, event, day):
             (event["child"],),
             day,
         )
-    if (
-        classification == "security_exchange"
-        and event.get("fractional_policy") == "floor_no_compensation"
+    if classification == "security_exchange" and (
+        event.get("fractional_policy") == "floor_no_compensation"
+        or (
+            event.get("fractional_policy") == "cash_in_lieu_unknown"
+            and event.get("election_policy") == "declared_no_election_default_shares"
+        )
     ):
         return _exchange(
             {
@@ -595,6 +598,9 @@ def _reviewed_grant(symbol, event, day):
                     "declaration": event["source"],
                     "fractional_source": event.get("fractional_source"),
                     "completion_source": event.get("completion_source"),
+                    "terms_source": event.get("terms_source"),
+                    "terms_source_sha256": event.get("terms_source_sha256"),
+                    "election_scope": "declared_private_policy_not_broker_election",
                 },
             },
             day,
@@ -681,7 +687,83 @@ def _consolidation(row, day):
     }
 
 
-# Validate prior-day terms for a named issuer exchange with no fractional payout.
+# Validate available-by evidence for a declared default share exchange before opening.
+def _default_share_terms(row, day):
+    fields = (
+        "completed_before",
+        "terms_available_at",
+        "completion_available_at",
+        "legal_clock_precision",
+        "election_policy",
+        "terms_source",
+        "completion_source",
+        "fractional_source",
+    )
+    _require(
+        all(field in row for field in fields)
+        and set(row)
+        <= {
+            *fields,
+            "date",
+            "kind",
+            "numerator",
+            "denominator",
+            "old_security_id",
+            "new_security_id",
+            "fractional_policy",
+            "terms_available_on",
+            "source_receipt",
+            "symbol",
+            "archive_factor",
+            "classification",
+            "source",
+            "ratio_condition",
+            "terms_source_sha256",
+        }
+        and row["election_policy"] == "declared_no_election_default_shares"
+        and row["legal_clock_precision"] == "completed_before_open_not_exact",
+        "Explicit default share exchange without an invented cash payment required",
+    )
+    clocks = []
+    for field in fields[:3]:
+        _require(
+            isinstance(row[field], str), "Aware share exchange evidence clocks required"
+        )
+        clock = datetime.fromisoformat(row[field])
+        _require(
+            clock.utcoffset() is not None,
+            "Aware share exchange evidence clocks required",
+        )
+        clocks.append(clock)
+    boundary, terms, completion = clocks
+    years, sessions = calendar.reviewed_sessions()
+    _require(
+        day.astype(object).year in years and np.is_busday(day, busdaycal=sessions),
+        "Reviewed regular share exchange session required",
+    )
+    opening = datetime.combine(
+        day.astype(object), calendar.REGULAR_OPEN, calendar.NEW_YORK
+    )
+    _require(
+        boundary == opening and terms < boundary and completion <= boundary,
+        "Observed first opening and prior available share exchange evidence required",
+    )
+    _require(
+        _day(terms.astimezone(calendar.NEW_YORK).date())
+        >= _day(row["terms_available_on"]),
+        "Share exchange availability cannot precede the dated terms",
+    )
+    _require(
+        all(
+            isinstance(row[field], str) and row[field].startswith("https://")
+            for field in fields[-3:]
+        ),
+        "Explicit share exchange declaration sources required",
+    )
+    return {field: row[field] for field in fields}
+
+
+# Validate named issuer terms and distinguish forfeiture from an unpaid cash fraction.
 def _exchange(row, day):
     numerator, denominator = row.get("numerator"), row.get("denominator")
     old, new = row.get("old_security_id"), row.get("new_security_id")
@@ -689,11 +771,25 @@ def _exchange(row, day):
         all(type(value) is int and value > 0 for value in (numerator, denominator))
         and all(isinstance(value, str) and value for value in (old, new))
         and old != new
-        and row.get("fractional_policy") == "floor_no_compensation",
+        and (
+            (
+                row.get("fractional_policy") == "floor_no_compensation"
+                and row.get("election_policy") is None
+            )
+            or (
+                row.get("fractional_policy") == "cash_in_lieu_unknown"
+                and row.get("election_policy") == "declared_no_election_default_shares"
+            )
+        ),
         "Explicit exchange identities, ratio and fractional policy required",
     )
     available = _day(row["terms_available_on"])
     _require(available < day, "Exchange terms require a prior-day declaration")
+    terms = (
+        _default_share_terms(row, day)
+        if row.get("fractional_policy") == "cash_in_lieu_unknown"
+        else {}
+    )
     receipt = row.get("source_receipt")
     _require(
         isinstance(receipt, Mapping) and bool(receipt),
@@ -706,9 +802,10 @@ def _exchange(row, day):
         "denominator": denominator,
         "old_security_id": old,
         "new_security_id": new,
-        "fractional_policy": "floor_no_compensation",
+        "fractional_policy": row["fractional_policy"],
         "terms_available_on": str(available),
         "source_receipt": _freeze(receipt),
+        **terms,
     }
 
 

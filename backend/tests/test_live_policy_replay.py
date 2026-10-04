@@ -699,6 +699,86 @@ def test_named_exchange_journey_grants_no_fractional_stock_or_cash():
     assert broker.ledger()["security_exchanges"][0]["forfeited_fraction"] == 0.8
 
 
+# Run the actual planner across a default share exchange with missing fractional cash.
+def share_exchange_fixture():
+    from backend.tests.test_live_execution_inputs import share_default_fixture
+
+    panel, raw, cubes = fixture(
+        ("2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04")
+    )
+    terms = {
+        **share_default_fixture(),
+        "date": "2026-09-03",
+        "terms_available_on": "2026-09-02",
+        "terms_available_at": "2026-09-02T16:01:00-04:00",
+        "completed_before": "2026-09-03T09:30:00-04:00",
+        "completion_available_at": "2026-09-03T08:30:00-04:00",
+    }
+    actions = dict(raw.actions)
+    actions["AAA"] = (terms,)
+    supplied = prepare(
+        panel,
+        raw.grades,
+        raw.eligible,
+        cubes,
+        actions,
+        basis_as_of="2026-09-04",
+        complete_through="2026-09-04",
+        provenance={"source": "synthetic_private_share_default"},
+    )
+    return panel, supplied, cubes
+
+
+# Missing fractional value remains visible and prevents a fabricated funded nightly.
+def test_actual_nightly_share_exchange_retains_unknown_wealth_and_whole_holdings(
+    tmp_path,
+):
+    panel, raw, cubes = share_exchange_fixture()
+    result = run_account(panel, raw, cubes, tmp_path / "share-exchange", 1, 3, 10)
+    ledger = result["broker"]
+    receipt = ledger["security_exchanges"][0]
+    assert receipt["quantity_before"] == 250
+    assert receipt["quantity_after"] == 451
+    assert receipt["fractional_qty"] == 0.65
+    assert receipt["cash_in_lieu"] is None
+    assert "forfeited_fraction" not in receipt
+    assert ledger["holdings"] == {"AAA": 451}
+    assert ledger["cash"] == 100000 - sum(
+        row["filled_qty"] * row["price"] + row["fee"]
+        for row in result["fills"]
+        if row["filled_qty"]
+    )
+    assert result["sessions"][1]["nightly"]["status"] == "planned"
+    for row in result["sessions"][2:]:
+        assert row["nav"] is None
+        assert row["status"] == "unknown_exchange_cash_in_lieu"
+        assert row["nightly"]["status"] == "nightly_broker_unavailable"
+        assert row["unpriced_entitlements"][0]["fractional_qty"] == 0.65
+    assert all(row["symbol"] == "AAA" for row in result["intents"])
+    assert result["adoption_eligible"] is False
+
+
+# Explicit payment restores NAV without pretending the archived factor granted shares.
+def test_default_share_exchange_dispatch_preserves_fraction_until_payment():
+    _, raw, _ = share_exchange_fixture()
+    broker = ReplayBroker(
+        100, 0, initial_holdings={"AAA": 100}, initial_average_prices={"AAA": 90}
+    )
+    day = 2
+    now = instant(raw.dates[day], calendar.REGULAR_OPEN)
+    broker.observe(now, dict.fromkeys(raw.tickers, 100), True)
+    before = broker.ledger()
+    corporate_actions(broker, raw, day, now)
+    assert broker.ledger()["holdings"] == {"AAA": 180}
+    assert valuation(broker, raw, day)["nav"] is None
+    broker.settle_exchange_cash("AAA", now, 30, now)
+    assert valuation(broker, raw, day)["nav"] == 18130
+    assert broker.ledger()["cash"] == before["cash"] + 30
+    paid = broker.ledger()
+    corporate_actions(broker, raw, day, now)
+    assert broker.ledger() == paid
+
+
 # Dispatch retains the legal clock and leaves fractional wealth missing until paid.
 @pytest.mark.parametrize("quantity", [24, 25])
 def test_consolidation_journey_preserves_legal_clock_and_cash_claim(quantity):

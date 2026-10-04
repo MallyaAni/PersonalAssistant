@@ -1,5 +1,63 @@
 # Next session
 
+## 2026-10-04 — declared default share exchange and missing fractional cash
+
+Goal ACTIVE; previous turn PROGRESS, exact terminal-merger source3a756d20
+verified559 tests and pushed through6353299e. Starting branch
+codex/learned-entry-risk-20261002, HEAD6353299ee3e887404846d3cabe1522100f1ddad0,
+clean. Fetched origin/main204689db; preserved the existing merge history.
+Atomic objective: complete the DELL2018 share-default exchange without treating
+an archive price factor, a different security or missing fractional proceeds
+as investment profit or spendable cash. Acceptance: distinct old/new identities,
+explicit private no-election default, prior available terms and before-open
+completion evidence, whole-share/rational rounding, preserved unknown cost,
+exact-once action/payment, no old-order or fill mutation, and actual persisted
+planner behavior with incomplete NAV. Neither historical elections nor payments
+may be inferred from later returns.
+
+FAILED first boundary: unchanged external share-default acceptance raised
+TypeError because the private broker had no election policy or payable-fraction
+exchange path. Existing no-compensation HUT behavior is retained. The separate
+cash-in-lieu mode requires declared_no_election_default_shares, tracks a fraction
+as an unknown cash claim instead of forfeiture, and credits cash only from a
+matching observed payment. Outstanding old-security orders/affected fills,
+unsupported cash elections, conflicting identity/ratio, intraday/weekend bounds
+and invented payments refuse mutation. A normalized declaration distinguishes
+a before-open upper bound from an exact legal merger clock. Funding/full NAV
+refuses an unknown positive claim; the actual nightly records missing evidence
+instead of inventing wealth or a buy budget.
+
+Primary evidence: Dell's Dec24,2018 issuer PDF explicitly fixes1.8066 despite
+unfinished aggregate elections. Captured via TLS on Spark, SHA
+8501599c5768420ae29e11453dd9afa995855c76732c2f384b46cd9becf29e2a;
+pages1/2 visually inspected and all text extracted. The term availability uses
+conservative Dec25 midnight, not a guessed exact Dec24 publication time. The
+issuer-syndicated completion release reports Dec28 09:00ET, before ClassC
+regular-way trading09:30; the completion HTML/headers were captured. Original
+archive factor1.806 remains unchanged and only recovers archive price units;
+the economic ratio18066/10000 grants ClassC shares under the declared private
+non-election default. A historical broker election, street-name aggregation,
+delivery, tax basis and fraction payment remain unproven. SEC fraction-source
+capture returned403; its source text was reviewed through web access and the
+failed header is retained, not called a captured declaration. No paid data,
+later-price calibration or rewritten source history.
+
+VERIFIED working-tree acceptance382 tests24.73s/no skips: unchanged external
+share-default/terminal/clock cases and actual planner/sender persisted journeys.
+The actual synthetic book carries250 old shares into451 whole new shares plus
+unknown0.65 fractional proceeds; cash reconciles to fills/fees, NAV stays missing
+and nightlies record broker incompleteness. Direct explicitly supplied synthetic
+payment restores NAV once; that is not historical payment evidence. Ruff/diff
+clean. Exact committed source-image/CLI/saved independent proof are next.
+No economic accounts scored, saved models restored/refitted, old captures
+repeated, protocol changed, main merge or live deployment. Original incorrect
+export score gates remain intact. Diagram impact: NONE — existing private
+input/accounting/planner boundaries and no new production dependency or flow.
+NEXT: wire reviewed original/passive/terminal inputs and the independent
+economic verifier, retain every missing payment/mark, then run the fixed funded
+same-sizing timing comparison. Timing×confidence sizing and remaining-horizon
+profit exits still require separate proof before the requested live replacement.
+
 ## 2026-10-04 — inherited terminal cash entitlement and unpaid funding
 
 Goal ACTIVE; previous turn PROGRESS (observed grantsb0348ce0/source519 tests,
