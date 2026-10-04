@@ -704,7 +704,8 @@ def _idle_cash_share(orders, prices, cash, equity) -> float | None:
 # Carry the desk's book to the paper account: cancel yesterday's unfilled
 # orders, plan this session, submit the plan for the next open, then record
 # the account. Explicit broker and decision-clock dependencies let a private
-# replay exercise this same lifecycle without contacting the real account.
+# replay exercise this same lifecycle without contacting the real account;
+# its optional feature reader reuses account-independent prefix calculations.
 def paper_trade(
     report,
     store_root: Path,
@@ -715,9 +716,14 @@ def paper_trade(
     *,
     client_factory=None,
     decision_at: datetime | None = None,
+    feature_reader=None,
 ) -> dict:
     from backend.agents.trading.desk import paper
 
+    if feature_reader is not None and (
+        not callable(feature_reader) or client_factory is None or decision_at is None
+    ):
+        raise ValueError("Private feature reader requires explicit broker and clock")
     if decision_at is not None:
         from backend.market import calendar
 
@@ -735,7 +741,11 @@ def paper_trade(
             raise ValueError(
                 "Nightly decision must follow the reviewed report session close"
             )
-    dependencies = {"client_factory": client_factory, "decision_at": decision_at}
+    dependencies = {
+        "client_factory": client_factory,
+        "decision_at": decision_at,
+        "feature_reader": feature_reader,
+    }
     if not live:
         return _paper_trade(
             report, store_root, session, False, rebalance_now, force, **dependencies
@@ -746,7 +756,7 @@ def paper_trade(
         )
 
 
-# Reconcile and execute one nightly plan while holding the shared paper-state lock.
+# Reconcile and execute one locked nightly plan with optional private feature reuse.
 def _paper_trade(
     report,
     store_root: Path,
@@ -757,6 +767,7 @@ def _paper_trade(
     *,
     client_factory=None,
     decision_at: datetime | None = None,
+    feature_reader=None,
 ) -> dict:
     """Plan and (when `live`) submit the paper book; return the day's entry."""
     from backend.agents.trading.desk import (
@@ -801,7 +812,11 @@ def _paper_trade(
     # did not fill has not happened - so this runs first and can put the
     # clock back before the plan is made.
     state, settled = _reconcile(client, state, store_root, live)
-    policy = event_risk.decision(panel)
+    policy = (
+        event_risk.decision(panel)
+        if feature_reader is None
+        else feature_reader("event", report)
+    )
     # Withdraw every pending leg before replacing it, this session's included
     # (a forced rerun), and wait for confirmed outcomes. A pending cancel can
     # still fill; never overwrite its durable intent.
@@ -822,7 +837,11 @@ def _paper_trade(
     # into the names the desk still wants; selling the same signal to cash
     # measured 24 points of CAGR a year worse than holding. See the table at
     # the top of `desk/exit.py`.
-    blocked, blocking_flags = _band_blocked(report)
+    blocked, blocking_flags = (
+        _band_blocked(report)
+        if feature_reader is None
+        else feature_reader("blocked", report)
+    )
     event_plan = nightly_plan.event_plan_required(state, policy)
     orders, new_state, what = nightly_plan.plan(
         session,
@@ -836,7 +855,15 @@ def _paper_trade(
         finished={} if event_plan else _downgraded(report, held),
         force_rebalance=rebalance_now,
         entry_blocked=blocked,
-        entries={} if event_plan else _price_entries(report),
+        entries=(
+            {}
+            if event_plan
+            else (
+                _price_entries(report)
+                if feature_reader is None
+                else feature_reader("entries", report)
+            )
+        ),
         cash=account.cash,
     )
     print(

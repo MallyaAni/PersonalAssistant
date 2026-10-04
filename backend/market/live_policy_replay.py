@@ -184,7 +184,9 @@ def validate(panel, inputs, root, first, last, reader_builder, provider):
 
 
 # Execute real nightly planning and retain unavailable paths without invented plans.
-def nightly(panel, inputs, root, broker, day, build_report, intents, logs):
+def nightly(
+    panel, inputs, root, broker, day, build_report, intents, logs, feature_reader=None
+):
     now = instant(
         inputs.dates[day], calendar.session_close(inputs.dates[day].astype(object))
     )
@@ -201,6 +203,7 @@ def nightly(panel, inputs, root, broker, day, build_report, intents, logs):
                 True,
                 client_factory=lambda: broker,
                 decision_at=now,
+                feature_reader=feature_reader,
             )
         remember_intents(root, intents)
         status = {"status": "planned", "entry": plain(result)}
@@ -232,6 +235,7 @@ def run_account(
     reader_builder=None,
     provider=None,
     report_builder=None,
+    feature_reader=None,
 ):
     root = Path(root)
     validate(panel, inputs, root, first, last, reader_builder, provider)
@@ -239,11 +243,21 @@ def run_account(
         from backend.market.live_policy_report import build as report_builder
     if not callable(report_builder):
         raise ValueError("Explicit nightly report builder required")
+    if feature_reader is not None and not callable(feature_reader):
+        raise ValueError("Explicit callable feature reader required")
     broker = ReplayBroker(initial_cash, cost_bps)
     root.mkdir(parents=True, exist_ok=False)
     intents, observations, sessions, logs, forecasts = {}, [], [], [], []
     base = nightly(
-        panel, inputs, root, broker, first - 1, report_builder, intents, logs
+        panel,
+        inputs,
+        root,
+        broker,
+        first - 1,
+        report_builder,
+        intents,
+        logs,
+        feature_reader,
     )
     sessions.append(
         {
@@ -325,7 +339,15 @@ def run_account(
             phase="close",
         )
         result = nightly(
-            panel, inputs, root, broker, day, report_builder, intents, logs
+            panel,
+            inputs,
+            root,
+            broker,
+            day,
+            report_builder,
+            intents,
+            logs,
+            feature_reader,
         )
         sessions.append(
             {
