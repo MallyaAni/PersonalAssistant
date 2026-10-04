@@ -1,5 +1,46 @@
 # Next session
 
+## 2026-10-04 — passive source audited; uncovered holding valuation reproduced
+
+Goal ACTIVE. Named-exchange source80b72522 and its verified handoffd793c809
+are pushed on codex/learned-entry-risk-20261002. No main merge/deployment.
+Separately captured69 original raw SIP response pages:2 daily,48 KD intraday
+and19 VMW intraday. First intraday launcher failed parsing BEFORE any requests;
+its log is retained. Corrected32-page KD prefix ended incomplete. A separate
+byte/token-bound16-page continuation fetched only remaining pages, preserving
+the original prefix and its missing-completion status. No daily refetch,
+source rewrite, model fit, selection-universe expansion or economic scoring.
+
+Independent saved-byte/calendar audit EXIT0: KD1230/1230 daily sessions and
+39298 intraday bars,1228 complete regular sessions; missing regular bars on
+2022-01-24 and2022-03-08. VMW517/517 daily sessions through2023-11-21 and15514
+intraday bars,514 complete regular sessions; gaps on2022-01-24,2022-01-26 and
+2022-03-08. All gaps and extended-hours source bars retained. Daily versus
+last regular-bar closes differ often; neither is substituted for the other,
+and no ratios were fitted. Daily final prices cannot be used at bar-start
+clocks. VMW's subsequent merger/election/payment requires separate treatment;
+its last price must not be carried past delisting. These audits do NOT prove
+full accounting readiness, actual historical publication or broker fills.
+
+Evidence:/home/animallya96/scratch/action-exchange-20261004-80b72522/proof.
+Saved audit38b721d4fa07dd346e61b914751ac7910a92246e4b60aa0a2d794d54e0e77195;
+daily receipt61a21f83cf797ce1bda57d13ad0b0ac1c1691994d6c25d7e206df496a8618186;
+intraday receipt9b6fed40e984c18d4272a09dff35795c61753bbe8614ec0d463818d74fab447b;
+tail receipt083c9cd0310b88049cca6c78947b5f9f96afd4bd5a13c7635215ebe5ed3ec12a.
+Audit script4e85023ffbbd3ed1917939d634e407cad367ab9bba587b6fbbde031f64b33d79.
+
+FAILED original uncovered-holding acceptance: valuation raised tuple.index
+ValueError before recording missing wealth. One targeted fix builds the
+existing named close map and reports missing_held_close/None NAV, preserving
+cash, shares and broker state. Native186 relevant cases PASS6.14s and Ruff/diff
+clean; exact committed-image acceptance PENDING. No passive prices added to
+the planner, invented liquidation, stale mark fallback or strategy change.
+
+NEXT: pin this exact correction, then source-aware passive marking and the
+five remaining economic action/terminal payment boundaries; resume fixed
+funded comparisons only with reviewed accounting identities. Live unchanged.
+Diagram impact: NONE — existing private valuation boundary only.
+
 ## 2026-10-04 — named HUT exchange, passive-asset source capture
 
 Goal ACTIVE; live policy unchanged. HUT2023-12-04 is a named issuer exchange,

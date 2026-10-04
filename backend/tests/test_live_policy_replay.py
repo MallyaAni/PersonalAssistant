@@ -188,6 +188,28 @@ def test_stock_distribution_journey_preserves_parent_and_missing_cash(quantity):
         assert valuation(broker, raw, 1)["nav"] == 14307
 
 
+# Retain uncovered holdings and report missing value without assuming liquidation.
+def test_unrepresented_held_security_is_explicit_missing_value():
+    _, raw, _ = fixture()
+    broker = ReplayBroker(
+        1000,
+        0,
+        initial_holdings={"AAA": 10, "CHILD": 2},
+        initial_average_prices={"AAA": 60, "CHILD": 20},
+    )
+    opening = instant(raw.dates[1], calendar.REGULAR_OPEN)
+    broker.observe(opening, {name: 100 for name in raw.tickers}, True)
+    before = broker.ledger()
+    result = valuation(broker, raw, 1)
+    assert result["nav"] is None
+    assert result["price_nav"] is None
+    assert result["status"] == "missing_held_close"
+    assert result["missing_symbols"] == ["CHILD"]
+    assert result["holdings"] == {"AAA": 10, "CHILD": 2}
+    assert result["cash"] == 1000
+    assert broker.ledger() == before
+
+
 # Child splits precede post-split distributions regardless of source symbol order.
 def test_distribution_does_not_split_new_child_shares_again():
     _, raw, _ = fixture()

@@ -140,7 +140,7 @@ def corporate_actions(broker, inputs, day, opening):
                 )
 
 
-# Value actual raw holdings separately from unknown-payment dividend receivables.
+# Value priced holdings and retain uncovered securities or unknown cash as missing NAV.
 def valuation(broker, inputs, day):
     ledger = broker.ledger()
     unknown = [
@@ -159,11 +159,11 @@ def valuation(broker, inputs, day):
                 "holdings": ledger["holdings"],
             }
         )
+    closing_marks = marks(inputs.tickers, inputs.daily_close[day])
     missing = [
         name
         for name, quantity in ledger["holdings"].items()
-        if quantity
-        and not np.isfinite(inputs.daily_close[day, inputs.tickers.index(name)])
+        if quantity and closing_marks.get(name) is None
     ]
     if missing:
         return {
@@ -175,7 +175,7 @@ def valuation(broker, inputs, day):
             "holdings": ledger["holdings"],
         }
     price_nav = ledger["cash"] + sum(
-        quantity * inputs.daily_close[day, inputs.tickers.index(name)]
+        quantity * closing_marks[name]
         for name, quantity in ledger["holdings"].items()
     )
     receivable = sum(row["amount"] for row in ledger["dividends"] if not row["paid"])
