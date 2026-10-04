@@ -1,5 +1,67 @@
 # Next session
 
+## 2026-10-03 — error-band implementation and actual saved proof complete
+
+VERIFIED evaluated0e563ccb:129 native/image checks,12 exact default comparisons
+in both runtimes,34 native/image independent verifier cases; no skips. Actual
+saved proof1e23138d exited0 and checks all THREE new journals/scores,141 monthly
+receipts, radius statistics/typed bytes, global certificates and actual-fee
+cash/covered-share/basis/profit arithmetic.18 older controls authenticated,
+no old audit/replay/model fitting/scoring. Proofea673e3e4555ac853eafd6c713b61739d54872928b2f9cde4361cfa2f3cc7b09;
+report98d29a64cfb2703fb79c06b76a1d1cc74307ea1d86dcb1650981778cd935f3c0.
+Daily stock scoring opportunities13,070:8,868 radius available/4,202 unavailable.
+All fixed cells and94stock contributions published in direct-error-band-results-
+2026-10-03.md/.json; JSON055619baa8759e5066a71e9dabc0a5ed49377baa085833a439a24344450445cb.
+FAILED adoption: gains356.69%/254.99%/210.49% at0/10/25bp trail BOTH saved direct
+and daily rule in every cost. Trading29.43/22.30/14.37NAV/year reduced, but does
+not establish that the suppressed trades were unnecessary. No coefficient/cost/
+window/regime tuning. Services IDs/start times unchanged; production untouched.
+Never restart producer/proof or modify original evidence.
+
+Next bounded correction, NOT yet fitted/scored: independent causal feature
+support. Current direct training inherits finite original ten-session forecasts,
+then needs another504 dates. Read-only source/support audit confirms this is a
+controlled-comparison dependency, not an estimator requirement: original feature
+support begins2016-01-04 and independently purged first monthly fit can begin
+2018-02-01. Register a separate explicit policy/schema/protocol before new
+outcomes; preserve old defaults and source identities. Same13features/fixed64HGB/
+504–756/monthlystrictD+2purge/Aug17freeze/commonMarch2020accountanchor. No new
+family or parameter search. Do not disguise new support as old bridge lineage.
+Reliable live replacement remains UNVERIFIED. DiagramNONE.
+
+## 2026-10-03 — fixed error-band account run complete; independent proof pending
+
+Source0e563ccb9756814c7493aa777e61b28ed8a2eb0b,2322-file manifest
+2bb2fab628fec9895ace486c3186ba2a3d1afe8ebd9b006288fad17d6d0ced7c.
+VERIFIED129 native/pinned-image checks/no skips,12 additional exact e093cd51
+default target/receipt comparisons native/image. Image129 container
+69b1ad808ebeae0be6f2c5683e7adbe9d19a5b5588e256c9cedc94e3abfdee61 exited0.
+Image log8fa59f59f24012a66fb27e1f2f3b9e15f72ac549bf9e27301b9a10b40c3baf83;
+parity log51f24a583d2717a7424027b5196f15c0a845ad6cfa1372eb3544381d545f8220.
+Producer6369e11c4f33c1097a89cd7a163b072f63e973e7e1bdb9e8ea319f498fc65ecd
+exited0; exactly3NEW accounts,18saved controls, zero model fits/scoring. Never
+restart it or alter immutable mounted source. Output only private writable,
+no network,2CPU8GB. Core service containers remain untouched.
+
+Study `/home/animallya96/scratch/direct-error-band-results-20261003-0e563ccb/study`.
+Report98d29a64cfb2703fb79c06b76a1d1cc74307ea1d86dcb1650981778cd935f3c0,
+calibration2a7751764d070ac2e2205fb23b6919c58de0d05a7aff84a0f26c75b546c19b24,
+numeric6bb96f6760409d115b3969b777abc9f0ac41a6ea352f1b0b30d924b800c95498.
+Root read every fixed cost/window cell ONCE; no tuning/selection. UNVERIFIED
+pending saved-artifact proof: zero-cost gain356.69%, trading29.43NAV/year versus
+direct749.92%,89.20 and rule547.68%,25.75.10bp254.99% versus direct296.40%,
+rule447.18%;25bp210.49% versus direct280.89%,rule325.00%. Fewer trades do not
+establish gain improvement. Do NOT lower the radius/multiplier from these results
+or choose a favorable cost/period. Current-vintage/daily proxy limits remain.
+
+evaluation_review owns only NEW private saved-only verifier/tests, not repository
+source; original26synthetic verifier cases passed, final release pending. Wait
+for release, root review/acceptance in pinned image, then actual calibration/
+radius-aware certified-target/new-ledger/metric proof. Authenticate18 old books
+without repeating audits/fits/replay. Publish ALL fixed cells/stock profits and
+missing calibration counts after proof, selectively commit/push. Production/
+UI/data/models unchanged; no research-only deployment or model gates. DiagramNONE.
+
 ## 2026-10-03 — stock-error holding band implemented; fixed account evaluation next
 
 User's reliable hard-rule replacement remains the objective. Frozen97c3ebed
