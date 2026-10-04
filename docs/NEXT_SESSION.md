@@ -1,5 +1,66 @@
 # Next session
 
+## 2026-10-04 — actual funded joint-risk integration verified; fixed study running
+
+Goal ACTIVE; turn PROGRESS. User wants the full measured live entry/profit-taking
+replacement, not only calibration or optional helpers. Starting isolated branch
+codex/learned-entry-risk-20261002 clean after docs233ae4ce. Source integration
+87fc9878 plus correction8a7b9cc7 pushed; exact final tree571pinned29.55s/no skips
+and21native10.01s/no skips. Earlier native566+one optional API-import skip is
+not final whole-tree proof. Ruff/diff clean. Fetched unchanged main204689db,
+ancestor retained; no rebase/history rewrite or main/user/source/models changes.
+
+VERIFIED optional JointFundedPolicy on actual market_daily/nightly_plan/
+live_policy_replay: original causal joint-volatility reader + globally certified
+log-growth allocation + existing whole-share funded planner, next-open proxy.
+No fixed dip/profit/confidence cutoff. Observed cash before sale proceeds,
+fees/receivables, A/A+ adds, optional B holds/no B adds, observed C exits,
+protected/unknown holdings, missing risk, default band blocker and event priority.
+Distinct policy/receipt/state; original defaults unchanged. Authentic and analytic
+private journeys assert submissions, fills, repeat/pending behavior, reconciliation,
+journals, clock/fee guards and actual quantities. New21cases, not mocked call proof.
+
+FAILED boundary reproduced and FIXED narrowly: a marked inherited child asset
+was absent from the graded stock report's price map, suppressing another stock's
+known C exit. Fresh private-ledger marks now supplement report marks without
+eligibility. Research override requires ReplayBroker, matching fees and exact
+observed decision clock before reconciliation/cancellation. Original acceptance
+assertion unchanged. No environment broker can select this unadopted policy.
+
+New fixed60 candidate accounts RUNNING on immutable source8a7b9cc79988815d943e59b46603e723a275323d.
+Container joint-funded-study-8a7b9cc7,ID363ae1ccff716e517522616b1ab7a1611b0b5cf94b2a9b0390fe1c81af6261bd,
+started2026-10-04T20:07:19.986631439Z;2CPU/8GB/netnone/sourceRO/OOMfalse.
+Root /home/animallya96/scratch/joint-funded-20261004-8a7b9cc7; outputproof/study.
+Original reviewed raw/risk/bridge input admission passed; no model restoration,
+fit, forecast regeneration, request, control replay or scoring-cohort choice.
+20original first-session starts from2018-02-01 x0/10/25bp through09-30,100Kcash,
+zero cash yield, original actual corporate-action ledger, same fixed windows.
+At16:09:34NewYork joint-0-0 had320sessions through2019-05-09, zero completebooks.
+Do not claim gains from process progress or edit/restart its mounted source.
+Original reviewed-economic-study-b5894a74 still running/OOMfalse, untouched.
+
+NEXT PRIMARY: independent read-only artifact/metric proof for completed candidate
+accounts; pair all fixed starts/costs/windows with authenticated unchanged rule,
+SPY and QQQ controls when available. No account resimulation, active-process
+restart, threshold/window/cohort mining or score-only substitution. Keep missing
+NAV/fills/receivables/unsupported opportunities explicit. If integration exposes
+a new real boundary, reproduce first, targeted fix with unchanged assertion;
+separate source/run identities. Goal remains full measured live update.
+
+UNVERIFIED: funded advantage, complete replacement, live promotion/deployment.
+Original confidence scores remain worse than past-only reference. Current-vintage
+grades/universe and adjusted-return/conditional raw-opening proxies are research
+limitations; neither exact live reconstruction nor proven broker/midpoint fills.
+No new models/agents/prompts/API/UI/schema/deployment. Diagram impact NONE.
+
+Detailed checkpoint: docs/research/joint-funded-account-checkpoint-2026-10-04.md.
+Exactcommands: /tmp/codex-joint-funded-execution-receipt-20261004.json and remote
+proof/execution-receipt.json. Source2380files, manifestSHAc5e0de9e268f31cb9f35fd9c90fbd4f31a2d4913f972a66f0ab77e411bdfad21;
+testsSHA0133d43c31ea308f3e82c8e38c8d3719175e66084f4114ff2039ca74bbc7b527;
+admissionSHAff9e7ede7870f509dd3d251a93d49770679b7ba210f3c458e9cc6bb97797cc4c.
+Temporary reconstructable duplicate local .tar archives removed for disk space;
+all original Git/data/proofs preserved. Final docs checkpoint follows, no redeploy.
+
 ## 2026-10-04 — conditional stock-volatility correction verified
 
 Goal ACTIVE; turn PROGRESS: source implementation plus measured conditional
