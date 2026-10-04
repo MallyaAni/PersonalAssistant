@@ -1,5 +1,49 @@
 # Next session
 
+## 2026-10-04 — independent saved-account verifier pushed; first controls verified
+
+Goal ACTIVE; turn PROGRESS. Exact code e7df67e778d59d470bae6d0fef9ed11287b3b7f6
+pushed on codex/learned-entry-risk-20261002. Started clean bd3dcced; unchanged
+main204689db remains an ancestor.128native24.93s,149pinned19.09s/no skips,
+Ruff/diff clean. No source edits/restarts to either active producer, no production,
+model, UI, prompt, schema or deployment changes; diagram impact NONE.
+
+New saved-only backend.cli.verify_joint_funded authenticates both full source
+trees/actual image/mount records, original raw/risk bytes and compressed accounts;
+reuses independent physical ledger folding and independently recalculates scores.
+Explicit candidate policy keyword in old reconciler retains its original default.
+31new cases reject money/share/fee/grade/policy/clock/metric/source/partial-index
+tampering, fake projections, future labels and unavailable benchmark openings;
+actual private saved artifacts verify with simulation/prediction forbidden.
+
+VERIFIED first saved prefix:7original accounts,0candidate;60candidate/293original
+accounts pending. Proof in /home/animallya96/scratch/joint-funded-proof-20261004-e7df67e7/proof/
+saved-account-proof.json SHAcf46283333b9c0c2b1cc1b308f0a28ab0a390725d3071e4630ec9d5702442c9f.
+149test logSHAfc874315296481a43ec4007e05c088c98b6999b8fb519c349c3e34800ad72805.
+First0bp/start0 conditional gains:rule856.4248%,boost827.5677%,ridge833.9933%,
+SPY190.4951%,QQQ350.6341%; NOT finished starts/cost study or exact live history.
+No candidate advantage verified. Original runtime says image_id=unavailable;
+separate actual Docker identity is authenticated without rewriting its receipt.
+
+Both producers still running/OOMfalse, unchanged handles in prior handoff.
+At16:51:49NY candidate joint-0-0 had2080completed sessions through2026-05-11,
+zero completed books. Its latest ordinary receipt had joint_net_growth and754
+common historical dates; no inference/model run was invoked by this inspection.
+Never restart/reimport/modify mounted sources or repeat account simulations/fits.
+
+NEXT PRIMARY: compact completion first; read newly completed candidate/control
+prefixes with the checked CLI and fresh output, using existing proof/command.json
+and evidence.json. The earlier launcher only corrected control's manifest.json
+path; code/assertions unchanged. Need distinct --output/name/log for the next
+read-only invocation; retain the existing proof. No repeated model/tests gates
+for unchanged code. Pair all20starts x0/10/25bp against rule/SPY/QQQ and preserve
+unknown NAV/claims/fills. If a real artifact boundary fails, reproduce and fix
+only that boundary with unchanged acceptance, separating producer/verifier IDs.
+Do not select a live policy from a partial0bp account or reused/current-vintage
+history. Full measured live replacement remains UNVERIFIED and goal ACTIVE.
+
+Details: docs/research/joint-funded-saved-proof-checkpoint-2026-10-04.md.
+
 ## 2026-10-04 — actual funded joint-risk integration verified; fixed study running
 
 Goal ACTIVE; turn PROGRESS. User wants the full measured live entry/profit-taking
