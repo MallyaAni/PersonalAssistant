@@ -1,5 +1,46 @@
 # Next session
 
+## 2026-10-03 — direct stock-conditioned decisions verified; turnover remains
+
+VERIFIED evaluated source e093cd51b9207899bfee6c46f4f578b1e7fd1d97, whole2315-file
+manifestafec6a579e835989f99d914c30955f88c28678c91186fc835b66e7a93ac9b8a3.
+Corrected producer2812602f005eb6ae5cee4e19392b31e9fb40f6b5cde3846c690ec4b0a365595d
+exited0: one fixed direct arithmetic learner, three NEW0/10/25bp books,15 saved
+controls reused. Never restart/refit/replay completed studies. Original failed
+925ab0e9 attempt below produced no fit/output; retain it separately.
+
+Acceptance: original39 native/image pass; after the one metadata-envelope fix,
+six CLI native/image pass, other33 model cases/source unchanged. New independent
+verifier23 native/image pass/no skips. Actual saved-only proof
+aa60f618374fa756013cc820c434187f8a7b6c251df292bf89f3db3cf7855d4b exited0,
+141 monthly receipts/79 numeric heads/prediction bytes,4965plans/21045intents,
+18696full fills/2349cash-limited/0missing/30allocator-unavailable reconciled.
+No estimator.predict/fit, strategy replay or repeat old-account audit.
+Proof8c8bbe09871d4e1ae3a87ecf306d135f80c330a111edee4bb1664d3b2ecb7017.
+Report764e8e6489325bf84d515ae2acc000bdebe41a2b539e59df1dce274950e8fc0a.
+Study `/home/animallya96/scratch/direct-daily-arithmetic-results-20261003-e093cd51/study`.
+Proof `/home/animallya96/scratch/direct-daily-arithmetic-verification-20261003-e093cd51/proof/proof.json`.
+
+Publication `docs/research/direct-daily-arithmetic-results-2026-10-03.md/.json`
+preserves ALL fixed windows/costs and94 stock contributions plus2 zero benchmark
+components. JSONa0c27074af91b18f75e29ae3735758fd4038f874c9dd3ee8912d3b987c1ec87c.
+Zero-cost direct gain749.92% vs daily rule547.68%,QQQ254.32%,SPY171.00%,
+DD35.83% vs rule47.50%.10bp296.40% vs rule447.18%;25bp280.89% vs rule325.00%.
+It beats both ETFs at all three costs but FAILED positive-cost rule total-gain
+adoption. Zero-cost gross trading89.20NAV/year vs rule25.75 conflicts with low
+turnover. Current-vintage eligibility, daily rule-component/proxy execution and
+reused recent data remain; full live replacement/broker fills UNVERIFIED.
+Do not choose a favorable cost/regime/window or claim reliable adoption.
+
+User's hard-rule replacement remains the main objective: direct model learns
+per-stock arithmetic means; certified risk/funding determines buys/holds/trims/
+exits, with no fixed entry/profit trigger in this candidate. Next bounded step
+must address forecast uncertainty/unnecessary rebalancing with a frozen causal
+protocol, not repeat fits or mine percentage barriers. Production/UI/data/model
+services unchanged; ds4/embedding IDs and start times independently match.
+No research-only deployment/model gates. Diagram impact NONE. All source is
+root-owned; no old agent files or drafts to recopy.
+
 ## 2026-10-03 — direct producer stopped before fitting; original envelope corrected
 
 Source925ab0e9 passed39 pinned-image checks but the actual original fit metadata
