@@ -473,3 +473,233 @@ def allocate(
         sales=float(np.maximum(current - target, 0).sum()),
     )
     return target, receipt
+
+
+# Maximize exact empirical log wealth using jointly aligned stock return scenarios.
+def _solve_distribution(returns, probabilities, current, upper, cash, cost, forced_fee):
+    size = len(current)
+    eye, zero = np.eye(size), np.zeros((size, size))
+    matrix = np.vstack(
+        (
+            np.r_[np.ones(size), np.zeros(2 * size)],
+            np.c_[eye, -eye, zero],
+            np.c_[-eye, -eye, zero],
+            np.c_[eye, zero, -eye],
+            np.r_[np.zeros(2 * size), np.full(size, 1 + cost)],
+        )
+    )
+    limits = np.r_[1.0, current, -current, current, cash]
+    bounds = [(0.0, value) for value in upper] + [(0.0, 1.0)] * (2 * size)
+    start_weights = np.minimum(current, upper)
+    start = np.r_[
+        start_weights,
+        np.abs(start_weights - current),
+        np.maximum(start_weights - current, 0),
+    ]
+
+    # Charge both trade sides once inside the actual portfolio wealth objective.
+    def wealth(x):
+        return 1 - forced_fee + returns @ x[:size] - cost * x[size : 2 * size].sum()
+
+    # Reject impossible hypothetical wealth rather than clipping forecast losses.
+    def objective(x):
+        values = wealth(x)
+        return -float(probabilities @ np.log(values)) if np.all(values > 0) else np.inf
+
+    # Differentiate the same joint wealth objective used by the solver and certificate.
+    def gradient(x):
+        values = wealth(x)
+        if not np.all(values > 0):
+            raise FloatingPointError("Nonpositive scenario wealth")
+        weighted = probabilities / values
+        return np.r_[
+            -returns.T @ weighted, np.full(size, cost * weighted.sum()), np.zeros(size)
+        ]
+
+    solved = minimize(
+        objective,
+        start,
+        jac=gradient,
+        method="SLSQP",
+        bounds=bounds,
+        constraints={
+            "type": "ineq",
+            "fun": lambda x: limits - matrix @ x,
+            "jac": lambda x: -matrix,
+        },
+        options={"ftol": 1e-14, "maxiter": 300},
+    )
+    solution = solved.x
+    proof = _certificate(solution, gradient, matrix, limits, bounds)
+    if proof["certified"]:
+        # Certify exact ownership kinks instead of rounding infinitesimal trades.
+        for index in range(size):
+            for value in (current[index], 0.0, upper[index]):
+                if not 0 <= value <= upper[index]:
+                    continue
+                candidate = solution.copy()
+                candidate[index] = value
+                candidate[size : 2 * size] = np.abs(candidate[:size] - current)
+                candidate[2 * size :] = np.maximum(candidate[:size] - current, 0)
+                certificate = _certificate(candidate, gradient, matrix, limits, bounds)
+                if (
+                    certificate["certified"]
+                    and objective(candidate) <= objective(solution) + 1e-14
+                ):
+                    solution, proof = candidate, certificate
+    proof.update(
+        solver_success=bool(solved.success),
+        iterations=int(solved.nit),
+        expected_log_growth=-float(objective(solution)),
+        minimum_scenario_wealth=float(wealth(solution).min()),
+    )
+    return solution[:size].copy(), proof
+
+
+# Validate aligned joint forecasts, holding horizons and actually available funding.
+def _distribution_inputs(
+    scenarios,
+    probabilities,
+    grades,
+    eligible,
+    current_weights,
+    cash_weight,
+    cost_bps,
+    benchmark_indices,
+    *,
+    horizon,
+):
+    if horizon != "next_open_to_following_open_arithmetic_return":
+        raise ValueError("Exact one-session holding return horizon required")
+    raw = np.asarray(scenarios)
+    if raw.ndim != 2 or min(raw.shape) == 0 or raw.dtype.kind not in "fiu":
+        raise ValueError("Joint numeric scenario by stock grid required")
+    values = raw.astype(float, copy=True)
+    if np.isinf(values).any() or np.any(values[np.isfinite(values)] < -1):
+        raise ValueError(
+            "Possible arithmetic returns or explicit missing values required"
+        )
+    count, size = values.shape
+    probability = _vector(probabilities, count, "scenario probabilities")
+    if np.any(probability <= 0) or abs(probability.sum() - 1) > 1e-12:
+        raise ValueError("Positive normalized scenario probabilities required")
+    grade = _vector(grades, size, "grades")
+    current = _vector(current_weights, size, "current_weights")
+    membership = np.asarray(eligible)
+    benchmarks = np.asarray(benchmark_indices)
+    if (
+        np.any(~np.isin(grade, (-1, 0, 1, 2, 3)))
+        or membership.shape != (size,)
+        or membership.dtype.kind != "b"
+        or benchmarks.ndim != 1
+        or benchmarks.dtype.kind not in "iu"
+        or len(np.unique(benchmarks)) != len(benchmarks)
+        or np.any(benchmarks < 0)
+        or np.any(benchmarks >= size)
+    ):
+        raise ValueError(
+            "Explicit aligned grade, membership and benchmark identities required"
+        )
+    if (
+        any(
+            isinstance(x, (bool, np.bool_))
+            or not isinstance(x, (int, float, np.integer, np.floating))
+            or not np.isfinite(x)
+            for x in (cash_weight, cost_bps)
+        )
+        or not 0 <= cash_weight <= 1
+        or not 0 <= cost_bps < 10000
+        or np.any(current < 0)
+        or current.sum() + cash_weight > 1 + 1e-10
+    ):
+        raise ValueError("Observed funded weights and per-side fees required")
+    return values, probability, grade, membership, current, benchmarks
+
+
+# Jointly size additions and held exits from remaining net account growth.
+def allocate_distribution(
+    scenarios,
+    probabilities,
+    grades,
+    eligible,
+    current_weights,
+    cash_weight,
+    cost_bps,
+    benchmark_indices,
+    *,
+    horizon,
+):
+    """Caller authenticates OOS scenario lineage; this option never changes defaults."""
+    values, probability, grade, membership, current, benchmarks = _distribution_inputs(
+        scenarios,
+        probabilities,
+        grades,
+        eligible,
+        current_weights,
+        cash_weight,
+        cost_bps,
+        benchmark_indices,
+        horizon=horizon,
+    )
+    mandatory, may_add, may_hold, holding = _holding_contract(
+        grade, membership, current, benchmarks, True, "arithmetic", 1
+    )
+    known = np.isfinite(values).all(axis=0)
+    safe = np.where(mandatory, 0, np.minimum(current, CAP))
+    receipt = {
+        "policy": "adaptive-funded-growth/3-joint-distribution-research",
+        "horizon": horizon,
+        "current_weights": current.tolist(),
+        "cost_bps": float(cost_bps),
+        "cash_weight": float(cash_weight),
+        "scenario_count": len(values),
+        "known": known.tolist(),
+        "mandatory_exits": mandatory.tolist(),
+        "probability_guarantee": False,
+        "adoption_eligible": False,
+        **holding,
+    }
+    reason = (
+        "missing_held_cross_risk" if np.any(may_hold & (current > 0) & ~known) else ""
+    )
+    selected = known & may_hold
+    if not reason and not selected.any():
+        reason = "no_eligible_evidence"
+    if reason:
+        receipt.update(status="unavailable", reason=reason, targets=safe.tolist())
+        return safe, receipt
+    cost = float(cost_bps) / 10000
+    try:
+        target, proof = _solve_distribution(
+            values[:, selected],
+            probability,
+            current[selected],
+            np.where(may_add[selected], CAP, np.minimum(current[selected], CAP)),
+            float(cash_weight),
+            cost,
+            cost * current[mandatory].sum(),
+        )
+    except (ValueError, RuntimeError, FloatingPointError, np.linalg.LinAlgError):
+        receipt.update(
+            status="unavailable", reason="optimizer_failed", targets=safe.tolist()
+        )
+        return safe, receipt
+    receipt["certificate"] = proof
+    if not proof["certified"]:
+        receipt.update(
+            status="unavailable", reason="optimizer_uncertified", targets=safe.tolist()
+        )
+        return safe, receipt
+    result = safe.copy()
+    result[selected] = target
+    receipt.update(
+        status="optimized",
+        targets=result.tolist(),
+        selected_indices=np.flatnonzero(selected).tolist(),
+        estimated_positive_return_probability=(
+            probability @ (values[:, selected] > 0)
+        ).tolist(),
+        purchases=float(np.maximum(result - current, 0).sum()),
+        sales=float(np.maximum(current - result, 0).sum()),
+    )
+    return result, receipt

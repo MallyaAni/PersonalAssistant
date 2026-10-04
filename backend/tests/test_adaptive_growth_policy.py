@@ -26,6 +26,136 @@ def inputs():
     }
 
 
+# Supply simultaneous holding scenarios without implying authenticated model quality.
+def distribution_inputs(scenarios, *, current=None, cash=1.0, cost=0):
+    values = np.asarray(scenarios, dtype=float)
+    size = values.shape[1]
+    return {
+        "scenarios": values,
+        "probabilities": np.full(len(values), 1 / len(values)),
+        "grades": np.full(size, 2),
+        "eligible": np.ones(size, dtype=bool),
+        "current_weights": np.zeros(size) if current is None else np.array(current),
+        "cash_weight": cash,
+        "cost_bps": cost,
+        "benchmark_indices": np.array([], dtype=int),
+        "horizon": "next_open_to_following_open_arithmetic_return",
+    }
+
+
+# Equal win rates with different adverse outcomes must receive different funded sizes.
+def test_joint_distribution_sizes_losses_instead_of_multiplying_probability():
+    data = distribution_inputs([[0.03, 0.03], [-0.01, -0.05]])
+    target, receipt = model.allocate_distribution(**data)
+    assert receipt["status"] == "optimized"
+    assert receipt["certificate"]["certified"]
+    assert target[0] == model.CAP
+    assert target[1] == 0
+    assert receipt["estimated_positive_return_probability"] == [0.5, 0.5]
+    assert not receipt["probability_guarantee"]
+
+
+# Simultaneous diversified outcomes support more exposure than identical loss paths.
+def test_joint_distribution_retains_cross_stock_dependence():
+    correlated = distribution_inputs([[0.1, 0.1], [-0.098, -0.098]])
+    diversified = distribution_inputs([[0.1, -0.098], [-0.098, 0.1]])
+    first, _ = model.allocate_distribution(**correlated)
+    second, receipt = model.allocate_distribution(**diversified)
+    assert receipt["status"] == "optimized"
+    assert second.sum() > first.sum()
+    np.testing.assert_allclose(second, [model.CAP, model.CAP], atol=1e-10)
+
+
+# Remaining expected utility can keep or exit a B holding without permission to add.
+@pytest.mark.parametrize(
+    ("outcomes", "expected"), [([[0.03], [0.01]], 0.2), ([[-0.01], [-0.03]], 0)]
+)
+def test_joint_distribution_retention_and_profit_exit(outcomes, expected):
+    data = distribution_inputs(outcomes, current=[0.2], cash=0.8)
+    data["grades"][0] = 1
+    target, receipt = model.allocate_distribution(**data)
+    assert receipt["status"] == "optimized"
+    assert target[0] == expected
+    assert not receipt["buy_eligible"][0]
+
+
+# A genuine total-loss scenario is retained instead of silently clipped or discarded.
+def test_joint_distribution_retains_bankruptcy_loss():
+    data = distribution_inputs([[0.03], [-1.0]])
+    target, receipt = model.allocate_distribution(**data)
+    assert receipt["status"] == "optimized"
+    assert target[0] == 0
+    assert receipt["scenario_count"] == 2
+
+
+# The real optimizer agrees with the exact single-stock log-growth stationary point.
+def test_joint_distribution_matches_analytical_growth_size():
+    up, down, win = 0.1, -0.1, 0.505
+    data = distribution_inputs([[up], [down]])
+    data["probabilities"] = np.array([win, 1 - win])
+    target, receipt = model.allocate_distribution(**data)
+    expected = -(win * up + (1 - win) * down) / (up * down)
+    assert receipt["status"] == "optimized"
+    assert target[0] == pytest.approx(expected, abs=1e-7)
+    assert receipt["certificate"]["expected_log_growth"] == pytest.approx(
+        win * np.log1p(expected * up) + (1 - win) * np.log1p(expected * down)
+    )
+
+
+# Permuting aligned stock identities cannot change their assigned capital.
+def test_joint_distribution_stock_permutation_invariance():
+    data = distribution_inputs([[0.03, 0.04], [-0.01, -0.05]])
+    target, _ = model.allocate_distribution(**data)
+    data["scenarios"] = data["scenarios"][:, ::-1]
+    other, receipt = model.allocate_distribution(**data)
+    assert receipt["status"] == "optimized"
+    np.testing.assert_allclose(other[::-1], target, atol=1e-8)
+
+
+# Covered sales never create simultaneous buying cash, even under strong forecasts.
+def test_joint_distribution_no_sale_funded_purchase():
+    data = distribution_inputs([[-0.1, 0.1], [-0.1, 0.1]], current=[1.0, 0], cash=0)
+    target, receipt = model.allocate_distribution(**data)
+    assert receipt["status"] == "optimized"
+    np.testing.assert_array_equal(target, [0, 0])
+
+
+# Fees preserve ownership when the forecast advantage cannot cover a sale and rebuy.
+def test_joint_distribution_fee_kink_preserves_held_position():
+    data = distribution_inputs([[0.0001], [-0.0001]], current=[0.2], cash=0.8, cost=25)
+    target, receipt = model.allocate_distribution(**data)
+    assert receipt["status"] == "optimized"
+    assert target[0] == 0.2
+    assert receipt["purchases"] == receipt["sales"] == 0
+
+
+# Missing held cross-risk rejects additions without deleting mandatory exits.
+def test_joint_distribution_missing_held_evidence():
+    data = distribution_inputs(
+        [[np.nan, 0.1, -0.1], [0.1, 0.1, -0.1]], current=[0.2, 0, 0.1], cash=0.7
+    )
+    data["grades"][2] = 0
+    target, receipt = model.allocate_distribution(**data)
+    np.testing.assert_array_equal(target, [0.2, 0, 0])
+    assert receipt["reason"] == "missing_held_cross_risk"
+
+
+# Invalid weights, return domains or an execution-price target cannot become sizes.
+@pytest.mark.parametrize("mutation", ["probability", "loss", "horizon"])
+def test_joint_distribution_rejects_invalid_forecast_contract(mutation):
+    data = distribution_inputs([[0.03], [-0.01]])
+    if mutation == "probability":
+        data["probabilities"] = np.array([0.8, 0.8])
+    elif mutation == "loss":
+        data["scenarios"][1, 0] = -1.01
+    else:
+        data["horizon"] = "one_decision_log_price_advantage"
+    with pytest.raises(
+        ValueError, match="probabilities|arithmetic returns|holding return"
+    ):
+        model.allocate_distribution(**data)
+
+
 # Use the real one-session risk covariance with directly declared arithmetic means.
 def radius_inputs():
     data = inputs()
