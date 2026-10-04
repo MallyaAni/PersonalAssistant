@@ -1,5 +1,36 @@
 # Next session
 
+## 2026-10-03 — direct arithmetic learner implemented; image/economic checks next
+
+Frozen protocole2c44a56 BEFORE any direct market fit/output. New source files
+`direct_daily_arithmetic.py`/test and CLI `market_direct_daily_arithmetic.py`/test
+are root-owned. One fixed64-iteration HGB predicts next-open→following-open
+ARITHMETIC returns directly from the original13 features. Every dated training
+row/hash, original forecast-valid A/A+ scoring mask, date-balanced weight,
+minimum504/maximum756 history, monthly/freeze clock and past mean matches the
+verified bridge. No ten-session/log conversion or new family/parameter search.
+Numeric baselines/columns/trees are persisted without executable pickles.
+
+VERIFIED native acceptance:16 actual sklearn model cases,6 CLI/artifact/funded
+workflow cases,17 unchanged independent causal/support cases;39total/no skips,
+Ruff/diff clean. Private17file50e47e9d7de1592441378b0df829dd9669f4fdf18bb5945ee6549520b3498e4e.
+Independent review reproduced a warmup None model serializer AttributeError;
+root pinned it before real fitting and skips only declared unavailable model
+snapshots, retaining every monthly receipt/NaNforecast. An ordered receipt/status/
+numeric-identity check rejects forged fitted or omitted months. Regression
+unchanged; all6 CLI cases pass. Actual funded fixture proves a still-A holding
+is sold after a negative forecast, not a grade/profit-threshold trigger.
+
+Next: pin committed source/archive and pinned-image39 acceptance, then ONE new
+direct head producer with THREE new0/10/25bp funded books. Reuse/authenticate all15
+d339aebe control books and cf4132bd proof, never rerun the bridge/models/controls.
+Source and all original data/proofs read-only, fresh private output only writable.
+All actual direct fits/economic results remain UNVERIFIED; no promotion or UI
+change. Require independent numeric-tree scoring, clocks/weights/features,
+covered holdings/funding/basis/fees/NAV and all fixed score cells before publication.
+Models/production source/data untouched; no research-only deploy or model gate.
+Diagram impact NONE. All agents released source; never recopy old files/drafts.
+
 ## 2026-10-03 — daily arithmetic decision comparison independently verified
 
 VERIFIED evaluated source `d339aebea05d28a034ff89a78c36791ecf400fef`:
