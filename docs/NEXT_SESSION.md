@@ -1,5 +1,73 @@
 # Next session
 
+## 2026-10-04 — actual-policy runner and exact feature reuse verified
+
+VERIFIED checkpoints a81af83a (real chronological runner/report/CDF reader)
+and8493a07a (exact nightly feature cache), pushed on
+codex/learned-entry-risk-20261002. Starting HEAD092b4c9d froze
+docs/research/actual-policy-timing-plan-2026-10-04.md BEFORE economic accounts.
+Live source/policy and production data/models remain unchanged. No full-policy
+economic accounts, benchmark controls, fits or adoption have run yet.
+
+Runner uses actual market_daily.paper_trade, entry_timing.update, due/send_due,
+pending persistence and next-night reconciliation. Future raw fill proxies enter
+only after decisions; missing marks, unavailable forecasts and retained holdings
+stay explicit. Independent acceptance first found the missing durable timing
+latch; adding the real update boundary fixed the unchanged case. Seven private
+runner cases passed, including future-fill invariance, held-mark gaps, removed
+membership without forced liquidation, dividend receivables and fractional
+split holdings. New report and reader have15 and24 native cases respectively.
+Full runner image286 PASS/no skips; no counts added across overlapping suites.
+Evidence:/home/animallya96/scratch/actual-policy-runner-20261004/proof.
+Acceptance77fed4cecc47955a8db2945d633adfef7f9d527ba53e34a69e3a114d66fd5e3a;
+nightly preflight19890db8865214bd1bbfcae6d41503fd2858a5a82fb5664524af5c908711629c.
+
+Repeated full-prefix features would make180 policy accounts unnecessarily slow.
+FeatureCache now reuses ONLY exact account-independent event/block/entry outputs
+from original functions. Keys bind all original report-prefix arrays, columns,
+grades, source identity and metadata. No scale normalization, abbreviated
+lookback or eager entry evaluation. Floating-point ties can change band-width
+rank under uniform1.5 share scaling; an unscaled full-grid shortcut was rejected.
+Private feature injection requires explicit broker and aware historical clock;
+default production path stays unchanged. Cache outputs/receipts are detached.
+
+VERIFIED final pinned source image304 PASS/no skips(8.40s), native58 focused
+PASS. Original frozen-input four-date cache preflight verified ALL feature
+verdicts unchanged: warm cache1.6–18.7ms versus original0.16–7.93s in that
+bounded run. These timings are diagnostics, not a whole-study completion ETA.
+Actual multi-night account parity includes cash, NAV, fills, intents, observed
+timing and state. First comparison failed only truthful runtime history.written
+timestamps; test now verifies timestamps are within execution time and compares
+all remaining state unchanged. No historical publication timestamp was forged.
+Ruff new source/tests and diff check PASS. All2366 indexed files byte-match the
+exercised immutable image mount; no source mutation during tests/preflight.
+Image5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+Evidence:/home/animallya96/scratch/actual-policy-cache-20261004/proof.
+Source manifestd23f31c56b170450fb5162545450b144fc35cbd6f14810be1d375f8ae19c719c;
+acceptancea579ba7befef4b91f9dbf4e0d6d94b65b92fd6189a300fcb8af6cde725bb2151;
+cache preflight999d752db3e3c156ef84e1d2c4f8fbb5bec125fe4a3962dfd0881b0ba7a7a873.
+Both --rm containers exited0; do not restart or repeat unchanged checks.
+Source/inputs read-only, CPU2/RAM8GB/network none, no production secrets.
+Diagram impact NONE: private dependencies preserve existing production paths.
+
+NEXT: implement authenticated full-study CLI and raw whole-share SPY/QQQ
+buy-and-hold controls, plus independent saved-artifact verification. Use the
+frozen180 policy account contract (3 arms ×3 costs ×20 starts),120 matched
+benchmark accounts, original full Panel/cubes/actions and saved CDFs. Restore
+saved calibration only; do not fit, tune, rerun old studies or select outcomes.
+Share verified feature cache across arms/costs/starts, retain actual nightly
+lazy evaluation and every unavailable opportunity. Whole-source manifests for
+the study use the existing git_commit/files authentication schema; this private
+cache receipt's flat files manifest is not a substitute for that authentication.
+Economic launch remains UNVERIFIED until driver/benchmarks/acceptance are ready.
+Then evaluate fixed funded gain versus rule/SPY/QQQ, costs, drawdown, turnover
+and missingness; holding/profit exits and sizing remain separate next tests.
+Latest original-input raw examples confirm dated units for NVDA/WDC/AVGO;
+AVGO source-close1700.67 versus original auction1703 is retained as a provider
+mark difference, never a fitted price conversion. All-name action/payment and
+historical publication completeness remain UNVERIFIED. All prior agents released
+files; no active writers. Persistent live-enhancement goal remains ACTIVE.
+
 ## 2026-10-04 — actual-policy replay foundation verified
 
 Checkpoint dc8365a8 adds explicit private broker/decision-clock dependencies to
