@@ -9,6 +9,7 @@ import pytest
 from backend.market import calendar as exchange
 from backend.market import daily_arithmetic_bridge as reference
 from backend.market import direct_feature_arithmetic as feature
+from backend.market import learned_entry_models as base
 from backend.tests.test_direct_daily_arithmetic import fixture as original_fixture
 
 
@@ -143,3 +144,167 @@ def test_support_rejects_invalid_inputs(change):
         eligible = eligible[:-1]
     with pytest.raises(ValueError, match="ordinal grades"):
         feature.walk_forward(prepared, parent, grades, eligible)
+
+
+# A held-B forecast head learns signed returns without a previous model's scores.
+def test_actual_held_b_head_learns_b_rows_and_preserves_default_exclusion():
+    prepared, parent, grades, eligible = fixture()
+    grades[:, 0] = 1
+    default = feature.walk_forward(prepared, parent, grades, eligible)
+    held = feature.walk_forward(prepared, parent, grades, eligible, hold_b=True)
+    assert not parent.score_mask.any()
+    assert not default.score_mask[:, 0].any()
+    assert np.isnan(default.forecasts[:, 0]).all()
+    known = np.isfinite(held.forecasts[:, 0]) & np.isfinite(parent.labels[:, 0])
+    assert known.any()
+    assert np.corrcoef(held.forecasts[known, 0], parent.labels[known, 0])[0, 1] > 0.8
+    assert held.score_mask[:, 0].all()
+    assert np.isfinite(held.forecasts[-2:, 0]).all()
+    assert np.isnan(parent.labels[-2:, 0]).all()
+    assert held.manifest["identity"]["policy"] == feature.HELD_POLICY
+    assert held.manifest["identity"]["hold_b"] is True
+    assert held.manifest["identity"]["support_min_grade"] == 1
+    assert feature.HELD_PROTOCOL in held.manifest["identity"]["source_sha256"]
+    assert "hold_b" not in default.manifest["identity"]
+    for receipt in held.manifest["months"]:
+        if receipt["status"] == "fitted":
+            assert receipt["training_rows"] == receipt["training_days"] * 2
+            assert receipt["rows_per_date"] == [2] * receipt["training_days"]
+            assert receipt["model"]["iterations"] == 64
+            assert np.datetime64(receipt["maximum_label_end"]) < np.datetime64(
+                receipt["label_end_before"]
+            )
+
+
+# The explicit off option and unchanged all-A support retain exact default results.
+def test_held_b_option_preserves_default_values_and_monthly_receipts():
+    prepared, parent, grades, eligible = fixture(count=530)
+    implicit = feature.walk_forward(prepared, parent, grades, eligible)
+    explicit = feature.walk_forward(prepared, parent, grades, eligible, hold_b=False)
+    held = feature.walk_forward(prepared, parent, grades, eligible, hold_b=True)
+    np.testing.assert_array_equal(implicit.forecasts, explicit.forecasts)
+    assert implicit.manifest == explicit.manifest
+    np.testing.assert_array_equal(implicit.forecasts, held.forecasts)
+    np.testing.assert_array_equal(implicit.score_mask, held.score_mask)
+    assert implicit.manifest["months"] == held.manifest["months"]
+    assert implicit.manifest["identity"]["policy"] == feature.POLICY
+
+
+# B support never turns C, unknown, nonmembers or benchmarks into opportunities.
+def test_held_b_support_keeps_every_causal_eligibility_boundary():
+    prepared, parent, grades, eligible = fixture(count=530)
+    grades[:, :2] = 1
+    grades[-5, 0] = 0
+    grades[-4, 0] = -1
+    eligible[-3, 0] = False
+    prepared["valid"][-2, 0] = False
+    _, _, _, mask, _ = feature.support(prepared, parent, grades, eligible, hold_b=True)
+    assert not mask[-5:-1, 0].any()
+    assert mask[-1, 0]
+    assert not mask[:, 2:].any()
+
+
+# Held-B error evidence is stock-specific genuine OOS under its own named lineage.
+def test_actual_held_b_band_has_explicit_matching_mode_identity():
+    prepared, parent, grades, eligible = fixture(count=630)
+    grades[:, 0] = 1
+    result = feature.walk_forward(prepared, parent, grades, eligible, hold_b=True)
+    bands = feature.calibrate(result, parent)
+    assert bands.manifest["identity"]["policy"] == feature.HELD_BAND_POLICY
+    assert bands.manifest["identity"]["hold_b"] is True
+    assert bands.manifest["identity"]["support_min_grade"] == 1
+    assert np.isfinite(bands.radii[-2:, 0]).all()
+    assert np.isnan(bands.radii[:, 2:]).all()
+    for receipt in bands.manifest["months"]:
+        for row in receipt["stocks"]:
+            if row["status"] == "available":
+                assert row["clusters"] >= 2
+                assert row["maximum_endpoint"] < receipt["label_end_before"]
+
+
+# A refreshed JSON hash cannot disguise a holding model as another support mode.
+@pytest.mark.parametrize(
+    "change", ["policy", "option", "grade", "protocol", "boolean_grade"]
+)
+def test_held_b_calibration_rejects_forged_mode(change):
+    prepared, parent, grades, eligible = fixture(count=530)
+    grades[:, 0] = 1
+    result = feature.walk_forward(prepared, parent, grades, eligible, hold_b=True)
+    identity = result.manifest["identity"]
+    if change == "policy":
+        identity["policy"] = feature.POLICY
+    elif change == "option":
+        identity["hold_b"] = False
+    elif change == "grade":
+        identity["support_min_grade"] = 2
+    elif change == "boolean_grade":
+        identity["support_min_grade"] = True
+    else:
+        identity["source_sha256"][feature.HELD_PROTOCOL] = "0" * 64
+    result.manifest["identity_sha256"] = base._json_hash(identity)
+    with pytest.raises(ValueError, match="mode identity mismatch"):
+        feature.calibrate(result, parent)
+
+
+# Future B features cannot alter a previous frozen model or its forecasts.
+def test_held_b_future_prefix_and_holdout_outcomes_are_causal():
+    prepared, parent, grades, eligible = fixture(count=700, start="2024-01-02")
+    grades[:, 0] = 1
+    original = feature.walk_forward(prepared, parent, grades, eligible, hold_b=True)
+    future = prepared["dates"] >= np.datetime64("2026-08-17")
+    prepared["X"][future, 0] *= -5
+    labels = parent.labels.copy()
+    unavailable = parent.label_end_dates >= np.datetime64("2026-08-17")
+    parent.labels[unavailable & np.isfinite(parent.labels[:, 0]), 0] += 0.25
+    parent.manifest["label_sha256"] = reference._hash(parent.labels)
+    actual = feature.walk_forward(prepared, parent, grades, eligible, hold_b=True)
+    np.testing.assert_array_equal(
+        original.forecasts[~future], actual.forecasts[~future]
+    )
+    for before, after in zip(
+        original.manifest["months"], actual.manifest["months"], strict=True
+    ):
+        assert (
+            before["model"] == after["model"]
+            if "model" in before
+            else "model" not in after
+        )
+        if before["month"] >= "2026-08":
+            assert before["maximum_label_end"] < "2026-08-17"
+    assert np.isnan(labels[-2:]).all()
+
+
+# Missing grade-option intent cannot be coerced from a string or integer flag.
+@pytest.mark.parametrize("option", [1, "true", None])
+def test_held_b_option_requires_an_actual_boolean(option):
+    prepared, parent, grades, eligible = fixture(count=20)
+    with pytest.raises(ValueError, match="boolean held-B support"):
+        feature.walk_forward(prepared, parent, grades, eligible, hold_b=option)
+
+
+# An unpublished future decision cannot enter B support despite known feature values.
+def test_held_b_requires_completed_decision_and_known_label_publication():
+    prepared, parent, grades, eligible = fixture(count=20, start="2026-01-02")
+    dates = prepared["dates"]
+    grades[:, 0] = 1
+    observed = 10
+    as_of = datetime.combine(
+        dates[observed].astype(object),
+        exchange.session_close(dates[observed].astype(object)),
+        exchange.NEW_YORK,
+    )
+    parent.manifest["data_as_of"] = as_of.isoformat()
+    future_end = parent.label_end_dates > dates[observed]
+    parent.labels[future_end] = np.nan
+    parent.manifest["label_sha256"] = reference._hash(parent.labels)
+    _, _, _, mask, completed = feature.support(
+        prepared, parent, grades, eligible, hold_b=True
+    )
+    assert mask[: observed + 1, 0].all()
+    assert not mask[observed + 1 :].any()
+    assert not completed[observed + 1 :].any()
+    future_label = np.flatnonzero(future_end)[0]
+    parent.labels[future_label, 0] = 0.001
+    parent.manifest["label_sha256"] = reference._hash(parent.labels)
+    with pytest.raises(ValueError, match="endpoint is not yet known"):
+        feature.support(prepared, parent, grades, eligible, hold_b=True)

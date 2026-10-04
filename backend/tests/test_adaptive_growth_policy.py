@@ -34,6 +34,94 @@ def radius_inputs():
     return data
 
 
+# Distinguish existing B ownership from A-only permission to make new purchases.
+@pytest.mark.parametrize(("mean", "target_b"), [(0.02, 0.2), (-0.02, 0)])
+def test_held_b_utility_can_retain_or_exit_without_addition(mean, target_b):
+    data = radius_inputs()
+    data.update(current_weights=np.array([0.2, 0, 0, 0]), cash_weight=0.8)
+    data["grades"][0] = 1
+    data["means"][0] = mean
+    target, receipt = model.allocate(**data, hold_b=True)
+    assert receipt["status"] == "optimized"
+    assert receipt["certificate"]["certified"]
+    assert target[0] == pytest.approx(target_b, abs=1e-10)
+    assert target[0] <= 0.2
+    assert not receipt["buy_eligible"][0]
+    assert receipt["holding_eligible"][0]
+    assert receipt["holding_upper_bounds"][0] == 0.2
+
+
+# Zero ownership prevents a positive B forecast from becoming a new buy or rebuy.
+def test_unheld_b_forecast_never_receives_capital():
+    data = radius_inputs()
+    data["grades"][0] = 1
+    data["means"][0] = 0.1
+    target, receipt = model.allocate(**data, hold_b=True)
+    assert target[0] == 0
+    assert not receipt["holding_eligible"][0]
+    assert receipt["certificate"]["certified"]
+
+
+# Unavailable held evidence preserves quantities and prevents cross-risk purchases.
+@pytest.mark.parametrize("missing", ["mean", "radius", "history"])
+def test_missing_held_b_evidence_uses_safe_account_fallback(missing):
+    data = radius_inputs()
+    data.update(current_weights=np.array([0.3, 0.1, 0, 0]), cash_weight=0.6)
+    data["grades"][0] = 1
+    radii = np.zeros(4)
+    if missing == "mean":
+        data["means"][0] = np.nan
+    elif missing == "radius":
+        radii[0] = np.nan
+    else:
+        data["history"][0, 0] = np.nan
+    target, receipt = model.allocate(**data, hold_b=True, trade_radius=radii)
+    np.testing.assert_array_equal(target, [0.25, 0.1, 0, 0])
+    assert receipt["reason"] == "missing_held_cross_risk"
+
+
+# Lost membership and C grades remain mandatory despite favorable B-mode forecasts.
+@pytest.mark.parametrize("boundary", ["grade", "membership"])
+def test_held_b_does_not_override_mandatory_exit(boundary):
+    data = radius_inputs()
+    data.update(current_weights=np.array([0.2, 0, 0, 0]), cash_weight=0.8)
+    data["grades"][0] = 1
+    data["means"][0] = 0.02
+    if boundary == "grade":
+        data["grades"][0] = 0
+    else:
+        data["eligible"][0] = False
+    target, receipt = model.allocate(**data, hold_b=True)
+    assert target[0] == 0
+    assert receipt["mandatory_exits"][0]
+
+
+# Explicitly disabled retention preserves every default output and receipt field.
+def test_held_b_default_is_exact_old_allocation():
+    data = radius_inputs()
+    data.update(current_weights=np.array([0.2, 0.1, 0, 0]), cash_weight=0.7)
+    data["grades"][0] = 1
+    target, receipt = model.allocate(**data)
+    same, evidence = model.allocate(**data, hold_b=False)
+    np.testing.assert_array_equal(target, same)
+    assert evidence == receipt
+    assert receipt["mandatory_exits"][0]
+    assert "hold_b" not in receipt
+
+
+# Reject an ambiguous option or incompatible ten-session horizon before solving.
+@pytest.mark.parametrize("option", [1, "yes", None])
+def test_held_b_option_requires_explicit_boolean(option):
+    with pytest.raises(ValueError, match="Boolean held-B"):
+        model.allocate(**radius_inputs(), hold_b=option)
+
+
+# Held-B one-day evidence cannot silently enter the old ten-session objective.
+def test_held_b_requires_daily_arithmetic_units():
+    with pytest.raises(ValueError, match="one-session arithmetic"):
+        model.allocate(**inputs(), hold_b=True)
+
+
 # Empirical resolution keeps uncertain signed advantages at the current holding.
 @pytest.mark.parametrize("mean", [0.0001, -0.0001])
 def test_error_radius_holds_uncertain_signed_advantage(mean):

@@ -23,6 +23,64 @@ def inputs(rows=5):
     return panel, grades, np.ones(prices.shape, bool), np.full(prices.shape, np.nan)
 
 
+# Actual funded books retain B, sell on negative utility and refuse a later B rebuy.
+@pytest.mark.parametrize("cost", [0, 10, 25])
+def test_actual_learned_held_b_book_tracks_ownership_and_exit(cost):
+    panel, grades, eligible, means = inputs(258)
+    day = np.arange(258)[:, None]
+    prices = np.exp(0.0002 * day + 0.03 * np.sin(day / 11)) * [10, 20, 30, 40]
+    panel.open = panel.close = panel.adj_close = prices
+    means[:] = 0.02
+    grades[254:, 0] = 1
+    means[255, 0] = -0.02
+    result = m.run_account(
+        panel,
+        grades,
+        eligible,
+        means,
+        method="calibrated",
+        cost_bps=cost,
+        first=252,
+        hold_b=True,
+    )
+    plans = result["allocation_trace"]
+    assert plans[2]["held_before"][0] > 0
+    assert plans[2]["submitted_delta"][0] <= 0
+    assert plans[2]["targets"][0] > 0
+    assert plans[3]["targets"][0] == pytest.approx(0, abs=1e-10)
+    assert result["shares"][4, 0] == pytest.approx(0, abs=1e-10)
+    assert plans[4]["targets"][0] == 0
+    for plan in plans[2:]:
+        assert plan["desired_shares"][0] <= plan["held_before"][0]
+        assert not plan["receipt"]["buy_eligible"][0]
+    assert (result["cash"] >= 0).all()
+    assert (result["shares"] >= 0).all()
+    assert result["hold_b"] is True
+    assert result["policy"] == "learned-held-exits-funded/1-research"
+
+
+# An explicit off option preserves the original carried account and plan receipts.
+def test_held_b_disabled_preserves_default_account():
+    values = inputs(255)
+    day = np.arange(255)[:, None]
+    prices = np.exp(0.0002 * day + 0.03 * np.sin(day / 11)) * [10, 20, 30, 40]
+    values[0].open = values[0].close = values[0].adj_close = prices
+    values[3][:] = 0.02
+    before = m.run_account(*values, method="calibrated", cost_bps=10, first=252)
+    after = m.run_account(
+        *values, method="calibrated", cost_bps=10, first=252, hold_b=False
+    )
+    for key in ("nav", "cash", "shares", "cost_basis", "fees"):
+        np.testing.assert_array_equal(before[key], after[key])
+    assert before["intent_trace"] == after["intent_trace"]
+    assert before["counts"] == after["counts"]
+    for old, same in zip(
+        before["allocation_trace"], after["allocation_trace"], strict=True
+    ):
+        assert old["receipt"] == same["receipt"]
+    assert "hold_b" not in after
+
+
 # Run the unmodified equal target rule at the separately declared daily clock.
 def run(values, *, cost=0, first=0, method="equal"):
     return m.run_account(*values, first=first, cost_bps=cost, method=method)

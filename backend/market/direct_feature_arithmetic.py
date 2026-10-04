@@ -18,6 +18,9 @@ from backend.market import learned_entry_models as base
 
 POLICY = "direct-feature-arithmetic/1-research"
 PROTOCOL = "docs/research/direct-feature-support-plan-2026-10-03.md"
+HELD_POLICY = "learned-held-exits/1-research"
+HELD_BAND_POLICY = "learned-held-exits-band/1-research"
+HELD_PROTOCOL = "docs/research/learned-held-exits-plan-2026-10-03.md"
 
 
 # Keep explicit causal opportunity support beside forecasts and numeric model evidence.
@@ -31,8 +34,10 @@ class FeatureForecasts:
     symbols: tuple
 
 
-# Validate original grids and derive support solely from supplied causal state.
-def support(prepared, bridge, grades, eligible):
+# Derive causal forecasting support, optionally including B holding evidence.
+def support(prepared, bridge, grades, eligible, *, hold_b=False):
+    if not isinstance(hold_b, (bool, np.bool_)):
+        raise ValueError("Explicit boolean held-B support option required")
     x, dates, names, _ = direct._validate(prepared, bridge)
     grades, eligible = np.asarray(grades), np.asarray(eligible)
     shape = (len(dates), len(names))
@@ -76,7 +81,7 @@ def support(prepared, bridge, grades, eligible):
     mask = (
         prepared["valid"]
         & eligible
-        & (grades >= 2)
+        & (grades >= (1 if hold_b else 2))
         & stock[None, :]
         & completed[:, None]
     )
@@ -120,12 +125,14 @@ def training(dates, names, features, labels, endpoints, mask, first):
     return actual, stock, weights, receipt
 
 
-# Fit the registered direct head without requiring any prior predictor's availability.
-def walk_forward(prepared, bridge, grades, eligible):
-    x, dates, names, mask, completed = support(prepared, bridge, grades, eligible)
+# Fit the registered daily head with explicit default or held-B forecast lineage.
+def walk_forward(prepared, bridge, grades, eligible, *, hold_b=False):
+    x, dates, names, mask, completed = support(
+        prepared, bridge, grades, eligible, hold_b=hold_b
+    )
     root = Path(__file__).resolve().parents[2]
     identity = {
-        "policy": POLICY,
+        "policy": HELD_POLICY if hold_b else POLICY,
         "target": "adjusted_open[t+2]/adjusted_open[t+1]-1",
         "config": dict(base.MODEL_CONFIG["boosting"]),
         "minimum_days": reference.MIN_DAYS,
@@ -157,10 +164,12 @@ def walk_forward(prepared, bridge, grades, eligible):
                 Path(base.__file__).resolve(),
                 Path(reference.__file__).resolve(),
                 Path(exchange.__file__).resolve(),
-                root / PROTOCOL,
+                root / (HELD_PROTOCOL if hold_b else PROTOCOL),
             )
         },
     }
+    if hold_b:
+        identity.update(hold_b=True, support_min_grade=1)
     manifest = {
         "identity": identity,
         "identity_sha256": base._json_hash(identity),
@@ -220,9 +229,7 @@ def _calibration_inputs(result, bridge):
     if not isinstance(result, FeatureForecasts):
         raise ValueError("Explicit FeatureForecasts required")
     identity = result.manifest["identity"]
-    if identity.get("policy") != POLICY or result.manifest[
-        "identity_sha256"
-    ] != base._json_hash(identity):
+    if result.manifest["identity_sha256"] != base._json_hash(identity):
         raise ValueError("New feature-policy identity required")
     _registered_identity(identity)
     if identity["bridge_manifest_sha256"] != base._json_hash(bridge.manifest):
@@ -230,8 +237,34 @@ def _calibration_inputs(result, bridge):
     return _calibration_grids(result, bridge, identity)
 
 
-# Refuse changes to the one fixed training protocol even under a refreshed hash.
+# Recover only a registered mode whose explicit option and protocol agree.
+def _holding_mode(identity):
+    source = identity.get("source_sha256", {})
+    if identity.get("policy") == HELD_POLICY:
+        protocol_sha = hashlib.sha256(
+            (Path(__file__).resolve().parents[2] / HELD_PROTOCOL).read_bytes()
+        ).hexdigest()
+        if (
+            identity.get("hold_b") is not True
+            or type(identity.get("support_min_grade")) is not int
+            or identity.get("support_min_grade") != 1
+            or source.get(HELD_PROTOCOL) != protocol_sha
+            or PROTOCOL in source
+        ):
+            raise ValueError("Held-B forecast mode identity mismatch")
+        return True
+    if identity.get("policy") != POLICY or (
+        "hold_b" in identity
+        or "support_min_grade" in identity
+        or HELD_PROTOCOL in source
+    ):
+        raise ValueError("Default feature forecast mode identity mismatch")
+    return False
+
+
+# Refuse changes to the fixed model or its receipt-authenticated support mode.
 def _registered_identity(identity):
+    _holding_mode(identity)
     expected = {
         "config": dict(base.MODEL_CONFIG["boosting"]),
         "minimum_days": reference.MIN_DAYS,
@@ -351,9 +384,12 @@ def _mature_receipt(result, bridge, row, first):
 # Authenticate new support lineage before reusing the unchanged residual formula.
 def calibrate(result, bridge):
     dates, names, identity = _calibration_inputs(result, bridge)
+    hold_b = _holding_mode(identity)
     root = Path(__file__).resolve().parents[2]
     band_identity = {
-        "policy": "direct-feature-error-band/1-research",
+        "policy": HELD_BAND_POLICY
+        if hold_b
+        else "direct-feature-error-band/1-research",
         "maximum_days": reference.MAX_DAYS,
         "freeze": str(reference.FREEZE),
         "minimum_observations": 2,
@@ -381,12 +417,14 @@ def calibrate(result, bridge):
                 Path(errors.__file__).resolve(),
                 Path(reference.__file__).resolve(),
                 Path(exchange.__file__).resolve(),
-                root / PROTOCOL,
+                root / (HELD_PROTOCOL if hold_b else PROTOCOL),
             )
         },
         "calculation_precision": "float64",
         "runtime": {"numpy": np.__version__},
     }
+    if hold_b:
+        band_identity.update(hold_b=True, support_min_grade=1)
     return errors.freeze_rows(
         dates,
         names,

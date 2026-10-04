@@ -1,5 +1,34 @@
 # Next session
 
+## 2026-10-03 — learned holding exits implemented; fixed image/account checks next
+
+Frozen protocol b127b106 BEFORE code/fits. Optional hold_b=False preserves
+default A/A+ targets/receipts; true trains/scores causal B/A/A+ daily features,
+but buys remain A/A+ only. Owned B upper=min(current,.25), can retain/trim/exit,
+never add/rebuy; C/membership exits and missing-cross-risk fallback remain.
+New forecast/band/account identities; no reused old manifest. Same fixed
+one-session label,13 features/model/purge/freeze/date weights/common anchor.
+CLI restores27 saved controls and runs exactly six NEW raw/band books only.
+
+VERIFIED native applicable acceptance190 cases/no skips:105 allocator/replay/CLI,
+25 feature,19 independent new private,21 previous feature private and20 previous
+band private. Twelve actual default solver comparisons against authenticated
+e093cd51 are exact. Independent strict tests reproduced infinitesimal B exits,
+tiny upper-bound trims and zero-cash additions. New optional boundary candidates
+are accepted only after full global feasibility/optimality certificate; original
+assertions unchanged, no epsilon clipping and old defaults untouched. Ruff clean.
+Pinned-image acceptance and actual outcomes still UNVERIFIED. Never select a
+favorable arm/cost/window or import old worker versions. Source now root-owned.
+
+User emphasizes AAOI ~7% fall toward95: daily studies do not prove intraday
+entry handling. Separate read-only audit of existing dated AAOI bars/intents is
+active; no refetch/fit/rescore/tuning. Completed15-minute path, volatility and
+structure must be tested causally before claiming that entry solved. Production
+policy/UI/accounts/data/models unchanged. No live promotion or model gate.
+evaluation_review owns NEW private saved-only verifier/tests; require release,
+corruption acceptance and exact source/data/report proof before publishing.
+DiagramNONE; full reliable live entry/exit replacement remains unfinished.
+
 ## 2026-10-03 — independent-support correction: actual results verified/published
 
 VERIFIED evaluatedde7a0059ceaa4ff0c4d6bccd360061f34db1c64d,2329-file manifest

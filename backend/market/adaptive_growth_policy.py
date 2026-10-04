@@ -99,8 +99,48 @@ def _holding_kinks(
     return (candidate, proof) if proof["certified"] else (solution, None)
 
 
-# Solve funded trades with actual fees and reprove optional error-informed holds.
-def _solve(mean, second, current, lower, upper, cash, cost, *, penalty=None):
+# Reprove exact bounded exits instead of carrying infinitesimal optimizer ownership.
+def _held_exit_kinks(solution, mean, current, upper, gradient, matrix, limits, bounds):
+    exits = (current > 0) & (upper <= current) & (mean < 0)
+    if not exits.any():
+        return solution, None
+    candidate = np.asarray(solution).copy()
+    size = len(current)
+    candidate[:size][exits] = 0
+    candidate[size : 2 * size] = np.abs(candidate[:size] - current)
+    candidate[2 * size :] = np.maximum(candidate[:size] - current, 0)
+    proof = _certificate(candidate, gradient, matrix, limits, bounds)
+    return (candidate, proof) if proof["certified"] else (solution, None)
+
+
+# Certify exact holding limits and zero-cash purchase boundaries without rounding rules.
+def _ownership_kinks(solution, current, upper, cash, gradient, matrix, limits, bounds):
+    candidate = np.asarray(solution).copy()
+    size = len(current)
+    wants_more = gradient(solution)[:size] < 0
+    bounded = (current > 0) & (upper <= current) & wants_more
+    candidate[:size][bounded] = upper[bounded]
+    if cash == 0:
+        candidate[:size] = np.minimum(candidate[:size], current)
+    candidate[size : 2 * size] = np.abs(candidate[:size] - current)
+    candidate[2 * size :] = np.maximum(candidate[:size] - current, 0)
+    proof = _certificate(candidate, gradient, matrix, limits, bounds)
+    return (candidate, proof) if proof["certified"] else (solution, None)
+
+
+# Solve funded trades with actual fees and reprove optional holding or exit kinks.
+def _solve(
+    mean,
+    second,
+    current,
+    lower,
+    upper,
+    cash,
+    cost,
+    *,
+    penalty=None,
+    bounded_exits=False,
+):
     size = len(current)
     eye = np.eye(size)
     zero = np.zeros((size, size))
@@ -156,6 +196,17 @@ def _solve(mean, second, current, lower, upper, cash, cost, *, penalty=None):
     if penalty is not None and proof["certified"]:
         solution, canonical = _holding_kinks(
             solution, mean, second, current, penalty, gradient, matrix, limits, bounds
+        )
+        if canonical is not None:
+            proof = canonical
+    if bounded_exits and proof["certified"]:
+        solution, canonical = _held_exit_kinks(
+            solution, mean, current, upper, gradient, matrix, limits, bounds
+        )
+        if canonical is not None:
+            proof = canonical
+        solution, canonical = _ownership_kinks(
+            solution, current, upper, cash, gradient, matrix, limits, bounds
         )
         if canonical is not None:
             proof = canonical
@@ -254,7 +305,33 @@ def _radius_penalty(radius, selected, cost):
     return arguments, {"selected_trade_penalties": penalties.tolist()}
 
 
-# Allocate with optional error-informed holding penalties and actual-fee funding.
+# Separate purchase permission from optional existing-position holding permission.
+def _holding_contract(grades, eligible, current, benchmarks, hold_b, units, horizon):
+    if not isinstance(hold_b, (bool, np.bool_)) or (
+        hold_b and (units, horizon) != ("arithmetic", 1)
+    ):
+        raise ValueError("Boolean held-B option requires one-session arithmetic means")
+    mandatory = ~eligible | (grades < (1 if hold_b else 2))
+    mandatory[benchmarks] = True
+    may_add = ~mandatory & (grades >= 2)
+    may_hold = may_add | (bool(hold_b) & ~mandatory & (grades == 1) & (current > 0))
+    evidence = (
+        {
+            "policy": "adaptive-funded-growth/3-held-exits-research",
+            "hold_b": True,
+            "holding_eligible": may_hold.tolist(),
+            "buy_eligible": may_add.tolist(),
+            "holding_upper_bounds": np.where(
+                may_add, CAP, np.where(may_hold, np.minimum(current, CAP), 0)
+            ).tolist(),
+        }
+        if hold_b
+        else {}
+    )
+    return mandatory, may_add, may_hold, evidence
+
+
+# Allocate funded growth with optional error penalties and held-B ownership bounds.
 def allocate(
     history,
     grades,
@@ -268,6 +345,7 @@ def allocate(
     mean_units="log",
     horizon_sessions=HORIZON,
     trade_radius=None,
+    hold_b=False,
 ):
     """Return target weights and evidence; desired sales never become buying cash."""
     if (
@@ -287,9 +365,9 @@ def allocate(
         cost_bps,
         benchmark_indices,
     )
-    mandatory = ~eligible | (grades < 2)
-    mandatory[benchmarks] = True
-    may_add = ~mandatory
+    mandatory, may_add, may_hold, holding_receipt = _holding_contract(
+        grades, eligible, current, benchmarks, hold_b, mean_units, horizon_sessions
+    )
     known_history = np.all(np.isfinite(history) & (history > 0), axis=0)
     known = known_history & np.isfinite(means)
     radius, known, radius_receipt = _radius_contract(trade_radius, current, known)
@@ -298,7 +376,7 @@ def allocate(
             "Nonzero or missing radius requires one-session arithmetic means"
         )
     safe = np.where(mandatory, 0, np.minimum(current, CAP))
-    protected = may_add & (current > 0) & ~known
+    protected = may_hold & (current > 0) & ~known
     receipt = {
         "policy": POLICY
         if mean_units == "log"
@@ -315,6 +393,7 @@ def allocate(
     }
     if mean_units == "arithmetic":
         receipt["mean_units"] = mean_units
+    receipt.update(holding_receipt)
     receipt.update(radius_receipt)
     if protected.any():
         receipt.update(
@@ -323,10 +402,11 @@ def allocate(
             targets=safe.tolist(),
         )
         return safe, receipt
-    selected = known & may_add
+    selected = known & may_hold
     extra_solve, selected_receipt = _radius_penalty(
         radius, selected, float(cost_bps) / 10000
     )
+    extra_solve.update({"bounded_exits": True} if hold_b else {})
     receipt.update(selected_receipt)
     if not selected.any():
         receipt.update(
@@ -361,7 +441,11 @@ def allocate(
             second,
             current_selected,
             np.zeros(selected.sum()),
-            np.full(selected.sum(), CAP),
+            (
+                np.where(may_add[selected], CAP, np.minimum(current[selected], CAP))
+                if hold_b
+                else np.full(selected.sum(), CAP)
+            ),
             float(cash_weight),
             float(cost_bps) / 10000,
         )

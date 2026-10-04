@@ -16,6 +16,85 @@ POLICY = "direct-feature-arithmetic/1-research"
 BAND_SOURCE = "0e563ccb9756814c7493aa777e61b28ed8a2eb0b"
 BAND_REPORT = "98d29a64cfb2703fb79c06b76a1d1cc74307ea1d86dcb1650981778cd935f3c0"
 BAND_PROOF = "ea673e3e4555ac853eafd6c713b61739d54872928b2f9cde4361cfa2f3cc7b09"
+FEATURE_SOURCE = "de7a0059ceaa4ff0c4d6bccd360061f34db1c64d"
+FEATURE_REPORT = "491d90d52414ef6af25d7bf0c60dc4a84c042993fbaa47052d0280a2e7425929"
+FEATURE_PROOF = "87ecc525f2fe0642cd5d558fd79ccc05741fd97bd178f7b5f7d6306bbae3f60d"
+
+
+# Restore six authenticated feature controls without recomputing their old scores.
+def load_feature(args, anchors, controls, records):
+    saved.require(
+        args.feature_study is not None and args.feature_proof is not None,
+        "Held-B evaluation requires the completed feature study and proof",
+    )
+    saved.require(
+        saved.digest(args.feature_proof) == FEATURE_PROOF, "Feature proof bytes"
+    )
+    anchors[args.feature_proof] = FEATURE_PROOF
+    proof = json.loads(args.feature_proof.read_bytes())
+    saved.require(
+        proof["ok"] is True
+        and proof["source_revision"] == FEATURE_SOURCE
+        and proof["report_sha256"] == FEATURE_REPORT
+        and proof["new_stock_accounts"] == 6
+        and proof["reused_control_accounts"] == 21,
+        "Exact completed feature proof required",
+    )
+    path = old.direct.checked_file(
+        args.feature_study, "evaluation.json", FEATURE_REPORT, anchors
+    )
+    report = json.loads(path.read_bytes())
+    saved.require(
+        report["status"] == "complete_independent_feature_component_not_adopted"
+        and report["adoption_eligible"] is False
+        and report["controls_scores_are_original"] is True
+        and report["identity"]["source"]["revision"] == FEATURE_SOURCE
+        and report["identity"]["common_anchor"] == "2020-03-02"
+        and [row["cost_bps"] for row in report["rows"]] == list(saved.COSTS),
+        "Complete saved feature cost/source grid",
+    )
+    for row in report["rows"]:
+        cost = row["cost_bps"]
+        saved.require(row["reused_controls"] == records[cost], "Exact21 old controls")
+        saved.require(
+            set(row["accounts"]) == {"feature_raw", "feature_band"},
+            "Both original feature arms required",
+        )
+        for name, record in row["accounts"].items():
+            key = f"{name}-{cost}"
+            saved.require(
+                record["arrays_file"] == key + ".npz"
+                and record["receipt_file"] == key + ".json"
+                and proof["book_artifacts"][key]
+                == {
+                    "arrays": record["arrays_sha256"],
+                    "receipt": record["receipt_sha256"],
+                },
+                "Proof-linked feature book names",
+            )
+            numeric_path = old.direct.checked_file(
+                args.feature_study,
+                record["arrays_file"],
+                record["arrays_sha256"],
+                anchors,
+            )
+            receipt_path = old.direct.checked_file(
+                args.feature_study,
+                record["receipt_file"],
+                record["receipt_sha256"],
+                anchors,
+            )
+            numeric, receipt = (
+                saved.arrays(numeric_path),
+                json.loads(receipt_path.read_bytes()),
+            )
+            saved.require(
+                not (numeric.keys() & receipt["account"].keys())
+                and receipt["score"] == record["score"],
+                "Separated old feature state and exact original score",
+            )
+            controls[cost][name] = {**receipt["account"], **numeric}
+            records[cost][name] = record
 
 
 # Authenticate the last three controls and retain their original recorded scores.
@@ -82,6 +161,8 @@ def evaluate(args, loaded, source):
     from backend.market import daily_bridge_replay, direct_feature_arithmetic
 
     panel, grades, eligible, original, assembled, anchors = loaded
+    hold_b = getattr(args, "hold_b", False)
+    saved.require(isinstance(hold_b, bool), "Explicit boolean held-B option")
     saved.require(not args.output.exists(), "Fresh private output; no restart")
     root = Path(__file__).resolve().parents[2]
     for protected in (
@@ -95,6 +176,13 @@ def evaluate(args, loaded, source):
         args.direct_proof.parent,
         args.band_study,
         args.band_proof.parent,
+        *(
+            (args.feature_study, args.feature_proof.parent)
+            if hold_b
+            and args.feature_study is not None
+            and args.feature_proof is not None
+            else ()
+        ),
     ):
         saved.require(
             not args.output.resolve().is_relative_to(protected.resolve()),
@@ -103,12 +191,17 @@ def evaluate(args, loaded, source):
     bridge, controls, records = old.direct.load_controls(args, panel, anchors)
     old.load_direct(args, panel, anchors, controls, records)
     load_band(args, anchors, controls, records)
+    if hold_b:
+        load_feature(args, anchors, controls, records)
     first = int(np.flatnonzero(panel.dates == np.datetime64("2020-03-02"))[0])
     for books in controls.values():
         saved.require(
             set(books)
-            == {"direct", "old_band", "calibrated", "mean", "equal", "SPY", "QQQ"},
-            "All21 saved controls",
+            == (
+                {"direct", "old_band", "calibrated", "mean", "equal", "SPY", "QQQ"}
+                | ({"feature_raw", "feature_band"} if hold_b else set())
+            ),
+            "Complete saved control grid",
         )
         for account in books.values():
             saved.require(
@@ -127,7 +220,7 @@ def evaluate(args, loaded, source):
         np.array_equal(prepared["dates"], panel.dates), "Exact original feature dates"
     )
     forecast = direct_feature_arithmetic.walk_forward(
-        prepared, bridge, grades, eligible
+        prepared, bridge, grades, eligible, **({"hold_b": True} if hold_b else {})
     )
     old.direct.validate_models(forecast.models, forecast.manifest)
     bands = direct_feature_arithmetic.calibrate(forecast, bridge)
@@ -147,7 +240,7 @@ def evaluate(args, loaded, source):
         symbols=np.asarray(panel.tickers),
     )
     identity = {
-        "policy": POLICY,
+        "policy": "learned-held-exits/1-research" if hold_b else POLICY,
         "source": source,
         "as_of": saved.AS_OF,
         "original_artifacts": saved.ORIGINAL,
@@ -162,16 +255,27 @@ def evaluate(args, loaded, source):
         "first_fill_session": str(panel.dates[first + 1]),
         "cost_bps": list(saved.COSTS),
         "new_stock_accounts": 6,
-        "reused_control_accounts": 21,
+        "reused_control_accounts": 27 if hold_b else 21,
         "execution": "frozen_previous_close_quantities_next_official_open_proxy",
         "selection": "current_vintage_reconstruction_not_historical_publication",
         "adoption_eligible": False,
     }
+    if hold_b:
+        identity.update(
+            hold_b=True,
+            feature_report_sha256=FEATURE_REPORT,
+            feature_proof_sha256=FEATURE_PROOF,
+            buys="A/A+ only",
+            held_B="retain_trim_exit_only_never_add_or_rebuy",
+        )
     saved.write_json(args.output / "identity.json", identity)
     rows = []
     for cost in saved.COSTS:
         accounts = {}
-        for name, radii in (("feature_raw", None), ("feature_band", bands.radii)):
+        for name, radii in (
+            ("held_raw" if hold_b else "feature_raw", None),
+            ("held_band" if hold_b else "feature_band", bands.radii),
+        ):
             account = daily_bridge_replay.run_account(
                 panel,
                 grades,
@@ -181,6 +285,7 @@ def evaluate(args, loaded, source):
                 cost_bps=cost,
                 first=first,
                 radii=radii,
+                **({"hold_b": True} if hold_b else {}),
             )
             accounts[name] = saved.save_account(
                 args.output,
@@ -197,7 +302,11 @@ def evaluate(args, loaded, source):
     saved.require(saved.source_identity(args) == source, "Exact mounted source")
     report = {
         "identity": identity,
-        "status": "complete_independent_feature_component_not_adopted",
+        "status": (
+            "complete_learned_held_exits_component_not_adopted"
+            if hold_b
+            else "complete_independent_feature_component_not_adopted"
+        ),
         "fit_file": "feature-fit.json",
         "fit_sha256": saved.digest(args.output / "feature-fit.json"),
         "forecast_file": "feature-forecasts.npz",
@@ -246,6 +355,9 @@ def main():
         parser.add_argument("--" + name, type=Path, required=True)
     for name in ("source-revision", "manifest-sha256"):
         parser.add_argument("--" + name, required=True)
+    parser.add_argument("--hold-b", action="store_true")
+    for name in ("feature-study", "feature-proof"):
+        parser.add_argument("--" + name, type=Path)
     args = parser.parse_args()
     saved.require(not args.output.exists(), "Fresh private output; no restart")
     evaluate(args, saved.load_inputs(args), saved.source_identity(args))

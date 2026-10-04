@@ -93,9 +93,20 @@ def _nav(cash, shares, prices, names):
     return nav, value
 
 
-# Freeze close-time quantities and preserve exact error-informed no-change holdings.
+# Freeze close-time quantities and preserve exact bounded no-change holdings.
 def _plan(
-    panel, grades, eligible, means, method, day, cash, shares, cost_bps, radii=None
+    panel,
+    grades,
+    eligible,
+    means,
+    method,
+    day,
+    cash,
+    shares,
+    cost_bps,
+    radii=None,
+    *,
+    hold_b=False,
 ):
     closes = np.asarray(panel.adj_close[day])
     names = tuple(panel.tickers)
@@ -110,6 +121,7 @@ def _plan(
         receipt = {"status": "equal_rule", "policy": policy_v5.POLICY_VERSION}
     else:
         extra = {} if radii is None else {"trade_radius": np.asarray(radii[day]).copy()}
+        extra.update({"hold_b": True} if hold_b else {})
         target, receipt = adaptive_growth_policy.allocate(
             np.asarray(panel.adj_close[: day + 1]).copy(),
             grades[day].copy(),
@@ -138,7 +150,7 @@ def _plan(
     desired = shares.copy()
     known = np.isfinite(closes) & (closes > 0)
     desired[known] = target[known] * nav / closes[known]
-    if radii is not None and np.any(np.asarray(radii[day]) != 0):
+    if hold_b or (radii is not None and np.any(np.asarray(radii[day]) != 0)):
         unchanged = known & (target == current)
         desired[unchanged] = shares[unchanged]
     if receipt.get("status") == "unavailable":
@@ -148,6 +160,11 @@ def _plan(
         desired[trim] = target[trim] * nav / closes[trim]
     if np.any((target > 0) & ~known):
         raise ValueError("Positive target has no completed-close share reference")
+    if hold_b:
+        bounded = grades[day] == 1
+        if np.any(target[bounded] > current[bounded]):
+            raise ValueError("Held-B target exceeds current ownership")
+        desired[bounded] = np.minimum(desired[bounded], shares[bounded])
     if np.any((desired > shares + 1e-12) & (~eligible[day] | (grades[day] < 2))):
         raise ValueError("Daily allocator attempted an ineligible addition")
     plan = {
@@ -300,8 +317,21 @@ def _finish(result, shares, basis, realized, cashflows, marks, names):
     return result
 
 
-# Carry daily funded books, retaining optional error radii without charging fees.
-def run_account(panel, grades, eligible, means, *, method, cost_bps, first, radii=None):
+# Carry daily funded books with explicit optional held-B and error-band decisions.
+def run_account(
+    panel,
+    grades,
+    eligible,
+    means,
+    *,
+    method,
+    cost_bps,
+    first,
+    radii=None,
+    hold_b=False,
+):
+    if not isinstance(hold_b, (bool, np.bool_)) or (hold_b and method != "calibrated"):
+        raise ValueError("Boolean held-B option requires the learned risk arm")
     dates, names, grades, eligible, means = _inputs(
         panel,
         grades,
@@ -375,7 +405,17 @@ def run_account(panel, grades, eligible, means, *, method, cost_bps, first, radi
                 names,
             )
         plan = _plan(
-            panel, grades, eligible, means, method, day, cash, shares, cost_bps, radii
+            panel,
+            grades,
+            eligible,
+            means,
+            method,
+            day,
+            cash,
+            shares,
+            cost_bps,
+            radii,
+            **({"hold_b": True} if hold_b else {}),
         )
         result["allocation_trace"].append(plan)
         result["counts"]["plans"] += 1
@@ -396,6 +436,8 @@ def run_account(panel, grades, eligible, means, *, method, cost_bps, first, radi
         },
     )
     result["returns"] = np.r_[np.nan, result["nav"][1:] / result["nav"][:-1] - 1]
+    if hold_b:
+        result.update(policy="learned-held-exits-funded/1-research", hold_b=True)
     if radii is not None:
         result["trade_radius"] = radii[first:].copy()
     return _finish(
