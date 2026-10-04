@@ -304,6 +304,53 @@ def test_named_exchange_journey_grants_no_fractional_stock_or_cash():
     assert broker.ledger()["security_exchanges"][0]["forfeited_fraction"] == 0.8
 
 
+# Dispatch retains the legal clock and leaves fractional wealth missing until paid.
+@pytest.mark.parametrize("quantity", [24, 25])
+def test_consolidation_journey_preserves_legal_clock_and_cash_claim(quantity):
+    _, raw, _ = fixture()
+    actions = dict(raw.actions)
+    effective = "2026-09-01T16:15:00-04:00"
+    actions["AAA"] = (
+        {"date": str(raw.dates[1]), "kind": "archive_adjustment", "value": 1 / 6},
+        {
+            "date": str(raw.dates[1]),
+            "kind": "share_consolidation",
+            "numerator": 1,
+            "denominator": 6,
+            "effective_at": effective,
+            "fractional_policy": "cash_in_lieu_unknown",
+        },
+    )
+    broker = ReplayBroker(
+        1000, 0, initial_holdings={"AAA": quantity}, initial_average_prices={"AAA": 8}
+    )
+    opening = instant(raw.dates[1], calendar.REGULAR_OPEN)
+    broker.observe(opening, {name: 100 for name in raw.tickers}, True)
+    corporate_actions(broker, replace(raw, actions=actions), 1, opening)
+    before = broker.ledger()
+    corporate_actions(broker, replace(raw, actions=actions), 1, opening)
+    assert broker.ledger() == before
+    assert before["holdings"] == {"AAA": 4}
+    assert before["cash"] == 1000
+    assert (
+        before["share_consolidations"][0]["effective_at"] == "2026-09-01T20:15:00+00:00"
+    )
+    assert (
+        before["share_consolidations"][0]["applied_at"] == "2026-09-02T13:30:00+00:00"
+    )
+    result = valuation(broker, raw, 1)
+    if quantity == 24:
+        assert result["nav"] == 1400
+    else:
+        assert result["nav"] is None
+        assert result["status"] == "unknown_consolidation_cash_in_lieu"
+        assert result["unpriced_entitlements"][0]["fractional_qty"] == pytest.approx(
+            1 / 6
+        )
+        broker.settle_consolidation_cash("AAA", effective, 3, opening)
+        assert valuation(broker, raw, 1)["nav"] == 1403
+
+
 # An unsupported entitlement rejects the whole due batch before any share mutation.
 def test_unresolved_entitlement_cannot_silently_disappear_from_execution():
     _, raw, _ = fixture()

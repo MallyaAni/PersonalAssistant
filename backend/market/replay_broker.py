@@ -98,6 +98,7 @@ class ReplayBroker:
         self._dividends, self._marks, self._mark_times = [], {}, {}
         self._security_distributions = []
         self._security_exchanges = []
+        self._share_consolidations = []
         self._now = self._observed_at = None
         self._market_open = self._batch_open = False
         self._last_equity = self._cash
@@ -128,6 +129,11 @@ class ReplayBroker:
                 **(
                     {"security_exchanges": self._security_exchanges}
                     if self._security_exchanges
+                    else {}
+                ),
+                **(
+                    {"share_consolidations": self._share_consolidations}
+                    if self._share_consolidations
                     else {}
                 ),
                 "observed_at": self._observed_at.isoformat()
@@ -181,6 +187,13 @@ class ReplayBroker:
         ):
             raise AlpacaTradingError(
                 "Unknown distribution cash-in-lieu prevents full NAV"
+            )
+        if any(
+            row["fractional_qty"] > 0 and row["cash_in_lieu"] is None
+            for row in self._share_consolidations
+        ):
+            raise AlpacaTradingError(
+                "Unknown consolidation cash-in-lieu prevents full NAV"
             )
         equity = self._cash + sum(
             qty * self._mark(symbol) for symbol, qty in self._held.items()
@@ -532,6 +545,76 @@ class ReplayBroker:
             self._average[symbol] = basis
         self._actions[key] = ratio
 
+    # Consolidate whole shares and keep fractional proceeds as an unknown cash claim.
+    def apply_share_consolidation(
+        self, symbol, numerator, denominator, effective_at, *, fractional_policy
+    ):
+        if (
+            any(
+                type(value) is not int or value <= 0
+                for value in (numerator, denominator)
+            )
+            or numerator >= denominator
+            or fractional_policy != "cash_in_lieu_unknown"
+        ):
+            raise ValueError(
+                "Explicit reverse ratio and fractional cash policy required"
+            )
+        ratio = Fraction(numerator, denominator)
+        key, value, effective = self._action(
+            symbol, "share_consolidation", float(ratio), effective_at
+        )
+        if key in self._actions:
+            prior = next(
+                row for row in self._share_consolidations if row["action_key"] == key
+            )
+            if (prior["numerator"], prior["denominator"]) != (
+                ratio.numerator,
+                ratio.denominator,
+            ):
+                raise ValueError("Conflicting share consolidation evidence")
+            return
+        if any(
+            row["symbol"] == symbol and row["status"] == "accepted"
+            for row in self._orders.values()
+        ):
+            raise ValueError("Outstanding orders need explicit consolidation treatment")
+        previous = self._held.get(symbol, 0)
+        if previous != int(previous):
+            raise ValueError("Whole pre-consolidation holdings required")
+        entitlement = Fraction(int(previous)) * ratio
+        quantity = int(entitlement)
+        residual = float(entitlement - quantity)
+        basis = self._average.get(symbol, 0) / value
+        if any(
+            not math.isfinite(amount) for amount in (quantity, basis, residual * basis)
+        ):
+            raise ValueError("Finite consolidated entitlements and basis required")
+        record = {
+            "action_key": key,
+            "symbol": symbol,
+            "numerator": ratio.numerator,
+            "denominator": ratio.denominator,
+            "quantity_before": previous,
+            "whole_qty": quantity,
+            "fractional_qty": residual,
+            "fractional_basis": residual * basis,
+            "fractional_policy": fractional_policy,
+            "cash_in_lieu": None,
+            "effective_at": effective.isoformat(),
+            "applied_at": self._now.isoformat(),
+            "entitlement_scope": (
+                "private_holder_aggregate_not_broker_street_name_allocation"
+            ),
+        }
+        if quantity:
+            self._held[symbol], self._average[symbol] = quantity, basis
+        else:
+            self._held.pop(symbol, None)
+            self._average.pop(symbol, None)
+        self._share_consolidations.append(record)
+        self._actions[key] = value
+
     # Exchange a named security into a new issuer without inventing fractional cash.
     def apply_security_exchange(
         self,
@@ -724,24 +807,48 @@ class ReplayBroker:
 
     # Post only observed cash-in-lieu evidence without inventing its amount or date.
     def settle_distribution_cash(self, parent, child, effective_at, amount, pay_at):
+        self._settle_fractional_cash(
+            self._security_distributions,
+            parent,
+            f"stock_distribution/{child}",
+            effective_at,
+            amount,
+            pay_at,
+            "distribution",
+        )
+
+    # Credit reverse-split fractions only from an explicitly observed payment receipt.
+    def settle_consolidation_cash(self, symbol, effective_at, amount, pay_at):
+        self._settle_fractional_cash(
+            self._share_consolidations,
+            symbol,
+            "share_consolidation",
+            effective_at,
+            amount,
+            pay_at,
+            "consolidation",
+        )
+
+    # Validate a dated fractional payment fully before changing either cash or receipt.
+    def _settle_fractional_cash(
+        self, records, symbol, kind, effective_at, amount, pay_at, label
+    ):
         self._observed()
         effective, payment = _instant(effective_at), _instant(pay_at)
         amount = _number(amount)
         if payment < effective or payment > self._now:
-            raise ValueError("Observed distribution payment after entitlement required")
-        key = (parent, f"stock_distribution/{child}", effective.isoformat())
-        matching = [
-            row for row in self._security_distributions if row["action_key"] == key
-        ]
+            raise ValueError(f"Observed {label} payment after entitlement required")
+        key = (symbol, kind, effective.isoformat())
+        matching = [row for row in records if row["action_key"] == key]
         if len(matching) != 1 or matching[0]["fractional_qty"] <= 0:
-            raise ValueError("Existing fractional distribution entitlement required")
+            raise ValueError(f"Existing fractional {label} entitlement required")
         row = matching[0]
         if row["cash_in_lieu"] is not None:
             if row["cash_in_lieu"] != amount or row["paid_at"] != payment.isoformat():
-                raise ValueError("Conflicting distribution payment evidence")
+                raise ValueError(f"Conflicting {label} payment evidence")
             return
         if not math.isfinite(self._cash + amount):
-            raise ValueError("Finite distribution payment required")
+            raise ValueError(f"Finite {label} payment required")
         self._cash += amount
         row.update(
             cash_in_lieu=amount,

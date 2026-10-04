@@ -132,6 +132,7 @@ def corporate_actions(broker, inputs, day, opening):
         "stock_distribution",
         "archive_adjustment",
         "security_exchange",
+        "share_consolidation",
     }
     if any(row["kind"] not in supported for _, row in due):
         raise ValueError("Unsupported economic corporate action")
@@ -139,6 +140,7 @@ def corporate_actions(broker, inputs, day, opening):
         "split",
         "share_split",
         "security_exchange",
+        "share_consolidation",
         "stock_distribution",
         "dividend",
     ):
@@ -149,6 +151,14 @@ def corporate_actions(broker, inputs, day, opening):
                 broker.apply_split(symbol, row["value"], opening)
             elif row["kind"] == "dividend":
                 broker.accrue_dividend(symbol, row["value"], opening)
+            elif row["kind"] == "share_consolidation":
+                broker.apply_share_consolidation(
+                    symbol,
+                    row["numerator"],
+                    row["denominator"],
+                    row["effective_at"],
+                    fractional_policy=row["fractional_policy"],
+                )
             elif row["kind"] == "security_exchange":
                 broker.apply_security_exchange(
                     symbol,
@@ -178,12 +188,20 @@ def valuation(broker, inputs, day):
         for row in ledger.get("security_distributions", ())
         if row["fractional_qty"] > 0 and row["cash_in_lieu"] is None
     ]
+    unknown_consolidations = [
+        row
+        for row in ledger.get("share_consolidations", ())
+        if row["fractional_qty"] > 0 and row["cash_in_lieu"] is None
+    ]
+    unknown.extend(unknown_consolidations)
     if unknown:
         return plain(
             {
                 "nav": None,
                 "price_nav": None,
-                "status": "unknown_distribution_cash_in_lieu",
+                "status": "unknown_consolidation_cash_in_lieu"
+                if unknown_consolidations
+                else "unknown_distribution_cash_in_lieu",
                 "unpriced_entitlements": unknown,
                 "cash": ledger["cash"],
                 "holdings": ledger["holdings"],

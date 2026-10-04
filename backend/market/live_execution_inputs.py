@@ -384,6 +384,28 @@ def review_action_export(original_bytes, review_bytes):
                     }
                 )
             elif (
+                classification == "same_security_split"
+                and numerator < denominator
+                and event.get("fractional_policy") == "cash_in_lieu_unknown"
+                and event.get("effective_at") is not None
+            ):
+                output.append(
+                    _consolidation(
+                        {
+                            **event,
+                            "source_receipt": {
+                                "declaration": event["source"],
+                                "effective_source": event.get("effective_source"),
+                                "effective_source_sha256": event.get(
+                                    "effective_source_sha256"
+                                ),
+                                "fractional_source": event.get("fractional_source"),
+                            },
+                        },
+                        day,
+                    )
+                )
+            elif (
                 classification == "security_exchange"
                 and event.get("fractional_policy") == "floor_no_compensation"
             ):
@@ -445,6 +467,64 @@ def review_action_export(original_bytes, review_bytes):
     )
 
 
+# Keep the legal consolidation clock distinct from regular-session application.
+def _consolidation(row, day):
+    numerator, denominator = row.get("numerator"), row.get("denominator")
+    _require(
+        all(type(value) is int and value > 0 for value in (numerator, denominator))
+        and numerator < denominator
+        and row.get("fractional_policy") == "cash_in_lieu_unknown",
+        "Explicit reverse ratio and unknown fractional cash policy required",
+    )
+    clock = row.get("effective_at")
+    _require(isinstance(clock, str), "Aware consolidation effective clock required")
+    effective = datetime.fromisoformat(clock)
+    _require(
+        effective.utcoffset() is not None,
+        "Aware consolidation effective clock required",
+    )
+    local = effective.astimezone(calendar.NEW_YORK)
+    years, sessions = calendar.reviewed_sessions()
+    _require(
+        local.year in years and day.astype(object).year in years,
+        "Reviewed consolidation calendar required",
+    )
+    is_session = bool(np.is_busday(np.datetime64(local.date()), busdaycal=sessions))
+    _require(
+        not is_session
+        or not (
+            calendar.REGULAR_OPEN < local.time() < calendar.session_close(local.date())
+        ),
+        "Intraday consolidation requires additional execution ordering",
+    )
+    offset = int(is_session and local.time() > calendar.REGULAR_OPEN)
+    application = np.busday_offset(
+        np.datetime64(local.date()), offset, roll="forward", busdaycal=sessions
+    )
+    _require(day == application, "Consolidation requires its first regular opening")
+    receipt = row.get("source_receipt")
+    _require(
+        isinstance(receipt, Mapping)
+        and bool(receipt)
+        and isinstance(row.get("effective_source"), str)
+        and row["effective_source"].startswith("https://")
+        and isinstance(row.get("fractional_source"), str)
+        and row["fractional_source"].startswith("https://"),
+        "Consolidation clock and fractional policy source evidence required",
+    )
+    return {
+        "date": str(day),
+        "kind": "share_consolidation",
+        "numerator": numerator,
+        "denominator": denominator,
+        "fractional_policy": "cash_in_lieu_unknown",
+        "effective_at": effective.isoformat(),
+        "effective_source": row["effective_source"],
+        "fractional_source": row["fractional_source"],
+        "source_receipt": _freeze(receipt),
+    }
+
+
 # Validate prior-day terms for a named issuer exchange with no fractional payout.
 def _exchange(row, day):
     numerator, denominator = row.get("numerator"), row.get("denominator")
@@ -476,11 +556,13 @@ def _exchange(row, day):
     }
 
 
-# Normalize sourced distributions and issuer exchanges through their distinct contracts.
+# Normalize distributions, exchanges and consolidations through distinct contracts.
 def _economic_action(row, names, day, parent):
     if row["kind"] == "stock_distribution":
         _require(row.get("child") != parent, "Distinct distribution child required")
         return _distribution(row, names, day)
+    if row["kind"] == "share_consolidation":
+        return _consolidation(row, day)
     return _exchange(row, day)
 
 
@@ -567,14 +649,26 @@ def _validate_distribution_dependencies(normalized):
     )
 
 
-# Require source ordering before combining an issuer exchange with another share event.
+# Require ordering before combining exchanges or consolidations with share events.
 def _validate_exchange_dependencies(normalized):
     exchanges = {
         (name, row["date"])
         for name, rows in normalized.items()
         for row in rows
-        if row["kind"] == "security_exchange"
+        if row["kind"] in ("security_exchange", "share_consolidation")
     }
+    _require(
+        all(
+            sum(
+                row["date"] == day
+                and row["kind"] in ("security_exchange", "share_consolidation")
+                for row in normalized[name]
+            )
+            == 1
+            for name, day in exchanges
+        ),
+        "Same-day exchange and consolidation require additional entitlement ordering",
+    )
     _require(
         all(
             (name, row["date"]) not in exchanges
@@ -629,6 +723,7 @@ def _actions(actions, names, dates, basis, through, dividend_basis, passive_name
                     "share_split",
                     "stock_distribution",
                     "security_exchange",
+                    "share_consolidation",
                 ),
                 "Explicit split/dividend units required",
             )
@@ -641,7 +736,11 @@ def _actions(actions, names, dates, basis, through, dividend_basis, passive_name
             _require(key not in seen, "Duplicate or conflicting corporate action")
             seen.add(key)
             previous = day
-            if kind in ("stock_distribution", "security_exchange"):
+            if kind in (
+                "stock_distribution",
+                "security_exchange",
+                "share_consolidation",
+            ):
                 rows.append(_economic_action(row, (*names, *passive_names), day, name))
                 continue
             value = row.get("value")

@@ -1,5 +1,44 @@
 # Next session
 
+## 2026-10-04 — whole-share consolidation and separate fractional cash
+
+Goal ACTIVE. Previous goal turn PROGRESS: primary certificate inspection
+resolved the legal clock needed for the next accounting change. Atomic objective:
+replace legacy fractional-share multiplication in reviewed reverse consolidations
+with whole tradable shares and a distinct, unpriced cash entitlement. Acceptance:
+conserve acquisition cost, apply exactly once at the first regular opening after
+the legal effective clock, never invent cash/payment dates, and retain missing
+NAV until an observed payment. No timing/sizing model refit or account scoring.
+
+FAILED reproduction: 25 APLD shares through apply_split(1/6) became
+4.166666666666666 tradable shares. The new explicit share_consolidation path
+keeps four shares plus a 1/6 cash entitlement. Generic legacy split behavior
+remains compatible, but reviewed consolidation never calls it. Unknown cash
+blocks full account NAV and new funding; receipt-based settlement credits cash
+once. Common payment validation also retains original distribution behavior.
+Outstanding old-share orders and post-effective fills refuse application rather
+than silently changing quantities. Same-day competing share events are rejected.
+
+VERIFIED primary certificate manual visual inspection: APLD 1-for-6,
+cash for fractions, legal April12,2022 1:15PM Pacific (=16:15 New York).
+Archive/application April13 remains unchanged. JPEG SHA256
+a570f12de293fa32801868a2eec6cf054e59119be708e76cdf70bf361fa4b1b3;
+issuer URL is pinned in the updated review. This authenticates only that captured
+certificate, not all review sources or broker street-name allocation/payment.
+UNVERIFIED actual fractional proceeds/payment; four other original reviewed
+events and VMW terminal merger processing remain incomplete. Original invalid
+export rejection gates remain intact. No old capture/assembly/score repeated.
+
+Working-tree native275 cases PASS12.39s including unchanged external acceptance;
+Ruff/diff clean. Exact-source image and actual original-byte compilation proof
+PENDING; do not call this new tree a verified checkpoint until completed.
+Original passive array evidence111e0655 is reusable and unchanged.
+Live read-only source still621e28f0f8407f511ff01202c8e5aaa6bcda9e40;
+no main merge/deployment. Diagram impact: NONE, existing private supplied-action
+and accounting boundaries. NEXT: source-image/action compilation proof, then
+unknown distribution basis and dated terminal/election processing before fixed
+funded same-sizing timing comparison; sizing and profit exits remain later arms.
+
 ## 2026-10-04 — causal valuation-only inherited-asset input path
 
 Goal ACTIVE; no strategy promotion, main merge or deployment. New PassiveMarks

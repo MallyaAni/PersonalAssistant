@@ -23,6 +23,134 @@ def account(cash=1000, cost=10, holdings=None):
     return broker
 
 
+# Whole reverse-split entitlements retain cost while cash fractions cannot fund trades.
+@pytest.mark.parametrize("quantity", [0, 1, 24, 25, 100])
+def test_consolidation_keeps_whole_shares_and_unknown_fractional_cash(quantity):
+    broker = account(1000, 0, holdings={"AAA": quantity})
+    broker.observe(NOW, {"AAA": 48}, True)
+    broker.apply_share_consolidation(
+        "AAA", 1, 6, NOW, fractional_policy="cash_in_lieu_unknown"
+    )
+    ledger = broker.ledger()
+    whole = quantity // 6
+    assert ledger["holdings"] == ({"AAA": whole} if whole else {})
+    assert ledger["cash"] == 1000
+    assert "security_exchanges" not in ledger
+    row = ledger["share_consolidations"][0]
+    assert row["fractional_qty"] == pytest.approx((quantity % 6) / 6)
+    assert row["cash_in_lieu"] is None
+    assert whole * ledger["average_prices"].get("AAA", 0) + row[
+        "fractional_basis"
+    ] == pytest.approx(quantity * 8)
+    if quantity % 6:
+        with pytest.raises(AlpacaTradingError, match="Unknown consolidation"):
+            broker.account()
+        with pytest.raises(AlpacaTradingError, match="Unknown consolidation"):
+            broker.submit_market("AAA", 1, "buy", "unfunded")
+        assert broker.open_orders() == []
+    else:
+        assert broker.account().equity == 1000 + whole * 48
+    broker.apply_share_consolidation(
+        "AAA", 1, 6, NOW, fractional_policy="cash_in_lieu_unknown"
+    )
+    assert broker.ledger() == ledger
+
+
+# Payment evidence becomes cash once, with no amount inferred from prices or basis.
+def test_consolidation_cash_is_observed_and_idempotent():
+    broker = account(1000, 0, holdings={"AAA": 25})
+    broker.apply_share_consolidation(
+        "AAA", 1, 6, NOW, fractional_policy="cash_in_lieu_unknown"
+    )
+    before = broker.ledger()
+    with pytest.raises(ValueError, match="Observed consolidation payment"):
+        broker.settle_consolidation_cash("AAA", NOW, 3, LATER)
+    assert broker.ledger() == before
+    broker.observe(LATER, {"AAA": 48}, True)
+    broker.settle_consolidation_cash("AAA", NOW, 3, LATER)
+    assert broker.account().cash == broker.account().buying_power == 1003
+    assert broker.account().equity == 1195
+    paid = broker.ledger()
+    assert (
+        paid["share_consolidations"][0]["observed_payment_at"]
+        == "2026-08-03T14:00:00+00:00"
+    )
+    broker.settle_consolidation_cash("AAA", NOW, 3, LATER)
+    assert broker.ledger() == paid
+    with pytest.raises(ValueError, match="Conflicting consolidation payment"):
+        broker.settle_consolidation_cash("AAA", NOW, 4, LATER)
+    assert broker.ledger() == paid
+
+
+# Invalid consolidation terms or old fractional holdings leave the ledger untouched.
+@pytest.mark.parametrize(
+    "defect", ["zero", "bool", "forward", "policy", "future", "fractional", "conflict"]
+)
+def test_consolidation_invalid_terms_are_atomic(defect):
+    broker = account(1000, 0, holdings={"AAA": 25})
+    numerator, denominator, effective, policy = 1, 6, NOW, "cash_in_lieu_unknown"
+    if defect == "zero":
+        numerator = 0
+    elif defect == "bool":
+        denominator = True
+    elif defect == "forward":
+        numerator = 6
+    elif defect == "policy":
+        policy = "floor_no_compensation"
+    elif defect == "future":
+        effective = LATER
+    elif defect == "fractional":
+        broker.apply_split("AAA", 0.5, NOW)
+    else:
+        broker.apply_share_consolidation("AAA", 1, 6, NOW, fractional_policy=policy)
+        denominator = 5
+    before = broker.ledger()
+    expected = {
+        "zero": "Explicit reverse ratio",
+        "bool": "Explicit reverse ratio",
+        "forward": "Explicit reverse ratio",
+        "policy": "Explicit reverse ratio",
+        "future": "Observed dated corporate action",
+        "fractional": "Whole pre-consolidation",
+        "conflict": "Conflicting corporate-action evidence",
+    }[defect]
+    with pytest.raises(ValueError, match=expected):
+        broker.apply_share_consolidation(
+            "AAA", numerator, denominator, effective, fractional_policy=policy
+        )
+    assert broker.ledger() == before
+
+
+# Old-share orders and fills need explicit treatment before a consolidation can apply.
+@pytest.mark.parametrize("filled", [False, True])
+def test_consolidation_cannot_rewrite_outstanding_orders_or_affected_fills(filled):
+    broker = account(1000, 0, holdings={"AAA": 25})
+    broker.submit_market("AAA", 1, "sell", "old-shares")
+    if filled:
+        broker.flush(LATER, {"AAA": 10})
+        broker.observe(LATER, {"AAA": 10}, True)
+    before = broker.ledger()
+    with pytest.raises(
+        ValueError, match="affected fills" if filled else "Outstanding orders"
+    ):
+        broker.apply_share_consolidation(
+            "AAA", 1, 6, NOW, fractional_policy="cash_in_lieu_unknown"
+        )
+    assert broker.ledger() == before
+
+
+# Whole entitlements cannot acquire cash merely because a receipt is supplied.
+def test_consolidation_cash_requires_an_existing_fractional_claim():
+    broker = account(1000, 0, holdings={"AAA": 24})
+    broker.apply_share_consolidation(
+        "AAA", 1, 6, NOW, fractional_policy="cash_in_lieu_unknown"
+    )
+    before = broker.ledger()
+    with pytest.raises(ValueError, match="Existing fractional consolidation"):
+        broker.settle_consolidation_cash("AAA", NOW, 3, NOW)
+    assert broker.ledger() == before
+
+
 # Apply the declared holder-level rounding without cash or a tradable fraction.
 @pytest.mark.parametrize("quantity", [0, 1, 24, 25, 100])
 def test_named_security_exchange_floors_shares_and_records_forfeited_basis(quantity):

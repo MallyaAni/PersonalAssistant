@@ -323,6 +323,131 @@ def test_reverse_split_fractional_processing_is_not_inferred_from_ratio():
     assert not any(row["kind"] == "share_split" for row in result["actions"]["AAA"])
 
 
+# Supply sourced consolidation terms independently of the archive price factor.
+def consolidation_fixture():
+    return {
+        "date": "2026-09-15",
+        "kind": "share_consolidation",
+        "numerator": 1,
+        "denominator": 6,
+        "effective_at": "2026-09-14T16:15:00-04:00",
+        "fractional_policy": "cash_in_lieu_unknown",
+        "effective_source": "https://issuer.example/synthetic-clock",
+        "fractional_source": "https://issuer.example/synthetic-cash-terms",
+        "source_receipt": {"declaration": "synthetic"},
+    }
+
+
+# Preserve raw price recovery while dispatching the separately dated cash entitlement.
+def test_reviewed_consolidation_does_not_adjust_prices_twice():
+    _, review = reviewed_action_fixture()
+    original = json.dumps(
+        {
+            "actions": {
+                "AAA": [{"date": "2026-09-15", "kind": "split", "value": 1 / 6}],
+                "SPY": [],
+            }
+        }
+    ).encode()
+    review["original_actions_sha256"] = hashlib.sha256(original).hexdigest()
+    review["events"][0].update(
+        **{
+            key: value
+            for key, value in consolidation_fixture().items()
+            if key not in ("kind", "source_receipt")
+        },
+        archive_factor=1 / 6,
+    )
+    result = adapter.review_action_export(original, json.dumps(review).encode())
+    assert result["unresolved"] == ()
+    assert [row["kind"] for row in result["actions"]["AAA"]] == [
+        "archive_adjustment",
+        "share_consolidation",
+    ]
+    args = inputs()
+    args["actions"] = result["actions"]
+    raw = adapter.prepare(**args)
+    np.testing.assert_allclose(raw.daily_close[:, 0], [50 / 6, 50])
+    assert raw.actions["AAA"][1]["effective_at"] == "2026-09-14T16:15:00-04:00"
+    assert raw.split_factors[0, 0] == 1 / 6
+    assert json.loads(original)["actions"]["AAA"][0]["kind"] == "split"
+
+
+# Unknown clocks, duplicate share actions and delayed application never pass preflight.
+@pytest.mark.parametrize(
+    "defect",
+    [
+        "naive",
+        "intraday",
+        "late_day",
+        "receipt",
+        "clock_source",
+        "cash_source",
+        "forward",
+        "duplicate_split",
+        "exchange",
+    ],
+)
+def test_consolidation_preparation_requires_source_clock_and_ordering(defect):
+    args = inputs()
+    row = consolidation_fixture()
+    args["actions"]["AAA"] = [row]
+    if defect == "naive":
+        row["effective_at"] = "2026-09-14T16:15:00"
+    elif defect == "intraday":
+        row["effective_at"] = "2026-09-14T15:45:00-04:00"
+    elif defect == "late_day":
+        row["effective_at"] = "2026-09-13T16:15:00-04:00"
+    elif defect == "receipt":
+        row["source_receipt"] = {}
+    elif defect == "clock_source":
+        row.pop("effective_source")
+    elif defect == "cash_source":
+        row.pop("fractional_source")
+    elif defect == "forward":
+        row["numerator"] = 6
+    elif defect == "duplicate_split":
+        args["actions"]["AAA"].append(
+            {"date": row["date"], "kind": "split", "value": 1 / 6}
+        )
+    else:
+        args["actions"]["AAA"].append(
+            {
+                "date": row["date"],
+                "kind": "security_exchange",
+                "numerator": 1,
+                "denominator": 5,
+                "old_security_id": "old",
+                "new_security_id": "new",
+                "fractional_policy": "floor_no_compensation",
+                "terms_available_on": "2026-09-14",
+                "source_receipt": {"declaration": "synthetic"},
+            }
+        )
+    expected = {
+        "naive": "Aware consolidation",
+        "intraday": "Intraday consolidation",
+        "late_day": "first regular opening",
+        "receipt": "source evidence",
+        "clock_source": "source evidence",
+        "cash_source": "source evidence",
+        "forward": "Explicit reverse ratio",
+        "duplicate_split": "additional entitlement ordering",
+        "exchange": "additional entitlement ordering",
+    }[defect]
+    with pytest.raises(ValueError, match=expected):
+        adapter.prepare(**args)
+
+
+# Use the real early close rather than rejecting an after-close legal effective clock.
+def test_consolidation_schedules_first_open_after_early_close():
+    row = consolidation_fixture()
+    row["effective_at"] = "2026-11-27T13:15:00-05:00"
+    result = adapter._consolidation(row, np.datetime64("2026-11-30"))
+    assert result["date"] == "2026-11-30"
+    assert result["effective_at"] == row["effective_at"]
+
+
 # Enforce exact coverage and original factors before compiling reviewed actions.
 @pytest.mark.parametrize(
     "change",
