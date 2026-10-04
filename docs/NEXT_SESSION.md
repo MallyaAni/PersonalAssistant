@@ -14,12 +14,22 @@ The input adapter separates its archive0.2 price conversion from the economic
 exchange. The dispatcher and synthetic accounting journey use the actual
 private broker path; no production strategy imports or deployment changed.
 
-VERIFIED native170 relevant tests PASS6.13s with the original independent
-acceptance assertions unchanged; Ruff/diff clean. Exact committed-image and
-saved-artifact validation are PENDING. Reviewed export now retains all24
+VERIFIED checkpoint80b72522af06861e2e51d3b961344e84b312d675:
+native170 relevant tests PASS5.87s with the original independent acceptance
+assertions unchanged; Ruff/diff clean. Exact Git archive2371 files passed440
+cases16.08s/no skips in image5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+Actual frozen-data review CLI EXIT0 and a separately named saved-only independent
+checker passed; no predictor imports or account resimulation. Reviewed export retains all24
 events,96 symbols,1753 dividends and26 archive adjustments:18 share splits,
 one named exchange and five unresolved entitlements. Full funded execution
 still refuses unresolved evidence; no model fitting or policy returns scored.
+Evidence:/home/animallya96/scratch/action-exchange-20261004-80b72522/proof.
+Test log f83daab564717c25583a46c09cb80fb49b2ebbd121d3979491efa315c18feacf;
+CLI artifact85fc9c23455210d25d88e0a9599743096ac3e13a004284560f4410efd05caa51;
+independent proof0aacfde36273b0865af2ca70475fddb6609a4748a88b5e75f8a7417df31b0b12.
+Manifestef29c3efaca2a08a18d1e3491e6df05674ce4d71ea81c0b6e3761ceaecf30585;
+reviewf891cb58ac9a9d16b737b1489c972cd1c3b12fa37cf184edc4d21e0420675efd.
+Original earlier proofs are preserved rather than edited to certify this source.
 
 Separately captured raw daily SIP response bytes for passive KD and VMW:
 KD1230 bars2021-11-04..2026-09-30; VMW517 bars2021-11-02..2023-11-21.
