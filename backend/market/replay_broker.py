@@ -127,6 +127,7 @@ class ReplayBroker:
         self._security_distributions = []
         self._security_exchanges = []
         self._share_consolidations = []
+        self._cash_mergers = []
         self._now = self._observed_at = None
         self._market_open = self._batch_open = False
         self._last_equity = self._cash
@@ -164,6 +165,7 @@ class ReplayBroker:
                     if self._share_consolidations
                     else {}
                 ),
+                **({"cash_mergers": self._cash_mergers} if self._cash_mergers else {}),
                 "observed_at": self._observed_at.isoformat()
                 if self._observed_at
                 else None,
@@ -227,6 +229,7 @@ class ReplayBroker:
             qty * self._mark(symbol) for symbol, qty in self._held.items()
         )
         equity += sum(row["amount"] for row in self._dividends if not row["paid"])
+        equity += sum(row["amount"] for row in self._cash_mergers if not row["paid"])
         if not math.isfinite(equity):
             raise AlpacaTradingError("Finite marked equity unavailable")
         reserved = sum(
@@ -366,6 +369,21 @@ class ReplayBroker:
             ):
                 raise AlpacaTradingError("Conflicting duplicate order identity")
             return deepcopy(existing)
+        if any(row["symbol"] == symbol for row in self._cash_mergers):
+            self._attempts.append(
+                {
+                    "client_order_id": identifier,
+                    "symbol": symbol,
+                    "side": side,
+                    "qty": int(qty),
+                    "at": self._now.isoformat(),
+                    "observed_price": None,
+                    "available_cash": None,
+                    "accepted": False,
+                    "reason": "terminated_security",
+                }
+            )
+            raise AlpacaTradingError("terminated_security")
         price = self._mark(symbol)
         cash = self.account().buying_power
         execute_on = (
@@ -551,6 +569,12 @@ class ReplayBroker:
             raise ValueError("Observed dated corporate action required")
         value = _number(value, positive=True)
         key = (symbol, kind, effective.isoformat())
+        if key not in self._actions and any(
+            row["symbol"] == symbol for row in self._cash_mergers
+        ):
+            raise ValueError(
+                "Terminated security requires distinct new-issuer evidence"
+            )
         if key in self._actions and self._actions[key] != value:
             raise ValueError("Conflicting corporate-action evidence")
         if key not in self._actions and any(
@@ -755,6 +779,87 @@ class ReplayBroker:
         self._security_exchanges.append(record)
         self._actions[key] = value
 
+    # Replace terminal shares with an unpaid claim under a declared cash default.
+    def apply_cash_merger(
+        self, symbol, per_share, completed_before, *, old_security_id, election_policy
+    ):
+        boundary = _instant(completed_before)
+        local = boundary.astimezone(calendar.NEW_YORK)
+        is_session, _ = _session(boundary)
+        if (
+            not isinstance(old_security_id, str)
+            or not old_security_id
+            or election_policy != "declared_no_election_default_cash"
+            or not is_session
+            or local.time() != calendar.REGULAR_OPEN
+        ):
+            raise ValueError(
+                "Named security and declared before-open cash default required"
+            )
+        key, amount, _ = self._action(symbol, "cash_merger", per_share, boundary)
+        if key in self._actions:
+            prior = next(row for row in self._cash_mergers if row["action_key"] == key)
+            if prior["old_security_id"] != old_security_id:
+                raise ValueError("Conflicting terminal security evidence")
+            return
+        if any(
+            row["symbol"] == symbol and row["status"] == "accepted"
+            for row in self._orders.values()
+        ):
+            raise ValueError("Outstanding orders need explicit merger treatment")
+        quantity = self._held.get(symbol, 0)
+        if quantity != int(quantity):
+            raise ValueError("Whole pre-merger holdings required")
+        total = quantity * amount
+        average = self._average.get(symbol, 0)
+        cost = quantity * average if average is not None else None
+        if not math.isfinite(total) or (cost is not None and not math.isfinite(cost)):
+            raise ValueError("Finite merger consideration and prior cost required")
+        record = {
+            "action_key": key,
+            "symbol": symbol,
+            "old_security_id": old_security_id,
+            "election_policy": election_policy,
+            "quantity_before": quantity,
+            "per_share": amount,
+            "amount": total,
+            "prior_total_cost": cost,
+            "completed_before": boundary.isoformat(),
+            "legal_clock_precision": "completed_before_open_not_exact",
+            "applied_at": self._now.isoformat(),
+            "paid": False,
+            "entitlement_scope": "declared_private_no_election_not_broker_receipt",
+        }
+        self._held.pop(symbol, None)
+        self._average.pop(symbol, None)
+        self._cash_mergers.append(record)
+        self._actions[key] = amount
+
+    # Credit a known merger claim only after an explicit matching payment is observed.
+    def settle_merger_cash(self, symbol, completed_before, amount, pay_at):
+        self._observed()
+        boundary, payment = _instant(completed_before), _instant(pay_at)
+        amount = _number(amount)
+        key = (symbol, "cash_merger", boundary.isoformat())
+        matching = [row for row in self._cash_mergers if row["action_key"] == key]
+        if len(matching) != 1 or matching[0]["quantity_before"] <= 0:
+            raise ValueError("Existing positive merger entitlement required")
+        row = matching[0]
+        if payment < boundary or payment > self._now or amount != row["amount"]:
+            raise ValueError("Observed matching merger payment after boundary required")
+        if row["paid"]:
+            if row["paid_at"] != payment.isoformat():
+                raise ValueError("Conflicting merger payment evidence")
+            return
+        if not math.isfinite(self._cash + amount):
+            raise ValueError("Finite merger payment required")
+        self._cash += amount
+        row.update(
+            paid=True,
+            paid_at=payment.isoformat(),
+            observed_payment_at=self._now.isoformat(),
+        )
+
     # Credit child shares without changing parent quantity or inventing fractional cash.
     def apply_stock_distribution(
         self,
@@ -796,6 +901,8 @@ class ReplayBroker:
             ) != (ratio.numerator, ratio.denominator):
                 raise ValueError("Conflicting distribution basis evidence")
             return
+        if any(row["symbol"] == child for row in self._cash_mergers):
+            raise ValueError("Terminated child cannot receive a new distribution")
         if any(
             row["symbol"] == child
             and row["filled_qty"] > 0

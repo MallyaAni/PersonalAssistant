@@ -13,6 +13,7 @@ import math
 from collections.abc import Mapping
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
+from itertools import chain
 from pathlib import Path
 
 import numpy as np
@@ -20,7 +21,11 @@ import numpy as np
 from backend.agents.trading.desk import intraday_orders, paper
 from backend.cli import market_daily
 from backend.market import alpaca_trading, calendar, entry_timing
-from backend.market.live_execution_inputs import RawExecutionInputs, validate_passive
+from backend.market.live_execution_inputs import (
+    RawExecutionInputs,
+    validate_inherited,
+    validate_passive,
+)
 from backend.market.replay_broker import ReplayBroker
 
 POLICY = "actual-policy-timing/1-research"
@@ -123,9 +128,11 @@ def due_actions(inputs, day, now):
     if now.utcoffset() is None or now.astimezone(calendar.NEW_YORK).date() != date:
         raise ValueError("Aware same-session corporate-action observation required")
     due = []
-    for symbol in inputs.tickers:
-        for row in inputs.actions[symbol]:
-            clock = row.get("effective_at")
+    for symbol, rows in chain(
+        inputs.actions.items(), (inputs.inherited_actions or {}).items()
+    ):
+        for row in rows:
+            clock = row.get("effective_at", row.get("completed_before"))
             if clock is None and row["date"] != str(inputs.dates[day]):
                 continue
             effective = (
@@ -145,6 +152,7 @@ def due_actions(inputs, day, now):
         "share_split",
         "security_exchange",
         "share_consolidation",
+        "cash_merger",
         "stock_distribution",
         "dividend",
         "archive_adjustment",
@@ -180,6 +188,14 @@ def corporate_actions(broker, inputs, day, now):
                 old_security_id=row["old_security_id"],
                 new_security_id=row["new_security_id"],
                 fractional_policy=row["fractional_policy"],
+            )
+        elif row["kind"] == "cash_merger":
+            broker.apply_cash_merger(
+                symbol,
+                row["value"],
+                row["completed_before"],
+                old_security_id=row["old_security_id"],
+                election_policy=row["election_policy"],
             )
         elif row["kind"] == "stock_distribution":
             broker.apply_stock_distribution(
@@ -250,11 +266,19 @@ def valuation(broker, inputs, day):
         quantity * closing_marks[name] for name, quantity in ledger["holdings"].items()
     )
     receivable = sum(row["amount"] for row in ledger["dividends"] if not row["paid"])
+    merger_receivable = sum(
+        row["amount"] for row in ledger.get("cash_mergers", ()) if not row["paid"]
+    )
     return plain(
         {
-            "nav": price_nav + receivable,
+            "nav": price_nav + receivable + merger_receivable,
             "price_nav": price_nav,
             "dividend_receivable": receivable,
+            **(
+                {"merger_receivable": merger_receivable}
+                if "cash_mergers" in ledger
+                else {}
+            ),
             "cash": ledger["cash"],
             "holdings": ledger["holdings"],
             "status": "marked_raw_close",
@@ -283,6 +307,7 @@ def validate(panel, inputs, root, first, last, reader_builder, provider):
     if not isinstance(inputs, RawExecutionInputs):
         raise ValueError("Reviewed raw execution input contract required")
     validate_passive(inputs.passive, inputs.dates, inputs.tickers)
+    validate_inherited(inputs)
     if (
         tuple(panel.tickers) != inputs.tickers
         or not np.array_equal(panel.dates, inputs.dates)

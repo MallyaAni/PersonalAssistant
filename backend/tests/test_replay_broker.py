@@ -8,6 +8,7 @@ from backend.market.replay_broker import ReplayBroker
 
 NOW = "2026-08-03T09:45:00-04:00"
 LATER = "2026-08-03T10:00:00-04:00"
+MERGER_BOUNDARY = "2026-08-03T09:30:00-04:00"
 
 
 # Create a private observed account with explicit initial acquisition bases.
@@ -21,6 +22,209 @@ def account(cash=1000, cost=10, holdings=None):
     )
     broker.observe(NOW, {"AAA": 10, "BBB": 10}, True)
     return broker
+
+
+# Convert terminal shares into a known receivable while retaining spendable cash.
+@pytest.mark.parametrize("quantity", [0, 1, 20, 100])
+def test_cash_merger_retains_value_without_paid_cash_or_stale_holdings(quantity):
+    broker = account(100, 0, holdings={"AAA": quantity})
+    broker.observe(NOW, {"AAA": None, "BBB": 10}, True)
+    broker.apply_cash_merger(
+        "AAA",
+        142.5,
+        MERGER_BOUNDARY,
+        old_security_id="old-common",
+        election_policy="declared_no_election_default_cash",
+    )
+    before = broker.ledger()
+    assert before["holdings"] == before["average_prices"] == {}
+    assert before["cash"] == broker.account().buying_power == 100
+    assert broker.account().equity == 100 + 142.5 * quantity
+    assert broker.positions() == []
+    receipt = before["cash_mergers"][0]
+    assert receipt["amount"] == 142.5 * quantity
+    assert receipt["prior_total_cost"] == quantity * 8
+    assert receipt["completed_before"] == "2026-08-03T13:30:00+00:00"
+    assert receipt["applied_at"] == "2026-08-03T13:45:00+00:00"
+    assert receipt["legal_clock_precision"] == "completed_before_open_not_exact"
+    assert receipt["paid"] is False
+    assert "effective_at" not in receipt
+    broker.apply_cash_merger(
+        "AAA",
+        142.5,
+        MERGER_BOUNDARY,
+        old_security_id="old-common",
+        election_policy="declared_no_election_default_cash",
+    )
+    assert broker.ledger() == before
+    with pytest.raises(AlpacaTradingError, match="insufficient_reserved_cash"):
+        broker.submit_market("BBB", 11, "buy", "unpaid-cash")
+    assert broker.open_orders() == []
+
+
+# Unallocated acquisition cost never changes the known merger entitlement.
+def test_cash_merger_keeps_unknown_prior_basis_without_fabricated_profit():
+    broker = account(1000, 0, holdings={"AAA": 100})
+    broker.apply_stock_distribution(
+        "AAA",
+        "BBB",
+        1,
+        5,
+        MERGER_BOUNDARY,
+        parent_basis_fraction=None,
+        basis_policy="unallocated_at_effective_clock",
+    )
+    broker.observe(NOW, {"AAA": 10, "BBB": None}, True)
+    broker.apply_cash_merger(
+        "BBB",
+        142.5,
+        MERGER_BOUNDARY,
+        old_security_id="old-child",
+        election_policy="declared_no_election_default_cash",
+    )
+    assert broker.ledger()["holdings"] == {"AAA": 100}
+    assert broker.ledger()["cash_mergers"][0]["prior_total_cost"] is None
+    assert broker.ledger()["cash_mergers"][0]["amount"] == 2850
+    assert broker.account().equity == 4850
+    assert broker.positions()[0].unrealized_pl is None
+
+
+# Only a matching observed payment changes cash, leaving total wealth unchanged.
+def test_merger_payment_is_observed_once_without_double_counting_wealth():
+    broker = account(100, 0, holdings={"AAA": 20})
+    broker.apply_cash_merger(
+        "AAA",
+        142.5,
+        MERGER_BOUNDARY,
+        old_security_id="old-common",
+        election_policy="declared_no_election_default_cash",
+    )
+    before = broker.ledger()
+    for amount, at in ((2850, LATER), (2849, NOW), (2850, "2026-08-03T09:29:00-04:00")):
+        with pytest.raises(ValueError, match="Observed matching merger payment"):
+            broker.settle_merger_cash("AAA", MERGER_BOUNDARY, amount, at)
+        assert broker.ledger() == before
+    broker.observe(LATER, {"AAA": None, "BBB": 10}, True)
+    broker.settle_merger_cash("AAA", MERGER_BOUNDARY, 2850, LATER)
+    assert broker.account().equity == broker.account().cash == 2950
+    assert broker.account().buying_power == 2950
+    paid = broker.ledger()
+    broker.settle_merger_cash("AAA", MERGER_BOUNDARY, 2850, LATER)
+    assert broker.ledger() == paid
+    with pytest.raises(ValueError, match="Conflicting merger payment"):
+        broker.settle_merger_cash("AAA", MERGER_BOUNDARY, 2850, NOW)
+    assert broker.ledger() == paid
+
+
+# Invalid or conflicting merger declarations leave every account field untouched.
+@pytest.mark.parametrize(
+    "defect",
+    [
+        "amount",
+        "bool",
+        "clock",
+        "future",
+        "identity",
+        "policy",
+        "fractional",
+        "conflict",
+        "different_identity",
+    ],
+)
+def test_cash_merger_invalid_evidence_is_atomic(defect):
+    broker = account(1000, 0, holdings={"AAA": 3})
+    amount, clock, identity, policy = (
+        142.5,
+        MERGER_BOUNDARY,
+        "old-common",
+        "declared_no_election_default_cash",
+    )
+    if defect == "amount":
+        amount = float("inf")
+    elif defect == "bool":
+        amount = True
+    elif defect == "clock":
+        clock = NOW
+    elif defect == "future":
+        clock = "2026-08-04T09:30:00-04:00"
+    elif defect == "identity":
+        identity = ""
+    elif defect == "policy":
+        policy = "stock_election"
+    elif defect == "fractional":
+        broker.apply_split("AAA", 1.5, MERGER_BOUNDARY)
+    else:
+        broker.apply_cash_merger(
+            "AAA", amount, clock, old_security_id=identity, election_policy=policy
+        )
+        if defect == "conflict":
+            amount = 142.48
+        else:
+            identity = "different-old-common"
+    before = broker.ledger()
+    expected = {
+        "amount": "Finite",
+        "bool": "Finite",
+        "clock": "before-open cash default",
+        "future": "Observed dated",
+        "identity": "before-open cash default",
+        "policy": "before-open cash default",
+        "fractional": "Whole pre-merger",
+        "conflict": "Conflicting corporate-action",
+        "different_identity": "Conflicting terminal",
+    }[defect]
+    with pytest.raises(ValueError, match=expected):
+        broker.apply_cash_merger(
+            "AAA", amount, clock, old_security_id=identity, election_policy=policy
+        )
+    assert broker.ledger() == before
+
+
+# Old accepted orders or already affected fills cannot be rewritten as a merger.
+@pytest.mark.parametrize("filled", [False, True])
+def test_cash_merger_refuses_old_orders_or_post_boundary_fills(filled):
+    broker = account(1000, 0, holdings={"AAA": 20})
+    broker.submit_market("AAA", 1, "sell", "old-security")
+    if filled:
+        broker.flush(LATER, {"AAA": 10})
+        broker.observe(LATER, {"AAA": None}, True)
+    before = broker.ledger()
+    with pytest.raises(
+        ValueError, match="affected fills" if filled else "Outstanding orders"
+    ):
+        broker.apply_cash_merger(
+            "AAA",
+            142.5,
+            MERGER_BOUNDARY,
+            old_security_id="old-common",
+            election_policy="declared_no_election_default_cash",
+        )
+    assert broker.ledger() == before
+
+
+# Stale positive quotes cannot resurrect a terminated security or a later share grant.
+def test_terminal_security_cannot_be_bought_split_or_recredited():
+    broker = account(1000, 0, holdings={"AAA": 20, "BBB": 100})
+    broker.apply_cash_merger(
+        "AAA",
+        142.5,
+        MERGER_BOUNDARY,
+        old_security_id="old-common",
+        election_policy="declared_no_election_default_cash",
+    )
+    broker.observe(LATER, {"AAA": 999, "BBB": 10}, True)
+    before = broker.ledger()
+    with pytest.raises(AlpacaTradingError, match="terminated_security"):
+        broker.submit_market("AAA", 1, "buy", "stale-quote")
+    assert broker.attempt_history[-1]["reason"] == "terminated_security"
+    assert broker.attempt_history[-1]["observed_price"] is None
+    with pytest.raises(ValueError, match="Terminated security"):
+        broker.apply_split("AAA", 2, LATER)
+    with pytest.raises(ValueError, match="Terminated child"):
+        broker.apply_stock_distribution(
+            "BBB", "AAA", 1, 5, LATER, parent_basis_fraction=0.75
+        )
+    assert broker.ledger() == before
 
 
 # Whole reverse-split entitlements retain cost while cash fractions cannot fund trades.

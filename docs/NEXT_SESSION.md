@@ -1,5 +1,51 @@
 # Next session
 
+## 2026-10-04 — inherited terminal cash entitlement and unpaid funding
+
+Goal ACTIVE; previous turn PROGRESS (observed grantsb0348ce0/source519 tests,
+pushed proof458f6bed). Atomic objective: remove an inherited terminal security
+at its declared first observed completion boundary, retain its known default
+cash entitlement in wealth, and never treat unpaid consideration as buying cash.
+Acceptance: explicit private no-election policy, named old security, source and
+publication clocks, price-coverage cutoff, exact-once conversion/payment,
+unknown prior cost retained, later orders/share recredits refused, unchanged
+selection/grade/execution grids, and actual nightly/sender/persistence behavior.
+
+UNIMPLEMENTED first boundary reproduced by unchanged external acceptance:
+ReplayBroker had no apply_cash_merger, leaving terminal held value unavailable.
+New private cash_mergers receipts remove whole old shares, retain prior cost
+(including null unallocated cost), and record a priced unpaid claim. Account
+NAV includes the claim; buying power includes only existing cash. Only a matching
+observed payment changes cash, without doubling NAV. Pending old-security orders
+and affected fills refuse mutation. A later stale positive quote cannot revive
+the security; the rejected attempt is retained. No real broker client changed.
+
+Supplied inherited_actions are separate from the original96-symbol action map,
+price/grade/selection/execution grids. Only covered passive names with prices
+ending before the terminal session qualify. The immutable declaration checks
+source URLs, explicit available-by clocks and first regular-opening boundary;
+neither that boundary nor the later LLC conversion is called an exact first
+merger time. A replaced declaration, guessed payment, alternate/optimised
+election, future evidence or post-terminal price coverage is refused.
+Review-only compilation retains original price factors/dividends while adding
+one separate VMW terminal declaration: fixed private non-election,142.50 gross
+cash entitlement, completion announced08:30ET Nov22,2023, before regular opening.
+This is a declared research holder assumption, not broker election/net-payment
+evidence. Manual primary URLs remain distinct from authenticated byte receipts.
+
+VERIFIED working tree:348 tests22.34s/no skips, including unchanged external
+merger/clock acceptance and actual planner/sender persisted-state paths. Ruff/
+diff clean. Synthetic journey grants250 child shares, then retains35625 unpaid
+cash entitlement through their terminal boundary without adding a child order.
+Known payable value is used without a stale last price, invented cash or tax
+profit. Source-image and saved-artifact verification are next, not yet claimed.
+No economic accounts scored, models restored/refitted, old capture repeated,
+main merge or deployment. Original incorrect-export score gates remain intact.
+Diagram impact: NONE, existing private action/accounting/input boundaries.
+NEXT: DELL2018 default share exchange and fractional-payment evidence, then wire
+reviewed inputs and independent economic verifier before fixed funded timing
+comparison; confidence sizing and remaining-horizon profit exits still follow.
+
 ## 2026-10-04 — observe legal grants before the overnight planner
 
 Goal ACTIVE. Previous goal turn PROGRESS: verified unallocated-basis source

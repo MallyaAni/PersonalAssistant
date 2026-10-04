@@ -32,6 +32,34 @@
     {"symbol":"KLAC","date":"2026-06-12","archive_factor":10.0,"classification":"same_security_split","numerator":10,"denominator":1,"source":"https://ir.kla.com/news-events/press-releases/detail/515/kla-corporation-announces-ten-to-one-stock-split-and","completion_source":"https://www.sec.gov/Archives/edgar/data/319201/000031920126000024/exhibit991earningsrelease7.htm"},
     {"symbol":"CRWD","date":"2026-07-02","archive_factor":4.0,"classification":"same_security_split","numerator":4,"denominator":1,"source":"https://ir.crowdstrike.com/static-files/f774ef12-cf94-48bf-ace2-c7f3dcf8ec97","completion_source":"https://ir.crowdstrike.com/news-releases/news-release-details/crowdstrike-reports-second-quarter-fiscal-year-2027-financial"}
   ],
+  "inherited_events": [
+    {
+      "symbol": "VMW",
+      "date": "2023-11-22",
+      "kind": "cash_merger",
+      "value": 142.5,
+      "old_security_id": "VMware Inc. Class A common stock",
+      "election_policy": "declared_no_election_default_cash",
+      "completed_before": "2023-11-22T09:30:00-05:00",
+      "legal_clock_precision": "completed_before_open_not_exact",
+      "terms_available_at": "2023-10-31T00:00:00-04:00",
+      "completion_available_at": "2023-11-22T08:30:00-05:00",
+      "terms_source": "https://www.sec.gov/Archives/edgar/data/1124610/000119312523266257/d573017dex991.htm",
+      "completion_source": "https://www.prnewswire.com/news-releases/broadcom-completes-acquisition-of-vmware-301995900.html",
+      "source_receipt": {
+        "scope": "manual_primary_declaration_review_not_authenticated_byte_capture",
+        "term_date": "2023-10-30",
+        "terms_available_clock": "conservative_next_calendar_midnight_not_exact_release_time",
+        "completion_publication_clock": "issuer_syndicated_release_08_30_ET",
+        "delisting_source": "https://www.sec.gov/Archives/edgar/data/1124610/000119312523282097/d559518d8k.htm",
+        "conversion_source": "https://www.sec.gov/Archives/edgar/data/1124610/000119312523282097/d559518dex31.htm",
+        "conversion_clock_is_not_first_merger_clock": true,
+        "no_election": "declared_private_policy_not_historical_broker_election_proof",
+        "payment": "unknown_not_spendable_cash",
+        "taxes": "private_gross_receivable_not_broker_net_payment"
+      }
+    }
+  ],
   "execution_readiness": "incomplete",
   "remaining_evidence": [
     "captured_passive_KD_VMW_prices_are_current_vintage_not_original_publication",
@@ -40,7 +68,7 @@
     "DELL_2018_causal_election_proration_and_security_identity",
     "HUT_2023_outstanding_old_security_order_treatment_if_any",
     "APLD_2022_observed_fractional_cash_in_lieu",
-    "VMW_2023_terminal_merger_election_and_observed_consideration",
+    "VMW_2023_declared_default_cash_is_not_observed_broker_election_or_payment",
     "source_receipt_byte_capture_is_distinct_from_manual_semantic_review"
   ]
 }

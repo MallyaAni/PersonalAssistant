@@ -55,6 +55,7 @@ class RawExecutionInputs:
     actions: Mapping
     provenance: Mapping
     passive: PassiveMarks | None = None
+    inherited_actions: Mapping | None = None
 
 
 # Reject an unsupported source relationship before deriving any execution dollars.
@@ -263,6 +264,108 @@ def validate_passive(passive, dates, selection_tickers):
     )
 
 
+# Normalize a declared default cash entitlement without inventing its payment clock.
+def _cash_merger(row, day):
+    required = {
+        "date",
+        "kind",
+        "value",
+        "old_security_id",
+        "election_policy",
+        "completed_before",
+        "legal_clock_precision",
+        "terms_available_at",
+        "completion_available_at",
+        "terms_source",
+        "completion_source",
+        "source_receipt",
+    }
+    _require(
+        isinstance(row, Mapping)
+        and set(row) == required
+        and row["kind"] == "cash_merger"
+        and row["election_policy"] == "declared_no_election_default_cash"
+        and row["legal_clock_precision"] == "completed_before_open_not_exact"
+        and isinstance(row["old_security_id"], str)
+        and bool(row["old_security_id"]),
+        "Explicit named default cash merger without a guessed payment required",
+    )
+    amount = row["value"]
+    _require(
+        type(amount) in (int, float) and np.isfinite(amount) and amount > 0,
+        "Positive known cash merger consideration required",
+    )
+    clocks = []
+    for field in ("completed_before", "terms_available_at", "completion_available_at"):
+        _require(isinstance(row[field], str), "Aware merger evidence clocks required")
+        clock = datetime.fromisoformat(row[field])
+        _require(clock.utcoffset() is not None, "Aware merger evidence clocks required")
+        clocks.append(clock)
+    boundary, terms, completion = clocks
+    years, sessions = calendar.reviewed_sessions()
+    _require(
+        day.astype(object).year in years and np.is_busday(day, busdaycal=sessions),
+        "Reviewed regular merger session required",
+    )
+    opening = datetime.combine(
+        day.astype(object), calendar.REGULAR_OPEN, calendar.NEW_YORK
+    )
+    _require(
+        boundary == opening and terms < boundary and completion <= boundary,
+        "Observed first opening and prior available merger evidence required",
+    )
+    _require(
+        all(
+            isinstance(row[field], str) and row[field].startswith("https://")
+            for field in ("terms_source", "completion_source")
+        )
+        and isinstance(row["source_receipt"], Mapping)
+        and bool(row["source_receipt"]),
+        "Explicit merger declaration sources required",
+    )
+    return {**dict(row), "date": str(day), "value": float(amount)}
+
+
+# Keep terminal declarations for inherited names outside every selection price array.
+def _inherited_actions(actions, passive, dates):
+    if actions is None:
+        return None
+    _require(
+        isinstance(actions, Mapping)
+        and bool(actions)
+        and passive is not None
+        and set(actions) <= set(passive.tickers),
+        "Covered passive security actions required without selection changes",
+    )
+    normalized = {}
+    for symbol, rows in actions.items():
+        _require(
+            isinstance(rows, (list, tuple)) and len(rows) == 1,
+            "One explicit terminal declaration per inherited security required",
+        )
+        row = rows[0]
+        _require(isinstance(row, Mapping) and "date" in row, "Dated merger required")
+        day = _day(row["date"])
+        _require(day in dates, "Merger requires a supplied regular session")
+        _require(
+            _day(passive.provenance["complete_through"][symbol]) < day,
+            "Terminal inherited prices must stop before the merger session",
+        )
+        normalized[symbol] = (_cash_merger(row, day),)
+    return _freeze(normalized)
+
+
+# Reject a replaced terminal declaration even if all original price arrays still match.
+def validate_inherited(inputs):
+    normalized = _inherited_actions(
+        inputs.inherited_actions, inputs.passive, inputs.dates
+    )
+    _require(
+        normalized == inputs.provenance.get("inherited_actions"),
+        "Unchanged inherited terminal-action contract required",
+    )
+
+
 # Reject repeated JSON keys instead of silently accepting overwritten evidence.
 def _unique_object(pairs):
     result = {}
@@ -384,6 +487,7 @@ def review_action_export(original_bytes, review_bytes):
     _require(
         covered == set(indexed), "Review includes an event absent from original bytes"
     )
+    inherited = _reviewed_inherited_events(review, set(actions), first, last)
     return _freeze(
         {
             "actions": result,
@@ -394,6 +498,7 @@ def review_action_export(original_bytes, review_bytes):
             "original_actions_sha256": sha256(original_bytes).hexdigest(),
             "review_sha256": sha256(review_bytes).hexdigest(),
             "reviewed_events": len(covered),
+            **({"inherited_actions": inherited} if inherited is not None else {}),
             "declaration_evidence": (
                 "manual_primary_URL_review_not_authenticated_source_receipts"
             ),
@@ -403,6 +508,35 @@ def review_action_export(original_bytes, review_bytes):
             "adoption_eligible": False,
         }
     )
+
+
+# Compile additional terminal events without rewriting original archive factors.
+def _reviewed_inherited_events(review, original_names, first, last):
+    events = review.get("inherited_events")
+    if events is None:
+        return None
+    children = {
+        event["child"]
+        for event in review["events"]
+        if event["classification"] == "security_distribution"
+    }
+    _require(
+        isinstance(events, list) and bool(events), "Explicit inherited events required"
+    )
+    result = {}
+    for event in events:
+        _require(isinstance(event, Mapping), "Explicit inherited event required")
+        symbol, day = event.get("symbol"), _day(event["date"])
+        _require(
+            symbol in children
+            and symbol not in original_names
+            and symbol not in result
+            and first <= day <= last,
+            "Unique covered inherited terminal declaration required",
+        )
+        row = {key: value for key, value in event.items() if key != "symbol"}
+        result[symbol] = (_cash_merger(row, day),)
+    return _freeze(result)
 
 
 # Compile physical grants without claiming valuation, allocation or payment evidence.
@@ -963,6 +1097,7 @@ def prepare(
     cube_price_basis=CUBE_BASIS,
     dividend_price_basis=None,
     passive=None,
+    inherited_actions=None,
 ):
     _require(
         daily_price_basis == DAILY_BASIS and cube_price_basis == CUBE_BASIS,
@@ -1017,6 +1152,7 @@ def prepare(
         dividend_price_basis,
         passive.tickers if passive is not None else (),
     )
+    inherited = _inherited_actions(inherited_actions, passive, dates)
     with np.errstate(over="ignore", under="ignore", invalid="ignore"):
         raw_daily = [value * factors for value in daily]
     _require(
@@ -1081,6 +1217,7 @@ def prepare(
                 if passive is not None
                 else {}
             ),
+            **({"inherited_actions": inherited} if inherited is not None else {}),
         }
     )
     for array in (
@@ -1113,4 +1250,5 @@ def prepare(
         action_rows,
         contract,
         passive,
+        inherited,
     )

@@ -325,9 +325,11 @@ def test_overnight_distribution_is_observed_once_on_actual_close_clock(dates):
     corporate_actions(broker, raw, 1, effective)
     receipt = broker.ledger()["security_distributions"][0]
     assert broker.ledger()["holdings"] == {"AAA": 100, "SPY": 20}
-    assert receipt["effective_at"] == receipt["applied_at"] == effective.astimezone(
-        UTC
-    ).isoformat()
+    assert (
+        receipt["effective_at"]
+        == receipt["applied_at"]
+        == effective.astimezone(UTC).isoformat()
+    )
     assert broker.ledger()["cash"] == 1000
     assert valuation(broker, raw, 1)["nav"] is None
     opening = instant(raw.dates[2], calendar.REGULAR_OPEN)
@@ -407,9 +409,12 @@ def test_nightly_sees_only_effective_grants_without_future_child_marks(
             assert "CHILD" not in first_night["holdings"]
             assert first_night["nav"] is not None
             assert first_night["nightly"]["status"] == "planned"
-            assert receipt["applied_at"] == instant(
-                raw.dates[2], calendar.REGULAR_OPEN
-            ).astimezone(UTC).isoformat()
+            assert (
+                receipt["applied_at"]
+                == instant(raw.dates[2], calendar.REGULAR_OPEN)
+                .astimezone(UTC)
+                .isoformat()
+            )
 
 
 # Re-observing the same session cannot grant a split or accrue a dividend twice.
@@ -453,6 +458,144 @@ def test_action_dispatch_requires_an_aware_actual_broker_observation():
     with pytest.raises(ValueError, match="actual observed broker clock"):
         corporate_actions(broker, raw, 1, now + timedelta(minutes=1))
     assert broker.ledger() == before
+
+
+# Keep an inherited security priced only through its final declared trading session.
+def terminal_fixture():
+    panel, raw, cubes = fixture(
+        ("2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04")
+    )
+    opening = np.full((4, 1), np.nan)
+    bars = np.full((4, 26, 1), np.nan)
+    closing = opening.copy()
+    opening[2], bars[2], closing[2] = 20, 21, 22
+    passive = prepare_passive(
+        raw.dates,
+        raw.tickers,
+        ("CHILD",),
+        opening,
+        bars,
+        closing,
+        first_session="2026-09-03",
+        complete_through="2026-09-03",
+        provenance={"source": "synthetic_final_inherited_session"},
+        price_basis=CUBE_BASIS,
+    )
+    actions = dict(raw.actions)
+    actions["AAA"] = (
+        {
+            "date": "2026-09-03",
+            "kind": "stock_distribution",
+            "child": "CHILD",
+            "numerator": 1,
+            "denominator": 1,
+            "parent_basis_fraction": None,
+            "basis_policy": "unallocated_at_effective_clock",
+            "effective_at": "2026-09-02T17:00:00-04:00",
+            "effective_source": "https://example.test/distribution",
+            "fractional_source": "https://example.test/distribution",
+            "fractional_policy": "cash_in_lieu_unknown",
+            "share_basis": "post_split_action_date_shares",
+            "source_receipt": {"scope": "synthetic_declaration"},
+        },
+    )
+    terminal = {
+        "date": "2026-09-04",
+        "kind": "cash_merger",
+        "value": 142.5,
+        "old_security_id": "synthetic-child-common",
+        "election_policy": "declared_no_election_default_cash",
+        "completed_before": "2026-09-04T09:30:00-04:00",
+        "legal_clock_precision": "completed_before_open_not_exact",
+        "terms_available_at": "2026-09-03T16:01:00-04:00",
+        "completion_available_at": "2026-09-04T08:30:00-04:00",
+        "terms_source": "https://example.test/cash-default-terms",
+        "completion_source": "https://example.test/merger-completion",
+        "source_receipt": {"scope": "synthetic_declaration_not_payment_receipt"},
+    }
+    supplied = prepare(
+        panel,
+        raw.grades,
+        raw.eligible,
+        cubes,
+        actions,
+        basis_as_of="2026-09-04",
+        complete_through="2026-09-04",
+        provenance={"source": "synthetic_terminal_journey"},
+        passive=passive,
+        inherited_actions={"CHILD": [terminal]},
+    )
+    return panel, supplied, cubes
+
+
+# The real planner continues with a known unpaid entitlement, never stale child prices.
+def test_actual_policy_terminal_merger_retains_wealth_without_inventing_funding(
+    tmp_path,
+):
+    panel, raw, cubes = terminal_fixture()
+    result = run_account(panel, raw, cubes, tmp_path / "terminal-merger", 1, 3, 10)
+    ledger = result["broker"]
+    assert "CHILD" not in ledger["holdings"]
+    assert "CHILD" not in ledger["average_prices"]
+    assert ledger["security_distributions"][0]["whole_qty"] == 250
+    assert len(ledger["cash_mergers"]) == 1
+    receipt = ledger["cash_mergers"][0]
+    assert receipt["quantity_before"] == 250
+    assert receipt["prior_total_cost"] is None
+    assert receipt["amount"] == 35625
+    assert receipt["paid"] is False
+    assert (
+        receipt["completed_before"]
+        == receipt["applied_at"]
+        == "2026-09-04T13:30:00+00:00"
+    )
+    assert all(
+        session["nightly"]["status"] == "planned" for session in result["sessions"]
+    )
+    final = result["sessions"][-1]
+    assert final["merger_receivable"] == 35625
+    assert final["nav"] == final["price_nav"] + 35625
+    assert final["price_nav"] == ledger["cash"] + ledger["holdings"]["AAA"] * 100
+    assert ledger["cash"] == pytest.approx(
+        100000
+        - sum(
+            row["filled_qty"] * row["price"] + row["fee"]
+            for row in result["fills"]
+            if row["filled_qty"]
+        )
+    )
+    for kind in ("fills", "attempts", "intents"):
+        assert all(row["symbol"] != "CHILD" for row in result[kind])
+    assert "CHILD" not in result["paper_state"]["rebalance_targets"]
+    assert all(
+        row["symbol"] != "CHILD"
+        for row in result["paper_state"]["history"][-1]["positions"]
+    )
+    assert raw.tickers == ("AAA", "SPY", "QQQ")
+    assert not np.isfinite(raw.passive.daily_close[3]).any()
+    assert raw.inherited_actions["CHILD"][0]["source_receipt"]["scope"] == (
+        "synthetic_declaration_not_payment_receipt"
+    )
+
+
+# Cash receipt settlement changes funding while keeping total NAV constant.
+def test_terminal_cash_receivable_and_paid_cash_have_distinct_valuation():
+    _, raw, _ = terminal_fixture()
+    broker = ReplayBroker(
+        100, 0, initial_holdings={"CHILD": 20}, initial_average_prices={"CHILD": 80}
+    )
+    now = instant(raw.dates[3], calendar.REGULAR_OPEN)
+    broker.observe(now, account_marks(raw, 3, now, raw.session_open[3]), True)
+    corporate_actions(broker, raw, 3, now)
+    before = valuation(broker, raw, 3)
+    assert before["nav"] == 2950
+    assert before["price_nav"] == 100
+    assert before["merger_receivable"] == 2850
+    broker.settle_merger_cash("CHILD", now, 2850, now)
+    after = valuation(broker, raw, 3)
+    assert after["nav"] == before["nav"]
+    assert after["price_nav"] == after["cash"] == 2950
+    assert after["merger_receivable"] == 0
 
 
 # Premarket, another session and timezone-free clocks cannot expose passive prices.

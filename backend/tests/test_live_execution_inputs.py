@@ -66,6 +66,140 @@ def passive_fixture(args):
     )
 
 
+# Supply a sourced, unpaid cash default with a declared before-open legal boundary.
+def merger_fixture():
+    return {
+        "date": "2026-09-15",
+        "kind": "cash_merger",
+        "value": 142.5,
+        "old_security_id": "synthetic-child-common",
+        "election_policy": "declared_no_election_default_cash",
+        "completed_before": "2026-09-15T09:30:00-04:00",
+        "legal_clock_precision": "completed_before_open_not_exact",
+        "terms_available_at": "2026-09-14T16:01:00-04:00",
+        "completion_available_at": "2026-09-15T08:30:00-04:00",
+        "terms_source": "https://example.test/merger-terms",
+        "completion_source": "https://example.test/merger-completion",
+        "source_receipt": {"scope": "synthetic_public_declaration_not_paid_receipt"},
+    }
+
+
+# Keep all child prices explicitly missing once the named security stops trading.
+def terminal_inputs():
+    args = inputs()
+    prior = passive_fixture(args)
+    opening, bars, closing = (
+        prior.session_open.copy(),
+        prior.observation_close.copy(),
+        prior.daily_close.copy(),
+    )
+    opening[1:] = bars[1:] = closing[1:] = np.nan
+    args["passive"] = adapter.prepare_passive(
+        prior.dates,
+        args["panel"].tickers,
+        prior.tickers,
+        opening,
+        bars,
+        closing,
+        first_session="2026-09-14",
+        complete_through="2026-09-14",
+        provenance={"source": "synthetic_terminal_history"},
+        price_basis=adapter.CUBE_BASIS,
+    )
+    args["inherited_actions"] = {"CHILD": [merger_fixture()]}
+    return args
+
+
+# A terminal action never adds a selection candidate or changes raw execution prices.
+def test_terminal_inherited_action_is_immutable_and_outside_selection():
+    args = terminal_inputs()
+    baseline = adapter.prepare(
+        **{key: value for key, value in args.items() if key != "inherited_actions"}
+    )
+    result = adapter.prepare(**args)
+    assert result.tickers == baseline.tickers == ("AAA", "SPY")
+    assert "CHILD" not in result.actions
+    assert result.actions == baseline.actions
+    for field in ("grades", "eligible", "daily_close", "session_open", "next_open"):
+        np.testing.assert_array_equal(getattr(result, field), getattr(baseline, field))
+    adapter.validate_inherited(result)
+    row = result.inherited_actions["CHILD"][0]
+    assert row["value"] == 142.5
+    assert "pay_at" not in row
+    args["inherited_actions"]["CHILD"][0]["value"] = 1
+    assert row["value"] == 142.5
+    with pytest.raises(TypeError):
+        row["source_receipt"]["scope"] = "invented_payment"
+    replaced = {"CHILD": [{**dict(row), "value": 1}]}
+    with pytest.raises(ValueError, match="Unchanged inherited terminal"):
+        adapter.validate_inherited(replace(result, inherited_actions=replaced))
+
+
+# Unsupported elections, publication clocks or payment guesses refuse preparation.
+@pytest.mark.parametrize(
+    "defect",
+    [
+        "policy",
+        "amount",
+        "bool",
+        "naive",
+        "future_terms",
+        "future_completion",
+        "midday",
+        "source",
+        "receipt",
+        "payment",
+        "duplicate",
+        "candidate",
+        "uncovered",
+        "late_prices",
+    ],
+)
+def test_terminal_inherited_action_refuses_invented_evidence(defect):
+    args = terminal_inputs()
+    row = args["inherited_actions"]["CHILD"][0]
+    changes = {
+        "policy": {"election_policy": "choose_best_stock_or_cash"},
+        "amount": {"value": -1},
+        "bool": {"value": True},
+        "naive": {"completion_available_at": "2026-09-15T08:30:00"},
+        "future_terms": {"terms_available_at": "2026-09-16T08:30:00-04:00"},
+        "future_completion": {"completion_available_at": "2026-09-15T10:00:00-04:00"},
+        "midday": {"completed_before": "2026-09-15T10:00:00-04:00"},
+        "source": {"terms_source": ""},
+        "receipt": {"source_receipt": {}},
+        "payment": {"pay_at": "2026-09-15T09:30:00-04:00"},
+    }
+    if defect in changes:
+        row.update(changes[defect])
+    elif defect == "duplicate":
+        args["inherited_actions"]["CHILD"].append(dict(row))
+    elif defect == "candidate":
+        args["inherited_actions"] = {"AAA": [row]}
+    elif defect == "uncovered":
+        args["passive"] = None
+    else:
+        args["passive"] = passive_fixture(args)
+    expected = {
+        "policy": "Explicit named default",
+        "amount": "Positive known cash",
+        "bool": "Positive known cash",
+        "naive": "Aware merger",
+        "future_terms": "prior available merger",
+        "future_completion": "prior available merger",
+        "midday": "Observed first opening",
+        "source": "Explicit merger declaration",
+        "receipt": "Explicit merger declaration",
+        "payment": "guessed payment",
+        "duplicate": "One explicit terminal",
+        "candidate": "Covered passive security",
+        "uncovered": "Covered passive security",
+        "late_prices": "Terminal inherited prices",
+    }[defect]
+    with pytest.raises(ValueError, match=expected):
+        adapter.prepare(**args)
+
+
 # Inherited assets never become new candidates or alter original execution inputs.
 def test_passive_prices_preserve_selection_grades_and_execution_arrays():
     args = inputs()
@@ -209,6 +343,57 @@ def reviewed_action_fixture():
         ],
     }
     return raw, review
+
+
+# Additional terminal declarations retain every original factor and dividend byte value.
+def test_review_compiles_inherited_merger_separately_from_original_actions():
+    original, review = reviewed_action_fixture()
+    review["events"][0].update(
+        classification="security_distribution",
+        child="CHILD",
+        numerator=1,
+        denominator=3,
+    )
+    before = adapter.review_action_export(original, json.dumps(review).encode())
+    review["inherited_events"] = [{"symbol": "CHILD", **merger_fixture()}]
+    compiled = adapter.review_action_export(original, json.dumps(review).encode())
+    assert compiled["actions"] == before["actions"]
+    assert compiled["original_actions_sha256"] == before["original_actions_sha256"]
+    assert compiled["reviewed_events"] == before["reviewed_events"] == 1
+    assert compiled["unresolved"] == before["unresolved"]
+    assert "CHILD" not in compiled["actions"]
+    row = compiled["inherited_actions"]["CHILD"][0]
+    assert row["kind"] == "cash_merger"
+    assert row["value"] == 142.5
+    assert "pay_at" not in row
+    assert compiled["adoption_eligible"] is False
+
+
+# A terminal declaration cannot invent a child name or duplicate its action identity.
+@pytest.mark.parametrize("defect", ["uncovered", "duplicate", "weekend"])
+def test_review_refuses_unsupported_inherited_terminal_event(defect):
+    original, review = reviewed_action_fixture()
+    review["events"][0].update(
+        classification="security_distribution",
+        child="CHILD",
+        numerator=1,
+        denominator=3,
+    )
+    row = {"symbol": "CHILD", **merger_fixture()}
+    review["inherited_events"] = [row]
+    if defect == "uncovered":
+        row["symbol"] = "invented-security"
+    elif defect == "duplicate":
+        review["inherited_events"].append(dict(row))
+    else:
+        review["last_session"] = "2026-09-21"
+        row["date"] = "2026-09-19"
+        row["completed_before"] = "2026-09-19T09:30:00-04:00"
+    expected = (
+        "Reviewed regular merger" if defect == "weekend" else "Unique covered inherited"
+    )
+    with pytest.raises(ValueError, match=expected):
+        adapter.review_action_export(original, json.dumps(review).encode())
 
 
 # Recover prices once while granting only separately declared economic shares.
