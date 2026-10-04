@@ -30,13 +30,28 @@ events and VMW terminal merger processing remain incomplete. Original invalid
 export rejection gates remain intact. No old capture/assembly/score repeated.
 
 Working-tree native275 cases PASS12.39s including unchanged external acceptance;
-Ruff/diff clean. Exact-source image and actual original-byte compilation proof
-PENDING; do not call this new tree a verified checkpoint until completed.
+Ruff/diff clean. VERIFIED exact sourceac5403753944314120ad3508b64133e70b2a7b0d:
+2371-file Git archive passed492 cases17.63s/no skips in pinned image
+5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+Counts overlap; do not sum. Actual review-only CLI authenticated the whole
+source before/after and preserved all96 symbol histories,26 original price
+adjustments and1753 dividends. Eighteen forward grants, one named HUT exchange
+and one APLD consolidation compile; four original events remain unresolved.
+The saved-only independent checker imports no producer/broker/predictor and
+verified those counts, original-byte retention, legal/application clock
+distinction and captured certificate hash. No accounts created or scored,
+models restored/fitted, original source recaptured or payment inferred.
+Proof:/home/animallya96/scratch/share-consolidation-20261004-ac540375/proof.
+Test log37d3ad01f74b23ec537298a8775460ee13a15abc638c564758efe25cc1a08110;
+manifest7cc5c7c431bddab62fd6578be83413900d2a7e4bf434764a67df96ce44082563;
+compiled9e9640449a73c85c2a422a27ee2d094cc90c7060362c5fb8f463475580815fe7;
+independent44a72f0bc180b0d37b8bf7dd1569fa0d888cd1d75dd0ffa38b1a981b540f5170.
+Receipt/captured certificate and checker are saved with exact commands there.
 Original passive array evidence111e0655 is reusable and unchanged.
 Live read-only source still621e28f0f8407f511ff01202c8e5aaa6bcda9e40;
 no main merge/deployment. Diagram impact: NONE, existing private supplied-action
-and accounting boundaries. NEXT: source-image/action compilation proof, then
-unknown distribution basis and dated terminal/election processing before fixed
+and accounting boundaries. NEXT: unknown distribution basis and dated
+terminal/election processing before fixed
 funded same-sizing timing comparison; sizing and profit exits remain later arms.
 
 ## 2026-10-04 — causal valuation-only inherited-asset input path
