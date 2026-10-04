@@ -14,7 +14,11 @@ import pytest
 
 from backend.cli import verify_actual_policy_timing as verifier
 from backend.market import calendar
-from backend.tests.test_live_policy_replay import fixture
+from backend.tests.test_live_policy_replay import (
+    fixture,
+    share_exchange_fixture,
+    terminal_fixture,
+)
 
 
 # Authenticated bytes with a known false entitlement must not earn a proof certificate.
@@ -40,7 +44,91 @@ def direct_data(raw, cubes):
             }
             for name, cube in cubes.items()
         },
+        "inherited_actions": {
+            name: [dict(row) for row in rows]
+            for name, rows in (raw.inherited_actions or {}).items()
+        },
+        "passive": {
+            "names": raw.passive.tickers,
+            "close": raw.passive.daily_close.copy(),
+        }
+        if raw.passive is not None
+        else None,
     }
+
+
+# Save the real policy across a distribution or named-security conversion boundary.
+def entitlement_account(tmp_path, kind):
+    from backend.market.live_execution_inputs import prepare
+    from backend.market.live_policy_replay import run_account
+
+    panel, raw, cubes = (
+        share_exchange_fixture() if kind == "share_default" else terminal_fixture()
+    )
+    if kind == "distribution":
+        raw = prepare(
+            panel,
+            raw.grades,
+            raw.eligible,
+            cubes,
+            raw.actions,
+            basis_as_of=str(raw.dates[-1]),
+            complete_through=str(raw.dates[-1]),
+            provenance={"source": "synthetic_distribution_without_terminal_event"},
+            passive=raw.passive,
+        )
+    declaration = dict(spec(), last=len(raw.dates) - 1)
+    account = run_account(
+        panel, raw, cubes, tmp_path / "source", 1, declaration["last"], 10
+    )
+    account["comparison_account"] = declaration
+    return account, declaration, direct_data(raw, cubes)
+
+
+# Price inherited holdings separately and retain missing fraction/payment evidence.
+@pytest.mark.parametrize("kind", ["distribution", "share_default", "merger"])
+def test_saved_entitlements_reconcile_without_invented_cash_or_cost(tmp_path, kind):
+    account, declaration, data = entitlement_account(tmp_path, kind)
+    counts = verifier.reconcile_account(account, declaration, data)
+    if kind == "share_default":
+        assert counts["unknown_claim_marks"] == 2
+        assert account["sessions"][-1]["nav"] is None
+    elif kind == "distribution":
+        assert counts["missing_held_marks"] == 1
+        assert account["broker"]["average_prices"]["CHILD"] is None
+    else:
+        assert counts["unknown_claim_marks"] == counts["missing_held_marks"] == 0
+        assert account["broker"]["cash_mergers"][0]["amount"] == 35625
+        assert account["sessions"][-1]["merger_receivable"] == 35625
+
+
+# Reject forged grant arithmetic or an earlier applied clock in a saved real journey.
+@pytest.mark.parametrize(
+    "field", ["whole_qty", "fractional_qty", "cash_in_lieu", "applied_at"]
+)
+def test_saved_distribution_receipt_tamper_cannot_earn_proof(tmp_path, field):
+    account, declaration, data = entitlement_account(tmp_path, "distribution")
+    receipt = account["broker"]["security_distributions"][0]
+    receipt[field] = "2026-09-02T13:30:00+00:00" if field == "applied_at" else 123
+    with pytest.raises(ValueError, match="security_distributions"):
+        verifier.reconcile_account(account, declaration, data)
+
+
+# Keep acquisition cost unknown until the entire old lot is closed.
+def test_unknown_basis_does_not_turn_into_a_free_known_lot():
+    held, basis, cash = {"AAA": 10}, {"AAA": None}, 100
+    buy = {"symbol": "AAA", "filled_qty": 2, "price": 5, "fee": 0.01, "side": "buy"}
+    cash = verifier.fold_fills([buy], cash, held, basis)
+    assert cash == pytest.approx(89.99)
+    assert held == {"AAA": 12}
+    assert basis == {"AAA": None}
+    sell = dict(buy, filled_qty=12, price=6, side="sell")
+    cash = verifier.fold_fills([sell], cash, held, basis)
+    assert held == basis == {}
+    cash = verifier.fold_fills([dict(buy, filled_qty=1, price=8)], cash, held, basis)
+    assert cash == pytest.approx(153.97)
+    assert held == {"AAA": 1}
+    assert basis == {"AAA": 8}
 
 
 # Declare an explicitly synthetic bounded account without changing the production grid.

@@ -12,7 +12,8 @@ import json
 import math
 import platform
 import sys
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
+from fractions import Fraction
 from pathlib import Path
 
 import numpy as np
@@ -626,36 +627,297 @@ def validate_fills(fills, accepted, spec, data, dates):
     return by_day
 
 
-# Account for dated entitlements before that day's saved transactions.
-def fold_actions(data, day, held, basis, dividends):
-    for symbol in data["names"]:
-        for action in data["actions"][symbol]:
-            if action["date"] != day:
-                continue
-            if action["kind"] == "split":
-                if symbol in held:
-                    held[symbol] *= action["value"]
-                    basis[symbol] /= action["value"]
+# Check the saved receipt against independently derived entitlement arithmetic.
+def check_entitlement(ledger, field, record):
+    matches = [
+        row
+        for row in ledger.get(field, [])
+        if row.get("action_key") == record["action_key"]
+    ]
+    require(len(matches) == 1, f"Unique {field} entitlement receipt required")
+    same(matches[0], record, field)
+    return record
+
+
+# Derive whole security conversions and their separate fractional acquisition cost.
+def conversion_entitlement(held, basis, symbol, action):
+    numerator, denominator = action["numerator"], action["denominator"]
+    require(
+        type(numerator) is type(denominator) is int
+        and numerator > 0
+        and denominator > 0,
+        "Positive integer share ratio required",
+    )
+    quantity = held.get(symbol, 0)
+    require(quantity == int(quantity), "Whole pre-action holdings required")
+    ratio = Fraction(numerator, denominator)
+    entitlement = int(quantity) * ratio
+    whole_qty, fraction = int(entitlement), float(entitlement % 1)
+    average = basis.get(symbol, 0)
+    new_average = average / float(ratio) if average is not None else None
+    fractional_cost = (
+        fraction * new_average if new_average is not None else None if fraction else 0
+    )
+    return ratio, quantity, whole_qty, fraction, new_average, fractional_cost
+
+
+# Reconstruct economic grants separately from archive price factors and cash payments.
+def fold_grant(symbol, action, effective, now, held, basis):
+    kind, clock = action["kind"], effective.isoformat()
+    key = [
+        symbol,
+        f"stock_distribution/{action['child']}"
+        if kind == "stock_distribution"
+        else kind,
+        clock,
+    ]
+    if kind == "stock_distribution":
+        child = action["child"]
+        require(child != symbol, "Distinct distribution security required")
+        ratio, parent_qty, whole_qty, fraction, _, _ = conversion_entitlement(
+            held, basis, symbol, action
+        )
+        allocation = action["parent_basis_fraction"]
+        require(
+            (
+                allocation is None
+                and action.get("basis_policy") == "unallocated_at_effective_clock"
+            )
+            or (type(allocation) in (int, float) and 0 < allocation < 1),
+            "Explicit known or unallocated acquisition basis required",
+        )
+        parent_average = basis.get(symbol, 0)
+        parent_total = (
+            parent_qty * parent_average if parent_average is not None else None
+        )
+        child_before, child_average = held.get(child, 0), basis.get(child, 0)
+        child_total = (
+            child_before * child_average if child_average is not None else None
+        )
+        child_grant_average = (
+            parent_average * (1 - allocation) / float(ratio)
+            if parent_average is not None and allocation is not None
+            else None
+        )
+        if parent_qty:
+            basis[symbol] = (
+                parent_average * allocation
+                if parent_average is not None and allocation is not None
+                else None
+            )
+        if whole_qty:
+            quantity = child_before + whole_qty
+            held[child] = quantity
+            basis[child] = (
+                (child_before * child_average + whole_qty * child_grant_average)
+                / quantity
+                if child_grant_average is not None
+                and (not child_before or child_average is not None)
+                else None
+            )
+        record = {
+            "action_key": key,
+            "parent": symbol,
+            "child": child,
+            "parent_qty": parent_qty,
+            "numerator": ratio.numerator,
+            "denominator": ratio.denominator,
+            "whole_qty": whole_qty,
+            "fractional_qty": fraction,
+            "fractional_basis": (
+                fraction * child_grant_average
+                if child_grant_average is not None
+                else None
+                if fraction
+                else 0
+            ),
+            "parent_basis_fraction": allocation,
+            "cash_in_lieu": None,
+            "effective_at": clock,
+            "applied_at": now.isoformat(),
+        }
+        if allocation is None:
+            record.update(
+                basis_policy="unallocated_at_effective_clock",
+                basis_before={"parent_total": parent_total, "child_total": child_total},
+            )
+        return "security_distributions", record
+    if kind == "cash_merger":
+        quantity, average = held.get(symbol, 0), basis.get(symbol, 0)
+        require(quantity == int(quantity), "Whole pre-merger holdings required")
+        require(
+            action["election_policy"] == "declared_no_election_default_cash",
+            "Explicit private cash default required",
+        )
+        record = {
+            "action_key": key,
+            "symbol": symbol,
+            "old_security_id": action["old_security_id"],
+            "election_policy": action["election_policy"],
+            "quantity_before": quantity,
+            "per_share": action["value"],
+            "amount": quantity * action["value"],
+            "prior_total_cost": quantity * average if average is not None else None,
+            "completed_before": clock,
+            "legal_clock_precision": "completed_before_open_not_exact",
+            "applied_at": now.isoformat(),
+            "paid": False,
+            "entitlement_scope": "declared_private_no_election_not_broker_receipt",
+        }
+        held.pop(symbol, None)
+        basis.pop(symbol, None)
+        return "cash_mergers", record
+    require(kind in ("share_consolidation", "security_exchange"), "Unsupported grant")
+    ratio, before, quantity, fraction, average, fractional_cost = (
+        conversion_entitlement(held, basis, symbol, action)
+    )
+    if quantity:
+        held[symbol], basis[symbol] = quantity, average
+    else:
+        held.pop(symbol, None)
+        basis.pop(symbol, None)
+    record = {
+        "action_key": key,
+        "symbol": symbol,
+        "numerator": ratio.numerator,
+        "denominator": ratio.denominator,
+        "quantity_before": before,
+        "fractional_policy": action["fractional_policy"],
+        "entitlement_scope": (
+            "private_holder_aggregate_not_broker_street_name_allocation"
+        ),
+    }
+    if kind == "share_consolidation":
+        require(
+            ratio < 1 and action["fractional_policy"] == "cash_in_lieu_unknown",
+            "Explicit consolidation cash-fraction policy required",
+        )
+        record.update(
+            whole_qty=quantity,
+            fractional_qty=fraction,
+            fractional_basis=fractional_cost,
+            cash_in_lieu=None,
+            effective_at=clock,
+            applied_at=now.isoformat(),
+        )
+        return "share_consolidations", record
+    record.update(
+        old_security_id=action["old_security_id"],
+        new_security_id=action["new_security_id"],
+        quantity_after=quantity,
+        cash_credit=0,
+    )
+    require(
+        record["old_security_id"] != record["new_security_id"],
+        "Distinct issuers required",
+    )
+    if action["fractional_policy"] == "floor_no_compensation":
+        require(action.get("election_policy") is None, "Unsupported cash election")
+        record.update(
+            forfeited_fraction=fraction,
+            forfeited_basis=fractional_cost,
+            effective_at=clock,
+            basis_policy="ratio_basis_with_separate_forfeited_cost_not_tax_basis",
+        )
+    else:
+        require(
+            action["fractional_policy"] == "cash_in_lieu_unknown"
+            and action["election_policy"] == "declared_no_election_default_shares",
+            "Explicit share default required",
+        )
+        record.update(
+            fractional_qty=fraction,
+            fractional_basis=fractional_cost,
+            cash_in_lieu=None,
+            completed_before=clock,
+            legal_clock_precision="completed_before_open_not_exact",
+            applied_at=now.isoformat(),
+            election_policy=action["election_policy"],
+            basis_policy="ratio_basis_with_separate_fractional_cost_not_tax_basis",
+        )
+    return "security_exchanges", record
+
+
+# Index both declaration application dates and legal dates without outcome filtering.
+def source_events(data):
+    priority = {
+        "split": 0,
+        "share_split": 0,
+        "security_exchange": 1,
+        "share_consolidation": 2,
+        "cash_merger": 3,
+        "stock_distribution": 4,
+        "dividend": 5,
+        "archive_adjustment": 6,
+    }
+    events = {}
+    for symbol, rows in (
+        *data["actions"].items(),
+        *(data.get("inherited_actions") or {}).items(),
+    ):
+        for action in rows:
+            require(action["kind"] in priority, "Unsupported source economic action")
+            supplied_clock = action.get("effective_at", action.get("completed_before"))
+            if supplied_clock is None:
+                effective = datetime.combine(
+                    date.fromisoformat(action["date"]),
+                    calendar.REGULAR_OPEN,
+                    calendar.NEW_YORK,
+                ).astimezone(UTC)
             else:
-                opening = (
-                    datetime.combine(
-                        date.fromisoformat(day),
-                        calendar.REGULAR_OPEN,
-                        calendar.NEW_YORK,
-                    )
-                    .astimezone(UTC)
-                    .isoformat()
+                effective = aware(supplied_clock)
+            for day in {
+                action["date"],
+                effective.astimezone(calendar.NEW_YORK).date().isoformat(),
+            }:
+                events.setdefault(day, []).append(
+                    (effective, priority[action["kind"]], symbol, action)
                 )
-                dividends.append(
-                    {
-                        "action_key": [symbol, "dividend", opening],
-                        "symbol": symbol,
-                        "amount": held.get(symbol, 0) * action["value"],
-                        "effective_at": opening,
-                        "pay_at": None,
-                        "paid": False,
-                    }
-                )
+    return {
+        day: sorted(rows, key=lambda event: event[:2]) for day, rows in events.items()
+    }
+
+
+# Apply source events only at actual opening/nightly observations, once per identity.
+def fold_actions(events, now, held, basis, dividends, records, seen, ledger):
+    now = aware(now.isoformat())
+    local = now.astimezone(calendar.NEW_YORK)
+    for effective, _, symbol, action in events.get(local.date().isoformat(), ()):
+        if effective > now:
+            continue
+        kind = action["kind"]
+        if kind == "archive_adjustment":
+            continue
+        identity = (
+            "split"
+            if kind == "share_split"
+            else f"stock_distribution/{action['child']}"
+            if kind == "stock_distribution"
+            else kind
+        )
+        key = (symbol, identity, effective.isoformat())
+        if key in seen:
+            continue
+        seen.add(key)
+        if kind in ("split", "share_split"):
+            if symbol in held:
+                held[symbol] *= action["value"]
+                if basis[symbol] is not None:
+                    basis[symbol] /= action["value"]
+        elif kind == "dividend":
+            dividends.append(
+                {
+                    "action_key": list(key),
+                    "symbol": symbol,
+                    "amount": held.get(symbol, 0) * action["value"],
+                    "effective_at": effective.isoformat(),
+                    "pay_at": None,
+                    "paid": False,
+                }
+            )
+        else:
+            field, record = fold_grant(symbol, action, effective, now, held, basis)
+            records[field].append(check_entitlement(ledger, field, record))
 
 
 # Fold recorded trades into cash, held shares and acquisition bases.
@@ -671,8 +933,15 @@ def fold_fills(fills, cash, held, basis):
             continue
         if fill["side"] == "buy":
             before = held.get(symbol, 0)
-            basis[symbol] = (before * basis.get(symbol, 0) + qty * price) / (
-                before + qty
+            prior_basis = basis.get(symbol, 0)
+            basis[symbol] = (
+                price
+                if not before
+                else (
+                    (before * prior_basis + qty * price) / (before + qty)
+                    if prior_basis is not None
+                    else None
+                )
             )
             held[symbol] = before + qty
             cash -= qty * price + fee
@@ -755,6 +1024,83 @@ def check_policy_receipts(account, data, dates):
     )
 
 
+# Validate priced holdings and explicit unpaid claims against a saved session.
+def check_valuation(row, data, global_index, observed, cash, held, dividends, records):
+    day = row["session"]
+    closing = datetime.combine(
+        date.fromisoformat(day),
+        calendar.session_close(date.fromisoformat(day)),
+        calendar.NEW_YORK,
+    )
+    missing_marks, unknown_claim_marks = 0, 0
+    marks = dict(zip(data["names"], data["close"][global_index], strict=True))
+    passive = data.get("passive")
+    if passive is not None:
+        marks.update(
+            zip(passive["names"], passive["close"][global_index], strict=True)
+            if observed > closing
+            else dict.fromkeys(passive["names"], np.nan).items()
+        )
+    absent = [
+        name
+        for name, qty in held.items()
+        if qty and not np.isfinite(marks.get(name, np.nan))
+    ]
+    unknown = {
+        field: [
+            item
+            for item in records[field]
+            if item.get("fractional_qty", 0) > 0 and item["cash_in_lieu"] is None
+        ]
+        for field in (
+            "security_distributions",
+            "share_consolidations",
+            "security_exchanges",
+        )
+    }
+    unpriced = [item for group in unknown.values() for item in group]
+    if unpriced:
+        unknown_claim_marks += 1
+        expected_status = (
+            "unknown_exchange_cash_in_lieu"
+            if unknown["security_exchanges"]
+            else "unknown_consolidation_cash_in_lieu"
+            if unknown["share_consolidations"]
+            else "unknown_distribution_cash_in_lieu"
+        )
+        require(
+            row["nav"] is None
+            and row["price_nav"] is None
+            and row["status"] == expected_status,
+            "Unpriced entitlement NAV was fabricated",
+        )
+        same(row["unpriced_entitlements"], unpriced, f"{day} unpriced claims")
+    elif absent:
+        missing_marks += 1
+        require(
+            row["nav"] is None
+            and row["price_nav"] is None
+            and row["status"] == "missing_held_close"
+            and row["missing_symbols"] == absent,
+            "Missing held NAV was hidden or filled",
+        )
+    else:
+        price_nav = cash + sum(qty * marks[name] for name, qty in held.items())
+        receivable = sum(item["amount"] for item in dividends)
+        merger_receivable = sum(item["amount"] for item in records["cash_mergers"])
+        same(row["price_nav"], price_nav, f"{day} price NAV")
+        same(row["dividend_receivable"], receivable, f"{day} receivable")
+        if records["cash_mergers"]:
+            same(row["merger_receivable"], merger_receivable, f"{day} merger claim")
+        same(
+            row["nav"],
+            price_nav + receivable + merger_receivable,
+            f"{day} funded NAV",
+        )
+        require(row["status"] == "marked_raw_close", "Raw NAV status differs")
+    return missing_marks, unknown_claim_marks
+
+
 # Reconcile saved receipts to every session's cash, shares, basis and raw marked wealth.
 def reconcile_account(account, spec, data):
     require(
@@ -788,45 +1134,51 @@ def reconcile_account(account, spec, data):
     accepted = validate_attempts(attempts, dates, data)
     by_day = validate_fills(fills, accepted, spec, data, dates)
     cash, held, basis, dividends = 100000.0, {}, {}, []
+    ledger = account["broker"]
+    records = dict.fromkeys(
+        (
+            "security_distributions",
+            "share_consolidations",
+            "security_exchanges",
+            "cash_mergers",
+        )
+    )
+    records = {field: [] for field in records}
+    events, seen = source_events(data), set()
     missing_marks = 0
+    unknown_claim_marks = 0
     for index, row in enumerate(sessions):
         day = row["session"]
+        opening = datetime.combine(
+            date.fromisoformat(day), calendar.REGULAR_OPEN, calendar.NEW_YORK
+        )
+        closing = datetime.combine(
+            date.fromisoformat(day),
+            calendar.session_close(date.fromisoformat(day)),
+            calendar.NEW_YORK,
+        )
+        observed = closing if benchmark else closing + timedelta(minutes=1)
         if index:
-            fold_actions(data, day, held, basis, dividends)
+            fold_actions(events, opening, held, basis, dividends, records, seen, ledger)
             cash = fold_fills(by_day.get(day, []), cash, held, basis)
+        if not benchmark:
+            fold_actions(
+                events, observed, held, basis, dividends, records, seen, ledger
+            )
         same(row["cash"], cash, f"{day} cash")
         same(row["holdings"], held, f"{day} shares")
         global_index = spec["first"] - 1 + index
-        absent = [
-            name
-            for name, qty in held.items()
-            if qty
-            and not np.isfinite(data["close"][global_index, data["names"].index(name)])
-        ]
-        if absent:
-            missing_marks += 1
-            require(
-                row["nav"] is None
-                and row["price_nav"] is None
-                and row["status"] == "missing_held_close"
-                and row["missing_symbols"] == absent,
-                "Missing held NAV was hidden or filled",
-            )
-        else:
-            price_nav = cash + sum(
-                qty * data["close"][global_index, data["names"].index(name)]
-                for name, qty in held.items()
-            )
-            receivable = sum(item["amount"] for item in dividends)
-            same(row["price_nav"], price_nav, f"{day} price NAV")
-            same(row["dividend_receivable"], receivable, f"{day} receivable")
-            same(row["nav"], price_nav + receivable, f"{day} funded NAV")
-            require(row["status"] == "marked_raw_close", "Raw NAV status differs")
-    ledger = account["broker"]
+        missing, unknown = check_valuation(
+            row, data, global_index, observed, cash, held, dividends, records
+        )
+        missing_marks += missing
+        unknown_claim_marks += unknown
     same(ledger["cash"], cash, "final cash")
     same(ledger["holdings"], held, "final holdings")
     same(ledger["average_prices"], basis, "final acquisition basis")
     same(ledger["dividends"], dividends, "final unpaid dividend entitlements")
+    for field, expected in records.items():
+        same(ledger.get(field, []), expected, f"final {field}")
     final_clock = datetime.combine(
         date.fromisoformat(str(dates[-1])),
         calendar.session_close(dates[-1].astype(object)),
@@ -849,6 +1201,7 @@ def reconcile_account(account, spec, data):
         "attempts": len(attempts),
         "missing_held_marks": missing_marks,
         "dividend_entitlements": len(dividends),
+        "unknown_claim_marks": unknown_claim_marks,
     }
 
 
@@ -1084,6 +1437,7 @@ def verify_saved(study, report, identity, data, *, grid=None):
         "attempts": 0,
         "missing_held_marks": 0,
         "dividend_entitlements": 0,
+        "unknown_claim_marks": 0,
     }
     checked = []
     for spec, row in zip(grid, report["accounts"], strict=True):
