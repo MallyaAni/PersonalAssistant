@@ -43,8 +43,8 @@ class _ObservedHead:
         return self.estimator.predict(np.asarray(features)[:, self.columns])
 
 
-# Build completed-close features and separately available next-open return labels.
-def prepare(panel, grades, eligible, calendar, provenance):
+# Build the original completed-close features without requiring future return labels.
+def completed_features(panel, grades, eligible, calendar, provenance):
     dates, prices, names, grades, eligible = learned_entry_data._validate_panel(
         panel, grades, eligible
     )
@@ -79,6 +79,26 @@ def prepare(panel, grades, eligible, calendar, provenance):
         spy,
     )
     context, available = context[1:], available[1:]
+    return {
+        "X": context,
+        "valid": available & members & (grades >= 0),
+        "available": available,
+        "risk_valid": available & stock[None, :],
+        "dates": dates,
+        "prices": prices,
+        "feature_names": list(FEATURE_NAMES),
+        "symbols": names,
+        "training_symbols": stock,
+        "spy_index": spy,
+        "provenance": provenance,
+    }
+
+
+# Build completed-close features and separately available next-open return labels.
+def prepare(panel, grades, eligible, calendar, provenance):
+    completed = completed_features(panel, grades, eligible, calendar, provenance)
+    dates, prices, names = completed["dates"], completed["prices"], completed["symbols"]
+    spy, stock = completed["spy_index"], completed["training_symbols"]
     opens = allocation_controls.adjusted_open(panel.open, panel.close, prices)
     if opens.shape != prices.shape or np.any(np.isinf(opens)):
         raise ValueError("Finite-or-missing aligned adjusted daily opens required")
@@ -93,11 +113,11 @@ def prepare(panel, grades, eligible, calendar, provenance):
             relative[day, known] = np.log(end[known] / start[known]) - market[day]
         endpoints[day] = dates[day + LABEL_END]
     return {
-        "X": context,
+        "X": completed["X"],
         "relative_labels": relative,
         "spy_labels": market,
-        "valid": available & members & (grades >= 0),
-        "spy_valid": available[:, spy],
+        "valid": completed["valid"],
+        "spy_valid": completed["available"][:, spy],
         "dates": dates,
         "label_end_dates": endpoints,
         "feature_names": list(FEATURE_NAMES),

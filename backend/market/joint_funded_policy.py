@@ -14,6 +14,7 @@ import numpy as np
 from backend.agents.trading.desk import allocation, funded_execution, paper
 from backend.market import adaptive_growth_policy as growth
 from backend.market.direct_error_band import VolatilityHoldingReader
+from backend.market.forward_arithmetic import ForwardVolatilityHoldingReader
 
 POLICY = "joint-stock-risk-funded/1-research"
 HORIZON = "next_open_to_following_open_arithmetic_return"
@@ -57,9 +58,11 @@ def _account(equity, held, prices, cash):
 class JointFundedPolicy:
     version = POLICY
 
-    # Admit only the authenticated original joint-volatility lineage.
+    # Admit original or published forward risk on the still-private funded path.
     def __init__(self, reader, cost_bps):
-        if not isinstance(reader, VolatilityHoldingReader):
+        if not isinstance(
+            reader, (VolatilityHoldingReader, ForwardVolatilityHoldingReader)
+        ):
             raise ValueError("Authenticated volatility holding reader required")
         if not _number(cost_bps) or cost_bps >= 10000:
             raise ValueError("Finite per-side costs below 10000 bp required")
@@ -81,6 +84,8 @@ class JointFundedPolicy:
     def decide(self, session, report, equity, held, prices, cash, blocked):
         if str(report.panel.dates[-1]) != session:
             raise ValueError("Exact current report session required")
+        if isinstance(self.reader, ForwardVolatilityHoldingReader):
+            self.reader.validate_report(report)
         dates = self.reader.dates
         hits = np.flatnonzero(dates == np.datetime64(session, "D"))
         if len(hits) != 1 or not np.array_equal(

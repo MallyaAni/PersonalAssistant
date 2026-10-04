@@ -790,6 +790,10 @@ def _holding_broker(policy, client, decision_at):
         )
     if datetime.fromisoformat(client.clock()["timestamp"]) != decision_at:
         raise ValueError("Joint private ledger must observe the exact decision clock")
+    from backend.market.forward_arithmetic import ForwardVolatilityHoldingReader
+
+    if isinstance(policy.reader, ForwardVolatilityHoldingReader):
+        policy.reader.validate_clock(decision_at)
 
 
 # Preserve fresh inherited position marks without granting stock eligibility.
