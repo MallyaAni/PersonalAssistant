@@ -1,6 +1,7 @@
 """Synthetic restoration accepts original samples and refuses corrupted evidence."""
 
 from copy import deepcopy
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -188,3 +189,72 @@ def test_input_identity_and_provider_indices_refused(original):
     for indices in ((-1, 0, 0), (0, 2, 0), (0, 0, 3), (True, 0, 0)):
         with pytest.raises(ValueError, match="indices"):
             restored.provider(*indices)
+
+
+# Require explicit admission before restoring the exact old calendar producer.
+def test_archived_calendar_requires_explicit_admission(original, monkeypatch):
+    manifest = deepcopy(original[1].manifest)
+    manifest["identity"]["sources"]["backend/market/calendar.py"] = (
+        "5f36c265d979d13370d0535a135e528198136572bc067efeaaad292433ffe0a9"
+    )
+    with pytest.raises(ValueError, match="identity differs: sources"):
+        restore(original, manifest=manifest)
+
+    # Reject any attempt to regenerate diagnostics during compatibility restoration.
+    def forbid(*args, **kwargs):
+        raise AssertionError("Saved restoration cannot calibrate")
+
+    monkeypatch.setattr(model, "calibrate", forbid)
+    old = restore(original, manifest=manifest, allow_calendar_correction=True)
+    current = restore(original)
+    day = len(original[0]["dates"]) - 1
+    actual, expected = old.provider(day, 0, 0), current.provider(day, 0, 0)
+    assert actual.mean == expected.mean
+    assert actual.scale == expected.scale
+    np.testing.assert_array_equal(actual.residuals, expected.residuals)
+    np.testing.assert_array_equal(actual.weights, expected.weights)
+    proof = old.verification["source_compatibility"]
+    assert proof["original_sources"] == manifest["identity"]["sources"]
+    assert proof["consumer_sources"] == original[1].manifest["identity"]["sources"]
+    assert proof["calendar_correction_admitted"] is True
+
+
+# The admitted pair never allows another source, calendar version or input to change.
+@pytest.mark.parametrize("changed", ["calendar", "producer", "table", "labels"])
+def test_calendar_admission_refuses_other_identity_changes(original, changed):
+    manifest = deepcopy(original[1].manifest)
+    sources = manifest["identity"]["sources"]
+    sources["backend/market/calendar.py"] = (
+        "5f36c265d979d13370d0535a135e528198136572bc067efeaaad292433ffe0a9"
+    )
+    if changed == "labels":
+        manifest["identity"]["inputs"]["labels"] = "0" * 64
+    elif changed == "calendar":
+        sources["backend/market/calendar.py"] = "0" * 64
+    else:
+        key = (
+            "backend/market/probabilistic_execution.py"
+            if changed == "producer"
+            else str(
+                calendar.HISTORICAL_SESSIONS_PATH.relative_to(
+                    Path(__file__).resolve().parents[2]
+                )
+            )
+        )
+        sources[key] = "0" * 64
+    with pytest.raises(ValueError, match="identity differs"):
+        restore(original, manifest=manifest, allow_calendar_correction=True)
+
+
+# A future consumer calendar or truthy non-boolean flag cannot reuse this exception.
+@pytest.mark.parametrize("changed", ["consumer", "flag"])
+def test_calendar_admission_refuses_unregistered_consumer(original, changed):
+    consumer = deepcopy(original[1].manifest["identity"]["sources"])
+    archived = dict(consumer)
+    archived["backend/market/calendar.py"] = saved.ARCHIVED_CALENDAR_SHA
+    if changed == "consumer":
+        consumer["backend/market/calendar.py"] = "1" * 64
+    with pytest.raises(ValueError, match="identity differs: sources"):
+        saved._source_compatibility(
+            archived, consumer, 1 if changed == "flag" else True
+        )

@@ -15,6 +15,14 @@ import numpy as np
 from backend.market import probabilistic_execution as model
 from backend.market.daily_arithmetic_bridge import _hash
 
+CALENDAR_SOURCE = "backend/market/calendar.py"
+ARCHIVED_CALENDAR_SHA = (
+    "5f36c265d979d13370d0535a135e528198136572bc067efeaaad292433ffe0a9"
+)
+CORRECTED_CALENDAR_SHA = (
+    "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4"
+)
+
 
 # Preserve verified samples and current support for causal execution decisions.
 @dataclass
@@ -64,6 +72,27 @@ def _require(condition, message):
         raise ValueError(message)
 
 
+# Admit only the pinned meeting-distance correction, preserving the producer identity.
+def _source_compatibility(original, consumer, allow_calendar_correction):
+    admitted = False
+    if original != consumer:
+        # The only changed function is not called by calibration or saved restoration.
+        # This explicit byte pair cannot authorize a later calendar or table change.
+        matched = dict(consumer)
+        matched[CALENDAR_SOURCE] = ARCHIVED_CALENDAR_SHA
+        admitted = (
+            allow_calendar_correction is True
+            and consumer.get(CALENDAR_SOURCE) == CORRECTED_CALENDAR_SHA
+            and original == matched
+        )
+        _require(admitted, "Original manifest identity differs: sources")
+    return {
+        "original_sources": deepcopy(original),
+        "consumer_sources": deepcopy(consumer),
+        "calendar_correction_admitted": admitted,
+    }
+
+
 # Bind original typed inputs, source semantics and recorded calibration clocks.
 def _identity(
     dates,
@@ -76,18 +105,22 @@ def _identity(
     manifest,
     data_as_of,
     horizon,
+    allow_calendar_correction,
 ):
     expected = model._identity(
         dates, symbols, means, second, labels, valid, endpoints, data_as_of, horizon
     )
     saved = manifest.get("identity", {})
     for key, value in expected.items():
-        if key != "numpy":
+        if key not in ("numpy", "sources"):
             _require(
                 saved.get(key) == value, f"Original manifest identity differs: {key}"
             )
     _require(isinstance(saved.get("numpy"), str), "Original runtime identity required")
-    return saved
+    compatibility = _source_compatibility(
+        saved.get("sources"), expected["sources"], allow_calendar_correction
+    )
+    return saved, compatibility
 
 
 # Require original saved forecast representation before deriving its support mask.
@@ -245,9 +278,10 @@ def load_saved(
     saved_quantiles,
     data_as_of,
     horizon,
+    allow_calendar_correction=False,
 ):
     _require(horizon == model.HORIZON, "Matching one-decision horizon required")
-    identity = _identity(
+    identity, compatibility = _identity(
         dates,
         symbols,
         means,
@@ -258,6 +292,7 @@ def load_saved(
         manifest,
         data_as_of,
         horizon,
+        allow_calendar_correction,
     )
     (
         dates,
@@ -345,6 +380,7 @@ def load_saved(
             "authenticated_sample_rows": rows,
             "available_observations": int(available.sum()),
             "original_numpy": identity["numpy"],
+            "source_compatibility": compatibility,
             "restoration_numpy": np.__version__,
             "no_refit_or_recalibration": True,
             "caller_authenticates_original_receipt_and_archive_bytes": True,

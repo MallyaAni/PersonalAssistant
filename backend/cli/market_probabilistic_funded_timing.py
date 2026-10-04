@@ -84,6 +84,7 @@ def distribution_provider(directory, method, report, inputs):
         horizon=probability.HORIZON,
         saved_probability=saved_probability,
         saved_quantiles=saved_quantiles,
+        allow_calendar_correction=True,
     )
 
 
