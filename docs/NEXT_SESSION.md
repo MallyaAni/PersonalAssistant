@@ -1,5 +1,78 @@
 # Next session
 
+## 2026-10-04 — reviewed source gate and fixed economic study started
+
+Goal ACTIVE. Previous turn NO PROGRESS: next-step explanation only. This turn
+PROGRESS: independently connected original reviewed sources, verified the
+explicit score gate, and started the fixed actual-policy study. Starting branch
+codex/learned-entry-risk-20261002, HEAD2adaf41b, clean; fetched origin/main204689db
+without rewriting existing merge history or concurrent main/user work.
+Atomic objective: independently authenticate original grants/passive/terminal
+inputs, retain legacy incorrect-export refusal, and allow only the reviewed
+conditional research path before restoring frozen predictors. Acceptance:
+original price factors remain separate from physical grants; original dividends
+and missing cells preserved; no selection extension, invented payment, refit,
+window/threshold changes, old-study restart or production writes.
+
+FAILED first boundary: no independent reviewed-action normalizer existed.
+Added an independent declaration normalizer and original passive loader, with
+exact source hashes, dated rational ratios, off-session legal/application clocks,
+named exchange/default election evidence, unknown basis/fractions and terminal
+cash claims. Kept default load_original_data(None,{}) and load_inputs(None)
+refusals unchanged. Test setup initially imported an unused wrong Panel location;
+removed that import. The first normalizer comparison exposed UTC serialization
+instead of the retained source offset; kept source offset after aware validation.
+The inherited comparison initially compared a frozen tuple to saved JSON lists;
+converted only its expected test serialization. Assertions stayed intact.
+
+VERIFIED exact sourcef9c87cdd92aa592c3f762eb5f932be4c8a056f02, pinned image
+5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d:
+636tests25.60s/no skips; unchanged earlier acceptance plus11new source cases.
+Separate1CPU/2GB/network-none saved-only reader authenticated103 original files,
+96 selection stocks,2953sessions, valuation-onlyKD/VMW and fixed300-account grid.
+Independently derived grants and terminal records exactly match saved original
+preparation. Imported no producer/broker/replay/model; regenerated zero accounts,
+restored/fitted zero models and scored zero returns. Whole2371-file tree and
+original bytes unchanged. Launcher corrections mounted original /inputs aliases
+read-only and changed a helper's mistaken account_grid name to fixed_grid;
+no production assertion or source was weakened for those infrastructure errors.
+Evidence:/home/animallya96/scratch/independent-reviewed-source-20261004-f9c87cdd/proof.
+Source manifest37c0a175f56747c3297f87fda35ae8954eb0e1529e8016fab04da803a5fa2d05;
+independent proof2a8ef22bf20de7891b27ae80ab05570a0be20ca170d6176ab596d0ec20aec102.
+
+Then added --reviewed-economics plus explicit review/passive/independent-proof
+paths to producer/verifier. Producer authenticates the fixed independent proof
+before execution-input or predictor loading; legacy score path stays refused.
+Reviewed full study retains114 original file identities including that proof;
+input-only independent preparation retains103 and restores no predictor.
+VERIFIED exact codeb5894a74613d7e866c843f56863b6897b9643b99:
+637tests25.20s/no skips in the same pinned image;103native overlapping tests
+10.98s/no skips; Ruff/format/diff clean. Both source trees have2371 files.
+Diagram impact NONE: existing private CLI/evidence boundary, no production flow.
+
+RUNNING, not a performance result: new container reviewed-economic-study-b5894a74,
+IDc2a0e90a3cee17d7f32b0ed84f63b15e820c91c1e7076348e030d0f9b3e19e65,
+started2026-10-04T16:04:23.765922814Z. Source mounted read-only;2CPU/8GB/network-none.
+Output:/home/animallya96/scratch/reviewed-economic-study-20261004-b5894a74/proof/study.
+Initial authoritative status running/Pid2516653/OOMfalse, no session receipt yet.
+Never restart while live, change its mounted source, reuse its output, or restart
+old stopped4ff85fbf. This is the original fixed300-account actual-policy run:
+20starts, rule/boosting/ridge/SPY/QQQ,0/10/25bp,2018-02-01..2026-09-30;
+unchanged grading, allocation, holding exits and saved model/calibration bytes.
+No models fitted. Current-vintage/manual declarations and unknown payments still
+limit economic interpretation; no broker/midpoint or exact-live reconstruction.
+Do not turn missing fractional wealth into zero or remove affected accounts.
+
+Source manifestd00dbe408105cd2dfab12c5d82c1f6f3d705e6038e54615ab1e6ec25cdfc4e81;
+test logf8bafdb34eb7663466fe1f6f6a8bd4661fbd24652db2d9a3f0e651289cec1c36.
+Exact commands/helper hashes retained in
+/tmp/codex-reviewed-economic-study-execution-receipt-20261004.json and remote proof.
+NEXT: inspect exact live container and compact active-account/session receipts.
+When terminal, diagnose first failure or independently verify saved accounts and
+report funded gains/missingness against rule/SPY/QQQ. Confidence sizing and
+remaining-horizon profit-taking remain separate required evidence; no live
+promotion or deployment occurred and the full requested live goal is incomplete.
+
 ## 2026-10-04 — independent observed-entitlement/account arithmetic
 
 Goal ACTIVE; previous turn PROGRESS: input preflight1b94994e verified604tests
