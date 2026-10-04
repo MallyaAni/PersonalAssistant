@@ -1,32 +1,47 @@
 # Next session
 
-## 2026-10-03 — focused forecast calibration code in progress
+## 2026-10-03 — saved forecast diagnostic complete and independently verified
 
-Combined results are independently verified and published at `4775dc2f`, clock
-compatibility clarified at `85629f17`; evaluated source remains `63c21f68`.
-The candidate underperforms the saved rule component; no live replacement or
-deployment. Current branch `codex/learned-entry-risk-20261002` now has the fixed
-next diagnostic protocol at `6642030e`, pushed BEFORE any forecast error cells.
-See `docs/research/daily-forecast-calibration-plan-2026-10-03.md`.
+Evaluated source `27c19d5e4df85b5115e2306da4786f75a06d64a3`, clean/pushed branch
+`codex/learned-entry-risk-20261002`. Protocol `6642030e`, exact tie convention
+`a29de5c9`, both BEFORE error cells. Pure module/test are now root-owned; no
+active source writers. Thirty-eight native/image diagnostic cases and twenty
+native/image independent-verifier cases pass, no skips. Exact-constant forecasts
+exposed a floating correlation defect; reproduced, fixed before actual cells,
+and pinned by unchanged acceptance plus six permanent regressions.
 
-learned_causal_inputs exclusively owns NEW
-`backend/market/daily_forecast_diagnostics.py` and its NEW test. evaluation_review
-owns only private `/tmp/test_daily_forecast_diagnostics_review.py` acceptance.
-Root owns artifact authentication/orchestration/private runner
-`/tmp/run_daily_forecast_diagnostics_20261003.py` and handoff/report. Never import
-active drafts. Require reviewed code and synthetic acceptance, then original
-data readout once with original bytes and complete calendar. No fits, account
-replay, provider requests, error-based parameter choices or production changes.
+Actual producer exited0, original report0631868f and rows885af27f. Read-only
+independent verifier f0468fbf7a602e8cab588f42a608d60012f0182ee9752ca11957a50d054547c7
+exited0, proof4c794a391c2f6d2a48d273363f0ef7b837ecdb4d612b45135d3b27e2f4e7e497.
+It reconciled23 row fields,168 window/head/group cells,752 per-stock cells and
+141 monthly clocks without diagnose/model/account calls. No fit, refetch or
+account replay. Whole2298 source manifest7769b595. Original source95 daily
+artifacts/parquets were authenticated read-only; never restart this diagnostic.
+Proof `/home/animallya96/scratch/daily-forecast-diagnostic-verification-20261003-27c19d5e/proof.json`.
+Complete readback `docs/research/daily-forecast-calibration-results-2026-10-03.md/.json`;
+published JSON76456538007462a3d89124330f8d7b309047948ffa070a1a3d9c3e9f4a8579f5.
 
-Inputs are the exact source95ee8708 daily study, relative/SPY forecasts, prepared
-labels and fit receipts already authenticated. Actual original daily parquets
-live at `/home/animallya96/anios/data/market/bars/asof=2026-09-30`, mount read-only;
-assembled arrays and every source hash must match saved original `inputs.json`.
-Use daily open * adjusted_close / close exactly once. No SIP scale conversion.
-Simulated monthly maturity is documented; historical publication clocks do not
-exist. Keep exact ten-session calibration separate from twenty-session horizon
-compatibility and actual intraday account returns. No outcome statistics from
-this new diagnostic have been read yet.
+FAILED adoption evidence: eligible A/A+ exact10-session absolute Pearson.01734,
+MSE1.01122×zero; relative.05287, MSE1.01565×zero; SPY−.17409, MSE1.06816×zero.
+Keep every fixed window/volatility group/all94 stocks, not a selected winner.
+A/A+13137 opportunities/13070 finite/67 unavailable/120 immature/12950 matched.
+Twenty-session extension is compatibility only, not a fitted20 forecast.
+These findings identify weak raw mean evidence, not the economic cause of the
+earlier allocation loss. Exact targets use09:30 next-open→open[t+11], not late
+intraday fills; the account resets20sessions. Simulated monthly maturity is
+not historical publication. Grades/book current-vintage, recent window reused.
+Reliable live replacement remains UNVERIFIED. Production source/policy/UI and
+model container IDs/start times are unchanged; no deploy for research-only work.
+
+Next bounded proposal: one causal arithmetic-return bridge of saved OOS outputs,
+matched to an explicitly declared decision horizon, before another model family.
+Daily buy/hold/trim/exit requires daily funded target refresh; calibration alone
+cannot create it in a20-session reset account. Freeze its protocol and comparison
+before fitting or reading new outcomes. Test against the same allocator using
+only a past-trained mean, incumbent, SPY and QQQ with identical clocks/fees/cash;
+do not combine selected intraday fills with09:30 labels silently. No candidate
+has qualified for promotion. Diagram impact: NONE — saved-artifact diagnostics
+within the existing isolated research/verification boundary.
 
 ## 2026-10-03 — combined implementation and independent economic proof complete
 
