@@ -1,5 +1,82 @@
 # Next session
 
+## 2026-10-04 — conditional stock-volatility correction verified
+
+Goal ACTIVE; turn PROGRESS: source implementation plus measured conditional
+risk improvement, not live adoption. Starting clean isolated branch
+codex/learned-entry-risk-20261002 HEADa261c911; fetched unchanged origin/main204689db
+through temporary SSH SOCKS, no rebase/history rewrite. Codecheckpointd8c69b36
+pushed; final docs checkpoint follows. Shared/main/user/source/models preserved.
+
+Atomic objective: one volatility-dispersion correction to the original saved
+joint scenarios, no mean/gain invention. Registered holding-volatility-correction
+protocol before outcomes. Existing direct_error_band now has pure log-power
+scaling with arithmetic mean normalization and an authenticated immutable
+VolatilityHoldingReader. Original bank dates/probabilities/purge/month/freeze,
+true total-loss rows and identity scaling retained; zero/missing/nonpositive
+volatility or manufactured-default underflow refuses the whole request. No
+rows dropped, clips, fitted multiplier, financial threshold or permissions.
+Producer3files/joint protocol and original risk1500cc4b remain unchanged.
+
+VERIFIED exact d8c69b36c35814c7851f22cabbe1a807563ddc7f:239native42.28s and
+239pinned16.05s, no skips;27independent synthetic formula/score checks.20new
+cases cover mean/dispersion, joint provenance, identity, defaults, invalid
+context/arithmetic, no model calls, mutation/current-label/future-vol invariance.
+Shared synthetic factory extracted with default unchanged; no original assertion
+weakened. Ruff/format/diff clean. Diagram impact NONE; no new prompt/agent/UI/tool.
+
+VERIFIED one fixed diagnostic and separate proof, each1CPU/2GB/netnone/sourceRO;
+204638cases/415groups, same147476common mature cases as baseline; zero added
+volatility refusals on actual data. Original16input/baseline artifacts and2375
+source files unchanged before/after. Read old model/reference scores unchanged
+from saved rows; no old score/forecast/model/account regeneration. Mean preserved.
+Every corrected sample independently checked against power formula; saved
+receipt, proper-score math, empirical CDF quantiles/PIT, counts/common aggregate
+means/reliability verified. Preliminary synthetic verifier wrongly required
+bit-exact membership across equivalent floating algorithms. Original oracle and
+assertions unchanged; separate proof helper now checks independent shape math
+against exact producer floats then scores those. Running diagnostic helper/
+source not edited or restarted; no saved evaluation repeated.
+
+VERIFIED useful conditional-risk improvement:80% coverage high-market-vol
+70.22%->81.32%, middle78.90%->79.59%, low83.09%->79.22%; all77.49%->80.02%.
+AAOI75.38%->79.90%, COHR75.17%->78.22%. Reused recent76.40%->84.98%, now overwide;
+no universal calibration claim. FAILED confidence edge remains: all0bp Brier
+.258357 versus original.260022 but empiricalreference.249803; CRPS.016881 versus
+.016884/.016573, tiny aggregate improvement and worse recent CRPS. Proper scores
+are not funded gain. No promotion or live change.
+
+NEXT PRIMARY: implement the fixed named joint-funded sizing/holding candidate
+using this corrected reader and existing certified allocate_distribution through
+the reviewed physical cash/whole-share/corporate-action accounting. Account for
+unpriced/uncovered holdings and receivables, never fabricate funding/liquidate
+uncovered positions; preserve actual event/safety priorities and old default.
+Ensure named-policy receipts/actual planner behavior, optional B retention/no B
+adds, fees/cash, state/reconciliation, and stock size dependence on risk/remaining
+utility. Pair cumulative gain with actual rule and BOTH SPY/QQQ at fixed costs/
+starts; reuse authenticated completed controls. Do not substitute another proper-
+score-only family or wait for295remaining books when integration is available.
+Confidence/mean calibration still needed if utility evidence calls for it; no
+promotion solely because interval coverage improved. No horizon/window/cohort/
+parameter mining or new fits on old saved producers. Goal is full live update.
+
+Original timing studyb5894a74/containerreviewed-economic-study-b5894a74 is still
+running/OOMfalse, Pid2516653; at14:57:43NewYork fivebooks completed, rule-0-1 at
+1040sessions through2022-03-18. Never restart/edit its mounted source. Provisional
+full0bp/start0 gains: rule8.564247838; boosting8.275676661; ridge8.339932633;
+SPY1.904951317; QQQ3.506340536. Current-vintage grades/universe and conditional
+fills, includes unspendable receivables; no full300/paid-cost/independent result
+claim. Read only compact progress; preserve every remaining account.
+
+Proofroot:/home/animallya96/scratch/holding-volatility-20261004-d8c69b36/proof/.
+ReportSHA847b4c3a39d880cadbffa853b5a5b1b90b4696b6a879aaf9683b8d7f4b9e0aeb;
+casesSHAe2878652fd2029b72a0d18ddcb377faab5a506ae297b6a6b2d0c3209b51ee540;
+proofSHA4b72dde4a875fe68bcf4b3056c582c22f0b89753d797ca6f29b2ac15b09883a3.
+Exactcommands:/tmp/codex-holding-volatility-execution-receipt-20261004.json and
+remoteproof/execution-receipt.json. Report in docs/research/
+holding-volatility-correction-results-2026-10-04.md. Do not repeat completed
+diagnostics, fits, baseline scoring, model gates or active-study starts.
+
 ## 2026-10-04 — saved holding calibration report, next volatility correction
 
 Goal ACTIVE; turn PROGRESS: a verified full saved-data diagnostic identifies
