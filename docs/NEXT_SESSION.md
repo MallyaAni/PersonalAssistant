@@ -38,7 +38,26 @@ merger/clock acceptance and actual planner/sender persisted-state paths. Ruff/
 diff clean. Synthetic journey grants250 child shares, then retains35625 unpaid
 cash entitlement through their terminal boundary without adding a child order.
 Known payable value is used without a stale last price, invented cash or tax
-profit. Source-image and saved-artifact verification are next, not yet claimed.
+profit. VERIFIED exact source3a756d20c5fefd43cc0b84c3fd34f3197f2a3b55,
+2371-file manifest in pinned image
+5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d:
+559 tests19.07s/no skips, including unchanged external merger/clock acceptance.
+The review-only CLI retained96 original histories,26 archive factors and1753
+dividends, adding only a separate VMW declaration. Mounted-source authentication
+before/after the saved real planner/sender/persistence journey passed. The
+saved-only independent checker imported no producer/broker/calendar/model and
+resimulated no account; cash, fees, whole shares,35625 unpaid claim, full NAV
+and child selection/order isolation reconcile. This is synthetic accounting
+proof, not historical election/payment proof or trading-performance evidence.
+Proof:/home/animallya96/scratch/terminal-merger-20261004-3a756d20/proof.
+Test log7cc290c4ae9b3f3bb8d093fb4b5d0dff3acbd5d87a66bf5f77fa0c9059021449;
+manifest9a74060f3a21e592a5221f994ccb3137cdde3242bb989a7286d1a2d8afe343ee;
+compiled e73c6f77509005a9e95b349c7c6496db681ca306b3895a8f55cb91e13311260e;
+journey13c0faac1b3a81bb21f6397898033153201d36dc6e44d12b578d62a01764ae80;
+independent3d49bfd50de9d72a9a96560fff8967b1c7ab8df86937e67e06124eaad28e3e04.
+Exact commands/runtime/helpers and original-byte hashes are retained in
+codex-terminal-merger-execution-receipt-20261004.json there. Counts overlap
+earlier source tests. Read-only deployed checkout remains621e28f0; unchanged.
 No economic accounts scored, models restored/refitted, old capture repeated,
 main merge or deployment. Original incorrect-export score gates remain intact.
 Diagram impact: NONE, existing private action/accounting/input boundaries.
