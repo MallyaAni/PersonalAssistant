@@ -718,9 +718,21 @@ def paper_trade(
     client_factory=None,
     decision_at: datetime | None = None,
     feature_reader=None,
+    holding_policy=None,
 ) -> dict:
     from backend.agents.trading.desk import paper
 
+    if holding_policy is not None:
+        from backend.market.joint_funded_policy import JointFundedPolicy
+
+        if (
+            not isinstance(holding_policy, JointFundedPolicy)
+            or client_factory is None
+            or decision_at is None
+        ):
+            raise ValueError(
+                "Joint research policy requires explicit private broker and clock"
+            )
     if feature_reader is not None and (
         not callable(feature_reader) or client_factory is None or decision_at is None
     ):
@@ -754,6 +766,7 @@ def paper_trade(
         "client_factory": client_factory,
         "decision_at": decision_at,
         "feature_reader": feature_reader,
+        "holding_policy": holding_policy,
     }
     if not live:
         return _paper_trade(
@@ -765,7 +778,34 @@ def paper_trade(
         )
 
 
-# Reconcile and execute one locked nightly plan with optional private feature reuse.
+# Keep optional research identity separate from the default allocation display.
+def _holding_metadata(policy, event_plan, state, targets):
+    from backend.agents.trading.desk import live_policy
+
+    if policy is None:
+        return targets, live_policy.ACTIVE, {}
+    if event_plan:
+        return (
+            targets,
+            policy.version,
+            {
+                "policy": policy.version,
+                "joint_funded": {"policy": policy.version, "status": "event_priority"},
+            },
+        )
+    return (
+        dict((state.allocation_state or {}).get("targets", {})),
+        policy.version,
+        {
+            "policy": policy.version,
+            "joint_funded": state.allocation_state,
+            "execution_rule": "next_open",
+            "redeploy": {"enabled": False, "orders": 0, "notional": 0.0},
+        },
+    )
+
+
+# Reconcile and execute one locked nightly plan with optional private research inputs.
 def _paper_trade(
     report,
     store_root: Path,
@@ -777,6 +817,7 @@ def _paper_trade(
     client_factory=None,
     decision_at: datetime | None = None,
     feature_reader=None,
+    holding_policy=None,
 ) -> dict:
     """Plan and (when `live`) submit the paper book; return the day's entry."""
     from backend.agents.trading.desk import (
@@ -810,7 +851,7 @@ def _paper_trade(
     state = paper.load_state(store_root)
     # A state planned under another policy rebalances into the active one
     # tonight, once; the stamp on the new state stops it recurring.
-    if live_policy.needs_rebalance(state.policy_version):
+    if holding_policy is None and live_policy.needs_rebalance(state.policy_version):
         print(
             f"  policy change: {state.policy_version or 'unstamped (/3 era)'} -> "
             f"{live_policy.ACTIVE}; rebalancing into the new targets tonight"
@@ -874,9 +915,14 @@ def _paper_trade(
             )
         ),
         cash=account.cash,
+        holding_policy=holding_policy,
+        report=report,
+    )
+    targets, policy_name, research_metadata = _holding_metadata(
+        holding_policy, event_plan, new_state, targets
     )
     print(
-        f"\npaper book ({live_policy.ACTIVE}; {what}"
+        f"\npaper book ({policy_name}; {what}"
         f"{', forced tonight' if rebalance_now else ''}), "
         f"equity {account.equity:,.0f}:"
     )
@@ -991,6 +1037,7 @@ def _paper_trade(
     # the board can show which names the desk refused to buy tonight.
     for row in entry["actions"]:
         row["rejecting_band"] = blocking_flags.get(row.get("ticker"), False)
+    entry.update(research_metadata)
     if live:
         paper.save_state(store_root, new_state)
     print(
@@ -1546,7 +1593,8 @@ def curve_block(report, store) -> dict | None:
         "live_execution_policy": paper_rules.POLICY_VERSION,
         "live_execution_timing": (
             intraday_orders.INTRADAY_TIMING
-            if intraday_orders.INTRADAY_EXECUTION else "next_open"
+            if intraday_orders.INTRADAY_EXECUTION
+            else "next_open"
         ),
         # The `simulate.run` flags this line was actually priced with. Under
         # the graded equal-weight policy (`/4`, `/5` since 2026-09-29) they
@@ -1712,7 +1760,11 @@ def _point_in_time_curve(report, sessions) -> tuple[list[float], dict, str]:
     except Exception as exc:  # noqa: BLE001 - reported on the record, never drawn
         return [], {}, f"point-in-time line not drawn: {type(exc).__name__}: {exc}"
     if sim.equity is None or len(sim.dates) != len(sessions):
-        return [], {}, "point-in-time line not drawn: sessions differ from the published run"
+        return (
+            [],
+            {},
+            "point-in-time line not drawn: sessions differ from the published run",
+        )
     equity = np.asarray(sim.equity, dtype=float)
     base = equity[0] if equity[0] > 0 else 1.0
     stats = {k: (None if v != v else float(v)) for k, v in sim.stats().items()}
@@ -1740,8 +1792,8 @@ CANDIDATE_LABEL = (
 # this line's.
 def _candidate_curve(report, sessions) -> tuple[list[float], dict, str]:
     """Return (cumulative return per session, stats, note) for the /4 candidate."""
-    from backend.agents.trading.desk import point_in_time, policy_v4, simulate
     from backend.agents.trading.desk import paper as paper_rules
+    from backend.agents.trading.desk import point_in_time, policy_v4, simulate
 
     try:
         restricted, mask = point_in_time.point_in_time(report)
@@ -1757,7 +1809,11 @@ def _candidate_curve(report, sessions) -> tuple[list[float], dict, str]:
     except Exception as exc:  # noqa: BLE001 - reported on the record, never drawn
         return [], {}, f"candidate line not drawn: {type(exc).__name__}: {exc}"
     if sim.equity is None or len(sim.dates) != len(sessions):
-        return [], {}, "candidate line not drawn: sessions differ from the published run"
+        return (
+            [],
+            {},
+            "candidate line not drawn: sessions differ from the published run",
+        )
     equity = np.asarray(sim.equity, dtype=float)
     base = equity[0] if equity[0] > 0 else 1.0
     stats = {k: (None if v != v else float(v)) for k, v in sim.stats().items()}

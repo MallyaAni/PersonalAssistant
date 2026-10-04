@@ -1,8 +1,9 @@
 """Pure dispatch for the current nightly paper planner and its execution clock.
 
 Broker reconciliation, cancellation, policy-change force inference, durable
-intent writes and submission remain the caller's responsibilities. This module
-changes neither the allocation policy nor either underlying planner.
+intent writes and submission remain the caller's responsibilities. An explicit
+private research policy can replace ordinary planning; default calls retain
+both underlying planners and event handling takes priority in either case.
 """
 
 from dataclasses import asdict, replace
@@ -38,7 +39,7 @@ def event_plan_required(state, event_policy):
     )
 
 
-# Dispatch reconciled nightly inputs without changing the caller's state or force.
+# Dispatch reconciled inputs with event priority and optional named research planning.
 def plan(
     session,
     state,
@@ -54,11 +55,17 @@ def plan(
     entries,
     cash,
     force_rebalance=False,
+    holding_policy=None,
+    report=None,
 ):
     planning_state = paper.PaperState(**asdict(state))
     if event_plan_required(state, event_policy):
         orders, new_state, what = event_execution.plan(
             session, planning_state, held, prices, cash, event_policy
+        )
+    elif holding_policy is not None:
+        orders, new_state, what = holding_policy.plan(
+            session, planning_state, equity, held, prices, report, cash, entry_blocked
         )
     else:
         orders, new_state, what = paper.plan(
@@ -76,6 +83,8 @@ def plan(
             cash=cash,
         )
         orders = on_the_boards_clock(orders)
-    if not live_policy.needs_rebalance(state.policy_version) or what == "rebalance":
+    if holding_policy is not None:
+        new_state.policy_version = holding_policy.version
+    elif not live_policy.needs_rebalance(state.policy_version) or what == "rebalance":
         new_state.policy_version = live_policy.ACTIVE
     return orders, new_state, what

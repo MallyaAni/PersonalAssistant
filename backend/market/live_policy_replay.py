@@ -375,7 +375,16 @@ def publish_progress(callback, row):
 
 # Execute real nightly planning and retain unavailable paths without invented plans.
 def nightly(
-    panel, inputs, root, broker, day, build_report, intents, logs, feature_reader=None
+    panel,
+    inputs,
+    root,
+    broker,
+    day,
+    build_report,
+    intents,
+    logs,
+    feature_reader=None,
+    holding_policy=None,
 ):
     now = instant(
         inputs.dates[day], calendar.session_close(inputs.dates[day].astype(object))
@@ -395,6 +404,7 @@ def nightly(
                 client_factory=lambda: broker,
                 decision_at=now,
                 feature_reader=feature_reader,
+                holding_policy=holding_policy,
             )
         remember_intents(root, intents)
         status = {"status": "planned", "entry": plain(result)}
@@ -412,7 +422,19 @@ def nightly(
     return {"status": status["status"], "excluded": plain(report.excluded)}
 
 
-# Carry a private account through real execution and detached progress receipts.
+# Admit optional risk planning only when physical-account costs match its contract.
+def _holding_option(policy, cost_bps):
+    if policy is None:
+        return
+    from backend.market.joint_funded_policy import JointFundedPolicy
+
+    if not isinstance(policy, JointFundedPolicy) or policy.cost_bps != cost_bps:
+        raise ValueError(
+            "Authenticated joint policy and identical account fees required"
+        )
+
+
+# Carry a private account through real execution with optional named risk planning.
 def run_account(
     panel,
     inputs,
@@ -427,11 +449,13 @@ def run_account(
     provider=None,
     report_builder=None,
     feature_reader=None,
+    holding_policy=None,
     reuse_unchanged_state=True,
     on_session=None,
 ):
     root = Path(root)
     validate(panel, inputs, root, first, last, reader_builder, provider)
+    _holding_option(holding_policy, cost_bps)
     if report_builder is None:
         from backend.market.live_policy_report import build as report_builder
     if not callable(report_builder):
@@ -455,6 +479,7 @@ def run_account(
         intents,
         logs,
         feature_reader,
+        holding_policy,
     )
     sessions.append(
         {
@@ -561,6 +586,7 @@ def run_account(
             intents,
             logs,
             feature_reader,
+            holding_policy,
         )
         sessions.append(
             {
