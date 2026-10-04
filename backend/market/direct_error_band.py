@@ -7,6 +7,7 @@ describe observed residuals; they are not coverage guarantees or paid costs.
 from __future__ import annotations
 
 import hashlib
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -21,6 +22,7 @@ from backend.market import probabilistic_execution as probability
 
 POLICY = "direct-error-band/1-research"
 PROTOCOL = "docs/research/direct-error-band-plan-2026-10-03.md"
+VOLATILITY_PROTOCOL = "docs/research/holding-volatility-correction-plan-2026-10-04.md"
 
 
 # Return aligned error radii separately from their complete calibration receipts.
@@ -491,7 +493,7 @@ def _holding_outcome(reader, day, stock):
 def holding_diagnostic_rows(reader, days):
     from backend.market.direct_feature_arithmetic import HoldingScenarioReader
 
-    if not isinstance(reader, HoldingScenarioReader):
+    if not isinstance(reader, (HoldingScenarioReader, VolatilityHoldingReader)):
         raise ValueError("Authenticated holding scenario reader required")
     days = np.asarray(days)
     if (
@@ -553,3 +555,176 @@ def holding_diagnostic_rows(reader, days):
                     for cost in (0, 10, 25)
                 ]
             yield case
+
+
+# Scale dated log-gross errors to current stock volatility without changing their mean.
+def scale_holding_volatility(current, past, outcomes, current_vol, past_vol):
+    if any(
+        np.asarray(value).dtype.kind not in "fiu"
+        for value in (current, past, outcomes, current_vol, past_vol)
+    ):
+        raise ValueError("Numeric stock forecasts, outcomes and volatility required")
+    current, past, outcomes, current_vol, past_vol = (
+        np.asarray(value, dtype=np.float64)
+        for value in (current, past, outcomes, current_vol, past_vol)
+    )
+    if (
+        current.ndim != 1
+        or not len(current)
+        or past.ndim != 2
+        or not len(past)
+        or past.shape[1] != len(current)
+        or outcomes.shape != past.shape
+        or current_vol.shape != current.shape
+        or past_vol.shape != past.shape
+        or any(not np.isfinite(value).all() for value in (current, past, outcomes))
+        or np.any(current <= -1)
+        or np.any(past <= -1)
+        or np.any(outcomes < -1)
+    ):
+        raise ValueError("Aligned possible stock forecasts and dated outcomes required")
+    if any(
+        not np.isfinite(value).all() or np.any(value <= 0)
+        for value in (current_vol, past_vol)
+    ):
+        raise ValueError("Positive finite current and dated stock volatility required")
+    with np.errstate(over="ignore", under="ignore", divide="ignore", invalid="ignore"):
+        gross = (1 + outcomes) / (1 + past)
+        original = (1 + current) * gross
+        ratio = current_vol / past_vol
+        log_error = np.log1p(outcomes) - np.log1p(past)
+        log_scaled = log_error * ratio
+    default = outcomes == -1
+    if (
+        not np.isfinite(original).all()
+        or np.any((original == 0) & ~default)
+        or not np.isfinite(ratio).all()
+        or np.any(ratio <= 0)
+        or not np.isfinite(log_scaled[~default]).all()
+    ):
+        raise ValueError("Volatility arithmetic exceeds supported finite range")
+    result = np.empty(past.shape, dtype=np.float64)
+    for stock in range(len(current)):
+        if np.all(ratio[:, stock] == 1) or np.all(default[:, stock]):
+            result[:, stock] = original[:, stock] - 1
+            continue
+        log_values = log_scaled[:, stock]
+        with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+            stable = np.exp(log_values - np.max(log_values))
+            maximum = original[:, stock].max()
+            desired = maximum * np.mean(original[:, stock] / maximum)
+            corrected = stable * (desired / stable.mean())
+        if (
+            not np.isfinite(corrected).all()
+            or np.any((corrected == 0) & ~default[:, stock])
+            or not np.isclose(corrected.mean(), desired, rtol=1e-12, atol=1e-15)
+        ):
+            raise ValueError("Volatility arithmetic exceeds supported finite range")
+        result[:, stock] = corrected - 1
+    if np.any((result == -1) & ~default):
+        raise ValueError("Volatility arithmetic manufactures total loss")
+    result.flags.writeable = False
+    return result
+
+
+# Condition dispersion on stock volatility while preserving original joint dates.
+class VolatilityHoldingReader:
+    # Bind immutable original inputs before extracting any dated volatility context.
+    def __init__(self, risk, bridge):
+        from backend.market import direct_feature_arithmetic as feature
+
+        if not isinstance(risk, feature.HoldingRiskForecasts):
+            raise ValueError("Authenticated original holding risk artifact required")
+        frozen = feature.HoldingRiskForecasts(
+            risk.forecasts.copy(),
+            risk.score_mask.copy(),
+            deepcopy(risk.manifest),
+            risk.dates.copy(),
+            tuple(risk.symbols),
+            feature._copy_feature(risk.parent),
+            risk.features.copy(),
+            risk.valid.copy(),
+            risk.prices.copy(),
+        )
+        self._reader = feature.HoldingScenarioReader(frozen, bridge)
+        for name in (
+            "dates",
+            "symbols",
+            "as_of",
+            "endpoints",
+            "labels",
+            "forecasts",
+            "support",
+            "months",
+        ):
+            setattr(self, name, getattr(self._reader, name))
+        self.volatility = frozen.features[:, :, 4].astype(np.float64, copy=True)
+        self.volatility.flags.writeable = False
+        root = Path(__file__).resolve().parents[2]
+        self.identity = {
+            "policy": "joint-holding-volatility/1-research",
+            "original_scenario_identity_sha256": base._json_hash(self._reader.identity),
+            "volatility_feature": "volatility_20",
+            "volatility_sha256": reference._hash(self.volatility),
+            "source_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            "protocol_sha256": hashlib.sha256(
+                (root / VOLATILITY_PROTOCOL).read_bytes()
+            ).hexdigest(),
+            "arithmetic_mean_preserved": True,
+            "confidence_guarantee": False,
+            "adoption_eligible": False,
+        }
+
+    # Transform an admitted original request without inspecting its current outcome.
+    def distribution(self, day, symbols):
+        from backend.market import direct_feature_arithmetic as feature
+
+        original = self._reader.distribution(day, symbols)
+        receipt = deepcopy(original.receipt)
+        receipt["original_scenario_receipt_sha256"] = base._json_hash(original.receipt)
+        receipt["volatility_identity"] = deepcopy(self.identity)
+        receipt["policy"] = self.identity["policy"]
+        if receipt["status"] != "available":
+            return feature.HoldingScenarios(None, None, original.symbols, receipt)
+        receipt["original_scenarios_sha256"] = receipt.pop("scenarios_sha256")
+        receipt.pop("probabilities_sha256")
+        chosen = np.asarray(receipt["decision_indices"], dtype=np.int64)
+        stocks = np.asarray([self.symbols.index(name) for name in original.symbols])
+        current_vol = self.volatility[day, stocks]
+        past_vol = self.volatility[np.ix_(chosen, stocks)]
+        receipt["volatility_context_sha256"] = {
+            "current": reference._hash(current_vol),
+            "bank": reference._hash(past_vol),
+        }
+        if any(
+            not np.isfinite(value).all() or np.any(value <= 0)
+            for value in (current_vol, past_vol)
+        ):
+            receipt.update(
+                status="unavailable", reason="unsupported_current_or_bank_volatility"
+            )
+            return feature.HoldingScenarios(None, None, original.symbols, receipt)
+        try:
+            scenarios = scale_holding_volatility(
+                self.forecasts[day, stocks],
+                self.forecasts[np.ix_(chosen, stocks)],
+                self.labels[np.ix_(chosen, stocks)],
+                current_vol,
+                past_vol,
+            )
+        except ValueError as exc:
+            receipt.update(
+                status="unavailable",
+                reason="unsupported_volatility_arithmetic",
+                arithmetic_reason=str(exc),
+            )
+            return feature.HoldingScenarios(None, None, original.symbols, receipt)
+        receipt.update(
+            scenarios_sha256=reference._hash(scenarios),
+            probabilities_sha256=reference._hash(original.probabilities),
+            original_mean_sha256=reference._hash(original.scenarios.mean(axis=0)),
+            corrected_mean_sha256=reference._hash(scenarios.mean(axis=0)),
+        )
+        return feature.HoldingScenarios(
+            scenarios, original.probabilities, original.symbols, receipt
+        )

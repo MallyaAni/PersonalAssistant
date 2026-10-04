@@ -209,9 +209,17 @@ def test_joint_holding_scenarios_refuse_forged_monthly_prediction(joint_forecast
 # Fit one pooled synthetic head while leaving the second stock's grades unknown.
 @pytest.fixture(scope="module")
 def risk_example(tmp_path_factory):
+    return risk_example_factory(tmp_path_factory)
+
+
+# Reuse fixed synthetic fits with optional distinct stock volatility.
+def risk_example_factory(tmp_path_factory, *, with_volatility=False):
     from backend.cli import market_direct_daily_arithmetic as cli
 
     prepared, bridge, grades, eligible = fixture(count=1200, start="2021-01-04")
+    if with_volatility:
+        scale = 1 + 0.35 * np.sin(np.arange(len(grades)) / 31)
+        prepared["X"][:, :, 4] = scale[:, None] * [0.02, 0.05, 0.015, 0.018]
     grades[:, 1], eligible[:, 1] = -1, False
     prepared["valid"][:252] = False
     prepared["X"][:, 1, 8] = np.nan

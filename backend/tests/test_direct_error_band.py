@@ -498,3 +498,228 @@ def test_holding_diagnostic_refuses_malformed_days(risk_example, days):
     reader = feature.HoldingScenarioReader(risk_example[-1], risk_example[1])
     with pytest.raises(ValueError, match="chronological"):
         list(bands.holding_diagnostic_rows(reader, days))
+
+
+# Different stock volatility adjusts dispersion without manufacturing expected gain.
+def test_volatility_scaling_matches_power_formula_and_preserves_mean():
+    current = np.array([0.01, 0.02])
+    past = np.array([[0.01, 0.02], [0.02, -0.01], [-0.01, 0.01]])
+    truth = np.array([[-0.04, 0.08], [0.02, -0.04], [0.05, 0.01]])
+    now = np.array([0.04, 0.015])
+    previous = np.array([[0.02, 0.03], [0.03, 0.02], [0.015, 0.02]])
+    actual = bands.scale_holding_volatility(current, past, truth, now, previous)
+    g = (1 + truth) / (1 + past)
+    h = g ** (now / previous)
+    expected = (1 + current) * h * g.mean(axis=0) / h.mean(axis=0) - 1
+    np.testing.assert_allclose(actual, expected, rtol=1e-12, atol=1e-15)
+    original = (1 + current) * g - 1
+    np.testing.assert_allclose(actual.mean(axis=0), original.mean(axis=0), atol=1e-15)
+    assert np.std(actual[:, 0]) > np.std(original[:, 0])
+    assert np.std(actual[:, 1]) < np.std(original[:, 1])
+    assert not actual.flags.writeable
+
+
+# Equal current/bank volatility preserves original arrays exactly without input writes.
+def test_volatility_scaling_identity_is_exact_and_detached():
+    current, past = np.array([0.01]), np.array([[0.005], [-0.02], [0.01]])
+    truth = np.array([[-0.03], [0.01], [0.04]])
+    now, previous = np.array([0.02]), np.full(past.shape, 0.02)
+    saved = [value.copy() for value in (current, past, truth, now, previous)]
+    actual = bands.scale_holding_volatility(current, past, truth, now, previous)
+    np.testing.assert_array_equal(
+        actual, (1 + current) * ((1 + truth) / (1 + past)) - 1
+    )
+    for value, original in zip(
+        (current, past, truth, now, previous), saved, strict=True
+    ):
+        np.testing.assert_array_equal(value, original)
+
+
+# Preserve true bankruptcy mass, including an all-default bank.
+def test_volatility_scaling_preserves_true_total_loss():
+    actual = bands.scale_holding_volatility(
+        [0.01, 0.02],
+        np.zeros((3, 2)),
+        np.array([[-1, -1], [0.03, -1], [-0.02, -1]]),
+        [0.04, 0.03],
+        np.full((3, 2), 0.02),
+    )
+    assert actual[0, 0] == -1
+    np.testing.assert_array_equal(actual[:, 1], -1)
+    assert np.all(actual[1:, 0] > -1)
+
+
+# Invalid volatility cannot silently remove historical dates.
+@pytest.mark.parametrize("bad", [0, -0.01, np.nan, np.inf, True, "0.02"])
+def test_volatility_scaling_refuses_unsupported_context(bad):
+    with pytest.raises(ValueError, match="required"):
+        bands.scale_holding_volatility([0.01], [[0]], [[0.02]], [bad], [[0.02]])
+
+
+# Finite inputs that would invent total loss or lose a positive ratio are refused.
+@pytest.mark.parametrize(
+    ("current", "past", "truth", "now", "previous"),
+    [
+        ([0], [[0], [0]], [[-0.5], [0.5]], [1e200], [[1e-200], [1e-200]]),
+        ([0], [[0], [0]], [[-0.5], [0.5]], [1], [[0.001], [0.001]]),
+        ([0], [[1e30]], [[0]], [0.02], [[0.02]]),
+        ([0], [[0]], [[0.02]], [1e-300], [[1e300]]),
+    ],
+)
+def test_volatility_scaling_refuses_numeric_tail_loss(
+    current, past, truth, now, previous
+):
+    with pytest.raises(ValueError, match="Volatility arithmetic"):
+        bands.scale_holding_volatility(current, past, truth, now, previous)
+
+
+# Supply actual saved heads with distinct positive stock-volatility paths.
+@pytest.fixture(scope="module")
+def volatility_risk(tmp_path_factory):
+    from backend.tests.test_direct_feature_arithmetic import risk_example_factory
+
+    return risk_example_factory(tmp_path_factory, with_volatility=True)
+
+
+# Preserve authenticated joint dates, probabilities and means without model calls.
+def test_volatility_reader_preserves_joint_provenance(volatility_risk, monkeypatch):
+    from backend.market import direct_feature_arithmetic as feature
+
+    _, bridge, _, _, risk = volatility_risk
+    day = len(risk.dates) - 1
+    original = feature.HoldingScenarioReader(risk, bridge).distribution(
+        day, ("AAA", "BBB")
+    )
+
+    # Runtime conditional dispersion never fits or runs a numeric forecast head.
+    def forbidden(*args, **kwargs):
+        pytest.fail("Saved risk reader must not fit or run models")
+
+    monkeypatch.setattr(feature, "holding_risk_forecasts", forbidden)
+    monkeypatch.setattr(feature.direct.NumericHead, "predict", forbidden)
+    actual = bands.VolatilityHoldingReader(risk, bridge).distribution(
+        day, ("AAA", "BBB")
+    )
+    assert actual.receipt["status"] == "available"
+    assert actual.receipt["decision_indices"] == original.receipt["decision_indices"]
+    np.testing.assert_array_equal(actual.probabilities, original.probabilities)
+    np.testing.assert_allclose(
+        actual.scenarios.mean(axis=0), original.scenarios.mean(axis=0), atol=1e-15
+    )
+    assert actual.receipt["original_scenario_receipt_sha256"] == base._json_hash(
+        original.receipt
+    )
+    assert actual.receipt["volatility_identity"]["confidence_guarantee"] is False
+    assert not actual.scenarios.flags.writeable
+
+
+# Zero volatility retains the unavailable request and its original bank.
+def test_volatility_reader_retains_unsupported_context(risk_example):
+    reader = bands.VolatilityHoldingReader(risk_example[-1], risk_example[1])
+    sample = reader.distribution(len(reader.dates) - 1, ("AAA", "BBB"))
+    assert sample.receipt["status"] == "unavailable"
+    assert sample.receipt["reason"] == "unsupported_current_or_bank_volatility"
+    assert sample.receipt["joint_dates"] >= 252
+    assert sample.scenarios is None
+    assert sample.probabilities is None
+    assert "scenarios_sha256" not in sample.receipt
+
+
+# Future volatility changes cannot alter an earlier authenticated request.
+def test_volatility_reader_future_feature_prefix_invariance(volatility_risk):
+    from backend.market import direct_feature_arithmetic as feature
+
+    prepared, bridge, parent, heads, risk = volatility_risk
+    parent = feature._copy_feature(parent)
+    x = prepared["X"].copy()
+    x[-1, :2, 4] *= 100
+    parent.manifest["identity"]["input_sha256"]["features"] = bridge_module._hash(x)
+    parent.manifest["identity_sha256"] = base._json_hash(parent.manifest["identity"])
+    changed = feature.holding_risk_forecasts(
+        parent, bridge, x, prepared["valid"], heads, prices=prepared["risk_prices"]
+    )
+    day = len(risk.dates) - 2
+    old = bands.VolatilityHoldingReader(risk, bridge).distribution(day, ("AAA", "BBB"))
+    new = bands.VolatilityHoldingReader(changed, bridge).distribution(
+        day, ("AAA", "BBB")
+    )
+    np.testing.assert_array_equal(old.scenarios, new.scenarios)
+    assert (
+        old.receipt["volatility_context_sha256"]
+        == new.receipt["volatility_context_sha256"]
+    )
+
+
+# Mutable caller buffers cannot change admitted context or scenarios.
+def test_volatility_reader_detaches_original_inputs(volatility_risk):
+    risk, bridge = deepcopy(volatility_risk[-1]), deepcopy(volatility_risk[1])
+    reader = bands.VolatilityHoldingReader(risk, bridge)
+    day = len(reader.dates) - 1
+    before = reader.distribution(day, ("AAA", "BBB"))
+    risk.features[:, :, 4] = np.nan
+    risk.forecasts[:] = np.nan
+    bridge.labels[:] = np.nan
+    after = reader.distribution(day, ("AAA", "BBB"))
+    np.testing.assert_array_equal(before.scenarios, after.scenarios)
+    assert before.receipt == after.receipt
+
+
+# Keep corrected predictions for unpublished labels and common cost scoring.
+def test_volatility_reader_diagnostic_retains_mature_and_future_cases(volatility_risk):
+    reader = bands.VolatilityHoldingReader(volatility_risk[-1], volatility_risk[1])
+    rows = list(
+        bands.holding_diagnostic_rows(
+            reader, [len(reader.dates) - 3, len(reader.dates) - 1]
+        )
+    )
+    assert len(rows) == 4
+    assert all(row["prediction_status"] == "available" for row in rows)
+    assert all(row["scores"] is not None for row in rows[:2])
+    assert all(row["scores"] is None for row in rows[2:])
+    assert all(row["outcome_status"] == "immature_outcome" for row in rows[2:])
+
+
+# Current outcomes cannot change the preceding admitted distribution or its joint bank.
+def test_volatility_reader_current_label_does_not_change_prediction(volatility_risk):
+    from backend.market import direct_feature_arithmetic as feature
+
+    prepared, bridge, parent, heads, risk = volatility_risk
+    bridge, parent = deepcopy(bridge), feature._copy_feature(parent)
+    day = len(risk.dates) - 3
+    bridge.labels[day, 1] += 0.4
+    bridge.manifest["label_sha256"] = bridge_module._hash(bridge.labels)
+    parent.manifest["identity"]["bridge_manifest_sha256"] = base._json_hash(
+        bridge.manifest
+    )
+    parent.manifest["identity"]["input_sha256"]["labels"] = bridge_module._hash(
+        bridge.labels
+    )
+    parent.manifest["identity_sha256"] = base._json_hash(parent.manifest["identity"])
+    changed = feature.holding_risk_forecasts(
+        parent,
+        bridge,
+        prepared["X"],
+        prepared["valid"],
+        heads,
+        prices=prepared["risk_prices"],
+    )
+    old = bands.VolatilityHoldingReader(risk, volatility_risk[1]).distribution(
+        day, ("AAA", "BBB")
+    )
+    new = bands.VolatilityHoldingReader(changed, bridge).distribution(
+        day, ("AAA", "BBB")
+    )
+    np.testing.assert_array_equal(old.scenarios, new.scenarios)
+    assert old.receipt["decision_indices"] == new.receipt["decision_indices"]
+    assert (
+        old.receipt["volatility_context_sha256"]
+        == new.receipt["volatility_context_sha256"]
+    )
+
+
+# Substituted volatility fails admission before scenario creation.
+def test_volatility_reader_refuses_unbound_context(volatility_risk):
+    risk = deepcopy(volatility_risk[-1])
+    risk.features[-1, 0, 4] *= 2
+    with pytest.raises(ValueError, match="Exact original holding feature"):
+        bands.VolatilityHoldingReader(risk, volatility_risk[1])
