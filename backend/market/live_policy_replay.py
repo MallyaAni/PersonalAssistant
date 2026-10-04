@@ -175,8 +175,9 @@ def corporate_actions(broker, inputs, day, opening):
                     row["child"],
                     row["numerator"],
                     row["denominator"],
-                    opening,
+                    row.get("effective_at", opening),
                     parent_basis_fraction=row["parent_basis_fraction"],
+                    basis_policy=row.get("basis_policy"),
                 )
 
 

@@ -12,13 +12,25 @@ from __future__ import annotations
 import math
 from contextlib import suppress
 from copy import deepcopy
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from fractions import Fraction
 
 import numpy as np
 
 from backend.market import calendar
-from backend.market.alpaca_trading import Account, AlpacaTradingError, Position
+from backend.market.alpaca_trading import Account, AlpacaTradingError
+
+
+# Report private held value without fabricating unallocated acquisition cost or P&L.
+@dataclass(frozen=True, slots=True)
+class ReplayPosition:
+    symbol: str
+    qty: float
+    market_value: float
+    avg_entry_price: float | None
+    current_price: float
+    unrealized_pl: float | None
 
 
 # Parse actual aware instants without silently assigning a timezone.
@@ -38,6 +50,22 @@ def _number(value, *, positive=False):
     if not math.isfinite(value) or (value <= 0 if positive else value < 0):
         raise ValueError("Finite positive or nonnegative numeric evidence required")
     return value
+
+
+# Validate known allocations separately from explicit unallocated acquisition cost.
+def _distribution_fraction(value, policy):
+    if value is None:
+        if policy != "unallocated_at_effective_clock":
+            raise ValueError("Explicit unknown distribution basis policy required")
+        return None
+    if policy is not None:
+        raise ValueError("Conflicting known and unknown distribution basis policy")
+    fraction = _number(value, positive=True)
+    if fraction >= 1:
+        raise ValueError(
+            "Explicit parent basis fraction strictly between zero and one required"
+        )
+    return fraction
 
 
 # Validate explicitly supplied raw marks without replacing missing prices.
@@ -214,13 +242,15 @@ class ReplayBroker:
     def positions(self):
         self._observed()
         return [
-            Position(
+            ReplayPosition(
                 symbol,
                 qty,
                 qty * self._mark(symbol),
                 self._average[symbol],
                 self._mark(symbol),
-                qty * (self._mark(symbol) - self._average[symbol]),
+                qty * (self._mark(symbol) - self._average[symbol])
+                if self._average[symbol] is not None
+                else None,
             )
             for symbol, qty in sorted(self._held.items())
         ]
@@ -412,8 +442,11 @@ class ReplayBroker:
             if row["side"] == "buy":
                 spent = quantity * price + fee
                 self._average[symbol] = (
-                    held * self._average.get(symbol, 0) + quantity * price
-                ) / (held + quantity)
+                    None
+                    if held and self._average[symbol] is None
+                    else (held * self._average.get(symbol, 0) + quantity * price)
+                    / (held + quantity)
+                )
                 self._held[symbol], self._cash, budget = (
                     held + quantity,
                     self._cash - spent,
@@ -538,8 +571,9 @@ class ReplayBroker:
         if not math.isfinite(quantity):
             raise ValueError("Finite split entitlement required")
         if symbol in self._held:
-            basis = self._average[symbol] / ratio
-            if not math.isfinite(basis) or basis <= 0:
+            basis = self._average[symbol]
+            basis = basis / ratio if basis is not None else None
+            if basis is not None and (not math.isfinite(basis) or basis <= 0):
                 raise ValueError("Finite split acquisition basis required")
             self._held[symbol] = quantity
             self._average[symbol] = basis
@@ -585,9 +619,14 @@ class ReplayBroker:
         entitlement = Fraction(int(previous)) * ratio
         quantity = int(entitlement)
         residual = float(entitlement - quantity)
-        basis = self._average.get(symbol, 0) / value
+        basis = self._average.get(symbol, 0)
+        basis = basis / value if basis is not None else None
+        fractional_basis = (
+            residual * basis if basis is not None else None if residual else 0
+        )
         if any(
-            not math.isfinite(amount) for amount in (quantity, basis, residual * basis)
+            amount is not None and not math.isfinite(amount)
+            for amount in (quantity, basis, fractional_basis)
         ):
             raise ValueError("Finite consolidated entitlements and basis required")
         record = {
@@ -598,7 +637,7 @@ class ReplayBroker:
             "quantity_before": previous,
             "whole_qty": quantity,
             "fractional_qty": residual,
-            "fractional_basis": residual * basis,
+            "fractional_basis": fractional_basis,
             "fractional_policy": fractional_policy,
             "cash_in_lieu": None,
             "effective_at": effective.isoformat(),
@@ -677,9 +716,14 @@ class ReplayBroker:
             raise ValueError("Whole old-security holdings required")
         entitlement = Fraction(int(previous)) * ratio
         quantity, residual = int(entitlement), float(entitlement - int(entitlement))
-        basis = self._average.get(symbol, 0) / value
+        basis = self._average.get(symbol, 0)
+        basis = basis / value if basis is not None else None
+        forfeited_basis = (
+            residual * basis if basis is not None else None if residual else 0
+        )
         if any(
-            not math.isfinite(amount) for amount in (quantity, basis, residual * basis)
+            amount is not None and not math.isfinite(amount)
+            for amount in (quantity, basis, forfeited_basis)
         ):
             raise ValueError(
                 "Finite exchanged entitlements and acquisition basis required"
@@ -694,7 +738,7 @@ class ReplayBroker:
             "quantity_before": previous,
             "quantity_after": quantity,
             "forfeited_fraction": residual,
-            "forfeited_basis": residual * basis,
+            "forfeited_basis": forfeited_basis,
             "fractional_policy": fractional_policy,
             "cash_credit": 0,
             "effective_at": effective.isoformat(),
@@ -721,6 +765,7 @@ class ReplayBroker:
         effective_at,
         *,
         parent_basis_fraction,
+        basis_policy=None,
     ):
         if (
             not isinstance(child, str)
@@ -736,11 +781,7 @@ class ReplayBroker:
             raise ValueError(
                 "Distinct child symbol and positive integer share ratio required"
             )
-        fraction = _number(parent_basis_fraction, positive=True)
-        if fraction >= 1:
-            raise ValueError(
-                "Explicit parent basis fraction strictly between zero and one required"
-            )
+        fraction = _distribution_fraction(parent_basis_fraction, basis_policy)
         ratio = Fraction(int(numerator), int(denominator))
         key, value, effective = self._action(
             parent, f"stock_distribution/{child}", float(ratio), effective_at
@@ -749,7 +790,10 @@ class ReplayBroker:
             prior = next(
                 row for row in self._security_distributions if row["action_key"] == key
             )
-            if prior["parent_basis_fraction"] != fraction:
+            if prior["parent_basis_fraction"] != fraction or (
+                prior["numerator"],
+                prior["denominator"],
+            ) != (ratio.numerator, ratio.denominator):
                 raise ValueError("Conflicting distribution basis evidence")
             return
         if any(
@@ -764,27 +808,57 @@ class ReplayBroker:
         whole = int(entitlement)
         residual = float(entitlement - whole)
         parent_basis = self._average.get(parent, 0)
-        child_basis = parent_basis * (1 - fraction) / value
+        child_basis = (
+            parent_basis * (1 - fraction) / value
+            if parent_basis is not None and fraction is not None
+            else None
+        )
+        allocated_parent_basis = (
+            parent_basis * fraction
+            if parent_basis is not None and fraction is not None
+            else None
+        )
         previous = self._held.get(child, 0)
         quantity = previous + whole
+        prior_child_basis = self._average.get(child, 0)
         basis = (
-            (previous * self._average.get(child, 0) + whole * child_basis) / quantity
+            (
+                None
+                if child_basis is None or (previous and prior_child_basis is None)
+                else (previous * prior_child_basis + whole * child_basis) / quantity
+            )
             if quantity
             else 0
         )
+        fractional_basis = (
+            residual * child_basis
+            if child_basis is not None
+            else None
+            if residual
+            else 0
+        )
+        before_basis = {
+            "parent_total": parent_qty * parent_basis
+            if parent_basis is not None
+            else None,
+            "child_total": previous * prior_child_basis
+            if prior_child_basis is not None
+            else None,
+        }
         amounts = (
             child_basis,
             quantity,
             basis,
-            parent_basis * fraction,
-            residual * child_basis,
+            allocated_parent_basis,
+            fractional_basis,
+            *before_basis.values(),
         )
-        if any(not math.isfinite(amount) for amount in amounts):
+        if any(amount is not None and not math.isfinite(amount) for amount in amounts):
             raise ValueError(
                 "Finite distribution entitlements and acquisition bases required"
             )
         if parent_qty:
-            self._average[parent] = parent_basis * fraction
+            self._average[parent] = allocated_parent_basis
         if whole:
             self._held[child], self._average[child] = quantity, basis
         self._security_distributions.append(
@@ -797,8 +871,16 @@ class ReplayBroker:
                 "denominator": ratio.denominator,
                 "whole_qty": whole,
                 "fractional_qty": residual,
-                "fractional_basis": residual * child_basis,
+                "fractional_basis": fractional_basis,
                 "parent_basis_fraction": fraction,
+                **(
+                    {
+                        "basis_policy": "unallocated_at_effective_clock",
+                        "basis_before": before_basis,
+                    }
+                    if fraction is None
+                    else {}
+                ),
                 "cash_in_lieu": None,
                 "effective_at": effective.isoformat(),
             }

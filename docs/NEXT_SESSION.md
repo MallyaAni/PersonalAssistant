@@ -1,5 +1,50 @@
 # Next session
 
+## 2026-10-04 — physical distributions with explicitly unallocated cost
+
+Goal ACTIVE; previous goal turn PROGRESS (verified consolidationac540375 and
+pushed handoff365237c4). Atomic objective: retain and value physical spin-off
+shares without a future tax-basis estimate entering the policy. Acceptance:
+whole/fractional entitlements unchanged, cash unchanged until observed payment,
+unknown acquisition cost/P&L remain null, and actual planner orders/funding/
+wealth match the known-basis control. No source-universe or model changes.
+
+FAILED original boundary: distributing100 IBM shares into20 KD shares with no
+known allocation raised TypeError in float(None). An explicit
+unallocated_at_effective_clock contract now preserves parent shares and grants
+child shares without setting a guessed cost. Private ReplayPosition supports
+unknown cost/P&L; the real Alpaca client is unchanged. Unknown basis propagates
+through additions, partial sales, splits, consolidations and subsequent grants;
+a fully closed position does not taint a newly bought lot. Known prior parent
+and child costs are retained as unallocated receipt evidence. A later estimate
+cannot silently rewrite the action. Unknown fractional payment still blocks NAV
+and funding independently of cost. Default known-basis distributions are retained.
+
+Manual primary declaration review records DELL Nov1,2021 16:01 New York,
+IBM Nov3,2021 17:00 New York and WDC Feb21,2025 23:59 Pacific. First regular
+application/archive dates remain Nov2,Nov4 and Feb24 respectively; raw original
+factors are unchanged. Compilation checks declared physical ratios, not the
+existence of child price coverage or broker delivery. Original action-date
+holder/due-bill treatment is an explicit private assumption, not record-date or
+street-name proof. Same-day competing splits require extra ordering evidence.
+Future Form8937 example allocations are not introduced. Three distributions
+compile under this contract; economic readiness/payment/terminal processing
+remain unverified. Original invalid-export rejection gates remain intact.
+
+Ruff/diff clean. New actual planner journey PASS1.40s: identical durable intents,
+attempts, fills, plan state, account cash/shares and marked wealth. Only reported
+cost, position P&L and entry-cost fields differ. Two initial new test assertions
+incorrectly compared cost-dependent history or read an absent summarized entry
+key; corrected to persisted records, keeping economic/decision assertions.
+External acceptance assertions are unchanged. Exact-source image/actual
+compilation/independent saved-artifact verification PENDING.
+No economic account scored, predictor restored/refitted, old capture/assembly
+repeated, main merge or deployment. Existing passive marks111e0655 are reusable.
+Diagram impact: NONE, existing private action/accounting boundaries.
+NEXT: complete exact-source proof, then DELL2018/VMW2023 terminal processing,
+off-session observation boundary and fractional payment evidence before fixed
+funded timing comparison; adaptive sizing and holding/profit exits still follow.
+
 ## 2026-10-04 — whole-share consolidation and separate fractional cash
 
 Goal ACTIVE. Previous goal turn PROGRESS: primary certificate inspection

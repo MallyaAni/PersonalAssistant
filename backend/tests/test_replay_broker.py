@@ -496,6 +496,159 @@ def test_split_entitlement_basis_and_pending_quantity():
     assert broker.ledger()["holdings"] == {"AAA": 20}
 
 
+# Known physical entitlements retain valued shares without a made-up tax allocation.
+def test_unallocated_distribution_reports_unknown_basis_without_blocking_wealth():
+    broker = ReplayBroker(
+        50,
+        0,
+        initial_holdings={"AAA": 99, "BBB": 2},
+        initial_average_prices={"AAA": 60, "BBB": 40},
+    )
+    broker.observe(NOW, {"AAA": 45, "BBB": 45}, True)
+    broker.apply_stock_distribution(
+        "AAA",
+        "BBB",
+        1,
+        3,
+        NOW,
+        parent_basis_fraction=None,
+        basis_policy="unallocated_at_effective_clock",
+    )
+    ledger = broker.ledger()
+    assert ledger["holdings"] == {"AAA": 99, "BBB": 35}
+    assert ledger["average_prices"] == {"AAA": None, "BBB": None}
+    assert ledger["security_distributions"][0]["basis_before"] == {
+        "parent_total": 5940,
+        "child_total": 80,
+    }
+    assert ledger["security_distributions"][0]["fractional_basis"] == 0
+    assert broker.account().equity == 6080
+    assert broker.account().cash == broker.account().buying_power == 50
+    assert all(
+        p.avg_entry_price is None and p.unrealized_pl is None
+        for p in broker.positions()
+    )
+    broker.apply_stock_distribution(
+        "AAA",
+        "BBB",
+        1,
+        3,
+        NOW,
+        parent_basis_fraction=None,
+        basis_policy="unallocated_at_effective_clock",
+    )
+    assert broker.ledger() == ledger
+    with pytest.raises(ValueError, match="Conflicting distribution basis"):
+        broker.apply_stock_distribution(
+            "AAA", "BBB", 1, 3, NOW, parent_basis_fraction=0.75
+        )
+    assert broker.ledger() == ledger
+
+
+# Adding or partly selling an unknown-basis lot cannot turn its cost into zero.
+def test_unallocated_basis_survives_trades_until_the_position_is_fully_closed():
+    broker = account(1000, 0, holdings={"AAA": 6})
+    broker.apply_stock_distribution(
+        "AAA",
+        "BBB",
+        1,
+        3,
+        NOW,
+        parent_basis_fraction=None,
+        basis_policy="unallocated_at_effective_clock",
+    )
+    broker.submit_market("BBB", 1, "buy", "add")
+    broker.flush(LATER, {"BBB": 10})
+    broker.observe(LATER, {"AAA": 10, "BBB": 10}, True)
+    assert broker.ledger()["average_prices"]["BBB"] is None
+    broker.submit_market("BBB", 1, "sell", "partial")
+    broker.flush("2026-08-03T10:15:00-04:00", {"BBB": 10})
+    broker.observe("2026-08-03T10:15:00-04:00", {"AAA": 10, "BBB": 10}, True)
+    assert broker.ledger()["holdings"]["BBB"] == 2
+    assert broker.ledger()["average_prices"]["BBB"] is None
+    broker.submit_market("BBB", 2, "sell", "close")
+    broker.flush("2026-08-03T10:30:00-04:00", {"BBB": 10})
+    broker.observe("2026-08-03T10:30:00-04:00", {"AAA": 10, "BBB": 11}, True)
+    assert "BBB" not in broker.ledger()["average_prices"]
+    broker.submit_market("BBB", 1, "buy", "new-lot")
+    broker.flush("2026-08-03T10:45:00-04:00", {"BBB": 11})
+    broker.observe("2026-08-03T10:45:00-04:00", {"AAA": 10, "BBB": 12}, True)
+    assert broker.ledger()["average_prices"]["BBB"] == 11
+    assert broker.positions()[1].unrealized_pl == 1
+
+
+# Corporate actions propagate unknown cost while still changing physical quantities.
+@pytest.mark.parametrize("kind", ["split", "consolidation", "exchange", "distribution"])
+def test_subsequent_share_actions_preserve_unallocated_basis(kind):
+    broker = account(1000, 0, holdings={"AAA": 99})
+    broker.apply_stock_distribution(
+        "AAA",
+        "BBB",
+        1,
+        3,
+        NOW,
+        parent_basis_fraction=None,
+        basis_policy="unallocated_at_effective_clock",
+    )
+    broker.observe(LATER, {"AAA": 10, "BBB": 10, "CCC": 10}, True)
+    if kind == "split":
+        broker.apply_split("BBB", 2, LATER)
+    elif kind == "consolidation":
+        broker.apply_share_consolidation(
+            "BBB", 1, 3, LATER, fractional_policy="cash_in_lieu_unknown"
+        )
+    elif kind == "exchange":
+        broker.apply_security_exchange(
+            "BBB",
+            1,
+            5,
+            LATER,
+            old_security_id="old",
+            new_security_id="new",
+            fractional_policy="floor_no_compensation",
+        )
+    else:
+        broker.apply_stock_distribution(
+            "BBB", "CCC", 1, 3, LATER, parent_basis_fraction=0.75
+        )
+    assert broker.ledger()["average_prices"]["BBB"] is None
+
+
+# Fractional cash remains unavailable independently of acquisition cost.
+def test_unallocated_fractional_distribution_still_requires_observed_cash():
+    broker = account(1000, 0, holdings={"AAA": 100})
+    broker.apply_stock_distribution(
+        "AAA",
+        "BBB",
+        1,
+        3,
+        NOW,
+        parent_basis_fraction=None,
+        basis_policy="unallocated_at_effective_clock",
+    )
+    assert broker.ledger()["security_distributions"][0]["fractional_basis"] is None
+    with pytest.raises(AlpacaTradingError, match="Unknown distribution"):
+        broker.account()
+    broker.settle_distribution_cash("AAA", "BBB", NOW, 3, NOW)
+    assert broker.account().equity == 2333
+    assert broker.ledger()["average_prices"] == {"AAA": None, "BBB": None}
+
+
+# Explicit uncertainty is required; invalid policy or a numerical guess changes nothing.
+@pytest.mark.parametrize(
+    ("fraction", "policy"),
+    [(None, None), (None, "guess"), (0.75, "unallocated_at_effective_clock")],
+)
+def test_unknown_distribution_basis_cannot_be_implicit_or_guessed(fraction, policy):
+    broker = account(1000, 0, holdings={"AAA": 99})
+    before = broker.ledger()
+    with pytest.raises(ValueError, match="distribution basis policy"):
+        broker.apply_stock_distribution(
+            "AAA", "BBB", 1, 3, NOW, parent_basis_fraction=fraction, basis_policy=policy
+        )
+    assert broker.ledger() == before
+
+
 # A child-stock distribution preserves parent shares and total acquisition basis.
 def test_stock_distribution_is_not_a_parent_split():
     broker = ReplayBroker(

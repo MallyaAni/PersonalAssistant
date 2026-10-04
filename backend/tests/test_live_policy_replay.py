@@ -203,6 +203,86 @@ def test_actual_policy_journey_retains_inherited_security_without_ordering_it(tm
     )
 
 
+# The actual planner funds the same orders with known or unallocated distribution cost.
+def test_actual_policy_orders_and_wealth_do_not_depend_on_tax_basis_guess(tmp_path):
+    panel, raw, cubes = fixture()
+    records = []
+    for allocated in (True, False):
+        actions = dict(raw.actions)
+        grant = {
+            "date": str(raw.dates[2]),
+            "kind": "stock_distribution",
+            "child": "CHILD",
+            "numerator": 1,
+            "denominator": 1,
+            "parent_basis_fraction": 0.75 if allocated else None,
+        }
+        if not allocated:
+            grant.update(
+                basis_policy="unallocated_at_effective_clock",
+                effective_at="2026-09-02T17:00:00-04:00",
+            )
+        actions["AAA"] = (grant,)
+        records.append(
+            run_account(
+                panel,
+                replace(raw, actions=actions, passive=passive_fixture(raw)),
+                cubes,
+                tmp_path / ("allocated" if allocated else "unknown-basis"),
+                1,
+                2,
+                10,
+            )
+        )
+    known, unknown = records
+    for key in ("attempts", "intents", "fills"):
+        assert known[key] == unknown[key]
+    assert {
+        key: value for key, value in known["paper_state"].items() if key != "history"
+    } == {
+        key: value for key, value in unknown["paper_state"].items() if key != "history"
+    }
+    for historical, unallocated in zip(
+        known["paper_state"]["history"], unknown["paper_state"]["history"], strict=True
+    ):
+        assert {
+            key: value
+            for key, value in historical.items()
+            if key not in ("written", "positions", "actions")
+        } == {
+            key: value
+            for key, value in unallocated.items()
+            if key not in ("written", "positions", "actions")
+        }
+        for a, b in zip(historical["positions"], unallocated["positions"], strict=True):
+            assert {
+                key: value
+                for key, value in a.items()
+                if key not in ("avg_entry_price", "unrealized_pl")
+            } == {
+                key: value
+                for key, value in b.items()
+                if key not in ("avg_entry_price", "unrealized_pl")
+            }
+        for a, b in zip(historical["actions"], unallocated["actions"], strict=True):
+            assert {key: value for key, value in a.items() if key != "entry_price"} == {
+                key: value for key, value in b.items() if key != "entry_price"
+            }
+    assert known["broker"]["cash"] == unknown["broker"]["cash"]
+    assert known["broker"]["holdings"] == unknown["broker"]["holdings"]
+    assert unknown["broker"]["holdings"]["CHILD"] == 250
+    assert unknown["broker"]["average_prices"] == {"AAA": None, "CHILD": None}
+    assert [row["nav"] for row in known["sessions"]] == [
+        row["nav"] for row in unknown["sessions"]
+    ]
+    positions = unknown["paper_state"]["history"][-1]["positions"]
+    assert all(
+        row["avg_entry_price"] is None and row["unrealized_pl"] is None
+        for row in positions
+    )
+    assert all(row["symbol"] != "CHILD" for row in unknown["attempts"])
+
+
 # Premarket, another session and timezone-free clocks cannot expose passive prices.
 def test_passive_marks_refuse_ambiguous_session_clocks():
     _, raw, _ = fixture()

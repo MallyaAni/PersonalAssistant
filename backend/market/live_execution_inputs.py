@@ -374,74 +374,12 @@ def review_action_export(original_bytes, review_bytes):
                     numerator / denominator == value,
                     "Declared same-security ratio differs from archive factor",
                 )
-            if classification == "same_security_split" and numerator % denominator == 0:
-                output.append(
-                    {
-                        "date": str(day),
-                        "kind": "share_split",
-                        "value": numerator / denominator,
-                        "review_event": dict(event),
-                    }
+            grant = _reviewed_grant(symbol, event, day)
+            if grant["kind"] == "unresolved_entitlement":
+                unresolved.append(
+                    {key: val for key, val in grant.items() if key != "kind"}
                 )
-            elif (
-                classification == "same_security_split"
-                and numerator < denominator
-                and event.get("fractional_policy") == "cash_in_lieu_unknown"
-                and event.get("effective_at") is not None
-            ):
-                output.append(
-                    _consolidation(
-                        {
-                            **event,
-                            "source_receipt": {
-                                "declaration": event["source"],
-                                "effective_source": event.get("effective_source"),
-                                "effective_source_sha256": event.get(
-                                    "effective_source_sha256"
-                                ),
-                                "fractional_source": event.get("fractional_source"),
-                            },
-                        },
-                        day,
-                    )
-                )
-            elif (
-                classification == "security_exchange"
-                and event.get("fractional_policy") == "floor_no_compensation"
-            ):
-                output.append(
-                    _exchange(
-                        {
-                            **event,
-                            "source_receipt": {
-                                "declaration": event["source"],
-                                "fractional_source": event.get("fractional_source"),
-                                "completion_source": event.get("completion_source"),
-                            },
-                        },
-                        day,
-                    )
-                )
-            else:
-                reason = (
-                    "fractional_share_payment_unresolved"
-                    if classification == "same_security_split"
-                    else "child_valuation_basis_and_payment_unresolved"
-                    if classification == "security_distribution"
-                    else (
-                        "security_identity_election_or_fractional_processing_unresolved"
-                    )
-                )
-                missing = {
-                    "symbol": symbol,
-                    "date": str(day),
-                    "reason": reason,
-                    "review_event": dict(event),
-                }
-                unresolved.append(missing)
-                output.append(
-                    {"date": str(day), "kind": "unresolved_entitlement", **missing}
-                )
+            output.append(grant)
         result[symbol] = output
     _require(
         covered == set(indexed), "Review includes an event absent from original bytes"
@@ -467,6 +405,115 @@ def review_action_export(original_bytes, review_bytes):
     )
 
 
+# Compile physical grants without claiming valuation, allocation or payment evidence.
+def _reviewed_grant(symbol, event, day):
+    classification = event["classification"]
+    numerator, denominator = event["numerator"], event["denominator"]
+    if classification == "same_security_split" and numerator % denominator == 0:
+        return {
+            "date": str(day),
+            "kind": "share_split",
+            "value": numerator / denominator,
+            "review_event": dict(event),
+        }
+    if (
+        classification == "same_security_split"
+        and numerator < denominator
+        and event.get("fractional_policy") == "cash_in_lieu_unknown"
+        and event.get("effective_at") is not None
+    ):
+        return _consolidation(
+            {
+                **event,
+                "source_receipt": {
+                    "declaration": event["source"],
+                    "effective_source": event.get("effective_source"),
+                    "effective_source_sha256": event.get("effective_source_sha256"),
+                    "fractional_source": event.get("fractional_source"),
+                },
+            },
+            day,
+        )
+    if (
+        classification == "security_distribution"
+        and event.get("basis_policy") == "unallocated_at_effective_clock"
+    ):
+        return _distribution(
+            {
+                **event,
+                "source_receipt": {
+                    "declaration": event["source"],
+                    "effective_source": event.get("effective_source"),
+                    "fractional_source": event.get("fractional_source"),
+                },
+            },
+            (event["child"],),
+            day,
+        )
+    if (
+        classification == "security_exchange"
+        and event.get("fractional_policy") == "floor_no_compensation"
+    ):
+        return _exchange(
+            {
+                **event,
+                "source_receipt": {
+                    "declaration": event["source"],
+                    "fractional_source": event.get("fractional_source"),
+                    "completion_source": event.get("completion_source"),
+                },
+            },
+            day,
+        )
+    reason = {
+        "same_security_split": "fractional_share_payment_unresolved",
+        "security_distribution": "child_valuation_basis_and_payment_unresolved",
+        "security_exchange": (
+            "security_identity_election_or_fractional_processing_unresolved"
+        ),
+    }[classification]
+    return {
+        "symbol": symbol,
+        "date": str(day),
+        "kind": "unresolved_entitlement",
+        "reason": reason,
+        "review_event": dict(event),
+    }
+
+
+# Validate an off-session legal clock separately from its first regular application.
+def _action_first_opening(row, day, label):
+    clock = row.get("effective_at")
+    _require(isinstance(clock, str), f"Aware {label} effective clock required")
+    effective = datetime.fromisoformat(clock)
+    _require(
+        effective.utcoffset() is not None,
+        f"Aware {label} effective clock required",
+    )
+    local = effective.astimezone(calendar.NEW_YORK)
+    years, sessions = calendar.reviewed_sessions()
+    _require(
+        local.year in years and day.astype(object).year in years,
+        f"Reviewed {label} calendar required",
+    )
+    is_session = bool(np.is_busday(np.datetime64(local.date()), busdaycal=sessions))
+    _require(
+        not is_session
+        or not (
+            calendar.REGULAR_OPEN < local.time() < calendar.session_close(local.date())
+        ),
+        f"Intraday {label} requires additional execution ordering",
+    )
+    offset = int(is_session and local.time() > calendar.REGULAR_OPEN)
+    application = np.busday_offset(
+        np.datetime64(local.date()), offset, roll="forward", busdaycal=sessions
+    )
+    _require(
+        day == application, f"{label.capitalize()} requires its first regular opening"
+    )
+    return effective
+
+
 # Keep the legal consolidation clock distinct from regular-session application.
 def _consolidation(row, day):
     numerator, denominator = row.get("numerator"), row.get("denominator")
@@ -476,32 +523,7 @@ def _consolidation(row, day):
         and row.get("fractional_policy") == "cash_in_lieu_unknown",
         "Explicit reverse ratio and unknown fractional cash policy required",
     )
-    clock = row.get("effective_at")
-    _require(isinstance(clock, str), "Aware consolidation effective clock required")
-    effective = datetime.fromisoformat(clock)
-    _require(
-        effective.utcoffset() is not None,
-        "Aware consolidation effective clock required",
-    )
-    local = effective.astimezone(calendar.NEW_YORK)
-    years, sessions = calendar.reviewed_sessions()
-    _require(
-        local.year in years and day.astype(object).year in years,
-        "Reviewed consolidation calendar required",
-    )
-    is_session = bool(np.is_busday(np.datetime64(local.date()), busdaycal=sessions))
-    _require(
-        not is_session
-        or not (
-            calendar.REGULAR_OPEN < local.time() < calendar.session_close(local.date())
-        ),
-        "Intraday consolidation requires additional execution ordering",
-    )
-    offset = int(is_session and local.time() > calendar.REGULAR_OPEN)
-    application = np.busday_offset(
-        np.datetime64(local.date()), offset, roll="forward", busdaycal=sessions
-    )
-    _require(day == application, "Consolidation requires its first regular opening")
+    effective = _action_first_opening(row, day, "consolidation")
     receipt = row.get("source_receipt")
     _require(
         isinstance(receipt, Mapping)
@@ -566,7 +588,7 @@ def _economic_action(row, names, day, parent):
     return _exchange(row, day)
 
 
-# Validate sourced child entitlements and an allocation available at the action clock.
+# Validate child entitlements with known or explicitly unallocated acquisition basis.
 def _distribution(row, names, day):
     child = row.get("child")
     numerator, denominator = row.get("numerator"), row.get("denominator")
@@ -581,23 +603,53 @@ def _distribution(row, names, day):
         "Covered child and explicit positive integer distribution ratio required",
     )
     fraction = row.get("parent_basis_fraction")
-    _require(
-        isinstance(fraction, (int, float, np.integer, np.floating))
-        and not isinstance(fraction, (bool, np.bool_))
-        and np.isfinite(fraction)
-        and 0 < fraction < 1,
-        "Explicit distribution basis allocation required",
-    )
-    available = row.get("basis_available_at")
-    _require(isinstance(available, str), "Aware distribution basis clock required")
-    available = datetime.fromisoformat(available)
-    opening = datetime.combine(
-        day.astype(object), calendar.REGULAR_OPEN, calendar.NEW_YORK
-    )
-    _require(
-        available.utcoffset() is not None and available <= opening,
-        "Distribution basis cannot use later evidence",
-    )
+    unallocated = row.get("basis_policy") == "unallocated_at_effective_clock"
+    if unallocated:
+        _require(
+            fraction is None and row.get("basis_available_at") is None,
+            "Unallocated distribution cannot contain a basis estimate or later clock",
+        )
+        effective = _action_first_opening(row, day, "distribution")
+        _require(
+            all(
+                isinstance(row.get(key), str) and row[key].startswith("https://")
+                for key in ("effective_source", "fractional_source")
+            ),
+            "Distribution effective clock and fractional source required",
+        )
+        basis_fields = {
+            "parent_basis_fraction": None,
+            "basis_policy": "unallocated_at_effective_clock",
+            "effective_at": effective.isoformat(),
+            "effective_source": row["effective_source"],
+            "fractional_source": row["fractional_source"],
+            "entitlement_scope": (
+                "private_action_date_holdings_due_bill_assumption_not_broker_proof"
+            ),
+        }
+    else:
+        _require(
+            row.get("basis_policy") is None
+            and isinstance(fraction, (int, float, np.integer, np.floating))
+            and not isinstance(fraction, (bool, np.bool_))
+            and np.isfinite(fraction)
+            and 0 < fraction < 1,
+            "Explicit distribution basis allocation required",
+        )
+        available = row.get("basis_available_at")
+        _require(isinstance(available, str), "Aware distribution basis clock required")
+        available = datetime.fromisoformat(available)
+        opening = datetime.combine(
+            day.astype(object), calendar.REGULAR_OPEN, calendar.NEW_YORK
+        )
+        _require(
+            available.utcoffset() is not None and available <= opening,
+            "Distribution basis cannot use later evidence",
+        )
+        basis_fields = {
+            "parent_basis_fraction": float(fraction),
+            "basis_available_at": available.isoformat(),
+        }
     receipt = row.get("source_receipt")
     _require(
         isinstance(receipt, Mapping)
@@ -615,8 +667,7 @@ def _distribution(row, names, day):
         "child": child,
         "numerator": int(numerator),
         "denominator": int(denominator),
-        "parent_basis_fraction": float(fraction),
-        "basis_available_at": available.isoformat(),
+        **basis_fields,
         "source_receipt": _freeze(receipt),
         "fractional_policy": "cash_in_lieu_unknown",
         "share_basis": "post_split_action_date_shares",
@@ -646,6 +697,21 @@ def _validate_distribution_dependencies(normalized):
             if row["kind"] == "stock_distribution"
         ),
         "Same-day chained distributions require additional entitlement evidence",
+    )
+    _require(
+        all(
+            not any(
+                other["date"] == row["date"]
+                and other["kind"] in ("split", "share_split")
+                for name in (parent, row["child"])
+                for other in normalized.get(name, ())
+            )
+            for parent, rows in normalized.items()
+            for row in rows
+            if row["kind"] == "stock_distribution"
+            and row.get("basis_policy") == "unallocated_at_effective_clock"
+        ),
+        "Distribution and same-day splits require additional entitlement ordering",
     )
 
 

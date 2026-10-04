@@ -603,6 +603,101 @@ def test_dividend_not_used_as_split_or_price_ratio():
     assert result.actions["AAA"][1]["value"] == 3.0
 
 
+# Declare physical shares while keeping acquisition-cost allocation explicitly absent.
+def unallocated_distribution_fixture():
+    return {
+        "date": "2026-09-15",
+        "kind": "stock_distribution",
+        "child": "SPY",
+        "numerator": 1,
+        "denominator": 5,
+        "parent_basis_fraction": None,
+        "basis_policy": "unallocated_at_effective_clock",
+        "effective_at": "2026-09-14T17:00:00-04:00",
+        "effective_source": "https://issuer.example/synthetic-legal-clock",
+        "fractional_source": "https://issuer.example/synthetic-fractional-policy",
+        "fractional_policy": "cash_in_lieu_unknown",
+        "share_basis": "post_split_action_date_shares",
+        "source_receipt": {"declaration": "synthetic-share-distribution"},
+    }
+
+
+# Physical grants never turn an archive factor into parent shares or tax basis.
+def test_reviewed_unallocated_distribution_does_not_fabricate_basis_or_cash():
+    original, review = reviewed_action_fixture()
+    review["events"][0].update(
+        **{
+            key: value
+            for key, value in unallocated_distribution_fixture().items()
+            if key not in ("kind", "source_receipt")
+        },
+        classification="security_distribution",
+    )
+    result = adapter.review_action_export(original, json.dumps(review).encode())
+    assert result["unresolved"] == ()
+    assert [row["kind"] for row in result["actions"]["AAA"]] == [
+        "archive_adjustment",
+        "stock_distribution",
+    ]
+    args = inputs()
+    args["actions"] = result["actions"]
+    raw = adapter.prepare(**args)
+    assert raw.actions["AAA"][1]["parent_basis_fraction"] is None
+    assert "basis_available_at" not in raw.actions["AAA"][1]
+    np.testing.assert_array_equal(raw.daily_close[:, 0], [100, 50])
+    assert raw.tickers == args["panel"].tickers
+
+
+# Later tax examples and ambiguous or unsourced terms cannot enter decisions.
+@pytest.mark.parametrize(
+    "defect",
+    [
+        "guess",
+        "later_basis",
+        "naive",
+        "intraday",
+        "delayed",
+        "source",
+        "policy",
+        "same_day_split",
+    ],
+)
+def test_unallocated_distribution_refuses_invented_or_mistimed_terms(defect):
+    args = inputs()
+    row = unallocated_distribution_fixture()
+    args["actions"]["AAA"] = [row]
+    if defect == "guess":
+        row["parent_basis_fraction"] = 0.75
+    elif defect == "later_basis":
+        row["basis_available_at"] = "2026-09-15T16:00:00-04:00"
+    elif defect == "naive":
+        row["effective_at"] = "2026-09-14T17:00:00"
+    elif defect == "intraday":
+        row["effective_at"] = "2026-09-14T15:45:00-04:00"
+    elif defect == "delayed":
+        row["effective_at"] = "2026-09-13T17:00:00-04:00"
+    elif defect == "source":
+        row.pop("effective_source")
+    elif defect == "policy":
+        row.pop("basis_policy")
+    else:
+        args["actions"]["SPY"] = [
+            {"date": row["date"], "kind": "share_split", "value": 2}
+        ]
+    expected = {
+        "guess": "Unallocated distribution",
+        "later_basis": "Unallocated distribution",
+        "naive": "Aware distribution",
+        "intraday": "Intraday distribution",
+        "delayed": "first regular opening",
+        "source": "fractional source required",
+        "policy": "Explicit distribution basis allocation",
+        "same_day_split": "additional entitlement ordering",
+    }[defect]
+    with pytest.raises(ValueError, match=expected):
+        adapter.prepare(**args)
+
+
 # Price adjustments change archive units without granting extra parent shares.
 def test_archive_adjustment_and_child_distribution_have_distinct_units():
     args = inputs()
