@@ -12,8 +12,12 @@ terminal clocks23/24 andSPY/QQQ stay unavailable. Estimates NOT confidence or
 holding-profit probabilities. Full weighted expected-log buy/sell utility uses
 actual funded NAV fraction/costs, no new percentage trigger/confidence×size.
 
-Native module/CLI and independent private acceptance passing; exact aggregate
-and image evidence to follow. Independent review reproduced early-close12:45
+VERIFIED source4e77c48163f1bb5ff1e610d42c9a46a12d704bf3/pushed;61 native cases
+7.07s and61 exact pinned-image cases1.81s/no skips. Image4910da82 exited0.
+Initial image9c10d557 failed BEFORE collection because read-only root had no
+temporary directory; preserved failure, suppliedTMPDIR in private output only,
+no assertions/source changed. Manifest188be7401b2e8f06a1ce44aa84c670383acbfdd1ad0a997686c0ab791164c23c,
+2340trackedfiles. Independent review reproduced early-close12:45
 support falsely permitting a13:00 later regular open. Targeted support fix
 requires both price proxies strictly before official close, pinned in repository
 and unchanged private regression. Originalprepared already excludedearlycloses;
@@ -21,14 +25,24 @@ no prior data/model changed. CLI uses actual causal_mask for denominators.
 VERIFIED supplied-array causality/arithmetic; FAILED earlycloseboundary corrected.
 UNVERIFIED actual calibration quality, funded timing/sizing/holding advantage.
 
-Next: exact pinned-image acceptance, run fixed original diagnostic ONCE in fresh
-private output, then independent saved-only proof. Newprobability CLI has NO fit
+Producerba540dfa COMPLETE/exited0, immutablearchive4e77c481,2CPU8GB/nonetwork/allinputsRO,
+output /home/animallya96/scratch/probabilistic-results-20261004-4e77c481/study.
+Report67084f65042a1defe87cfc5372ef5dd1de9e18e86a50b8c9d94b9d223681bf34,
+3,812,089 causalopportunities;boosting3,253,836/ridge3,253,831 available,
+all94stocks/4fixedwindows. Fullsame-sessiontail outcomes retained; no account
+or totalgain inferred. NEVER restart/repeat it or edit its mountedsource.
+Independent saved-only proof pending. Newprobability CLI has NO fit
 or account mode; keep bothpredeclaredboosting/ridge heads,all94stocks/fixedwindows,
 missing/coldstart counts, pairedhistoricalreference and infinite losses explicit.
 Saved proof worker ownsNEW private verifier/tests only. No production imports,
 policy/UI/services/account/data changes or adoption. Do not repeat earlier
 completed account studies. Sizing can change aggregategain; isolate timing with
 matched sizes before jointly carried funded evaluation. Full usergoal active.
+User asks whether sizing obscuresentrygain: existing verified63c21f68 factorial
+at10bp haspairedmedian timingwithsameequalrule +13.1637pp,13/20phases;
+growthsizingwithsamegate -212.8617pp,only1/20positive. These are component
+accounts andoverlapping sensitivityschedules,notfull livepolicy orindependent
+trials. Allocationlossis demonstrated;causal source of sizingloss stillunproved.
 
 ## 2026-10-04 — learned held exits verified; intraday probability work remains
 
