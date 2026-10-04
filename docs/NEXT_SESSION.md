@@ -32,11 +32,18 @@ Audit script4e85023ffbbd3ed1917939d634e407cad367ab9bba587b6fbbde031f64b33d79.
 FAILED original uncovered-holding acceptance: valuation raised tuple.index
 ValueError before recording missing wealth. One targeted fix builds the
 existing named close map and reports missing_held_close/None NAV, preserving
-cash, shares and broker state. Native186 relevant cases PASS6.14s and Ruff/diff
-clean; exact committed-image acceptance PENDING. No passive prices added to
+cash, shares and broker state. VERIFIED codee8328dd0a89ceafc3f131cd82685841d62338525:
+native186 relevant cases PASS6.14s and Ruff/diff clean. Exact Git archive2371
+files passed441 cases17.02s/no skips in the same pinned image5c6c5605..., including
+the unchanged external acceptance cases and the originally failing holding
+journey. Counts overlap; do not sum. No passive prices added to
 the planner, invented liquidation, stale mark fallback or strategy change.
+Proof:/home/animallya96/scratch/uncovered-valuation-20261004-e8328dd0/proof;
+test loged4bece739479ccc1a95cb29967a18f00d60a00e6f3617baa12a23632fdeb524;
+manifest6a0c22b4d0c763489e575ec79805b3469d4e7b011f3fc47bb7b214a595a622b0.
+Read-only deployment source still621e28f0f8407f511ff01202c8e5aaa6bcda9e40.
 
-NEXT: pin this exact correction, then source-aware passive marking and the
+NEXT: source-aware passive marking and the
 five remaining economic action/terminal payment boundaries; resume fixed
 funded comparisons only with reviewed accounting identities. Live unchanged.
 Diagram impact: NONE — existing private valuation boundary only.
