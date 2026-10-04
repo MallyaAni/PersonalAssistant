@@ -1,5 +1,68 @@
 # Next session
 
+## 2026-10-03 — daily arithmetic decision comparison independently verified
+
+VERIFIED evaluated source `d339aebea05d28a034ff89a78c36791ecf400fef`:
+100 native/image implementation cases and28 native/image private-verifier cases,
+no skips. Independent proof container3ef67ae94ff2dfe7ed4fb3bce4935d15a2391911b797ff7f0336d15921f8c79c
+exited0; reconstructed141 monthly receipts and reconciled all9 stock/6ETF
+saved ledgers,54,037 intents,33,908 full fills,20,129 cash-limited outcomes,
+basis/profit/NAV/risk certificates and15 complete score sets. No model/account
+rerun. Proofcf4132bd2e51c3a6420eac17dd121ce6fb09637bc79d2cac899a5f2373d502c2.
+Report1e3dc8fc matches; publication
+`docs/research/daily-arithmetic-bridge-results-2026-10-03.md/.json` preserves
+all fixed books/windows and94 stock contributions. JSON5f30b8492f9536473f5a7fd98dd13d9f843cb0c3e2cb0dd6d655d37b6b357f18.
+
+FAILED adoption evidence: at10bp calibrated gains186.42% versus daily equal
+447.18%,QQQ253.97%,SPY170.73%; even0bp537.66% versus equal547.68%.
+Full-period drawdown decreases but total gain is primary. No superiority/live
+replacement claim. Historical/current-vintage book and reused recent window;
+rule comparator is daily target component, not full live rotation/FOMC/intraday.
+All-cash25bp past-mean result retains nullSharpe, not a missing cell. No tuning
+or chosen subgroup. Exact study/proof locations below; NEVER restart either.
+
+Next bounded implementation: direct one-session arithmetic boosting head using
+the original13 daily features and original fixed configuration, identical bridge
+training/scoring masks and same March2020 account anchor. Assert exact dated
+training support/labels/date-balanced weights; keep saved calibrated/past-mean/
+equal/ETF controls, no original replay. Freeze protocol BEFORE new fits/outcomes.
+No new family/threshold/regime search. New direct learner/economic proof remain
+UNVERIFIED. Production policy/UI/data and model service identities unchanged.
+Diagram impact NONE; no research-only deployment/model gate.
+
+## 2026-10-03 — daily funded arithmetic producer complete; independent proof pending
+
+Exact evaluated/pushed source `d339aebea05d28a034ff89a78c36791ecf400fef`, branch
+`codex/learned-entry-risk-20261002`. VERIFIED: 100 native and 100 pinned-image
+acceptance cases, no skips; unchanged historical default targets/receipts match
+in twelve additional comparisons. Whole2,308-file source manifest
+`efdca8d6e9219cd1558290f883d9bbe08a4acf0603b721e617e39ac0a2a5bdc2`.
+Producer6507ce4d3e44d02fae97004bebb14f2f4fc3e083f0d6b8c240d1fa662343d508
+exited0; one bridge fit, nine new stock books and six matched ETF books. Never
+restart/refit/replay it. Source/archive and original inputs mounted read-only;
+private output only writable, no network,2CPU/8GB, original model services intact.
+
+Study `/home/animallya96/scratch/daily-arithmetic-bridge-results-20261003-d339aebe/study`.
+Report1e3dc8fc1e74049e7945f198d0b18ab5fcffebed3f6a077c1b85fa42fe15f9df,
+bridgeb3e6c8445f9e8f6fa3d2618b8193c8fa0031b66bac546c287290c3c3644f4f14,
+fitff9d869933b7392f4bf79eff82f6b200fd897d52736b4b73fdcb3d058d2290aa.
+Common causal anchor2020-03-02, first fill03-03; excludes522 original forecast
+decision sessions, or1,298 full-panel sessions. Do not conflate denominators.
+No economic value was read before protocold7e6d016/source acceptance.
+
+Root SHA-checked report and read every fixed arm/cost/window once. UNVERIFIED
+pending independent artifact proof: at10bp calibrated net gain186.422%,
+daily grade-equal447.178%, QQQ253.966%, SPY170.726%; at0bp calibrated537.665%
+versus equal547.676%; at25bp calibrated91.745% versus equal325.003%.
+At25bp the past-mean ablation stays all cash,0gain/nullSharpe, not a missing
+result. These are daily rule-component comparisons, not full live parity.
+No adoption, tuning or chosen regime/name from these values. evaluation_review
+owns only NEW private saved-artifact verifier/tests; wait for release, independently
+review and run acceptance, then read-only proof without producer/model/account calls.
+Publish all fixed cells and all94 stock contributions after proof, selectively
+commit/push. Research-only changes require no deployment/model gate. Diagram
+impact NONE; live policy/UI, production data and model identities unchanged.
+
 ## 2026-10-03 — daily arithmetic decision implementation ready for image acceptance
 
 Protocol `d7e6d016` frozen BEFORE bridge fits/outcomes. New pure
