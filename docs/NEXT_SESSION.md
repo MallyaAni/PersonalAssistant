@@ -1,5 +1,77 @@
 # Next session
 
+## 2026-10-04 — historical calendar repaired; corrected funded comparisons running
+
+Goal ACTIVE; turn PROGRESS. Isolated branch codex/learned-entry-risk-20261002.
+Started clean353fb3c5; code ebedd8d4 then e396841bb5bdb4218491e0bc3adba96cb804635b
+verified/pushed. Main204689db unchanged/ancestor; no main, production, model,
+UI, prompt, schema or deployment changes. Diagram impact NONE.
+
+Material FAILED comparison boundary independently reproduced: original candidate
+8a7b9cc7 had1926 false calendar pauses in2178nightlies. Its first physically
+verified gain376.14% versus rule856.42% measures mostly paused policies, not
+intended ordinary daily decisions. Preserve those results, never adopt/reject
+from them. Prefix1 saved proofSHA6e2dd90a3e42f8816dd92721260a43b7fe6d907e8f755ac094d2084a2167a00c.
+Original candidate/control studies STOPPED only after proof/reproduction:1/10
+complete books and partial states preserved under old IDs; superseded for
+decision coverage, not performance selection. Stop proof at funded-calendar-
+20261004-ebedd8d4/proof/superseded-studies.json SHA4c7804f9a25e4c4f37cb0bad9ddf8bc7efeebb8a820ae05cf43b2cffec5e38f1.
+NEVER restart old joint-funded-study-8a7b9cc7 or reviewed-economic-study-b5894a74.
+
+VERIFIED targeted repair: _future_session_offset now uses existing reviewed
+2015–2028 sessions, retaining unknown-year refusal/event priority.7red cases,
+72native7.48s and638pinned35.67s/no skips at ebedd8d4. Broad native run failed
+Mac disk exhaustion, not a pass; removed only its terminated syntheticpytest360
+fixtures. Use remote pinned image for broad fixtures; Mac~248MiB free.
+
+Saved original calibration initially rejected changed calendar source. Explicit
+compatibility admits only the exact original5f36c265 and corrected f5ceca3c
+full hashes; default strict. All other source/table/input/sample hashes required;
+original and consumer identities both retained. No recalibration or new forecast.
+e396841b:69native9.37s,669pinned33.15s/no skips; Ruff/diff clean. Original supplied
+control artifacts preflight passed; both restored methods attest the exact pair.
+Candidate preflight authenticates103original files, original saved risk,0models
+fit/restored and all2178real nightly prefix calendars through09-30 close.
+First launcher omitted terminal close in its coverage loop, refused before
+launch; corrected helper v2 includes it and retains the failed2177-row proof.
+Initial gate-command typo ran no tests; corrected command/log is authoritative.
+
+ACTIVE immutable source /home/animallya96/scratch/funded-calendar-20261004-e396841b,
+2386files, pinned image5c6c5605,2CPU/8GB/netnone/sourceRO each:
+joint-calendar-study-e396841b ID2bb2b921b84fbd2a2da16416ed3cc01bb1a950d6bb017367cf3edf48b1f2ff0d;
+actual-calendar-study-e396841b ID2832af72a29ad33dae9b02151350983f1741aa8d79d6e9f16a16f74ce9f4d626.
+Started21:42:10UTC/running/OOMfalse. At17:48NY candidate500sessions through
+2020-01-27; control380through2019-08-05,0complete books. Same frozen96names,
+20starts x0/10/25bp,2018-02-01..2026-09-30,100Kcash,zero yield;60candidate and
+300rule/boosting/ridge/SPY/QQQ accounts. No threshold/date/cohort/model tuning.
+Actual candidate receipt joint_net_growth; submitted MSI buy97 next_open;
+unused legacy dip latch is also recorded by replay but does not govern these
+next-open ordinary candidate orders. Event execution retains shared priority.
+
+Evidence under that root: manifestSHA775528d677abf8e4e69b5a04571e7d69b627405db4e1c3ed543281b4287c09f7;
+testsSHA41eb093d0d08f38ae7a95eaf7c9111d56762724ad6555d1a08b3a73522ced59a;
+actual-preflight/identitySHA282f7f2afe8f853e7b090fed31e70ff19d45c4378b47665934490054c2410e60;
+candidate-preflight-v2SHA9daaf26bcfad7262d88e8efb856047c95dfb3e04a23ddc62a58d082dfe3ed647.
+Commands/logs/initial actual Docker inspections retained in proof/; runner v2
+immutable, no rewriting active mounted files. Original invalid runs remain separate.
+
+NEXT: inspect compact completion/failure first, not rerun/refit/restart. Read-only
+watcher2992559 waits for first candidate and first5controls (includes rule/SPY/QQQ)
+then executes backend.cli.verify_joint_funded exactly once. proof/independent/
+watcher.log, command-prefix1.json, evidence.json SHAb7b5c38a20b02b40b005e3201b55aaa9bd430eb3d74cbe3b3086101ac2584dab;
+saved-prefix1.json/prefix1.log appear after proof. Do not launch duplicate watcher.
+Independently inspect current process/error evidence and saved proof before claims.
+Verify subsequent newly completed prefixes with fresh output/name/log only;
+retain pending books, unknown wealth/claims/fills and all starts/cost windows.
+No resimulation for verification. Source e396 includes independently tested
+physical ledger/money/receipt verifier; no unchanged model/test gates needed.
+
+UNVERIFIED corrected funded advantage/full live replacement. Current-vintage
+grades/universe, unscheduled FOMC publication, unspendable claims and conditional
+raw proxy fills limit historical evidence; not exact live/broker/midpoint results.
+Keep focus entry/profit-taking plus actual funding, not new strategy churn.
+Protocol: research/funded-calendar-correction-plan-2026-10-04.md.
+
 ## 2026-10-04 — independent saved-account verifier pushed; first controls verified
 
 Goal ACTIVE; turn PROGRESS. Exact code e7df67e778d59d470bae6d0fef9ed11287b3b7f6
