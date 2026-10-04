@@ -5,6 +5,7 @@ from copy import deepcopy
 from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -14,6 +15,8 @@ from backend.market import daily_arithmetic_bridge as bridge_module
 from backend.market import direct_daily_arithmetic as direct
 from backend.market import direct_error_band as bands
 from backend.market import learned_entry_models as base
+
+pytest_plugins = ["backend.tests.test_direct_feature_arithmetic"]
 
 
 # Supply genuine causal bridge receipts and a caller-authenticated numeric archive.
@@ -330,3 +333,168 @@ def test_missing_direct_source_identity_is_rejected():
     receipt["identity_sha256"] = base._json_hash(receipt["identity"])
     with pytest.raises(ValueError, match="source hashes required"):
         bands.calibrate(dates, names, forecasts, receipt, parent)
+
+
+# Unequal weights match pairwise CRPS and empirical quantiles.
+def test_holding_scores_match_two_point_probability_arithmetic():
+    values, weights = np.array([-0.02, 0.04]), np.array([0.25, 0.75])
+    original = values.copy(), weights.copy()
+    actual = bands.score_holding_distribution(values, weights, 0.01, 0)
+    assert actual["crps"] == pytest.approx(0.01875)
+    assert actual["brier"] == pytest.approx(0.0625)
+    assert actual["probability_gain"] == 0.75
+    assert actual["realized_gain"] == 1
+    assert actual["predicted_mean"] == pytest.approx(0.025)
+    assert actual["mean_error"] == pytest.approx(0.015)
+    np.testing.assert_allclose(actual["quantiles_10_50_90"], [-0.02, 0.04, 0.04])
+    assert actual["interval80_covered"] == 1
+    assert actual["interval80_width"] == pytest.approx(0.06)
+    assert actual["pit_left"] == actual["pit_right"] == 0.25
+    np.testing.assert_array_equal(values, original[0])
+    np.testing.assert_array_equal(weights, original[1])
+
+
+# Strict gains, equal outcomes and bankruptcy retain their distinct probability meaning.
+def test_holding_scores_preserve_ties_and_total_loss():
+    actual = bands.score_holding_distribution([0, 0.01], [0.5, 0.5], 0, 0)
+    assert actual["probability_gain"] == 0.5
+    assert actual["realized_gain"] == 0
+    assert actual["brier"] == 0.25
+    assert actual["pit_left"] == 0
+    assert actual["pit_right"] == 0.5
+    loss = bands.score_holding_distribution([-1], [1], -1, 25)
+    assert loss["realized_return"] == loss["predicted_mean"] == -1
+    assert loss["brier"] == loss["crps"] == 0
+    assert loss["quantiles_10_50_90"] == [-1, -1, -1]
+
+
+# Per-side costs change gain classification once and preserve proper score arithmetic.
+@pytest.mark.parametrize("cost", [0, 10, 25])
+def test_holding_scores_match_independent_pairwise_definition(cost):
+    values = np.array([-0.04, 0.001, 0.001, 0.005, 0.03])
+    weights = np.array([0.1, 0.2, 0.15, 0.35, 0.2])
+    actual = bands.score_holding_distribution(values, weights, 0.001, cost)
+    rate = cost / 10000
+    net = ((1 + values) * (1 - rate) / (1 + rate)) - 1
+    observed = (1.001 * (1 - rate) / (1 + rate)) - 1
+    expected = weights @ np.abs(net - observed) - 0.5 * np.sum(
+        weights[:, None] * weights[None, :] * np.abs(net[:, None] - net[None, :])
+    )
+    assert actual["crps"] == pytest.approx(expected, abs=2e-15)
+    assert actual["realized_gain"] == int(cost == 0)
+    assert actual["probability_gain"] == pytest.approx(weights[net > 0].sum())
+    assert actual["realized_return"] == pytest.approx(observed, abs=2e-15)
+
+
+# Invalid distributions and impossible outcomes cannot manufacture usable risk scores.
+@pytest.mark.parametrize(
+    ("values", "weights", "actual", "cost"),
+    [
+        ([-1.01], [1], 0, 0),
+        ([0], [1], -1.01, 0),
+        ([0], [0.9], 0, 0),
+        ([0], [0], 0, 0),
+        ([np.nan], [1], 0, 0),
+        ([0], [1], np.nan, 0),
+        ([0], [1], True, 0),
+        ([0], [1], 0, True),
+        ([0], [1], 0, -1),
+        ([0], [1], 0, 10000),
+        ([0], [1], 0, np.inf),
+    ],
+)
+def test_holding_scores_refuse_invalid_probability_domains(
+    values, weights, actual, cost
+):
+    with pytest.raises(ValueError, match="required"):
+        bands.score_holding_distribution(values, weights, actual, cost)
+
+
+# Actual saved heads retain cold starts and unpublished outcomes without permission.
+def test_holding_diagnostic_retains_actual_reader_opportunities(risk_example):
+    from backend.market import direct_feature_arithmetic as feature
+
+    _, bridge, _, _, risk = risk_example
+    reader = feature.HoldingScenarioReader(risk, bridge)
+    last = len(reader.dates) - 1
+    rows = list(bands.holding_diagnostic_rows(reader, [0, last - 2, last - 1, last]))
+    assert len(rows) == 8
+    assert {row["symbol"] for row in rows} == {"AAA", "BBB"}
+    assert all(row["scores"] is None for row in rows[:2])
+    assert all(row["outcome_status"] == "known_outcome" for row in rows[:4])
+    assert all(row["scores"] is not None for row in rows[2:4])
+    assert all(row["prediction_status"] == "available" for row in rows[2:])
+    assert all(row["outcome_status"] == "immature_outcome" for row in rows[4:])
+    assert all(row["scores"] is None for row in rows[4:])
+    for row in rows[2:4]:
+        assert [score["cost_bps"] for score in row["scores"]] == [0, 10, 25]
+        assert np.datetime64(row["bank"]["maximum_endpoint"]) < np.datetime64(
+            row["bank"]["label_end_before"]
+        )
+
+
+# Missing current labels change scoring availability without censoring predictions.
+def test_holding_diagnostic_keeps_missing_known_outcome(risk_example):
+    from backend.market import direct_feature_arithmetic as feature
+
+    prepared, bridge, parent, heads, original = risk_example
+    bridge, parent = deepcopy(bridge), feature._copy_feature(parent)
+    day = len(original.dates) - 3
+    bridge.labels[day, 1] = np.nan
+    bridge.manifest["label_sha256"] = bridge_module._hash(bridge.labels)
+    parent.manifest["identity"]["bridge_manifest_sha256"] = base._json_hash(
+        bridge.manifest
+    )
+    parent.manifest["identity"]["input_sha256"]["labels"] = bridge_module._hash(
+        bridge.labels
+    )
+    parent.manifest["identity_sha256"] = base._json_hash(parent.manifest["identity"])
+    risk = feature.holding_risk_forecasts(
+        parent,
+        bridge,
+        prepared["X"],
+        prepared["valid"],
+        heads,
+        prices=prepared["risk_prices"],
+    )
+    rows = list(
+        bands.holding_diagnostic_rows(
+            feature.HoldingScenarioReader(risk, bridge), [day]
+        )
+    )
+    assert rows[0]["scores"] is not None
+    assert rows[1]["prediction_status"] == "available"
+    assert rows[1]["outcome_status"] == "missing_known_outcome"
+    assert rows[1]["scores"] is None
+
+
+# Calendar close separates missing and future outcomes, including early closes.
+def test_holding_outcome_uses_calendar_maturity_and_unknown_endpoints():
+    reader = SimpleNamespace(
+        dates=np.array(
+            ["2026-11-23", "2026-11-24", "2026-11-25"], dtype="datetime64[D]"
+        ),
+        endpoints=np.array(["2026-11-25", "NaT", "NaT"], dtype="datetime64[D]"),
+        labels=np.full((3, 1), np.nan),
+        as_of=datetime(2026, 11, 27, 12, 59, tzinfo=exchange.NEW_YORK),
+    )
+    assert bands._holding_outcome(reader, 1, 0) == "immature_outcome"
+    reader.as_of = datetime(2026, 11, 27, 13, 0, tzinfo=exchange.NEW_YORK)
+    assert bands._holding_outcome(reader, 1, 0) == "missing_known_outcome"
+    assert bands._holding_outcome(reader, 2, 0) == "immature_outcome"
+    reader.as_of = datetime(2026, 12, 2, 16, 0, tzinfo=exchange.NEW_YORK)
+    assert bands._holding_outcome(reader, 2, 0) == "missing_known_outcome"
+    reader.dates = np.array(
+        ["2100-12-28", "2100-12-29", "2100-12-30"], dtype="datetime64[D]"
+    )
+    assert bands._holding_outcome(reader, 2, 0) == "unknown_outcome_endpoint"
+
+
+# Malformed requests cannot silently repeat or select opportunities.
+@pytest.mark.parametrize("days", [[], [True], [1, 1], [2, 1], [-1], [1200], [1.0]])
+def test_holding_diagnostic_refuses_malformed_days(risk_example, days):
+    from backend.market import direct_feature_arithmetic as feature
+
+    reader = feature.HoldingScenarioReader(risk_example[-1], risk_example[1])
+    with pytest.raises(ValueError, match="chronological"):
+        list(bands.holding_diagnostic_rows(reader, days))

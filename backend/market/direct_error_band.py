@@ -17,6 +17,7 @@ from backend.market import calendar as exchange
 from backend.market import daily_arithmetic_bridge as reference
 from backend.market import direct_daily_arithmetic as direct
 from backend.market import learned_entry_models as base
+from backend.market import probabilistic_execution as probability
 
 POLICY = "direct-error-band/1-research"
 PROTOCOL = "docs/research/direct-error-band-plan-2026-10-03.md"
@@ -403,3 +404,152 @@ def freeze_rows(
         "unavailable": int((score_mask & ~np.isfinite(radii)).sum()),
     }
     return ErrorBands(radii, manifest)
+
+
+# Score a mature stock-return distribution without interpreting it as account profit.
+def score_holding_distribution(values, weights, actual, cost_bps):
+    values, weights = probability._sample(values, weights)
+    if (
+        np.any(values < -1)
+        or isinstance(actual, (bool, np.bool_))
+        or not isinstance(actual, (int, float, np.integer, np.floating))
+        or not np.isfinite(actual)
+        or actual < -1
+        or isinstance(cost_bps, (bool, np.bool_))
+        or not isinstance(cost_bps, (int, float, np.integer, np.floating))
+        or not np.isfinite(cost_bps)
+        or not 0 <= cost_bps < 10000
+        or not np.isclose(weights.sum(), 1.0, rtol=0, atol=1e-12)
+    ):
+        raise ValueError(
+            "Possible mature returns, unit probabilities and valid costs required"
+        )
+    weights = weights / weights.sum()
+    cost = float(cost_bps) / 10000
+    with np.errstate(over="ignore", invalid="ignore"):
+        net = (1 + values) * ((1 - cost) / (1 + cost)) - 1
+        realized = (1 + float(actual)) * ((1 - cost) / (1 + cost)) - 1
+        order = np.argsort(net, kind="stable")
+        x, w = net[order], weights[order]
+        previous_mass = np.r_[0.0, np.cumsum(w)[:-1]]
+        previous_value = np.r_[0.0, np.cumsum(w * x)[:-1]]
+        half_distance = np.sum(w * (x * previous_mass - previous_value))
+        crps = float(weights @ np.abs(net - realized) - half_distance)
+        quantiles = probability.weighted_quantiles(net, weights)
+        positive = float(weights[net > 0].sum())
+        won = int(realized > 0)
+        mean = float(weights @ net)
+        result = {
+            "probability_gain": positive,
+            "realized_gain": won,
+            "brier": (positive - won) ** 2,
+            "crps": crps,
+            "predicted_mean": mean,
+            "realized_return": float(realized),
+            "mean_error": mean - float(realized),
+            "quantiles_10_50_90": quantiles.tolist(),
+            "interval80_covered": int(quantiles[0] <= realized <= quantiles[-1]),
+            "interval80_width": float(quantiles[-1] - quantiles[0]),
+            "pit_left": float(weights[net < realized].sum()),
+            "pit_right": float(weights[net <= realized].sum()),
+        }
+    scalars = [value for key, value in result.items() if key != "quantiles_10_50_90"]
+    if not np.isfinite(scalars).all() or not np.isfinite(quantiles).all():
+        raise ValueError("Holding diagnostic arithmetic exceeds finite range")
+    return result
+
+
+# Distinguish an unpublished D+2 outcome from a past missing original price label.
+def _holding_outcome(reader, day, stock):
+    endpoint = reader.endpoints[day]
+    if np.isnat(endpoint):
+        years, calendar = exchange.reviewed_sessions()
+        first = reader.dates[-1] + np.timedelta64(1, "D")
+        whole = np.arange(first, first + np.timedelta64(30, "D"))
+        if any(value.astype(object).year not in years for value in whole):
+            return "unknown_outcome_endpoint"
+        next_sessions = whole[np.is_busday(whole, busdaycal=calendar)]
+        offset = day + 2 - len(reader.dates)
+        if not 0 <= offset < len(next_sessions):
+            return "unknown_outcome_endpoint"
+        endpoint = next_sessions[offset]
+    close = datetime.combine(
+        endpoint.astype(object),
+        exchange.session_close(endpoint.astype(object)),
+        exchange.NEW_YORK,
+    )
+    if close > reader.as_of:
+        return "immature_outcome"
+    return (
+        "known_outcome"
+        if np.isfinite(reader.labels[day, stock])
+        else "missing_known_outcome"
+    )
+
+
+# Retain every stock/session and score identical mature model/reference cases.
+def holding_diagnostic_rows(reader, days):
+    from backend.market.direct_feature_arithmetic import HoldingScenarioReader
+
+    if not isinstance(reader, HoldingScenarioReader):
+        raise ValueError("Authenticated holding scenario reader required")
+    days = np.asarray(days)
+    if (
+        days.ndim != 1
+        or not len(days)
+        or days.dtype.kind not in "iu"
+        or np.any((days < 0) | (days >= len(reader.dates)))
+        or np.any(days[1:] <= days[:-1])
+    ):
+        raise ValueError("Unique chronological declared decision indices required")
+    for day in days:
+        day = int(day)
+        for stock, name in enumerate(reader.symbols):
+            if name in ("SPY", "QQQ"):
+                continue
+            sample = reader.distribution(day, (name,))
+            outcome = _holding_outcome(reader, day, stock)
+            case = {
+                "day": day,
+                "stock": stock,
+                "symbol": name,
+                "prediction_status": sample.receipt["status"],
+                "prediction_reason": sample.receipt.get("reason"),
+                "outcome_status": outcome,
+                "scores": None,
+                "scenario_receipt_sha256": base._json_hash(sample.receipt),
+                "bank": {
+                    key: sample.receipt.get(key)
+                    for key in (
+                        "fit_date",
+                        "label_end_before",
+                        "joint_dates",
+                        "maximum_endpoint",
+                        "row_sha256",
+                    )
+                },
+            }
+            if sample.receipt["status"] == "available" and outcome == "known_outcome":
+                indices = np.asarray(sample.receipt["decision_indices"], dtype=np.int64)
+                observed = reader.labels[day, stock]
+                reference_values = reader.labels[indices, stock]
+                if not np.isfinite(reference_values).all() or not np.all(
+                    reader.endpoints[indices]
+                    < np.datetime64(sample.receipt["label_end_before"], "D")
+                ):
+                    raise ValueError(
+                        "Strictly mature original reference labels required"
+                    )
+                case["scores"] = [
+                    {
+                        "cost_bps": cost,
+                        "model": score_holding_distribution(
+                            sample.scenarios[:, 0], sample.probabilities, observed, cost
+                        ),
+                        "reference": score_holding_distribution(
+                            reference_values, sample.probabilities, observed, cost
+                        ),
+                    }
+                    for cost in (0, 10, 25)
+                ]
+            yield case
