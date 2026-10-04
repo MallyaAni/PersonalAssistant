@@ -34,8 +34,12 @@ focused cases15.56s, pinned-image402 cases16.93s/no skips, Ruff/diff clean.
 Image5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d;
 log:/home/animallya96/scratch/action-entitlement-repair-20261004-522e9ba3/proof/source-image-tests.log,
 sha a190f5ac955cd6e9695a00f47dc911a5d2eafb601ad67e11864d30a01c0a7394.
-Counts overlap; do not add them. Latest metadata correction names archive
-factors separately from economic share units; its new source check follows.
+Counts overlap; do not add them. Final code checkpoint2a130e002369ffc7315876106f63fd1e1008acf6
+is pushed and also passed402 pinned-image cases16.17s/no skips, plus115 focused
+native cases10.65s. It corrects source metadata to describe archive price
+factors separately from economic share units. Final-image log:
+/home/animallya96/scratch/action-entitlement-repair-20261004-2a130e00/proof/source-image-tests.log,
+sha5da2c76576f3b456174f3310b848101d680791b79715032b311316663d68fd5b.
 Exact original event
 reproduction proves100 WDC incorrectly becomes132.3; corrected synthetic
 allocation preserves100 WDC,33 SNDK and1/3 unpriced cash entitlement. Allocation
@@ -64,6 +68,23 @@ Then isolate timing, sizing and holding exits toward funded compounded gain
 against rule/SPY/QQQ. Goal ACTIVE; live621e28f0 unchanged, no promotion/deploy,
 models/data/secrets preserved. Diagram impact: NONE — existing private research
 ledger and source boundary, no new agent/service/store or production flow.
+
+Targeted original-action inventory (not another price-scale audit) found24
+supplied split-labelled records in the fixed evaluation range. In addition to
+WDC, primary sources identify these non-share adjustments requiring review:
+DELL2021-11-02 source1.973 represents
+[0.440626 VMW per DELL](https://www.sec.gov/Archives/edgar/data/1571996/000119312521315488/d146470d8k.htm);
+IBM2021-11-04 source1.046 represents
+[one KD per five IBM](https://www.ibm.com/investor/services/faqs-about-the-kyndryl-holdings-inc-distribution).
+DELL2018-12-28 source1.806 involves a DIFFERENT share-class exchange with cash
+elections/proration and
+[1.8066 Class C per Class V stock election](https://www.sec.gov/Archives/edgar/data/1571996/000119312518360943/d673794dex991.htm),
+not a generic rounded split. Do not infer entitlements from archive ratios.
+Original96-name snapshot has SNDK but lacks KD/VMW; retain missing child
+valuation evidence explicitly and source additional evidence separately, never
+rewrite/refetch originals or quietly liquidate uncovered holdings. The remaining
+20 event semantics have not been independently certified. This inventory did
+not evaluate or select any policy outcomes.
 
 ## 2026-10-04 — historical-clock boundary corrected; fresh full run active
 
