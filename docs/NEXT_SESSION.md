@@ -19,7 +19,8 @@ planner's candidate price map; inherited holdings persist without fabricated
 liquidation. Unknown fractional cash still prevents complete NAV. Each replay
 with passive data records the actual passive input provenance.
 
-VERIFIED native208 relevant cases PASS, including unchanged external acceptance
+VERIFIED code111e06553c2497b6e5c1f71dfb4f59614dbe321a: native208 relevant cases PASS5.95s,
+including unchanged external acceptance
 cases; Ruff/diff clean. Synthetic real-nightly/sender/broker journey retained
 250 child shares, valued them at supplied prices and created zero child orders,
 targets or fills. Completed-bar prefix invariance, actual early close, unchanged
@@ -27,13 +28,30 @@ selection arrays, missing marks, coverage/identity/tamper refusal and unchanged
 default benchmark funding were tested. One new test initially asserted an
 unprovided nightly receipt key; corrected to the actual persisted rebalance
 targets and fill receipts, with economic/state assertions unchanged.
-Exact committed-image and actual captured-data assembly are PENDING.
+Exact Git archive2371 files passed463 tests16.14s/no skips in pinned image
+5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+Counts overlap; do not sum. Actual assembly EXIT0 authenticated the whole source
+tree before/after and consumed only the69 previously captured original pages
+and original96-name/2953-date snapshot. KD/VMW arrays are separate and retain
+all missing regular bars and VMW's post2023-11-21 terminal missingness.
+Eight actual-clock examples passed:09:30 opening,09:45 completed close,16:01
+daily close, both common historical feed gaps, last VMW close142.48 and two
+post-terminal unavailable marks. No model restored/fitted or account scored.
+A saved-only independent checker imported no broker, predictor or producer
+calendar; each array cell was joined to the original raw page fields and the
+published early-close tables. All eight saved causal examples matched too.
+Evidence:/home/animallya96/scratch/passive-valuation-20261004-111e0655/proof.
+Test log71a376964b71874809482ab0ca55dfd72a01ca147be4b7e6fdcbc1ca81ca4679;
+manifestd66d37d82e2a7f34640d5b4de7a9fadb892b7401560b97e239a0b6a35e42d996;
+arrayc07e4615e425e8778282f26c75f18437ca38fa88993a4bab9bfe4b4499e99411;
+receipt2bc957fcf9948981c4139c1868ad1336b0425d0bf5106460974ffb240a2869a9;
+independent proof067b5612e0e0e591a6b1c9d45055864f5c00c3abd50fdbb2b9c5fc6689634492.
+Reuse these saved arrays/evidence; do not repeat the source capture or assembly.
 
-NEXT: pin this source and assemble separate passive arrays from the69 already
-audited response pages once. Preserve every gap and VMW terminal missingness;
-do not refetch, restore/fit models or score an economic account. Resolve the
+NEXT: resolve the
 five remaining economic action/terminal processing boundaries before the fixed
 funded comparison. Both original invalid-export rejection gates remain intact.
+Read-only deployed source remains621e28f0f8407f511ff01202c8e5aaa6bcda9e40.
 Diagram impact: NONE — existing private supplied-price/accounting boundaries.
 
 ## 2026-10-04 — passive source audited; uncovered holding valuation reproduced
