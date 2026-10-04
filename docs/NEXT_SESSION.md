@@ -1,5 +1,35 @@
 # Next session
 
+## 2026-10-04 — probabilistic execution implementation; calibration next
+
+Frozen protocol89887d34 precedes code/calibration/outcomes. NEW pure
+probabilistic_execution.py and isolated market_probabilistic_execution CLI reuse
+authenticated duration-matched21ee02e9 heads/prepared labels, no refit/replay.
+Stock/month residualCDF uses252 mature dates/756session lookback, equal date
+weights, strict prior-month/Aug17freeze; actual waiting label is SAME-session
+15m, originalD+10 remains modelpurge only. Missing/zero/inconsistent moments,
+terminal clocks23/24 andSPY/QQQ stay unavailable. Estimates NOT confidence or
+holding-profit probabilities. Full weighted expected-log buy/sell utility uses
+actual funded NAV fraction/costs, no new percentage trigger/confidence×size.
+
+Native module/CLI and independent private acceptance passing; exact aggregate
+and image evidence to follow. Independent review reproduced early-close12:45
+support falsely permitting a13:00 later regular open. Targeted support fix
+requires both price proxies strictly before official close, pinned in repository
+and unchanged private regression. Originalprepared already excludedearlycloses;
+no prior data/model changed. CLI uses actual causal_mask for denominators.
+VERIFIED supplied-array causality/arithmetic; FAILED earlycloseboundary corrected.
+UNVERIFIED actual calibration quality, funded timing/sizing/holding advantage.
+
+Next: exact pinned-image acceptance, run fixed original diagnostic ONCE in fresh
+private output, then independent saved-only proof. Newprobability CLI has NO fit
+or account mode; keep bothpredeclaredboosting/ridge heads,all94stocks/fixedwindows,
+missing/coldstart counts, pairedhistoricalreference and infinite losses explicit.
+Saved proof worker ownsNEW private verifier/tests only. No production imports,
+policy/UI/services/account/data changes or adoption. Do not repeat earlier
+completed account studies. Sizing can change aggregategain; isolate timing with
+matched sizes before jointly carried funded evaluation. Full usergoal active.
+
 ## 2026-10-04 — learned held exits verified; intraday probability work remains
 
 VERIFIED source94130c30afa4b1bcd2db7bf4e5b01674a295b791,2332-file manifest
