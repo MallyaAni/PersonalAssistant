@@ -1,5 +1,89 @@
 # Next session
 
+## 2026-10-04 — grade-independent risk inference from original saved heads
+
+Goal ACTIVE; previous turn PROGRESS: verified joint-scenario reader exposed sparse
+saved support (5/97 requests available). This turn PROGRESS: broad price-risk
+inference now supplies92/97, including AAOI/COHR, without fitting or giving
+ungraded/nonmember stocks trading permission. Starting isolated branch
+codex/learned-entry-risk-20261002, HEAD86b45ffe, clean; fetched origin/main204689db.
+No shared/main history rewrite or production/model-service change.
+
+Atomic objective: reuse authenticated original monthly held heads on causal price
+history, keeping training and trading eligibility separate. Registered expanded
+inference contract in existing joint-distribution protocol before new predictions.
+FAILED initial support assumption: prepared.valid already includes membership
+and grade. Source learned_retention_models.prepare confirmed this; new inference
+uses253 completed-close stock/SPY prefixes and original observed price context/
+finite breadth instead, while retaining original valid bytes as training provenance.
+Individual missing features/grades take original native tree routes. An overly
+strict all-feature check initially rejected the deliberately missing-column
+synthetic fixture; corrected it to actual context availability. No outcome-based
+window, threshold, model, training row, cost or horizon tuning. A new integration
+test initially called the allocator with the wrong signature; corrected that
+call without changing its no-permission assertion. All original assertions stay.
+
+Extended existing direct_daily_arithmetic with a safe fixed64-tree numeric head:
+exact fields/model receipt, immutable copies, finite numeric-only acyclic unique
+forward-child graph, exact original missing routes. No pickle/sklearn restoration.
+Existing persistence test now exercises this actual scorer; redundant test-only
+traversal removed, original estimator parity assertions preserved. Added separate
+HoldingRiskForecasts in existing direct_feature_arithmetic: complete original
+monthly head schedule, original feature/valid hashes plus authenticated adjusted
+close input, explicit new inference identity, monthly lineage and original
+supported predictions preserved byte-for-byte after original numerical tolerance
+check. Missing heads/invalid predictions retained. Joint reader admits expanded
+artifact only after parent training, mask, source and monthly receipt validation.
+All grade/membership/cash/safety rules remain unchanged outside optional research.
+
+VERIFIED exact source1500cc4b73664e05be677ac9e5f38963e915e9e1:
+native174tests25.80s/no skips; pinned image5c6c5605,174tests10.05s/no skips,
+including20new risk/numeric-head cases. Actual64-tree sklearn parity, unknown-grade
+inference without permission, original support/values/warmup preservation,
+feature/valid/model substitutions, graph/config rejection, future feature/label
+invariance, corrupted parent/month/mask refusal,253-session gaps/SPY/breadth gates.
+Ruff/format/diff clean. Diagram impact NONE: optional pure numeric research path.
+
+VERIFIED one original saved-head inference, network-none/1CPU/2GB; original held/
+bridge reports, independent proofs, model files, original daily prepared NPZ and
+snapshot authenticated before/after.104 numeric heads,141 monthly receipts,
+172170 expanded predictions independently recomputed with the earlier frozen
+numeric verifier;172572 additional inference opportunities, all original supported
+values preserved. No estimator fit/predict/restore, account scoring or replay.
+Saved and reloaded new risk artifacts; independently recomputed price-prefix mask,
+joint dates, purge and scenario bytes; whole2372-file source unchanged. Same fixed
+September30 diagnostic97requests:92available,5unavailable. AAOI/COHR, STX/WDC,
+AVGO/NVDA each have743 joint dates ending no later than August14. Missing:CRWV93,
+GLXY59,NBIS201,SNDK123 joint dates (<252); Q lacks current forecast. No relaxation,
+imputation or silent fallback. Training on grade-qualified stocks means expanded
+inference still has distribution-shift risk; coverage is not a calibration or
+profitability result.
+
+Proof root:/home/animallya96/scratch/holding-price-inference-20261004-1500cc4b/proof/.
+New artifacts:inference/risk-forecasts.npz SHA0332800a54bcbacc963d4f3e67308b99efe1d98a3ba943299774382bc056c5cd;
+inference/risk-fit.json SHAcbe75549fe3061517d8ba8deb5e871bf6dcf49e77288307821969de1b4feddec;
+inference/proof.json SHA f2b6df2384460600380f6615032e2758e60990cf08e6d90db6b3df5358d94735.
+Source manifest9b3c6741cb8740e78efccb781587a9be052989fbae4bef730b26f370b75e448e;
+tests log9d95b899f0e9be747371ca93ef2f1d6df0c3249b1c68fc5f6c0fe9ddbacb3857.
+Exact commands/hashes:/tmp/codex-holding-price-inference-execution-receipt-20261004.json
+and remote proof copy. Do not repeat inference, fit old models or rescore old books.
+
+Original300-account timing study still exact sourceb5894a74/Pid2516653/container
+reviewed-economic-study-b5894a74, running/OOMfalse. At13:29:28 New York:1complete
+account; boosting-0-0 progressed1480sessions through2023-12-15. No final report or
+promotion; never restart or edit its mounted source/cohort. UNVERIFIED: conditional
+joint distribution calibration, funded gain advantage, live account/selection
+parity and deployment. Next freeze and measure calibration/support on these exact
+new saved risk artifacts without fitting or score-driven tuning, then implement
+fixed funded sizing/holding comparison through the reviewed physical accounting
+(not older daily replay). Keep complete portfolios, fees, SPY/QQQ and all starts/
+missingness. The requested live enhancement remains the full objective.
+Risk artifact identity pins direct_feature_arithmetic, direct_daily_arithmetic
+and the joint protocol bytes. Preserve those while adding the separate calibration
+consumer/protocol; do not change them and silently relabel saved artifacts. Use
+the exact archived producer for an unchanged artifact if a later consumer needs
+different source. No new fits, repeated inference or active-study restarts.
+
 ## 2026-10-04 — authenticated joint holding scenarios
 
 Goal ACTIVE; this turn PROGRESS. Starting isolated branch
