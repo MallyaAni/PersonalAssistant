@@ -1,0 +1,392 @@
+"""Past-only stock error resolution for supplied authenticated OOS forecasts.
+
+The caller authenticates numeric forecast/report/source files. These statistics
+describe observed residuals; they are not coverage guarantees or paid costs.
+"""
+
+from __future__ import annotations
+
+import hashlib
+from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
+
+import numpy as np
+
+from backend.market import calendar as exchange
+from backend.market import daily_arithmetic_bridge as reference
+from backend.market import direct_daily_arithmetic as direct
+from backend.market import learned_entry_models as base
+
+POLICY = "direct-error-band/1-research"
+PROTOCOL = "docs/research/direct-error-band-plan-2026-10-03.md"
+
+
+# Return aligned error radii separately from their complete calibration receipts.
+@dataclass(frozen=True)
+class ErrorBands:
+    radii: np.ndarray
+    manifest: dict
+
+
+# Validate the exact chronological and numeric forecast representation.
+def _inputs(dates, symbols, forecasts, bridge):
+    if not isinstance(bridge, reference.BridgeForecasts):
+        raise ValueError("Validated BridgeForecasts required")
+    dates, forecasts = np.asarray(dates), np.asarray(forecasts)
+    names = tuple(symbols)
+    if (
+        dates.ndim != 1
+        or not len(dates)
+        or dates.dtype != np.dtype("datetime64[D]")
+        or np.isnat(dates).any()
+        or np.any(dates[1:] <= dates[:-1])
+    ):
+        raise ValueError("Exact chronological datetime64[D] dates required")
+    if (
+        not names
+        or any(not isinstance(name, str) or not name for name in names)
+        or len(set(names)) != len(names)
+        or not {"SPY", "QQQ"}.issubset(names)
+    ):
+        raise ValueError("Unique symbols including SPY and QQQ required")
+    shape = (len(dates), len(names))
+    if forecasts.shape != shape or forecasts.dtype != np.dtype("float64"):
+        raise ValueError("Exact aligned float64 direct forecasts required")
+    if np.isinf(forecasts).any() or np.any(np.isfinite(forecasts) & (forecasts <= -1)):
+        raise ValueError("Direct forecasts must be possible finite returns or missing")
+    return dates, names, forecasts
+
+
+# Bind the original bridge grids, outcomes and causal stock support.
+def _bridge(dates, names, forecasts, bridge):
+    shape = forecasts.shape
+    parent = bridge.manifest
+    if (
+        parent.get("policy") != reference.POLICY
+        or parent.get("symbols") != list(names)
+        or parent.get("maximum_days") != reference.MAX_DAYS
+        or parent.get("freeze") != str(reference.FREEZE)
+        or parent.get("target") != "adjusted_open[t+2]/adjusted_open[t+1]-1"
+        or parent.get("units") != "one_session_arithmetic_return"
+        or parent.get("input_sha256", {}).get("dates") != reference._hash(dates)
+        or parent.get("input_sha256", {}).get("symbols")
+        != reference._hash(np.asarray(names))
+    ):
+        raise ValueError("Original bridge schema and input bytes mismatch")
+    for field, digest in (
+        ("calibrated", "calibrated_sha256"),
+        ("past_mean", "past_mean_sha256"),
+        ("labels", "label_sha256"),
+        ("label_end_dates", "label_end_dates_sha256"),
+        ("score_mask", "score_mask_sha256"),
+    ):
+        value = np.asarray(getattr(bridge, field))
+        expected = (len(dates),) if field == "label_end_dates" else shape
+        if value.shape != expected or reference._hash(value) != parent.get(digest):
+            raise ValueError(f"Original bridge {field} bytes mismatch")
+    if bridge.score_mask.dtype != np.dtype("bool") or bridge.labels.dtype != np.dtype(
+        "float64"
+    ):
+        raise ValueError("Exact boolean support and float64 labels required")
+    if np.isinf(bridge.labels).any() or np.any(
+        np.isfinite(bridge.labels) & (bridge.labels <= -1)
+    ):
+        raise ValueError("Labels must be possible finite returns or missing")
+    endpoints = np.full(len(dates), np.datetime64("NaT", "D"))
+    endpoints[:-2] = dates[2:]
+    if bridge.label_end_dates.dtype != endpoints.dtype or not np.array_equal(
+        bridge.label_end_dates.view("i8"), endpoints.view("i8")
+    ):
+        raise ValueError("Exact one-session arithmetic outcome endpoints required")
+    benchmark = np.array([name in ("SPY", "QQQ") for name in names])
+    if np.any(bridge.score_mask[:, benchmark]) or np.any(
+        np.isfinite(forecasts) & ~bridge.score_mask
+    ):
+        raise ValueError("Direct forecasts disagree with causal stock support")
+
+
+# Authenticate direct manifest lineage before using its supplied residuals.
+def _direct(dates, names, forecasts, direct_manifest, bridge):
+    parent = bridge.manifest
+    identity = direct_manifest.get("identity", {})
+    if (
+        direct_manifest.get("identity_sha256") != base._json_hash(identity)
+        or identity.get("policy") != direct.POLICY
+        or identity.get("symbols") != list(names)
+        or identity.get("target") != parent["target"]
+        or identity.get("config") != base.MODEL_CONFIG["boosting"]
+        or identity.get("minimum_days") != reference.MIN_DAYS
+        or identity.get("label_end") != 2
+        or identity.get("holdout_end_before") != str(reference.FREEZE)
+        or identity.get("maximum_days") != reference.MAX_DAYS
+        or identity.get("bridge_manifest_sha256") != base._json_hash(parent)
+    ):
+        raise ValueError("Authenticated direct identity mismatch")
+    source = identity.get("source_sha256", {})
+    required = {
+        "backend/market/direct_daily_arithmetic.py",
+        "backend/market/learned_entry_models.py",
+        "backend/market/daily_arithmetic_bridge.py",
+        direct.PROTOCOL,
+    }
+    if set(source) != required or any(
+        not isinstance(value, str)
+        or len(value) != 64
+        or any(character not in "0123456789abcdef" for character in value)
+        for value in source.values()
+    ):
+        raise ValueError("Explicit direct training source hashes required")
+    for key, value in (
+        ("dates_sha256", dates),
+        ("labels_sha256", bridge.labels),
+        ("label_end_dates_sha256", bridge.label_end_dates),
+        ("score_mask_sha256", bridge.score_mask),
+    ):
+        if identity.get(key) != reference._hash(value):
+            raise ValueError(f"Direct identity {key} mismatch")
+    if direct_manifest.get("forecasts_sha256") != reference._hash(
+        forecasts
+    ) or direct_manifest.get("score_mask_sha256") != reference._hash(bridge.score_mask):
+        raise ValueError("Direct forecast or support bytes mismatch")
+
+
+# Refuse mismatched monthly prediction bytes or retrospective scoring clocks.
+def _months(dates, forecasts, direct_manifest, bridge):
+    parent = bridge.manifest
+    months = dates.astype("datetime64[M]")
+    expected_months = [str(month) for month in np.unique(months)]
+    if [row.get("month") for row in parent["months"]] != expected_months or [
+        row.get("month") for row in direct_manifest["months"]
+    ] != expected_months:
+        raise ValueError("Exact original monthly receipt schedule required")
+    for receipt, month in zip(
+        direct_manifest["months"], np.unique(months), strict=True
+    ):
+        scored = np.flatnonzero(months == month)
+        if (
+            receipt.get("fit_index") != int(scored[0])
+            or receipt.get("fit_date") != str(dates[scored[0]])
+            or receipt.get("label_end_before")
+            != str(min(dates[scored[0]], reference.FREEZE))
+            or receipt.get("prediction_sha256") != reference._hash(forecasts[scored])
+            or (
+                receipt.get("status") != "fitted"
+                and np.isfinite(forecasts[scored]).any()
+            )
+        ):
+            raise ValueError("Original direct monthly clock or forecast bytes mismatch")
+
+
+# Ensure supplied outcomes and eligible decisions existed by the stated close.
+def _publication(dates, bridge):
+    endpoints = bridge.label_end_dates
+    parent = bridge.manifest
+    as_of = reference._as_of(parent["data_as_of"])
+    for day in dates:
+        close = datetime.combine(
+            day.astype(object),
+            exchange.session_close(day.astype(object)),
+            exchange.NEW_YORK,
+        )
+        if close > as_of:
+            index = int(np.searchsorted(dates, day))
+            if bridge.score_mask[index].any():
+                raise ValueError(
+                    "Scoring support precedes completed session publication"
+                )
+        if (
+            day > np.datetime64(as_of.date())
+            and np.isfinite(bridge.labels[np.searchsorted(dates, day)]).any()
+        ):
+            raise ValueError("Future decision outcomes cannot be known")
+    known = np.isfinite(bridge.labels).any(axis=1)
+    for index in np.flatnonzero(known):
+        if np.isnat(endpoints[index]):
+            raise ValueError("Finite label has no outcome endpoint")
+        close = datetime.combine(
+            endpoints[index].astype(object),
+            exchange.session_close(endpoints[index].astype(object)),
+            exchange.NEW_YORK,
+        )
+        if close > as_of:
+            raise ValueError("Finite label endpoint is not yet known")
+    return as_of
+
+
+# Check every supplied lineage and availability boundary before calibration.
+def _validate(dates, symbols, forecasts, direct_manifest, bridge):
+    dates, names, forecasts = _inputs(dates, symbols, forecasts, bridge)
+    _bridge(dates, names, forecasts, bridge)
+    _direct(dates, names, forecasts, direct_manifest, bridge)
+    _months(dates, forecasts, direct_manifest, bridge)
+    return dates, names, forecasts, _publication(dates, bridge)
+
+
+# Compute the exact registered cluster statistic with overflow-aware scaling.
+def _statistics(errors, clusters):
+    unique, group = np.unique(clusters, return_inverse=True)
+    n, g = len(errors), len(unique)
+    empty = {
+        "bias": None,
+        "cluster_sums": None,
+        "cluster_sums_scaled": None,
+        "residual_scale": None,
+        "standard_error": None,
+        "radius": None,
+    }
+    if not np.isfinite(errors).all():
+        return {
+            **empty,
+            "status": "nonfinite_residual",
+            "nonfinite_residuals": int((~np.isfinite(errors)).sum()),
+        }
+    if n < 2 or g < 2:
+        return {
+            **empty,
+            "status": "insufficient_observations" if n < 2 else "insufficient_clusters",
+            "nonfinite_residuals": 0,
+        }
+    scale = float(np.max(np.abs(errors)))
+    normalized = errors / scale if scale else np.zeros_like(errors)
+    mean = float(np.mean(normalized))
+    centered = normalized - mean
+    sums = np.bincount(group, weights=centered, minlength=g)
+    with np.errstate(over="ignore", invalid="ignore"):
+        bias = float(mean * scale)
+        se = float((np.linalg.norm(sums / n) * np.sqrt(g / (g - 1))) * scale)
+        radius = float(abs(bias) + se)
+        actual_sums = sums * scale
+    if not np.isfinite([bias, se, radius]).all():
+        return {**empty, "status": "nonfinite_statistic", "nonfinite_residuals": 0}
+    return {
+        "status": "available",
+        "nonfinite_residuals": 0,
+        "bias": bias,
+        "cluster_sums": [
+            float(value) if np.isfinite(value) else None for value in actual_sums
+        ],
+        "cluster_sums_scaled": sums.tolist(),
+        "residual_scale": scale,
+        "standard_error": se,
+        "radius": radius,
+    }
+
+
+# Freeze each stock's past-only residual resolution for its entire scoring month.
+def calibrate(dates, symbols, forecasts, direct_manifest, bridge):
+    dates, names, forecasts, as_of = _validate(
+        dates, symbols, forecasts, direct_manifest, bridge
+    )
+    root = Path(__file__).resolve().parents[2]
+    identity = {
+        "policy": POLICY,
+        "maximum_days": reference.MAX_DAYS,
+        "freeze": str(reference.FREEZE),
+        "minimum_observations": 2,
+        "minimum_clusters": 2,
+        "multiplier": 1,
+        "units": "one_session_arithmetic_return",
+        "clustering": "forecast_calendar_month",
+        "direct_manifest_sha256": base._json_hash(direct_manifest),
+        "bridge_manifest_sha256": base._json_hash(bridge.manifest),
+        "input_sha256": {
+            "dates": reference._hash(dates),
+            "symbols": reference._hash(np.asarray(names)),
+            "forecasts": reference._hash(forecasts),
+            "labels": reference._hash(bridge.labels),
+            "label_end_dates": reference._hash(bridge.label_end_dates),
+            "score_mask": reference._hash(bridge.score_mask),
+        },
+        "source_sha256": {
+            str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in (
+                Path(__file__).resolve(),
+                root / PROTOCOL,
+                Path(reference.__file__).resolve(),
+                Path(base.__file__).resolve(),
+                Path(direct.__file__).resolve(),
+                Path(exchange.__file__).resolve(),
+            )
+        },
+        "runtime": {"numpy": np.__version__},
+        "calculation_precision": "float64",
+    }
+    manifest = {
+        "identity": identity,
+        "identity_sha256": base._json_hash(identity),
+        "months": [],
+    }
+    radii = np.full(forecasts.shape, np.nan, dtype=np.float64)
+    months = dates.astype("datetime64[M]")
+    for month in np.unique(months):
+        scored = np.flatnonzero(months == month)
+        first = int(scored[0])
+        cutoff = min(dates[first], reference.FREEZE)
+        days = np.arange(max(0, first - reference.MAX_DAYS), first, dtype=np.int64)
+        days = days[
+            ~np.isnat(bridge.label_end_dates[days])
+            & (bridge.label_end_dates[days] < cutoff)
+        ]
+        receipt = {
+            "month": str(month),
+            "fit_date": str(dates[first]),
+            "fit_index": first,
+            "label_end_before": str(cutoff),
+            "stocks": [],
+        }
+        completed = (
+            datetime.combine(
+                dates[first].astype(object),
+                exchange.session_close(dates[first].astype(object)),
+                exchange.NEW_YORK,
+            )
+            <= as_of
+        )
+        for stock, name in enumerate(names):
+            chosen = days[
+                bridge.score_mask[days, stock]
+                & np.isfinite(forecasts[days, stock])
+                & np.isfinite(bridge.labels[days, stock])
+            ]
+            with np.errstate(over="ignore", invalid="ignore"):
+                errors = bridge.labels[chosen, stock] - forecasts[chosen, stock]
+            clusters = months[chosen]
+            row = {
+                "symbol": name,
+                "observations": len(chosen),
+                "clusters": len(np.unique(clusters)),
+                "maximum_endpoint": str(bridge.label_end_dates[chosen].max())
+                if len(chosen)
+                else None,
+                "cluster_months": [str(value) for value in np.unique(clusters)],
+                "row_sha256": {
+                    "decision_indices": reference._hash(chosen),
+                    "forecasts": reference._hash(forecasts[chosen, stock]),
+                    "labels": reference._hash(bridge.labels[chosen, stock]),
+                    "residuals": reference._hash(errors),
+                    "endpoints": reference._hash(bridge.label_end_dates[chosen]),
+                    "clusters": reference._hash(clusters),
+                },
+            }
+            row.update(_statistics(errors, clusters))
+            if name in ("SPY", "QQQ"):
+                row["status"] = "excluded_benchmark"
+            elif not completed:
+                row["status"] = "fit_clock_unavailable"
+            elif row["status"] == "available":
+                radii[scored, stock] = np.where(
+                    bridge.score_mask[scored, stock], row["radius"], np.nan
+                )
+            receipt["stocks"].append(row)
+        receipt["radii_sha256"] = reference._hash(radii[scored])
+        manifest["months"].append(receipt)
+    finite = np.flatnonzero(np.isfinite(radii).any(axis=1))
+    manifest["first_score_date"] = str(dates[finite[0]]) if len(finite) else None
+    manifest["radii_sha256"] = reference._hash(radii)
+    manifest["counts"] = {
+        "opportunities": int(bridge.score_mask.sum()),
+        "available": int(np.isfinite(radii).sum()),
+        "unavailable": int((bridge.score_mask & ~np.isfinite(radii)).sum()),
+    }
+    return ErrorBands(radii, manifest)

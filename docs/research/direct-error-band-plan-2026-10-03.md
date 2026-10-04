@@ -69,6 +69,17 @@ Default callers with no radius must retain exact old targets and receipts.
 An explicit all-zero radius must preserve old numeric targets; record its new
 contract without pretending it supplies calibrated uncertainty.
 
+Acceptance exposed numerical solver residue at an exact no-change kink before
+any new actual account outcome. In the optional band path only, canonicalize
+current weights where the declared subgradient lies strictly inside the change
+penalty and bounds permit the holding. Reconstruct exact trade/purchase auxiliary
+variables; use the canonical point ONLY if a fresh existing feasibility/global
+convex certificate passes (strict bounds; declared1e-8 constraint/gap tolerances).
+Otherwise keep the original certified point. When
+the resulting target exactly equals current weight, preserve original shares
+instead of creating a floating round-trip trade. No economic percentage or
+parameter is introduced; absent/zero-radius scalar solves remain unchanged.
+
 Keep common NAV1 anchor2020-03-02, first official-open proxy03-03, end09-30,
 same prior-close share freezing, pre-sale cash, covered shares, fees/basis/profit,
 missing-open expiry,25% operator cap and zero cash yield. Historical current-

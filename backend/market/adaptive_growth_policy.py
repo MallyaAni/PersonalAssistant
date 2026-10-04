@@ -79,8 +79,28 @@ def _certificate(solution, gradient, matrix, limits, bounds):
     }
 
 
-# Solve absolute trades and purchases jointly, retaining fixed-position cross-risk.
-def _solve(mean, second, current, lower, upper, cash, cost):
+# Reprove exact no-change kinks instead of interpreting solver residue as trades.
+def _holding_kinks(
+    solution, mean, second, current, penalty, gradient, matrix, limits, bounds
+):
+    candidate = np.asarray(solution).copy()
+    size = len(current)
+    lower = np.array([item[0] for item in bounds[:size]])
+    upper = np.array([item[1] for item in bounds[:size]])
+    hold = (
+        (current >= lower)
+        & (current <= upper)
+        & (np.abs(second @ candidate[:size] - mean) < penalty)
+    )
+    candidate[:size][hold] = current[hold]
+    candidate[size : 2 * size] = np.abs(candidate[:size] - current)
+    candidate[2 * size :] = np.maximum(candidate[:size] - current, 0)
+    proof = _certificate(candidate, gradient, matrix, limits, bounds)
+    return (candidate, proof) if proof["certified"] else (solution, None)
+
+
+# Solve funded trades with actual fees and reprove optional error-informed holds.
+def _solve(mean, second, current, lower, upper, cash, cost, *, penalty=None):
     size = len(current)
     eye = np.eye(size)
     zero = np.zeros((size, size))
@@ -98,17 +118,25 @@ def _solve(mean, second, current, lower, upper, cash, cost):
     initial = np.minimum(np.maximum(current, lower), upper)
     start = np.r_[initial, np.abs(initial - current), np.maximum(initial - current, 0)]
 
-    # Evaluate the preregistered approximate growth loss and actual trade penalty.
+    # Penalize changes without charging empirical error resolution to account cash.
     def objective(x):
         return (
             0.5 * x[:size] @ second @ x[:size]
             - mean @ x[:size]
-            + cost * x[size : 2 * size].sum()
+            + (
+                cost * x[size : 2 * size].sum()
+                if penalty is None
+                else penalty @ x[size : 2 * size]
+            )
         )
 
     # Give the solver exact derivatives of weights and auxiliary trade variables.
     def gradient(x):
-        return np.r_[second @ x[:size] - mean, np.full(size, cost), np.zeros(size)]
+        return np.r_[
+            second @ x[:size] - mean,
+            np.full(size, cost) if penalty is None else penalty,
+            np.zeros(size),
+        ]
 
     solved = minimize(
         objective,
@@ -123,11 +151,18 @@ def _solve(mean, second, current, lower, upper, cash, cost):
         },
         options={"ftol": 1e-14, "maxiter": 300},
     )
-    proof = _certificate(solved.x, gradient, matrix, limits, bounds)
+    solution = solved.x
+    proof = _certificate(solution, gradient, matrix, limits, bounds)
+    if penalty is not None and proof["certified"]:
+        solution, canonical = _holding_kinks(
+            solution, mean, second, current, penalty, gradient, matrix, limits, bounds
+        )
+        if canonical is not None:
+            proof = canonical
     proof["solver_success"] = bool(solved.success)
     proof["iterations"] = int(solved.nit)
-    proof["objective"] = float(objective(solved.x))
-    return solved.x[:size].copy(), proof
+    proof["objective"] = float(objective(solution))
+    return solution[:size].copy(), proof
 
 
 # Validate the complete observation and account contract before optimizing capital.
@@ -187,7 +222,39 @@ def _validated(
     return history, grades, eligible.copy(), means, current, benchmarks
 
 
-# Allocate known stocks with matching forecast units, risk horizon and funded limits.
+# Validate empirical error resolution without filling unavailable stock evidence.
+def _radius_contract(trade_radius, current, known):
+    if trade_radius is None:
+        return None, known, {}
+    radius = _vector(trade_radius, len(current), "trade_radius", missing=True)
+    if np.any(np.isfinite(radius) & (radius < 0)):
+        raise ValueError("trade_radius must be nonnegative or missing")
+    contract = {
+        "trade_radius_contract": {
+            "radius": [
+                float(value) if np.isfinite(value) else None for value in radius
+            ],
+            "units": "empirical_arithmetic_return_error_resolution",
+            "objective": "sum((actual_per_side_cost+radius)*abs(target-current))",
+            "missing": "unavailable_forecast_evidence",
+            "funding": "actual_per_side_cost_only",
+            "confidence_guarantee": False,
+        },
+        "selected_trade_penalties": [],
+    }
+    return radius, known & np.isfinite(radius), contract
+
+
+# Preserve the original scalar arithmetic for absent or zero empirical radii.
+def _radius_penalty(radius, selected, cost):
+    if radius is None:
+        return {}, {}
+    penalties = cost + radius[selected]
+    arguments = {} if np.all(radius[selected] == 0) else {"penalty": penalties}
+    return arguments, {"selected_trade_penalties": penalties.tolist()}
+
+
+# Allocate with optional error-informed holding penalties and actual-fee funding.
 def allocate(
     history,
     grades,
@@ -200,6 +267,7 @@ def allocate(
     *,
     mean_units="log",
     horizon_sessions=HORIZON,
+    trade_radius=None,
 ):
     """Return target weights and evidence; desired sales never become buying cash."""
     if (
@@ -224,6 +292,11 @@ def allocate(
     may_add = ~mandatory
     known_history = np.all(np.isfinite(history) & (history > 0), axis=0)
     known = known_history & np.isfinite(means)
+    radius, known, radius_receipt = _radius_contract(trade_radius, current, known)
+    if radius is not None and mean_units != "arithmetic" and np.any(radius != 0):
+        raise ValueError(
+            "Nonzero or missing radius requires one-session arithmetic means"
+        )
     safe = np.where(mandatory, 0, np.minimum(current, CAP))
     protected = may_add & (current > 0) & ~known
     receipt = {
@@ -242,6 +315,7 @@ def allocate(
     }
     if mean_units == "arithmetic":
         receipt["mean_units"] = mean_units
+    receipt.update(radius_receipt)
     if protected.any():
         receipt.update(
             status="unavailable",
@@ -250,6 +324,10 @@ def allocate(
         )
         return safe, receipt
     selected = known & may_add
+    extra_solve, selected_receipt = _radius_penalty(
+        radius, selected, float(cost_bps) / 10000
+    )
+    receipt.update(selected_receipt)
     if not selected.any():
         receipt.update(
             status="unavailable", reason="no_eligible_evidence", targets=safe.tolist()
@@ -278,7 +356,7 @@ def allocate(
         return safe, receipt
     current_selected = current[selected]
     try:
-        result, proof = _solve(
+        arguments = (
             arithmetic,
             second,
             current_selected,
@@ -287,6 +365,7 @@ def allocate(
             float(cash_weight),
             float(cost_bps) / 10000,
         )
+        result, proof = _solve(*arguments, **extra_solve)
     except (RuntimeError, ValueError, FloatingPointError, np.linalg.LinAlgError):
         receipt.update(
             status="unavailable", reason="optimizer_failed", targets=safe.tolist()

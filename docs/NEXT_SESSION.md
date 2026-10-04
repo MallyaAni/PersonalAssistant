@@ -1,5 +1,50 @@
 # Next session
 
+## 2026-10-03 — stock-error holding band implemented; fixed account evaluation next
+
+User's reliable hard-rule replacement remains the objective. Frozen97c3ebed
+protocol `docs/research/direct-error-band-plan-2026-10-03.md` BEFORE new account
+outcomes: reuse saved direct forecasts and18 controls; no model fit/scoring or
+old account replay. Same94stocks/commonMarch2020 anchor/fixed0/10/25bp/windows.
+One monthly past-only stock radius=abs(residual bias)+calendar-month cluster SE,
+preceding756indices, endpoint<min(month-first,Aug17), N2/G2computability only.
+This is empirical error resolution, NOT calibrated confidence or holding horizon.
+Radius penalizes abs(target-current); actual costs alone fund/deduct trades.
+
+VERIFIED native acceptance:20 calibration cases,77 allocator/ledger/default-unit
+cases,12 CLI/artifact/actual-funded integration cases,109total/no skips; Ruff/
+diff clean.12 additional exact default target/receipt comparisons match original
+e093cd51 allocatorSHAf8afa4d86e21c178f71177a0ba63ca7599c5fdc1201ab073217d38fa027d92c7.
+Independent20 private acceptance cases pass/no skips, file
+390a4f87350945d897db916725e0dd1e00d77cbcb949598191fa712dd5652d29.
+Exact pinned-image checks still pending.
+All implemented source files are root-owned; agents released, no drafts to import.
+New CLI `market_direct_error_band` restores only authenticated original data,
+direct forecasts/proof and18 saved books, creates THREE new books, never fits.
+
+Two concrete boundaries reproduced before actual data: reject nonzero/missing
+daily radius on ten-session mean (explicitzero default numerical parity retained);
+SLSQP residue caused3e-18share phantom buys at a declared no-change kink. Preserve
+unchanged no-buy funded acceptance. Optional band path canonicalizes exact current
+weights only when current fits bounds and the declared subgradient is inside
+the penalty, then REPROVES the complete candidate with global LP certificate.
+Reject infeasible/uncertified canonical candidate; preserve original solution.
+Exact target==current preserves original shares instead of inverse-NAV residue.
+No economic threshold/parameter introduced; protocol correction recorded before
+any actual new account outcome. Absent/zero paths unchanged.
+Independent review additionally reproduced explicit-zero radii changing an exact
+held quantity by4e-19 via the new inverse-conversion bypass. The bypass now runs
+only for nonzero/missing CURRENT-day radii, never the future grid; all unchanged
+20 private cases pass. Scalar zero compatibility remains exact, no relaxed test.
+
+Next pin accepted source/archive; ONE3-book producer from immutable inputs and
+saved forecasts, no network,2CPU8GB, private output only. Independent saved-only
+proof must reconstruct calibration and audit only NEW radius-aware certified
+targets/ledgers/metrics plus authenticate18 controls, never old model/account
+reruns. Publish all cells, including missing support and profits, before any
+promotion claim. New economics and live replacement UNVERIFIED. Production/UI/
+data/models unchanged; no research-only deployment/model gate. Diagram NONE.
+
 ## 2026-10-03 — direct stock-conditioned decisions verified; turnover remains
 
 VERIFIED evaluated source e093cd51b9207899bfee6c46f4f578b1e7fd1d97, whole2315-file

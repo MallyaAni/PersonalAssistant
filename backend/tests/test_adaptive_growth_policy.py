@@ -26,6 +26,106 @@ def inputs():
     }
 
 
+# Use the real one-session risk covariance with directly declared arithmetic means.
+def radius_inputs():
+    data = inputs()
+    data.update(mean_units="arithmetic", horizon_sessions=1)
+    data["means"][:2] = 0.001
+    return data
+
+
+# Empirical resolution keeps uncertain signed advantages at the current holding.
+@pytest.mark.parametrize("mean", [0.0001, -0.0001])
+def test_error_radius_holds_uncertain_signed_advantage(mean):
+    data = radius_inputs()
+    data.update(current_weights=np.array([0.2, 0, 0, 0]), cash_weight=0.8)
+    data["grades"][1] = 0
+    data["means"][0] = mean
+    target, receipt = model.allocate(**data, trade_radius=np.full(4, 0.001))
+    assert receipt["status"] == "optimized"
+    assert receipt["certificate"]["certified"]
+    assert target[0] == pytest.approx(0.2, abs=1e-10)
+    assert receipt["trade_radius_contract"]["confidence_guarantee"] is False
+
+
+# Sufficiently strong favorable or unfavorable means overcome the same holding band.
+@pytest.mark.parametrize(("mean", "expected"), [(0.01, 0.25), (-0.01, 0.0)])
+def test_strong_signed_advantage_buys_or_exits(mean, expected):
+    data = radius_inputs()
+    data.update(current_weights=np.array([0.2, 0, 0, 0]), cash_weight=0.8)
+    data["grades"][1] = 0
+    data["means"][0] = mean
+    target, receipt = model.allocate(**data, trade_radius=np.full(4, 0.001))
+    assert receipt["certificate"]["certified"]
+    assert target[0] == pytest.approx(expected, abs=1e-10)
+
+
+# Different empirical stock errors change purchases without changing paid broker fees.
+def test_stock_specific_radius_and_cash_constraint():
+    data = radius_inputs()
+    data.update(cost_bps=10, cash_weight=0.02)
+    data["means"][:2] = 0.002
+    target, receipt = model.allocate(**data, trade_radius=np.array([0.01, 0, 0, 0]))
+    assert target[0] == pytest.approx(0, abs=1e-10)
+    assert target[1] > 0
+    assert target.sum() * 1.001 <= 0.02 + 1e-10
+    assert receipt["selected_trade_penalties"] == [0.011, 0.001]
+    assert receipt["trade_radius_contract"]["funding"] == "actual_per_side_cost_only"
+
+
+# Missing radius follows existing held-risk fallback and preserves mandatory exits/caps.
+def test_missing_radius_safe_fallback_and_mandatory_exits():
+    data = radius_inputs()
+    data.update(current_weights=np.array([0.3, 0.1, 0, 0]), cash_weight=0.6)
+    target, receipt = model.allocate(**data, trade_radius=np.array([np.nan, 0, 0, 0]))
+    np.testing.assert_array_equal(target, [0.25, 0.1, 0, 0])
+    assert receipt["reason"] == "missing_held_cross_risk"
+    assert receipt["trade_radius_contract"]["radius"][0] is None
+    data["grades"][0] = 0
+    data["means"][1] = -0.01
+    target, receipt = model.allocate(**data, trade_radius=np.array([np.nan, 1, 0, 0]))
+    assert target[0] == 0
+    assert target[1] == pytest.approx(0.1, abs=1e-10)
+    assert receipt["mandatory_exits"][0]
+
+
+# Unheld missing radius is excluded rather than silently assigned zero uncertainty.
+def test_unheld_missing_radius_does_not_poison_known_stock():
+    data = radius_inputs()
+    target, receipt = model.allocate(**data, trade_radius=np.array([np.nan, 0, 0, 0]))
+    assert target[0] == 0
+    assert target[1] > 0
+    assert receipt["known"][0] is False
+
+
+# Explicit zeros retain exact scalar solver targets and all original receipt fields.
+@pytest.mark.parametrize("units", ["log", "arithmetic"])
+def test_absent_and_zero_radius_preserve_original_numerics(units):
+    data = inputs() if units == "log" else radius_inputs()
+    before, original = model.allocate(**data)
+    absent, same = model.allocate(**data, trade_radius=None)
+    zero, expanded = model.allocate(**data, trade_radius=np.zeros(4))
+    np.testing.assert_array_equal(before, absent)
+    np.testing.assert_array_equal(before, zero)
+    assert original == same
+    expanded.pop("trade_radius_contract")
+    expanded.pop("selected_trade_penalties")
+    assert expanded == original
+
+
+# Malformed radii cannot enter the objective or become unavailable silently.
+@pytest.mark.parametrize("radius", [[0], [-1, 0, 0, 0], [np.inf, 0, 0, 0], [True] * 4])
+def test_invalid_radius_is_rejected(radius):
+    with pytest.raises(ValueError, match="trade_radius"):
+        model.allocate(**radius_inputs(), trade_radius=np.asarray(radius))
+
+
+# Daily error estimates cannot silently penalize a ten-session return objective.
+def test_daily_error_radius_requires_matching_arithmetic_horizon():
+    with pytest.raises(ValueError, match="one-session arithmetic"):
+        model.allocate(**inputs(), trade_radius=np.full(4, 0.001))
+
+
 # Equal expected arithmetic returns receive different interior quantities by risk.
 def test_actual_optimizer_changes_quantity_for_stock_volatility():
     data = inputs()

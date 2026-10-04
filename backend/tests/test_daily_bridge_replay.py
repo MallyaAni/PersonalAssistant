@@ -318,3 +318,117 @@ def test_unavailable_held_forecast_preserves_exact_share_quantities():
         assert plan["receipt"]["status"] == "unavailable"
         np.testing.assert_array_equal(plan["desired_shares"], held)
         assert not plan["submitted_delta"].any()
+
+
+# Use varying supplied closes and strong arithmetic means for actual funded solves.
+def radius_book_inputs():
+    values = inputs(257)
+    day = np.arange(257)[:, None]
+    prices = 10 * np.exp(
+        day * 0.0005 + np.sin(day / 13) * np.array([[0.01, 0.02, 0.03, 0.04]])
+    )
+    for field in ("open", "close", "adj_close"):
+        setattr(values[0], field, prices.copy())
+    values[3][:] = 0.002
+    return values
+
+
+# Account defaults remain exact and zero radius records only its explicit contract.
+def test_account_absent_and_zero_radius_equivalence():
+    values = radius_book_inputs()
+    before = m.run_account(*values, method="calibrated", cost_bps=10, first=252)
+    absent = m.run_account(
+        *values, method="calibrated", cost_bps=10, first=252, radii=None
+    )
+    zero = m.run_account(
+        *values,
+        method="calibrated",
+        cost_bps=10,
+        first=252,
+        radii=np.zeros(values[3].shape),
+    )
+    for key in ("nav", "cash", "shares", "cost_basis", "fees", "gross_notional"):
+        np.testing.assert_array_equal(before[key], absent[key])
+        np.testing.assert_array_equal(before[key], zero[key])
+    assert "trade_radius" not in before
+    assert "trade_radius" not in before["allocation_trace"][0]
+    np.testing.assert_array_equal(zero["trade_radius"], 0)
+    assert (
+        zero["allocation_trace"][0]["receipt"]["trade_radius_contract"]["funding"]
+        == "actual_per_side_cost_only"
+    )
+
+
+# Only the scalar broker cost enters fees or the independently carried cash ledger.
+def test_account_radius_is_not_deducted_as_fee_or_cash():
+    values = radius_book_inputs()
+    radius = np.full(values[3].shape, 0.0001)
+    result = m.run_account(
+        *values, method="calibrated", cost_bps=10, first=252, radii=radius
+    )
+    np.testing.assert_allclose(
+        result["fees"], result["gross_notional"] * 0.001, atol=1e-15
+    )
+    for day in range(1, len(result["dates"])):
+        rows = [
+            row
+            for row in result["intent_trace"]
+            if row["execution_session"] == str(result["dates"][day])
+        ]
+        move = sum(row["filled_delta"] * row["price"] + row["fee"] for row in rows)
+        assert result["cash"][day] == pytest.approx(result["cash"][day - 1] - move)
+    assert result["fees"].sum() > 0
+
+
+# Future radii cannot alter prior plans, quantities or funded account observations.
+def test_account_radius_future_prefix_is_causal():
+    values = radius_book_inputs()
+    radii = np.full(values[3].shape, 0.0001)
+    before = m.run_account(
+        *values, method="calibrated", cost_bps=10, first=252, radii=radii
+    )
+    radii[255:] = 1
+    after = m.run_account(
+        *values, method="calibrated", cost_bps=10, first=252, radii=radii
+    )
+    for key in ("nav", "cash", "shares", "fees"):
+        np.testing.assert_array_equal(before[key][:3], after[key][:3])
+    for day in range(3):
+        np.testing.assert_array_equal(
+            before["allocation_trace"][day]["submitted_delta"],
+            after["allocation_trace"][day]["submitted_delta"],
+        )
+
+
+# An unavailable radius retains the common cash start and unavailable opportunities.
+def test_account_missing_radius_retains_cash_and_denominators():
+    values = radius_book_inputs()
+    result = m.run_account(
+        *values,
+        method="calibrated",
+        cost_bps=10,
+        first=252,
+        radii=np.full(values[3].shape, np.nan),
+    )
+    np.testing.assert_array_equal(result["nav"], 1)
+    assert not result["shares"].any()
+    assert result["counts"]["plans"] == len(result["dates"])
+    assert result["counts"]["allocator_unavailable"] == len(result["dates"])
+
+
+# Invalid future grid evidence is rejected rather than ignored by the account wrapper.
+@pytest.mark.parametrize("fault", ["shape", "negative", "infinite", "equal"])
+def test_account_radius_grid_validation(fault):
+    values = radius_book_inputs()
+    radii = np.zeros(values[3].shape)
+    method = "calibrated"
+    if fault == "shape":
+        radii = radii[:-1]
+    elif fault == "negative":
+        radii[-1, 0] = -1
+    elif fault == "infinite":
+        radii[-1, 0] = np.inf
+    else:
+        method = "equal"
+    with pytest.raises(ValueError, match="radii"):
+        m.run_account(*values, method=method, cost_bps=10, first=252, radii=radii)

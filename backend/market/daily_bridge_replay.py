@@ -93,8 +93,10 @@ def _nav(cash, shares, prices, names):
     return nav, value
 
 
-# Freeze targets and share quantities using only this completed-close prefix.
-def _plan(panel, grades, eligible, means, method, day, cash, shares, cost_bps):
+# Freeze close-time quantities and preserve exact error-informed no-change holdings.
+def _plan(
+    panel, grades, eligible, means, method, day, cash, shares, cost_bps, radii=None
+):
     closes = np.asarray(panel.adj_close[day])
     names = tuple(panel.tickers)
     nav, values = _nav(cash, shares, closes, names)
@@ -107,6 +109,7 @@ def _plan(panel, grades, eligible, means, method, day, cash, shares, cost_bps):
         )
         receipt = {"status": "equal_rule", "policy": policy_v5.POLICY_VERSION}
     else:
+        extra = {} if radii is None else {"trade_radius": np.asarray(radii[day]).copy()}
         target, receipt = adaptive_growth_policy.allocate(
             np.asarray(panel.adj_close[: day + 1]).copy(),
             grades[day].copy(),
@@ -118,6 +121,7 @@ def _plan(panel, grades, eligible, means, method, day, cash, shares, cost_bps):
             benchmark,
             mean_units="arithmetic",
             horizon_sessions=1,
+            **extra,
         )
     target = np.asarray(target)
     if (
@@ -134,6 +138,9 @@ def _plan(panel, grades, eligible, means, method, day, cash, shares, cost_bps):
     desired = shares.copy()
     known = np.isfinite(closes) & (closes > 0)
     desired[known] = target[known] * nav / closes[known]
+    if radii is not None and np.any(np.asarray(radii[day]) != 0):
+        unchanged = known & (target == current)
+        desired[unchanged] = shares[unchanged]
     if receipt.get("status") == "unavailable":
         # Preserve exact ownership when risk is missing; retain real cap/exits.
         desired = shares.copy()
@@ -143,7 +150,7 @@ def _plan(panel, grades, eligible, means, method, day, cash, shares, cost_bps):
         raise ValueError("Positive target has no completed-close share reference")
     if np.any((desired > shares + 1e-12) & (~eligible[day] | (grades[day] < 2))):
         raise ValueError("Daily allocator attempted an ineligible addition")
-    return {
+    plan = {
         "decision_index": int(day),
         "decision_session": str(panel.dates[day]),
         "nav": nav,
@@ -156,6 +163,9 @@ def _plan(panel, grades, eligible, means, method, day, cash, shares, cost_bps):
         "prices": closes.copy(),
         "receipt": receipt,
     }
+    if radii is not None:
+        plan["trade_radius"] = np.asarray(radii[day]).copy()
+    return plan
 
 
 # Execute one expiring plan without recycling sale proceeds into its buy budget.
@@ -290,8 +300,8 @@ def _finish(result, shares, basis, realized, cashflows, marks, names):
     return result
 
 
-# Carry daily funded books from a common completed-close NAV1 anchor.
-def run_account(panel, grades, eligible, means, *, method, cost_bps, first):
+# Carry daily funded books, retaining optional error radii without charging fees.
+def run_account(panel, grades, eligible, means, *, method, cost_bps, first, radii=None):
     dates, names, grades, eligible, means = _inputs(
         panel,
         grades,
@@ -301,6 +311,16 @@ def run_account(panel, grades, eligible, means, *, method, cost_bps, first):
         cost_bps,
         first,
     )
+    if radii is not None:
+        radii = np.asarray(radii)
+        if (
+            method == "equal"
+            or radii.shape != np.shape(panel.adj_close)
+            or radii.dtype.kind not in "fiu"
+            or np.isinf(radii).any()
+            or np.any(np.isfinite(radii) & (radii < 0))
+        ):
+            raise ValueError("Aligned nonnegative-or-missing risk-arm radii required")
     opens = allocation_controls.adjusted_open(panel.open, panel.close, panel.adj_close)
     result = _arrays(dates, names, first)
     shares, basis, realized, cashflows = (np.zeros(len(names)) for _ in range(4))
@@ -355,7 +375,7 @@ def run_account(panel, grades, eligible, means, *, method, cost_bps, first):
                 names,
             )
         plan = _plan(
-            panel, grades, eligible, means, method, day, cash, shares, cost_bps
+            panel, grades, eligible, means, method, day, cash, shares, cost_bps, radii
         )
         result["allocation_trace"].append(plan)
         result["counts"]["plans"] += 1
@@ -376,6 +396,8 @@ def run_account(panel, grades, eligible, means, *, method, cost_bps, first):
         },
     )
     result["returns"] = np.r_[np.nan, result["nav"][1:] / result["nav"][:-1] - 1]
+    if radii is not None:
+        result["trade_radius"] = radii[first:].copy()
     return _finish(
         result, shares, basis, realized, cashflows, panel.adj_close[-1], names
     )
