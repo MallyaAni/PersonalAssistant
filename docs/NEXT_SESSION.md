@@ -55,6 +55,9 @@ IDc2a0e90a3cee17d7f32b0ed84f63b15e820c91c1e7076348e030d0f9b3e19e65,
 started2026-10-04T16:04:23.765922814Z. Source mounted read-only;2CPU/8GB/network-none.
 Output:/home/animallya96/scratch/reviewed-economic-study-20261004-b5894a74/proof/study.
 Initial authoritative status running/Pid2516653/OOMfalse, no session receipt yet.
+Follow-up confirmed actual progress: rule-0-0 completed160sessions through
+2018-09-18 at2026-10-04T12:06:36.945414-04:00; identity212387bytes written.
+Container running/Pid2516653/OOMfalse,79.67%CPU and1.047GiB/8GiB at that check.
 Never restart while live, change its mounted source, reuse its output, or restart
 old stopped4ff85fbf. This is the original fixed300-account actual-policy run:
 20starts, rule/boosting/ridge/SPY/QQQ,0/10/25bp,2018-02-01..2026-09-30;
