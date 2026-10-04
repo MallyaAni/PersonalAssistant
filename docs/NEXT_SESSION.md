@@ -83,6 +83,11 @@ and the joint protocol bytes. Preserve those while adding the separate calibrati
 consumer/protocol; do not change them and silently relabel saved artifacts. Use
 the exact archived producer for an unchanged artifact if a later consumer needs
 different source. No new fits, repeated inference or active-study restarts.
+Git preservation: origin/main204689db is already an ancestor. Explicit required
+pull --rebase nevertheless tried replaying142 branch commits and conflicted in
+old NEXT_SESSION at9bec943b; aborted immediately, restoring exactd3b4f375 and
+clean tree. No conflict edits, lost work, changed source checkpoint or force push.
+Preserve this published merge history; do not repeat the flattening operation.
 
 ## 2026-10-04 — authenticated joint holding scenarios
 
