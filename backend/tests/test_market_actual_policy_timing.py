@@ -10,8 +10,10 @@ import pytest
 
 from backend.cli import market_actual_policy_timing as study
 from backend.market import calendar
+from backend.market.live_execution_inputs import CUBE_BASIS, prepare_passive
+from backend.market.live_policy_replay import plain
 from backend.tests.test_live_execution_inputs import reviewed_action_fixture
-from backend.tests.test_live_policy_replay import fixture
+from backend.tests.test_live_policy_replay import fixture, passive_fixture
 
 
 # Refuse known incorrect action bytes before any input or predictor loading.
@@ -353,3 +355,79 @@ def test_preflight_does_not_run_a_study_account(tmp_path, monkeypatch):
     assert not (output / "state").exists()
     assert not (output / "accounts").exists()
     assert not (output / "report.json").exists()
+
+
+# Save separate inherited marks with an explicit binding to the original selection.
+def saved_passive_inputs(tmp_path, monkeypatch):
+    _, raw, _ = fixture()
+    original = passive_fixture(raw)
+    passive = prepare_passive(
+        raw.dates,
+        raw.tickers,
+        original.tickers,
+        original.session_open,
+        original.observation_close,
+        original.daily_close,
+        first_session=str(raw.dates[0]),
+        complete_through=str(raw.dates[-1]),
+        provenance={"snapshot_sha256": study.SNAPSHOT_SHA},
+        price_basis=CUBE_BASIS,
+    )
+    arrays, receipt = tmp_path / "passive.npz", tmp_path / "receipt.json"
+    np.savez(
+        arrays,
+        dates=raw.dates,
+        symbols=passive.tickers,
+        session_open=passive.session_open,
+        observation_close=passive.observation_close,
+        daily_close=passive.daily_close,
+    )
+    metadata = {
+        "arrays_sha256": study.sha256(arrays),
+        "selection_symbols": 3,
+        "selection_universe_extended": False,
+        "adoption_eligible": False,
+        "passive_provenance": plain(passive.provenance),
+    }
+    receipt.write_text(json.dumps(metadata))
+    monkeypatch.setattr(study, "PASSIVE_ARRAYS_SHA", study.sha256(arrays))
+    monkeypatch.setattr(study, "PASSIVE_RECEIPT_SHA", study.sha256(receipt))
+    return (
+        SimpleNamespace(passive_arrays=arrays, passive_receipt=receipt),
+        raw,
+        metadata,
+    )
+
+
+# Reload immutable inherited prices while preserving their typed hashes and identities.
+def test_saved_passive_loader_preserves_original_contract(tmp_path, monkeypatch):
+    args, raw, metadata = saved_passive_inputs(tmp_path, monkeypatch)
+    passive = study.load_passive_inputs(args, raw.dates, raw.tickers)
+    assert passive.tickers == ("CHILD",)
+    assert plain(passive.provenance) == metadata["passive_provenance"]
+    assert passive.daily_close[0, 0] == 22
+    assert not passive.daily_close.flags.writeable
+    with pytest.raises(ValueError, match="calendar"):
+        study.load_passive_inputs(args, raw.dates[1:], raw.tickers)
+
+
+# Reject individually hashed receipts that conflict with their arrays or selection.
+@pytest.mark.parametrize("change", ["hash", "universe", "snapshot", "typed_hash"])
+def test_passive_loader_requires_cross_artifact_semantics(
+    tmp_path, monkeypatch, change
+):
+    args, raw, metadata = saved_passive_inputs(tmp_path, monkeypatch)
+    if change == "hash":
+        metadata["arrays_sha256"] = "0" * 64
+    elif change == "universe":
+        metadata["selection_universe_extended"] = True
+    elif change == "snapshot":
+        metadata["passive_provenance"]["supplied"]["snapshot_sha256"] = "0" * 64
+    else:
+        metadata["passive_provenance"]["arrays"]["daily_close"] = "0" * 64
+    args.passive_receipt.write_text(json.dumps(metadata))
+    monkeypatch.setattr(
+        study, "PASSIVE_RECEIPT_SHA", study.sha256(args.passive_receipt)
+    )
+    with pytest.raises(ValueError, match="receipt|snapshot|hashes"):
+        study.load_passive_inputs(args, raw.dates, raw.tickers)

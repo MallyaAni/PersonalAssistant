@@ -20,7 +20,11 @@ from backend.cli.market_sequential_execution import runtime_identity
 from backend.market import calendar
 from backend.market.allocation_evaluation import metrics
 from backend.market.learned_entry_evaluation import read_cubes
-from backend.market.live_execution_inputs import prepare, review_action_export
+from backend.market.live_execution_inputs import (
+    prepare,
+    prepare_passive,
+    review_action_export,
+)
 from backend.market.live_policy_features import FeatureCache
 from backend.market.live_policy_replay import plain, run_account, run_benchmark
 from backend.market.live_probability_timing import build_reader
@@ -38,6 +42,10 @@ REJECTED_ACTIONS_SHA = (
     "0e05a397f3719c61688e2eb79355eb5111961c05f31916db8a16ab6ff01dbcca"
 )
 INPUT_RECEIPT_SHA = "9a367843ab2f529ba5123997967e435ae41481be5692314501e71f3aaad7be29"
+ACTION_REVIEW_SHA = "81106947ba049d0315d610719988a80da8e0efce9d87c52f789f2041901e95e8"
+PASSIVE_ARRAYS_SHA = "c07e4615e425e8778282f26c75f18437ca38fa88993a4bab9bfe4b4499e99411"
+PASSIVE_RECEIPT_SHA = "2bc957fcf9948981c4139c1868ad1336b0425d0bf5106460974ffb240a2869a9"
+PANEL_SHAPE = (2953, 96)
 ARMS = ("rule", "boosting", "ridge")
 BENCHMARKS = ("SPY", "QQQ")
 COSTS = (0, 10, 25)
@@ -113,12 +121,57 @@ def source_identity(args):
     return identity
 
 
-# Refuse known invalid actions before loading original arrays or predictive models.
-def load_inputs(args):
-    require(
-        ACTIONS_SHA != REJECTED_ACTIONS_SHA,
-        "Known incorrect stock-distribution export; reviewed replacement required",
+# Authenticate saved inherited-security arrays without adding selection candidates.
+def load_passive_inputs(args, dates, names):
+    forecasts.evidence(args.passive_arrays, PASSIVE_ARRAYS_SHA)
+    receipt = forecasts.evidence(
+        args.passive_receipt, PASSIVE_RECEIPT_SHA, json_file=True
     )
+    require(
+        receipt["arrays_sha256"] == PASSIVE_ARRAYS_SHA
+        and receipt["selection_symbols"] == len(names)
+        and receipt["selection_universe_extended"] is False
+        and receipt["adoption_eligible"] is False,
+        "Original passive receipt cannot extend selection or authorize adoption",
+    )
+    contract = receipt["passive_provenance"]
+    require(
+        contract["supplied"]["snapshot_sha256"] == SNAPSHOT_SHA,
+        "Passive prices belong to another selection snapshot",
+    )
+    with np.load(args.passive_arrays, allow_pickle=False) as archive:
+        require(
+            set(archive.files)
+            == {"dates", "symbols", "session_open", "observation_close", "daily_close"}
+            and np.array_equal(archive["dates"], dates),
+            "Original passive calendar and array fields required",
+        )
+        passive = prepare_passive(
+            archive["dates"],
+            names,
+            tuple(archive["symbols"].tolist()),
+            archive["session_open"],
+            archive["observation_close"],
+            archive["daily_close"],
+            first_session=contract["first_session"],
+            complete_through=contract["complete_through"],
+            provenance=contract["supplied"],
+            price_basis=contract["price_basis"],
+        )
+    require(
+        plain(passive.provenance) == contract,
+        "Derived passive units, missingness or typed array hashes differ",
+    )
+    return passive
+
+
+# Prepare original execution units, with reviewed economics allowed only for preflight.
+def load_execution_inputs(args, *, reviewed=False):
+    if not reviewed:
+        require(
+            ACTIONS_SHA != REJECTED_ACTIONS_SHA,
+            "Known incorrect stock-distribution export; reviewed replacement required",
+        )
     forecasts.evidence(args.snapshot, SNAPSHOT_SHA)
     forecasts.evidence(args.provenance, PROVENANCE_SHA)
     actions = forecasts.evidence(args.actions, ACTIONS_SHA, json_file=True)
@@ -140,7 +193,7 @@ def load_inputs(args):
             "SPY",
         )
         grades, eligible = archive["grades"], archive["eligible"]
-    require(len(names) == 96 and len(dates) == 2953, "Original complete panel required")
+    require((len(dates), len(names)) == PANEL_SHAPE, "Original complete panel required")
     cubes, cube_receipts = read_cubes(args.cubes, names)
     require(
         cube_receipts == original["identity"]["data"]["cubes"],
@@ -151,26 +204,83 @@ def load_inputs(args):
         and actions["provenance_sha256"] == PROVENANCE_SHA,
         "Actions belong to another daily archive",
     )
+    source_files = {
+        str(args.snapshot): SNAPSHOT_SHA,
+        str(args.provenance): PROVENANCE_SHA,
+        str(args.actions): ACTIONS_SHA,
+        str(args.input_receipt): INPUT_RECEIPT_SHA,
+    }
+    economic_actions, inherited, passive = actions["actions"], None, None
+    supplied = {
+        "snapshot_sha256": SNAPSHOT_SHA,
+        "provenance_sha256": PROVENANCE_SHA,
+        "actions_sha256": ACTIONS_SHA,
+        "cubes": cube_receipts,
+    }
+    if reviewed:
+        forecasts.evidence(args.action_review, ACTION_REVIEW_SHA)
+        compiled = review_action_export(
+            args.actions.read_bytes(), args.action_review.read_bytes()
+        )
+        require(
+            not compiled["unresolved"]
+            and dict(compiled["scope"])
+            == {"first_session": "2018-02-01", "last_session": "2026-09-30"}
+            and compiled["execution_readiness"] == "pending_declaration_receipts",
+            "Fixed complete economic review required; "
+            "declaration receipts remain pending",
+        )
+        passive = load_passive_inputs(args, dates, names)
+        economic_actions = compiled["actions"]
+        inherited = compiled.get("inherited_actions")
+        source_files.update(
+            {
+                str(args.action_review): ACTION_REVIEW_SHA,
+                str(args.passive_arrays): PASSIVE_ARRAYS_SHA,
+                str(args.passive_receipt): PASSIVE_RECEIPT_SHA,
+            }
+        )
+        supplied.update(
+            reviewed_actions_sha256=ACTION_REVIEW_SHA,
+            passive_arrays_sha256=PASSIVE_ARRAYS_SHA,
+            passive_receipt_sha256=PASSIVE_RECEIPT_SHA,
+            declaration_evidence=compiled["declaration_evidence"],
+            execution_readiness=compiled["execution_readiness"],
+        )
     raw = prepare(
         panel,
         grades,
         eligible,
         cubes,
-        actions["actions"],
+        economic_actions,
         basis_as_of=actions["basis_as_of"],
         complete_through=actions["complete_through"],
         dividend_price_basis="split_adjusted_archive_share_dollars",
-        provenance={
-            "snapshot_sha256": SNAPSHOT_SHA,
-            "provenance_sha256": PROVENANCE_SHA,
-            "actions_sha256": ACTIONS_SHA,
-            "cubes": cube_receipts,
-        },
+        provenance=supplied,
+        passive=passive,
+        inherited_actions=inherited,
     )
+    for name, receipt in cube_receipts.items():
+        path = args.cubes / f"{name}.npz"
+        if receipt["status"] == "original":
+            require(
+                path.is_file() and not path.is_symlink(), "Regular raw cube required"
+            )
+            source_files[str(path)] = receipt["sha256"]
+        else:
+            require(not path.exists(), "Originally missing cube must remain missing")
+            source_files[str(path)] = None
+    check_original_files(source_files)
+    return panel, raw, cubes, source_files
+
+
+# Restore frozen predictors only after the separate execution-input score gate passes.
+def load_inputs(args):
+    panel, raw, cubes, source_files = load_execution_inputs(args)
     diagnostic, _ = saved.diagnostic_evidence(args.diagnostic, args.probability_proof)
     loaded = forecasts.load_inputs(args.prepared, args.moments, args.fit_proof)
     require(
-        np.array_equal(loaded[0], dates) and loaded[1] == names,
+        np.array_equal(loaded[0], panel.dates) and loaded[1] == panel.tickers,
         "Original forecast and actual policy grids differ",
     )
     providers = {
@@ -178,10 +288,6 @@ def load_inputs(args):
         for name in saved.METHODS
     }
     paths = [
-        args.snapshot,
-        args.provenance,
-        args.actions,
-        args.input_receipt,
         args.prepared,
         args.fit_proof,
         args.probability_proof,
@@ -196,17 +302,7 @@ def load_inputs(args):
                 args.diagnostic / f"{name}-calibration.json",
             )
         )
-    source_files = {str(path): sha256(path) for path in paths}
-    for name, receipt in cube_receipts.items():
-        path = args.cubes / f"{name}.npz"
-        if receipt["status"] == "original":
-            require(
-                path.is_file() and not path.is_symlink(), "Regular raw cube required"
-            )
-            source_files[str(path)] = receipt["sha256"]
-        else:
-            require(not path.exists(), "Originally missing cube must remain missing")
-            source_files[str(path)] = None
+    source_files.update({str(path): sha256(path) for path in paths})
     return panel, raw, cubes, providers, source_files
 
 
@@ -489,7 +585,51 @@ def review_inputs(args):
     )
 
 
-# Run the fixed study or an input-only preflight in a fresh private folder.
+# Connect saved reviewed inputs without restoring models or producing economic scores.
+def prepare_reviewed_inputs(args):
+    output = Path(args.output)
+    require(not output.exists(), "Fresh output required; never restart or overwrite")
+    source = source_identity(args)
+    panel, raw, _, files = load_execution_inputs(args, reviewed=True)
+    grid = account_grid(panel.dates)
+    check_original_files(files)
+    require(
+        source_identity(args) == source, "Mounted source changed during preparation"
+    )
+    output.mkdir(parents=True, exist_ok=False)
+    write_json(
+        output / "reviewed-inputs.json",
+        plain(
+            {
+                "status": "prepared_pending_independent_economic_verifier",
+                "policy": POLICY,
+                "protocol_sha256": PROTOCOL_SHA,
+                "source": source,
+                "runtime": runtime_identity(),
+                "original_files": files,
+                "accounts": grid,
+                "raw_input_provenance": raw.provenance,
+                "reviewed_actions": raw.actions,
+                "inherited_actions": raw.inherited_actions,
+                "selection_symbols": len(raw.tickers),
+                "selection_universe_extended": False,
+                "passive_symbols": raw.passive.tickers,
+                "execution_readiness": "pending_declaration_receipts",
+                "availability": (
+                    "current_vintage_grades_universe_and_history_not_exact_live_reconstruction"
+                ),
+                "payment_completeness": "unknown_claims_not_paid_or_spendable",
+                "accounts_created": 0,
+                "models_restored": 0,
+                "models_fitted": 0,
+                "policy_returns_scored": 0,
+                "adoption_eligible": False,
+            }
+        ),
+    )
+
+
+# Run the fixed study or a model-restoration preflight in a fresh private folder.
 def evaluate(args):
     output = Path(args.output)
     require(not output.exists(), "Fresh output required; never restart or overwrite")
@@ -670,22 +810,45 @@ def main():
     parser.add_argument("--source-revision")
     parser.add_argument("--preflight", action="store_true")
     parser.add_argument("--action-review", type=Path)
+    parser.add_argument("--passive-arrays", type=Path)
+    parser.add_argument("--passive-receipt", type=Path)
+    parser.add_argument("--prepare-reviewed-inputs-only", action="store_true")
     parser.add_argument("--review-actions-only", action="store_true")
     args = parser.parse_args()
     required = (
         ("actions", "action-review", "source-manifest", "output")
         if args.review_actions_only
+        else (
+            "snapshot",
+            "provenance",
+            "cubes",
+            "actions",
+            "input-receipt",
+            "action-review",
+            "passive-arrays",
+            "passive-receipt",
+            "source-manifest",
+            "output",
+        )
+        if args.prepare_reviewed_inputs_only
         else names
     )
     for name in (*required, "source-revision"):
         if getattr(args, name.replace("-", "_")) is None:
             parser.error("--" + name + " is required")
-    if args.review_actions_only:
+    if args.prepare_reviewed_inputs_only:
+        if args.review_actions_only or args.preflight:
+            parser.error("Reviewed-input preparation is a separate input-only mode")
+        prepare_reviewed_inputs(args)
+    elif args.review_actions_only:
         if args.preflight:
             parser.error("Action review and model preflight are separate modes")
         review_inputs(args)
     else:
-        if args.action_review is not None:
+        if any(
+            item is not None
+            for item in (args.action_review, args.passive_arrays, args.passive_receipt)
+        ):
             parser.error("Action review is not an executable economic source")
         evaluate(args)
 
