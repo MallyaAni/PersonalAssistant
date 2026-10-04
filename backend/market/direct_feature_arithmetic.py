@@ -24,6 +24,15 @@ HELD_BAND_POLICY = "learned-held-exits-band/1-research"
 HELD_PROTOCOL = "docs/research/learned-held-exits-plan-2026-10-03.md"
 RISK_POLICY = "holding-price-inference/1-research"
 JOINT_PROTOCOL = "docs/research/joint-distribution-allocation-plan-2026-10-04.md"
+SAVED_RISK_SOURCE = {
+    "backend/market/direct_daily_arithmetic.py": (
+        "8c51bd0cf858e0df22f0ff56e4fe0f6f33a93542d94831e8b39fa2984169b690"
+    ),
+    "backend/market/direct_feature_arithmetic.py": (
+        "93b10dd7d9d367361351d8cf59ca2b530bc880f33af718e0300df9eac7edb203"
+    ),
+    JOINT_PROTOCOL: "db48217d2e44e312cca774b6e7c1fa5c378b48f4e2124c3b15c54aeba5980cc1",
+}
 
 
 # Keep explicit causal opportunity support beside forecasts and numeric model evidence.
@@ -632,11 +641,18 @@ def holding_risk_forecasts(parent, bridge, features, valid, heads, *, prices):
 
 
 # Refuse expanded artifacts that obscure training, input support or monthly scoring.
-def _risk_lineage(result, bridge):
+def _risk_lineage(result, bridge, *, allow_saved_origin=False):
     dates, names, expected_mask = _risk_features(
         result.parent, bridge, result.features, result.valid, result.prices
     )
     expected_identity = _risk_identity(result.parent, result.prices)
+    if not isinstance(allow_saved_origin, (bool, np.bool_)):
+        raise ValueError("Explicit boolean saved-origin admission required")
+    if (
+        allow_saved_origin
+        and result.manifest["identity"]["source_sha256"] == SAVED_RISK_SOURCE
+    ):
+        expected_identity["source_sha256"] = dict(SAVED_RISK_SOURCE)
     if (
         result.symbols != names
         or result.dates.dtype != dates.dtype
@@ -696,7 +712,7 @@ class HoldingScenarios:
 # Admit frozen OOS holding forecasts once and retain same-date joint error history.
 class HoldingScenarioReader:
     # Validate immutable copies without retaining any executable model or caller buffer.
-    def __init__(self, result, bridge):
+    def __init__(self, result, bridge, *, allow_saved_origin=False):
         if not isinstance(
             result, (FeatureForecasts, HoldingRiskForecasts)
         ) or not isinstance(bridge, reference.BridgeForecasts):
@@ -721,7 +737,9 @@ class HoldingScenarioReader:
                 result.valid.copy(),
                 result.prices.copy(),
             )
-            dates, names, identity = _risk_lineage(result, bridge)
+            dates, names, identity = _risk_lineage(
+                result, bridge, allow_saved_origin=allow_saved_origin
+            )
         else:
             result = _copy_feature(result)
             dates, names, identity = _calibration_inputs(result, bridge)
@@ -796,6 +814,12 @@ class HoldingScenarioReader:
             self.identity["original_feature_manifest_sha256"] = base._json_hash(
                 result.parent.manifest
             )
+            self.identity["original_risk_source_sha256"] = deepcopy(
+                result.manifest["identity"]["source_sha256"]
+            )
+            self.identity["consumer_risk_source_sha256"] = _risk_identity(
+                result.parent, result.prices
+            )["source_sha256"]
 
     # Cache strictly mature common OOS dates for the month and required stock order.
     def _bank(self, day, indices):

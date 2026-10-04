@@ -39,3 +39,11 @@ this reader; its broker guard still requires ReplayBroker and the exact decision
 clock, now also checking forecast expiry. No real orders, production selector or
 strategy promotion is enabled. Actual current-source/shadow evidence and the
 completed funded comparison remain required before live selection.
+
+Saved-risk admission stays strict by default. An explicit `allow_saved_origin`
+option admits only the exact original three-file producer source map registered
+in `direct_feature_arithmetic.SAVED_RISK_SOURCE`. Numeric export was added to the
+direct module after that artifact was produced; no inference formula changed.
+Original and consumer source maps remain separate in the reader receipt, and
+all original parent, input, support, monthly forecast and price hashes are still
+required. Changed producer hashes or forecasts refuse even with the option.

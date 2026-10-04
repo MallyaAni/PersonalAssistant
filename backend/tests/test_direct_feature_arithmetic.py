@@ -246,6 +246,36 @@ def risk_example_factory(tmp_path_factory, *, with_volatility=False):
     return prepared, bridge, parent, heads, risk
 
 
+# Only the exact archived origin can be admitted explicitly, retaining both sources.
+def test_saved_risk_source_requires_explicit_exact_origin(risk_example):
+    _, bridge, _, _, result = deepcopy(risk_example)
+    result.manifest["identity"]["source_sha256"] = dict(feature.SAVED_RISK_SOURCE)
+    result.manifest["identity_sha256"] = base._json_hash(result.manifest["identity"])
+    with pytest.raises(ValueError, match="lineage"):
+        feature.HoldingScenarioReader(result, bridge)
+    reader = feature.HoldingScenarioReader(result, bridge, allow_saved_origin=True)
+    assert reader.identity["original_risk_source_sha256"] == feature.SAVED_RISK_SOURCE
+    assert reader.identity["consumer_risk_source_sha256"] != feature.SAVED_RISK_SOURCE
+    result.manifest["identity"]["source_sha256"][
+        "backend/market/direct_daily_arithmetic.py"
+    ] = "0" * 64
+    result.manifest["identity_sha256"] = base._json_hash(result.manifest["identity"])
+    with pytest.raises(ValueError, match="lineage"):
+        feature.HoldingScenarioReader(result, bridge, allow_saved_origin=True)
+
+
+# Compatibility never admits changed forecasts or weakens the numeric lineage checks.
+def test_saved_risk_compatibility_retains_numeric_integrity(risk_example):
+    _, bridge, _, _, result = deepcopy(risk_example)
+    result.manifest["identity"]["source_sha256"] = dict(feature.SAVED_RISK_SOURCE)
+    result.manifest["identity_sha256"] = base._json_hash(result.manifest["identity"])
+    result.forecasts[-1, 0] += 0.001
+    with pytest.raises(ValueError, match="lineage"):
+        feature.HoldingScenarioReader(result, bridge, allow_saved_origin=True)
+    with pytest.raises(ValueError, match="Explicit boolean"):
+        feature.HoldingScenarioReader(result, bridge, allow_saved_origin=1)
+
+
 # Risk inference covers price histories without fabricating a grade or refitting.
 def test_holding_risk_expands_without_trading_permission(risk_example, monkeypatch):
     from backend.market import adaptive_growth_policy as allocator

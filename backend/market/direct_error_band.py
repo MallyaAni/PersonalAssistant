@@ -630,7 +630,7 @@ def scale_holding_volatility(current, past, outcomes, current_vol, past_vol):
 # Condition dispersion on stock volatility while preserving original joint dates.
 class VolatilityHoldingReader:
     # Bind immutable original inputs before extracting any dated volatility context.
-    def __init__(self, risk, bridge):
+    def __init__(self, risk, bridge, *, allow_saved_origin=False):
         from backend.market import direct_feature_arithmetic as feature
 
         if not isinstance(risk, feature.HoldingRiskForecasts):
@@ -646,7 +646,9 @@ class VolatilityHoldingReader:
             risk.valid.copy(),
             risk.prices.copy(),
         )
-        self._reader = feature.HoldingScenarioReader(frozen, bridge)
+        self._reader = feature.HoldingScenarioReader(
+            frozen, bridge, allow_saved_origin=allow_saved_origin
+        )
         for name in (
             "dates",
             "symbols",
