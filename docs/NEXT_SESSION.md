@@ -1,5 +1,46 @@
 # Next session
 
+## 2026-10-04 — full-cohort saved proof scheduled; live refresh boundary identified
+
+Goal ACTIVE; previous turn PROGRESS, this turn PROGRESS plus verified waits.
+Started clean07b2926d. No producer/source/model/live-policy changes or repeated
+gates. Exact Docker handles2bb2b921/2832af72 remain running/OOMfalse; timeout on
+docker wait was NOT terminal. At18:12NY candidate1100sessions through2022-06-13,
+rule1040through2022-03-17,0completed books.2.7TiB scratch free,13/7MiB private
+study output at earlier check; no storage cleanup or service changes needed.
+
+New private read-only final watcher3043785 waits for exact60candidate/300control
+final reports, authenticates the original evidence and command hashes, captures
+fresh actual Docker IDs/images/OOM evidence and invokes the existing saved-only
+verifier ONCE. It never simulates, restarts, changes a cohort, fits or promotes.
+Six small workflow guards pass natively0.29s: missing/incomplete final reports,
+changed producer/command, child failure and zero exit without a proof artifact.
+Actual full-cohort proof remains UNVERIFIED until completion and root review.
+
+Helper /home/animallya96/scratch/funded-calendar-20261004-e396841b/
+codex-watch-calendar-final-proof-20261004.py SHAb6b7d9430f0a8781b3fd99423017ce030fb5db16a0d483f8da11e380bf296bce.
+proof/independent/final-watcher.log; evidence-final.json/command-final.json/
+saved-final.json/final.log/final-completion.json appear only at the final stage.
+Existing prefix watcher2992559 remains separate and unchanged; do not duplicate
+either watcher. Model/producer failures stop verification without false success.
+
+LIVE READINESS inspected, not inferred from tests: market_daily._holding_broker
+admits only ReplayBroker; JointFundedPolicy.decide requires a date in the frozen
+reader ending09-30. Research results cannot be enabled by merely merging source.
+If the funded evidence justifies this candidate, next necessary implementation
+is a dated forward forecast/model refresh and residual-bank publication path,
+using the same completed-close features, monthly maturity/freeze, stock-volatility
+transform and certified funded allocator, followed by actual shadow/live parity
+and guarded deployment. Existing NumericHead and numeric saved model artifacts
+are reusable; no new forecasting architecture is justified by this inspection.
+Do not lift the private broker guard or relabel old forecasts as current.
+
+NEXT first inspect the two actual job handles and both watcher logs/results.
+Review newly finished saved accounts/proofs and prepare the requested gain/
+rule/SPY/QQQ/cost/era table; retain every missing metric and overlapping starts.
+No unverified live promotion, new methods, refitting, active-source editing,
+resimulation for verification, real orders, model gates or repeated baselines.
+
 ## 2026-10-04 — historical calendar repaired; corrected funded comparisons running
 
 Goal ACTIVE; turn PROGRESS. Isolated branch codex/learned-entry-risk-20261002.
