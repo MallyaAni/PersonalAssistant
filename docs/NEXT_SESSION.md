@@ -1,5 +1,56 @@
 # Next session
 
+## 2026-10-04 — funded evidence complete; shared nightly planner verified
+
+The120-account producer and saved-only proof BOTH EXITED0/no OOM. Do not
+restart, resimulate, recalibrate or refit their completed work. Evaluated source
+2e49b234caf3ac286f2d00f90972bfb1a6908aa1; report
+9a367843ab2f529ba5123997967e435ae41481be5692314501e71f3aaad7be29;
+proof1ab0a70e12592e8f85f2bd48e23dc60ca620a5e38c1fba396e2d5197d1876c69.
+Proof container474e9aa37d866c97f4d510e2fd0e69ff9d7c526ad49d4c65f61b91c08e934cba
+verified120 accounts/103844 intents/1111840 decisions/95598 fills, reused60
+controls+6 benchmarks, with no model/account/producer called. Verifier
+98cf0683fb60abe762b9bf8750dbe14d77c0de898c3986dff12b323f189915c5 passed47
+native and47 pinned-image synthetic cases. Source and original inputs were
+authenticated before/after. Artifacts remain at the paths in the result note.
+
+Read docs/research/probabilistic-funded-timing-results-2026-10-04.md.
+VERIFIED economic component outcome: unchanged allocation,10bp paired median
+full-period gain Boosting+2.9167pp(11/20 phases), Ridge+0.3131pp(10/20).
+Both lose to the rule in2018–20 and reused recent window. These overlapping
+phases are not independent trials; a slight median gain is not reliable
+promotion evidence. ETF excess largely comes from shared selection/allocation.
+No chosen phase/window/cost, increased sizing or current-vintage grade history
+can convert this into proven live performance. Actual live strategy unchanged.
+
+Verified new shared nightly dispatch checkpoint426a945f: market_daily invokes
+nightly_plan.plan; policy-force inference before reconciliation, conditional
+ordinary features, FOMC/pending dispatch, state stamps and persistence order
+preserved.100 focused image cases PASS/no skips(2.45s), native99pass/1optional
+API-dependency skip. Two new event-path acceptance cases first reproduced the
+extraction's eager ordinary-feature evaluation; shared event_plan_required
+predicate fixed it without weakening assertions. Read-only independent review
+found no other concrete mismatch. No production calls/deployment/order writes.
+New module/tests Ruff clean;3 existing market_daily lint issues and4 existing
+live-policy-test lint issues remain outside scope; extraction removes the
+previous nightly complexity finding. Exact four source/test hashes matched
+image source. Acceptance:/home/animallya96/scratch/nightly-plan-acceptance-20261004.
+
+NEXT bounded implementation: full-policy comparator sharing this nightly
+planner and real pending execution/state transitions, with actual whole-share
+capital, cash, retry and settlement mechanics. Freeze its fill/source contract
+before outcomes; explicitly retain historical publication/eligibility limits.
+Corporate actions/raw-versus-adjusted prices matter for whole-share sizing;
+inspect supplied dated evidence rather than infer split ratios. Then test
+buy and sell continuation decisions separately with sizing held constant.
+The next forecast must capture remaining opportunity/structure/volatility at
+its actual decision horizon. Holding/profit exits are a separate carried-state
+evaluation;9.1% is allocation prose, not a fixed profit threshold. Do not
+promote or deploy the weak current probabilistic candidate. The active user
+goal remains unfinished until a justified live replacement is actually shipped
+and verified; do not mark complete. All agents released ownership; root owns
+the integrated files. Preserve main/user changes and model/data services.
+
 ## 2026-10-04 — funded probability timing implementation
 
 Verified source2e49b234caf3ac286f2d00f90972bfb1a6908aa1 is pushed. Native/image
