@@ -20,7 +20,7 @@ from backend.cli.market_sequential_execution import runtime_identity
 from backend.market import calendar
 from backend.market.allocation_evaluation import metrics
 from backend.market.learned_entry_evaluation import read_cubes
-from backend.market.live_execution_inputs import prepare
+from backend.market.live_execution_inputs import prepare, review_action_export
 from backend.market.live_policy_features import FeatureCache
 from backend.market.live_policy_replay import plain, run_account, run_benchmark
 from backend.market.live_probability_timing import build_reader
@@ -448,6 +448,47 @@ def check_original_files(files):
         )
 
 
+# Review source-bound actions without restoring predictors or creating accounts.
+def review_inputs(args):
+    output = Path(args.output)
+    require(not output.exists(), "Fresh output required; never restart or overwrite")
+    source = source_identity(args)
+    paths = (Path(args.actions), Path(args.action_review))
+    require(
+        all(path.is_file() and not path.is_symlink() for path in paths),
+        "Regular original action and review files required",
+    )
+    original_bytes, review_bytes = (path.read_bytes() for path in paths)
+    require(sha256(paths[0]) == ACTIONS_SHA, "Fixed original action bytes required")
+    result = review_action_export(original_bytes, review_bytes)
+    require(
+        dict(result["scope"])
+        == {"first_session": "2018-02-01", "last_session": "2026-09-30"},
+        "Fixed study action review scope required",
+    )
+    files = {
+        str(paths[0]): result["original_actions_sha256"],
+        str(paths[1]): result["review_sha256"],
+    }
+    check_original_files(files)
+    require(source_identity(args) == source, "Mounted source changed during review")
+    output.mkdir(parents=True, exist_ok=False)
+    write_json(
+        output / "action-review.json",
+        plain(
+            {
+                **result,
+                "source": source,
+                "original_files": files,
+                "accounts_created": 0,
+                "models_restored": 0,
+                "models_fitted": 0,
+                "policy_returns_scored": 0,
+            }
+        ),
+    )
+
+
 # Run the fixed study or an input-only preflight in a fresh private folder.
 def evaluate(args):
     output = Path(args.output)
@@ -610,7 +651,7 @@ def evaluate(args):
 # Accept only explicit immutable research paths and the complete fixed study contract.
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in (
+    names = (
         "snapshot",
         "provenance",
         "cubes",
@@ -623,11 +664,30 @@ def main():
         "probability-proof",
         "source-manifest",
         "output",
-    ):
-        parser.add_argument("--" + name, type=Path, required=True)
-    parser.add_argument("--source-revision", required=True)
+    )
+    for name in names:
+        parser.add_argument("--" + name, type=Path)
+    parser.add_argument("--source-revision")
     parser.add_argument("--preflight", action="store_true")
-    evaluate(parser.parse_args())
+    parser.add_argument("--action-review", type=Path)
+    parser.add_argument("--review-actions-only", action="store_true")
+    args = parser.parse_args()
+    required = (
+        ("actions", "action-review", "source-manifest", "output")
+        if args.review_actions_only
+        else names
+    )
+    for name in (*required, "source-revision"):
+        if getattr(args, name.replace("-", "_")) is None:
+            parser.error("--" + name + " is required")
+    if args.review_actions_only:
+        if args.preflight:
+            parser.error("Action review and model preflight are separate modes")
+        review_inputs(args)
+    else:
+        if args.action_review is not None:
+            parser.error("Action review is not an executable economic source")
+        evaluate(args)
 
 
 if __name__ == "__main__":

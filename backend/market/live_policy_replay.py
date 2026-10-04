@@ -95,14 +95,20 @@ def corporate_actions(broker, inputs, day, opening):
         for row in inputs.actions[symbol]
         if row["date"] == str(inputs.dates[day])
     ]
-    supported = {"split", "dividend", "stock_distribution", "archive_adjustment"}
+    supported = {
+        "split",
+        "share_split",
+        "dividend",
+        "stock_distribution",
+        "archive_adjustment",
+    }
     if any(row["kind"] not in supported for _, row in due):
         raise ValueError("Unsupported economic corporate action")
-    for kind in ("split", "stock_distribution", "dividend"):
+    for kind in ("split", "share_split", "stock_distribution", "dividend"):
         for symbol, row in due:
             if row["kind"] != kind:
                 continue
-            if row["kind"] == "split":
+            if row["kind"] in ("split", "share_split"):
                 broker.apply_split(symbol, row["value"], opening)
             elif row["kind"] == "dividend":
                 broker.accrue_dividend(symbol, row["value"], opening)

@@ -1,5 +1,7 @@
 """Raw conversion uses dated splits and preserves unsupported execution inputs."""
 
+import hashlib
+import json
 from copy import deepcopy
 from dataclasses import replace
 
@@ -45,6 +47,168 @@ def inputs():
             "actions_source": "synthetic-dated",
         },
     )
+
+
+# Supply original archive bytes separately from reviewed economic declarations.
+def reviewed_action_fixture():
+    original = {
+        "actions": {
+            "AAA": [{"date": "2026-09-15", "kind": "split", "value": 2}],
+            "SPY": [{"date": "2026-09-14", "kind": "dividend", "value": 0.2}],
+        }
+    }
+    raw = json.dumps(original).encode()
+    review = {
+        "schema": "actual-policy-action-semantics/1",
+        "original_actions_sha256": hashlib.sha256(raw).hexdigest(),
+        "adoption_eligible": False,
+        "first_session": "2026-09-14",
+        "last_session": "2026-09-15",
+        "events": [
+            {
+                "symbol": "AAA",
+                "date": "2026-09-15",
+                "archive_factor": 2,
+                "classification": "same_security_split",
+                "numerator": 2,
+                "denominator": 1,
+                "source": "https://issuer.example/synthetic-declaration",
+            }
+        ],
+    }
+    return raw, review
+
+
+# Recover prices once while granting only separately declared economic shares.
+def test_reviewed_split_separates_archive_and_share_units_without_double_adjustment():
+    original, review = reviewed_action_fixture()
+    result = adapter.review_action_export(original, json.dumps(review).encode())
+    assert result["reviewed_events"] == 1
+    assert result["unresolved"] == ()
+    assert result["adoption_eligible"] is False
+    assert result["execution_readiness"] == "pending_declaration_receipts"
+    assert [row["kind"] for row in result["actions"]["AAA"]] == [
+        "archive_adjustment",
+        "share_split",
+    ]
+    args = inputs()
+    args["actions"] = result["actions"]
+    args["dividend_price_basis"] = "split_adjusted_archive_share_dollars"
+    raw = adapter.prepare(**args)
+    np.testing.assert_array_equal(raw.daily_close[:, 0], [100, 50])
+    assert raw.actions["SPY"][0]["value"] == 0.2
+    assert raw.actions["AAA"][1]["review_event"]["source"].startswith("https://")
+    with pytest.raises(TypeError):
+        result["actions"]["AAA"][1]["review_event"]["numerator"] = 99
+    assert json.loads(original)["actions"]["AAA"][0]["kind"] == "split"
+
+
+# Keep spin-offs and exchanges unresolved instead of granting archive-factor shares.
+@pytest.mark.parametrize(
+    "classification", ["security_distribution", "security_exchange"]
+)
+def test_review_retains_unresolved_economic_entitlements(classification):
+    original, review = reviewed_action_fixture()
+    review["events"][0].update(
+        classification=classification, numerator=1, denominator=3, child="CHILD"
+    )
+    result = adapter.review_action_export(original, json.dumps(review).encode())
+    assert result["execution_readiness"] == "incomplete"
+    assert result["unresolved"][0]["review_event"]["child"] == "CHILD"
+    assert [row["kind"] for row in result["actions"]["AAA"]] == [
+        "archive_adjustment",
+        "unresolved_entitlement",
+    ]
+    args = inputs()
+    args["actions"] = result["actions"]
+    with pytest.raises(ValueError, match="Explicit split/dividend units"):
+        adapter.prepare(**args)
+
+
+# Legacy combined splits cannot be paired with a second economic share grant.
+def test_legacy_split_plus_separate_share_grant_is_rejected():
+    args = inputs()
+    args["actions"]["AAA"].append(
+        {"date": "2026-09-15", "kind": "share_split", "value": 2}
+    )
+    with pytest.raises(ValueError, match="duplicate entitlements"):
+        adapter.prepare(**args)
+
+
+# Reverse splits cannot retain tradable fractional securities without venue evidence.
+def test_reverse_split_fractional_processing_is_not_inferred_from_ratio():
+    _, review = reviewed_action_fixture()
+    original = json.dumps(
+        {"actions": {"AAA": [{"date": "2026-09-15", "kind": "split", "value": 1 / 6}]}}
+    ).encode()
+    review["original_actions_sha256"] = hashlib.sha256(original).hexdigest()
+    review["events"][0].update(archive_factor=1 / 6, numerator=1, denominator=6)
+    result = adapter.review_action_export(original, json.dumps(review).encode())
+    assert result["unresolved"][0]["reason"] == "fractional_share_payment_unresolved"
+    assert not any(row["kind"] == "share_split" for row in result["actions"]["AAA"])
+
+
+# Enforce exact coverage and original factors before compiling reviewed actions.
+@pytest.mark.parametrize(
+    "change",
+    [
+        "hash",
+        "missing",
+        "extra",
+        "duplicate",
+        "factor",
+        "ratio",
+        "bool_ratio",
+        "source",
+        "scope",
+        "self_child",
+    ],
+)
+def test_review_refuses_changed_missing_or_ambiguous_evidence(change):
+    original, review = reviewed_action_fixture()
+    event = review["events"][0]
+    if change == "hash":
+        review["original_actions_sha256"] = "0" * 64
+    elif change == "missing":
+        review["events"] = []
+    elif change == "extra":
+        review["events"].append(dict(event, symbol="SPY"))
+    elif change == "duplicate":
+        review["events"].append(dict(event))
+    elif change == "factor":
+        event["archive_factor"] = 3
+    elif change == "ratio":
+        event["numerator"] = 3
+    elif change == "bool_ratio":
+        event["denominator"] = True
+    elif change == "source":
+        event["source"] = "not-source-evidence"
+    elif change == "scope":
+        review["last_session"] = "2026-09-14"
+    else:
+        event.update(classification="security_distribution", child="AAA")
+    errors = {
+        "hash": "exact original",
+        "missing": "Missing economic",
+        "extra": "absent from original",
+        "duplicate": "Unique covered",
+        "factor": "archive factor differs",
+        "ratio": "same-security ratio differs",
+        "bool_ratio": "positive integer",
+        "source": "declaration URL",
+        "scope": "Unique covered",
+        "self_child": "Distinct explicit",
+    }
+    with pytest.raises(ValueError, match=errors[change]):
+        adapter.review_action_export(original, json.dumps(review).encode())
+
+
+# Reject duplicate serialized keys that would hide one declaration behind another.
+def test_review_refuses_duplicate_serialized_keys():
+    original, review = reviewed_action_fixture()
+    encoded = json.dumps(review).encode()[:-1] + b',"events":[]}'
+    with pytest.raises(ValueError, match="Duplicate action evidence key"):
+        adapter.review_action_export(original, encoded)
 
 
 # Split-adjusted dividends must become ex-date dollars before multiplying raw shares.

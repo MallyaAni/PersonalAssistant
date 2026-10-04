@@ -10,6 +10,7 @@ import pytest
 
 from backend.cli import market_actual_policy_timing as study
 from backend.market import calendar
+from backend.tests.test_live_execution_inputs import reviewed_action_fixture
 from backend.tests.test_live_policy_replay import fixture
 
 
@@ -18,6 +19,64 @@ def test_known_bad_action_export_is_refused_before_loading(monkeypatch):
     monkeypatch.setattr(study, "ACTIONS_SHA", study.REJECTED_ACTIONS_SHA)
     with pytest.raises(ValueError, match="Known incorrect stock-distribution"):
         study.load_inputs(None)
+
+
+# Review exact bytes into a private artifact without invoking model or account loaders.
+def test_action_review_cli_retains_unresolved_events_and_never_loads_models(
+    tmp_path, monkeypatch
+):
+    original, review = reviewed_action_fixture()
+    review.update(first_session="2018-02-01", last_session="2026-09-30")
+    review["events"][0].update(classification="security_exchange")
+    actions, declarations = tmp_path / "actions.json", tmp_path / "declarations.json"
+    actions.write_bytes(original)
+    declarations.write_text(json.dumps(review))
+    args = SimpleNamespace(
+        actions=actions,
+        action_review=declarations,
+        output=tmp_path / "review",
+        source_manifest=tmp_path / "unused-manifest",
+        source_revision="synthetic",
+    )
+    monkeypatch.setattr(study, "ACTIONS_SHA", hashlib.sha256(original).hexdigest())
+    identity = {"source_revision": "synthetic", "manifest_sha256": "synthetic"}
+    monkeypatch.setattr(study, "source_identity", lambda args: identity)
+
+    # Fail immediately if action review tries restoring a model or economic account.
+    def forbidden_loader(*args):
+        raise AssertionError("Action review must not invoke predictive inputs")
+
+    monkeypatch.setattr(study, "load_inputs", forbidden_loader)
+    study.review_inputs(args)
+    artifact = json.loads((args.output / "action-review.json").read_text())
+    assert artifact["execution_readiness"] == "incomplete"
+    assert artifact["unresolved"][0]["symbol"] == "AAA"
+    assert artifact["accounts_created"] == artifact["models_restored"] == 0
+    assert artifact["models_fitted"] == artifact["policy_returns_scored"] == 0
+    assert artifact["adoption_eligible"] is False
+    assert actions.read_bytes() == original
+    with pytest.raises(ValueError, match="Fresh output"):
+        study.review_inputs(args)
+
+
+# Action reviews cannot substitute a smaller study window or changed original bytes.
+@pytest.mark.parametrize("change", ["hash", "scope"])
+def test_action_review_cli_cannot_change_frozen_inputs_or_scope(
+    tmp_path, monkeypatch, change
+):
+    original, review = reviewed_action_fixture()
+    actions, declarations = tmp_path / "actions.json", tmp_path / "declarations.json"
+    actions.write_bytes(original)
+    declarations.write_text(json.dumps(review))
+    args = SimpleNamespace(
+        actions=actions, action_review=declarations, output=tmp_path / "new"
+    )
+    monkeypatch.setattr(study, "source_identity", lambda args: {})
+    if change == "scope":
+        monkeypatch.setattr(study, "ACTIONS_SHA", hashlib.sha256(original).hexdigest())
+    with pytest.raises(ValueError, match="Fixed original|Fixed study"):
+        study.review_inputs(args)
+    assert not args.output.exists()
 
 
 # Supply reviewed exchange sessions spanning the entire fixed comparison range.

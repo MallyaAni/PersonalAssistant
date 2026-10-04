@@ -1,5 +1,56 @@
 # Next session
 
+## 2026-10-04 — complete original-event join, corrected action review command
+
+The original invalid economic study remains terminal EXIT137/OOMfalse; no
+restart, accounts scored or live changes. Live deployed source remains
+621e28f0f8407f511ff01202c8e5aaa6bcda9e40. Goal ACTIVE.
+
+New `docs/research/actual-policy-action-review-2026-10-04.json` manually reviews
+ALL24 original split-labelled events in the fixed2018-02-01..2026-09-30 scope.
+The byte-bound compiler checks exact original hash0e05a397..., one-to-one event
+coverage, original factors and explicit rational economic units. It preserves
+all96 symbols,1753 dividends and26 archive adjustments (two outside the scoped
+economic window).18 integral forward split grants become separate share_split
+events: archive conversion and economic shares cannot double-adjust prices.
+Legacy combined splits cannot also carry a separate grant. Unsupported actions
+stay unresolved_entitlement; preparation/replay rejects them before mutations.
+
+Six unresolved events: DELL2018 class/security exchange; DELL2021 VMW and
+IBM2021 KD distributions; APLD2022 fractional cash-in-lieu; HUT2023 new issuer;
+WDC2025 SNDK distribution. APLD's actual filing establishes cash for fractions,
+not permanently tradable fractional stock. No issuer election, later basis
+example, missing child price, unknown payment or share factor is invented.
+KD/VMW parquet histories were not present under current production bars/actions
+directories in a read-only filename search. Obtain supplemental evidence
+separately; do not rewrite the original panel or change selection membership.
+
+`market_actual_policy_timing --review-actions-only --actions <original.json>
+--action-review <review.json> --source-revision <exact SHA> --source-manifest
+<whole manifest.json> --output <fresh private directory>` emits action-review.json
+WITHOUT predictors, model fits, accounts or returns. It does not lift the
+producer/verifier rejection of the known-bad economic export; passing an action
+review to the economic run is refused. Full execution remains incomplete.
+Native116 relevant cases PASS5.79s, including unchanged original independent
+acceptance cases; Ruff/diff clean. Pinned-image/full-source CLI proof pending.
+
+Primary-page byte capture is separate from semantic review. First34 requests
+failed locally for missing default TLS CA; no disabled verification. A separately
+named certifi-verified capture retained15 HTTP200,14 explicit SEC403 and5
+network/time failures. HTTP200/hash alone is NOT semantic authentication.
+Receipts:/tmp/codex-action-primary-source-receipts-certifi-20261004/receipts.json,
+sha4c715a88bcda288798bcf7278a1dac619f59fb01ed9678ca3c102527072b4010.
+Preserve both attempts; do not silently replace blocked responses with guessed
+URLs or claim every original source byte has been captured.
+
+NEXT: independently verify the pinned runtime and actual review-only CLI,
+preserve/push this checkpoint; then resolve the six economic action boundaries
+and extend saved-only independent accounting verification before new scoring.
+Do not refit models, select a narrower cohort, change fixed costs/horizons or
+claim an entry/exit advantage from accounting tests. Subsequent comparisons
+isolate timing, probability/volatility sizing and holding/profit-taking.
+Diagram impact NONE: existing private research input and ledger boundaries.
+
 ## 2026-10-04 — invalid economic action isolated; entitlement boundary repaired
 
 This supersedes ALL running-study statements below. Root deliberately stopped

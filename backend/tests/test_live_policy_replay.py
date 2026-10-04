@@ -82,6 +82,45 @@ def fixture(dates=("2026-09-01", "2026-09-02", "2026-09-03"), missing_fill=False
     return panel, raw, cubes
 
 
+# Apply a separate share grant exactly once while the archive factor stays price-only.
+def test_separated_share_split_dispatch_preserves_basis_and_idempotence():
+    _, raw, _ = fixture()
+    actions = dict(raw.actions)
+    actions["AAA"] = (
+        {"date": str(raw.dates[1]), "kind": "archive_adjustment", "value": 2},
+        {"date": str(raw.dates[1]), "kind": "share_split", "value": 2},
+    )
+    raw = replace(raw, actions=actions)
+    broker = ReplayBroker(
+        1000, 0, initial_holdings={"AAA": 10}, initial_average_prices={"AAA": 60}
+    )
+    opening = instant(raw.dates[1], calendar.REGULAR_OPEN)
+    broker.observe(opening, {name: 100 for name in raw.tickers}, True)
+    corporate_actions(broker, raw, 1, opening)
+    corporate_actions(broker, raw, 1, opening)
+    assert broker.ledger()["holdings"] == {"AAA": 20}
+    assert broker.positions()[0].avg_entry_price == 30
+    assert broker.ledger()["cash"] == 1000
+
+
+# An unsupported entitlement rejects the whole due batch before any share mutation.
+def test_unresolved_entitlement_cannot_silently_disappear_from_execution():
+    _, raw, _ = fixture()
+    actions = dict(raw.actions)
+    actions["AAA"] = (
+        {"date": str(raw.dates[1]), "kind": "share_split", "value": 2},
+        {"date": str(raw.dates[1]), "kind": "unresolved_entitlement"},
+    )
+    broker = ReplayBroker(
+        1000, 0, initial_holdings={"AAA": 10}, initial_average_prices={"AAA": 60}
+    )
+    opening = instant(raw.dates[1], calendar.REGULAR_OPEN)
+    broker.observe(opening, {name: 100 for name in raw.tickers}, True)
+    with pytest.raises(ValueError, match="Unsupported economic"):
+        corporate_actions(broker, replace(raw, actions=actions), 1, opening)
+    assert broker.ledger()["holdings"] == {"AAA": 10}
+
+
 # Separate a supplied archive price factor from actual child shares in the ledger.
 @pytest.mark.parametrize("quantity", [99, 100])
 def test_stock_distribution_journey_preserves_parent_and_missing_cash(quantity):

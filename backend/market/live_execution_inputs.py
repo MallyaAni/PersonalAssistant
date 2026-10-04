@@ -7,9 +7,11 @@ Future action facts describe archive units, not historical feature availability.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date, datetime
+from hashlib import sha256
 from types import MappingProxyType
 
 import numpy as np
@@ -119,6 +121,171 @@ def _freeze(value):
     return value
 
 
+# Reject repeated JSON keys instead of silently accepting overwritten evidence.
+def _unique_object(pairs):
+    result = {}
+    for key, value in pairs:
+        _require(key not in result, "Duplicate action evidence key")
+        result[key] = value
+    return result
+
+
+# Bind each reviewed event to original bytes without using price factors as shares.
+def review_action_export(original_bytes, review_bytes):
+    _require(
+        isinstance(original_bytes, bytes) and isinstance(review_bytes, bytes),
+        "Original export and review bytes required",
+    )
+    original = json.loads(original_bytes, object_pairs_hook=_unique_object)
+    review = json.loads(review_bytes, object_pairs_hook=_unique_object)
+    _require(
+        isinstance(original, Mapping)
+        and isinstance(review, Mapping)
+        and review.get("schema") == "actual-policy-action-semantics/1"
+        and review.get("adoption_eligible") is False
+        and review.get("original_actions_sha256") == sha256(original_bytes).hexdigest(),
+        "Review must identify exact original action bytes",
+    )
+    first, last = _day(review["first_session"]), _day(review["last_session"])
+    _require(first <= last, "Ordered action review scope required")
+    actions, events = original.get("actions"), review.get("events")
+    _require(
+        isinstance(actions, Mapping) and bool(actions) and isinstance(events, list),
+        "Original action map and reviewed event sequence required",
+    )
+    indexed = {}
+    for event in events:
+        _require(isinstance(event, Mapping), "Explicit reviewed event required")
+        symbol, day = event.get("symbol"), _day(event["date"])
+        key = (symbol, str(day))
+        _require(
+            symbol in actions and first <= day <= last and key not in indexed,
+            "Unique covered in-scope review event required",
+        )
+        classification = event.get("classification")
+        _require(
+            classification
+            in ("same_security_split", "security_distribution", "security_exchange"),
+            "Explicit economic action classification required",
+        )
+        numerator, denominator = event.get("numerator"), event.get("denominator")
+        _require(
+            all(type(value) is int and value > 0 for value in (numerator, denominator)),
+            "Explicit positive integer economic ratio required",
+        )
+        source = event.get("source")
+        _require(
+            isinstance(source, str) and source.startswith("https://"),
+            "Primary declaration URL required; not a source-byte receipt",
+        )
+        if classification == "security_distribution":
+            _require(
+                isinstance(event.get("child"), str)
+                and bool(event["child"])
+                and event["child"] != symbol,
+                "Distinct explicit distribution security required",
+            )
+        indexed[key] = event
+    covered, unresolved, result = set(), [], {}
+    for symbol, rows in actions.items():
+        _require(
+            isinstance(symbol, str) and bool(symbol) and isinstance(rows, list),
+            "Explicit original symbol and ordered action sequence required",
+        )
+        output, seen, previous = [], set(), None
+        for row in rows:
+            _require(isinstance(row, Mapping), "Original action record required")
+            day, kind, value = _day(row["date"]), row.get("kind"), row.get("value")
+            _require(
+                kind in ("split", "dividend")
+                and type(value) in (int, float)
+                and np.isfinite(value)
+                and value > 0
+                and (previous is None or day >= previous)
+                and (str(day), kind) not in seen,
+                "Ordered unique positive original split/dividend records required",
+            )
+            previous = day
+            seen.add((str(day), kind))
+            output.append(
+                dict(row, kind="archive_adjustment" if kind == "split" else kind)
+            )
+            if kind != "split" or not first <= day <= last:
+                continue
+            key = (symbol, str(day))
+            _require(
+                key in indexed, "Missing economic review for original archive factor"
+            )
+            event = indexed[key]
+            factor = event.get("archive_factor")
+            _require(
+                type(factor) in (int, float)
+                and np.isfinite(factor)
+                and factor == value,
+                "Reviewed archive factor differs from original bytes",
+            )
+            covered.add(key)
+            numerator, denominator = event["numerator"], event["denominator"]
+            classification = event["classification"]
+            if classification == "same_security_split":
+                _require(
+                    numerator / denominator == value,
+                    "Declared same-security ratio differs from archive factor",
+                )
+            if classification == "same_security_split" and numerator % denominator == 0:
+                output.append(
+                    {
+                        "date": str(day),
+                        "kind": "share_split",
+                        "value": numerator / denominator,
+                        "review_event": dict(event),
+                    }
+                )
+            else:
+                reason = (
+                    "fractional_share_payment_unresolved"
+                    if classification == "same_security_split"
+                    else "child_valuation_basis_and_payment_unresolved"
+                    if classification == "security_distribution"
+                    else (
+                        "security_identity_election_or_fractional_processing_unresolved"
+                    )
+                )
+                missing = {
+                    "symbol": symbol,
+                    "date": str(day),
+                    "reason": reason,
+                    "review_event": dict(event),
+                }
+                unresolved.append(missing)
+                output.append(
+                    {"date": str(day), "kind": "unresolved_entitlement", **missing}
+                )
+        result[symbol] = output
+    _require(
+        covered == set(indexed), "Review includes an event absent from original bytes"
+    )
+    return _freeze(
+        {
+            "actions": result,
+            "unresolved": sorted(
+                unresolved, key=lambda row: (row["date"], row["symbol"])
+            ),
+            "scope": {"first_session": str(first), "last_session": str(last)},
+            "original_actions_sha256": sha256(original_bytes).hexdigest(),
+            "review_sha256": sha256(review_bytes).hexdigest(),
+            "reviewed_events": len(covered),
+            "declaration_evidence": (
+                "manual_primary_URL_review_not_authenticated_source_receipts"
+            ),
+            "execution_readiness": "incomplete"
+            if unresolved
+            else "pending_declaration_receipts",
+            "adoption_eligible": False,
+        }
+    )
+
+
 # Validate sourced child entitlements and an allocation available at the action clock.
 def _distribution(row, names, day):
     child = row.get("child")
@@ -176,10 +343,18 @@ def _distribution(row, names, day):
     }
 
 
-# Refuse same-day chains whose entitlement order is not established by the source.
+# Refuse duplicate share grants and distributions whose same-day order is unknown.
 def _validate_distribution_dependencies(normalized):
     parents_by_day = {}
     for name, rows in normalized.items():
+        legacy_splits = {row["date"] for row in rows if row["kind"] == "split"}
+        _require(
+            not any(
+                row["kind"] == "share_split" and row["date"] in legacy_splits
+                for row in rows
+            ),
+            "Legacy split and separate share grant would duplicate entitlements",
+        )
         for row in rows:
             if row["kind"] == "stock_distribution":
                 parents_by_day.setdefault(row["date"], set()).add(name)
@@ -223,7 +398,13 @@ def _actions(actions, names, dates, basis, through, dividend_basis):
             day, kind = _day(row["date"]), row["kind"]
             _require(
                 kind
-                in ("split", "dividend", "archive_adjustment", "stock_distribution"),
+                in (
+                    "split",
+                    "dividend",
+                    "archive_adjustment",
+                    "share_split",
+                    "stock_distribution",
+                ),
                 "Explicit split/dividend units required",
             )
             _require(
@@ -252,7 +433,11 @@ def _actions(actions, names, dates, basis, through, dividend_basis):
                 np.isfinite(value) and value > 0,
                 "Positive corporate-action value required",
             )
-            rows.append({"date": str(day), "kind": kind, "value": value})
+            normalized_row = {"date": str(day), "kind": kind, "value": value}
+            normalized_row.update(
+                _freeze({key: row[key] for key in {"review_event"}.intersection(row)})
+            )
+            rows.append(normalized_row)
             if kind in ("split", "archive_adjustment") and day <= basis[name]:
                 with np.errstate(over="ignore", under="ignore"):
                     factors[dates < day, stock] *= value
