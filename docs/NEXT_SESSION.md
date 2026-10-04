@@ -2,6 +2,33 @@
 
 ## 2026-10-04 — funded probability timing implementation
 
+Verified source2e49b234caf3ac286f2d00f90972bfb1a6908aa1 is pushed. Native/image
+89 cases PASS, no skips:78 focused/default-parity cases plus11 independent CLI
+cases. Exact image78pass1.60s/11pass1.24s. New private CLI acceptance
+a999ca92aff9842ce58b2b3987efc46cd1af0b657b53046d3637f0f3cee2e9f6.
+2349-file immutable source manifest
+ab6ff0d766c0449b36494f7c5f0443984633fd2cd2a97ffab9016521b8f51441.
+Archivee44ebef826460c0be3a3645648047eda07890afa124ec66d5ae5fcb68821e65f.
+Actual original-input restoration PASS/exited0, both141-month receipts and
+6856 available stock/month samples each;60 controls and6 benchmarks reused.
+Input proof5f6c83e6d3fa95d9ba69e11881f1f0a2493dfd0970dac99ce8c2d27e0561be5a
+at /home/animallya96/scratch/probabilistic-funded-preflight-20261004-2e49b234.
+No old diagnostic, account or fit called. Independent CLI review corrected its
+own mistaken assumption: finite locked-attempt prices persist even at zero
+filled quantity; attribution does not select pairs using positive later fills.
+
+Exactly120 NEW accounts are NOW ACTIVE, producer
+e634929890d09d07d4debd2526951f196e6be9b4d3b844a41e103f4e726cf6ee,
+name probabilistic-funded-accounts-2e49b234; never restart or edit mounted source.
+Source /home/animallya96/codex-worktrees/probabilistic-funded-20261004-2e49b234.
+Output /home/animallya96/scratch/probabilistic-funded-results-20261004-2e49b234/study,
+launch.json at parent contains exact mount/command/source/input proof.2CPU/8GB,
+network disabled, source/inputs read-only, original pinned image. Check compact
+container/progress first. Independent reviewer owns new private saved-ledger
+verifier/tests; review it before proof. Never resimulate accounts for proof.
+UNVERIFIED economic result/live replacement. No strategy adoption from component
+results alone; actual current-policy parity remains a separate requirement.
+
 Frozen protocol78442ee5 precedes new accounts. Root owns NEW
 probabilistic_execution_replay.py, probabilistic_execution_saved.py and
 market_probabilistic_funded_timing.py with their tests. Native60 cases pass
@@ -21,7 +48,8 @@ shares, retains missing/opposite/unpaired plans and cash-limited flags; it is
 not investable compounded wealth. Actual original source/input/control parity
 is mandatory before run. No old accounts, outcomes, source or caches rewritten.
 Independent reviewer owns only /tmp funded acceptance/verifier helpers.
-All producer runs are still NOT STARTED. Production/policy/UI/models untouched.
+Historical status above predates the launch just recorded. Production/policy/UI/
+models remain untouched.
 
 ## 2026-10-04 — probabilistic execution diagnostic independently verified
 
