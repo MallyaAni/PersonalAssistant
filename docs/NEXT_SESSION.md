@@ -1,5 +1,26 @@
 # Next session
 
+## 2026-10-03 — direct producer stopped before fitting; original envelope corrected
+
+Source925ab0e9 passed39 pinned-image checks but the actual original fit metadata
+stores feature names in `identity.features`, not the synthetic fixture's top
+level. Producerfebdcf42354778d4d18e51b82cda34f6818813e47e5062c3218cc6673d274f8b
+exited1 with KeyError BEFORE any new fit or output directory. Retain failed source,
+container and `/home/animallya96/scratch/direct-daily-arithmetic-results-20261003-925ab0e9/producer-failure-complete.log`
+SHAff18d242df940dc5b6317ce4fb6501bd0b897e38ef5922100703929f10651d24.
+Never restart that process or change its mounted source. No new economics read.
+
+Root inspected authenticated actual metadata keys, corrected the fixture to the
+real envelope, reproduced the SAME KeyError, then changed only the nested-field
+read. Unchanged funded integration assertions and all6 CLI cases now pass;
+actual original feature names are asserted. Ruff/diff clean. Modelc4603b60,
+protocol e2c44a56, dated support/config and prior39 acceptance model cases are
+unchanged. Pin a NEW corrected source/archive and image6 CLI acceptance before
+one fresh producer; no original models/bridge/control accounts repeated.
+evaluation_review owns only new saved-artifact verifier/tests, awaiting corrected
+source identity and actual completion/report hashes. Direct economics/live
+replacement remain UNVERIFIED. Production/model/data untouched.
+
 ## 2026-10-03 — direct arithmetic learner implemented; image/economic checks next
 
 Frozen protocole2c44a56 BEFORE any direct market fit/output. New source files

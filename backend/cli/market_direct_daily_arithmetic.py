@@ -215,7 +215,9 @@ def evaluate(args, loaded, source):
     prepared = saved.arrays(args.daily / "prepared.npz")
     prepared.update(
         symbols=tuple(panel.tickers),
-        feature_names=json.loads((args.daily / "fit.json").read_bytes())["features"],
+        feature_names=json.loads((args.daily / "fit.json").read_bytes())["identity"][
+            "features"
+        ],
         absolute_forecasts=original["relative"] + original["spy"][:, None],
     )
     saved.require(

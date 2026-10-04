@@ -222,7 +222,11 @@ def test_direct_cli_creates_only_three_new_funded_books(tmp_path, monkeypatch):
     monkeypatch.setattr(daily_bridge_replay, "run_account", record_run)
     input_dir = tmp_path / "inputs"
     input_dir.mkdir()
-    (input_dir / "fit.json").write_text(json.dumps({"features": list(range(13))}))
+    (input_dir / "fit.json").write_text(
+        json.dumps(
+            {"identity": {"features": list(direct_daily_arithmetic.FEATURE_NAMES)}}
+        )
+    )
     np.savez(
         input_dir / "prepared.npz",
         dates=dates,
@@ -233,6 +237,7 @@ def test_direct_cli_creates_only_three_new_funded_books(tmp_path, monkeypatch):
 
     # Supply one deterministic head so the test measures the actual CLI/account path.
     def fit_once(prepared, bridge):
+        assert prepared["feature_names"] == list(direct_daily_arithmetic.FEATURE_NAMES)
         fits.append(prepared)
         return SimpleNamespace(
             forecasts=forecasts.copy(), manifest={"months": []}, models={}
