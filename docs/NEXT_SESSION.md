@@ -29,14 +29,10 @@ verifier/tests; review it before proof. Never resimulate accounts for proof.
 UNVERIFIED economic result/live replacement. No strategy adoption from component
 results alone; actual current-policy parity remains a separate requirement.
 
-Frozen protocol78442ee5 precedes new accounts. Root owns NEW
-probabilistic_execution_replay.py, probabilistic_execution_saved.py and
-market_probabilistic_funded_timing.py with their tests. Native60 cases pass
-3.56s, including11 unchanged independent funding/locking cases;18 original
-default-engine parity cases pass1.56s, Ruff clean. Exact pinned-image acceptance
-and original saved-sample restoration remain pending before economic outcomes.
-VERIFIED supplied-array funding, unchanged allocation and ex-ante quantity
-attribution. UNVERIFIED actual funded advantage or live replacement.
+Frozen protocol78442ee5 precedes new accounts. Root owns the new replay,
+saved-distribution loader, funded CLI and their tests. VERIFICATION above
+supersedes the pre-launch status; it proves supplied-array funding, unchanged
+allocation and ex-ante quantity attribution, not economic advantage.
 
 Loader authenticates saved monthly residual hashes and support without any
 fit, calibration call or old diagnostic regeneration; caches one month.
@@ -48,8 +44,19 @@ shares, retains missing/opposite/unpaired plans and cash-limited flags; it is
 not investable compounded wealth. Actual original source/input/control parity
 is mandatory before run. No old accounts, outcomes, source or caches rewritten.
 Independent reviewer owns only /tmp funded acceptance/verifier helpers.
-Historical status above predates the launch just recorded. Production/policy/UI/
-models remain untouched.
+Production/policy/UI/models remain untouched.
+
+Current live boundary inspected read-only: backend image
+1970c294079a9d40d75a1863616746be2f687282bb89bf668ccd3049e9ba61b3,
+deployment marker621e28f0. Runtime entry_timing/intraday_orders/live_policy/
+policy_v5/paper hashes equal this source. Imported actual constants show
+graded-equal-weight/5, dip_or_close enabled, level0.01.9.1% in the source's
+examples is a planned allocation, not a fixed profit-taking target. Both buy
+AND sell timing use the mirrored1% trigger. Holding exits are a separate
+planner question; do not invent a9.1% exit rule or silently change allocation
+while claiming timing-only parity. Another worker is mapping the shared actual
+paper planner and smallest next full-policy replay before any live replacement.
+All120 candidate results and the independent saved ledger proof remain pending.
 
 ## 2026-10-04 — probabilistic execution diagnostic independently verified
 
