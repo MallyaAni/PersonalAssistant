@@ -492,18 +492,9 @@ def _submit(
 # With `intraday_orders.INTRADAY_EXECUTION` off the orders are unchanged.
 def _on_the_boards_clock(orders) -> list:
     """Return `orders` with the ordinary ones on the intraday rule."""
-    from dataclasses import replace
+    from backend.agents.trading.desk import nightly_plan
 
-    from backend.agents.trading.desk import intraday_orders
-
-    if not intraday_orders.INTRADAY_EXECUTION:
-        return list(orders)
-    return [
-        replace(o, execution_timing=intraday_orders.INTRADAY_TIMING)
-        if not o.event_id and not o.priority
-        else o
-        for o in orders
-    ]
+    return nightly_plan.on_the_boards_clock(orders)
 
 
 # The board's orders are sent in the session by the balancer, on the board's
@@ -741,10 +732,10 @@ def _paper_trade(
     """Plan and (when `live`) submit the paper book; return the day's entry."""
     from backend.agents.trading.desk import (
         actions,
-        event_execution,
         event_risk,
         intraday_orders,
         live_policy,
+        nightly_plan,
         paper,
     )
     from backend.market import alpaca_trading
@@ -803,34 +794,22 @@ def _paper_trade(
     # measured 24 points of CAGR a year worse than holding. See the table at
     # the top of `desk/exit.py`.
     blocked, blocking_flags = _band_blocked(report)
-    event_active = bool(state.event_cycle) or policy.get("factor") == event_risk.REDUCED
-    if state.pending or event_active or not policy["calendar_known"]:
-        orders, new_state, what = event_execution.plan(
-            session, state, held, prices, account.cash, policy
-        )
-    else:
-        orders, new_state, what = paper.plan(
-            session,
-            state,
-            account.equity,
-            held,
-            prices,
-            targets,
-            grades,
-            finished=_downgraded(report, held),
-            force_rebalance=rebalance_now,
-            entry_blocked=blocked,
-            entries=_price_entries(report),
-            cash=account.cash,
-        )
-        orders = _on_the_boards_clock(orders)
-    # The stamp says "this state's book is the active policy's". It is
-    # written when the book already was, or when tonight's plan rebalanced
-    # into it; a session that could not rebalance (an event cycle, pending
-    # orders, a refused rebalance below) leaves the old stamp so the next
-    # session forces the rebalance again.
-    if not live_policy.needs_rebalance(state.policy_version) or what == "rebalance":
-        new_state.policy_version = live_policy.ACTIVE
+    event_plan = nightly_plan.event_plan_required(state, policy)
+    orders, new_state, what = nightly_plan.plan(
+        session,
+        state,
+        account.equity,
+        held,
+        prices,
+        targets,
+        grades,
+        policy,
+        finished={} if event_plan else _downgraded(report, held),
+        force_rebalance=rebalance_now,
+        entry_blocked=blocked,
+        entries={} if event_plan else _price_entries(report),
+        cash=account.cash,
+    )
     print(
         f"\npaper book ({live_policy.ACTIVE}; {what}"
         f"{', forced tonight' if rebalance_now else ''}), "
