@@ -125,6 +125,49 @@ def test_review_retains_unresolved_economic_entitlements(classification):
         adapter.prepare(**args)
 
 
+# A declared issuer exchange changes economic shares but does not rescale prices twice.
+def test_reviewed_named_exchange_separates_price_factor_and_security_identity():
+    original, review = reviewed_action_fixture()
+    source = json.loads(original)
+    source["actions"]["AAA"][0]["value"] = 0.2
+    original = json.dumps(source).encode()
+    review["original_actions_sha256"] = hashlib.sha256(original).hexdigest()
+    review["events"][0].update(
+        classification="security_exchange",
+        archive_factor=0.2,
+        numerator=1,
+        denominator=5,
+        old_security_id="old",
+        new_security_id="new",
+        fractional_policy="floor_no_compensation",
+        terms_available_on="2026-09-13",
+        fractional_source="https://issuer.example/synthetic-holder-terms",
+    )
+    result = adapter.review_action_export(original, json.dumps(review).encode())
+    assert result["unresolved"] == ()
+    assert [row["kind"] for row in result["actions"]["AAA"]] == [
+        "archive_adjustment",
+        "security_exchange",
+    ]
+    args = inputs()
+    args["actions"] = result["actions"]
+    raw = adapter.prepare(**args)
+    np.testing.assert_array_equal(raw.daily_close[:, 0], [10, 50])
+    assert raw.actions["AAA"][1]["old_security_id"] == "old"
+    assert raw.actions["AAA"][1]["new_security_id"] == "new"
+    combined = dict(result["actions"])
+    combined["AAA"] = (
+        *combined["AAA"],
+        {"date": "2026-09-15", "kind": "share_split", "value": 2},
+    )
+    args["actions"] = combined
+    with pytest.raises(ValueError, match="additional entitlement ordering"):
+        adapter.prepare(**args)
+    review["events"][0]["terms_available_on"] = "2026-09-15"
+    with pytest.raises(ValueError, match="prior-day declaration"):
+        adapter.review_action_export(original, json.dumps(review).encode())
+
+
 # Legacy combined splits cannot be paired with a second economic share grant.
 def test_legacy_split_plus_separate_share_grant_is_rejected():
     args = inputs()

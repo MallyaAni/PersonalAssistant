@@ -241,6 +241,23 @@ def review_action_export(original_bytes, review_bytes):
                         "review_event": dict(event),
                     }
                 )
+            elif (
+                classification == "security_exchange"
+                and event.get("fractional_policy") == "floor_no_compensation"
+            ):
+                output.append(
+                    _exchange(
+                        {
+                            **event,
+                            "source_receipt": {
+                                "declaration": event["source"],
+                                "fractional_source": event.get("fractional_source"),
+                                "completion_source": event.get("completion_source"),
+                            },
+                        },
+                        day,
+                    )
+                )
             else:
                 reason = (
                     "fractional_share_payment_unresolved"
@@ -284,6 +301,45 @@ def review_action_export(original_bytes, review_bytes):
             "adoption_eligible": False,
         }
     )
+
+
+# Validate prior-day terms for a named issuer exchange with no fractional payout.
+def _exchange(row, day):
+    numerator, denominator = row.get("numerator"), row.get("denominator")
+    old, new = row.get("old_security_id"), row.get("new_security_id")
+    _require(
+        all(type(value) is int and value > 0 for value in (numerator, denominator))
+        and all(isinstance(value, str) and value for value in (old, new))
+        and old != new
+        and row.get("fractional_policy") == "floor_no_compensation",
+        "Explicit exchange identities, ratio and fractional policy required",
+    )
+    available = _day(row["terms_available_on"])
+    _require(available < day, "Exchange terms require a prior-day declaration")
+    receipt = row.get("source_receipt")
+    _require(
+        isinstance(receipt, Mapping) and bool(receipt),
+        "Exchange source receipt required",
+    )
+    return {
+        "date": str(day),
+        "kind": "security_exchange",
+        "numerator": numerator,
+        "denominator": denominator,
+        "old_security_id": old,
+        "new_security_id": new,
+        "fractional_policy": "floor_no_compensation",
+        "terms_available_on": str(available),
+        "source_receipt": _freeze(receipt),
+    }
+
+
+# Normalize sourced distributions and issuer exchanges through their distinct contracts.
+def _economic_action(row, names, day, parent):
+    if row["kind"] == "stock_distribution":
+        _require(row.get("child") != parent, "Distinct distribution child required")
+        return _distribution(row, names, day)
+    return _exchange(row, day)
 
 
 # Validate sourced child entitlements and an allocation available at the action clock.
@@ -369,6 +425,32 @@ def _validate_distribution_dependencies(normalized):
     )
 
 
+# Require source ordering before combining an issuer exchange with another share event.
+def _validate_exchange_dependencies(normalized):
+    exchanges = {
+        (name, row["date"])
+        for name, rows in normalized.items()
+        for row in rows
+        if row["kind"] == "security_exchange"
+    }
+    _require(
+        all(
+            (name, row["date"]) not in exchanges
+            for name, rows in normalized.items()
+            for row in rows
+            if row["kind"] in ("split", "share_split")
+        )
+        and all(
+            (name, row["date"]) not in exchanges
+            and (row["child"], row["date"]) not in exchanges
+            for name, rows in normalized.items()
+            for row in rows
+            if row["kind"] == "stock_distribution"
+        ),
+        "Same-day exchange and share events require additional entitlement ordering",
+    )
+
+
 # Separate archive price factors from dated economic share and cash entitlements.
 def _actions(actions, names, dates, basis, through, dividend_basis):
     _require(
@@ -404,6 +486,7 @@ def _actions(actions, names, dates, basis, through, dividend_basis):
                     "archive_adjustment",
                     "share_split",
                     "stock_distribution",
+                    "security_exchange",
                 ),
                 "Explicit split/dividend units required",
             )
@@ -416,11 +499,8 @@ def _actions(actions, names, dates, basis, through, dividend_basis):
             _require(key not in seen, "Duplicate or conflicting corporate action")
             seen.add(key)
             previous = day
-            if kind == "stock_distribution":
-                _require(
-                    row.get("child") != name, "Distinct distribution child required"
-                )
-                rows.append(_distribution(row, names, day))
+            if kind in ("stock_distribution", "security_exchange"):
+                rows.append(_economic_action(row, names, day, name))
                 continue
             value = row.get("value")
             _require(
@@ -466,6 +546,7 @@ def _actions(actions, names, dates, basis, through, dividend_basis):
             )
         normalized[name] = tuple(MappingProxyType(row) for row in rows)
     _validate_distribution_dependencies(normalized)
+    _validate_exchange_dependencies(normalized)
     _require(
         np.isfinite(factors).all() and (factors > 0).all(),
         "Finite positive dated split factors required",

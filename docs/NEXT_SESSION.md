@@ -1,5 +1,41 @@
 # Next session
 
+## 2026-10-04 — named HUT exchange, passive-asset source capture
+
+Goal ACTIVE; live policy unchanged. HUT2023-12-04 is a named issuer exchange,
+not a same-security split: one new share per five old shares, with fractional
+shares rounded down without compensation under the published arrangement.
+The private aggregate-holder primitive records old/new identities, whole
+entitlements, separately forfeited acquisition cost and zero cash. It rejects
+outstanding old-security orders, conflicting identities, fractional old
+holdings and ambiguous same-day share-event ordering. Broker street-name
+allocation and tax basis are NOT established by this hypothetical ledger.
+The input adapter separates its archive0.2 price conversion from the economic
+exchange. The dispatcher and synthetic accounting journey use the actual
+private broker path; no production strategy imports or deployment changed.
+
+VERIFIED native170 relevant tests PASS6.13s with the original independent
+acceptance assertions unchanged; Ruff/diff clean. Exact committed-image and
+saved-artifact validation are PENDING. Reviewed export now retains all24
+events,96 symbols,1753 dividends and26 archive adjustments:18 share splits,
+one named exchange and five unresolved entitlements. Full funded execution
+still refuses unresolved evidence; no model fitting or policy returns scored.
+
+Separately captured raw daily SIP response bytes for passive KD and VMW:
+KD1230 bars2021-11-04..2026-09-30; VMW517 bars2021-11-02..2023-11-21.
+Private receipts:/home/animallya96/scratch/action-review-20261004-c4c3793c/
+proof/passive-asset-history-20261004. Capture is NOT yet semantic validation.
+These histories do not extend the96-name selection/model universe. Daily final
+closes cannot be used at morning or intraday clocks; VMW needs terminal merger
+treatment rather than forward-filled prices. No original inputs were rewritten.
+Supplemental HUT completion and Dell2021 completion primary responses returned
+200; Dell2018 issuer capture timed out and remains explicit missing evidence.
+
+NEXT: pin exact HUT source/artifact acceptance, validate the passive histories
+and resolve outstanding distributions/payment/election boundaries before the
+fixed funded timing comparison. Never rerun the invalid stopped economic study.
+Diagram impact: NONE — existing private research input/accounting boundaries.
+
 ## 2026-10-04 — complete original-event join, corrected action review command
 
 The original invalid economic study remains terminal EXIT137/OOMfalse; no

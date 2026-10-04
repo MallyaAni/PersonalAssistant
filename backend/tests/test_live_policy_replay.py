@@ -103,6 +103,33 @@ def test_separated_share_split_dispatch_preserves_basis_and_idempotence():
     assert broker.ledger()["cash"] == 1000
 
 
+# Exchange shares in the actual dispatcher while retaining issuer and rounding receipts.
+def test_named_exchange_journey_grants_no_fractional_stock_or_cash():
+    _, raw, _ = fixture()
+    actions = dict(raw.actions)
+    actions["AAA"] = (
+        {
+            "date": str(raw.dates[1]),
+            "kind": "security_exchange",
+            "numerator": 1,
+            "denominator": 5,
+            "old_security_id": "old-common",
+            "new_security_id": "new-common",
+            "fractional_policy": "floor_no_compensation",
+        },
+    )
+    broker = ReplayBroker(
+        1000, 0, initial_holdings={"AAA": 24}, initial_average_prices={"AAA": 8}
+    )
+    opening = instant(raw.dates[1], calendar.REGULAR_OPEN)
+    broker.observe(opening, {name: 100 for name in raw.tickers}, True)
+    corporate_actions(broker, replace(raw, actions=actions), 1, opening)
+    assert broker.ledger()["holdings"] == {"AAA": 4}
+    assert broker.ledger()["cash"] == 1000
+    assert valuation(broker, raw, 1)["nav"] == 1400
+    assert broker.ledger()["security_exchanges"][0]["forfeited_fraction"] == 0.8
+
+
 # An unsupported entitlement rejects the whole due batch before any share mutation.
 def test_unresolved_entitlement_cannot_silently_disappear_from_execution():
     _, raw, _ = fixture()

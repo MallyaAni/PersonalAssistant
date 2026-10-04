@@ -23,6 +23,157 @@ def account(cash=1000, cost=10, holdings=None):
     return broker
 
 
+# Apply the declared holder-level rounding without cash or a tradable fraction.
+@pytest.mark.parametrize("quantity", [0, 1, 24, 25, 100])
+def test_named_security_exchange_floors_shares_and_records_forfeited_basis(quantity):
+    broker = account(1000, 0, holdings={"AAA": quantity})
+    broker.apply_security_exchange(
+        "AAA",
+        1,
+        5,
+        NOW,
+        old_security_id="old-issuer-common",
+        new_security_id="new-issuer-common",
+        fractional_policy="floor_no_compensation",
+    )
+    whole = quantity // 5
+    assert broker.ledger()["holdings"] == ({"AAA": whole} if whole else {})
+    assert broker.ledger()["cash"] == 1000
+    assert "security_distributions" not in broker.ledger()
+    event = broker.ledger()["security_exchanges"][0]
+    assert event["old_security_id"] != event["new_security_id"]
+    assert event["quantity_before"] == quantity
+    assert event["quantity_after"] == whole
+    assert event["forfeited_fraction"] == pytest.approx((quantity % 5) / 5)
+    assert event["cash_credit"] == 0
+    basis = broker.ledger()["average_prices"].get("AAA", 0)
+    assert whole * basis + event["forfeited_basis"] == pytest.approx(quantity * 8)
+    assert broker.account().equity == 1000 + whole * 10
+    broker.apply_security_exchange(
+        "AAA",
+        1,
+        5,
+        NOW,
+        old_security_id="old-issuer-common",
+        new_security_id="new-issuer-common",
+        fractional_policy="floor_no_compensation",
+    )
+    assert len(broker.ledger()["security_exchanges"]) == 1
+
+
+# Invalid or conflicting security terms leave both holdings and cash unchanged.
+@pytest.mark.parametrize(
+    "change",
+    [
+        "zero_ratio",
+        "bool_ratio",
+        "same_id",
+        "empty_id",
+        "cash_policy",
+        "future",
+        "conflict",
+    ],
+)
+def test_security_exchange_rejects_unsupported_or_changed_terms_atomically(change):
+    broker = account(1000, 0, holdings={"AAA": 24})
+    args = dict(
+        old_security_id="old-issuer-common",
+        new_security_id="new-issuer-common",
+        fractional_policy="floor_no_compensation",
+    )
+    numerator, denominator, effective = 1, 5, NOW
+    if change == "zero_ratio":
+        numerator = 0
+    elif change == "bool_ratio":
+        denominator = True
+    elif change == "same_id":
+        args["new_security_id"] = args["old_security_id"]
+    elif change == "empty_id":
+        args["old_security_id"] = ""
+    elif change == "cash_policy":
+        args["fractional_policy"] = "cash_in_lieu_unknown"
+    elif change == "future":
+        effective = LATER
+    else:
+        broker.apply_security_exchange("AAA", 1, 5, NOW, **args)
+        args["new_security_id"] = "different-new-issuer"
+    before = broker.ledger()
+    message = (
+        "Observed dated corporate action required"
+        if change == "future"
+        else "Conflicting security exchange evidence"
+        if change == "conflict"
+        else "Explicit security identities, ratio and fractional policy required"
+    )
+    with pytest.raises(ValueError, match=message):
+        broker.apply_security_exchange("AAA", numerator, denominator, effective, **args)
+    assert broker.ledger() == before
+
+
+# Old-security orders cannot silently become orders for a different issuer.
+def test_security_exchange_requires_explicit_outstanding_order_treatment():
+    broker = account(1000, 0, holdings={"AAA": 24})
+    broker.submit_market("AAA", 1, "buy", "old-security-intent")
+    before = broker.ledger()
+    with pytest.raises(ValueError, match="Outstanding orders"):
+        broker.apply_security_exchange(
+            "AAA",
+            1,
+            5,
+            NOW,
+            old_security_id="old",
+            new_security_id="new",
+            fractional_policy="floor_no_compensation",
+        )
+    assert broker.ledger() == before
+    assert broker.open_orders()[0]["qty"] == "1"
+
+
+# A subsequent issuer exchange must start with the actual prior recorded issuer.
+def test_security_exchange_cannot_relabel_an_unrelated_old_issuer():
+    broker = account(1000, 0, holdings={"AAA": 100})
+    broker.apply_security_exchange(
+        "AAA",
+        1,
+        5,
+        NOW,
+        old_security_id="old",
+        new_security_id="new",
+        fractional_policy="floor_no_compensation",
+    )
+    broker.observe(LATER, {"AAA": 50, "BBB": 10}, True)
+    before = broker.ledger()
+    with pytest.raises(ValueError, match="Prior security identity"):
+        broker.apply_security_exchange(
+            "AAA",
+            1,
+            2,
+            LATER,
+            old_security_id="unrelated",
+            new_security_id="latest",
+            fractional_policy="floor_no_compensation",
+        )
+    assert broker.ledger() == before
+
+
+# Fractional old positions need their own evidence instead of another inferred rounding.
+def test_security_exchange_refuses_fractional_old_holdings_without_mutation():
+    broker = account(1000, 0, holdings={"AAA": 25})
+    broker.apply_split("AAA", 0.5, NOW)
+    before = broker.ledger()
+    with pytest.raises(ValueError, match="Whole old-security holdings"):
+        broker.apply_security_exchange(
+            "AAA",
+            1,
+            5,
+            NOW,
+            old_security_id="old",
+            new_security_id="new",
+            fractional_policy="floor_no_compensation",
+        )
+    assert broker.ledger() == before
+
+
 # Future price differences affect fills without leaking into accepted decisions.
 def test_future_prices_do_not_enter_submission_or_marked_account():
     cheap, expensive = account(), account()

@@ -19,7 +19,7 @@
     {"symbol":"FTNT","date":"2022-06-23","archive_factor":5.0,"classification":"same_security_split","numerator":5,"denominator":1,"source":"https://www.fortinet.com/corporate/about-us/newsroom/press-releases/2022/fortinet-announces-five-for-one-stock-split"},
     {"symbol":"GOOGL","date":"2022-07-18","archive_factor":20.0,"classification":"same_security_split","numerator":20,"denominator":1,"source":"https://www.sec.gov/Archives/edgar/data/1652044/000119312522167375/d294315d8k.htm","completion_source":"https://www.sec.gov/Archives/edgar/data/1652044/000165204422000090/goog-20220930.htm"},
     {"symbol":"PANW","date":"2022-09-14","archive_factor":3.0,"classification":"same_security_split","numerator":3,"denominator":1,"source":"https://investors.paloaltonetworks.com/news-releases/news-release-details/palo-alto-networks-reports-fiscal-fourth-quarter-and-fiscal-6"},
-    {"symbol":"HUT","date":"2023-12-04","archive_factor":0.2,"classification":"security_exchange","numerator":1,"denominator":5,"ratio_condition":"old_Hut_8_to_New_Hut_same_ticker_not_same_issuer","source":"https://www.sec.gov/Archives/edgar/data/1731805/000110465923122470/tm2331881d1_ex99-1.htm"},
+    {"symbol":"HUT","date":"2023-12-04","archive_factor":0.2,"classification":"security_exchange","numerator":1,"denominator":5,"ratio_condition":"old_Hut_8_to_New_Hut_same_ticker_not_same_issuer","fractional_policy":"floor_no_compensation","old_security_id":"Hut 8 Mining Corp. common shares","new_security_id":"Hut 8 Corp. common stock","terms_available_on":"2023-11-30","source":"https://www.sec.gov/Archives/edgar/data/1731805/000110465923122470/tm2331881d1_ex99-1.htm","completion_source":"https://www.hut8.com/news-insights/press-releases/hut-8-and-usbtc-announce-completion-of-business-combination","fractional_source":"https://www.sec.gov/Archives/edgar/data/1731805/000110465923091050/tm2322932-2_exh99x4.htm"},
     {"symbol":"NVDA","date":"2024-06-10","archive_factor":10.0,"classification":"same_security_split","numerator":10,"denominator":1,"source":"https://investor.nvidia.com/files/doc_downloads/2024/06/nvidia-2024-stock-split_faq_investors.pdf"},
     {"symbol":"AVGO","date":"2024-07-15","archive_factor":10.0,"classification":"same_security_split","numerator":10,"denominator":1,"source":"https://www.sec.gov/Archives/edgar/data/1730168/000114036124033072/ny20032136x6_8k.htm"},
     {"symbol":"SMCI","date":"2024-10-01","archive_factor":10.0,"classification":"same_security_split","numerator":10,"denominator":1,"source":"https://s204.q4cdn.com/707617056/files/doc_financials/2024/q4/SMCI-Q4-FY24-Script-FullFINAL-v2-for-web.pdf","session_source":"https://www.miaxglobal.com/sites/default/files/alert-files/SMCI_Split_55298.pdf"},
@@ -38,7 +38,7 @@
     "causal_distribution_basis_allocation_and_entitlement_clocks",
     "observed_fractional_cash_in_lieu_or_explicitly_missing_wealth",
     "DELL_2018_causal_election_proration_and_security_identity",
-    "HUT_2023_security_identity_and_fractional_processing",
+    "HUT_2023_outstanding_old_security_order_treatment_if_any",
     "APLD_2022_observed_fractional_cash_in_lieu",
     "source_receipt_byte_capture_is_distinct_from_manual_semantic_review"
   ]

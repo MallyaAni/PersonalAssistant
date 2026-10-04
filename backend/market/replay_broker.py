@@ -97,6 +97,7 @@ class ReplayBroker:
         self._orders, self._attempts, self._fills, self._actions = {}, [], [], {}
         self._dividends, self._marks, self._mark_times = [], {}, {}
         self._security_distributions = []
+        self._security_exchanges = []
         self._now = self._observed_at = None
         self._market_open = self._batch_open = False
         self._last_equity = self._cash
@@ -122,6 +123,11 @@ class ReplayBroker:
                 **(
                     {"security_distributions": self._security_distributions}
                     if self._security_distributions
+                    else {}
+                ),
+                **(
+                    {"security_exchanges": self._security_exchanges}
+                    if self._security_exchanges
                     else {}
                 ),
                 "observed_at": self._observed_at.isoformat()
@@ -525,6 +531,102 @@ class ReplayBroker:
             self._held[symbol] = quantity
             self._average[symbol] = basis
         self._actions[key] = ratio
+
+    # Exchange a named security into a new issuer without inventing fractional cash.
+    def apply_security_exchange(
+        self,
+        symbol,
+        numerator,
+        denominator,
+        effective_at,
+        *,
+        old_security_id,
+        new_security_id,
+        fractional_policy,
+    ):
+        if (
+            any(
+                type(value) is not int or value <= 0
+                for value in (numerator, denominator)
+            )
+            or any(
+                not isinstance(value, str) or not value
+                for value in (old_security_id, new_security_id)
+            )
+            or old_security_id == new_security_id
+            or fractional_policy != "floor_no_compensation"
+        ):
+            raise ValueError(
+                "Explicit security identities, ratio and fractional policy required"
+            )
+        ratio = Fraction(numerator, denominator)
+        key, value, effective = self._action(
+            symbol, "security_exchange", float(ratio), effective_at
+        )
+        if key in self._actions:
+            prior = next(
+                row for row in self._security_exchanges if row["action_key"] == key
+            )
+            if (
+                prior["old_security_id"],
+                prior["new_security_id"],
+                prior["fractional_policy"],
+            ) != (old_security_id, new_security_id, fractional_policy):
+                raise ValueError("Conflicting security exchange evidence")
+            return
+        if any(
+            row["symbol"] == symbol and row["status"] == "accepted"
+            for row in self._orders.values()
+        ):
+            raise ValueError(
+                "Outstanding orders need explicit security exchange treatment"
+            )
+        prior_exchanges = [
+            row for row in self._security_exchanges if row["symbol"] == symbol
+        ]
+        if (
+            prior_exchanges
+            and prior_exchanges[-1]["new_security_id"] != old_security_id
+        ):
+            raise ValueError("Prior security identity differs from exchange evidence")
+        previous = self._held.get(symbol, 0)
+        if previous != int(previous):
+            raise ValueError("Whole old-security holdings required")
+        entitlement = Fraction(int(previous)) * ratio
+        quantity, residual = int(entitlement), float(entitlement - int(entitlement))
+        basis = self._average.get(symbol, 0) / value
+        if any(
+            not math.isfinite(amount) for amount in (quantity, basis, residual * basis)
+        ):
+            raise ValueError(
+                "Finite exchanged entitlements and acquisition basis required"
+            )
+        record = {
+            "action_key": key,
+            "symbol": symbol,
+            "old_security_id": old_security_id,
+            "new_security_id": new_security_id,
+            "numerator": ratio.numerator,
+            "denominator": ratio.denominator,
+            "quantity_before": previous,
+            "quantity_after": quantity,
+            "forfeited_fraction": residual,
+            "forfeited_basis": residual * basis,
+            "fractional_policy": fractional_policy,
+            "cash_credit": 0,
+            "effective_at": effective.isoformat(),
+            "basis_policy": "ratio_basis_with_separate_forfeited_cost_not_tax_basis",
+            "entitlement_scope": (
+                "private_holder_aggregate_not_broker_street_name_allocation"
+            ),
+        }
+        if quantity:
+            self._held[symbol], self._average[symbol] = quantity, basis
+        else:
+            self._held.pop(symbol, None)
+            self._average.pop(symbol, None)
+        self._security_exchanges.append(record)
+        self._actions[key] = value
 
     # Credit child shares without changing parent quantity or inventing fractional cash.
     def apply_stock_distribution(
