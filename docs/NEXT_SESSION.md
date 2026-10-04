@@ -1,5 +1,74 @@
 # Next session
 
+## 2026-10-04 — saved holding calibration report, next volatility correction
+
+Goal ACTIVE; turn PROGRESS: a verified full saved-data diagnostic identifies
+conditional-risk and confidence weaknesses before funded sizing/live adoption.
+Starting isolated branch codex/learned-entry-risk-20261002, clean HEADbb1f8907.
+Preserved original risk producer3files/protocol, saved forecasts and active study.
+Direct Mac Git fetch failed DNS twice; temporary read-only SSH SOCKS tunnel
+fetched unchanged origin/main204689db and pushed verifiedb04185c5, no rebase/
+history rewrite. Final docs checkpoint follows; do not mistake it for deployment.
+
+Atomic objective: score all94 nonbenchmark names across2018-02-01..2026-09-30
+using original saved risk1500cc4b, no refit/inference/replay. Registered separate
+holding-distribution-calibration-plan before outputs. Added pure proper-score
+and retained-request generator to existing direct_error_band, no production
+caller/feature producer change. Reference uses identical original mature dates,
+costs0/10/25 per side; prediction versus outcome availability separate.80% interval,
+PIT, weighted CRPS, Brier, empirical quantiles and fixed causal vol/support groups.
+
+VERIFIED exact sourceb04185c5b5d37333ec7072f94618000e32d61e9e:219pinned tests
+12.45s/no skips;219native (191/31.78s +28/2.69s)/no skips;72independent synthetic
+score checks. Purpose comments/Ruff/format/diff clean. Diagram impact NONE:
+optional numeric diagnostic inside existing research boundary, no runtime/tool/
+prompt/agent/UI changes. Test lint/format fixed without assertion weakening.
+
+VERIFIED one diagnostic plus separate artifact verification, each network-none/
+1CPU/2GB.204638cases,415groups;147476common mature scored cases;147654available,
+56984unavailable predictions;178722known/25728past-missing/188immature outcomes.
+Report results in docs/research/holding-distribution-calibration-results-2026-10-04.md.
+All original bytes and2373source files unchanged before/after. Separate proof
+reconstructed mature banks/scenarios and every available proper score; saved
+groups/counts/reliability independently recomputed. Initial proof launcher
+mistakenly replaced Docker's run verb as well as helper mode; Docker125 before
+container launch/output. Corrected that argument only, same source/helper/assertions.
+
+FAILED confidence advantage: all0bp modelBrier.260022 versus reference.249803;
+CRPS.016884 versus.016573, also worse at10/25bp and in reused recent window.
+Inside original grade-qualified support also worse. FAILED conditional coverage:
+declared80% modelinterval covers70.22% in high-market-vol,78.90% middle,83.09% low;
+past-only reference has same weakness. AAOI75.38%, COHR75.17% coverage. Current
+mean-head vol features do not make the historical error bank conditional on
+today's stock volatility. Do not interpret raw win probabilities as reliable
+live sizing confidence, or these price-component diagnostics as wealth/gain.
+
+NEXT concrete correction: register one causal stock-volatility error-scaling
+mechanism on the exact same original joint dates/artifacts, then confidence
+calibration from strictly earlier outcomes as needed. Preserve total-loss tails,
+joint date alignment, purge/month/freeze clocks, unknown support and original
+producer bytes. Test synthetic different-volatility stocks, unchanged/future
+prefixes, no impossible negative wealth, early-close maturity and no fit/replay.
+Freeze its comparison before outputs; do not mine thresholds/windows/cohorts or
+repeat completed baseline diagnostics. Then fixed funded sizing/holding on the
+reviewed physical-accounting path, not older fractional adjusted daily replay.
+Primary remains actual compounded gain after costs against rule, SPY and QQQ.
+
+Original300-account study sourceb5894a74/containerreviewed-economic-study-b5894a74
+still running/OOMfalse, Pid2516653; last14:17:42 New York:2accounts complete,
+ridge-0-0 at1440sessions through2023-10-19. Do not restart or alter mounted source.
+First0bp/start0 books complete: rulefullgain8.564247838 versus boosting8.275676661,
+but no complete costs/starts/benchmarks; do not claim complete comparison/adoption.
+No new accounts or rescoring this turn. UNVERIFIED: corrected conditional risk,
+funded advantage, live/account parity and deployment. Existing live unchanged.
+
+Proof:/home/animallya96/scratch/holding-calibration-20261004-b04185c5/proof/.
+ReportSHA db8d0d807598683f6682bee4ec6785e7623f4689cf4436bf8cca428520cfe0e7;
+casesSHA f6a94a4c4eab299e44efac5cd19432314bf8ab5e893d4ce84d2eff503ca262f0;
+verificationSHA6949cb5741de620f9ac4572278b5a5f31b7a52461731401ff1fc19655db7a4c0.
+Exact commands/hashes:/tmp/codex-holding-calibration-execution-receipt-20261004.json
+and remoteproof/execution-receipt.json. Do not rerun unchanged diagnostic/old fits.
+
 ## 2026-10-04 — grade-independent risk inference from original saved heads
 
 Goal ACTIVE; previous turn PROGRESS: verified joint-scenario reader exposed sparse
