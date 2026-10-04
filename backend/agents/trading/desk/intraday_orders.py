@@ -48,6 +48,7 @@ from __future__ import annotations
 import math
 import time
 from collections.abc import Callable
+from copy import deepcopy
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -170,6 +171,8 @@ def _why_sent(timed: dict[str, Any], how: str, now: datetime) -> dict[str, Any]:
 # sent twice. Nothing is sent unless the broker's own clock says the market is
 # open: an order sent after the close would queue for the NEXT session. A sell
 # is never sent for more shares than the account holds.
+# An explicit timing reader can replace ordinary pre-deadline timing in a
+# private replay; the default, bounded IOC contracts and final clock are retained.
 # Returns the log lines.
 def send_due(
     root: Path | str,
@@ -178,6 +181,7 @@ def send_due(
     client_factory: Callable[[], Any],
     *,
     quote_reader: Callable | None = None,
+    timing_reader: Callable | None = None,
 ) -> list[str]:
     """Send the orders the board's timing makes due now; return log lines."""
     if now.tzinfo is None:
@@ -186,13 +190,18 @@ def send_due(
     root = Path(root)
     with paper.transaction(root):
         return _send_due_locked(
-            root, snapshot, now, today, client_factory, quote_reader
+            root, snapshot, now, today, client_factory, quote_reader, timing_reader
         )
 
 
 # The due rows that `decide` says to send on this candle, with its verdict.
 def _ready(
-    rows: list[dict], root: Path, snapshot: dict | None, now: datetime, today: date
+    rows: list[dict],
+    root: Path,
+    snapshot: dict | None,
+    now: datetime,
+    today: date,
+    timing_reader: Callable | None = None,
 ) -> list[tuple[dict, dict[str, Any]]]:
     """Return [(row, verdict)] for the rows to send now."""
     latch = entry_timing.load(root, today)
@@ -200,13 +209,28 @@ def _ready(
     ready = []
     for row in rows:
         symbol = str(row.get("symbol"))
-        verdict = decide(
+        custom = False
+        if timing_reader is not None and "execution_policy" not in row:
+            clock = entry_timing.session_clock(today)
+            custom = clock["open"] <= now < clock["final"]
+        reader = timing_reader if custom else decide
+        args = (
             row,
             entry_timing.row_for(latch, symbol, today),
             quotes.get(symbol),
             now,
             today,
         )
+        verdict = reader(*(deepcopy(args) if custom else args))
+        if custom and (
+            not isinstance(verdict, dict)
+            or "send" not in verdict
+            or verdict["send"] not in (None, MARKET)
+            or not isinstance(verdict.get("timed"), dict)
+            or not isinstance(verdict["timed"].get("state"), str)
+            or not verdict["timed"]["state"]
+        ):
+            raise ValueError("Timing reader requires an explicit ordinary verdict")
         if verdict["send"]:
             ready.append((row, verdict))
     return ready
@@ -220,6 +244,7 @@ def _send_due_locked(
     today: date,
     client_factory: Callable[[], Any],
     quote_reader: Callable | None,
+    timing_reader: Callable | None = None,
 ) -> list[str]:
     """Send due rows with the paper lock held; return log lines."""
     from backend.market import alpaca_trading
@@ -229,7 +254,7 @@ def _send_due_locked(
     snapshot, now = qualify_snapshot(rows, snapshot, now, quote_reader)
     started = time.monotonic()
     _observe_bounded(root, state, rows, snapshot, now, today)
-    ready = _ready(rows, root, snapshot, now, today)
+    ready = _ready(rows, root, snapshot, now, today, timing_reader)
     recovering = [r for r in rows if "execution_policy" in r and r.get("sending")]
     if not ready and not recovering:
         return []

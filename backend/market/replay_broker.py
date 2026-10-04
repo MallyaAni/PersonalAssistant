@@ -1,0 +1,553 @@
+"""Private deterministic broker semantics, never a network client or fill claim.
+
+Submissions see current raw marks and reserve cash/shares. Supplied outcome
+prices enter only flush, after the entire decision batch. FIFO whole-share
+fills use pre-flush cash; proceeds of this batch's sales cannot fund its buys.
+Partial attempts expire their remainder. Auctions require explicit phase and
+prices, never a close substitution. This is a declared hypothetical venue.
+"""
+
+from __future__ import annotations
+
+import math
+from contextlib import suppress
+from copy import deepcopy
+from datetime import UTC, datetime
+
+import numpy as np
+
+from backend.market import calendar
+from backend.market.alpaca_trading import Account, AlpacaTradingError, Position
+
+
+# Parse actual aware instants without silently assigning a timezone.
+def _instant(value):
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value)
+    if not isinstance(value, datetime) or value.utcoffset() is None:
+        raise ValueError("Explicit timezone-aware clock required")
+    return value.astimezone(UTC)
+
+
+# Parse finite numeric values without accepting booleans as financial evidence.
+def _number(value, *, positive=False):
+    if isinstance(value, (bool, np.bool_)):
+        raise ValueError("Finite numeric evidence required")
+    value = float(value)
+    if not math.isfinite(value) or (value <= 0 if positive else value < 0):
+        raise ValueError("Finite positive or nonnegative numeric evidence required")
+    return value
+
+
+# Validate explicitly supplied raw marks without replacing missing prices.
+def _prices(values):
+    if not isinstance(values, dict):
+        raise ValueError("Explicit symbol/raw-price dictionary required")
+    output = {}
+    for symbol, value in values.items():
+        if not isinstance(symbol, str) or not symbol:
+            raise ValueError("Nonempty symbol required")
+        if value is None or (
+            isinstance(value, (float, np.floating)) and np.isnan(value)
+        ):
+            output[symbol] = None
+        else:
+            output[symbol] = _number(value, positive=True)
+    return output
+
+
+# Check the complete reviewed historical calendar rather than live-only coverage.
+def _session(now):
+    local = now.astimezone(calendar.NEW_YORK)
+    years, sessions = calendar.reviewed_sessions()
+    if local.year not in years:
+        raise ValueError("Reviewed observed calendar unavailable")
+    is_session = bool(np.is_busday(np.datetime64(local.date()), busdaycal=sessions))
+    is_open = is_session and (
+        calendar.REGULAR_OPEN <= local.time() < calendar.session_close(local.date())
+    )
+    return is_session, is_open
+
+
+# Simulate the broker surface used by nightly and intraday dispatch.
+class ReplayBroker:
+    # Initialize private cash and explicit whole-share holdings and acquisition bases.
+    def __init__(
+        self,
+        initial_cash,
+        cost_bps,
+        *,
+        initial_holdings=None,
+        initial_average_prices=None,
+    ):
+        self._cash = _number(initial_cash)
+        self.cost_bps = _number(cost_bps)
+        if self.cost_bps >= 1e4:
+            raise ValueError("Per-side cost below 10000 basis points required")
+        self._held, self._average = {}, {}
+        supplied = initial_average_prices or {}
+        for symbol, value in (initial_holdings or {}).items():
+            qty = _number(value)
+            if not isinstance(symbol, str) or not symbol or qty != int(qty):
+                raise ValueError("Explicit whole-share initial holdings required")
+            if qty:
+                self._held[symbol] = qty
+                self._average[symbol] = _number(supplied[symbol], positive=True)
+        self._orders, self._attempts, self._fills, self._actions = {}, [], [], {}
+        self._dividends, self._marks, self._mark_times = [], {}, {}
+        self._now = self._observed_at = None
+        self._market_open = self._batch_open = False
+        self._last_equity = self._cash
+
+    # Return detached attempt receipts so callers cannot alter historical evidence.
+    @property
+    def attempt_history(self):
+        return tuple(deepcopy(self._attempts))
+
+    # Return detached outcome receipts separately from submission evidence.
+    @property
+    def fill_history(self):
+        return tuple(deepcopy(self._fills))
+
+    # Expose raw ledger state for private verification without fabricating a NAV mark.
+    def ledger(self):
+        return deepcopy(
+            {
+                "cash": self._cash,
+                "holdings": self._held,
+                "average_prices": self._average,
+                "dividends": self._dividends,
+                "observed_at": self._observed_at.isoformat()
+                if self._observed_at
+                else None,
+            }
+        )
+
+    # Advance only with explicit observed raw marks and a reviewed market clock.
+    def observe(self, now, prices, market_open):
+        now, prices = _instant(now), _prices(prices)
+        if not isinstance(market_open, bool) or (
+            self._now is not None and now < self._now
+        ):
+            raise ValueError(
+                "Monotonic clock and explicit market-open boolean required"
+            )
+        _, is_open = _session(now)
+        if market_open and not is_open:
+            raise ValueError("Market-open flag disagrees with reviewed exchange clock")
+        self._now = self._observed_at = now
+        self._market_open, self._batch_open = market_open, True
+        for symbol, price in prices.items():
+            self._marks[symbol], self._mark_times[symbol] = price, now
+        self._pay_dividends(now)
+        local = now.astimezone(calendar.NEW_YORK)
+        if local.time() >= calendar.session_close(local.date()):
+            with suppress(AlpacaTradingError):
+                self._last_equity = self.account().equity
+
+    # Require an actual current observation before account valuation or submission.
+    def _observed(self):
+        if self._now is None or self._observed_at != self._now:
+            raise AlpacaTradingError("Fresh observed account clock required")
+
+    # Refuse missing current marks instead of carrying stale prices.
+    def _mark(self, symbol):
+        if (
+            self._mark_times.get(symbol) != self._observed_at
+            or self._marks.get(symbol) is None
+        ):
+            raise AlpacaTradingError(f"Fresh raw held mark unavailable for {symbol}")
+        return self._marks[symbol]
+
+    # Value actual cash, marked holdings and explicit unspendable dividend receivables.
+    def account(self):
+        self._observed()
+        equity = self._cash + sum(
+            qty * self._mark(symbol) for symbol, qty in self._held.items()
+        )
+        equity += sum(row["amount"] for row in self._dividends if not row["paid"])
+        if not math.isfinite(equity):
+            raise AlpacaTradingError("Finite marked equity unavailable")
+        reserved = sum(
+            row["reserved_cash"]
+            for row in self._orders.values()
+            if row["status"] == "accepted"
+        )
+        return Account(
+            equity, self._cash, max(0.0, self._cash - reserved), self._last_equity
+        )
+
+    # Return actual held shares at current observed marks, never projected future fills.
+    def positions(self):
+        self._observed()
+        return [
+            Position(
+                symbol,
+                qty,
+                qty * self._mark(symbol),
+                self._average[symbol],
+                self._mark(symbol),
+                qty * (self._mark(symbol) - self._average[symbol]),
+            )
+            for symbol, qty in sorted(self._held.items())
+        ]
+
+    # Expose only the current supplied market clock.
+    def clock(self):
+        self._observed()
+        return {"is_open": self._market_open, "timestamp": self._now.isoformat()}
+
+    # Return detached accepted orders without revealing any future outcome price.
+    def open_orders(self):
+        return deepcopy(
+            [row for row in self._orders.values() if row["status"] == "accepted"]
+        )
+
+    # Return detached receipts from the requested aware submission clock.
+    def orders_since(self, after, limit=500):
+        after = _instant(after)
+        if isinstance(limit, bool) or not isinstance(limit, int) or limit <= 0:
+            raise ValueError("Positive integer page limit required")
+        return deepcopy(
+            [
+                row
+                for row in self._orders.values()
+                if _instant(row["submitted_at"]) >= after
+            ]
+        )
+
+    # Cancel accepted IDs while preserving terminal receipts.
+    def cancel_orders(self, ids):
+        self._observed()
+        if not isinstance(ids, (list, tuple)) or any(
+            not isinstance(identifier, str) or not identifier for identifier in ids
+        ):
+            raise ValueError("Explicit nonempty order IDs required")
+        result = {}
+        for identifier in ids:
+            row = self._orders.get(identifier)
+            if row is None or row["status"] != "accepted":
+                result[identifier] = "already_gone"
+            else:
+                row.update(
+                    status="canceled",
+                    canceled_at=self._now.isoformat(),
+                    reserved_cash=0.0,
+                )
+                result[identifier] = "cancelled"
+        return result
+
+    # Choose the next scheduled session phase strictly after the submission timestamp.
+    def _due(self, phase):
+        local = self._now.astimezone(calendar.NEW_YORK)
+        years, sessions = calendar.reviewed_sessions()
+        if local.year not in years:
+            raise AlpacaTradingError("Reviewed queue calendar unavailable")
+        day = np.datetime64(local.date(), "D")
+        opening = (
+            calendar.REGULAR_OPEN
+            if phase == "open"
+            else calendar.session_close(local.date())
+        )
+        if np.is_busday(day, busdaycal=sessions) and local.time() < opening:
+            selected = day
+        else:
+            selected = np.busday_offset(day, 1, roll="backward", busdaycal=sessions)
+        if selected.astype(object).year not in years:
+            raise AlpacaTradingError("Reviewed future queue session unavailable")
+        return str(selected)
+
+    # Submit a market request inside the observed regular session.
+    def submit_market(self, symbol, qty, side, client_order_id=None):
+        if not self._market_open:
+            raise AlpacaTradingError("Ordinary market submission requires open session")
+        return self._submit(symbol, qty, side, client_order_id, "day", "market")
+
+    # Match the real API's day market order, queued only outside regular hours.
+    def submit_market_on_open(self, symbol, qty, side, client_order_id=None):
+        phase = "market" if self._market_open else "open"
+        return self._submit(symbol, qty, side, client_order_id, "day", phase)
+
+    # Queue an explicit closing auction without manufacturing an auction fill price.
+    def submit_market_on_close(self, symbol, qty, side, client_order_id=None):
+        return self._submit(symbol, qty, side, client_order_id, "cls", "close")
+
+    # Accept or reject using only presently observed prices, cash and covered shares.
+    def _submit(self, symbol, qty, side, identifier, tif, phase):
+        self._observed()
+        if not self._batch_open:
+            raise AlpacaTradingError("Observe a new decision batch before submission")
+        if (
+            not isinstance(symbol, str)
+            or not symbol
+            or side not in ("buy", "sell")
+            or not isinstance(identifier, str)
+            or not identifier
+            or isinstance(qty, (bool, np.bool_))
+            or not isinstance(qty, (int, np.integer))
+            or qty <= 0
+        ):
+            raise AlpacaTradingError(
+                "Unique ID, symbol, side and positive whole quantity required"
+            )
+        existing = self._orders.get(identifier)
+        if existing is not None:
+            if any(
+                existing[key] != value
+                for key, value in (
+                    ("symbol", symbol),
+                    ("side", side),
+                    ("qty", str(qty)),
+                    ("time_in_force", tif),
+                )
+            ):
+                raise AlpacaTradingError("Conflicting duplicate order identity")
+            return deepcopy(existing)
+        price = self._mark(symbol)
+        cash = self.account().buying_power
+        execute_on = (
+            str(self._now.astimezone(calendar.NEW_YORK).date())
+            if phase == "market"
+            else self._due(phase)
+        )
+        reserved_shares = sum(
+            int(row["qty"])
+            for row in self._orders.values()
+            if row["status"] == "accepted"
+            and row["side"] == "sell"
+            and row["symbol"] == symbol
+        )
+        needed = int(qty) * price * (1 + self.cost_bps / 1e4) if side == "buy" else 0.0
+        if not math.isfinite(needed):
+            raise AlpacaTradingError("Finite order notional required")
+        reason = (
+            "insufficient_reserved_cash"
+            if needed > cash
+            else "uncovered_sell"
+            if side == "sell" and qty > self._held.get(symbol, 0) - reserved_shares
+            else None
+        )
+        attempt = {
+            "client_order_id": identifier,
+            "symbol": symbol,
+            "side": side,
+            "qty": int(qty),
+            "at": self._now.isoformat(),
+            "observed_price": price,
+            "available_cash": cash,
+            "accepted": reason is None,
+            "reason": reason,
+        }
+        self._attempts.append(deepcopy(attempt))
+        if reason:
+            raise AlpacaTradingError(reason)
+        row = {
+            "id": f"private-replay-{len(self._orders)}",
+            "client_order_id": identifier,
+            "symbol": symbol,
+            "side": side,
+            "qty": str(int(qty)),
+            "type": "market",
+            "time_in_force": tif,
+            "status": "accepted",
+            "filled_qty": "0",
+            "filled_avg_price": None,
+            "created_at": self._now.isoformat(),
+            "submitted_at": self._now.isoformat(),
+            "execution_phase": phase,
+            "execute_on": execute_on,
+            "reserved_cash": needed,
+            "fee": 0.0,
+        }
+        self._orders[identifier] = row
+        return deepcopy(row)
+
+    # Apply one explicit post-batch outcome under pre-flush cash and whole-share bounds.
+    def _fill(self, row, price, now, budget):
+        requested = int(row["qty"])
+        quantity = 0
+        if price is not None:
+            if row["side"] == "buy":
+                quantity = min(
+                    requested, math.floor(budget / (price * (1 + self.cost_bps / 1e4)))
+                )
+            else:
+                quantity = min(requested, math.floor(self._held.get(row["symbol"], 0)))
+        fee = quantity * (price or 0) * self.cost_bps / 1e4
+        if quantity:
+            symbol, held = row["symbol"], self._held.get(row["symbol"], 0)
+            if row["side"] == "buy":
+                spent = quantity * price + fee
+                self._average[symbol] = (
+                    held * self._average.get(symbol, 0) + quantity * price
+                ) / (held + quantity)
+                self._held[symbol], self._cash, budget = (
+                    held + quantity,
+                    self._cash - spent,
+                    budget - spent,
+                )
+            else:
+                self._held[symbol], self._cash = (
+                    held - quantity,
+                    self._cash + quantity * price - fee,
+                )
+                if self._held[symbol] == 0:
+                    self._held.pop(symbol)
+                    self._average.pop(symbol)
+        row.update(
+            status="filled" if quantity == requested else "expired",
+            filled_qty=str(quantity),
+            filled_avg_price=str(price) if quantity else None,
+            reserved_cash=0.0,
+            fee=fee,
+        )
+        if quantity:
+            row["filled_at"] = now.isoformat()
+        if quantity != requested:
+            row["expired_at"] = now.isoformat()
+        self._fills.append(
+            {
+                "client_order_id": row["client_order_id"],
+                "symbol": row["symbol"],
+                "side": row["side"],
+                "requested_qty": requested,
+                "filled_qty": quantity,
+                "price": price if quantity else None,
+                "fee": fee,
+                "at": now.isoformat(),
+                "status": row["status"],
+                "reason": "missing_execution_price"
+                if price is None
+                else "partial_cash_or_coverage"
+                if quantity < requested
+                else "filled",
+            }
+        )
+        return budget
+
+    # Consume explicit fill proxies only after all requests at an observation are fixed.
+    def flush(self, now, fill_prices, *, phase="market"):
+        now, prices = _instant(now), _prices(fill_prices)
+        if (
+            self._now is None
+            or now < self._now
+            or phase not in ("market", "open", "close")
+        ):
+            raise ValueError("Monotonic explicit execution clock and phase required")
+        local = now.astimezone(calendar.NEW_YORK)
+        is_session, _ = _session(now)
+        if not is_session:
+            raise ValueError("Execution requires a reviewed exchange session")
+        if phase == "market" and not (
+            calendar.REGULAR_OPEN
+            <= local.time()
+            <= calendar.session_close(local.date())
+        ):
+            raise ValueError("Ordinary outcome requires a regular-session clock")
+        day = str(local.date())
+        expected = (
+            calendar.REGULAR_OPEN
+            if phase == "open"
+            else calendar.session_close(local.date())
+        )
+        if phase != "market" and local.time() != expected:
+            raise ValueError(
+                "Auction proxy requires its exact scheduled phase timestamp"
+            )
+        due = [
+            row
+            for row in self._orders.values()
+            if row["status"] == "accepted"
+            and row["execution_phase"] == phase
+            and row["execute_on"] == day
+        ]
+        reserved = sum(
+            row["reserved_cash"]
+            for row in self._orders.values()
+            if row["status"] == "accepted" and row not in due
+        )
+        budget = max(0.0, self._cash - reserved)
+        before = len(self._fills)
+        for row in due:
+            budget = self._fill(row, prices.get(row["symbol"]), now, budget)
+        self._now, self._batch_open = now, False
+        return deepcopy(self._fills[before:])
+
+    # Bind a dated corporate action and refuse conflicting duplicate evidence.
+    def _action(self, symbol, kind, value, effective_at):
+        effective = _instant(effective_at)
+        if (
+            self._now is None
+            or effective > self._now
+            or not isinstance(symbol, str)
+            or not symbol
+        ):
+            raise ValueError("Observed dated corporate action required")
+        value = _number(value, positive=True)
+        key = (symbol, kind, effective.isoformat())
+        if key in self._actions and self._actions[key] != value:
+            raise ValueError("Conflicting corporate-action evidence")
+        if key not in self._actions and any(
+            row["symbol"] == symbol
+            and row["filled_qty"] > 0
+            and _instant(row["at"]) >= effective
+            for row in self._fills
+        ):
+            raise ValueError("Corporate action must precede affected fills")
+        return key, value, effective
+
+    # Apply split entitlements and basis without rewriting pending quantities.
+    def apply_split(self, symbol, ratio, effective_at):
+        key, ratio, _ = self._action(symbol, "split", ratio, effective_at)
+        if key in self._actions:
+            return
+        quantity = self._held.get(symbol, 0) * ratio
+        if not math.isfinite(quantity):
+            raise ValueError("Finite split entitlement required")
+        if symbol in self._held:
+            basis = self._average[symbol] / ratio
+            if not math.isfinite(basis) or basis <= 0:
+                raise ValueError("Finite split acquisition basis required")
+            self._held[symbol] = quantity
+            self._average[symbol] = basis
+        self._actions[key] = ratio
+
+    # Accrue a dividend without spending an unknown payment-date entitlement.
+    def accrue_dividend(self, symbol, per_share, effective_at, *, pay_at=None):
+        key, amount, effective = self._action(
+            symbol, "dividend", per_share, effective_at
+        )
+        payment = _instant(pay_at) if pay_at is not None else None
+        if payment is not None and payment < effective:
+            raise ValueError("Dividend payment cannot precede entitlement")
+        if key in self._actions:
+            prior = next(row for row in self._dividends if row["action_key"] == key)
+            if prior["pay_at"] != (payment.isoformat() if payment else None):
+                raise ValueError("Conflicting dividend payment evidence")
+            return
+        total = self._held.get(symbol, 0) * amount
+        if not math.isfinite(total):
+            raise ValueError("Finite dividend entitlement required")
+        self._dividends.append(
+            {
+                "action_key": key,
+                "symbol": symbol,
+                "amount": total,
+                "effective_at": effective.isoformat(),
+                "pay_at": payment.isoformat() if payment else None,
+                "paid": False,
+            }
+        )
+        self._actions[key] = amount
+        self._pay_dividends(self._now)
+
+    # Move only explicitly dated payable receivables into actual cash.
+    def _pay_dividends(self, now):
+        for row in self._dividends:
+            if (
+                not row["paid"]
+                and row["pay_at"] is not None
+                and _instant(row["pay_at"]) <= now
+            ):
+                self._cash += row["amount"]
+                row["paid"] = True

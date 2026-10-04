@@ -519,10 +519,10 @@ def _hold_for_the_session(orders) -> list:
 # An order the balancer sends intraday also carries the session it executes
 # on (the next reviewed session after the decision); a date the calendar does
 # not cover leaves it None, and such a row is never sent (fail closed).
-def _pending_orders(orders, session, prices, reference_session):
+def _pending_orders(orders, session, prices, reference_session, *, decision_at=None):
     from backend.agents.trading.desk import intraday_orders, paper
 
-    decision_at = datetime.now(tz=UTC).isoformat()
+    decision_at = (decision_at or datetime.now(tz=UTC)).isoformat()
     upcoming = intraday_orders.next_session(date.fromisoformat(str(session)))
     return [
         {
@@ -703,7 +703,8 @@ def _idle_cash_share(orders, prices, cash, equity) -> float | None:
 
 # Carry the desk's book to the paper account: cancel yesterday's unfilled
 # orders, plan this session, submit the plan for the next open, then record
-# the account. Returns the day's entry for the desk record.
+# the account. Explicit broker and decision-clock dependencies let a private
+# replay exercise this same lifecycle without contacting the real account.
 def paper_trade(
     report,
     store_root: Path,
@@ -711,13 +712,38 @@ def paper_trade(
     live: bool,
     rebalance_now: bool = False,
     force: bool = False,
+    *,
+    client_factory=None,
+    decision_at: datetime | None = None,
 ) -> dict:
     from backend.agents.trading.desk import paper
 
+    if decision_at is not None:
+        from backend.market import calendar
+
+        if decision_at.tzinfo is None or decision_at.utcoffset() is None:
+            raise ValueError("Explicit nightly decision requires an aware instant")
+        local = decision_at.astimezone(calendar.NEW_YORK)
+        schedule = calendar.exchange_status(local)
+        if (
+            not schedule["calendar_known"]
+            or not schedule["is_session"]
+            or str(report.panel.dates[-1]) != session
+            or local.date().isoformat() != session
+            or local.time().replace(tzinfo=None) < calendar.session_close(local.date())
+        ):
+            raise ValueError(
+                "Nightly decision must follow the reviewed report session close"
+            )
+    dependencies = {"client_factory": client_factory, "decision_at": decision_at}
     if not live:
-        return _paper_trade(report, store_root, session, False, rebalance_now, force)
+        return _paper_trade(
+            report, store_root, session, False, rebalance_now, force, **dependencies
+        )
     with paper.transaction(store_root):
-        return _paper_trade(report, store_root, session, live, rebalance_now, force)
+        return _paper_trade(
+            report, store_root, session, live, rebalance_now, force, **dependencies
+        )
 
 
 # Reconcile and execute one nightly plan while holding the shared paper-state lock.
@@ -728,6 +754,9 @@ def _paper_trade(
     live: bool,
     rebalance_now: bool = False,
     force: bool = False,
+    *,
+    client_factory=None,
+    decision_at: datetime | None = None,
 ) -> dict:
     """Plan and (when `live`) submit the paper book; return the day's entry."""
     from backend.agents.trading.desk import (
@@ -740,7 +769,7 @@ def _paper_trade(
     )
     from backend.market import alpaca_trading
 
-    client = alpaca_trading.client_from_env()
+    client = (client_factory or alpaca_trading.client_from_env)()
     account = client.account()
     held = {p.symbol: p.qty for p in client.positions()}
     panel = report.panel
@@ -834,7 +863,9 @@ def _paper_trade(
     # leaves a record the next session can ask the broker about, rather
     # than a gap that has to be guessed at from positions.
     if live and orders:
-        new_state.pending = _pending_orders(orders, session, prices, panel.dates[last])
+        new_state.pending = _pending_orders(
+            orders, session, prices, panel.dates[last], decision_at=decision_at
+        )
         if what == "rebalance":
             new_state.unconfirmed_rebalance = session
         paper.save_state(store_root, new_state)
