@@ -1,5 +1,33 @@
 # Next session
 
+## 2026-10-04 — all six original numerical refusals verified
+
+Goal ACTIVE; previous turn PROGRESS, this turn PROGRESS. Started43e2ba6a clean;
+no production code, active source, account result or live-policy changes.
+Exactba15b769 production, pinned682e02aa, exit0/OOMfalse: reconstructed ALL six
+original refused scenarios, authenticated original account/prefix proof/loader
+and complete source manifest. Dates2019-05-02,2020-02-07,2021-08-16,2024-02-14,
+2025-04-17,2025-08-01.6/6 now globally certified under unchanged1e-8 tolerance;
+largest finalgap1.9088029767910797e-13. Actual original cash, fees, grades,
+simultaneous dates and ownership preserved; objective no worse in every case.
+No account resimulation/refits/orders or economic-gain attribution. This checks
+the production retry, not the earlier ephemeral normalization prototype.
+Root /home/animallya96/scratch/joint-optimizer-proof-20261004-ba15b769;
+proof/six-boundaries.json SHA221c7d3becbc30320bec533ed0e7c7acbba10c6238f949f4daa2adb0de87c9bd;
+proof/six-boundaries-execution.json SHA2d1b5024a419fa9aafadb279b4ae8d78e83104ed455a042f0a24a852416e78de
+pins source/image, exact helper, inspection/log and all original/final gaps.
+
+Mac write failure reproduced: APFS reported131MiB but refused even touch.
+Removed ONLY authenticated regenerable /tmp/codex-passive-valuation-source-111e0655/source
+after2371 hashes matched its retained manifest; original Git commit and Spark
+source/proofs remain. No user/production data, working tree or result deletion.
+Writable again206MiB; continue streaming archives rather than local extraction.
+At21:30NY all original producers remain running/OOMfalse, no restart:
+v2 has0complete/1560sessions through2024-04-12; controls2complete/ridge960
+through2021-11-19. Prior saved-proof watchers unchanged. Continue compact
+completion checks and prepared v2 saved-only proof when a book exists. Economic
+adoption/live deployment still UNVERIFIED; do not promote from6 numerical cases.
+
 ## 2026-10-04 — strict joint optimizer refusal reproduced and fixed
 
 Goal ACTIVE; turn PROGRESS. Startedaa6f1c18 clean on isolated
