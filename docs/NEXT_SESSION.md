@@ -1,5 +1,60 @@
 # Next session
 
+## 2026-10-05 — forward residual/current-distribution path verified
+
+Goal ACTIVE; prior turn PROGRESS (88-case feature path pushed508f3568).
+Started clean508f3568; main unchanged. VERIFIED exact checkpoint
+7036ab6dcad079e8dd6a8397eb4e688a4bfcb2b9:143 tests/no skips, Ruff clean,
+pinned image5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+Restored OOS contexts now bind all private typed arrays/calendar/manifest against
+mutation. forward_execution.prepare_residuals continues only a new month's
+original stock residual recipe, with actual exchange-date756-session lookback,
+252-session minimum, strict freeze/endpoints and actual post-preparation clock.
+No old forecast fitting or probability rescoring. current_distributions reloads
+numeric model bytes, binds cohort/month/source and preserves missing/invalid
+risk. Exact reference sample parity and a genuinely fitted zero-variance head
+are exercised. This proves inference integrity, not confidence or gain.
+
+Proof root /home/animallya96/scratch/forward-execution-residuals-20261005-evaluation3.
+All2407 archived source files unchanged. LogSHA
+03e1f915839a4e3d07820b6c11363b5bc83f3590d3200682e16e6a6831fd2e16;
+commandSHA1664564d73bed7833e6a1d1b8de82948b2a5e12dc43c191b7ca43e1901d28958;
+manifestSHA243d6dfd22f5179d4a0b5d58c3827945ccf8d1fe938b9a8802587163a6266896.
+Initiald99c2f70 retained135pass/7fail: callback name overwritten by clock-index
+array, plus a fixture attempting to deepcopy numpy.busdaycalendar. Targeted
+385c56a6 fixes those boundaries,142pass; added zero-risk case gives143pass.
+Assertions unchanged. No economic account grid or production changes.
+
+NEXT: bind actual completed-prefix observations/current distributions to the
+real private intraday sender. Its historical clock/account contract requires
+exact boundary equality; actual publication/broker GET clocks differ. Preserve
+the frozen historical default, never backdate, and exercise real persistence,
+funding, covered holdings, duplicate identities and mandatory exit priorities.
+Current source authentication/price basis and actual live selection remain
+caller/acceptance requirements. Full V5 advantage/adoption UNVERIFIED; producer
+659a960b and sole saved-result watcher252268 untouched.
+
+Scheduled October5 cohort also started, separate from new models: exact original
+a799949fbde26c2ec1788b38263b6c0850d8922d source archived privately under
+/home/animallya96/scratch/execution-forward-20261005/source. Four opportunities,
+nine exclusions; initial account/plan09:49:57NY, delayed collector09:52:34NY.
+Original source bytes/plan hash retained; capture is read-only every15seconds
+through the CLI's actual calendar close. First launcher failed after successful
+initialization because root-owned private output denied host access. Recovered
+ONLY that ownership boundary; no reinitialize or changed selection. Original
+plan bytes still matched and all exclusions were disclosed before collection.
+Actual container89bdf2bbc12ceaebfb709fe56a13cd011c23ee7e0805fa78e725dd731ac37d0c
+RUNNING/OOMfalse,76 captured files at last check. Never launch/restart a second
+collector. Retain the initial gap. Root launch-result/source-manifest/disclosure
+and original failure/recovery claims are the next wake's authority; do not read
+the obsolete Oct2 finalizer or repeat Oct2 scoring. ManifestSHA
+b22bc06e14337ff6ade5df5d2c4c0a964a48763f5829e8f9afe68461486d5dc5;
+disclosureSHAf0ae8d47fd5b0821270fefc692e06bedf0d6139c975b7117e00c03baf5b4f7ba.
+At closing, require actual exit/log, GET-only matching paper receipts, then the
+fixed delayed endpoint evidence once. No compounded-performance/adoption claim.
+Diagram impact NONE: existing private inference and separately registered
+read-only recording paths; no production component/service change.
+
 ## 2026-10-05 — completed-prefix feature path verified
 
 Goal ACTIVE; previous turn PROGRESS (verified/pushed forward timing heads).
