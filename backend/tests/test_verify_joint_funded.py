@@ -11,7 +11,11 @@ from backend.cli import verify_actual_policy_timing as ledger
 from backend.cli import verify_joint_funded as verifier
 from backend.cli.market_actual_policy_timing import archive_account
 from backend.market.direct_error_band import VolatilityHoldingReader
-from backend.market.joint_funded_policy import JointFundedPolicy, MaturityFundedPolicy
+from backend.market.joint_funded_policy import (
+    CalibratedMaturityFundedPolicy,
+    JointFundedPolicy,
+    MaturityFundedPolicy,
+)
 from backend.market.live_policy_replay import run_account
 from backend.tests.test_direct_feature_arithmetic import risk_example_factory
 from backend.tests.test_live_policy_replay import fixture
@@ -55,7 +59,11 @@ def saved_case(tmp_path_factory, policy_type):
         "first": first,
         "last": last,
         "first_session": str(reader.dates[first]),
-        "id": "joint-10-0" if policy_type is JointFundedPolicy else "maturity-10-0",
+        "id": {
+            JointFundedPolicy: "joint-10-0",
+            MaturityFundedPolicy: "maturity-10-0",
+            CalibratedMaturityFundedPolicy: "calibrated-10-0",
+        }[policy_type],
     }
     account["comparison_account"] = spec
     data = {
@@ -67,6 +75,10 @@ def saved_case(tmp_path_factory, policy_type):
         "backend/market/joint_funded_policy.py": policy.identity["source_sha256"],
         policy.protocol: policy.identity["protocol_sha256"],
     }
+    if policy_type is CalibratedMaturityFundedPolicy:
+        source["backend/market/conditional_holding_calibration.py"] = (
+            policy.reader.identity["source_sha256"]
+        )
     return account, spec, data, source
 
 
@@ -80,6 +92,76 @@ def saved(tmp_path_factory):
 @pytest.fixture(scope="module")
 def maturity_saved(tmp_path_factory):
     return saved_case(tmp_path_factory, MaturityFundedPolicy)
+
+
+# Keep a separate actual calibrated account instead of relabelling earlier results.
+@pytest.fixture(scope="module")
+def calibrated_saved(tmp_path_factory):
+    return saved_case(tmp_path_factory, CalibratedMaturityFundedPolicy)
+
+
+# Verify the calibration screen with fitting, predictions and simulation forbidden.
+def test_actual_calibrated_saved_account_without_producer(
+    tmp_path, calibrated_saved, monkeypatch
+):
+    from backend.market.conditional_holding_calibration import CalibratedHoldingReader
+
+    account, spec, data, source = calibrated_saved
+    row = save(tmp_path, account, spec)
+
+    # A saved-only verifier must never recreate calibration or account decisions.
+    def forbidden(*args, **kwargs):
+        raise AssertionError("No fitting, selection or simulation permitted")
+
+    monkeypatch.setattr(CalibratedHoldingReader, "_stock_fit", forbidden)
+    monkeypatch.setattr(CalibratedMaturityFundedPolicy, "decide", forbidden)
+    monkeypatch.setattr("backend.market.live_policy_replay.run_account", forbidden)
+    checked = verifier.verify_rows(
+        tmp_path,
+        [row],
+        data,
+        candidate=True,
+        source=source,
+        policy=verifier.CALIBRATED_POLICY,
+    )
+    assert checked[0]["ordinary_receipts"] == 3
+    assert checked[0]["counts"]["sessions"] == 2
+    dates = np.arange("2018-01-01", "2026-10-01", dtype="datetime64[D]")
+    from backend.market.joint_funded_accounts import candidate_grid
+
+    assert verifier.candidate_grid(
+        dates, policy=verifier.CALIBRATED_POLICY
+    ) == candidate_grid(dates, policy=verifier.CALIBRATED_POLICY)
+
+
+# Rehashed archives cannot claim future calibration, certainty or invalid fit support.
+@pytest.mark.parametrize(
+    "mutation", ["future", "certainty", "count", "source", "uncertainty"]
+)
+def test_saved_calibration_tampering_rejected(tmp_path, calibrated_saved, mutation):
+    original, spec, data, source = calibrated_saved
+    account = copy.deepcopy(original)
+    sample = account["nightlies"][-1]["entry"]["joint_funded"]["receipt"]["scenario"]
+    if mutation == "future":
+        sample["calibration"][0]["maximum_endpoint"] = sample["label_end_before"]
+    elif mutation == "certainty":
+        sample["calibration_identity"]["confidence_guarantee"] = True
+    elif mutation == "count":
+        sample["calibration"][0]["fit"]["observations"] -= 1
+    elif mutation == "source":
+        sample["calibration_identity"]["source_sha256"] = "0" * 64
+    else:
+        sample["predictions"][0]["residual_multiplier"] = 0.9
+    row = save(tmp_path, account, spec)
+    with pytest.raises(ValueError, match="calibration|Calibration|differs"):
+        verifier.verify_rows(
+            tmp_path,
+            [row],
+            data,
+            candidate=True,
+            source=source,
+            policy=verifier.CALIBRATED_POLICY,
+        )
 
 
 # Persist a compressed immutable account and its independently recomputed score index.

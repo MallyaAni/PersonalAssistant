@@ -18,22 +18,30 @@ from backend.market import calendar
 
 POLICY = "joint-stock-risk-funded/1-research"
 MATURITY_POLICY = "joint-stock-risk-funded/2-maturity-shadow"
+CALIBRATED_POLICY = "joint-stock-risk-funded/3-log-calibration-research"
 HORIZON = "next_open_to_following_open_arithmetic_return"
 PROTOCOL = "docs/research/joint-funded-account-plan-2026-10-04.md"
 CANDIDATES = {
     POLICY: PROTOCOL,
     MATURITY_POLICY: "docs/research/risk-qualified-funded-plan-2026-10-04.md",
+    CALIBRATED_POLICY: (
+        "docs/research/conditional-holding-calibration-plan-2026-10-05.md"
+    ),
 }
 
 
-# Derive all candidate opportunities from the independently fixed original grid.
+# Derive existing grids and the calibration screen without removing missing accounts.
 def candidate_grid(dates, *, policy=POLICY):
     ledger.require(policy in CANDIDATES, "Registered candidate policy required")
-    prefix = "joint" if policy == POLICY else "maturity"
+    prefix = {
+        POLICY: "joint",
+        MATURITY_POLICY: "maturity",
+        CALIBRATED_POLICY: "calibrated",
+    }[policy]
     return [
         {**row, "arm": policy, "id": f"{prefix}-{row['cost_bps']}-{row['start']}"}
         for row in ledger.fixed_grid(dates)
-        if row["arm"] == "rule"
+        if row["arm"] == "rule" and (policy != CALIBRATED_POLICY or row["start"] == 0)
     ]
 
 
@@ -152,12 +160,93 @@ def scenario_receipt(sample, day, dates):
         ledger.require(len(chosen) >= 252, "Insufficient available joint history")
 
 
+# Check saved calibration provenance and maturity without fitting or predicting.
+def calibration_receipt(sample, source):
+    identity = sample["calibration_identity"]
+    ledger.same(sample["policy"], "joint-holding-log-calibration/1-research")
+    ledger.same(identity["policy"], sample["policy"])
+    ledger.same(
+        identity["source_sha256"],
+        source["backend/market/conditional_holding_calibration.py"],
+    )
+    ledger.same(identity["protocol_sha256"], source[CANDIDATES[CALIBRATED_POLICY]])
+    ledger.require(
+        identity["confidence_guarantee"] is False
+        and identity["adoption_eligible"] is False
+        and identity["calibration_residuals"]
+        == "in_sample_on_genuine_OOS_base_forecasts",
+        "Calibration limitations differ",
+    )
+    if sample["status"] != "available":
+        return
+    fits, predictions = sample["calibration"], sample["predictions"]
+    ledger.same([fit["symbol"] for fit in fits], sample["symbols"])
+    ledger.same(len(predictions), len(fits), "Calibration prediction count")
+    for proof, prediction in zip(fits, predictions, strict=True):
+        ledger.same(proof["fit_date"], sample["fit_date"])
+        ledger.same(proof["label_end_before"], sample["label_end_before"])
+        fit = proof["fit"]
+        ledger.require(
+            type(proof["calibration_dates"]) is int
+            and 252 <= proof["calibration_dates"] <= 756
+            and np.datetime64(proof["maximum_endpoint"])
+            < np.datetime64(proof["label_end_before"])
+            and all(
+                type(fit[key]) is int
+                for key in ("observations", "defaults", "parameters")
+            )
+            and fit["observations"] >= 3
+            and fit["defaults"] >= 0
+            and fit["observations"] + fit["defaults"] == proof["calibration_dates"]
+            and fit["parameters"] in (1, 2)
+            and fit["observations"] > fit["parameters"],
+            "Invalid calibration support or publication",
+        )
+        values = [
+            fit[key]
+            for key in ("center", "scale", "slope", "mean", "sum_squared_predictor")
+        ]
+        ledger.require(
+            all(type(value) in (int, float) and np.isfinite(value) for value in values)
+            and (
+                fit["parameters"] == 1
+                and fit["scale"] == fit["slope"] == fit["sum_squared_predictor"] == 0
+                or fit["parameters"] == 2
+                and fit["scale"] > 0
+                and fit["sum_squared_predictor"] > 0
+            ),
+            "Invalid calibration coefficients",
+        )
+        for key in (
+            "decision_indices_sha256",
+            "forecasts_sha256",
+            "labels_sha256",
+            "endpoints_sha256",
+        ):
+            value = proof[key]
+            ledger.require(
+                isinstance(value, str)
+                and len(value) == 64
+                and all(c in "0123456789abcdef" for c in value),
+                "Invalid calibration provenance digest",
+            )
+        ledger.require(
+            all(
+                type(value) in (int, float) and np.isfinite(value)
+                for value in prediction.values()
+            )
+            and set(prediction) == {"conditional_log_mean", "residual_multiplier"}
+            and prediction["residual_multiplier"] >= 1,
+            "Invalid calibration prediction or uncertainty",
+        )
+
+
 # Check qualification partitions and past support without predicting or selecting again.
 def qualification_receipt(receipt, day, dates, *, policy=MATURITY_POLICY):
     if policy == POLICY:
         return
     q = receipt["entry_qualification"]
-    ledger.same(q["policy"], MATURITY_POLICY)
+    ledger.same(q["policy"], policy)
     if q.get("status") == "not_evaluated":
         ledger.require(
             receipt["status"] == "unavailable"
@@ -224,6 +313,11 @@ def qualification_receipt(receipt, day, dates, *, policy=MATURITY_POLICY):
                     "unsupported_volatility_arithmetic",
                     "unsupported_current_or_bank_volatility",
                     "unsupported_scenario_arithmetic",
+                    *(
+                        ("unsupported_log_calibration",)
+                        if policy == CALIBRATED_POLICY
+                        else ()
+                    ),
                 },
                 "Unknown risk exclusion",
             )
@@ -269,6 +363,21 @@ def held_weights(row, index, data):
     }
 
 
+# Check optional calibration provenance only for its registered candidate.
+def candidate_calibration(receipt, source, policy):
+    if policy == CALIBRATED_POLICY:
+        samples = [receipt.get("scenario")]
+        samples.extend(
+            entry.get("risk")
+            for entry in receipt.get("entry_qualification", {})
+            .get("excluded_entries", {})
+            .values()
+        )
+        for sample in samples:
+            if sample is not None:
+                calibration_receipt(sample, source)
+
+
 # Check ordinary receipts against original permissions and observed funded accounts.
 def candidate_receipts(account, data, source, *, policy=POLICY):
     sessions = {row["session"]: row for row in account["sessions"]}
@@ -306,6 +415,7 @@ def candidate_receipts(account, data, source, *, policy=POLICY):
             receipt["source_sha256"], source["backend/market/joint_funded_policy.py"]
         )
         ledger.same(receipt["protocol_sha256"], source[CANDIDATES[policy]])
+        candidate_calibration(receipt, source, policy)
         ledger.same(receipt["horizon"], HORIZON)
         ledger.same(receipt["session"], day)
         ledger.same(receipt["cost_bps"], account["cost_bps"])
@@ -501,7 +611,7 @@ def verify(config, output):
         and inputs["adoption_eligible"] is False,
         "Candidate identity differs",
     )
-    if policy == MATURITY_POLICY:
+    if policy != POLICY:
         ledger.same(admission["candidate_policy"], policy, "Variant admission")
     ledger.require(
         identity["policy"] == ledger.POLICY
@@ -533,7 +643,8 @@ def verify(config, output):
     )
     ledger.require(
         admission["models_fitted"] == admission["models_restored"] == 0
-        and admission["candidate_accounts"] == 60
+        and admission["candidate_accounts"]
+        == (3 if policy == CALIBRATED_POLICY else 60)
         and admission["adoption_eligible"] is False,
         "Candidate input limitations differ",
     )
@@ -602,7 +713,7 @@ def verify(config, output):
             right,
             grid,
             references=("rule", "boosting", "ridge", "SPY", "QQQ")
-            if policy == MATURITY_POLICY
+            if policy != POLICY
             else ("rule", "SPY", "QQQ"),
         ),
         "limitations": [

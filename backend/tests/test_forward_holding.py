@@ -21,6 +21,30 @@ from backend.market.replay_broker import ReplayBroker
 from backend.tests.test_direct_feature_arithmetic import risk_example_factory
 
 
+# Calibrated scenarios retain real publication, report and next-open expiry guards.
+def test_forward_calibration_uses_actual_publication_guards(example):
+    from backend.market.conditional_holding_calibration import (
+        ForwardCalibratedHoldingReader,
+    )
+
+    original, _, _, panel, grades, _, _, now = example
+    current = observation(example)
+    parent = forward.ForwardVolatilityHoldingReader(original, current)
+    reader = ForwardCalibratedHoldingReader(parent)
+    reader.validate_clock(now)
+    reader.validate_report(report(panel, grades))
+    actual = reader.distribution(len(reader.dates) - 1, ("AAA",))
+    assert actual.receipt["status"] == "available"
+    assert (
+        actual.receipt["calibration"][0]["label_end_before"]
+        == actual.receipt["label_end_before"]
+    )
+    with pytest.raises(
+        ValueError, match="Completed close before its following opening required"
+    ):
+        reader.validate_clock(now + timedelta(days=4))
+
+
 # Fit original synthetic evidence once and append one actual reviewed session.
 @pytest.fixture(scope="module")
 def example(tmp_path_factory):

@@ -18,6 +18,7 @@ from backend.market.forward_arithmetic import ForwardVolatilityHoldingReader
 
 POLICY = "joint-stock-risk-funded/1-research"
 MATURITY_POLICY = "joint-stock-risk-funded/2-maturity-shadow"
+CALIBRATED_POLICY = "joint-stock-risk-funded/3-log-calibration-research"
 HORIZON = "next_open_to_following_open_arithmetic_return"
 PROTOCOL = "docs/research/joint-funded-account-plan-2026-10-04.md"
 MATURITY_PROTOCOL = "docs/research/risk-qualified-funded-plan-2026-10-04.md"
@@ -322,3 +323,29 @@ class MaturityFundedPolicy(JointFundedPolicy):
                 "joint_risk_still_required": True,
             },
         }
+
+
+# Use conditional scenarios for both additions and held exits on the private account.
+class CalibratedMaturityFundedPolicy(MaturityFundedPolicy):
+    version = CALIBRATED_POLICY
+    protocol = "docs/research/conditional-holding-calibration-plan-2026-10-05.md"
+
+    # Wrap original history or published current risk without altering default policies.
+    def __init__(self, reader, cost_bps):
+        from backend.market.conditional_holding_calibration import (
+            CalibratedHoldingReader,
+            ForwardCalibratedHoldingReader,
+        )
+
+        if type(reader) is VolatilityHoldingReader:
+            reader = CalibratedHoldingReader(reader)
+        elif type(reader) is ForwardVolatilityHoldingReader:
+            reader = ForwardCalibratedHoldingReader(reader)
+        elif type(reader) not in (
+            CalibratedHoldingReader,
+            ForwardCalibratedHoldingReader,
+        ):
+            raise ValueError(
+                "Original or calibrated authenticated risk reader required"
+            )
+        super().__init__(reader, cost_bps)

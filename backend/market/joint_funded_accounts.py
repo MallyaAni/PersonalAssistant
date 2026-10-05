@@ -19,8 +19,10 @@ from backend.cli.market_actual_policy_timing import (
 from backend.cli.market_learned_entry import write_json
 from backend.market import calendar
 from backend.market.joint_funded_policy import (
+    CALIBRATED_POLICY,
     MATURITY_POLICY,
     POLICY,
+    CalibratedMaturityFundedPolicy,
     JointFundedPolicy,
     MaturityFundedPolicy,
 )
@@ -33,19 +35,20 @@ def _variant(policy):
     options = {
         POLICY: (JointFundedPolicy, "joint"),
         MATURITY_POLICY: (MaturityFundedPolicy, "maturity"),
+        CALIBRATED_POLICY: (CalibratedMaturityFundedPolicy, "calibrated"),
     }
     if not isinstance(policy, str) or policy not in options:
         raise ValueError("Registered funded candidate required")
     return options[policy]
 
 
-# Declare the same twenty starts and three costs without rerunning existing controls.
+# Retain existing grids and limit the new calibration screen to its first fixed start.
 def candidate_grid(dates, *, policy=POLICY):
     _, prefix = _variant(policy)
     return [
         {**row, "arm": policy, "id": f"{prefix}-{row['cost_bps']}-{row['start']}"}
         for row in account_grid(dates)
-        if row["arm"] == "rule"
+        if row["arm"] == "rule" and (policy != CALIBRATED_POLICY or row["start"] == 0)
     ]
 
 
