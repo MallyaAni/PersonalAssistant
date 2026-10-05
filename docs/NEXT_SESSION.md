@@ -1,5 +1,43 @@
 # Next session
 
+## 2026-10-04 — future-intent correction LIVE; first funded results available
+
+VERIFIED deployed source e8e339e0f9bdf247ce4d16bedc3f6c744af0b638 through
+scripts/deploy.sh. Unit gate: 8664 passed, 93 skipped, 6 xfailed; real routing
+gate: 100 passed. Post-deploy receipt: 2026-10-05T03:04:10Z e8e339e0 ok (cheap).
+The original failed gate and its fixed-clock test repair remain recorded below.
+No assertion or gate was weakened. No strategy or UI change in this release.
+
+Actual backend image 8b58ab3ab08a1ebadf1ca6e98623e9862c25218fd8dcf0a7d12cce7842275409,
+serving container 1d19169df26ba84bc32431b6b73adf387e0f4dfaacfef9777b1039772a2629a9.
+All 2187 runtime source files match the committed source manifest; host deploy
+files also match. Same-image private acceptance, with no source override:
+13/13 future unsent intents retained, 0 settled, state reloaded, exit 0.
+No orders or broker/production-state mutations. Three checked local model
+containers have unchanged IDs/images/start times. Future broker fills remain
+UNVERIFIED; this proof does not establish model profitability or chart behavior.
+
+Root /home/animallya96/scratch/main-intent-proof-20261004-b2a09688;
+live-execution-e8e339e0.json SHA
+881d56faaee10d0532093e408c658a7ec70c34c59032237da551a76e36a813c0.
+Release log /home/animallya96/scratch/main-intent-release-clock-20261004.log.
+Spark primary ~/anios fast-forwarded to e8e339e0; user untracked
+.github/workflows/spark1.yml and scratch/ preserved. Do not redeploy merely
+because this documentation checkpoint puts main ahead of the live marker.
+
+Research remains isolated on codex/learned-entry-risk-20261002. First fixed
+2018-02-01..2026-09-30 / 0bp books independently verified from saved bytes:
+rule CAGR 28.34%, boosting timing 28.76%, joint sizing v2 18.62%, SPY 13.14%,
+QQQ 19.04%. These are conditional current-vintage/proxy accounts, not exact
+historical live reconstruction or proven broker fills. V2 trails rule/QQQ;
+the timing control's small advantage does not yet justify adoption. Nonzero
+costs/other starts remain pending; actual held-book SNDK coverage remains
+insufficient. Existing producers/watchers remain immutable: do not restart,
+refit, tune from outcomes or merge the research branch. Detailed results and
+proof hashes are on the research branch in
+docs/research/joint-funded-saved-proof-checkpoint-2026-10-04.md.
+Full entry/exit replacement objective remains ACTIVE, not complete.
+
 ## 2026-10-04 — scheduled paper intents preserved; guarded release pending
 
 Release408d355e FAILED before touching deployment: 8663 passed,93 skipped,
