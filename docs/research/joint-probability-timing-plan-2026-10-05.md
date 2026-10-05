@@ -100,3 +100,25 @@ one-decision price-advantage horizon and existing expected-log-NAV decision.
 This does not prove confidence calibration or broker fills. Actual current-bar
 observation binding, publication-delay handling and sender acceptance remain
 required before any live selection.
+
+## Actual-clock conditional sender transport
+
+Keep historical exact-boundary admission unchanged. The separate private
+forward adapter requires the actual forecast availability before its decision,
+and independently received raw bid/ask plus the already published original
+next-bar opening. With current midpoint M and original next opening O, transport
+the existing log-price forecast by log(M/O). This is a conditional midpoint
+proxy with unchanged future endpoint, not an executable-fill or accuracy claim.
+Reject missing anchors, future receipts, incompatible price bases and quotes
+outside the existing30-second/25bp execution guards, including wide IEX books.
+No new fitted threshold, numerical floor or outcome-driven adjustment.
+
+Read broker cash, buying power and whole-share positions twice with source
+clocks before/after, then record the actual post-GET capture time. Reject changing
+funds/quantities, future clocks and stale snapshots. Independent current feeds
+may mark NAV differently; exact mark equality does not establish price basis.
+Preserve aggregate pending-buy funding, covered sells, unchanged intent identity,
+company/event priorities and original final deadline. Persist the forward receipt
+alongside the actual sender acknowledgment. This contract is private and cannot
+promote the candidate. Real feature/model/quote acquisition and source basis
+authentication still require combined acceptance before production selection.

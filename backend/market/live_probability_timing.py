@@ -220,11 +220,55 @@ def build_reader(
     now, session, symbols, start = _contract(
         provider, symbols, day, clock, session, now, snapshot, pending, cost_bps, trace
     )
+
+    # Keep the historical quote contract unchanged when sharing batch accounting.
+    def quote_reader(quote):
+        return _quote(quote, start, now, session)
+
+    # Keep the historical broker contract unchanged when sharing batch accounting.
+    def account_reader(marks):
+        return _account(broker, marks, now)
+
+    return _frozen_reader(
+        provider,
+        symbols,
+        day,
+        clock,
+        session,
+        now,
+        snapshot["quotes"],
+        pending,
+        cost_bps,
+        trace,
+        quote_reader,
+        account_reader,
+        start,
+    )
+
+
+# Share original intent, funding and utility checks across explicit clock contracts.
+def _frozen_reader(
+    provider,
+    symbols,
+    day,
+    clock,
+    session,
+    now,
+    supplied_quotes,
+    pending,
+    cost_bps,
+    trace,
+    quote_reader,
+    account_reader,
+    start,
+    *,
+    extra=None,
+):
     identities = _intents(pending, session, symbols)
     original = {r[0]: r for r in identities}
-    quotes = deepcopy(snapshot["quotes"])
-    marks = {s: _quote(q, start, now, session) for s, q in quotes.items()}
-    account_reason, nav, budget, held = _account(broker, marks, now)
+    quotes = deepcopy(supplied_quotes)
+    marks = {s: quote_reader(q) for s, q in quotes.items()}
+    account_reason, nav, budget, held = account_reader(marks)
     buying = [r for r in identities if r[2] == "buy"]
     missing_buy = any(marks.get(r[1]) is None for r in buying)
     spend = (
@@ -248,7 +292,7 @@ def build_reader(
         if original.get(identity[0]) != identity:
             raise ValueError("Timing reader original intent identity differs")
         cid, symbol, side, qty = identity
-        mark = _quote(quote, start, now, session)
+        mark = quote_reader(quote)
         reason = account_reason or (
             "unsupported learned clock"
             if clock > 22
@@ -281,6 +325,7 @@ def build_reader(
                 horizon=probability.HORIZON,
             )
         evidence = {
+            **deepcopy(extra or {}),
             "policy": POLICY,
             "intent_id": cid,
             "day": int(day),

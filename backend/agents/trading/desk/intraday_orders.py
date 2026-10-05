@@ -158,6 +158,18 @@ def _why_sent(timed: dict[str, Any], how: str, now: datetime) -> dict[str, Any]:
         "level": timed.get("level"),
         "trigger_bar": timed.get("trigger_bar"),
         "trigger_price": timed.get("trigger_price"),
+        **(
+            {
+                "forward_timing": {
+                    "receipt": deepcopy(timed["forward_receipt"]),
+                    "receipt_sha256": timed["forward_receipt_sha256"],
+                    "trade_fraction": timed["trade_fraction"],
+                    "expected_log_utility": timed["expected_log_utility"],
+                },
+            }
+            if "forward_receipt" in timed
+            else {}
+        ),
     }
 
 
