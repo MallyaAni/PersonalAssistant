@@ -1,5 +1,58 @@
 # Next session
 
+## 2026-10-05 — private sizing/timing connection verified; economic screen unchanged
+
+Goal ACTIVE. Starting clean branch codex/learned-entry-risk-20261002 at
+64b60f15, origin/main still f77d6e57. PROGRESS: code checkpoint
+b45791f368c3d05b5a90a26db4f43a1032fdf04b implements the separately named
+joint-stock-risk-funded/4-calibrated-probability-timing-research integration.
+It preserves v3 allocation economics and routes only ordinary allocation
+orders to the existing empirical intraday timing reader. Company exits stay
+next-open; event dispatch stays prior to ordinary planning. No economic grid
+or production selector was added. All original active producers stay immutable.
+
+FAILED first acceptance on original source: combining a next-open holding
+policy with an explicit intraday model was accepted while its quantities still
+filled at the open. It now refuses that unused dependency before account writes.
+The combined policy requires the original saved-distribution loader, real reader
+and aligned dates/symbols; it persists required timing identity on pending rows.
+Missing timing before the deadline cannot revert to the 1% gate. Invalid
+contracts or substituted verdicts cannot downgrade. Same funded quantities,
+cash/covered shares and original intent IDs survive through reconciliation.
+
+VERIFIED final native source: 208 pass/no skips in 41.17s, one environment
+asyncio warning. Exact checkpoint on pinned source image
+5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d:
+208 pass/no skips in 23.24s, read-only pytest-cache warning only. Ruff and
+diff check clean. Actual nightly/storage/sender/private fills/reconciliation
+prove buy waiting despite a 2% dip, later execution on a flat bar, held A+
+discretionary exit without a pop, repeat safety, missing-reader guard, company
+and event priority. Early-close missing bars remain missing through the actual
+12:45 deadline: no invented request or fill. A new test initially expected a
+request despite absent raw quotes; corrected that new expectation to the
+existing sender contract, never changed the mark/fill guard or old assertions.
+
+Spark proof root /home/animallya96/scratch/joint-timing-source-20261005-b45791f3.
+2397 source members match exact Mac commit; source unchanged before/after tests.
+Manifest SHA 3758f8fba8a54160e93115acc170260947224367f9c5f34e9ef5209dddcff39e;
+tests log SHA c997574051a2b891dfe8ac1d612c6139381accea4d3f5ebf3136af6312cb66fa;
+tests receipt SHA 0ed5c90046b75689249980c694349367c3ac415583bf66d347724c330f8ceb48.
+Private test container network none, source read-only, CPU2/memory8G; no
+model-service changes or production account writes. Diagram impact NONE:
+existing private planner/sender mechanism, not a new conversational agent.
+
+UNVERIFIED: combined economic gain, genuine forward timing publication and
+production adoption. This is wiring proof, not alpha. Do not rerun old checks,
+launch another account grid or promote the combined policy from these tests.
+At 01:12 NY the immutable 3a598702 three-cost screen is still running:
+calibrated-0-0 has 1180 sessions through 2022-10-06, no completed account.
+V2 second start has 2080 sessions through 2026-05-12; original controls have
+six completed books and boosting-0-1 is running. None restarted or edited.
+NEXT: inspect the new first saved calibrated account, then execute the already
+prepared saved-only prefix proof once; nonzero-cost controls remain pending.
+Live still verified e8e339e0, incumbent unchanged. No deployment for this
+research-only checkpoint. Goal remains incomplete.
+
 ## 2026-10-05 — new saved causal-regime evidence; all producers unchanged
 
 Goal ACTIVE. Previous goal turn was PROGRESS: implemented/pushed 3a598702,
