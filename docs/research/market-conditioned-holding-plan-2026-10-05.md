@@ -1,5 +1,52 @@
 # Market-conditioned holding calibration
 
+## Frozen economic producer and conditional launch
+
+Source f58d87e60c89cbd3728c6016632aba42e9f6e83f reconciles current main without
+changing this branch's market/API bytes. A new2403member archive and external
+runner are frozen before V5 portfolio outcomes.50exact-image merge tests pass,
+no skips. Fixed-date preflight independently checks228available original-bank
+calibrations:67on2019-03-01,72on2021-01-04,89on2026-09-30. Retain60unavailable
+opportunities (52missing_current_forecast,8insufficient_joint_history).
+No base heads or performance account were fitted/scored in this preflight.
+This confirms supplied-bank numerical causality, not forecast calibration,
+historical publication, broker fills or an economic advantage.
+
+Root `/home/animallya96/scratch/market-funded-screen-20261005-f58d87e6`:
+
+- source-manifest.json SHA
+  `dfbab58d6c033390988dc83c9578ec162afe906d3fa26af6478c7a936cb4ecc9`.
+- runner.py SHA
+  `9a41a90e9624a35038396a702c7e54531c1d5cba32e2069b91df31ed8e1f439c`.
+- proof/economic-command.json SHA
+  `813514c399873b9892852be12290f2cf52dc36d10c3ba96ae068a785bb641604`.
+- preflight-execution.json SHA
+  `5ca86122a6682d16a964ff97d261345eb2b01cfbfe24a1e66abfc01d23fbbea4`.
+- proof/market-preflight.json SHA
+  `17009300f0bc9b55f833dd9ceb8ba5448473776793e428be86e6323942d646f3`.
+- proof/tests.log SHA
+  `2f2f7c5157486eb640dc45fa917d54b3f2ae624c72e83c42f20e4b70cba8d481`.
+- proof/preflight.log SHA
+  `c87f33bd1f939edb436c1372642473938cf8706c6b71eda702823d263f553483`.
+- coordinator.py SHA
+  `817ee7770d2a8a0d21b0772e37a37d314c1cd9125fc4d73a06782eb5e2eaff15`.
+
+One detached coordinator PID86605 was started at07:06NY and its process and
+queue.json inspected. It waits for the exact original V3 producer's successful
+terminal state, original-input completion receipt and three-account index.
+It runs the existing old-source saved-only verifier ONCE into a fresh v3-review
+directory before launching the already prepared three-account V5 command.
+It does not refit, reprice controls, wait for every300control account, restart
+any producer or change active source. All source/helper/command inputs are
+hash-bound; failures persist and stop. The original and V5 handles remain
+separate. A queue or launch receipt is not a completed backtest or live change.
+
+Image remains `sha256:5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d`;
+CPU2/memory8GiB, network-none, read-only source/original data, private outputs.
+V5 IDs, dates, costs, accounting, development-window limitations and adoption
+restrictions remain the fixed design below. No model services or production
+data, accounts, policy or UI changed.
+
 ## Saved account acceptance
 
 Verified code84769d259eb802a9a10453b35aa1d7af2474e02a adds V5 receipt validation

@@ -1,5 +1,48 @@
 # Next session
 
+## 2026-10-05 — V5 frozen, preflight passed, completion-dependent launch queued
+
+Goal ACTIVE. Started clean atb011d90e. Merged origin/main f77d6e57 without
+rewriting published history: f58d87e60c89cbd3728c6016632aba42e9f6e83f.
+The main unsent-intent fix already existed on this branch at57559291; retain
+the causal decision clock and optional private feature reader when resolving
+duplicate context. All market/API code is byte-identical to the starting tree;
+only main's fixed-clock test and91handoff lines enter this merge. Preserve
+both research and main proof history. No production deploy is needed here.
+
+VERIFIED: exact f58d87e6 archive2403members;50pinned-image merge checks pass,
+no skips. Original-bank V5 preflight on fixed2019-03-01/2021-01-04/2026-09-30
+checks228available calibrations independently, retains60unavailable
+(52missing_current_forecast/8insufficient_joint_history), and fits no base
+heads. Source/data unchanged. This is causal numerical acceptance, not
+portfolio performance, calibrated confidence or live adoption evidence.
+
+Spark root /home/animallya96/scratch/market-funded-screen-20261005-f58d87e6.
+Pinned image5c6c5605...,manifestSHA
+dfbab58d6c033390988dc83c9578ec162afe906d3fa26af6478c7a936cb4ecc9;
+preflight executionSHA5ca86122a6682d16a964ff97d261345eb2b01cfbfe24a1e66abfc01d23fbbea4.
+Full hashes and command scope in the market-conditioned holding protocol.
+
+At07:06NY original V3 handle cd6a73ef... remains RUNNING/OOMfalse;
+2of3 costs indexed,25bp1840of2177sessions through2025-05-27. Never restart or
+alter its mounted source. Started ONE coordinator PID86605 and confirmed its
+actual process plus queue.json. It authenticates the original handle, waits
+at most2hours, requires exit0/all3accounts/original-input integrity, folds
+saved accounts with the unchanged original verifier into NEW v3-review,
+then launches exactly the prepared market-0-0/market-10-0/market-25-0 screen.
+No waiting for all300controls and no duplicate control accounts. The candidate
+uses network-none/read-only source/data and private account outputs. Missing
+matching controls remain explicit. queue-failure.json stops the coordinator
+at the first failed boundary, without any automatic restart.
+
+NEXT: inspect actual coordinator/old/new Docker handles and launch-receipt.json
+before acting. Do not launch twice, restart active work or recopy sources.
+If V5 is running, retain exact source/runner/image and review its saved accounts
+against the authenticated original bank, reusing only available matching
+controls. Economic advantage/live replacement remain UNVERIFIED. Existing
+live policy, models, production accounts and data are unchanged.
+Diagram impact: NONE — private execution artifacts, existing model/data flow.
+
 ## 2026-10-05 — V5 fixed screen wired and saved-index path verified
 
 Goal ACTIVE, PROGRESS. Started clean at80b99636. First actual boundary FAILED:
