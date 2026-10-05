@@ -43,7 +43,7 @@ def side_pending(v, original, learned_side, entries, pending, observed, wanted,
 
 
 # Verify original data and every recorded fill, then summarize paired account gains.
-def main():
+def main(prediction_path=None, expected_prediction_sha256=None, sides=("buy", "sell")):
     v = verifier()
     raw = Path("/primary/evaluation.json").read_bytes()
     if hashlib.sha256(raw).hexdigest() != PRIMARY_SHA:
@@ -63,10 +63,21 @@ def main():
                            provenance=Path("/inputs/portfolio.json"), cubes=Path("/cubes"),
                            prepared=Path("/prepared"), source_root=Path("/app"))
     panel, dataset, opened, supported = v.verify_inputs(args, source)
-    prediction_path = Path("/primary/models/predictions.npz")
-    if v.file_hash(prediction_path) != primary["identity"]["forecast_sha256"]:
-        raise ValueError("Original forecast archive changed")
-    predictions = v.read_npz(prediction_path)["predictions"]
+    if prediction_path is None:
+        prediction_path = Path("/primary/models/predictions.npz")
+        expected_prediction_sha256 = primary["identity"]["forecast_sha256"]
+    else:
+        prediction_path = Path(prediction_path)
+        if not expected_prediction_sha256:
+            raise ValueError("Explicit candidate forecast hash required")
+    if v.file_hash(prediction_path) != expected_prediction_sha256:
+        raise ValueError("Forecast archive changed")
+    forecast_archive = v.read_npz(prediction_path)
+    predictions = forecast_archive["predictions"]
+    if not np.array_equal(forecast_archive["dates"], dataset["dates"]):
+        raise ValueError("Forecast dates differ from original inputs")
+    if predictions.shape != (*dataset["valid"].shape, 2):
+        raise ValueError("Forecast dimensions differ")
     dates = panel["dates"].astype("datetime64[D]")
     first = int(np.flatnonzero(dates == np.datetime64("2018-02-01"))[0])
     comparison_dates = dates[first - 1:]
@@ -74,8 +85,11 @@ def main():
                 for r in primary["phases"] if r["cost_bps"] == 0}
     original_pending = v.audit_pending
     result = {"primary_sha256": PRIMARY_SHA, "verifier_sha256": VERIFIER_SHA,
+              "forecast_sha256": expected_prediction_sha256,
               "cost_bps": 0, "adoption_eligible": False, "accounts": [], "summary": {}}
-    for side in ("buy", "sell"):
+    if not sides or any(side not in ("buy", "sell") for side in sides):
+        raise ValueError("Explicit intervention sides required")
+    for side in sides:
         # Bind the intervention side while preserving the original accounting checker.
         def audit(*args):
             return side_pending(v, original_pending, side, *args)
