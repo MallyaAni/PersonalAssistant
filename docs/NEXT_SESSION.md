@@ -1,5 +1,85 @@
 # Next session
 
+## 2026-10-05 — delayed forward sender acceptance verified; V5 still running
+
+Goal ACTIVE. Human asked why the backtest is not ready; report actual progress,
+not a completion promise. Started cleanb5c51a27 on the owned research branch.
+GitHub main f77d6e57 remains unchanged and is already an ancestor. Required
+pull/rebase attempted to replay220 published branch commits and conflicted in
+handoff; immediately aborted, restored exact original HEAD/clean tree. No
+published history rewritten. Avoid repeating that rebase; verify ancestry and
+preserve shared main. Primary Mac/Spark checkout unchanged.
+
+VERIFIED source c3e820cf0d9141916ed863e3defc4d260b25d84b:173 forecast/private
+sender tests plus44 existing intraday sender tests, no skips;2409 exact archived
+source files unchanged. Proof /home/animallya96/scratch/forward-sender-20261005-evaluation2,
+image5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+Primary logSHA0fcb22b6090f273694b8b394fff5a651273ea940cdcaef89812ca3643eb5abe8;
+commandSHA46fb7d9b4a0a02f93a00c53811bd54a3bccb339bec803b451e013fa921e55886;
+manifestSHA5654293da74268fa94c260973bf4464177d0f28e506d301f67a992b0f7d085a9;
+legacy logSHA36ef858e6dc2c7537f672fc6000e93407ec482e98b7b97d3d0501d39c0e6aea9.
+Initial90f2da6f retained167pass. New files Ruff PASS --no-cache; existing sender
+RUF046 and historical-reader TRY004 findings predate this change and remain.
+Initial lint failed because read-only cache lacked permission, then no-cache
+passed; no acceptance assertions weakened. Earlier PT018 conjunctions split
+without changing either property. Diagram impact NONE: private adapter in the
+existing execution flow, no new service/agent/tool/prompt/UI.
+
+New forward_probability_timing.capture_account performs repeated cash/power/
+whole-share GETs bracketed by actual source clocks, recording the actual
+post-response capture time. Changing funds/shares, future clocks, stale/unknown
+accounts fail closed. Separate forward build_reader admits actual forecast
+availability and dated raw bid/ask/known original next-bar opening. Current
+midpoint transport is log(M/O), not an assumed fill or calibrated conditional
+probability. Preserve original future endpoint and record the delay. Original
+30second/25bp quote guards apply to both feeds; no fitted threshold/floor.
+The original historical reader's exact boundary contract is unchanged; shared
+_frozen_reader preserves intent identity, aggregate buy funding and covered
+sells. Real private sender acknowledgments now retain the supplied forward
+receipt/hash/utility/funded fraction. Tests exercise actual persisted states,
+buy/sell direction and observed price transport, missing risk/anchors, invalid
+prices/bases/clocks, concurrent account changes, repeat identity and no legacy
+one-percent fallback. Company/event/default final routing unchanged.
+
+UNVERIFIED: real-source acquisition/authentication and combined current-feature
+observation -> numeric head -> residual -> timestamped forecast -> sender;
+forward allocation selection/persistence and actual complete portfolio acceptance.
+The adapter accepts caller-authenticated supplied distributions/source identities;
+hash-shaped strings alone do not establish real model/quote provenance.
+The current-midpoint transport is a separately recorded shadow contract, not
+the exact-opening V5 historical screen or proof that it performs better.
+No production caller, orders, deployment, refitting or new economic grid.
+
+Actual V5 container659a960b still RUNNING/OOMfalse; sole watcher252268 unchanged.
+At10:51:17NY, market-0-0 reached1000sessions through2022-01-19,0complete accounts.
+Frozen source756c0076 and active mounted bytes untouched. The replay uses about
+one CPU core despite its2CPU quota. Its carried state has grown to119,262,915
+bytes at1007 history entries: read/parse0.53436seconds, same indent2 encoding
+1.22930seconds in a bounded1GB read-only probe. SnapshotSHA
+b403d945da7ad11b47e0fd54529d9e845b5d8db2cbd0f5fe260cda5b49f3983b;
+latest history joint_funded receipt alone81056compact JSON bytes. There are
+only3pending rows, so growth is retained history, not a duplicate-order flood.
+This is measured serialization overhead, not economic scoring. Do not prune
+history, alter the active source, restart/re-run the producer or select costs
+from partial results. Its completion watcher deadline14:51NY may expire before
+the slow producer; timeout is not producer failure. Revalidate exact handle
+after expiration before arranging another bounded read-only completion watch.
+Future storage improvements require unchanged carried-account/evidence semantics.
+
+Mac writes initially failed with128MiB free. Recovered ONLY reproducible owned
+temp codex-bounded-base-20261001.tar: exact git archive9ab75e85 SHA
+d3b49dbbc3879375966ec578c679b1784b039eb44c4d1684e78357ce7ae6152f,
+retained Git source and no open handles. No data/proof/model file removed;
+temporary writes now work. Stream source archives to Spark, never stage them
+locally. Separate October5 read-only collector89bdf2bb remains RUNNING/OOMfalse;
+do not reinitialize/restart or touch its mounted source. Closing evidence and
+the fixed original cohort still require their normal independent finalization.
+
+NEXT: bind actual inference/publication evidence to this sender, including the
+distinct current-midpoint transport identity, rather than invent a historical
+timestamp. Keep live default unchanged until full comparison and actual source/
+account acceptance support adoption. No superiority claim from217 checks.
+
 ## 2026-10-05 — forward residual/current-distribution path verified
 
 Goal ACTIVE; prior turn PROGRESS (88-case feature path pushed508f3568).
