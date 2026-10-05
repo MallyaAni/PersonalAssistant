@@ -1,5 +1,41 @@
 # Next session
 
+## 2026-10-04 — scheduled paper intents preserved; guarded release pending
+
+Verified code b2a09688e85f97a0059dad830170ba7a53404604, based on
+origin/main204689db. Only paper settlement, nightly reconciliation and their
+existing test module changed. No learned-policy imports, strategy selection,
+model-service changes, production state writes or broker mutations.
+Diagram impact: NONE — existing reconciliation and persistence boundary.
+
+VERIFIED: 164 relevant tests passed in the pinned source-mounted image
+5c6c5605. Normal/early closes, mixed confirmed fills, pending persistence and
+rebalance completion covered. Main already has four Ruff findings in
+market_daily.py (C901, two E501, I001); original and changed trees have exactly
+the same findings. Do not describe this as a clean repository lint run.
+
+FAILED original boundary reproduced on exact204689db: original saved paper
+GET receipts cause all13 future unsent intents to settle missing before their
+October5 execution window. The failure wrote only a private copied store.
+VERIFIED corrected b2a09688: 13 retained/0 settled and private state reloaded;
+captured source state and broker receipts unchanged. Nightly now supplies an
+aware clock; unsent intraday rows expire at actual exchange close, ordinary
+opening rows at opening. Known broker outcomes still settle immediately.
+Partial settlement cannot discard unexamined pending legs or conclude them.
+
+Exact2188-file original/fixed source manifests, original red and corrected
+readback are in /home/animallya96/scratch/main-intent-proof-20261004-b2a09688.
+execution.json SHA f5af2c29c9d743207bbe49edef22576c7d8ae9f0ab6e00c3f3a1c41b49995937
+pins process IDs/image, commands, sources and result. First helper attempt
+imported a research-only module absent on main; it failed before acceptance.
+Corrected helper exercises main reconciliation/persistence directly.
+
+UNVERIFIED: deployment and actual future broker fills. Ship only through
+scripts/deploy.sh to ~/deploy/anios, preserving621e28f0 paper close-window fix.
+Do not merge the large research branch or promote a learned strategy. Fixed
+candidate/control backtests and existing saved-result watchers remain active
+and immutable; revised economic advantage and SPY/QQQ comparison are pending.
+
 ## 2026-10-02 — LIVE 20:12 ET: the paper close window sends a market order at 3:45 PM, not market-on-close
 
 This fixes the open leak below ("market-on-close orders expire on the paper
