@@ -163,7 +163,9 @@ def test_publication_binds_actual_clock_helpers_and_calendar(fitted):
         exchange.HISTORICAL_SESSIONS_PATH, exchange.HOLIDAYS_PATH,
         exchange.EARLY_CLOSES_PATH,
     ):
-        assert recorded[str(path.relative_to(root))] == sha256(path.read_bytes()).hexdigest()
+        assert recorded[str(path.relative_to(root))] == sha256(
+            path.read_bytes()
+        ).hexdigest()
 
 
 # A returned receipt must not alias or revise the registered execution target.
