@@ -13,10 +13,13 @@ from datetime import datetime
 from pathlib import Path
 
 import numpy as np
+import sklearn
 from threadpoolctl import threadpool_limits
 
 from backend.market import calendar as exchange
+from backend.market import daily_arithmetic_bridge as reference
 from backend.market import direct_daily_arithmetic as numeric
+from backend.market import forward_arithmetic as publication_source
 from backend.market import learned_entry_data as features
 from backend.market import learned_entry_models as original
 from backend.market import learned_intraday_moments as moments
@@ -137,6 +140,11 @@ def _sources():
         Path(features.__file__),
         Path(numeric.__file__),
         Path(exchange.__file__),
+        Path(reference.__file__),
+        Path(publication_source.__file__),
+        exchange.HISTORICAL_SESSIONS_PATH,
+        exchange.HOLIDAYS_PATH,
+        exchange.EARLY_CLOSES_PATH,
         root / PROTOCOL,
     )
     return {
@@ -240,6 +248,7 @@ def fit_month(
         "published_at": requested.isoformat(),
         "feature_names": names,
         "config": dict(original.MODEL_CONFIG["boosting"]),
+        "runtime": {"numpy": np.__version__, "sklearn": sklearn.__version__},
         "minimum_days": original.MIN_TRAIN_DAYS,
         "maximum_days": original.MAX_TRAIN_DAYS,
         "freeze": str(original.HOLDOUT_START),

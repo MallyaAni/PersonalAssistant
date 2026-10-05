@@ -2,12 +2,16 @@
 
 from copy import deepcopy
 from datetime import datetime
+from hashlib import sha256
+from pathlib import Path
 
 import joblib
 import numpy as np
 import pytest
 
 from backend.market import calendar as exchange
+from backend.market import daily_arithmetic_bridge as reference
+from backend.market import forward_arithmetic as publication_source
 from backend.market import forward_execution as forward
 from backend.market import learned_entry_data as features
 from backend.market import learned_entry_models as original
@@ -17,7 +21,9 @@ from backend.market import learned_intraday_moments as moments
 # Supply a complete session grid with real models and controlled synthetic labels.
 def dataset(end="2026-10-02"):
     _, calendar = exchange.reviewed_sessions()
-    dates = np.arange("2023-01-03", np.datetime64(end) + 1, dtype="datetime64[D]")
+    dates = np.arange(
+        "2023-01-03", np.datetime64(end) + np.timedelta64(1, "D"), dtype="datetime64[D]"
+    )
     dates = dates[np.is_busday(dates, busdaycal=calendar)]
     rng = np.random.default_rng(721)
     x = rng.uniform(-1, 1, size=(len(dates), 25, 3, 21)).astype(np.float32)
@@ -146,6 +152,18 @@ def test_freeze_and_future_prefix_invariance(fitted):
     after = publish(changed)
     assert after.receipt["models"] == before.receipt["models"]
     assert after.receipt["training"] == before.receipt["training"]
+
+
+# Clock semantics and calendar bytes must remain attributable to the published fit.
+def test_publication_binds_actual_clock_helpers_and_calendar(fitted):
+    recorded = fitted[1].receipt["identity"]["sources"]
+    root = Path(forward.__file__).resolve().parents[2]
+    for path in (
+        Path(reference.__file__), Path(publication_source.__file__),
+        exchange.HISTORICAL_SESSIONS_PATH, exchange.HOLIDAYS_PATH,
+        exchange.EARLY_CLOSES_PATH,
+    ):
+        assert recorded[str(path.relative_to(root))] == sha256(path.read_bytes()).hexdigest()
 
 
 # New-month fitting needs only the previous completed session, not future prices.
