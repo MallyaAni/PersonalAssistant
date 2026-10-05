@@ -149,7 +149,8 @@ def test_invalid_evidence_blocks_actual_sender(tmp_path, key, value):
     trace, state, client, lines = send(tmp_path, quotes=quotes)
     assert trace[0]["state"] == "unavailable"
     assert not state.pending[0].get("sent")
-    assert client.attempt_history == () and lines == []
+    assert client.attempt_history == ()
+    assert lines == []
 
 
 # No cash cannot be replaced by the hoped-for proceeds of a held position.
@@ -159,7 +160,8 @@ def test_zero_cash_preserves_pending(tmp_path):
     )
     assert trace[0]["state"] == "no_trade"
     assert trace[0]["buying_power_budget"] == 0
-    assert not state.pending[0].get("sent") and client.ledger()["cash"] == 0
+    assert not state.pending[0].get("sent")
+    assert client.ledger()["cash"] == 0
 
 
 # Different current feed marks do not permit selling more shares than actually held.
@@ -218,7 +220,8 @@ def test_concurrent_account_change_is_unavailable(field):
         changed_clock,
     )
     result = forward.capture_account(client, NOW, clock=lambda: DECISION)
-    assert result["receipt"]["reason"] and result["receipt"]["budget"] is None
+    assert result["receipt"]["reason"]
+    assert result["receipt"]["budget"] is None
 
 
 # Receipt tampering cannot manufacture funds while retaining the captured identity.
