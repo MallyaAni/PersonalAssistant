@@ -1,5 +1,51 @@
 # Next session
 
+## 2026-10-04 — strict joint optimizer refusal reproduced and fixed
+
+Goal ACTIVE; turn PROGRESS. Startedaa6f1c18 clean on isolated
+codex/learned-entry-risk-20261002. Verified codeba15b76998afecfd66438e54fa124eb6f059c163;
+main204689db remains ancestor/unchanged. Diagram impact NONE: bounded numerical
+refinement inside the existing research allocator. No live/UI/model/account
+policy promotion, active-source edits, new model fits or account resimulations.
+
+FAILED original acceptance reproduced in pinned runtimec54c2937: originalfa2
+production plus explicit new test/fixture mounts refuses2019-05-02. Native
+older runtime passes the original, so this is platform-sensitive, not proof
+that all prior decisions failed. Earlier red-run launcher failed before Python
+because a nested mount target was absent; corrected directory mount exercised
+the actual assertion. Original dated310-scenario/eight-stock inputs retained
+verbatim in20KB fixtureSHAe302a298f69eff4188fc2253954c65f03565c51a76bd68c16d2e501a1bc74323.
+Original account/proof and risk-loader authentication are recorded in
+/home/animallya96/scratch/joint-optimizer-boundary-20261004/proof/boundary-proof.json,
+SHAe27518275c410c29ed9b672dcff40cfbd171b699355df2c8a9ac96c725383be2.
+
+VERIFIED fix: only a feasible uncertified point gets ONE positive-gradient-
+normalized SLSQP retry. Same original expected-log objective, fees, cash,
+position bounds and1e-8 global certificate; reject worse or uncertified output.
+Already-certified solves are unchanged. Keep accepted/rejected retry provenance
+through exact ownership-kink certification. Tests include false solver success,
+out-of-bounds output and refinement exceptions; none authorize new buys.
+Native70passed; Ruff/format/diff clean. Exact2392-file tree pinnedf8b2b1b:
+212passed/no skips12.86s. Actual production acceptance4f2c05e8 on original
+dated inputs: initialgap3.4445898173412516e-6, finalgap5.637851296924623e-18,
+violation0, minimum scenario wealth0.949857553467481. Originalcash and25%
+caps respected. This proves numerical availability, NOT economic advantage.
+
+Root /home/animallya96/scratch/joint-optimizer-proof-20261004-ba15b769;
+manifestSHA2fa107bf8af8702069016539612acbe4a3d0a17c6f7eeded072b0efcd92599bc;
+acceptanceSHAe092db8ca7811f49e00ac8c24d302f6bdeda9a112bd2fd7167b794c5ad12501c;
+executionSHA39e9da7d384869b52ff6a53213e42b3e74c774884515d2719b3ce93acc62d3f8
+pins exact source/image, original red assertion, final gate and actual inputs.
+
+At21:24NY producers remain running/untouched: v1 has1completed/second1920
+sessions through2025-09-22; controls2completed/ridge800sessions through
+2021-04-06; v2 has0completed/1500sessions through2024-01-17. Prior five-control
+and final saved-proof watchers remain unchanged. Next inspect compact completion
+and execute predeclared v2 saved-only proof ONCE when a completed book exists.
+Never credit this new numerical source to old immutable study results, repeat
+old initial-pair scoring, restart producers, tune from outcomes or claim live
+replacement. Current-vintage/proxy assumptions and missing comparisons remain.
+
 ## 2026-10-04 — first funded pair independently verified; persistence accelerated
 
 Goal ACTIVE. Previous turn PROGRESS; this turn PROGRESS. Starteda3b1f4be clean
