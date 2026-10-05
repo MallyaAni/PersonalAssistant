@@ -22,7 +22,8 @@ def actions(opened, observed, delta, known, pending, final, counts, carry):
 
 
 # Carry frozen plan quantities and funding until replacement by the next plan.
-def account(panel, grades, eligible, dataset, opens, first, phase, support, carry):
+def account(panel, grades, eligible, dataset, opens, first, phase, support, carry,
+            buy_forecasts=None):
     timing.validate_replay(panel, grades, eligible, dataset, first, 0, phase)
     support, counts = timing.replay_controls(panel, 24, support, {
         "waiting_decisions": 0, "opening_unavailable": 0,
@@ -77,6 +78,12 @@ def account(panel, grades, eligible, dataset, opens, first, phase, support, carr
                     available = pending & ~attempted & (np.abs(delta) > 1e-10)
                     acting = actions(opens[day], observed, delta, known, available,
                                      clock == 24, counts, carry)
+                    if buy_forecasts is not None:
+                        value = buy_forecasts[day, clock]
+                        buys = available & known & (delta > 0)
+                        acting = (acting & (delta < 0)) | (
+                            buys & np.isfinite(value) & (value <= 0)
+                        )
                     attempted |= acting
                     timing.trace_attempts(rows, acting, clock, clock == 24, observed)
                     for stock in np.flatnonzero(acting):
