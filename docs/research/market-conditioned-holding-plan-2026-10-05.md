@@ -182,7 +182,8 @@ equal empirical date probabilities, overflow refusal and original provenance.
 Use the same transformation for historical and published forward observations.
 The existing jointly certified net-log-growth optimizer will translate those
 conditional scenarios into cash, whole-share additions and discretionary exits.
-No production policy or new economic account grid is registered in this step.
+The initial numerical checkpoint registered no production policy or economic
+grid; the subsequent fixed screen above remains private research.
 
 Acceptance: independently solved raw design regression and leverage; causal
 calendar/month/freeze selection; future-label/feature prefix invariance;
@@ -249,8 +250,9 @@ The funded policy retains the original cash and whole-share contract, mandatory
 company exits at the next opening and event priority. Ordinary discretionary
 buys and profit-taking intents use the already declared probabilistic timing
 mechanism. Calibration assumptions remain approximate; no percentage target
-is substituted with a claim of guaranteed confidence. This policy has no
-production selector or new economic grid. Wiring tests with an explicit
+is substituted with a claim of guaranteed confidence. At7171cae2 this policy had
+no production selector or economic grid; the later screen above is research only.
+Wiring tests with an explicit
 scenario oracle test routing only; genuine numeric scenario tests and funded
 planning tests are recorded separately from those oracles.
 
@@ -339,3 +341,36 @@ logs SHA68d05edc47ea0f84624bd9287aebc9d3112d3c710960859073bc02beddfbd895 /
 d3fce7e7b0b2a381989eb5263ab29a78599945c1e1e9ea569835c4e2a2eadefc;
 saved helper SHAa97b14954916f453f51a91cf755be145de07d42bfb3d0d30f54004c1d0af0e19.
 Diagram impact NONE: reuse of local numeric work, no boundary or flow change.
+
+### Fixed screen wiring acceptance
+
+Code967f1bf691dbc93b73fd08ee63da47391ef60e71 registers only the three first-phase
+V5 accounts and carries the caller-authenticated original bank into saved-index
+verification. Prior candidate grids and all account assertions remain unchanged.
+109 exact-image tests pass, no skips; Ruff clean. Native73passed,3failed and
+33setup errors from ENOSPC in generated fixtures; no assertion was weakened.
+Only that completed run's owned disposable fixtures were removed.
+
+The actual original January5 component passes the new compressed-account/index
+fold:1session,4fills/attempts,0missing held marks,1dividend entitlement and
+2ordinary receipts. Both independently implemented fixed grids match the original
+calendar. No new fit,prediction,replay or economic account. Its recomputed index
+is component verification, not a new V5 performance result. First helper failed
+the existing ID/filename guard; a separate v2 helper corrects that filename only.
+Original failure/source/input bytes and assertions are preserved.
+
+Spark market-screen-source-20261005-967f1bf6;source2403members unchanged,
+manifest SHA9b95b04e4688de336a16746638a24a33a952e69985dbe597b06695b2f3fda579.
+proof-v2/saved-screen-proof.json SHA
+6e21817b32125ad2d93757177a8a1087f028e3d6035beb886afabb3a288115f2;
+proof-v2/execution.json SHA
+67b0159aae6b80e4621c6cd56bb729099e23e457fab952bafbc1728143e893d6.
+Test command/log SHAde2a192bc61da3b348a92fe2c6dd3168043e7f7ed53b23e5168030e7406c140e /
+d5452ae6fa99d79ecb5d26bc1c5212e22fe85dd5661e7762597a243c7c05095d;
+v2 saved command/log SHA7925d0b44f2cee2b4b3495308463de02f93b5706f444273a3a7cc56f284d9b0a /
+4b07557159e36eea9c1d74ddb60948d944bfc4072ecd28ba50c91b63ed176959;
+v2 helper/launcher SHA45000984cd8472bd4a4b936ad29847bcb64f662bed6b29d25a6b8d57bc550427 /
+95a1b4bf834105c72fb9a17a5f9bb74612ed285a12b972a102d33fab7976a30b.
+First failed helper log SHA0543a8e88e50d3258ffb90f6cf35234202296d496ec2bfd5f13d2108d08c5094.
+Use the same pinned image as above. Diagram impact NONE: existing private runner
+and verifier gain a fixed registered variant, with no production selector.

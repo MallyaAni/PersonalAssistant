@@ -1,5 +1,47 @@
 # Next session
 
+## 2026-10-05 — V5 fixed screen wired and saved-index path verified
+
+Goal ACTIVE, PROGRESS. Started clean at80b99636. First actual boundary FAILED:
+the funded candidate runner rejected V5 as unregistered (test-mode rerun after
+an initial missing test SECRET_KEY). Verified code967f1bf691dbc93b73fd08ee63da47391ef60e71
+registers exactly market-0-0,market-10-0,market-25-0 at the original first phase;
+prior V1/V2/V3 grids remain unchanged. The saved account fold now accepts an
+externally authenticated original market bank; missing bank or changed scores
+fail. Full evidence verification also requires matching bank/physical dates
+and names. The ordinary CLI cannot manufacture this external admission.
+
+VERIFIED109exact-image tests, no skips, Ruff/diff clean. Native run73passed,
+3failed/33errors from Mac ENOSPC in generated fixtures; no assertion changed.
+Removed only that completed run's disposable pytest-397 directory after checking
+ownership/no open files; no user data or saved research artifacts removed.
+Pinned image acceptance covers the full109unchanged cases. Diagram impact NONE.
+
+Actual original January5 saved component passes new archive/index fold:
+1session,4fills/attempts,0missing held marks,1dividend entitlement,2ordinary
+receipts. No new fit/prediction/account replay. Two producer/consumer grid
+implementations match the actual original full calendar and all three costs.
+First external helper FAILED the existing ID/filename guard; correct only the
+helper filename in a separate v2 proof root. Old failure retained, guard and
+assertions unchanged. Source2403consumer/2402producer members remain unchanged.
+
+Spark market-screen-source-20261005-967f1bf6,manifest
+9b95b04e4688de336a16746638a24a33a952e69985dbe597b06695b2f3fda579;
+saved proof6e21817b32125ad2d93757177a8a1087f028e3d6035beb886afabb3a288115f2.
+Full command/log hashes in protocol. This is runner and saved-proof acceptance,
+not a V5 performance result. No economic account, worker, model change or deploy.
+
+At06:30NY original V3 remains2of3indexed,25bp1440sessions through2023-10-19.
+NEXT: review concurrent main's unsent-intent fix before freezing future source;
+prepare a hash-bound V5 producer using the admitted original numeric bank and
+physical inputs. After the original V3 three candidate costs finish and their
+saved ledger is reviewed, launch ONLY this predeclared three-account screen.
+Do not wait for every unrelated phase of the300-control producer to complete;
+reuse available matching controls and report the missing ones explicitly.
+Never duplicate/reprice pending controls or mutate original active processes.
+V5 advantage/live adoption remains UNVERIFIED; live source unchanged.
+
+
 ## 2026-10-05 — exact duplicate solver work removed
 
 Goal ACTIVE, PROGRESS; live replacement and V5 economics remain UNVERIFIED.
