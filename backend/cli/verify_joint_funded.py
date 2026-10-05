@@ -37,6 +37,10 @@ MARKET_CONTEXT = [
     "breadth_20",
 ]
 MARKET_PROTOCOL = "docs/research/market-conditioned-holding-plan-2026-10-05.md"
+MARKET_TIMED_POLICY = (
+    "joint-stock-risk-funded/5-market-conditioned-probability-timing-research"
+)
+RECEIPT_PROTOCOLS = {**CANDIDATES, MARKET_TIMED_POLICY: MARKET_PROTOCOL}
 
 
 # Authenticate array dtype, shape and bytes without importing the forecast producer.
@@ -126,8 +130,8 @@ class MarketCalibrationVerifier:
         for array in self.bank.values():
             array.flags.writeable = False
 
-    # Check current context and every recorded stock fit against original admitted rows.
-    def check(self, sample):
+    # Check source and bank identity even when the recorded opportunity was unavailable.
+    def identity(self, sample):
         identity = sample["calibration_identity"]
         ledger.same(sample["policy"], "market-conditioned-joint-holding/1-research")
         ledger.same(identity["policy"], sample["policy"])
@@ -151,6 +155,10 @@ class MarketCalibrationVerifier:
         ledger.same(
             identity["calibration_residuals"], "in_sample_on_genuine_OOS_base_forecasts"
         )
+
+    # Check current context and every recorded stock fit against original admitted rows.
+    def check(self, sample):
+        self.identity(sample)
         ledger.require(
             sample["status"] == "available",
             "Available historical market receipt required",
@@ -661,6 +669,8 @@ def qualification_receipt(receipt, day, dates, *, policy=MATURITY_POLICY):
                     *(
                         ("unsupported_log_calibration",)
                         if policy == CALIBRATED_POLICY
+                        else ("unsupported_market_calibration",)
+                        if policy == MARKET_TIMED_POLICY
                         else ()
                     ),
                 },
@@ -708,9 +718,9 @@ def held_weights(row, index, data):
     }
 
 
-# Check optional calibration provenance only for its registered candidate.
-def candidate_calibration(receipt, source, policy):
-    if policy == CALIBRATED_POLICY:
+# Check optional calibration provenance with the original bank for market conditioning.
+def candidate_calibration(receipt, source, policy, *, market_calibration=None):
+    if policy in (CALIBRATED_POLICY, MARKET_TIMED_POLICY):
         samples = [receipt.get("scenario")]
         samples.extend(
             entry.get("risk")
@@ -720,11 +730,69 @@ def candidate_calibration(receipt, source, policy):
         )
         for sample in samples:
             if sample is not None:
-                calibration_receipt(sample, source)
+                if policy == CALIBRATED_POLICY:
+                    calibration_receipt(sample, source)
+                else:
+                    ledger.require(
+                        type(market_calibration) is MarketCalibrationVerifier,
+                        "Original authenticated market calibration bank required",
+                    )
+                    for name in (
+                        "backend/market/market_conditioned_holding.py",
+                        "backend/market/market_conditioned_calibration.py",
+                        MARKET_PROTOCOL,
+                    ):
+                        ledger.same(market_calibration.source[name], source[name])
+                    market_calibration.identity(sample)
+                    if sample["status"] == "available":
+                        market_calibration.check(sample)
+
+
+# Check market-policy routing while leaving registered next-open receipts unchanged.
+def candidate_order_routing(account, entry, receipt, source, day, policy):
+    if policy != MARKET_TIMED_POLICY:
+        return
+    timing = "live-probability-timing/1-research"
+    ledger.same(receipt["timing_policy"], timing)
+    ledger.same(
+        receipt["timing_source_sha256"],
+        source["backend/market/live_probability_timing.py"],
+    )
+    ledger.same(receipt["timing_horizon"], "one_decision_log_price_advantage")
+    orders = [row for row in account["intents"] if row["session"] == day]
+    expected = {}
+    ordinary = False
+    for row in orders:
+        delayed = (
+            row["symbol"] not in receipt["company_exits"]
+            and not row.get("event_id")
+            and not row.get("priority")
+        )
+        expected[row["client_order_id"]] = "dip_or_close" if delayed else "next_open"
+        ledger.same(row["execution_timing"], expected[row["client_order_id"]])
+        if delayed:
+            ledger.same(row.get("timing_policy"), timing)
+            ordinary = True
+        else:
+            ledger.require("timing_policy" not in row, "Mandatory exit delayed")
+    ledger.same(entry["execution_rule"], timing if ordinary else "next_open")
+    if expected:
+        routing = receipt["execution_timing"]
+        ledger.same(routing["ordinary"], timing)
+        ledger.same(routing["company_exit"], "next_open")
+        ledger.same(routing["orders"], expected, "Original order routing")
+    else:
+        ledger.require(
+            "execution_timing" not in receipt,
+            "Routing fabricated without original orders",
+        )
 
 
 # Check ordinary receipts against original permissions and observed funded accounts.
-def candidate_receipts(account, data, source, *, policy=POLICY):
+def candidate_receipts(
+    account, data, source, *, policy=POLICY, market_calibration=None
+):
+    ledger.require(policy in RECEIPT_PROTOCOLS, "Registered receipt policy required")
     sessions = {row["session"]: row for row in account["sessions"]}
     checked = events = 0
     for night in account["nightlies"]:
@@ -759,8 +827,11 @@ def candidate_receipts(account, data, source, *, policy=POLICY):
         ledger.same(
             receipt["source_sha256"], source["backend/market/joint_funded_policy.py"]
         )
-        ledger.same(receipt["protocol_sha256"], source[CANDIDATES[policy]])
-        candidate_calibration(receipt, source, policy)
+        ledger.same(receipt["protocol_sha256"], source[RECEIPT_PROTOCOLS[policy]])
+        candidate_calibration(
+            receipt, source, policy, market_calibration=market_calibration
+        )
+        candidate_order_routing(account, entry, receipt, source, day, policy)
         ledger.same(receipt["horizon"], HORIZON)
         ledger.same(receipt["session"], day)
         ledger.same(receipt["cost_bps"], account["cost_bps"])

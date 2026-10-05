@@ -1,15 +1,26 @@
 """Saved calibration proof refuses changed dates, coefficients and uncertainty."""
 
 import hashlib
+from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
 import pytest
 
+from backend.cli import verify_joint_funded as verifier
 from backend.cli.verify_joint_funded import MarketCalibrationVerifier
 from backend.market import market_conditioned_calibration as model
 from backend.market.daily_arithmetic_bridge import _hash
+from backend.market.joint_funded_policy import MarketConditionedTimedFundedPolicy
+from backend.market.live_policy_replay import run_account
+from backend.market.live_probability_timing import build_reader
+from backend.tests import test_joint_probability_timing as journey
+from backend.tests.test_joint_probability_timing import timing as timing
+from backend.tests.test_live_policy_replay import fixture
 from backend.tests.test_market_conditioned_calibration import evidence
+from backend.tests.test_market_conditioned_holding import example as example
+from backend.tests.test_market_conditioned_holding import reader as reader
+from backend.tests.test_verify_actual_policy_timing import direct_data
 
 
 # Build a real numeric fitted receipt with an explicit synthetic historical bank.
@@ -172,3 +183,123 @@ def test_current_query_outside_fitted_span_refused():
     bank["forecasts"][day, 0] = 0.1
     with pytest.raises(ValueError, match="identified market query"):
         MarketCalibrationVerifier(bank, source).check(sample)
+
+
+# Persist a genuine private market-policy replay with explicitly synthetic inputs.
+@pytest.fixture(scope="module")
+def market_account(reader, timing, tmp_path_factory):
+    panel, raw, cubes = fixture(tuple(map(str, reader.dates)))
+    policy = MarketConditionedTimedFundedPolicy(reader, 10)
+    first, last = len(reader.dates) - 2, len(reader.dates) - 1
+    account = run_account(
+        panel,
+        raw,
+        cubes,
+        tmp_path_factory.mktemp("market-account") / "account",
+        first,
+        last,
+        10,
+        holding_policy=policy,
+        feature_reader=journey.features,
+        reader_builder=build_reader,
+        provider=timing.provider,
+    )
+    root = Path(__file__).resolve().parents[2]
+    files = (
+        "backend/market/joint_funded_policy.py",
+        "backend/market/live_probability_timing.py",
+        "backend/market/market_conditioned_holding.py",
+        "backend/market/market_conditioned_calibration.py",
+        policy.protocol,
+    )
+    source = {
+        name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in files
+    }
+    data = {**direct_data(raw, cubes), "grades": raw.grades, "eligible": raw.eligible}
+    bank = {
+        name: getattr(reader, name)
+        for name in (
+            "dates",
+            "endpoints",
+            "forecasts",
+            "labels",
+            "features",
+            "support",
+            "symbols",
+        )
+    }
+    return account, data, source, bank
+
+
+# The new saved account path must consume the authenticated bank without replaying it.
+def test_market_account_saved_receipts(market_account, monkeypatch):
+    account, data, source, bank = market_account
+
+    # Saved checks cannot manufacture a replacement account or fit a new model.
+    def forbidden(*args, **kwargs):
+        pytest.fail("Saved account validation attempted producer work")
+
+    monkeypatch.setattr(model, "fit_market_log", forbidden)
+    monkeypatch.setattr(model.MarketLogFit, "predict", forbidden)
+    monkeypatch.setattr("backend.market.live_policy_replay.run_account", forbidden)
+    counts = verifier.candidate_receipts(
+        account,
+        data,
+        source,
+        policy=account["policy"],
+        market_calibration=MarketCalibrationVerifier(bank, source),
+    )
+    assert counts["ordinary_receipts"] == 3
+    checked = deepcopy(account)
+    spec = {
+        "arm": checked["policy"],
+        "cost_bps": 10,
+        "start": 0,
+        "first": len(data["dates"]) - 2,
+        "last": len(data["dates"]) - 1,
+        "first_session": checked["first"],
+        "id": "market-component-10",
+    }
+    checked["comparison_account"] = spec
+    ledger_counts = verifier.ledger.reconcile_account(
+        checked, spec, data, account_policy=checked["policy"]
+    )
+    assert ledger_counts["sessions"] == 2
+
+
+# Missing original bank admission cannot be replaced by trusted saved fit metadata.
+def test_market_account_requires_original_bank(market_account):
+    account, data, source, _ = market_account
+    with pytest.raises(ValueError, match="Original authenticated market"):
+        verifier.candidate_receipts(account, data, source, policy=account["policy"])
+
+
+# Rehashed account metadata cannot hide changed funding, permissions or routing.
+@pytest.mark.parametrize(
+    ("path", "value", "error"),
+    [
+        (("observed_cash",), 1, "observed funding"),
+        (("grades", "AAA"), 0, "original grade permissions"),
+        (("targets", "AAA"), -0.1, "Invalid target"),
+        (("timing_source_sha256",), "0" * 64, "value differs"),
+        (("timing_policy",), "legacy", "value differs"),
+        (("entry_qualification", "selection_uses_future_outcomes"), True, "limitation"),
+    ],
+)
+def test_market_account_metadata_tampering(market_account, path, value, error):
+    original, data, source, bank = market_account
+    account = deepcopy(original)
+    target = account["nightlies"][0]["entry"]["joint_funded"]["receipt"]
+    for key in path[:-1]:
+        target = target[key]
+    target[path[-1]] = value
+    if path[0] == "targets":
+        account["nightlies"][0]["entry"]["joint_funded"]["targets"][path[1]] = value
+    with pytest.raises(ValueError, match=error):
+        verifier.candidate_receipts(
+            account,
+            data,
+            source,
+            policy=account["policy"],
+            market_calibration=MarketCalibrationVerifier(bank, source),
+        )
