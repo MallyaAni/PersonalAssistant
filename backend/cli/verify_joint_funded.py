@@ -6,6 +6,7 @@ broker fills, historical publication completeness or adoption eligibility.
 """
 
 import argparse
+import hashlib
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -28,6 +29,350 @@ CANDIDATES = {
         "docs/research/conditional-holding-calibration-plan-2026-10-05.md"
     ),
 }
+
+MARKET_CONTEXT = [
+    "spy_return_20",
+    "spy_drawdown_252",
+    "spy_volatility_20",
+    "breadth_20",
+]
+MARKET_PROTOCOL = "docs/research/market-conditioned-holding-plan-2026-10-05.md"
+
+
+# Authenticate array dtype, shape and bytes without importing the forecast producer.
+def _market_hash(array):
+    value = np.ascontiguousarray(array)
+    digest = hashlib.sha256()
+    digest.update(str(value.dtype).encode())
+    digest.update(json.dumps(value.shape).encode())
+    digest.update(value.tobytes())
+    return digest.hexdigest()
+
+
+# Read JSON numbers without silently coercing booleans or missing values.
+def _market_numbers(value, shape):
+    raw = np.asarray(value, dtype=object)
+    ledger.require(
+        raw.shape == shape and all(type(x) in (int, float) for x in raw.flat),
+        "Typed market calibration numbers required",
+    )
+    result = raw.astype(float)
+    ledger.require(
+        np.isfinite(result).all(), "Finite market calibration numbers required"
+    )
+    return result
+
+
+# Compare independent arithmetic with a bound derived only from machine precision.
+def _market_same(actual, expected, name, *, operations=1):
+    actual, expected = np.asarray(actual), np.asarray(expected)
+    scale = max(1.0, float(np.max(np.abs(expected))))
+    tolerance = 64 * np.finfo(float).eps * max(operations, 1, *expected.shape) * scale
+    ledger.require(
+        actual.shape == expected.shape
+        and np.all(np.abs(actual - expected) <= tolerance),
+        "Market calibration arithmetic differs: " + name,
+    )
+
+
+# Verify saved historical calibration algebra without fitting, predicting or trading.
+class MarketCalibrationVerifier:
+    # Detach the externally authenticated bank and check its original calendar contract.
+    def __init__(self, bank, source):
+        keys = ("dates", "endpoints", "forecasts", "labels", "features", "support")
+        self.bank = {key: np.asarray(bank[key]).copy() for key in keys}
+        self.symbols = tuple(bank["symbols"])
+        self.source = dict(source)
+        dates = self.bank["dates"]
+        ledger.require(dates.ndim == 1, "Original daily market dates required")
+        size = (len(dates), len(self.symbols))
+        ledger.require(
+            dates.dtype == np.dtype("datetime64[D]")
+            and dates.ndim == 1
+            and len(dates) > 2
+            and not np.isnat(dates).any()
+            and np.all(dates[1:] > dates[:-1])
+            and len(set(self.symbols)) == len(self.symbols)
+            and "SPY" in self.symbols
+            and self.bank["features"].shape == (*size, 13)
+            and self.bank["features"].dtype.kind in "fiu"
+            and self.bank["support"].shape == size
+            and self.bank["support"].dtype == np.dtype("bool")
+            and all(
+                self.bank[key].shape == size and self.bank[key].dtype.kind in "fiu"
+                for key in ("forecasts", "labels")
+            ),
+            "Original aligned market calibration bank required",
+        )
+        years, sessions = calendar.reviewed_sessions()
+        whole = np.arange(dates[0], dates[-1] + np.timedelta64(1, "D"))
+        ledger.require(
+            all(day.astype(object).year in years for day in whole)
+            and np.array_equal(dates, whole[np.is_busday(whole, busdaycal=sessions)]),
+            "Complete reviewed market calibration calendar required",
+        )
+        endpoints = np.full(len(dates), np.datetime64("NaT", "D"))
+        endpoints[:-2] = dates[2:]
+        ledger.require(
+            self.bank["endpoints"].dtype == endpoints.dtype
+            and np.array_equal(self.bank["endpoints"].view("i8"), endpoints.view("i8")),
+            "Original D+2 market calibration endpoints required",
+        )
+        self.market = self.bank["features"][:, self.symbols.index("SPY")][
+            :, [1, 5, 4, 12]
+        ]
+        self.features_sha256 = _market_hash(self.bank["features"])
+        self.context_sha256 = _market_hash(self.market)
+        for array in self.bank.values():
+            array.flags.writeable = False
+
+    # Check current context and every recorded stock fit against original admitted rows.
+    def check(self, sample):
+        identity = sample["calibration_identity"]
+        ledger.same(sample["policy"], "market-conditioned-joint-holding/1-research")
+        ledger.same(identity["policy"], sample["policy"])
+        ledger.same(
+            identity["source_sha256"],
+            self.source["backend/market/market_conditioned_holding.py"],
+        )
+        ledger.same(
+            identity["numerical_source_sha256"],
+            self.source["backend/market/market_conditioned_calibration.py"],
+        )
+        ledger.same(identity["protocol_sha256"], self.source[MARKET_PROTOCOL])
+        ledger.same(identity["features_sha256"], self.features_sha256)
+        ledger.same(identity["context_sha256"], self.context_sha256)
+        ledger.same(identity["context"], MARKET_CONTEXT)
+        ledger.require(
+            identity["adoption_eligible"] is False
+            and identity["confidence_guarantee"] is False,
+            "Market calibration limitations missing",
+        )
+        ledger.same(
+            identity["calibration_residuals"], "in_sample_on_genuine_OOS_base_forecasts"
+        )
+        ledger.require(
+            sample["status"] == "available",
+            "Available historical market receipt required",
+        )
+        dates = self.bank["dates"]
+        hits = np.flatnonzero(dates == np.datetime64(sample["decision_date"], "D"))
+        ledger.require(len(hits) == 1, "Historical market observation required")
+        day = int(hits[0])
+        scenario_receipt(sample, sample["decision_date"], dates)
+        current = self.market[day].astype(float)
+        ledger.require(
+            np.isfinite(current).all()
+            and -1 <= current[1] <= 0
+            and current[2] >= 0
+            and 0 <= current[3] <= 1,
+            "Possible current market context required",
+        )
+        _market_numbers(sample["current_context"], (4,))
+        ledger.same(sample["current_context"], current.tolist())
+        ledger.same(sample["current_context_sha256"], _market_hash(current))
+        ledger.require(
+            isinstance(sample["symbols"], list)
+            and len(sample["symbols"]) > 0
+            and len(set(sample["symbols"])) == len(sample["symbols"]),
+            "Unique nonempty market stock list required",
+        )
+        ledger.same([fit["symbol"] for fit in sample["calibration"]], sample["symbols"])
+        ledger.same(len(sample["predictions"]), len(sample["calibration"]))
+        first = int(
+            np.flatnonzero(
+                dates.astype("datetime64[M]") == dates[day].astype("datetime64[M]")
+            )[0]
+        )
+        candidates = np.arange(max(0, first - 756), first)
+        mature = candidates[
+            ~np.isnat(self.bank["endpoints"][candidates])
+            & (
+                self.bank["endpoints"][candidates]
+                < np.datetime64(sample["label_end_before"], "D")
+            )
+        ]
+        joint = np.ones(len(mature), dtype=bool)
+        for fit, prediction in zip(
+            sample["calibration"], sample["predictions"], strict=True
+        ):
+            ledger.require(
+                fit["symbol"] in self.symbols and fit["symbol"] not in ("SPY", "QQQ"),
+                "Original market stock required",
+            )
+            stock = self.symbols.index(fit["symbol"])
+            mask = (
+                self.bank["support"][mature, stock]
+                & np.isfinite(self.bank["forecasts"][mature, stock])
+                & np.isfinite(self.bank["labels"][mature, stock])
+            )
+            joint &= mask
+            rows = mature[mask]
+            ledger.require(
+                isinstance(fit["selected_indices"], list)
+                and all(type(value) is int for value in fit["selected_indices"]),
+                "Typed original market singleton dates required",
+            )
+            ledger.same(
+                fit["selected_indices"],
+                rows.tolist(),
+                "Original market singleton dates",
+            )
+            ledger.require(252 <= len(rows) <= 756, "Mature market support required")
+            ledger.same(fit["fit_date"], sample["fit_date"])
+            ledger.same(fit["label_end_before"], sample["label_end_before"])
+            ledger.same(
+                fit["maximum_endpoint"], str(self.bank["endpoints"][rows].max())
+            )
+            self._fit(fit, prediction, rows, day, stock, current)
+        ledger.same(
+            sample["decision_indices"],
+            mature[joint].tolist(),
+            "Original simultaneous market dates",
+        )
+
+    # Prove the saved least-squares solution and leverage from moment equations only.
+    def _fit(self, fit, prediction, rows, day, stock, current):
+        ledger.same(fit["policy"], "market-conditioned-holding/1-research")
+        ledger.same(
+            fit["source_sha256"],
+            self.source["backend/market/market_conditioned_calibration.py"],
+        )
+        ledger.same(fit["protocol_sha256"], self.source[MARKET_PROTOCOL])
+        ledger.same(fit["context"], MARKET_CONTEXT)
+        ledger.require(
+            fit["adoption_eligible"] is False and fit["confidence_guarantee"] is False,
+            "Saved fit limitations missing",
+        )
+        raw, observed = (
+            self.bank["forecasts"][rows, stock],
+            self.bank["labels"][rows, stock],
+        )
+        market = self.market[rows].astype(float)
+        volatility = self.bank["features"][rows, stock, 4]
+        ledger.require(
+            np.isfinite(volatility).all()
+            and np.all(volatility > 0)
+            and np.isfinite(self.bank["features"][day, stock, 4])
+            and self.bank["features"][day, stock, 4] > 0,
+            "Positive original stock volatility required",
+        )
+        ledger.require(
+            np.all(raw > -1)
+            and np.all(observed >= -1)
+            and np.isfinite(market).all()
+            and np.all((market[:, 1] >= -1) & (market[:, 1] <= 0))
+            and np.all(market[:, 2] >= 0)
+            and np.all((market[:, 3] >= 0) & (market[:, 3] <= 1)),
+            "Possible original market observations required",
+        )
+        expected = dict(
+            zip(
+                ("dates", "endpoints", "forecasts", "outcomes", "context"),
+                map(
+                    _market_hash,
+                    (
+                        self.bank["dates"][rows],
+                        self.bank["endpoints"][rows],
+                        raw,
+                        observed,
+                        market,
+                    ),
+                ),
+                strict=True,
+            )
+        )
+        ledger.same(fit["row_hashes"], expected)
+        default = observed == -1
+        n, rank = int((~default).sum()), fit["rank"]
+        ledger.require(
+            type(fit["observations"]) is int
+            and fit["observations"] == n
+            and type(fit["defaults"]) is int
+            and fit["defaults"] == int(default.sum())
+            and type(rank) is int
+            and 1 <= rank <= 6
+            and n > rank,
+            "Saved market support and rank differ",
+        )
+        predictors = np.c_[np.log1p(raw[~default]), market[~default]]
+        y = np.log1p(observed[~default])
+        center = _market_numbers(fit["center"], (5,))
+        scale = _market_numbers(fit["scale"], (5,))
+        _market_same(center, predictors.mean(axis=0), "training centers")
+        expected_scale = np.max(np.abs(predictors - center), axis=0)
+        constant = np.all(predictors == predictors[0], axis=0)
+        expected_scale[constant] = 0
+        _market_same(scale, expected_scale, "training scales")
+        ledger.require(
+            np.array_equal(scale == 0, constant), "Saved constant predictor differs"
+        )
+        design = np.zeros((n, 6))
+        design[:, 0] = 1
+        active = scale > 0
+        design[:, 1 + np.flatnonzero(active)] = (
+            predictors[:, active] - center[active]
+        ) / scale[active]
+        coefficients = _market_numbers(fit["coefficients"], (6,))
+        directions = _market_numbers(fit["directions"], (rank, 6))
+        singular = _market_numbers(fit["singular_values"], (rank,))
+        values = np.linalg.svd(design, compute_uv=False)
+        retained = values > np.finfo(float).eps * max(design.shape) * values[0]
+        ledger.same(rank, int(retained.sum()), "Saved numerical rank")
+        _market_same(singular, values[retained], "singular values")
+        _market_same(directions @ directions.T, np.eye(rank), "orthonormal directions")
+        _market_same(
+            (directions.T * singular**2) @ directions,
+            design.T @ design,
+            "design Gram matrix",
+        )
+        _market_same(
+            design.T @ (y - design @ coefficients),
+            np.zeros(6),
+            "least-squares stationarity",
+            operations=n,
+        )
+        _market_same(
+            directions.T @ directions @ coefficients,
+            coefficients,
+            "identified coefficients",
+        )
+        query_raw = np.r_[np.log1p(self.bank["forecasts"][day, stock]), current]
+        constant_tolerance = (
+            64 * np.finfo(float).eps * np.maximum(1, np.abs(center[~active]))
+        )
+        ledger.require(
+            np.isfinite(query_raw).all()
+            and np.all(
+                np.abs(query_raw[~active] - center[~active]) <= constant_tolerance
+            ),
+            "Current identified market query required",
+        )
+        query = np.zeros(6)
+        query[0] = 1
+        query[1 + np.flatnonzero(active)] = (
+            query_raw[active] - center[active]
+        ) / scale[active]
+        _market_same(directions.T @ directions @ query, query, "identified query span")
+        ledger.require(
+            set(prediction) == {"conditional_log_mean", "residual_multiplier"},
+            "Saved market prediction fields differ",
+        )
+        actual = _market_numbers(
+            [prediction["conditional_log_mean"], prediction["residual_multiplier"]],
+            (2,),
+        )
+        expected = np.array(
+            [
+                query @ coefficients,
+                np.sqrt(
+                    n
+                    / (n - rank)
+                    * (1 + np.sum(((directions @ query) / singular) ** 2))
+                ),
+            ]
+        )
+        _market_same(actual, expected, "recorded conditional mean and leverage")
 
 
 # Derive existing grids and the calibration screen without removing missing accounts.
