@@ -6,11 +6,11 @@ from types import SimpleNamespace
 
 import numpy as np
 import pytest
-from backend.market.learned_entry_data import prepare
-from backend.market.sip_cube import SessionCube
 
 from backend.market import calendar as exchange
 from backend.market.forward_entry_features import observe
+from backend.market.learned_entry_data import prepare
+from backend.market.sip_cube import SessionCube
 
 
 # Supply identical prior context and distinct raw stock paths on a reviewed calendar.
@@ -104,7 +104,7 @@ def test_split_units_and_future_prefix_invariance():
     for name in ("open", "high", "low", "close"):
         getattr(cube, name)[0, :4] *= 10
         getattr(cube, name)[0, 4:] = 1000
-    cube.prior_close *= 10
+    cube.prior_close[:] *= 10
     changed[1][-1] = -1
     changed_inputs, changed_clocks = current(changed, 4)
     after = observe(*changed_inputs, **changed_clocks)

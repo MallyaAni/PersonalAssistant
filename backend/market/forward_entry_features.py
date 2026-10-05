@@ -9,11 +9,11 @@ from hashlib import sha256
 from pathlib import Path
 
 import numpy as np
-from backend.market.daily_arithmetic_bridge import _as_of, _hash
 
 from backend.market import calendar as exchange
 from backend.market import daily_arithmetic_bridge as clocks
 from backend.market import learned_entry_data as original
+from backend.market.daily_arithmetic_bridge import _as_of, _hash
 
 
 # Preserve the registered raw prefix ratios, including missing and malformed bars.
