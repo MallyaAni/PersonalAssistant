@@ -1,5 +1,59 @@
 # Next session
 
+## 2026-10-05 — current-month numeric heads published from original real data
+
+Goal remains unfinished; human asks for the delayed backtest. Started clean
+fe198221, owned research branch; main/shared checkout and live unchanged.
+VERIFIED current-month publication on exact6a844e1d59c655524bd42dd9bc6935c995dd8076
+and image5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+Private root /home/animallya96/scratch/forward-timing-publication-20261005-6a844e1d.
+One predeclared October fit of the original two64-tree boosting mean/risk heads:
+707distinct training sessions,245284rows,original clocks0/3/9/19,original
+504minimum/756maximum history and August17 outcome freeze.96-name original
+book,94training stocks excludingSPY/QQQ. No window/parameter/model search,
+historical OOS grid refit, new data or performance scoring.
+
+Original prepared711MB bytes SHA c759ecb607e755631dacc0d28a147511a1eaa7e54e3cbcb23bdff4aafe8b76bf
+and receipt checked before/after; original feature source/cohort/provenance
+identities checked. Declared data_as_of September30 close; actual publication
+October5 at11:48:25.585705NY, NOT backdated to October1. Numeric saved/readback
+probe predictions match; no executable estimator restoration. Container9894aff2
+started15:48:08Z/finished15:48:27Z,exit0/OOMfalse,networkNONE,1CPU/2GB cap.
+PublicationSHA7759572d79f1bc4e0cb288c04f9d14d318c8d51f15d447efd7a6bf47864d60a8;
+modelSHA14a47423e82608361c0810b399a17bb817b119c4783f7995728b18323f5d5c41;
+resultSHA49df81f611fdb7c8b6dae9fc221e2bb8b7b334fbf8ce6726d1d2addce0f2b82f.
+Separate read-only,networkNONE,512MB numerical artifact verifier passed at
+11:50:02NY WITHOUT refitting/rescoring. Proof verification/artifact-proof.json,
+SHA9460ff9cc38727aaac010082bfb92f403576c92ef00f3d17e366d4687e3d11dd.
+Publication helperSHA73251cc2a9051359d357b9101fc4f52149346bfa76919496b32b5f05be5eb491;
+logSHA0141bad288ee1af611c70f8dd1ba5733bed22f339ddb0e6581313c8e9a025595.
+
+FAILED initial private publisher metadata admission: helper mistakenly used
+feature_source_sha instead of actual feature_source_sha256. Inspected actual
+three metadata field names, corrected the helper only; original failing helper
+and log retained as publish-initial-schema.py/initial-schema-failure.log. It
+failed before any fitting or publication. No dataset/acceptance changes.
+Mac again hit128MiB write reserve; removed ONLY owned Git-reproducible51MB
+codex-open-source-base-20261001.tar after exact regenerated archive equality,
+SHAf26c5eb749f3245f089b9f310ac31fe60620ca84ec144460d3280053222ea629,
+retained sourcef133cd88 and no open handles. No data/proofs/models removed.
+
+UNVERIFIED: saved dated residual publication for restart, actual external live
+input authentication and full funded selection/sizing/profile integration.
+These heads alone are not an adopted or fully ready forward policy. Current-
+vintage cohort and original grade assumptions remain explicit. Numeric
+publication integrity does NOT establish calibrated confidence or more gain.
+No orders, production model services, UI or live policy changes.181 combined
+tests already passed on this exact source; not repeated for this artifact.
+
+V5 original container659a960b still RUNNING:1140sessions through2022-08-10
+at11:48:34NY,0completed cost scenarios. Do not restart/modify/re-score it.
+Large carried-account JSON rewrites remain measured bottleneck, no promised ETA.
+Sole completion watcher252268 and separate fixed collector89bdf2bb preserved.
+NEXT: complete authentic residual persistence and real-source/private funded
+acceptance while original carried-portfolio comparison continues. Require full
+matched rule/SPY/QQQ metrics before claiming adoption or updating live strategy.
+
 ## 2026-10-05 — real numeric inference bound to immutable sender evidence
 
 Goal ACTIVE. Human asks why the backtest is not ready. Started clean574ec331;
