@@ -176,9 +176,12 @@ def observe(root, reader, timing, broker, *, clock=0, price=98.0, supplied=True)
 
 # A favorable wait forecast overrides a latched dip, then executes on a flat bar.
 def test_real_buy_waits_after_two_percent_dip_then_executes_without_dip(
-    reader, timing, tmp_path, monkeypatch
+    reader, timing, tmp_path, monkeypatch, capsys
 ):
     chosen, _, broker, entry, _ = planned(tmp_path, reader, monkeypatch)
+    output = capsys.readouterr().out
+    assert "probabilistic timing" in output
+    assert "1% under" not in output
     original = paper.load_state(tmp_path).pending
     assert original[0]["qty"] == 250
     assert original[0]["timing_policy"] == chosen.timing_policy

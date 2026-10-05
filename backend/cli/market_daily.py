@@ -432,7 +432,13 @@ def _settled_rows(settled, panel) -> list[dict]:
 # is after the close; a run by hand during the session is refused whole and
 # told why.
 def _submit(
-    client, orders, session: str, live: bool, *, intraday_event_reduction=False
+    client,
+    orders,
+    session: str,
+    live: bool,
+    *,
+    intraday_event_reduction=False,
+    timing_policy=None,
 ) -> tuple[list[dict], list[str]]:
     """Return (submitted rows, refusals) after sending `orders` when `live`."""
     from backend.agents.trading.desk import execution_evidence, paper
@@ -440,7 +446,7 @@ def _submit(
 
     submitted: list[dict] = []
     refused: list[str] = []
-    orders = _hold_for_the_session(orders)
+    orders = _hold_for_the_session(orders, timing_policy=timing_policy)
     market_open = False
     clock_known = False
     if live and orders:
@@ -533,15 +539,18 @@ def _on_the_boards_clock(orders) -> list:
 
 # The board's orders are sent in the session by the balancer, on the board's
 # own rule (`intraday_orders`); the nightly only writes them down. Print each
-# one as planned and return the orders the nightly itself still sends (the
-# FOMC event orders, which keep their next-open treatment).
-def _hold_for_the_session(orders) -> list:
+# one under its selected timing policy, preserving the event orders sent nightly.
+def _hold_for_the_session(orders, *, timing_policy=None) -> list:
     """Print the intraday orders as planned; return the rest."""
     from backend.agents.trading.desk import intraday_orders
 
     timing = intraday_orders.INTRADAY_TIMING
     for order in (o for o in orders if o.execution_timing == timing):
-        rule = intraday_orders.rule_text(order.side)
+        rule = (
+            "probabilistic timing; final-session deadline"
+            if timing_policy is not None
+            else intraday_orders.rule_text(order.side)
+        )
         print(
             f"  {order.side:4} {order.qty:5d} {order.symbol:6} {order.reason}"
             f"  [planned for the next session: {rule}]"
@@ -1104,6 +1113,9 @@ def _paper_trade(
     # each one will carry. A crash between sending and recording then
     # leaves a record the next session can ask the broker about, rather
     # than a gap that has to be guessed at from positions.
+    timing_policy = (
+        getattr(holding_policy, "timing_policy", None) if not event_plan else None
+    )
     if live and orders:
         new_state.pending = _pending_orders(
             orders,
@@ -1111,16 +1123,14 @@ def _paper_trade(
             prices,
             panel.dates[last],
             decision_at=decision_at,
-            timing_policy=(
-                getattr(holding_policy, "timing_policy", None)
-                if not event_plan
-                else None
-            ),
+            timing_policy=timing_policy,
         )
         if what == "rebalance":
             new_state.unconfirmed_rebalance = session
         paper.save_state(store_root, new_state)
-    submitted, refused = _submit(client, orders, session, live)
+    submitted, refused = _submit(
+        client, orders, session, live, timing_policy=timing_policy
+    )
     _remember_acknowledgments(new_state, submitted, store_root, live, orders)
     if not orders:
         print("  nothing to do")
