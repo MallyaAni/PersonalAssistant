@@ -1,5 +1,27 @@
 # Next session
 
+## 2026-10-05 16:10NY — backtest still advancing; expired watcher replaced
+
+Human asks status. VERIFIED original V5 producer659a960b remains RUNNING/OOMfalse
+on frozen756c0076:1600sessions through2024-06-10 at16:05NY, first market-0-0
+account,0complete cost scenarios. No complete return/benchmark comparison yet.
+Prior watcher252268 exited on its14:51NY bounded deadline; original failure
+and log retained. That timeout did not stop or restart the backtest.
+
+Revalidated exact producer/image/start time and all existing verification pins.
+New sole bounded read-only watcher890392 started16:10NY, deadline22:10NY.
+Private watch-results-continuation-1.py SHA
+362bf04690e22d8706e3e0ce1b8648eaa4c651d632cdc38f3350b321f2d944b1.
+Only three exclusive watcher evidence filenames differ from original script;
+all producer/admission/complete-three-account/saved-verification checks remain.
+Claim/log use results-watch-continuation-1-claim.json and
+watch-results-continuation-1.log in existing market-funded-screen root.
+It invokes original saved-only verifier after successful full producer exit,
+never model fitting/account replay. Never duplicate/restart an active watcher.
+No source, account, model service, experiment or live changes. Model publication
+and181-case implementation acceptance remain verified; live replacement/gain
+remain UNVERIFIED. One-shot actual-intent observation remains failed/paused.
+
 ## 2026-10-05 — one-shot actual-intent observation FAILED before requests
 
 Bounded automation verify-learned-timing-against-actual-live-intents attempted
