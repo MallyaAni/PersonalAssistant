@@ -1,5 +1,68 @@
 # Next session
 
+## 2026-10-04 — first funded pair independently verified; persistence accelerated
+
+Goal ACTIVE. Previous turn PROGRESS; this turn PROGRESS. Starteda3b1f4be clean
+on isolated codex/learned-entry-risk-20261002. Verified codefa2c74543dc322acf6f8075b17aa8f6a70ec718b.
+No strategy/model/UI/main/deployment, active-source or old-output changes.
+Diagram impact: NONE — equivalent atomic persistence in the existing store.
+
+VERIFIED SAVED PREFIX, not adoption: new read-only verifier5da2d26d accepted
+one original v1 account and one rule account, start2018-02-01/0bp/end09-30-2026.
+2177 sessions/no missing NAV. v1 total gain283.7604%, CAGR16.8445%, max loss
+36.2954%, Sharpe0.7767; rule763.5132%,28.3448%,43.0897%,0.9933.
+Mean end-session exposure48.10% versus85.43%; cumulative realized turnover
+530.60 versus184.21. These are conditional current-vintage/proxy-account
+comparisons with unreinvested dividend receivables, not exact historical live
+or broker performance. First pair does NOT establish any candidate advantage.
+59candidate/299control accounts remain; SPY/QQQ and nonzero costs missing.
+Original five-control watcher and final watcher unchanged. Do not repeat this
+initial proof or confuse it with a complete cohort.
+
+Root /home/animallya96/scratch/funded-calendar-20261004-e396841b;
+proof/independent-initial/saved-initial.json SHA
+c700b5633991229f60b80bf50bd15144fdb29eafe47843324568eaa03cd0e0a4.
+Saved-only descriptive-diagnosis.json SHA
+88076367bcc3161c4478c338ce7803c4c82147bdba6b6c42581d4e74d7d1ae00:
+323unavailable/206event-or-pending-priority/1648available nights;262 insufficient
+joint history,55 missing current forecast,6 uncertified optimizer results.
+2018-20:252unavailable/735;2021-26:71/1442. All fixed windows and original
+denominators preserved. Low exposure/turnover coexist with the shortfall;
+this is descriptive, NOT a causal return attribution or a tuned new strategy.
+Risk-qualified v2 was registered BEFORE these outcomes and remains separate.
+
+VERIFIED persistence fix: expand dataclasses lazily during JSON encoding rather
+than deepcopy the entire history before encoding. Same exact JSON bytes,
+atomic replacement/fsync, all pending/journal/history/metadata retained; no
+historical files rewritten. Nested dataclass/tuple/nonfinite legacy compatibility
+and interrupted encode/fsync preserving old intent tested. Removed only one
+already-unused test fixture variable; no assertion deleted.3native cases pass;
+exact-source pinned415bd189:240passed/no skips10.85s, Ruff/diff clean.
+Actual old/new writers on one completed61,325,273-byte private state: all six
+writes byte-identical to46454d21d6415c8a46603a197c6aef8adbccf9f752fb7643e0e0faa970596a79;
+median1.17318s versus0.88737s,24.36% writer-time reduction. This is a bounded
+measurement, not a whole-study speed guarantee. Active immutable jobs still
+use their ORIGINAL writers; do not imply they were upgraded/restarted.
+Root /home/animallya96/scratch/paper-state-proof-20261004;
+manifestSHAeadadc809c34201c365dc53a565d435ab6d388c762142dd4e82bf9d1994ab4d0;
+proof/writer-proof.json SHAac626c44eac340fa6b8c2592706a4228f82190432007490b1daffc8eb05e19e2;
+proof/execution.json SHAa162938f9beae02a0aa2815f6fafa660b9493dce72d23a283d59760e02ce2716
+pins gate415bd189, actual writer e9c0e3b0, initial verifier and prior profile.
+
+At21:00NY producers7a01b694/2bb2b921/2832af72 all running/OOMfalse.
+v2:0completed/1260sessions through2023-02-01; control:1completed/boosting2080
+through2026-05-11. No full score or v2 saved proof yet. Next inspect compact
+completion and execute prepared v2 saved-only proof once a useful book exists.
+Bounded correctness task: first optimizer refusal2019-05-02 has solver_success
+true/5iterations but strict global gap3.4445898173412516e-6 exceeds1e-8; wealth
+minimum0.94990, violation0. Original eight symbolsADSK/CRM/FTNT/GEN/KLAC/LRCX/MSI/ORCL,
+310 joint dates, cash100.155/equity104858.2365773, CRM just above25% after price
+movement. Reconstruct this exact original scenario and reproduce the boundary;
+test an equivalent objective normalization/refinement before changing code.
+Keep the certificate/fees/constraints/objective unchanged. Do not relax the
+tolerance, refit, tune outcomes or alter running study sources. Numerical fixes
+cannot be credited to old saved results. Live replacement remains UNVERIFIED.
+
 ## 2026-10-04 — private candidate action/order consistency verified
 
 Goal ACTIVE; turn PROGRESS. Started4daa3bab clean. Verified code checkpoint
