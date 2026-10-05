@@ -44,7 +44,7 @@ def screen_inputs(reader):
         tickers=tuple(reader.symbols),
         **{
             name: getattr(old, name)[:, columns].copy()
-            for name in ("open", "high", "low", "close", "adjusted_close", "volume")
+            for name in ("open", "high", "low", "close", "adj_close", "volume")
         },
     )
     cubes["BBB"] = replace(cubes["AAA"], ticker="BBB")
