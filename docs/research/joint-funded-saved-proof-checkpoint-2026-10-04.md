@@ -1,5 +1,72 @@
 # Independent funded-account proof
 
+## First calibrated account, October 5
+
+The original immutable three-cost producer has completed its first account.
+The unchanged saved-only verifier authenticates the complete 2177 return
+intervals from February 1, 2018 through September 30, 2026, original inputs,
+cash, whole-share holdings, receipts, corporate actions and every declared
+score. No account was rerun or refitted for verification. These are conditional
+current-vintage research accounts, not an exact historical live reconstruction
+or proven broker fills. Dividend receivables contribute to wealth but remain
+unspendable. This first table has zero added execution cost.
+
+| Account | Total gain | CAGR | Maximum loss | Sharpe | Realized turnover |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Calibrated allocation V3 | 644.71% | 26.16% | 48.97% | 0.911 | 172.34 |
+| Incumbent rule | 763.51% | 28.34% | 43.09% | 0.993 | 184.21 |
+| Incumbent allocation / boosting timing | 787.70% | 28.76% | 43.30% | 1.006 | 182.56 |
+| Incumbent allocation / ridge timing | 711.32% | 27.42% | 43.59% | 0.970 | 182.84 |
+| SPY account | 190.50% | 13.14% | 32.59% | 0.772 | 1.00 |
+| QQQ account | 350.63% | 19.04% | 34.54% | 0.862 | 1.00 |
+
+Turnover is the sum of actual bought/sold notional divided by the preceding
+session's NAV under the original verifier's definition, not an annual rate or a count
+of trades. Calibration improves substantially over V2's 18.62% CAGR and
+551.10 turnover, but trails the incumbent's full-history gain with greater loss.
+It therefore does not establish a live replacement.
+
+The predeclared eras are informative without changing the primary objective:
+2018–2020 CAGR is 17.88% versus the rule's 29.35%; 2021–2026 is 30.61%
+versus 27.83%. The latter also has 48.97% maximum loss versus 43.09%.
+Both retain original warmup, missing decisions and carried accounts. The reused
+32-session recent window gains 2.87% versus the rule's 5.37%; it is neither a
+new holdout nor a basis for tuning or an annual-return claim.
+
+A new saved-only diagnostic uses the existing four causal market states,
+independently reproducing every label with scalar statistics and every log-growth
+contribution with scalar arithmetic. Calibrated-minus-rule daily log basis
+points: above-mean/high-volatility -2.01 (731 intervals), above-mean/low-volatility
++2.61 (1045), below-mean/high-volatility -4.89 (360), below-mean/low-volatility
+-23.72 (41). The calm rising contribution is a concrete development finding,
+not evidence for adopting a selected regime switch. Noncontiguous contributions
+are not separate portfolio CAGR, and the smallest regime is weak evidence.
+The calibrated account's worst loss runs from November 29, 2021 to October 14,
+2022, recovering January 22, 2024; the rule peaks November 8, 2021, troughs
+October 12, 2022 and recovers December 15, 2023. Market labels use evidence
+through the preceding session close; this attribution changes no trade.
+
+Artifacts under calibrated-funded-20261005-3a598702/proof/independent on Spark:
+saved-prefix1.json SHA
+1fca74a1911680a13b3e0ec689e4a94715a382e2d9a55af5902385d5f687244a;
+candidate account SHA
+1eec36e3980990ea8de52dda4b6060de7b3f0a4a66773fcdac3fd6fe0684d6ab;
+calibrated-saved-diagnostic.json SHA
+2df39ae841addf5127c4a025cf9e229fec0e593f73521b1fed8ca6bef650d60e;
+diagnostic source SHA
+fec99306853beb1c61bef9b64ae0380a7c70bb17d0c8b3e29730cb2e33dde1d6.
+Both verification and diagnostic run on the original pinned image/source,
+without model fits, orders, producer mutation or source changes. The diagnostic
+also verifies the original input and three saved-account hashes and all losses.
+
+The 10/25bp candidate accounts and matching cost comparisons remain pending.
+At 03:25 NY the same producer is processing calibrated-10-0, 640 sessions
+through August 14, 2020. Prepared saved-only prefix2 command SHA
+524371df4cd9fda453601d736a0528cb4429a30db88493448120be165bc028ad,
+evidence SHA 102437cc92c823dd7d0abe015cda834a92196d405b7f73e9312110d8a97f11a9;
+execute only once after the second account enters the atomic index. All missing
+controls remain explicit. No combined V4 economic grid or live adoption yet.
+
 ## Second fixed start and actual-input integration, October 5
 
 An unchanged saved-only verifier now authenticates two V2 accounts and seven

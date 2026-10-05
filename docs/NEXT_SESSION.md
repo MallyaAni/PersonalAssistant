@@ -1,5 +1,48 @@
 # Next session
 
+## 2026-10-05 — calibrated first account complete and independently verified
+
+Goal ACTIVE; prior goal turn PROGRESS at pushed 16395854. This turn verified
+the unchanged producer handle in two bounded waits, then made PROGRESS with
+the first saved calibrated account and a new scalar-checked causal diagnostic.
+Started clean on codex/learned-entry-risk-20261002; no production code changed.
+
+VERIFIED unchanged source3a598702 saved-only verifier on pinned source image:
+1/3 calibrated accounts and 7/300 controls, all 2177 original return intervals.
+Zero-cost full-history calibrated CAGR 26.16%, rule 28.34%, boosting timing
+28.76%, ridge 27.42%, SPY 13.14%, QQQ 19.04%. Calibrated gain 644.71%,
+maximum loss 48.97%, Sharpe0.911, turnover172.34. Rule gain763.51%, loss43.09%,
+Sharpe0.993, turnover184.21. Substantial improvement over V2 but full objective
+not met. Predeclared 2021–2026 CAGR30.61% vs rule27.83%; 2018–2020 17.88%
+vs29.35%. Do not replace the primary full comparison with the favorable era.
+Current-vintage conditional fills and unspendable dividend claims remain limits.
+
+Proof root calibrated-funded-20261005-3a598702/proof/independent on Spark:
+saved-prefix1.json SHA
+1fca74a1911680a13b3e0ec689e4a94715a382e2d9a55af5902385d5f687244a.
+Original command/evidence bytes unchanged; an initial caller hash was truncated
+to60 characters and refused before any effect, corrected from original bytes.
+No verifier assertion weakened, no account or estimator rerun.
+
+New saved diagnostic source SHA
+fec99306853beb1c61bef9b64ae0380a7c70bb17d0c8b3e29730cb2e33dde1d6,
+report SHA 2df39ae841addf5127c4a025cf9e229fec0e593f73521b1fed8ca6bef650d60e.
+Original evaluator reused; separate scalar oracle reproduces all2177 causal
+labels, log growth and drawdowns. Calibrated daily excess log bp vs rule:
+above/high -2.01, above/low +2.61, below/high -4.89, below/low -23.72.
+Counts731/1045/360/41. Worst calibrated loss peaks2021-11-29, troughs2022-10-14,
+recovers2024-01-22. See existing report for full table and limitations. This
+is development attribution, not regime-switching or new holdout evidence.
+
+At03:25 NY same calibrated producer RUNNING/OOMfalse, original ID cd6a73ef...
+and start04:25:08Z unchanged. calibrated-10-0 is640 sessions through2020-08-14.
+NEXT: inspect next completed account, then run prepared command-prefix2.json
+once; SHA524371df4cd9fda453601d736a0528cb4429a30db88493448120be165bc028ad,
+evidence-prefix2 SHA102437cc92c823dd7d0abe015cda834a92196d405b7f73e9312110d8a97f11a9.
+Matching10/25bp controls remain pending; do not estimate or replay replacements.
+All producer sources remain immutable; no new grid, threshold change, model
+service change or live adoption. Live incumbent remains e8e339e0. Goal incomplete.
+
 ## 2026-10-05 — original-input timing journey and second saved account verified
 
 Goal ACTIVE. Started clean at 863a0dc7 on codex/learned-entry-risk-20261002;
