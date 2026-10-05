@@ -2,6 +2,23 @@
 
 ## 2026-10-04 — scheduled paper intents preserved; guarded release pending
 
+Release408d355e FAILED before touching deployment: 8663 passed,93 skipped,
+6 xfailed and1 failed in582.23s. First failing boundary is
+test_discovery_digest_quality::test_a_date_with_no_time_is_never_given_one:
+its October3 event is now correctly rejected as past by render_message, but
+the formatting test omitted its already-declared fixed _NOW. Added now=_NOW
+with all existing assertions unchanged.21 digest-quality tests pass in the
+pinned image; owned test Ruff clean. No discovery production changes.
+One targeted hypothesis; an earlier command named a nonexistent sibling
+test module and failed collection before exercising anything.
+
+The original guarded deploy is terminal; live remains621e28f0. Preserve its
+failure log /home/animallya96/scratch/main-intent-release-20261004.log. Retry
+only the corrected committed tree through scripts/deploy.sh with every gate;
+do not treat this date-dependent fixture as a reason to bypass a gate.
+Runtime manifest prepared for408d355e is superseded by this test/docs change;
+produce a separately named exact manifest for the successful release.
+
 Verified code b2a09688e85f97a0059dad830170ba7a53404604, based on
 origin/main204689db. Only paper settlement, nightly reconciliation and their
 existing test module changed. No learned-policy imports, strategy selection,
