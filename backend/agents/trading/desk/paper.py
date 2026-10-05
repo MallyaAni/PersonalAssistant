@@ -39,7 +39,7 @@ import math
 import os
 import tempfile
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass, field, replace
+from dataclasses import asdict, dataclass, field, fields, is_dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -361,7 +361,14 @@ def load_state(root: Path) -> PaperState:
     return PaperState(**data)
 
 
-# Replace the state atomically so a crash cannot truncate pending order intent.
+# Expand dataclasses as JSON reaches them without copying the entire account history.
+def _state_json(value):
+    if not isinstance(value, type) and is_dataclass(value):
+        return {item.name: getattr(value, item.name) for item in fields(value)}
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
+
+
+# Replace the state atomically with the same JSON bytes and durable intent guarantees.
 def save_state(root: Path, state: PaperState) -> Path:
     """Write the PaperState and return its path."""
     path = state_path(root)
@@ -371,7 +378,7 @@ def save_state(root: Path, state: PaperState) -> Path:
     ) as handle:
         temporary = Path(handle.name)
         try:
-            handle.write(json.dumps(asdict(state), indent=2))
+            handle.write(json.dumps(state, indent=2, default=_state_json))
             handle.flush()
             os.fsync(handle.fileno())
         except BaseException:

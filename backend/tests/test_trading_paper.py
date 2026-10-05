@@ -1,11 +1,57 @@
 """The paper book's rules and the Alpaca trading client."""
 
 import json
+from dataclasses import asdict
 
 import pytest
 
 from backend.agents.trading.desk import paper
 from backend.market import alpaca_trading
+
+
+# Faster persistence keeps every original field and nested dataclass byte-compatible.
+def test_state_save_preserves_legacy_json_and_input_objects(tmp_path):
+    order = paper.PaperOrder("AAA", "buy", 7, "Risk-adjusted allocation")
+    state = paper.PaperState(
+        sessions_seen=["2026-10-02"],
+        pending=[{"symbol": "AAA", "qty": 7, "execution": {"at": None}}],
+        history=[{"orders": (order,), "note": "\u03bc forecast", "cash": -0.0}],
+        journal=[{"qty": 7, "fees": 0.125, "terminal": False}],
+        allocation_state={
+            "targets": {"AAA": 0.25},
+            "proof": [None, True, float("nan")],
+        },
+    )
+    expected = json.dumps(asdict(state), indent=2).encode()
+    path = paper.save_state(tmp_path, state)
+    assert path.read_bytes() == expected
+    assert json.dumps(asdict(paper.load_state(tmp_path)), indent=2).encode() == expected
+    assert state.history[0]["orders"][0] is order
+    assert isinstance(state.history[0]["orders"], tuple)
+
+
+# A failed serialization or durable flush never destroys the previous pending intent.
+@pytest.mark.parametrize("failure", ["encode", "fsync"])
+def test_state_save_failure_preserves_original_intent(tmp_path, monkeypatch, failure):
+    state = paper.PaperState(pending=[{"symbol": "AAA", "qty": 7}])
+    path = paper.save_state(tmp_path, state)
+    original = path.read_bytes()
+    changed = paper.PaperState(pending=[{"symbol": "BBB", "qty": 12}])
+    if failure == "encode":
+        changed.allocation_state = {"unsupported": object()}
+        expected = TypeError
+    else:
+        # Reproduce an interrupted durable write after the new JSON has been encoded.
+        def interrupted(_descriptor):
+            raise OSError("Interrupted durable flush")
+
+        monkeypatch.setattr(paper.os, "fsync", interrupted)
+        expected = OSError
+    with pytest.raises(expected):
+        paper.save_state(tmp_path, changed)
+    assert path.read_bytes() == original
+    assert paper.load_state(tmp_path).pending == state.pending
+    assert sorted(item.name for item in path.parent.iterdir()) == ["state.json"]
 
 
 # The first session rebalances to the targets in whole shares, sells first,
@@ -503,8 +549,6 @@ def test_cancel_orders_reports_an_unconfirmed_cancel():
 # chooses when each name is entered. Measured 2026-09-18; the constants and
 # the evidence are at the top of paper.py.
 def test_a_price_entry_is_paid_from_cash_and_sized_by_the_band():
-    state = paper.PaperState(last_rebalance="2026-08-01", sessions_since_rebalance=3)
-
     def plan_at(band):
         return paper.plan(
             "2026-09-04",
