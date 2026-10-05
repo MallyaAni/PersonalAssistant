@@ -1,5 +1,38 @@
 # Next session
 
+## 2026-10-05 — three targeted entry revisions tested, none adopted
+
+User wants continued entry/exit improvement, fixed stock selection, zero costs.
+Started clean c99cf59b on isolated timing branch; main pull up to date.
+Implemented and tested three hypotheses instead of stopping after diagnosis:
+incumbent-relative continuation targets; buy-eligible training; completed-prefix
+intraday EMA/band/RSI/momentum features. Exact producer sources7e6acb07,
+bc663eaf,1f900b3b respectively; private original sources remain unchanged.
+
+VERIFIED all312 monthly models /12,244,176 saved forecasts,60 new funded books
+and52,230 intents. Independent reader checks exact input/source/model hashes,
+numeric forecast reproduction and recorded actions/fills/cash/shares/daily NAV.
+All producers/verifiers exit0/OOMfalse on pinned image5c6c5605; oneCPU/4GB caps,
+network disabled, source/market mounts read-only. Six final focused tests and
+scoped Ruff pass on formattede8e8b1a5. No model server or production mutation.
+
+FAILED advantage: median paired full gain versus1% rule = -16.3362pp (6/20wins),
+-35.0054pp (4/20), -3.4657pp (8/20); all recent comparisons also negative.
+Reports/JSON: research/rule-relative-entry-2026-10-05,
+eligible-entry-training-2026-10-05, technical-entry-prefix-2026-10-05.
+Spark scratch roots respectively rule-relative-entry-20261005,
+eligible-entry-20261005, technical-entry-20261005. Preserve all original models
+and accounts; do not refit/rerun these failures or tune away an unfavorable phase.
+
+Repository three-unsuccessful-hypotheses stop rule now applies to this sequence.
+Goal remains UNFINISHED. Next investigation: carried entry opportunities across
+sessions; existing engine forces a same-day terminal attempt and otherwise
+expires that day's intent. Removing the deadline alone would discard orders.
+Keep selection fixed and design an explicit comparable carried-intent contract.
+This is not proof that1% is optimal; reused-vintage history is not fresh evidence.
+Other running full-policy producers/watchers were preserved. No live deployment.
+Diagram impact NONE: alternatives inside the existing isolated research path.
+
 ## 2026-10-05 — zero-cost entry/exit side isolation completed; no adoption
 
 User explicitly requires improving the hardcoded 1% entry and exit timing,

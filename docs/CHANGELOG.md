@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-05 — zero-cost entry model hypotheses measured
+
+Implemented incumbent-relative continuation, buy-eligible training and intraday
+technical-prefix candidates on the isolated timing branch. All312 numeric model
+publications and60 saved accounts verified; none consistently beats the existing
+1% entry. Paired full-period median differences -16.34/-35.01/-3.47percentage
+points, fixed selection and zero costs. No strategy promotion or deployment.
+Six focused tests and scoped Ruff pass. Full evidence and next carried-intent
+investigation are in NEXT_SESSION and the three dated research reports.
+
 ## 2026-10-02 — Paper planner `/6`: the redeploy spends its whole-share remainder (fix/paper-target-tracking)
 
 - Why: the operator reported the account "doesn't know when to buy and

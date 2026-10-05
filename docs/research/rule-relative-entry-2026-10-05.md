@@ -36,3 +36,17 @@ numeric model replay including missing features, exact input hashes and saved
 independent account readback. A failed economic candidate is not promoted.
 No production model server, broker, account or dashboard mutations.
 Diagram impact NONE: isolated alternative within existing research evaluation.
+
+## Completed result
+
+VERIFIED source7e6acb07, image5c6c5605, producer33c71e68 exited0/OOMfalse.
+All104 monthly numeric models and4,081,392 predictions reproduce exactly as
+float32 saved forecasts. Independent original accounting verifies20 accounts,
+17,445 intents, source/input hashes, causal attempts, funding, fills, cash,
+shares and daily wealth. Four initial tests passed; later formatting changed
+no settings or decision logic. Raw original source remains in the private root.
+
+FAILED advantage: full paired median -16.3362pp,6/20 phases win; early+0.2787pp,
+later-8.8531pp, reused-recent-1.1412pp. No model promoted. Full hashes/window
+ranges: rule-relative-entry-2026-10-05.json. Original artifacts and receipt:
+Spark /home/animallya96/scratch/rule-relative-entry-20261005.
