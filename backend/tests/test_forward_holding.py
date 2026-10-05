@@ -48,8 +48,13 @@ def test_forward_calibration_uses_actual_publication_guards(example):
 # Fit original synthetic evidence once and append one actual reviewed session.
 @pytest.fixture(scope="module")
 def example(tmp_path_factory):
+    return example_factory(tmp_path_factory)
+
+
+# Reuse real publication mechanics with optionally valid synthetic market history.
+def example_factory(tmp_path_factory, *, with_market=False):
     prepared, bridge, parent, _, risk = risk_example_factory(
-        tmp_path_factory, with_volatility=True
+        tmp_path_factory, with_volatility=True, with_market=with_market
     )
     original = errors.VolatilityHoldingReader(risk, bridge)
     month = prepared["dates"][-1].astype("datetime64[M]")

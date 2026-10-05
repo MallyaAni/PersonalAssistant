@@ -20,6 +20,9 @@ POLICY = "joint-stock-risk-funded/1-research"
 MATURITY_POLICY = "joint-stock-risk-funded/2-maturity-shadow"
 CALIBRATED_POLICY = "joint-stock-risk-funded/3-log-calibration-research"
 TIMED_POLICY = "joint-stock-risk-funded/4-calibrated-probability-timing-research"
+MARKET_TIMED_POLICY = (
+    "joint-stock-risk-funded/5-market-conditioned-probability-timing-research"
+)
 HORIZON = "next_open_to_following_open_arithmetic_return"
 PROTOCOL = "docs/research/joint-funded-account-plan-2026-10-04.md"
 MATURITY_PROTOCOL = "docs/research/risk-qualified-funded-plan-2026-10-04.md"
@@ -361,12 +364,17 @@ class ProbabilityTimedFundedPolicy(CalibratedMaturityFundedPolicy):
 
     # Preserve allocation economics and authenticate the separate execution mechanism.
     def __init__(self, reader, cost_bps):
+        timing = self._timing_identity()
+        super().__init__(reader, cost_bps)
+        self.identity.update(timing)
+
+    # Require the registered timing engine before either private funded policy binds it.
+    def _timing_identity(self):
         from backend.market import live_probability_timing
 
         if self.timing_policy != live_probability_timing.POLICY:
             raise ValueError("Registered probability timing version required")
-        super().__init__(reader, cost_bps)
-        self.identity.update(
+        return dict(
             timing_policy=self.timing_policy,
             timing_source_sha256=hashlib.sha256(
                 Path(live_probability_timing.__file__).read_bytes()
@@ -399,3 +407,29 @@ class ProbabilityTimedFundedPolicy(CalibratedMaturityFundedPolicy):
             },
         }
         return routed, new, what
+
+
+# Bind learned market context to funded quantities and the same timing engine.
+class MarketConditionedTimedFundedPolicy(ProbabilityTimedFundedPolicy):
+    version = MARKET_TIMED_POLICY
+    protocol = "docs/research/market-conditioned-holding-plan-2026-10-05.md"
+
+    # Preserve funding and mandatory exits with the new authenticated reader.
+    def __init__(self, reader, cost_bps):
+        from backend.market.market_conditioned_holding import (
+            ForwardMarketConditionedHoldingReader,
+            MarketConditionedHoldingReader,
+        )
+
+        timing = self._timing_identity()
+        if type(reader) is VolatilityHoldingReader:
+            reader = MarketConditionedHoldingReader(reader)
+        elif type(reader) is ForwardVolatilityHoldingReader:
+            reader = ForwardMarketConditionedHoldingReader(reader)
+        elif type(reader) not in (
+            MarketConditionedHoldingReader,
+            ForwardMarketConditionedHoldingReader,
+        ):
+            raise ValueError("Original or market-conditioned authentic reader required")
+        MaturityFundedPolicy.__init__(self, reader, cost_bps)
+        self.identity.update(timing)

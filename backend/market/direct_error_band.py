@@ -660,7 +660,9 @@ class VolatilityHoldingReader:
             "months",
         ):
             setattr(self, name, getattr(self._reader, name))
-        self.volatility = frozen.features[:, :, 4].astype(np.float64, copy=True)
+        self.features = frozen.features.copy()
+        self.features.flags.writeable = False
+        self.volatility = self.features[:, :, 4].astype(np.float64, copy=True)
         self.volatility.flags.writeable = False
         root = Path(__file__).resolve().parents[2]
         self.identity = {
@@ -668,6 +670,7 @@ class VolatilityHoldingReader:
             "original_scenario_identity_sha256": base._json_hash(self._reader.identity),
             "volatility_feature": "volatility_20",
             "volatility_sha256": reference._hash(self.volatility),
+            "features_sha256": reference._hash(self.features),
             "source_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             "protocol_sha256": hashlib.sha256(
                 (root / VOLATILITY_PROTOCOL).read_bytes()

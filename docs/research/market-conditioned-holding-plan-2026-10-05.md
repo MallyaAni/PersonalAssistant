@@ -88,6 +88,33 @@ original-input-proof.py SHA
 First image test startup lacked writable TMPDIR and failed before collection;
 source/log retained, TMPDIR=/proof alone corrected, no assertion or gate changed.
 
-UNVERIFIED: authenticated historical/published-forward adapter, funded quantities,
-timing, portfolio economic advantage and deployment. This component remains
-unselected by production; completing those paths is required goal work.
+## Private reader and funded timing integration
+
+The next implementation uses separately named
+`market-conditioned-joint-holding/1-research` readers and
+`joint-stock-risk-funded/5-market-conditioned-probability-timing-research` policy.
+It retains the complete features already validated with the original numeric
+risk artifact; their hashes bind historical and forward training context.
+Current forward context comes from the genuine published close. No arbitrary
+caller context matrix is accepted by these adapters.
+
+Each stock fit retains exactly the original singleton admitted dates. Joint
+residuals use their original simultaneous dates and empirical probabilities,
+preserving actual total-loss rows and stock-specific volatility scaling.
+The same dated fitter and scenario transformation serve both historical and
+published-forward reads. A later complete forward calendar may extend the
+frozen bank with unavailable rows for fit-clock validation; those rows have no
+forecast, label, context or support and cannot become training observations.
+
+The funded policy retains the original cash and whole-share contract, mandatory
+company exits at the next opening and event priority. Ordinary discretionary
+buys and profit-taking intents use the already declared probabilistic timing
+mechanism. Calibration assumptions remain approximate; no percentage target
+is substituted with a claim of guaranteed confidence. This policy has no
+production selector or new economic grid. Wiring tests with an explicit
+scenario oracle test routing only; genuine numeric scenario tests and funded
+planning tests are recorded separately from those oracles.
+
+UNVERIFIED until acceptance is recorded: reader/funding/timing integration.
+Portfolio economic advantage and deployment remain UNVERIFIED. The existing
+three-cost V3 screen must finish before any new economic account run.

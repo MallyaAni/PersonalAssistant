@@ -212,14 +212,20 @@ def risk_example(tmp_path_factory):
     return risk_example_factory(tmp_path_factory)
 
 
-# Reuse fixed synthetic fits with optional distinct stock volatility.
-def risk_example_factory(tmp_path_factory, *, with_volatility=False):
+# Reuse synthetic fits with optional stock volatility and valid market context.
+def risk_example_factory(tmp_path_factory, *, with_volatility=False, with_market=False):
     from backend.cli import market_direct_daily_arithmetic as cli
 
     prepared, bridge, grades, eligible = fixture(count=1200, start="2021-01-04")
     if with_volatility:
         scale = 1 + 0.35 * np.sin(np.arange(len(grades)) / 31)
         prepared["X"][:, :, 4] = scale[:, None] * [0.02, 0.05, 0.015, 0.018]
+    if with_market:
+        day = np.arange(len(grades))
+        spy = prepared["symbols"].index("SPY")
+        prepared["X"][:, spy, 1] = 0.03 * np.sin(day / 23)
+        prepared["X"][:, spy, 5] = -0.1 - 0.05 * np.cos(day / 47)
+        prepared["X"][:, spy, 12] = 0.5 + 0.2 * np.sin(day / 67)
     grades[:, 1], eligible[:, 1] = -1, False
     prepared["valid"][:252] = False
     prepared["X"][:, 1, 8] = np.nan

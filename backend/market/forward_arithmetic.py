@@ -608,9 +608,11 @@ class ForwardVolatilityHoldingReader:
             observation, CloseObservation
         ):
             raise ValueError("Authenticated original reader and current close required")
-        if reference._hash(original.volatility) != original.identity[
-            "volatility_sha256"
-        ] or any(
+        if (
+            reference._hash(original.features) != original.identity["features_sha256"]
+            or reference._hash(original.volatility)
+            != original.identity["volatility_sha256"]
+        ) or any(
             reference._hash(getattr(original, name))
             != reference._hash(getattr(original._reader, name))
             for name in ("dates", "forecasts", "labels", "endpoints", "support")
@@ -647,6 +649,7 @@ class ForwardVolatilityHoldingReader:
                 "endpoints",
                 "support",
                 "volatility",
+                "features",
             )
         }
         for value in self._bank.values():
