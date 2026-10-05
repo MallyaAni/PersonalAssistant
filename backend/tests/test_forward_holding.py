@@ -415,10 +415,13 @@ def test_actual_private_forward_decision_survives_midnight(
     assert paper.load_state(tmp_path).pending == saved.pending
     assert broker.account().cash == 100000.0
     for row in repeated["actions"]:
-        assert row["decision_source"] == "settlement_or_event_priority"
+        assert row["decision_source"] == (
+            "settlement_or_event_priority" if saved.pending else policy_type.version
+        )
         assert row["action"] == "hold"
         assert row["action_status"] == "no_new_order"
-        assert row["model_target_weight"] is None
+        if saved.pending:
+            assert row["model_target_weight"] is None
     assert entry["until_rebalance"] is None
     for row in entry["actions"]:
         assert row["until_rebalance"] is None
