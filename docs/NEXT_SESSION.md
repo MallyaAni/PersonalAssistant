@@ -1,5 +1,45 @@
 # Next session
 
+## 2026-10-05 — saved market calibration independently verified
+
+Goal ACTIVE, PROGRESS; no strategy promotion or deployment. Started at e98d2188
+on the owned research branch with the two in-progress verification files.
+Verified code checkpoint aa5392f4425ca8bddeadfb0c5e84b2deec133501: saved historical
+market calibration can now be checked from original numeric bank dates/features
+and moment equations, without importing a forecast producer, fitting, predicting
+or replaying an account. Existing V1/V2/V3 grid registrations remain unchanged.
+
+VERIFIED 90 native and 90 pinned-image tests, no skips. Tests reject altered
+dates, coefficients, uncertainty, source/context, missing or repeated stocks,
+unidentified current predictors and false confidence claims. Initial verifier
+FAILED a valid constant predictor because exact equality rejected floating-point
+rounding; numerical bound fixed, out-of-span rejection retained. Existing
+dependency guard also rejected imported producer hashing; independently hash
+dtype/shape/bytes instead, unchanged guard passes. One native fixture failed for
+disk exhaustion; removed only a regenerated/hash-matched owned temporary source
+archive, no results or user data. Final native acceptance rerun passed all90.
+
+Actual saved original January4/5,2021 receipts PASS: two available receipts,
+ten stock fits,733 shared historical rows per receipt. Original source7171cae2
+all2402 members and original bank remain unchanged. All fits/predictions/account
+runs forbidden during saved proof. This verifies calibration algebra and causal
+row selection only; full V5 economic account proof, forward saved receipts,
+probability calibration and advantage remain UNVERIFIED.
+
+Spark root market-saved-proof-20261005-aa5392f4, all2403 consumer members unchanged.
+Manifest SHA17aa3203f0dfde4809b6c9003f4fcd4fc25c37f153573c2565c403670e0757cc;
+saved report SHA2672583bef8028a163cf19e80d068fb1e4d6acddb4c15a69d3ee5f31a19bb092.
+Full source/helper/command/test hashes in market-conditioned protocol document.
+
+At05:16NY original V3 producer RUNNING/OOMfalse,10bp account2000sessions through
+2026-01-14;1of3 indexed. Fixed0bp result already verified and does not justify
+replacement (644.71% gain vs763.51% rule;48.97% loss vs43.09%). NEXT: once second
+account is indexed, run existing saved-only prefix2 command once; matched10/25bp
+controls may still be pending. Complete/review the original fixed screen before
+a separately frozen V5 economic run. No active source/process restarts or new
+grid this turn. Live e8e339e0 unchanged. Diagram impact NONE: verification of
+existing private numerical flow, no runtime boundary change.
+
 ## 2026-10-05 — full original-session market-policy execution verified
 
 Goal ACTIVE; previous turn PROGRESS at696bdca9. Started clean on owned research

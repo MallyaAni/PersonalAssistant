@@ -1,5 +1,64 @@
 # Market-conditioned holding calibration
 
+## Saved calibration verification checkpoint
+
+Code aa5392f4425ca8bddeadfb0c5e84b2deec133501 adds a separate saved-only
+historical verifier. It authenticates the supplied original bank's complete
+exchange calendar, independently derives exact D+2 maturity, monthly opening,
+freeze and singleton/joint dates, and checks original context/feature hashes.
+It verifies recorded centering/scaling, numerical rank, orthonormal training
+directions, design Gram matrix, least-squares stationarity and identified
+coefficients. Current conditional means and regression leverage are recomputed
+from saved coefficients and decomposition, without calling the producer fitter,
+predictor or account runner. Original bank byte authentication remains the
+external admission contract; this verifier cannot certify arbitrary caller data.
+
+Acceptance: 90 native and 90 pinned-image tests pass without skips, including
+fabricated coefficients/uncertainty, omitted/future dates, changed context,
+false confidence, constant predictors and out-of-span refusal. The unchanged
+dependency guard exposed producer-hash reuse; independent byte hashing resolves
+it without loosening the guard. Floating-point rounding in a constant fitted
+mean is accepted at numerical precision, never as an economic tolerance.
+
+Saved original7171cae2 January4/5,2021 replay receipts independently pass:
+two available receipts, five stock fits each,733 joint dates each. Source2402
+members and original physical inputs are reauthenticated; saved bytes remain
+unchanged. Producer fitting, prediction and account replay are structurally
+forbidden during this check. Full V5 account economics, forward saved receipts,
+scenario probability accuracy, economic advantage and actual broker fills are
+not verified by it. No new economic grid, policy adoption or production change.
+
+Evidence root `/home/animallya96/scratch/market-saved-proof-20261005-aa5392f4`:
+
+- source-manifest.json SHA
+  `17aa3203f0dfde4809b6c9003f4fcd4fc25c37f153573c2565c403670e0757cc`,
+  all2403 exact consumer members unchanged.
+- proof/saved-market-calibration.json SHA
+  `2672583bef8028a163cf19e80d068fb1e4d6acddb4c15a69d3ee5f31a19bb092`.
+- proof/tests.log SHA
+  `32fef6156ea1fea493fa3d8f3d5098f726a261a908525bd879b942232478c438`.
+- proof/saved.log SHA
+  `bbdd41695b76fd2d2b22452ccc0dba809cfbd946cebee8c63b0a70af8119cbce`.
+- saved-proof.py SHA
+  `d9d7604b04fa53bbd6526257fae44f3c98d251ad421f5ccacb2e585b203ecb96`.
+- launch.py SHA
+  `9073fec04f4383dfc9f6ccdc05d2fc550b9a663c418c591b6ba0306d2ef8d7da`.
+- proof/saved-command.json SHA
+  `e3d9b1e36d9e50235a41ad524c3b38421a1b933e7ed414d786d63be3223d300c`.
+- proof/tests-command.json SHA
+  `1e0eed5e24ef2f2dd56dc8ac9cf6ab6f0de8121944288441de676cd181362dab`.
+- proof/execution.json SHA
+  `246fbe8c2febb73f3bfb4305b4137941a2b5fa59c139f58ee1472cc5b7005f4f`.
+
+Image remains
+`sha256:5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d`;
+network disabled, source/data read-only, private new proof directory writable.
+Existing original saved replay SHA
+`e044d6fcbeba093a6d41e39698da87e14cffab16e19f629e24dddfa0345cd071`
+is read without repeating its trades or calculating new economic scores.
+
+## Registered design
+
 Objective: condition stock-specific holding forecasts on the observed market
 without selecting a fixed bullish/bearish gate or dip/profit percentage.
 This advances the authorized learned exposure component. V3's first zero-cost
