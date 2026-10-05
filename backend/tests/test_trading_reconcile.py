@@ -17,9 +17,110 @@ again when another leg fills in a later round; and the journal survives
 the state's round-trip through its file.
 """
 
+from datetime import date, datetime, timedelta
+from types import SimpleNamespace
+
 import pytest
 
 from backend.agents.trading.desk import paper
+
+
+# A forward check preserves unsent scheduled intents without inventing broker orders.
+@pytest.mark.parametrize(
+    ("execution_day", "close_hour"), [("2026-10-05", 16), ("2026-11-27", 13)]
+)
+def test_reconciliation_preserves_unsent_intents_until_exchange_close(
+    tmp_path, execution_day, close_hour
+):
+    from backend.cli import market_daily
+    from backend.market.calendar import NEW_YORK
+
+    execute_on = date.fromisoformat(execution_day)
+    planned = (execute_on - timedelta(days=3)).isoformat()
+    row = {
+        "client_order_id": "scheduled",
+        "symbol": "AAA",
+        "side": "buy",
+        "qty": 2,
+        "session": planned,
+        "execute_on": execution_day,
+        "execution_timing": "dip_or_close",
+        "execution": {"reference_price": 10.0},
+    }
+    state = paper.PaperState(pending=[row], unconfirmed_rebalance=planned)
+    paper.save_state(tmp_path, state)
+
+    # Supply complete original broker absence without pretending the intent was sent.
+    def orders_since(ignored):
+        return []
+
+    client = SimpleNamespace(orders_since=orders_since)
+    close = datetime.combine(execute_on, datetime.min.time(), NEW_YORK).replace(
+        hour=close_hour
+    )
+    for now in (close - timedelta(days=1), close - timedelta(minutes=1)):
+        state, settled = market_daily._reconcile(
+            client, state, tmp_path, True, decision_at=now
+        )
+        assert not settled
+        assert paper.load_state(tmp_path).pending == [row]
+        assert not paper.load_state(tmp_path).journal
+        assert state.unconfirmed_rebalance == planned
+    state, settled = market_daily._reconcile(
+        client, state, tmp_path, True, decision_at=close
+    )
+    assert [item.status for item in settled] == ["missing"]
+    assert not paper.load_state(tmp_path).pending
+    assert paper.load_state(tmp_path).journal[0]["status"] == "missing"
+
+
+# Real broker outcomes still settle while another future intent remains unsubmitted.
+def test_reconciliation_preserves_future_intent_beside_confirmed_fill(tmp_path):
+    from backend.cli import market_daily
+    from backend.market.calendar import NEW_YORK
+
+    rows = [
+        {
+            "client_order_id": identity,
+            "symbol": symbol,
+            "side": "buy",
+            "qty": 2,
+            "session": "2026-10-02",
+            "execute_on": "2026-10-05",
+            "execution_timing": "dip_or_close",
+        }
+        for identity, symbol in (("future", "AAA"), ("filled", "BBB"))
+    ]
+    state = paper.PaperState(pending=rows, unconfirmed_rebalance="2026-10-02")
+    paper.save_state(tmp_path, state)
+
+    # Return the explicit filled receipt even though its recorded schedule is later.
+    def orders_since(ignored):
+        return [
+            {
+                "client_order_id": "filled",
+                "status": "filled",
+                "filled_qty": "2",
+                "filled_avg_price": "10",
+            }
+        ]
+
+    state, settled = market_daily._reconcile(
+        SimpleNamespace(orders_since=orders_since),
+        state,
+        tmp_path,
+        True,
+        decision_at=datetime(2026, 10, 4, 22, tzinfo=NEW_YORK),
+    )
+    saved = paper.load_state(tmp_path)
+    assert [(item.client_order_id, item.status) for item in settled] == [
+        ("filled", "filled")
+    ]
+    assert saved.pending == [rows[0]]
+    assert [(item["client_order_id"], item["status"]) for item in saved.journal] == [
+        ("filled", "filled")
+    ]
+    assert state.unconfirmed_rebalance == saved.unconfirmed_rebalance == "2026-10-02"
 
 
 def _pending(session: str, *symbols: str) -> list[dict]:
