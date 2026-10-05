@@ -175,18 +175,48 @@ def test_independent_marks_and_covered_sell(tmp_path):
     assert state.pending[0]["sent"]["qty"] == 3
 
 
-# A concurrent cash change fails the actual repeated-GET snapshot boundary.
-def test_concurrent_cash_change_is_unavailable():
+# Concurrent funds, shares or impossible source clocks fail the actual GET boundary.
+@pytest.mark.parametrize("field", ["cash", "shares", "future_clock"])
+def test_concurrent_account_change_is_unavailable(field):
     client = broker(now=DECISION)
-    account, calls = client.account, [0]
+    account, positions, source_clock, calls = (
+        client.account,
+        client.positions,
+        client.clock,
+        [0],
+    )
 
     # Alter only the second real account response to reproduce changing funds.
     def changed():
         calls[0] += 1
         value = account()
-        return replace(value, cash=value.cash + 1) if calls[0] == 2 else value
+        return (
+            replace(value, cash=value.cash + 1)
+            if calls[0] == 2 and field == "cash"
+            else value
+        )
 
-    client.account = changed
+    # Reproduce a held-share change without changing either account valuation.
+    def changed_positions():
+        values = positions()
+        if field == "shares" and calls[0] == 2:
+            values = [
+                type("Position", (), {"symbol": "AAA", "qty": 1, "current_price": 10})()
+            ]
+        return values
+
+    # Reproduce a source clock that was not yet known when its response was captured.
+    def changed_clock():
+        value = source_clock()
+        if field == "future_clock":
+            value["timestamp"] = (DECISION + timedelta(seconds=1)).isoformat()
+        return value
+
+    client.account, client.positions, client.clock = (
+        changed,
+        changed_positions,
+        changed_clock,
+    )
     result = forward.capture_account(client, NOW, clock=lambda: DECISION)
     assert result["receipt"]["reason"] and result["receipt"]["budget"] is None
 
@@ -227,6 +257,72 @@ def test_repeated_sender_does_not_submit_twice(tmp_path):
         == []
     )
     assert client.attempt_history == before
+
+
+# Actual publication cannot precede the prefix, arrive in the future or expire.
+@pytest.mark.parametrize(
+    ("available", "decision"),
+    [
+        (NOW - timedelta(seconds=1), DECISION),
+        (DECISION + timedelta(seconds=1), DECISION),
+        (DECISION, NOW + timedelta(minutes=15)),
+    ],
+)
+def test_impossible_or_expired_forecast_publication_rejected(available, decision):
+    captured = forward.capture_account(
+        broker(now=DECISION), NOW, clock=lambda: DECISION
+    )
+    with pytest.raises(ValueError, match="forecast publication"):
+        forward.build_reader(
+            forecasts(),
+            SYMBOLS,
+            0,
+            SESSION,
+            decision,
+            snapshot(),
+            [intent()],
+            captured,
+            10,
+            [],
+            forecast_available_at=available,
+            source_identity=SOURCE,
+        )
+
+
+# Missing stock risk remains unavailable rather than inventing a tiny variance.
+def test_missing_distribution_keeps_actual_order_pending(tmp_path):
+    client = broker(now=DECISION)
+    captured = forward.capture_account(client, NOW, clock=lambda: DECISION)
+    supplied = forecasts()
+    supplied["AAA"] = None
+    state = paper.PaperState()
+    state.pending = [intent()]
+    state.pending[0]["timing_policy"] = historical.POLICY
+    paper.save_state(tmp_path, state)
+    trace = []
+    reader = forward.build_reader(
+        supplied,
+        SYMBOLS,
+        0,
+        SESSION,
+        DECISION,
+        snapshot(),
+        state.pending,
+        captured,
+        10,
+        trace,
+        forecast_available_at=DECISION,
+        source_identity=SOURCE,
+    )
+    assert (
+        intraday_orders.send_due(
+            tmp_path, snapshot(), DECISION, lambda: client, timing_reader=reader
+        )
+        == []
+    )
+    assert trace[0]["state"] == "unavailable"
+    assert not paper.load_state(tmp_path).pending[0].get("sent")
+    assert client.attempt_history == ()
 
 
 # The original historical reader still rejects observations after its exact boundary.

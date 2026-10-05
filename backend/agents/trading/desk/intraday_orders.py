@@ -147,7 +147,7 @@ def _submit(client, row: dict, how: str, qty: int, verdict: dict) -> dict:
     return client.submit_market(symbol, qty, side, cid)
 
 
-# The part of a timing the row keeps as the record of why it was sent.
+# Preserve why a row was sent, including its supplied forward probability receipt.
 def _why_sent(timed: dict[str, Any], how: str, now: datetime) -> dict[str, Any]:
     """Return the sent block written onto a row: when, how, and the level."""
     return {
