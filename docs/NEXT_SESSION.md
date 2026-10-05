@@ -24,7 +24,8 @@ Spark scratch roots respectively rule-relative-entry-20261005,
 eligible-entry-20261005, technical-entry-20261005. Preserve all original models
 and accounts; do not refit/rerun these failures or tune away an unfavorable phase.
 
-Repository three-unsuccessful-hypotheses stop rule now applies to this sequence.
+User superseded the three-unsuccessful-hypotheses stop rule on 2026-10-05:
+AGENTS.md now requires evidence-driven persistence toward the acceptance criteria.
 Goal remains UNFINISHED. Next investigation: carried entry opportunities across
 sessions; existing engine forces a same-day terminal attempt and otherwise
 expires that day's intent. Removing the deadline alone would discard orders.
