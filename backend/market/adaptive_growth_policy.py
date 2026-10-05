@@ -475,6 +475,44 @@ def allocate(
     return target, receipt
 
 
+# Refine a feasible numerical stall in equivalent units with the original certificate.
+def _refine_distribution(
+    solved, proof, objective, gradient, matrix, limits, bounds, constraints
+):
+    if proof["certified"] or proof["reason"] != "global_convex_gap":
+        return solved, proof
+    scale = float(np.max(np.abs(gradient(solved.x))))
+    if not np.isfinite(scale) or scale <= 0:
+        return solved, proof
+    initial = objective(solved.x)
+    refinement = {
+        "method": "gradient_normalized_SLSQP",
+        "objective_scale": scale,
+        "initial_gap": proof["gap"],
+        "initial_solver_success": bool(solved.success),
+        "initial_iterations": int(solved.nit),
+        "accepted": False,
+    }
+    try:
+        retry = minimize(
+            lambda x: (objective(x) - initial) / scale,
+            solved.x,
+            jac=lambda x: gradient(x) / scale,
+            method="SLSQP",
+            bounds=bounds,
+            constraints=constraints,
+            options={"ftol": 1e-14, "maxiter": 300},
+        )
+        certificate = _certificate(retry.x, gradient, matrix, limits, bounds)
+        if certificate["certified"] and objective(retry.x) <= initial:
+            solved, proof = retry, certificate
+            refinement["accepted"] = True
+    except (ValueError, RuntimeError, FloatingPointError, np.linalg.LinAlgError) as exc:
+        refinement["error_type"] = type(exc).__name__
+    proof["refinement"] = refinement
+    return solved, proof
+
+
 # Maximize exact empirical log wealth using jointly aligned stock return scenarios.
 def _solve_distribution(returns, probabilities, current, upper, cash, cost, forced_fee):
     size = len(current)
@@ -516,21 +554,27 @@ def _solve_distribution(returns, probabilities, current, upper, cash, cost, forc
             -returns.T @ weighted, np.full(size, cost * weighted.sum()), np.zeros(size)
         ]
 
+    constraints = {
+        "type": "ineq",
+        "fun": lambda x: limits - matrix @ x,
+        "jac": lambda x: -matrix,
+    }
     solved = minimize(
         objective,
         start,
         jac=gradient,
         method="SLSQP",
         bounds=bounds,
-        constraints={
-            "type": "ineq",
-            "fun": lambda x: limits - matrix @ x,
-            "jac": lambda x: -matrix,
-        },
+        constraints=constraints,
         options={"ftol": 1e-14, "maxiter": 300},
     )
     solution = solved.x
     proof = _certificate(solution, gradient, matrix, limits, bounds)
+    solved, proof = _refine_distribution(
+        solved, proof, objective, gradient, matrix, limits, bounds, constraints
+    )
+    solution = solved.x
+    refinement = {key: value for key, value in proof.items() if key == "refinement"}
     if proof["certified"]:
         # Certify exact ownership kinks instead of rounding infinitesimal trades.
         for index in range(size):
@@ -547,6 +591,7 @@ def _solve_distribution(returns, probabilities, current, upper, cash, cost, forc
                     and objective(candidate) <= objective(solution) + 1e-14
                 ):
                     solution, proof = candidate, certificate
+    proof.update(refinement)
     proof.update(
         solver_success=bool(solved.success),
         iterations=int(solved.nit),

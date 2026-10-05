@@ -1,5 +1,9 @@
 """Actual convex solves verify causal risk sizing and funded position boundaries."""
 
+import hashlib
+from pathlib import Path
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 
@@ -100,6 +104,83 @@ def test_joint_distribution_matches_analytical_growth_size():
     assert receipt["certificate"]["expected_log_growth"] == pytest.approx(
         win * np.log1p(expected * up) + (1 - win) * np.log1p(expected * down)
     )
+
+
+# Small cash and cap drift cannot make a monotone, analytically solved book unavailable.
+@pytest.mark.parametrize("cost", [0, 10, 25])
+def test_joint_distribution_certifies_small_cash_at_drifted_ownership_cap(cost):
+    data = distribution_inputs(
+        [[0.003, 0.001, 0.005]] * 3,
+        current=[0.25, 0.25001, 0],
+        cash=0.000955,
+        cost=cost,
+    )
+    target, receipt = model.allocate_distribution(**data)
+    assert receipt["status"] == "optimized"
+    assert receipt["certificate"]["certified"]
+    assert receipt["certificate"]["gap"] <= model.CERTIFICATE_TOLERANCE
+    np.testing.assert_allclose(
+        target,
+        [0.25, 0.25, data["cash_weight"] / (1 + cost / 10000)],
+        atol=1e-10,
+    )
+    assert receipt["purchases"] * (1 + cost / 10000) <= data["cash_weight"] + 1e-12
+
+
+# The original dated scenario must pass the unchanged global certificate and cash limit.
+def test_joint_distribution_reproduced_small_cash_boundary():
+    path = Path(__file__).parent / "fixtures/joint_optimizer_2019-05-02.npz"
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == (
+        "e302a298f69eff4188fc2253954c65f03565c51a76bd68c16d2e501a1bc74323"
+    )
+    # Original simultaneous bank and private-account inputs; never resampled or fitted.
+    with np.load(path, allow_pickle=False) as source:
+        data = distribution_inputs(
+            source["scenarios"],
+            current=source["current"],
+            cash=float(source["cash"]),
+            cost=float(source["cost_bps"]),
+        )
+        data["probabilities"] = source["probabilities"]
+        data["grades"] = source["grades"]
+    target, receipt = model.allocate_distribution(**data)
+    assert receipt["status"] == "optimized"
+    assert receipt["certificate"]["certified"]
+    assert receipt["certificate"]["gap"] <= model.CERTIFICATE_TOLERANCE
+    assert np.all(target <= model.CAP)
+    assert receipt["purchases"] <= data["cash_weight"] + 1e-12
+    reference = np.array([0.24998186930881294, 0.25, 0.25, 0, 0, 0, 0.25, 0])
+    expected = data["probabilities"] @ np.log1p(data["scenarios"] @ reference)
+    assert receipt["certificate"]["expected_log_growth"] >= expected - 2e-12
+
+
+# False solver success, failed refinement and out-of-bounds output never authorize buys.
+@pytest.mark.parametrize("failure", ["stalled", "refinement_error", "infeasible"])
+def test_joint_distribution_refinement_stays_fail_closed(monkeypatch, failure):
+    data = distribution_inputs([[0.05], [0.03]], current=[0.1], cash=0.9)
+    calls = []
+
+    # Return the observed holding without optimization, or a strictly invalid holding.
+    def failed_solver(objective, start, **kwargs):
+        calls.append(start.copy())
+        if failure == "refinement_error" and len(calls) == 2:
+            raise RuntimeError("numerical refinement unavailable")
+        point = start.copy()
+        if failure == "infeasible":
+            point[0] = np.nextafter(model.CAP, np.inf)
+        return SimpleNamespace(x=point, success=True, nit=1)
+
+    monkeypatch.setattr(model, "minimize", failed_solver)
+    target, receipt = model.allocate_distribution(**data)
+    assert receipt["status"] == "unavailable"
+    assert receipt["reason"] == "optimizer_uncertified"
+    np.testing.assert_array_equal(target, data["current_weights"])
+    assert not receipt["certificate"]["certified"]
+    assert len(calls) == (1 if failure == "infeasible" else 2)
+    if failure != "infeasible":
+        assert not receipt["certificate"]["refinement"]["accepted"]
+    if failure == "refinement_error":
+        assert receipt["certificate"]["refinement"]["error_type"] == "RuntimeError"
 
 
 # Permuting aligned stock identities cannot change their assigned capital.
