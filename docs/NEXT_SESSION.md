@@ -1,5 +1,44 @@
 # Next session
 
+## 2026-10-05 — original screen complete; corrected timing screen running
+
+Goal ACTIVE. Objective: verify stock-specific entry/exit and funded sizing
+against matching rule/SPY/QQQ controls before any live replacement. Started
+clean at756c0076; preserve primary/main and all active producer source mounts.
+Local GitHub fetch failed DNS; last fetched main f77d6e57 remains ancestor.
+
+VERIFIED original V3 all3cost accounts,2177return intervals each,0missing NAV.
+Exact producer cd6a73ef exited0; independent saved proofSHA
+822a0bb886ef76c938d317a9164074f42137df3c287926e2d4f94f5d4c7e6375.
+CAGR0/10/25bp:26.16/25.39/30.08%; maximum loss48.97/51.58/36.64%.
+Zero-cost rule CAGR28.34%, so V3 trails it there. Matching10/25bp controls
+remain missing:12verified controls,288pending. Costs change allocations as
+well as fees; do not select25bp from this outcome or claim adoption.
+
+FAILED f58d87e6 V5 economic container f7f8a629 exited1 before any account:
+driver omitted original timing reader/provider. Old artifacts preserved.
+Targeted driver fix495bef89 forwards authenticated timing and checks it before
+output creation. Test fixture initially named a nonexistent Panel field;
+756c0076 corrects that field only. VERIFIED182exact-image tests, no skips,
+including actual driver to persisted private orders/fills/cash/holdings.
+Original timing metadata and114files exactly match the unchanged controls.
+
+Corrected V5 root /home/animallya96/scratch/market-funded-screen-20261005-756c0076.
+Producer market-funded-study-756c0076, ID659a960bd69ed52a1d824d1f09cccfde607bf52af6df83971357bf7d72f349d7,
+started12:13:15Z; actual RUNNING/OOMfalse. At08:30NY,0complete accounts,
+500nightly snapshots through2020-01-27 in market-0-0. Never restart/recopy.
+Independent reader admitted2953sessions/96stocks with fit/predict/replay
+disabled; feature/context hashes match producer. Bank proofSHA
+c38db4e429cb013a36f95987acd43d38faa573fd7cd133d494bef6bb6294952e.
+
+NEXT: inspect exact handle and completion receipt. Only after exit0/all3,
+run this root's `python3 results-launch.py verify` ONCE; require saved-execution
+exit0, saved-results.json AND saved-results.targets.json. Reuse only completed
+matching controls, never duplicate their accounts or wait for all300.
+Full V5 economics, advantage and live replacement UNVERIFIED. No production
+deploy, model changes, data writes or new economic grid. Live remains unchanged.
+Diagram impact: NONE — repair of the existing private timing dependency.
+
 ## 2026-10-05 — full V5 saved-result reader admitted
 
 Goal ACTIVE; previous turn PROGRESS (frozen source, actual coordinator and

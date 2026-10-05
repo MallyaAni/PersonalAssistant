@@ -1,5 +1,71 @@
 # Market-conditioned holding calibration
 
+## Corrected full-driver acceptance and active producer
+
+The original V3 screen completed all three fixed costs and its saved arithmetic
+was independently verified; proof
+`market-funded-screen-20261005-f58d87e6/v3-review/saved-prefix3.json` SHA
+`822a0bb886ef76c938d317a9164074f42137df3c287926e2d4f94f5d4c7e6375`.
+Each account has2177return intervals and no missing NAV. This is the declared
+2018-02-01..2026-09-30 conditional current-vintage book, not exact historical
+live selection or proven broker fills.
+
+| Cost, bp | Total gain | CAGR | Maximum loss | Sharpe | Turnover |
+| --- | --- | --- | --- | --- | --- |
+| 0 | 644.71% | 26.16% | 48.97% | 0.911 | 172.34 |
+| 10 | 606.19% | 25.39% | 51.58% | 0.878 | 104.52 |
+| 25 | 869.89% | 30.08% | 36.64% | 1.128 | 67.34 |
+
+Fees enter sizing as well as wealth: these are different allocation paths,
+not a licence to choose25bp after observing this result. V3 zero-cost CAGR
+trails matching rule28.34%; matching10/25bp rule and passive controls are
+not complete. Twelve controls verified,288pending. No adoption claim.
+
+The queued f58d87e6 V5 container exited1 before any account: the driver omitted
+its required original timing reader/provider. Its archived source, receipt and
+failure remain intact. Canonical fix495bef89 forwards and authenticates timing
+before creating outputs. First unit attempt found only a wrong test-fixture
+Panel field;756c0076 changes that field to actual adj_close, with assertions
+unchanged. VERIFIED182pinned-image tests, no skips, including real driver,
+nightly planning, intraday decisions, persisted fills/cash/whole-share holdings.
+The predeclared candidate, cost grid, data, arithmetic and controls are unchanged.
+
+Corrected source756c0076acccad57e0ad034324d3b4d7c8fa6a7b,2403members, root
+`/home/animallya96/scratch/market-funded-screen-20261005-756c0076`:
+
+- source-manifest.json SHA `7acda0fafabf5807ec1a57ab7326ce501d2a1f7c6f22ab77f22a24734455f607`.
+- runner.py SHA `438d63d34c0803a9fe26e1ed407f96d1c6e440cb9ce1d8f3851e61aff3362d77`.
+- tests log SHA `63bd0ab1a767e3de9b997c9471d8fc091bcb3fe176c4c5a28139c39346ed5387`.
+- preflight-execution.json SHA `d596e47730ca58853efb3e388253d672c9a8981c421ebd6c2149e69b87edd591`.
+- economic-command.json SHA `4cad836540b2a959fb2cd03f54840a658b598a1d26e9ff64e3508cf5dccab7fc`.
+- launch-receipt.json SHA `2e0fef43c1f2094c06fa2073cfef6d1928f83345d7913f7e0545f8004d77168f`.
+
+Actual producer `market-funded-study-756c0076`, ID
+`659a960bd69ed52a1d824d1f09cccfde607bf52af6df83971357bf7d72f349d7`,
+started12:13:15Z October5. At08:30NewYork it remains RUNNING/OOMfalse,
+500nightly snapshots through2020-01-27, zero completed accounts. This passed
+the failed driver boundary; it does not prove portfolio results. Do not alter
+mounted source, restart it or rerun controls. Original boosting timing is
+restored, not fitted;114original file hashes and metadata match control identity.
+
+Independent saved reader for the corrected source restores2953sessions and
+96stocks with fitting/prediction/account replay disabled. Feature/context hashes
+match actual producer preflight. Admission exit0 is not full-result acceptance:
+
+- saved-results.py SHA `6772c66a8c6f03041ab8f1b391bb6ee76d6961aa7e8f2b45c82db0dea125c718`.
+- results-launch.py SHA `bb7e70ad827e11c0febc5e13d90177ed48ff03075d9c175f41c4988aeac22d05`.
+- bank-admission.json SHA `c38db4e429cb013a36f95987acd43d38faa573fd7cd133d494bef6bb6294952e`.
+- bank-execution.json SHA `59733e9b97d02521d13c096d0975ee89faeda3f5870ba9a5616599d0a633d9f9`.
+- bank-command.json SHA `bcfe85e8e82c309a77541bc520ea02bcbed4ba2058cbfc1380f3682f0d70806e`.
+- bank.log SHA `d9b62afc42c0c719a2b23fb7d3b3b9badd39b106e12ee708d4310ea8c3c5faf4`.
+
+After successful exact producer completion, run existing results-launch.py verify
+once. It authenticates original timing metadata/bytes, then saved full ledger,
+calibration, target scenario hashes, funding and log utility independently.
+Require saved-execution exit0 plus saved-results.json and its targets companion.
+No fit, prediction, account replay, target selection or global optimality claim.
+Full V5 performance and live replacement remain UNVERIFIED; live unchanged.
+
 ## Full saved-result reader admission
 
 The existing frozen f58d87e6 root now has private saved-results.py and
