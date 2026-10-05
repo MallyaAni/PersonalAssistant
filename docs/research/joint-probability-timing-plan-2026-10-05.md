@@ -81,3 +81,22 @@ and rejects missing calendar dates, incomplete/future publications and forming
 bars. Preserve early-close timing support explicitly. Source authentication and
 historical grade publication remain caller responsibilities. This private pure
 feature function creates no order, forecast probability or live selection.
+
+## Forward probability continuation
+
+Prepare only the new month's residual sample from the original authenticated
+SavedDistributions context. Bind the restored typed arrays and manifest against
+mutation. Preserve the original stock exclusions, strict endpoint/freeze,
+252-session minimum,756-session lookback and equal session weights. Count the
+lookback in actual exchange dates even when later frozen-out archive sessions
+are absent; disclose those absent sessions. Do not refit or rescore old forecasts.
+Record actual availability after sample preparation and retain missing stock risk.
+
+At a current observation, reload the hash-addressed numeric heads and require
+the same declared cohort, monthly fit and original sample hashes. Invalid second
+moments remain unavailable, with no variance floor. Missing names and unsupported
+timing remain explicit; exclude benchmark trades. Preserve the estimated
+one-decision price-advantage horizon and existing expected-log-NAV decision.
+This does not prove confidence calibration or broker fills. Actual current-bar
+observation binding, publication-delay handling and sender acceptance remain
+required before any live selection.

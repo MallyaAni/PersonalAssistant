@@ -7,6 +7,8 @@ It neither fits estimators nor regenerates probability diagnostics.
 
 from __future__ import annotations
 
+import hashlib
+import json
 from copy import deepcopy
 from dataclasses import dataclass, field
 
@@ -22,6 +24,59 @@ ARCHIVED_CALENDAR_SHA = (
 CORRECTED_CALENDAR_SHA = (
     "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4"
 )
+
+
+# Bind the verified private context so later forward consumers can detect mutation.
+def _context_identity(context):
+    (
+        dates,
+        names,
+        means,
+        scales,
+        outcomes,
+        score,
+        ends,
+        completion,
+        as_of,
+        sessions,
+        manifest,
+    ) = context
+    identity = {
+        name: _hash(value)
+        for name, value in zip(
+            (
+                "dates",
+                "symbols",
+                "means",
+                "scales",
+                "outcomes",
+                "score",
+                "ends",
+                "completion",
+                "as_of",
+                "holidays",
+                "weekmask",
+            ),
+            (
+                dates,
+                np.asarray(names),
+                means,
+                scales,
+                outcomes,
+                score,
+                ends,
+                completion,
+                np.asarray(as_of),
+                sessions.holidays,
+                sessions.weekmask,
+            ),
+            strict=True,
+        )
+    }
+    identity["manifest"] = hashlib.sha256(
+        json.dumps(manifest, sort_keys=True, allow_nan=False).encode()
+    ).hexdigest()
+    return identity
 
 
 # Preserve verified samples and current support for causal execution decisions.
@@ -385,6 +440,7 @@ def load_saved(
             "no_refit_or_recalibration": True,
             "caller_authenticates_original_receipt_and_archive_bytes": True,
             "sample_cache": "one_month_only",
+            "context_sha256": _context_identity(context),
         },
         context,
     )

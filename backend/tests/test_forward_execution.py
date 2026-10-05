@@ -16,6 +16,8 @@ from backend.market import forward_execution as forward
 from backend.market import learned_entry_data as features
 from backend.market import learned_entry_models as original
 from backend.market import learned_intraday_moments as moments
+from backend.market import probabilistic_execution as probability
+from backend.market import probabilistic_execution_saved as saved_source
 
 
 # Supply a complete session grid with real models and controlled synthetic labels.
@@ -58,7 +60,7 @@ def publish(data, session="2026-10-01", at="2026-10-02T17:00:00-04:00"):
         ),
         published_at=at,
         source_revision="a" * 40,
-        input_identity={"original": "b" * 64},
+        input_identity={"original": "b" * 64, "cohort": "c" * 64},
     )
 
 
@@ -159,13 +161,16 @@ def test_publication_binds_actual_clock_helpers_and_calendar(fitted):
     recorded = fitted[1].receipt["identity"]["sources"]
     root = Path(forward.__file__).resolve().parents[2]
     for path in (
-        Path(reference.__file__), Path(publication_source.__file__),
-        exchange.HISTORICAL_SESSIONS_PATH, exchange.HOLIDAYS_PATH,
+        Path(reference.__file__),
+        Path(publication_source.__file__),
+        exchange.HISTORICAL_SESSIONS_PATH,
+        exchange.HOLIDAYS_PATH,
         exchange.EARLY_CLOSES_PATH,
     ):
-        assert recorded[str(path.relative_to(root))] == sha256(
-            path.read_bytes()
-        ).hexdigest()
+        assert (
+            recorded[str(path.relative_to(root))]
+            == sha256(path.read_bytes()).hexdigest()
+        )
 
 
 # A returned receipt must not alias or revise the registered execution target.
@@ -263,4 +268,188 @@ def test_input_calendar_and_completion_refused(fitted):
             published_at="2026-10-02T17:00:00-04:00",
             source_revision="a" * 40,
             input_identity={"original": "b" * 64},
+        )
+
+
+# Preserve synthetic original OOS calibration bytes for forward-month acceptance only.
+@pytest.fixture(scope="module")
+def residual_archive():
+    dates = dataset("2026-09-30")["dates"]
+    shape = (len(dates), 2, 3)
+    inputs = {
+        "dates": dates,
+        "symbols": ("AAOI", "SPY", "QQQ"),
+        "means": np.zeros(shape, dtype=np.float32),
+        "second_moments": np.full(shape, 0.01, dtype=np.float32),
+        "labels": np.broadcast_to(np.array([-0.1, 0.1])[None, :, None], shape).copy(),
+        "valid": np.ones(shape, dtype=bool),
+        "outcome_end_dates": dates.copy(),
+        "data_as_of": "2026-09-30T16:00:00-04:00",
+        "horizon": probability.HORIZON,
+    }
+    calibrated = probability.calibrate(**inputs)
+    saved = saved_source.load_saved(
+        **inputs,
+        manifest=calibrated.manifest,
+        saved_probability=calibrated.probability_positive,
+        saved_quantiles=calibrated.quantiles,
+    )
+    return inputs, saved
+
+
+# Prepare one forward sample with an explicitly synthetic post-preparation clock.
+def residual_month(saved, **changes):
+    arguments = {
+        "fit_session": "2026-10-01",
+        "published_at": "2026-10-01T08:00:00-04:00",
+        "archive_identity": {"cohort": "c" * 64, "archive": "d" * 64},
+        "clock": lambda: "2026-10-01T08:00:00-04:00",
+    }
+    arguments.update(changes)
+    return forward.prepare_residuals(saved, **arguments)
+
+
+# Original calibration with an unavailable new row pins the forward sample formula.
+def test_forward_residuals_match_original_next_month_without_rescoring(
+    residual_archive, monkeypatch
+):
+    inputs, saved = residual_archive
+    expected_inputs = deepcopy(inputs)
+    expected_inputs["dates"] = np.append(inputs["dates"], np.datetime64("2026-10-01"))
+    for name in ("means", "second_moments", "labels", "valid"):
+        values = inputs[name]
+        extra = (
+            np.zeros((1, 2, 3), dtype=bool)
+            if name == "valid"
+            else np.full((1, 2, 3), np.nan)
+        )
+        expected_inputs[name] = np.concatenate((values, extra.astype(values.dtype)))
+    expected_inputs["outcome_end_dates"] = np.append(
+        inputs["outcome_end_dates"], np.datetime64("NaT", "D")
+    )
+    expected_inputs["data_as_of"] = "2026-10-01T16:00:00-04:00"
+    expected = probability.calibrate(**expected_inputs).samples["2026-10"]["AAOI"]
+
+    # Forward continuation must not recalibrate old probability diagnostics.
+    def forbidden(*args, **kwargs):
+        pytest.fail("Forward residual preparation rescored the archive")
+
+    monkeypatch.setattr(probability, "calibrate", forbidden)
+    actual = residual_month(saved)
+    for name in ("residuals", "weights", "day_indices", "clock_indices"):
+        np.testing.assert_array_equal(
+            getattr(actual.samples["AAOI"], name), getattr(expected, name)
+        )
+    assert set(actual.samples) == {"AAOI"}
+    assert actual.receipt["stocks"][0]["maximum_endpoint"] < "2026-08-17"
+    assert not actual.samples["AAOI"].residuals.flags.writeable
+
+
+# Mature lookback uses actual exchange dates even beyond the last archived month.
+def test_forward_residual_calendar_lookback_and_missing_sessions(residual_archive):
+    _, saved = residual_archive
+    result = residual_month(
+        saved,
+        fit_session="2026-11-02",
+        published_at="2026-11-02T08:00:00-05:00",
+        clock=lambda: "2026-11-02T08:00:00-05:00",
+    )
+    lower = result.receipt["identity"]["lookback_first_date"]
+    assert (
+        saved.dates[result.samples["AAOI"].day_indices] >= np.datetime64(lower)
+    ).all()
+    assert result.receipt["identity"]["unrepresented_archive_sessions"] > 0
+
+
+# Mutating a restored context cannot create an unauthenticated future sample.
+def test_changed_verified_context_refused(residual_archive):
+    saved = deepcopy(residual_archive[1])
+    saved._context[4].flags.writeable = True
+    saved._context[4][0, 0, 0] = 99
+    with pytest.raises(ValueError, match="Verified original OOS"):
+        residual_month(saved)
+
+
+# A forward request cannot predate its actual input or preparation completion.
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"published_at": "2026-09-30T08:00:00-04:00"},
+        {"clock": lambda: "2026-10-01T07:59:59-04:00"},
+        {"archive_identity": {"cohort": "invalid"}},
+    ],
+)
+def test_residual_availability_and_identity_refused(residual_archive, change):
+    with pytest.raises(ValueError, match="dated forward|preparation"):
+        residual_month(residual_archive[1], **change)
+
+
+# Real numeric head readback and original residuals supply only the admitted stock.
+def test_current_model_and_residual_distribution_path(
+    fitted, residual_archive, tmp_path
+):
+    folder = tmp_path / "forward-cdf"
+    digest = write(folder, fitted[1])
+    month = residual_month(residual_archive[1])
+    values = np.zeros((3, 21), dtype=np.float32)
+    result = forward.current_distributions(
+        folder,
+        digest,
+        month,
+        symbols=residual_archive[0]["symbols"],
+        values=values,
+        valid=np.ones(3, dtype=bool),
+        observed_at="2026-10-05T10:00:03-04:00",
+        timing_supported=True,
+    )
+    heads, _ = forward.load_publication(
+        folder, receipt_sha256=digest, observed_at="2026-10-05T10:00:03-04:00"
+    )
+    predicted = forward.predict_moments(heads, values).astype(np.float64)
+    assert result["AAOI"].mean == predicted[0, 0]
+    assert result["AAOI"].scale == np.sqrt(predicted[1, 0] - predicted[0, 0] ** 2)
+    assert result["SPY"] is None
+    assert result["QQQ"] is None
+    assert result["AAOI"].horizon == probability.HORIZON
+    assert month.receipt["confidence_guarantee"] is False
+
+
+# Unavailable observations and unsupported clocks retain every name without forecasts.
+def test_current_missing_inputs_and_timing_retained(fitted, residual_archive, tmp_path):
+    folder = tmp_path / "missing-cdf"
+    digest = write(folder, fitted[1])
+    arguments = {
+        "symbols": residual_archive[0]["symbols"],
+        "values": np.zeros((3, 21)),
+        "valid": np.zeros(3, dtype=bool),
+        "observed_at": "2026-10-05T10:00:03-04:00",
+        "timing_supported": True,
+    }
+    month = residual_month(residual_archive[1])
+    arguments["values"][0] = np.inf
+    result = forward.current_distributions(folder, digest, month, **arguments)
+    assert all(value is None for value in result.values())
+    arguments.update(
+        values=np.zeros((3, 21)), valid=np.ones(3, dtype=bool), timing_supported=False
+    )
+    result = forward.current_distributions(folder, digest, month, **arguments)
+    assert all(value is None for value in result.values())
+
+
+# Changed cohort metadata cannot substitute residual evidence at the current decision.
+def test_changed_residual_receipt_refused(fitted, residual_archive, tmp_path):
+    folder = tmp_path / "changed-cdf"
+    digest = write(folder, fitted[1])
+    month = residual_month(residual_archive[1])
+    month.receipt["stocks"][0]["training_days"] = 1
+    with pytest.raises(ValueError, match="Matching current"):
+        forward.current_distributions(
+            folder,
+            digest,
+            month,
+            symbols=residual_archive[0]["symbols"],
+            values=np.zeros((3, 21)),
+            valid=np.ones(3, dtype=bool),
+            observed_at="2026-10-05T10:00:03-04:00",
+            timing_supported=True,
         )

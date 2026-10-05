@@ -23,6 +23,8 @@ from backend.market import forward_arithmetic as publication_source
 from backend.market import learned_entry_data as features
 from backend.market import learned_entry_models as original
 from backend.market import learned_intraday_moments as moments
+from backend.market import probabilistic_execution as probability
+from backend.market import probabilistic_execution_saved as saved_source
 from backend.market.daily_arithmetic_bridge import _as_of, _hash
 from backend.market.forward_arithmetic import _month_session
 
@@ -142,6 +144,8 @@ def _sources():
         Path(exchange.__file__),
         Path(reference.__file__),
         Path(publication_source.__file__),
+        Path(probability.__file__),
+        Path(saved_source.__file__),
         exchange.HISTORICAL_SESSIONS_PATH,
         exchange.HOLIDAYS_PATH,
         exchange.EARLY_CLOSES_PATH,
@@ -401,3 +405,237 @@ def predict_moments(heads, values):
         )
     result[~np.isfinite(result)] = np.nan
     return result
+
+
+# Keep shared stock residuals separate from their actual forward-month publication.
+@dataclass(frozen=True)
+class ResidualMonth:
+    samples: dict
+    receipt: dict
+    receipt_sha256: str
+
+
+# Continue original verified OOS residuals without refitting or rescoring old forecasts.
+def prepare_residuals(
+    saved, *, fit_session, published_at, archive_identity, clock=None
+):
+    first, calendar = _month_session(fit_session)
+    published = _as_of(published_at)
+    if (
+        not isinstance(saved, saved_source.SavedDistributions)
+        or saved.verification.get("status") != "VERIFIED_SAVED_DISTRIBUTIONS"
+        or saved.verification.get("context_sha256")
+        != saved_source._context_identity(saved._context)
+        or not isinstance(archive_identity, dict)
+        or "cohort" not in archive_identity
+        or any(
+            not isinstance(key, str)
+            or not key
+            or not isinstance(value, str)
+            or len(value) != 64
+            or any(c not in "0123456789abcdef" for c in value)
+            for key, value in archive_identity.items()
+        )
+        or np.datetime64(published.date(), "M") != first.astype("datetime64[M]")
+        or published.date() < first.astype(object)
+    ):
+        raise ValueError(
+            "Verified original OOS context and dated forward month required"
+        )
+    (
+        dates,
+        symbols,
+        means,
+        scales,
+        outcomes,
+        score,
+        ends,
+        completion,
+        as_of,
+        _,
+        manifest,
+    ) = saved._context
+    if dates[-1] >= first or as_of > probability._utc(published):
+        raise ValueError("Original archive must be available before the forward fit")
+    # Preserve the latest archive's original sample hashes before continuation.
+    saved_source._samples(
+        *saved._context, retain_month=str(dates[-1].astype("datetime64[M]"))
+    )
+    lower = np.busday_offset(first, -probability.MAX_DAYS, busdaycal=calendar)
+    cutoff = min(first, probability.FREEZE)
+    select = (
+        score
+        & np.isfinite(outcomes)
+        & (ends < cutoff)
+        & (completion <= as_of)
+        & ~np.isnat(completion)
+        & ((dates >= lower) & (dates < first))[:, None, None]
+    )
+    samples, records = {}, []
+    for stock, symbol in enumerate(symbols):
+        day, clock = np.nonzero(select[:, :, stock])
+        with np.errstate(all="ignore"):
+            residual = (
+                outcomes[day, clock, stock] - means[day, clock, stock]
+            ) / scales[day, clock, stock]
+        finite = np.isfinite(residual)
+        day, clock, residual = day[finite], clock[finite], residual[finite]
+        unique, counts = np.unique(day, return_counts=True)
+        weights = (
+            1.0 / counts[np.searchsorted(unique, day)]
+            if len(day)
+            else np.array([], dtype=np.float64)
+        )
+        status = (
+            "excluded_benchmark"
+            if symbol in ("SPY", "QQQ")
+            else (
+                "available"
+                if len(unique) >= probability.MIN_DAYS
+                else "insufficient_mature_sessions"
+            )
+        )
+        records.append(
+            {
+                "symbol": symbol,
+                "status": status,
+                "training_days": len(unique),
+                "training_rows": len(day),
+                "maximum_endpoint": str(ends[day, clock, stock].max())
+                if len(day)
+                else None,
+                "hashes": {
+                    key: _hash(value)
+                    for key, value in zip(
+                        ("day_indices", "clock_indices", "residuals", "weights"),
+                        (day, clock, residual, weights),
+                        strict=True,
+                    )
+                },
+            }
+        )
+        if status == "available":
+            for value in (day, clock, residual, weights):
+                value.flags.writeable = False
+            samples[symbol] = probability.ResidualSample(residual, weights, day, clock)
+    available_at = _as_of(clock() if clock else datetime.now(exchange.NEW_YORK))
+    if available_at < published or np.datetime64(
+        available_at.date(), "M"
+    ) != first.astype("datetime64[M]"):
+        raise ValueError(
+            "Actual residual preparation cannot precede its request or expire"
+        )
+    identity = {
+        "policy": "forward-execution-residuals/1-shadow",
+        "fit_date": str(first),
+        "published_at": available_at.isoformat(),
+        "requested_at": published.isoformat(),
+        "archive_identity": deepcopy(archive_identity),
+        "context_sha256": deepcopy(saved.verification["context_sha256"]),
+        "original_verification": deepcopy(saved.verification),
+        "sources": _sources(),
+        "horizon": probability.HORIZON,
+        "freeze": str(probability.FREEZE),
+        "minimum_days": probability.MIN_DAYS,
+        "maximum_days": probability.MAX_DAYS,
+        "lookback_first_date": str(lower),
+        "cutoff_exclusive": str(cutoff),
+        "symbols": list(symbols),
+        "original_manifest_sha256": original._json_hash(manifest),
+        "unrepresented_archive_sessions": int(
+            np.busday_count(
+                dates[-1] + np.timedelta64(1, "D"), first, busdaycal=calendar
+            )
+        ),
+    }
+    receipt = {
+        "identity": identity,
+        "identity_sha256": original._json_hash(identity),
+        "stocks": records,
+        "adoption_eligible": False,
+        "confidence_guarantee": False,
+    }
+    return ResidualMonth(samples, receipt, original._json_hash(receipt))
+
+
+# Bind current moments to the prepared month without inventing missing stock risk.
+def current_distributions(
+    model_folder,
+    model_receipt_sha256,
+    residual_month,
+    *,
+    symbols,
+    values,
+    valid,
+    observed_at,
+    timing_supported,
+):
+    now = _as_of(observed_at)
+    heads, model_receipt = load_publication(
+        model_folder, receipt_sha256=model_receipt_sha256, observed_at=now
+    )
+    identity = residual_month.receipt["identity"]
+    supplied = model_receipt["identity"]
+    if (
+        residual_month.receipt_sha256 != original._json_hash(residual_month.receipt)
+        or residual_month.receipt["identity_sha256"] != original._json_hash(identity)
+        or identity["sources"] != _sources()
+        or identity["symbols"] != list(symbols)
+        or supplied["input_identity"].get("cohort")
+        != identity["archive_identity"]["cohort"]
+        or model_receipt["training"]["fit_date"] != identity["fit_date"]
+        or _as_of(identity["requested_at"]) > _as_of(identity["published_at"])
+        or _as_of(identity["published_at"]) > now
+        or _as_of(supplied["published_at"]) > now
+        or np.datetime64(now.date(), "M") != np.datetime64(identity["fit_date"], "M")
+        or residual_month.receipt["adoption_eligible"] is not False
+        or residual_month.receipt["confidence_guarantee"] is not False
+        or not isinstance(timing_supported, (bool, np.bool_))
+    ):
+        raise ValueError(
+            "Matching current head, residual cohort and publication required"
+        )
+    x, allowed = np.asarray(values), np.asarray(valid)
+    if (
+        x.shape != (len(symbols), 21)
+        or allowed.shape != (len(symbols),)
+        or allowed.dtype.kind != "b"
+    ):
+        raise ValueError(
+            "Aligned original features and explicit valid observations required"
+        )
+    output = {symbol: None for symbol in symbols}
+    if not timing_supported or heads is None:
+        return output
+    predictions = predict_moments(heads, x[allowed]).astype(np.float64)
+    for index, stock in enumerate(np.flatnonzero(allowed)):
+        symbol = symbols[stock]
+        sample = residual_month.samples.get(symbol)
+        record = residual_month.receipt["stocks"][stock]
+        if symbol in ("SPY", "QQQ") or record["status"] != "available":
+            continue
+        mean, second = predictions[:, index]
+        variance = second - mean * mean
+        if (
+            sample is None
+            or not np.isfinite([mean, second, variance]).all()
+            or second < 0
+            or variance <= 0
+        ):
+            continue
+        for key, array in zip(
+            ("residuals", "weights", "day_indices", "clock_indices"),
+            (
+                sample.residuals,
+                sample.weights,
+                sample.day_indices,
+                sample.clock_indices,
+            ),
+            strict=True,
+        ):
+            if record["hashes"][key] != _hash(array):
+                raise ValueError("Prepared original residual bytes differ")
+        output[symbol] = probability.Distribution(
+            float(mean), float(np.sqrt(variance)), sample.residuals, sample.weights
+        )
+    return output
