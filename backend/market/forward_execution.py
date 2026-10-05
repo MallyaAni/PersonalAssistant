@@ -252,7 +252,7 @@ def fit_month(
         "minimum_days": original.MIN_TRAIN_DAYS,
         "maximum_days": original.MAX_TRAIN_DAYS,
         "freeze": str(original.HOLDOUT_START),
-        "target_schema": moments.TARGET_SCHEMA,
+        "target_schema": deepcopy(moments.TARGET_SCHEMA),
     }
     bundles, models = None, None
     if len(distinct) >= original.MIN_TRAIN_DAYS:

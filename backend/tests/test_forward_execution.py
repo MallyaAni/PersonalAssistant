@@ -166,6 +166,18 @@ def test_publication_binds_actual_clock_helpers_and_calendar(fitted):
         assert recorded[str(path.relative_to(root))] == sha256(path.read_bytes()).hexdigest()
 
 
+# A returned receipt must not alias or revise the registered execution target.
+def test_returned_receipt_detaches_registered_target(monkeypatch):
+    declared = deepcopy(moments.TARGET_SCHEMA)
+    monkeypatch.setattr(moments, "TARGET_SCHEMA", deepcopy(declared))
+    publication = publish(
+        dataset("2024-01-31"), session="2024-02-01", at="2024-02-01T08:00:00-05:00"
+    )
+    publication.receipt["identity"]["target_schema"]["prediction_clocks"].append(24)
+    publication.receipt["identity"]["target_schema"]["maturity_sessions"] = 1
+    assert moments.TARGET_SCHEMA == declared
+
+
 # New-month fitting needs only the previous completed session, not future prices.
 def test_forward_fit_without_any_current_month_features():
     data = dataset("2026-09-30")
