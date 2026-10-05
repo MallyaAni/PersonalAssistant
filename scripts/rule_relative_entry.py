@@ -2,12 +2,17 @@
 
 import hashlib
 import json
-from pathlib import Path
 
 import numpy as np
 
-CONFIG = dict(max_iter=64, max_leaf_nodes=15, learning_rate=0.05,
-              min_samples_leaf=200, early_stopping=False, random_state=0)
+CONFIG = {
+    "max_iter": 64,
+    "max_leaf_nodes": 15,
+    "learning_rate": 0.05,
+    "min_samples_leaf": 200,
+    "early_stopping": False,
+    "random_state": 0,
+}
 CLOCKS = (0, 3, 9, 19)
 FREEZE = np.datetime64("2026-08-17")
 
@@ -20,15 +25,19 @@ def targets(observed, execution, opening, volatility):
         raise ValueError("Opening and observed volatility dimensions differ")
     result = np.full(observed.shape, np.nan, dtype=np.float32)
     future = execution[:, 24].astype(float).copy()
-    future = np.where(np.isfinite(observed[:, 24]) & (observed[:, 24] > 0), future, np.nan)
+    future = np.where(
+        np.isfinite(observed[:, 24]) & (observed[:, 24] > 0), future, np.nan
+    )
     for clock in range(23, -1, -1):
         current, price = execution[:, clock], observed[:, clock]
         sigma = volatility[:, clock]
-        valid = np.isfinite(current) & (current > 0) & np.isfinite(future) & (future > 0)
+        valid = (
+            np.isfinite(current) & (current > 0) & np.isfinite(future) & (future > 0)
+        )
         valid &= np.isfinite(price) & (price > 0) & np.isfinite(sigma) & (sigma > 0)
         np.divide(current - future, price * sigma, out=result[:, clock], where=valid)
         crossed = np.isfinite(price) & (price > 0) & (price <= opening * 0.99)
-        # A selected missing fill remains missing; never choose a convenient later price.
+        # Keep a selected missing fill missing instead of choosing a later price.
         future = np.where(crossed, current, future)
     return result
 
@@ -53,8 +62,11 @@ def numeric_predict(trees, baseline, x):
             active = active[~leaf]
             node = node[~leaf]
             values = x[active, node["feature_idx"]]
-            left = np.where(np.isnan(values), node["missing_go_to_left"].astype(bool),
-                            values <= node["num_threshold"])
+            left = np.where(
+                np.isnan(values),
+                node["missing_go_to_left"].astype(bool),
+                values <= node["num_threshold"],
+            )
             indices[active] = np.where(left, node["left"], node["right"])
     return output
 
@@ -67,14 +79,21 @@ def fit_month(x, y, destination):
     trees = [tree[0].nodes for tree in model._predictors]
     baseline = float(model._baseline_prediction[0, 0])
     with destination.open("xb") as handle:
-        np.savez_compressed(handle, baseline=np.asarray(baseline),
-                            **{f"tree{i}": tree for i, tree in enumerate(trees)})
+        np.savez_compressed(
+            handle,
+            baseline=np.asarray(baseline),
+            **{f"tree{i}": tree for i, tree in enumerate(trees)},
+        )
     with np.load(destination, allow_pickle=False) as saved:
         restored = [saved[f"tree{i}"] for i in range(len(trees))]
-        # The probe is a fixed prefix of training inputs, including their missing values.
+        # Probe a fixed prefix of training inputs, including missing values.
         probe = x[:4096]
-        if not np.allclose(numeric_predict(restored, float(saved["baseline"]), probe),
-                           model.predict(probe), rtol=1e-12, atol=1e-12):
+        if not np.allclose(
+            numeric_predict(restored, float(saved["baseline"]), probe),
+            model.predict(probe),
+            rtol=1e-12,
+            atol=1e-12,
+        ):
             raise ValueError("Numeric model readback differs")
     return model
 
@@ -83,8 +102,7 @@ def fit_month(x, y, destination):
 def walk_forward(dataset, opening, output):
     x, dates, valid = dataset["X"], dataset["dates"], dataset["valid"]
     stock_mask = np.asarray(dataset["training_symbols"])
-    labels = targets(dataset["current_close"], dataset["next_open"], opening,
-                     x[..., 4])
+    labels = targets(dataset["current_close"], dataset["next_open"], opening, x[..., 4])
     predictions = np.full((*valid.shape, 2), np.nan, dtype=np.float32)
     months = dates.astype("datetime64[M]")
     receipts = []
@@ -96,18 +114,33 @@ def walk_forward(dataset, opening, output):
         if not len(days):
             receipts.append({"month": str(month), "status": "insufficient_history"})
             continue
-        mask = valid[days][:, CLOCKS] & stock_mask & np.isfinite(labels[days][:, CLOCKS])
+        mask = (
+            valid[days][:, CLOCKS] & stock_mask & np.isfinite(labels[days][:, CLOCKS])
+        )
         local, clock, stock = np.nonzero(mask)
         row_days, row_clocks = days[local], np.asarray(CLOCKS)[clock]
-        train_x, train_y = x[row_days, row_clocks, stock], labels[row_days, row_clocks, stock]
+        train_x, train_y = (
+            x[row_days, row_clocks, stock],
+            labels[row_days, row_clocks, stock],
+        )
         path = output / f"model-{month}.npz"
         model = fit_month(train_x, train_y, path)
-        selected = valid[test, :24] & np.isfinite(x[test, :24, :, 4]) & (x[test, :24, :, 4] > 0)
+        selected = (
+            valid[test, :24]
+            & np.isfinite(x[test, :24, :, 4])
+            & (x[test, :24, :, 4] > 0)
+        )
         day, clock, stock = np.nonzero(selected)
-        predictions[test[day], clock, stock, 0] = model.predict(x[test[day], clock, stock])
-        receipt = {"month": str(month), "status": "fitted", "rows": len(train_y),
-                   "last_training_session": str(dates[row_days].max()),
-                   "model_sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+        predictions[test[day], clock, stock, 0] = model.predict(
+            x[test[day], clock, stock]
+        )
+        receipt = {
+            "month": str(month),
+            "status": "fitted",
+            "rows": len(train_y),
+            "last_training_session": str(dates[row_days].max()),
+            "model_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        }
         receipts.append(receipt)
         print(json.dumps(receipt), flush=True)
     with (output / "predictions.npz").open("xb") as handle:
