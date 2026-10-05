@@ -1,0 +1,608 @@
+{
+  "source_sha256": "2a8276f0c5e677292a600c260e87016d39029ee33359cdfae9c228c70fe22f11",
+  "cost_bps": 0,
+  "adoption_eligible": false,
+  "interpretation": [
+    "Positive price advantage means lower buy or higher sell price.",
+    "Equal-intent paired price diagnostic, not compounded portfolio gain.",
+    "Phase observations overlap; counts are not independent sample sizes.",
+    "Different fills affect later quantities; no causal side attribution.",
+    "Current-vintage universe and reused windows, not a fresh holdout."
+  ],
+  "windows": {
+    "all": {
+      "entry": {
+        "counts": {
+          "union_intents": 5419,
+          "same_action": 4677,
+          "one_or_both_unfilled": 1341,
+          "different_action": 742
+        },
+        "outcomes": {
+          "candidate": {
+            "completed": 871,
+            "unfilled": 947,
+            "partial": 3258
+          },
+          "control": {
+            "completed": 1130,
+            "unfilled": 842,
+            "partial": 3048
+          }
+        },
+        "common_fill_price_advantage_bp": {
+          "count": 3336,
+          "mean": 6.08813695989012,
+          "median": 0.0,
+          "positive": 1429
+        },
+        "common_attempt_delay_minutes": {
+          "count": 4615,
+          "mean": -191.46045503791981,
+          "median": -270,
+          "positive": 523
+        },
+        "common_fill_quantity_ratio": {
+          "count": 3336,
+          "mean": 41621605614927.29,
+          "median": 1.0311859290825753,
+          "positive": 3336
+        }
+      },
+      "add": {
+        "counts": {
+          "union_intents": 6328,
+          "same_action": 4670,
+          "one_or_both_unfilled": 1572,
+          "different_action": 1658
+        },
+        "outcomes": {
+          "candidate": {
+            "partial": 2890,
+            "unfilled": 1174,
+            "completed": 1415
+          },
+          "control": {
+            "unfilled": 1039,
+            "partial": 2873,
+            "completed": 1607
+          }
+        },
+        "common_fill_price_advantage_bp": {
+          "count": 3098,
+          "mean": 6.762831814283827,
+          "median": 0.0,
+          "positive": 1333
+        },
+        "common_attempt_delay_minutes": {
+          "count": 4604,
+          "mean": -186.02085143353605,
+          "median": -255.0,
+          "positive": 554
+        },
+        "common_fill_quantity_ratio": {
+          "count": 3098,
+          "mean": 4002206312959.8677,
+          "median": 1.0022186325431526,
+          "positive": 3098
+        }
+      },
+      "trim": {
+        "counts": {
+          "union_intents": 3112,
+          "same_action": 2052,
+          "different_action": 1060,
+          "one_or_both_unfilled": 16
+        },
+        "outcomes": {
+          "candidate": {
+            "completed": 2555,
+            "unfilled": 19
+          },
+          "control": {
+            "completed": 2571,
+            "unfilled": 19
+          }
+        },
+        "common_fill_price_advantage_bp": {
+          "count": 2036,
+          "mean": 0.18726984440597771,
+          "median": -3.5527244366684787,
+          "positive": 838
+        },
+        "common_attempt_delay_minutes": {
+          "count": 2036,
+          "mean": -149.18222003929273,
+          "median": -165.0,
+          "positive": 384
+        },
+        "common_fill_quantity_ratio": {
+          "count": 2036,
+          "mean": 1.477410915221481,
+          "median": 1.005532543626437,
+          "positive": 2036
+        }
+      },
+      "exit": {
+        "counts": {
+          "union_intents": 4294,
+          "same_action": 3897,
+          "unmatched": 397,
+          "one_or_both_unfilled": 56
+        },
+        "outcomes": {
+          "candidate": {
+            "completed": 4014,
+            "unfilled": 61
+          },
+          "control": {
+            "completed": 4058,
+            "unfilled": 58
+          }
+        },
+        "common_fill_price_advantage_bp": {
+          "count": 3841,
+          "mean": 3.7251153828792,
+          "median": -0.0,
+          "positive": 1618
+        },
+        "common_attempt_delay_minutes": {
+          "count": 3841,
+          "mean": -167.81567300182243,
+          "median": -225,
+          "positive": 624
+        },
+        "common_fill_quantity_ratio": {
+          "count": 3841,
+          "mean": 1.786749454031022,
+          "median": 1.0163235515769198,
+          "positive": 3841
+        }
+      }
+    },
+    "early": {
+      "entry": {
+        "counts": {
+          "union_intents": 2033,
+          "same_action": 1755,
+          "one_or_both_unfilled": 507,
+          "different_action": 278
+        },
+        "outcomes": {
+          "candidate": {
+            "completed": 327,
+            "unfilled": 383,
+            "partial": 1211
+          },
+          "control": {
+            "completed": 421,
+            "unfilled": 314,
+            "partial": 1132
+          }
+        },
+        "common_fill_price_advantage_bp": {
+          "count": 1248,
+          "mean": 7.346453551353396,
+          "median": 0.0,
+          "positive": 576
+        },
+        "common_attempt_delay_minutes": {
+          "count": 1724,
+          "mean": -218.69199535962878,
+          "median": -315.0,
+          "positive": 163
+        },
+        "common_fill_quantity_ratio": {
+          "count": 1248,
+          "mean": 33703010572987.477,
+          "median": 1.017155557281932,
+          "positive": 1248
+        }
+      },
+      "add": {
+        "counts": {
+          "union_intents": 2045,
+          "same_action": 1467,
+          "one_or_both_unfilled": 446,
+          "different_action": 578
+        },
+        "outcomes": {
+          "candidate": {
+            "partial": 1104,
+            "unfilled": 302,
+            "completed": 324
+          },
+          "control": {
+            "unfilled": 317,
+            "partial": 974,
+            "completed": 491
+          }
+        },
+        "common_fill_price_advantage_bp": {
+          "count": 1021,
+          "mean": 6.711205516426574,
+          "median": 0.0,
+          "positive": 464
+        },
+        "common_attempt_delay_minutes": {
+          "count": 1439,
+          "mean": -202.9638637943016,
+          "median": -300,
+          "positive": 146
+        },
+        "common_fill_quantity_ratio": {
+          "count": 1021,
+          "mean": 1952534287666.9333,
+          "median": 0.9741979948572719,
+          "positive": 1021
+        }
+      },
+      "trim": {
+        "counts": {
+          "union_intents": 949,
+          "same_action": 579,
+          "different_action": 370,
+          "one_or_both_unfilled": 2
+        },
+        "outcomes": {
+          "candidate": {
+            "completed": 760,
+            "unfilled": 3
+          },
+          "control": {
+            "completed": 763,
+            "unfilled": 2
+          }
+        },
+        "common_fill_price_advantage_bp": {
+          "count": 577,
+          "mean": -3.242647716538987,
+          "median": -10.78029992873281,
+          "positive": 217
+        },
+        "common_attempt_delay_minutes": {
+          "count": 577,
+          "mean": -185.09532062391682,
+          "median": -240,
+          "positive": 77
+        },
+        "common_fill_quantity_ratio": {
+          "count": 577,
+          "mean": 1.6154525752147397,
+          "median": 1.0013515186373156,
+          "positive": 577
+        }
+      },
+      "exit": {
+        "counts": {
+          "union_intents": 1560,
+          "same_action": 1414,
+          "unmatched": 146,
+          "one_or_both_unfilled": 30
+        },
+        "outcomes": {
+          "candidate": {
+            "completed": 1453,
+            "unfilled": 35
+          },
+          "control": {
+            "completed": 1454,
+            "unfilled": 32
+          }
+        },
+        "common_fill_price_advantage_bp": {
+          "count": 1384,
+          "mean": -5.939804602006052,
+          "median": -6.65986704874189,
+          "positive": 549
+        },
+        "common_attempt_delay_minutes": {
+          "count": 1384,
+          "mean": -197.03757225433526,
+          "median": -270.0,
+          "positive": 177
+        },
+        "common_fill_quantity_ratio": {
+          "count": 1384,
+          "mean": 1.1955087013918249,
+          "median": 1.001977433161772,
+          "positive": 1384
+        }
+      }
+    },
+    "later": {
+      "entry": {
+        "counts": {
+          "union_intents": 3386,
+          "same_action": 2922,
+          "one_or_both_unfilled": 834,
+          "different_action": 464
+        },
+        "outcomes": {
+          "candidate": {
+            "partial": 2047,
+            "unfilled": 564,
+            "completed": 544
+          },
+          "control": {
+            "unfilled": 528,
+            "partial": 1916,
+            "completed": 709
+          }
+        },
+        "common_fill_price_advantage_bp": {
+          "count": 2088,
+          "mean": 5.33603968683161,
+          "median": 0.0,
+          "positive": 853
+        },
+        "common_attempt_delay_minutes": {
+          "count": 2891,
+          "mean": -175.22137668626772,
+          "median": -225,
+          "positive": 360
+        },
+        "common_fill_quantity_ratio": {
+          "count": 2088,
+          "mean": 46354558973328.1,
+          "median": 1.0511344988218128,
+          "positive": 2088
+        }
+      },
+      "add": {
+        "counts": {
+          "union_intents": 4283,
+          "same_action": 3203,
+          "one_or_both_unfilled": 1126,
+          "different_action": 1080
+        },
+        "outcomes": {
+          "candidate": {
+            "partial": 1786,
+            "unfilled": 872,
+            "completed": 1091
+          },
+          "control": {
+            "partial": 1899,
+            "unfilled": 722,
+            "completed": 1116
+          }
+        },
+        "common_fill_price_advantage_bp": {
+          "count": 2077,
+          "mean": 6.78820997996137,
+          "median": 0.0,
+          "positive": 869
+        },
+        "common_attempt_delay_minutes": {
+          "count": 3165,
+          "mean": -178.3175355450237,
+          "median": -240,
+          "positive": 408
+        },
+        "common_fill_quantity_ratio": {
+          "count": 2077,
+          "mean": 5009772580568.96,
+          "median": 1.0107322076236014,
+          "positive": 2077
+        }
+      },
+      "trim": {
+        "counts": {
+          "union_intents": 2163,
+          "same_action": 1473,
+          "different_action": 690,
+          "one_or_both_unfilled": 14
+        },
+        "outcomes": {
+          "candidate": {
+            "completed": 1795,
+            "unfilled": 16
+          },
+          "control": {
+            "completed": 1808,
+            "unfilled": 17
+          }
+        },
+        "common_fill_price_advantage_bp": {
+          "count": 1459,
+          "mean": 1.543721134786543,
+          "median": -0.0,
+          "positive": 621
+        },
+        "common_attempt_delay_minutes": {
+          "count": 1459,
+          "mean": -134.97943797121317,
+          "median": -135,
+          "positive": 307
+        },
+        "common_fill_quantity_ratio": {
+          "count": 1459,
+          "mean": 1.4228187028732215,
+          "median": 1.0089122861527877,
+          "positive": 1459
+        }
+      },
+      "exit": {
+        "counts": {
+          "union_intents": 2734,
+          "same_action": 2483,
+          "unmatched": 251,
+          "one_or_both_unfilled": 26
+        },
+        "outcomes": {
+          "candidate": {
+            "completed": 2561,
+            "unfilled": 26
+          },
+          "control": {
+            "completed": 2604,
+            "unfilled": 26
+          }
+        },
+        "common_fill_price_advantage_bp": {
+          "count": 2457,
+          "mean": 9.169254275464136,
+          "median": -0.0,
+          "positive": 1069
+        },
+        "common_attempt_delay_minutes": {
+          "count": 2457,
+          "mean": -151.35531135531136,
+          "median": -180,
+          "positive": 447
+        },
+        "common_fill_quantity_ratio": {
+          "count": 2457,
+          "mean": 2.1197886081428043,
+          "median": 1.0280488316356737,
+          "positive": 2457
+        }
+      }
+    },
+    "reused_recent": {
+      "entry": {
+        "counts": {
+          "union_intents": 184,
+          "same_action": 176,
+          "one_or_both_unfilled": 81,
+          "different_action": 8
+        },
+        "outcomes": {
+          "candidate": {
+            "unfilled": 43,
+            "partial": 123,
+            "completed": 15
+          },
+          "control": {
+            "unfilled": 53,
+            "partial": 73,
+            "completed": 53
+          }
+        },
+        "common_fill_price_advantage_bp": {
+          "count": 95,
+          "mean": -12.806526596618724,
+          "median": 0.0,
+          "positive": 25
+        },
+        "common_attempt_delay_minutes": {
+          "count": 176,
+          "mean": -173.01136363636363,
+          "median": -210.0,
+          "positive": 30
+        },
+        "common_fill_quantity_ratio": {
+          "count": 95,
+          "mean": 2.142422154894972,
+          "median": 1.0231538882632378,
+          "positive": 95
+        }
+      },
+      "add": {
+        "counts": {
+          "union_intents": 57,
+          "different_action": 12,
+          "same_action": 45,
+          "one_or_both_unfilled": 30
+        },
+        "outcomes": {
+          "candidate": {
+            "partial": 29,
+            "unfilled": 18,
+            "completed": 2
+          },
+          "control": {
+            "partial": 17,
+            "completed": 14,
+            "unfilled": 22
+          }
+        },
+        "common_fill_price_advantage_bp": {
+          "count": 15,
+          "mean": -139.6672322293291,
+          "median": -97.59015872422368,
+          "positive": 0
+        },
+        "common_attempt_delay_minutes": {
+          "count": 45,
+          "mean": -183.66666666666666,
+          "median": -270,
+          "positive": 8
+        },
+        "common_fill_quantity_ratio": {
+          "count": 15,
+          "mean": 1.0001149833904477,
+          "median": 0.7383822379327328,
+          "positive": 15
+        }
+      },
+      "trim": {
+        "counts": {
+          "union_intents": 33,
+          "different_action": 10,
+          "same_action": 23
+        },
+        "outcomes": {
+          "candidate": {
+            "completed": 29
+          },
+          "control": {
+            "completed": 27
+          }
+        },
+        "common_fill_price_advantage_bp": {
+          "count": 23,
+          "mean": 12.125411677302596,
+          "median": 28.637528820438828,
+          "positive": 14
+        },
+        "common_attempt_delay_minutes": {
+          "count": 23,
+          "mean": -161.08695652173913,
+          "median": -330,
+          "positive": 5
+        },
+        "common_fill_quantity_ratio": {
+          "count": 23,
+          "mean": 1.3206064193526017,
+          "median": 1.0125141616842745,
+          "positive": 23
+        }
+      },
+      "exit": {
+        "counts": {
+          "union_intents": 134,
+          "same_action": 108,
+          "unmatched": 26
+        },
+        "outcomes": {
+          "candidate": {
+            "completed": 123
+          },
+          "control": {
+            "completed": 119
+          }
+        },
+        "common_fill_price_advantage_bp": {
+          "count": 108,
+          "mean": 8.111084979520147,
+          "median": -0.0,
+          "positive": 51
+        },
+        "common_attempt_delay_minutes": {
+          "count": 108,
+          "mean": -163.47222222222223,
+          "median": -172.5,
+          "positive": 15
+        },
+        "common_fill_quantity_ratio": {
+          "count": 108,
+          "mean": 1.4175396497390371,
+          "median": 1.033864572748627,
+          "positive": 108
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,310 @@
+{
+  "primary_sha256": "2a8276f0c5e677292a600c260e87016d39029ee33359cdfae9c228c70fe22f11",
+  "verifier_sha256": "73946b7624930d32a16e82bb6d2c882bb80ad47405289575dcf8b1099c8c5e2a",
+  "cost_bps": 0,
+  "adoption_eligible": false,
+  "accounts": [
+    {
+      "side": "buy",
+      "phase": 0,
+      "sha256": "1cfef01e70e04962386aedc7fc0601aa59d91d6c016411f6924d2de4cb18e4ae",
+      "intents": 871
+    },
+    {
+      "side": "buy",
+      "phase": 1,
+      "sha256": "294695df009b612020d5592478562c482cd3202d76a5d28113fb3f2c46f22cb0",
+      "intents": 872
+    },
+    {
+      "side": "buy",
+      "phase": 2,
+      "sha256": "ea03ebb11937867530e54650156faa7fc6dda8d592b3512cd26774cdbd5e8ca4",
+      "intents": 870
+    },
+    {
+      "side": "buy",
+      "phase": 3,
+      "sha256": "930e8ff4669d4f24bf4d17da5734b3f6fa5efb2b81041e96ebae5b32d9366800",
+      "intents": 879
+    },
+    {
+      "side": "buy",
+      "phase": 4,
+      "sha256": "e6758ba86669ae7c7b4f9f8b155560cfd9d1eec2a78d59c09a24110acfb1d715",
+      "intents": 885
+    },
+    {
+      "side": "buy",
+      "phase": 5,
+      "sha256": "cb54d7f7d135a4ba08b3ab6d87afaa865e09c971b5461125aa26abe6b64186b4",
+      "intents": 887
+    },
+    {
+      "side": "buy",
+      "phase": 6,
+      "sha256": "ef3e810484f94a0ceb75df60c300e1d6226c19560e4cab90031b44c788544786",
+      "intents": 881
+    },
+    {
+      "side": "buy",
+      "phase": 7,
+      "sha256": "042f88b1f0c6adc0280fa30a6e174a6be90cbd1fff0fd5fa65207410724984b2",
+      "intents": 864
+    },
+    {
+      "side": "buy",
+      "phase": 8,
+      "sha256": "a58867adf1e9c39f8b7baf548066dae4661a042526cf622bab995a1b8c8a1af3",
+      "intents": 869
+    },
+    {
+      "side": "buy",
+      "phase": 9,
+      "sha256": "f4288e4348d8b04b2878e7b8e53c6830bcef31853bdc4c5966a856287654f755",
+      "intents": 845
+    },
+    {
+      "side": "buy",
+      "phase": 10,
+      "sha256": "a6274a9d803c855fcb16800db326653667427bb65c784a1bfbb24a2f15a6e167",
+      "intents": 840
+    },
+    {
+      "side": "buy",
+      "phase": 11,
+      "sha256": "ed16a8841dca39e2c42a64cf79f1f3b14dd3e88e37c6556b436a20dfb405da5c",
+      "intents": 849
+    },
+    {
+      "side": "buy",
+      "phase": 12,
+      "sha256": "eff58b15a699fdef0627d2d8683b8e7650a760217c193937d9ab4ebfd6aab736",
+      "intents": 843
+    },
+    {
+      "side": "buy",
+      "phase": 13,
+      "sha256": "6b72e3497d765161a0e1060d4b8248d5f606ff698db561429d0c139b70b7f34d",
+      "intents": 840
+    },
+    {
+      "side": "buy",
+      "phase": 14,
+      "sha256": "c56bc7a12ccdc9111af3913344efabf7ffa9488270ad3a5f0898bb4b8af161d4",
+      "intents": 838
+    },
+    {
+      "side": "buy",
+      "phase": 15,
+      "sha256": "5e653ed830d266f66265a4b272b205da3b59f5bfcfa0fa63640c090e51d1609a",
+      "intents": 844
+    },
+    {
+      "side": "buy",
+      "phase": 16,
+      "sha256": "1c0ebcd25642f5eef6bb5e0d48822eb2870a244e6fc7ef33671077221589c3aa",
+      "intents": 865
+    },
+    {
+      "side": "buy",
+      "phase": 17,
+      "sha256": "0fc5437230a8607c0de2480172875db420ccfd2f296584930c1b79fac051e35c",
+      "intents": 858
+    },
+    {
+      "side": "buy",
+      "phase": 18,
+      "sha256": "9ce29a7fa6ca4c2ae7ee1dd76751ad365359d8b78c0a902eea9ac212691e3089",
+      "intents": 856
+    },
+    {
+      "side": "buy",
+      "phase": 19,
+      "sha256": "551f77699ded51062b093dfb18a0740b675333348cd60ef474222b0f973989e4",
+      "intents": 848
+    },
+    {
+      "side": "sell",
+      "phase": 0,
+      "sha256": "a41c635167d70b7df6f7306ff755a1c38aa920e70326636e14ff13e4ffb6fe75",
+      "intents": 869
+    },
+    {
+      "side": "sell",
+      "phase": 1,
+      "sha256": "fc6c75747d55561a84f607887a56616280aab8c90f2f18cc48ebe2b3885e1a25",
+      "intents": 873
+    },
+    {
+      "side": "sell",
+      "phase": 2,
+      "sha256": "d3f885de8b9faf5e5a60bdf4b4c439b352fd5975043d3830f09f20e6d3839f9b",
+      "intents": 881
+    },
+    {
+      "side": "sell",
+      "phase": 3,
+      "sha256": "cd26649bcf01544dfe27149fed201e73b007241d430b1de8c0f44f1d07d1d158",
+      "intents": 885
+    },
+    {
+      "side": "sell",
+      "phase": 4,
+      "sha256": "19e2fdd9a50b4080c36c77e8cb0d4333a0804e9c7dcce3d7acf4d5308a85b460",
+      "intents": 882
+    },
+    {
+      "side": "sell",
+      "phase": 5,
+      "sha256": "d275905746338b781d98357a6d0747d308b6563de95071224f5d93188fca9245",
+      "intents": 892
+    },
+    {
+      "side": "sell",
+      "phase": 6,
+      "sha256": "52092acc72c50f49dde4c71294cd74e57778a3bba33de8cab869d104711152a9",
+      "intents": 884
+    },
+    {
+      "side": "sell",
+      "phase": 7,
+      "sha256": "5fb595dc002fcd15c0a34548328114b5aceb8275bc4204688fd61f3c3ff5a62d",
+      "intents": 863
+    },
+    {
+      "side": "sell",
+      "phase": 8,
+      "sha256": "b1a8d19f59b0a5813400adc8d1e45358098f7f46a9b7f46a3371f53079e84b30",
+      "intents": 864
+    },
+    {
+      "side": "sell",
+      "phase": 9,
+      "sha256": "8435a2dc913cd0851caae216ce3e5d2d6b84c42e797c7c7c85b085810f6fc740",
+      "intents": 843
+    },
+    {
+      "side": "sell",
+      "phase": 10,
+      "sha256": "023a2fb45b161301df6180daf3231b62105200e0269d5f4edc046a82a4cbabe2",
+      "intents": 843
+    },
+    {
+      "side": "sell",
+      "phase": 11,
+      "sha256": "1f8090abb0d22f7a6920fb7fd56d463fb2429167e57ecf11edced39dc38d9fbb",
+      "intents": 864
+    },
+    {
+      "side": "sell",
+      "phase": 12,
+      "sha256": "8d2cf2082afba0f15b3966fbbc00c890969ca0c90a9b2f88ad52e8b1d0379311",
+      "intents": 851
+    },
+    {
+      "side": "sell",
+      "phase": 13,
+      "sha256": "5129f6a87a08b4cdb8b1ab8df11b6cbc8e80d334da41e74876b971826fc016b6",
+      "intents": 841
+    },
+    {
+      "side": "sell",
+      "phase": 14,
+      "sha256": "8ec6e1ac8086b74163b3d02f6781a99e4c1b59c93eccf741c1ca154d905c42df",
+      "intents": 838
+    },
+    {
+      "side": "sell",
+      "phase": 15,
+      "sha256": "e25c8ad590df4f27147d76c86c142940631fdb17f084ce80e339638ff5023163",
+      "intents": 843
+    },
+    {
+      "side": "sell",
+      "phase": 16,
+      "sha256": "c5fa96c2de3106a53d73f6b937f7bdffec0ef9b1949e38c9a6fb3fdc5086172d",
+      "intents": 866
+    },
+    {
+      "side": "sell",
+      "phase": 17,
+      "sha256": "304f9b39bb7b180454abb56fa7a95dc90af417e595b0afd92463023c4935cdc8",
+      "intents": 855
+    },
+    {
+      "side": "sell",
+      "phase": 18,
+      "sha256": "790b407828d9c16f48c3becc37180da6d241e8b427701ea2dd0220dfd817d81c",
+      "intents": 860
+    },
+    {
+      "side": "sell",
+      "phase": 19,
+      "sha256": "360883ba97afe9aa998f7930d8c1e4fcf354427e97f2785382b7f7c57a8408f3",
+      "intents": 850
+    }
+  ],
+  "summary": {
+    "buy": {
+      "all": {
+        "median_paired_gain_pp": -11.033281584698429,
+        "min_pp": -150.61632593894672,
+        "max_pp": 202.6683465634477,
+        "winning_phases": 9,
+        "phases": 20
+      },
+      "early": {
+        "median_paired_gain_pp": 1.2706349467617617,
+        "min_pp": -15.303460903482913,
+        "max_pp": 16.366403467218184,
+        "winning_phases": 12,
+        "phases": 20
+      },
+      "later": {
+        "median_paired_gain_pp": 3.9518516490868016,
+        "min_pp": -55.14569675155228,
+        "max_pp": 85.45350790883903,
+        "winning_phases": 11,
+        "phases": 20
+      },
+      "reused_recent": {
+        "median_paired_gain_pp": -0.8981980107874377,
+        "min_pp": -5.109169837747995,
+        "max_pp": 2.6673326184465607,
+        "winning_phases": 5,
+        "phases": 20
+      }
+    },
+    "sell": {
+      "all": {
+        "median_paired_gain_pp": 6.801089595643717,
+        "min_pp": -45.49216907381748,
+        "max_pp": 55.3558145828843,
+        "winning_phases": 12,
+        "phases": 20
+      },
+      "early": {
+        "median_paired_gain_pp": -0.5496309432608926,
+        "min_pp": -13.743511263369612,
+        "max_pp": 3.146167019768553,
+        "winning_phases": 8,
+        "phases": 20
+      },
+      "later": {
+        "median_paired_gain_pp": 4.156314912118342,
+        "min_pp": -19.02705951927306,
+        "max_pp": 47.28538346834927,
+        "winning_phases": 14,
+        "phases": 20
+      },
+      "reused_recent": {
+        "median_paired_gain_pp": 0.012711960958944335,
+        "min_pp": -0.7585674757694782,
+        "max_pp": 0.9175328718228126,
+        "winning_phases": 11,
+        "phases": 20
+      }
+    }
+  }
+}

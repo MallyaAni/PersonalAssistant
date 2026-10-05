@@ -1,5 +1,28 @@
 # Next session
 
+## 2026-10-05 — zero-cost entry/exit side isolation completed; no adoption
+
+User explicitly requires improving the hardcoded 1% entry and exit timing,
+with selection fixed and zero fees/spread/slippage. Broad goal remains
+unfinished. Isolated branch codex/entry-exit-zero-cost-attribution from
+f77d6e57 preserves both shared Mac checkout and active research producers.
+An attempted primary-checkout pull conflicted; rebase was aborted and original
+3b9f0f1d plus all unrelated untracked files were preserved.
+
+VERIFIED producer c236b2bd and selector tests ed0e6fcc: 40 new zero-cost
+carried component accounts, frozen original forecasts, no fits or grid search.
+Eight focused tests pass. Independent saved-only audit verifies 34,451 intents,
+all funding/fills/daily NAV/stock wealth on original pinned image 5c6c5605.
+Buy-only learned timing: median paired full gain -11.0333pp, 9/20 phases win;
+sell-only: +6.8011pp, 12/20 win. Recent -0.8982pp / +0.0127pp respectively.
+FAILED consistent advantage; no live replacement. This is reused conditional
+history, not fresh holdout evidence or exact historical current-policy parity.
+Full report/hashes: research/zero-cost-side-ablation-2026-10-05.{md,json}.
+Original private output: Spark scratch/zero-cost-side-ablation-20261005-c236b2bd.
+Do not rerun completed arms. Larger V5 producer659a960b and its existing watcher
+were preserved; their eventual result is separate from this timing-only task.
+Diagram impact NONE. No production/account/model-server changes or deployment.
+
 ## 2026-10-04 — future-intent correction LIVE; first funded results available
 
 VERIFIED deployed source e8e339e0f9bdf247ce4d16bedc3f6c744af0b638 through
