@@ -177,7 +177,7 @@ def test_returned_receipt_detaches_registered_target(monkeypatch):
     )
     publication.receipt["identity"]["target_schema"]["prediction_clocks"].append(24)
     publication.receipt["identity"]["target_schema"]["maturity_sessions"] = 1
-    assert moments.TARGET_SCHEMA == declared
+    assert declared == moments.TARGET_SCHEMA
 
 
 # New-month fitting needs only the previous completed session, not future prices.
