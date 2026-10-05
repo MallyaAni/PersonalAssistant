@@ -422,15 +422,37 @@ def nightly(
     return {"status": status["status"], "excluded": plain(report.excluded)}
 
 
-# Admit optional risk planning only when physical-account costs match its contract.
-def _holding_option(policy, cost_bps):
+# Bind physical-account fees and reject ignored, missing or substituted timing models.
+def _holding_option(policy, cost_bps, reader_builder, provider, inputs):
     if policy is None:
         return
-    from backend.market.joint_funded_policy import JointFundedPolicy
+    from backend.market.joint_funded_policy import (
+        JointFundedPolicy,
+        ProbabilityTimedFundedPolicy,
+    )
 
     if not isinstance(policy, JointFundedPolicy) or policy.cost_bps != cost_bps:
         raise ValueError(
             "Authenticated joint policy and identical account fees required"
+        )
+    if not isinstance(policy, ProbabilityTimedFundedPolicy):
+        if reader_builder is not None:
+            raise ValueError("A next-open policy cannot use an intraday timing model")
+        return
+    from backend.market.live_probability_timing import build_reader
+    from backend.market.probabilistic_execution_saved import SavedDistributions
+
+    owner = getattr(provider, "__self__", None)
+    if (
+        reader_builder is not build_reader
+        or type(owner) is not SavedDistributions
+        or getattr(provider, "__func__", None) is not SavedDistributions.provider
+        or owner.verification.get("status") != "VERIFIED_SAVED_DISTRIBUTIONS"
+        or tuple(owner.symbols) != inputs.tickers
+        or not np.array_equal(owner.dates, inputs.dates)
+    ):
+        raise ValueError(
+            "Original aligned saved distributions and timing reader required"
         )
 
 
@@ -455,7 +477,7 @@ def run_account(
 ):
     root = Path(root)
     validate(panel, inputs, root, first, last, reader_builder, provider)
-    _holding_option(holding_policy, cost_bps)
+    _holding_option(holding_policy, cost_bps, reader_builder, provider, inputs)
     if report_builder is None:
         from backend.market.live_policy_report import build as report_builder
     if not callable(report_builder):

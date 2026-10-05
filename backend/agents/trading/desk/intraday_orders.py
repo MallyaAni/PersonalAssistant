@@ -209,10 +209,18 @@ def _ready(
     ready = []
     for row in rows:
         symbol = str(row.get("symbol"))
+        required = "timing_policy" in row
+        if required:
+            from backend.market.live_probability_timing import POLICY as TIMING_POLICY
+
+            if row.get("timing_policy") != TIMING_POLICY or "execution_policy" in row:
+                continue
         custom = False
+        clock = entry_timing.session_clock(today) if required or timing_reader else None
         if timing_reader is not None and "execution_policy" not in row:
-            clock = entry_timing.session_clock(today)
             custom = clock["open"] <= now < clock["final"]
+        if required and now < clock["final"] and not custom:
+            continue
         reader = timing_reader if custom else decide
         args = (
             row,
@@ -229,6 +237,7 @@ def _ready(
             or not isinstance(verdict.get("timed"), dict)
             or not isinstance(verdict["timed"].get("state"), str)
             or not verdict["timed"]["state"]
+            or (required and verdict["timed"].get("policy") != TIMING_POLICY)
         ):
             raise ValueError("Timing reader requires an explicit ordinary verdict")
         if verdict["send"]:

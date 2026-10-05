@@ -553,7 +553,9 @@ def _hold_for_the_session(orders) -> list:
 # An order the balancer sends intraday also carries the session it executes
 # on (the next reviewed session after the decision); a date the calendar does
 # not cover leaves it None, and such a row is never sent (fail closed).
-def _pending_orders(orders, session, prices, reference_session, *, decision_at=None):
+def _pending_orders(
+    orders, session, prices, reference_session, *, decision_at=None, timing_policy=None
+):
     from backend.agents.trading.desk import intraday_orders, paper
 
     decision_at = (decision_at or datetime.now(tz=UTC)).isoformat()
@@ -571,6 +573,14 @@ def _pending_orders(orders, session, prices, reference_session, *, decision_at=N
             "priority": order.priority,
             "execution_timing": order.execution_timing,
             "kind": order.kind,
+            **(
+                {"timing_policy": timing_policy}
+                if timing_policy is not None
+                and order.execution_timing == intraday_orders.INTRADAY_TIMING
+                and not order.event_id
+                and not order.priority
+                else {}
+            ),
             **(
                 {"execute_on": upcoming.isoformat() if upcoming else None}
                 if order.execution_timing == intraday_orders.INTRADAY_TIMING
@@ -869,13 +879,24 @@ def _holding_metadata(policy, event_plan, state, targets):
                 "joint_funded": {"policy": policy.version, "status": "event_priority"},
             },
         )
+    timings = (
+        (state.allocation_state or {})
+        .get("receipt", {})
+        .get("execution_timing", {})
+        .get("orders", {})
+    )
+    execution_rule = (
+        getattr(policy, "execution_rule", "next_open")
+        if "dip_or_close" in timings.values()
+        else "next_open"
+    )
     return (
         dict((state.allocation_state or {}).get("targets", {})),
         policy.version,
         {
             "policy": policy.version,
             "joint_funded": state.allocation_state,
-            "execution_rule": "next_open",
+            "execution_rule": execution_rule,
             "redeploy": {"enabled": False, "orders": 0, "notional": 0.0},
         },
     )
@@ -1085,7 +1106,16 @@ def _paper_trade(
     # than a gap that has to be guessed at from positions.
     if live and orders:
         new_state.pending = _pending_orders(
-            orders, session, prices, panel.dates[last], decision_at=decision_at
+            orders,
+            session,
+            prices,
+            panel.dates[last],
+            decision_at=decision_at,
+            timing_policy=(
+                getattr(holding_policy, "timing_policy", None)
+                if not event_plan
+                else None
+            ),
         )
         if what == "rebalance":
             new_state.unconfirmed_rebalance = session

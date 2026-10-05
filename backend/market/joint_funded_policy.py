@@ -6,7 +6,7 @@ discretionary optimization. Existing event handling remains the dispatcher's.
 """
 
 import hashlib
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path
 
 import numpy as np
@@ -19,6 +19,7 @@ from backend.market.forward_arithmetic import ForwardVolatilityHoldingReader
 POLICY = "joint-stock-risk-funded/1-research"
 MATURITY_POLICY = "joint-stock-risk-funded/2-maturity-shadow"
 CALIBRATED_POLICY = "joint-stock-risk-funded/3-log-calibration-research"
+TIMED_POLICY = "joint-stock-risk-funded/4-calibrated-probability-timing-research"
 HORIZON = "next_open_to_following_open_arithmetic_return"
 PROTOCOL = "docs/research/joint-funded-account-plan-2026-10-04.md"
 MATURITY_PROTOCOL = "docs/research/risk-qualified-funded-plan-2026-10-04.md"
@@ -349,3 +350,52 @@ class CalibratedMaturityFundedPolicy(MaturityFundedPolicy):
                 "Original or calibrated authenticated risk reader required"
             )
         super().__init__(reader, cost_bps)
+
+
+# Join calibrated quantities to learned execution without delaying mandatory exits.
+class ProbabilityTimedFundedPolicy(CalibratedMaturityFundedPolicy):
+    version = TIMED_POLICY
+    protocol = "docs/research/joint-probability-timing-plan-2026-10-05.md"
+    timing_policy = "live-probability-timing/1-research"
+    execution_rule = timing_policy
+
+    # Preserve allocation economics and authenticate the separate execution mechanism.
+    def __init__(self, reader, cost_bps):
+        from backend.market import live_probability_timing
+
+        if self.timing_policy != live_probability_timing.POLICY:
+            raise ValueError("Registered probability timing version required")
+        super().__init__(reader, cost_bps)
+        self.identity.update(
+            timing_policy=self.timing_policy,
+            timing_source_sha256=hashlib.sha256(
+                Path(live_probability_timing.__file__).read_bytes()
+            ).hexdigest(),
+            timing_horizon="one_decision_log_price_advantage",
+        )
+
+    # Route ordinary allocation intents intraday while keeping company exits immediate.
+    def plan(self, session, state, equity, held, prices, report, cash, blocked):
+        from backend.agents.trading.desk import intraday_orders
+
+        orders, new, what = super().plan(
+            session, state, equity, held, prices, report, cash, blocked
+        )
+        if not orders:
+            return orders, new, what
+        receipt = new.allocation_state["receipt"]
+        exits = set(receipt["company_exits"])
+        routed = [
+            replace(order, execution_timing=intraday_orders.INTRADAY_TIMING)
+            if order.symbol not in exits and not order.event_id and not order.priority
+            else order
+            for order in orders
+        ]
+        receipt["execution_timing"] = {
+            "ordinary": self.timing_policy,
+            "company_exit": "next_open",
+            "orders": {
+                order.client_order_id: order.execution_timing for order in routed
+            },
+        }
+        return routed, new, what
