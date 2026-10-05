@@ -1,5 +1,69 @@
 # Next session
 
+## 2026-10-05 — conditional calibration implemented; three-cost screen RUNNING
+
+Goal ACTIVE. PROGRESS from 7ed6df7b: verified code checkpoint
+3a59870220ea1a2c0c5797fbc5fb48318b265042 pushed on
+codex/learned-entry-risk-20261002. Protocol preceded economic outcomes.
+Monthly stock-specific affine log-return calibration wraps authenticated
+historical and published-forward readers and uses the unchanged private funded
+planner for additions and held exits. Individual fit banks: strictly past-only,
+252 minimum / 756 maximum dates, August 17 freeze. Original simultaneous
+scenario dates, true total-loss rows and stock volatility retained. Regression
+degrees-of-freedom/leverage adjustment is approximate, not a probability
+guarantee. No base-head refit, new production selector, live/UI change or GPU.
+
+VERIFIED exact final native source: 122 tests pass/no skips; one environment
+warning about unavailable asyncio config. Same committed tree on pinned image
+5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d:
+122 pass/no skips in 28.08s; read-only pytest-cache warning only. Ruff clean.
+Independent matrix regression/scenario oracle on real archived inputs: 228
+stock/date requests pass; 60 original unavailable requests stay unavailable,
+including actual frozen September 30 checks. Three fixed audit dates, no
+performance scoring. 103 original physical files and 2178 calendar decision
+prefixes admitted. 228 calibration fits are distinct from zero base-head fits.
+First new forward test expected the wrong expiry message; corrected that new
+expectation to the actual original guard, not the publication/expiry code.
+
+NEW immutable root:
+/home/animallya96/scratch/calibrated-funded-20261005-3a598702.
+Container calibrated-funded-study-3a598702, ID
+cd6a73efda3092f5e9108a29aaa071ba5682663efac66ff791f753391cb82f73,
+started 2026-10-05T04:25:08Z, network none/source read-only, OOM false.
+2395 source members, manifest SHA
+ba72fb70d4a1dee99d54399855b93d7666c3a61f511a50ee257ab1111690fb0f.
+Execution SHA b47df4753eb271d01bf901345c178c19d6496755b3fb3439b83c9e944eab0251;
+numerical preflight SHA
+9151857f467b6fefa7b7c143db80506bdf9ce1daafc6dc039efa61182ec59102.
+Exactly calibrated-0-0 / calibrated-10-0 / calibrated-25-0, original first
+2018-02-01 start through 2026-09-30; no sixty-account expansion. First actual
+read: 20 sessions saved through 2018-02-28. Inspect compact completion/logs
+first; never restart or edit its source/helper mounts.
+
+Owned helpers archived there: funded-runner.py SHA
+e2e8cc8bd7e60407daf9952321e1af4b5f3d20ad678c9cf96090c1c47c58a26a;
+launch.py SHA dd12c449e85041f9058fd1e3ddede1e7dedb7b461c956b0858161d60e65c176f.
+Their Mac copies were removed only after exact-byte comparison; no new helper
+source files committed. Saved-only proof prepared, NOT executed:
+proof/independent/command-prefix1.json SHA
+70340dccf63b9b806333cfa6c5792b1c85d0cd31be2e1c2e1327e2f376e2f3e8,
+evidence SHA 49882f8a3d538745c7bbf92cf2a023b25d7e2a8e246c1d61a43b45a20148404c.
+Wait for a newly completed account before invoking it; never re-simulate.
+Keep pending matching 10/25bp controls explicit. Reused development data and
+zero-cost results cannot establish adoption. No calibrated economic result yet.
+
+Existing v1/v2/control studies and final watcher 3043785 untouched. Latest
+compact reads: v1 3 books complete, fourth 1200 sessions; v2 1 complete,
+second 1620; controls 5 complete, sixth 2100. Larger original grids are serial;
+do not restart active jobs. First verified v2 still trails rule/QQQ. Live
+remains verified e8e339e0; main f77d6e57. No research-only deployment. Actual
+carried-book missing SNDK support remains explicit.
+
+Mac low disk: only this turn's completed, unused synthetic pytest fixtures
+removed to recover ~55MiB per run; source/results/user files preserved. Large
+source archive streamed directly to Spark. Diagram impact NONE: existing
+private risk/planner contract, not a new AniOS conversational agent.
+
 ## 2026-10-04 — cash/turnover causes separated; saved mean skill checked
 
 Goal ACTIVE. PROGRESS from 30a8a65d: authenticated first-book behavior and
