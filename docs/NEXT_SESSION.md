@@ -1,5 +1,33 @@
 # Next session
 
+## 2026-10-05 — exact-screen completion verification supervised
+
+Goal ACTIVE; previous turn PROGRESS. Started clean at013dc6f8, pushed on the
+research branch; actual GitHub main still f77d6e57. No main/deploy change.
+
+VERIFIED one private completion watcher PID252268, actual process plus exclusive
+results-watch-claim.json. Existing756c0076 root, watch-results.py SHA
+632e6e7a9082e89dbacd8735337a9bd74aed3b13e59d39746efb06d2e0b7c3e6.
+Ruff and read-only artifact/actual-handle admission pass. It binds source/image,
+producer659a960b and its original start clock, rechecks pins before verification,
+and calls existing saved-only verifier once after exit0. No fitting, prediction,
+trade replay, restart or promotion. Deadline14:51NY; inspect watch completion,
+failure/log and actual PID before any manual verify. Do NOT run a second watcher.
+
+At08:50NY producer still RUNNING/OOMfalse: market-0-0,640nightly snapshots
+through2020-08-14,0complete accounts. Full V5 economics UNVERIFIED. Independent
+check success requires both saved report and target companion plus exit0.
+Forward holding publication exists, but intraday SavedDistributions.provider
+only admits its archived date grid: live timing inference/publication remains
+an implementation requirement, not something a historical test proves.
+
+Mac filesystem creation FAILED at three paths, confirmed by tempfile probe.
+Recovered writes by removing ONLY temporary74.7MB Git source archive80b72522
+after exact regenerated archive SHA match88d89e07fa17d2b91c2048cd9b5454b0eb3f6cef07c4bcce01b095b34911c77f
+and no open handle. Retained Git/source evidence and all Spark data/jobs.
+No native model test/archive repetition. Diagram impact: NONE — existing
+private saved-verification process; no production component or data flow added.
+
 ## 2026-10-05 — original screen complete; corrected timing screen running
 
 Goal ACTIVE. Objective: verify stock-specific entry/exit and funded sizing
