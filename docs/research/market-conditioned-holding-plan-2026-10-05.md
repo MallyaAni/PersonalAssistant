@@ -280,3 +280,33 @@ three-cost V3 screen must finish before any new economic account run. Diagram
 impact: NONE — an optional numeric transformation within the existing isolated
 research/planner/publication flow; no new subsystem, dependency, persistent store
 or trust boundary.
+
+### Solver work checkpoint
+
+Code9cdddfed226f65313b1cea976ecc14e0f8a3a20b caches byte-identical ownership
+certificate points within one fixed objective/constraint solve. Unavailable
+solver attempts are retried, and returned proof dictionaries are detached.
+Initial/refinement certificates and all financial tolerances remain unchanged.
+The original three-stock acceptance case made ten certificate requests for four
+distinct points; the corrected path makes five including its initial check.
+146 native and146 exact-image tests pass, no skips, with Ruff clean.
+
+Six original January4/5 contexts at fixed0/10/25bp, three paired repeats each,
+preserve exact allocation bytes and full receipts. Their LP solves decrease
+15→7,14→9,16→9,11→8,11→7,11→6. Sampled solve medians decrease7.0–10.9ms to
+4.1–8.0ms. These are numeric work measurements, not new economic accounts or
+a claim about complete backtest runtime. At10bp the original saved targets
+also match exactly. Model fitting, prediction and account replay were forbidden;
+original bank/source/raw receipt bytes remain unchanged.
+
+Spark root growth-certificate-cache-20261005-9cdddfed,2403consumer members,
+pinned image5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+Manifest SHA01d07b4dd4619c92d90f275656702fe8b63fc09cc04723c6549c9ca4c0468faf;
+proof SHA f37fbf5f3ab97f105c556a58f5de88c8fa008b763a7aa8440db75302aa9a1b63;
+execution SHA dd3d9199d64b8135a02bb057a7027fff1a0a94d2a069bcd20d8830dd98c99586.
+Test/saved commands SHA70abb426f959a2facc7bd7a184be145ec00e487384bd3778125699acff203602 /
+7b490d4da762bca920fb2ccbf27d4bb9d0c4e1c07e3c500b21d06080a5062d13;
+logs SHA68d05edc47ea0f84624bd9287aebc9d3112d3c710960859073bc02beddfbd895 /
+d3fce7e7b0b2a381989eb5263ab29a78599945c1e1e9ea569835c4e2a2eadefc;
+saved helper SHAa97b14954916f453f51a91cf755be145de07d42bfb3d0d30f54004c1d0af0e19.
+Diagram impact NONE: reuse of local numeric work, no boundary or flow change.

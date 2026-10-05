@@ -1,5 +1,36 @@
 # Next session
 
+## 2026-10-05 — exact duplicate solver work removed
+
+Goal ACTIVE, PROGRESS; live replacement and V5 economics remain UNVERIFIED.
+Started clean at262aff6e; verified code9cdddfed226f65313b1cea976ecc14e0f8a3a20b.
+Reproduced ten certificate requests for four distinct ownership points in one
+three-stock solve. Cache byte-exact points within that solve only, copy returned
+proofs, and retry unavailable solver results. No financial rule, objective,
+constraint, tolerance or active producer source changed. Ruff/diff clean;
+146native/146pinned-image tests pass, no skips. Diagram impact NONE.
+
+Original authenticated January4/5 solver contexts at fixed0/10/25bp, three
+paired repeats each: exact allocation bytes AND complete receipts unchanged.
+Original10bp allocations also match their saved account receipts. LP solves
+fell15→7,14→9,16→9,11→8,11→7,11→6; sampled medians fell7.0–10.9ms to4.1–8.0ms.
+These six contexts do not establish whole-backtest speed or better trading.
+No fitting, prediction, account replay or economic scoring in this proof.
+
+Spark growth-certificate-cache-20261005-9cdddfed: source2403members unchanged,
+manifest01d07b4dd4619c92d90f275656702fe8b63fc09cc04723c6549c9ca4c0468faf;
+solver proof f37fbf5f3ab97f105c556a58f5de88c8fa008b763a7aa8440db75302aa9a1b63;
+execution dd3d9199d64b8135a02bb057a7027fff1a0a94d2a069bcd20d8830dd98c99586.
+Detailed command/log hashes in the market-conditioned protocol.
+
+At06:14NY original V3 container cd6a73ef... remains RUNNING/OOMfalse;
+2of3 indexed,25bp1180sessions through2022-10-06. No restart or mounted-source
+mutation. Matching10/25bp controls still pending. Complete the original fixed
+screen before launching new V5 economics; prepare a separately frozen runner
+without changing the existing grid. Review concurrent main's pending-intent fix
+before future source integration; never rebase published research history.
+
+
 ## 2026-10-05 — second cost account and market account proof verified
 
 Goal ACTIVE, PROGRESS. Started clean at9f7340af on the owned research branch.
