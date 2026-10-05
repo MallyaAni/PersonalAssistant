@@ -1,5 +1,62 @@
 # Next session
 
+## 2026-10-04 — actual carried-book coverage checked; future intents protected
+
+Goal ACTIVE; previous turn PROGRESS, this turn PROGRESS. Started2ba451b7 clean.
+Verified code5755929120067e1bfb84ee347842dc5dd650d58e on isolated research branch.
+Diagram impact NONE: existing reconciliation/settlement boundary. No strategy
+promotion, production state/order writes, real model refits or active-job edits.
+
+VERIFIED current-book diagnostic: guarded paper-only7GETs produced two matching
+cash/equity/position/order observations,11positions/0open orders. Exactba15
+source/pinnedbf1da21c, original October head/October2 close and unchanged input
+hashes:0/10/25bp all refuse joint risk. HeldSNDK restricts the required joint
+bank to123mature dates versus252required. The empty-account proof did NOT test
+this coverage. Do not drop/liquidate the holding, lower support from this
+example, invent peer history or claim v2 ready for this live book. NumPy warns
+on empty historical band slices; qualification/missingness remain explicit.
+Root /home/animallya96/scratch/carried-account-shadow-20261004-ba15b769;
+proof/execution.json SHAd8c84b21ecc3f9f6f84cc09600525505f69ac13281975aad901b18c6cf4dc26a
+pins image/source, helpers, private account proof and coverage result. Account
+artifacts remain private; source backend image1970c294 recorded. This is a
+closed-session target diagnostic, NOT executable guidance or a broker fill.
+
+FAILED operational boundary reproduced:13stored pending intents are unsent
+dip_or_close legs executingOctober5. Original read-only order page200/10rows,
+SHA3f4c007b705bea02d2225b906e2eda644c72d45e69bd04b3674ae3aa824bc5fb,
+matches stateSHA7014c61657f8c4dd4053947d46bd9f21ca88a944bf7597f596aedb2518c323ce.
+Originalba15 dry reconciliation93fd7d20 prematurely marked all13missing on
+Sunday and removed them in MEMORY only. The earlier shadow's dispatch field
+was BEFORE reconciliation, not proof of actual active broker orders. Explicit
+interpretation correction is retained in its execution receipt. Original full
+public forward-takeover regression176b7d19 also fails: future intent disappears.
+
+VERIFIED correction: nightly passes its aware decision clock; unknown unsent
+scheduled intents remain pending until their real exchange window ends. Known
+broker fills still settle immediately. Partial settlement preserves other
+intents and cannot conclude their rebalance. Ordinary/early-close persistence,
+mixed confirmed fills and real public forward/repeat path tested.84native pass;
+owned-file Ruff/diff clean. Exact2392-file5755 pinnedf055ca01:322passed/no skips
+19.11s. Original13receipts49946e76:13retained,0settled, private state reloaded;
+production state and broker untouched. Sourcepaper.py has a PRE-EXISTING
+formatter discrepancy at unrelatedbound_orders call; no whole-file formatting.
+Root /home/animallya96/scratch/carried-intent-proof-20261004-57559291;
+manifestSHA729c0fc9e1a8b9c5fa15032ecd0c1af39c4e98cd1d360b32d9a8bf2dad5b2459;
+acceptanceSHAe28f46853749da4d018a0a85abda41a3294b5faadb65bc58d815a7dfb78abb38;
+executionSHA925411ccd1959a3e146f54de4e136c46db3ca5493c6b0f5f324deea8d9d56897
+pins original red, exact source/gate and corrected actual private persistence.
+
+Next port ONLY the verified reconciliation/settlement correction to an isolated
+origin/main release branch, adapt its caller clock (main lacks research-only
+decision_at), verify exact main tree and original receipts, then guarded release.
+Do NOT merge this entire research branch or promote unproven models. Spark
+primary main14f61a0f lags origin/main204689db; untracked .github/workflows/spark1.yml
+and scratch/ are user-owned. Preserve them. No active deploy observed. All
+original funded producers/watchers remain live/unchanged: at22:00NY v2 had
+0complete/1800sessions through2025-03-28; controls2complete/ridge1520through
+2024-02-14. Inspect compact completion and use existing saved-only verifiers;
+no repeated account scoring, refits, old audits or new workers.
+
 ## 2026-10-04 — all six original numerical refusals verified
 
 Goal ACTIVE; previous turn PROGRESS, this turn PROGRESS. Started43e2ba6a clean;
