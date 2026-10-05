@@ -1,5 +1,47 @@
 # Next session
 
+## 2026-10-04 — main integration of future-intent protection; release running
+
+Goal ACTIVE. Previous status-only turn had no implementation progress; this
+turn PROGRESS: original-main failure reproduced, correction verified, committed
+and pushed selectively to GitHub main. Research start926d4964 clean; main now
+408d355ea9af6bc416e48e3f28b3e338b5e7887d. No entire research branch merge.
+Diagram impact: NONE — existing settlement/persistence boundary.
+
+Isolated Spark /home/animallya96/codex-worktrees/preserve-future-intents-20261004
+base204689db, verified codeb2a09688e85f97a0059dad830170ba7a53404604, docs408d355e.
+Three owned code/test files only. Main lacks research decision_at in
+_paper_trade; both callers correctly use datetime.now(UTC), not an undefined
+research variable.164 pinned source-mounted tests pass. Main's four Ruff
+findings in market_daily.py are unchanged from original204689db; no new
+findings. Do not claim repository lint clean.
+
+Exact2188-file main original/fixed source acceptance: originalb2f1617e exits1
+on pending preservation; corrected7d620678 exits0,13before/13after,0settled,
+private saved state reloaded. No broker or production-state mutations.
+First helpers failed before acceptance on a research-only import; original
+and corrected second attempts are recorded separately. Root
+/home/animallya96/scratch/main-intent-proof-20261004-b2a09688;
+execution.json SHAf5af2c29c9d743207bbe49edef22576c7d8ae9f0ab6e00c3f3a1c41b49995937.
+
+Guarded scripts/deploy.sh --deploy-dir=~/deploy/anios --wait-post is RUNNING,
+parent3454252, ANIOS_GATE_WORKERS=1, log
+/home/animallya96/scratch/main-intent-release-20261004.log. It gates408d355e in
+a separate tree before touching live621e28f0. Unit gate13% at22:32NY. Model
+container identities captured in proof root/models-before.txt. Never restart
+this active deploy, pull manually into deploy checkout or skip its gates.
+After success verify actual marker/image, owned code hashes, private receipt
+acceptance against deployed code and unchanged model identities; future real
+paper fills remain UNVERIFIED. Learned policy remains inactive.
+
+All three immutable studies verified RUNNING/OOMfalse; current CPU about one
+core each, memory under1GiB. Existing saved-proof watchers2992559/3043785 live.
+At22:32NY: v2first2020/2177sessions,0complete; controls2complete, ridge2060;
+v1two complete. No producer restarts or mounted-source edits. Prepared v2
+command-prefix1.json still NOT EXECUTED. Run once after first saved v2book,
+retain missing cohort rows; original five-control watcher handles its proof.
+Revised economic advantage and benchmark comparisons remain UNVERIFIED.
+
 ## 2026-10-04 — actual carried-book coverage checked; future intents protected
 
 Goal ACTIVE; previous turn PROGRESS, this turn PROGRESS. Started2ba451b7 clean.
