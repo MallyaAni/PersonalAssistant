@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
-from rule_relative_entry import CONFIG, FREEZE, numeric_predict
+from rule_relative_entry import CONFIG, FREEZE, numeric_predict, technical_prefix
 import verify_timing_side_ablation as ledger
 
 
@@ -24,6 +24,8 @@ def verify_models():
         raise ValueError("Prepared source bytes changed")
     with np.load(prepared, allow_pickle=False) as original:
         x, dates, valid = original["X"], original["dates"], original["valid"]
+        if identity.get("technical"):
+            x = np.concatenate((x, technical_prefix(original["current_close"])), axis=-1)
     with np.load(output / "models/predictions.npz", allow_pickle=False) as saved:
         predictions = saved["predictions"]
         if not np.array_equal(saved["dates"], dates):

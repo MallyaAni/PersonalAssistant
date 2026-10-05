@@ -99,8 +99,10 @@ def fit_month(x, y, destination):
 
 
 # Train once per month on earlier outcomes and publish immutable predictions/receipts.
-def walk_forward(dataset, opening, output, *, eligible_only=False):
+def walk_forward(dataset, opening, output, *, eligible_only=False, technical=False):
     x, dates, valid = dataset["X"], dataset["dates"], dataset["valid"]
+    if technical:
+        x = np.concatenate((x, technical_prefix(dataset["current_close"])), axis=-1)
     stock_mask = np.asarray(dataset["training_symbols"])
     labels = targets(dataset["current_close"], dataset["next_open"], opening, x[..., 4])
     predictions = np.full((*valid.shape, 2), np.nan, dtype=np.float32)
@@ -149,7 +151,7 @@ def walk_forward(dataset, opening, output, *, eligible_only=False):
         np.savez_compressed(handle, predictions=predictions, dates=dates)
     with (output / "fit.json").open("x") as handle:
         json.dump({"config": CONFIG, "clocks": CLOCKS, "receipts": receipts,
-                   "eligible_only": eligible_only}, handle)
+                   "eligible_only": eligible_only, "technical": technical}, handle)
     return predictions
 
 
@@ -160,3 +162,39 @@ def eligible_training(dataset, days):
     if eligible.dtype != bool or grades.shape != eligible.shape:
         raise ValueError("Aligned prior-session grades and eligibility required")
     return eligible[days] & (grades[days] >= 2)
+
+
+# Build intraday EMA, band, RSI and momentum features using completed prefixes only.
+def technical_prefix(closes):
+    closes = np.asarray(closes, dtype=float)
+    if closes.ndim != 3 or closes.shape[1] != 25:
+        raise ValueError("Expected completed closes with 25 session clocks")
+    result = np.full((*closes.shape, 7), np.nan, dtype=np.float32)
+    ema = [closes[:, 0].copy(), closes[:, 0].copy()]
+    with np.errstate(divide="ignore", invalid="ignore"):
+        for clock in range(25):
+            current = closes[:, clock]
+            for index, span in enumerate((3, 9)):
+                alpha = 2 / (span + 1)
+                if clock:
+                    ema[index] = alpha * current + (1 - alpha) * ema[index]
+                result[:, clock, :, index] = current / ema[index] - 1
+            for index, window in enumerate((8, 20), start=2):
+                if clock + 1 >= window:
+                    history = closes[:, clock - window + 1:clock + 1]
+                    mean, std = history.mean(axis=1), history.std(axis=1)
+                    result[:, clock, :, index] = np.divide(
+                        current - mean, std, out=np.zeros_like(mean), where=std > 0)
+                    result[:, clock, :, index][~np.isfinite(mean)] = np.nan
+            if clock >= 6:
+                changes = np.diff(closes[:, clock - 6:clock + 1], axis=1)
+                gain = np.maximum(changes, 0).mean(axis=1)
+                loss = np.maximum(-changes, 0).mean(axis=1)
+                result[:, clock, :, 4] = np.divide(
+                    gain, gain + loss, out=np.full_like(gain, .5), where=gain + loss > 0)
+                result[:, clock, :, 4][~np.isfinite(gain + loss)] = np.nan
+            for index, lag in enumerate((4, 8), start=5):
+                if clock >= lag:
+                    result[:, clock, :, index] = np.log(current / closes[:, clock - lag])
+    result[~np.isfinite(result)] = np.nan
+    return result

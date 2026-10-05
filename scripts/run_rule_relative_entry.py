@@ -17,6 +17,7 @@ from rule_relative_entry import walk_forward
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--eligible-only", action="store_true")
+    parser.add_argument("--technical", action="store_true")
     options = parser.parse_args()
     args = SimpleNamespace(
         snapshot=Path("/inputs/portfolio.npz"),
@@ -48,12 +49,14 @@ def main():
         },
         "cost_bps": 0,
         "eligible_only": options.eligible_only,
+        "technical": options.technical,
         "adoption_eligible": False,
     }
     with (output / "identity.json").open("x") as handle:
         json.dump(identity, handle, indent=2)
     opens = primary.session_opens(panel, cubes)
-    forecasts = walk_forward(dataset, opens, models, eligible_only=options.eligible_only)
+    forecasts = walk_forward(dataset, opens, models, eligible_only=options.eligible_only,
+                             technical=options.technical)
     first = primary.comparison_first(panel)
     for phase in range(20):
         result = account(

@@ -7,11 +7,23 @@ from pathlib import Path
 import numpy as np
 
 from rule_relative_entry import (
-    eligible_training, fit_month, numeric_predict, targets, training_days,
+    eligible_training, fit_month, numeric_predict, targets, training_days, technical_prefix,
 )
 
 
 class RuleRelativeTest(unittest.TestCase):
+    # Future bars cannot change earlier features, and price units cannot change signals.
+    def test_technical_prefix_causality_and_units(self):
+        closes = np.arange(100., 150.).reshape(2, 25, 1)
+        original = technical_prefix(closes)
+        changed = closes.copy()
+        changed[:, 10:] *= 2
+        np.testing.assert_array_equal(original[:, :10], technical_prefix(changed)[:, :10])
+        np.testing.assert_allclose(original, technical_prefix(closes * 3),
+                                   rtol=1e-6, atol=1e-7, equal_nan=True)
+        assert np.isnan(original[:, :7, :, 2]).all()
+        assert np.isnan(original[:, :19, :, 3]).all()
+
     # Unknown and ineligible stocks cannot train the entry head for selected names.
     def test_trade_eligible_training_population(self):
         dataset = {"prior_grades": np.array([[3, 2, 1, -1], [0, 0, 0, 0]]),
