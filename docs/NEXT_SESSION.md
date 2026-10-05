@@ -1,5 +1,52 @@
 # Next session
 
+## 2026-10-04 — private candidate action/order consistency verified
+
+Goal ACTIVE; turn PROGRESS. Started4daa3bab clean. Verified code checkpoint
+d323689632902ebf63c6bec5aa084d071d779bf2 on isolated
+codex/learned-entry-risk-20261002; main204689db still ancestor/unchanged.
+No UI, strategy, model, broker permission or active-study source changes.
+Diagram impact: NONE — private record serialization and default import guard.
+
+VERIFIED: optional candidate action rows now follow actual whole-share orders,
+including sub-0.5%-equity adds/trims; unfunded targets remain holds. Original
+continuous model targets are separate from funded order weights. Planned rows
+are explicitly not fills. Grade-only exit prose, fixed stops and legacy
+rebalance clocks removed from these candidate records; ordinary action board
+unchanged. Pending/event priority cannot claim a new model target. Default
+nightly calls no longer import optional forward research when no policy exists.
+Import failure reproduced first; two focused native cases pass.
+
+Pinned exact-source gate88b1b845:156passed/no skips11.65s across forward holding,
+daily/nightly planning, actions and actual replay. Actual synthetic A+ learned
+exit submission/fill/reconciliation and repeat persistence still pass. Initial
+gate8cf/de0a522b:154pass/2fail because a NEW test wrongly assumed the no-order
+fixture had pending settlement; fixed to assert from actual saved pending state.
+No production assertion, timing guard or strategy threshold weakened.
+
+Original-data acceptance500240db: all twelve saved0/10/25bp private buy intents
+match serialized quantities, funded weights and planned/not-filled status.
+Original entry/state hashes unchanged; no refits, forecasts, resimulation,
+broker calls or production writes. Root
+/home/animallya96/scratch/candidate-action-proof-20261004-d3236896;
+source manifestSHA4583608cad0f3666b75ef3c434e0795dddc07344d02b033632994d46251165b3;
+proof/record-proof.json SHA29c70d8eeb5d0d2bb0ffe20198857d2ac5defbb938fbd81a8b30e8e08264c576;
+proof/execution.json SHAf428cdb3fcfcf339cfbb167e43839ef389185fa6b99b365fd7623a23a305b2d4
+pins source/image, first failure, final gate and saved-original acceptance.
+
+UNVERIFIED: economic advantage, production account adoption and browser display;
+these private records are not a deployed dashboard change. Three producers and
+two prior saved-proof watchers remain running/untouched; v2 at20:30NY had
+0completed/820sessions through2021-05-04; control1completed and boosting1620
+sessions through2024-07-10. Inspect compact progress before any new action.
+Never restart/rewrite mounted sources or rescore original experiments. Prepared
+v2 saved-only proof below remains NOT executed: wait for a completed prefix.
+Potential runtime issue to investigate narrowly: growing durable history
+serialization causes large cumulative I/O (37/206/266GB for v2/control/v1 at
+20:31NY), despite only28/49/102MB study directories. Do not change a live
+producer, drop evidence or relabel another source's output. Any acceleration
+must demonstrate identical actual account/order/receipt behavior first.
+
 ## 2026-10-04 — risk-qualified funded variant verified privately; economic study active
 
 Goal ACTIVE; turn PROGRESS. Registered v2 at12fd7ca7 BEFORE its outcomes,
