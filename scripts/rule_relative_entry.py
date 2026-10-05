@@ -99,7 +99,7 @@ def fit_month(x, y, destination):
 
 
 # Train once per month on earlier outcomes and publish immutable predictions/receipts.
-def walk_forward(dataset, opening, output):
+def walk_forward(dataset, opening, output, *, eligible_only=False):
     x, dates, valid = dataset["X"], dataset["dates"], dataset["valid"]
     stock_mask = np.asarray(dataset["training_symbols"])
     labels = targets(dataset["current_close"], dataset["next_open"], opening, x[..., 4])
@@ -117,6 +117,8 @@ def walk_forward(dataset, opening, output):
         mask = (
             valid[days][:, CLOCKS] & stock_mask & np.isfinite(labels[days][:, CLOCKS])
         )
+        if eligible_only:
+            mask &= eligible_training(dataset, days)[:, None, :]
         local, clock, stock = np.nonzero(mask)
         row_days, row_clocks = days[local], np.asarray(CLOCKS)[clock]
         train_x, train_y = (
@@ -146,5 +148,15 @@ def walk_forward(dataset, opening, output):
     with (output / "predictions.npz").open("xb") as handle:
         np.savez_compressed(handle, predictions=predictions, dates=dates)
     with (output / "fit.json").open("x") as handle:
-        json.dump({"config": CONFIG, "clocks": CLOCKS, "receipts": receipts}, handle)
+        json.dump({"config": CONFIG, "clocks": CLOCKS, "receipts": receipts,
+                   "eligible_only": eligible_only}, handle)
     return predictions
+
+
+# Restrict entry training to the same prior-session eligibility used by selection.
+def eligible_training(dataset, days):
+    grades = np.asarray(dataset["prior_grades"])
+    eligible = np.asarray(dataset["prior_eligible"])
+    if eligible.dtype != bool or grades.shape != eligible.shape:
+        raise ValueError("Aligned prior-session grades and eligibility required")
+    return eligible[days] & (grades[days] >= 2)

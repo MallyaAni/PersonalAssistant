@@ -1,5 +1,6 @@
 """Fit and evaluate one registered entry candidate against frozen zero-cost controls."""
 
+import argparse
 import hashlib
 import json
 from pathlib import Path
@@ -14,6 +15,9 @@ from rule_relative_entry import walk_forward
 
 # Authenticate original inputs, fit the candidate once and persist all twenty books.
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--eligible-only", action="store_true")
+    options = parser.parse_args()
     args = SimpleNamespace(
         snapshot=Path("/inputs/portfolio.npz"),
         provenance=Path("/inputs/portfolio.json"),
@@ -43,12 +47,13 @@ def main():
             )
         },
         "cost_bps": 0,
+        "eligible_only": options.eligible_only,
         "adoption_eligible": False,
     }
     with (output / "identity.json").open("x") as handle:
         json.dump(identity, handle, indent=2)
     opens = primary.session_opens(panel, cubes)
-    forecasts = walk_forward(dataset, opens, models)
+    forecasts = walk_forward(dataset, opens, models, eligible_only=options.eligible_only)
     first = primary.comparison_first(panel)
     for phase in range(20):
         result = account(

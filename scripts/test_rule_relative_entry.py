@@ -6,10 +6,20 @@ from pathlib import Path
 
 import numpy as np
 
-from rule_relative_entry import fit_month, numeric_predict, targets, training_days
+from rule_relative_entry import (
+    eligible_training, fit_month, numeric_predict, targets, training_days,
+)
 
 
 class RuleRelativeTest(unittest.TestCase):
+    # Unknown and ineligible stocks cannot train the entry head for selected names.
+    def test_trade_eligible_training_population(self):
+        dataset = {"prior_grades": np.array([[3, 2, 1, -1], [0, 0, 0, 0]]),
+                   "prior_eligible": np.array([[True, False, True, True],
+                                               [True, True, True, True]])}
+        np.testing.assert_array_equal(eligible_training(dataset, [0]),
+                                      [[True, False, False, False]])
+
     # A label compares now with the next crossing, never a crossing at the same clock.
     def test_future_crossing_and_sign(self):
         observed = np.full((1, 25, 1), 100.0)

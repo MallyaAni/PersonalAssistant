@@ -1,0 +1,165 @@
+{
+  "primary_sha256": "2a8276f0c5e677292a600c260e87016d39029ee33359cdfae9c228c70fe22f11",
+  "verifier_sha256": "73946b7624930d32a16e82bb6d2c882bb80ad47405289575dcf8b1099c8c5e2a",
+  "forecast_sha256": "eabd30f5d6e0409c14b3a3205ff1082051be9df6cbef16d7de3a51790294660a",
+  "cost_bps": 0,
+  "adoption_eligible": false,
+  "accounts": [
+    {
+      "side": "buy",
+      "phase": 0,
+      "sha256": "33e3393aa09039afb5f9f0c68f3d58de7dd79a3e3dd5125728278aa9c4c13509",
+      "intents": 882
+    },
+    {
+      "side": "buy",
+      "phase": 1,
+      "sha256": "dfad11f9a79e40a5c1847c0a3aad11199ed0136ec5a1ab981cb89ac9a1071a9b",
+      "intents": 882
+    },
+    {
+      "side": "buy",
+      "phase": 2,
+      "sha256": "efc2f39c4038121c2bf8afccbbed748d7d32aa10b137366aee0bf28f13f5a005",
+      "intents": 886
+    },
+    {
+      "side": "buy",
+      "phase": 3,
+      "sha256": "c1f9e17a064c8dcf4065f57e30578db8b4a3d5ab47488c35a9fde500a35b9047",
+      "intents": 897
+    },
+    {
+      "side": "buy",
+      "phase": 4,
+      "sha256": "0b32df31b7a99433e1d4ed7abd64c35e72e0da2b1267485120f3e079f973b43d",
+      "intents": 904
+    },
+    {
+      "side": "buy",
+      "phase": 5,
+      "sha256": "a642d34d9a2343b82e00abea74e6a808c4d6ea448020466585c4118c7ddfc1e5",
+      "intents": 903
+    },
+    {
+      "side": "buy",
+      "phase": 6,
+      "sha256": "a08c759f63e6dbac1d2363ae3e0e292dc52ed54b84efaff0321efd780c3d6e47",
+      "intents": 895
+    },
+    {
+      "side": "buy",
+      "phase": 7,
+      "sha256": "7d19a7c424b399c8969e5af52586dd1af682c58153aa9ee2f487b5db709cab0d",
+      "intents": 876
+    },
+    {
+      "side": "buy",
+      "phase": 8,
+      "sha256": "fcf9390cafaaa8565914569b98ee3aaca42a25f80ffc8d49d10a16ce6cec38d3",
+      "intents": 879
+    },
+    {
+      "side": "buy",
+      "phase": 9,
+      "sha256": "be5b717290770e07089c0bbe1fcdee15b2d86e2842e241709c354ee58235cbd0",
+      "intents": 851
+    },
+    {
+      "side": "buy",
+      "phase": 10,
+      "sha256": "ff4f8425f1c9bd0f85d54dc37212b3498fc4ff5ce67407b324f218f121ababe8",
+      "intents": 852
+    },
+    {
+      "side": "buy",
+      "phase": 11,
+      "sha256": "5b027cf2b7f197bfc5025df32e62a33ce8ef96889c1d39413f7aac85be0a7463",
+      "intents": 867
+    },
+    {
+      "side": "buy",
+      "phase": 12,
+      "sha256": "117b5d31677441651d9bdaa31e2a7dd82e28cec8c75c5069dbb2de525d61d0c3",
+      "intents": 859
+    },
+    {
+      "side": "buy",
+      "phase": 13,
+      "sha256": "0f0f3e84dba683b43081989cbbc3de03754f78f25cf7caa987ab9a66fadfd5c5",
+      "intents": 850
+    },
+    {
+      "side": "buy",
+      "phase": 14,
+      "sha256": "103071a3adb6ea9343081c3b2a82d56341a02629d816ff27c8e49099c7b88d05",
+      "intents": 845
+    },
+    {
+      "side": "buy",
+      "phase": 15,
+      "sha256": "9eea5ea85c96c052bf124aba98db8cd25ce8fe4f3078a42bfec5943a22087e1a",
+      "intents": 848
+    },
+    {
+      "side": "buy",
+      "phase": 16,
+      "sha256": "a1eccf1b6319c8a828957b0dcac4b7a16735d063e94deb4c00154e948be25d8a",
+      "intents": 876
+    },
+    {
+      "side": "buy",
+      "phase": 17,
+      "sha256": "ed636173483f5a7af68a78a3c4ba0a228aed198702da51aa07a220a28547ccb3",
+      "intents": 869
+    },
+    {
+      "side": "buy",
+      "phase": 18,
+      "sha256": "15593cf4bdfa128ae94fc9cb264e8bd905aa270a46d975ce3aac4d759d30f18e",
+      "intents": 865
+    },
+    {
+      "side": "buy",
+      "phase": 19,
+      "sha256": "cea862cfa013863ea81b571a8a8e00224c9e369545dce7f03bfdf60445b6d817",
+      "intents": 859
+    }
+  ],
+  "summary": {
+    "buy": {
+      "all": {
+        "median_paired_gain_pp": -16.33618209714185,
+        "min_pp": -99.5122051625481,
+        "max_pp": 103.8933215962917,
+        "winning_phases": 6,
+        "phases": 20
+      },
+      "early": {
+        "median_paired_gain_pp": 0.2786825647481894,
+        "min_pp": -16.254170142451297,
+        "max_pp": 18.32832978261223,
+        "winning_phases": 10,
+        "phases": 20
+      },
+      "later": {
+        "median_paired_gain_pp": -8.853148691371615,
+        "min_pp": -50.940452117143934,
+        "max_pp": 50.0477515597165,
+        "winning_phases": 9,
+        "phases": 20
+      },
+      "reused_recent": {
+        "median_paired_gain_pp": -1.1412378775351617,
+        "min_pp": -5.009822047239587,
+        "max_pp": 2.092852279464452,
+        "winning_phases": 6,
+        "phases": 20
+      }
+    }
+  },
+  "numeric_model_replay": {
+    "months": 104,
+    "predictions_checked": 4081392
+  }
+}
