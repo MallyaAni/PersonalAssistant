@@ -22,14 +22,6 @@ MATURITY_POLICY = "joint-stock-risk-funded/2-maturity-shadow"
 CALIBRATED_POLICY = "joint-stock-risk-funded/3-log-calibration-research"
 HORIZON = "next_open_to_following_open_arithmetic_return"
 PROTOCOL = "docs/research/joint-funded-account-plan-2026-10-04.md"
-CANDIDATES = {
-    POLICY: PROTOCOL,
-    MATURITY_POLICY: "docs/research/risk-qualified-funded-plan-2026-10-04.md",
-    CALIBRATED_POLICY: (
-        "docs/research/conditional-holding-calibration-plan-2026-10-05.md"
-    ),
-}
-
 MARKET_CONTEXT = [
     "spy_return_20",
     "spy_drawdown_252",
@@ -40,7 +32,15 @@ MARKET_PROTOCOL = "docs/research/market-conditioned-holding-plan-2026-10-05.md"
 MARKET_TIMED_POLICY = (
     "joint-stock-risk-funded/5-market-conditioned-probability-timing-research"
 )
-RECEIPT_PROTOCOLS = {**CANDIDATES, MARKET_TIMED_POLICY: MARKET_PROTOCOL}
+CANDIDATES = {
+    POLICY: PROTOCOL,
+    MATURITY_POLICY: "docs/research/risk-qualified-funded-plan-2026-10-04.md",
+    CALIBRATED_POLICY: (
+        "docs/research/conditional-holding-calibration-plan-2026-10-05.md"
+    ),
+    MARKET_TIMED_POLICY: MARKET_PROTOCOL,
+}
+RECEIPT_PROTOCOLS = dict(CANDIDATES)
 
 
 # Authenticate array dtype, shape and bytes without importing the forecast producer.
@@ -390,11 +390,15 @@ def candidate_grid(dates, *, policy=POLICY):
         POLICY: "joint",
         MATURITY_POLICY: "maturity",
         CALIBRATED_POLICY: "calibrated",
+        MARKET_TIMED_POLICY: "market",
     }[policy]
     return [
         {**row, "arm": policy, "id": f"{prefix}-{row['cost_bps']}-{row['start']}"}
         for row in ledger.fixed_grid(dates)
-        if row["arm"] == "rule" and (policy != CALIBRATED_POLICY or row["start"] == 0)
+        if row["arm"] == "rule"
+        and (
+            policy not in (CALIBRATED_POLICY, MARKET_TIMED_POLICY) or row["start"] == 0
+        )
     ]
 
 
@@ -898,7 +902,16 @@ def candidate_receipts(
 
 
 # Fold each completed saved account and independently recompute every declared score.
-def verify_rows(study, rows, data, *, candidate=False, source=None, policy=POLICY):
+def verify_rows(
+    study,
+    rows,
+    data,
+    *,
+    candidate=False,
+    source=None,
+    policy=POLICY,
+    market_calibration=None,
+):
     checked = []
     for row in rows:
         spec = {
@@ -918,7 +931,13 @@ def verify_rows(study, rows, data, *, candidate=False, source=None, policy=POLIC
             account, spec, data, account_policy=policy if candidate else ledger.POLICY
         )
         receipt_counts = (
-            candidate_receipts(account, data, source, policy=policy)
+            candidate_receipts(
+                account,
+                data,
+                source,
+                policy=policy,
+                market_calibration=market_calibration,
+            )
             if candidate
             else {}
         )
@@ -1001,8 +1020,8 @@ def paired_results(candidates, controls, grid, *, references=("rule", "SPY", "QQ
     return result
 
 
-# Authenticate frozen sources and inputs around a saved-only account proof.
-def verify(config, output):
+# Verify frozen accounts with caller-authenticated original market bank when required.
+def verify(config, output, *, market_calibration=None):
     output = Path(output)
     ledger.require(
         not output.exists()
@@ -1029,6 +1048,11 @@ def verify(config, output):
     )
     if policy != POLICY:
         ledger.same(admission["candidate_policy"], policy, "Variant admission")
+    if policy == MARKET_TIMED_POLICY:
+        ledger.require(
+            type(market_calibration) is MarketCalibrationVerifier,
+            "Original authenticated market calibration bank required",
+        )
     ledger.require(
         identity["policy"] == ledger.POLICY
         and identity["protocol_sha256"] == ledger.PROTOCOL_SHA
@@ -1060,7 +1084,7 @@ def verify(config, output):
     ledger.require(
         admission["models_fitted"] == admission["models_restored"] == 0
         and admission["candidate_accounts"]
-        == (3 if policy == CALIBRATED_POLICY else 60)
+        == (3 if policy in (CALIBRATED_POLICY, MARKET_TIMED_POLICY) else 60)
         and admission["adoption_eligible"] is False,
         "Candidate input limitations differ",
     )
@@ -1086,6 +1110,12 @@ def verify(config, output):
             archive["grades"].copy(),
             archive["eligible"].copy(),
         )
+    if policy == MARKET_TIMED_POLICY:
+        ledger.same(market_calibration.symbols, tuple(data["names"]))
+        ledger.require(
+            np.array_equal(market_calibration.bank["dates"], data["dates"]),
+            "Original market bank and physical account dates differ",
+        )
     grid, original = (
         candidate_grid(data["dates"], policy=policy),
         ledger.fixed_grid(data["dates"]),
@@ -1101,6 +1131,7 @@ def verify(config, output):
         candidate=True,
         source=manifests["candidate"]["files"],
         policy=policy,
+        market_calibration=market_calibration,
     )
     right = verify_rows(study, controls, data)
     for role in ("candidate", "control"):

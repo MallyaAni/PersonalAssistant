@@ -20,10 +20,12 @@ from backend.cli.market_learned_entry import write_json
 from backend.market import calendar
 from backend.market.joint_funded_policy import (
     CALIBRATED_POLICY,
+    MARKET_TIMED_POLICY,
     MATURITY_POLICY,
     POLICY,
     CalibratedMaturityFundedPolicy,
     JointFundedPolicy,
+    MarketConditionedTimedFundedPolicy,
     MaturityFundedPolicy,
 )
 from backend.market.live_policy_features import FeatureCache
@@ -36,19 +38,23 @@ def _variant(policy):
         POLICY: (JointFundedPolicy, "joint"),
         MATURITY_POLICY: (MaturityFundedPolicy, "maturity"),
         CALIBRATED_POLICY: (CalibratedMaturityFundedPolicy, "calibrated"),
+        MARKET_TIMED_POLICY: (MarketConditionedTimedFundedPolicy, "market"),
     }
     if not isinstance(policy, str) or policy not in options:
         raise ValueError("Registered funded candidate required")
     return options[policy]
 
 
-# Retain existing grids and limit the new calibration screen to its first fixed start.
+# Retain existing grids and limit calibration screens to their first fixed start.
 def candidate_grid(dates, *, policy=POLICY):
     _, prefix = _variant(policy)
     return [
         {**row, "arm": policy, "id": f"{prefix}-{row['cost_bps']}-{row['start']}"}
         for row in account_grid(dates)
-        if row["arm"] == "rule" and (policy != CALIBRATED_POLICY or row["start"] == 0)
+        if row["arm"] == "rule"
+        and (
+            policy not in (CALIBRATED_POLICY, MARKET_TIMED_POLICY) or row["start"] == 0
+        )
     ]
 
 

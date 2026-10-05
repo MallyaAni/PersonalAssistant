@@ -110,6 +110,35 @@ is read without repeating its trades or calculating new economic scores.
 
 ## Registered design
 
+### Fixed economic screen, registered before V5 performance
+
+Use the unchanged physical account runner, original authenticated stock and
+price bank, original exchange calendar and fixed first phase:2018-02-01 through
+2026-09-30. Register exactly three private carried accounts at0/10/25bp per
+side, initial cash100000, zero cash yield, whole shares and no external deposits.
+IDs are market-0-0,market-10-0,market-25-0. Earlier original rule/boosting/ridge/
+SPY/QQQ controls are reused at matching cost/start only; never resimulate or
+reprice missing controls. Existing V1/V2 sixty-account and V3 three-account
+grids remain unchanged. No newly selected cohort, start, feature or parameter.
+
+Ordinary allocations use the already fixed V5 conditional joint-return model
+and probabilistic buy/sell timing. Mandatory exits retain next-open priority.
+Keep every missed/unavailable opportunity, causal month/freeze boundary and
+original physical ledger. Dividend entitlements count in wealth but remain
+unspendable unless the original source has a supported payment. Report full,
+2018–20,2021–26 and already reused recent windows, with total gain,CAGR,positive
+drawdown loss,Sharpe,turnover,fees,exposure and missing marks. These windows
+remain previously inspected development evidence, not untouched holdouts.
+
+For independent saved-account verification, the caller must authenticate and
+restore the original numeric bank before supplying MarketCalibrationVerifier.
+The verifier must check each saved calibration and full physical ledger without
+fitting,predicting,replaying or scoring a new account. Missing bank admission or
+matching controls must remain explicit. Passing this screen does not establish
+historical publication,broker fills,calibrated confidence or adoption eligibility.
+Do not launch until the active original V3 three-cost candidate screen finishes
+and is reviewed. No production selector or deployment is added here.
+
 Objective: condition stock-specific holding forecasts on the observed market
 without selecting a fixed bullish/bearish gate or dip/profit percentage.
 This advances the authorized learned exposure component. V3's first zero-cost

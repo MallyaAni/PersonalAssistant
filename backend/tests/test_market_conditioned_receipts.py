@@ -11,6 +11,7 @@ from backend.cli import verify_joint_funded as verifier
 from backend.cli.verify_joint_funded import MarketCalibrationVerifier
 from backend.market import market_conditioned_calibration as model
 from backend.market.daily_arithmetic_bridge import _hash
+from backend.market.joint_funded_accounts import candidate_grid
 from backend.market.joint_funded_policy import MarketConditionedTimedFundedPolicy
 from backend.market.live_policy_replay import run_account
 from backend.market.live_probability_timing import build_reader
@@ -21,6 +22,7 @@ from backend.tests.test_market_conditioned_calibration import evidence
 from backend.tests.test_market_conditioned_holding import example as example
 from backend.tests.test_market_conditioned_holding import reader as reader
 from backend.tests.test_verify_actual_policy_timing import direct_data
+from backend.tests.test_verify_joint_funded import save
 
 
 # Build a real numeric fitted receipt with an explicit synthetic historical bank.
@@ -301,5 +303,92 @@ def test_market_account_metadata_tampering(market_account, path, value, error):
             data,
             source,
             policy=account["policy"],
+            market_calibration=MarketCalibrationVerifier(bank, source),
+        )
+
+
+# Freeze three market-model accounts without altering any previously registered grid.
+def test_market_screen_uses_same_first_start_and_costs():
+    dates = np.arange("2018-01-01", "2026-10-01", dtype="datetime64[D]")
+    dates = dates[np.is_busday(dates)]
+    old = candidate_grid(dates)
+    market = candidate_grid(dates, policy=verifier.MARKET_TIMED_POLICY)
+    assert market == verifier.candidate_grid(dates, policy=verifier.MARKET_TIMED_POLICY)
+    assert [row["id"] for row in market] == [
+        "market-0-0",
+        "market-10-0",
+        "market-25-0",
+    ]
+    assert len(old) == 60
+    assert len(candidate_grid(dates, policy=verifier.MATURITY_POLICY)) == 60
+    assert len(candidate_grid(dates, policy=verifier.CALIBRATED_POLICY)) == 3
+    assert {row["id"] for row in market}.isdisjoint(row["id"] for row in old)
+    first = [row for row in old if row["start"] == 0]
+    for registered, control in zip(market, first, strict=True):
+        assert {k: v for k, v in registered.items() if k not in ("id", "arm")} == {
+            k: v for k, v in control.items() if k not in ("id", "arm")
+        }
+        assert registered["first_session"] == "2018-02-01"
+        assert dates[registered["last"]] == np.datetime64("2026-09-30")
+
+
+# Authenticate a saved physical account and its scored index without producer calls.
+def test_market_saved_score_index_requires_original_bank(
+    market_account,
+    tmp_path,
+    monkeypatch,
+):
+    original, data, source, bank = market_account
+    account = deepcopy(original)
+    spec = {
+        "arm": verifier.MARKET_TIMED_POLICY,
+        "cost_bps": 10,
+        "start": 0,
+        "first": len(data["dates"]) - 2,
+        "last": len(data["dates"]) - 1,
+        "first_session": account["first"],
+        "id": "market-10-0",
+    }
+    account["comparison_account"] = spec
+    row = save(tmp_path, account, spec)
+
+    # The independent account fold cannot create a new fit, forecast or trade.
+    def forbidden(*args, **kwargs):
+        pytest.fail("Saved account verification invoked a producer")
+
+    monkeypatch.setattr(model, "fit_market_log", forbidden)
+    monkeypatch.setattr(model.MarketLogFit, "predict", forbidden)
+    monkeypatch.setattr("backend.market.live_policy_replay.run_account", forbidden)
+    checked = verifier.verify_rows(
+        tmp_path,
+        [row],
+        data,
+        candidate=True,
+        source=source,
+        policy=verifier.MARKET_TIMED_POLICY,
+        market_calibration=MarketCalibrationVerifier(bank, source),
+    )
+    assert checked[0]["ordinary_receipts"] == 3
+    assert checked[0]["counts"]["sessions"] == 2
+    assert checked[0]["scores"] == row["scores"]
+    with pytest.raises(ValueError, match="Original authenticated market"):
+        verifier.verify_rows(
+            tmp_path,
+            [row],
+            data,
+            candidate=True,
+            source=source,
+            policy=verifier.MARKET_TIMED_POLICY,
+        )
+    wrong = deepcopy(row)
+    wrong["scores"]["full"]["total_gain"] = 100.0
+    with pytest.raises(ValueError, match="independent account scores"):
+        verifier.verify_rows(
+            tmp_path,
+            [wrong],
+            data,
+            candidate=True,
+            source=source,
+            policy=verifier.MARKET_TIMED_POLICY,
             market_calibration=MarketCalibrationVerifier(bank, source),
         )
