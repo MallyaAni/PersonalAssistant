@@ -1,5 +1,62 @@
 # Independent funded-account proof
 
+## Causal regime attribution, October 5
+
+The seven independently verified first-start, zero-cost books were attributed
+to the existing causal market-state definition in `neural_study_metrics`.
+The next account return uses SPY evidence only through the preceding close:
+above/below its 200-close mean and 20-return volatility above/below the median
+of 252 trailing volatility observations. These are diagnostic categories,
+not a new trading gate, optimized definition or regime-switching policy.
+
+All 2177 return intervals are retained, including the first return from the
+January 31 initial cash mark into February 1. Missing states remain explicit;
+none are unknown in this original dataset. No portfolio was rerun or refitted.
+Mean excess values below are **daily log-return basis points versus the rule**.
+Noncontiguous contributions must not be annualized as separate portfolios.
+
+| Prior market state | Intervals | V2 excess | V2 excess after an available ordinary decision | Boosting timing excess |
+| --- | ---: | ---: | ---: | ---: |
+| Above mean / higher volatility | 731 | -2.98 bp | -1.74 bp | +0.34 bp |
+| Above mean / lower volatility | 1045 | -0.20 bp | +1.29 bp | +0.12 bp |
+| Below mean / higher volatility | 360 | -7.81 bp | -4.19 bp | -0.61 bp |
+| Below mean / lower volatility | 41 | -39.26 bp | -40.50 bp | +3.05 bp |
+
+V2 trails the rule in every full regime. Following available ordinary decisions
+it has a modest positive contribution in the above-mean/lower-volatility state,
+but not the others. That partition retains the original carried book; it is
+not a restarted warmup-free backtest. The 41-interval below-mean/lower-volatility
+sample is especially small. Boosting's small positive contributions in several
+states do not establish statistically independent edge or a switching rule.
+
+V2's actual end exposure averages 46.8%, 54.2%, 42.5%, 37.9% across those
+states, versus the rule's 85.4%, 86.6%, 81.8%, 88.4%. Prior decision states
+retain 1714 available ordinary, 257 unavailable ordinary and 206 event-priority
+intervals. The final September 30 decision has no later account return and
+is correctly absent from this interval attribution. Lower exposure and missing
+warmup alone do not establish the cause of the lost growth; available-decision
+intervals also lose ground outside the calm rising state.
+
+VERIFIED: existing evaluator 43 tests pass/no skips. A separate scalar
+`statistics`/`math` implementation independently reproduces every causal regime
+count and all seven books' attributed log growth from the original hash-bound
+compressed accounts, without importing the simulator or production evaluator.
+Its result covers all 2177 intervals. A first diagnostic adapter attempt failed
+before output on ordinary receipts lacking an outer status; corrected only
+the adapter to use the original nested receipt. Failed source/log preserved.
+
+Evidence under /home/animallya96/scratch/calibrated-funded-20261005-3a598702:
+`proof/saved-regime-attribution.json` SHA
+7351c73413551ad37cd81ffa33b40af939262ed97b762dadb2ad163805980d55;
+successful diagnostic source SHA
+6c1ac7bb160141d7ef0847dbc577ebe3cddc6233bc588040604614acb41f46bc;
+independent verification source SHA
+44a52298d69ea813b4564090c2c30d6c98eec44a400c4a6b68b92cb9b0a36c2b.
+This reused zero-cost, first-start development evidence cannot promote V2 or
+choose a favorable regime; the separate calibrated three-cost screen remains
+running on its unchanged 3a598702 source. Nonzero-cost/start evidence and a
+genuinely prospective carried-book evaluation remain required.
+
 ## Current fixed-calendar prefix, October 4
 
 VERIFIED saved arithmetic: two v1 candidate accounts, the first v2 candidate

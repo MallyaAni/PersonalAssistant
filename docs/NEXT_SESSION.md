@@ -1,5 +1,44 @@
 # Next session
 
+## 2026-10-05 — new saved causal-regime evidence; all producers unchanged
+
+Goal ACTIVE. Previous goal turn was PROGRESS: implemented/pushed 3a598702,
+passed 122 actual pinned-image checks and real-input oracle, started the
+three-cost screen. This turn PROGRESS: reused the existing causal regime
+evaluator, independently verified new saved-account attribution, persisted
+its implications. No policy/threshold/source/producer change or promotion.
+
+Same seven verified first-start 0bp books, all 2177 original return intervals.
+V2 trails the rule in all four full predefined regimes. After available
+ordinary decisions only, above-mean/lower-volatility contributes +1.29 daily
+excess log bp, other regimes negative. It is a carried-book partition, not
+an independent strategy, fresh holdout, significant edge or warmup-free replay.
+41 below-mean/lower-volatility intervals are particularly weak evidence.
+43 existing evaluator tests pass/no skips; separate scalar statistics/math
+oracle independently reproduces regime counts and seven curves' growth.
+Detailed scope/table in existing joint-funded-saved-proof-checkpoint report.
+
+Artifacts in calibrated-funded-20261005-3a598702 root:
+proof/saved-regime-attribution.json SHA
+7351c73413551ad37cd81ffa33b40af939262ed97b762dadb2ad163805980d55;
+saved-regime-diagnostic-v2.py SHA
+6c1ac7bb160141d7ef0847dbc577ebe3cddc6233bc588040604614acb41f46bc;
+verify-saved-regimes.py SHA
+44a52298d69ea813b4564090c2c30d6c98eec44a400c4a6b68b92cb9b0a36c2b;
+proof/saved-regime-independent-proof.json passed, 7 curves/2177 intervals.
+First diagnostic attempt failed on ordinary status nesting before output;
+original script/log preserved, one adapter correction, no assertion weakened.
+Local helper copies are temporary and removed only after exact archive checks.
+
+At 00:40 NY, actual calibrated-funded-study-3a598702 remains RUNNING/OOM false,
+680 sessions through 2020-10-12, zero completed accounts. No source mutation,
+restart, new watcher, model-service change or repeated account replay. Existing
+v1/v2/control processes and watcher 3043785 also confirmed active. NEXT:
+inspect first saved new account, then execute the already prepared saved-only
+proof once. Preserve explicit pending 10/25bp controls. Do not repeat this
+completed diagnostic or adjust regimes/thresholds from its outcomes. Live
+remains e8e339e0, incumbent unchanged; goal not complete.
+
 ## 2026-10-05 — conditional calibration implemented; three-cost screen RUNNING
 
 Goal ACTIVE. PROGRESS from 7ed6df7b: verified code checkpoint
