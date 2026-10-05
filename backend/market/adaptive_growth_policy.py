@@ -513,6 +513,17 @@ def _refine_distribution(
     return solved, proof
 
 
+# Reuse exact points in a private solve cache without retaining failed solver attempts.
+def _cached_certificate(point, cache, gradient, matrix, limits, bounds):
+    key = np.asarray(point, dtype=np.float64).tobytes()
+    if key not in cache:
+        proof = _certificate(point, gradient, matrix, limits, bounds)
+        if proof["reason"] != "certificate_unavailable":
+            cache[key] = proof
+        return proof.copy()
+    return cache[key].copy()
+
+
 # Maximize exact empirical log wealth using jointly aligned stock return scenarios.
 def _solve_distribution(returns, probabilities, current, upper, cash, cost, forced_fee):
     size = len(current)
@@ -576,6 +587,8 @@ def _solve_distribution(returns, probabilities, current, upper, cash, cost, forc
     solution = solved.x
     refinement = {key: value for key, value in proof.items() if key == "refinement"}
     if proof["certified"]:
+        # Reuse exact points only within this fixed objective and constraint set.
+        certificates = {}
         # Certify exact ownership kinks instead of rounding infinitesimal trades.
         for index in range(size):
             for value in (current[index], 0.0, upper[index]):
@@ -585,7 +598,9 @@ def _solve_distribution(returns, probabilities, current, upper, cash, cost, forc
                 candidate[index] = value
                 candidate[size : 2 * size] = np.abs(candidate[:size] - current)
                 candidate[2 * size :] = np.maximum(candidate[:size] - current, 0)
-                certificate = _certificate(candidate, gradient, matrix, limits, bounds)
+                certificate = _cached_certificate(
+                    candidate, certificates, gradient, matrix, limits, bounds
+                )
                 if (
                     certificate["certified"]
                     and objective(candidate) <= objective(solution) + 1e-14

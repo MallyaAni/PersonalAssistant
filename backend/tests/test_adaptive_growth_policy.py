@@ -47,6 +47,89 @@ def distribution_inputs(scenarios, *, current=None, cash=1.0, cost=0):
     }
 
 
+# Recheck distinct ownership points once per solve, never sharing fee-specific proofs.
+def test_distribution_certificate_work_is_unique_within_each_account(monkeypatch):
+    original = model._certificate
+    observed = []
+
+    # Observe actual mathematical certificates without substituting their results.
+    def tracked(point, *args):
+        observed.append(np.asarray(point).tobytes())
+        return original(point, *args)
+
+    monkeypatch.setattr(model, "_certificate", tracked)
+    for cost in (0, 10, 25):
+        observed.clear()
+        data = distribution_inputs(
+            [[-0.01, -0.02, -0.03], [-0.03, -0.01, -0.02]], cost=cost
+        )
+        target, receipt = model.allocate_distribution(**data)
+        np.testing.assert_array_equal(target, np.zeros(3))
+        assert receipt["certificate"]["certified"]
+        assert receipt["certificate"]["expected_log_growth"] == 0
+        assert len(set(observed)) == 4
+        assert len(observed) == len(set(observed)) + 1
+
+
+# Adjacent floating-point values get separate proofs and returned copies stay detached.
+def test_certificate_cache_preserves_exact_points_and_detaches_results(monkeypatch):
+    original = model._certificate
+    calls = []
+
+    # Record real certificate inputs while preserving the linear optimization itself.
+    def tracked(point, *args):
+        calls.append(np.asarray(point).copy())
+        return original(point, *args)
+
+    # Make both exact points feasible without adding an economic model to the fixture.
+    def gradient(point):
+        return np.zeros_like(point)
+
+    monkeypatch.setattr(model, "_certificate", tracked)
+    cache = {}
+    point = np.array([0.0])
+    args = gradient, np.array([[1.0]]), np.array([0.25]), [(0.0, 0.25)]
+    first = model._cached_certificate(point, cache, *args)
+    first["certified"] = False
+    again = model._cached_certificate(point.copy(), cache, *args)
+    close = model._cached_certificate(np.nextafter(point, 1), cache, *args)
+    assert again["certified"]
+    assert close["certified"]
+    assert len(calls) == 2
+    assert calls[0][0] == 0
+    assert calls[1][0] > 0
+
+
+# A temporary failed linear solve is retried rather than becoming a cached refusal.
+def test_certificate_cache_does_not_retain_unavailable_solver(monkeypatch):
+    normal = model.linprog
+    calls = []
+
+    # Fail only the first LP request, then exercise the real original solver.
+    def recovering(*args, **kwargs):
+        calls.append(True)
+        if len(calls) == 1:
+            return SimpleNamespace(success=False, fun=np.nan)
+        return normal(*args, **kwargs)
+
+    # Supply the same feasible zero-gradient point on each retry.
+    def gradient(point):
+        return np.zeros_like(point)
+
+    monkeypatch.setattr(model, "linprog", recovering)
+    cache = {}
+    point = np.array([0.0])
+    args = gradient, np.array([[1.0]]), np.array([0.25]), [(0.0, 0.25)]
+    first = model._cached_certificate(point, cache, *args)
+    assert not first["certified"]
+    assert not cache
+    second = model._cached_certificate(point, cache, *args)
+    third = model._cached_certificate(point, cache, *args)
+    assert second["certified"]
+    assert third["certified"]
+    assert len(calls) == 2
+
+
 # Equal win rates with different adverse outcomes must receive different funded sizes.
 def test_joint_distribution_sizes_losses_instead_of_multiplying_probability():
     data = distribution_inputs([[0.03, 0.03], [-0.01, -0.05]])
