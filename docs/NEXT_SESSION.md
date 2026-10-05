@@ -1,5 +1,55 @@
 # Next session
 
+## 2026-10-05 — real numeric inference bound to immutable sender evidence
+
+Goal ACTIVE. Human asks why the backtest is not ready. Started clean574ec331;
+main f77d6e57 remains an ancestor, shared Mac/Spark checkouts untouched.
+VERIFIED source6a844e1d59c655524bd42dd9bc6935c995dd8076:181 relevant tests,
+no skips,11.08seconds,2409 archived files unchanged. Pinned image
+5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+Proof /home/animallya96/scratch/forward-inference-20261005-evaluation1/proof;
+execution.json records source/image, no performance scoring and exit0.
+LogSHA53cc254d1bbaa392ad20315d78d4ce5b258b81dd115991e7aba5cefe096d6b4e;
+commandSHAcaf89b85262df2844518edef5510febcb3796d9376700278d51098314c842382;
+manifestSHA87bc806e2741b36d342ffb7fdb4598e9f8212ee11d487aecb5bdff85f0dc48c5.
+Exact new module/test Ruff PASS --no-cache. No acceptance assertions weakened.
+
+prepare_forecast now binds completed-bar features to hash-authenticated numeric
+heads and original dated residual samples, then records the actual clock AFTER
+inference. Backdated/expired forecasts and changed distributions fail closed.
+build_forecast_reader binds that packet to original raw opening/quotes and the
+actual account/sender path. The real private sender test reads back its persisted
+acknowledgment and immutable full inference JSON. Acknowledgments retain a hash
+and relative file pointer instead of duplicating the full receipt in hot state.
+Evidence files are private, exclusive-created and reused only for identical
+bytes; corrupt existing files remain untouched and are rejected. Tests also
+prove original numeric predictions/residuals and caller-mutation isolation.
+This is numeric sklearn integration, not a new language-model prompt or tool;
+no new service/agent/diagram/UI. Dataset authenticity, probabilities and gain
+are not proven by synthetic acceptance or file hashes alone.
+
+UNVERIFIED: complete real-source acquisition/current funded selection path,
+full portfolio advantage and live promotion. No production calls/orders,
+deployment, historical refit, rescore or new economic grid. Live remains
+e8e339e0, default policy unchanged. Before promotion require matched incumbent,
+SPY/QQQ metrics and full actual source/account acceptance.
+
+At11:34:49 New York V5 market-0-0 reached1100sessions through2022-06-13,
+0completed accounts; original container659a960b RUNNING/OOMfalse. Frozen source
+756c0076 untouched. The measured0.53436seconds includes read/HASH/parse;
+prior entry called it read/parse too narrowly.119MB hot history rewrites are
+measured overhead, not a strategy result. Do not modify/restart the active run
+or choose costs from partial results. Sole watcher252268 deadline14:51NY may
+expire before producer; timeout alone is not producer failure.
+
+NEXT: authenticate original prepared inputs and publish only the predeclared
+current-month numeric heads, actual publication clocks, without another OOS
+grid or refetch. Prepared711MB SHA c759ecb607e755631dacc0d28a147511a1eaa7e54e3cbcb23bdff4aafe8b76bf
+has2953dates2015-01-02..2026-09-30,96symbols; exact reviewed calendar equality
+already inspected and source feature hash matches. Keep current-vintage and
+historical eligibility assumptions explicit. Real prospective collector89bdf2bb
+remains separate/frozen; no reinitialization or repurposing. No superiority claim.
+
 ## 2026-10-05 — delayed forward sender acceptance verified; V5 still running
 
 Goal ACTIVE. Human asked why the backtest is not ready; report actual progress,
