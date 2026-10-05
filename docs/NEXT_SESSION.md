@@ -1,5 +1,37 @@
 # Next session
 
+## 2026-10-05 — completed-prefix feature path verified
+
+Goal ACTIVE; previous turn PROGRESS (verified/pushed forward timing heads).
+Started clean7f244086, main f77d6e57 unchanged. VERIFIED exact checkpoint
+1d1fe75c3fff567fe12fc5b59ffb7b326be86007:88 tests/no skips, Ruff clean,
+image5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+New forward_entry_features.observe supplies the original21features from only
+complete prior exchange history and actually published raw prefixes. Actual
+historical prepare parity covers all25 full-session clocks/all4 fixture stocks.
+Tests also pin split units, future prices/grades/bars, source delay, missing
+stocks, defective bars, calendar gaps and early-close support. Actual observation
+time remains distinct from the completed-bar clock; no fabricated close/fill.
+
+Proof root /home/animallya96/scratch/forward-entry-features-20261005-evaluation2;
+all2407 archived source files unchanged. LogSHA
+fee8790cd524538a4b7fab887a271d12a6295e4661956810e9f5b32398c85056;
+commandSHAe4e693c870c43288ce301270a2cb3a5e04689c35e7cebda52d5cf056a55a91ff;
+manifestSHAa7edebfd09d05d073f37bda83f5546fd064a80aa7a6b2bd06dcad391bd518558.
+Original8d6c95ca run retained:87 pass/1 fixture failure (reassigning a frozen
+SessionCube field). Targeted slice mutation fixes the fixture; split-invariance
+assertion unchanged. No model fitting change or economic score in these tests.
+
+NEXT: continue authenticated original out-of-sample residual samples into the
+new monthly forecast, bind numerical heads and actual feature observation, then
+exercise the real private sender with actual source-publication delay. Current
+reader expects an exact bar boundary; do not backdate an available live forecast
+to satisfy it. Keep the frozen historical screen/reader contract unchanged.
+Combined sender/live selection, V5 performance and adoption UNVERIFIED.
+Producer659a960b and watcher252268 remain untouched. No new economic grid,
+refetch, orders, deployment or production source changes. Diagram impact NONE:
+private feature preparation within the existing research data flow.
+
 ## 2026-10-05 — forward timing publication verified; economic screen continuing
 
 Goal ACTIVE. Objective: continue stock-specific entry/exit and funded sizing
