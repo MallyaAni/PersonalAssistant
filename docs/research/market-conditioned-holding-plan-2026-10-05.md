@@ -115,6 +115,37 @@ production selector or new economic grid. Wiring tests with an explicit
 scenario oracle test routing only; genuine numeric scenario tests and funded
 planning tests are recorded separately from those oracles.
 
-UNVERIFIED until acceptance is recorded: reader/funding/timing integration.
+VERIFIED at 7171cae2533a5ae5e3234543fcf3aa8d2ca25847: 308 native and 308
+pinned-image checks pass, no skips. Historical and genuine published-forward
+queries match independently solved raw regressions and same-date residuals.
+Feature/numeric binding, report/expiry checks, future prefix, caller detachment,
+peer order, missing context, original defaults, genuine funded planning,
+whole-share cash limits, repeat identity, company exits, persisted buy/sell
+timing and reconciliation are exercised. Routing-oracle journeys remain
+explicitly synthetic; they are not predictive evidence.
+
+Actual original-input January 4/5, 2021 journey on that exact source passes:
+five past-only calibration fits, zero base-head fits. Four funded intents are
+AMAT286, AMD269, AVGO57 and MCHP181. The empirical timing reader requests AMAT
+and waits on the other three. Previous saved V4 intents were AMAT287, AMD270,
+AVGO58 and NOW47; this comparison reads the original saved artifact, without
+rerunning it. The changed quantities/selection demonstrate that the new context
+affects private planning; they do not establish better choices. Cash remains
+$100,000, holdings empty, no fills, outcome-price introduction or performance
+scoring. All market data is mounted read-only; no production account is touched.
+
+Spark evidence root market-funded-source-20261005-7171cae2, all2402 committed
+source members unchanged. Manifest SHA
+f7eeee5c89c3ab54e7c2fbba00d51ff270703e103c5f7e5c2d9f0a3c64272b2d;
+image test log SHA
+327c6e15426cd558e1ef906e34cd52974472534a419da6fcab33bab820baea3b;
+original-input report SHA
+9ba39b8897aab6700fe644cd39bd12118d083e2869f7ca68c5646629a81990e2;
+original-input helper SHA
+3dec99a4ef224ce9e8ea6ef227efc8fbe68f86b0634358879338eeb4f252f363.
+
 Portfolio economic advantage and deployment remain UNVERIFIED. The existing
-three-cost V3 screen must finish before any new economic account run.
+three-cost V3 screen must finish before any new economic account run. Diagram
+impact: NONE — an optional numeric transformation within the existing isolated
+research/planner/publication flow; no new subsystem, dependency, persistent store
+or trust boundary.

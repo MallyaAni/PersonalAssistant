@@ -1,5 +1,55 @@
 # Next session
 
+## 2026-10-05 — authenticated market context reaches private funded timing
+
+Goal ACTIVE; previous turn PROGRESS at59942bf9. Started clean on
+codex/learned-entry-risk-20261002; fetched main without rewriting published
+research history or user changes. This turn PROGRESS at verified code checkpoint
+7171cae2533a5ae5e3234543fcf3aa8d2ca25847: full authenticated original features
+are retained and hash-bound; continuous market-conditioned scenarios feed the
+separately named /5 funded probability-timing policy. Historical and genuine
+published-forward reads share the transformation and preserve expiry/report
+guards. No production selector, source mutation or new economic grid.
+
+VERIFIED native308pass and exact pinned-image308pass, no skips. Independent raw
+regression/scenario oracle, peer order, future prefix, buffer detachment, original
+default mass, missing context, numeric binding, genuine funded cash/whole-share
+planning, repeat identity, mandatory exits, private intent persistence and
+probabilistic buy/profit-taking reconciliation. Explicit routing oracles prove
+mechanics only. Ruff/diff check clean. Diagram impact: NONE — numeric research
+transformation within existing planner/publication flow, no boundary change.
+
+Actual original January4/5,2021 input journey passes: five past-only calibration
+fits, zero base-head fits. AMAT286/AMD269/AVGO57/MCHP181 buy intents; empirical
+timing requests AMAT and waits on others. Old saved V4 had NOW47 rather than
+MCHP181, with AMAT287/AMD270/AVGO58. No old account rerun: read saved artifact.
+Changed selection/quantities show the new context is used, not better performance.
+Cash remains100K, holdings empty, no fills or performance scoring. Original
+physical inputs and all2402 source members unchanged; network disabled, dataRO.
+
+Spark root market-funded-source-20261005-7171cae2. Manifest SHA
+f7eeee5c89c3ab54e7c2fbba00d51ff270703e103c5f7e5c2d9f0a3c64272b2d;
+image tests SHA327c6e15426cd558e1ef906e34cd52974472534a419da6fcab33bab820baea3b;
+actual-input report SHA
+9ba39b8897aab6700fe644cd39bd12118d083e2869f7ca68c5646629a81990e2.
+Full source/helper receipts and limitations in market-conditioned protocol doc.
+
+V3 first full-history zero-cost backtest already independently verified:
+gain644.71%, CAGR26.16%, maxloss48.97%; rule763.51%/28.34%/43.09%.
+It does NOT justify replacement. At04:26 NY the unchanged calibrated producer
+cd6a73ef... remains RUNNING/OOMfalse, original start04:25:08Z. Second account
+calibrated-10-0 is1580sessions through2024-05-10,1indexed account. All old
+producer sources remain immutable; /5 has no economic result yet. Live
+incumbent e8e339e0 unchanged; no deployment, model change or real order.
+
+NEXT: compact-check original V3 progress. Once index admits second account,
+run the prepared prefix2 saved-only command once (previous handoff hashes),
+retaining pending matched10/25bp controls explicitly. Finish/review the fixed
+three-cost screen before a separately frozen /5 economic run; no grid expansion,
+threshold/window selection or source mutation. /5 currently uses original
+published numeric forecast context and private replay timing; forward adoption
+and economic advantage remain UNVERIFIED. Goal incomplete.
+
 ## 2026-10-05 — dated market-conditioned calibration implemented and verified
 
 Goal ACTIVE; previous turn PROGRESS at 86db9f3c (first calibrated economic
