@@ -267,7 +267,8 @@ def prune(root: Path, asof: date, days: int) -> list[Path]:
 # Orders are looked up by the id chosen before they were sent, not by
 # comparing positions: a position moves for reasons that have nothing to
 # do with this desk, so it cannot say whether this desk's order filled.
-def _reconcile(client, state, store_root: Path, live: bool):
+# Reconcile reported outcomes without expiring a future unsent execution window.
+def _reconcile(client, state, store_root: Path, live: bool, *, decision_at=None):
     """Return (state after settlement, what settled)."""
     from backend.agents.trading.desk import paper
     from backend.market import alpaca_trading
@@ -299,7 +300,8 @@ def _reconcile(client, state, store_root: Path, live: bool):
             f"recovery ({', '.join(unknown)})"
         )
         return state, []
-    settled = paper.settle(state.pending, broker)
+    pending = _reconciliation_pending(state.pending, known, decision_at)
+    settled = paper.settle(pending, broker)
     if settled:
         counts: dict[str, int] = {}
         for row in settled:
@@ -323,6 +325,38 @@ def _reconcile(client, state, store_root: Path, live: bool):
     if live:
         paper.save_state(store_root, updated)
     return updated, settled
+
+
+# Preserve unsent scheduled intents until their exchange execution window ends.
+def _reconciliation_pending(pending, known, decision_at):
+    if decision_at is None:
+        return pending
+    from backend.agents.trading.desk import intraday_orders
+    from backend.market import calendar
+
+    if not isinstance(decision_at, datetime) or decision_at.utcoffset() is None:
+        raise ValueError("Aware reconciliation clock required")
+    ready = []
+    for row in pending:
+        if (
+            row.get("client_order_id") in known
+            or _acknowledged(row)
+            or row.get("sent")
+            or not row.get("execute_on")
+        ):
+            ready.append(row)
+            continue
+        day = date.fromisoformat(row["execute_on"])
+        deadline = datetime.combine(
+            day,
+            calendar.session_close(day)
+            if row.get("execution_timing") == intraday_orders.INTRADAY_TIMING
+            else calendar.REGULAR_OPEN,
+            calendar.NEW_YORK,
+        )
+        if decision_at >= deadline:
+            ready.append(row)
+    return ready
 
 
 # Whether the broker ever acknowledged a pending order: its execution block
@@ -956,7 +990,9 @@ def _paper_trade(
     # An accepted order is not a filled one, and a rebalance whose orders
     # did not fill has not happened - so this runs first and can put the
     # clock back before the plan is made.
-    state, settled = _reconcile(client, state, store_root, live)
+    state, settled = _reconcile(
+        client, state, store_root, live, decision_at=decision_at or datetime.now(UTC)
+    )
     policy = (
         event_risk.decision(panel)
         if feature_reader is None
@@ -968,7 +1004,13 @@ def _paper_trade(
     stale = _ids_to_withdraw(state, session, force)
     if live and stale:
         client.cancel_orders(stale)
-        state, more = _reconcile(client, state, store_root, live)
+        state, more = _reconcile(
+            client,
+            state,
+            store_root,
+            live,
+            decision_at=decision_at or datetime.now(UTC),
+        )
         settled.extend(more)
     account = client.account()
     held_positions = client.positions()

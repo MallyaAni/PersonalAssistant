@@ -1274,6 +1274,7 @@ def close_shortfall_bps(side: str, filled_price: float, close: float) -> float |
 # order still working stays pending; a partial the broker has now closed
 # (canceled or expired) is a concluded partial, with its fill recorded,
 # not an order waiting for an answer that can never arrive.
+# Apply known receipts without discarding intents that have no outcome yet.
 def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
     """Return the state after recording what the broker did."""
     new = PaperState(**asdict(state))
@@ -1323,13 +1324,17 @@ def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
         for s in settled
         if s.status == "open" or (s.status == "partial" and not s.terminal)
     }
+    settled_ids = {s.client_order_id for s in settled}
     new.pending = [
         {
             **row,
             "execution": journal[str(row.get("client_order_id") or "")]["execution"],
         }
-        for row in state.pending
         if str(row.get("client_order_id") or "") in still_working
+        else row
+        for row in new.pending
+        if str(row.get("client_order_id") or "") not in settled_ids
+        or str(row.get("client_order_id") or "") in still_working
     ]
     if state.unconfirmed_rebalance is None:
         return new
@@ -1340,7 +1345,15 @@ def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
         for e in new.journal
         if e["session"] == state.unconfirmed_rebalance and not e.get("event_id")
     ]
-    if not legs or any(not e["terminal"] for e in legs):
+    if (
+        not legs
+        or any(not e["terminal"] for e in legs)
+        or any(
+            row.get("session") == state.unconfirmed_rebalance
+            and not row.get("event_id")
+            for row in new.pending
+        )
+    ):
         # Nothing to conclude yet; ask again next session.
         return new
     if all(e["status"] in DONE for e in legs):

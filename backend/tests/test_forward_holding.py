@@ -455,6 +455,59 @@ def test_actual_private_forward_decision_survives_midnight(
         assert paper.load_state(tmp_path).journal == reconciled.journal
 
 
+# A forward takeover preserves an unsent future plan through real private persistence.
+def test_forward_takeover_preserves_future_unsent_intent(example, tmp_path):
+    current = observation(example)
+    reader = forward.ForwardVolatilityHoldingReader(example[0], current)
+    panel, grades = example[3], example[4]
+    shown = report(panel, grades)
+    shown.sides = {"AAA": "long", "BBB": "long"}
+    shown.scores = grades.astype(float)
+    deadline = datetime.fromisoformat(current.receipt["identity"]["expires_at"])
+    now = deadline.replace(hour=1, minute=0)
+    session = str(panel.dates[-1])
+    row = {
+        "client_order_id": "existing-future-intent",
+        "symbol": "AAA",
+        "side": "buy",
+        "qty": 2,
+        "session": session,
+        "execute_on": deadline.date().isoformat(),
+        "execution_timing": "dip_or_close",
+    }
+    paper.save_state(tmp_path, paper.PaperState(pending=[row]))
+    broker = ReplayBroker(100000.0, 10)
+    broker.observe(
+        now, {s: float(panel.close[-1, i]) for i, s in enumerate(panel.tickers)}, False
+    )
+
+    # Keep the current event and entry permissions without bypassing real dispatch.
+    def features(kind, ignored):
+        return (
+            {"calendar_known": True, "factor": 1.0}
+            if kind == "event"
+            else (set(), {})
+            if kind == "blocked"
+            else {}
+        )
+
+    args = dict(
+        client_factory=lambda: broker,
+        decision_at=now,
+        feature_reader=features,
+        holding_policy=MaturityFundedPolicy(reader, 10),
+    )
+    for _ in range(2):
+        entry = market_daily.paper_trade(shown, tmp_path, session, True, **args)
+        saved = paper.load_state(tmp_path)
+        assert saved.pending == [row]
+        assert not saved.journal
+        assert entry["orders"] == []
+        assert not broker.attempt_history
+        assert broker.account().cash == 100000.0
+        assert all(action["model_target_weight"] is None for action in entry["actions"])
+
+
 # Expired forward rows fail before any private account persistence or order attempt.
 def test_actual_private_forward_expiry_has_no_side_effect(example, tmp_path):
     current = observation(example)
