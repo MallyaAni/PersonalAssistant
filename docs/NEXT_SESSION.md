@@ -1,5 +1,48 @@
 # Next session
 
+## 2026-10-04 — first revised funded book verified; operational main fix LIVE
+
+Goal ACTIVE. PROGRESS: independent saved-only v2 verification completed once,
+first funded result table persisted, selective operational release verified
+on its actual serving image. Started research 7a3c430c; only result/handoff
+documentation changed in this turn. No model refit, strategy promotion,
+parameter mining, producer restart or active-source edit.
+
+First predeclared 2018-02-01..2026-09-30 / 0bp CAGR: rule 28.34%, boosting
+timing 28.76%, ridge timing 27.42%, joint v1 16.84%, joint v2 18.62%,
+SPY 13.14%, QQQ 19.04%. V2 improves on v1 but still trails QQQ and the rule;
+its 551.10x turnover/49.49% mean exposure warrant causal diagnosis, not
+outcome-selected thresholds or increased leverage. Boosting retains incumbent
+selection/sizing/exits and is a timing control, not a joint-risk replacement.
+Full conditional limitations, windows and hashes:
+docs/research/joint-funded-saved-proof-checkpoint-2026-10-04.md.
+
+VERIFIED v1 + five-control prefix SHA
+b1c5ac41001ad4d5c5b981347ca427b3eca01cb5c3990c4a9abf61949b755c3a;
+v2 prefix SHA aa9152a8ea571dcd5ce4d6e23f702ac5034afb28dc515456f5fdded90af06571.
+At proof reads 58/60 v1, 59/60 v2, 295/300 control books remain pending.
+All three original containers remain running/OOM false at 23:26 NY. V1 third
+book 1940 sessions; v2 second book 980; controls sixth book 1320. No repeat
+prefix verification or scoring. Inspect existing final watcher completion
+and new saved account evidence before doing more work; preserve missing rows.
+
+VERIFIED main live e8e339e0f9bdf247ce4d16bedc3f6c744af0b638: scripts/deploy.sh,
+8664 unit pass/93 skip/6 xfail; 100 real routing pass; cheap post-deploy ok.
+Image 8b58ab3ab08a1ebadf1ca6e98623e9862c25218fd8dcf0a7d12cce7842275409;
+2187 actual serving/host source files match. Same-image private persistence
+acceptance retained all 13 future unsent intents, 0 settled, exit 0; no orders,
+broker mutations or production-state writes. Three local model containers
+unchanged. Live receipt SHA
+881d56faaee10d0532093e408c658a7ec70c34c59032237da551a76e36a813c0 under
+/home/animallya96/scratch/main-intent-proof-20261004-b2a09688.
+Spark primary main fast-forwarded to e8e339e0 with user untracked files
+preserved. Do not redeploy for docs/test-only main-marker differences.
+
+Remaining: full costs/start comparisons, predictive calibration/turnover
+diagnosis and real carried-book support (SNDK 123 mature dates vs 252 required).
+Neither empty-account backtests nor this operational fix complete a reliable
+live replacement. Future broker fills and economic adoption remain UNVERIFIED.
+
 ## 2026-10-04 — main integration of future-intent protection; release running
 
 Goal ACTIVE. Previous status-only turn had no implementation progress; this
