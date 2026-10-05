@@ -5,9 +5,9 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
-
 from backend.cli import market_sequential_execution as primary
 from backend.cli import market_sequential_first_available as saved
+
 from carried_entry import account
 from rule_relative_entry import CONFIG, FREEZE, fit_month, technical_prefix
 

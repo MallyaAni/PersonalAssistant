@@ -7,7 +7,6 @@ proceeds become purchase funding, even on later sessions.
 """
 
 import numpy as np
-
 from backend.agents.trading.desk import policy_v5
 from backend.agents.trading.desk.simulate import _Book
 from backend.market import learned_entry_evaluation as ledger
@@ -37,6 +36,8 @@ def account(panel, grades, eligible, dataset, opens, first, phase, support, carr
     trades = np.zeros(len(panel.tickers), dtype=int)
     traces, rows = [], {}
     active = False
+    wanted, initial = book.shares.copy(), book.shares.copy()
+    intent = np.zeros(len(panel.tickers), dtype=bool)
     for day in range(first, len(panel.dates)):
         slot = day - first + 1
         plan_day = (day - first) % 20 == phase

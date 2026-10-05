@@ -22,6 +22,7 @@ def audit(v, evidence, panel, data, opens, support, first, phase, carry, forecas
     shares, flows = np.zeros(len(tickers)), np.zeros(len(tickers))
     cash, budget = 1.0, 0.0
     entries, attempted, totals = {}, set(), Counter()
+    wanted, initial = shares.copy(), shares.copy()
     for day in range(first, len(dates)):
         plan = (day - first) % 20 == phase
         new = by_date.pop(str(dates[day]), [])
