@@ -1,5 +1,50 @@
 # Next session
 
+## 2026-10-05 — one-shot actual-intent observation FAILED before requests
+
+Bounded automation verify-learned-timing-against-actual-live-intents attempted
+exactly ONE reviewed CLI invocation, then PAUSED as instructed. Started clean
+eeb7a706; no source/model/main/production edits. Observation was late: actual
+container start11:56:38NY, NOT first completed bar09:45. No coverage obtained.
+Eligible/excluded intent counts and model decisions are UNAVAILABLE, not zero.
+
+FAILED launcher configuration boundary: supplied APCA_API_BASE_URL omitted
+/v2; frozen collector requires client.base_url equal to canonical PAPER_URL
+https://paper-api.alpaca.markets/v2. The ValueError at collect line237 occurs
+before freeze_intents, all account GETs, market requests and model loading.
+Client construction only installs headers/transport; it performs no request.
+Do not retry/restart, overwrite the empty private output, pick another window,
+refetch or start another cohort. This failure does not evaluate timing quality.
+Future authorized launcher should use the reviewed default or exact canonical
+constant; no endpoint guard was relaxed and frozen source was not corrected.
+
+VERIFIED execution identity99d235afb816645155c7ed42610f9b9b916e47c9,
+2241tracked files unchanged before/after, clean frozen checkout; pinned image
+5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+Private containerdbc3a979de05562636f4b10bfca2cd20618401be2165189d87077950a73bf588
+exit1/OOMfalse, user1000:1000,2CPUs/4GB, read-only rootfs/source/models/market.
+Only private-proof mount writable. Output directory700 and wrapper evidence600;
+original failing command/log/source manifest retained outside production data.
+Wrapper forwarded only provider credentials in memory; no credentials in
+command, log or evidence. Its exited private container is removed after proof
+to avoid retaining the credential-bearing container configuration.
+
+Evidence root /home/animallya96/scratch/sequential-execution-supervision-20261002:
+actual-intent-execution-20261005.json SHA
+bc7f01529a5fb4b587408639e2cd134f5f6156c0ac8dad17594a77d92731b4dd;
+actual-intent-command-20261005.json SHA
+fed1b916078915f208b23d098475abd9a78894c2f235fc8b0373e321b500f37e;
+actual-intent-cli-20261005.log SHA
+2e5a68822abca86c41e83c17e214d310c8a2cf8a6e2658edba7f98d4570c3df7;
+actual-intent-source-manifest-20261005.json SHA
+f29560e888391716664a8c94a8ca56b6fff27e2a407f13ba2005db012bed884b;
+run-actual-intent-20261005.py SHA
+86431f8e7c77bceb26f1c4699d9bfd758317b7642f2215aff8ef038882747d4d.
+Automation update returned statusPAUSED, prompt/schedule/thread preserved.
+No orders, account writes, scoring, model fits or deployments. Other existing
+collectors/backtests are separate and remain untouched. Broad entry/exit goal
+is unfinished; one-shot failure/pause does not complete or pause that work.
+
 ## 2026-10-05 — current-month numeric heads published from original real data
 
 Goal remains unfinished; human asks for the delayed backtest. Started clean
