@@ -1,6 +1,6 @@
 """Actual timing fits, numeric inference and causal publication acceptance."""
 
-from copy import deepcopy
+from copy import copy, deepcopy
 from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
@@ -363,7 +363,11 @@ def test_forward_residual_calendar_lookback_and_missing_sessions(residual_archiv
 
 # Mutating a restored context cannot create an unauthenticated future sample.
 def test_changed_verified_context_refused(residual_archive):
-    saved = deepcopy(residual_archive[1])
+    saved = copy(residual_archive[1])
+    saved._context = tuple(
+        value.copy() if isinstance(value, np.ndarray) else value
+        for value in saved._context
+    )
     saved._context[4].flags.writeable = True
     saved._context[4][0, 0, 0] = 99
     with pytest.raises(ValueError, match="Verified original OOS"):

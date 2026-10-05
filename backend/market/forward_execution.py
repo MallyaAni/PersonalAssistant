@@ -473,13 +473,17 @@ def prepare_residuals(
     )
     samples, records = {}, []
     for stock, symbol in enumerate(symbols):
-        day, clock = np.nonzero(select[:, :, stock])
+        day, clock_indices = np.nonzero(select[:, :, stock])
         with np.errstate(all="ignore"):
             residual = (
-                outcomes[day, clock, stock] - means[day, clock, stock]
-            ) / scales[day, clock, stock]
+                outcomes[day, clock_indices, stock] - means[day, clock_indices, stock]
+            ) / scales[day, clock_indices, stock]
         finite = np.isfinite(residual)
-        day, clock, residual = day[finite], clock[finite], residual[finite]
+        day, clock_indices, residual = (
+            day[finite],
+            clock_indices[finite],
+            residual[finite],
+        )
         unique, counts = np.unique(day, return_counts=True)
         weights = (
             1.0 / counts[np.searchsorted(unique, day)]
@@ -501,23 +505,25 @@ def prepare_residuals(
                 "status": status,
                 "training_days": len(unique),
                 "training_rows": len(day),
-                "maximum_endpoint": str(ends[day, clock, stock].max())
+                "maximum_endpoint": str(ends[day, clock_indices, stock].max())
                 if len(day)
                 else None,
                 "hashes": {
                     key: _hash(value)
                     for key, value in zip(
                         ("day_indices", "clock_indices", "residuals", "weights"),
-                        (day, clock, residual, weights),
+                        (day, clock_indices, residual, weights),
                         strict=True,
                     )
                 },
             }
         )
         if status == "available":
-            for value in (day, clock, residual, weights):
+            for value in (day, clock_indices, residual, weights):
                 value.flags.writeable = False
-            samples[symbol] = probability.ResidualSample(residual, weights, day, clock)
+            samples[symbol] = probability.ResidualSample(
+                residual, weights, day, clock_indices
+            )
     available_at = _as_of(clock() if clock else datetime.now(exchange.NEW_YORK))
     if available_at < published or np.datetime64(
         available_at.date(), "M"
