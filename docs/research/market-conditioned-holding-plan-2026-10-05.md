@@ -1,5 +1,36 @@
 # Market-conditioned holding calibration
 
+## Full saved-result reader admission
+
+The existing frozen f58d87e6 root now has private saved-results.py and
+results-launch.py. The original producer/source/queue are unchanged. New
+exact-image admission restores the authenticated2953-session/96-stock bank
+while candidate fit, prediction and account replay paths raise immediately.
+Feature/context hashes match the original producer preflight; source unchanged.
+Exit0 proves admission only, not full V5 account economics. No trade rerun.
+
+- saved-results.py SHA
+  `c68bb067a199a557cb7e4bb654c0379d9478c04d0f8e3f2392d4f359f01877e3`.
+- results-launch.py SHA
+  `093ec568f71706e54c15d99f716684ea207495368631626c290374793bf880b7`.
+- independent/bank-admission.json SHA
+  `58a31aa93478aadfc967757dce80d7f0d8d21b2da9e560cff03d6d73413aeeee`.
+- independent/bank-execution.json SHA
+  `870fbbb7c70963df9ee3ea866f40068387e592e0944f2967520368668acf7237`.
+- independent/bank-command.json SHA
+  `522a3c37ebd8313912ed797c1842de5ed26b26c81075672138d9542c3a4febab`.
+- independent/bank.log SHA
+  `6c1a9cf63c6327a07e19933dc9b1584f808ccfa971384c69e338c430debee3a8`.
+
+After exact V5 successful completion, results-launch.py verify captures source,
+image, handles and receipts and runs the registered full saved-account fold.
+It additionally checks every available saved target's scenario/probability
+bytes and funding/log utility using the already reviewed84769d25 arithmetic.
+No targets are selected, forecasts generated, models fitted or trades replayed.
+Require successful execution plus both saved-results.json and its targets
+companion before claiming this complete acceptance. This preparation does not
+prove global optimizer optimality, probability accuracy, fills or advantage.
+
 ## Frozen economic producer and conditional launch
 
 Source f58d87e60c89cbd3728c6016632aba42e9f6e83f reconciles current main without

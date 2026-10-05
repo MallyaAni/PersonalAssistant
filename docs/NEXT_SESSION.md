@@ -1,5 +1,34 @@
 # Next session
 
+## 2026-10-05 — full V5 saved-result reader admitted
+
+Goal ACTIVE; previous turn PROGRESS (frozen source, actual coordinator and
+pushed f7c46023). Started clean there; origin/main still ancestor. Prepared
+private saved-results.py/results-launch.py in the existing f58d87e6 Spark root,
+without changing its archived source, active runner or coordinator.
+
+VERIFIED original2953-session/96-stock numeric bank with fitting, prediction
+and account replay disabled. Feature/context byte hashes match the actual
+producer preflight. Exact-image command exit0; bank proofSHA
+58a31aa93478aadfc967757dce80d7f0d8d21b2da9e560cff03d6d73413aeeee.
+Ruff clean. This verifies reader admission only; full V5 performance/targets
+and source-linked complete-account acceptance remain UNVERIFIED until produced.
+
+After V5 exits0/all3accounts/integrity receipt, run the existing root's
+`python3 results-launch.py verify` ONCE. It captures actual candidate/control
+handles, binds admission/source/image and invokes the saved-only full ledger
+and calibration checks. Separately reconstructs recorded scenario hashes and
+log-utility/funding at each available saved target using reviewed independent
+matrix arithmetic, without choosing a target. Success needs saved-execution
+exit0 AND saved-results.json AND saved-results.targets.json. Do not retry
+over old output or claim optimizer global optimality/forecast accuracy.
+
+At07:18NY V3 still RUNNING/OOMfalse,25bp1960of2177sessions through2025-11-14;
+coordinator PID86605 confirmed live. No V5 economic container yet. Inspect
+exact handles/launch-receipt before any launch or verification. No base-head
+fit, new account, refetch, production deploy, model service or live-data write.
+Diagram impact: NONE — existing private saved-artifact verification path.
+
 ## 2026-10-05 — V5 frozen, preflight passed, completion-dependent launch queued
 
 Goal ACTIVE. Started clean atb011d90e. Merged origin/main f77d6e57 without
