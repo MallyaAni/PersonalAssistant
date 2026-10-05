@@ -40,3 +40,27 @@ three-cost v3 screen first. Any combined economic run needs its own fixed source
 authenticated original boosting timing bank, identical costs/starts and saved
 arithmetic verification; it must not rename or modify an active v3 account.
 Reused development history is not prospective adoption evidence.
+
+## Forward timing publication
+
+The archived distribution provider cannot score an unseen session. Continue the
+same fixed boosting timing policy with a dated publication of its two existing
+heads: fifteen-minute waiting log return and its second moment. Preserve the
+original21features,64trees, estimator settings, min504/max756sessions, four
+training clocks and ten-session maturity before the monthly cutoff/August17.
+No new estimator, horizon, fitted threshold or economic account grid.
+
+Only authenticated completed historical inputs may train a monthly head. The
+first reviewed monthly session defines the cutoff; a head can be prepared from
+the previous completed session. Record the caller's input hashes and actual
+fit-request clock. Write non-executable numeric trees and record publication
+after serialization; never load estimator pickles, backdate availability or
+silently carry an expired monthly head. Insufficient training remains explicit.
+
+Acceptance requires exact float32 prediction parity with the original real fits,
+future-feature/label and overnight invariance, sufficient strict maturity,
+complete calendars, writer/readback clocks, byte tampering and numeric graph
+validation. This is inference/publication acceptance, not economic advantage.
+The current-feature observation, original residual-bank continuation and actual
+private intraday sender still need combined acceptance before live selection.
+No production caller or real broker is enabled by publishing a head.
