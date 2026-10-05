@@ -13,7 +13,7 @@ from verify_timing_side_ablation import PRIMARY_SHA, verifier
 
 
 # Reconstruct plans, every first eligible action, funding and daily wealth from traces.
-def audit(v, evidence, panel, data, opens, support, first, phase, carry):
+def audit(v, evidence, panel, data, opens, support, first, phase, carry, forecasts=None):
     tickers = panel["symbols"].tolist()
     dates, close = panel["dates"].astype("datetime64[D]"), panel["adj_close"]
     index = {name: i for i, name in enumerate(tickers)}
@@ -72,6 +72,8 @@ def audit(v, evidence, panel, data, opens, support, first, phase, carry):
                     crossed = np.isfinite(opens[day, j]) and opens[day, j] > 0 and (
                         observed[j] <= opens[day, j] * .99 if buy
                         else observed[j] >= opens[day, j] * 1.01)
+                    if buy and forecasts is not None:
+                        crossed = np.isfinite(forecasts[day, clock, j]) and forecasts[day, clock, j] <= 0
                     if crossed or (clock == 24 and (not carry or not buy)):
                         expected.add(j)
             v.require(set(actual) == expected, "First causal attempt differs")
@@ -118,7 +120,7 @@ def audit(v, evidence, panel, data, opens, support, first, phase, carry):
 
 
 # Authenticate the original inputs before auditing all forty saved accounts.
-def main():
+def main(forecasts=None, controls=None):
     v = verifier()
     primary_path = Path("/primary/evaluation.json")
     v.require(v.file_hash(primary_path) == PRIMARY_SHA, "Original report hash")
@@ -146,9 +148,11 @@ def main():
     for phase in range(20):
         navs = {}
         for name in ("control", "carry"):
-            path = Path("/output") / f"{name}-{phase}.json"
+            root = controls if name == "control" and controls is not None else Path("/output")
+            path = root / f"{name}-{phase}.json"
             evidence = v.read_json(path)
-            navs[name] = audit(v, evidence, panel, data, opens, support, first, phase, name == "carry")
+            navs[name] = audit(v, evidence, panel, data, opens, support, first, phase,
+                               name == "carry", forecasts if name == "carry" else None)
             accounts.append({"name": name, "phase": phase, "sha256": v.file_hash(path),
                              "intents": len(evidence["intent_trace"])})
         for name, start, end in (

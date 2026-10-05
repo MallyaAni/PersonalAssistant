@@ -1,0 +1,267 @@
+{
+  "accounts": [
+    {
+      "name": "control",
+      "phase": 0,
+      "sha256": "bf92a88bbc1ee3c2de21802b07095c36c6863c684605dde3e68e137fa9376c42",
+      "intents": 869
+    },
+    {
+      "name": "carry",
+      "phase": 0,
+      "sha256": "3c07c337d9ea5a1572cf29d581f6c91e68677577a8d66748040e6668f9d477af",
+      "intents": 860
+    },
+    {
+      "name": "control",
+      "phase": 1,
+      "sha256": "3b96061205a5c02a0c2e25ce0bb8b8bc2818795b4b51529543369767037ae34e",
+      "intents": 873
+    },
+    {
+      "name": "carry",
+      "phase": 1,
+      "sha256": "d72a57c6cef09b77dfe3f543bc40d36f8fd19df7e88c68777c644c43a65e4686",
+      "intents": 861
+    },
+    {
+      "name": "control",
+      "phase": 2,
+      "sha256": "3ea117d1c67570443daafb2352056c47291a8c3b4d6aa527223e846983bcfa72",
+      "intents": 881
+    },
+    {
+      "name": "carry",
+      "phase": 2,
+      "sha256": "693f32ebb472d0c506fbc0c09e1cbe9aecabdfb531bbb9987a02b45452f3ef21",
+      "intents": 871
+    },
+    {
+      "name": "control",
+      "phase": 3,
+      "sha256": "9819947946d066d9f527d1ea6b1a954be314d1103894cf45568f9cb70a49b4ff",
+      "intents": 885
+    },
+    {
+      "name": "carry",
+      "phase": 3,
+      "sha256": "70f3be2d5e12fb5846a94a04421f9d3b36e2c6e6cfa49a0836be44be140c6024",
+      "intents": 876
+    },
+    {
+      "name": "control",
+      "phase": 4,
+      "sha256": "d7920cd3ed6161a4aab8d9e21bb0dd7dfc9510b2c20a53a954b59de9b23c9bc1",
+      "intents": 882
+    },
+    {
+      "name": "carry",
+      "phase": 4,
+      "sha256": "af5479c07d24960464218db8f21c66167690bbfbec39ed4e8eb61f33dcbee22c",
+      "intents": 871
+    },
+    {
+      "name": "control",
+      "phase": 5,
+      "sha256": "690f588568efb3092aef66daa9549d65832f3962617cf6a5696a970ba1dd58e7",
+      "intents": 891
+    },
+    {
+      "name": "carry",
+      "phase": 5,
+      "sha256": "fa68ffb40511ba38c9ec024d9f393ea47fd576d049f78d4ed58647a4ae4052f3",
+      "intents": 876
+    },
+    {
+      "name": "control",
+      "phase": 6,
+      "sha256": "7e19254cbfe00134c4045e58b6854cddf7d9ad26a25e49865efa20fbf6884a96",
+      "intents": 884
+    },
+    {
+      "name": "carry",
+      "phase": 6,
+      "sha256": "403508c472a6e6cd2d7b7e73904ddd6a2c519519a41236be7bbe6d77da01b82c",
+      "intents": 864
+    },
+    {
+      "name": "control",
+      "phase": 7,
+      "sha256": "e2ba9667797968e1e1ad8f68bdd6ac5ca09444f0a6a92dea756bb2861459afe2",
+      "intents": 863
+    },
+    {
+      "name": "carry",
+      "phase": 7,
+      "sha256": "272109191b7992836cb1001d6e1637c48c39dcb5cb654064aca4992b1f4946c6",
+      "intents": 843
+    },
+    {
+      "name": "control",
+      "phase": 8,
+      "sha256": "0152aa7f17fed1ff8c49547819a3d37f79ef42b7be79ea5af20512c97b17f306",
+      "intents": 864
+    },
+    {
+      "name": "carry",
+      "phase": 8,
+      "sha256": "43bca8b7f226af3fca94d60e34c75aa5d421aa2ab41c211cbf8142100c4e7d8e",
+      "intents": 845
+    },
+    {
+      "name": "control",
+      "phase": 9,
+      "sha256": "4be00cbaebb59d4367af3b6990253c3484cd0f9036954929fdba119643a0b696",
+      "intents": 843
+    },
+    {
+      "name": "carry",
+      "phase": 9,
+      "sha256": "29d8ee9b4a737c0a5258e78053a1c662797f26bd0e45b50237efb59d008d9b2b",
+      "intents": 825
+    },
+    {
+      "name": "control",
+      "phase": 10,
+      "sha256": "b905c4efffb37968f34b92413d69633b6ae5c1640a9841ee2cfe233ca623078a",
+      "intents": 843
+    },
+    {
+      "name": "carry",
+      "phase": 10,
+      "sha256": "bd28d1da2e65b803e66b57961df5cc555cbfef99cc7a73a74b65cfa621dbf25e",
+      "intents": 834
+    },
+    {
+      "name": "control",
+      "phase": 11,
+      "sha256": "7ed036d6afa82e3eebaa55d1aae5b0e3552003a27e79c02511be3fd2d1eedf89",
+      "intents": 864
+    },
+    {
+      "name": "carry",
+      "phase": 11,
+      "sha256": "8b18f6054cc51c6dc436f653fe5bbd1cb6079634a785ca9f9c6b5e4a25a9fb41",
+      "intents": 842
+    },
+    {
+      "name": "control",
+      "phase": 12,
+      "sha256": "20ef0eff534e53ed64e85b3a451e97434aa8de628a6fa7f64f70567ef9ebb760",
+      "intents": 851
+    },
+    {
+      "name": "carry",
+      "phase": 12,
+      "sha256": "8502e2a0a55ea5f302888237820429dc1791b97d3d8dd7313625b8250c5b5ca4",
+      "intents": 836
+    },
+    {
+      "name": "control",
+      "phase": 13,
+      "sha256": "fe497d2da9a4e8af1e527a1b15e7f4eea612e771023f1eb386ef0a9b938f41d9",
+      "intents": 841
+    },
+    {
+      "name": "carry",
+      "phase": 13,
+      "sha256": "22d42120d8f21d0e628ef672a02f5dcf0376d8c2fa02ef75e7cbd7458ecd36cb",
+      "intents": 829
+    },
+    {
+      "name": "control",
+      "phase": 14,
+      "sha256": "2131414163eba757d8e68b41ed15fb34285e14f6d306e9d8ff4804ed79ae1b14",
+      "intents": 838
+    },
+    {
+      "name": "carry",
+      "phase": 14,
+      "sha256": "fa4a06c75578e22e2868e49914a3148c2db50ff70f35ddb67b9cafa2b43fb638",
+      "intents": 821
+    },
+    {
+      "name": "control",
+      "phase": 15,
+      "sha256": "084a8062f0cf89972a55b80ec9292948aca8890f8f30a1f7d45b1973ff6aa651",
+      "intents": 843
+    },
+    {
+      "name": "carry",
+      "phase": 15,
+      "sha256": "35577d2daee6c2275a29ce1982666d60cb09ab884cb11763f2c4fb421f592098",
+      "intents": 823
+    },
+    {
+      "name": "control",
+      "phase": 16,
+      "sha256": "1e73b8d9f9e28635932d722858adc9053ea8218b54c9edadf3beb0e9d15e9629",
+      "intents": 866
+    },
+    {
+      "name": "carry",
+      "phase": 16,
+      "sha256": "643baccb3b8582a1e24df6dafb09678008b7f2b37c1bc7ba970851cb20867ba1",
+      "intents": 850
+    },
+    {
+      "name": "control",
+      "phase": 17,
+      "sha256": "9472bb3612b7c805a76ba080f95d4c9e6ad64011ace1a4394f5b5d59cdbfa3f8",
+      "intents": 855
+    },
+    {
+      "name": "carry",
+      "phase": 17,
+      "sha256": "61b4955c44c242f5cc8a2a3ff121540e61f662d2840be0d14c4beacd150804a9",
+      "intents": 842
+    },
+    {
+      "name": "control",
+      "phase": 18,
+      "sha256": "fdd70e5315cd62736e730714dc1819b26b3f7a9085183f266c5119c33c52143f",
+      "intents": 860
+    },
+    {
+      "name": "carry",
+      "phase": 18,
+      "sha256": "d7ff705509bf1056fa98b45c159a74abea640bbf672cdb8269f64b734a51e726",
+      "intents": 848
+    },
+    {
+      "name": "control",
+      "phase": 19,
+      "sha256": "2238891914aba7ac68304b50914815f2c300954ed06ca05e696b7df84317acb6",
+      "intents": 849
+    },
+    {
+      "name": "carry",
+      "phase": 19,
+      "sha256": "a5076243241d6c72feb19d1c496a4376f27b8593467d28ccb51a6a3eefd4aebf",
+      "intents": 844
+    }
+  ],
+  "adoption_eligible": false,
+  "summary": {
+    "all": {
+      "median_paired_gain_pp": -13.50727464238366,
+      "winning_phases": 6,
+      "phases": 20
+    },
+    "early": {
+      "median_paired_gain_pp": -3.891108623690398,
+      "winning_phases": 7,
+      "phases": 20
+    },
+    "later": {
+      "median_paired_gain_pp": 8.316858059332333,
+      "winning_phases": 13,
+      "phases": 20
+    },
+    "reused_recent": {
+      "median_paired_gain_pp": 0.11468371396603505,
+      "winning_phases": 13,
+      "phases": 20
+    }
+  }
+}

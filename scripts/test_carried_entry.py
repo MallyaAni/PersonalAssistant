@@ -68,6 +68,27 @@ class CarriedEntryTests(unittest.TestCase):
         self.assertEqual(trace["filled_delta"], 0)
         self.assertEqual(result["counts"]["missing_execution"], 1)
 
+    # Prove a forecast can authorize an entry without any fixed percentage dip.
+    def test_forecast_controls_buy_without_dip(self):
+        panel, grades, eligible, data, opens, support = fixture()
+        forecast = np.ones((24, 25, 2))
+        forecast[2, 4, 0] = -.01
+        result = account(panel, grades, eligible, data, opens, 1, 0, support, True,
+                         buy_forecasts=forecast)
+        trace = result["intent_trace"][0]
+        self.assertEqual(trace["attempt_date"], str(panel.dates[2]))
+        self.assertEqual(trace["attempt_clock"], 4)
+        self.assertEqual(trace["observed_price"], 100)
+        self.assertEqual(result["cash"][1], 1)
+
+    # Prove missing forecasts cannot become an implicit buy at the session deadline.
+    def test_missing_forecast_defers_entry(self):
+        panel, grades, eligible, data, opens, support = fixture()
+        result = account(panel, grades, eligible, data, opens, 1, 0, support, True,
+                         buy_forecasts=np.full((24, 25, 2), np.nan))
+        self.assertEqual(result["counts"]["fills"], 0)
+        np.testing.assert_array_equal(result["cash"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
