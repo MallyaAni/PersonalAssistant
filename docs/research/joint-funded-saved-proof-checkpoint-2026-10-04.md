@@ -1,5 +1,50 @@
 # Independent funded-account proof
 
+## Second calibrated account, October 5
+
+The original 10bp-per-side account is now complete and independently verified
+from saved bytes across all2177 intervals, February1,2018–September30,2026.
+It is the older V3 calibration candidate, not the new market-conditioned V5.
+No fitting, account replay or parameter changes occurred during verification.
+
+| Cost per side | Total gain | CAGR | Maximum loss | Sharpe | Realized turnover | Fees |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| V3,10bp | 606.19% | 25.39% | 51.58% | 0.878 | 104.52 | $24,045.13 |
+
+Cash, shares, original prices/receipts, corporate actions and reported metrics
+are verified. Missing NAV count is zero. End dividend receivable is$7,353.776;
+it contributes to wealth but is not spendable or reinvested. All the original
+current-vintage/proxy/publication limitations still apply. Matching10bp rule,
+boosting, ridge, SPY and QQQ accounts are not yet available; their comparison
+cells remain explicitly missing. Do not treat a zero-cost reference as matched.
+The zero-cost screen below already fails to establish superiority over the rule.
+
+Exact prepared command-prefix2.json ran once after the original producer ID
+`cd6a73efda3092f5e9108a29aaa071ba5682663efac66ff791f753391cb82f73`
+was independently confirmed live, with two indexed accounts. Its original
+start remains2026-10-05T04:25:08.718101314Z; no restart or mounted source change.
+The saved verifier accepts2candidate and11control accounts. One candidate and
+289controls remain pending; partial prefixes do not establish adoption.
+
+Root `/home/animallya96/scratch/calibrated-funded-20261005-3a598702`:
+
+- 10bp account SHA
+  `bb4b6642b7b9e3d4ab47761f8406f763d8b53630f59c37259e0d4654c2c2c35a`.
+- proof/independent/saved-prefix2.json SHA
+  `845c3ea8fd4557cbd601cbf39be6f0fec640b7a43f9aca22ed206bf7d9e0211d`.
+- proof/independent/prefix2-execution.json SHA
+  `179cb981336ad4b39824d9744e8c980979cb96a48f815b0dc17e5405ba0dc9bd`.
+- prefix2-proof.py SHA
+  `c5b85624a166b6e1cd1a109baa45f61797e71a0cf3995e4c71dad9a23ac4e873`.
+- Current actual producer inspection SHA
+  `a9fab849a9415e71c5d97956f98b40176f9e025908665ef86ad58450557b4c10`.
+
+Prepared command/evidence hashes remain
+`524371df4cd9fda453601d736a0528cb4429a30db88493448120be165bc028ad` /
+`102437cc92c823dd7d0abe015cda834a92196d405b7f73e9312110d8a97f11a9`.
+Exact old producer3a598702 and pinned image verify this prefix. Reported
+arithmetic is evidence for this conditional simulation, not broker fills.
+
 ## First calibrated account, October 5
 
 The original immutable three-cost producer has completed its first account.

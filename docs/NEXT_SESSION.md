@@ -1,5 +1,48 @@
 # Next session
 
+## 2026-10-05 — second cost account and market account proof verified
+
+Goal ACTIVE, PROGRESS. Started clean at9f7340af on the owned research branch.
+Verified code84769d259eb802a9a10453b35aa1d7af2474e02a extends saved receipt checks
+to V5 with authenticated original bank admission, current funding/permissions
+and mandatory-next-open versus ordinary probability routing. Economic grids
+are unchanged; V5 is not registered for scoring or selectable in production.
+Original missing-interface failure reproduced on a genuine numeric synthetic
+private account; targeted extension passes98native/98image tests, no skips.
+Existing dependency and acceptance guards remain unchanged. Diagram impact NONE.
+
+Saved original7171cae2 January4/5 audit independently passes existing physical
+ledger and new receipt paths:1carried session,4fills/attempts,0missing marks,
+1dividend entitlement,2ordinary receipts. Source2402 producer/2403 consumer
+members and original inputs unchanged. Joint scenario/probability hashes,
+funding at recorded targets, expected log utility and minimum scenario wealth
+independently reproduced. No fit, prediction, replay or performance scorer.
+Global optimizer optimality, forecast verdicts, unavailable calibration reasons,
+probability accuracy and historical publication are not independently re-solved.
+This is component acceptance, not full V5 economics or adoption evidence.
+
+Spark root market-account-proof-20261005-84769d25; manifest SHA
+bdd88a57b5e563b9aee5172568edddd6d2aaf926a53c35d41c855868cc9f96fb;
+saved proof SHA94b0234d9bf1aa0276cf8898e415f527c9bf85bc320d75efab7d57e0c755d55b.
+Detailed command/source/test hashes in market-conditioned protocol document.
+
+Original V3 index now2of3. Prepared old-source prefix2 command executed ONCE
+after current original handle cd6a73ef... confirmed RUNNING/OOMfalse and index2.
+Independent proof verifies2candidates/11controls;1candidate/289controls pending.
+10bp full2177intervals: gain606.1913%,CAGR25.3913%,maxloss51.5842%,Sharpe0.877584,
+turnover104.51754,fees24045.13309,0missing NAV. Matching10bp incumbent/SPY/QQQ
+controls remain absent; never substitute zero-cost controls. Original0bp result
+still trails rule and does not justify replacement. Source3a598702 untouched.
+Proof SHA845c3ea8fd4557cbd601cbf39be6f0fec640b7a43f9aca22ed206bf7d9e0211d;
+execution SHA179cb981336ad4b39824d9744e8c980979cb96a48f815b0dc17e5405ba0dc9bd.
+
+At05:43NY25bp original account460sessions through2019-11-26. NEXT: complete
+and review remaining original fixed screen before a separately frozen V5
+economic run. No new grid/worker/refetch/tuning/deployment. A bounded next
+engineering investigation may measure duplicate certificate work in the
+future runner; never mutate mounted active source or change financial rules.
+Preserve all original handles, inputs and controls. Live e8e339e0 unchanged.
+
 ## 2026-10-05 — saved market calibration independently verified
 
 Goal ACTIVE, PROGRESS; no strategy promotion or deployment. Started at e98d2188

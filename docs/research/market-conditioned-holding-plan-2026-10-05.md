@@ -1,5 +1,56 @@
 # Market-conditioned holding calibration
 
+## Saved account acceptance
+
+Verified code84769d259eb802a9a10453b35aa1d7af2474e02a adds V5 receipt validation
+without registering an economic grid. It requires the original authenticated
+numeric bank for calibration checks and retains existing funding, grade,
+qualification, protected-holding and target checks. Ordinary intents preserve
+probabilistic timing; company exits remain next-open. Source versions and
+persisted routing must match. 98native and98pinned-image tests pass, no skips,
+including a genuine numeric synthetic private replay and unchanged older-policy
+paths. Test setup needed a new child account directory, not an existing fixture
+directory; the production new-folder guard was preserved.
+
+The original7171cae2 January4/5 saved replay passes generic physical ledger and
+new receipt validation: one carried session, four fills/attempts, no missing
+held marks, one dividend entitlement and two ordinary receipts. Independent
+matrix arithmetic reproduces both saved scenario/probability hashes and each
+recorded target's expected log utility, minimum wealth and cash/name constraints.
+It does not choose a target or rerun trades. Component comparison metadata is
+added only to a detached consumer copy; original saved bytes remain unchanged.
+Global optimizer optimality, forecast verdicts and unavailable calibration
+reasons are not independently re-solved. Passing this check does not establish
+forecast accuracy, historical publication, fill validity or economic advantage.
+
+Root `/home/animallya96/scratch/market-account-proof-20261005-84769d25`:
+
+- Manifest SHA
+  `bdd88a57b5e563b9aee5172568edddd6d2aaf926a53c35d41c855868cc9f96fb`;
+  all2403 consumer members unchanged, original2402 producer members unchanged.
+- proof/saved-account-proof.json SHA
+  `94b0234d9bf1aa0276cf8898e415f527c9bf85bc320d75efab7d57e0c755d55b`.
+- proof/tests.log SHA
+  `f3d57390a3903d53937d439238a412d36181ffa8365d1a518429e5af344a3f3a`.
+- proof/saved.log SHA
+  `d5e9700395d051a335ce189f3aa3348af3b8f12fed9c793322214f2390eb14c1`.
+- saved-proof.py SHA
+  `feb1ae9787c0bd351829f2f8e494964b94b189f13e84e02880187b2d61988a7c`.
+- launch.py SHA
+  `dfef079b9f54f1de6bc395cd77b1be9d7a10e8fcd7f6eb5d4a806913f24c6ae2`.
+- proof/saved-command.json SHA
+  `1dcf048c623bf2a7eede042f5402e881795eb67c7df6573a30c3f1a3cb91af67`.
+- proof/tests-command.json SHA
+  `439592da69f922a936910425baf55dfb0e6709311c162908f4589b148c209eb5`.
+- proof/execution.json SHA
+  `2d58c1c085d4f0c2abe2c7688266c481035873f0ad133156a37d4f7d964c5ea7`.
+- proof/input-arguments.json SHA
+  `0006acface6b706613d9094c087542a3e01e9fdae46bd3dca02f96f8879d554a`.
+
+Pinned image and isolated read-only source/data mounts remain as recorded below.
+No producer fit/prediction, account replay or performance score is permitted by
+this saved-only proof. Live policy, model services and active grids are unchanged.
+
 ## Saved calibration verification checkpoint
 
 Code aa5392f4425ca8bddeadfb0c5e84b2deec133501 adds a separate saved-only
