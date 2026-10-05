@@ -122,3 +122,24 @@ company/event priorities and original final deadline. Persist the forward receip
 alongside the actual sender acknowledgment. This contract is private and cannot
 promote the candidate. Real feature/model/quote acquisition and source basis
 authentication still require combined acceptance before production selection.
+
+## Combined current inference and sender receipt
+
+Freeze the supplied prior panel, grades, eligibility and completed raw prefixes
+before deriving the original21features. Load authenticated numeric timing heads
+and the original dated residual sample; do not accept an externally substituted
+probability mapping in the combined path. Record actual completion after numeric
+inference and reject backdated or expired observations. Bind feature/valid hashes,
+model and residual receipts, helper source bytes and the full observed clocks.
+Retain every missing stock forecast and never manufacture positive risk.
+
+Before the actual sender, verify the inferred receipt and original distribution
+arrays, then freeze it independently of subsequent caller edits. Require the
+quote's raw session opening to match the observed prefix. Store the complete
+inference receipt once under its content hash outside the hot account state;
+the acknowledgment retains the immutable reference. Never overwrite differing
+evidence. Real numeric readback,
+prior-only feature parity and private sender state changes must be exercised
+together. This is an integrity acceptance path, not forecast calibration or
+economic advantage. Authentication of actual external data publication/basis
+and the separate complete funded allocation path remain required for adoption.

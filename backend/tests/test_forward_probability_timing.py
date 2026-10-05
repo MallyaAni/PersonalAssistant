@@ -1,8 +1,11 @@
 """Actual-clock CDF timing through the real private persisted paper sender."""
 
+import json
 from copy import deepcopy
 from dataclasses import replace
 from datetime import timedelta
+from hashlib import sha256
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -11,6 +14,11 @@ from backend.agents.trading.desk import intraday_orders, paper
 from backend.market import forward_probability_timing as forward
 from backend.market import live_probability_timing as historical
 from backend.market.probabilistic_execution import Distribution
+from backend.market.replay_broker import ReplayBroker
+from backend.tests.test_forward_entry_features import current, fixture
+from backend.tests.test_forward_execution import fitted as fitted
+from backend.tests.test_forward_execution import residual_archive as residual_archive
+from backend.tests.test_forward_execution import residual_month, write
 from backend.tests.test_live_probability_timing import (
     NOW,
     SESSION,
@@ -344,3 +352,204 @@ def test_historical_contract_unchanged():
             10,
             [],
         )
+
+
+# Supply a real observed prefix with the same three-stock cohort as the model archive.
+def inference_inputs():
+    inputs, clocks = current(fixture("2026-10-05"), 1, delay=1)
+    panel, grades, eligible, records = inputs
+    indices = [0, 2, 3]
+    panel = SimpleNamespace(
+        dates=panel.dates,
+        tickers=("AAOI", "SPY", "QQQ"),
+        adj_close=panel.adj_close[:, indices],
+    )
+    records = {"AAOI": records["AAA"], "SPY": records["SPY"], "QQQ": records["QQQ"]}
+    return (panel, grades[:, indices], eligible[:, indices], records), clocks
+
+
+# Publish fitted numeric heads and dated residuals for one actual observation.
+def inferred(folder, fitted, residual_archive, *, inputs=None, available=None):
+    digest = write(folder, fitted[1])
+    inputs, clocks = inputs or inference_inputs()
+    available = available or clocks["observed_at"] + timedelta(seconds=2)
+    packet = forward.prepare_forecast(
+        *inputs,
+        **clocks,
+        model_folder=folder,
+        model_receipt_sha256=digest,
+        residual_month=residual_month(residual_archive[1]),
+        clock=lambda: available,
+    )
+    return packet, inputs, clocks
+
+
+# Authenticate numeric inference, past residuals and post-inference availability.
+def test_inferred_packet_matches_actual_numeric_head_and_past_residuals(
+    fitted, residual_archive, tmp_path
+):
+    packet, inputs, clocks = inferred(tmp_path / "models", fitted, residual_archive)
+    from backend.market import forward_execution as models
+    from backend.market.forward_entry_features import observe
+
+    frame = observe(*inputs, **clocks)
+    heads, _ = models.load_publication(
+        tmp_path / "models",
+        receipt_sha256=packet.receipt["model_receipt"],
+        observed_at=clocks["observed_at"],
+    )
+    moments = models.predict_moments(heads, frame["features"]).astype(np.float64)
+    value = packet.distributions["AAOI"]
+    assert value is not None
+    assert value.mean == moments[0, 0]
+    assert value.scale == np.sqrt(moments[1, 0] - moments[0, 0] ** 2)
+    sample = residual_month(residual_archive[1]).samples["AAOI"]
+    np.testing.assert_array_equal(value.residuals, sample.residuals)
+    np.testing.assert_array_equal(value.weights, sample.weights)
+    assert packet.distributions["SPY"] is None
+    assert packet.distributions["QQQ"] is None
+    assert not value.residuals.flags.writeable
+    assert (
+        packet.receipt["forecast_available_at"]
+        == (clocks["observed_at"] + timedelta(seconds=2)).isoformat()
+    )
+
+
+# Preserve actual inferred evidence through the real private sender acknowledgment.
+def test_real_inference_to_actual_persisted_sender(fitted, residual_archive, tmp_path):
+    packet, _, clocks = inferred(tmp_path / "models", fitted, residual_archive)
+    completed = clocks["observed_at"] - timedelta(seconds=1)
+    now = completed + timedelta(seconds=6)
+    client = ReplayBroker(10000, 0)
+    client.observe(now - timedelta(seconds=1), {"AAOI": 100}, True)
+    account = forward.capture_account(client, completed, clock=lambda: now)
+    opening = packet.receipt["raw_session_openings"]["AAOI"]
+    quotes = {
+        "quotes": {
+            "AAOI": {
+                "bid": 99.995,
+                "ask": 100.005,
+                "bid_size": 100,
+                "ask_size": 100,
+                "last": 100,
+                "open": opening,
+                "feed": "iex",
+                "basis": "raw_current_shares",
+                "bar": (completed - timedelta(minutes=15)).isoformat(),
+                "as_of": (now - timedelta(seconds=1)).isoformat(),
+                "received_at": now.isoformat(),
+                "next_open": 105,
+                "next_open_at": completed.isoformat(),
+                "next_open_published_at": (
+                    completed + timedelta(seconds=1)
+                ).isoformat(),
+            }
+        }
+    }
+    state = paper.PaperState()
+    row = intent(symbol="AAOI", qty=5)
+    row["execute_on"] = completed.date().isoformat()
+    row["timing_policy"] = historical.POLICY
+    state.pending = [row]
+    paper.save_state(tmp_path / "paper", state)
+    traces = []
+    reader = forward.build_forecast_reader(
+        packet,
+        now,
+        quotes,
+        state.pending,
+        account,
+        10,
+        traces,
+        evidence_root=tmp_path / "paper",
+    )
+    client.observe(now, {"AAOI": 100}, True)
+    assert (
+        len(
+            intraday_orders.send_due(
+                tmp_path / "paper", quotes, now, lambda: client, timing_reader=reader
+            )
+        )
+        == 1
+    )
+    sent = paper.load_state(tmp_path / "paper").pending[0]["sent"]
+    assert sent["qty"] == 5
+    reference = sent["forward_timing"]["receipt"]["inference"]
+    raw = (tmp_path / "paper" / reference["path"]).read_bytes()
+    assert json.loads(raw) == packet.receipt
+    assert sha256(raw).hexdigest() == reference["sha256"] == packet.receipt_sha256
+    assert (
+        sent["forward_timing"]["receipt_sha256"] == traces[0]["forward_receipt_sha256"]
+    )
+    assert client.ledger()["holdings"] == {}
+
+
+# Caller edits after inference cannot rewrite the observed inputs or resulting forecast.
+def test_input_mutation_after_forecast_leaves_packet_unchanged(
+    fitted, residual_archive, tmp_path
+):
+    packet, inputs, _ = inferred(tmp_path / "models", fitted, residual_archive)
+    before = deepcopy(packet.receipt)
+    inputs[0].adj_close[:] = 10000
+    inputs[1][:] = -1
+    inputs[3]["AAOI"]["close"][:] = 10000
+    assert packet.receipt == before
+    assert forward._digest(packet.receipt) == packet.receipt_sha256
+
+
+# Modified inferred values or receipts cannot be swapped into an authenticated sender.
+@pytest.mark.parametrize("defect", ["receipt", "distribution"])
+def test_changed_inferred_packet_rejected_before_account_or_submission(
+    fitted, residual_archive, tmp_path, defect
+):
+    packet, _, _ = inferred(tmp_path / "models", fitted, residual_archive)
+    if defect == "receipt":
+        packet.receipt["forecast_available_at"] = "2026-10-05T09:44:00-04:00"
+    else:
+        packet.distributions["AAOI"] = replace(packet.distributions["AAOI"], mean=-1)
+    with pytest.raises(ValueError, match="inferred forecast"):
+        forward.build_forecast_reader(
+            packet, DECISION, {}, [], {}, 10, [], evidence_root=tmp_path
+        )
+
+
+# Actual compute completion cannot be backdated or used after its next-bar expiry.
+@pytest.mark.parametrize("seconds", [-1, 900])
+def test_inference_completion_clock_rejected(
+    fitted, residual_archive, tmp_path, seconds
+):
+    inputs, clocks = inference_inputs()
+    with pytest.raises(ValueError, match="forecast completion"):
+        inferred(
+            tmp_path / "models",
+            fitted,
+            residual_archive,
+            inputs=(inputs, clocks),
+            available=clocks["observed_at"] + timedelta(seconds=seconds),
+        )
+
+
+# Reusing an identical inference writes one artifact and never replaces corrupted bytes.
+def test_inference_evidence_is_content_addressed_and_immutable(
+    fitted, residual_archive, tmp_path
+):
+    packet, _, _ = inferred(tmp_path / "models", fitted, residual_archive)
+    first = forward._store_inference(
+        tmp_path / "evidence", packet.receipt, packet.receipt_sha256
+    )
+    path = tmp_path / "evidence" / first["path"]
+    before = path.stat().st_mtime_ns
+    assert (
+        forward._store_inference(
+            tmp_path / "evidence", packet.receipt, packet.receipt_sha256
+        )
+        == first
+    )
+    assert path.stat().st_mtime_ns == before
+    assert len(list(path.parent.glob("*.json"))) == 1
+    path.write_bytes(b"corrupt")
+    with pytest.raises(ValueError, match="immutable inference"):
+        forward._store_inference(
+            tmp_path / "evidence", packet.receipt, packet.receipt_sha256
+        )
+    assert path.read_bytes() == b"corrupt"
