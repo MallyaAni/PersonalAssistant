@@ -1,5 +1,49 @@
 # Independent funded-account proof
 
+## Second fixed start and actual-input integration, October 5
+
+An unchanged saved-only verifier now authenticates two V2 accounts and seven
+controls. New February 2, 2018 start: V2 gains 337.21% at 18.63% CAGR versus
+the rule's 748.32% at 28.10%, and boosting timing's 768.93% at 28.45%. V2's
+terminal wealth, drawdown and turnover are identical to its first start because
+both remain cash through the same immature-risk period. This is not a second
+independent success. Matching second-start ridge/SPY/QQQ and all nonzero-cost
+comparisons remain pending; no substitute benchmark or cost estimate was used.
+The source/accounts were not rerun, refitted or edited. New saved-prefix2 proof
+SHA 522258ef31b7881cc918388b09ecc7bf1380437a662f810edf45f721c4610b96,
+at risk-qualified-20261004-4daa3bab/proof/independent on Spark. Pending counts at
+that snapshot: 58/60 candidate and 293/300 control accounts.
+
+The separately named private V4 sizing/timing integration also passes an
+actual-original-input journey at the previously declared intermediate audit
+date, January 4, 2021. The next completed January 5 opening bar yields four
+unchanged funded intents: AMAT 287, AMD 270, AVGO 58 and NOW 47 whole shares.
+The original restored boosting distribution submits AMAT and waits on the other
+three. Original cash stays $100,000 and holdings stay empty: no outcome prices,
+fill, gain or broker execution is claimed. Five past-only calibration fits are
+distinct from zero base-head fits. Source inputs, calendars, publication rules,
+cash/quantity identities and explicit missingness remain authenticated.
+
+This real journey exposed misleading console text still describing the 1% rule.
+Checkpoint e2811373945a9a5ac1590b70cfe2439866b624e8 corrects the description
+without changing its decisions. The regression first failed on that claim, then
+77 relevant tests pass/no skips on both native and the pinned source image.
+The original input journey passes again on that exact committed source. A
+separate saved comparison proves exact equality of pending rows, allocation
+receipt, four timing decisions, request and private ledger before/after the
+description correction. All 2397 source members remain unchanged.
+
+Final proof root joint-timing-description-20261005-e2811373 on Spark:
+source manifest SHA af434819b9de5d24bec94ebdec772f70942190876a7dcac00ccfab5a127a9179;
+real-input-preflight-v3.json SHA
+71fc22958b01abec22b26b4a84167d8096729c9fe949d3c4620ba5e9d3d1fbe3;
+saved equality proof SHA
+6f1df65cfe5b01d9fd44424f9f9e15dbb9b9936d46832f21b98e9579ad9801e0.
+Initial helper attempt used a 40-character revision where FeatureCache requires
+an authenticated 64-character source-manifest hash; failed source/log retained,
+caller corrected without weakening the original guard. No production selector,
+deployment, strategy promotion or new economic account grid was introduced.
+
 ## Causal regime attribution, October 5
 
 The seven independently verified first-start, zero-cost books were attributed

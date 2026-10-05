@@ -1,5 +1,46 @@
 # Next session
 
+## 2026-10-05 — original-input timing journey and second saved account verified
+
+Goal ACTIVE. Started clean at 863a0dc7 on codex/learned-entry-risk-20261002;
+origin/main remains f77d6e57. Verified code e2811373945a9a5ac1590b70cfe2439866b624e8
+corrects console descriptions for learned timing, preserving ordinary rule text.
+Actual January 4/5, 2021 original-input V4 journey produces four funded intents;
+the existing probabilistic sender submits AMAT and waits on AMD/AVGO/NOW.
+No fills, outcome prices, performance scoring or production account writes.
+Five past-only calibration fits, zero base-head fits. Saved before/after proof
+shows identical quantities, timing decisions, request, allocation and ledger.
+
+FAILED original log acceptance: learned orders were described as using the
+1% rule. One targeted description fix; unchanged execution semantics.
+VERIFIED native and exact pinned source image: 77 pass/no skips each; Ruff and
+diff check clean. Source root joint-timing-description-20261005-e2811373 on
+Spark, 2397 unchanged members. Manifest SHA
+af434819b9de5d24bec94ebdec772f70942190876a7dcac00ccfab5a127a9179;
+actual-input proof SHA
+71fc22958b01abec22b26b4a84167d8096729c9fe949d3c4620ba5e9d3d1fbe3;
+saved equality proof SHA
+6f1df65cfe5b01d9fd44424f9f9e15dbb9b9936d46832f21b98e9579ad9801e0.
+An initial helper supplied a revision instead of FeatureCache's required
+manifest hash; failure archived, caller corrected, guard unchanged.
+
+New saved-only prefix2 proof authenticates two V2 and seven control accounts.
+Second fixed start V2 CAGR 18.63%, rule 28.10%, boosting timing 28.45%, cost0.
+V2's same terminal wealth reflects cash through the same immature-risk period,
+not independent confirmation. Matching second-start ridge/SPY/QQQ and all
+10/25bp comparisons remain pending. Saved proof SHA
+522258ef31b7881cc918388b09ecc7bf1380437a662f810edf45f721c4610b96,
+risk-qualified-20261004-4daa3bab/proof/independent/saved-prefix2.json.
+No resimulation, refit, new cohort or producer restart.
+
+At 02:21 NY calibrated-funded-study-3a598702 is RUNNING/OOM false, immutable
+original start 04:25:08Z. First account 1820 sessions through 2025-04-28,
+zero complete; no calibrated performance result yet. NEXT: once the original
+atomic progress index admits its first account, run the already prepared
+saved-only prefix1 proof once. Preserve explicit pending cost controls.
+No new grid, threshold change or adoption from wiring tests. Live incumbent
+e8e339e0 remains unchanged. No deployment for research/docs; goal incomplete.
+
 ## 2026-10-05 — private sizing/timing connection verified; economic screen unchanged
 
 Goal ACTIVE. Starting clean branch codex/learned-entry-risk-20261002 at
