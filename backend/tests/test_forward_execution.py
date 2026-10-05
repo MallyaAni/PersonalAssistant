@@ -457,3 +457,25 @@ def test_changed_residual_receipt_refused(fitted, residual_archive, tmp_path):
             observed_at="2026-10-05T10:00:03-04:00",
             timing_supported=True,
         )
+
+
+# A genuinely fitted zero-risk head must remain unavailable, with no invented variance.
+def test_current_fitted_zero_variance_is_not_floored(
+    fitted, residual_archive, tmp_path
+):
+    data = deepcopy(fitted[0])
+    data["y"][..., 2] = 0
+    publication = publish(data)
+    folder = tmp_path / "zero-risk"
+    digest = write(folder, publication)
+    result = forward.current_distributions(
+        folder,
+        digest,
+        residual_month(residual_archive[1]),
+        symbols=residual_archive[0]["symbols"],
+        values=np.zeros((3, 21)),
+        valid=np.ones(3, dtype=bool),
+        observed_at="2026-10-05T10:00:03-04:00",
+        timing_supported=True,
+    )
+    assert all(value is None for value in result.values())
