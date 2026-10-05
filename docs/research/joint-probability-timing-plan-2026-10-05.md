@@ -64,3 +64,20 @@ validation. This is inference/publication acceptance, not economic advantage.
 The current-feature observation, original residual-bank continuation and actual
 private intraday sender still need combined acceptance before live selection.
 No production caller or real broker is enabled by publishing a head.
+
+## Forward completed-prefix observations
+
+Supply only the complete prior exchange-session panel and explicitly published
+raw regular-session prefixes. Derive the current21features with the original
+prior-only daily context and raw prefix ratios. Missing names or malformed bars
+remain unavailable; never require a current official close, outcome label,
+split conversion from a later close or a future execution open. Bind supplied
+array hashes, original helper/calendar bytes, actual source publication and
+observation times separately from the completed-bar clock.
+
+Acceptance compares every full-session clock and stock with the actual original
+historical feature builder, checks unseen bars/current prices and split units,
+and rejects missing calendar dates, incomplete/future publications and forming
+bars. Preserve early-close timing support explicitly. Source authentication and
+historical grade publication remain caller responsibilities. This private pure
+feature function creates no order, forecast probability or live selection.
