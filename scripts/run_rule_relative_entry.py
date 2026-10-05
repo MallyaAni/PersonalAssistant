@@ -55,8 +55,13 @@ def main():
     with (output / "identity.json").open("x") as handle:
         json.dump(identity, handle, indent=2)
     opens = primary.session_opens(panel, cubes)
-    forecasts = walk_forward(dataset, opens, models, eligible_only=options.eligible_only,
-                             technical=options.technical)
+    forecasts = walk_forward(
+        dataset,
+        opens,
+        models,
+        eligible_only=options.eligible_only,
+        technical=options.technical,
+    )
     first = primary.comparison_first(panel)
     for phase in range(20):
         result = account(

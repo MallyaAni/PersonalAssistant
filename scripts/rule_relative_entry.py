@@ -150,8 +150,16 @@ def walk_forward(dataset, opening, output, *, eligible_only=False, technical=Fal
     with (output / "predictions.npz").open("xb") as handle:
         np.savez_compressed(handle, predictions=predictions, dates=dates)
     with (output / "fit.json").open("x") as handle:
-        json.dump({"config": CONFIG, "clocks": CLOCKS, "receipts": receipts,
-                   "eligible_only": eligible_only, "technical": technical}, handle)
+        json.dump(
+            {
+                "config": CONFIG,
+                "clocks": CLOCKS,
+                "receipts": receipts,
+                "eligible_only": eligible_only,
+                "technical": technical,
+            },
+            handle,
+        )
     return predictions
 
 
@@ -181,20 +189,27 @@ def technical_prefix(closes):
                 result[:, clock, :, index] = current / ema[index] - 1
             for index, window in enumerate((8, 20), start=2):
                 if clock + 1 >= window:
-                    history = closes[:, clock - window + 1:clock + 1]
+                    history = closes[:, clock - window + 1 : clock + 1]
                     mean, std = history.mean(axis=1), history.std(axis=1)
                     result[:, clock, :, index] = np.divide(
-                        current - mean, std, out=np.zeros_like(mean), where=std > 0)
+                        current - mean, std, out=np.zeros_like(mean), where=std > 0
+                    )
                     result[:, clock, :, index][~np.isfinite(mean)] = np.nan
             if clock >= 6:
-                changes = np.diff(closes[:, clock - 6:clock + 1], axis=1)
+                changes = np.diff(closes[:, clock - 6 : clock + 1], axis=1)
                 gain = np.maximum(changes, 0).mean(axis=1)
                 loss = np.maximum(-changes, 0).mean(axis=1)
                 result[:, clock, :, 4] = np.divide(
-                    gain, gain + loss, out=np.full_like(gain, .5), where=gain + loss > 0)
+                    gain,
+                    gain + loss,
+                    out=np.full_like(gain, 0.5),
+                    where=gain + loss > 0,
+                )
                 result[:, clock, :, 4][~np.isfinite(gain + loss)] = np.nan
             for index, lag in enumerate((4, 8), start=5):
                 if clock >= lag:
-                    result[:, clock, :, index] = np.log(current / closes[:, clock - lag])
+                    result[:, clock, :, index] = np.log(
+                        current / closes[:, clock - lag]
+                    )
     result[~np.isfinite(result)] = np.nan
     return result
