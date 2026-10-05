@@ -29,7 +29,8 @@ from backend.market.joint_funded_policy import (
     MaturityFundedPolicy,
 )
 from backend.market.live_policy_features import FeatureCache
-from backend.market.live_policy_replay import plain, run_account
+from backend.market.live_policy_replay import _holding_option, plain, run_account
+from backend.market.live_probability_timing import build_reader
 
 
 # Admit registered variants with separate IDs and the unchanged start/cost grid.
@@ -58,8 +59,10 @@ def candidate_grid(dates, *, policy=POLICY):
     ]
 
 
-# Carry each predeclared private account and retain all requests, fills and missing NAV.
-def evaluate(panel, raw, cubes, reader, output, source_identity, *, policy=POLICY):
+# Carry fixed private accounts with the admitted timing model and retain missing NAV.
+def evaluate(
+    panel, raw, cubes, reader, output, source_identity, *, policy=POLICY, timing=None
+):
     policy_type, _ = _variant(policy)
     if not np.array_equal(panel.dates, reader.dates) or tuple(panel.tickers) != tuple(
         reader.symbols
@@ -71,6 +74,9 @@ def evaluate(panel, raw, cubes, reader, output, source_identity, *, policy=POLIC
         or not source_identity.get("source_revision")
     ):
         raise ValueError("Authenticated source identity required")
+    builder = build_reader if timing is not None else None
+    provider = getattr(timing, "provider", None)
+    _holding_option(policy_type(reader, 0), 0, builder, provider, raw)
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
     accounts = output / "accounts"
@@ -116,6 +122,8 @@ def evaluate(panel, raw, cubes, reader, output, source_identity, *, policy=POLIC
             spec["last"],
             spec["cost_bps"],
             holding_policy=policy_type(reader, spec["cost_bps"]),
+            reader_builder=builder,
+            provider=provider,
             feature_reader=cache,
             on_session=progress,
         )

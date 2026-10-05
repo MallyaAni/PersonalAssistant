@@ -2,6 +2,8 @@
 
 import hashlib
 from copy import deepcopy
+from dataclasses import replace
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -9,10 +11,17 @@ import pytest
 
 from backend.cli import verify_joint_funded as verifier
 from backend.cli.verify_joint_funded import MarketCalibrationVerifier
+from backend.market import (
+    joint_funded_accounts,
+    probabilistic_execution,
+    probabilistic_execution_saved,
+)
 from backend.market import market_conditioned_calibration as model
+from backend.market.calendar import NEW_YORK, session_close
 from backend.market.daily_arithmetic_bridge import _hash
 from backend.market.joint_funded_accounts import candidate_grid
 from backend.market.joint_funded_policy import MarketConditionedTimedFundedPolicy
+from backend.market.live_execution_inputs import prepare
 from backend.market.live_policy_replay import run_account
 from backend.market.live_probability_timing import build_reader
 from backend.tests import test_joint_probability_timing as journey
@@ -23,6 +32,129 @@ from backend.tests.test_market_conditioned_holding import example as example
 from backend.tests.test_market_conditioned_holding import reader as reader
 from backend.tests.test_verify_actual_policy_timing import direct_data
 from backend.tests.test_verify_joint_funded import save
+
+
+# Align a genuine synthetic timing bank and four-stock raw execution fixture.
+@pytest.fixture(scope="module")
+def screen_inputs(reader):
+    old, _, cubes = fixture(tuple(map(str, reader.dates)))
+    columns = [0, 0, 1, 2]
+    panel = replace(
+        old,
+        tickers=tuple(reader.symbols),
+        **{
+            name: getattr(old, name)[:, columns].copy()
+            for name in ("open", "high", "low", "close", "adjusted_close", "volume")
+        },
+    )
+    cubes["BBB"] = replace(cubes["AAA"], ticker="BBB")
+    raw = prepare(
+        panel,
+        np.tile([3, 0, 0, 3], (len(reader.dates), 1)).astype(np.int16),
+        np.tile([True, False, False, False], (len(reader.dates), 1)),
+        cubes,
+        dict.fromkeys(panel.tickers, ()),
+        basis_as_of=str(reader.dates[-1]),
+        complete_through=str(reader.dates[-1]),
+        provenance={"origin": "synthetic_screen_driver"},
+    )
+    means = np.full((len(reader.dates), 23, 4), -0.02)
+    means[:, 0] = 0.02
+    args = {
+        "dates": reader.dates,
+        "symbols": tuple(reader.symbols),
+        "means": means,
+        "second_moments": means**2 + 0.01,
+        "labels": means.copy(),
+        "valid": np.ones_like(means, dtype=bool),
+        "outcome_end_dates": reader.dates,
+        "data_as_of": datetime.combine(
+            reader.dates[-1].astype(object),
+            session_close(reader.dates[-1].astype(object)),
+            NEW_YORK,
+        ),
+        "horizon": probabilistic_execution.HORIZON,
+    }
+    calibrated = probabilistic_execution.calibrate(**args)
+    timing = probabilistic_execution_saved.load_saved(
+        **args,
+        manifest=calibrated.manifest,
+        saved_probability=calibrated.probability_positive,
+        saved_quantiles=calibrated.quantiles,
+    )
+    return panel, raw, cubes, timing
+
+
+# The fixed screen rejects missing timing before creating any account artifacts.
+def test_market_screen_requires_original_timing_before_effects(
+    reader, screen_inputs, tmp_path
+):
+    panel, raw, cubes, _ = screen_inputs
+    output = tmp_path / "screen"
+    with pytest.raises(ValueError, match="aligned saved distributions"):
+        joint_funded_accounts.evaluate(
+            panel,
+            raw,
+            cubes,
+            reader,
+            output,
+            {"manifest_sha256": "a" * 64, "source_revision": "b" * 40},
+            policy=verifier.MARKET_TIMED_POLICY,
+        )
+    assert not output.exists()
+
+
+# Run the real screen driver through persisted learned intents, fills and saved scores.
+def test_market_screen_carries_original_timing_to_real_account(
+    reader, screen_inputs, tmp_path, monkeypatch
+):
+    panel, raw, cubes, timing = screen_inputs
+    first, last = len(reader.dates) - 2, len(reader.dates) - 1
+    spec = {
+        "id": "market-10-0",
+        "arm": verifier.MARKET_TIMED_POLICY,
+        "cost_bps": 10,
+        "start": 0,
+        "first": first,
+        "last": last,
+        "first_session": str(reader.dates[first]),
+    }
+
+    # Limit this synthetic component period without changing the registered grid.
+    def component_grid(dates, *, policy):
+        assert np.array_equal(dates, reader.dates)
+        assert policy == verifier.MARKET_TIMED_POLICY
+        return [spec]
+
+    # Isolate event dependencies while keeping the actual planner and sender active.
+    def cached_features(key):
+        return journey.features
+
+    monkeypatch.setattr(joint_funded_accounts, "candidate_grid", component_grid)
+    monkeypatch.setattr(joint_funded_accounts, "FeatureCache", cached_features)
+    output = tmp_path / "screen"
+    result = joint_funded_accounts.evaluate(
+        panel,
+        raw,
+        cubes,
+        reader,
+        output,
+        {"manifest_sha256": "a" * 64, "source_revision": "b" * 40},
+        policy=verifier.MARKET_TIMED_POLICY,
+        timing=timing,
+    )
+    assert result["declared"] == len(result["accounts"]) == 1
+    account = verifier.ledger.read_account(output, result["accounts"][0])
+    assert account["policy"] == verifier.MARKET_TIMED_POLICY
+    assert account["forecast_decisions"]
+    assert account["broker"]["holdings"].get("AAA", 0) > 0
+    assert account["broker"]["cash"] < account["initial_cash"]
+    assert any(row["filled_qty"] > 0 for row in account["fills"])
+    assert all(
+        row["timing_policy"] == "live-probability-timing/1-research"
+        for row in account["intents"]
+        if row["execution_timing"] == "dip_or_close"
+    )
 
 
 # Build a real numeric fitted receipt with an explicit synthetic historical bank.
