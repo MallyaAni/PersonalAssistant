@@ -1,5 +1,37 @@
 # Next session
 
+## 2026-10-05 — forward timing publication verified; economic screen continuing
+
+Goal ACTIVE. Objective: continue stock-specific entry/exit and funded sizing
+toward an evidence-supported live replacement. Starting tree902c4e3b clean;
+no production/main edits. VERIFIED checkpoint9c319ac10f30a36416149fff559a7338a6959efd:
+42 exact-image tests, no skips, Ruff clean. Tests exercise actual original
+boosting mean/risk fits, numeric publication/readback and exact float32
+prediction parity, future-label/feature invariance, maturity, missing history,
+calendar/clock hashes, schema isolation and tampered/stale model rejection.
+No pickle deserialization, new estimator or fitted threshold.
+
+Proof root /home/animallya96/scratch/forward-execution-publisher-20261005-9c319ac1.
+Pinned image5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d.
+Original2405 source files unchanged. Tests logSHA
+a71212295f0f86b0de34765dda32b35659e9110e6b581401e212b3bf5f23f27d;
+commandSHAf34887fefa034f112f7f408d5b635a734acb91fb4dd06b4fdb6d4e6c7a23c7aa;
+manifestSHAdc699e928616336750063b5e36efb5c659cac5def70a5b5ba6055221b48afbd8.
+Prior40-case d6428eab proof retained; final source adds clock/calendar pins and
+detached target metadata. Final tests score no economics. Diagram impact NONE:
+existing private research publication, no production component/selector.
+
+At09:23NY exact corrected756c0076 producer659a960b RUNNING/OOMfalse,
+780 snapshots through2021-03-08, first market-0-0 account; zero complete
+economic accounts. Ignore pytest fixture active-account files when reporting
+producer progress. Completion watcher252268 remains the sole saved verifier;
+do not restart, refetch, rescore, tune or import its active source.
+
+Full V5 advantage/live replacement UNVERIFIED. NEXT: complete current-prefix
+feature observation plus original out-of-sample residual continuation and
+private sender acceptance. Publishing numerical heads alone is not a usable
+live policy. Keep live unchanged until comparison and deployment acceptance.
+
 ## 2026-10-05 — exact-screen completion verification supervised
 
 Goal ACTIVE; previous turn PROGRESS. Started clean at013dc6f8, pushed on the
