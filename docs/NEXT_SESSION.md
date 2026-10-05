@@ -1,5 +1,47 @@
 # Next session
 
+## 2026-10-04 — cash/turnover causes separated; saved mean skill checked
+
+Goal ACTIVE. PROGRESS from 30a8a65d: authenticated first-book behavior and
+saved forecast-mean diagnostics now change the next model investigation.
+No producer/source changes, fits, account replay, tuning or live promotion.
+V2 has no stocks on 708/2177 sessions versus the rule's 5. Of 1972 ordinary
+decisions, 251 refuse entry risk, 6 refuse optimization, 1715 are available;
+396 available decisions explicitly target zero stock exposure. Event-priority
+206 nights are distinct. Ordinary allocation accounts for $94.86m realized
+notional, not principally FOMC/company exits. Do not select a later start
+to hide warmup or loosen support from this result. Diagnosis artifact SHA
+c91c67244f0dc950a05e8619e5302de0dc5ce664e11e4dceca2f02e4c8a9f524 at
+/home/animallya96/scratch/risk-qualified-20261004-4daa3bab/proof/diagnostics-first-book.json.
+
+Expanded price-support mean forecast diagnostic: 171984 mature stock rows,
+2175 equally weighted represented dates, 186 missing outcomes; MSE 2.16%
+worse than zero forecast and direction accuracy 50.31% versus always-positive
+52.19%. This is not grade-eligible portfolio alpha or calibrated probability.
+Both original NPZ hashes/grids/support/endpoints checked; analysis SHA
+f21327c4ce5cff9715566f826030027790b378713677771f19f6676f7a468b45,
+archived with report in the same root/proof/mean-skill. Detailed scope/results
+in the existing joint-funded-saved-proof-checkpoint report. First exploratory
+schema probes failed before output: nested receipts, event-priority metadata
+and zero-quantity expiry rows were inspected and handled explicitly; no
+acceptance assertion or producer was changed.
+
+NEXT bounded implementation: investigate a monthly, strictly past-only
+conditional mean calibration layer, with its specification and causal/future-
+prefix acceptance fixed before new economic outcomes. Address evidence of
+forecast miscalibration rather than raising exposure, reducing support or
+choosing sign/cutoff from results. Keep incumbent active and all three existing
+studies/final watcher immutable; inspect compact completion first and reuse
+saved independent proof without repeating old accounts.
+
+Mac write-space failure resolved narrowly: original owned temporary bundle
+/tmp/codex-first-available-248bf5ad.bundle copied byte-exact to Spark scratch
+codex-first-available-248bf5ad.bundle-mac-preserved, SHA
+08469eacdb172e6eef572abcbe369b6b31f979dc393df50df0d1736505201641, then only
+that local copy removed (94MiB recovered). No user files, models, environments
+or result artifacts removed. Disk remains tight; stream large outputs to Spark.
+Main f77d6e57 contains latest docs; actual live source remains e8e339e0.
+
 ## 2026-10-04 — first revised funded book verified; operational main fix LIVE
 
 Goal ACTIVE. PROGRESS: independent saved-only v2 verification completed once,

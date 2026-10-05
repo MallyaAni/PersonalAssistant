@@ -63,6 +63,55 @@ its higher gain cannot select a regime, threshold or replacement policy.
 Later optimizer and persistence fixes are absent from these producer sources
 and cannot be credited to their saved economic results.
 
+Saved first-book behavior diagnosis (no refit or replay): v2 has no stock
+holdings on 708/2177 sessions versus 5/2177 for the rule. Its first available
+ordinary allocation is 2019-03-01; its first held session is 2019-03-04.
+Of 1972 unique ordinary decisions, 251 refuse entry risk, 6 refuse numerical
+optimization and 1715 are available. Among those available decisions, 396
+explicitly target zero stock exposure. The 206 separate event-priority nights
+are not counted as fresh model decisions. Thus missing history does not
+explain all its cash exposure; deliberate model choices also contribute.
+
+V2 has fills on 1501 dates versus 932 for the rule. Its realized notional is
+$94.86 million from ordinary joint allocation changes, $3.08 million from
+company exits and $3.55 million from FOMC reduction/restoration. Counts retain
+the original 2018 start and all missed opportunities. Zero-quantity expiries
+contribute no realized notional; partial fills ending expired still count.
+These descriptions do not isolate a causal source of lost return or justify
+loosening risk support. Do not trim the evaluation to the first tradable date.
+
+Artifact /home/animallya96/scratch/risk-qualified-20261004-4daa3bab/proof/diagnostics-first-book.json
+SHA c91c67244f0dc950a05e8619e5302de0dc5ce664e11e4dceca2f02e4c8a9f524.
+Each input compressed account matches its previously verified declared hash.
+The diagnostic explicitly separates event-priority metadata from allocation
+receipts; it neither scores another account nor changes any producer input.
+
+Saved mean-forecast diagnostic on expanded price support, independent of
+grade/trading permission: 171,984 mature rows over 2175 represented dates;
+186 missing outcomes remain explicit. Equal total weight per represented
+date, exact next-open to following-open arithmetic target. Across the fixed
+full period, mean-square error is 2.16% worse than a zero-return forecast;
+direction accuracy is 50.31% versus 52.19% for always predicting a positive
+return (binary positive versus nonpositive, including flat returns). MSE is
+also worse in both registered eras (3.44% and 1.75%). Among
+negative forecasts, the realized date-weighted mean return is positive 0.112%
+versus the predicted -0.212%. These broad price-support comparisons are not
+an executable grade-eligible portfolio test, confidence calibration or fresh
+holdout. They do not prove every forecast lacks value or select a replacement.
+
+Original risk NPZ SHA 0332800a54bcbacc963d4f3e67308b99efe1d98a3ba943299774382bc056c5cd;
+bridge NPZ SHA b3e6c8445f9e8f6fa3d2618b8193c8fa0031b66bac546c287290c3c3644f4f14.
+The diagnostic checks original bytes, grids, causal forecast support, benchmark
+exclusion and mature label endpoints before comparing saved means. Native
+NumPy 2.5.3; no model fits, estimator predictions or account replay. Archived
+analysis/report: risk-qualified-20261004-4daa3bab/proof/mean-skill on Spark.
+
+Next investigate past-only conditional mean calibration before giving these
+raw forecasts more capital. Freeze any new specification before its outcomes,
+keep all existing producers/source identities unchanged, and retain the original
+rule/ETF denominators. Do not lower risk support, invert predictions, optimize
+a cutoff from these observations or claim a new policy is live.
+
 These are conditional current-vintage/proxy books, not exact historical live
 reconstruction or proven broker/midpoint fills. Dividend claims contribute
 to NAV but remain unspendable and unreinvested; ETF results follow that same
