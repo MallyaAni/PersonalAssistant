@@ -4522,6 +4522,97 @@ evidence. Existing results cannot be a new holdout after method selection.
 No further experiment is automatically authorized by this completion handoff.
 Diagram impact NONE: existing internal research/account boundary, no new
 runtime agent, service or persistent production store.
+## 2026-10-04 — future-intent correction LIVE; first funded results available
+
+VERIFIED deployed source e8e339e0f9bdf247ce4d16bedc3f6c744af0b638 through
+scripts/deploy.sh. Unit gate: 8664 passed, 93 skipped, 6 xfailed; real routing
+gate: 100 passed. Post-deploy receipt: 2026-10-05T03:04:10Z e8e339e0 ok (cheap).
+The original failed gate and its fixed-clock test repair remain recorded below.
+No assertion or gate was weakened. No strategy or UI change in this release.
+
+Actual backend image 8b58ab3ab08a1ebadf1ca6e98623e9862c25218fd8dcf0a7d12cce7842275409,
+serving container 1d19169df26ba84bc32431b6b73adf387e0f4dfaacfef9777b1039772a2629a9.
+All 2187 runtime source files match the committed source manifest; host deploy
+files also match. Same-image private acceptance, with no source override:
+13/13 future unsent intents retained, 0 settled, state reloaded, exit 0.
+No orders or broker/production-state mutations. Three checked local model
+containers have unchanged IDs/images/start times. Future broker fills remain
+UNVERIFIED; this proof does not establish model profitability or chart behavior.
+
+Root /home/animallya96/scratch/main-intent-proof-20261004-b2a09688;
+live-execution-e8e339e0.json SHA
+881d56faaee10d0532093e408c658a7ec70c34c59032237da551a76e36a813c0.
+Release log /home/animallya96/scratch/main-intent-release-clock-20261004.log.
+Spark primary ~/anios fast-forwarded to e8e339e0; user untracked
+.github/workflows/spark1.yml and scratch/ preserved. Do not redeploy merely
+because this documentation checkpoint puts main ahead of the live marker.
+
+Research remains isolated on codex/learned-entry-risk-20261002. First fixed
+2018-02-01..2026-09-30 / 0bp books independently verified from saved bytes:
+rule CAGR 28.34%, boosting timing 28.76%, joint sizing v2 18.62%, SPY 13.14%,
+QQQ 19.04%. These are conditional current-vintage/proxy accounts, not exact
+historical live reconstruction or proven broker fills. V2 trails rule/QQQ;
+the timing control's small advantage does not yet justify adoption. Nonzero
+costs/other starts remain pending; actual held-book SNDK coverage remains
+insufficient. Existing producers/watchers remain immutable: do not restart,
+refit, tune from outcomes or merge the research branch. Detailed results and
+proof hashes are on the research branch in
+docs/research/joint-funded-saved-proof-checkpoint-2026-10-04.md.
+Full entry/exit replacement objective remains ACTIVE, not complete.
+
+## 2026-10-04 — scheduled paper intents preserved; guarded release pending
+
+Release408d355e FAILED before touching deployment: 8663 passed,93 skipped,
+6 xfailed and1 failed in582.23s. First failing boundary is
+test_discovery_digest_quality::test_a_date_with_no_time_is_never_given_one:
+its October3 event is now correctly rejected as past by render_message, but
+the formatting test omitted its already-declared fixed _NOW. Added now=_NOW
+with all existing assertions unchanged.21 digest-quality tests pass in the
+pinned image; owned test Ruff clean. No discovery production changes.
+One targeted hypothesis; an earlier command named a nonexistent sibling
+test module and failed collection before exercising anything.
+
+The original guarded deploy is terminal; live remains621e28f0. Preserve its
+failure log /home/animallya96/scratch/main-intent-release-20261004.log. Retry
+only the corrected committed tree through scripts/deploy.sh with every gate;
+do not treat this date-dependent fixture as a reason to bypass a gate.
+Runtime manifest prepared for408d355e is superseded by this test/docs change;
+produce a separately named exact manifest for the successful release.
+
+Verified code b2a09688e85f97a0059dad830170ba7a53404604, based on
+origin/main204689db. Only paper settlement, nightly reconciliation and their
+existing test module changed. No learned-policy imports, strategy selection,
+model-service changes, production state writes or broker mutations.
+Diagram impact: NONE — existing reconciliation and persistence boundary.
+
+VERIFIED: 164 relevant tests passed in the pinned source-mounted image
+5c6c5605. Normal/early closes, mixed confirmed fills, pending persistence and
+rebalance completion covered. Main already has four Ruff findings in
+market_daily.py (C901, two E501, I001); original and changed trees have exactly
+the same findings. Do not describe this as a clean repository lint run.
+
+FAILED original boundary reproduced on exact204689db: original saved paper
+GET receipts cause all13 future unsent intents to settle missing before their
+October5 execution window. The failure wrote only a private copied store.
+VERIFIED corrected b2a09688: 13 retained/0 settled and private state reloaded;
+captured source state and broker receipts unchanged. Nightly now supplies an
+aware clock; unsent intraday rows expire at actual exchange close, ordinary
+opening rows at opening. Known broker outcomes still settle immediately.
+Partial settlement cannot discard unexamined pending legs or conclude them.
+
+Exact2188-file original/fixed source manifests, original red and corrected
+readback are in /home/animallya96/scratch/main-intent-proof-20261004-b2a09688.
+execution.json SHA f5af2c29c9d743207bbe49edef22576c7d8ae9f0ab6e00c3f3a1c41b49995937
+pins process IDs/image, commands, sources and result. First helper attempt
+imported a research-only module absent on main; it failed before acceptance.
+Corrected helper exercises main reconciliation/persistence directly.
+
+UNVERIFIED: deployment and actual future broker fills. Ship only through
+scripts/deploy.sh to ~/deploy/anios, preserving621e28f0 paper close-window fix.
+Do not merge the large research branch or promote a learned strategy. Fixed
+candidate/control backtests and existing saved-result watchers remain active
+and immutable; revised economic advantage and SPY/QQQ comparison are pending.
+
 ## 2026-10-02 — LIVE 20:12 ET: the paper close window sends a market order at 3:45 PM, not market-on-close
 
 This fixes the open leak below ("market-on-close orders expire on the paper

@@ -241,6 +241,7 @@ def _dated(title: str, starts_at: datetime) -> RankedCandidate:
     return RankedCandidate(ScoredCandidate(event, None), 0.9, "concerts")
 
 
+# Render a future bare date without inventing a clock, independent of wall time.
 def test_a_date_with_no_time_is_never_given_one():
     # Sources overwhelmingly publish a bare date, which parses to midnight UTC.
     # Converting that into the reader's zone moved it to the previous evening
@@ -249,6 +250,7 @@ def test_a_date_with_no_time_is_never_given_one():
     message = render_message(
         (_dated("COLLECTIVE concert", datetime(2026, 10, 3, tzinfo=UTC)),),
         timezone="America/New_York",
+        now=_NOW,
     )
 
     assert message is not None
