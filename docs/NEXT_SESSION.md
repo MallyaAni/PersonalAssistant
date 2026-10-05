@@ -1,5 +1,37 @@
 # Next session
 
+## 2026-10-05 — full original-session market-policy execution verified
+
+Goal ACTIVE; previous turn PROGRESS at696bdca9. Started clean on owned research
+branch; this turn adds acceptance evidence without production changes. Exact
+7171cae2/pinned image runs the previously declared January4/5,2021 audit through
+all25regular observation clocks,76intent observations. Timing1execute/69wait/
+3unavailable: AMAT conditional fill09:45NY, AMD/AVGO/MCHP common deadline15:45NY.
+Do not call deadline fills learned entry signals. Independent cash/fees/shares
+and persisted terminal journal match55.2609058/99.8448942 and AMAT286/AMD269/
+AVGO57/MCHP181. Two subsequent overnight intents remain. No economic scorer/grid.
+
+FAILED helper boundary: requested absent broker.fees after replay. Source ledger
+inspection; one targeted helper correction verifies persisted fills and cash,
+preserving cash/per-fill fee/whole-share assertions. Raw output now saved first.
+Original failed helper/log/state retained. No source, model, production account
+or active producer changed. Same2402source members and original inputs unchanged.
+Root market-funded-source-20261005-7171cae2, accepted report SHA
+da7a1b5394330f128ed35a5becc6be965d365891c0f26634231daf043d805586;
+raw SHAe044d6fcbeba093a6d41e39698da87e14cffab16e19f629e24dddfa0345cd071;
+passed log SHA43989b37be8cd455bda08aea9bf11eee8b0012d840a4addd76fc1df622476c58.
+Protocol doc records helper/failure hashes. Prior308native/308image tests remain
+the code verification; no unchanged test/model gate or deployment repeated.
+
+At04:44NY unchanged calibrated producer has1740sessions through2024-12-30,
+1indexed account. Read-only stats confirm four original producers RUNNING at
+roughly one core each,0.8–1.1GiB; preserve their sources and handles. NEXT: once
+original index admits second account, run prepared saved-only prefix2 command
+once; retain missing matched10/25bp controls. Finish/review fixed V3 screen
+before separately frozen /5 economics and saved-only receipt verification. No
+new grid, refetch, tuning or adoption from this audit. Live e8e339e0 unchanged.
+Goal incomplete. Diagram impact: NONE — runtime evidence for existing flow.
+
 ## 2026-10-05 — authenticated market context reaches private funded timing
 
 Goal ACTIVE; previous turn PROGRESS at59942bf9. Started clean on

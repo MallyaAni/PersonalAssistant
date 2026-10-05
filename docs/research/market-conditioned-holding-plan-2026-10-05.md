@@ -144,6 +144,27 @@ original-input report SHA
 original-input helper SHA
 3dec99a4ef224ce9e8ea6ef227efc8fbe68f86b0634358879338eeb4f252f363.
 
+Full-session original January5 acceptance on the same7171cae2 tree retains all25
+regular observation clocks and76intent observations. Timing states are1execute,
+69wait,3unavailable. AMAT's conditional fill is09:45NY; AMD/AVGO/MCHP fill at
+the common15:45 deadline. Deadline fills are not additional learned signals.
+Independent sequential cash/fee/share arithmetic matches the terminal journal:
+cash55.2609058,fees99.8448942, AMAT286/AMD269/AVGO57/MCHP181. Two subsequent
+overnight intents remain separate. No performance scorer or new grid ran.
+
+First helper FAILED after replay on an absent broker.fees field. One targeted
+helper correction validates persisted fills and cash; original cash/per-fill
+fee/whole-share assertions remain. Raw results now save before verification.
+Failed helper/log/private state are preserved; production source is unchanged.
+Same Spark root: proof/market-replay-january05-v2.json SHA
+da7a1b5394330f128ed35a5becc6be965d365891c0f26634231daf043d805586;
+raw result SHAe044d6fcbeba093a6d41e39698da87e14cffab16e19f629e24dddfa0345cd071;
+passed log SHA43989b37be8cd455bda08aea9bf11eee8b0012d840a4addd76fc1df622476c58;
+helper SHA5061336b7f8f1f57409326daef34b23f320a09a99b92a4d445ce977c85927553.
+Failed log SHAdb55b134214e84ebe8f154388dec5ff8eb4d3b7ec8410919850587136d1540f8.
+All2402source members and original inputs unchanged. Conditional SIP next-bar-open
+proxies and current-vintage evidence do not prove broker fills or live advantage.
+
 Portfolio economic advantage and deployment remain UNVERIFIED. The existing
 three-cost V3 screen must finish before any new economic account run. Diagram
 impact: NONE — an optional numeric transformation within the existing isolated
