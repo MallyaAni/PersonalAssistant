@@ -1,5 +1,55 @@
 # Next session
 
+## 2026-10-05 — dated market-conditioned calibration implemented and verified
+
+Goal ACTIVE; previous turn PROGRESS at 86db9f3c (first calibrated economic
+account and causal diagnostic). Started clean on codex/learned-entry-risk-20261002.
+Protocol f0730d20 declared one fixed market-conditioned design before its own
+economic outcomes; code checkpoint 0cd20c650214d804cee19660cd0ae3e1be87a32e.
+New numerical fitter retains original stock forecasts and learns continuous
+SPY return/drawdown/volatility and breadth effects per stock/month. Dates are
+mandatory; complete reviewed calendar, monthly opening, independent D+2 purge,
+756/252 support and August 17 freeze enforced before fitting. SVD identifies
+estimable directions; out-of-span queries and numeric tails refuse. Regression
+leverage is approximate uncertainty, not calibrated confidence or alpha.
+
+VERIFIED: native 25 pass/no skips; exact pinned source image 25 pass/no skips.
+Raw matrix/leverage oracle, future/current data prefix invariance, caller-buffer
+detachment, defaults, market sensitivity, constant/collinear span, calendar and
+domain refusals. First image command failed before collection due to missing
+writable TMPDIR; only added TMPDIR=/proof, same source and assertions pass.
+Ruff/diff check clean. No production code imports this new component yet.
+
+Actual original-input fit audit on fixed 2021-01-04 and AMAT/AMD/AVGO/NOW:
+four calibration fits, zero base-head fits. Authenticated original bank dates
+retained exactly; independent raw design solves reproduce means and leverage;
+altered future features/outcomes do not change the earlier fitted receipts.
+No account planning, order, fill, performance or model-skill evaluation here.
+Source/data hashes unchanged. Root market-context-source-20261005-0cd20c65 on
+Spark; 2400 exact source members. Manifest SHA
+148b6c2c992bfb9912bb90317bfed9dd1173d9377880de9529645c5a536d0404;
+passed image log SHA
+eff1947526856f8bfddb482b89fa4241343423f342153b65eb0d1294f8609223;
+original-input proof SHA
+9030256c83d38967cb7a8c1d562e3a5bdcc096c052b0372d6c0781ba4025ffad.
+Protocol doc holds helper hashes and acceptance limits.
+
+NEXT: bind this fitter to authenticated historical and published-forward
+context, preserve original simultaneous residual dates/defaults/volatility, then
+wire a separately named funded probability-timing policy through actual private
+planning and ledger acceptance. Do not call this numerical checkpoint a live
+replacement. Original VolatilityHoldingReader validates full risk.features but
+retains only volatility, so causal context must be bound to that same validated
+artifact rather than an arbitrary caller matrix. Forward current features are
+published in CloseObservation; original historical training context also needed.
+No new economic grid before completing/reviewing the active V3 screen.
+
+At 04:02 NY immutable calibrated-funded-study-3a598702 remains RUNNING/OOMfalse,
+original start04:25:08Z unchanged: calibrated-10-0 at1280 sessions through2023-03-02.
+Prefix2 command/evidence prepared earlier; execute once after second indexed
+account. Live incumbent remains e8e339e0. No active collector/producer restart,
+source mutation, model-service change, order or deployment. Goal incomplete.
+
 ## 2026-10-05 — calibrated first account complete and independently verified
 
 Goal ACTIVE; prior goal turn PROGRESS at pushed 16395854. This turn verified
