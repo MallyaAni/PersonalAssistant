@@ -1,5 +1,52 @@
 # Next session
 
+## 2026-10-05 — carried and directional entry experiments completed; live replacement unqualified
+
+User explicitly requires continuing toward an entry/exit solution suitable for
+live use, zero execution costs, commits along the way. No arbitrary attempt cap
+applies. Goal remains unfinished; do not portray research mechanics as a live
+trading improvement. Started clean `f6b5dc51`, pulled main, preserved shared
+checkout and all unrelated producers. No production deployment this session.
+
+VERIFIED checkpoints: `13c3580d` carried-intent producer (four real-engine tests);
+`d39195bb` next-session model producer; `4abf88ad` explicit state initialization,
+eight tests and scoped Ruff; `c3a5750e` directional producer with two tests and
+scoped Ruff. All owned producers and independent verifiers exited zero/OOMfalse
+on pinned image5c6c5605. Original producer bytes remain frozen on Spark, separate
+from later cleanup. One push hit transient DNS failure; retry succeeded.
+
+Results and exact output hashes live in the matching research reports/JSON:
+- Carried 1% buys: full median -13.5073pp, 6/20 positive; later +8.3169pp.
+  Forty books, 34,206 intents audited; no-carry engine exactly matches all twenty
+  original control NAV/cash/exposure/turnover/fee curves.
+- Learned next-session waiting: full -8.6895pp, 9/20; later +12.1575pp.
+  104 monthly models, 4,251,450 saved forecasts reproduced from numeric trees;
+  twenty new books plus controls, 34,666 intents audited.
+- Original model, earlier buys only: full +3.0084pp, 10/20; recent -0.9533pp.
+- Original model, defer triggered buys only: full +0.6880pp, 10/20;
+  recent -0.0037pp. Both directions: forty books, 34,472 intents audited.
+FAILED consistent economic improvement; none qualifies for live adoption.
+Do not repeat these fits or select the favorable period after seeing outcomes.
+
+Read-only production evidence: deploy checkout HEAD e8e339e0; archived research
+contains194 decision files across only nine sessions (Sep14,15,16,17,18,23,29,
+Oct1,2), none for Oct5. Latest research status at2026-10-05T20:45:25Z says
+"Complete fresh price and technical coverage required". Live snapshot at20:45:24Z
+contains95 quotes/94 technical entries; this after-hours status alone does not
+prove an intraday defect. No history was changed or synthesized. The checkout
+SHA is not independent proof of container identity. Actual live-policy parity
+and adequate fresh prospective evaluation remain UNVERIFIED.
+
+Next evidence-backed boundary: investigate why the actual observation archive
+has missing sessions, using during-session evidence rather than inferring from
+the after-hours failure. Preserve all freshness/funding checks. Then evaluate
+timing on actual saved recommendation/order lifecycles; the twenty-session
+component accounts above are not exact production. More parameter searches on
+the repeatedly examined sample cannot supply fresh prospective proof.
+Research directories: scratch/carried-entry-20261005,
+scratch/next-session-entry-20261005, scratch/directional-entry-20261005 on Spark.
+Diagram impact NONE. All unrelated long-running studies were preserved.
+
 ## 2026-10-05 — three targeted entry revisions tested, none adopted
 
 User wants continued entry/exit improvement, fixed stock selection, zero costs.
