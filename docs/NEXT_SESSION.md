@@ -1,5 +1,51 @@
 # Next session
 
+## 2026-10-04 — risk-qualified funded variant verified privately; economic study active
+
+Goal ACTIVE; turn PROGRESS. Registered v2 at12fd7ca7 BEFORE its outcomes,
+code4daa3bab18a44010d53dd845005678b427bc2cb1 pushed on the isolated
+codex/learned-entry-risk-20261002 branch. Main204689db unchanged/ancestor.
+Diagram impact NONE: optional private policy and saved-account verification.
+
+VERIFIED: only unheld entrants can be excluded for explicit permission or past
+risk support; every retained B/A/A+ holding remains mandatory. No subsets,
+independent marginal substitution or relaxation of252 common dates. Original
+v1/default planning unchanged. All unsupported entrants refuse explicitly;
+bad/protected accounts do not probe qualification. Saved-only verification
+authenticates these partitions and retains all five control denominators.
+346pinned tests/no skips36.00s, Ruff/diff clean;17targeted native18.36s.
+
+Actual saved October2 close/head, original96 names and actual event/band inputs,
+three hypothetical private$100Kcash accounts at0/10/25bp: SNDK explicitly
+excluded, seven qualified entrants,349 simultaneous dates, certified sizing,
+four next-open submissions each. Durable repeat protection and independent
+whole-share/cash/fee arithmetic pass. No fills, refits, real orders or production
+writes. This is component availability, not profitability or adoption evidence.
+Root /home/animallya96/scratch/risk-qualified-20261004-4daa3bab;
+proof/execution.json SHA30ce9cee4c5ad608ec9e5c8a66f07c5723f33ad2f8e14f9a6e2f1f48ff30213f;
+proof/shadow-proof.json SHAb5ef3c0b9d6cdd162787f264c54eaf730de501e53f6d49dacb618f5171f2756f.
+Current close expires10-05 09:30NY; never relabel it an intraday forecast.
+
+Full original input/calendar preflight passed. New sixty-account producer
+maturity-funded-study-4daa3bab, Docker7a01b6945a2059217c38b323fda61d62e6bb33e04d5a1778b5e56147df30ca83,
+running/OOMfalse at20:21NY,0completed/620sessions through2020-07-17.
+Immutable source4daa, pinnedimage5c6c5605, netnone/read-only,2CPU/8GB.
+Same twenty starts/0-10-25bp/96 names/original models/cash/actions/calendar;
+no controls refit or repeated. Original v1/control2bb2b921/2832af72 and both
+saved-proof watchers remain untouched. Do not restart or alter mounted sources.
+Prepared independent/evidence.json SHAe63ddf79ff89aa5c255e4d4513f5e39b89e6bf0c811c2395ecb20c398ce24aae
+and command-prefix1.json SHA373ab12525bb3d9c08d3aa0f64345ffed17195636b2646adc60245d90a272503;
+NOT executed. Run once when a useful completed prefix exists; never resimulate.
+
+UNVERIFIED: economic advantage versus rule/SPY/QQQ and full live integration.
+Historical current-vintage/grade/calendar limits persist. Unsupported retained
+holdings still refuse discretionary sizing; no claim all tickers are solved.
+NEXT fix concrete candidate record mismatch: inherited action prose still says
+grade-only exits and a rebalance clock, despite learned exits/daily decisions;
+labels/sizes must reflect actual whole-share orders, including small changes.
+Also guard the default nightly path from importing optional forward research
+when no candidate is selected. Preserve default strategy and active studies.
+
 ## 2026-10-04 — current forecast and durable shadow path verified; short-history gap isolated
 
 Goal ACTIVE; turn PROGRESS. Started clean859a536b on isolated

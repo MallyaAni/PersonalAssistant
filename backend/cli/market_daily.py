@@ -784,9 +784,11 @@ def paper_trade(
 
 # Bind a current report before broker effects and keep its signal valid until next open.
 def _forward_close_window(policy, instant, report):
+    if policy is None:
+        return False
     from backend.market.forward_arithmetic import ForwardVolatilityHoldingReader
 
-    if policy is not None and isinstance(policy.reader, ForwardVolatilityHoldingReader):
+    if isinstance(policy.reader, ForwardVolatilityHoldingReader):
         policy.reader.validate_clock(instant)
         policy.reader.validate_report(report)
         return True
@@ -843,6 +845,58 @@ def _holding_metadata(policy, event_plan, state, targets):
             "redeploy": {"enabled": False, "orders": 0, "notional": 0.0},
         },
     )
+
+
+# Describe the private candidate's funded orders without legacy thresholds or exits.
+def _holding_actions(policy, rows, orders, holdings, held, prices, equity, event_plan):
+    if policy is None:
+        return rows
+    by_name = {order.symbol: order for order in orders}
+    result = []
+    for original in rows:
+        row = dict(original)
+        name = row["ticker"]
+        order = by_name.get(name)
+        current = holdings.get(name, actions.Holding(0.0)).weight
+        delta = 0.0
+        action = "hold"
+        if order is not None:
+            delta = order.qty * prices[name] / equity
+            if order.side == "buy":
+                action = "add" if held.get(name, 0) > 0 else "buy"
+            else:
+                delta = -delta
+                action = "sell" if order.qty >= held.get(name, 0) else "trim"
+        row.update(
+            policy=policy.version,
+            decision_source=(
+                "settlement_or_event_priority" if event_plan else policy.version
+            ),
+            model_target_weight=None if event_plan else row["target_weight"],
+            target_weight=max(0.0, current + delta),
+            delta_weight=delta,
+            action=action,
+            order_quantity=int(order.qty) if order is not None else 0,
+            action_status="planned" if order is not None else "no_new_order",
+            is_fill=False,
+            until_rebalance=None,
+            leaves_if=(
+                "Company exit, risk-adjusted allocation or event risk"
+                if event_plan
+                else "Company exit or risk-adjusted allocation"
+            ),
+            stops={},
+            why=order.reason if order is not None else "",
+        )
+        result.append(row)
+    result.sort(
+        key=lambda row: (
+            actions.ORDER[row["action"]],
+            -abs(row["delta_weight"]),
+            row["ticker"],
+        )
+    )
+    return result
 
 
 # Reconcile and execute one locked nightly plan with optional private research inputs.
@@ -1050,8 +1104,10 @@ def _paper_trade(
         "outcome": new_state.event_outcomes[-1] if new_state.event_outcomes else None,
     }
     entry["settled"] = _settled_rows(settled, panel)
-    entry["until_rebalance"] = max(
-        actions.REBALANCE - int(new_state.sessions_since_rebalance), 0
+    entry["until_rebalance"] = (
+        max(actions.REBALANCE - int(new_state.sessions_since_rebalance), 0)
+        if holding_policy is None
+        else None
     )
     entry["idle_cash_share"] = _idle_cash_share(
         orders, prices, account.cash, account.equity
@@ -1075,6 +1131,16 @@ def _paper_trade(
         holdings,
         int(new_state.sessions_since_rebalance),
         {o.symbol: o.reason for o in orders},
+    )
+    entry["actions"] = _holding_actions(
+        holding_policy,
+        entry["actions"],
+        orders,
+        holdings,
+        held,
+        prices,
+        account.equity,
+        event_plan,
     )
     # The band-rejection flag each action row decided on, so the record and
     # the board can show which names the desk refused to buy tonight.

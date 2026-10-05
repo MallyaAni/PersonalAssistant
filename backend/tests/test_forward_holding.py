@@ -1,5 +1,6 @@
 """Current close, original joint errors and real funded shadow policy acceptance."""
 
+import builtins
 from copy import deepcopy
 from datetime import datetime, timedelta
 from types import SimpleNamespace
@@ -409,10 +410,22 @@ def test_actual_private_forward_decision_survives_midnight(
     assert saved.allocation_state["receipt"]["scenario"]["status"] == "available"
     assert session in saved.sessions_seen
     attempts = broker.attempt_history
-    market_daily.paper_trade(shown, tmp_path, session, True, **args)
+    repeated = market_daily.paper_trade(shown, tmp_path, session, True, **args)
     assert broker.attempt_history == attempts
     assert paper.load_state(tmp_path).pending == saved.pending
     assert broker.account().cash == 100000.0
+    for row in repeated["actions"]:
+        assert row["decision_source"] == "settlement_or_event_priority"
+        assert row["action"] == "hold"
+        assert row["action_status"] == "no_new_order"
+        assert row["model_target_weight"] is None
+    assert entry["until_rebalance"] is None
+    for row in entry["actions"]:
+        assert row["until_rebalance"] is None
+        assert row["stops"] == {}
+        assert row["leaves_if"] == "Company exit or risk-adjusted allocation"
+        assert row["action_status"] in {"planned", "no_new_order"}
+        assert row["is_fill"] is False
     if learned_exit:
         receipt = saved.allocation_state["receipt"]
         assert grades[-1, 0] == 3
@@ -422,6 +435,10 @@ def test_actual_private_forward_decision_survives_midnight(
         assert any(
             row["symbol"] == "AAA" and row["side"] == "sell" for row in entry["orders"]
         )
+        action = next(row for row in entry["actions"] if row["ticker"] == "AAA")
+        assert action["action"] == "sell"
+        assert action["order_quantity"] == 100
+        assert action["delta_weight"] == -action["current_weight"]
         assert broker.positions()[0].qty == 100
         broker.observe(deadline, prices, True)
         broker.flush(deadline, prices, phase="open")
@@ -454,6 +471,74 @@ def test_actual_private_forward_expiry_has_no_side_effect(example, tmp_path):
         )
     assert not broker.attempt_history
     assert not list(tmp_path.iterdir())
+
+
+# An ordinary decision cannot depend on the optional learned forecasting imports.
+def test_default_close_window_does_not_import_research(monkeypatch):
+    original = builtins.__import__
+
+    # Reproduce an installation that does not provide the optional research stack.
+    def without_research(name, *args, **kwargs):
+        if name == "backend.market.forward_arithmetic":
+            raise ModuleNotFoundError("Optional research is unavailable")
+        return original(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", without_research)
+    assert market_daily._forward_close_window(None, None, None) is False
+
+
+# Small funded orders remain actions and unfunded targets remain holds.
+def test_candidate_action_rows_follow_actual_whole_share_orders():
+    from backend.agents.trading.desk import actions
+
+    rows = [
+        {
+            "ticker": name,
+            "action": "hold",
+            "target_weight": target,
+            "current_weight": held,
+            "delta_weight": target - held,
+            "last_close": 100,
+            "reason": "Company evidence",
+        }
+        for name, target, held in (
+            ("AAA", 0.1001, 0.1),
+            ("BBB", 0.05, 0.1),
+            ("CCC", 0.09, 0),
+        )
+    ]
+    original = deepcopy(rows)
+    holdings = {name: actions.Holding(0.1) for name in ("AAA", "BBB")}
+    orders = [
+        paper.PaperOrder("AAA", "buy", 1, "joint net-growth allocation"),
+        paper.PaperOrder("BBB", "sell", 1, "joint net-growth allocation"),
+    ]
+    result = market_daily._holding_actions(
+        SimpleNamespace(version="private-candidate"),
+        rows,
+        orders,
+        holdings,
+        {"AAA": 100, "BBB": 100},
+        {"AAA": 100, "BBB": 100},
+        100000,
+        False,
+    )
+    by_name = {row["ticker"]: row for row in result}
+    assert by_name["AAA"]["action"] == "add"
+    assert by_name["AAA"]["delta_weight"] == 0.001
+    assert by_name["AAA"]["target_weight"] == 0.101
+    assert by_name["BBB"]["action"] == "trim"
+    assert by_name["BBB"]["delta_weight"] == -0.001
+    assert by_name["CCC"]["action"] == "hold"
+    assert by_name["CCC"]["target_weight"] == 0
+    assert by_name["CCC"]["model_target_weight"] == 0.09
+    assert rows == original
+    assert (
+        market_daily._holding_actions(
+            None, rows, orders, holdings, {}, {}, 100000, False
+        )
+        is rows
+    )
 
 
 # A mismatched price report is refused before ledger effects or durable planning.
