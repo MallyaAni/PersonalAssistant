@@ -1,5 +1,27 @@
 # Next session
 
+## 2026-10-06 19:45NY — Spark access restored; one cost account complete
+
+Human restored session full access and asked to retry. SSH VERIFIED again.
+Started cleanede71a44 on owned research branch; no producer/source/live edits.
+Original659a960b still RUNNING/OOMfalse, exact image/start time preserved.
+At19:18NY active market-10-0 reached2020sessions through2026-02-12,
+completed_accounts1; market-0-0.json.gz exists, market-25-0 pending. No full
+saved verification/results yet; do not score/select from partial cost scenarios.
+The zero-cost artifact is not independently verified merely because it exists.
+
+Prior sole watcher890392 expired at its bounded22:10NY October5 deadline and
+is no longer running. Preserved original failure/log. Revalidated all original
+immutable pins; new sole read-only watcher3169361 started19:45:30NY October6,
+deadline19:45:30NY October7. Exclusive continuation-2 claim/log/proof names.
+watch-results-continuation-2.py SHA
+e4cc47f2d36eb27c09728683642f2d13e1307cbb775ebf47d24384dc781c7e14.
+Only watcher evidence filenames and wait duration24hours differ from original;
+economic protocol, input/source/producer pins and all saved result acceptance
+assertions remain unchanged. No new fits, economic replays, refetches or orders.
+Never duplicate an active watcher or restart the producer. Existing one-shot
+compatibility automation remains failed/paused; live adoption remains UNVERIFIED.
+
 ## 2026-10-05 16:10NY — backtest still advancing; expired watcher replaced
 
 Human asks status. VERIFIED original V5 producer659a960b remains RUNNING/OOMfalse
