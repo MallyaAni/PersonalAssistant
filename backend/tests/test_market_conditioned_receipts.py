@@ -308,6 +308,27 @@ def test_bank_detachment_and_original_endpoint_contract():
         MarketCalibrationVerifier(wrong, source)
 
 
+# NumPy symbol arrays retain their order and compare exactly with physical JSON names.
+def test_market_bank_numpy_symbols_match_physical_names():
+    bank, source, sample = case()
+    names = bank["symbols"]
+    bank["symbols"] = np.asarray(names)
+    checked = MarketCalibrationVerifier(bank, source)
+    verifier.ledger.same(checked.symbols, names)
+    assert all(type(name) is str for name in checked.symbols)
+    checked.check(sample)
+    with pytest.raises(ValueError, match="value differs"):
+        verifier.ledger.same(checked.symbols, names[::-1])
+
+
+# A malformed numeric symbol cannot become a valid name through string conversion.
+def test_market_bank_nonstring_symbols_refused():
+    bank, source, _ = case()
+    bank["symbols"] = (123, "SPY")
+    with pytest.raises(ValueError, match="market calibration symbols"):
+        MarketCalibrationVerifier(bank, source)
+
+
 # An unidentified changed current predictor is rejected instead of certifying precision.
 def test_current_query_outside_fitted_span_refused():
     bank, source, sample = case(constant=True)

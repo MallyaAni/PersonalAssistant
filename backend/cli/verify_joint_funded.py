@@ -81,11 +81,16 @@ def _market_same(actual, expected, name, *, operations=1):
 
 # Verify saved historical calibration algebra without fitting, predicting or trading.
 class MarketCalibrationVerifier:
-    # Detach the externally authenticated bank and check its original calendar contract.
+    # Detach the authenticated bank, normalize string names and check its calendar.
     def __init__(self, bank, source):
         keys = ("dates", "endpoints", "forecasts", "labels", "features", "support")
         self.bank = {key: np.asarray(bank[key]).copy() for key in keys}
-        self.symbols = tuple(bank["symbols"])
+        symbols = tuple(bank["symbols"])
+        ledger.require(
+            all(isinstance(name, str) and name for name in symbols),
+            "String market calibration symbols required",
+        )
+        self.symbols = tuple(str(name) for name in symbols)
         self.source = dict(source)
         dates = self.bank["dates"]
         ledger.require(dates.ndim == 1, "Original daily market dates required")
