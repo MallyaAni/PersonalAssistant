@@ -1,5 +1,42 @@
 # Next session
 
+## 2026-10-07 — candidate finished; saved-verifier symbol boundary corrected
+
+Live activation remains the priority and is NOT complete. Original candidate
+659a960bd69ed52a1d824d1f09cccfde607bf52af6df83971357bf7d72f349d7
+is terminal0/OOMfalse, through2026-09-30/2178sessions in the final25bp account.
+Completion integrity authenticates original756c0076 source/inputs and three
+accounts. No partial economics were used and no producer was restarted.
+
+FAILED first saved-only verification: watcher3169361 terminated after its
+verifier rejected NumPy string symbols against physical Python strings. Actual
+96 ordered values and2953 dates match; strict ledger.same requires identical
+scalar types. Original log remains at market-funded-screen-20261005-756c0076/
+independent/saved.log SHA19a8158405b85a94350958977e3b848e0c6b4858b5e5c18bbbc9069acc879ad8.
+Correction99e9bdef2934a713cf51d03689563480144b0daa normalizes authenticated
+string names once in MarketCalibrationVerifier and refuses nonstring names.
+The exact ordered comparison, all numeric checks and original acceptance
+assertions remain unchanged. VERIFIED:79 native tests/no skips; both newly
+reproduced failures now pass, reordered names still fail, Ruff clean. Test log
+market-verifier-symbols-20261007/corrected-tests.log SHA
+77fdd7dfeff9f04fc47f3ab7e85ede24c635d6983e1a46be1ded4d8b914b13d6.
+This CLI/test-only checkpoint is pushed; do not redeploy or rerun model gates.
+
+One separately identified corrected saved verification is RUNNING:
+market-saved-symbols-99e9bdef container
+fe6824c5192f0d5b98ed86d52d21f5a4f07ae70e964d08d0b299f6174b93c7e1,
+original5c6c image, networknone, CPU2/memory8GB, read-only source/data and only
+private proof writable. Source/application still authenticates the complete
+original756c tree; separately pinned corrected verifier SHA
+085a43ad0ede82af4c5a66a6da90e11171e489cc23c432328c8810bc0ed6cbdb.
+Original saved helper6772c66a is unchanged; wrapper records actual99e verifier
+revision. No fitting/prediction/account replay is permitted. Read proof/
+execution.json, saved-results.json and saved-results.targets.json under
+/home/animallya96/scratch/market-verifier-symbols-20261007 before any outcome
+or adoption claim. Original failed proof/watcher are preserved; never restart
+them or duplicate this correction job. Matching controls2832af72 remain live.
+Current production still92b11bb9/incumbent with both selectors absent.
+
 ## 2026-10-07 — learned buy risk boundary repaired; activation remains priority
 
 Further live preparation VERIFIED: inactive activation plan now binds deployed
