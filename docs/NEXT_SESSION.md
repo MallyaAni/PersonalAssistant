@@ -1,5 +1,61 @@
 # Next session
 
+## 2026-10-07 — live admission and personal-account refusals corrected
+
+Goal ACTIVE: complete the live buy/exit/sizing replacement, not merely compatible
+research code. Verified/pushed fb60e42ab68f8aa6ae0da1f9e7478e0adda53726 on
+codex/learned-live-release-20261006. Main f77d6e57 and live e8e339e0 unchanged.
+
+FAILED/reproduced three first boundaries before fixes: exact-type broker dispatch
+treated V6 as private replay; personal ownership of a risk-unqualified paper
+entrant inherited a zero-weight sell; unavailable joint optimization inherited
+paper weights as personal trades. Reproduced uncovered-holding capital/missing-
+grade handling with and without paper retention. Corrected only these paths.
+Paper dispatch admits the two exact installed types, keeping approval, current
+clock, source/config integrity and paper-only endpoint checks. Personal guidance
+uses its own capital, preserves unavailable-risk holdings, reserves uncovered
+holdings even when paper is fully calibrated, and refuses unsupported allocation
+actions. Company C exits still execute with unknown cash, unavailable allocation
+or event priority. Dated/typed risk exclusions are checked; no risk invented.
+
+VERIFIED final exact2361-file source and all28 release-bound hashes. Native pinned
+5c6c5605 image:776trading tests PASS/no skips,78.35s. No lowered assertions; the
+three malformed-evidence fixtures now assert the actual specific boundary error
+instead of an incorrect generic message, plus zero move/no execution/no requests.
+Tests SHA c011ea0b3a568e50102aeb338eb2c70e3f1d2d109a82ff90bc2bda34800a4fec.
+Original saved October6 book still passes10/25bp, retaining SNDK,344joint dates
+and cash/share guards; final proof SHA
+c9d23e7e0493175946477c89bed6ed9716ffc957023b6f97b24eea8ac84a853b.
+Both under scratch/learned-held-personal-risk-20261007-v6/proof. Read-only mounts,
+private output, no new heads trained, current broker reads or submitted orders.
+
+VERIFIED four Chromium cases cover V5/V6 waiting observations and confirmed fills,
+no fixed1% detail, correct policy timing and no page/console/required-request
+failures. All99frontend files match the tested source. Browser log under
+scratch/learned-held-transition-admission-20261007-v3/proof/browser-v3b.log SHA
+a2a83d6ff144c5db04e1687a091fb7d786eb42b0da462728a78d3f523072507f.
+First browser launch failed before a process because its read-only mount lacked
+a node_modules mountpoint; private mountpoint added, original failure preserved.
+No production frontend changes, browser writes or deployment claimed.
+
+VERIFIED prior bc2068b4 canonical dry run:10426unit passes/93skips/6xfails and
+100routing passes; exit0, serving/model IDs/head/marker unchanged. Execution SHA
+764f632ec3dbb5f120b7341fe0699c999ed3cb2e61da1befbc055075b824e393;
+log SHA3448de92ba5f0bbe75ba7ef4d1b82e578cdb6917400b401b54e74d3580fd9d15.
+This does not verify the admission/personal corrections made after its snapshot.
+
+NEXT active final preflight: fb60e42a, same isolated Spark release checkout,
+scratch/learned-live-transition-preflight-20261007-fb60e42a/run.py PID3891856.
+scripts/deploy.sh --no-pull --dry-run, serial, separate throwaway database
+anios_gate_live_transition_final_20261007. The preceding gate had exited before
+updating the isolated checkout and starting this one. Inspect claim/execution/
+log and PID before any action; never restart an active gate. No approval/config
+installed. Complete original carried results/controls, economic review, guarded
+main integration/deployment and actual broker/API/browser/artifact verification
+remain required. Producers659a960b/2832af72 and watcher3169361 remain running;
+final saved-results.json absent. Do not inspect partial economics, alter frozen
+sources, restart producers, create more cohorts or claim adoption from tests.
+
 ## 2026-10-07 — named live transition implemented and recorded-book acceptance passes
 
 User priority: focus exclusively on live buy/exit/sizing replacement. Goal ACTIVE;
