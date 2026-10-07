@@ -1,5 +1,58 @@
 # Next session
 
+## 2026-10-06 — private live replacement assets assembled and authenticated
+
+Goal ACTIVE/incomplete; latest human instruction is LIVE REPLACEMENT. Started
+clean372fec77 on owned codex/learned-entry-risk-20261002; fetched origin/main
+f77d6e57 remains ancestor. No production code, policy or configuration changed.
+
+VERIFIED private bundle at
+/home/animallya96/scratch/learned-live-release-20261006-372fec77-v2/bundle:
+eight original regular files,96-symbol bank, dedicated holding risk/model and
+timing model/residual folders. All original bytes and hashes unchanged;
+UID1000, folders0700/files0600. Original holding, timing, residual and risk readers
+restore successfully under exact reviewed372fec77 source and pinned5c6c5605
+image. Matching cohort origin, symbols and October fit dates checked. All26
+release-bound runtime file hashes independently match this clean local tree.
+CPU1/memory3GiB/user1000/networknone/read-only root; assets/source read-only,
+only private proof writable. Container learned-release-assets-372fec77-v3 exited0,
+OOMfalse. This verifies restoration, not new forecasts, economic advantage or
+permission to activate. No fit, prediction, account read/write or market request.
+
+No config.json, evidence approval or chosen cost exists in this bundle; both
+actual configured selectors return false before and after restoration. Original
+publication files remain unchanged and explicitly not adoption evidence. October
+heads retain their original month/availability guards; this is not an automatic
+monthly refresh mechanism or an approved production release.
+
+Proof root /home/animallya96/scratch/learned-live-release-20261006-372fec77-v2:
+assets.json SHA4c5519949bb53b705b07ef4015bc7e044e83570abc9189fd74d69e4ce3b6cfc2;
+proof/restoration.json SHAc31292098ceb509f331527af2662c755ff3a7a578aaaba6bbb47853728ad1c04;
+proof/execution.json SHAb9efda162cd9a3ca0d0165d75821d0e864d63c5cffe73376fa26e45835226598.
+Execution records exact handle/image/mounts and original saved hash checks;
+independent inspection did not rerun restoration. Original private failures kept:
+first helper mistook model semantic identity for model.npz byte hash; corrected
+to the pinned original receipt's e0c42cc2... byte hash. Second helper assumed
+holding input_identity used timing's cohort key; actual holding publication uses
+/snapshot.npz. Corrected that consumer field and also bound actual symbols;
+original asset/model/source guards unchanged. Failed helper/log remain separate.
+
+Deployment path read: scripts/deploy.sh gates a separate target worktree before
+moving production, preserves desk-job/nightly windows and requires ff-compatible
+target. No script run or gate repeated in this artifact-only step. Shared Spark
+main retains unrelated untracked .github/workflows/spark1.yml and scratch/.
+This branch includes substantial research history; review/select exact runtime
+dependencies before main integration rather than blindly merging its255commits.
+
+NEXT: inspect complete original carried comparison and saved-only verification
+when exact producer succeeds; never inspect partial scores, restart or mutate
+producer659a960b/watcher3169361. At23:32NewYork producer RUNNING/OOMfalse,
+completed saved economic outputs absent. Live markere8e339e0 remains incumbent.
+Then make a supported explicit source/evidence/cost release, integrate reviewed
+live dependencies, scripts/deploy.sh required gates, actual deployed numeric API,
+browser/account/artifact proof. No superiority claim from tests/restoration.
+Do not repeat old scoring, fit/refetch, add cohorts or agents, or redesign UI.
+
 ## 2026-10-06 — actual nightly benchmark boundary fixed for live replacement
 
 Goal ACTIVE/incomplete; latest human priority remains LIVE REPLACEMENT. Started
