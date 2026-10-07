@@ -160,10 +160,16 @@ def test_missing_stock_is_not_benchmark_completion(example, tmp_path, monkeypatc
 
 # Installed current inference must produce genuine risk quantities without a fresh fit.
 @pytest.mark.parametrize("omit_benchmark", [False, True])
+@pytest.mark.parametrize("retained", [False, True])
 def test_installed_current_heads_and_funded_nightly(
-    example, tmp_path, monkeypatch, omit_benchmark
+    example, tmp_path, monkeypatch, omit_benchmark, retained
 ):
-    shown, now = install(tmp_path, example, monkeypatch)
+    if retained:
+        from backend.tests.test_learned_holding_transition import install_transition
+
+        _, shown, now = install_transition(tmp_path, example, monkeypatch)
+    else:
+        shown, now = install(tmp_path, example, monkeypatch)
     if omit_benchmark:
         shown = without_benchmark(shown)
         shown.sides = {"AAA": "long", "BBB": "long"}
@@ -175,7 +181,9 @@ def test_installed_current_heads_and_funded_nightly(
 
     monkeypatch.setattr(runtime.forward.direct, "_fit", forbidden)
     chosen = runtime.prepare(tmp_path, shown, clock=lambda: now)
-    assert chosen.version == runtime.funded.MARKET_TIMED_POLICY
+    assert chosen.version == (
+        runtime.transition.POLICY if retained else runtime.funded.MARKET_TIMED_POLICY
+    )
     assert (
         chosen.reader.distribution(len(chosen.reader.dates) - 1, ("AAA",)).receipt[
             "status"

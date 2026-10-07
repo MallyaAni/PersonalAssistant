@@ -21,6 +21,9 @@ fund other trades. Zero calibrated capital creates no discretionary orders.
 Personal guidance reserves its own retained and uncovered holdings and uses its
 own confirmed cash. Paper's retained weights cannot become personal buy targets.
 Unconfirmed personal cash preserves holdings except authenticated company exits.
+An unavailable joint allocation preserves the personal book. Dated individual
+risk exclusions also protect stocks held only by the person: paper's zero weight
+for an unsupported unheld entrant is not a personal sell recommendation.
 
 This is an account transition, not evidence of new timing or return superiority.
 Require accounting tests, original-path equivalence when no holdings are retained,

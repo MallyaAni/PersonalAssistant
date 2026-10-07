@@ -42,8 +42,12 @@ const NVDA_PLANNED = {client_order_id: 'NVDA-1', symbol: 'NVDA', side: 'buy', ac
 const paperPlan = (orders: object[] = [NVDA_PLANNED]) => ({rule: 'dip_or_close', until_rebalance: 18, last_rebalance: '2026-08-12', reason: null, orders})
 
 // Learned timing appears consistently without converting a forecast into a broker fill.
+for (const policy of [
+  'joint-stock-risk-funded/5-market-conditioned-probability-timing-research',
+  'joint-stock-risk-funded/6-retained-holdings-probability-timing-research',
+]) {
 for (const filled of [false, true]) {
-  test(`learned paper timing preserves ${filled ? 'confirmed fill' : 'waiting observation'}`, async ({page}) => {
+  test(`learned paper timing ${policy} preserves ${filled ? 'confirmed fill' : 'waiting observation'}`, async ({page}) => {
     const errors = observeBlockingBrowserErrors(page)
     const failed: string[] = []
     page.on('requestfailed', request => { if (request.url().includes('/market/')) failed.push(request.url()) })
@@ -58,7 +62,7 @@ for (const filled of [false, true]) {
     }
     await page.route(`**/market/${USER}/desk/paper`, route => route.fulfill({json: {
       equity: 100000, cash: 10000, positions: [], orders: [],
-      plan: {...paperPlan([order]), rule, policy: 'joint-stock-risk-funded/5-market-conditioned-probability-timing-research',
+      plan: {...paperPlan([order]), rule, policy,
         rule_text: {buy: 'Ordinary orders use learned timing; company exits at the open',
           sell: 'Ordinary orders use learned timing; company exits at the open'}},
     }}))
@@ -74,6 +78,7 @@ for (const filled of [false, true]) {
     expect(failed).toEqual([])
     expect(errors).toEqual({consoleErrors: [], pageErrors: []})
   })
+}
 }
 
 // Unsupported historical returns stay hidden while the original record remains archived.

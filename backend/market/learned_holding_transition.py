@@ -166,9 +166,56 @@ def recorded(record):
     return transition
 
 
-# Rebase modeled weights onto the person's own capital, retaining only their own shares.
-def personal_weights(boundary, weights, shares, prices, equity, cash):
-    retained = set(boundary["retained_weights"])
+# Check dated risk exclusions without confusing buy permissions with missing risk.
+def _risk_exclusion(name, row, session):
+    if not isinstance(name, str) or not name or not isinstance(row, dict):
+        raise ValueError("Recorded stock risk exclusion required")
+    if row.get("reason") != "entry_risk_unavailable":
+        return False
+    risk = row.get("risk")
+    if (
+        not isinstance(risk, dict)
+        or risk.get("status") != "unavailable"
+        or risk.get("symbols") != [name]
+        or risk.get("decision_date") != session
+    ):
+        raise ValueError("Dated unavailable individual stock risk required")
+    return True
+
+
+# Authenticate missing-risk exclusions separately from a zero model allocation.
+def personal_support(record):
+    if (record.get("targets") or {}).get("policy") != POLICY:
+        return True, set()
+    block = (record.get("paper") or {}).get("joint_funded") or {}
+    if not isinstance(block, dict):
+        raise ValueError("Recorded learned allocation evidence required")
+    if block.get("status") == "event_priority":
+        return False, set()
+    receipt = block.get("receipt") or {}
+    if not isinstance(receipt, dict) or receipt.get("status") not in (
+        "available",
+        "unavailable",
+    ):
+        raise ValueError("Recorded learned allocation status required")
+    qualification = receipt.get("entry_qualification", {})
+    if not isinstance(qualification, dict):
+        raise ValueError("Recorded stock risk qualification required")
+    excluded = qualification.get("excluded_entries", {})
+    if not isinstance(excluded, dict):
+        raise ValueError("Recorded stock risk exclusions required")
+    unsupported = set()
+    for name, row in excluded.items():
+        if _risk_exclusion(name, row, record.get("session")):
+            unsupported.add(name)
+    return receipt["status"] == "available", unsupported
+
+
+# Rebase calibrated weights onto personal capital while preserving unsupported shares.
+def personal_weights(
+    boundary, weights, shares, prices, equity, cash, *, unsupported=()
+):
+    retained = set(boundary["retained_weights"]) | set(unsupported)
     protected = (set(shares) - set(weights)) | (set(shares) & retained)
     current = {name: qty * prices[name] / equity for name, qty in shares.items()}
     if cash is None or boundary["modeled_fraction"] == 0:

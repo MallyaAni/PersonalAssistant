@@ -111,6 +111,8 @@ def install_transition(root, fixture, monkeypatch, *, company_exit=None):
     if company_exit is not None:
         grades[-1, shown.panel.index(company_exit)] = 0
     shown = report(shown.panel, grades)
+    shown.sides = {"AAA": "long", "BBB": "long"}
+    shown.scores = grades.astype(float)
     config_path = root / runtime.CONFIG
     config = json.loads(config_path.read_bytes())
     release_path = config_path.with_name("release.json")
@@ -377,6 +379,7 @@ def approve_personal_transition(root, record):
     capital = transition.partition(10000, 7000, {"QQQ": 30}, {"QQQ": 100}, {"QQQ"})
     record["paper"]["joint_funded"] = {
         "receipt": {
+            "status": "available",
             "transition": capital.receipt(
                 {
                     "QQQ": {
@@ -385,7 +388,7 @@ def approve_personal_transition(root, record):
                         "decision_date": record["session"],
                     }
                 }
-            )
+            ),
         }
     }
 
@@ -463,3 +466,178 @@ def test_nightly_record_accepts_exact_transition_weights(
         shown, {"policy": chosen.version, "selected_targets": selected}
     )
     assert result == selected
+
+
+# The real nightly broker boundary accepts only the explicitly installed paper policy.
+@pytest.mark.parametrize("endpoint", ["paper", "live", "replay"])
+def test_transition_admission_uses_original_paper_endpoint_guard(
+    example, tmp_path, monkeypatch, endpoint
+):
+    from backend.cli import market_daily
+    from backend.market import alpaca_trading
+    from backend.market.replay_broker import ReplayBroker
+
+    chosen, _, now = install_transition(tmp_path, example, monkeypatch)
+    calls = []
+
+    # Supply the actual typed client clock while prohibiting every account mutation.
+    def transport(method, url, headers, body):
+        assert method == "GET"
+        assert body is None
+        assert url == alpaca_trading.PAPER_URL + "/clock"
+        calls.append(url)
+        return 200, json.dumps({"timestamp": now.isoformat()}).encode()
+
+    client = (
+        ReplayBroker(100000, 10)
+        if endpoint == "replay"
+        else alpaca_trading.AlpacaTradingClient(
+            "fixture",
+            "fixture",
+            transport=transport,
+            base_url=alpaca_trading.PAPER_URL
+            if endpoint == "paper"
+            else "https://api.alpaca.markets/v2",
+        )
+    )
+    if endpoint == "paper":
+        market_daily._holding_broker(chosen, client, now)
+        assert calls == [alpaca_trading.PAPER_URL + "/clock"]
+    else:
+        with pytest.raises(ValueError, match="paper endpoint"):
+            market_daily._holding_broker(chosen, client, now)
+        assert calls == []
+
+
+# Personal risk exclusions preserve shares even when paper has no position.
+def test_personal_owned_unqualified_stock_does_not_inherit_paper_zero_target(personal):
+    run, record, seen, root = personal
+    approve_personal_transition(root, record)
+    record["targets"]["weights"]["AAOI"] = 0
+    record["paper"]["selected_targets"] = deepcopy(record["targets"])
+    record["paper"]["joint_funded"]["receipt"].update(
+        status="available",
+        entry_qualification={
+            "excluded_entries": {
+                "AAOI": {
+                    "reason": "entry_risk_unavailable",
+                    "risk": {
+                        "status": "unavailable",
+                        "symbols": ["AAOI"],
+                        "decision_date": record["session"],
+                        "joint_dates": 123,
+                    },
+                }
+            }
+        },
+    )
+    result = run(held=[holdings.Holding("AAOI", 10, 40, "2026-10-01")], price=150)
+    row = result["rows"]["AAOI"]
+    assert row["action"] == "Hold", row
+    assert row["target_weight"] == 0.15
+    assert row["blocker"] == "Risk history unavailable"
+    assert seen == []
+
+
+# An unavailable optimizer cannot turn paper weights into personal trades.
+def test_personal_unavailable_joint_allocation_preserves_own_book(personal):
+    run, record, seen, root = personal
+    approve_personal_transition(root, record)
+    record["paper"]["joint_funded"]["receipt"]["status"] = "unavailable"
+    result = run(held=[holdings.Holding("AAOI", 10, 40, "2026-10-01")], price=150)
+    row = result["rows"]["AAOI"]
+    assert row["action"] == "Hold", row
+    assert row["target_weight"] == 0.15
+    assert row["blocker"] == "Learned allocation unavailable"
+    assert seen == []
+
+
+# An allocation refusal or event-priority record never suppresses a company C exit.
+@pytest.mark.parametrize("status", ["unavailable", "event_priority"])
+def test_personal_company_exit_survives_unavailable_allocation(personal, status):
+    run, record, seen, root = personal
+    approve_personal_transition(root, record)
+    record["grades"]["AAOI"]["grade"] = "C"
+    record["targets"]["weights"]["AAOI"] = 0
+    if status == "event_priority":
+        record["targets"]["weights"]["QQQ"] = 0
+        record["paper"]["joint_funded"] = {
+            "policy": transition.POLICY,
+            "status": status,
+        }
+    else:
+        record["paper"]["joint_funded"]["receipt"]["status"] = status
+    record["paper"]["selected_targets"] = deepcopy(record["targets"])
+    result = run(held=[holdings.Holding("AAOI", 10, 40, "2026-10-01")], price=150)
+    row = result["rows"]["AAOI"]
+    assert row["action"] == "Sell", row
+    assert row["planned_qty"] == 10
+    assert row["reason"] == "Company exit"
+    assert seen == []
+
+
+# Wrong-name, stale or malformed risk evidence cannot authorize a personal trade.
+@pytest.mark.parametrize("fault", ["symbol", "date", "shape"])
+def test_personal_risk_exclusion_requires_dated_original_shape(personal, fault):
+    run, record, seen, root = personal
+    approve_personal_transition(root, record)
+    risk = {
+        "status": "unavailable",
+        "symbols": ["AAOI"],
+        "decision_date": record["session"],
+    }
+    if fault == "symbol":
+        risk["symbols"] = ["OTHER"]
+    elif fault == "date":
+        risk["decision_date"] = "2026-10-01"
+    qualification = {
+        "excluded_entries": {"AAOI": {"reason": "entry_risk_unavailable", "risk": risk}}
+    }
+    if fault == "shape":
+        qualification["excluded_entries"] = []
+    record["paper"]["joint_funded"]["receipt"]["entry_qualification"] = qualification
+    result = run(held=[holdings.Holding("AAOI", 10, 40, "2026-10-01")], price=150)
+    assert result["rows"]["AAOI"]["action"] == "Hold"
+    assert result["rows"]["AAOI"]["blocker"] == (
+        "Recorded stock risk exclusions required"
+        if fault == "shape"
+        else "Dated unavailable individual stock risk required"
+    )
+    assert result["rows"]["AAOI"]["move_weight"] == 0
+    assert result["rows"]["AAOI"]["executable"] is False
+    assert seen == []
+
+
+# Personal capital reserves uncovered holdings even when paper needs no transition.
+@pytest.mark.parametrize("paper_retained", [False, True])
+def test_personal_transition_reserves_uncovered_capital_in_both_paper_states(
+    personal, paper_retained
+):
+    from backend.tests.test_forward_market_evidence import NOW
+
+    run, record, _, root = personal
+    approve_personal_transition(root, record)
+    if not paper_retained:
+        record["paper"]["joint_funded"]["receipt"].pop("transition")
+        record["targets"]["weights"]["QQQ"] = 0
+        record["paper"]["selected_targets"] = deepcopy(record["targets"])
+    result = run(
+        held=[holdings.Holding("OTHER", 20, 40, "2026-10-01")],
+        cash=7000,
+        extra_quotes={
+            "OTHER": {
+                "bp": 98.995,
+                "ap": 99.005,
+                "bs": 100,
+                "as": 100,
+                "t": NOW.isoformat(),
+            }
+        },
+    )
+    assert result["rows"]["AAOI"]["target_weight"] == pytest.approx(
+        0.05 if paper_retained else 0.035
+    )
+    assert result["rows"]["AAOI"]["action"] == "Buy", result
+    assert result["rows"]["OTHER"]["action"] == "Hold"
+    assert result["rows"]["OTHER"]["target_weight"] == 0.198
+    assert result["rows"]["OTHER"]["move_weight"] == 0

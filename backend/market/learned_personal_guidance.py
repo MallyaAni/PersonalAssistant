@@ -94,6 +94,7 @@ def _approve(root, record, now):
     targets = record.get("targets") or {}
     weights = targets.get("weights")
     boundary = learned_holding_transition.recorded(record)
+    learned_holding_transition.personal_support(record)
     retained = (boundary or {}).get("retained_weights", {})
     if (
         not adopted(record)
@@ -159,6 +160,34 @@ def _account(result, held, equity, cash):
     return shares, prices
 
 
+# Derive personal targets from calibrated evidence and the person's own capital.
+def _personal_targets(record, weights, shares, prices, equity, cash):
+    boundary = learned_holding_transition.recorded(record)
+    available, unsupported = learned_holding_transition.personal_support(record)
+    if not available:
+        desired = {
+            name: shares.get(name, 0) * prices.get(name, 0) / equity
+            for name in set(weights) | set(shares)
+        }
+    elif (
+        boundary is not None
+        or unsupported
+        or record["targets"]["policy"] == learned_holding_transition.POLICY
+    ):
+        desired = learned_holding_transition.personal_weights(
+            boundary or {"retained_weights": {}, "modeled_fraction": 1},
+            weights,
+            shares,
+            prices,
+            equity,
+            cash,
+            unsupported=unsupported,
+        )
+    else:
+        desired = dict(weights)
+    return desired, boundary, available, unsupported
+
+
 # Preserve uncovered holdings and cap additions by explicit cash, pending buys and risk.
 def _basket(
     result,
@@ -174,12 +203,9 @@ def _basket(
     now,
     cost,
 ):
-    desired = dict(weights)
-    boundary = learned_holding_transition.recorded(record)
-    if boundary is not None:
-        desired = learned_holding_transition.personal_weights(
-            boundary, weights, shares, prices, equity, cash
-        )
+    desired, boundary, allocation_available, unsupported = _personal_targets(
+        record, weights, shares, prices, equity, cash
+    )
     technical, _ = desk_freshness.grade_inputs(snapshot, record, now)
     expiries = desk_freshness.grade_expiries(snapshot, technical)
     paused = record.get("event_risk") or {}
@@ -192,14 +218,18 @@ def _basket(
     for name, row in result["rows"].items():
         current = shares.get(name, 0) * prices.get(name, 0) / equity
         target = desired.get(name, current)
-        if name in desired and (record["grades"][name] or {}).get("grade") == "C":
+        if name in desired and (record["grades"].get(name) or {}).get("grade") == "C":
             target = 0.0
         row.update(
             target_weight=target, current_weight=current, delta_weight=target - current
         )
-        retained = boundary is not None and name in boundary["retained_weights"]
+        retained = name in unsupported or (
+            boundary is not None and name in boundary["retained_weights"]
+        )
         blocker = (
-            "Risk history unavailable"
+            "Learned allocation unavailable"
+            if not allocation_available
+            else "Risk history unavailable"
             if retained
             else "Available cash unconfirmed"
             if boundary is not None and cash is None

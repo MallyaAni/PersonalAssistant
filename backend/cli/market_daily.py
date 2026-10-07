@@ -867,9 +867,12 @@ def _forward_close_window(policy, instant, report):
 def _holding_broker(policy, client, decision_at):
     if policy is None:
         return
-    from backend.market.learned_live_holding import InstalledHoldingPolicy
+    from backend.market.learned_live_holding import (
+        InstalledHoldingPolicy,
+        RetainedHoldingPolicy,
+    )
 
-    if type(policy) is InstalledHoldingPolicy:
+    if type(policy) in (InstalledHoldingPolicy, RetainedHoldingPolicy):
         policy.admit_broker(client, decision_at)
         return
     from backend.market.replay_broker import ReplayBroker
