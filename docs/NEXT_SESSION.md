@@ -1,5 +1,50 @@
 # Next session
 
+## 2026-10-07 — replacement code deployed; economic activation still pending
+
+Goal ACTIVE; this turn made progress by completing guarded deployment and actual
+runtime verification. Live source/artifact marker31e23d08 now includes the learned
+integration and corrected allocation display. Backend image11c6912574d1f6fa7db6279f9b8f832e926c34fcd6c02534ef70652be2d8aa08;
+gateway imagee6640ab700b9da48df2f70e698f9da337c34970d26dc5a023ff34e72aea8d785.
+The backend release d5712afa passed10440unit/93skip/6xfail and100real routing
+cases; scripts/deploy.sh then deployed it and passed post-deploy checks. The
+subsequent31e23d08 frontend/docs diff correctly took the script's frontend path,
+without repeating unchanged model gates. Both deployment runners are terminal0.
+
+VERIFIED independently: all28 release-bound backend/protocol hashes match the
+tested source; model/research identities remained unchanged (15 protected at the
+backend release;21 at the frontend release); both learned selectors remain absent.
+Current authenticated GET desk/paper paths return the October6 incumbent plan,
+graded-equal-weight/5, nine whole-share holdings and one planned order. Confirmed
+actual cash and share validity; no account/order writes. HTTPS logged-in browser
+shows the actual plan and policy help, retained market flags, no false allocation
+multiplier and no page/console errors. Nine unchanged Chromium acceptance cases
+pass against the deployed gateway bundle, including V5/V6 waiting/fill states.
+Served bundle index-BZs0Cn5e.js SHA
+4e09fbf17425b24deff90cb48fecb739104afa87fb6420bc1588a36d2998d689 matches the image
+bytes. Post-deploy31e23d08 ok. Final independent proof under
+scratch/learned-regime-release-20261007-31e23d08/independent-release-proof.json,
+SHAee2754e9d6206d851430d2cd6a264d4c54a5aa62c7f6a9877924a4e8e4c9606c.
+
+FAILED harness attempts preserved: wrong container port refused connections;
+correct-port nonsecure Docker hostname lacked crypto.randomUUID. Trace proved
+the first runtime boundary. Use normal trusted loopback8080 for the deployed
+browser harness; no crypto/security override, assertion or timeout changes.
+The backend deployment's optional Mac WAL mirror failed on a vanished temporary
+file (rsync23); local backup and Spark2 mirror succeeded. Do not claim that Mac
+WAL mirror is verified, or repeat39GB transfers as part of this model task.
+
+UNVERIFIED learned adoption/performance. Original candidate659a960b and matching
+control2832af72 remain running/OOMfalse; saved-only watcher3169361 remains live.
+Allowed progress: candidate two completed cost accounts, market-25-0 at1520
+sessions/2024-02-14 (03:48New York); control60completed accounts, rule-0-12 at760
+sessions/2021-02-24 (03:51). No partial economics inspected. Never restart, edit
+mounted sources, retag old intents, rewrite history, refit or add duplicate
+cohorts. Next: inspect terminal original integrity/economic proofs, review all
+declared paired costs and benchmark coverage, then supported exact-source model
+activation and ordinary nightly publication. Current deployed compatibility is
+not strategy adoption or a superiority claim. Do not redeploy for this handoff.
+
 ## 2026-10-07 — replacement deployment active; allocation display corrected
 
 Goal ACTIVE: learned live activation remains the priority. Main d5712afa carries
