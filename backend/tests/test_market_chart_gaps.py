@@ -140,20 +140,20 @@ def test_good_friday_week_completes_on_thursday_without_a_gap():
 
 
 # Unsupported requested calendar years are labelled instead of guessing holiday
-# gaps. 2015 is the last year before the reviewed calendar (2016 onward).
+# gaps. 2014 is the last year before the reviewed calendar (2015 onward).
 def test_calendar_coverage_is_explicit_for_requested_old_history():
     rows = [
-        DailyBar(date(2015, 12, day), 100, 102, 99, 101, 101, 1000) for day in (29, 30)
+        DailyBar(date(2014, 12, day), 100, 102, 99, 101, 101, 1000) for day in (29, 30)
     ]
     payload = ticker_chart.payload(Store(rows), "AAA", 30)
     assert payload["data_status"] == "unavailable"
-    assert "2015" in payload["data_reason"]
+    assert "2014" in payload["data_reason"]
 
 
 # Old warm-up outside reviewed years does not taint a fully covered recent display.
 def test_old_background_dates_do_not_hide_complete_current_coverage():
     current = history(end=date(2026, 9, 25))
-    old = replace(current.bars[0], session_date=date(2015, 12, 28))
+    old = replace(current.bars[0], session_date=date(2014, 12, 29))
     # Keep a long current prefix so every displayed indicator window is covered.
     payload = ticker_chart.payload(Store((old,) + current.bars), "AAA", 20)
     assert payload["data_status"] != "unavailable"

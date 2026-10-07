@@ -211,11 +211,11 @@ def test_default_tickers_are_the_book_plus_the_benchmarks():
 # from the daily store's session dates; for reviewed years, the calendar.
 def test_sessions_for_uses_the_daily_store_before_the_calendar_coverage(tmp_path):
     store = MarketStore(tmp_path)
-    old = date(2015, 12, 31)
-    store.write(date(2026, 9, 26), _daily("AVGO", {old: 50.0, date(2016, 1, 4): 60.0}))
-    sessions = cli.sessions_for(store, "AVGO", date(2015, 12, 30), date(2016, 1, 5))
-    assert sessions == [old, date(2016, 1, 4), date(2016, 1, 5)]
-    assert cli.sessions_for(store, "NOPE", date(2015, 12, 30), date(2015, 12, 31)) == []
+    old = date(2014, 12, 31)
+    store.write(date(2026, 9, 26), _daily("AVGO", {old: 50.0, date(2015, 1, 2): 60.0}))
+    sessions = cli.sessions_for(store, "AVGO", date(2014, 12, 30), date(2015, 1, 5))
+    assert sessions == [old, date(2015, 1, 2), date(2015, 1, 5)]
+    assert cli.sessions_for(store, "NOPE", date(2014, 12, 30), date(2014, 12, 31)) == []
 
 
 # Reconcile prints a failure line with its reason and a pass rate per

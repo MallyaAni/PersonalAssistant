@@ -218,3 +218,44 @@ def test_a_declared_migration_continues_the_ledger(tmp_path):
 def test_the_deployed_ledger_continues_into_the_current_identity():
     deployed = "19f933ffc785a21c1275fe3f00e822fb755184e234f41fcee466c3128e5bd34f"
     assert shadow.migration(deployed, shadow.identity(shadow.BUNDLE)) is not None
+
+
+# Preserve covered-year accounts and record the calendar successor without
+# rewriting history.
+def test_calendar_successor_preserves_accounts_and_archived_bytes(
+    tmp_path, monkeypatch
+):
+    predecessor = "39a7f99d0a31e284798eae906d262a98fad4b4f0d7b22da84087cb9b1fa802a8"
+    successor = shadow.identity(shadow.BUNDLE)
+    known = json.loads(shadow.MIGRATIONS.read_bytes())
+    origins = {row["from"] for row in known if row["to"] == predecessor}
+    origins.add(predecessor)
+    assert len(origins) == 7
+    assert all(shadow.migration(origin, successor) is not None for origin in origins)
+    now = datetime(2026, 10, 6, 21, tzinfo=UTC)
+    state = shadow.initialize(tmp_path, ("ABC", "SPY"), predecessor, now)
+    targets = {name: np.array([0.1, 0]) for name in shadow.POLICIES}
+    state = shadow.advance(state, "2026-10-06", now, np.ones(2), np.ones(2), targets)
+    shadow.append(tmp_path, state)
+    before = {path.name: path.read_bytes() for path in tmp_path.glob("*.json")}
+    continued = shadow.initialize(tmp_path, ("ABC", "SPY"), successor, now)
+    assert continued["accounts"] == state["accounts"]
+    assert continued["sequence"] == state["sequence"]
+    assert continued["policy_from"] == predecessor
+    assert before == {path.name: path.read_bytes() for path in tmp_path.glob("*.json")}
+    next_now = now + timedelta(days=1)
+    current = shadow.advance(
+        continued, "2026-10-07", next_now, np.ones(2), np.ones(2) * 1.01, targets
+    )
+    with monkeypatch.context() as prior_calendar:
+        prior_calendar.setattr(
+            shadow.calendar, "reviewed_sessions", shadow.calendar._published_sessions
+        )
+        control = shadow.advance(
+            state, "2026-10-07", next_now, np.ones(2), np.ones(2) * 1.01, targets
+        )
+    assert current["accounts"] == control["accounts"]
+    assert current["sequence"] == control["sequence"]
+    assert current["policy"] == successor
+    assert current["policy_from"] == predecessor
+    assert shadow.migration("stranger", successor) is None

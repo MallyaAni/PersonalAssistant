@@ -142,5 +142,47 @@
   "to": "39a7f99d0a31e284798eae906d262a98fad4b4f0d7b22da84087cb9b1fa802a8",
   "declared": "2026-10-01",
   "reason": "Revision fix/6k-false-admissions changed edgar.py only in the Form 6-K results-release classifier (BESIDE_THE_RELEASE, OUTLOOK_ONLY and RESULTS_REPORTED refuse a month's sales report, a preliminary figure, the audited year restated later, and a guidance update or outlook that reports no results) and in html_to_text (a word split across inline formatting tags with no space is joined). The shadow's reads are unchanged: edgar._known_series, _known_quarters, record_from_frames, parse_company_facts and the features are untouched; the 8-K event path (item 2.02) is untouched. The model, features, execution, price inputs, target construction and funded ledger are unchanged. The deployed ledger continues; archived transitions are not rewritten. The re-read of the 6-K issuers removes TSMC's and Silicon Motion's false admissions and adds ASML's 2021-01-20 release in their edgar_events frames, which is a data-vintage change, not a code-identity change."
+ },
+ {
+  "from": "39a7f99d0a31e284798eae906d262a98fad4b4f0d7b22da84087cb9b1fa802a8",
+  "to": "b4f79c63590649b915942b8f79a57e6539207d5e0381e5a9043b6008c5ba0486",
+  "declared": "2026-10-07",
+  "reason": "Calendar._future_session_offset now uses reviewed historical and current sessions instead of current years alone. The frozen model and all other hashed modules are identical to 39a7f99d. Private read-only proof learned-calendar-continuity-20261007 verifies 4260 clock pairs in the original covered years, exact original saved inference and an identical detached next account transition from the October 6 sequence 14 ledger. Its original bytes remain unchanged. Earlier years gain explicit reviewed coverage; unsupported years remain unavailable. Future rows retain this successor identity; archived observations are not rewritten."
+ },
+ {
+  "from": "19f933ffc785a21c1275fe3f00e822fb755184e234f41fcee466c3128e5bd34f",
+  "to": "b4f79c63590649b915942b8f79a57e6539207d5e0381e5a9043b6008c5ba0486",
+  "declared": "2026-10-07",
+  "reason": "Continues the already declared 19f933ff -> 39a7f99d lineage through the separately verified 39a7f99d -> b4f79c63 calendar-coverage transition. The model and other hashed modules are unchanged; covered clocks, original saved inference and detached account transition are equal in read-only proof learned-calendar-continuity-20261007. Archived observations are not rewritten."
+ },
+ {
+  "from": "df47189d60dd11b108a0e29ece29a07f452ea8bece337baba9326b549aa7665a",
+  "to": "b4f79c63590649b915942b8f79a57e6539207d5e0381e5a9043b6008c5ba0486",
+  "declared": "2026-10-07",
+  "reason": "Continues the already declared df47189d -> 39a7f99d lineage through the separately verified 39a7f99d -> b4f79c63 calendar-coverage transition. The model and other hashed modules are unchanged; covered clocks, original saved inference and detached account transition are equal in read-only proof learned-calendar-continuity-20261007. Archived observations are not rewritten."
+ },
+ {
+  "from": "dc1d5fa6a445b8d0fcfaddc0886fcd13d2025f26b771ece3a6fb37aab574fbed",
+  "to": "b4f79c63590649b915942b8f79a57e6539207d5e0381e5a9043b6008c5ba0486",
+  "declared": "2026-10-07",
+  "reason": "Continues the already declared dc1d5fa6 -> 39a7f99d lineage through the separately verified 39a7f99d -> b4f79c63 calendar-coverage transition. The model and other hashed modules are unchanged; covered clocks, original saved inference and detached account transition are equal in read-only proof learned-calendar-continuity-20261007. Archived observations are not rewritten."
+ },
+ {
+  "from": "4b5e711070e9ecbad73f179de89a5aac68a9d8d4bde4796dc29088c11477baac",
+  "to": "b4f79c63590649b915942b8f79a57e6539207d5e0381e5a9043b6008c5ba0486",
+  "declared": "2026-10-07",
+  "reason": "Continues the already declared 4b5e7110 -> 39a7f99d lineage through the separately verified 39a7f99d -> b4f79c63 calendar-coverage transition. The model and other hashed modules are unchanged; covered clocks, original saved inference and detached account transition are equal in read-only proof learned-calendar-continuity-20261007. Archived observations are not rewritten."
+ },
+ {
+  "from": "e8f98a4324df6172abcd6b1d5b9c45ecd6e5bbe46a7f91588d532862ea74e22e",
+  "to": "b4f79c63590649b915942b8f79a57e6539207d5e0381e5a9043b6008c5ba0486",
+  "declared": "2026-10-07",
+  "reason": "Continues the already declared e8f98a43 -> 39a7f99d lineage through the separately verified 39a7f99d -> b4f79c63 calendar-coverage transition. The model and other hashed modules are unchanged; covered clocks, original saved inference and detached account transition are equal in read-only proof learned-calendar-continuity-20261007. Archived observations are not rewritten."
+ },
+ {
+  "from": "884a9418c7d1fda8768755494162ddcc8ce0123d3442396dd9aabf1df10bbdf1",
+  "to": "b4f79c63590649b915942b8f79a57e6539207d5e0381e5a9043b6008c5ba0486",
+  "declared": "2026-10-07",
+  "reason": "Continues the already declared 884a9418 -> 39a7f99d lineage through the separately verified 39a7f99d -> b4f79c63 calendar-coverage transition. The model and other hashed modules are unchanged; covered clocks, original saved inference and detached account transition are equal in read-only proof learned-calendar-continuity-20261007. Archived observations are not rewritten."
  }
 ]
