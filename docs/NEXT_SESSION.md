@@ -1,5 +1,51 @@
 # Next session
 
+## 2026-10-06 — original-byte forward market adapter VERIFIED
+
+Human requested check/retry: SSH restored and source/worktree state inspected.
+Started79e0b2c2 on owned codex/learned-entry-risk-20261002; two owned drafts only.
+Fetched origin/main remainsf77d6e57. Goal incomplete; concrete adapter progress.
+Verified checkpointdefa84774ddad0be9f650c333feaadc3625d6aed. Main/live untouched.
+
+The display quote summaries discard source bodies and do not contain the forming
+bar's already-observed opening. Added one private adapter, not a production caller:
+original raw IEX/split-anchor page chains and an explicit IEX quote GET -> completed
+prefixes/current bid-ask midpoint/known new-bar opening -> unchanged numeric heads,
+residuals and persisted private sender. Exact original bytes, hashes, query basis,
+pagination and actual request/receipt clocks remain in the inference receipt.
+Receipt allowlist excludes supplied headers/credentials. No fitting, historical
+replay, provider request, account write, model service or deployment was performed.
+
+First acceptance FAILED for missing module, retained market-packet-missing.log.
+Original acceptance now passes, plus forming H/L/C/V invariance, missing opening,
+boolean/empty/malformed/future/previous-bar quotes, wide IEX spread refusal, original
+byte tampering, disconnected pagination, unit mismatch, late receipt, caller array
+mutation, early-close supplied-packet boundary and genuine numeric inference through
+private paper acknowledgment. Actual stored inference retains exact original raw,
+split and quote bytes; repeated sender call creates no second submission. No broker
+fill or profit inferred from this synthetic path. The older capture() wrapper still
+refuses early closes; this adapter's early-close test uses supplied original packets,
+not proof that the older acquisition wrapper can fetch them.
+
+Exact committed source/pinned5c6c5605 image:124PASS/no skips4.54seconds across new
+adapter, completed features, source capture and actual-clock inference/sender tests.
+2411source files unchanged; Ruff/diff clean; both new source/test hashes independently
+match Mac commit and Spark archive. Evidence root:
+/home/animallya96/scratch/forward-market-evidence-20261006-defa8477/proof.
+tests.log SHAed2baadebea83c6b2748e05cbe0ab8ec8889e51932a1d4c116835db80ad9f93b;
+command.json SHAa3163150f9e4ed4deb0b5dfec0c73ead36cfb23c08dc98ca0270b4639989086f;
+source-manifest.json SHAf01c31c0446c28e8a99b96ac2e5b74317952e34056cb1b7e7baa9631af464bdf.
+Diagram impact NONE: implementation fills the existing private source-to-inference
+boundary; no service, model, agent or production data flow was introduced.
+
+Original V5 producer659a960b RUNNING/OOMfalse; sole watcher3169361 active.
+Durable status running,1of3cost accounts complete; no final saved-results/execution.
+Never restart either, mutate mounted source or select partial economic scores.
+UNVERIFIED: authentic current market packet inference, training-source equivalence,
+full carried benchmark advantage and live adoption. IEX/current raw anchors differ
+from SIP/Yahoo training; midpoint is an observed reference, not proven execution.
+Keep candidate experimental and incumbent live until complete evidence/gated release.
+
 ## 2026-10-06 — full published sizing/timing/fill journey VERIFIED
 
 Goal ACTIVE; previous turn PROGRESS (residual persistence and real publication),
