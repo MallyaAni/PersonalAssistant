@@ -21,7 +21,7 @@ from backend.tests.test_joint_funded_policy import report as historical_report
 from backend.tests.test_joint_probability_timing import timing as timing
 
 
-# Publish real numeric timing heads and original residuals for the funded fixture's next session.
+# Publish numeric timing heads and residuals for the next synthetic session.
 @pytest.fixture(scope="module")
 def forward_timing(example, tmp_path_factory):
     from backend.market import (
@@ -120,7 +120,7 @@ def reader(example):
     return example[0]
 
 
-# Genuine sizing and restored numeric timing must carry both sides through durable fills.
+# Carry genuine sizing and restored timing through durable buys and sells.
 @pytest.mark.parametrize("held", [0, 5000])
 def test_full_forward_policy_through_restored_timing_and_reconciliation(
     example, forward_timing, tmp_path, monkeypatch, held
@@ -137,7 +137,7 @@ def test_full_forward_policy_through_restored_timing_and_reconciliation(
     monkeypatch.setattr(direct_daily_arithmetic, "_fit", forbidden)
     monkeypatch.setattr(learned_entry_models, "_estimator", forbidden)
 
-    # Controlled synthetic histories exercise the learned positive/negative holding forecast.
+    # Controlled histories exercise both learned holding-forecast directions.
     panel = deepcopy(example[3])
     for field in ("open", "close", "adj_close", "high", "low"):
         getattr(panel, field)[-1, 0] *= 0.5 if held else 1.5
@@ -176,11 +176,13 @@ def test_full_forward_policy_through_restored_timing_and_reconciliation(
     assert state.allocation_state["receipt"]["optimizer"]["certificate"]["certified"]
     assert state.allocation_state["receipt"]["company_exits"] == []
     assert shown.graded.grades[-1, 0] == 3
-    assert not entry["orders"] and len(state.pending) == 1
+    assert not entry["orders"]
+    assert len(state.pending) == 1
     assert current.forecasts[0] < 0 if held else current.forecasts[0] > 0
     intent = state.pending[0]
     side = "sell" if held else "buy"
-    assert intent["symbol"] == "AAA" and intent["side"] == side
+    assert intent["symbol"] == "AAA"
+    assert intent["side"] == side
     assert intent["execution_timing"] == intraday_orders.INTRADAY_TIMING
     assert not broker.attempt_history
 
@@ -286,7 +288,8 @@ def test_full_forward_policy_through_restored_timing_and_reconciliation(
     reconciled, settled = market_daily._reconcile(
         broker, acknowledged, tmp_path / "paper", True
     )
-    assert settled and not reconciled.pending
+    assert settled
+    assert not reconciled.pending
     direction = -1 if held else 1
     assert broker.ledger()["holdings"].get("AAA", 0) == held + direction * intent["qty"]
     expected_cash = (
