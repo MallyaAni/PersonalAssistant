@@ -1,5 +1,55 @@
 # Next session
 
+## 2026-10-07 — live replacement gate repairs verified; full preflight running
+
+User priority remains the live buy/exit/sizing replacement. Goal ACTIVE; no
+strategy activation or superiority claim. Corrected checkpoint
+827f478c641f90ca5580718a2abd89389a398adc is verified/pushed on
+codex/learned-live-release-20261006; all2358 tracked files match the exact private
+accepted source before this handoff. Spark release checkout is detached at that
+SHA. Production remains e8e339e0 and its incumbent policy.
+
+FAILED original canonical scripts/deploy.sh --no-pull --dry-run on26a616fa:
+6 failures,10393 passes,93 skips,6 xfails. Stopped before the routing/model gate,
+with serving/model identities unchanged. Original log and execution receipt
+are preserved at scratch/learned-live-readiness-20261007-26a616fa; log SHA
+9b4bcc477d4c38d9a03c24c8b1212d50d577326b69bb2531335bdc8938ad4c35.
+
+Five fixtures incorrectly treated2015 as outside reviewed coverage. They now
+exercise the real2014/2015 boundary, preserving unavailable/gap assertions.
+The sixth failure caught the neural shadow's missing explicit source-identity
+continuation after calendar._future_session_offset gained historical coverage.
+Only calendar.py differs among its hashed modules; frozen model bytes match.
+Read-only pinned-image proof verifies4260 original covered-year clock pairs,
+exact saved neural inference and an identical detached next account transition
+from actual October6 sequence14. Original15 ledger files remain unchanged.
+Declared39a7f99d -> b4f79c63 and existing predecessor continuations explicitly;
+unknown identities still fail. No production ledger reset or write.
+Proof scratch/learned-calendar-continuity-20261007/continuity.json SHA
+caa6b903da63338c79c92bba7a5c27d53bfb59f0fe74cafb3b11065c82d3e675.
+
+VERIFIED corrected six complete modules:67PASS/no skips in2.25s, immutable
+2358-file source, pinned5c6c5605 image, networknone, CPU2/memory3GiB/user1000.
+Proof scratch/learned-live-gate-fixes-20261007/proof-v2; execution SHA
+cfd856a9d99a5da2235bb2e66e909ccf73d76ab3bb1c18aecb5049c8e784d7ef;
+test log SHA ddf31cbf1150544ca839d5e0ff9a6def7b5986627a04443616d42a2d3f5d6743.
+Scoped lint passes on five modified modules; test_intraday_sip.py retains its
+14 untouched baseline findings. No global lint-clean claim.
+
+Canonical full preflight restarted only after the failed run exited, on exact
+827f478c: scratch/learned-live-readiness-20261007-827f478c, run.py PID3687480,
+started2026-10-07T04:27:59Z. scripts/deploy.sh --no-pull --dry-run, serial gate,
+separate gate database, required gates unchanged. Inspect compact execution/log
+completion; never restart an active run. It cannot activate or restart serving
+code. Release modules and original learned asset identities remain unchanged.
+
+Original candidate659a960b and control2832af72 remain active/OOMfalse; saved-only
+watcher3169361 remains active. No complete candidate artifact yet, no partial
+economic scores inspected, no rescore/refit/refetch. NEXT: full preflight and
+completed carried comparison review, supported exact source/evidence/cost
+approval, guarded main/deploy and actual deployed API/browser/artifact proof.
+Do not substitute branch integration, compatibility or unit results for adoption.
+
 ## 2026-10-06 — main-based learned live integration verified, not activated
 
 VERIFIED/pushed source checkpoint26a616fac4515889bccdc33b413a1d7ffed3959d.
