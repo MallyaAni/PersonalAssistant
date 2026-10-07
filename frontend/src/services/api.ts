@@ -2769,7 +2769,7 @@ export interface DeskRowTiming {
   rule: string;
   side: 'buy' | 'sell';
   state: 'pre-open' | 'waiting' | 'triggered' | 'close' | 'closed';
-  level_fraction: number;
+  level_fraction: number | null;
   session: string;
   trading_day: boolean;
   open: number | null;
@@ -2781,10 +2781,10 @@ export interface DeskRowTiming {
   reason: string;
 }
 
-// Present only on the `/4` board: its actions are timed by the measured level.
+// Present on timed policies; learned forecasts have no fixed percentage level.
 export interface DeskTiming {
   rule: string;
-  level: number;
+  level: number | null;
   session: string;
   close_cutoff: string;
   moc_deadline: string;

@@ -63,6 +63,10 @@ def source_identity():
         root / "backend/market/live_probability_timing.py",
         root / "backend/market/entry_timing.py",
         root / "backend/market/alpaca_trading.py",
+        root / "backend/market/learned_personal_guidance.py",
+        root / "backend/market/decision_view.py",
+        root / "backend/market/personal_history.py",
+        root / "backend/api/v1/market.py",
     )
     return {
         str(path.relative_to(root)): sha256(path.read_bytes()).hexdigest()
@@ -247,10 +251,8 @@ class InstalledHoldingPolicy(funded.MarketConditionedTimedFundedPolicy):
         self.reader.validate_clock(decision_at)
 
 
-# Restore original risk and monthly heads, then retain dated current inference.
-def prepare(root, report, *, clock=None):
-    clock = clock or (lambda: datetime.now(calendar.NEW_YORK))
-    started = context._instant(clock(), "Nightly observation")
+# Authenticate one installed configuration for nightly and personal decision readers.
+def read_configuration(root, now):
     raw = (Path(root) / CONFIG).read_bytes()
     config = json.loads(raw)
     if (
@@ -272,7 +274,15 @@ def prepare(root, report, *, clock=None):
         or not 0 <= config["cost_bps"] < 10000
     ):
         raise ValueError("Exact installed learned holding configuration required")
-    _release(root, config, started)
+    _release(root, config, now)
+    return raw, config
+
+
+# Restore original risk and monthly heads, then retain dated current inference.
+def prepare(root, report, *, clock=None):
+    clock = clock or (lambda: datetime.now(calendar.NEW_YORK))
+    started = context._instant(clock(), "Nightly observation")
+    raw, config = read_configuration(root, started)
     original, _ = holding_risk_bank.load_bank(
         _folder(root, config["risk_directory"]),
         receipt_sha256=config["risk_receipt_sha256"],

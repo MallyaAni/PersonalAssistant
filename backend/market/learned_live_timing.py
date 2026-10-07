@@ -70,15 +70,8 @@ def market_transport(url, headers):
         return exc.code, exc.read()
 
 
-# Build current inference inside the sender's account lock from installed heads only.
-def observe(root, rows, snapshot, now, client_factory, *, transport=None, clock=None):
-    selected = [
-        row
-        for row in rows
-        if row.get("timing_policy") == POLICY and "execution_policy" not in row
-    ]
-    if not selected:
-        return snapshot, now, None
+# Acquire the same authenticated market forecast for execution and personal guidance.
+def acquire(root, now, *, symbols=(), transport=None, clock=None):
     clock = clock or (lambda: datetime.now(calendar.NEW_YORK))
     started = market._as_of(clock())
     session, _, completed = market._window(started)
@@ -130,7 +123,7 @@ def observe(root, rows, snapshot, now, client_factory, *, transport=None, clock=
     )
     if tuple(context.panel.tickers) != tuple(residual.receipt["identity"]["symbols"]):
         raise ValueError("Current book differs from the published model cohort")
-    if any(row.get("symbol") not in context.panel.tickers for row in selected):
+    if any(symbol not in context.panel.tickers for symbol in symbols):
         raise ValueError("Learned intent has no authenticated stock context")
     try:
         packet = market.capture(
@@ -195,19 +188,59 @@ def observe(root, rows, snapshot, now, client_factory, *, transport=None, clock=
         receipt,
         timing._digest(receipt),
     )
-    account = timing.capture_account(client_factory(), completed, clock=clock)
     available = market._as_of(clock())
     market._same_window(completed, available, started)
     if (Path(root) / CONFIG).read_bytes() != raw_config:
         raise ValueError("Installed timing configuration changed during inference")
+    return SimpleNamespace(
+        packet=packet,
+        forecast=forecast,
+        config=config,
+        config_bytes=raw_config,
+        completed=completed,
+        available=available,
+    )
+
+
+# Reject a changed configuration or expired observation before using account inputs.
+def validate_observation(root, observation, now):
+    market._same_window(
+        observation.completed, market._as_of(now), observation.available
+    )
+    if (Path(root) / CONFIG).read_bytes() != observation.config_bytes:
+        raise ValueError("Installed timing configuration changed during inference")
+
+
+# Build current inference inside the sender's account lock from installed heads only.
+def observe(root, rows, snapshot, now, client_factory, *, transport=None, clock=None):
+    selected = [
+        row
+        for row in rows
+        if row.get("timing_policy") == POLICY and "execution_policy" not in row
+    ]
+    if not selected:
+        return snapshot, now, None
+    clock = clock or (lambda: datetime.now(calendar.NEW_YORK))
+    observation = acquire(
+        root,
+        now,
+        symbols=[row["symbol"] for row in selected],
+        transport=transport,
+        clock=clock,
+    )
+    account = timing.capture_account(
+        client_factory(), observation.completed, clock=clock
+    )
+    available = market._as_of(clock())
+    validate_observation(root, observation, available)
     reader = timing.build_forecast_reader(
-        forecast,
+        observation.forecast,
         available,
-        packet.snapshot,
+        observation.packet.snapshot,
         rows,
         account,
-        config["cost_bps"],
+        observation.config["cost_bps"],
         [],
         evidence_root=Path(root),
     )
-    return packet.snapshot, available, reader
+    return observation.packet.snapshot, available, reader
