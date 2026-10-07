@@ -1,5 +1,39 @@
 # Next session
 
+## 2026-10-07 — final replacement gate passes; activation remains inactive
+
+User priority remains the live buy/exit/sizing replacement. Goal ACTIVE. Exact
+runtime source fb60e42ab68f8aa6ae0da1f9e7478e0adda53726 passed the canonical
+scripts/deploy.sh --no-pull --dry-run:10440unit passes/93skips/6xfails and
+100real-model routing passes/no skips. Finished2026-10-07T06:17:18Z, exit0.
+Independent verification checked the original log hash, clean exact source,
+identical before/after serving/model identities, production head and marker.
+Evidence scratch/learned-live-transition-preflight-20261007-fb60e42a:
+execution SHAaba66c0168081db8a8b7c7a98638bfe8b14db6076b1a9e6abcb3fe1e39adc325;
+log SHA02a5c769780fc3bf32065bb7458102f4f8c549dedb015f65f85a15a33f8e8e4e.
+The gate runner has exited; do not repeat this gate for documentation changes.
+
+VERIFIED private inactive activation plan: all8 original asset files/counts/
+permissions/hashes and all28 runtime source hashes checked; both production
+configuration flags remain false. No cost selected or economic approval created.
+Proof scratch/learned-live-activation-plan-20261007-fb60e42a/proof/activation-plan.json
+SHAa2c44759f583b8cee393b4590401733c0c3beff3ebc6bacccd56c76c80d1da47.
+Templates are not installable configurations. After complete economic review,
+deploy the approved exact source through scripts/deploy.sh; install original
+artifacts/evidence and timing configuration before publishing the holding
+selector last. The next ordinary nightly must produce new targets/tagged intents.
+Do not rewrite historical predictions or retag existing incumbent orders.
+
+UNVERIFIED performance/adoption and deployed replacement. Original candidate
+659a960b and matching control2832af72 remain running/OOMfalse; watcher3169361
+remains live. Allowed progress metadata at02:15:47New York:two completed accounts,
+market-25-0 at1280completed sessions/2023-03-02. Final saved results/targets/
+execution remain absent; no partial economics inspected. Preserve mounted
+sources and wait for terminal artifacts before the saved-only independent review.
+Mainf77d6e57/livee8e339e0 unchanged. Remaining acceptance is the complete declared
+comparison, separately supported held-book transition, guarded main deployment,
+current broker/API/browser/source/artifact proof and next-nightly publication.
+
 ## 2026-10-07 — live admission and personal-account refusals corrected
 
 Goal ACTIVE: complete the live buy/exit/sizing replacement, not merely compatible
