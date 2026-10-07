@@ -1,5 +1,56 @@
 # Next session
 
+## 2026-10-06 — actual nightly benchmark boundary fixed for live replacement
+
+Goal ACTIVE/incomplete; latest human priority remains LIVE REPLACEMENT. Started
+cleanea581ca5 on owned branch. VERIFIED/pushed
+f8c0095fa1738dc4944caecd5438de1e5b707204: real book_panel on October6 data has95names;
+the frozen monthly head requires96. The missing name is ONLY QQQ, not a stock.
+Original prepare failed its unchanged original-symbol check in the reproduced
+regression. The installed adapter now adds authenticated CURRENT QQQ daily bytes
+for model inference only, with grade unavailable and benchmark eligibility off.
+It preserves the actual nightly95-name report and its stock forecasts/targets.
+Missing/stale benchmark data or a changed stock cohort cannot be substituted.
+
+170PASS/no skips20.35s, scoped Ruff PASS. Cases prove benchmark-complete versus
+ordinary nightly stock forecasts identical, missing bytes and stock removal fail,
+and actual default nightly selection/funded intent persistence work with either
+panel. Original failed boundary is retained; assertions not relaxed. All1618
+committed backend files match tested bytes. Earlier dashboard/TypeScript checks
+are unchanged and were not repeated for this backend-only correction.
+
+ONE actual original-head/current-input observation, no fit, account read, order
+or economic score. October6 record sourcee8e339e0, SHA
+e6cf8293f233ae0cd6bf08be2e10cf78c656e8f7d6464d7e849a12c0acb599c0.
+Published saved current grade replay plus actual daily bytes:2957sessions,
+95nightly/96inference names,93supported stock forecasts. Original numeric saved
+restore identical; AAOI/COHR,STX/WDC,AVGO/NVDA current paired distributions available.
+Actual observed23:13:46.182714/completed23:13:49.203958 New York. This is current
+input/arithmetic compatibility, NOT a live policy run or proof of timing advantage.
+Private reference report comes from saved current grade histories, not desk.run;
+unknown grades on unpriced historical rows remain unavailable. First harness
+incorrectly demanded every stock history contain every panel date; corrected to
+the real writer's exact finite-close dates and retained its failed log. Historical
+grades are current-vintage replay, explicitly not point-in-time reconstruction.
+
+Proof /home/animallya96/scratch/learned-nightly-benchmark-20261006/proof:
+verified-checkpoint.json SHA
+5ba2e3da49e234843a3c04d87a331bcd7f5f069000fafe1eed3861e7da4a51bb;
+checkpoint-manifest.json SHA
+7d3513046a80c717c2992d4194047dab0aa85fe9ff203c97d3294a58c9168e50.
+Current close receipt67fa70ca29420ea8310325d4f6fa69da331e79405e8a52f7d2768dc937db7c8d.
+Exact originals mounted read-only, CPU1/memory3GB/user1000/image5c6c5605,
+networknone. Original producer/source, published heads, production data and model
+services unchanged. No production release/configuration or deployment.
+
+NEXT: finish source/artifact release assembly and verify complete saved carried
+comparison once available; then guarded main integration and scripts/deploy.sh
+with actual deployed API/browser/artifact proof ONLY for a supported release.
+Producer659a960b RUNNING/OOMfalse, watcher3169361 active; completed economic
+verification absent. Never restart/mutate either or inspect partial scores.
+Live markere8e339e0 remains incumbent. Input compatibility/tests do not approve
+adoption. No new cohorts, refits, old scoring, model gates for docs or UI redesign.
+
 ## 2026-10-06 — learned paper decisions retained; live replacement remains priority
 
 Goal ACTIVE/incomplete. Started e14fec99 clean on owned
