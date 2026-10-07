@@ -1,5 +1,47 @@
 # Next session
 
+## 2026-10-07 — incremental verification accepts71closed controls
+
+Previous goal turn: VERIFIED WAIT (actual2ff5c7ea runtime confirmed running).
+This turn: PROGRESS (new saved-only verifier and five newly reconciled accounts).
+Goal remains the justified, deployed entry/holding/sizing enhancement; incomplete.
+
+VERIFIED checkpointa2d2bfb57d2cefb00ea04cc67a5746dadff1f61a adds the standalone
+verify_actual_policy_continuation CLI.26tests/0skips/0fail, Ruff clean. It accepts
+noncontiguous coordinator-acknowledged receipts, retains every pending grid ID,
+and reuses prior arithmetic only with unchanged bytes/specifications/scores.
+Real saved synthetic account acceptance forbids replay; source/runtime/terminal,
+ownership, repeated receipt, sequence, changed score and archive guards exercised.
+Preparatory fixture omissions, test complexity and one mistyped image invocation
+failed and remain in private logs; no economic assertion was relaxed.
+
+VERIFIED actual saved CLI containera9a05015 terminal0/OOMfalse, original5c6cimage,
+CPU1/memory4GB/user1000:1000/networknone/ROroot. Only private proof output writable.
+All five relevant mounted verifier/helper hashes match committeda2d2bfb5 bytes.
+Original engine manifest,114input members, plan, stopped original and continuation
+ownership authenticated.66controls and3candidate results reused, only five new
+controls folded: boosting/ridge/SPY/QQQ-0-13 and rule-0-14.71verified/229pending.
+No model fitting, prediction, account replay, orders or production changes.
+
+Root scratch/continuation-verifier-20261007/proof/incremental-01/:
+results.json SHA6d3655b5e7133541e794e93452ee3e003b6ea99ca33971d7077e8ef9eb08c40a;
+independent-acceptance.json SHAa825258b6d64c669e7b614f9d326012e61bad70a3ff26b5b3156cbb97c0c669e.
+JUnit tests-v6.xml SHA41d1b6f74c16f166ce649fc4a8ab5d39c56773eb5085e78bbf2d7eb0476ea1ae.
+Use this71-account proof as the next hash-bound predecessor; do not recheck the
+same five arithmetic paths or rescore the three candidates. Initial wrapper is
+exclusive incremental-01 only; it must not be relaunched. Next evidence config
+uses previous.results/evidence.input_arguments and the new proof's exact hash.
+
+Original continuation2ff5c7ea remains RUNNING/OOMfalse, two children. Latest
+read-only state: rule-10-0 at1088sessions/2022-05-25, boosting-10-0 at1093/2022-06-02.
+These accounts are still open; no fee performance inferred. Fourteen complete
+zero-cost timing phases: boosting12/14full wins, median+25.25gain points, but0/14
+reused-recent wins; ridge2/14full wins. All declared eras/costs/methods and pending
+comparisons retained in the result. No live-adoption claim; selectors still absent
+and deployed incumbent92b11bb9 unchanged. Do not restart or alter the active engine,
+repeat prior audits/fits, or deploy research-only verifier/test/docs changes.
+Diagram impact NONE: saved evidence checking within the existing research boundary.
+
 ## 2026-10-07 — original accounts preserved; parallel continuation is active
 
 Previous goal turn: PROGRESS (reviewed scheduler,27passing tests and publication).

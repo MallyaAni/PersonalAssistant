@@ -1,5 +1,40 @@
 # Learned live replacement: completed candidate evidence
 
+## Incremental continuation update
+
+The saved-only continuation verifier now authenticates71closed controls and
+retains229pending. It reuses the earlier66verified controls and3candidate accounts;
+only the five new original accounts are reconciled. No account is replayed and
+no predictor is fitted or called. Matching10/25bp controls are still open.
+
+Fourteen complete zero-cost paired timing phases0–13 now yield:
+
+| Method / period | Starts with greater gain | Median gain difference, percentage points |
+| --- | ---: | ---: |
+| Boosting / full | 12/14 | +25.25 |
+| Boosting / 2018–20 | 9/14 | +2.04 |
+| Boosting / 2021–26 | 9/14 | +7.42 |
+| Boosting / reused recent | 0/14 | −1.15 |
+| Ridge / full | 2/14 | −39.01 |
+| Ridge / 2018–20 | 5/14 | −2.57 |
+| Ridge / 2021–26 | 2/14 | −17.68 |
+| Ridge / reused recent | 0/14 | −1.38 |
+
+These remain overlapping sensitivity starts, conditional current-vintage inputs
+and development evidence. Positive full-period timing results do not approve
+combined sizing, new holding exits or a live replacement. All300declared accounts,
+fixed eras and missing fee comparisons remain in the machine-readable report.
+The earlier thirteen-phase record below is preserved with its original proof.
+
+New private root: `scratch/continuation-verifier-20261007/proof/incremental-01/`.
+Saved result SHA256
+`6d3655b5e7133541e794e93452ee3e003b6ea99ca33971d7077e8ef9eb08c40a`;
+independent acceptance SHA256
+`a825258b6d64c669e7b614f9d326012e61bad70a3ff26b5b3156cbb97c0c669e`.
+Verifier checkpoint `a2d2bfb57d2cefb00ea04cc67a5746dadff1f61a`:26passing tests,
+no skips, repository lint clean, original image, network disabled and all source
+and market inputs read-only. Live remains unchanged.
+
 The current candidate does **not yet justify live activation**. In the completed
 zero-cost comparison it earns less than the incumbent over the full period,
 despite a slightly smaller maximum drawdown. Matching 10/25 bp controls are
