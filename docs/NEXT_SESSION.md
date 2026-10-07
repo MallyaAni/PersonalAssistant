@@ -1,5 +1,58 @@
 # Next session
 
+## 2026-10-07 — monthly continuation runner and actual sender acceptance
+
+Previous turn PROGRESS: numeric model/data compatibility. This turn PROGRESS:
+monthly checkpoint runner, actual sender reader,23behavior cases and one historical
+fit launched. Goal ACTIVE/INCOMPLETE; no policy promotion or live configuration.
+
+VERIFIED checkpointb54067edfaf04ddcbb01a818e306e638c570a7f7: source-bank loader
+requires original archive/receipt, then monthly numeric checkpoints preserve all
+unavailable months, strict maturity and the original freeze. Complete checkpoints
+resume without refitting; altered inputs and partial drafts are refused. The
+research-only continuation reader changes ordinary submission permission, not
+quantities, holding decisions or event actions. Opposite buy/sell signs, missing
+means/quotes/funds, whole sell caps, repeats, terminal execution and no same-batch
+sale financing pass through the actual private sender. These are mean forecasts,
+not calibrated confidence. Named production tags/configuration are not integrated.
+
+Native test03-final23pass/0fail/0skip in18.78seconds, Ruff clean. Source1622tracked
+backend/protocol files match owned bytes. Private
+scratch/nonlinear-monthly-acceptance-20261007/acceptance.json SHA
+63e3529f59af17b9525b45bef307419a7be8932a733d58bb9381ceba3557c289;
+source manifest SHA606115201dca20b5f6cb3778df1c356970d7ba46f51ebb15108b062e74004704.
+An initial test matched the wrong existing error text; corrected to the actual
+input-identity rejection. Style findings retained; no business assertion loosened.
+
+ACTIVE historical fit now EXACT container
+1f2faa5ad24110e4530268138a59ada2592b6c02b2e70adb11c2cc9e03cc5358,
+name nonlinear-self-fit-b54067ed-ro-20261007, root
+scratch/nonlinear-self-continuation-study-20261007-b54067ed-ro.
+All source/helper/prepared mounts read-only; only root/results writable, no
+overlapping alias. Original5c6cimage, CPU1/memory4GB/user1000/networknone/ROroot.
+Actual running/OOMfalse/CPU106%/memory1.14GB confirmed; last acknowledged month
+2017-01 still insufficient, first trained month pending. Results under
+results/fit/models, runtime/complete files under results/fit. Never edit mounted
+source, restart or duplicate this process; inspect its exact state/logs first.
+
+FIRST launcher e5ebe5b9 had an output mount exposing a writable alias of copied
+source. Reproduced by actual mount inspection; deliberately stopped terminal137/
+OOMfalse BEFORE any trained month. Original failed root/container/log retained.
+All1622source bytes unchanged;23completed insufficient-history months with no heads
+authenticated and reused, not fitted again. Corrected run has distinct identity
+and frozen private resume driver. Lineage819a7ca6db62b94ec7b5665c0dd967c7d2176b3b7e761cacdba82dc15b091b8c
+records failed mounts, source and original prefix hashes. Do not revive first run.
+
+Bounded funded-screen protocol3524f664 was frozen before this fit: start0 at
+2018-02-01..2026-09-30,0/10/25bp, same carried ledger, every declared period,
+authenticated shared rule/SPY/QQQ controls. Three accounts are a screen, not
+adoption. Actual economic runner/provider authentication remains UNVERIFIED and
+must be implemented while fitting continues; holding/profit-exit and funded sizing
+qualification also remain. Active original2ff5c7ea300-account continuation was
+confirmed running/OOMfalse and untouched. Snapshot03 remains75verified/225pending.
+No new agents, scoring/refetch/tuning/old fits/model gates/real orders/deployment.
+Diagram impact NONE: existing internal research/execution boundary.
+
 ## 2026-10-07 — numeric continuation publication and original bank verified
 
 Previous goal turn PROGRESS: paid incumbent/ETF controls independently accepted.
