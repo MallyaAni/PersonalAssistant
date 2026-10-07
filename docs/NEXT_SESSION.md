@@ -1,5 +1,49 @@
 # Next session
 
+## 2026-10-06 — full published sizing/timing/fill journey VERIFIED
+
+Goal ACTIVE; previous turn PROGRESS (residual persistence and real publication),
+this turn PROGRESS (missing combined acceptance). Started clean7f894f5c.
+Verified checkpoint4c79f12f186eeacf790604e929508bd1eebdf189 on owned research
+branch. Production algorithms, model receipts, artifacts, main and live untouched.
+
+Added two genuine numeric synthetic journeys to existing market-conditioned
+holding tests: published completed-close model -> original simultaneous risk
+bank -> market-conditioned calibration -> certified funded whole-share plan ->
+persisted ordinary intent -> restored numeric timing heads/residuals -> current
+completed-prefix forecast -> actual private sender -> acknowledgment, single
+conditional fill and reconciliation. One funded buy and one discretionary sell
+with the grade STILL A+; no substituted scenario or timing-decision oracle.
+Base fitting is structurally forbidden after fixture publication. Cash, fee,
+quantity, inference-receipt linkage, no overnight ordinary submission, no duplicate
+submission and durable empty terminal pending state all pass. Synthetic controlled
+histories and broad price moves exercise both sides, not profit or threshold tuning.
+
+Initial fixture incorrectly included current-month data in a prior-month residual
+archive; original refusal retained, fixture narrowed to its declared prior month.
+Second helper wrongly expected overnight acknowledgment rather than a pending
+ordinary intent; assertions now distinguish both. Missing already-published
+next-bar opening correctly produced no execution; supplied its explicit synthetic
+capture clock without loosening the guard. All original failure logs retained in
+/home/animallya96/scratch/forward-residual-storage-20261006/full-forward-*.log.
+
+Exact-source pinned-image acceptance:113PASS/no skips17.39seconds across forward
+holding, market-conditioned holding, joint timing and actual-clock timing modules.
+2409archived source members unchanged; Ruff/diff clean. Evidence root
+/home/animallya96/scratch/forward-funded-acceptance-20261006-4c79f12f/proof:
+tests.log SHAb32443b0fc5667fdb181c8e1749aaa89bade134c5cc071a217db6bc37ee198ba;
+command.json SHAae0ce55a14551bf6ccd92bad61e7dc76db08ab1f5d86e9c68b2ae07f5d6f094a;
+source-manifest.json SHAe79a2b7f48439e2512412b6cd7c73d607680d1530511f4a5544c5c65f06a779e.
+Diagram impact NONE — acceptance exercises the existing private flows only.
+
+Original V5 producer659a960b and watcher3169361 confirmed live this turn.
+Last compact durable progress: market-10-0,2060sessions through2026-04-13,
+one of three cost accounts complete. Do not select from its partial scores.
+No producer restart/source change, new economic grid, scoring, market request,
+model service, broker order or deployment. Economic advantage/current external
+source transport/full production adoption remain UNVERIFIED; these four-stock
+synthetic journeys cannot substitute for the complete benchmark comparison.
+
 ## 2026-10-06 20:20NY — residual persistence and real publication VERIFIED
 
 Human asks to check/retry. SSH works; original V5 producer659a960b remains
