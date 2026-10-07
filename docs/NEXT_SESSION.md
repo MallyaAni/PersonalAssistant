@@ -2,6 +2,12 @@
 
 ## 2026-10-06 — main-based learned live integration verified, not activated
 
+VERIFIED/pushed source checkpoint26a616fac4515889bccdc33b413a1d7ffed3959d.
+After commit,2357tracked file hashes match the actual accepted private source;
+only this handoff differs as documentation. Test execution receipt SHA
+296f50818e0d886797e65c21ea72a246b3fa8a91d2d02011b909ed1089af7d19.
+Origin/main remainsf77d6e57; pull/rebase found this release branch up to date.
+
 Goal ACTIVE/incomplete: replace ordinary fixed timing and equal sizing with the
 reviewed learned buy/exit/funded sizing path. New managed worktree
 /Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant,
