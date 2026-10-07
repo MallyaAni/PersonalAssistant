@@ -1,5 +1,36 @@
 # Next session
 
+## 2026-10-07 — learned personal waits render correctly; economic continuation active
+
+VERIFIED checkpoint dd1433b1f975226f6f5645734ad6c574ecb46a92 fixes an observed
+browser defect: valid named learned timing waits previously rendered Blocked in
+personal previews and expanded ticker guidance. The mounted actionPresentation
+helper now distinguishes fresh, matching, spread-verified model waits; expired,
+foreign and unavailable evidence still cannot present an executable trade.
+Learned personal target detail no longer claims a next-reset execution time.
+No backend decision, funding gate, model, production configuration or order changed.
+
+VERIFIED actual Chrome acceptance: all17 simple-actions browser cases pass,
+including seven learned wait/buy/sell/unavailable/expired/unverified/foreign cases.
+Log /private/tmp/learned-personal-browser-correct-startup-20261007.log. Typecheck
+and production build pass on the exact four changed frontend files, Node24.19.0,
+Vite8.2.2. Bundle index-DmcVmRN7.js SHA256
+041ecff1d6d44b2b1a876ca6f09f092742d2211858f53865c5a755c51507bb60.
+CSS index-CpD4Eu5p.css SHA256
+c39265c74ee96deb3924bfa26e628132b16e9631833a083a97b608f5ecba9d6c.
+Build retains CSS-pseudo-class and bundle-size warnings; no unrelated changes.
+Earlier bad test startup used repository-root cwd and omitted Tailwind content;
+correct frontend cwd passes the unchanged mobile acceptance. An assertion against
+the unmounted old StockBoard was removed; no unmounted-only edits remain.
+
+UNVERIFIED live deployment and economic qualification. Incumbent remains unchanged.
+Continuation actual-continuation-57e044b1a4ef confirmed RUNNING/OOMfalse with two
+active CPU workers at about69minutes elapsed, no new acknowledged fee accounts.
+Existing71closed accounts and229pending retained; do not restart or patch it.
+Prioritize already queued matched10/25bp evidence, not additional cohorts or fits.
+Goal remains the justified deployed replacement, not this browser fix alone.
+Diagram impact NONE: existing personal presentation only.
+
 ## 2026-10-07 — incremental verification accepts71closed controls
 
 Previous goal turn: VERIFIED WAIT (actual2ff5c7ea runtime confirmed running).
