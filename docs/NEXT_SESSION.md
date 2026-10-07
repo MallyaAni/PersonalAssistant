@@ -1,5 +1,28 @@
 # Next session
 
+## 2026-10-07 — timing-only evidence separated from combined allocation
+
+VERIFIED comparison of already independently verified saved scores, thirteen
+complete paired zero-cost phases0–12 per timing method. Original report SHA
+839678806cc4d8cbf6e48fd71918ebf21f3d1331f7ec6658c95389fe8f020719 checked before
+and after; pairs have identical boundaries/session counts and no missing NAV.
+No fit, prediction, trade replay, new return series or active-account economics.
+Boosting timing preserves incumbent selection/sizing and exceeds its full gain
+in11/13 starts, median+24.19percentage points terminal gain/+0.41points CAGR.
+It loses every reused-recent comparison, median−1.15points gain. Ridge wins
+2/13 full comparisons, median−41.15points gain. All declared eras/both methods
+and ranges are retained in learned-live-replacement-results-2026-10-07.md.
+Overlapping starts are not independent trials. Seven phases and all fee pairs
+remain pending; this is not configuration selection or adoption approval.
+
+Original controls2832af72 remain RUNNING/OOMfalse: ridge-0-13,67completed,
+1340sessions/2023-06-15 at12:14NewYork. Completed30-minute read-only monitor949;
+do not resume/restart that terminal monitor. Original producer remains live.
+No duplicate/subset/repriced controls or new cohorts. Next review keeps the
+timing-only and combined-sizing questions separate using original completed
+evidence; neither proves new profit-exit behavior. Live92b11bb9/incumbent and
+both absent selectors unchanged; goal ACTIVE.
+
 ## 2026-10-07 — saved causes clarify startup readiness without changing results
 
 VERIFIED read-only cause review of all three original candidate accounts:

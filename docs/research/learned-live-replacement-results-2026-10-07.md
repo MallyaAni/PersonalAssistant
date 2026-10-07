@@ -29,6 +29,44 @@ Its cumulative realized turnover is 256.98 versus 184.21 for the rule;
 these are full-period ratios, not annual turnover. Average end-session exposure
 is 62.56% versus 85.43%.
 
+## Timing-only controls: completed start-date sensitivity
+
+The independent saved report also contains thirteen complete paired start phases
+(0–12) for each original timing-only method versus the unchanged rule, at zero
+cost. This review compares its already verified scores; it fits no model,
+replays no account and computes no new return series. Each pair has identical
+first/last sessions, equal scored session counts and no missing NAV marks.
+The seven remaining phases and all matching fee comparisons remain pending.
+
+| Method / period | Starts with greater gain | Median gain difference, percentage points | Gain difference range, percentage points | Median CAGR difference, percentage points |
+| --- | ---: | ---: | ---: | ---: |
+| Boosting / full | 11/13 | +24.19 | −24.55 to +53.97 | +0.41 |
+| Boosting / 2018–20 | 8/13 | +1.16 | −7.09 to +20.65 | +0.24 |
+| Boosting / 2021–26 | 8/13 | +5.71 | −29.67 to +20.78 | +0.31 |
+| Boosting / reused recent | 0/13 | −1.15 | −2.39 to −0.93 | Not annualized here |
+| Ridge / full | 2/13 | −41.15 | −69.90 to +65.71 | −0.72 |
+| Ridge / 2018–20 | 4/13 | −3.56 | −8.34 to +16.30 | −0.75 |
+| Ridge / 2021–26 | 2/13 | −16.38 | −50.71 to +23.20 | −0.91 |
+| Ridge / reused recent | 0/13 | −1.37 | −1.69 to −1.33 | Not annualized here |
+
+All differences are method minus the matched rule. A 24.19-point full gain
+difference means about $24,191 additional terminal wealth on the original
+$100,000, not a 24.19% relative improvement. The starts overlap heavily and are
+not thirteen independent trials. Boosting's median full-period drawdown loss
+difference is −0.15 percentage points; its median cumulative turnover difference
+is −1.62 account-turnover units. Ridge's corresponding differences are +0.50
+points and −1.36 turnover units. These are differences of paired diagnostics,
+not differences between separately calculated medians.
+
+This distinguishes a potentially useful timing component from the combined
+learned allocation candidate. It does not establish a reliable new holding-exit
+policy, stock-specific position sizing or an untouched holdout win. Recent
+weakness, incomplete starts/costs and the original source limitations remain.
+Continue the original comparison; do not select the zero-cost boosting result
+as an approved configuration or adopt a retrospective profitable-era switch.
+The saved report hash and independent acceptance below authenticate this
+completed prefix. No active account's partial financial metrics were read.
+
 ## Fixed cost sensitivity
 
 | Cost per side | Candidate total gain | CAGR | Maximum loss | Sharpe | Paid fees |
