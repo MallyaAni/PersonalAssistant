@@ -2796,6 +2796,12 @@ export interface DeskDecisions {
   holdings: Record<string, number>;
   timing?: DeskTiming;
   rows: Record<string, {
+    learned_timing?: {
+      policy: string;
+      state: 'execute' | 'wait' | 'unavailable' | 'no_trade';
+      at: string;
+      reason: string;
+    } | null;
     // `/4` only: the timing of the row's trade, the executor's band gate,
     // the close grade the action is based on and the candle's re-grade.
     timing?: DeskRowTiming | null;

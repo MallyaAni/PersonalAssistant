@@ -174,6 +174,16 @@ export const actionPresentation = (plan: PlanAction, decision: DeskDecisions['ro
     ? {word: 'Unavailable', detail: 'Entry data missing'}
     : {word: 'Hold', detail: null}
   const detail = `Strategy: ${actionWord(intent, decision).toLowerCase()}`
+  const learned = decision.learned_timing
+  if (decision.action === 'Hold' && decision.timing?.rule === 'live-probability-timing/1-research'
+    && learned?.policy === decision.timing.rule && learned.state === 'wait') {
+    const expiry = Date.parse(decision.valid_until ?? '')
+    const observed = Date.parse(learned.at)
+    if (!Number.isFinite(expiry) || expiry <= now || !Number.isFinite(observed) || observed > now)
+      return {word: 'Unavailable', detail: 'Refresh price check'}
+    if (decision.quote.eligible && decision.quote.spread_verified === true)
+      return {word: 'Wait', detail}
+  }
   if (decision.action === 'Hold' && decision.entry_guard?.allowed === false
     && decision.blocker === decision.entry_guard.reason) {
     const expiry = Date.parse(decision.valid_until ?? '')

@@ -2401,7 +2401,7 @@ const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = 
     {spreadCaveat}
     {terse && !blocked && <p aria-label={`${ticker} decision reason`} className="text-xs font-normal text-[#6e6e73]">{action === 'Hold' && (row.strategy_action ?? row.action) === 'Hold' && row.entry_status === 'unavailable' ? row.entry_reason ?? 'Entry data unavailable' : reason}</p>}
     {!terse && <details className="mt-1 text-[#6e6e73]"><summary className="cursor-pointer">Recorded allocation & execution quote</summary>
-      <div>Recorded personal allocation {allocationPercent(row.current_weight)} · strategy target {allocationPercent(row.target_weight)} at the next reset</div>
+      <div>Recorded personal allocation {allocationPercent(row.current_weight)} · strategy target {allocationPercent(row.target_weight)}{row.timing?.rule === 'live-probability-timing/1-research' ? '' : ' at the next reset'}</div>
       {row.quote ? <>
         <div>{row.quote.feed?.toUpperCase() ?? 'No feed'} · {row.quote.bid && row.quote.ask ? `${priceMoney(row.quote.bid)} bid / ${priceMoney(row.quote.ask)} ask` : 'quote unavailable'}</div>
         <div>{row.quote.at ? executionTime(row.quote.at) : 'No quote time'}{expired ? ' · expired' : ''}</div>

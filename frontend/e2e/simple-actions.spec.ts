@@ -28,8 +28,8 @@ function paper(orders: Order[], held: Record<string, number> = {}, untilReset = 
 }
 
 // Exercise the complete desk with deterministic record, market and paper-account responses.
-async function setup(page: Page, {open = true, paused = false, account, beforeNavigate}: {
-  open?: boolean; paused?: boolean; account?: ReturnType<typeof paper>; beforeNavigate?: () => Promise<void>} = {}) {
+async function setup(page: Page, {open = true, paused = false, account, policy = POLICY, beforeNavigate}: {
+  open?: boolean; paused?: boolean; account?: ReturnType<typeof paper>; policy?: string; beforeNavigate?: () => Promise<void>} = {}) {
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()) })
@@ -45,7 +45,7 @@ async function setup(page: Page, {open = true, paused = false, account, beforeNa
     else if (path.endsWith('/desk')) json = {latest: {
       session, written, regime: {exposure: 1, flags: []},
       grades: Object.fromEntries(['AAPL', 'NVDA', 'MSFT'].map(ticker => [ticker, {grade: 'A', score: 1, votes: 3, stances: {}, ranks: {}, headline: `${ticker}: trend and growth lead`, reason: '+ Technical: above its 50-day average'}])),
-      targets: {policy: POLICY, weights: {AAPL: .0909, NVDA: .0909, MSFT: .0909}},
+      targets: {policy, weights: {AAPL: .0909, NVDA: .0909, MSFT: .0909}},
       book: [{ticker: 'AAPL', weight: .05, grade: 'A'}], actions: ['AAPL', 'NVDA', 'MSFT'].map(ticker => ({ticker, action: 'hold', grade: 'A', last_close: 100})), briefs: {},
     }, sessions: [session], event_policy: paused ? {enabled: true} : undefined,
       event_status: paused ? {planning_paused: true, active: true, stale: false, status: 'reduction pending'} : undefined}
@@ -59,6 +59,66 @@ async function setup(page: Page, {open = true, paused = false, account, beforeNa
   if (beforeNavigate) await beforeNavigate()
   await page.goto('/#desk')
   return {errors}
+}
+
+// Personal previews preserve model waits, executable sides and missing or stale evidence.
+for (const scenario of [
+  {name: 'wait', state: 'wait', side: 'Buy', expected: 'Wait'},
+  {name: 'buy', state: 'execute', side: 'Buy', expected: 'BUY'},
+  {name: 'sell', state: 'execute', side: 'Sell', expected: 'SELL'},
+  {name: 'unavailable', state: 'unavailable', side: 'Buy', expected: 'Blocked'},
+  {name: 'expired', state: 'wait', side: 'Buy', expected: 'Unavailable'},
+  {name: 'unverified quote', state: 'wait', side: 'Buy', expected: 'Blocked'},
+  {name: 'foreign observation', state: 'wait', side: 'Buy', expected: 'Blocked'},
+] as const) {
+test(`learned personal ${scenario.name} preserves timing and executable size`, async ({page}) => {
+  const timingPolicy = 'live-probability-timing/1-research'
+  const execute = scenario.state === 'execute'
+  const expiry = scenario.name === 'expired' ? '2026-09-24T13:59:59Z' : '2026-09-24T14:00:30Z'
+  const reason = execute ? 'Learned timing ready' : scenario.state === 'wait' ? 'Learned timing waiting' : 'Learned observation unavailable'
+  const {errors} = await setup(page, {
+    policy: 'joint-stock-risk-funded/6-retained-holdings-probability-timing-research',
+    account: paper([]), beforeNavigate: async () => {
+      await page.route('**/api/v1/auth/session', route => route.fulfill({json: {
+        authentication_required: true, user_id: 'ani.mallya', is_admin: true, desk_write: false,
+      }}))
+      await page.route('**/desk/holdings', route => route.fulfill({json: {
+        holdings: scenario.side === 'Sell' ? [{ticker: 'AAPL', shares: 50, entry_price: 90, entry_date: '2026-09-23'}] : [],
+      }}))
+      await page.route('**/desk/mine', route => route.fulfill({json: {
+        session, rows: [], grades_live: {}, decisions: {
+          session, written, as_of: at, equity: EQUITY, holdings: {},
+          timing: {rule: timingPolicy, level: null, session, latched: true},
+          rows: {AAPL: {
+            action: execute ? scenario.side : 'Hold', strategy_action: scenario.side,
+            move_weight: execute ? (scenario.side === 'Buy' ? .05 : -.05) : 0,
+            strategy_move_weight: scenario.side === 'Buy' ? .05 : -.05,
+            target_weight: scenario.side === 'Buy' ? .05 : 0,
+            current_weight: scenario.side === 'Buy' ? 0 : .05, delta_weight: scenario.side === 'Buy' ? .05 : -.05,
+            executable: execute, blocker: execute ? null : reason, reason, valid_until: expiry,
+            quote: {eligible: true, spread_verified: scenario.name !== 'unverified quote', feed: 'iex', bid: 99.99, ask: 100.01,
+              at, valid_until: expiry},
+            timing: {rule: timingPolicy, state: execute ? 'triggered' : 'waiting', side: scenario.side.toLowerCase(), session,
+              level: null, level_fraction: null, reason},
+            learned_timing: {policy: scenario.name === 'foreign observation' ? 'another-policy' : timingPolicy,
+              state: scenario.state, at, reason: scenario.state === 'wait' ? 'Waiting has higher expected utility' : reason},
+          }},
+        },
+      }}))
+    },
+  })
+  await page.getByLabel('Personal portfolio', {exact: true}).locator(':scope > summary').click()
+  const preview = page.getByLabel('Personal action preview', {exact: true})
+  await expect(preview.getByLabel('AAPL strategy intent', {exact: true})).toContainText(scenario.expected)
+  await expect(preview.getByLabel('AAPL personal trade size')).toHaveCount(execute ? 1 : 0)
+  if (scenario.expected === 'Wait') await expect(preview).not.toContainText('Blocked')
+  await expect(preview).not.toContainText('at the next reset')
+  await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
+  const guidance = page.getByRole('region', {name: 'AAPL personal guidance', exact: true})
+  await expect(guidance.getByLabel('AAPL strategy intent', {exact: true})).toContainText(scenario.expected)
+  if (scenario.expected === 'Wait') await expect(guidance).not.toContainText('Blocked')
+  expect(errors).toEqual([])
+})
 }
 
 // Keep the primary board small while preserving the evidence and the paper position on request.
