@@ -81,6 +81,32 @@ for (const filled of [false, true]) {
 }
 }
 
+for (const policy of [
+  'graded-equal-weight/5',
+  'joint-stock-risk-funded/5-market-conditioned-probability-timing-research',
+  'joint-stock-risk-funded/6-retained-holdings-probability-timing-research',
+]) {
+  // Market flags must not attribute the reference engine's multiplier to another allocator.
+  test(`recorded allocation does not inherit reference regime multiplier: ${policy}`, async ({page}) => {
+    const errors = observeBlockingBrowserErrors(page)
+    const latest = deskRecord()
+    // Begin with a complete zero-target map before assigning the policy's stock weight.
+    const weights = Object.fromEntries(Object.keys(latest.grades).map(name => [name, 0]))
+    weights.AAPL = policy === 'graded-equal-weight/5' ? .25 : .20
+    // Supply stamped targets independently of the reference engine's exposure field.
+    await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
+      latest: {...latest, targets: {policy, weights}},
+    }}))
+    await page.goto('/?deskDetails=1#desk')
+    const risk = page.getByRole('note').filter({hasText: 'Market risk'})
+    await risk.locator('summary').click()
+    await expect(risk).toContainText('AI trading activity is below its historical median')
+    await expect(risk).not.toContainText('target sizing')
+    await expect(risk).not.toContainText('target-size multiplier')
+    expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+  })
+}
+
 // Unsupported historical returns stay hidden while the original record remains archived.
 test('withholds an unvalidated simulation and explains missing held marks', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)
@@ -110,7 +136,7 @@ test('account wording distinguishes allocation from profit and paper from person
   await page.goto('/?deskDetails=1#desk')
   await page.getByRole('button', {name: 'How to use this page', exact: true}).click()
   await page.locator('summary', {hasText: 'Market risk'}).click()
-  await expect(page.getByText('This is not your invested percentage or a claim about available cash;', {exact: false})).toBeVisible()
+  await expect(page.getByRole('note')).not.toContainText('target-size multiplier')
   await expect(page.getByText('The paper account places exactly these orders. Nothing here touches your own brokerage account.', {exact: false})).toBeVisible()
   await expect(page.getByText(/BUY, SELL and TRIM are the paper account's orders/)).toBeVisible()
   await expect(page.getByText(/HOLD means no order: the position stays/)).toBeVisible()
@@ -1390,11 +1416,10 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   await expect(page.getByText('CAGR', { exact: true })).toBeVisible()
   await expect(page.getByText('31.0%', { exact: true })).toBeVisible()
 
-  // The regime leads the board, in plain words, and says what it is doing
-  // about it.
+  // The recorded market flags remain visible without claiming they size another policy.
   await expect(page.getByRole('note')).toContainText('Market risk')
   await expect(page.getByRole('note')).toContainText('AI trading activity is below its historical median')
-  await expect(page.getByRole('note')).toContainText('target-size multiplier to 80%')
+  await expect(page.getByRole('note')).not.toContainText('target-size multiplier')
 
   // What moved since the last session, which the page used to throw away.
   await strategyDetails(page)

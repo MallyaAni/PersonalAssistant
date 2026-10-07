@@ -594,33 +594,18 @@ const SimulationSummary = ({latest, backtest}: {latest: DeskRecord; backtest: De
   </section>
 }
 
-// The regime in front of the board, not at the bottom: the warnings change
-// how much of the board to trust, so they lead it. Plain words for each
-// flag, and a line when the desk has sized down because of them.
+// Show recorded market conditions without attributing reference sizing to account targets.
 const RegimeBanner = ({ regime, session }: { regime: DeskRecord['regime']; session: string }) => {
   const flags = regime.flags ?? []
   if (flags.length === 0) return null
-  const exposure = regime.exposure ?? 1
   return (
     <section className="rounded-xl border border-[#9a6200]/30 bg-[#fff6e5] px-3 py-2" role="note">
-      {/* The multiplier goes in the summary, not at the bottom of the fold.
-          It is what halves the book - on the live record exposure 0.5 against
-          an FOMC gate that is idle - and a reader looking at 57% cash had to
-          open a collapsed section to find the only sentence explaining it. */}
-      <details><summary className="cursor-pointer text-xs font-medium text-[#9a6200]">Market risk · {session} close · {flags.length} flags{exposure < 1 ? ` · target sizing at ${Math.round(exposure * 100)}%` : ''}</summary>
-      <p className="mt-1 text-xs text-[#7a5200]">Reassessed nightly. Intraday research sizing has its own dated inputs.</p>
+      <details><summary className="cursor-pointer text-xs font-medium text-[#9a6200]">Market risk · {session} close · {flags.length} flags</summary>
       <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-[#7a5200]">
         {flags.map((flag) => (
           <li key={flag}>{FLAG_WORDS[flag] ?? flag}</li>
         ))}
       </ul>
-      {exposure < 1 && (
-        <p className="mt-2 text-sm text-[#7a5200]">
-          These flags set the strategy target-size multiplier to {Math.round(exposure * 100)}%.
-          The FOMC policy is separate. This is not your invested percentage or a claim about available cash;
-          actual holdings depend on recorded fills.
-        </p>
-      )}
       </details>
     </section>
   )

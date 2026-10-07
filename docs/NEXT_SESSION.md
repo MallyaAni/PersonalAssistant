@@ -1,5 +1,36 @@
 # Next session
 
+## 2026-10-07 — replacement deployment active; allocation display corrected
+
+Goal ACTIVE: learned live activation remains the priority. Main d5712afa carries
+the tested replacement and clean-build dependency fix. Actual guarded deployment
+runner4010644 at scratch/learned-live-inactive-deploy-20261007-async-fix passed
+10440unit tests/93skips/6xfails and routing, built all eight affected services,
+and is mirroring the required backup. Read execution.json and deploy.log before
+further deployment; never restart an active attempt. Learned selectors remain
+absent. Inactive deployment is not model adoption or economic superiority.
+
+FAILED/reproduced: RegimeBanner attributes the reference engine's exposure
+multiplier to recorded account targets, although neither the incumbent allocator
+nor the learned funded optimizer applies it. Three unchanged browser assertions
+failed for incumbent/V5/V6. Remove only that false sizing attribution and redundant
+prose; preserve the recorded market flags. VERIFIED exact99frontend source files:
+typecheck/build and nine Chromium acceptance cases pass, including four learned
+waiting/fill cases and the broad desk rendering path. The build emits an existing
+CSS selector warning; no new browser errors. Private isolated source, no production
+or account writes. Original failures and corrected logs are retained under
+scratch/learned-regime-rendering-20261007. Acceptance proof SHA
+c9906505469b55098e22eb0e058c1e85102e8da3f23d8966e326ad98ee267a4f.
+This display correction still needs guarded frontend deployment and actual browser
+verification after the active backend deployment terminates.
+
+Original candidate659a960b/control2832af72 remain running, OOMfalse; final carried
+economic comparison is unavailable. Preserve their mounted sources and original
+saved-only watcher. No partial economic metrics, new fitting, replay, cohorts,
+parameter changes or orders. Activation still requires completed declared
+comparison, supported held transition, current broker/API/browser/artifact proof
+and new targets/tagged intents from the ordinary nightly publication.
+
 ## 2026-10-07 — integration merged; clean-build dependency boundary fixed
 
 Goal ACTIVE: the learned live replacement is not yet activated. Tested source
