@@ -1,5 +1,65 @@
 # Next session
 
+## 2026-10-06 20:20NY — residual persistence and real publication VERIFIED
+
+Human asks to check/retry. SSH works; original V5 producer659a960b remains
+RUNNING/OOMfalse and sole read-only watcher3169361 remains active. No complete
+three-cost saved verification yet. Never restart either or score partial accounts.
+Started4164924d on owned research branch; current main remainsf77d6e57 ancestor.
+No main, production, model-service, UI, orders or old economic replay changes.
+
+VERIFIED code checkpoint4d8d0fbaf044048f57978cebd586cf49efc05331, pushed to
+codex/learned-entry-risk-20261002. Added exclusive private numeric residual
+publication/restoration in existing forward_probability_timing.py, preserving
+original preparation receipt, typed sample hashes, equal-date weights, missing
+stocks, source/cohort, maturity and separate actual storage availability.
+First original acceptance FAILED for missing write_residual_month; retained
+missing-storage.log. Same acceptance now passes. Changed files, extra fields,
+changed samples despite a new outer hash, early/expired clocks and overwrite
+attempts are rejected. The unchanged real inference/private persisted sender
+acceptance now exercises both in-memory and restored residual samples.
+
+Exact committed source on image5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d:
+192checks PASS/no skips in11.83seconds,2409source files unchanged; Ruff clean.
+Evidence /home/animallya96/scratch/forward-residual-storage-20261006/verification/proof:
+tests.log SHA8e55b2c82e78a0d69ea88c597db0e68a5c6dcfbfb13ce11cf02ab9cd198651b9;
+command.json SHA32a30fa918cb56aa4bead74c170a4acc3c358bec6ac512615252b4e63a81cde8;
+source-manifest.json SHAbe60eea446f30747918e5179feeb2b572f3d20caf39acdee34ab2f2c11bb0622.
+Diagram impact: NONE — serialization extends the existing private research
+artifact boundary; no new subsystem, service, caller or production data flow.
+
+ONE real October residual publication from original authenticated prepared,
+moment, diagnostic and calibration artifacts, without model fitting, market
+requests, economic scoring or recalibration. Root:
+/home/animallya96/scratch/forward-residual-storage-20261006/real-publication.
+Original numeric head receipt7759572d79f1bc4e0cb288c04f9d14d318c8d51f15d447efd7a6bf47864d60a8
+remains compatible: forward_execution.py/protocol/source contract unchanged.
+Actual prepared20:19:22.821324NY, stored20:19:23.371866NY October6; NOT backdated
+to October1 fit date.96names:89available,5insufficient_mature_sessions,2excluded
+benchmarks.1,420,721supported residual rows; latest endpointAugust14 before
+frozenAugust17 cutoff. The five unsupported stocks remain explicit, with no
+invented distributions or hard-threshold fallback.
+
+Publication containerc7ebca06b07a512ba7f874ed096eed2d6b48766297a9a8bb6c0b3fc436aabafb
+exit0/OOMfalse, user1000:1000,CPU1/memory4GB/networknone; source/inputs/heads
+mounted read-only, private output only writable.2409source files unchanged.
+Independent separate-process readback authenticated all available typed arrays,
+missingness, permissions and original head compatibility. Its zero-feature
+numeric probe proves compatibility, NOT an observed market forecast or profit.
+Receipt SHA348b81ca6018a73701aaa8e76970facf514ebba6b6a0e68e204b1f28eb4aca9b;
+array SHA4616b41cc6e39b2e8c763417def0baaa1bdd01800e5535a412594671d1d3f94e;
+output/result.json SHA308354f82961d3fcfdcd6b31fc57fac6cb4645881134afec4d0f2ddbb841c16d;
+proof/execution.json SHAa85d61b45aba502ef99650c76f9c6b7f5c75a2f8e464abeb661a4df08d3ec33f;
+independent/artifact-proof.json SHA6e655a811d2664513c627080afa6505a0319caa4258d6b8ae4dd5818674587a8.
+
+Remaining UNVERIFIED: complete V5 carried gains versus matched-cost incumbent,
+SPY and QQQ; causal adoption evidence; authentic current observations and the
+full learned funded selection/sizing path into production. This helper and its
+stored original one-bar distributions are not the full V5 holding-risk policy.
+Do not promote from tests, a numeric probe or these original archive assumptions.
+Do not refit/republish these artifacts just for status or docs-only revisions.
+The failed one-shot actual-intent automation remains paused; no retry/new cohort.
+
 ## 2026-10-06 19:45NY — Spark access restored; one cost account complete
 
 Human restored session full access and asked to retry. SSH VERIFIED again.
