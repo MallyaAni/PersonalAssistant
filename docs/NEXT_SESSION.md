@@ -1,5 +1,35 @@
 # Next session
 
+## 2026-10-07 — learned buy risk boundary repaired; activation remains priority
+
+User priority: live replacement. Source checkpoint b10702d28e1e18c2b94dc37126c30050af4a4cd8
+changes only learned personal guidance and its regression tests. FAILED first:
+both exhausted-risk and unknown-reward buys correctly had zero executable size,
+but lost the actual risk blocker because a string action bypassed the shared
+enum identity check. Use the shared Action enum at this boundary. No numeric
+heads, allocation math, economic inputs or active experiment changed.
+
+VERIFIED targeted acceptance:234 tests pass/no skips, including the same two
+original failed assertions, eligible buys/sells, company exits, own cash/whole
+shares, paper isolation and the authenticated personal POST. Ruff clean. Exact
+2361 source files retained unchanged in private read-only, network-none image
+7c2d78044a693425dd77d672f849a674cbf9f8f0f1383c67df50f534df8f5a51.
+Proof scratch/learned-risk-reason-20261007/proof-v3/acceptance.json SHA
+02f6ed5183a8f8348ffcd31a54a8428a355ff2a2c2ca5978e0616d29dc0b9afa;
+failed cases remain in proof-v1/test.log. This is targeted compatibility proof,
+not economic approval or completed deployment.
+
+NEXT: guarded backend release through scripts/deploy.sh, required gates and
+current API/browser/source verification. Both learned selectors remain absent;
+live31e23d08 still uses the incumbent. Original carried candidate659a960b and
+controls2832af72 remain running/OOMfalse, watcher3169361 live. Candidate has two
+completed cost accounts, final market-25-0 at1640 sessions/2024-08-07, observed
+04:52New York. No partial economics inspected. Preserve active sources and
+original assets; do not refit, restart, tune, rescore or duplicate experiments.
+Complete saved-only integrity/economic review and supported held transition,
+then exact-source activation and ordinary nightly tagged publication. Inactive
+code deployment alone does not satisfy the live replacement goal.
+
 ## 2026-10-07 — replacement code deployed; economic activation still pending
 
 Goal ACTIVE; this turn made progress by completing guarded deployment and actual
