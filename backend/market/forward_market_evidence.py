@@ -34,10 +34,12 @@ class MarketPacket:
 
 
 # Capture one explicit free-feed GET without discarding its original response bytes.
-def capture_quotes(symbols, *, transport, headers, clock):
+def capture_quotes(symbols, *, transport, headers, clock, expected_window=None):
     names = source._symbols(symbols)
     url = QUOTE_ENDPOINT + "?" + urlencode({"symbols": ",".join(names), "feed": "iex"})
     requested = _as_of(clock())
+    if expected_window is not None:
+        _same_window(expected_window[0], requested, expected_window[1])
     status, body = transport(url, headers)
     received = _as_of(clock())
     return {
@@ -48,6 +50,146 @@ def capture_quotes(symbols, *, transport, headers, clock):
         "body": body,
         "sha256": sha256(body).hexdigest(),
     }
+
+
+# Resolve an actually completed active window on the reviewed exchange calendar.
+def _window(now):
+    session = now.date()
+    years, exchange = calendar.reviewed_sessions()
+    opening = datetime.combine(session, calendar.REGULAR_OPEN, calendar.NEW_YORK)
+    closing = datetime.combine(
+        session, calendar.session_close(session), calendar.NEW_YORK
+    )
+    if (
+        session.year not in years
+        or not np.is_busday(np.datetime64(session), busdaycal=exchange)
+        or not opening + timedelta(minutes=15) <= now < closing
+    ):
+        raise ValueError("Current completed regular observation required")
+    count = int((now - opening) // timedelta(minutes=15))
+    return session, count, opening + timedelta(minutes=15 * count)
+
+
+# Stop subsequent requests when the clock moves backward or crosses a bar boundary.
+def _same_window(completed, now, minimum):
+    if now < minimum or _window(now)[2] != completed:
+        raise ValueError("Original source observation window changed")
+
+
+# Bound each individual bar request while retaining the parser's original receipts.
+def _capture_bars(names, query, completed, started, transport, headers, clock):
+    pages, last, seen = [], {}, set()
+    rows, received = {name: [] for name in names}, started
+    try:
+        for _ in range(100):
+            requested = _as_of(clock())
+            _same_window(completed, requested, received)
+            first = [requested]
+
+            # Retain the checked request instant and read the response clock afterward.
+            def request_clock(first=first):
+                return first.pop() if first else clock()
+
+            status, body, received = source._request_page(
+                source.ENDPOINT + "?" + urlencode(query),
+                headers,
+                transport,
+                request_clock,
+                received,
+                pages,
+            )
+            if status != 200:
+                raise source.CaptureError("Bar source endpoint unavailable", pages)
+            _same_window(completed, received, requested)
+            parsed, token = source._captured_page(body, names, last, pages)
+            for name, bars in parsed.items():
+                rows[name].extend(bars)
+            if token is None:
+                return {
+                    "status": "captured",
+                    "pages": pages,
+                    "rows": rows,
+                    "received_at": received.isoformat(),
+                }
+            if token in seen:
+                raise ValueError("Repeated source pagination token")
+            seen.add(token)
+            query["page_token"] = token
+        raise ValueError("Source page chain exceeded its declared bound")
+    except (ValueError, TypeError, KeyError) as exc:
+        raise source.CaptureError(
+            "Market source evidence unavailable: " + str(exc), pages
+        ) from exc
+
+
+# Acquire one causal packet without orders, fitting or replacement windows.
+def capture(symbols, *, transport, headers, clock):
+    names = source._symbols(symbols)
+    started = _as_of(clock())
+    session, _, completed = _window(started)
+    _, exchange = calendar.reviewed_sessions()
+    prior = np.busday_offset(np.datetime64(session), -1, busdaycal=exchange).astype(
+        object
+    )
+    pages = []
+    try:
+        raw = _capture_bars(
+            names,
+            source._query(names, session, started, "raw"),
+            completed,
+            started,
+            transport,
+            headers,
+            clock,
+        )
+        pages.extend(raw["pages"])
+        received = _as_of(raw["received_at"])
+        _same_window(completed, received, started)
+        raw["cubes"] = source.cubes_from_rows(
+            raw.pop("rows"), str(session), received, {}
+        )
+        raw.update(feed="iex", price_basis="raw")
+        anchor_started = _as_of(clock())
+        _same_window(completed, anchor_started, received)
+        anchors = _capture_bars(
+            names,
+            source._query(names, prior, received, "split"),
+            completed,
+            anchor_started,
+            transport,
+            headers,
+            clock,
+        )
+        pages.extend(anchors["pages"])
+        attested = _as_of(anchors["received_at"])
+        _same_window(completed, attested, received)
+        split_rows = anchors.pop("rows")
+        anchors.update(
+            anchors={},
+            anchor_basis="IEX_split_adjusted_prior_regular_close_current_raw_equivalence",
+            training_prior_source_matches=False,
+        )
+        for name, cube in raw["cubes"].items():
+            value = source._anchor_for_symbol(
+                cube, split_rows[name], str(session), str(prior), received
+            )
+            if value is not None:
+                anchors["anchors"][name] = value
+        quote = capture_quotes(
+            names,
+            transport=transport,
+            headers=headers,
+            clock=clock,
+            expected_window=(completed, attested),
+        )
+        pages.append(quote)
+        return prepare(raw, anchors, quote, observed_at=clock())
+    except source.CaptureError as exc:
+        raise source.CaptureError(str(exc), pages + exc.pages) from exc
+    except (ValueError, TypeError, KeyError, OSError) as exc:
+        raise source.CaptureError(
+            "Market source evidence unavailable: " + str(exc), pages
+        ) from exc
 
 
 # Authenticate original bytes and clocks before parsing an endpoint response.
@@ -146,20 +288,9 @@ def _original_pages(pages):
 # Join original bars, unit attestations and quotes without using forming-bar features.
 def prepare(raw, anchors, quote_page, *, observed_at):
     now = _as_of(observed_at)
-    session = now.date()
-    years, exchange = calendar.reviewed_sessions()
+    session, count, completed = _window(now)
+    _, exchange = calendar.reviewed_sessions()
     opening = datetime.combine(session, calendar.REGULAR_OPEN, calendar.NEW_YORK)
-    closing = datetime.combine(
-        session, calendar.session_close(session), calendar.NEW_YORK
-    )
-    count = int((now - opening) // timedelta(minutes=15))
-    if (
-        session.year not in years
-        or not np.is_busday(np.datetime64(session), busdaycal=exchange)
-        or not opening + timedelta(minutes=15) <= now < closing
-    ):
-        raise ValueError("Current completed regular observation required")
-    completed = opening + timedelta(minutes=15 * count)
     first_query = parse_qs(urlsplit(raw["pages"][0]["url"]).query)
     names = source._symbols(first_query["symbols"][0].split(","))
     if raw.get("price_basis") != "raw" or raw.get("feed") != "iex":

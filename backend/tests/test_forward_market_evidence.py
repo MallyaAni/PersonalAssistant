@@ -378,3 +378,266 @@ def test_early_close_original_evidence():
         adapter.prepare(
             raw, anchors, page, observed_at=now.replace(hour=13, minute=0, second=0)
         )
+
+
+# Supply original responses for either a full session or a reviewed early close.
+def capture_payloads(now, prior):
+    opening = datetime.combine(now.date(), calendar.REGULAR_OPEN, calendar.NEW_YORK)
+    count = int((now - opening) // timedelta(minutes=15))
+    bars = [
+        {
+            "t": (opening + timedelta(minutes=15 * index)).isoformat(),
+            "o": 100,
+            "h": 102,
+            "l": 99,
+            "c": 101,
+            "v": 1000,
+        }
+        for index in range(count + 1)
+    ]
+    bars[-1].update(o=100.5, c=999)
+    previous = {**bars[0], "t": prior.isoformat(), "c": 99}
+    return [
+        json.dumps(
+            {"bars": {name: rows for name in NAMES}, "next_page_token": None}
+        ).encode()
+        for rows in (bars, [previous, *bars])
+    ] + [
+        json.dumps(
+            {
+                "quotes": {
+                    name: {
+                        "bp": 98.995,
+                        "ap": 99.005,
+                        "bs": 100,
+                        "as": 100,
+                        "t": (now - timedelta(seconds=3)).isoformat(),
+                    }
+                    for name in NAMES
+                }
+            }
+        ).encode()
+    ]
+
+
+# One acquisition must work on the actual early-close clock without a wrapper override.
+@pytest.mark.parametrize(
+    ("now", "prior", "count"),
+    [
+        (NOW, datetime(2026, 10, 2, 15, 45, tzinfo=calendar.NEW_YORK), 1),
+        (
+            datetime(2026, 11, 27, 12, 45, 8, tzinfo=calendar.NEW_YORK),
+            datetime(2026, 11, 25, 15, 45, tzinfo=calendar.NEW_YORK),
+            13,
+        ),
+    ],
+)
+def test_capture_current_regular_and_early_close(now, prior, count):
+    bodies = capture_payloads(now, prior)
+    responses = iter(bodies)
+    requests = []
+    clocks = iter(now - timedelta(seconds=seconds) for seconds in range(8, -1, -1))
+
+    # Count exact request URLs without copying credential headers into the evidence.
+    def transport(url, headers):
+        requests.append(url)
+        assert headers == {"Authorization": "private"}
+        return 200, next(responses)
+
+    packet = adapter.capture(
+        NAMES,
+        transport=transport,
+        headers={"Authorization": "private"},
+        clock=lambda: next(clocks),
+    )
+    assert len(requests) == 3
+    assert "adjustment=raw" in requests[0]
+    assert "adjustment=split" in requests[1]
+    assert requests[2].startswith(adapter.QUOTE_ENDPOINT)
+    assert len(packet.prefixes["AAOI"]["close"]) == count
+    assert packet.receipt["observed_at"] == now.isoformat()
+    for label, original in zip(("raw", "split", "quotes"), bodies, strict=True):
+        assert (
+            base64.b64decode(packet.receipt["sources"][label][0]["body_base64"])
+            == original
+        )
+
+
+# Failed later requests retain earlier original bytes without retrying another window.
+@pytest.mark.parametrize("failed", [0, 1, 2])
+def test_capture_preserves_failed_endpoint(failed):
+    bodies = capture_payloads(
+        NOW, datetime(2026, 10, 2, 15, 45, tzinfo=calendar.NEW_YORK)
+    )
+    requests = []
+    clocks = iter(NOW - timedelta(seconds=seconds) for seconds in range(8, -1, -1))
+
+    # Stop at the first unavailable source while retaining its exact failure response.
+    def transport(url, headers):
+        index = len(requests)
+        requests.append(url)
+        return (
+            (403, b'{"message":"source unavailable"}')
+            if index == failed
+            else (200, bodies[index])
+        )
+
+    with pytest.raises(source.CaptureError, match="source|endpoint") as caught:
+        adapter.capture(
+            NAMES, transport=transport, headers={}, clock=lambda: next(clocks)
+        )
+    assert len(requests) == failed + 1
+    assert len(caught.value.pages) == failed + 1
+    assert caught.value.pages[-1]["status"] == 403
+    assert caught.value.pages[-1]["body"] == b'{"message":"source unavailable"}'
+    for index in range(failed):
+        assert caught.value.pages[index]["body"] == bodies[index]
+
+
+# A closed session must cause no request at all.
+def test_capture_closed_session_does_not_request():
+    requests = []
+    with pytest.raises(ValueError, match="completed regular observation"):
+        adapter.capture(
+            NAMES,
+            transport=lambda url, headers: requests.append(url),
+            headers={},
+            clock=lambda: NOW.replace(hour=16, minute=0, second=0),
+        )
+    assert requests == []
+
+
+# Crossing a window stops later requests while preserving all already captured bytes.
+@pytest.mark.parametrize(("crossed_at", "requests_expected"), [(2, 1), (6, 2), (7, 3)])
+def test_capture_does_not_continue_expired_window(crossed_at, requests_expected):
+    bodies = capture_payloads(
+        NOW, datetime(2026, 10, 2, 15, 45, tzinfo=calendar.NEW_YORK)
+    )
+    clocks = [NOW - timedelta(seconds=seconds) for seconds in range(8, -1, -1)]
+    clocks[crossed_at:] = [NOW + timedelta(minutes=15)] * (len(clocks) - crossed_at)
+    times = iter(clocks)
+    requests = []
+
+    # Return only the original response for each actually permitted endpoint request.
+    def transport(url, headers):
+        index = len(requests)
+        requests.append(url)
+        return 200, bodies[index]
+
+    with pytest.raises(source.CaptureError, match="window|source") as caught:
+        adapter.capture(
+            NAMES, transport=transport, headers={}, clock=lambda: next(times)
+        )
+    assert len(requests) == requests_expected
+    assert len(caught.value.pages) == requests_expected
+    assert [page["body"] for page in caught.value.pages] == bodies[:requests_expected]
+
+
+# A missing quote response preserves bars and unit evidence without fabricating bytes.
+def test_capture_preserves_transport_failure():
+    bodies = capture_payloads(
+        NOW, datetime(2026, 10, 2, 15, 45, tzinfo=calendar.NEW_YORK)
+    )
+    clocks = iter(NOW - timedelta(seconds=seconds) for seconds in range(8, -1, -1))
+    requests = []
+
+    # Reproduce an endpoint outage after the two successful original bar responses.
+    def transport(url, headers):
+        requests.append(url)
+        if len(requests) == 3:
+            raise OSError("quote response unavailable")
+        return 200, bodies[len(requests) - 1]
+
+    with pytest.raises(
+        source.CaptureError, match="quote response unavailable"
+    ) as caught:
+        adapter.capture(
+            NAMES, transport=transport, headers={}, clock=lambda: next(clocks)
+        )
+    assert len(requests) == 3
+    assert [page["body"] for page in caught.value.pages] == bodies[:2]
+
+
+# A paginated response that expires must not trigger a further provider request.
+def test_capture_stops_expired_pagination():
+    body = capture_payloads(
+        NOW, datetime(2026, 10, 2, 15, 45, tzinfo=calendar.NEW_YORK)
+    )[0]
+    original = json.loads(body)
+    first = json.dumps(
+        {
+            "bars": {name: bars[:1] for name, bars in original["bars"].items()},
+            "next_page_token": "next",
+        }
+    ).encode()
+    final = json.dumps(
+        {
+            "bars": {name: bars[1:] for name, bars in original["bars"].items()},
+            "next_page_token": None,
+        }
+    ).encode()
+    clocks = iter(
+        [NOW - timedelta(seconds=8), NOW - timedelta(seconds=7)]
+        + [NOW + timedelta(minutes=15)] * 10
+    )
+    requests = []
+
+    # Return distinct original pages so only the clock boundary explains refusal.
+    def transport(url, headers):
+        requests.append(url)
+        return 200, first if len(requests) == 1 else final
+
+    with pytest.raises(source.CaptureError, match="window|source") as caught:
+        adapter.capture(
+            NAMES, transport=transport, headers={}, clock=lambda: next(clocks)
+        )
+    assert len(requests) == 1
+    assert [page["body"] for page in caught.value.pages] == [first]
+
+
+# Connected pages must arrive once in order; a repeated continuation is refused.
+@pytest.mark.parametrize("repeated", [False, True])
+def test_capture_connected_pagination(repeated):
+    now = NOW + timedelta(seconds=2)
+    bodies = capture_payloads(
+        now, datetime(2026, 10, 2, 15, 45, tzinfo=calendar.NEW_YORK)
+    )
+    original = json.loads(bodies[0])
+    first = json.dumps(
+        {
+            "bars": {name: bars[:1] for name, bars in original["bars"].items()},
+            "next_page_token": "next",
+        }
+    ).encode()
+    final = json.dumps(
+        {
+            "bars": {name: bars[1:] for name, bars in original["bars"].items()},
+            "next_page_token": "next" if repeated else None,
+        }
+    ).encode()
+    responses = iter([first, final, *bodies[1:]])
+    clocks = iter(now - timedelta(seconds=seconds) for seconds in range(10, -1, -1))
+    requests = []
+
+    # Return exactly the next page from the fixed original source chain.
+    def transport(url, headers):
+        requests.append(url)
+        return 200, next(responses)
+
+    if repeated:
+        with pytest.raises(
+            source.CaptureError, match="Repeated source pagination"
+        ) as caught:
+            adapter.capture(
+                NAMES, transport=transport, headers={}, clock=lambda: next(clocks)
+            )
+        assert len(requests) == 2
+        assert [page["body"] for page in caught.value.pages] == [first, final]
+    else:
+        packet = adapter.capture(
+            NAMES, transport=transport, headers={}, clock=lambda: next(clocks)
+        )
+        assert len(requests) == 4
+        assert "page_token=next" in requests[1]
+        assert len(packet.receipt["sources"]["raw"]) == 2
+        assert packet.snapshot["quotes"]["AAOI"]["next_open"] == 100.5
