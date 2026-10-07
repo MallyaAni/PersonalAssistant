@@ -30,6 +30,13 @@ from backend.market.live_probability_timing import POLICY
 CONFIG = "desk/learned-timing/config.json"
 
 
+# Preserve the original endpoint instead of forwarding credentials through redirects.
+class _NoRedirect(request.HTTPRedirectHandler):
+    # Let urllib return the original HTTP failure without issuing another request.
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 # Keep the scheduled job on the incumbent when no learned artifacts are installed.
 def configured(root):
     return (Path(root) / CONFIG).is_file()
@@ -57,7 +64,7 @@ def market_transport(url, headers):
         raise ValueError("Only original stock-bar and quote GETs are permitted")
     query = request.Request(url, headers=headers, method="GET")
     try:
-        with request.urlopen(query, timeout=15) as response:
+        with request.build_opener(_NoRedirect()).open(query, timeout=15) as response:
             return response.status, response.read()
     except error.HTTPError as exc:
         return exc.code, exc.read()

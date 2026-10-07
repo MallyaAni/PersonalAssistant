@@ -294,3 +294,41 @@ def test_final_deadline_does_not_start_factory(tmp_path):
     assert len(lines) == 1
     assert "sent" in lines[0]
     assert paper.load_state(tmp_path).pending[0]["sent"]["how"] == "market"
+
+
+# Original-endpoint capture must not follow a redirect with credential headers.
+def test_market_transport_installs_redirect_refusal(monkeypatch):
+    seen = []
+
+    # Reject the unguarded convenience opener used before this boundary was enforced.
+    def unsafe(*args, **kwargs):
+        pytest.fail("Market transport used a redirect-following convenience opener")
+
+    # Exercise an original endpoint failure through the explicitly guarded opener.
+    def opener(handler):
+        assert (
+            handler.redirect_request(
+                None, None, 302, "redirect", {}, "https://other.example"
+            )
+            is None
+        )
+
+        # Return the actual HTTP error instead of following its alternate endpoint.
+        def opening(query, timeout):
+            seen.append(query.full_url)
+            from io import BytesIO
+
+            raise runtime.error.HTTPError(
+                query.full_url, 302, "redirect", {}, BytesIO(b"original redirect")
+            )
+
+        return SimpleNamespace(open=opening)
+
+    monkeypatch.setattr(runtime.request, "urlopen", unsafe)
+    monkeypatch.setattr(runtime.request, "build_opener", opener)
+    result = runtime.market_transport(
+        "https://data.alpaca.markets/v2/stocks/quotes/latest?feed=iex",
+        {},
+    )
+    assert result == (302, b"original redirect")
+    assert len(seen) == 1
