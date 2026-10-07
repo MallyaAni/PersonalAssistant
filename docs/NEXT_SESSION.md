@@ -1,5 +1,54 @@
 # Next session
 
+## 2026-10-07 — all-clock nonlinear self-continuation implemented
+
+Previous goal turn PROGRESS: recent saved execution weakness documented.
+This turn PROGRESS: a distinct remaining-session learning candidate implemented
+and exercised with real estimators. Goal remains ACTIVE/INCOMPLETE; not adopted.
+
+VERIFIED checkpoint f7bcf6813385be1339f60f98efebc5267897ba5a adds
+nonlinear_session_continuation.py,18behavior cases and a frozen protocol. Existing
+Ridge continuation and normalized teacher modules were inspected first; this is
+not a repeated one-bar model or a refit of either immutable historical artifact.
+Three whole-date nuisance folds train their own pooled nonlinear suffix policies
+for three fixed improvement iterations at all24ordinary clocks. Final heads use
+held-fold suffix outcomes. Monthly first-session and strict ten-session endpoint
+maturity enforced internally; benchmark names cannot train. Missing chosen fills,
+unknown terminals and unavailable risk remain missing. No hindsight extrema.
+
+VERIFIED actual fixed sklearn estimators:18tests/0fail/0skip in5.01seconds, Ruff
+clean. Container9b5d8f77 terminal0/OOMfalse, original5c6cimage, CPU1/memory4GB,
+user1000:1000/networknone/ROroot; all source mounts read-only. Three new files and
+three imported helper hashes match the owned Mac bytes. Private root
+scratch/nonlinear-self-continuation-acceptance-20261007/acceptance.json SHA
+60e521a49e05bc91cb9fe62ec015fb9adc4b6fa3ac5e524949fd9ce6ca4fa7e6;
+acceptance.log SHA16fd96a74be5e91eacf0662a6b4a1c32bfad94480934e48c7b463aeddd9893a3.
+Initial nested RO-file mount failed before startup; private copied source fixed
+the launcher. Style failures retained. A real missing-volatility case reproduced
+an incorrect fitted status and now passes unchanged as no_finite_training_targets.
+No historical fit, economic replay, broker request, source-data or live change.
+Tests intentionally lower source-day readiness on synthetic data only; actual
+default remains504 and each receipt records the actual minimum/source/dependencies.
+
+UNVERIFIED actual-history usefulness, fitted artifact replay/live provider,
+early-close data support, funded executor comparison, calibration and adoption.
+This finite policy iteration is not exact Bellman optimality and does not itself
+change holding/profit exits or sizing. Complete these remaining requirements;
+do not redefine the requested live upgrade around this model core. Authenticate
+the original prepared bank and freeze a bounded funded evaluation before fitting.
+No new agents, duplicated old studies, threshold/window mining or active-engine
+changes. Diagram impact NONE: existing internal research boundary only.
+
+Active continuation2ff5c7ea has now acknowledged boosting-10-0 as completed072.
+Do not read unverified fee scores or restart it. One saved-only verification02
+has been launched, previous71-account proof6d3655b5, fresh private
+scratch/continuation-verifier-20261007/proof/incremental-02/. Container name
+continuation-saved-verification-02-20261007. Inspect that exact handle and result;
+never rerun exclusive wrapper run-verification-02.py. It reuses prior71controls
+and3candidate accounts and checks only newly acknowledged closed accounts.
+Original rule-10-0 was still running at launch; missing matched fee comparisons
+remain explicit. Require source/runtime/content acceptance before reporting scores.
+
 ## 2026-10-07 — recent receipt comparison identifies execution weakness
 
 Previous goal turn PROGRESS: frontend learned-wait fix and17browser cases pushed
