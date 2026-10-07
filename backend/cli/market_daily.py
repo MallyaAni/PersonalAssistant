@@ -754,6 +754,18 @@ def _idle_cash_share(orders, prices, cash, equity) -> float | None:
     return float(min(1.0, max(0.0, (cash - buys + sells) / equity)))
 
 
+# Select installed dependencies only for an ordinary unattended nightly call.
+def _installed_holding_dependencies(root, report, policy, factory, instant):
+    if policy is not None or factory is not None or instant is not None:
+        return policy, factory, instant
+    from backend.market import alpaca_trading, learned_live_holding
+
+    if not learned_live_holding.configured(root):
+        return policy, factory, instant
+    selected = learned_live_holding.prepare(root, report)
+    return selected, alpaca_trading.client_from_env, selected.observed_at
+
+
 # Carry the desk's book to the paper account: cancel yesterday's unfilled
 # orders, plan this session, submit the plan for the next open, then record
 # the account. Explicit broker and decision-clock dependencies let a private
@@ -775,6 +787,9 @@ def paper_trade(
 ) -> dict:
     from backend.agents.trading.desk import paper
 
+    holding_policy, client_factory, decision_at = _installed_holding_dependencies(
+        store_root, report, holding_policy, client_factory, decision_at
+    )
     if holding_policy is not None:
         from backend.market.joint_funded_policy import JointFundedPolicy
 
@@ -848,9 +863,14 @@ def _forward_close_window(policy, instant, report):
     return False
 
 
-# Limit this unadopted policy to the actual private replay ledger and exact clock.
+# Admit an approved installed paper policy or retain the exact private replay guard.
 def _holding_broker(policy, client, decision_at):
     if policy is None:
+        return
+    from backend.market.learned_live_holding import InstalledHoldingPolicy
+
+    if type(policy) is InstalledHoldingPolicy:
+        policy.admit_broker(client, decision_at)
         return
     from backend.market.replay_broker import ReplayBroker
 
@@ -909,6 +929,32 @@ def _holding_metadata(policy, event_plan, state, targets):
             "redeploy": {"enabled": False, "orders": 0, "notional": 0.0},
         },
     )
+
+
+# Keep recorded targets aligned with funded quantities and event priorities.
+def _holding_plan_metadata(
+    policy, event_plan, state, targets, grades, prices, held, equity, orders
+):
+    if policy is not None and event_plan:
+        wanted = dict(held)
+        for order in orders:
+            wanted[order.symbol] = wanted.get(order.symbol, 0) + (
+                order.qty if order.side == "buy" else -order.qty
+            )
+        targets = {
+            name: qty * prices[name] / equity
+            for name, qty in wanted.items()
+            if qty > 0 and name in prices and equity > 0
+        }
+    targets, name, metadata = _holding_metadata(policy, event_plan, state, targets)
+    if policy is not None:
+        metadata["selected_targets"] = {
+            "policy": policy.version,
+            "weights": {name: float(targets.get(name, 0.0)) for name in grades},
+        }
+        if hasattr(policy, "admission"):
+            metadata["learned_holding"] = policy.admission
+    return targets, name, metadata
 
 
 # Describe the private candidate's funded orders without legacy thresholds or exits.
@@ -1087,8 +1133,16 @@ def _paper_trade(
         holding_policy=holding_policy,
         report=report,
     )
-    targets, policy_name, research_metadata = _holding_metadata(
-        holding_policy, event_plan, new_state, targets
+    targets, policy_name, research_metadata = _holding_plan_metadata(
+        holding_policy,
+        event_plan,
+        new_state,
+        targets,
+        grades,
+        prices,
+        held,
+        account.equity,
+        orders,
     )
     print(
         f"\npaper book ({policy_name}; {what}"
@@ -1425,6 +1479,41 @@ def _fundamental_block(report) -> dict:
     }
 
 
+# Record the selected funded plan; absent selection retains the incumbent's targets.
+def _record_targets(report, paper_entry):
+    from backend.agents.trading.desk import live_policy
+    from backend.market import joint_funded_policy as funded
+
+    selected = (paper_entry or {}).get("selected_targets")
+    if selected is None:
+        return live_policy.record_targets(report)
+    names = {name for name in report.panel.tickers if name != report.panel.benchmark}
+    weights = selected.get("weights", {})
+    if (
+        selected.get("policy")
+        not in (
+            funded.POLICY,
+            funded.MATURITY_POLICY,
+            funded.CALIBRATED_POLICY,
+            funded.TIMED_POLICY,
+            funded.MARKET_TIMED_POLICY,
+        )
+        or (paper_entry or {}).get("policy") != selected.get("policy")
+        or set(weights) != names
+        or any(
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not np.isfinite(value)
+            or not 0 <= value <= 1
+            for value in weights.values()
+        )
+        or sum(weights.values()) > 1 + 1e-10
+    ):
+        raise ValueError("Exact funded policy targets required for the recorded book")
+    return {"policy": selected["policy"], "weights": dict(weights)}
+
+
+# Write current grades and selected policy targets with their original provenance.
 def record(
     report,
     briefs: dict[str, dict] | None = None,
@@ -1439,7 +1528,7 @@ def record(
     policy_shadows: dict | None = None,
 ) -> dict:
     """Return the JSON-ready record of a DeskReport."""
-    from backend.agents.trading.desk import event_risk, live_policy
+    from backend.agents.trading.desk import event_risk
 
     panel = report.panel
     last = len(panel.dates) - 1
@@ -1526,7 +1615,7 @@ def record(
         # What the account trades and the dashboard sizes against: the active
         # policy's weight for every graded name (`live_policy`). `book` below
         # is the desk's `/3` sizing, kept on the record for reference.
-        "targets": live_policy.record_targets(report),
+        "targets": _record_targets(report, paper),
         "book": [
             {
                 "ticker": s.position.ticker,
@@ -2514,6 +2603,14 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
             )
         except Exception as exc:  # the account being away must not lose the record
             print(f"\npaper book: not traded ({type(exc).__name__}: {exc})")
+            from backend.market import learned_live_holding
+
+            if learned_live_holding.configured(store.root):
+                # A failed selected policy cannot publish an incumbent plan instead.
+                raise RuntimeError(
+                    "Installed learned nightly plan unavailable; "
+                    "incumbent record not substituted"
+                ) from exc
     # The dry-run policy shadows, after the live book has had its turn and
     # with no hand in it: their receipts go into the record, nothing else.
     policy_shadows = _policy_shadows(Path(store.root), report, session, current)
