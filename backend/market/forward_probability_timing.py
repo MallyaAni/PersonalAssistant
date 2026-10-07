@@ -5,6 +5,7 @@ This contract transports an opening-price forecast to a conditional current
 midpoint proxy. It does not claim a midpoint fill or enable a production caller.
 """
 
+import io
 import json
 import math
 import os
@@ -27,6 +28,7 @@ from backend.market.alpaca_trading import AlpacaTradingError
 from backend.market.daily_arithmetic_bridge import _as_of, _hash
 
 CONTRACT = "forward-probability-timing/1-shadow"
+RESIDUAL_FIELDS = ("residuals", "weights", "day_indices", "clock_indices")
 
 
 # Keep inferred stock distributions attached to their actual observation receipt.
@@ -42,6 +44,197 @@ def _digest(value):
     return sha256(
         json.dumps(value, sort_keys=True, allow_nan=False).encode()
     ).hexdigest()
+
+
+# Check original sample identities, support and clocks before storing or restoring them.
+def _validate_residual_month(month, observed_at):
+    if not isinstance(month, inference.ResidualMonth):
+        raise ValueError("Original prepared residual month required")
+    receipt, now = month.receipt, _as_of(observed_at)
+    identity = receipt["identity"]
+    first, exchange_calendar = inference._month_session(identity["fit_date"])
+    published = _as_of(identity["published_at"])
+    symbols, records = identity["symbols"], receipt["stocks"]
+    if (
+        month.receipt_sha256 != _digest(receipt)
+        or receipt["identity_sha256"] != _digest(identity)
+        or identity["policy"] != "forward-execution-residuals/1-shadow"
+        or identity["sources"] != inference._sources()
+        or identity["horizon"] != probability.HORIZON
+        or identity["freeze"] != str(probability.FREEZE)
+        or identity["minimum_days"] != probability.MIN_DAYS
+        or identity["maximum_days"] != probability.MAX_DAYS
+        or identity["cutoff_exclusive"] != str(min(first, probability.FREEZE))
+        or identity["lookback_first_date"]
+        != str(
+            np.busday_offset(first, -probability.MAX_DAYS, busdaycal=exchange_calendar)
+        )
+        or not _as_of(identity["requested_at"]) <= published <= now
+        or np.datetime64(published.date(), "M") != first.astype("datetime64[M]")
+        or published.date() < first.astype(object)
+        or np.datetime64(now.date(), "M") != first.astype("datetime64[M]")
+        or receipt["adoption_eligible"] is not False
+        or receipt["confidence_guarantee"] is not False
+        or len(symbols) != len(set(symbols))
+        or [row["symbol"] for row in records] != symbols
+        or set(month.samples)
+        != {row["symbol"] for row in records if row["status"] == "available"}
+    ):
+        raise ValueError("Original causal residual receipt and cohort required")
+    for record in records:
+        symbol, status = record["symbol"], record["status"]
+        if status not in (
+            "available",
+            "excluded_benchmark",
+            "insufficient_mature_sessions",
+        ):
+            raise ValueError("Original residual missingness status required")
+        if (symbol in ("SPY", "QQQ")) != (status == "excluded_benchmark"):
+            raise ValueError("Benchmarks cannot become stock residual samples")
+        if status != "available":
+            continue
+        sample = month.samples[symbol]
+        residuals, weights = probability._sample(sample.residuals, sample.weights)
+        days, clocks = sample.day_indices, sample.clock_indices
+        if (
+            days.ndim != 1
+            or clocks.shape != days.shape
+            or days.dtype.kind not in "iu"
+            or clocks.dtype.kind not in "iu"
+            or residuals.shape != days.shape
+            or weights.shape != days.shape
+            or np.any(days < 0)
+            or np.any(clocks < 0)
+            or np.any(clocks > 22)
+            or np.any(
+                (days[1:] < days[:-1])
+                | ((days[1:] == days[:-1]) & (clocks[1:] <= clocks[:-1]))
+            )
+            or record["training_rows"] != len(days)
+            or record["maximum_endpoint"] is None
+            or np.datetime64(record["maximum_endpoint"], "D")
+            >= min(first, probability.FREEZE)
+        ):
+            raise ValueError("Original ordered residual observation rows required")
+        unique, counts = np.unique(days, return_counts=True)
+        if (
+            record["training_days"] != len(unique)
+            or len(unique) < probability.MIN_DAYS
+            or not np.array_equal(weights, 1.0 / counts[np.searchsorted(unique, days)])
+            or any(
+                record["hashes"][name] != _hash(getattr(sample, name))
+                for name in RESIDUAL_FIELDS
+            )
+        ):
+            raise ValueError(
+                "Original supported residual bytes and date weights required"
+            )
+
+
+# Store non-executable residual arrays once and date availability after serialization.
+def write_residual_month(output, month, *, clock=None):
+    if not isinstance(month, inference.ResidualMonth):
+        raise ValueError("Original prepared residual month required")
+    receipt = deepcopy(month.receipt)
+    if "prepared_at" in receipt["identity"]:
+        raise ValueError("Already stored residual month cannot be republished")
+    samples = {
+        symbol: probability.ResidualSample(
+            *(getattr(sample, name).copy() for name in RESIDUAL_FIELDS)
+        )
+        for symbol, sample in month.samples.items()
+    }
+    frozen = inference.ResidualMonth(samples, receipt, month.receipt_sha256)
+    _validate_residual_month(frozen, receipt["identity"]["published_at"])
+    output = Path(output)
+    output.mkdir(mode=0o700, parents=True, exist_ok=False)
+    arrays = {
+        f"s{index}_{name}": getattr(samples[record["symbol"]], name)
+        for index, record in enumerate(receipt["stocks"])
+        if record["status"] == "available"
+        for name in RESIDUAL_FIELDS
+    }
+    descriptor = os.open(
+        output / "residuals.npz", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600
+    )
+    with os.fdopen(descriptor, "wb") as target:
+        np.savez_compressed(target, **arrays)
+        target.flush()
+        os.fsync(target.fileno())
+    available = _as_of(clock() if clock else datetime.now(calendar.NEW_YORK))
+    _validate_residual_month(frozen, available)
+    identity = receipt["identity"]
+    identity["prepared_at"] = identity["published_at"]
+    identity["published_at"] = available.isoformat()
+    identity["residual_artifact"] = {
+        "name": "residuals.npz",
+        "sha256": sha256((output / "residuals.npz").read_bytes()).hexdigest(),
+    }
+    identity["storage_sources"] = _inference_sources()
+    receipt["preparation_receipt_sha256"] = month.receipt_sha256
+    receipt["identity_sha256"] = _digest(identity)
+    raw = json.dumps(receipt, sort_keys=True, allow_nan=False).encode()
+    descriptor = os.open(
+        output / "residuals.json", os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600
+    )
+    with os.fdopen(descriptor, "wb") as target:
+        target.write(raw)
+        target.flush()
+        os.fsync(target.fileno())
+    return sha256(raw).hexdigest()
+
+
+# Restore only original hash-bound arrays and retain their actual later availability.
+def load_residual_month(output, *, receipt_sha256, observed_at):
+    output = Path(output)
+    if output.is_symlink() or any(
+        (output / name).is_symlink() for name in ("residuals.json", "residuals.npz")
+    ):
+        raise ValueError("Regular original residual artifacts required")
+    raw = (output / "residuals.json").read_bytes()
+    if sha256(raw).hexdigest() != receipt_sha256:
+        raise ValueError("Original residual publication bytes differ")
+    receipt = json.loads(raw)
+    identity = receipt["identity"]
+    artifact = identity["residual_artifact"]
+    if (
+        artifact["name"] != "residuals.npz"
+        or identity["storage_sources"] != _inference_sources()
+    ):
+        raise ValueError("Original residual artifact and storage helpers required")
+    encoded = (output / "residuals.npz").read_bytes()
+    if sha256(encoded).hexdigest() != artifact["sha256"]:
+        raise ValueError("Original residual array file bytes differ")
+    samples = {}
+    with np.load(io.BytesIO(encoded), allow_pickle=False) as saved:
+        expected = {
+            f"s{index}_{name}"
+            for index, record in enumerate(receipt["stocks"])
+            if record["status"] == "available"
+            for name in RESIDUAL_FIELDS
+        }
+        if len(saved.files) != len(expected) or set(saved.files) != expected:
+            raise ValueError("Exact original residual archive fields required")
+        for index, record in enumerate(receipt["stocks"]):
+            if record["status"] == "available":
+                arrays = [saved[f"s{index}_{name}"] for name in RESIDUAL_FIELDS]
+                for array in arrays:
+                    array.flags.writeable = False
+                samples[record["symbol"]] = probability.ResidualSample(*arrays)
+    restored = inference.ResidualMonth(samples, receipt, receipt_sha256)
+    _validate_residual_month(restored, observed_at)
+    preparation = deepcopy(receipt)
+    original_identity = preparation["identity"]
+    original_identity["published_at"] = original_identity.pop("prepared_at")
+    original_identity.pop("residual_artifact")
+    original_identity.pop("storage_sources")
+    original_sha = preparation.pop("preparation_receipt_sha256")
+    preparation["identity_sha256"] = _digest(original_identity)
+    _validate_residual_month(
+        inference.ResidualMonth(samples, preparation, original_sha),
+        identity["published_at"],
+    )
+    return restored
 
 
 # Bind the actual inference, feature and sender modules used by this observation.

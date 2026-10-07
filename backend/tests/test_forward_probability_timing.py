@@ -13,6 +13,7 @@ import pytest
 from backend.agents.trading.desk import intraday_orders, paper
 from backend.market import forward_probability_timing as forward
 from backend.market import live_probability_timing as historical
+from backend.market.daily_arithmetic_bridge import _hash
 from backend.market.probabilistic_execution import Distribution
 from backend.market.replay_broker import ReplayBroker
 from backend.tests.test_forward_entry_features import current, fixture
@@ -29,6 +30,123 @@ from backend.tests.test_live_probability_timing import (
 
 DECISION = NOW + timedelta(seconds=5)
 SOURCE = {key: "a" * 64 for key in ("model_receipt", "residual_receipt", "observation")}
+
+
+# A restarted process must recover exact dated residuals before computing forecasts.
+def test_residual_publication_restores_original_samples(residual_archive, tmp_path):
+    original = residual_month(residual_archive[1])
+    folder = tmp_path / "residuals"
+    digest = forward.write_residual_month(
+        folder, original, clock=lambda: "2026-10-05T08:00:00-04:00"
+    )
+    restored = forward.load_residual_month(
+        folder, receipt_sha256=digest, observed_at="2026-10-05T09:45:00-04:00"
+    )
+    assert set(restored.samples) == set(original.samples) == {"AAOI"}
+    assert restored.receipt["stocks"] == original.receipt["stocks"]
+    assert restored.receipt["preparation_receipt_sha256"] == original.receipt_sha256
+    assert restored.receipt["identity"]["prepared_at"] == "2026-10-01T08:00:00-04:00"
+    assert restored.receipt["identity"]["published_at"] == "2026-10-05T08:00:00-04:00"
+    for name in ("day_indices", "clock_indices", "residuals", "weights"):
+        before = getattr(original.samples["AAOI"], name)
+        after = getattr(restored.samples["AAOI"], name)
+        assert _hash(before) == _hash(after)
+        np.testing.assert_array_equal(before, after)
+        assert not after.flags.writeable
+    assert folder.stat().st_mode & 0o777 == 0o700
+    assert all(path.stat().st_mode & 0o777 == 0o600 for path in folder.iterdir())
+
+
+# Reject altered evidence even when the caller supplies a new outer file hash.
+@pytest.mark.parametrize("damage", ["receipt", "bytes", "field", "sample"])
+def test_residual_restoration_rejects_changed_artifacts(
+    residual_archive, tmp_path, damage
+):
+    folder = tmp_path / "residuals"
+    digest = forward.write_residual_month(
+        folder,
+        residual_month(residual_archive[1]),
+        clock=lambda: "2026-10-05T08:00:00-04:00",
+    )
+    receipt_path, array_path = folder / "residuals.json", folder / "residuals.npz"
+    receipt = json.loads(receipt_path.read_bytes())
+    if damage == "receipt":
+        receipt_path.write_bytes(receipt_path.read_bytes() + b" ")
+    elif damage == "bytes":
+        array_path.write_bytes(array_path.read_bytes() + b"changed")
+    else:
+        with np.load(array_path, allow_pickle=False) as saved:
+            arrays = {name: saved[name].copy() for name in saved.files}
+        if damage == "field":
+            arrays["unexpected"] = np.zeros(1)
+        else:
+            arrays["s0_residuals"][0] += 0.1
+        np.savez_compressed(array_path, **arrays)
+        receipt["identity"]["residual_artifact"]["sha256"] = sha256(
+            array_path.read_bytes()
+        ).hexdigest()
+        receipt["identity_sha256"] = forward._digest(receipt["identity"])
+        raw = json.dumps(receipt, sort_keys=True, allow_nan=False).encode()
+        receipt_path.write_bytes(raw)
+        digest = sha256(raw).hexdigest()
+    reason = {
+        "receipt": "publication bytes differ",
+        "bytes": "array file bytes differ",
+        "field": "archive fields required",
+        "sample": "supported residual bytes",
+    }[damage]
+    with pytest.raises(ValueError, match=reason):
+        forward.load_residual_month(
+            folder, receipt_sha256=digest, observed_at="2026-10-05T09:45:00-04:00"
+        )
+
+
+# An unavailable or expired publication must never supply inference residuals.
+@pytest.mark.parametrize(
+    "observed", ["2026-10-05T07:59:59-04:00", "2026-11-02T09:45:00-05:00"]
+)
+def test_residual_restoration_enforces_actual_availability(
+    residual_archive, tmp_path, observed
+):
+    folder = tmp_path / "residuals"
+    digest = forward.write_residual_month(
+        folder,
+        residual_month(residual_archive[1]),
+        clock=lambda: "2026-10-05T08:00:00-04:00",
+    )
+    with pytest.raises(ValueError, match="causal residual"):
+        forward.load_residual_month(folder, receipt_sha256=digest, observed_at=observed)
+
+
+# Failed publication clocks leave no receipt claiming usable residual evidence.
+@pytest.mark.parametrize(
+    "published", ["2026-10-01T07:59:59-04:00", "2026-11-02T08:00:00-05:00"]
+)
+def test_residual_publication_rejects_backdated_or_expired_clocks(
+    residual_archive, tmp_path, published
+):
+    folder = tmp_path / "residuals"
+    with pytest.raises(ValueError, match="causal residual"):
+        forward.write_residual_month(
+            folder, residual_month(residual_archive[1]), clock=lambda: published
+        )
+    assert not (folder / "residuals.json").exists()
+
+
+# A retry must preserve the existing exclusive publication rather than replace it.
+def test_residual_publication_preserves_existing_artifacts(residual_archive, tmp_path):
+    folder = tmp_path / "residuals"
+    original = residual_month(residual_archive[1])
+    forward.write_residual_month(
+        folder, original, clock=lambda: "2026-10-05T08:00:00-04:00"
+    )
+    before = {path.name: path.read_bytes() for path in folder.iterdir()}
+    with pytest.raises(FileExistsError):
+        forward.write_residual_month(
+            folder, original, clock=lambda: "2026-10-05T09:00:00-04:00"
+        )
+    assert before == {path.name: path.read_bytes() for path in folder.iterdir()}
+    assert "prepared_at" not in original.receipt["identity"]
 
 
 # Supply independently published raw quotes and the original next-bar opening.
@@ -369,16 +487,29 @@ def inference_inputs():
 
 
 # Publish fitted numeric heads and dated residuals for one actual observation.
-def inferred(folder, fitted, residual_archive, *, inputs=None, available=None):
+def inferred(
+    folder, fitted, residual_archive, *, inputs=None, available=None, stored=False
+):
     digest = write(folder, fitted[1])
     inputs, clocks = inputs or inference_inputs()
     available = available or clocks["observed_at"] + timedelta(seconds=2)
+    residuals = residual_month(residual_archive[1])
+    if stored:
+        residual_folder = folder.parent / "residuals"
+        residual_digest = forward.write_residual_month(
+            residual_folder, residuals, clock=lambda: "2026-10-05T08:00:00-04:00"
+        )
+        residuals = forward.load_residual_month(
+            residual_folder,
+            receipt_sha256=residual_digest,
+            observed_at=clocks["observed_at"],
+        )
     packet = forward.prepare_forecast(
         *inputs,
         **clocks,
         model_folder=folder,
         model_receipt_sha256=digest,
-        residual_month=residual_month(residual_archive[1]),
+        residual_month=residuals,
         clock=lambda: available,
     )
     return packet, inputs, clocks
@@ -416,8 +547,13 @@ def test_inferred_packet_matches_actual_numeric_head_and_past_residuals(
 
 
 # Preserve actual inferred evidence through the real private sender acknowledgment.
-def test_real_inference_to_actual_persisted_sender(fitted, residual_archive, tmp_path):
-    packet, _, clocks = inferred(tmp_path / "models", fitted, residual_archive)
+@pytest.mark.parametrize("stored", [False, True])
+def test_real_inference_to_actual_persisted_sender(
+    fitted, residual_archive, tmp_path, stored
+):
+    packet, _, clocks = inferred(
+        tmp_path / "models", fitted, residual_archive, stored=stored
+    )
     completed = clocks["observed_at"] - timedelta(seconds=1)
     now = completed + timedelta(seconds=6)
     client = ReplayBroker(10000, 0)
