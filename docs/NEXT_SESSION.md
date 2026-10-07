@@ -1,5 +1,35 @@
 # Next session
 
+## 2026-10-07 — original candidate independently verified; no live approval yet
+
+Corrected saved verification is terminal0/OOMfalse and independently checked.
+Original helpers/assertions retained; no fitting,prediction or trade replay.
+Private market-verifier-symbols-20261007/independent-acceptance.json SHA
+c608ea9f986f7cfad141d2e2438179cb1ea44631243dd147d92f1e998913c795.
+All three candidate accounts are complete, no missing NAV marks; saved output
+SHA839678806cc4d8cbf6e48fd71918ebf21f3d1331f7ec6658c95389fe8f020719.
+Target companion SHAbe738453d8ba221ed4ab61a71351f5d0130e552db92dff49e71b6dcef58db885
+checks1703/1703/1708 receipts at0/10/25bp. Never rerun this finished verification
+or restart original watcher3169361. Source99e9bdef and handoff8cb30eb4 pushed.
+
+Full zero-cost candidate CAGR27.57% versus rule28.34%, SPY13.14%, QQQ19.04%;
+candidate maximum loss42.19% versus rule43.09%, SPY32.59%, QQQ34.54%.
+Candidate does not improve full-period total gain over incumbent. 2021–26 is
+stronger but is not permission for a hindsight regime switch. Candidate10/25bp
+CAGR22.09/20.94%; matching fee controls still unavailable. Report records all
+costs and declared windows at docs/research/learned-live-replacement-results-2026-10-07.md.
+These are current-vintage/archived-grade conditional accounts, not exact live
+reconstruction. No cost winner selected and no economic approval/selector written.
+
+Original controls2832af72 remain RUNNING/OOMfalse; latestboosting-0-13,
+66completedaccounts/1720sessions through2024-12-18 at11:04NewYork. Continue only
+this handle; no duplicate/subset/repriced controls, new cohorts or tuning.
+The finished independent report explicitly marks234 controls pending. A future
+new prefix may be verified only when needed matching controls genuinely finish,
+with existing full candidate verification reused rather than repeated.
+Live replacement goal remains ACTIVE; incumbent92b11bb9 remains live. No UI,
+model-server or deployed-source change was needed for the verifier-only fix.
+
 ## 2026-10-07 — candidate finished; saved-verifier symbol boundary corrected
 
 Live activation remains the priority and is NOT complete. Original candidate
