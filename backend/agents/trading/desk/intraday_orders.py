@@ -183,8 +183,9 @@ def _why_sent(timed: dict[str, Any], how: str, now: datetime) -> dict[str, Any]:
 # sent twice. Nothing is sent unless the broker's own clock says the market is
 # open: an order sent after the close would queue for the NEXT session. A sell
 # is never sent for more shares than the account holds.
-# An explicit timing reader can replace ordinary pre-deadline timing in a
-# private replay; the default, bounded IOC contracts and final clock are retained.
+# An explicit reader or installed numeric-head factory can replace ordinary
+# pre-deadline timing. The factory observes funding under this same paper lock;
+# the incumbent, bounded IOC contracts and final clock are retained.
 # Returns the log lines.
 def send_due(
     root: Path | str,
@@ -194,6 +195,7 @@ def send_due(
     *,
     quote_reader: Callable | None = None,
     timing_reader: Callable | None = None,
+    timing_reader_factory: Callable | None = None,
 ) -> list[str]:
     """Send the orders the board's timing makes due now; return log lines."""
     if now.tzinfo is None:
@@ -202,7 +204,14 @@ def send_due(
     root = Path(root)
     with paper.transaction(root):
         return _send_due_locked(
-            root, snapshot, now, today, client_factory, quote_reader, timing_reader
+            root,
+            snapshot,
+            now,
+            today,
+            client_factory,
+            quote_reader,
+            timing_reader,
+            timing_reader_factory,
         )
 
 
@@ -257,7 +266,46 @@ def _ready(
     return ready
 
 
-# The body of `send_due`, run while the paper state is locked.
+# Restore learned evidence under the existing lock without changing other order rules.
+def _observe_timing(root, rows, snapshot, now, today, client_factory, reader, factory):
+    unavailable = []
+    if (
+        reader is None
+        and any("timing_policy" in row for row in rows)
+        and entry_timing.session_clock(today)["open"] + entry_timing.BAR
+        <= now
+        < entry_timing.session_clock(today)["final"]
+    ):
+        from backend.market import learned_live_timing
+
+        if factory is None and learned_live_timing.configured(root):
+            factory = learned_live_timing.observe
+        if factory is not None:
+            try:
+                observed, instant, observed_reader = factory(
+                    root, deepcopy(rows), deepcopy(snapshot), now, client_factory
+                )
+                if (
+                    not isinstance(observed, dict)
+                    or not isinstance(instant, datetime)
+                    or instant.tzinfo is None
+                    or instant < now
+                    or instant.astimezone(NEW_YORK).date() != today
+                    or (instant - entry_timing.session_clock(today)["open"])
+                    // entry_timing.BAR
+                    != (now - entry_timing.session_clock(today)["open"])
+                    // entry_timing.BAR
+                    or (observed_reader is not None and not callable(observed_reader))
+                ):
+                    raise ValueError("Current learned timing observation required")
+                snapshot, now, reader = observed, instant, observed_reader
+            except (OSError, ValueError, TypeError, KeyError):
+                # Tagged orders cannot fall back to the incumbent's price trigger.
+                unavailable = ["learned timing unavailable; ordinary intents retained"]
+    return snapshot, now, reader, unavailable
+
+
+# Reconcile and submit due rows while the original paper transaction stays locked.
 def _send_due_locked(
     root: Path,
     snapshot: dict | None,
@@ -266,19 +314,29 @@ def _send_due_locked(
     client_factory: Callable[[], Any],
     quote_reader: Callable | None,
     timing_reader: Callable | None = None,
+    timing_reader_factory: Callable | None = None,
 ) -> list[str]:
-    """Send due rows with the paper lock held; return log lines."""
     from backend.market import alpaca_trading
 
     state = paper.load_state(root)
     rows = due(state, today)
     snapshot, now = qualify_snapshot(rows, snapshot, now, quote_reader)
+    snapshot, now, timing_reader, unavailable = _observe_timing(
+        root,
+        rows,
+        snapshot,
+        now,
+        today,
+        client_factory,
+        timing_reader,
+        timing_reader_factory,
+    )
     started = time.monotonic()
     _observe_bounded(root, state, rows, snapshot, now, today)
     ready = _ready(rows, root, snapshot, now, today, timing_reader)
     recovering = [r for r in rows if "execution_policy" in r and r.get("sending")]
     if not ready and not recovering:
-        return []
+        return unavailable
     try:
         client = client_factory()
         market_open = bool((client.clock() or {}).get("is_open"))
@@ -319,10 +377,14 @@ def _send_due_locked(
         return recovered + [
             "intraday orders: the broker reports the market closed; nothing sent"
         ]
-    return recovered + [
-        _send_one(root, state, row, verdict, client, known, held, now, started)
-        for row, verdict in ready
-    ]
+    return (
+        unavailable
+        + recovered
+        + [
+            _send_one(root, state, row, verdict, client, known, held, now, started)
+            for row, verdict in ready
+        ]
+    )
 
 
 # Fetch only missing candidate quotes; legacy orders make no additional data requests.
