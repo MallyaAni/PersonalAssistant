@@ -102,6 +102,11 @@ def source_fingerprint() -> dict[str, str]:
         "backend/api/v1/market.py",
         "backend/market/personal_history.py",
         "backend/market/decision_view.py",
+        "backend/market/learned_personal_guidance.py",
+        "backend/market/learned_live_timing.py",
+        "backend/market/learned_live_holding.py",
+        "backend/market/forward_probability_timing.py",
+        "backend/market/live_probability_timing.py",
         # The `/4` board's timing and the measured level it reuses.
         "backend/market/entry_timing.py",
         "backend/market/bounded_execution.py",
@@ -134,6 +139,7 @@ def _record_fingerprint(record: dict) -> str:
 def project(decisions: dict, record: dict, snapshot: dict, entries: dict) -> dict:
     from backend.agents.trading.desk.paper import POLICY_VERSION
     from backend.market import desk_freshness, holdings
+    from backend.market.joint_funded_policy import MARKET_TIMED_POLICY
 
     generated = _instant(decisions["as_of"])
     readings = {}
@@ -185,7 +191,11 @@ def project(decisions: dict, record: dict, snapshot: dict, entries: dict) -> dic
         }
     payload = {
         "schema_version": "personal-decision-receipt/2",
-        "policy_version": POLICY_VERSION,
+        "policy_version": (
+            MARKET_TIMED_POLICY
+            if (record.get("targets") or {}).get("policy") == MARKET_TIMED_POLICY
+            else POLICY_VERSION
+        ),
         "decision_version": decisions["version"],
         "decision_policy": decisions["policy"],
         "session": decisions["session"],

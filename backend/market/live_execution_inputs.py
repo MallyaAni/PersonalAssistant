@@ -1,0 +1,1351 @@
+"""Supplied-array raw-dollar inputs for whole-share live-policy research.
+
+Dated archive factors recover raw prices independently of economic share grants.
+Dividend-adjusted closes and observed price ratios never set conversion factors.
+Future action facts describe archive units, not historical feature availability.
+"""
+
+from __future__ import annotations
+
+import json
+from collections.abc import Mapping
+from dataclasses import dataclass
+from datetime import date, datetime
+from hashlib import sha256
+from types import MappingProxyType
+
+import numpy as np
+
+from backend.market import calendar
+from backend.market.daily_arithmetic_bridge import _hash
+
+DAILY_BASIS = "split_adjusted_daily_store"
+CUBE_BASIS = "raw_session_dollars"
+
+
+# Keep raw prices for inherited assets outside selection, forecasts and execution grids.
+@dataclass(frozen=True)
+class PassiveMarks:
+    dates: np.ndarray
+    tickers: tuple[str, ...]
+    session_open: np.ndarray
+    observation_close: np.ndarray
+    daily_close: np.ndarray
+    provenance: Mapping
+
+
+# Carry unchanged calendar and membership alongside explicit raw execution prices.
+@dataclass(frozen=True)
+class RawExecutionInputs:
+    dates: np.ndarray
+    tickers: tuple[str, ...]
+    grades: np.ndarray
+    eligible: np.ndarray
+    daily_open: np.ndarray
+    daily_high: np.ndarray
+    daily_low: np.ndarray
+    daily_close: np.ndarray
+    observation_close: np.ndarray
+    next_open: np.ndarray
+    session_open: np.ndarray
+    cube_present: np.ndarray
+    full_session: np.ndarray
+    status: np.ndarray
+    split_factors: np.ndarray
+    actions: Mapping
+    provenance: Mapping
+    passive: PassiveMarks | None = None
+    inherited_actions: Mapping | None = None
+
+
+# Reject an unsupported source relationship before deriving any execution dollars.
+def _require(condition, message):
+    if not condition:
+        raise ValueError(message)
+
+
+# Parse explicit archive dates without truncating timestamps or assigning timezones.
+def _day(value):
+    if isinstance(value, np.datetime64):
+        _require(
+            value.dtype == np.dtype("datetime64[D]") and not np.isnat(value),
+            "Explicit day dates required",
+        )
+        return value
+    _require(not isinstance(value, datetime), "Explicit day dates required")
+    if isinstance(value, str):
+        value = date.fromisoformat(value)
+    _require(isinstance(value, date), "Explicit day dates required")
+    return np.datetime64(value, "D")
+
+
+# Require a declared completeness and adjustment date for every retained symbol.
+def _dates_by_name(value, names, description):
+    if not isinstance(value, Mapping):
+        value = dict.fromkeys(names, value)
+    _require(set(value) == set(names), f"Per-name {description} required")
+    return {name: _day(value[name]) for name in names}
+
+
+# Validate monetary source arrays while preserving each supplied missing cell.
+def _prices(value, shape, description, *, allow_zero=False):
+    array = np.asarray(value)
+    _require(
+        array.shape == shape and array.dtype.kind in "fiu",
+        f"Aligned numeric {description} required",
+    )
+    known = np.isfinite(array)
+    _require(
+        not np.isinf(array).any()
+        and np.all(array[known] >= 0 if allow_zero else array[known] > 0),
+        f"Positive finite-or-missing {description} required",
+    )
+    return array.astype(np.float64, copy=True)
+
+
+# Refuse inconsistent OHLC units rather than using their ratios to repair prices.
+def _ohlc(values, description):
+    opening, high, low, closing = values
+    for left, right in (
+        (low, high),
+        (opening, high),
+        (closing, high),
+        (low, opening),
+        (low, closing),
+    ):
+        known = np.isfinite(left) & np.isfinite(right)
+        _require(np.all(left[known] <= right[known]), f"Invalid {description} OHLC")
+
+
+# Deep-freeze explicit caller provenance without claiming its provider authenticity.
+def _freeze(value):
+    if isinstance(value, Mapping):
+        return MappingProxyType({key: _freeze(item) for key, item in value.items()})
+    if isinstance(value, (list, tuple)):
+        return tuple(_freeze(item) for item in value)
+    _require(
+        value is None or isinstance(value, (str, int, float, bool)),
+        "Plain supplied provenance values required",
+    )
+    _require(
+        not isinstance(value, float) or np.isfinite(value),
+        "Finite provenance values required",
+    )
+    return value
+
+
+# Copy raw passive price arrays and keep their declared coverage and source identity.
+def prepare_passive(
+    dates,
+    selection_tickers,
+    tickers,
+    session_open,
+    observation_close,
+    daily_close,
+    *,
+    first_session,
+    complete_through,
+    provenance,
+    price_basis,
+):
+    dates, names = np.asarray(dates), tuple(tickers)
+    selected = tuple(selection_tickers)
+    _require(
+        dates.ndim == 1
+        and len(dates)
+        and dates.dtype == np.dtype("datetime64[D]")
+        and not np.isnat(dates).any()
+        and np.all(dates[1:] > dates[:-1])
+        and bool(names)
+        and len(names) == len(set(names))
+        and all(isinstance(name, str) and name for name in names)
+        and not set(names) & set(selected),
+        "Ordered passive sessions and distinct nonselection symbols required",
+    )
+    years, sessions = calendar.reviewed_sessions()
+    _require(
+        all(day.astype(object).year in years for day in dates)
+        and np.is_busday(dates, busdaycal=sessions).all()
+        and price_basis == CUBE_BASIS
+        and isinstance(provenance, Mapping)
+        and bool(provenance),
+        "Reviewed passive calendar, raw units and supplied provenance required",
+    )
+    first = _dates_by_name(first_session, names, "passive first session")
+    through = _dates_by_name(complete_through, names, "passive price coverage")
+    shape = (len(dates), len(names))
+    opening = _prices(session_open, shape, "passive opening")
+    observed = _prices(
+        observation_close, (len(dates), 26, len(names)), "passive completed bars"
+    )
+    closing = _prices(daily_close, shape, "passive daily close")
+    for column, name in enumerate(names):
+        _require(first[name] <= through[name], "Ordered passive coverage required")
+        outside = (dates < first[name]) | (dates > through[name])
+        _require(
+            all(
+                not np.isfinite(value[outside]).any()
+                for value in (
+                    opening[:, column],
+                    observed[:, :, column],
+                    closing[:, column],
+                )
+            ),
+            "Passive prices outside declared coverage cannot be carried forward",
+        )
+    for day, date_value in enumerate(dates):
+        count = int(
+            (
+                datetime.combine(
+                    date_value.astype(object),
+                    calendar.session_close(date_value.astype(object)),
+                )
+                - datetime.combine(date_value.astype(object), calendar.REGULAR_OPEN)
+            ).total_seconds()
+            // 900
+        )
+        _require(
+            not np.isfinite(observed[day, count:]).any(),
+            "Passive extended-hours bars cannot occupy regular-session slots",
+        )
+    dates = dates.copy()
+    contract = _freeze(
+        {
+            "price_basis": CUBE_BASIS,
+            "tickers": names,
+            "use": "valuation_only_not_selection_or_execution",
+            "availability": (
+                "declared_opening_proxy_completed_bar_end_after_actual_daily_close"
+            ),
+            "opening_proxy": (
+                "historical_first_regular_trade_not_proven_instantaneous_quote"
+            ),
+            "first_session": {name: str(first[name]) for name in names},
+            "complete_through": {name: str(through[name]) for name in names},
+            "source_authentication": "supplied_provenance_not_provider_verification",
+            "supplied": provenance,
+            "arrays": {
+                "dates": _hash(dates),
+                "session_open": _hash(opening),
+                "observation_close": _hash(observed),
+                "daily_close": _hash(closing),
+            },
+        }
+    )
+    for array in (dates, opening, observed, closing):
+        array.flags.writeable = False
+    return PassiveMarks(dates, names, opening, observed, closing, contract)
+
+
+# Require an unchanged passive contract aligned to the original selection calendar.
+def validate_passive(passive, dates, selection_tickers):
+    if passive is None:
+        return
+    _require(
+        isinstance(passive, PassiveMarks)
+        and np.array_equal(passive.dates, dates)
+        and not set(passive.tickers) & set(selection_tickers),
+        "Aligned passive prices cannot alter the selection universe",
+    )
+    fields = ("dates", "session_open", "observation_close", "daily_close")
+    _require(
+        all(
+            not getattr(passive, field).flags.writeable
+            and _hash(getattr(passive, field)) == passive.provenance["arrays"][field]
+            for field in fields
+        )
+        and passive.provenance["use"] == "valuation_only_not_selection_or_execution"
+        and passive.provenance["price_basis"] == CUBE_BASIS,
+        "Unchanged immutable raw passive source contract required",
+    )
+    _require(
+        tuple(passive.provenance["tickers"]) == passive.tickers,
+        "Unchanged passive security identities required",
+    )
+
+
+# Normalize a declared default cash entitlement without inventing its payment clock.
+def _cash_merger(row, day):
+    required = {
+        "date",
+        "kind",
+        "value",
+        "old_security_id",
+        "election_policy",
+        "completed_before",
+        "legal_clock_precision",
+        "terms_available_at",
+        "completion_available_at",
+        "terms_source",
+        "completion_source",
+        "source_receipt",
+    }
+    _require(
+        isinstance(row, Mapping)
+        and set(row) == required
+        and row["kind"] == "cash_merger"
+        and row["election_policy"] == "declared_no_election_default_cash"
+        and row["legal_clock_precision"] == "completed_before_open_not_exact"
+        and isinstance(row["old_security_id"], str)
+        and bool(row["old_security_id"]),
+        "Explicit named default cash merger without a guessed payment required",
+    )
+    amount = row["value"]
+    _require(
+        type(amount) in (int, float) and np.isfinite(amount) and amount > 0,
+        "Positive known cash merger consideration required",
+    )
+    clocks = []
+    for field in ("completed_before", "terms_available_at", "completion_available_at"):
+        _require(isinstance(row[field], str), "Aware merger evidence clocks required")
+        clock = datetime.fromisoformat(row[field])
+        _require(clock.utcoffset() is not None, "Aware merger evidence clocks required")
+        clocks.append(clock)
+    boundary, terms, completion = clocks
+    years, sessions = calendar.reviewed_sessions()
+    _require(
+        day.astype(object).year in years and np.is_busday(day, busdaycal=sessions),
+        "Reviewed regular merger session required",
+    )
+    opening = datetime.combine(
+        day.astype(object), calendar.REGULAR_OPEN, calendar.NEW_YORK
+    )
+    _require(
+        boundary == opening and terms < boundary and completion <= boundary,
+        "Observed first opening and prior available merger evidence required",
+    )
+    _require(
+        all(
+            isinstance(row[field], str) and row[field].startswith("https://")
+            for field in ("terms_source", "completion_source")
+        )
+        and isinstance(row["source_receipt"], Mapping)
+        and bool(row["source_receipt"]),
+        "Explicit merger declaration sources required",
+    )
+    return {**dict(row), "date": str(day), "value": float(amount)}
+
+
+# Keep terminal declarations for inherited names outside every selection price array.
+def _inherited_actions(actions, passive, dates):
+    if actions is None:
+        return None
+    _require(
+        isinstance(actions, Mapping)
+        and bool(actions)
+        and passive is not None
+        and set(actions) <= set(passive.tickers),
+        "Covered passive security actions required without selection changes",
+    )
+    normalized = {}
+    for symbol, rows in actions.items():
+        _require(
+            isinstance(rows, (list, tuple)) and len(rows) == 1,
+            "One explicit terminal declaration per inherited security required",
+        )
+        row = rows[0]
+        _require(isinstance(row, Mapping) and "date" in row, "Dated merger required")
+        day = _day(row["date"])
+        _require(day in dates, "Merger requires a supplied regular session")
+        _require(
+            _day(passive.provenance["complete_through"][symbol]) < day,
+            "Terminal inherited prices must stop before the merger session",
+        )
+        normalized[symbol] = (_cash_merger(row, day),)
+    return _freeze(normalized)
+
+
+# Reject a replaced terminal declaration even if all original price arrays still match.
+def validate_inherited(inputs):
+    normalized = _inherited_actions(
+        inputs.inherited_actions, inputs.passive, inputs.dates
+    )
+    _require(
+        normalized == inputs.provenance.get("inherited_actions"),
+        "Unchanged inherited terminal-action contract required",
+    )
+
+
+# Reject repeated JSON keys instead of silently accepting overwritten evidence.
+def _unique_object(pairs):
+    result = {}
+    for key, value in pairs:
+        _require(key not in result, "Duplicate action evidence key")
+        result[key] = value
+    return result
+
+
+# Bind each reviewed event to original bytes without using price factors as shares.
+def review_action_export(original_bytes, review_bytes):
+    _require(
+        isinstance(original_bytes, bytes) and isinstance(review_bytes, bytes),
+        "Original export and review bytes required",
+    )
+    original = json.loads(original_bytes, object_pairs_hook=_unique_object)
+    review = json.loads(review_bytes, object_pairs_hook=_unique_object)
+    _require(
+        isinstance(original, Mapping)
+        and isinstance(review, Mapping)
+        and review.get("schema") == "actual-policy-action-semantics/1"
+        and review.get("adoption_eligible") is False
+        and review.get("original_actions_sha256") == sha256(original_bytes).hexdigest(),
+        "Review must identify exact original action bytes",
+    )
+    first, last = _day(review["first_session"]), _day(review["last_session"])
+    _require(first <= last, "Ordered action review scope required")
+    actions, events = original.get("actions"), review.get("events")
+    _require(
+        isinstance(actions, Mapping) and bool(actions) and isinstance(events, list),
+        "Original action map and reviewed event sequence required",
+    )
+    indexed = {}
+    for event in events:
+        _require(isinstance(event, Mapping), "Explicit reviewed event required")
+        symbol, day = event.get("symbol"), _day(event["date"])
+        key = (symbol, str(day))
+        _require(
+            symbol in actions and first <= day <= last and key not in indexed,
+            "Unique covered in-scope review event required",
+        )
+        classification = event.get("classification")
+        _require(
+            classification
+            in ("same_security_split", "security_distribution", "security_exchange"),
+            "Explicit economic action classification required",
+        )
+        numerator, denominator = event.get("numerator"), event.get("denominator")
+        _require(
+            all(type(value) is int and value > 0 for value in (numerator, denominator)),
+            "Explicit positive integer economic ratio required",
+        )
+        source = event.get("source")
+        _require(
+            isinstance(source, str) and source.startswith("https://"),
+            "Primary declaration URL required; not a source-byte receipt",
+        )
+        if classification == "security_distribution":
+            _require(
+                isinstance(event.get("child"), str)
+                and bool(event["child"])
+                and event["child"] != symbol,
+                "Distinct explicit distribution security required",
+            )
+        indexed[key] = event
+    covered, unresolved, result = set(), [], {}
+    for symbol, rows in actions.items():
+        _require(
+            isinstance(symbol, str) and bool(symbol) and isinstance(rows, list),
+            "Explicit original symbol and ordered action sequence required",
+        )
+        output, seen, previous = [], set(), None
+        for row in rows:
+            _require(isinstance(row, Mapping), "Original action record required")
+            day, kind, value = _day(row["date"]), row.get("kind"), row.get("value")
+            _require(
+                kind in ("split", "dividend")
+                and type(value) in (int, float)
+                and np.isfinite(value)
+                and value > 0
+                and (previous is None or day >= previous)
+                and (str(day), kind) not in seen,
+                "Ordered unique positive original split/dividend records required",
+            )
+            previous = day
+            seen.add((str(day), kind))
+            output.append(
+                dict(row, kind="archive_adjustment" if kind == "split" else kind)
+            )
+            if kind != "split" or not first <= day <= last:
+                continue
+            key = (symbol, str(day))
+            _require(
+                key in indexed, "Missing economic review for original archive factor"
+            )
+            event = indexed[key]
+            factor = event.get("archive_factor")
+            _require(
+                type(factor) in (int, float)
+                and np.isfinite(factor)
+                and factor == value,
+                "Reviewed archive factor differs from original bytes",
+            )
+            covered.add(key)
+            numerator, denominator = event["numerator"], event["denominator"]
+            classification = event["classification"]
+            if classification == "same_security_split":
+                _require(
+                    numerator / denominator == value,
+                    "Declared same-security ratio differs from archive factor",
+                )
+            grant = _reviewed_grant(symbol, event, day)
+            if grant["kind"] == "unresolved_entitlement":
+                unresolved.append(
+                    {key: val for key, val in grant.items() if key != "kind"}
+                )
+            output.append(grant)
+        result[symbol] = output
+    _require(
+        covered == set(indexed), "Review includes an event absent from original bytes"
+    )
+    inherited = _reviewed_inherited_events(review, set(actions), first, last)
+    return _freeze(
+        {
+            "actions": result,
+            "unresolved": sorted(
+                unresolved, key=lambda row: (row["date"], row["symbol"])
+            ),
+            "scope": {"first_session": str(first), "last_session": str(last)},
+            "original_actions_sha256": sha256(original_bytes).hexdigest(),
+            "review_sha256": sha256(review_bytes).hexdigest(),
+            "reviewed_events": len(covered),
+            **({"inherited_actions": inherited} if inherited is not None else {}),
+            "declaration_evidence": (
+                "manual_primary_URL_review_not_authenticated_source_receipts"
+            ),
+            "execution_readiness": "incomplete"
+            if unresolved
+            else "pending_declaration_receipts",
+            "adoption_eligible": False,
+        }
+    )
+
+
+# Compile additional terminal events without rewriting original archive factors.
+def _reviewed_inherited_events(review, original_names, first, last):
+    events = review.get("inherited_events")
+    if events is None:
+        return None
+    children = {
+        event["child"]
+        for event in review["events"]
+        if event["classification"] == "security_distribution"
+    }
+    _require(
+        isinstance(events, list) and bool(events), "Explicit inherited events required"
+    )
+    result = {}
+    for event in events:
+        _require(isinstance(event, Mapping), "Explicit inherited event required")
+        symbol, day = event.get("symbol"), _day(event["date"])
+        _require(
+            symbol in children
+            and symbol not in original_names
+            and symbol not in result
+            and first <= day <= last,
+            "Unique covered inherited terminal declaration required",
+        )
+        row = {key: value for key, value in event.items() if key != "symbol"}
+        result[symbol] = (_cash_merger(row, day),)
+    return _freeze(result)
+
+
+# Compile physical grants without claiming valuation, allocation or payment evidence.
+def _reviewed_grant(symbol, event, day):
+    classification = event["classification"]
+    numerator, denominator = event["numerator"], event["denominator"]
+    if classification == "same_security_split" and numerator % denominator == 0:
+        return {
+            "date": str(day),
+            "kind": "share_split",
+            "value": numerator / denominator,
+            "review_event": dict(event),
+        }
+    if (
+        classification == "same_security_split"
+        and numerator < denominator
+        and event.get("fractional_policy") == "cash_in_lieu_unknown"
+        and event.get("effective_at") is not None
+    ):
+        return _consolidation(
+            {
+                **event,
+                "source_receipt": {
+                    "declaration": event["source"],
+                    "effective_source": event.get("effective_source"),
+                    "effective_source_sha256": event.get("effective_source_sha256"),
+                    "fractional_source": event.get("fractional_source"),
+                },
+            },
+            day,
+        )
+    if (
+        classification == "security_distribution"
+        and event.get("basis_policy") == "unallocated_at_effective_clock"
+    ):
+        return _distribution(
+            {
+                **event,
+                "source_receipt": {
+                    "declaration": event["source"],
+                    "effective_source": event.get("effective_source"),
+                    "fractional_source": event.get("fractional_source"),
+                },
+            },
+            (event["child"],),
+            day,
+        )
+    if classification == "security_exchange" and (
+        event.get("fractional_policy") == "floor_no_compensation"
+        or (
+            event.get("fractional_policy") == "cash_in_lieu_unknown"
+            and event.get("election_policy") == "declared_no_election_default_shares"
+        )
+    ):
+        return _exchange(
+            {
+                **event,
+                "source_receipt": {
+                    "declaration": event["source"],
+                    "fractional_source": event.get("fractional_source"),
+                    "completion_source": event.get("completion_source"),
+                    "terms_source": event.get("terms_source"),
+                    "terms_source_sha256": event.get("terms_source_sha256"),
+                    "election_scope": "declared_private_policy_not_broker_election",
+                },
+            },
+            day,
+        )
+    reason = {
+        "same_security_split": "fractional_share_payment_unresolved",
+        "security_distribution": "child_valuation_basis_and_payment_unresolved",
+        "security_exchange": (
+            "security_identity_election_or_fractional_processing_unresolved"
+        ),
+    }[classification]
+    return {
+        "symbol": symbol,
+        "date": str(day),
+        "kind": "unresolved_entitlement",
+        "reason": reason,
+        "review_event": dict(event),
+    }
+
+
+# Validate an off-session legal clock separately from its first regular application.
+def _action_first_opening(row, day, label):
+    clock = row.get("effective_at")
+    _require(isinstance(clock, str), f"Aware {label} effective clock required")
+    effective = datetime.fromisoformat(clock)
+    _require(
+        effective.utcoffset() is not None,
+        f"Aware {label} effective clock required",
+    )
+    local = effective.astimezone(calendar.NEW_YORK)
+    years, sessions = calendar.reviewed_sessions()
+    _require(
+        local.year in years and day.astype(object).year in years,
+        f"Reviewed {label} calendar required",
+    )
+    is_session = bool(np.is_busday(np.datetime64(local.date()), busdaycal=sessions))
+    _require(
+        not is_session
+        or not (
+            calendar.REGULAR_OPEN < local.time() < calendar.session_close(local.date())
+        ),
+        f"Intraday {label} requires additional execution ordering",
+    )
+    offset = int(is_session and local.time() > calendar.REGULAR_OPEN)
+    application = np.busday_offset(
+        np.datetime64(local.date()), offset, roll="forward", busdaycal=sessions
+    )
+    _require(
+        day == application, f"{label.capitalize()} requires its first regular opening"
+    )
+    return effective
+
+
+# Keep the legal consolidation clock distinct from regular-session application.
+def _consolidation(row, day):
+    numerator, denominator = row.get("numerator"), row.get("denominator")
+    _require(
+        all(type(value) is int and value > 0 for value in (numerator, denominator))
+        and numerator < denominator
+        and row.get("fractional_policy") == "cash_in_lieu_unknown",
+        "Explicit reverse ratio and unknown fractional cash policy required",
+    )
+    effective = _action_first_opening(row, day, "consolidation")
+    receipt = row.get("source_receipt")
+    _require(
+        isinstance(receipt, Mapping)
+        and bool(receipt)
+        and isinstance(row.get("effective_source"), str)
+        and row["effective_source"].startswith("https://")
+        and isinstance(row.get("fractional_source"), str)
+        and row["fractional_source"].startswith("https://"),
+        "Consolidation clock and fractional policy source evidence required",
+    )
+    return {
+        "date": str(day),
+        "kind": "share_consolidation",
+        "numerator": numerator,
+        "denominator": denominator,
+        "fractional_policy": "cash_in_lieu_unknown",
+        "effective_at": effective.isoformat(),
+        "effective_source": row["effective_source"],
+        "fractional_source": row["fractional_source"],
+        "source_receipt": _freeze(receipt),
+    }
+
+
+# Validate available-by evidence for a declared default share exchange before opening.
+def _default_share_terms(row, day):
+    fields = (
+        "completed_before",
+        "terms_available_at",
+        "completion_available_at",
+        "legal_clock_precision",
+        "election_policy",
+        "terms_source",
+        "completion_source",
+        "fractional_source",
+    )
+    _require(
+        all(field in row for field in fields)
+        and set(row)
+        <= {
+            *fields,
+            "date",
+            "kind",
+            "numerator",
+            "denominator",
+            "old_security_id",
+            "new_security_id",
+            "fractional_policy",
+            "terms_available_on",
+            "source_receipt",
+            "symbol",
+            "archive_factor",
+            "classification",
+            "source",
+            "ratio_condition",
+            "terms_source_sha256",
+        }
+        and row["election_policy"] == "declared_no_election_default_shares"
+        and row["legal_clock_precision"] == "completed_before_open_not_exact",
+        "Explicit default share exchange without an invented cash payment required",
+    )
+    clocks = []
+    for field in fields[:3]:
+        _require(
+            isinstance(row[field], str), "Aware share exchange evidence clocks required"
+        )
+        clock = datetime.fromisoformat(row[field])
+        _require(
+            clock.utcoffset() is not None,
+            "Aware share exchange evidence clocks required",
+        )
+        clocks.append(clock)
+    boundary, terms, completion = clocks
+    years, sessions = calendar.reviewed_sessions()
+    _require(
+        day.astype(object).year in years and np.is_busday(day, busdaycal=sessions),
+        "Reviewed regular share exchange session required",
+    )
+    opening = datetime.combine(
+        day.astype(object), calendar.REGULAR_OPEN, calendar.NEW_YORK
+    )
+    _require(
+        boundary == opening and terms < boundary and completion <= boundary,
+        "Observed first opening and prior available share exchange evidence required",
+    )
+    _require(
+        _day(terms.astimezone(calendar.NEW_YORK).date())
+        >= _day(row["terms_available_on"]),
+        "Share exchange availability cannot precede the dated terms",
+    )
+    _require(
+        all(
+            isinstance(row[field], str) and row[field].startswith("https://")
+            for field in fields[-3:]
+        ),
+        "Explicit share exchange declaration sources required",
+    )
+    return {field: row[field] for field in fields}
+
+
+# Validate named issuer terms and distinguish forfeiture from an unpaid cash fraction.
+def _exchange(row, day):
+    numerator, denominator = row.get("numerator"), row.get("denominator")
+    old, new = row.get("old_security_id"), row.get("new_security_id")
+    _require(
+        all(type(value) is int and value > 0 for value in (numerator, denominator))
+        and all(isinstance(value, str) and value for value in (old, new))
+        and old != new
+        and (
+            (
+                row.get("fractional_policy") == "floor_no_compensation"
+                and row.get("election_policy") is None
+            )
+            or (
+                row.get("fractional_policy") == "cash_in_lieu_unknown"
+                and row.get("election_policy") == "declared_no_election_default_shares"
+            )
+        ),
+        "Explicit exchange identities, ratio and fractional policy required",
+    )
+    available = _day(row["terms_available_on"])
+    _require(available < day, "Exchange terms require a prior-day declaration")
+    terms = (
+        _default_share_terms(row, day)
+        if row.get("fractional_policy") == "cash_in_lieu_unknown"
+        else {}
+    )
+    receipt = row.get("source_receipt")
+    _require(
+        isinstance(receipt, Mapping) and bool(receipt),
+        "Exchange source receipt required",
+    )
+    return {
+        "date": str(day),
+        "kind": "security_exchange",
+        "numerator": numerator,
+        "denominator": denominator,
+        "old_security_id": old,
+        "new_security_id": new,
+        "fractional_policy": row["fractional_policy"],
+        "terms_available_on": str(available),
+        "source_receipt": _freeze(receipt),
+        **terms,
+    }
+
+
+# Normalize distributions, exchanges and consolidations through distinct contracts.
+def _economic_action(row, names, day, parent):
+    if row["kind"] == "stock_distribution":
+        _require(row.get("child") != parent, "Distinct distribution child required")
+        return _distribution(row, names, day)
+    if row["kind"] == "share_consolidation":
+        return _consolidation(row, day)
+    return _exchange(row, day)
+
+
+# Validate child entitlements with known or explicitly unallocated acquisition basis.
+def _distribution(row, names, day):
+    child = row.get("child")
+    numerator, denominator = row.get("numerator"), row.get("denominator")
+    _require(
+        child in names
+        and all(
+            isinstance(value, (int, np.integer))
+            and not isinstance(value, (bool, np.bool_))
+            and value > 0
+            for value in (numerator, denominator)
+        ),
+        "Covered child and explicit positive integer distribution ratio required",
+    )
+    fraction = row.get("parent_basis_fraction")
+    unallocated = row.get("basis_policy") == "unallocated_at_effective_clock"
+    if unallocated:
+        _require(
+            fraction is None and row.get("basis_available_at") is None,
+            "Unallocated distribution cannot contain a basis estimate or later clock",
+        )
+        effective = _action_first_opening(row, day, "distribution")
+        _require(
+            all(
+                isinstance(row.get(key), str) and row[key].startswith("https://")
+                for key in ("effective_source", "fractional_source")
+            ),
+            "Distribution effective clock and fractional source required",
+        )
+        basis_fields = {
+            "parent_basis_fraction": None,
+            "basis_policy": "unallocated_at_effective_clock",
+            "effective_at": effective.isoformat(),
+            "effective_source": row["effective_source"],
+            "fractional_source": row["fractional_source"],
+            "entitlement_scope": (
+                "private_action_date_holdings_due_bill_assumption_not_broker_proof"
+            ),
+        }
+    else:
+        _require(
+            row.get("basis_policy") is None
+            and isinstance(fraction, (int, float, np.integer, np.floating))
+            and not isinstance(fraction, (bool, np.bool_))
+            and np.isfinite(fraction)
+            and 0 < fraction < 1,
+            "Explicit distribution basis allocation required",
+        )
+        available = row.get("basis_available_at")
+        _require(isinstance(available, str), "Aware distribution basis clock required")
+        available = datetime.fromisoformat(available)
+        opening = datetime.combine(
+            day.astype(object), calendar.REGULAR_OPEN, calendar.NEW_YORK
+        )
+        _require(
+            available.utcoffset() is not None and available <= opening,
+            "Distribution basis cannot use later evidence",
+        )
+        basis_fields = {
+            "parent_basis_fraction": float(fraction),
+            "basis_available_at": available.isoformat(),
+        }
+    receipt = row.get("source_receipt")
+    _require(
+        isinstance(receipt, Mapping)
+        and bool(receipt)
+        and row.get("fractional_policy") == "cash_in_lieu_unknown",
+        "Explicit source receipt and unknown fractional cash policy required",
+    )
+    _require(
+        row.get("share_basis") == "post_split_action_date_shares",
+        "Explicit distribution share basis required",
+    )
+    return {
+        "date": str(day),
+        "kind": "stock_distribution",
+        "child": child,
+        "numerator": int(numerator),
+        "denominator": int(denominator),
+        **basis_fields,
+        "source_receipt": _freeze(receipt),
+        "fractional_policy": "cash_in_lieu_unknown",
+        "share_basis": "post_split_action_date_shares",
+    }
+
+
+# Refuse duplicate share grants and distributions whose same-day order is unknown.
+def _validate_distribution_dependencies(normalized):
+    parents_by_day = {}
+    for name, rows in normalized.items():
+        legacy_splits = {row["date"] for row in rows if row["kind"] == "split"}
+        _require(
+            not any(
+                row["kind"] == "share_split" and row["date"] in legacy_splits
+                for row in rows
+            ),
+            "Legacy split and separate share grant would duplicate entitlements",
+        )
+        for row in rows:
+            if row["kind"] == "stock_distribution":
+                parents_by_day.setdefault(row["date"], set()).add(name)
+    _require(
+        all(
+            row["child"] not in parents_by_day[row["date"]]
+            for rows in normalized.values()
+            for row in rows
+            if row["kind"] == "stock_distribution"
+        ),
+        "Same-day chained distributions require additional entitlement evidence",
+    )
+    _require(
+        all(
+            not any(
+                other["date"] == row["date"]
+                and other["kind"] in ("split", "share_split")
+                for name in (parent, row["child"])
+                for other in normalized.get(name, ())
+            )
+            for parent, rows in normalized.items()
+            for row in rows
+            if row["kind"] == "stock_distribution"
+            and row.get("basis_policy") == "unallocated_at_effective_clock"
+        ),
+        "Distribution and same-day splits require additional entitlement ordering",
+    )
+
+
+# Require ordering before combining exchanges or consolidations with share events.
+def _validate_exchange_dependencies(normalized):
+    exchanges = {
+        (name, row["date"])
+        for name, rows in normalized.items()
+        for row in rows
+        if row["kind"] in ("security_exchange", "share_consolidation")
+    }
+    _require(
+        all(
+            sum(
+                row["date"] == day
+                and row["kind"] in ("security_exchange", "share_consolidation")
+                for row in normalized[name]
+            )
+            == 1
+            for name, day in exchanges
+        ),
+        "Same-day exchange and consolidation require additional entitlement ordering",
+    )
+    _require(
+        all(
+            (name, row["date"]) not in exchanges
+            for name, rows in normalized.items()
+            for row in rows
+            if row["kind"] in ("split", "share_split")
+        )
+        and all(
+            (name, row["date"]) not in exchanges
+            and (row["child"], row["date"]) not in exchanges
+            for name, rows in normalized.items()
+            for row in rows
+            if row["kind"] == "stock_distribution"
+        ),
+        "Same-day exchange and share events require additional entitlement ordering",
+    )
+
+
+# Separate archive price factors from dated economic share and cash entitlements.
+def _actions(actions, names, dates, basis, through, dividend_basis, passive_names=()):
+    _require(
+        isinstance(actions, Mapping) and set(actions) == set(names),
+        "Explicit action history required for every symbol",
+    )
+    factors = np.ones((len(dates), len(names)), dtype=np.float64)
+    normalized = {}
+    for stock, name in enumerate(names):
+        previous, seen, rows = None, set(), []
+        _require(
+            isinstance(actions[name], (list, tuple)),
+            "Explicit ordered action record sequence required",
+        )
+        _require(
+            through[name] >= basis[name] and through[name] >= dates[-1],
+            "Corporate-action completeness must cover archive basis and sessions",
+        )
+        _require(
+            basis[name] >= dates[-1], "Archive basis cannot precede daily sessions"
+        )
+        for row in actions[name]:
+            _require(
+                isinstance(row, Mapping) and {"date", "kind"} <= set(row),
+                "Dated split/dividend action records required",
+            )
+            day, kind = _day(row["date"]), row["kind"]
+            _require(
+                kind
+                in (
+                    "split",
+                    "dividend",
+                    "archive_adjustment",
+                    "share_split",
+                    "stock_distribution",
+                    "security_exchange",
+                    "share_consolidation",
+                ),
+                "Explicit split/dividend units required",
+            )
+            _require(
+                previous is None or day >= previous,
+                "Chronological action records required",
+            )
+            _require(day <= through[name], "Action beyond declared completeness")
+            key = (str(day), kind)
+            _require(key not in seen, "Duplicate or conflicting corporate action")
+            seen.add(key)
+            previous = day
+            if kind in (
+                "stock_distribution",
+                "security_exchange",
+                "share_consolidation",
+            ):
+                rows.append(_economic_action(row, (*names, *passive_names), day, name))
+                continue
+            value = row.get("value")
+            _require(
+                isinstance(value, (int, float, np.integer, np.floating))
+                and not isinstance(value, (bool, np.bool_)),
+                "Explicit split/dividend units required",
+            )
+            value = float(value)
+            _require(
+                np.isfinite(value) and value > 0,
+                "Positive corporate-action value required",
+            )
+            normalized_row = {"date": str(day), "kind": kind, "value": value}
+            normalized_row.update(
+                _freeze({key: row[key] for key in {"review_event"}.intersection(row)})
+            )
+            rows.append(normalized_row)
+            if kind in ("split", "archive_adjustment") and day <= basis[name]:
+                with np.errstate(over="ignore", under="ignore"):
+                    factors[dates < day, stock] *= value
+        rows.sort(key=lambda row: (row["date"], row["kind"] != "split"))
+        for row in rows:
+            if row["kind"] != "dividend":
+                continue
+            _require(
+                dividend_basis
+                in (
+                    "raw_ex_date_share_dollars",
+                    "split_adjusted_archive_share_dollars",
+                ),
+                "Explicit supported dividend amount basis required",
+            )
+            row["source_value"] = row["value"]
+            if dividend_basis == "split_adjusted_archive_share_dollars":
+                for split in rows:
+                    if split["kind"] in ("split", "archive_adjustment") and row[
+                        "date"
+                    ] < split["date"] <= str(basis[name]):
+                        row["value"] *= split["value"]
+            _require(
+                np.isfinite(row["value"]) and row["value"] > 0,
+                "Finite raw dividend amount required",
+            )
+        normalized[name] = tuple(MappingProxyType(row) for row in rows)
+    _validate_distribution_dependencies(normalized)
+    _validate_exchange_dependencies(normalized)
+    _require(
+        np.isfinite(factors).all() and (factors > 0).all(),
+        "Finite positive dated split factors required",
+    )
+    return factors, MappingProxyType(normalized)
+
+
+# Map supplied raw full-session cubes onto the unchanged panel without bar filling.
+def _cubes(cubes, names, dates, full_session):
+    _require(
+        isinstance(cubes, Mapping) and set(cubes) <= set(names),
+        "Cube keys must belong to original panel symbols",
+    )
+    shape = (len(dates), 25, len(names))
+    observed, following = np.full(shape, np.nan), np.full(shape, np.nan)
+    opening = np.full((len(dates), len(names)), np.nan)
+    present = np.zeros(opening.shape, dtype=bool)
+    statuses = np.full(opening.shape, "missing_cube_session", dtype="U32")
+    statuses[~full_session] = "unsupported_early_close"
+    sources = {}
+    for stock, name in enumerate(names):
+        cube = cubes.get(name)
+        if cube is None:
+            sources[name] = {"provided": False}
+            continue
+        cube_dates = np.asarray(cube.dates)
+        _require(
+            cube.ticker == name
+            and cube_dates.ndim == 1
+            and cube_dates.dtype == np.dtype("datetime64[D]")
+            and not np.isnat(cube_dates).any()
+            and np.all(cube_dates[1:] > cube_dates[:-1]),
+            "Ordered unique cube dates and matching ticker required",
+        )
+        years, sessions = calendar.reviewed_sessions()
+        _require(
+            all(day.astype(object).year in years for day in cube_dates)
+            and np.is_busday(cube_dates, busdaycal=sessions).all(),
+            "Reviewed cube session dates required",
+        )
+        cube_shape = (len(cube_dates), 26)
+        values = [
+            _prices(getattr(cube, field), cube_shape, f"cube {field}")
+            for field in ("open", "high", "low", "close")
+        ]
+        _ohlc(values, "raw cube")
+        _prices(cube.volume, cube_shape, "cube volume", allow_zero=True)
+        _prices(cube.prior_close, (len(cube_dates),), "cube prior close")
+        _prices(cube.auction_open, (len(cube_dates),), "cube auction open")
+        _prices(
+            cube.auction_volume,
+            (len(cube_dates),),
+            "cube auction volume",
+            allow_zero=True,
+        )
+        indices = np.searchsorted(dates, cube_dates)
+        inside = indices < len(dates)
+        inside[inside] &= dates[indices[inside]] == cube_dates[inside]
+        selected = np.flatnonzero(inside)
+        rows = indices[selected]
+        present[rows, stock] = True
+        supported = full_session[rows]
+        cube_rows, rows = selected[supported], rows[supported]
+        observed[rows, :, stock] = values[3][cube_rows, :25]
+        following[rows, :, stock] = values[0][cube_rows, 1:26]
+        opening[rows, stock] = values[0][cube_rows, 0]
+        complete = np.logical_and.reduce(
+            [np.isfinite(value[cube_rows]).all(axis=1) for value in values]
+        )
+        statuses[rows, stock] = np.where(
+            complete, "provided_full_grid", "provided_missing_bars"
+        )
+        sources[name] = {
+            "provided": True,
+            "outside_panel_rows": int((~inside).sum()),
+            "excluded": dict(cube.excluded),
+            "arrays": {
+                field: _hash(np.asarray(getattr(cube, field)))
+                for field in (
+                    "dates",
+                    "open",
+                    "high",
+                    "low",
+                    "close",
+                    "volume",
+                    "prior_close",
+                    "auction_open",
+                    "auction_volume",
+                )
+            },
+        }
+    return observed, following, opening, present, statuses, sources
+
+
+# Preserve source selection, missingness and actions in raw execution units.
+def prepare(
+    panel,
+    grades,
+    eligible,
+    cubes,
+    actions,
+    *,
+    basis_as_of,
+    complete_through,
+    provenance,
+    daily_price_basis=DAILY_BASIS,
+    cube_price_basis=CUBE_BASIS,
+    dividend_price_basis=None,
+    passive=None,
+    inherited_actions=None,
+):
+    _require(
+        daily_price_basis == DAILY_BASIS and cube_price_basis == CUBE_BASIS,
+        "Declared split-adjusted daily and raw cube units required",
+    )
+    _require(
+        isinstance(provenance, Mapping) and bool(provenance),
+        "Explicit supplied source provenance required",
+    )
+    dates, names = np.asarray(panel.dates), tuple(panel.tickers)
+    _require(
+        dates.ndim == 1
+        and len(dates)
+        and dates.dtype == np.dtype("datetime64[D]")
+        and not np.isnat(dates).any()
+        and np.all(dates[1:] > dates[:-1])
+        and len(names) == len(set(names))
+        and bool(names)
+        and all(isinstance(name, str) and name for name in names),
+        "Ordered original sessions and unique symbols required",
+    )
+    years, sessions = calendar.reviewed_sessions()
+    _require(
+        all(day.astype(object).year in years for day in dates)
+        and np.is_busday(dates, busdaycal=sessions).all(),
+        "Reviewed exchange session dates required",
+    )
+    validate_passive(passive, dates, names)
+    shape = (len(dates), len(names))
+    grades, eligible = np.asarray(grades), np.asarray(eligible)
+    _require(
+        grades.shape == shape
+        and grades.dtype.kind in "iu"
+        and np.isin(grades, (-1, 0, 1, 2, 3)).all()
+        and eligible.shape == shape
+        and eligible.dtype.kind == "b",
+        "Original aligned ordinal grades and boolean membership required",
+    )
+    daily = [
+        _prices(getattr(panel, field), shape, f"daily {field}")
+        for field in ("open", "high", "low", "close")
+    ]
+    _ohlc(daily, "daily source")
+    basis = _dates_by_name(basis_as_of, names, "split-adjustment basis")
+    through = _dates_by_name(complete_through, names, "action completeness")
+    factors, action_rows = _actions(
+        actions,
+        names,
+        dates,
+        basis,
+        through,
+        dividend_price_basis,
+        passive.tickers if passive is not None else (),
+    )
+    inherited = _inherited_actions(inherited_actions, passive, dates)
+    with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+        raw_daily = [value * factors for value in daily]
+    _require(
+        all(
+            not np.isinf(value).any() and np.all(value[np.isfinite(value)] > 0)
+            for value in raw_daily
+        ),
+        "Raw daily conversion overflow or underflow",
+    )
+    full = np.array(
+        [
+            calendar.session_close(day.astype(object)) == calendar.REGULAR_CLOSE
+            for day in dates
+        ],
+        dtype=bool,
+    )
+    observed, following, opening, present, statuses, cube_sources = _cubes(
+        cubes, names, dates, full
+    )
+    dates, grades, eligible = dates.copy(), grades.copy(), eligible.copy()
+    contract = _freeze(
+        {
+            "daily_price_basis": DAILY_BASIS,
+            "cube_price_basis": CUBE_BASIS,
+            "raw_conversion": (
+                "daily_OHLC_times_product_of_archive_factors_strictly_after_session_"
+                "through_archive_basis"
+            ),
+            "archive_factor_action_kinds": ("split", "archive_adjustment"),
+            "distribution_share_basis": "post_split_action_date_shares",
+            "distribution_fractional_cash": "unpriced_until_observed_payment_receipt",
+            "dividend_adjustment": "adj_close_not_used_for_raw_prices",
+            "dividend_source_basis": dividend_price_basis,
+            "dividend_output_basis": "raw_ex_date_share_dollars",
+            "dividend_cash_conversion": (
+                "explicit_adjusted_amount_times_dated_archive_factors_strictly_after_"
+                "ex_date_through_archive_basis;_original_source_value_retained"
+            ),
+            "action_completeness": (
+                "caller_supplied_not_independent_provider_verification"
+            ),
+            "future_actions": (
+                "archive_units_and_accounting_only_not_historical_decision_features"
+            ),
+            "early_close": (
+                "retained_dates_unavailable_original_full_session_cube_contract"
+            ),
+            "cube_clock": "observation_close_slots_0_to_24_next_open_slots_1_to_25",
+            "auction": "never_used_as_a_regular_next_open_or_synthetic_fill",
+            "basis_as_of": {name: str(basis[name]) for name in names},
+            "complete_through": {name: str(through[name]) for name in names},
+            "supplied": provenance,
+            "cube_sources": cube_sources,
+            "daily_source_arrays": {
+                field: _hash(np.asarray(getattr(panel, field)))
+                for field in ("dates", "open", "high", "low", "close", "adj_close")
+            },
+            "grade_sha256": _hash(grades),
+            "eligible_sha256": _hash(eligible),
+            **(
+                {"passive_provenance": passive.provenance}
+                if passive is not None
+                else {}
+            ),
+            **({"inherited_actions": inherited} if inherited is not None else {}),
+        }
+    )
+    for array in (
+        dates,
+        grades,
+        eligible,
+        *raw_daily,
+        observed,
+        following,
+        opening,
+        present,
+        full,
+        statuses,
+        factors,
+    ):
+        array.flags.writeable = False
+    return RawExecutionInputs(
+        dates,
+        names,
+        grades,
+        eligible,
+        *raw_daily,
+        observed,
+        following,
+        opening,
+        present,
+        full,
+        statuses,
+        factors,
+        action_rows,
+        contract,
+        passive,
+        inherited,
+    )

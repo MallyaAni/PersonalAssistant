@@ -41,6 +41,41 @@ const NVDA_PLANNED = {client_order_id: 'NVDA-1', symbol: 'NVDA', side: 'buy', ac
   state: 'planned', status: 'Planned', when: 'Wed Sep 9 · 15-min close 1% under the open, else at the close'}
 const paperPlan = (orders: object[] = [NVDA_PLANNED]) => ({rule: 'dip_or_close', until_rebalance: 18, last_rebalance: '2026-08-12', reason: null, orders})
 
+// Learned timing appears consistently without converting a forecast into a broker fill.
+for (const filled of [false, true]) {
+  test(`learned paper timing preserves ${filled ? 'confirmed fill' : 'waiting observation'}`, async ({page}) => {
+    const errors = observeBlockingBrowserErrors(page)
+    const failed: string[] = []
+    page.on('requestfailed', request => { if (request.url().includes('/market/')) failed.push(request.url()) })
+    const rule = 'live-probability-timing/1-research'
+    const order = {...NVDA_PLANNED, timing_policy: rule, open: null, level: null,
+      state: filled ? 'filled' : 'waiting', status: filled ? 'Bought 5 @ $98.50 · 10:16 AM' : 'Awaiting current learned decision',
+      qty: filled ? 5 : 10, price: filled ? 98.5 : 130, quantity_basis: filled ? 'filled' : 'planned',
+      when: 'Wed Sep 9 · learned timing; session completion 15:45 ET',
+      learned_timing: {policy: rule, state: filled ? 'execute' : 'wait', reason: 'Original model verdict',
+        observed_qty: filled ? 5 : null, observed_price: 130, observed_at: '2026-09-09T14:15:02Z',
+        evidence_sha256: 'a'.repeat(64), current: false, fill_proven: false},
+    }
+    await page.route(`**/market/${USER}/desk/paper`, route => route.fulfill({json: {
+      equity: 100000, cash: 10000, positions: [], orders: [],
+      plan: {...paperPlan([order]), rule, policy: 'joint-stock-risk-funded/5-market-conditioned-probability-timing-research',
+        rule_text: {buy: 'Ordinary orders use learned timing; company exits at the open',
+          sell: 'Ordinary orders use learned timing; company exits at the open'}},
+    }}))
+    await page.goto('/?deskDetails=1#desk')
+    const detail = await stockDetails(page, 'NVDA')
+    await expect(detail.getByLabel('NVDA recorded model decision')).toContainText('historical observation; not a fill')
+    await expect(detail).toContainText(order.status)
+    await expect(detail).not.toContainText('1%')
+    await page.getByRole('button', {name: 'How to use this page', exact: true}).click()
+    await expect(page.getByText('The selected policy determines portfolio weights.')).toBeVisible()
+    await page.locator('summary', {hasText: 'Paper account'}).click()
+    await expect(page.getByLabel('Paper account execution timing')).toHaveText('Ordinary orders use learned timing; company exits at the open')
+    expect(failed).toEqual([])
+    expect(errors).toEqual({consoleErrors: [], pageErrors: []})
+  })
+}
+
 // Unsupported historical returns stay hidden while the original record remains archived.
 test('withholds an unvalidated simulation and explains missing held marks', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)

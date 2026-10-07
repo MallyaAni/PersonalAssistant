@@ -10,6 +10,22 @@ from backend.market.panel import panel_from_histories
 from backend.market.yahoo import DailyBar, TickerHistory
 
 
+# Pin the newly reviewed 2015 closures without inventing a July early close.
+def test_reviewed_2015_sessions_and_early_closes():
+    from datetime import time
+
+    sessions = calendar.reviewed_sessions()
+    assert 2015 in sessions[0]
+    exchange = sessions[1]
+    assert np.is_busday(np.datetime64("2015-01-02"), busdaycal=exchange)
+    for closed in ("2015-01-01", "2015-04-03", "2015-07-03"):
+        assert not np.is_busday(np.datetime64(closed), busdaycal=exchange)
+    assert calendar.session_close(date(2015, 7, 2)) == time(16, 0)
+    assert calendar.session_close(date(2015, 11, 27)) == time(13, 0)
+    assert calendar.session_close(date(2015, 12, 24)) == time(13, 0)
+    assert np.is_busday(np.datetime64("2015-12-31"), busdaycal=exchange)
+
+
 # A weekday-only flat history.
 def _history(ticker: str, first: date, sessions: int) -> TickerHistory:
     bars = []
@@ -131,6 +147,34 @@ def test_future_distance_uses_exchange_holidays():
     dates = np.asarray(["2026-04-02"], dtype="datetime64[D]")
     distance, _ = calendar._fomc_distances(dates, [date(2026, 4, 5)])
     assert distance[0] == 1  # Good Friday closed, Sunday action reacts Monday.
+
+
+# Historical prefixes use reviewed future sessions across all covered years.
+@pytest.mark.parametrize(
+    ("last", "decision", "expected"),
+    [
+        ("2018-03-15", "2018-03-21", 4),
+        ("2018-05-24", "2018-06-13", 13),
+        ("2020-03-13", "2020-03-15", 1),
+        ("2025-11-26", "2025-11-28", 1),
+    ],
+)
+def test_historical_future_distance_uses_reviewed_sessions(last, decision, expected):
+    distance, _ = calendar._fomc_distances(
+        np.asarray([last], dtype="datetime64[D]"), [date.fromisoformat(decision)]
+    )
+    assert distance[0] == expected
+
+
+# Appending later observed prices cannot change a past scheduled meeting distance.
+def test_historical_calendar_prefix_matches_full_exchange_grid():
+    dates = np.arange(np.datetime64("2018-03-01"), np.datetime64("2018-04-03"))
+    dates = dates[np.is_busday(dates, busdaycal=calendar.reviewed_sessions()[1])]
+    decisions = [date(2018, 3, 21)]
+    full, _ = calendar._fomc_distances(dates, decisions)
+    prefix = dates[dates <= np.datetime64("2018-03-15")]
+    causal, _ = calendar._fomc_distances(prefix, decisions)
+    np.testing.assert_array_equal(causal, full[: len(prefix)])
 
 
 # Unknown coverage stays unknown; an earlier decision cannot become today's event.

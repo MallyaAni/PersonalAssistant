@@ -1,5 +1,59 @@
 # Next session
 
+## 2026-10-06 — main-based learned live integration verified, not activated
+
+Goal ACTIVE/incomplete: replace ordinary fixed timing and equal sizing with the
+reviewed learned buy/exit/funded sizing path. New managed worktree
+/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant,
+branch codex/learned-live-release-20261006, started clean at origin/mainf77d6e57.
+Copied189 exact dependency/test/protocol/frontend files from reviewed research
+source69d5c129; excluded the large result archives and unrelated research paths.
+All26 release-bound production module hashes match the authenticated inactive
+asset bundle. The original research branch/history remains intact.
+
+VERIFIED actual pinned-image main-based integration:1729PASS/no skips132.23s
+across70modules. Source/app read-only, networknone, CPU2/memory3GiB/user1000;
+only private proof writable. Containerfc8be6b7 exited0/OOMfalse;2358sourcefiles
+unchanged. Cases cover original numeric publication/purge, calendar/basis,
+funded planning, paper lock/dispatch, nightly selector, personal isolation,
+actual API paths, persistence, timing observations and carried synthetic ledger.
+These are correctness tests, not the pending actual economic screen.
+
+Original integration failures preserved, assertions not weakened: initial scope
+missed two source-authenticated CLI files; added exact dependencies. A synthetic
+CLI module stub omitted its current numeric_snapshot API; supplied the actual
+serializer. An unknown-year fixture implicitly depended on2015being unreviewed;
+now explicitly removes that year in the fixture, preserving its original
+assertions, with a new known-year missing-session case. Live-policy test cleanup
+only removes an unused import and wraps lines; AST/assertions otherwise identical.
+No production model coefficients, registered rules, fit windows or economic
+inputs changed. Full corrected acceptance was repeated once after these failures.
+
+Scoped Ruff PASS on selected Python files except personal_history.py, whose four
+previously reproduced baseline findings remain disclosed. No global lint-clean
+claim. All99frontend files exactly match the prior typechecked/Chrome-tested
+source; unchanged source browser checks were not repeated. Fresh deployed
+API/browser/artifact acceptance remains required. No production config or release
+approval, order/account write, deployment, model-service change or market request.
+
+Proof /home/animallya96/scratch/learned-live-integration-20261006-69d5c129/proof-v4:
+test-execution.json binds exact handle/image/mounts, source hashes and commands;
+test.log SHA77afc7c0f34b556ec17b013a39867b89ab3561b5dfa62cbf409588461d4d8736;
+test-command.json SHA9ba7db97bc073b351037c24ff47059289a6c3853b006e37607ca97dfeac0fb25.
+Earlier failed runs remain in proof,proof-v2,proof-v3 with immutable source copies.
+Original model assets remain private/inactive at learned-live-release-20261006-
+372fec77-v2/bundle; no config.json or cost/adoption selection exists there.
+
+NEXT: review the complete original carried comparison and matching controls when
+successful saved-only verification exists. Producer659a960b and original control
+2832af72 are RUNNING/OOMfalse; watcher3169361 active, complete candidate proof
+absent, live markere8e339e0 unchanged. Never inspect partial scores or restart/
+mutate active source. Then supported explicit source/evidence/cost approval,
+guarded main integration and scripts/deploy.sh required gates, followed by actual
+deployed numerical/API/browser/account/artifact acceptance. This branch is
+prepared release code, not an adopted strategy. No automatic monthly refresh
+claim: October publications retain their original expiry/availability guards.
+
 ## 2026-10-04 — future-intent correction LIVE; first funded results available
 
 VERIFIED deployed source e8e339e0f9bdf247ce4d16bedc3f6c744af0b638 through

@@ -206,9 +206,9 @@ def exchange_status(now: datetime) -> dict[str, object]:
     return status
 
 
-# Count sessions beyond the panel, or report missing exchange-calendar coverage.
+# Count future sessions using all reviewed years, refusing uncovered calendar spans.
 def _future_session_offset(last: np.datetime64, decision: np.datetime64) -> float:
-    years, sessions = _published_sessions()
+    years, sessions = reviewed_sessions()
     start_year = last.astype(object).year
     end_year = decision.astype(object).year
     if not set(range(start_year, end_year + 1)).issubset(years):

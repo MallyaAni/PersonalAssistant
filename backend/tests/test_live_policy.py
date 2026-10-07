@@ -17,7 +17,6 @@ import pytest
 
 from backend.agents.trading.desk import (
     event_risk,
-    grading,
     intraday_orders,
     live_policy,
     paper,
@@ -350,10 +349,46 @@ def test_a_v4_state_moves_to_v5_without_a_forced_rebalance(
     assert paper.load_state(tmp_path).policy_version == "graded-equal-weight/5"
 
 
-# A session that cannot rebalance - here an FOMC cycle routes the plan
-# through the event path - leaves the state unstamped, so the rebalance
-# into the active policy is forced again on the next ordinary session.
-def test_a_session_that_cannot_rebalance_keeps_the_old_stamp(tmp_path, monkeypatch, capsys):
+# Event-only sessions never evaluate unused ordinary entry or rotation features.
+@pytest.mark.parametrize(
+    ("known", "factor"), [(True, event_risk.REDUCED), (False, 1.0)]
+)
+def test_event_planning_does_not_evaluate_ordinary_entry_features(
+    tmp_path, monkeypatch, known, factor
+):
+    from backend.market import alpaca_trading
+
+    # Fail if an event-only nightly evaluates unused ordinary planning features.
+    def forbidden(*args):
+        raise AssertionError("ordinary features evaluated during event-only planning")
+
+    monkeypatch.setattr(alpaca_trading, "client_from_env", lambda: _EmptyBroker())
+    monkeypatch.setattr(
+        event_risk,
+        "decision",
+        lambda panel: {
+            "calendar_known": known,
+            "factor": factor,
+            "decision_date": "2026-09-16",
+        },
+    )
+    monkeypatch.setattr(market_daily, "_price_entries", forbidden)
+    monkeypatch.setattr(market_daily, "_downgraded", forbidden)
+    paper.save_state(
+        tmp_path,
+        paper.PaperState(last_rebalance="2026-09-02", sessions_since_rebalance=1),
+    )
+    before = paper.state_path(tmp_path).read_bytes()
+    entry = market_daily.paper_trade(_report(), tmp_path, "2026-09-03", False)
+    assert not entry["orders"]
+    assert not entry["planned"]
+    assert paper.state_path(tmp_path).read_bytes() == before
+
+
+# An event session leaves the old stamp so the next ordinary plan is forced again.
+def test_a_session_that_cannot_rebalance_keeps_the_old_stamp(
+    tmp_path, monkeypatch, capsys
+):
     from backend.market import alpaca_trading
 
     class Broker:
@@ -382,9 +417,16 @@ def test_a_session_that_cannot_rebalance_keeps_the_old_stamp(tmp_path, monkeypat
     monkeypatch.setattr(
         event_risk,
         "decision",
-        lambda panel: {"calendar_known": True, "factor": event_risk.REDUCED, "decision_date": "2026-09-16"},
+        lambda panel: {
+            "calendar_known": True,
+            "factor": event_risk.REDUCED,
+            "decision_date": "2026-09-16",
+        },
     )
-    paper.save_state(tmp_path, paper.PaperState(last_rebalance="2026-09-02", sessions_since_rebalance=1))
+    paper.save_state(
+        tmp_path,
+        paper.PaperState(last_rebalance="2026-09-02", sessions_since_rebalance=1),
+    )
     market_daily.paper_trade(_report(), tmp_path, "2026-09-03", True)
     out = capsys.readouterr().out
     assert "policy change" in out

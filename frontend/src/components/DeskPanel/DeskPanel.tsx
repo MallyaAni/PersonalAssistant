@@ -9,7 +9,7 @@ import { RecommendationTimeline } from './RecommendationTimeline'
 import { PersonalDecisionHistory, type PersonalHistoryContext } from './PersonalDecisionHistory'
 import { PaperAccountHistory } from './PaperAccountHistory'
 import { TickerChart } from './TickerChart'
-import { TradeBoard, boardRows, dollars, percent, orderWord, quantityLabel, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
+import { TradeBoard, boardRows, dollars, percent, orderWord, quantityLabel, executionRuleText, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
 import { StrategyBench } from './StrategyBench'
 import { NeuralStudy } from './NeuralStudy'
 import { OpportunityCard } from './OpportunityCard'
@@ -43,6 +43,7 @@ import {
   type DeskMineRow,
   type DeskOptionsEvidence,
   type DeskPaperLive,
+  type DeskPaperPlan,
   type DeskPayload,
   type DeskQuote,
   type DeskRecord,
@@ -1015,7 +1016,7 @@ const TrackRecord = ({ curve, latest }: { curve: DeskCurve | undefined; latest: 
 
 // The one-screen explanation for someone who has never seen the page, used
 // both as the help popover and the empty-state guide.
-const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?: boolean }) => (
+const HowToUse = ({ onClose, compact = false, plan }: { onClose?: () => void; compact?: boolean; plan?: DeskPaperPlan }) => (
   <div className={`rounded-xl border border-black/[0.08] bg-[#f5f5f7] p-4 text-sm text-[#1d1d1f] ${compact ? '' : 'my-2 max-w-2xl'}`}>
     <p className="font-medium">Reading this page</p>
     <p className="mt-1 text-[#6e6e73]">
@@ -1041,17 +1042,17 @@ const HowToUse = ({ onClose, compact = false }: { onClose?: () => void; compact?
       <div>
         <dt className="font-medium">When</dt>
         <dd className="text-[#6e6e73]">
-          The nightly plan decides the orders after the close. The next session, a buy goes in on the first 15-minute
+          {plan && plan.rule !== 'dip_or_close' ? executionRuleText(plan) : <>The nightly plan decides the orders after the close. The next session, a buy goes in on the first 15-minute
           close 1% or more under the day&apos;s open, a sell or trim on one 1% or more over it; with none, the order goes in
           as a market order at 3:45 PM ET, just before the close. The status shows where each order is: planned, waiting for its level, sent,
-          filled.
+          filled.</>}
         </dd>
       </div>
       <div>
         <dt className="font-medium">Grade</dt>
         <dd className="text-[#6e6e73]">
           A+ down to C, from five analysts: growth &amp; margins (F), price trend (T), earnings-release tone (S), relative
-          valuation (V) and group leadership (R). A and A+ names are in the book at equal weight, up to 20% each. Grades
+          valuation (V) and group leadership (R). {plan && plan.rule !== 'dip_or_close' ? 'The selected policy determines portfolio weights.' : 'A and A+ names are in the book at equal weight, up to 20% each.'} Grades
           are set at the close.
         </dd>
       </div>
@@ -1558,7 +1559,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               {autopsy ? 'Hide the review' : 'Analyze my trading'}
             </button>
           </div>
-          {help && <HowToUse onClose={() => setHelp(false)} />}
+          {help && <HowToUse onClose={() => setHelp(false)} plan={paperLive?.plan} />}
           <p className="text-sm text-[#6e6e73]">
             {latest ? `Decision session ${latest.session} · published ${marketTime(latest.written)}` : 'No decision on file yet'}
           </p>
@@ -1675,9 +1676,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             <span className="ml-2 text-xs font-normal text-[#6e6e73]">history, positions and fills · simulated funds</span>
           </summary>
           <div className="space-y-3 px-4 pb-4">
-            <p aria-label="Paper account execution timing" className="text-xs text-[#6e6e73]">{paperLive?.plan?.rule === 'next_open'
-              ? 'The paper account sends its buys for the next open and its sells for the next close.'
-              : 'The paper account sends the Stock rankings orders on the board’s rule: a buy on a 15-minute close 1% under the day’s open, a sell 1% over it, otherwise a market order at 3:45 PM ET. FOMC risk orders go in at the open.'}</p>
+            <p aria-label="Paper account execution timing" className="text-xs text-[#6e6e73]">{executionRuleText(paperLive?.plan)}</p>
             <SummaryStrip latest={latest} paperLive={paperLive} />
             <PaperAccountHistory key={userId} userId={userId} session={latest.session} />
             {paperLive && paperLive.reason === undefined && paperLive.equity !== undefined && <LivePositions paper={paperLive} equity={paperLive.equity} />}

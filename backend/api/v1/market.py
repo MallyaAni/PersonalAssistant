@@ -149,7 +149,8 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         research = {**research, "event_paused": True}
     return {
         "user_id": user_id,
-        "current_policy": paper_rules.POLICY_VERSION,
+        "current_policy": paper_rules.load_state(_root()).policy_version
+        or paper_rules.POLICY_VERSION,
         "latest": latest,
         "economics": economics.load(_root()),
         "intraday_research": research,
@@ -674,6 +675,33 @@ def _with_active_targets(record: dict) -> dict:
     return {**record, "book": book}
 
 
+# Read optional band metadata without substituting it for the adopted policy.
+async def _personal_entry_readings(snapshot):
+    if not snapshot or not snapshot.get("quotes"):
+        return {}, {}
+
+    class _Quote:
+        # Adapt dated quote fields to the existing technical reader's input.
+        def __init__(self, fields: dict) -> None:
+            self.__dict__.update(fields)
+
+    try:
+        reads = await asyncio.to_thread(
+            live_technical.entry_now,
+            MarketStore(_root()),
+            {s: _Quote(f) for s, f in snapshot["quotes"].items()},
+        )
+        return {
+            symbol: read["band_z"]
+            for symbol, read in reads.items()
+            if read.get("band_z") is not None
+        }, reads
+    except Exception as exc:  # noqa: BLE001 - optional technical metadata
+        print(f"desk/mine: live entry read unavailable ({type(exc).__name__}: {exc})")
+        return {}, {}
+
+
+# Read manual guidance from the dated adopted policy without crossing account balances.
 async def _desk_mine_payload(
     user_id: str,
     equity: float,
@@ -702,7 +730,8 @@ async def _desk_mine_payload(
     from backend.market import decision_view, entry_timing, execution_quotes
 
     quoted = await asyncio.to_thread(
-        execution_quotes.fetch, list(latest.get("grades") or {})
+        execution_quotes.fetch,
+        sorted(set(latest.get("grades") or {}) | {holding.ticker for holding in rows}),
     )
     # Today's latch of the measured entry level, written by the balancer on
     # every candle (None before the session's first one). Only the `/4`
@@ -714,48 +743,44 @@ async def _desk_mine_payload(
     # Each name's position on its own 20-day band at the live price, which is
     # the book's entry trigger. A failure here costs the entry line and
     # nothing else: the plan still renders from the record.
-    entries: dict[str, float] = {}
-    reads: dict[str, dict] = {}
-    if snap and snap.get("quotes"):
+    entries, reads = await _personal_entry_readings(snap)
+    from backend.market import learned_personal_guidance
 
-        class _Quote:
-            def __init__(self, fields: dict) -> None:
-                self.__dict__.update(fields)
-
-        try:
-            reads = await asyncio.to_thread(
-                live_technical.entry_now,
-                MarketStore(_root()),
-                {s: _Quote(f) for s, f in (snap.get("quotes") or {}).items()},
-            )
-            entries = {
-                symbol: read["band_z"]
-                for symbol, read in reads.items()
-                if read.get("band_z") is not None
-            }
-        except Exception as exc:  # noqa: BLE001 - the plan stands without it
-            print(
-                f"desk/mine: live entry read unavailable ({type(exc).__name__}: {exc})"
-            )
-    decisions = decision_view.build(
-        latest,
-        rows,
-        equity,
-        snap or {},
-        quoted,
-        now,
-        None,
-        entries,
-        # The allocation preview belongs to the account viewing it: a plan
-        # naming another account is an explicit unavailable preview.
-        expected_account=user_id,
-        cash=available_cash,
-        pending=pending_buys,
-        risk_budget_pct=risk_budget_pct,
-        entry_readings=reads,
-        timing_latch=latch,
-        protect_entry_price=True,
-    )
+    if learned_personal_guidance.adopted(latest):
+        decisions, snap = await asyncio.to_thread(
+            learned_personal_guidance.build,
+            _root(),
+            latest,
+            rows,
+            equity,
+            snap or {},
+            quoted,
+            now,
+            expected_account=user_id,
+            cash=available_cash,
+            pending=pending_buys,
+            risk_budget_pct=risk_budget_pct,
+        )
+    else:
+        decisions = decision_view.build(
+            latest,
+            rows,
+            equity,
+            snap or {},
+            quoted,
+            now,
+            None,
+            entries,
+            # The allocation preview belongs to the account viewing it: a plan
+            # naming another account is an explicit unavailable preview.
+            expected_account=user_id,
+            cash=available_cash,
+            pending=pending_buys,
+            risk_budget_pct=risk_budget_pct,
+            entry_readings=reads,
+            timing_latch=latch,
+            protect_entry_price=True,
+        )
     if history_context is not None:
         from backend.market import personal_history
 
@@ -1126,7 +1151,14 @@ async def desk_paper(user_id: UserId) -> dict[str, object]:
                 }
                 for o in client.open_orders()
             ],
-            "plan": _paper_plan(client, state, positions, equity),
+            "plan": _paper_plan(
+                client,
+                state,
+                positions,
+                equity,
+                cash=account.cash,
+                buying_power=getattr(account, "buying_power", None),
+            ),
         }
 
     try:
@@ -1146,7 +1178,9 @@ async def desk_paper(user_id: UserId) -> dict[str, object]:
 # `intraday_orders` so the board, the ticker panel and the chart cannot
 # disagree. The broker's answer for each order is read by its client order id;
 # when that read fails the orders are still listed, from the state alone.
-def _paper_plan(client, state, positions, equity: float) -> dict[str, object]:
+def _paper_plan(
+    client, state, positions, equity: float, *, cash=None, buying_power=None
+) -> dict[str, object]:
     """Return {"rule", "orders", "until_rebalance", ...} for the board."""
     from backend.agents.trading.desk import actions, intraday_orders
     from backend.market import entry_timing
@@ -1183,20 +1217,33 @@ def _paper_plan(client, state, positions, equity: float) -> dict[str, object]:
         prices=prices,
         equity=equity,
         now=now,
+        root=_root(),
+        budget=min(cash, buying_power)
+        if cash is not None and buying_power is not None
+        else None,
     )
+    from backend.market import learned_order_observation
+    from backend.market.joint_funded_policy import MARKET_TIMED_POLICY, TIMED_POLICY
+
+    observed_rule, observed_text = learned_order_observation.plan_timing(state)
     return {
-        "rule": intraday_orders.INTRADAY_TIMING
-        if intraday_orders.INTRADAY_EXECUTION
-        else "next_open",
+        "policy": state.policy_version,
+        "rule": observed_rule
+        or (
+            intraday_orders.INTRADAY_TIMING
+            if intraday_orders.INTRADAY_EXECUTION
+            else "next_open"
+        ),
         "rule_text": {
-            "buy": intraday_orders.rule_text("buy"),
-            "sell": intraday_orders.rule_text("sell"),
+            side: observed_text or intraday_orders.rule_text(side)
+            for side in ("buy", "sell")
         },
         "orders": orders,
         "until_rebalance": max(
             actions.REBALANCE - int(state.sessions_since_rebalance), 0
         )
         if state.last_rebalance
+        and state.policy_version not in (MARKET_TIMED_POLICY, TIMED_POLICY)
         else None,
         "last_rebalance": state.last_rebalance,
         "reason": reason,

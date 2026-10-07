@@ -48,6 +48,7 @@ from __future__ import annotations
 import math
 import time
 from collections.abc import Callable
+from copy import deepcopy
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -146,7 +147,7 @@ def _submit(client, row: dict, how: str, qty: int, verdict: dict) -> dict:
     return client.submit_market(symbol, qty, side, cid)
 
 
-# The part of a timing the row keeps as the record of why it was sent.
+# Preserve why a row was sent, including its supplied forward probability receipt.
 def _why_sent(timed: dict[str, Any], how: str, now: datetime) -> dict[str, Any]:
     """Return the sent block written onto a row: when, how, and the level."""
     return {
@@ -157,6 +158,18 @@ def _why_sent(timed: dict[str, Any], how: str, now: datetime) -> dict[str, Any]:
         "level": timed.get("level"),
         "trigger_bar": timed.get("trigger_bar"),
         "trigger_price": timed.get("trigger_price"),
+        **(
+            {
+                "forward_timing": {
+                    "receipt": deepcopy(timed["forward_receipt"]),
+                    "receipt_sha256": timed["forward_receipt_sha256"],
+                    "trade_fraction": timed["trade_fraction"],
+                    "expected_log_utility": timed["expected_log_utility"],
+                },
+            }
+            if "forward_receipt" in timed
+            else {}
+        ),
     }
 
 
@@ -170,6 +183,9 @@ def _why_sent(timed: dict[str, Any], how: str, now: datetime) -> dict[str, Any]:
 # sent twice. Nothing is sent unless the broker's own clock says the market is
 # open: an order sent after the close would queue for the NEXT session. A sell
 # is never sent for more shares than the account holds.
+# An explicit reader or installed numeric-head factory can replace ordinary
+# pre-deadline timing. The factory observes funding under this same paper lock;
+# the incumbent, bounded IOC contracts and final clock are retained.
 # Returns the log lines.
 def send_due(
     root: Path | str,
@@ -178,6 +194,8 @@ def send_due(
     client_factory: Callable[[], Any],
     *,
     quote_reader: Callable | None = None,
+    timing_reader: Callable | None = None,
+    timing_reader_factory: Callable | None = None,
 ) -> list[str]:
     """Send the orders the board's timing makes due now; return log lines."""
     if now.tzinfo is None:
@@ -186,13 +204,26 @@ def send_due(
     root = Path(root)
     with paper.transaction(root):
         return _send_due_locked(
-            root, snapshot, now, today, client_factory, quote_reader
+            root,
+            snapshot,
+            now,
+            today,
+            client_factory,
+            quote_reader,
+            timing_reader,
+            timing_reader_factory,
         )
 
 
 # The due rows that `decide` says to send on this candle, with its verdict.
 def _ready(
-    rows: list[dict], root: Path, snapshot: dict | None, now: datetime, today: date
+    rows: list[dict],
+    root: Path,
+    snapshot: dict | None,
+    now: datetime,
+    today: date,
+    timing_reader: Callable | None = None,
+    observation_sink: Callable | None = None,
 ) -> list[tuple[dict, dict[str, Any]]]:
     """Return [(row, verdict)] for the rows to send now."""
     latch = entry_timing.load(root, today)
@@ -200,19 +231,114 @@ def _ready(
     ready = []
     for row in rows:
         symbol = str(row.get("symbol"))
-        verdict = decide(
+        required = "timing_policy" in row
+        if required:
+            from backend.market.live_probability_timing import POLICY as TIMING_POLICY
+
+            if row.get("timing_policy") != TIMING_POLICY or "execution_policy" in row:
+                continue
+        custom = False
+        clock = entry_timing.session_clock(today) if required or timing_reader else None
+        if timing_reader is not None and "execution_policy" not in row:
+            custom = clock["open"] <= now < clock["final"]
+        if required and now < clock["final"] and not custom:
+            continue
+        reader = timing_reader if custom else decide
+        args = (
             row,
             entry_timing.row_for(latch, symbol, today),
             quotes.get(symbol),
             now,
             today,
         )
+        verdict = reader(*(deepcopy(args) if custom else args))
+        if custom and (
+            not isinstance(verdict, dict)
+            or "send" not in verdict
+            or verdict["send"] not in (None, MARKET)
+            or not isinstance(verdict.get("timed"), dict)
+            or not isinstance(verdict["timed"].get("state"), str)
+            or not verdict["timed"]["state"]
+            or (required and verdict["timed"].get("policy") != TIMING_POLICY)
+        ):
+            raise ValueError("Timing reader requires an explicit ordinary verdict")
+        if (
+            custom
+            and required
+            and observation_sink
+            and "inference" in (verdict["timed"].get("forward_receipt") or {})
+        ):
+            observation_sink(row, verdict)
+        if required and not custom:
+            # Session completion is not a model prediction or a percent-level trigger.
+            verdict["timed"].update(
+                policy=TIMING_POLICY,
+                level=None,
+                level_fraction=None,
+                reason="Session completion",
+            )
         if verdict["send"]:
             ready.append((row, verdict))
     return ready
 
 
-# The body of `send_due`, run while the paper state is locked.
+# Restore learned evidence under the existing lock without changing other order rules.
+def _observe_timing(root, rows, snapshot, now, today, client_factory, reader, factory):
+    unavailable = []
+    if (
+        reader is None
+        and any("timing_policy" in row for row in rows)
+        and entry_timing.session_clock(today)["open"] + entry_timing.BAR
+        <= now
+        < entry_timing.session_clock(today)["final"]
+    ):
+        from backend.market import learned_live_timing
+
+        if factory is None and learned_live_timing.configured(root):
+            factory = learned_live_timing.observe
+        if factory is not None:
+            try:
+                observed, instant, observed_reader = factory(
+                    root, deepcopy(rows), deepcopy(snapshot), now, client_factory
+                )
+                if (
+                    not isinstance(observed, dict)
+                    or not isinstance(instant, datetime)
+                    or instant.tzinfo is None
+                    or instant < now
+                    or instant.astimezone(NEW_YORK).date() != today
+                    or (instant - entry_timing.session_clock(today)["open"])
+                    // entry_timing.BAR
+                    != (now - entry_timing.session_clock(today)["open"])
+                    // entry_timing.BAR
+                    or (observed_reader is not None and not callable(observed_reader))
+                ):
+                    raise ValueError("Current learned timing observation required")
+                snapshot, now, reader = observed, instant, observed_reader
+            except (OSError, ValueError, TypeError, KeyError):
+                # Tagged orders cannot fall back to the incumbent's price trigger.
+                unavailable = ["learned timing unavailable; ordinary intents retained"]
+    return snapshot, now, reader, unavailable
+
+
+# Persist original model observations before any order submission.
+def _observed_ready(root, state, rows, snapshot, now, today, timing_reader):
+    observations = []
+
+    # Retain every original model verdict, including waiting and unavailable states.
+    def remember(row, verdict):
+        observations.append((row, verdict))
+
+    ready = _ready(rows, root, snapshot, now, today, timing_reader, remember)
+    if observations:
+        from backend.market import learned_order_observation
+
+        if learned_order_observation.retain(root, observations, now):
+            paper.save_state(root, state)
+    return ready
+
+
+# Reconcile and submit due rows while the original paper transaction stays locked.
 def _send_due_locked(
     root: Path,
     snapshot: dict | None,
@@ -220,19 +346,30 @@ def _send_due_locked(
     today: date,
     client_factory: Callable[[], Any],
     quote_reader: Callable | None,
+    timing_reader: Callable | None = None,
+    timing_reader_factory: Callable | None = None,
 ) -> list[str]:
-    """Send due rows with the paper lock held; return log lines."""
     from backend.market import alpaca_trading
 
     state = paper.load_state(root)
     rows = due(state, today)
     snapshot, now = qualify_snapshot(rows, snapshot, now, quote_reader)
+    snapshot, now, timing_reader, unavailable = _observe_timing(
+        root,
+        rows,
+        snapshot,
+        now,
+        today,
+        client_factory,
+        timing_reader,
+        timing_reader_factory,
+    )
     started = time.monotonic()
     _observe_bounded(root, state, rows, snapshot, now, today)
-    ready = _ready(rows, root, snapshot, now, today)
+    ready = _observed_ready(root, state, rows, snapshot, now, today, timing_reader)
     recovering = [r for r in rows if "execution_policy" in r and r.get("sending")]
     if not ready and not recovering:
-        return []
+        return unavailable
     try:
         client = client_factory()
         market_open = bool((client.clock() or {}).get("is_open"))
@@ -273,10 +410,14 @@ def _send_due_locked(
         return recovered + [
             "intraday orders: the broker reports the market closed; nothing sent"
         ]
-    return recovered + [
-        _send_one(root, state, row, verdict, client, known, held, now, started)
-        for row, verdict in ready
-    ]
+    return (
+        unavailable
+        + recovered
+        + [
+            _send_one(root, state, row, verdict, client, known, held, now, started)
+            for row, verdict in ready
+        ]
+    )
 
 
 # Fetch only missing candidate quotes; legacy orders make no additional data requests.
@@ -784,6 +925,13 @@ def _action(side: str, leg: str, qty: int, held: float, broker: dict | None) -> 
     return "TRIM" if 0 < qty < held + sold else "SELL"
 
 
+# Include learned observation metadata without changing recorded broker state.
+def _learned_fields(row, observation):
+    if "timing_policy" not in row:
+        return {}
+    return {"timing_policy": row["timing_policy"], "learned_timing": observation}
+
+
 # One pending row as the board shows it.
 #
 # `broker` is the broker's order under the row's id (None when unknown),
@@ -804,6 +952,7 @@ def board_row(
     price: float | None,
     equity: float | None,
     now: datetime,
+    learned_observation: dict | None = None,
 ) -> dict[str, Any]:
     """Return the dashboard's view of one planned or working order."""
     side = str(row.get("side") or "")
@@ -856,6 +1005,7 @@ def board_row(
         "filled_qty": None,
         "filled_price": None,
         "filled_at": None,
+        **_learned_fields(row, learned_observation),
     }
     sent = row.get("sent") or {}
     if sent.get("open") is not None and sent.get("level") is not None:
@@ -918,6 +1068,19 @@ def _when(
         else "Next session"
     )
     if timing == INTRADAY_TIMING:
+        if "timing_policy" in out:
+            from backend.market import learned_order_observation
+            from backend.market.live_probability_timing import POLICY
+
+            if out["timing_policy"] != POLICY:
+                return f"{day} · timing policy unavailable"
+            try:
+                return learned_order_observation.when(
+                    day,
+                    date.fromisoformat(execute_on) if execute_on else today,
+                )
+            except (ValueError, TypeError):
+                return f"{day} · learned timing unavailable"
         return f"{day} · {rule_text(side, out.get('open'), out.get('level'))}"
     if timing == "event":
         return f"{day} · at the open (FOMC risk rule)"
@@ -1010,6 +1173,13 @@ def _clock_status(
     """Return (state, sentence) for an unsent row on its own session."""
     side = str(row.get("side") or "")
     symbol = str(row.get("symbol") or "")
+    if "timing_policy" in row and "execution_policy" not in row:
+        from backend.market import learned_order_observation
+        from backend.market.live_probability_timing import POLICY
+
+        if row["timing_policy"] != POLICY:
+            return "waiting", "Timing policy unavailable"
+        return learned_order_observation.clock_status(out.get("learned_timing"), now)
     verdict = decide(row, entry_timing.row_for(latch, symbol, today), quote, now, today)
     timed = verdict["timed"]
     if "guard" in verdict:
@@ -1091,6 +1261,8 @@ def board_orders(
     prices: dict[str, float],
     equity: float | None,
     now: datetime,
+    root: Path | None = None,
+    budget: float | None = None,
 ) -> list[dict[str, Any]]:
     """Return `board_row` for every order of the paper state the board lists."""
     by_id = {
@@ -1098,6 +1270,19 @@ def board_orders(
         for o in broker_orders or []
         if o.get("client_order_id")
     }
+    learned = {}
+    if root is not None:
+        from backend.market import learned_order_observation
+
+        learned = learned_order_observation.for_rows(
+            root,
+            _shown_rows(state),
+            now,
+            held=held,
+            equity=equity,
+            budget=budget,
+            prices=prices,
+        )
     rows = [
         board_row(
             row,
@@ -1108,6 +1293,7 @@ def board_orders(
             price=prices.get(str(row.get("symbol"))),
             equity=equity,
             now=now,
+            learned_observation=learned.get(row.get("client_order_id")),
         )
         for row in _shown_rows(state)
     ]

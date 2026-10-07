@@ -432,7 +432,13 @@ def _settled_rows(settled, panel) -> list[dict]:
 # is after the close; a run by hand during the session is refused whole and
 # told why.
 def _submit(
-    client, orders, session: str, live: bool, *, intraday_event_reduction=False
+    client,
+    orders,
+    session: str,
+    live: bool,
+    *,
+    intraday_event_reduction=False,
+    timing_policy=None,
 ) -> tuple[list[dict], list[str]]:
     """Return (submitted rows, refusals) after sending `orders` when `live`."""
     from backend.agents.trading.desk import execution_evidence, paper
@@ -440,7 +446,7 @@ def _submit(
 
     submitted: list[dict] = []
     refused: list[str] = []
-    orders = _hold_for_the_session(orders)
+    orders = _hold_for_the_session(orders, timing_policy=timing_policy)
     market_open = False
     clock_known = False
     if live and orders:
@@ -526,31 +532,25 @@ def _submit(
 # With `intraday_orders.INTRADAY_EXECUTION` off the orders are unchanged.
 def _on_the_boards_clock(orders) -> list:
     """Return `orders` with the ordinary ones on the intraday rule."""
-    from dataclasses import replace
+    from backend.agents.trading.desk import nightly_plan
 
-    from backend.agents.trading.desk import intraday_orders
-
-    if not intraday_orders.INTRADAY_EXECUTION:
-        return list(orders)
-    return [
-        replace(o, execution_timing=intraday_orders.INTRADAY_TIMING)
-        if not o.event_id and not o.priority
-        else o
-        for o in orders
-    ]
+    return nightly_plan.on_the_boards_clock(orders)
 
 
 # The board's orders are sent in the session by the balancer, on the board's
 # own rule (`intraday_orders`); the nightly only writes them down. Print each
-# one as planned and return the orders the nightly itself still sends (the
-# FOMC event orders, which keep their next-open treatment).
-def _hold_for_the_session(orders) -> list:
+# one under its selected timing policy, preserving the event orders sent nightly.
+def _hold_for_the_session(orders, *, timing_policy=None) -> list:
     """Print the intraday orders as planned; return the rest."""
     from backend.agents.trading.desk import intraday_orders
 
     timing = intraday_orders.INTRADAY_TIMING
     for order in (o for o in orders if o.execution_timing == timing):
-        rule = intraday_orders.rule_text(order.side)
+        rule = (
+            "probabilistic timing; final-session deadline"
+            if timing_policy is not None
+            else intraday_orders.rule_text(order.side)
+        )
         print(
             f"  {order.side:4} {order.qty:5d} {order.symbol:6} {order.reason}"
             f"  [planned for the next session: {rule}]"
@@ -562,10 +562,12 @@ def _hold_for_the_session(orders) -> list:
 # An order the balancer sends intraday also carries the session it executes
 # on (the next reviewed session after the decision); a date the calendar does
 # not cover leaves it None, and such a row is never sent (fail closed).
-def _pending_orders(orders, session, prices, reference_session):
+def _pending_orders(
+    orders, session, prices, reference_session, *, decision_at=None, timing_policy=None
+):
     from backend.agents.trading.desk import intraday_orders, paper
 
-    decision_at = datetime.now(tz=UTC).isoformat()
+    decision_at = (decision_at or datetime.now(tz=UTC)).isoformat()
     upcoming = intraday_orders.next_session(date.fromisoformat(str(session)))
     return [
         {
@@ -580,6 +582,14 @@ def _pending_orders(orders, session, prices, reference_session):
             "priority": order.priority,
             "execution_timing": order.execution_timing,
             "kind": order.kind,
+            **(
+                {"timing_policy": timing_policy}
+                if timing_policy is not None
+                and order.execution_timing == intraday_orders.INTRADAY_TIMING
+                and not order.event_id
+                and not order.priority
+                else {}
+            ),
             **(
                 {"execute_on": upcoming.isoformat() if upcoming else None}
                 if order.execution_timing == intraday_orders.INTRADAY_TIMING
@@ -744,9 +754,24 @@ def _idle_cash_share(orders, prices, cash, equity) -> float | None:
     return float(min(1.0, max(0.0, (cash - buys + sells) / equity)))
 
 
+# Select installed dependencies only for an ordinary unattended nightly call.
+def _installed_holding_dependencies(root, report, policy, factory, instant):
+    if policy is not None or factory is not None or instant is not None:
+        return policy, factory, instant
+    from backend.market import alpaca_trading, learned_live_holding
+
+    if not learned_live_holding.configured(root):
+        return policy, factory, instant
+    selected = learned_live_holding.prepare(root, report)
+    return selected, alpaca_trading.client_from_env, selected.observed_at
+
+
 # Carry the desk's book to the paper account: cancel yesterday's unfilled
 # orders, plan this session, submit the plan for the next open, then record
-# the account. Returns the day's entry for the desk record.
+# the account. Explicit broker and decision-clock dependencies let a private
+# replay exercise this same lifecycle without contacting the real account;
+# its optional feature reader reuses account-independent prefix calculations.
+# Explicit private broker clocks use the complete reviewed historical calendar.
 def paper_trade(
     report,
     store_root: Path,
@@ -754,16 +779,237 @@ def paper_trade(
     live: bool,
     rebalance_now: bool = False,
     force: bool = False,
+    *,
+    client_factory=None,
+    decision_at: datetime | None = None,
+    feature_reader=None,
+    holding_policy=None,
 ) -> dict:
     from backend.agents.trading.desk import paper
 
+    holding_policy, client_factory, decision_at = _installed_holding_dependencies(
+        store_root, report, holding_policy, client_factory, decision_at
+    )
+    if holding_policy is not None:
+        from backend.market.joint_funded_policy import JointFundedPolicy
+
+        if (
+            not isinstance(holding_policy, JointFundedPolicy)
+            or client_factory is None
+            or decision_at is None
+        ):
+            raise ValueError(
+                "Joint research policy requires explicit private broker and clock"
+            )
+    if feature_reader is not None and (
+        not callable(feature_reader) or client_factory is None or decision_at is None
+    ):
+        raise ValueError("Private feature reader requires explicit broker and clock")
+    if decision_at is not None:
+        from backend.market import calendar
+
+        if decision_at.tzinfo is None or decision_at.utcoffset() is None:
+            raise ValueError("Explicit nightly decision requires an aware instant")
+        local = decision_at.astimezone(calendar.NEW_YORK)
+        schedule = calendar.exchange_status(local)
+        if client_factory is not None:
+            years, sessions = calendar.reviewed_sessions()
+            schedule = {
+                "calendar_known": local.year in years,
+                "is_session": bool(
+                    np.is_busday(np.datetime64(local.date()), busdaycal=sessions)
+                ),
+            }
+        forward_window = _forward_close_window(holding_policy, local, report)
+        if str(report.panel.dates[-1]) != session or (
+            not forward_window
+            and (
+                not schedule["calendar_known"]
+                or not schedule["is_session"]
+                or local.date().isoformat() != session
+                or local.time().replace(tzinfo=None)
+                < calendar.session_close(local.date())
+            )
+        ):
+            raise ValueError(
+                "Nightly decision must follow the reviewed report session close"
+            )
+    dependencies = {
+        "client_factory": client_factory,
+        "decision_at": decision_at,
+        "feature_reader": feature_reader,
+        "holding_policy": holding_policy,
+    }
     if not live:
-        return _paper_trade(report, store_root, session, False, rebalance_now, force)
+        return _paper_trade(
+            report, store_root, session, False, rebalance_now, force, **dependencies
+        )
     with paper.transaction(store_root):
-        return _paper_trade(report, store_root, session, live, rebalance_now, force)
+        return _paper_trade(
+            report, store_root, session, live, rebalance_now, force, **dependencies
+        )
 
 
-# Reconcile and execute one nightly plan while holding the shared paper-state lock.
+# Bind a current report before broker effects and keep its signal valid until next open.
+def _forward_close_window(policy, instant, report):
+    if policy is None:
+        return False
+    from backend.market.forward_arithmetic import ForwardVolatilityHoldingReader
+
+    if isinstance(policy.reader, ForwardVolatilityHoldingReader):
+        policy.reader.validate_clock(instant)
+        policy.reader.validate_report(report)
+        return True
+    return False
+
+
+# Admit an approved installed paper policy or retain the exact private replay guard.
+def _holding_broker(policy, client, decision_at):
+    if policy is None:
+        return
+    from backend.market.learned_live_holding import InstalledHoldingPolicy
+
+    if type(policy) is InstalledHoldingPolicy:
+        policy.admit_broker(client, decision_at)
+        return
+    from backend.market.replay_broker import ReplayBroker
+
+    if not isinstance(client, ReplayBroker) or client.cost_bps != policy.cost_bps:
+        raise ValueError(
+            "Joint research requires a private replay ledger with identical fees"
+        )
+    if datetime.fromisoformat(client.clock()["timestamp"]) != decision_at:
+        raise ValueError("Joint private ledger must observe the exact decision clock")
+    from backend.market.forward_arithmetic import ForwardVolatilityHoldingReader
+
+    if isinstance(policy.reader, ForwardVolatilityHoldingReader):
+        policy.reader.validate_clock(decision_at)
+
+
+# Preserve fresh inherited position marks without granting stock eligibility.
+def _holding_prices(policy, prices, positions):
+    if policy is None:
+        return prices
+    return {**{row.symbol: row.current_price for row in positions}, **prices}
+
+
+# Keep optional research identity separate from the default allocation display.
+def _holding_metadata(policy, event_plan, state, targets):
+    from backend.agents.trading.desk import live_policy
+
+    if policy is None:
+        return targets, live_policy.ACTIVE, {}
+    if event_plan:
+        return (
+            targets,
+            policy.version,
+            {
+                "policy": policy.version,
+                "joint_funded": {"policy": policy.version, "status": "event_priority"},
+            },
+        )
+    timings = (
+        (state.allocation_state or {})
+        .get("receipt", {})
+        .get("execution_timing", {})
+        .get("orders", {})
+    )
+    execution_rule = (
+        getattr(policy, "execution_rule", "next_open")
+        if "dip_or_close" in timings.values()
+        else "next_open"
+    )
+    return (
+        dict((state.allocation_state or {}).get("targets", {})),
+        policy.version,
+        {
+            "policy": policy.version,
+            "joint_funded": state.allocation_state,
+            "execution_rule": execution_rule,
+            "redeploy": {"enabled": False, "orders": 0, "notional": 0.0},
+        },
+    )
+
+
+# Keep recorded targets aligned with funded quantities and event priorities.
+def _holding_plan_metadata(
+    policy, event_plan, state, targets, grades, prices, held, equity, orders
+):
+    if policy is not None and event_plan:
+        wanted = dict(held)
+        for order in orders:
+            wanted[order.symbol] = wanted.get(order.symbol, 0) + (
+                order.qty if order.side == "buy" else -order.qty
+            )
+        targets = {
+            name: qty * prices[name] / equity
+            for name, qty in wanted.items()
+            if qty > 0 and name in prices and equity > 0
+        }
+    targets, name, metadata = _holding_metadata(policy, event_plan, state, targets)
+    if policy is not None:
+        metadata["selected_targets"] = {
+            "policy": policy.version,
+            "weights": {name: float(targets.get(name, 0.0)) for name in grades},
+        }
+        if hasattr(policy, "admission"):
+            metadata["learned_holding"] = policy.admission
+    return targets, name, metadata
+
+
+# Describe the private candidate's funded orders without legacy thresholds or exits.
+def _holding_actions(policy, rows, orders, holdings, held, prices, equity, event_plan):
+    if policy is None:
+        return rows
+    by_name = {order.symbol: order for order in orders}
+    result = []
+    for original in rows:
+        row = dict(original)
+        name = row["ticker"]
+        order = by_name.get(name)
+        current = holdings.get(name, actions.Holding(0.0)).weight
+        delta = 0.0
+        action = "hold"
+        if order is not None:
+            delta = order.qty * prices[name] / equity
+            if order.side == "buy":
+                action = "add" if held.get(name, 0) > 0 else "buy"
+            else:
+                delta = -delta
+                action = "sell" if order.qty >= held.get(name, 0) else "trim"
+        row.update(
+            policy=policy.version,
+            decision_source=(
+                "settlement_or_event_priority" if event_plan else policy.version
+            ),
+            model_target_weight=None if event_plan else row["target_weight"],
+            target_weight=max(0.0, current + delta),
+            delta_weight=delta,
+            action=action,
+            order_quantity=int(order.qty) if order is not None else 0,
+            action_status="planned" if order is not None else "no_new_order",
+            is_fill=False,
+            until_rebalance=None,
+            leaves_if=(
+                "Company exit, risk-adjusted allocation or event risk"
+                if event_plan
+                else "Company exit or risk-adjusted allocation"
+            ),
+            stops={},
+            why=order.reason if order is not None else "",
+        )
+        result.append(row)
+    result.sort(
+        key=lambda row: (
+            actions.ORDER[row["action"]],
+            -abs(row["delta_weight"]),
+            row["ticker"],
+        )
+    )
+    return result
+
+
+# Reconcile and execute one locked nightly plan with optional private research inputs.
 def _paper_trade(
     report,
     store_root: Path,
@@ -771,19 +1017,25 @@ def _paper_trade(
     live: bool,
     rebalance_now: bool = False,
     force: bool = False,
+    *,
+    client_factory=None,
+    decision_at: datetime | None = None,
+    feature_reader=None,
+    holding_policy=None,
 ) -> dict:
     """Plan and (when `live`) submit the paper book; return the day's entry."""
     from backend.agents.trading.desk import (
         actions,
-        event_execution,
         event_risk,
         intraday_orders,
         live_policy,
+        nightly_plan,
         paper,
     )
     from backend.market import alpaca_trading
 
-    client = alpaca_trading.client_from_env()
+    client = (client_factory or alpaca_trading.client_from_env)()
+    _holding_broker(holding_policy, client, decision_at)
     account = client.account()
     held = {p.symbol: p.qty for p in client.positions()}
     panel = report.panel
@@ -804,7 +1056,7 @@ def _paper_trade(
     state = paper.load_state(store_root)
     # A state planned under another policy rebalances into the active one
     # tonight, once; the stamp on the new state stops it recurring.
-    if live_policy.needs_rebalance(state.policy_version):
+    if holding_policy is None and live_policy.needs_rebalance(state.policy_version):
         print(
             f"  policy change: {state.policy_version or 'unstamped (/3 era)'} -> "
             f"{live_policy.ACTIVE}; rebalancing into the new targets tonight"
@@ -815,9 +1067,13 @@ def _paper_trade(
     # did not fill has not happened - so this runs first and can put the
     # clock back before the plan is made.
     state, settled = _reconcile(
-        client, state, store_root, live, decision_at=datetime.now(UTC)
+        client, state, store_root, live, decision_at=decision_at or datetime.now(UTC)
     )
-    policy = event_risk.decision(panel)
+    policy = (
+        event_risk.decision(panel)
+        if feature_reader is None
+        else feature_reader("event", report)
+    )
     # Withdraw every pending leg before replacing it, this session's included
     # (a forced rerun), and wait for confirmed outcomes. A pending cancel can
     # still fill; never overwrite its durable intent.
@@ -825,11 +1081,17 @@ def _paper_trade(
     if live and stale:
         client.cancel_orders(stale)
         state, more = _reconcile(
-            client, state, store_root, live, decision_at=datetime.now(UTC)
+            client,
+            state,
+            store_root,
+            live,
+            decision_at=decision_at or datetime.now(UTC),
         )
         settled.extend(more)
     account = client.account()
-    held = {p.symbol: p.qty for p in client.positions()}
+    held_positions = client.positions()
+    held = {p.symbol: p.qty for p in held_positions}
+    prices = _holding_prices(holding_policy, prices, held_positions)
     # `finished` carries the names the desk has turned against, and nothing
     # else. The band exit that used to fill it cost 3.0% a year and stays
     # retired; every price-based rule measured worse than holding, because a
@@ -840,37 +1102,50 @@ def _paper_trade(
     # into the names the desk still wants; selling the same signal to cash
     # measured 24 points of CAGR a year worse than holding. See the table at
     # the top of `desk/exit.py`.
-    blocked, blocking_flags = _band_blocked(report)
-    event_active = bool(state.event_cycle) or policy.get("factor") == event_risk.REDUCED
-    if state.pending or event_active or not policy["calendar_known"]:
-        orders, new_state, what = event_execution.plan(
-            session, state, held, prices, account.cash, policy
-        )
-    else:
-        orders, new_state, what = paper.plan(
-            session,
-            state,
-            account.equity,
-            held,
-            prices,
-            targets,
-            grades,
-            finished=_downgraded(report, held),
-            force_rebalance=rebalance_now,
-            entry_blocked=blocked,
-            entries=_price_entries(report),
-            cash=account.cash,
-        )
-        orders = _on_the_boards_clock(orders)
-    # The stamp says "this state's book is the active policy's". It is
-    # written when the book already was, or when tonight's plan rebalanced
-    # into it; a session that could not rebalance (an event cycle, pending
-    # orders, a refused rebalance below) leaves the old stamp so the next
-    # session forces the rebalance again.
-    if not live_policy.needs_rebalance(state.policy_version) or what == "rebalance":
-        new_state.policy_version = live_policy.ACTIVE
+    blocked, blocking_flags = (
+        _band_blocked(report)
+        if feature_reader is None
+        else feature_reader("blocked", report)
+    )
+    event_plan = nightly_plan.event_plan_required(state, policy)
+    orders, new_state, what = nightly_plan.plan(
+        session,
+        state,
+        account.equity,
+        held,
+        prices,
+        targets,
+        grades,
+        policy,
+        finished={} if event_plan else _downgraded(report, held),
+        force_rebalance=rebalance_now,
+        entry_blocked=blocked,
+        entries=(
+            {}
+            if event_plan
+            else (
+                _price_entries(report)
+                if feature_reader is None
+                else feature_reader("entries", report)
+            )
+        ),
+        cash=account.cash,
+        holding_policy=holding_policy,
+        report=report,
+    )
+    targets, policy_name, research_metadata = _holding_plan_metadata(
+        holding_policy,
+        event_plan,
+        new_state,
+        targets,
+        grades,
+        prices,
+        held,
+        account.equity,
+        orders,
+    )
     print(
-        f"\npaper book ({live_policy.ACTIVE}; {what}"
+        f"\npaper book ({policy_name}; {what}"
         f"{', forced tonight' if rebalance_now else ''}), "
         f"equity {account.equity:,.0f}:"
     )
@@ -892,12 +1167,24 @@ def _paper_trade(
     # each one will carry. A crash between sending and recording then
     # leaves a record the next session can ask the broker about, rather
     # than a gap that has to be guessed at from positions.
+    timing_policy = (
+        getattr(holding_policy, "timing_policy", None) if not event_plan else None
+    )
     if live and orders:
-        new_state.pending = _pending_orders(orders, session, prices, panel.dates[last])
+        new_state.pending = _pending_orders(
+            orders,
+            session,
+            prices,
+            panel.dates[last],
+            decision_at=decision_at,
+            timing_policy=timing_policy,
+        )
         if what == "rebalance":
             new_state.unconfirmed_rebalance = session
         paper.save_state(store_root, new_state)
-    submitted, refused = _submit(client, orders, session, live)
+    submitted, refused = _submit(
+        client, orders, session, live, timing_policy=timing_policy
+    )
     _remember_acknowledgments(new_state, submitted, store_root, live, orders)
     if not orders:
         print("  nothing to do")
@@ -953,8 +1240,10 @@ def _paper_trade(
         "outcome": new_state.event_outcomes[-1] if new_state.event_outcomes else None,
     }
     entry["settled"] = _settled_rows(settled, panel)
-    entry["until_rebalance"] = max(
-        actions.REBALANCE - int(new_state.sessions_since_rebalance), 0
+    entry["until_rebalance"] = (
+        max(actions.REBALANCE - int(new_state.sessions_since_rebalance), 0)
+        if holding_policy is None
+        else None
     )
     entry["idle_cash_share"] = _idle_cash_share(
         orders, prices, account.cash, account.equity
@@ -979,10 +1268,21 @@ def _paper_trade(
         int(new_state.sessions_since_rebalance),
         {o.symbol: o.reason for o in orders},
     )
+    entry["actions"] = _holding_actions(
+        holding_policy,
+        entry["actions"],
+        orders,
+        holdings,
+        held,
+        prices,
+        account.equity,
+        event_plan,
+    )
     # The band-rejection flag each action row decided on, so the record and
     # the board can show which names the desk refused to buy tonight.
     for row in entry["actions"]:
         row["rejecting_band"] = blocking_flags.get(row.get("ticker"), False)
+    entry.update(research_metadata)
     if live:
         paper.save_state(store_root, new_state)
     print(
@@ -1179,6 +1479,41 @@ def _fundamental_block(report) -> dict:
     }
 
 
+# Record the selected funded plan; absent selection retains the incumbent's targets.
+def _record_targets(report, paper_entry):
+    from backend.agents.trading.desk import live_policy
+    from backend.market import joint_funded_policy as funded
+
+    selected = (paper_entry or {}).get("selected_targets")
+    if selected is None:
+        return live_policy.record_targets(report)
+    names = {name for name in report.panel.tickers if name != report.panel.benchmark}
+    weights = selected.get("weights", {})
+    if (
+        selected.get("policy")
+        not in (
+            funded.POLICY,
+            funded.MATURITY_POLICY,
+            funded.CALIBRATED_POLICY,
+            funded.TIMED_POLICY,
+            funded.MARKET_TIMED_POLICY,
+        )
+        or (paper_entry or {}).get("policy") != selected.get("policy")
+        or set(weights) != names
+        or any(
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not np.isfinite(value)
+            or not 0 <= value <= 1
+            for value in weights.values()
+        )
+        or sum(weights.values()) > 1 + 1e-10
+    ):
+        raise ValueError("Exact funded policy targets required for the recorded book")
+    return {"policy": selected["policy"], "weights": dict(weights)}
+
+
+# Write current grades and selected policy targets with their original provenance.
 def record(
     report,
     briefs: dict[str, dict] | None = None,
@@ -1193,7 +1528,7 @@ def record(
     policy_shadows: dict | None = None,
 ) -> dict:
     """Return the JSON-ready record of a DeskReport."""
-    from backend.agents.trading.desk import event_risk, live_policy
+    from backend.agents.trading.desk import event_risk
 
     panel = report.panel
     last = len(panel.dates) - 1
@@ -1280,7 +1615,7 @@ def record(
         # What the account trades and the dashboard sizes against: the active
         # policy's weight for every graded name (`live_policy`). `book` below
         # is the desk's `/3` sizing, kept on the record for reference.
-        "targets": live_policy.record_targets(report),
+        "targets": _record_targets(report, paper),
         "book": [
             {
                 "ticker": s.position.ticker,
@@ -1538,7 +1873,8 @@ def curve_block(report, store) -> dict | None:
         "live_execution_policy": paper_rules.POLICY_VERSION,
         "live_execution_timing": (
             intraday_orders.INTRADAY_TIMING
-            if intraday_orders.INTRADAY_EXECUTION else "next_open"
+            if intraday_orders.INTRADAY_EXECUTION
+            else "next_open"
         ),
         # The `simulate.run` flags this line was actually priced with. Under
         # the graded equal-weight policy (`/4`, `/5` since 2026-09-29) they
@@ -1704,7 +2040,11 @@ def _point_in_time_curve(report, sessions) -> tuple[list[float], dict, str]:
     except Exception as exc:  # noqa: BLE001 - reported on the record, never drawn
         return [], {}, f"point-in-time line not drawn: {type(exc).__name__}: {exc}"
     if sim.equity is None or len(sim.dates) != len(sessions):
-        return [], {}, "point-in-time line not drawn: sessions differ from the published run"
+        return (
+            [],
+            {},
+            "point-in-time line not drawn: sessions differ from the published run",
+        )
     equity = np.asarray(sim.equity, dtype=float)
     base = equity[0] if equity[0] > 0 else 1.0
     stats = {k: (None if v != v else float(v)) for k, v in sim.stats().items()}
@@ -1732,8 +2072,8 @@ CANDIDATE_LABEL = (
 # this line's.
 def _candidate_curve(report, sessions) -> tuple[list[float], dict, str]:
     """Return (cumulative return per session, stats, note) for the /4 candidate."""
-    from backend.agents.trading.desk import point_in_time, policy_v4, simulate
     from backend.agents.trading.desk import paper as paper_rules
+    from backend.agents.trading.desk import point_in_time, policy_v4, simulate
 
     try:
         restricted, mask = point_in_time.point_in_time(report)
@@ -1749,7 +2089,11 @@ def _candidate_curve(report, sessions) -> tuple[list[float], dict, str]:
     except Exception as exc:  # noqa: BLE001 - reported on the record, never drawn
         return [], {}, f"candidate line not drawn: {type(exc).__name__}: {exc}"
     if sim.equity is None or len(sim.dates) != len(sessions):
-        return [], {}, "candidate line not drawn: sessions differ from the published run"
+        return (
+            [],
+            {},
+            "candidate line not drawn: sessions differ from the published run",
+        )
     equity = np.asarray(sim.equity, dtype=float)
     base = equity[0] if equity[0] > 0 else 1.0
     stats = {k: (None if v != v else float(v)) for k, v in sim.stats().items()}
@@ -2259,6 +2603,14 @@ def _run(args, store: MarketStore) -> None:  # noqa: C901
             )
         except Exception as exc:  # the account being away must not lose the record
             print(f"\npaper book: not traded ({type(exc).__name__}: {exc})")
+            from backend.market import learned_live_holding
+
+            if learned_live_holding.configured(store.root):
+                # A failed selected policy cannot publish an incumbent plan instead.
+                raise RuntimeError(
+                    "Installed learned nightly plan unavailable; "
+                    "incumbent record not substituted"
+                ) from exc
     # The dry-run policy shadows, after the live book has had its turn and
     # with no hand in it: their receipts go into the record, nothing else.
     policy_shadows = _policy_shadows(Path(store.root), report, session, current)

@@ -1313,6 +1313,29 @@ async def test_the_desk_payload_carries_every_key_the_page_reads(tmp_path, monke
     assert payload["latest"]["prose_state"] in {"absent", "embedded"}
 
 
+# Identify the persisted paper policy rather than the incumbent constant over HTTP.
+@pytest.mark.asyncio
+async def test_desk_names_installed_paper_policy_over_http(tmp_path, monkeypatch):
+    from backend.agents.trading.desk import paper
+    from backend.market.joint_funded_policy import MARKET_TIMED_POLICY
+
+    monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
+    monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
+    _write(tmp_path, "2026-09-04", {"SNDK": "A+"}, [("SNDK", 0.08)], [])
+    state = paper.PaperState(policy_version=MARKET_TIMED_POLICY)
+    paper.save_state(tmp_path, state)
+    token = issue_user_token("desk_user", ttl_seconds=60, scopes=["memory:read"])
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.get(
+            "/api/v1/market/desk_user/desk",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+    assert response.status_code == 200, response.text
+    assert response.json()["current_policy"] == MARKET_TIMED_POLICY
+
+
 # The board reads the paper account's own orders from `/desk/paper`: each
 # pending order with its action, size, plain reason, rule and what the broker
 # says about it, so the board and the account can never tell two stories.

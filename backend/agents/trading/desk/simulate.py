@@ -411,27 +411,176 @@ def _variant_midcycle_orders(
     return funded
 
 
-# Replay the paper planner's joint rotation and entry orders without share rounding.
-# `deferred`, when given, is the previous session's unpaid buy shares per
-# symbol, retried first from the cash on hand exactly as `paper.plan` does;
-# `unfunded`, when a dict is given, receives tonight's unpaid buy shares.
-# `variant`, when given, is a `MidcycleVariant` (entry mode, sweep, redeploy
-# buffer, exits, today's allocator weights, the last rebalance's allocator
-# weights) and routes the plan through `_variant_midcycle_orders`; None is
-# the live rule, byte for byte.
+# Validate an optional research reset without permitting new low-grade positions.
+def _retention_reset(adapter, t, target, closes, held, cash, grades, blocked):
+    from backend.agents.trading.desk import policy_v5
+
+    base = np.asarray(target)
+    response = np.asarray(
+        adapter.reset(
+            t,
+            base.copy(),
+            closes.copy(),
+            held.copy(),
+            float(cash),
+            grades.copy(),
+            blocked.copy(),
+        )
+    )
+    if (
+        response.shape != base.shape
+        or response.dtype.kind not in "iuf"
+        or not np.isfinite(response).all()
+        or np.any(response < 0)
+        or response.sum() > 1 + 1e-12
+        or np.any(response > policy_v5.HOLD_CAP + 1e-12)
+    ):
+        raise ValueError("retention reset must return finite capped target weights")
+    marked = np.where(held > 0, held * closes, 0.0)
+    nav = float(cash + marked.sum())
+    if not np.isfinite(nav) or nav <= 0:
+        raise ValueError("retention reset requires a finite positive account NAV")
+    held_weights = marked / nav
+    b = grades == grading.ORDINAL[grading.B]
+    allowed = np.where(b, held_weights, base)
+    if np.any((grades < grading.ORDINAL[grading.A]) & (response > allowed + 1e-12)):
+        raise ValueError("retention reset cannot add B or other low-grade shares")
+    if np.any(blocked & (response > np.maximum(base, held_weights) + 1e-12)):
+        raise ValueError("retention reset cannot bypass existing purchase blocks")
+    result = response.astype(float, copy=True)
+    result[b] = np.minimum(result[b], held_weights[b])
+    return result
+
+
+# Restrict a research midcycle change to ordinary held-B exits and declared trims.
+def _retention_midcycle_inputs(
+    adapter, t, prices, held, grades, finished, excluded, equity, cash
+):
+    response = adapter.midcycle(
+        t,
+        prices.copy(),
+        held.copy(),
+        grades.copy(),
+        finished.copy(),
+        excluded.copy(),
+        float(equity),
+        float(cash),
+    )
+    if not isinstance(response, tuple) or len(response) != 3:
+        raise ValueError("retention midcycle must return finished, excluded, caps")
+    changed, blocked, caps = response
+    if (
+        not isinstance(changed, dict)
+        or not isinstance(blocked, set)
+        or not isinstance(caps, dict)
+    ):
+        raise ValueError("retention midcycle requires dict, set, dict values")
+    if not set(changed) <= set(finished) or any(
+        reason != finished[symbol] for symbol, reason in changed.items()
+    ):
+        raise ValueError("retention may only remove existing grade rotation exits")
+    removed = set(finished) - set(changed)
+    if any(
+        grades.get(symbol) != grading.B
+        or held.get(symbol, 0) <= 0
+        or finished[symbol] != "grade rotation"
+        for symbol in removed
+    ):
+        raise ValueError("retention may only remove ordinary held B exits")
+    if not excluded | removed <= blocked or not blocked <= set(grades):
+        raise ValueError(
+            "retention must preserve purchase blocks and exclude retained B"
+        )
+    if set(caps) != removed:
+        raise ValueError("retention share caps must name exactly the removed B exits")
+    bounded = {}
+    for symbol, qty in caps.items():
+        if (
+            isinstance(qty, (bool, np.bool_))
+            or not isinstance(qty, (int, float, np.integer, np.floating))
+            or not np.isfinite(qty)
+            or qty < 0
+            or qty > held[symbol] + 1e-12
+        ):
+            raise ValueError("retention share caps must be finite and cannot add B")
+        bounded[symbol] = min(float(qty), held[symbol])
+    return changed.copy(), blocked.copy(), bounded
+
+
+# Validate an opt-in cash selection before it can touch funding or owned shares.
+def _cash_selection_decision(adapter, t, grades, prices, held, nav):
+    from backend.market.learned_cash_selection import CashSelection
+
+    plan = adapter.decide(t, grades.copy(), prices.copy(), held.copy(), nav)
+    size = len(held)
+    if not isinstance(plan, CashSelection):
+        raise ValueError("cash selection must return a CashSelection verdict")
+    for mask in (plan.no_buy, plan.cash_exit):
+        if mask.shape != (size,) or mask.dtype.kind != "b":
+            raise ValueError("cash selection requires aligned boolean verdicts")
+    ordinary = adapter.eligible[t] & (grades >= 2)
+    if np.any((plan.no_buy | plan.cash_exit) & ~ordinary):
+        raise ValueError("cash selection cannot change mandatory or ineligible names")
+    if (
+        plan.cash_exit_shares.shape != (size,)
+        or not np.array_equal(plan.cash_exit_shares, np.where(plan.cash_exit, held, 0))
+        or np.any(plan.cash_exit & ((held <= 0) | ~plan.no_buy))
+    ):
+        raise ValueError("cash selection exits require exact covered shares and no buy")
+    return plan
+
+
+# Replay shared rotation and entry orders with optional research selection.
+# `deferred` retries the prior unpaid buys first; `unfunded` receives new ones.
+# `variant` routes research entry/redeploy options through the shared planner.
+# Retention is applied before those legs, so cash and deferred funding are rebuilt.
 def _live_midcycle(
-    book, report, t, bands, blocked, deferred=None, unfunded=None, variant=None
+    book,
+    report,
+    t,
+    bands,
+    blocked,
+    deferred=None,
+    unfunded=None,
+    variant=None,
+    retention_adapter=None,
+    cash_selection=None,
 ):
     from backend.agents.trading.desk import paper
 
     panel = report.panel
     prices, held, grades, finished, excluded = _paper_inputs(book, report, t, blocked)
+    if cash_selection is not None:
+        excluded |= {s for j, s in enumerate(panel.tickers) if cash_selection.no_buy[j]}
+        for j in np.flatnonzero(cash_selection.cash_exit):
+            finished.setdefault(panel.tickers[j], "forecast cash exit")
+        if variant is not None and cash_selection.no_buy.any():
+            from dataclasses import replace
+
+            # Redeployment reads targets directly; remove denied takers before funding.
+            variant = replace(
+                variant,
+                today={s: w for s, w in variant.today.items() if s not in excluded},
+            )
     entries = {
         s: float(bands[t, j])
         for j, s in enumerate(panel.tickers)
         if s != panel.benchmark and np.isfinite(bands[t, j])
     }
     equity = book.equity(panel.adj_close[t])
+    retained_caps = {}
+    if retention_adapter is not None:
+        finished, excluded, retained_caps = _retention_midcycle_inputs(
+            retention_adapter,
+            t,
+            prices,
+            held,
+            grades,
+            finished,
+            excluded,
+            equity,
+            book.cash,
+        )
     session = str(panel.dates[t])
     retry, _unpaid = paper._fund_buys(
         paper._deferred_orders(
@@ -494,6 +643,9 @@ def _live_midcycle(
         wanted[panel.index(order.symbol)] += order.qty * (
             1 if order.side == "buy" else -1
         )
+    for symbol, qty in retained_caps.items():
+        column = panel.index(symbol)
+        wanted[column] = min(wanted[column], qty)
     return wanted
 
 
@@ -1042,6 +1194,9 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     midcycle_exits: bool = True,
     reset_topup: bool = False,
     midcycle_trims: bool = False,
+    retention_adapter=None,
+    cash_selection_adapter=None,
+    rebalance_offset: int = 0,
 ) -> SimResult:
     """Return the SimResult of the desk's rules over the panel.
 
@@ -1061,6 +1216,17 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     the exit analyst's own reading, so a candidate exit rule is measured
     inside the same book; `grace` is how many sessions a position is left
     alone after it opens before any exit may fire.
+
+    `retention_adapter` is an opt-in research planning overlay, not a live policy.
+    Its copied reset inputs are read after purchase gates and before event
+    ceilings; its copied midcycle inputs precede retry, rotation and funding.
+    Only ordinary held-B exits may be removed, retained names cannot receive
+    additions, and declared quantity caps may trim them. Active event lifecycle
+    sessions bypass both callbacks. It requires the shared live_midcycle planner
+    with exit overlays disabled and refuses incompatible allocation/filter paths.
+    None preserves the incumbent path. `rebalance_offset` shifts scheduled resets
+    only; ordinary daily entry, redeploy and event rules start on the cohort's
+    first decision day even before the first scheduled reset.
 
     `journal` is an optional research observer bound to these exact source
     arrays, dates and costs. It records decisions, phase-specific adjustments,
@@ -1228,6 +1394,72 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     the redeploy buys toward). The sale fills as every live sell does, at
     the close, held back on a green open. Off, every result is byte-identical.
     """
+    if (
+        isinstance(rebalance, (bool, np.bool_))
+        or not isinstance(rebalance, (int, np.integer))
+        or rebalance <= 0
+    ):
+        raise ValueError("rebalance must be a positive integer")
+    if (
+        isinstance(rebalance_offset, (bool, np.bool_))
+        or not isinstance(rebalance_offset, (int, np.integer))
+        or not 0 <= rebalance_offset < rebalance
+    ):
+        raise ValueError("rebalance_offset must be an integer in [0, rebalance)")
+    if retention_adapter is not None:
+        if (
+            funded_allocation
+            or weight_filter is not None
+            or not midcycle_exits
+            or not live_midcycle
+            or use_exits
+            or reset_topup
+            or midcycle_trims
+        ):
+            raise ValueError(
+                "retention requires the ordinary live_midcycle path without "
+                "funded_allocation, weight_filter, disabled exits or exit overlays"
+            )
+        if not callable(getattr(retention_adapter, "reset", None)) or not callable(
+            getattr(retention_adapter, "midcycle", None)
+        ):
+            raise ValueError("retention adapter requires reset and midcycle callbacks")
+    if cash_selection_adapter is not None:
+        from backend.market.learned_cash_selection import CashSelectionAdapter
+
+        if not isinstance(cash_selection_adapter, CashSelectionAdapter):
+            raise ValueError("cash selection requires a dated CashSelectionAdapter")
+        if (
+            funded_allocation
+            or weight_filter is not None
+            or not live_midcycle
+            or not midcycle_exits
+            or use_exits
+            or exits is not None
+            or reset_topup
+            or midcycle_trims
+            or dip is not None
+            or band_dip_buy
+            or trend_gated_exit
+            or trend_brake
+            or brake_path_override is not None
+            or midcycle_sweep
+            or midcycle_entries != MIDCYCLE_BREAKOUT
+            or not exit_at_close
+            or not deferred_buys
+            or (event_exposure is not None and not event_lifecycle)
+        ):
+            raise ValueError(
+                "cash selection requires the ordinary tested live_midcycle path"
+            )
+        if (
+            cash_selection_adapter.symbols != tuple(report.panel.tickers)
+            or not np.array_equal(cash_selection_adapter.dates, report.panel.dates)
+            or cash_selection_adapter.cost_bps != cost_bps
+        ):
+            raise ValueError(
+                "cash selection symbol/calendar/cost identity must match account"
+            )
     decide = allocator or _targets
     if midcycle_entries not in MIDCYCLE_ENTRIES:
         raise ValueError(
@@ -1375,7 +1607,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
     top = np.full(rows, np.nan)
     top[start] = book.top_weight(closes[start])
     dip_adds = 0
-    next_rebalance = start
+    next_rebalance = start + int(rebalance_offset)
     funded_trace: list[dict] = []
     excluded: set[str] = set()
     # The allocator's weights at the last rebalance, per symbol, for the
@@ -1587,6 +1819,16 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             book.observe_mark(t + 1, equity[t + 1])
             continue
         # Decided on t's close, filled at t+1's open.
+        selection = None
+        if cash_selection_adapter is not None:
+            selection = _cash_selection_decision(
+                cash_selection_adapter,
+                t,
+                report.graded.grades[t],
+                closes[t],
+                book.shares,
+                book.equity(closes[t]),
+            )
         rebalanced = t >= next_rebalance
         if rebalanced:
             next_rebalance = t + rebalance
@@ -1600,6 +1842,27 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                     (book.shares * closes[t]) / total if total > 0 else np.zeros(names)
                 )
                 target = _gated_targets(target, fired, blocked, weights, t)
+            selection_blocked = (
+                np.zeros(names, dtype=bool) if blocked is None else blocked[t].copy()
+            )
+            if selection is not None:
+                weights = np.where(
+                    book.shares > 0, book.shares * closes[t], 0
+                ) / book.equity(closes[t])
+                target = np.where(selection.no_buy, np.minimum(target, weights), target)
+                target = np.where(selection.cash_exit, 0.0, target)
+                selection_blocked |= selection.no_buy
+            if retention_adapter is not None:
+                target = _retention_reset(
+                    retention_adapter,
+                    t,
+                    target,
+                    closes[t],
+                    book.shares,
+                    book.cash,
+                    report.graded.grades[t],
+                    selection_blocked,
+                )
             reason = "rebalanced out"
             rebalances += 1
         else:
@@ -1654,6 +1917,21 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
             label,
         )
         order = book.plan(target, closes[t])
+        if retention_adapter is not None and rebalanced:
+            # An explicit retained-B trim must survive the ordinary trade floor.
+            retained_b = (
+                (report.graded.grades[t] == grading.ORDINAL[grading.B])
+                & (book.shares > 0)
+                & (target > 0)
+                & np.isfinite(closes[t])
+                & (closes[t] > 0)
+            )
+            cap = book.shares.copy()
+            cap[retained_b] = (
+                target[retained_b] * book.equity(closes[t]) / closes[t, retained_b]
+            )
+            trim_b = retained_b & (cap < book.shares - 1e-12)
+            order[trim_b] = np.minimum(order[trim_b], cap[trim_b])
         # The deferred leg: last session's unpaid remainder is retried on a
         # plain session and superseded by a rebalance; an event session
         # leaves it waiting, as the live book does while the event cycle
@@ -1692,6 +1970,8 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                 deferred=carried or None,
                 unfunded=unfunded if deferred_buys and not reduced else None,
                 variant=variant,
+                retention_adapter=retention_adapter,
+                cash_selection=selection,
             )
             reason = "shared paper rotation and entry policy"
             if trimmed is not None and trimmed.any():
@@ -1731,6 +2011,22 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
         if event_paused:
             # Live FOMC execution owns the cycle and cannot add positions.
             order = np.minimum(order, book.shares)
+        if selection is not None and not event_changed and not event_paused:
+            # Permission blocks additions, never an incumbent reduction or covered exit.
+            order = np.where(selection.no_buy, np.minimum(order, book.shares), order)
+            if rebalanced:
+                priced = np.isfinite(closes[t]) & (closes[t] > 0)
+                known = (
+                    np.isfinite(selection.absolute_mean)
+                    & cash_selection_adapter.eligible[t]
+                    & (report.graded.grades[t] >= 2)
+                )
+                capped = (selection.no_buy | known) & priced
+                order[capped] = np.minimum(
+                    order[capped],
+                    target[capped] * book.equity(closes[t]) / closes[t, capped],
+                )
+            order[selection.cash_exit] = 0.0
         if deferred_buys and rebalanced and not event_changed and not reduced:
             pending_deferred = _unpaid_buys(book, order, closes[t])
         buy_prices = opens[t + 1]
@@ -1753,6 +2049,23 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                 "braked": bool(braked),
                 "sell_at_close": bool(exit_at_close and not event_changed),
                 "deferred_units": dict(pending_deferred),
+                **(
+                    {
+                        "cash_selection": {
+                            "no_buy": [
+                                panel.tickers[j]
+                                for j in np.flatnonzero(selection.no_buy)
+                            ],
+                            "cash_exit": [
+                                panel.tickers[j]
+                                for j in np.flatnonzero(selection.cash_exit)
+                            ],
+                        }
+                    }
+                    if selection is not None
+                    and (selection.no_buy.any() or selection.cash_exit.any())
+                    else {}
+                ),
             },
         )
         # Event-risk changes are explicitly next-open orders, including a green open.
