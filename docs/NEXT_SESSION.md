@@ -1,5 +1,70 @@
 # Next session
 
+## 2026-10-06 — installed learned timing connected to the locked sender
+
+Goal ACTIVE/incomplete. Human priority: focus on LIVE REPLACEMENT, not additional
+AAOI forensics, UI cleanup or research cohorts. Started cleanb30ed5b3 on owned
+codex/learned-entry-risk-20261002. Required pull/rebase conflicted in old published
+handoffs; aborted, restored exact starting tree, confirmed origin/mainf77d6e57 is
+still an ancestor. No history rewrite or unrelated working-tree change.
+
+VERIFIED checkpoint7f0b7526b8bfe7e800f696032812ea9df89cf773. Added one installed
+numeric-head factory, learned_live_timing.py, called by the ACTUAL send_due path
+under its existing paper lock. It runs only for explicitly learned ordinary
+intents, after a completed bar and before the existing final deadline. No config
+or learned intents: incumbent behavior unchanged. Private explicit timing readers
+and bounded/event execution retain their prior dispatch. No production config was
+installed and the nightly still selects the incumbent; this is NOT live adoption.
+
+The factory restores hash-authenticated monthly heads/residuals without fitting,
+checks original cohort/month BEFORE provider requests, loads the preceding actual
+desk record and daily partition, drops only the unpublished current-day empty row,
+captures original raw IEX/split-attestation/quote bytes, runs actual inference,
+captures actual cash/whole-share holdings and returns a current reader. Config
+changes, future/backward/different-window observations and unavailable source
+evidence refuse learned execution before its final deadline; they cannot use the
+incumbent1% trigger. The original final deadline remains unchanged. Original failed
+HTTP bodies are privately persisted, credentials omitted; redirects are refused.
+Stored successful inference also binds config/source hashes and original context
+file hashes/publication metadata. Sender references resolve under the actual paper
+root. No broker orders, market requests, production writes or base fitting this turn.
+
+Original missing-module acceptance FAILED; independent changed-window case FAILED
+before the sender's own clock guard; redirect refusal FAILED against the convenience
+opener. Retained at /home/animallya96/scratch/learned-live-dispatch-20261006/proof:
+baseline-missing-runtime.log, draft.log, redirect-boundary.log. Exact final source,
+pinned5c6c5605 image:192PASS/no skips10.54seconds, Ruff clean,2413archived source
+members unchanged. Real numeric heads drive BOTH buy and held-sell synthetic
+submissions through the default installed factory; actual lock, funded quantities,
+source-byte persistence and repeated-call dedupe asserted. Other tests cover failure
+retention, no untagged model work, tampered models before HTTP, confined artifact
+paths, original503 evidence and final-deadline preservation. Synthetic daily input
+adapter/provider responses/private ReplayBroker are not production market proof.
+
+Proof root /home/animallya96/scratch/learned-live-dispatch-20261006-7f0b7526/proof.
+tests.log SHA5860d2ea73a5cf11ebe791237d8cd0af62e99a6e39335783fae78b3d8df52fba;
+commands.json SHA66650a05b9176119d22e4da41157b7b99ad2f49b165bdc826cfc737938ab0dfc;
+source-manifest.json SHAf8a92bc0b4db5f6820be8dbdad9632e62e4fd5c84a98bdae2555d7c638ab8e91.
+Diagram impact NONE for adopted flow: existing sender/inference boundary only;
+no new service, model, agent or selected allocation policy. Reflect the completed
+conditional production flow in the diagram pair when the selector is admitted.
+
+UNVERIFIED/next concrete step: nightly installed holding/sizing selector and its
+authenticated original risk-bank restoration. market_daily._holding_broker still
+deliberately refuses non-ReplayBroker callers. Do NOT merely remove that guard:
+bind exact current report, published artifacts, observed account and approved
+release before broker effects; retain protected holdings, FOMC handling and cash
+constraints. Then ensure recorded/dashboard targets use the selected policy, not
+live_policy.ACTIVE's old equal weights. Source feeds still differ from training;
+no confidence guarantee, AAOI counterfactual or superiority inferred from tests.
+
+Original producer659a960b RUNNING/OOMfalse, sole watcher3169361 live, no completed
+saved-results proof. Never restart or mutate either source, inspect/select partial
+economic scores, refit, repeat completed diagnostics, or create new cohorts.
+Live markere8e339e0/main unchanged. Full carried rule/SPY/QQQ evidence and guarded
+scripts/deploy.sh plus actual API/browser acceptance remain required for adoption.
+Do not stop the active goal or claim live replacement complete.
+
 ## 2026-10-06 — bounded forward acquisition and actual context VERIFIED
 
 Goal ACTIVE/incomplete; previous turn PROGRESS, this turn PROGRESS. Started clean
