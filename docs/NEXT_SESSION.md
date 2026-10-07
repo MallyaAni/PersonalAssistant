@@ -1,5 +1,39 @@
 # Next session
 
+## 2026-10-07 — recent receipt comparison identifies execution weakness
+
+Previous goal turn PROGRESS: frontend learned-wait fix and17browser cases pushed
+through7d35d137. This turn PROGRESS: authenticated saved receipt evidence changes
+the next research action; no live activation or completion claim.
+
+All14completed zero-cost boosting/rule starts were reviewed for the already
+declared Aug17–Sep30 window without fitting, scoring or account replay. Stable
+unique session/ticker/side opportunities are matched, not local order counters.
+Ambiguous repetitions and every unmatched/unfilled/different-date leg retained.
+All14starts have more worse than better matched fill prices; phase0 has37
+comparable:8better/13worse/16equal. This is not dollar gain attribution or14
+independent trials. Conditional COHR Sept21 sell325.20 at09:45 versus331.44 at10:30
+shows an execution weakness that position sizing alone cannot correct.
+
+VERIFIED private recent-receipt-diagnosis-v3.json SHA
+1e500c9998d77013765d16284c4308ff5c7f20a0d0902614c9e40c9d8ddcd52e,
+independent decimal/identity/count acceptance SHA
+ee442faf0d6619d55e93e408fcea94543a0e479996c639d7b0f272ebfd9570b3.
+Both under scratch/continuation-verifier-20261007/proof.9synthetic cases pass.
+Script5e593eb5 is private, not a new production dependency. Initial event-shape,
+cross-book-ID and VWAP-roundoff findings retained; final interpretation usesv3
+only. Source reader is explicitly one-decision timing, not remaining-session
+optimal stopping or holding/profit exit. Full requirement remains unresolved;
+target continuation-value/holding decisions rather than tuning observed outcomes.
+
+Actual continuation2ff5c7ea confirmed live/OOMfalse, two active CPU workers.
+Latest observed progress boosting-10-0:1888sessions/2025-08-05,
+rule-10-0:1838sessions/2025-05-22; no acknowledged fee accounts yet.
+Do not restart or change mounted source, repeat any closed account or old scoring.
+Next independent cost snapshot must extend71-account incremental-01 once newly
+acknowledged receipts exist. Preserve all229pending and the fixed300-account grid.
+Live incumbent remains unchanged; goal remains ACTIVE/INCOMPLETE.
+
 ## 2026-10-07 — learned personal waits render correctly; economic continuation active
 
 VERIFIED checkpoint dd1433b1f975226f6f5645734ad6c574ecb46a92 fixes an observed

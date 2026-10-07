@@ -1,5 +1,51 @@
 # Learned live replacement: completed candidate evidence
 
+## Recent execution receipts
+
+A saved-only review covers the declared August17–September30 development window
+for all fourteen completed zero-cost rule/boosting starts. It authenticates each
+account against the71-account proof, with no new returns, fitting or replay.
+The comparison matches unique ordinary decision-session, execution-session,
+ticker and side combinations. Order IDs are local counters and are not common
+across these diverged books. Repeated ambiguous legs, unmatched plans, event
+orders, unfilled legs and different execution dates remain explicit.
+
+Every start has more worse than better comparable execution prices:6–11 better,
+13–24 worse and14–18 equal, among33–53 comparable pairs. These overlapping books
+are not independent trials, and counting trades does not measure dollar gain.
+The phase-zero book has37 same-session comparable legs:8 better,13 worse,16 equal;
+one uniquely matched leg remains incomparable, and eight common opportunities
+contain ambiguous repeated legs. Three ordinary rule-only opportunities remain.
+Both books have26 recent event intents outside this ordinary timing comparison.
+
+For example, the phase-zero conditional COHR sell on September21 executes at
+09:45NewYork/$325.20 for boosting versus10:30/$331.44 for the rule,1.88% lower.
+Quantities differ66 versus64 and remain recorded. This is a historical raw-price
+proxy example, not the user's broker receipt or an attribution of total losses.
+It shows that changing position sizes alone would not correct this execution.
+Other receipt differences and whole-book outcomes remain in the original study.
+
+The learned reader optimizes an immediate-versus-one-decision waiting distribution,
+with the incumbent terminal deadline retained. It does not forecast the best
+remaining-session action or decide whether a profitable holding should stay open.
+Those are distinct unresolved requirements of the requested live replacement.
+The evidence therefore directs further work toward continuation-value and holding
+decisions, not retrospective threshold changes or promotion of this timing model.
+No new model's advantage is inferred from this diagnosis.
+
+Private artifact `scratch/continuation-verifier-20261007/proof/recent-receipt-diagnosis-v3.json`
+SHA256`1e500c9998d77013765d16284c4308ff5c7f20a0d0902614c9e40c9d8ddcd52e`;
+independent decimal/identity/count acceptance SHA256
+`ee442faf0d6619d55e93e408fcea94543a0e479996c639d7b0f272ebfd9570b3`.
+Diagnostic script SHA256
+`5e593eb565e7e1392282b087a5afe8efabc70fdf153e18c37e95115d488f8a75`.
+Nine synthetic identity/side/missing-date/ambiguous cases pass; VWAP binary
+roundoff within1e-12relative is equal, not a trading threshold. Initial diagnostic
+failed on an event intent's absent ordinary execution date; the first completed
+ID-matching artifact found no comparable IDs and is not used for conclusions.
+The earlier v2 artifact preserves raw floating-point differences; v3 corrects
+only numerical equal-price classification. All original accounts are unchanged.
+
 ## Incremental continuation update
 
 The saved-only continuation verifier now authenticates71closed controls and
