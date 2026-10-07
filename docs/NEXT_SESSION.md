@@ -27,7 +27,8 @@ incumbent1% trigger. The original final deadline remains unchanged. Original fai
 HTTP bodies are privately persisted, credentials omitted; redirects are refused.
 Stored successful inference also binds config/source hashes and original context
 file hashes/publication metadata. Sender references resolve under the actual paper
-root. No broker orders, market requests, production writes or base fitting this turn.
+root. No external broker orders, provider requests, production writes or research
+refits; only synthetic fixture fitting and private ledger writes this turn.
 
 Original missing-module acceptance FAILED; independent changed-window case FAILED
 before the sender's own clock guard; redirect refusal FAILED against the convenience
