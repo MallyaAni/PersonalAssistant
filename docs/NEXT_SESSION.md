@@ -1,5 +1,43 @@
 # Next session
 
+## 2026-10-06 — use the verified main-based live release branch next
+
+Goal ACTIVE/incomplete. Live integration is now VERIFIED/pushed separately:
+26a616fac4515889bccdc33b413a1d7ffed3959d on
+codex/learned-live-release-20261006, based directly on current mainf77d6e57.
+Owned managed worktree
+/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant.
+Use its current docs/NEXT_SESSION.md for the next live release work. This older
+research branch remains a frozen reference; do not recopy its stale test fixtures
+or blindly merge its256commits. No main integration or deployment yet.
+
+Selected189dependency/test/protocol/frontend files, excluding large result
+archives. Full corrected actual integration1729PASS/no skips132.23s in pinned
+5c6c5605 image, sourceRO/networknone/CPU2/memory3GiB/user1000. All2357committed
+source files match accepted bytes except documentation handoff. All26release
+runtime hashes still match original authenticated assets. Scoped Ruff PASS;
+four previously reproduced personal_history baseline findings remain disclosed.
+All99frontend files match prior typechecked/Chrome-tested source; fresh deployed
+API/browser proof still required. No production model coefficients changed.
+
+Preserved failures led to three narrow integration corrections: include two
+source-authenticated CLI dependencies omitted by import-only scope; give a
+synthetic module stub its actual numeric_snapshot API; make the unknown2015
+calendar fixture explicit and add a known-year missing-session check. Original
+assertions preserved. Live-policy formatting removes only an unused import and
+wraps lines; remaining AST identical. Failed immutable runs retained.
+
+Proof /home/animallya96/scratch/learned-live-integration-20261006-69d5c129/proof-v4:
+test-execution.json SHA296f50818e0d886797e65c21ea72a246b3fa8a91d2d02011b909ed1089af7d19;
+test.log SHA77afc7c0f34b556ec17b013a39867b89ab3561b5dfa62cbf409588461d4d8736.
+Private original asset bundle remains inactive. No production config, economic
+approval, account/order write, market request, new fit/cohort, model gate or UI
+redesign. Producer659a960b and original control2832af72 RUNNING/OOMfalse, sole
+watcher3169361 active; completed carried verification absent. Livee8e339e0.
+NEXT: complete original saved comparison review, then supported approval/cost,
+guarded main merge/deploy.sh and actual deployed numeric/API/browser/artifact
+proof. Never restart/mutate active producers or read partial scores.
+
 ## 2026-10-06 — private live replacement assets assembled and authenticated
 
 Goal ACTIVE/incomplete; latest human instruction is LIVE REPLACEMENT. Started
