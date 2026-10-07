@@ -5,9 +5,11 @@ paper account. Numeric publication is not economic proof or release approval.
 """
 
 import json
+from dataclasses import replace
 from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
+from types import SimpleNamespace
 from uuid import uuid4
 
 import numpy as np
@@ -165,6 +167,47 @@ def _inputs(root, report, now):
     )
 
 
+# Complete only the observed benchmark omitted by the ordinary nightly stock panel.
+def _model_report(root, report, symbols, now):
+    panel = report.panel
+    if tuple(panel.tickers) == tuple(symbols):
+        return report
+    missing = set(symbols) - set(panel.tickers)
+    if missing != {"QQQ"} or set(panel.tickers) - set(symbols):
+        raise ValueError("Current nightly stock cohort differs from installed model")
+    day = panel.dates[-1].astype(object)
+    path = Path(root) / "bars" / ("asof=" + day.isoformat()) / "QQQ.parquet"
+    sources = {}
+    days, _, _, _ = context._daily(path, "QQQ", day, now, sources)
+    raw = path.read_bytes()
+    if sha256(raw).hexdigest() != sources[str(path.absolute())]["sha256"]:
+        raise ValueError("Concurrent current benchmark bytes differ")
+    values = pq.read_table(pa.BufferReader(raw)).to_pydict()
+    rows = np.searchsorted(panel.dates, days)
+    usable = (rows < len(panel.dates)) & (days >= panel.dates[0])
+    rows, days = rows[usable], days[usable]
+    if not np.array_equal(panel.dates[rows], days):
+        raise ValueError("Current benchmark calendar differs from nightly report")
+    arrays = {}
+    grades = np.full((len(panel.dates), len(symbols)), -1, dtype=float)
+    for field in ("open", "high", "low", "close", "adj_close", "volume"):
+        array = np.full(grades.shape, np.nan)
+        for column, name in enumerate(symbols):
+            if name == "QQQ":
+                key = "adjusted_close" if field == "adj_close" else field
+                array[rows, column] = np.asarray(values[key], dtype=float)[usable]
+            else:
+                original = panel.index(name)
+                array[:, column] = getattr(panel, field)[:, original]
+                grades[:, column] = report.graded.grades[:, original]
+        arrays[field] = array
+    context._check_unchanged(sources)
+    return SimpleNamespace(
+        panel=replace(panel, tickers=tuple(symbols), **arrays),
+        graded=SimpleNamespace(grades=grades),
+    )
+
+
 # Admit matching published execution heads and residuals before planning funded legs.
 def _timing(root, config, original, now):
     from backend.market import forward_execution, forward_probability_timing
@@ -291,9 +334,10 @@ def prepare(root, report, *, clock=None):
     )
     timing_bytes = _timing(root, config, original, started)
     model_folder = _folder(root, config["model_directory"])
-    grades, membership, provenance = _inputs(root, report, started)
+    inference_report = _model_report(root, report, original.symbols, started)
+    grades, membership, provenance = _inputs(root, inference_report, started)
     current = forward.observe_close(
-        report.panel,
+        inference_report.panel,
         grades,
         membership,
         provenance,

@@ -2,11 +2,12 @@
 
 import json
 from copy import deepcopy
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from datetime import timedelta
 from hashlib import sha256
 from types import SimpleNamespace
 
+import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
@@ -101,9 +102,72 @@ def install(root, example, monkeypatch):
     return shown, now
 
 
-# Installed current inference must produce genuine risk quantities without a fresh fit.
-def test_installed_current_heads_and_funded_nightly(example, tmp_path, monkeypatch):
+# Mirror the real nightly panel, which contains SPY but no QQQ benchmark column.
+def without_benchmark(shown, name="QQQ"):
+    columns = [i for i, symbol in enumerate(shown.panel.tickers) if symbol != name]
+    panel = replace(
+        shown.panel,
+        tickers=tuple(shown.panel.tickers[i] for i in columns),
+        **{
+            field: getattr(shown.panel, field)[:, columns].copy()
+            for field in ("open", "high", "low", "close", "adj_close", "volume")
+        },
+    )
+    return report(panel, shown.graded.grades[:, columns].copy())
+
+
+# Completing the observed QQQ benchmark leaves every stock forecast unchanged.
+def test_actual_nightly_benchmark_boundary_preserves_stock_inference(
+    example, tmp_path, monkeypatch
+):
     shown, now = install(tmp_path, example, monkeypatch)
+    full = runtime.prepare(tmp_path, shown, clock=lambda: now)
+    reduced = without_benchmark(shown)
+    before = reduced.panel.adj_close.copy()
+    chosen = runtime.prepare(tmp_path, reduced, clock=lambda: now)
+    assert chosen.reader.current.symbols == full.reader.current.symbols
+    stock = [
+        i for i, name in enumerate(full.reader.symbols) if name not in ("SPY", "QQQ")
+    ]
+    np.testing.assert_array_equal(
+        chosen.reader.current.forecasts[stock], full.reader.current.forecasts[stock]
+    )
+    assert "QQQ" not in reduced.panel.tickers
+    np.testing.assert_array_equal(reduced.panel.adj_close, before)
+    chosen.reader.validate_report(reduced)
+
+
+# A missing benchmark source cannot be replaced with invented or carried prices.
+def test_missing_current_benchmark_bytes_blocks_installed_inference(
+    example, tmp_path, monkeypatch
+):
+    shown, now = install(tmp_path, example, monkeypatch)
+    reduced = without_benchmark(shown)
+    (
+        tmp_path / "bars" / ("asof=" + str(shown.panel.dates[-1])) / "QQQ.parquet"
+    ).unlink()
+    with pytest.raises(FileNotFoundError):
+        runtime.prepare(tmp_path, reduced, clock=lambda: now)
+
+
+# Benchmark completion never selects a replacement for an uncovered stock cohort.
+def test_missing_stock_is_not_benchmark_completion(example, tmp_path, monkeypatch):
+    shown, now = install(tmp_path, example, monkeypatch)
+    reduced = without_benchmark(shown, "AAA")
+    with pytest.raises(ValueError, match="stock cohort"):
+        runtime.prepare(tmp_path, reduced, clock=lambda: now)
+
+
+# Installed current inference must produce genuine risk quantities without a fresh fit.
+@pytest.mark.parametrize("omit_benchmark", [False, True])
+def test_installed_current_heads_and_funded_nightly(
+    example, tmp_path, monkeypatch, omit_benchmark
+):
+    shown, now = install(tmp_path, example, monkeypatch)
+    if omit_benchmark:
+        shown = without_benchmark(shown)
+        shown.sides = {"AAA": "long", "BBB": "long"}
+        shown.scores = shown.graded.grades.astype(float)
 
     # A runtime fit would silently turn a frozen live model into another experiment.
     def forbidden(*args, **kwargs):
