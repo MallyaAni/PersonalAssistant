@@ -149,7 +149,8 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         research = {**research, "event_paused": True}
     return {
         "user_id": user_id,
-        "current_policy": paper_rules.POLICY_VERSION,
+        "current_policy": paper_rules.load_state(_root()).policy_version
+        or paper_rules.POLICY_VERSION,
         "latest": latest,
         "economics": economics.load(_root()),
         "intraday_research": research,
@@ -1150,7 +1151,14 @@ async def desk_paper(user_id: UserId) -> dict[str, object]:
                 }
                 for o in client.open_orders()
             ],
-            "plan": _paper_plan(client, state, positions, equity),
+            "plan": _paper_plan(
+                client,
+                state,
+                positions,
+                equity,
+                cash=account.cash,
+                buying_power=getattr(account, "buying_power", None),
+            ),
         }
 
     try:
@@ -1170,7 +1178,9 @@ async def desk_paper(user_id: UserId) -> dict[str, object]:
 # `intraday_orders` so the board, the ticker panel and the chart cannot
 # disagree. The broker's answer for each order is read by its client order id;
 # when that read fails the orders are still listed, from the state alone.
-def _paper_plan(client, state, positions, equity: float) -> dict[str, object]:
+def _paper_plan(
+    client, state, positions, equity: float, *, cash=None, buying_power=None
+) -> dict[str, object]:
     """Return {"rule", "orders", "until_rebalance", ...} for the board."""
     from backend.agents.trading.desk import actions, intraday_orders
     from backend.market import entry_timing
@@ -1207,20 +1217,33 @@ def _paper_plan(client, state, positions, equity: float) -> dict[str, object]:
         prices=prices,
         equity=equity,
         now=now,
+        root=_root(),
+        budget=min(cash, buying_power)
+        if cash is not None and buying_power is not None
+        else None,
     )
+    from backend.market import learned_order_observation
+    from backend.market.joint_funded_policy import MARKET_TIMED_POLICY, TIMED_POLICY
+
+    observed_rule, observed_text = learned_order_observation.plan_timing(state)
     return {
-        "rule": intraday_orders.INTRADAY_TIMING
-        if intraday_orders.INTRADAY_EXECUTION
-        else "next_open",
+        "policy": state.policy_version,
+        "rule": observed_rule
+        or (
+            intraday_orders.INTRADAY_TIMING
+            if intraday_orders.INTRADAY_EXECUTION
+            else "next_open"
+        ),
         "rule_text": {
-            "buy": intraday_orders.rule_text("buy"),
-            "sell": intraday_orders.rule_text("sell"),
+            side: observed_text or intraday_orders.rule_text(side)
+            for side in ("buy", "sell")
         },
         "orders": orders,
         "until_rebalance": max(
             actions.REBALANCE - int(state.sessions_since_rebalance), 0
         )
         if state.last_rebalance
+        and state.policy_version not in (MARKET_TIMED_POLICY, TIMED_POLICY)
         else None,
         "last_rebalance": state.last_rebalance,
         "reason": reason,

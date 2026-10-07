@@ -223,6 +223,7 @@ def _ready(
     now: datetime,
     today: date,
     timing_reader: Callable | None = None,
+    observation_sink: Callable | None = None,
 ) -> list[tuple[dict, dict[str, Any]]]:
     """Return [(row, verdict)] for the rows to send now."""
     latch = entry_timing.load(root, today)
@@ -261,6 +262,21 @@ def _ready(
             or (required and verdict["timed"].get("policy") != TIMING_POLICY)
         ):
             raise ValueError("Timing reader requires an explicit ordinary verdict")
+        if (
+            custom
+            and required
+            and observation_sink
+            and "inference" in (verdict["timed"].get("forward_receipt") or {})
+        ):
+            observation_sink(row, verdict)
+        if required and not custom:
+            # Session completion is not a model prediction or a percent-level trigger.
+            verdict["timed"].update(
+                policy=TIMING_POLICY,
+                level=None,
+                level_fraction=None,
+                reason="Session completion",
+            )
         if verdict["send"]:
             ready.append((row, verdict))
     return ready
@@ -305,6 +321,23 @@ def _observe_timing(root, rows, snapshot, now, today, client_factory, reader, fa
     return snapshot, now, reader, unavailable
 
 
+# Persist original model observations before any order submission.
+def _observed_ready(root, state, rows, snapshot, now, today, timing_reader):
+    observations = []
+
+    # Retain every original model verdict, including waiting and unavailable states.
+    def remember(row, verdict):
+        observations.append((row, verdict))
+
+    ready = _ready(rows, root, snapshot, now, today, timing_reader, remember)
+    if observations:
+        from backend.market import learned_order_observation
+
+        if learned_order_observation.retain(root, observations, now):
+            paper.save_state(root, state)
+    return ready
+
+
 # Reconcile and submit due rows while the original paper transaction stays locked.
 def _send_due_locked(
     root: Path,
@@ -333,7 +366,7 @@ def _send_due_locked(
     )
     started = time.monotonic()
     _observe_bounded(root, state, rows, snapshot, now, today)
-    ready = _ready(rows, root, snapshot, now, today, timing_reader)
+    ready = _observed_ready(root, state, rows, snapshot, now, today, timing_reader)
     recovering = [r for r in rows if "execution_policy" in r and r.get("sending")]
     if not ready and not recovering:
         return unavailable
@@ -892,6 +925,13 @@ def _action(side: str, leg: str, qty: int, held: float, broker: dict | None) -> 
     return "TRIM" if 0 < qty < held + sold else "SELL"
 
 
+# Include learned observation metadata without changing recorded broker state.
+def _learned_fields(row, observation):
+    if "timing_policy" not in row:
+        return {}
+    return {"timing_policy": row["timing_policy"], "learned_timing": observation}
+
+
 # One pending row as the board shows it.
 #
 # `broker` is the broker's order under the row's id (None when unknown),
@@ -912,6 +952,7 @@ def board_row(
     price: float | None,
     equity: float | None,
     now: datetime,
+    learned_observation: dict | None = None,
 ) -> dict[str, Any]:
     """Return the dashboard's view of one planned or working order."""
     side = str(row.get("side") or "")
@@ -964,6 +1005,7 @@ def board_row(
         "filled_qty": None,
         "filled_price": None,
         "filled_at": None,
+        **_learned_fields(row, learned_observation),
     }
     sent = row.get("sent") or {}
     if sent.get("open") is not None and sent.get("level") is not None:
@@ -1026,6 +1068,19 @@ def _when(
         else "Next session"
     )
     if timing == INTRADAY_TIMING:
+        if "timing_policy" in out:
+            from backend.market import learned_order_observation
+            from backend.market.live_probability_timing import POLICY
+
+            if out["timing_policy"] != POLICY:
+                return f"{day} · timing policy unavailable"
+            try:
+                return learned_order_observation.when(
+                    day,
+                    date.fromisoformat(execute_on) if execute_on else today,
+                )
+            except (ValueError, TypeError):
+                return f"{day} · learned timing unavailable"
         return f"{day} · {rule_text(side, out.get('open'), out.get('level'))}"
     if timing == "event":
         return f"{day} · at the open (FOMC risk rule)"
@@ -1118,6 +1173,13 @@ def _clock_status(
     """Return (state, sentence) for an unsent row on its own session."""
     side = str(row.get("side") or "")
     symbol = str(row.get("symbol") or "")
+    if "timing_policy" in row and "execution_policy" not in row:
+        from backend.market import learned_order_observation
+        from backend.market.live_probability_timing import POLICY
+
+        if row["timing_policy"] != POLICY:
+            return "waiting", "Timing policy unavailable"
+        return learned_order_observation.clock_status(out.get("learned_timing"), now)
     verdict = decide(row, entry_timing.row_for(latch, symbol, today), quote, now, today)
     timed = verdict["timed"]
     if "guard" in verdict:
@@ -1199,6 +1261,8 @@ def board_orders(
     prices: dict[str, float],
     equity: float | None,
     now: datetime,
+    root: Path | None = None,
+    budget: float | None = None,
 ) -> list[dict[str, Any]]:
     """Return `board_row` for every order of the paper state the board lists."""
     by_id = {
@@ -1206,6 +1270,19 @@ def board_orders(
         for o in broker_orders or []
         if o.get("client_order_id")
     }
+    learned = {}
+    if root is not None:
+        from backend.market import learned_order_observation
+
+        learned = learned_order_observation.for_rows(
+            root,
+            _shown_rows(state),
+            now,
+            held=held,
+            equity=equity,
+            budget=budget,
+            prices=prices,
+        )
     rows = [
         board_row(
             row,
@@ -1216,6 +1293,7 @@ def board_orders(
             price=prices.get(str(row.get("symbol"))),
             equity=equity,
             now=now,
+            learned_observation=learned.get(row.get("client_order_id")),
         )
         for row in _shown_rows(state)
     ]

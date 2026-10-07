@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react'
-import type { DeskLevelTag, DeskLive, DeskPaperLive, DeskPaperOrder, DeskRecord, DeskStructure } from '../../services/api'
+import type { DeskLevelTag, DeskLive, DeskPaperLive, DeskPaperOrder, DeskPaperPlan, DeskRecord, DeskStructure } from '../../services/api'
 import { displayedBoardPrice, SessionPrice } from './StockBoard'
 
 // The Stock rankings board, rebuilt around one question a trader asks of it:
@@ -7,9 +7,7 @@ import { displayedBoardPrice, SessionPrice } from './StockBoard'
 //
 // Every action on this board is the paper account's own order, read from
 // `/desk/paper` (`plan.orders`), and the paper account sends exactly those
-// orders on exactly the rule the board prints: a buy on a 15-minute close 1%
-// under the day's open, a sell 1% over it, otherwise a market order at 3:45 PM
-// ET, the close window's last 15-minute candle. The wording of each order (why, when, what happened) comes
+// orders using their recorded policy. The wording of each order (why, when, what happened) comes
 // from the backend in one place, so this board, the ticker panel and the
 // chart cannot tell different stories. A name with no order is HOLD when the
 // account holds it and a dash when it does not.
@@ -20,6 +18,14 @@ import { displayedBoardPrice, SessionPrice } from './StockBoard'
 // The four words a row can say, and the dash for a name the account neither
 // holds nor trades.
 export type BoardWord = 'BUY' | 'SELL' | 'TRIM' | 'HOLD' | '—' | 'ORDERS'
+
+// Prefer the executor's recorded rule rather than assigning legacy timing to a new policy.
+export const executionRuleText = (plan?: DeskPaperPlan): string => {
+  if (plan?.rule_text) return [...new Set(Object.values(plan.rule_text))].join(' · ')
+  if (plan?.rule === 'next_open') return 'Buys go in at the next open and sells at the next close.'
+  if (plan?.rule === 'dip_or_close') return 'Buys wait for a 15-minute close at least 1% under the day’s open; sells wait for one at least 1% over. Otherwise, a market order goes in at 3:45 PM ET, the last 15-minute candle before the regular close.'
+  return 'Order timing unavailable; see each order.'
+}
 
 // One name on the board, with everything its row and its details show.
 export type BoardRow = {
@@ -256,6 +262,7 @@ export const holdReason = (weight: number | null, target: number | null, untilRe
   if (weight === null) return `Target ${percent(target)}`
   const gap = weight - target
   if (Math.abs(gap) < 0.01) return `Near its ${percent(target)} target`
+  if (untilReset === null) return `${gap > 0 ? 'Above' : 'Below'} its ${percent(target)} target · no current order`
   return gap > 0
     ? `Above its ${percent(target)} target · trimmed at ${reset}`
     : `Below its ${percent(target)} target · topped up at ${reset}`
@@ -402,6 +409,10 @@ const RowDetails = ({row, latest, myAccount, onOpen, extra, structure, displayed
           {row.orders.length > 1 && <p className="text-[#6e6e73]">{order.why}</p>}
           <p><span className={`mr-1 inline-block h-2 w-2 rounded-full ${STATE_DOT[order.state] ?? 'bg-[#86868b]'}`} aria-hidden="true" />{order.status}</p>
           <p className="text-[#6e6e73]">{order.when}</p>
+          {order.learned_timing && <p aria-label={`${order.symbol} recorded model decision`} className="text-[#6e6e73]">
+            Model: {order.learned_timing.state} · {new Date(order.learned_timing.observed_at).toLocaleString('en-US', {timeZone: 'America/New_York'})} ET
+            {' · '}{order.learned_timing.current ? 'current observation' : 'historical observation'}; not a fill
+          </p>}
         </div>
       })}
     </section>
@@ -476,9 +487,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
   })
   const onSort = (key: SortKey) => setSort(current =>
     current?.key !== key ? {key, down: key !== 'ticker'} : current.down === (key !== 'ticker') ? {key, down: !current.down} : null)
-  const ruleText = paper?.plan?.rule === 'next_open'
-    ? 'Buys go in at the next open and sells at the next close.'
-    : 'Buys wait for a 15-minute close at least 1% under the day’s open; sells wait for one at least 1% over. Otherwise, a market order goes in at 3:45 PM ET, the last 15-minute candle before the regular close.'
+  const ruleText = executionRuleText(paper?.plan)
   return <section aria-label="Stocks and cash" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-black/[0.08] bg-white [container-type:inline-size]">
     <div className="shrink-0 space-y-2 border-b border-black/[0.06] px-3 py-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">

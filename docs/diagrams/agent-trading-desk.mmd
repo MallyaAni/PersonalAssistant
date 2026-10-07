@@ -7,6 +7,16 @@ flowchart TB
     Store --> Grades[Analyst ranks and grades<br/>measured numerical rules]
     Models --> Grades
     Grades --> Plan[Adopted scheduled allocation<br/>risk caps and FOMC policy]
+    Artifacts --> Admission[Optional reviewed learned release<br/>source, evidence, model and configuration hashes<br/>not enabled by test results]
+    Store --> Admission
+    Admission --> LearnedPlan[Installed learned nightly selector<br/>stock-specific whole-share funded targets<br/>no assumed sale proceeds]
+    LearnedPlan --> Journal
+    LearnedPlan --> Records
+    Admission --> LearnedTiming[Shared learned completed-bar inference<br/>original published models; no runtime fitting]
+    Quotes --> LearnedTiming
+    LearnedTiming -->|Observed execute or wait verdict| Journal
+    LearnedTiming -->|Personal account inputs only| View
+    Journal -->|Immutable original forecast receipts<br/>distinct from confirmed broker fills| View
     Plan --> Journal[(Paper intent and fill journal)]
     Journal --> Broker[Alpaca paper only<br/>scheduled orders and event recovery]
     Broker --> Journal
@@ -47,6 +57,6 @@ flowchart TB
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     class Store,Journal,Records,Holdings,Research,PersonalHistory,DisplaySnapshot,PolicyShadow data;
     class Providers,Broker,Quotes external;
-    class Models model;
+    class Models,LearnedTiming model;
     class View interface;
-    class DisplayCollector application;
+    class DisplayCollector,Admission,LearnedPlan application;

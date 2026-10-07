@@ -64,6 +64,7 @@ def source_identity():
         root / "backend/market/entry_timing.py",
         root / "backend/market/alpaca_trading.py",
         root / "backend/market/learned_personal_guidance.py",
+        root / "backend/market/learned_order_observation.py",
         root / "backend/market/decision_view.py",
         root / "backend/market/personal_history.py",
         root / "backend/api/v1/market.py",

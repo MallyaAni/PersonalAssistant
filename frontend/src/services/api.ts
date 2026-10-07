@@ -2761,10 +2761,7 @@ export interface DeskOpportunity {
   missing: string[]; method: string;
 }
 
-// One `/4` row's timing (`backend/market/entry_timing.timing`): a BUY, SELL or
-// TRIM stands only when `state` is `triggered` (a 15-minute close reached the
-// level today) or `close` (the close window); `reason` is the sentence for
-// the hover. `level` is `open` x (1 - 1%) for a buy and x (1 + 1%) for a sell.
+// The selected policy's timing verdict; learned timing has no fixed price level.
 export interface DeskRowTiming {
   rule: string;
   side: 'buy' | 'sell';
@@ -2957,6 +2954,12 @@ export interface DeskPaperOrder {
   why: string;
   reason?: string | null;
   timing: 'dip_or_close' | 'next_open' | 'close' | 'event';
+  timing_policy?: string;
+  learned_timing?: {
+    policy: string; state: string; reason: string; observed_qty: number | null;
+    observed_price: number | null; observed_at: string; evidence_sha256: string;
+    current: boolean; fill_proven: false;
+  } | null;
   decided?: string | null;
   execute_on?: string | null;
   open?: number | null;
@@ -2975,7 +2978,8 @@ export interface DeskPaperOrder {
 
 // The paper account's plan: its orders, the rule they execute on and the reset clock.
 export interface DeskPaperPlan {
-  rule: 'dip_or_close' | 'next_open';
+  policy?: string;
+  rule: string;
   rule_text?: { buy: string; sell: string };
   orders: DeskPaperOrder[];
   until_rebalance: number | null;

@@ -179,6 +179,20 @@ def test_no_learned_intents_do_nothing(tmp_path):
     assert runtime.observe(tmp_path, [], {}, NOW, None) == ({}, NOW, None)
 
 
+# A learned paper row cannot describe an unsent order using the incumbent percent level.
+def test_learned_paper_view_never_displays_incumbent_threshold(tmp_path):
+    _, row = pending(tmp_path)
+    shown = intraday_orders.board_row(
+        row, broker=None, latch=None,
+        quote={"open": 100, "last": 90, "bar": "2026-10-05T13:30:00Z"},
+        held=0, price=90, equity=10000, now=NOW,
+    )
+    assert shown["timing_policy"] == live_probability_timing.POLICY
+    assert "1%" not in shown["when"]
+    assert "1%" not in shown["status"]
+    assert shown["state"] == "waiting"
+
+
 # A learned source failure cannot fire the incumbent's one-percent trigger.
 def test_failed_factory_retains_learned_intent(tmp_path):
     client, row = pending(tmp_path)
