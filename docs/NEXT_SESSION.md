@@ -1,5 +1,42 @@
 # Next session
 
+## 2026-10-07 — integration merged; clean-build dependency boundary fixed
+
+Goal ACTIVE: the learned live replacement is not yet activated. Tested source
+was fast-forwarded to GitHub main8568cc9e. Both learned selectors remain absent.
+The actual guarded deployment attempted that exact revision with required gates,
+but FAILED before production changes: its freshly resolved SQLAlchemy2.1.3 lacked
+greenlet and could not import the asyncio extension to migrate the gate database.
+Production stayse8e339e0; model/research container identities remain unchanged.
+Failure preserved in scratch/learned-live-inactive-deploy-20261007-8568cc9e,
+deploy.log SHAa8d651eddf142409bfe855356b3bb715fcf8c006ce5aef339c4775c8c50311e3.
+The original runner3965085 is terminal; this is not a running deploy to restart.
+
+VERIFIED production and the preceding passed gate both use SQLAlchemy2.0.54 and
+greenlet3.5.6. Pin that measured ORM version with its explicit asyncio extra in
+requirements.txt and pyproject.toml. The upstream dependency change is documented
+at https://docs.sqlalchemy.org/en/21/faq/installation.html. No gate weakened.
+Fresh private image5cca29457a07fba77102396d63e3e67233db6bb8d83d20ed0e5d3ddf4c420c75
+imports the async engine and migrates the isolated gate database successfully;
+queried persisted revision20260924_0021. Import/migration log hashes:
+79129e70e035986b831bf9b899b8d3b8a08697c085f0c7be6ca5bd13bd762e86;
+a62947f7152ee8245554873d282dc2294a730f7624e5b9488e5b5ad3e3a36c55.
+Same newly built image passes the original saved October6 held-book acceptance
+at10/25bp, two private planned adjustments per cost, SNDK retained, cash/share
+guards intact. All28 runtime hashes match; no new heads, current broker reads,
+orders, production writes or return scoring. Proof SHA
+b510e3f357c39227fd399630226729497594accd64fcbbd99b5e4b9d6f7f11a9.
+Evidence under scratch/learned-live-sqlalchemy-boundary-20261007.
+
+NEXT/active corrected deployment root:
+scratch/learned-live-inactive-deploy-20261007-async-fix. Read claim.json PID/source,
+execution.json and deploy.log first; do not restart an active attempt. Deployment
+must use scripts/deploy.sh with every applicable gate and leave learned selectors
+absent. Actual deployed API/browser/source/artifact proof still required. Original
+carried candidate/controls/watchers remain immutable; completed economic review,
+separately supported held transition and next-nightly publication precede model
+activation. An inactive code deployment does not complete the live replacement.
+
 ## 2026-10-07 — final replacement gate passes; activation remains inactive
 
 User priority remains the live buy/exit/sizing replacement. Goal ACTIVE. Exact
