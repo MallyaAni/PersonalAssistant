@@ -1,5 +1,51 @@
 # Next session
 
+## 2026-10-06 — learned paper decisions retained; live replacement remains priority
+
+Goal ACTIVE/incomplete. Started e14fec99 clean on owned
+codex/learned-entry-risk-20261002; origin/mainf77d6e57 remains an ancestor.
+VERIFIED checkpointd0eb687509e1da67c1ae824ad99bb25e021ec3f1. Actual locked sender
+retains original shared numeric execute/wait/unavailable verdicts before submission,
+including decisions which place no order. Pending rows contain only an immutable
+hash reference; original inference, account, code, configuration, clocks and order
+identity are authenticated on reading. Changed funding, holdings, price or expired
+evidence remains historical, never current readiness. Broker fills remain authoritative.
+Final session completion is labelled separately, with no invented1% price level.
+
+Paper API now reads those original observations, actual paper cash/buying power and
+persisted policy. Mixed timing is order-specific; unknown policies unavailable.
+The learned nightly selector is not described as the legacy reset schedule.
+Dashboard help and paper rules use the executor's wording; optional model history
+shows its actual time separately from fills. Existing detailed diagram pair updated;
+unrelated renders produced by the renderer's all-diagram command were reverted
+only in this originally clean owned worktree. No UI redesign or strategy promotion.
+
+Acceptance540PASS/no skips24.80s in pinned5c6c5605 image. All1618 committed backend
+files match the original tested bytes exactly; no repeated economic scoring.
+Scoped lint PASS, native TypeScript PASS, four actual Chrome browser workflows
+PASS20.4s (learned wait, confirmed fill, existing account wording and paper board).
+Browser endpoints are explicit fixtures, not production numeric/runtime proof.
+Initial missing timing_policy regression and holiday-clock failure retained;
+assertions unchanged. Playwright's downloadable shell does not support macOS13;
+used the installed Chrome without changing assertions. Existing four history lint
+findings from prior handoff remain outside this scoped lint claim.
+
+Proof /home/animallya96/scratch/learned-paper-d0eb6875/proof/execution.json
+SHA97f92de851658b6243574c99d10741be2be8a8743382aea37cda3dc5422cc642;
+source-manifest.json binds the whole commit; tests.log preserves original540-case
+result and browser.log the four source-rendered workflows. Draft failures remain
+in learned-paper-view-20261006/proof. Source unchanged during independent checks.
+
+UNVERIFIED/next: original published heads with actual current nightly inputs through
+the installed preparation path, then reviewed release/artifact installation and
+scripts/deploy.sh plus actual deployed API/browser proof. Do not infer economic
+approval from fixtures, compatibility or tests. Carried comparison producer659a960b
+still RUNNING/OOMfalse and sole watcher3169361 active; final saved verification
+absent. Never restart/mutate it, inspect partial scores or fit new thresholds.
+Live markere8e339e0 is still incumbent; no production configuration, account/order
+write, deployment, model-service change or economic experiment in this checkpoint.
+Keep focus on supported live replacement, not unrelated cleanup or new research.
+
 ## 2026-10-06 — learned personal decision path connected and verified
 
 Goal ACTIVE/incomplete; human priority LIVE REPLACEMENT. Started cleanfba2c702
