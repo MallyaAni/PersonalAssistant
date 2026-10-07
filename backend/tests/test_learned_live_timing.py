@@ -61,36 +61,45 @@ def context():
     )
 
 
-# Preserve a real pending learned buy and the private broker's actual funding clock.
-def pending(root):
-    row = intent(symbol="AAOI", qty=5)
+# Preserve a pending learned leg and the private broker's actual funding clock.
+def pending(root, *, side="buy", price=99):
+    row = intent(symbol="AAOI", qty=5, side=side)
     row["execute_on"] = NOW.date().isoformat()
     row["timing_policy"] = live_probability_timing.POLICY
     state = paper.PaperState()
     state.pending = [row]
     paper.save_state(root, state)
-    client = ReplayBroker(10000, 0)
-    client.observe(NOW, {"AAOI": 99}, True)
+    client = ReplayBroker(
+        10000,
+        0,
+        initial_holdings={"AAOI": 5} if side == "sell" else {},
+        initial_average_prices={"AAOI": 90} if side == "sell" else {},
+    )
+    client.observe(NOW, {"AAOI": price}, True)
     return client, row
 
 
 # The installed factory must restore numeric inference under the actual paper lock.
+@pytest.mark.parametrize(("side", "price"), [("buy", 99), ("sell", 150)])
 def test_installed_heads_drive_locked_sender(
-    fitted, residual_archive, tmp_path, monkeypatch
+    fitted, residual_archive, tmp_path, monkeypatch, side, price
 ):
     config = install(tmp_path, fitted, residual_archive)
-    client, row = pending(tmp_path)
+    client, row = pending(tmp_path, side=side, price=price)
     original_transaction = paper.transaction
     locked = []
     seen = []
     source = context()
     original_observe = runtime.observe
-    bodies = iter(
-        capture_payloads(
-            NOW,
-            datetime(2026, 10, 2, 15, 45, tzinfo=calendar.NEW_YORK),
-        )
+    original_bodies = capture_payloads(
+        NOW,
+        datetime(2026, 10, 2, 15, 45, tzinfo=calendar.NEW_YORK),
     )
+    quotes = json.loads(original_bodies[-1])
+    for quote in quotes["quotes"].values():
+        quote.update(bp=price - 0.005, ap=price + 0.005)
+    original_bodies[-1] = json.dumps(quotes).encode()
+    bodies = iter(original_bodies)
 
     # Retain the actual file lock while making its lifetime inspectable.
     @contextmanager
@@ -157,6 +166,7 @@ def test_installed_heads_drive_locked_sender(
     assert receipt["live_dispatch"]["strategy_promotion"] is False
     assert len(seen) == 3
     assert stored["qty"] == 5
+    assert stored["side"] == side
     assert len(client.orders_since("2026-10-05T00:00:00Z")) == 1
     assert intraday_orders.send_due(tmp_path, {}, NOW, lambda: client) == []
     assert len(seen) == 3
