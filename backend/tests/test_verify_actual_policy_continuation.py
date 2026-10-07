@@ -304,14 +304,15 @@ def test_continuation_runtime_and_lineage_guards(tmp_path, monkeypatch, defect):
         runtime["HostConfig"][key] = "bridge" if defect == "network" else 1
     elif defect == "root":
         runtime["Config"]["User"] = "0"
-    elif defect == "source":
-        runtime["Mounts"][0]["Source"] = "different-source"
-    elif defect == "writable":
-        runtime["Mounts"][0]["RW"] = True
-    elif defect == "active_original":
-        terminal["State"]["Running"] = True
-    elif defect == "original_oom":
-        terminal["State"]["OOMKilled"] = True
+    elif defect in ("source", "writable"):
+        key, value = (
+            ("Source", "different-source") if defect == "source" else ("RW", True)
+        )
+        runtime["Mounts"][0][key] = value
+    elif defect in ("active_original", "original_oom"):
+        terminal["State"]["Running" if defect == "active_original" else "OOMKilled"] = (
+            True
+        )
     elif defect == "scheduler":
         plan["scheduler_sha256"] = "0" * 64
     config = {
