@@ -1,5 +1,34 @@
 # Next session
 
+## 2026-10-07 — saved causes clarify startup readiness without changing results
+
+VERIFIED read-only cause review of all three original candidate accounts:
+251ordinary decisions had unavailable entry risk, all in2018–20. First optimized
+allocation2019-03-01 at every cost; first positive targetMarch1/4/7 at0/10/25bp.
+At0bp, early662ordinary decisions include411supported optimizations and296zero
+target weights; later1292ordinary decisions are all supported, with26zero
+targets. Missing history is not the only cash cause and does not explain the
+weaker recent result. No returned period was dropped, model fitted, account
+replayed, return scored or live state changed. Counts exactly match original
+verified ordinary/event/objective coverage. Private receipt-causes artifact SHA
+a4fc50bec2b8c36f444f41451f63635d637167d5519496b5c66c0c3cc8e8195b under
+market-verifier-symbols-20261007/receipt-diagnostics. Diagnostic container
+5ed5848aab9486c476bc98b7e77e8054b2034bda9c2ddfb1ec7cd2788042c6d7
+terminal0/OOMfalse, original5c6c image, networknone/read-only inputs.
+
+Interpretation: live V6 migration carries existing holdings/trained assets;
+original V5 economic test starts with cash before calibration readiness. Both
+are distinct from selecting the profitable2021–26 period. Preserve all old
+results and252-mature-date guards; accounting compatibility does not establish
+carried transition profit. A further transition evaluation needs a fixed causal
+contract, not a retrospectively chosen date. No new cohort is launched here.
+Full source report updated in learned-live-replacement-results-2026-10-07.md.
+GitHub rejected report6281d3e9 pushes with DNS errors and HTTP500; preserve local
+verified commits and retry ordinary fast-forward push, never force. Source99e
+and earlier8cb handoff already pushed. Current controls2832af72 confirmed live,
+boosting-0-13/66completed/2020sessions through2026-03-04 at11:23NewYork.
+Live incumbent92b11bb9 remains unchanged; goal ACTIVE and approval absent.
+
 ## 2026-10-07 — original candidate independently verified; no live approval yet
 
 Corrected saved verification is terminal0/OOMfalse and independently checked.

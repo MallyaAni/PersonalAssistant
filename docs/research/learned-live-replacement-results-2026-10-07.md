@@ -57,6 +57,37 @@ not an independent test. The full-period weakness is concentrated in the early
 period; aggregate exposure and turnover identify questions for causal receipt
 review, not permission to tune thresholds or select profitable windows.
 
+## Recorded cause review
+
+A read-only pass over all three original, hash-bound accounts finds the same
+251 ordinary decisions with unavailable entry risk. The first optimized
+allocation is dated 2019-03-01 in every account; the first positive target is
+March 1/4/7 at 0/10/25 bp. This startup history is retained in the full results.
+It must not be removed after seeing the returns.
+
+At zero cost, all 251 unavailable decisions occur in 2018–20. In that period,
+1,312 individual entrant exclusions cite insufficient joint history and four
+cite missing current forecasts. These are stock-decision counts, not distinct
+stocks or missed fills. Of 662 ordinary decisions in that period, 411 have
+supported optimization and 296 have zero total target weight; thus unavailable
+history is not the only reason for cash allocation. In 2021–26 all 1,292
+ordinary decisions have supported optimization, with 26 zero-weight targets.
+
+This changes interpretation of the early-period weakness, but does not prove
+what a different startup account would have earned or explain the weaker
+recent result. Current live adoption is a carried transition from existing
+holdings and trained assets, distinct from this cash-start experiment. The
+existing V6 transition preserves unsupported holdings and the unchanged
+252-mature-date guard; accounting acceptance is not transition return evidence.
+Do not infer approval by selecting a profitable later period or relaxing
+readiness. Any further transition evaluation needs a fixed causal contract.
+
+The diagnostic calculates no new returns, fits no model and replays no account.
+Recorded ordinary/event/optimized counts match the independently verified
+report and objective companion. Private artifact
+`receipt-diagnostics/receipt-causes.json` under the evidence root below has SHA256
+`a4fc50bec2b8c36f444f41451f63635d637167d5519496b5c66c0c3cc8e8195b`.
+
 ## Verification and live status
 
 Original producer `756c0076acccad57e0ad034324d3b4d7c8fa6a7b` completed all three
