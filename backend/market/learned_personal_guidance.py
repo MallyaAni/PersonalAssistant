@@ -21,6 +21,7 @@ from backend.market import (
     entry_timing,
     execution_quotes,
     holdings,
+    learned_holding_transition,
     learned_live_holding,
     learned_live_timing,
 )
@@ -33,7 +34,10 @@ VERSION = "learned-personal-guidance/1"
 
 # Select this path only for a dated record that explicitly names the learned policy.
 def adopted(record):
-    return (record.get("targets") or {}).get("policy") == MARKET_TIMED_POLICY
+    return (record.get("targets") or {}).get("policy") in (
+        MARKET_TIMED_POLICY,
+        learned_holding_transition.POLICY,
+    )
 
 
 # Preserve neutral chart and grade metadata while removing every legacy action gate.
@@ -51,7 +55,7 @@ def _neutral(record, held, equity, snapshot, quoted, now, account):
     )
     result.update(
         version=VERSION,
-        policy=MARKET_TIMED_POLICY,
+        policy=(record.get("targets") or {}).get("policy"),
         account_basis="manual_personal_inputs_not_broker_verified",
         portfolio_allocation=None,
     )
@@ -89,9 +93,12 @@ def _approve(root, record, now):
     paper = record.get("paper") or {}
     targets = record.get("targets") or {}
     weights = targets.get("weights")
+    boundary = learned_holding_transition.recorded(record)
+    retained = (boundary or {}).get("retained_weights", {})
     if (
         not adopted(record)
-        or paper.get("policy") != MARKET_TIMED_POLICY
+        or paper.get("policy") != targets.get("policy")
+        or config["policy"] != targets.get("policy")
         or paper.get("selected_targets") != targets
         or (paper.get("learned_holding") or {}).get("config_sha256")
         != sha256(raw).hexdigest()
@@ -101,8 +108,16 @@ def _approve(root, record, now):
             isinstance(value, bool)
             or not isinstance(value, (int, float))
             or not math.isfinite(value)
-            or not 0 <= value <= adaptive_growth_policy.CAP
-            for value in weights.values()
+            or not 0
+            <= value
+            <= (
+                retained[name]
+                if name in retained
+                else adaptive_growth_policy.CAP
+                * (boundary["modeled_fraction"] if boundary is not None else 1)
+            )
+            or (name in retained and value != retained[name])
+            for name, value in weights.items()
         )
         or sum(weights.values()) > 1 + 1e-10
     ):
@@ -160,6 +175,11 @@ def _basket(
     cost,
 ):
     desired = dict(weights)
+    boundary = learned_holding_transition.recorded(record)
+    if boundary is not None:
+        desired = learned_holding_transition.personal_weights(
+            boundary, weights, shares, prices, equity, cash
+        )
     technical, _ = desk_freshness.grade_inputs(snapshot, record, now)
     expiries = desk_freshness.grade_expiries(snapshot, technical)
     paused = record.get("event_risk") or {}
@@ -177,7 +197,15 @@ def _basket(
         row.update(
             target_weight=target, current_weight=current, delta_weight=target - current
         )
-        row.update(blocker=None, reason="At learned target")
+        retained = boundary is not None and name in boundary["retained_weights"]
+        blocker = (
+            "Risk history unavailable"
+            if retained
+            else "Available cash unconfirmed"
+            if boundary is not None and cash is None
+            else None
+        )
+        row.update(blocker=blocker, reason=blocker or "At learned target")
         gap = target - current
         row.update(
             strategy_action="Buy" if gap > 0 else "Sell" if gap < 0 else "Hold",
@@ -221,7 +249,7 @@ def _basket(
             "Selected weights and protected holdings exceed personal equity"
         )
     decision = allocation.AllocationDecision(
-        MARKET_TIMED_POLICY,
+        record["targets"]["policy"],
         record["session"],
         desired,
         max(0.0, 1 - sum(desired.values())),

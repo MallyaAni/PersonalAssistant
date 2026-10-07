@@ -19,6 +19,7 @@ import pyarrow.parquet as pq
 from backend.market import calendar, holding_risk_bank, learned_live_timing
 from backend.market import forward_arithmetic as forward
 from backend.market import joint_funded_policy as funded
+from backend.market import learned_holding_transition as transition
 from backend.market import sequential_shadow_context as context
 
 CONFIG = "desk/learned-holding/config.json"
@@ -48,6 +49,8 @@ def source_identity():
         Path(holding_risk_bank.__file__),
         Path(learned_live_timing.__file__),
         Path(funded.__file__),
+        Path(transition.__file__),
+        root / transition.PROTOCOL,
         Path(context.__file__),
         root / "backend/cli/market_daily.py",
         root / "backend/agents/trading/desk/nightly_plan.py",
@@ -94,7 +97,7 @@ def _release(root, config, now):
             "approved",
         }
         or release["schema"] != "learned-holding-release/1"
-        or release["policy"] != funded.MARKET_TIMED_POLICY
+        or release["policy"] != config["policy"]
         or release["approved"] is not True
         or release["source_sha256"] != source_identity()
         or context._instant(release["approved_at"], "Release") > now
@@ -275,7 +278,7 @@ class InstalledHoldingPolicy(funded.MarketConditionedTimedFundedPolicy):
                 "Installed nightly configuration or decision clock changed"
             )
         config = json.loads(self.config_bytes)
-        if self.cost_bps != config["cost_bps"]:
+        if self.cost_bps != config["cost_bps"] or config["policy"] != self.version:
             raise ValueError(
                 "Installed policy costs differ from the approved configuration"
             )
@@ -295,6 +298,70 @@ class InstalledHoldingPolicy(funded.MarketConditionedTimedFundedPolicy):
         self.reader.validate_clock(decision_at)
 
 
+# Preserve uncalibrated existing shares while optimizing a conservative wealth bound.
+class RetainedHoldingPolicy(InstalledHoldingPolicy):
+    version = transition.POLICY
+    protocol = transition.PROTOCOL
+
+    # Keep the original decision exact when its whole required book has usable risk.
+    def decide(self, session, report, equity, held, prices, cash, blocked):
+        targets, receipt = super().decide(
+            session, report, equity, held, prices, cash, blocked
+        )
+        if receipt["reason"] not in {
+            "joint_risk_unavailable",
+            "protected_held_risk_unavailable",
+        }:
+            return targets, receipt
+        exits = set(receipt["company_exits"])
+        protected = set(receipt["protected_holdings"])
+        unavailable = {}
+        day = int(np.flatnonzero(self.reader.dates == np.datetime64(session))[0])
+        for name, qty in held.items():
+            if qty <= 0 or name in exits:
+                continue
+            risk = self.reader.distribution(day, (name,)).receipt
+            if name in protected:
+                risk = {
+                    "status": "unavailable",
+                    "reason": "company_grade_unavailable",
+                    "symbols": [name],
+                    "decision_date": session,
+                }
+            if risk["status"] != "available":
+                unavailable[name] = risk
+        if not unavailable:
+            return targets, receipt
+        capital = transition.partition(equity, cash, held, prices, set(unavailable))
+        boundary = capital.receipt(unavailable)
+        if capital.modeled_equity <= 0:
+            receipt.update(transition=boundary, reason="no_calibrated_capital")
+            return targets, receipt
+        selected, known = super().decide(
+            session,
+            report,
+            capital.modeled_equity,
+            capital.modeled_holdings,
+            prices,
+            capital.cash,
+            blocked,
+        )
+        lifted = capital.lift(selected)
+        modeled_decision = {"targets": dict(selected), "receipt": dict(known)}
+        known.pop("optimizer", None)
+        known.update(
+            observed_equity=float(equity),
+            observed_cash=float(cash),
+            current_weights=receipt["current_weights"],
+            reserved_wealth=float(equity) - capital.modeled_equity,
+            company_exits=receipt["company_exits"],
+            transition=boundary,
+            targets=lifted,
+            modeled_decision=modeled_decision,
+        )
+        return lifted, known
+
+
 # Authenticate one installed configuration for nightly and personal decision readers.
 def read_configuration(root, now):
     raw = (Path(root) / CONFIG).read_bytes()
@@ -311,7 +378,7 @@ def read_configuration(root, now):
             "timing_config_sha256",
             "release_receipt_sha256",
         }
-        or config["policy"] != funded.MARKET_TIMED_POLICY
+        or config["policy"] not in (funded.MARKET_TIMED_POLICY, transition.POLICY)
         or isinstance(config["cost_bps"], bool)
         or not isinstance(config["cost_bps"], (int, float))
         or not np.isfinite(config["cost_bps"])
@@ -369,6 +436,9 @@ def prepare(root, report, *, clock=None):
         "config_sha256": sha256(raw).hexdigest(),
         "provenance": provenance,
     }
-    return InstalledHoldingPolicy(
-        reader, config["cost_bps"], root, raw, admission, completed
+    factory = (
+        RetainedHoldingPolicy
+        if config["policy"] == transition.POLICY
+        else InstalledHoldingPolicy
     )
+    return factory(reader, config["cost_bps"], root, raw, admission, completed)

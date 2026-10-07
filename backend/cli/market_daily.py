@@ -1483,6 +1483,7 @@ def _fundamental_block(report) -> dict:
 def _record_targets(report, paper_entry):
     from backend.agents.trading.desk import live_policy
     from backend.market import joint_funded_policy as funded
+    from backend.market.learned_holding_transition import POLICY as RETAINED_POLICY
 
     selected = (paper_entry or {}).get("selected_targets")
     if selected is None:
@@ -1497,6 +1498,7 @@ def _record_targets(report, paper_entry):
             funded.CALIBRATED_POLICY,
             funded.TIMED_POLICY,
             funded.MARKET_TIMED_POLICY,
+            RETAINED_POLICY,
         )
         or (paper_entry or {}).get("policy") != selected.get("policy")
         or set(weights) != names

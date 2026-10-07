@@ -140,6 +140,7 @@ def project(decisions: dict, record: dict, snapshot: dict, entries: dict) -> dic
     from backend.agents.trading.desk.paper import POLICY_VERSION
     from backend.market import desk_freshness, holdings
     from backend.market.joint_funded_policy import MARKET_TIMED_POLICY
+    from backend.market.learned_holding_transition import POLICY as RETAINED_POLICY
 
     generated = _instant(decisions["as_of"])
     readings = {}
@@ -192,8 +193,9 @@ def project(decisions: dict, record: dict, snapshot: dict, entries: dict) -> dic
     payload = {
         "schema_version": "personal-decision-receipt/2",
         "policy_version": (
-            MARKET_TIMED_POLICY
-            if (record.get("targets") or {}).get("policy") == MARKET_TIMED_POLICY
+            record["targets"]["policy"]
+            if (record.get("targets") or {}).get("policy")
+            in (MARKET_TIMED_POLICY, RETAINED_POLICY)
             else POLICY_VERSION
         ),
         "decision_version": decisions["version"],

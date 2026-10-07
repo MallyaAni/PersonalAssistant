@@ -248,10 +248,13 @@ def test_plan_timing_matches_actual_ordinary_rows(tags, expected):
 
 
 # A learned plan with no pending ordinary rows still names its adopted timing.
-def test_empty_learned_plan_names_its_policy():
+@pytest.mark.parametrize("retained", [False, True])
+def test_empty_learned_plan_names_its_policy(retained):
     from backend.market.joint_funded_policy import MARKET_TIMED_POLICY
+    from backend.market.learned_holding_transition import POLICY as RETAINED_POLICY
 
-    state = SimpleNamespace(pending=[], policy_version=MARKET_TIMED_POLICY)
+    policy = RETAINED_POLICY if retained else MARKET_TIMED_POLICY
+    state = SimpleNamespace(pending=[], policy_version=policy)
     assert observed.plan_timing(state)[0] == runtime.POLICY
 
 
@@ -265,15 +268,18 @@ def test_holiday_clock_is_unavailable():
 
 
 # The real paper-plan assembly reads the saved verdict and the paper funding budget.
+@pytest.mark.parametrize("retained", [False, True])
 def test_paper_api_plan_uses_recorded_learned_decision(
-    observation_factory, monkeypatch
+    observation_factory, monkeypatch, retained
 ):
     from backend.api.v1 import market
     from backend.market.joint_funded_policy import MARKET_TIMED_POLICY
+    from backend.market.learned_holding_transition import POLICY as RETAINED_POLICY
 
     run, root = observation_factory
     state, client, _, price = run()
-    state.policy_version = MARKET_TIMED_POLICY
+    policy = RETAINED_POLICY if retained else MARKET_TIMED_POLICY
+    state.policy_version = policy
     state.last_rebalance = "2026-10-01"
     monkeypatch.setattr(market, "_root", lambda: root)
     monkeypatch.setattr(
@@ -286,7 +292,7 @@ def test_paper_api_plan_uses_recorded_learned_decision(
     )
     shown = market._paper_plan(client, state, [], 10000, cash=10000, buying_power=10000)
     assert shown["rule"] == runtime.POLICY
-    assert shown["policy"] == MARKET_TIMED_POLICY
+    assert shown["policy"] == policy
     assert shown["until_rebalance"] is None
     assert "1%" not in str(shown["rule_text"])
     assert shown["orders"][0]["learned_timing"]["current"] is True

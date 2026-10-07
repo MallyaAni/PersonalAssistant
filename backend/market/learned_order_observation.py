@@ -257,6 +257,7 @@ def when(day, session):
 def plan_timing(state):
     from backend.agents.trading.desk import intraday_orders
     from backend.market.joint_funded_policy import MARKET_TIMED_POLICY, TIMED_POLICY
+    from backend.market.learned_holding_transition import POLICY as RETAINED_POLICY
 
     tags = {
         row.get("timing_policy") or intraday_orders.INTRADAY_TIMING
@@ -267,7 +268,8 @@ def plan_timing(state):
     if len(tags) > 1:
         return "order-specific", "Order-specific timing; see each order"
     if tags == {POLICY} or (
-        not tags and state.policy_version in (MARKET_TIMED_POLICY, TIMED_POLICY)
+        not tags
+        and state.policy_version in (MARKET_TIMED_POLICY, TIMED_POLICY, RETAINED_POLICY)
     ):
         return POLICY, "Ordinary orders use learned timing; company exits at the open"
     if tags and tags != {intraday_orders.INTRADAY_TIMING}:
