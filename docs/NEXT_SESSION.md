@@ -1,5 +1,44 @@
 # Next session
 
+## 2026-10-07 — numeric continuation publication and original bank verified
+
+Previous goal turn PROGRESS: paid incumbent/ETF controls independently accepted.
+This turn PROGRESS: deployable-format numeric inference, actual estimator parity
+and original prepared-bank compatibility. Goal remains ACTIVE/INCOMPLETE.
+
+VERIFIED checkpoint7e5c4f792d904dd31b626538c83d4d3de2b27540 adds the numeric
+continuation artifact and10actual-estimator cases. Reuses existing fixed numeric
+tree reader; no executable pickle. Source/model/head/calendar/forecast identities
+checked; real-estimator and saved-reader predictions match. Even a changed forecast
+with recomputed hashes is rejected by numerical replay. Original pending/outcome
+arrays are not inference inputs. Missing heads stay unavailable. Native container
+61d07ca4 terminal0/OOMfalse, original5c6cimage, CPU1/memory4GB/user1000/networknone,
+ROroot/allsourceRO;10pass/0skip/0fail in16.48seconds, Ruff clean. Test logs retained:
+initial isolated checkout lacked newer helpers; two tuple/list round-trip findings
+corrected; later rejection-message mismatch corrected without weakening assertions.
+Do not rerun closed checks or the existing18core tests.
+
+Private scratch/nonlinear-artifact-acceptance-20261007/acceptance-final6.json
+SHAc9d2d2b018ff0fc0dea899dd6a4ba7597ff203f00d60393e63a6d1537463319c.
+Native original-bank compatibilitya45e55ec terminal0: archivec759ecb6 and receipt
+90906534 authenticated;2953sessions/25clocks/96names/21features,94stock training
+names, SPY/QQQ excluded. All23early-close sessions remain unavailable; no data
+regeneration, fitting or account replay. Original feature-source hash matches.
+This confirms input compatibility, not point-in-time eligibility or advantage.
+
+UNVERIFIED monthly historical runner, actual-sender integration, calibrated risk,
+holding/profit exits, economic qualification and live activation. A historical
+fit date is not an actual publication time. Keep these requirements explicit;
+do not install the new artifact or call it a complete live strategy. Next coding
+step is monthly artifacts plus an actual ordinary-intent continuation reader,
+with a bounded funded contract frozen before historical fitting. Preserve the
+active300account producer;75verified/225pending snapshot03 remains predecessor.
+Current deploy checkout92b11bb9 has identical policy_v5/live_policy/nightly_plan/
+entry_timing/calendar bytes to the frozen control, but intraday_orders/paper/
+market_daily differ through learned hooks and receipts. Review these boundaries
+before claiming full current-runtime parity or reusing controls for a new reader.
+No new agents or repeated old studies. Diagram impact NONE: internal model format.
+
 ## 2026-10-07 — matched paid incumbent and benchmarks independently accepted
 
 Saved verification03 is COMPLETE. Do not rerun its exclusive wrapper or the
