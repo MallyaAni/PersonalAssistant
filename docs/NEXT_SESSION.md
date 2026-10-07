@@ -1,5 +1,27 @@
 # Next session
 
+## 2026-10-07 — matched paid incumbent and benchmarks independently accepted
+
+Saved verification03 is COMPLETE. Do not rerun its exclusive wrapper or the
+three newly closed accounts. Native runtime/source/grid/hash/content acceptance
+PASS:75controls verified,72reused, new rule-10-0/SPY-10-0/QQQ-10-0,225pending;
+all3candidate accounts reused,0fits/0replays. Container9dac3944 terminal0/OOMfalse,
+original5c6cimage, CPU1/memory4GB/user1000/networknone/ROroot; only private proof
+writable. Result scratch/continuation-verifier-20261007/proof/incremental-03/results.json
+SHAa2e19bbea3a5c39340a44367f563a86cd44a4cc34fd35e74e930ff0f48387809;
+independent acceptance SHA0c924e80200eac99bb0782f9a4b3b19082a57779f26f728bcdfb4c6530257729.
+Next incremental check must extend this75proof, not72/71; no repeated old checks.
+
+At10bp/start0, timing boosting25.61%CAGR versus rule25.33%, SPY13.13%, QQQ19.03%;
+combined candidate22.09%. Timing's full gain advantage over rule is13.73points,
+only0.28CAGRpoints; one overlapping starting book does not qualify adoption.
+Combined candidate minus rule full−142.36gain points, early−46.47,later+15.01,
+reused recent−0.77. Startup maturity and different allocations remain explicit;
+do not infer a holding-only exit effect or excuse the poorer full result.
+The new nonlinear core did not produce these accounts. Active producer2ff5c7ea
+still running; preserve source/process. Paid Ridge and remaining starts missing.
+Live incumbent unchanged, deployment/qualification UNVERIFIED; goal INCOMPLETE.
+
 ## 2026-10-07 — first paid timing control independently accepted
 
 Saved verification02 is COMPLETE, not active. Do not rerun its exclusive wrapper

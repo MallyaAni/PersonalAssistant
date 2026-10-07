@@ -1,5 +1,43 @@
 # Learned live replacement: completed candidate evidence
 
+## Matched cost-inclusive incumbent and benchmarks
+
+The third saved snapshot independently verifies75closed controls:72reused and
+three newly acknowledged rule/SPY/QQQ accounts at10bp/start0. All three candidate
+accounts are reused unchanged;225controls remain pending. No model fit or replay.
+The window is2018-02-01..2026-09-30, the same carried account and costs per side.
+
+| Policy, 10bp per side, start0 | Total gain | CAGR | Maximum loss | Sharpe |
+| --- | ---: | ---: | ---: | ---: |
+| Existing rule | 603.10% | 25.33% | 44.89% | 0.91 |
+| Original boosting execution timing | 616.84% | 25.61% | 44.77% | 0.92 |
+| Combined learned allocation/holding candidate | 460.74% | 22.09% | 44.81% | 0.82 |
+| SPY | 190.40% | 13.13% | 32.62% | 0.77 |
+| QQQ | 350.53% | 19.03% | 34.55% | 0.86 |
+
+Timing alone leads the rule by13.73total-gain percentage points and0.28CAGR
+points in this one account. That small observed edge is not an adoption decision.
+The combined candidate trails the rule by142.36gain points over the full period;
+paired differences are−46.47points in2018–20,+15.01points in2021–26 and−0.77points
+in the reused recent window. It beats both ETFs over the full period, but trails
+QQQ in2018–20. No favorable era is selected to replace the complete result.
+
+Startup risk maturity, funding and different allocations affect these results;
+the comparison does not isolate holding/profit exits. Current-vintage permissions
+and conditional raw-open fills remain research limitations. Overlapping starts
+are not independent trials. The remaining paid starts and Ridge are unavailable
+in this snapshot. The newly implemented nonlinear continuation core has not
+produced historical accounts or live decisions. Live remains the incumbent.
+
+Private `scratch/continuation-verifier-20261007/proof/incremental-03/results.json`
+SHA256`a2e19bbea3a5c39340a44367f563a86cd44a4cc34fd35e74e930ff0f48387809`;
+independent native acceptance SHA256
+`0c924e80200eac99bb0782f9a4b3b19082a57779f26f728bcdfb4c6530257729`.
+Actual verifier9dac3944 terminal0/OOMfalse, original image, network disabled,
+source and inputs read-only, only private proof writable. Source hashes, original
+receipt bytes, predecessor72proof, execution command and all300IDs checked.
+Verification03 is closed and must not be rerun; subsequent snapshots extend it.
+
 ## First verified cost-inclusive timing control
 
 The saved-only second snapshot verifies72closed controls, reuses71previously
