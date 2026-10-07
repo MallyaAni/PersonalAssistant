@@ -1,5 +1,54 @@
 # Next session
 
+## 2026-10-06 — bounded forward acquisition and actual context VERIFIED
+
+Goal ACTIVE/incomplete; previous turn PROGRESS, this turn PROGRESS. Started clean
+49ecea55 on owned research branch; current origin/mainf77d6e57 unchanged. Verified,
+pushed checkpointb3a9c1cecdf64171f386b9ee273cc5bc72d1dd9f. Main/live untouched.
+
+Added one read-only acquisition entry to forward_market_evidence.py: current raw
+IEX pages, mechanically attested prior split close and original quote response feed
+the existing packet builder. It uses the reviewed actual close, including early
+closes, without modifying the frozen collector or published model/residual sources.
+Each page request and response is checked against the SAME completed window. A
+later unavailable endpoint preserves earlier bytes and the failed original body;
+an outage cannot invent response bytes. No replacement window or retry is selected.
+
+Original acceptance first FAILED for missing capture(), preserved in
+market-acquisition-missing.log. Independent pagination edge then FAILED: expired
+first response triggered a second page request. market-acquisition-pagination.log
+retains the actual2-versus1 failure. Targeted per-request/per-response guard passes
+that same assertion. Added connected/repeated pagination, regular/early-close
+acquisition, closed/no-request, failed raw/split/quote, boundary-crossing and quote
+transport outage cases. Exact checkpoint137PASS/no skips4.42seconds; Ruff clean,
+2411source files unchanged. Private pinned-image proof root:
+/home/animallya96/scratch/forward-market-acquisition-20261006-b3a9c1ce/proof.
+tests.log SHA484aad71d3db62d9b90d83a921102acfa629b3b7e046817a057a179f29830300;
+command.json SHAb36a18c81ff605c0c1298c7a6b8d1dfcb140f70a233866fd656114b04a67f443;
+source-manifest.json SHAad03e87a6f41172436fb3a149eb577ca43bc6e2f8bdf805e6e2b05497d330bd7.
+Diagram impact NONE: the existing private source-to-inference boundary only.
+
+ONE actual current-context read at2026-10-06T20:54:08.312879NY, no market or broker
+requests and no model inference. Exact source/pinned-image/networknone; production
+market and residual inputs read-only. Original October5 desk record and96prior daily
+files passed existing loader publication/metadata/concurrent-byte checks:2957rows,
+96names EXACTLY matching the published residual cohort;94prior eligible stocks,
+no added/missing names. Actual history publicationOct5T23:33:26.060178Z; actual grade/
+membership publicationOct5T23:48:41Z. Original grades are not reconstructed earlier.
+current-context.json SHA46927248177c33476c3e9904743e049610450868c8654df54938f372a163aa14,
+mode0600; independent read-only process confirmed all97original context file hashes
+and2411archived source files unchanged. This proves dated input/cohort compatibility,
+NOT current-bar acquisition, numeric forecast, confidence or economic advantage.
+
+Original producer659a960b RUNNING/OOMfalse and sole watcher3169361 confirmed live;
+one of three cost accounts complete, no saved final verification. Do not restart,
+change their mounted source or inspect/select partial economic scores. No refit,
+provider fetch, account write, model change, old experiment replay or deployment.
+UNVERIFIED: actual completed-window acquisition/inference and full carried benchmark
+advantage/adoption. Keep candidate experimental. A genuine current source packet must
+be observed in its own regular window, never backdated or substituted for the failed,
+paused October5 compatibility automation. Source equivalence to training remains false.
+
 ## 2026-10-06 — original-byte forward market adapter VERIFIED
 
 Human requested check/retry: SSH restored and source/worktree state inspected.
