@@ -1,5 +1,49 @@
 # Next session
 
+## 2026-10-07 — original accounts preserved; parallel continuation is active
+
+Previous goal turn: PROGRESS (reviewed scheduler,27passing tests and publication).
+This turn: PROGRESS (actual execution ownership transferred; not merely a plan).
+Goal remains the economically justified, deployed learned entry/holding/sizing
+replacement, not completion of this operational scheduler.
+
+VERIFIED original account rule-0-14 finished and was indexed. All71closed
+archives match their original hashes; no orphan compressed account was ignored.
+Original2832af72 was deliberately stopped, terminal137/OOMfalse after Docker's
+30-second stop timeout. It was not restarted. Full original output/source and
+partial boosting-0-14 state remain untouched in funded-calendar-20261004-e396841b.
+That incomplete account is NOT a completed result; its declared account will
+start afresh in the continuation. No completed economic account is replayed.
+Transfer audit scratch/actual-calendar-transfer-20261007-09b36566/before.json
+and after.json retain clocks, hashes, partial-state ownership and terminal state.
+
+VERIFIED new container2ff5c7eade4bd7e7d33e5f1dfb45c922d7d1a501b2a7c74fa2398b1099e1420b
+named actual-continuation-57e044b1a4ef RUNNING/OOMfalse, two actual child processes
+and isolated state roots rule-10-0/boosting-10-0. Original5c6cimage,CPU2,memory4GB,
+swap4GB,networknone/ROroot. Engine e396841bb5bdb4218491e0bc3adba96cb804635b
+and2386-member manifest775528d677abf8e4e69b5a04571e7d69b627405db4e1c3ed543281b4287c09f7
+are unchanged. Actual loader authenticated all114input members and retained the
+exact original300-account grid/models/source. All71copies are byte-identical.
+Remaining229are scheduled by declared metadata, starting with10/25bp phase0.
+Scheduler850872e87f111ed625b539e1404510fa037f04c8062ed4d668c78c6e9ed9704a.
+Plan57e044b1a4efe23e03f1025eb92e47b75d6d81455f6920eabfb95c95c9f2de9d.
+Actual study identity11b62dcabe58dde8c29ffd09ed288ed633e91c918a784253131384384c246eed.
+Source review confirms model state is only a deterministic one-month restored
+sample cache; child caches are isolated, without cross-account learning.
+
+Active root scratch/actual-calendar-continuation-20261007-09b36566/study/.
+Launch log at parent launch.log, native launcher1016270; transfer launcher.log
+is separate. NEVER restart the stopped original, launch another continuation,
+edit the mounted scheduler/engine, or repeat completed candidates/baselines.
+Inspect this exact container and completed receipts, not stale original progress.
+UNVERIFIED full study completion, measured speedup and adoption advantage.
+Independent new-receipt verification must retain all pending grid IDs and reuse
+the existing66verified control rows/3candidate rows rather than rescore them.
+The new completion order is noncontiguous; do not pretend it is a prefix or feed
+it through an old contiguous-prefix index reader. The existing verify_rows
+arithmetic can check explicitly authenticated new receipts without simulating.
+Live92b11bb9/incumbent and absent selectors unchanged; no orders/deployment.
+
 ## 2026-10-07 — parallel continuation prepared; original still running
 
 Objective: reduce the original300-account study's sequential runtime without
