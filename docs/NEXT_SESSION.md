@@ -23,9 +23,10 @@ results and252-mature-date guards; accounting compatibility does not establish
 carried transition profit. A further transition evaluation needs a fixed causal
 contract, not a retrospectively chosen date. No new cohort is launched here.
 Full source report updated in learned-live-replacement-results-2026-10-07.md.
-GitHub rejected report6281d3e9 pushes with DNS errors and HTTP500; preserve local
-verified commits and retry ordinary fast-forward push, never force. Source99e
-and earlier8cb handoff already pushed. Current controls2832af72 confirmed live,
+GitHub initially rejected report pushes with DNS errors and HTTP500; ordinary
+fast-forward delivery recovered atf8cd511043337154a2897c0f3075357d66c0a3a7.
+Spark independently read that exact GitHub main ref. No force push, deployment
+or production checkout change. Current controls2832af72 confirmed live,
 boosting-0-13/66completed/2020sessions through2026-03-04 at11:23NewYork.
 Live incumbent92b11bb9 remains unchanged; goal ACTIVE and approval absent.
 
