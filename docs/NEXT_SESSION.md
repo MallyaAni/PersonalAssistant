@@ -1,5 +1,33 @@
 # Next session
 
+## 2026-10-07 — runtime overhead checked without altering original controls
+
+VERIFIED original control2832af72 RUNNING/OOMfalse,70completed and
+rule-0-14/820sessions through2021-05-24 at13:21NewYork. Read-only Docker stats
+observed71%CPU/682MiB and cumulative623GBread/5.73TBwritten. A10-second
+original-process sample observed553MBrchar/223MBwritten and all10 wait-channel
+samples0; this does not establish an I/O-bound or CPU-bound whole study.
+Completed ridge-0-13 state is23,110,492bytes. Frozen paper writer a6c4c0b2
+copies the full dataclass before encoding; deployed/current4a8e9387 already
+uses the faster field encoder. No source or producer was patched/restarted.
+
+VERIFIED actual saved-state comparison in private, network-none/read-only
+container c0dbd22330c130f069e6d2616bfa412cb54efeb429c36442997603e0f4a6d443,
+original5c6cimage/CPU1/memory4GB/user1000, terminal0/OOMfalse. Six durable files
+exactly equal original state SHA2e973d2e119f899ae5b6cf4b6cc5661d07b814cebab2fa4e0943643a15bb1433;
+normal loader readback and0600permissions checked. Original/source bytes checked
+before/after;0models/0orders/0economic replays. Median old/deployed writes
+0.483/0.363seconds (1.33ratio), not a measured whole-run speedup. An earlier
+compact-format encoding probe is diagnostic only; it is NOT installed.
+
+Private evidence scratch/saved-state-writer-check-20261007/proof/writer-check/
+acceptance.json SHA09b4fa56f3494d7f71b06eab60f8e246fa7b9f1c2ba856b3759b37676bf50aac.
+Helper SHA678d5d2d1db019f9b72662c3b55cb51fcc7d341bf40d98f5c375a09b04df5f19.
+No new production code, strategy, data rewrite or deployment; the faster writer
+is already live at92b11bb9. Full matching controls still required, selectors
+absent and goal ACTIVE. Do not turn this microbenchmark into a shortened ETA,
+approval to replace the active source, or economic/adoption evidence.
+
 ## 2026-10-07 — timing-only evidence separated from combined allocation
 
 VERIFIED comparison of already independently verified saved scores, thirteen
