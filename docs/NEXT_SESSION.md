@@ -1,5 +1,49 @@
 # Next session
 
+## 2026-10-07 — complete release preflight passes; held-book adoption gap isolated
+
+VERIFIED canonical scripts/deploy.sh --no-pull --dry-run on exact827f478c:
+10400unit passes,93skips,6xfails;100real-model routing passes. Exit0 at
+04:48:06Z, original serving/model identities unchanged, live marker e8e339e0.
+Fresh gate image a2a167234f6eef150ea01cdf463803b6513b64f97ea71e31385c986a612745ac.
+Scratch learned-live-readiness-20261007-827f478c/execution.json SHA
+f9c165751e0f2391a4e1e34fca2446837ed7152cdcf872d1ee292a7afa6ca1d2;
+log SHA55b6372bcc4124df587b26c5f06c5bff413e843e15cfc749da1cdf225b98e96b.
+No deployment or activation. Spark source827f478c remains clean/detached.
+
+FAILED adoption readiness of the actual October6 recorded held book despite
+all nine original current forecasts being supported. Authenticated original
+holding bank and saved close produce only123simultaneous mature OOS dates;
+the original252-date requirement correctly reports insufficient_joint_history.
+Per-stock and leave-one-out checks isolate SNDK:123single dates; the other
+eight jointly have349dates and available risk. Thus activating the unmodified
+whole-book policy would freeze learned allocation for this existing account.
+Do not lower252, invent SNDK confidence, sell it to make adoption pass, or
+claim the existing pure-cash research screen proves this transition.
+
+Read-only proof scratch/learned-held-risk-support-20261007-v3/held-support.json
+SHA98242ba7c6036ebef0ac6621be0fd12b66c92efacaa961411b8ceec9d8dd109b;
+script SHA277b09687a55f1b0fd7abd58d74416bbb6f76c760ae594adfe1a58ec32b50573.
+Exact5c6c5605 image/container1229063e exited0/OOMfalse, CPU1/memory3GiB,
+networknone, all source/assets/production market data read-only; only private
+proof writable. No fitting, account reads/writes, trade simulation or scoring.
+v1 preserves a private helper path failure; corrected v2/v3 restore the actual
+desk/learned-holding artifact paths without altering originals or guards.
+
+NEXT concrete live step: implement/review a separately named, conservative
+transition for existing insufficient-history holdings. Preserve their real
+shares and reserve their marked capital using a zero-future-value lower bound;
+size the calibrated book from its own wealth and actual spendable cash.
+Unknown holdings must not fund buys or freeze unrelated calibrated decisions.
+Personal guidance must preserve its own holdings, never copy paper's reserved
+weights into a new personal buy. Keep company exits and all original maturity
+assertions. This transition needs exact accounting/parity tests and honest
+evidence distinct from the original V5 screen; no automatic approval claim.
+The complete original carried comparison/controls and actual deployment proof
+are still required. Candidate659a960b, control2832af72 and watcher3169361 remain
+live; candidate has2complete cost accounts and its final25bp account is in2022.
+No partial economics inspected; frozen source/processes remain unchanged.
+
 ## 2026-10-07 — live replacement gate repairs verified; full preflight running
 
 User priority remains the live buy/exit/sizing replacement. Goal ACTIVE; no
