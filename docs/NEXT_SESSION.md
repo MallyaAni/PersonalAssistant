@@ -1,5 +1,68 @@
 # Next session
 
+## 2026-10-07 — named live transition implemented and recorded-book acceptance passes
+
+User priority: focus exclusively on live buy/exit/sizing replacement. Goal ACTIVE;
+not deployed or promoted. Verified/pushed code checkpoint
+bc2068b4c15d3f7e77afd70c686723ed586d9988 on codex/learned-live-release-20261006.
+Main remains f77d6e57; production remains e8e339e0 and the incumbent policy.
+
+VERIFIED named V6 retained-holdings transition: original numerical V5 allocation
+and probability timing for calibrated capital, unchanged252-date maturity guard.
+Unsupported existing shares and unobserved wealth are reserved; their proceeds
+cannot fund buys. Targets are converted back to full-account units. Personal
+guidance reserves its own positions/cash rather than copying paper holdings.
+Company exits remain immediate, including when personal cash is unconfirmed.
+Fully supported decisions match the original numerical policy. Missing joint
+support among individually supported holdings remains unavailable.
+
+VERIFIED exact final source:2361files match private accepted v4 source; all28
+release-bound source/protocol hashes independently match the recorded-book proof.
+Pinned5c6c5605 image, networknone/read-only source/assets/market, private outputs.
+199relevant nightly/API/personal/history/timing tests PASS/no skips in18.91s.
+Test log SHA32defffc979aab1ade631476931623e40663d7338f1ef3a1588d67b010b60ad7.
+Broader immediately preceding v3:761PASS/no skips in62.10s; v4 adds the missing-
+cash company-exit case and only splits an API expression without changing it.
+Broad log SHA7677df128675b58b6dde18380e284dca1c800b81834343e93aa04edf265b4813.
+Scoped lint passes; personal_history retains its four untouched baseline findings.
+Initial private v1 preserves two failed transition fixtures: the inherited BBB
+grade was C, correctly taking a company exit rather than the retained-long path.
+The fixture now explicitly grades that retained long A+ before authenticated
+inference; no acceptance assertions were weakened.
+
+VERIFIED original October6 saved-book planning at10/25bp: SNDK remains at its
+actual shares with123mature dates; remaining admitted book has344joint dates.
+Two private planned adjustments at each cost, no SNDK orders, no overselling,
+nonnegative projected cash and no anticipated sale funding. Actual recorded
+grades/history and original monthly model/risk bytes authenticated unchanged.
+Proof scratch/learned-held-transition-20261007-v4/proof/recorded-book.json SHA
+317b3d30441aa52b078642095f9597974e1f354c86f2302abb5fa25a77126989.
+Tests container84121d01 and book-probe f33b5fc2 both exit0/OOMfalse.
+This uses a saved account, not current broker state; no orders submitted, new
+heads trained, production writes or economic performance scoring. The original
+monthly market calibration calculation remains part of its original decision.
+
+Wiring corrected for V6 in nightly selected-target recording, personal history,
+and paper-plan timing/rebalance description. Research-only V5 controls/protocol
+and mounted sources are unchanged. No automatic selection or config installed.
+
+NEXT: canonical scripts/deploy.sh --no-pull --dry-run for bc2068b4 in isolated
+Spark checkout /home/animallya96/codex-worktrees/learned-live-held-release-20261007;
+root scratch/learned-live-transition-preflight-20261007-bc2068b4/run.py and logs.
+Inspect claim/execution first; never restart an active gate. Separate throwaway
+DB anios_gate_live_transition_20261007; serial gate; serving/model identities
+checked unchanged. Earlier full10400unit/100routing gate applies827f478c only.
+Do not claim it verifies new transition code.
+
+Complete original carried candidate/control results remain required for economic
+review before approval, guarded main integration/deployment and actual broker/
+API/browser/artifact verification. Producers659a960b/2832af72 and watcher3169361
+were still running at last check; final saved-results.json remains absent. No
+partial economic metrics inspected or frozen producer changes. Original pure-
+cash V5 screen cannot establish held-book transition returns. Keep unsupported
+or missing evidence explicit. No new cohorts, refitting archived heads, tuning,
+model changes, real orders, data rewrites or unrelated UI work.
+
 ## 2026-10-07 — complete release preflight passes; held-book adoption gap isolated
 
 VERIFIED canonical scripts/deploy.sh --no-pull --dry-run on exact827f478c:
