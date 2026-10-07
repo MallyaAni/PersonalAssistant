@@ -30,8 +30,10 @@ name nonlinear-self-fit-b54067ed-ro-20261007, root
 scratch/nonlinear-self-continuation-study-20261007-b54067ed-ro.
 All source/helper/prepared mounts read-only; only root/results writable, no
 overlapping alias. Original5c6cimage, CPU1/memory4GB/user1000/networknone/ROroot.
-Actual running/OOMfalse/CPU106%/memory1.14GB confirmed; last acknowledged month
-2017-01 still insufficient, first trained month pending. Results under
+Actual running/OOMfalse/CPU106%/memory1.14GB confirmed. First two trained months
+2017-02/03 are acknowledged. March has407832rows per side at all24clocks,
+533mature source sessions, label endpoint2017-02-28 strictly before2017-03-01.
+These are training receipts, not economic gains or adoption evidence. Results under
 results/fit/models, runtime/complete files under results/fit. Never edit mounted
 source, restart or duplicate this process; inspect its exact state/logs first.
 
