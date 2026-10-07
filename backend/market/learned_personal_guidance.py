@@ -238,7 +238,11 @@ def _basket(
         row.update(blocker=blocker, reason=blocker or "At learned target")
         gap = target - current
         row.update(
-            strategy_action="Buy" if gap > 0 else "Sell" if gap < 0 else "Hold",
+            strategy_action=decision_view.Action.BUY
+            if gap > 0
+            else decision_view.Action.SELL
+            if gap < 0
+            else decision_view.Action.HOLD,
             strategy_move_weight=gap,
         )
         decision_view._apply_risk_budget(

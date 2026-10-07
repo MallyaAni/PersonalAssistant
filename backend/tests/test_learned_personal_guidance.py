@@ -120,7 +120,7 @@ def personal(tmp_path, monkeypatch, fitted, residual_archive):
     )
     monkeypatch.setattr(learned_live_timing.alpaca, "credentials", lambda: {})
 
-    # Replay the original endpoint bytes at an explicit current observation clock.
+    # Replay endpoint bytes and stock risk references at an explicit current clock.
     def run(
         *,
         held=(),
@@ -130,9 +130,15 @@ def personal(tmp_path, monkeypatch, fitted, residual_archive):
         budget=None,
         now=NOW,
         extra_quotes=None,
+        reference_risk=None,
     ):
         current_quoted = deepcopy(quoted)
         current_snapshot = deepcopy(snapshot)
+        if reference_risk is not None:
+            support, resistance = reference_risk
+            current_snapshot["technical_detail"]["AAOI"]["short"].update(
+                support_distance=support, resistance_distance=resistance
+            )
         for quote in current_quoted["quotes"].values():
             quote.update(bp=price - 0.005, ap=price + 0.005, t=now.isoformat())
         current_quoted["quotes"].update(extra_quotes or {})
@@ -303,6 +309,32 @@ def test_personal_risk_preference_cannot_increase_model_weight(personal):
     bounded = run(budget=0.1)["rows"]["AAOI"]
     assert 0 <= bounded["move_weight"] <= unrestricted["move_weight"]
     assert bounded["target_weight"] == unrestricted["target_weight"] == 0.05
+
+
+# Explain zero-sized learned buys by their risk constraint without fetching timing.
+@pytest.mark.parametrize("missing_reward", [False, True])
+def test_risk_blocked_buy_preserves_actual_risk_reason(personal, missing_reward):
+    run, record, seen, _ = personal
+    before = deepcopy(record)
+    held = [] if missing_reward else [holdings.Holding("AAOI", 3, 40, "2026-10-01")]
+    result = run(
+        held=held,
+        budget=0.1,
+        reference_risk=(0.04, None if missing_reward else 0.08),
+    )
+    row = result["rows"]["AAOI"]
+    assert row["strategy_action"] == "Buy"
+    assert row["action"] == "Hold"
+    assert row["move_weight"] == 0
+    assert row["executable"] is False
+    assert row["blocker"] == row["risk_plan"]["reason"]
+    assert row["reason"] == row["risk_plan"]["reason"]
+    assert row["target_weight"] == 0.05
+    assert row["current_weight"] == pytest.approx(
+        0 if missing_reward else 3 * 99 / 10000
+    )
+    assert not seen
+    assert record == before
 
 
 # A known uncovered holding stays at its actual shares rather than becoming a sale.
