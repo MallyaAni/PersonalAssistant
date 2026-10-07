@@ -1,5 +1,50 @@
 # Next session
 
+## 2026-10-07 — parallel continuation prepared; original still running
+
+Objective: reduce the original300-account study's sequential runtime without
+changing its frozen economic specification, source, models, inputs or completed
+accounts. Acceptance: full declared grid, identical actual account journeys,
+isolated ownership and explicit verification of any continuation's lineage.
+
+VERIFIED checkpoint09b36566e409a5ffb38b267a7b10e110da7a4d95 adds a standalone
+research scheduler and its tests; no production import or selector changed.
+27tests/0skips, repositoryRuff clean, original5c6cimage/frozen e396841b engine,
+private container81a2d327 terminal0/OOMfalse/CPU2/memory4GB/networknone/ROroot.
+Forty synthetic sequential/parallel accounts exercise rule, both CDF paths and
+SPY/QQQ across normal, missing-fill, early-close and missing-forecast journeys.
+Complete saved decisions, fills, cash, holdings and scores match. Only actual
+publication clocks differ: both identified history/nightly copies are checked
+against their real execution interval; historical clocks remain exact.
+
+VERIFIED native prepare authenticates70original compressed account bytes and
+embedded specifications, retains all230pending accounts and the full300grid.
+Scheduling is metadata-only (start, cost, arm), so the first pending books are
+the paired10/25bp phase0controls rather than later zero-cost starts. Source
+850872e87f111ed625b539e1404510fa037f04c8062ed4d668c78c6e9ed9704a;
+tests ef540107dd951f83c78c5c17da9972d7ec0ad95622e43bd971ead7820bf6c84d.
+JUnit6f5471bb1730e7e5d4847abf7e37337444698605bfc5c0a1f3197f9dabd4ae7f.
+Private artifacts: scratch/actual-continuation-preparation-20261007/.
+Plan6c48d8107bf32e21db5714b298b0b10bbf630af293c164204953c8fa75e7b53d;
+real active-container guard refuses launch and creates no account/output.
+
+FAILED preparatory attempts retained: first test mount/startup and missing
+test-only settings, whole-second/duplicated publication clock comparisons,
+explicit1000:1000 UID handling, and a missing test import. Corrected narrowly;
+no engine behavior, economic acceptance assertion or model setting weakened.
+
+UNVERIFIED full-size continuation launch, runtime/memory performance and
+economic advantage. Original2832af72 remains RUNNING/OOMfalse, unmodified;
+no second economic producer, fitting, orders or deployment occurred. The helper
+never stops it automatically and refuses active/stale/duplicate launch paths.
+Operational transfer is still outstanding: preserve all original completed
+AND partial files, reprepare after terminal, reuse the same immutable mounts,
+and independently verify new saved receipts rather than rerunning old scores.
+Launch capCPU2/memory4GB/swap4GB; completed results retain original order and
+all300accounts. Do not call this a proven speedup or a live replacement.
+Live92b11bb9/incumbent and absent selectors unchanged; goal ACTIVE.
+Diagram impact: NONE — private research scheduling inside existing boundaries.
+
 ## 2026-10-07 — runtime overhead checked without altering original controls
 
 VERIFIED original control2832af72 RUNNING/OOMfalse,70completed and
