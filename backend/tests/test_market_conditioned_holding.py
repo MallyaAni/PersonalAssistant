@@ -1,13 +1,14 @@
 """Causal feature binding, independent scenarios and actual private funded timing."""
 
 from copy import deepcopy
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import numpy as np
 import pytest
 
 from backend.agents.trading.desk import paper
 from backend.cli import market_daily
+from backend.market import calendar, forward_execution, forward_probability_timing
 from backend.market import forward_arithmetic as forward
 from backend.market import market_conditioned_holding as conditioned
 from backend.market.joint_funded_policy import (
@@ -20,6 +21,93 @@ from backend.tests.test_joint_funded_policy import report as historical_report
 from backend.tests.test_joint_probability_timing import timing as timing
 
 
+# Publish real numeric timing heads and original residuals for the funded fixture's next session.
+@pytest.fixture(scope="module")
+def forward_timing(example, tmp_path_factory):
+    from backend.market import (
+        learned_entry_data,
+        probabilistic_execution,
+        probabilistic_execution_saved,
+    )
+
+    panel, prior_close = example[3], example[-1]
+    _, exchange = calendar.reviewed_sessions()
+    session = np.busday_offset(panel.dates[-1], 1, busdaycal=exchange)
+    first = np.busday_offset(
+        session.astype("datetime64[M]").astype("datetime64[D]"),
+        0,
+        roll="forward",
+        busdaycal=exchange,
+    )
+    requested = datetime.combine(
+        session.astype(object), datetime.min.time(), calendar.NEW_YORK
+    ).replace(hour=8)
+    dates, names = panel.dates.copy(), panel.tickers
+    rng = np.random.default_rng(721)
+    x = rng.uniform(-1, 1, (len(dates), 25, len(names), 21)).astype(np.float32)
+    y = np.full((*x.shape[:3], 3), np.nan, dtype=np.float32)
+    y[..., 2] = 0.002 * x[..., 0] + rng.normal(0, 0.0004, x.shape[:3])
+    y[-10:, ..., 2] = np.nan
+    valid = np.ones(x.shape[:3], dtype=bool)
+    for day, value in enumerate(dates):
+        close = calendar.session_close(value.astype(object))
+        slots = ((close.hour - 9) * 60 + close.minute - 30) // 15
+        valid[day, slots:] = False
+    publication = forward_execution.fit_month(
+        {
+            "X": x,
+            "y": y,
+            "valid": valid,
+            "dates": dates,
+            "feature_names": list(learned_entry_data.FEATURE_NAMES),
+            "training_symbols": np.array([True, True, False, False]),
+        },
+        fit_session=str(first),
+        data_as_of=prior_close,
+        published_at=requested,
+        source_revision="a" * 40,
+        input_identity={"cohort": "c" * 64},
+    )
+    folder = tmp_path_factory.mktemp("full-forward-timing")
+    model_sha = forward_execution.write_publication(
+        folder / "models", publication, clock=lambda: requested
+    )
+    # The residual archive ends before the new fit month, as the real archive does.
+    dates = dates[dates < first]
+    shape = (len(dates), 2, len(names))
+    arguments = {
+        "dates": dates,
+        "symbols": names,
+        "means": np.zeros(shape),
+        "second_moments": np.full(shape, 0.01),
+        "labels": np.broadcast_to(np.array([-0.1, 0.1])[None, :, None], shape).copy(),
+        "valid": np.ones(shape, dtype=bool),
+        "outcome_end_dates": dates,
+        "data_as_of": prior_close,
+        "horizon": probabilistic_execution.HORIZON,
+    }
+    calibrated = probabilistic_execution.calibrate(**arguments)
+    saved = probabilistic_execution_saved.load_saved(
+        **arguments,
+        manifest=calibrated.manifest,
+        saved_probability=calibrated.probability_positive,
+        saved_quantiles=calibrated.quantiles,
+    )
+    residuals = forward_execution.prepare_residuals(
+        saved,
+        fit_session=str(first),
+        published_at=requested,
+        archive_identity={"cohort": "c" * 64},
+        clock=lambda: requested,
+    )
+    residual_sha = forward_probability_timing.write_residual_month(
+        folder / "residuals",
+        residuals,
+        clock=lambda: requested,
+    )
+    return folder, model_sha, residual_sha, session
+
+
 # Train genuine numeric synthetic artifacts once with explicitly valid market inputs.
 @pytest.fixture(scope="module")
 def example(tmp_path_factory):
@@ -30,6 +118,184 @@ def example(tmp_path_factory):
 @pytest.fixture(scope="module")
 def reader(example):
     return example[0]
+
+
+# Genuine sizing and restored numeric timing must carry both sides through durable fills.
+@pytest.mark.parametrize("held", [0, 5000])
+def test_full_forward_policy_through_restored_timing_and_reconciliation(
+    example, forward_timing, tmp_path, monkeypatch, held
+):
+    from backend.agents.trading.desk import intraday_orders
+    from backend.market.replay_broker import ReplayBroker
+
+    # Runtime inference must consume published heads rather than train replacements.
+    def forbidden(*args, **kwargs):
+        pytest.fail("Published-head inference attempted a base-model fit")
+
+    from backend.market import direct_daily_arithmetic, learned_entry_models
+
+    monkeypatch.setattr(direct_daily_arithmetic, "_fit", forbidden)
+    monkeypatch.setattr(learned_entry_models, "_estimator", forbidden)
+
+    # Controlled synthetic histories exercise the learned positive/negative holding forecast.
+    panel = deepcopy(example[3])
+    for field in ("open", "close", "adj_close", "high", "low"):
+        getattr(panel, field)[-1, 0] *= 0.5 if held else 1.5
+    current = observation(example, panel=panel)
+    chosen = MarketConditionedTimedFundedPolicy(
+        forward.ForwardVolatilityHoldingReader(example[0], current), 10
+    )
+    shown = report(panel, example[4])
+    shown.sides = {"AAA": "long", "BBB": "long"}
+    shown.scores = example[4].astype(float)
+    closing = example[-1]
+    prices = {
+        name: float(shown.panel.close[-1, i])
+        for i, name in enumerate(shown.panel.tickers)
+    }
+    broker = ReplayBroker(
+        100000,
+        10,
+        initial_holdings={"AAA": held} if held else {},
+        initial_average_prices={"AAA": prices["AAA"] * 0.8},
+    )
+    broker.observe(closing, prices, False)
+    entry = market_daily.paper_trade(
+        shown,
+        tmp_path / "paper",
+        str(shown.panel.dates[-1]),
+        True,
+        client_factory=lambda: broker,
+        decision_at=closing,
+        feature_reader=journey.features,
+        holding_policy=chosen,
+    )
+    state = paper.load_state(tmp_path / "paper")
+    assert state.policy_version == MARKET_TIMED_POLICY
+    assert state.allocation_state["receipt"]["scenario"]["status"] == "available"
+    assert state.allocation_state["receipt"]["optimizer"]["certificate"]["certified"]
+    assert state.allocation_state["receipt"]["company_exits"] == []
+    assert shown.graded.grades[-1, 0] == 3
+    assert not entry["orders"] and len(state.pending) == 1
+    assert current.forecasts[0] < 0 if held else current.forecasts[0] > 0
+    intent = state.pending[0]
+    side = "sell" if held else "buy"
+    assert intent["symbol"] == "AAA" and intent["side"] == side
+    assert intent["execution_timing"] == intraday_orders.INTRADAY_TIMING
+    assert not broker.attempt_history
+
+    folder, model_sha, residual_sha, session = forward_timing
+    opening = datetime.combine(
+        session.astype(object), calendar.REGULAR_OPEN, calendar.NEW_YORK
+    )
+    completed, now = (
+        opening + timedelta(minutes=15),
+        opening + timedelta(minutes=15, seconds=6),
+    )
+    residuals = forward_probability_timing.load_residual_month(
+        folder / "residuals",
+        receipt_sha256=residual_sha,
+        observed_at=completed,
+    )
+    midpoint = prices["AAA"] * (1.2 if held else 0.8)
+    prefixes = {
+        name: {
+            "open": np.array([prices[name]]),
+            "high": np.array(
+                [max(prices[name], midpoint if name == "AAA" else prices[name])]
+            ),
+            "low": np.array(
+                [min(prices[name], midpoint if name == "AAA" else prices[name])]
+            ),
+            "close": np.array([midpoint if name == "AAA" else prices[name]]),
+            "volume": np.array([1000]),
+            "starts": [opening],
+            "prior_close": prices[name],
+            "published_at": completed + timedelta(seconds=1),
+        }
+        for name in shown.panel.tickers
+    }
+    forecast = forward_probability_timing.prepare_forecast(
+        shown.panel,
+        example[4],
+        example[5],
+        prefixes,
+        observed_at=completed + timedelta(seconds=1),
+        daily_as_of=closing,
+        model_folder=folder / "models",
+        model_receipt_sha256=model_sha,
+        residual_month=residuals,
+        clock=lambda: completed + timedelta(seconds=2),
+    )
+    quotes = {
+        "quotes": {
+            "AAA": {
+                "bid": midpoint * 0.999995,
+                "ask": midpoint * 1.000005,
+                "bid_size": 100,
+                "ask_size": 100,
+                "last": midpoint,
+                "open": prices["AAA"],
+                "bar": opening.isoformat(),
+                "as_of": (now - timedelta(seconds=1)).isoformat(),
+                "received_at": now.isoformat(),
+                "feed": "iex",
+                "basis": "raw_current_shares",
+                "next_open": prices["AAA"],
+                "next_open_at": completed.isoformat(),
+                "next_open_published_at": (
+                    completed + timedelta(seconds=1)
+                ).isoformat(),
+            }
+        }
+    }
+    broker.observe(now - timedelta(seconds=1), {"AAA": midpoint}, True)
+    account = forward_probability_timing.capture_account(
+        broker, completed, clock=lambda: now
+    )
+    trace = []
+    timing_reader = forward_probability_timing.build_forecast_reader(
+        forecast,
+        now,
+        quotes,
+        state.pending,
+        account,
+        10,
+        trace,
+        evidence_root=tmp_path / "paper",
+    )
+    broker.observe(now, {"AAA": midpoint}, True)
+    submitted = intraday_orders.send_due(
+        tmp_path / "paper", quotes, now, lambda: broker, timing_reader=timing_reader
+    )
+    assert len(submitted) == 1, trace
+    acknowledged = paper.load_state(tmp_path / "paper")
+    assert acknowledged.pending[0]["sent"]["qty"] == intent["qty"]
+    assert (
+        acknowledged.pending[0]["sent"]["forward_timing"]["receipt"]["inference"][
+            "sha256"
+        ]
+        == forecast.receipt_sha256
+    )
+    assert len(broker.attempt_history) == 1
+    assert not intraday_orders.send_due(
+        tmp_path / "paper", quotes, now, lambda: broker, timing_reader=timing_reader
+    )
+    assert len(broker.attempt_history) == 1
+    broker.flush(now, {"AAA": midpoint})
+    reconciled, settled = market_daily._reconcile(
+        broker, acknowledged, tmp_path / "paper", True
+    )
+    assert settled and not reconciled.pending
+    direction = -1 if held else 1
+    assert broker.ledger()["holdings"].get("AAA", 0) == held + direction * intent["qty"]
+    expected_cash = (
+        100000 - direction * intent["qty"] * midpoint - intent["qty"] * midpoint * 0.001
+    )
+    assert broker.ledger()["cash"] == pytest.approx(expected_cash)
+    assert expected_cash >= 0
+    assert not paper.load_state(tmp_path / "paper").pending
+    assert paper.load_state(tmp_path / "paper").policy_version == MARKET_TIMED_POLICY
 
 
 # Independently solve raw regressions and same-date residuals for either current source.
