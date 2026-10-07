@@ -1,5 +1,69 @@
 # Next session
 
+## 2026-10-06 — learned personal decision path connected and verified
+
+Goal ACTIVE/incomplete; human priority LIVE REPLACEMENT. Started cleanfba2c702
+on owned codex/learned-entry-risk-20261002. Fetched origin/mainf77d6e57;
+it remains an ancestor, shared main unchanged. No history rewrite, production
+configuration, real provider/account/order call or model-service change.
+
+VERIFIED checkpointc13bc770ec613a925e874f47168a50d549efa1f2. Actual authenticated
+body-only personal API now selects learned_personal_guidance ONLY for an explicit
+learned adopted record. It verifies reviewed release/source/evidence, dated plan,
+selected weights, configuration identity and current/next-session freshness.
+Configured failure cannot substitute incumbent1% timing or the legacy B exit.
+Current grade metadata is stamped from the actual selected nightly grade, with
+intraday readings separate. Saved personal history names the learned policy and
+hashes its actual source; raw account amounts/quantities remain excluded.
+
+Execution and personal guidance now share learned_live_timing.acquire and the
+original numeric forecast reader. No copied paper cash/positions or assumed sale
+proceeds: personal whole-share planning uses explicit manual equity/cash/holdings,
+conservative bid/ask references, fixed reviewed cost, original half-share funding
+planner and optional dated personal risk cap. Unknown cash/pending buys are
+blocked; marked uncovered holdings preserved, unmarked/fractional holdings
+unavailable. B at target is not a forced exit and profit alone is not a threshold.
+Company C exits and existing final session completion retain their separate path;
+an unavailable ordinary forecast cannot suppress a supported company exit.
+Before the first completed bar ordinary entries wait. Quotes/configuration/release
+are checked again at actual inference completion. No fixed percentage level is
+invented; frontend contract permits null learned levels. No model fitted at runtime.
+
+Exact committed source/pinned5c6c5605 image:424PASS/no skips21.49s,2419source files
+unchanged.25new cases exercise genuine synthetic published numeric heads and raw
+provider byte parsing, buy/trim/wait, cash, pending buys, event pause, company/final
+paths, protected holdings, original model failure and the authenticated POST.
+Current daily context is explicitly a supplied fixture, not a production proof.
+The first POST test correctly failed403 with a read-only fixture token; added the
+required write scope without changing middleware or weakening the assertion.
+Native TypeScript check PASS using Node24.19.0 and byte-identical lockfile
+60e8c54f0f24f85da4ed4e3180b26dac67c3849b761d57e4e265ec557c34c603.
+Temporary owned dependency symlink removed; shared dependencies unchanged.
+
+Proof /home/animallya96/scratch/learned-personal-c13bc770/proof:
+tests.log SHA10d295606483a37613ad3ab888411936e868a9d8fdd51a4bf40ddf31239cf8d7;
+commands.json SHA496ac38be93f6fb87adf92c2d7a07673e044f409c9f2bae970b412e7a62b9fb5;
+source-manifest.json SHA7e02bf45cc9751a60253b8d8be2232aff1beb93cd36eb923a38c4526baf129da.
+Scoped new/integration lint PASS. FAILED existing personal_history lint:3long
+unchanged limitation strings and old public HistoryConflict name. The exact same
+4findings were reproduced on startingHEAD in learned-personal-20261006/proof/
+baseline-history-lint.log; no rules suppressed or unrelated exception renamed.
+This is not a claim that whole-branch lint is clean. Original failed attempts kept.
+
+UNVERIFIED/next: paper board's unsent learned rows still use its old latch display;
+connect its current learned verdicts without replacing actual broker fill state.
+Validate learned decision rendering, chart/current-policy provenance, update the
+existing detailed diagram pair, then install ONLY a reviewed supported release
+and deploy via scripts/deploy.sh with actual API/browser/exact-artifact proof.
+No UI redesign, extra cohorts, repeated scores/refits, model gates for docs only,
+or automatic economic approval. API/tests/typecheck are NOT deployed UI proof.
+
+Original producer659a960b RUNNING/OOMfalse, sole watcher3169361 live; no completed
+saved economic verification. Never restart/mutate it, inspect partial scores or
+repeat old tests/cohorts. Live markere8e339e0 remains incumbent; these changes
+are on the pushed branch, not adopted on main. Full carried rule/SPY/QQQ evidence
+still determines promotion. Keep goal active until a supported release is live.
+
 ## 2026-10-06 — installed nightly learned sizing connected; adoption still pending
 
 Goal ACTIVE/incomplete. Human priority remains LIVE REPLACEMENT. Started at
