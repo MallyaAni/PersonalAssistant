@@ -1,5 +1,83 @@
 # Next session
 
+## 2026-10-06 — installed nightly learned sizing connected; adoption still pending
+
+Goal ACTIVE/incomplete. Human priority remains LIVE REPLACEMENT. Started at
+be729a04 on owned codex/learned-entry-risk-20261002 with only the two owned risk-bank
+drafts. origin/mainf77d6e57 and shared Spark main unchanged; still an ancestor.
+No active producer, frozen source, model service or production file modified.
+
+VERIFIED e6a58fb0c84ec84ef3b234b202c0470acaf4dc34: holding_risk_bank stores14typed
+numeric arrays and original manifests, never executable estimators or pickle.
+Full original constructor/lineage/purge checks run on publication and restoration;
+real availability is after serialization. Exact source/pinned5c6c5605 image:
+165PASS/no skips23.10s, Ruff clean,2415source files unchanged. Original missing
+module failure retained in holding-risk-bank-20261006/proof/missing-bank-loader.log.
+
+ONE actual original96stock/2953date bank publication, no fitting, numeric model
+prediction or account scoring. Authenticated existing helper/original input hashes;
+all restored arrays and three fixed joint distributions matched the original reader
+exactly (AAOI/COHR,STX/WDC,AVGO/NVDA all available). Source and original data unchanged.
+Root /home/animallya96/scratch/holding-risk-bank-20261006-e6a58fb0/proof;
+publication/bank.json SHA79b33d54253001ba0f907ae0b41f49c81ae436800e43e05b75cd5f58bb653cfe;
+bank.npz SHA fcb0f04c847a10a2842d26418b872bb1fc758a1d2752727eda72a25c8f122f7a.
+Actual availability2026-10-06T21:46:39.053868NY. publication-proof.json SHA
+f8ff1f7a54816d3ed5ea1da388aa924c1c5918e81d8fe6ac5d0ec6338da6284a.
+Docker initially left this new private publication root-owned; fixed ONLY its
+ownership via a bounded container. Before/after bytes identical; UID1000owns the
+0700folder and0600files. sudo unavailable is not a remaining blocker.
+
+VERIFIED b714b4e156a9aa0bee85a65a6864c8a67f0e84ce: learned_live_holding is connected
+to the ACTUAL default paper_trade caller (therefore normal nightly _run). With no
+installed config, incumbent behavior unchanged. Configured calls require an
+explicit hash-bound reviewed source/evidence approval, restored original bank,
+current monthly numeric head, matching execution heads/residual cohort/month/cost,
+exact current dated Yahoo bytes and completed-close window. All daily feature and
+raw decision-mark arrays bind to the actual report; no historical publication claim
+is made for its recomputed grade history. Current inference is privately retained
+with original hashes and actual post-serialization clock, no runtime head fitting.
+
+Installed policy admission requires the exact Alpaca paper endpoint and current
+broker clock, rechecks source/config/timing/cost before account effects. Other
+research policy callers retain the original ReplayBroker-only guard. Existing
+funding, protected holdings, company exits and FOMC/event dispatch are preserved.
+The same selected funded targets now populate paper metadata AND the dated desk
+record; event display targets come from actual quantities, not equal weights.
+A configured nightly failure stops before publishing an incumbent fallback record;
+the previous durable record remains available with its original date/freshness.
+
+Exact committed source/pinned image:250PASS/no skips26.26s, Ruff clean,2417source
+files unchanged. Proof /home/animallya96/scratch/installed-holding-20261006-b714b4e1/proof;
+tests.log SHAf917616119d80c0012ee15a4de14ccbbe18c864d80b6c0a0079e5318980fc6ef;
+commands.json SHAb30592342687591a32802151fe4bbed08e81336bcba4b0c2380590cefd985e82;
+source-manifest.json SHA6edd21c905ab061167b90d3d78bff6c688a982e9593f317144cbe39adaeeea43.
+Actual default selection/numeric current inference, paper HTTP-shaped reads, funded
+planner, locked intent persistence and recorded target identity tested privately.
+Fixtures supply an independently authenticated original-reader dependency and a
+synthetic execution-admission adapter; these are not a production end-to-end proof.
+Original formatter lint findings were fixed by extracting coherent helpers, not
+raising complexity allowances. installed-job-failure.log retains a fixture-only
+missing stance before the requested boundary; console formatting was isolated and
+the unchanged no-fallback assertion passes. No real orders/provider calls/account
+writes, no research replay/refit, no UI changes or deployment.
+
+UNVERIFIED/next bounded work: the personal API's _sizes_toward_targets still admits
+only the incumbent versions and its legacy timing latch. Align the adopted-model
+decision response with authenticated current learned observations and funded user
+cash/holdings; do not merely add the policy to same_book and apply the1%gate. Ensure
+historical rules curves and current-policy labels cannot imply the old allocator is
+the learned policy. Update the existing detailed diagram pair when that complete
+conditional flow is admitted (no new agent/service introduced here). Then install
+only a reviewed release and deploy through scripts/deploy.sh with actual API/browser
+and exact-artifact proof. Tests/numeric publication do NOT establish economic edge.
+
+Original producer659a960b remains RUNNING/OOMfalse; sole watcher3169361 live.
+No saved final economic verification exists. Never restart/change these sources,
+inspect/select partial scores, refit, rescore or repeat earlier cohorts. Live marker
+e8e339e0, shared mainf77d6e57 still unchanged. The current live rules have NOT switched.
+The full carried rule/SPY/QQQ comparison still determines whether this candidate
+qualifies; keep the goal active until an honest supported release is actually live.
+
 ## 2026-10-06 — installed learned timing connected to the locked sender
 
 Goal ACTIVE/incomplete. Human priority: focus on LIVE REPLACEMENT, not additional
