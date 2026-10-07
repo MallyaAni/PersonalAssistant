@@ -16,15 +16,30 @@ shares, paper isolation and the authenticated personal POST. Ruff clean. Exact
 7c2d78044a693425dd77d672f849a674cbf9f8f0f1383c67df50f534df8f5a51.
 Proof scratch/learned-risk-reason-20261007/proof-v3/acceptance.json SHA
 02f6ed5183a8f8348ffcd31a54a8428a355ff2a2c2ca5978e0616d29dc0b9afa;
-failed cases remain in proof-v1/test.log. This is targeted compatibility proof,
-not economic approval or completed deployment.
+failed cases remain in proof-v1/test.log. This is compatibility proof, not
+economic approval.
 
-NEXT: guarded backend release through scripts/deploy.sh, required gates and
-current API/browser/source verification. Both learned selectors remain absent;
-live31e23d08 still uses the incumbent. Original carried candidate659a960b and
-controls2832af72 remain running/OOMfalse, watcher3169361 live. Candidate has two
-completed cost accounts, final market-25-0 at1640 sessions/2024-08-07, observed
-04:52New York. No partial economics inspected. Preserve active sources and
+RELEASE VERIFIED: guarded scripts/deploy.sh terminal0 at92b11bb981fb42a580dd98f140c8aa440c462f3e;
+10442unit passes/93skips/6xfails and100real-model passes. Actual backend image
+b030999a3cdfecabdc04e41f0afa6610b536035a2ba0ae19b29913888b78ab89.
+Current authenticated GET desk/paper validates positive equity, nonnegative cash,
+nine whole-share holdings and one incumbent order; zero submitted orders. All28
+deployed runtime/protocol hashes match the accepted source. Model/research
+identities and frontend/gateway identities remain unchanged. Served gateway
+bundle matches the previously browser-verified31e23d08 artifact; no UI change.
+Post-deploy92b11bb9 ok. Independent proof
+scratch/learned-risk-release-20261007-92b11bb9/independent-release-proof.json SHA
+d44226aa247557fb26acaacaf01779353f7fb3febffd6442637bdc5d1b100921;
+deploy log SHA98507f7711e08b89a149dec1a6c0630f74030e5b735c412eae23740cecb5962c.
+Both selectors remain absent; this does not activate learned decisions. Do not
+redeploy for this docs-only handoff or repeat unchanged gates.
+
+NEXT: actual learned activation after original saved economic acceptance, then
+ordinary nightly publication and current broker/API/browser proof. Original
+candidate659a960b and controls2832af72 remain running/OOMfalse, watcher3169361
+live. Candidate has two completed cost accounts, final market-25-0 at1680
+sessions/2024-10-03, observed05:08New York. No partial economics inspected.
+Preserve active sources and
 original assets; do not refit, restart, tune, rescore or duplicate experiments.
 Complete saved-only integrity/economic review and supported held transition,
 then exact-source activation and ordinary nightly tagged publication. Inactive
