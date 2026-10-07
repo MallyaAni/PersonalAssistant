@@ -2,6 +2,25 @@
 
 ## 2026-10-07 — learned buy risk boundary repaired; activation remains priority
 
+Further live preparation VERIFIED: inactive activation plan now binds deployed
+92b11bb9 and exactly the reviewed personal-guidance source delta, preserving
+original asset receipts and cost=None/approval=false. Private plan
+scratch/learned-current-activation-plan-20261007-92b11bb9/activation-plan.json SHA
+d189a87b23be1d0627c634eab0f524fa25c066d02270b5d69e98b53cc882fdf6.
+Actual daily/intraday cron scripts use the guarded deploy checkout, not the older
+development checkout. All28 source hashes match in the host Python environment.
+Native saved-book acceptance additionally restores the original models/October6
+observation and passes the unchanged accounting assertions at10/25bp, producing
+identical integer orders to container acceptance, preserving SNDK, cash and
+shares. Only helper path bindings changed; no models fitted, provider requests,
+orders or production-data writes. Independent native proof under that root's
+native-proof/independent-acceptance.json SHA
+671ad06956c308d3c91d7eed836fce467451a326d3ee9290e1ddaa55553bd591.
+This is saved-book host-runtime proof, not current-broker acceptance or advantage.
+Original candidate/control handles and watcher still live/OOMfalse; final
+market-25-0 reached1700sessions/2024-10-31 at05:26NewYork. Do not rerun either
+acceptance, original scoring or deployment for this docs-only checkpoint.
+
 User priority: live replacement. Source checkpoint b10702d28e1e18c2b94dc37126c30050af4a4cd8
 changes only learned personal guidance and its regression tests. FAILED first:
 both exhausted-risk and unknown-reward buys correctly had zero executable size,
