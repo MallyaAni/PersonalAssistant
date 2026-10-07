@@ -1,5 +1,38 @@
 # Learned live replacement: completed candidate evidence
 
+## First verified cost-inclusive timing control
+
+The saved-only second snapshot verifies72closed controls, reuses71previously
+accepted controls and all3candidate accounts, and retains228pending. Only newly
+acknowledged boosting-10-0 is reconciled. No model or account is replayed.
+
+| Policy, 10bp per side, start0 | Total gain | CAGR | Maximum loss | Sharpe |
+| --- | ---: | ---: | ---: | ---: |
+| Combined learned allocation/holding candidate | 460.74% | 22.09% | 44.81% | 0.82 |
+| Original boosting execution timing control | 616.84% | 25.61% | 44.77% | 0.92 |
+
+The combined candidate is156.09gain percentage points below this timing-only
+control over the full2018-02-01..2026-09-30 account. Candidate-minus-control gains
+are−44.35points in2018–20,+4.14points in2021–26 and+0.34points in the reused recent
+window. These are paired differences at the same costs and start, not inferred
+by subtracting fees from a zero-cost result. Startup risk unavailability and
+different allocations remain material; this does not isolate a holding-exit effect.
+
+The matching10bp incumbent, Ridge, SPY and QQQ accounts are still absent from this
+snapshot. No cost-inclusive superiority to the live rule or benchmarks is claimed.
+One completed start also does not qualify adoption across all declared starts.
+The new all-clock self-continuation implementation has synthetic acceptance only;
+it did not produce either account in this table.
+
+Private `scratch/continuation-verifier-20261007/proof/incremental-02/results.json`
+SHA256`6e788ea5ebe961ebba64f1e1f55d7d773f8bd8c4a15430a0cc1ea14883befe09`;
+independent acceptance SHA256
+`b829aaea7cf0df0010a5198046767cb3b8a3256c74151393196f85f97f895757`.
+Actual verifier09880781 terminal0/OOMfalse, original image, network disabled,
+source/inputs read-only and only private proof writable. Verifier source and four
+critical helper hashes match their accepted checkpoint. All300IDs partition into
+72closed/228pending; old arithmetic is reused with identical bytes and scores.
+
 ## Recent execution receipts
 
 A saved-only review covers the declared August17–September30 development window

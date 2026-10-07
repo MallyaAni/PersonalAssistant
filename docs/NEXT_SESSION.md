@@ -1,5 +1,29 @@
 # Next session
 
+## 2026-10-07 — first paid timing control independently accepted
+
+Saved verification02 is COMPLETE, not active. Do not rerun its exclusive wrapper
+or reconcile boosting-10-0 again. Container098807816bc5d72ab1053bc81d991eda2a8b915010bfb415b645412b1852aab7
+terminal0/OOMfalse, original5c6cimage, networknone/ROroot/user1000. One private proof
+mount writable; engine/inputs read-only. Native source/runtime/grid/count/content
+acceptance PASS.72controls verified,71reused, one newly folded boosting-10-0;
+3candidate accounts reused,228pending, no fit/replay/adoption. Previous71proof
+6d3655b5 remains immutable predecessor, including its original source acceptance.
+
+New predecessor scratch/continuation-verifier-20261007/proof/incremental-02/results.json
+SHA6e788ea5ebe961ebba64f1e1f55d7d773f8bd8c4a15430a0cc1ea14883befe09;
+independent-acceptance.json SHAb829aaea7cf0df0010a5198046767cb3b8a3256c74151393196f85f97f895757.
+Next saved check03 must extend this72proof, not71or66; authenticate only newly
+acknowledged controls while retaining every missing pair and the full300grid.
+
+At10bp/start0, boosting timing control616.84%gain/25.61%CAGR/44.77%loss/.92Sharpe,
+combined holding/allocation candidate460.74/22.09/44.81/.82. Full paired difference
+candidate-minus-boosting−156.09gain points; early−44.35,later+4.14,recent+0.34.
+Do not conflate the new nonlinear model with either already completed account.
+Matching incumbent/Ridge/SPY/QQQ10bp accounts remain pending in this snapshot.
+No fee-adjusted adoption claim; incumbent live unchanged; goal ACTIVE/INCOMPLETE.
+Active continuation2ff5c7ea must remain unmodified and not be restarted.
+
 ## 2026-10-07 — all-clock nonlinear self-continuation implemented
 
 Previous goal turn PROGRESS: recent saved execution weakness documented.
