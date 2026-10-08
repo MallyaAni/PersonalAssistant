@@ -10,11 +10,50 @@ from backend.agents.trading.desk import paper
 from backend.market import holdings, learned_live_timing
 from backend.market import learned_holding_transition as transition
 from backend.market import learned_live_holding as runtime
+from backend.market.joint_funded_policy import RetainedMarketConditionedFundedPolicy
 from backend.tests.test_forward_execution import fitted as fitted
 from backend.tests.test_forward_execution import residual_archive as residual_archive
 from backend.tests.test_learned_live_holding import example as example
 from backend.tests.test_learned_live_holding import install
 from backend.tests.test_learned_personal_guidance import personal as personal
+
+
+# Historical and installed paths must use one holding decision, not parallel copies.
+@pytest.mark.parametrize("unsupported", [False, True])
+def test_shared_retained_plan_matches_installed_account_decision(
+    example, tmp_path, monkeypatch, unsupported
+):
+    installed, shown, _ = install_transition(tmp_path, example, monkeypatch)
+    if unsupported:
+        unavailable_holding(installed, monkeypatch)
+    historical = RetainedMarketConditionedFundedPolicy(installed.reader, 10)
+    prices = {name: float(shown.panel.close[-1, shown.panel.index(name)])
+              for name in ("AAA", "BBB")}
+    held, cash = {"AAA": 20, "BBB": 30}, 1000
+    equity = cash + sum(held[name] * prices[name] for name in held)
+    args = (str(shown.panel.dates[-1]), paper.PaperState(), equity, held,
+            prices, shown, cash, set())
+    actual = historical.plan(*args)
+    expected = installed.plan(*args)
+    assert actual == expected
+    assert historical.decide.__func__ is installed.decide.__func__
+    assert not isinstance(historical, runtime.InstalledHoldingPolicy)
+
+
+# The economic runner and independent verifier must agree on all declared accounts.
+def test_retained_policy_has_identical_fixed_funded_and_verifier_grids():
+    import numpy as np
+
+    from backend.cli import verify_joint_funded as verifier
+    from backend.market.joint_funded_accounts import candidate_grid
+
+    dates = np.arange("2018-01-01", "2026-10-01", dtype="datetime64[D]")
+    actual = candidate_grid(dates, policy=transition.POLICY)
+    assert actual == verifier.candidate_grid(dates, policy=transition.POLICY)
+    assert [(row["cost_bps"], row["start"]) for row in actual] == [
+        (0, 0), (10, 0), (25, 0),
+    ]
+    assert all(row["first_session"] == "2018-02-01" for row in actual)
 
 
 # Preserve actual shares and derive calibrated capital without anticipated sales.

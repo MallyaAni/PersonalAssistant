@@ -298,68 +298,11 @@ class InstalledHoldingPolicy(funded.MarketConditionedTimedFundedPolicy):
         self.reader.validate_clock(decision_at)
 
 
-# Preserve uncalibrated existing shares while optimizing a conservative wealth bound.
-class RetainedHoldingPolicy(InstalledHoldingPolicy):
-    version = transition.POLICY
-    protocol = transition.PROTOCOL
-
-    # Keep the original decision exact when its whole required book has usable risk.
-    def decide(self, session, report, equity, held, prices, cash, blocked):
-        targets, receipt = super().decide(
-            session, report, equity, held, prices, cash, blocked
-        )
-        if receipt["reason"] not in {
-            "joint_risk_unavailable",
-            "protected_held_risk_unavailable",
-        }:
-            return targets, receipt
-        exits = set(receipt["company_exits"])
-        protected = set(receipt["protected_holdings"])
-        unavailable = {}
-        day = int(np.flatnonzero(self.reader.dates == np.datetime64(session))[0])
-        for name, qty in held.items():
-            if qty <= 0 or name in exits:
-                continue
-            risk = self.reader.distribution(day, (name,)).receipt
-            if name in protected:
-                risk = {
-                    "status": "unavailable",
-                    "reason": "company_grade_unavailable",
-                    "symbols": [name],
-                    "decision_date": session,
-                }
-            if risk["status"] != "available":
-                unavailable[name] = risk
-        if not unavailable:
-            return targets, receipt
-        capital = transition.partition(equity, cash, held, prices, set(unavailable))
-        boundary = capital.receipt(unavailable)
-        if capital.modeled_equity <= 0:
-            receipt.update(transition=boundary, reason="no_calibrated_capital")
-            return targets, receipt
-        selected, known = super().decide(
-            session,
-            report,
-            capital.modeled_equity,
-            capital.modeled_holdings,
-            prices,
-            capital.cash,
-            blocked,
-        )
-        lifted = capital.lift(selected)
-        modeled_decision = {"targets": dict(selected), "receipt": dict(known)}
-        known.pop("optimizer", None)
-        known.update(
-            observed_equity=float(equity),
-            observed_cash=float(cash),
-            current_weights=receipt["current_weights"],
-            reserved_wealth=float(equity) - capital.modeled_equity,
-            company_exits=receipt["company_exits"],
-            transition=boundary,
-            targets=lifted,
-            modeled_decision=modeled_decision,
-        )
-        return lifted, known
+# Use the evaluated holding decision with the installed broker-admission guards.
+class RetainedHoldingPolicy(
+    funded.RetainedMarketConditionedFundedPolicy, InstalledHoldingPolicy
+):
+    pass
 
 
 # Authenticate one installed configuration for nightly and personal decision readers.

@@ -22,6 +22,74 @@ from backend.tests.test_live_policy_replay import fixture
 from backend.tests.test_verify_actual_policy_timing import direct_data
 
 
+# Isolate capital lifting from forecast fitting with an explicitly synthetic receipt.
+def retained_capital_case():
+    current = {"AAA": 0.2, "UNKNOWN": 0.5}
+    known = {
+        "policy": verifier.RETAINED_POLICY, "session": "2026-08-03",
+        "observed_cash": 300, "observed_equity": 500,
+        "grades": {"AAA": 3}, "buy_blocked": [], "company_exits": [],
+        "source_sha256": "a" * 64, "protocol_sha256": "b" * 64,
+        "cost_bps": 10, "horizon": verifier.HORIZON,
+        "status": "available", "reason": "joint_net_growth",
+        "current_weights": {"AAA": 0.4}, "targets": {"AAA": 0.2},
+    }
+    receipt = {
+        **known, "current_weights": current, "observed_equity": 1000,
+        "protected_holdings": ["UNKNOWN"], "reserved_wealth": 500,
+        "targets": {"AAA": 0.1, "UNKNOWN": 0.5},
+        "transition": {
+            "policy": verifier.RETAINED_POLICY, "observed_equity": 1000,
+            "observed_cash": 300, "modeled_equity": 500,
+            "modeled_fraction": 0.5, "reserved_capital": 500,
+            "retained_weights": {"UNKNOWN": 0.5},
+            "risk_unavailable": {"UNKNOWN": {
+                "status": "unavailable", "reason": "company_grade_unavailable",
+                "symbols": ["UNKNOWN"], "decision_date": "2026-08-03",
+            }}, "unknown_future_value_lower_bound": 0,
+            "sale_proceeds_are_funding": False,
+        },
+        "modeled_decision": {"targets": {"AAA": 0.2}, "receipt": known},
+    }
+    row = {"session": "2026-08-03", "nav": 1000, "cash": 300,
+           "holdings": {"AAA": 2, "UNKNOWN": 5}}
+    data = {"names": ("AAA", "UNKNOWN"), "close": np.array([[100., 100.]]),
+            "dates": np.array(["2026-08-03"], dtype="datetime64[D]")}
+    source = {"backend/market/joint_funded_policy.py": "a" * 64,
+              verifier.CANDIDATES[verifier.RETAINED_POLICY]: "b" * 64}
+    return receipt, row, data, source
+
+
+# Saved capital checks must recover modeled wealth without invoking allocation.
+def test_retained_capital_independent_reconciliation():
+    receipt, row, data, source = retained_capital_case()
+    known = verifier.retained_receipt(receipt, row, data, 0, source, None)
+    assert known["observed_equity"] == 500
+    assert known["targets"]["AAA"] == 0.2
+    assert receipt["targets"]["UNKNOWN"] * row["nav"] / 100 == 5
+
+
+# Rehashed receipts cannot hide fictitious funding or altered retained shares.
+@pytest.mark.parametrize(("path", "value"), [
+    (("transition", "modeled_equity"), 1000),
+    (("transition", "modeled_fraction"), 1),
+    (("transition", "sale_proceeds_are_funding"), True),
+    (("transition", "retained_weights", "UNKNOWN"), 0.4),
+    (("modeled_decision", "receipt", "observed_cash"), 800),
+    (("modeled_decision", "receipt", "current_weights", "AAA"), 0.2),
+    (("targets", "AAA"), 0.2),
+    (("targets", "UNKNOWN"), 0.4),
+])
+def test_retained_capital_tampering_is_refused(path, value):
+    receipt, row, data, source = retained_capital_case()
+    target = receipt
+    for name in path[:-1]:
+        target = target[name]
+    target[path[-1]] = value
+    with pytest.raises(ValueError, match="arithmetic differs|value differs|forecast"):
+        verifier.retained_receipt(receipt, row, data, 0, source, None)
+
+
 # Build actual private accounts for a declared policy; verification never calls this.
 def saved_case(tmp_path_factory, policy_type):
     root = tmp_path_factory.mktemp("saved-funded")

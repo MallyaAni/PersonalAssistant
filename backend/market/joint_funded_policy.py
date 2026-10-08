@@ -13,6 +13,7 @@ import numpy as np
 
 from backend.agents.trading.desk import allocation, funded_execution, paper
 from backend.market import adaptive_growth_policy as growth
+from backend.market import learned_holding_transition as transition
 from backend.market.direct_error_band import VolatilityHoldingReader
 from backend.market.forward_arithmetic import ForwardVolatilityHoldingReader
 
@@ -433,3 +434,66 @@ class MarketConditionedTimedFundedPolicy(ProbabilityTimedFundedPolicy):
             raise ValueError("Original or market-conditioned authentic reader required")
         MaturityFundedPolicy.__init__(self, reader, cost_bps)
         self.identity.update(timing)
+
+
+# Share retained-capital decisions between historical accounts and installed planning.
+class RetainedMarketConditionedFundedPolicy(MarketConditionedTimedFundedPolicy):
+    version = transition.POLICY
+    protocol = transition.PROTOCOL
+
+    # Keep unsupported shares while permitting reductions in the modeled book.
+    def decide(self, session, report, equity, held, prices, cash, blocked):
+        targets, receipt = super().decide(
+            session, report, equity, held, prices, cash, blocked
+        )
+        if receipt["reason"] not in {
+            "joint_risk_unavailable",
+            "protected_held_risk_unavailable",
+        }:
+            return targets, receipt
+        exits = set(receipt["company_exits"])
+        protected = set(receipt["protected_holdings"])
+        unavailable = {}
+        day = int(np.flatnonzero(self.reader.dates == np.datetime64(session))[0])
+        for name, qty in held.items():
+            if qty <= 0 or name in exits:
+                continue
+            risk = self.reader.distribution(day, (name,)).receipt
+            if name in protected:
+                risk = {
+                    "status": "unavailable",
+                    "reason": "company_grade_unavailable",
+                    "symbols": [name],
+                    "decision_date": session,
+                }
+            if risk["status"] != "available":
+                unavailable[name] = risk
+        if not unavailable:
+            return targets, receipt
+        capital = transition.partition(equity, cash, held, prices, set(unavailable))
+        boundary = capital.receipt(unavailable)
+        if capital.modeled_equity <= 0:
+            receipt.update(
+                transition=boundary, reason="no_calibrated_capital",
+                reserved_wealth=float(equity),
+            )
+            return targets, receipt
+        selected, known = super().decide(
+            session, report, capital.modeled_equity, capital.modeled_holdings,
+            prices, capital.cash, blocked,
+        )
+        lifted = capital.lift(selected)
+        modeled_decision = {"targets": dict(selected), "receipt": dict(known)}
+        known.pop("optimizer", None)
+        known.update(
+            observed_equity=float(equity),
+            observed_cash=float(cash),
+            current_weights=receipt["current_weights"],
+            reserved_wealth=float(equity) - capital.modeled_equity,
+            company_exits=receipt["company_exits"],
+            protected_holdings=receipt["protected_holdings"],
+            transition=boundary,
+            targets=lifted,
+            modeled_decision=modeled_decision,
+        )
+        return lifted, known

@@ -14,6 +14,7 @@ from backend.market import market_conditioned_holding as conditioned
 from backend.market.joint_funded_policy import (
     MARKET_TIMED_POLICY,
     MarketConditionedTimedFundedPolicy,
+    RetainedMarketConditionedFundedPolicy,
 )
 from backend.tests import test_joint_probability_timing as journey
 from backend.tests.test_forward_holding import example_factory, observation, report
@@ -122,8 +123,11 @@ def reader(example):
 
 # Carry genuine sizing and restored timing through durable buys and sells.
 @pytest.mark.parametrize("held", [0, 5000])
+@pytest.mark.parametrize("policy_type", [
+    MarketConditionedTimedFundedPolicy, RetainedMarketConditionedFundedPolicy,
+])
 def test_full_forward_policy_through_restored_timing_and_reconciliation(
-    example, forward_timing, tmp_path, monkeypatch, held
+    example, forward_timing, tmp_path, monkeypatch, held, policy_type
 ):
     from backend.agents.trading.desk import intraday_orders
     from backend.market.replay_broker import ReplayBroker
@@ -142,7 +146,7 @@ def test_full_forward_policy_through_restored_timing_and_reconciliation(
     for field in ("open", "close", "adj_close", "high", "low"):
         getattr(panel, field)[-1, 0] *= 0.5 if held else 1.5
     current = observation(example, panel=panel)
-    chosen = MarketConditionedTimedFundedPolicy(
+    chosen = policy_type(
         forward.ForwardVolatilityHoldingReader(example[0], current), 10
     )
     shown = report(panel, example[4])
@@ -171,7 +175,7 @@ def test_full_forward_policy_through_restored_timing_and_reconciliation(
         holding_policy=chosen,
     )
     state = paper.load_state(tmp_path / "paper")
-    assert state.policy_version == MARKET_TIMED_POLICY
+    assert state.policy_version == chosen.version
     assert state.allocation_state["receipt"]["scenario"]["status"] == "available"
     assert state.allocation_state["receipt"]["optimizer"]["certificate"]["certified"]
     assert state.allocation_state["receipt"]["company_exits"] == []
@@ -298,7 +302,7 @@ def test_full_forward_policy_through_restored_timing_and_reconciliation(
     assert broker.ledger()["cash"] == pytest.approx(expected_cash)
     assert expected_cash >= 0
     assert not paper.load_state(tmp_path / "paper").pending
-    assert paper.load_state(tmp_path / "paper").policy_version == MARKET_TIMED_POLICY
+    assert paper.load_state(tmp_path / "paper").policy_version == chosen.version
 
 
 # Independently solve raw regressions and same-date residuals for either current source.

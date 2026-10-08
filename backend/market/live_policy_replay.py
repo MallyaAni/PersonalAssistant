@@ -407,7 +407,10 @@ def nightly(
                 holding_policy=holding_policy,
             )
         remember_intents(root, intents)
-        status = {"status": "planned", "entry": plain(result)}
+        status = {
+            "status": "planned", "entry": plain(result),
+            "persisted_policy": paper.load_state(root).policy_version,
+        }
     except alpaca_trading.AlpacaTradingError as exc:
         # Broker incompleteness is missing evidence; programming failures still stop.
         status = {"status": "nightly_broker_unavailable", "reason": str(exc)}
@@ -456,6 +459,21 @@ def _holding_option(policy, cost_bps, reader_builder, provider, inputs):
         )
 
 
+# Admit a declared transition only on an observed session inside this account.
+def holding_transition(inputs, first, last, policy, start):
+    if start is None:
+        return None
+    if (policy is None or not isinstance(start, str)
+            or start not in tuple(map(str, inputs.dates[first:last + 1]))):
+        raise ValueError("Observed in-range holding transition session required")
+    return int(np.flatnonzero(inputs.dates == np.datetime64(start))[0])
+
+
+# Keep incumbent planning until the declared nightly transition.
+def policy_for_session(policy, switch, day):
+    return policy if switch is None or day >= switch else None
+
+
 # Carry a private account through real execution with optional named risk planning.
 def run_account(
     panel,
@@ -472,12 +490,15 @@ def run_account(
     report_builder=None,
     feature_reader=None,
     holding_policy=None,
+    holding_start=None,
     reuse_unchanged_state=True,
     on_session=None,
 ):
     root = Path(root)
     validate(panel, inputs, root, first, last, reader_builder, provider)
     _holding_option(holding_policy, cost_bps, reader_builder, provider, inputs)
+    switch = holding_transition(inputs, first, last, holding_policy, holding_start)
+
     if report_builder is None:
         from backend.market.live_policy_report import build as report_builder
     if not callable(report_builder):
@@ -501,7 +522,7 @@ def run_account(
         intents,
         logs,
         feature_reader,
-        holding_policy,
+        policy_for_session(holding_policy, switch, first - 1),
     )
     sessions.append(
         {
@@ -543,6 +564,7 @@ def run_account(
             reader = None
             if (
                 reader_builder is not None
+                and (switch is None or day > switch)
                 and now < entry_timing.session_clock(date)["final"]
             ):
                 reader = reader_builder(
@@ -608,7 +630,7 @@ def run_account(
             intents,
             logs,
             feature_reader,
-            holding_policy,
+            policy_for_session(holding_policy, switch, day),
         )
         sessions.append(
             {
@@ -626,6 +648,7 @@ def run_account(
             "last": str(inputs.dates[last]),
             "initial_cash": initial_cash,
             "cost_bps": cost_bps,
+            **({"holding_start": holding_start} if switch is not None else {}),
             "sessions": sessions,
             "intents": list(intents.values()),
             "observations": observations,

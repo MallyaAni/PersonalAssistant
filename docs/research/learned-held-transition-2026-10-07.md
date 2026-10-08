@@ -29,3 +29,21 @@ This is an account transition, not evidence of new timing or return superiority.
 Require accounting tests, original-path equivalence when no holdings are retained,
 actual recorded-book acceptance, completed original economic evidence, guarded
 deployment and current broker/API/browser verification before adoption.
+
+## October 8 carried-account screen, fixed before new results
+
+Use the original full 2018-02-01 through 2026-09-30 account and costs 0/10/25 bp.
+Keep the incumbent selection, funded ledger and timing through the nightly of
+2019-02-28. Switch nightly holding planning on **2019-03-01**; this is the first
+mature allocation month identified in the original risk-availability audit, not
+a date selected for its return. Learned execution begins with that nightly's
+subsequent intents. Cash, whole shares, acquisition bases, corporate-action claims,
+order counters and event state carry through the same broker and paper state;
+there is no reset to cash and no replay of a fabricated opening portfolio.
+
+Independently check the unchanged incumbent prefix, transition admission, retained
+capital and all saved ledger/forecast receipts. Reuse the already verified exact
+rule/SPY/QQQ references; do not regenerate controls, refit base heads or change
+thresholds. Keep every original full/early/later/reused-recent window, including
+missing marks. This three-account screen and previously exposed recent data are
+not sufficient evidence for adoption or a newly unseen holdout.

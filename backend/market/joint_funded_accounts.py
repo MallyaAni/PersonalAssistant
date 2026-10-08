@@ -27,7 +27,9 @@ from backend.market.joint_funded_policy import (
     JointFundedPolicy,
     MarketConditionedTimedFundedPolicy,
     MaturityFundedPolicy,
+    RetainedMarketConditionedFundedPolicy,
 )
+from backend.market.learned_holding_transition import POLICY as RETAINED_POLICY
 from backend.market.live_policy_features import FeatureCache
 from backend.market.live_policy_replay import _holding_option, plain, run_account
 from backend.market.live_probability_timing import build_reader
@@ -40,6 +42,7 @@ def _variant(policy):
         MATURITY_POLICY: (MaturityFundedPolicy, "maturity"),
         CALIBRATED_POLICY: (CalibratedMaturityFundedPolicy, "calibrated"),
         MARKET_TIMED_POLICY: (MarketConditionedTimedFundedPolicy, "market"),
+        RETAINED_POLICY: (RetainedMarketConditionedFundedPolicy, "retained"),
     }
     if not isinstance(policy, str) or policy not in options:
         raise ValueError("Registered funded candidate required")
@@ -54,14 +57,16 @@ def candidate_grid(dates, *, policy=POLICY):
         for row in account_grid(dates)
         if row["arm"] == "rule"
         and (
-            policy not in (CALIBRATED_POLICY, MARKET_TIMED_POLICY) or row["start"] == 0
+            policy not in (CALIBRATED_POLICY, MARKET_TIMED_POLICY, RETAINED_POLICY)
+            or row["start"] == 0
         )
     ]
 
 
 # Carry fixed private accounts with the admitted timing model and retain missing NAV.
 def evaluate(
-    panel, raw, cubes, reader, output, source_identity, *, policy=POLICY, timing=None
+    panel, raw, cubes, reader, output, source_identity, *, policy=POLICY, timing=None,
+    holding_start=None,
 ):
     policy_type, _ = _variant(policy)
     if not np.array_equal(panel.dates, reader.dates) or tuple(panel.tickers) != tuple(
@@ -90,6 +95,7 @@ def evaluate(
             "accounts": grid,
             "raw_provenance": plain(raw.provenance),
             "adoption_eligible": False,
+            "holding_start": holding_start,
         },
     )
     cache = FeatureCache(source_identity["manifest_sha256"])
@@ -122,6 +128,7 @@ def evaluate(
             spec["last"],
             spec["cost_bps"],
             holding_policy=policy_type(reader, spec["cost_bps"]),
+            holding_start=holding_start,
             reader_builder=builder,
             provider=provider,
             feature_reader=cache,

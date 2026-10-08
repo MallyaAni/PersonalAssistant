@@ -32,6 +32,9 @@ MARKET_PROTOCOL = "docs/research/market-conditioned-holding-plan-2026-10-05.md"
 MARKET_TIMED_POLICY = (
     "joint-stock-risk-funded/5-market-conditioned-probability-timing-research"
 )
+RETAINED_POLICY = (
+    "joint-stock-risk-funded/6-retained-holdings-probability-timing-research"
+)
 CANDIDATES = {
     POLICY: PROTOCOL,
     MATURITY_POLICY: "docs/research/risk-qualified-funded-plan-2026-10-04.md",
@@ -39,6 +42,7 @@ CANDIDATES = {
         "docs/research/conditional-holding-calibration-plan-2026-10-05.md"
     ),
     MARKET_TIMED_POLICY: MARKET_PROTOCOL,
+    RETAINED_POLICY: "docs/research/learned-held-transition-2026-10-07.md",
 }
 RECEIPT_PROTOCOLS = dict(CANDIDATES)
 
@@ -396,13 +400,15 @@ def candidate_grid(dates, *, policy=POLICY):
         MATURITY_POLICY: "maturity",
         CALIBRATED_POLICY: "calibrated",
         MARKET_TIMED_POLICY: "market",
+        RETAINED_POLICY: "retained",
     }[policy]
     return [
         {**row, "arm": policy, "id": f"{prefix}-{row['cost_bps']}-{row['start']}"}
         for row in ledger.fixed_grid(dates)
         if row["arm"] == "rule"
         and (
-            policy not in (CALIBRATED_POLICY, MARKET_TIMED_POLICY) or row["start"] == 0
+            policy not in (CALIBRATED_POLICY, MARKET_TIMED_POLICY, RETAINED_POLICY)
+            or row["start"] == 0
         )
     ]
 
@@ -679,7 +685,7 @@ def qualification_receipt(receipt, day, dates, *, policy=MATURITY_POLICY):
                         ("unsupported_log_calibration",)
                         if policy == CALIBRATED_POLICY
                         else ("unsupported_market_calibration",)
-                        if policy == MARKET_TIMED_POLICY
+                        if policy in (MARKET_TIMED_POLICY, RETAINED_POLICY)
                         else ()
                     ),
                 },
@@ -729,7 +735,7 @@ def held_weights(row, index, data):
 
 # Check optional calibration provenance with the original bank for market conditioning.
 def candidate_calibration(receipt, source, policy, *, market_calibration=None):
-    if policy in (CALIBRATED_POLICY, MARKET_TIMED_POLICY):
+    if policy in (CALIBRATED_POLICY, MARKET_TIMED_POLICY, RETAINED_POLICY):
         samples = [receipt.get("scenario")]
         samples.extend(
             entry.get("risk")
@@ -759,7 +765,7 @@ def candidate_calibration(receipt, source, policy, *, market_calibration=None):
 
 # Check market-policy routing while leaving registered next-open receipts unchanged.
 def candidate_order_routing(account, entry, receipt, source, day, policy):
-    if policy != MARKET_TIMED_POLICY:
+    if policy not in (MARKET_TIMED_POLICY, RETAINED_POLICY):
         return
     timing = "live-probability-timing/1-research"
     ledger.same(receipt["timing_policy"], timing)
@@ -797,11 +803,153 @@ def candidate_order_routing(account, entry, receipt, source, day, policy):
         )
 
 
+# Reconcile retained shares and modeled targets without calling the holding planner.
+def retained_receipt(receipt, row, data, index, source, market_calibration):
+    boundary = receipt["transition"]
+    ledger.require(
+        set(boundary) == {
+            "policy", "observed_equity", "observed_cash", "modeled_equity",
+            "modeled_fraction", "reserved_capital", "retained_weights",
+            "risk_unavailable", "unknown_future_value_lower_bound",
+            "sale_proceeds_are_funding",
+        }, "Exact retained-capital receipt required",
+    )
+    ledger.same(boundary["policy"], RETAINED_POLICY)
+    ledger.same(boundary["observed_equity"], row["nav"])
+    ledger.same(boundary["observed_cash"], row["cash"])
+    ledger.require(
+        boundary["sale_proceeds_are_funding"] is False
+        and type(boundary["unknown_future_value_lower_bound"]) in (int, float)
+        and boundary["unknown_future_value_lower_bound"] == 0,
+        "Unsupported holdings cannot supply proceeds or a forecast",
+    )
+    current = held_weights(row, index, data)
+    retained = boundary["retained_weights"]
+    missing = boundary["risk_unavailable"]
+    ledger.require(
+        isinstance(retained, dict) and retained
+        and set(retained) == set(missing)
+        and set(retained).issubset(current)
+        and not set(retained).intersection(receipt["company_exits"]),
+        "Retained shares must be existing non-exit holdings",
+    )
+    ledger.same(retained, {name: current[name] for name in retained})
+    for name, sample in missing.items():
+        ledger.same(sample["symbols"], [name])
+        ledger.same(sample["decision_date"], row["session"])
+        ledger.same(sample["status"], "unavailable")
+        if name in receipt["protected_holdings"]:
+            ledger.same(sample["reason"], "company_grade_unavailable")
+        else:
+            scenario_receipt(sample, row["session"], data["dates"])
+            ledger.require(
+                type(market_calibration) is MarketCalibrationVerifier,
+                "Original market risk evidence required for retained holdings",
+            )
+            market_calibration.identity(sample)
+            if sample["reason"] == "insufficient_joint_history":
+                ledger.require(sample["joint_dates"] < 252, "Fabricated risk shortage")
+    capital = row["cash"] + sum(
+        weight * row["nav"] for name, weight in current.items() if name not in retained
+    )
+    ledger.same(boundary["modeled_equity"], capital)
+    ledger.same(boundary["modeled_fraction"], capital / row["nav"])
+    ledger.same(boundary["reserved_capital"], row["nav"] - capital)
+    ledger.same(receipt["reserved_wealth"], row["nav"] - capital)
+    if capital == 0:
+        ledger.same(receipt["reason"], "no_calibrated_capital")
+        ledger.same(receipt["status"], "unavailable")
+        ledger.require("modeled_decision" not in receipt, "Invented modeled wealth")
+        ledger.same(receipt["targets"], {
+            name: weight for name, weight in current.items()
+            if name not in receipt["company_exits"]
+        }, "Zero-capital holdings changed")
+        return None
+    decision = receipt["modeled_decision"]
+    known = decision["receipt"]
+    ledger.same(known["policy"], RETAINED_POLICY)
+    ledger.same(known["session"], row["session"])
+    ledger.same(known["observed_cash"], row["cash"])
+    ledger.same(known["observed_equity"], capital)
+    ledger.same(known["grades"], receipt["grades"])
+    ledger.same(known["buy_blocked"], receipt["buy_blocked"])
+    ledger.same(known["company_exits"], receipt["company_exits"])
+    ledger.same(known["source_sha256"], source["backend/market/joint_funded_policy.py"])
+    ledger.same(known["protocol_sha256"], source[CANDIDATES[RETAINED_POLICY]])
+    ledger.same(known["cost_bps"], receipt["cost_bps"])
+    ledger.same(known["horizon"], HORIZON)
+    ledger.same(known["status"], receipt["status"])
+    ledger.same(known["reason"], receipt["reason"])
+    ledger.same(known["current_weights"], {
+        name: weight * row["nav"] / capital
+        for name, weight in current.items() if name not in retained
+    })
+    ledger.same(decision["targets"], known["targets"])
+    ledger.require(
+        not any(known["targets"].get(name, 0) > 0 for name in retained),
+        "Retained holdings cannot become modeled purchases",
+    )
+    lifted = {name: weight * capital / row["nav"]
+              for name, weight in known["targets"].items()}
+    lifted.update(retained)
+    ledger.same(receipt["targets"], lifted, "Full-account target lifting")
+    return known
+
+
+# Check the modeled risk separately after reconciling full-account retained capital.
+def candidate_risk(receipt, row, data, index, source, policy, market_calibration):
+    checked = receipt
+    if "transition" in receipt:
+        ledger.same(policy, RETAINED_POLICY, "Retained receipt policy")
+        checked = retained_receipt(
+            receipt, row, data, index, source, market_calibration
+        )
+    if checked is None:
+        return
+    candidate_calibration(
+        checked, source, policy, market_calibration=market_calibration
+    )
+    scenario_receipt(checked.get("scenario"), row["session"], data["dates"])
+    qualification_receipt(checked, row["session"], data["dates"], policy=policy)
+    if checked["status"] == "available" and checked.get("optimizer") is not None:
+        optimizer = checked["optimizer"]
+        ledger.require(
+            optimizer["status"] == "optimized"
+            and optimizer["certificate"]["certified"] is True,
+            "Missing optimizer certificate",
+        )
+
+
+# Verify that the carried prefix contains only the unchanged incumbent planner.
+def carried_incumbent(night, day, holding_start):
+    if holding_start is None or day >= holding_start:
+        return False
+    ledger.same(night["persisted_policy"], "graded-equal-weight/5", "Carried incumbent")
+    ledger.require("joint_funded" not in night["entry"], "Pre-transition learned plan")
+    return True
+
+
+# Reconcile marked holdings without treating reserved claims as spendable funding.
+def observed_holdings(receipt, row, index, data):
+    if row["nav"] is None or row["nav"] <= 0:
+        return
+    expected = held_weights(row, index, data)
+    if receipt["reason"] != "held_mark_unavailable":
+        ledger.same(receipt["current_weights"], expected, "observed held weights")
+        if "transition" not in receipt:
+            ledger.same(
+                receipt["reserved_wealth"], row["nav"] - row["price_nav"],
+                "unspendable wealth",
+            )
+
+
 # Check ordinary receipts against original permissions and observed funded accounts.
 def candidate_receipts(
-    account, data, source, *, policy=POLICY, market_calibration=None
+    account, data, source, *, policy=POLICY, market_calibration=None,
+    holding_start=None,
 ):
     ledger.require(policy in RECEIPT_PROTOCOLS, "Registered receipt policy required")
+    ledger.same(account.get("holding_start"), holding_start, "Declared holding start")
     sessions = {row["session"]: row for row in account["sessions"]}
     checked = events = 0
     for night in account["nightlies"]:
@@ -821,6 +969,8 @@ def candidate_receipts(
             )
             continue
         entry = night["entry"]
+        if carried_incumbent(night, day, holding_start):
+            continue
         ledger.same(entry["policy"], policy, "nightly policy")
         ledger.same(entry["session"], day)
         state = entry["joint_funded"]
@@ -837,9 +987,6 @@ def candidate_receipts(
             receipt["source_sha256"], source["backend/market/joint_funded_policy.py"]
         )
         ledger.same(receipt["protocol_sha256"], source[RECEIPT_PROTOCOLS[policy]])
-        candidate_calibration(
-            receipt, source, policy, market_calibration=market_calibration
-        )
         candidate_order_routing(account, entry, receipt, source, day, policy)
         ledger.same(receipt["horizon"], HORIZON)
         ledger.same(receipt["session"], day)
@@ -865,15 +1012,7 @@ def candidate_receipts(
         protected = sorted(name for name in weights if name not in grades)
         ledger.same(receipt["company_exits"], exits)
         ledger.same(receipt["protected_holdings"], protected)
-        if row["nav"] is not None and row["nav"] > 0:
-            expected = held_weights(row, index, data)
-            if receipt["reason"] != "held_mark_unavailable":
-                ledger.same(weights, expected, "observed held weights")
-                ledger.same(
-                    receipt["reserved_wealth"],
-                    row["nav"] - row["price_nav"],
-                    "unspendable wealth",
-                )
+        observed_holdings(receipt, row, index, data)
         targets = receipt["targets"]
         ledger.require(
             all(np.isfinite(value) and value >= 0 for value in targets.values()),
@@ -888,15 +1027,7 @@ def candidate_receipts(
             )
             if name in protected:
                 ledger.same(target, old, "Protected holding changed")
-        scenario_receipt(receipt.get("scenario"), day, data["dates"])
-        qualification_receipt(receipt, day, data["dates"], policy=policy)
-        if receipt["status"] == "available" and receipt.get("optimizer") is not None:
-            optimizer = receipt["optimizer"]
-            ledger.require(
-                optimizer["status"] == "optimized"
-                and optimizer["certificate"]["certified"] is True,
-                "Missing optimizer certificate",
-            )
+        candidate_risk(receipt, row, data, index, source, policy, market_calibration)
         if receipt.get("execution") is not None:
             ledger.require(
                 receipt["execution"]["projection_is_fill"] is False,
@@ -916,6 +1047,7 @@ def verify_rows(
     source=None,
     policy=POLICY,
     market_calibration=None,
+    holding_start=None,
 ):
     checked = []
     for row in rows:
@@ -942,6 +1074,7 @@ def verify_rows(
                 source,
                 policy=policy,
                 market_calibration=market_calibration,
+                holding_start=holding_start,
             )
             if candidate
             else {}
@@ -1045,6 +1178,14 @@ def verify(config, output, *, market_calibration=None):
     identity_hash = ledger.digest(study / "identity.json")
     input_hash = ledger.digest(cstudy / "inputs.json")
     policy = config.get("candidate_policy", POLICY)
+    holding_start = config.get("holding_start")
+    ledger.same(inputs.get("holding_start"), holding_start, "Input holding start")
+    if holding_start is not None:
+        ledger.require(
+            policy == RETAINED_POLICY and holding_start == "2019-03-01",
+            "Preregistered carried transition required",
+        )
+        ledger.same(admission["holding_start"], holding_start, "Admitted transition")
     ledger.require(
         policy in CANDIDATES
         and inputs["policy"] == policy
@@ -1053,7 +1194,7 @@ def verify(config, output, *, market_calibration=None):
     )
     if policy != POLICY:
         ledger.same(admission["candidate_policy"], policy, "Variant admission")
-    if policy == MARKET_TIMED_POLICY:
+    if policy in (MARKET_TIMED_POLICY, RETAINED_POLICY):
         ledger.require(
             type(market_calibration) is MarketCalibrationVerifier,
             "Original authenticated market calibration bank required",
@@ -1089,7 +1230,10 @@ def verify(config, output, *, market_calibration=None):
     ledger.require(
         admission["models_fitted"] == admission["models_restored"] == 0
         and admission["candidate_accounts"]
-        == (3 if policy in (CALIBRATED_POLICY, MARKET_TIMED_POLICY) else 60)
+        == (
+            3 if policy in (CALIBRATED_POLICY, MARKET_TIMED_POLICY, RETAINED_POLICY)
+            else 60
+        )
         and admission["adoption_eligible"] is False,
         "Candidate input limitations differ",
     )
@@ -1115,7 +1259,7 @@ def verify(config, output, *, market_calibration=None):
             archive["grades"].copy(),
             archive["eligible"].copy(),
         )
-    if policy == MARKET_TIMED_POLICY:
+    if policy in (MARKET_TIMED_POLICY, RETAINED_POLICY):
         ledger.same(market_calibration.symbols, tuple(data["names"]))
         ledger.require(
             np.array_equal(market_calibration.bank["dates"], data["dates"]),
@@ -1137,6 +1281,7 @@ def verify(config, output, *, market_calibration=None):
         source=manifests["candidate"]["files"],
         policy=policy,
         market_calibration=market_calibration,
+        holding_start=holding_start,
     )
     right = verify_rows(study, controls, data)
     for role in ("candidate", "control"):

@@ -20,7 +20,10 @@ from backend.market import market_conditioned_calibration as model
 from backend.market.calendar import NEW_YORK, session_close
 from backend.market.daily_arithmetic_bridge import _hash
 from backend.market.joint_funded_accounts import candidate_grid
-from backend.market.joint_funded_policy import MarketConditionedTimedFundedPolicy
+from backend.market.joint_funded_policy import (
+    MarketConditionedTimedFundedPolicy,
+    RetainedMarketConditionedFundedPolicy,
+)
 from backend.market.live_execution_inputs import prepare
 from backend.market.live_policy_replay import run_account
 from backend.market.live_probability_timing import build_reader
@@ -340,11 +343,10 @@ def test_current_query_outside_fitted_span_refused():
         MarketCalibrationVerifier(bank, source).check(sample)
 
 
-# Persist a genuine private market-policy replay with explicitly synthetic inputs.
-@pytest.fixture(scope="module")
-def market_account(reader, timing, tmp_path_factory):
+# Persist a genuine private replay using the selected shared holding planner.
+def saved_market_account(reader, timing, tmp_path_factory, policy_type):
     panel, raw, cubes = fixture(tuple(map(str, reader.dates)))
-    policy = MarketConditionedTimedFundedPolicy(reader, 10)
+    policy = policy_type(reader, 10)
     first, last = len(reader.dates) - 2, len(reader.dates) - 1
     account = run_account(
         panel,
@@ -365,6 +367,7 @@ def market_account(reader, timing, tmp_path_factory):
         "backend/market/live_probability_timing.py",
         "backend/market/market_conditioned_holding.py",
         "backend/market/market_conditioned_calibration.py",
+        "docs/research/market-conditioned-holding-plan-2026-10-05.md",
         policy.protocol,
     )
     source = {
@@ -384,6 +387,93 @@ def market_account(reader, timing, tmp_path_factory):
         )
     }
     return account, data, source, bank
+
+
+# Preserve the original policy's actual saved acceptance accounts.
+@pytest.fixture(scope="module")
+def market_account(reader, timing, tmp_path_factory):
+    return saved_market_account(
+        reader, timing, tmp_path_factory, MarketConditionedTimedFundedPolicy
+    )
+
+
+# Exercise the same shared retained planner through the actual replay and sender.
+@pytest.fixture(scope="module")
+def retained_account(reader, timing, tmp_path_factory):
+    return saved_market_account(
+        reader, timing, tmp_path_factory, RetainedMarketConditionedFundedPolicy
+    )
+
+
+# Independent verification must accept the genuine V6 ledger without producer work.
+def test_retained_actual_account_saved_proof(retained_account, monkeypatch):
+    account, data, source, bank = retained_account
+
+    # Reconstructing trades or refitting cannot substitute for archived evidence.
+    def forbidden(*args, **kwargs):
+        pytest.fail("Saved verification called the producer")
+
+    monkeypatch.setattr(RetainedMarketConditionedFundedPolicy, "decide", forbidden)
+    monkeypatch.setattr(model, "fit_market_log", forbidden)
+    monkeypatch.setattr(model.MarketLogFit, "predict", forbidden)
+    counts = verifier.candidate_receipts(
+        account, data, source, policy=account["policy"],
+        market_calibration=MarketCalibrationVerifier(bank, source),
+    )
+    assert counts["ordinary_receipts"] == 3
+    assert account["policy"] == verifier.RETAINED_POLICY
+
+
+# A carried migration must preserve the real incumbent prefix and existing shares.
+def test_retained_transition_carries_incumbent_holdings(
+    reader, timing, tmp_path, monkeypatch, retained_account
+):
+    panel, raw, cubes = fixture(tuple(map(str, reader.dates)))
+    first, last = len(reader.dates) - 3, len(reader.dates) - 1
+    cutoff = str(reader.dates[first])
+    incumbent = run_account(
+        panel, raw, cubes, tmp_path / "incumbent", first, last, 10,
+        feature_reader=journey.features,
+    )
+    chosen = RetainedMarketConditionedFundedPolicy(reader, 10)
+    carried = run_account(
+        panel, raw, cubes, tmp_path / "carried", first, last, 10,
+        holding_policy=chosen, holding_start=cutoff,
+        feature_reader=journey.features, reader_builder=build_reader,
+        provider=timing.provider,
+    )
+    assert carried["sessions"][0] == incumbent["sessions"][0]
+    assert carried["sessions"][1]["holdings"] == incumbent["sessions"][1]["holdings"]
+    assert carried["sessions"][1]["holdings"]["AAA"] > 0
+    assert carried["sessions"][1]["cash"] == incumbent["sessions"][1]["cash"]
+    assert carried["nightlies"][0] == incumbent["nightlies"][0]
+    assert carried["nightlies"][1]["entry"]["policy"] == chosen.version
+    assert carried["holding_start"] == cutoff
+    _, data, source, bank = retained_account
+    counts = verifier.candidate_receipts(
+        carried, data, source, policy=chosen.version, holding_start=cutoff,
+        market_calibration=MarketCalibrationVerifier(bank, source),
+    )
+    assert counts["ordinary_receipts"] == 3
+    changed = deepcopy(carried)
+    changed["nightlies"][0]["persisted_policy"] = chosen.version
+    with pytest.raises(ValueError, match="Carried incumbent"):
+        verifier.candidate_receipts(
+            changed, data, source, policy=chosen.version, holding_start=cutoff,
+            market_calibration=MarketCalibrationVerifier(bank, source),
+        )
+
+
+# An archive cannot move its transition forward to evade modeled-receipt validation.
+def test_unadmitted_transition_is_refused(retained_account):
+    original, data, source, bank = retained_account
+    account = deepcopy(original)
+    account["holding_start"] = "2099-01-01"
+    with pytest.raises(ValueError, match="Declared holding start"):
+        verifier.candidate_receipts(
+            account, data, source, policy=account["policy"],
+            market_calibration=MarketCalibrationVerifier(bank, source),
+        )
 
 
 # The new saved account path must consume the authenticated bank without replaying it.
