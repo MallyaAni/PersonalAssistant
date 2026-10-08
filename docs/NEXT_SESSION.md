@@ -1,5 +1,33 @@
 # Next session
 
+## 2026-10-08 — paper loss attributed; continuation screen complete
+
+Latest user reports about $4,000 lost today in the PAPER account. VERIFIED at
+14:12:53 New York: broker equity102828.66 versus last_equity106760.96,
+day-3932.30/-3.6833%; sum held-position intraday P&L-3932.305, within half cent.
+Complete today's fills empty, no newly submitted October8 orders. Loss is existing
+holdings. Cash0.98%,NTAP17.54%+SMCI15.03%; largest contributors SMCI-947.175,
+ALAB-714.42,SNDK-508.65. October7 nightly held grades allA/A+, ordinary pending
+onlyGEVbuy1, no protective exit/trim. Rebalance13sessions away; recorded trim
+actions are target differences, not actual planned orders. Timing replacement
+alone cannot create the missing holding/exposure reductions. Do not hindsight-tune
+on today's moves or claim a new policy would prevent them.
+
+Source-matched production92b11bb9/imageb030999a/container1902cd4f, unchanged
+graded-equal-weight/5. Strict paper-host GET-only capture, private original bytes
+and clocks; no broker writes, production-data changes, model calls or UI edits.
+Detailed report docs/research/paper-giveback-and-continuation-screen-2026-10-08.md.
+Closing-day value/new joint policy/live replacement remain UNVERIFIED/INCOMPLETE.
+
+New timing accounts and independent saved-ledger proof are now COMPLETE:
+736e55e7 andf9c4b21d terminal0/OOMfalse. Actual result/completion hashes agree:
+1e416244d6012217a71841b096821c3f400cf651ca567b73f04a64e12ca5eac0.
+All three costs, same2018-02-01..2026-09-30 start0: timing gains707.71/576.29/
+406.23% vsrule763.51/603.10/432.96% at0/10/25bp. Full36comparisons retained.
+Saved proof adoptionfalse, zero fits/replays; no restart, rescore or new cost/window.
+These change timing only, unchanged sizing/holding exits; not a qualified current
+live replacement. Existing300-account producer still active and untouched.
+
 ## 2026-10-08 — funded continuation path implemented and actual accounts started
 
 Objective remains a qualified live entry/holding-exit/sizing replacement, INCOMPLETE.
