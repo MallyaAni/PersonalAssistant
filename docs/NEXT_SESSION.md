@@ -1,5 +1,51 @@
 # Next session
 
+## 2026-10-08 — retained holding planner shared with carried-account evaluation
+
+Latest user priority: live replacement ASAP, including holding/exposure reductions
+while grades remain strong. Objective INCOMPLETE; production remains92b11bb9,
+graded-equal-weight/5, no learned activation or deployment this turn.
+
+VERIFIED checkpoint94b8b740bf674704950ea6e25ad41138749046b6 pushed to GitHub
+main using Spark's existing repository authentication after Mac DNS failed.
+Desktop/shared Spark working trees preserved; publication did not change their
+checked-out files or restart anything. Shared V6 decide now serves historical
+and installed consumers; installed clock/account/release guards remain. Unknown
+holdings retain actual shares, no fabricated funding. Independent receipt checker
+reconciles retained capital, nested modeled risk and lifted full-account targets.
+
+Exact source-mounted native image5c6c:258pass,0skip,28.18seconds,Ruff clean.
+Container3c17c5d51ee5ea5ea6b18ba7d9c5442419b1eca5739ebcfed36fc386879bd415,
+networknone/ROroot/user1000/CPU1/memory4GB, all sourceRO. Root scratch/
+held-risk-shared-acceptance-20261008-test06. Manifest SHA
+2a525a541546de5a090432660073a7eab7c179da0949c1943b22f3baca00dc80;
+pytest log51b4b45e5a19d5100109abd9a3fc5136f14cc5fcc266d55250e1616d645e76eb.
+Acceptance includes real A+ model-driven sell through sender/reconciliation,
+installed/historical exact shared decision, carried cash/shares from incumbent,
+independent saved V6 model proof and refusal of forged transition admission.
+Earlier complexity/style failures and the missing legacy entry-policy field were
+preserved/corrected without loosening assertions; prefix proof now reads the
+actual persisted paper policy rather than assuming the old snapshot had that key.
+
+Bounded carried screen protocol fixed BEFORE outcomes: full2018-02-01..2026-09-30,
+start0,cost0/10/25, incumbent through2019-02-28nightly; V6 starts2019-03-01nightly,
+subsequent learned execution. Same actual broker/paper state, no seed/reset;
+reuse original verified rule/SPY/QQQ controls, no base fits or controls rescore.
+This is three accounts/current-vintage/reused recent data, not adoption evidence.
+No diagram change: existing planning/execution/account boundaries unchanged.
+
+Private supervisor scratch/launch_held_carried_20261008.py; immutable financial
+source94b8b740. First two launcher stages failed lint BEFORE economics; runtimefix2
+passed lint then stopped BEFORE admission/accounts: independent comparison rejects
+NumPy strings versus JSON strings even though names/order and2953dates match.
+Original fixed hashes remain unchanged. Runtimefix3 only normalizes already-string
+names for comparison, preserves original bank/forecasts/protocol/costs/source.
+Inspect scratch/held-carried-supervision-20261008-94b8b740-runtimefix3.log and root
+scratch/held-carried-screen-20261008-94b8b740-runtimefix3 FIRST; never restart an
+active stage or edit its mounted source/runner. It runs producer then independent
+saved-ledger/calibration proof with no second account replay. No economic result,
+current-production release/API/browser or performance advantage claimed yet.
+
 ## 2026-10-08 — paper loss attributed; continuation screen complete
 
 Latest user reports about $4,000 lost today in the PAPER account. VERIFIED at
