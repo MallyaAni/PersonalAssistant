@@ -1,5 +1,25 @@
 # Learned live replacement: completed candidate evidence
 
+## October8: new continuation candidate now reaches funded accounts
+
+All141monthly artifacts and original forecast/calendar/source identities have
+independent numeric parity verification:116fitted,25insufficient history retained,
+zero new fits or account replays during verification. Frozen-engine acceptance
+18pass/0fail/0skip; new source6edd52de pushed to main. No live policy activation.
+
+The preregistered three funded accounts at0/10/25bp are now executing, start
+2018-02-01..2026-09-30. Before planning,5,083,225available training observations
+were matched to original raw cube bars under the mechanical session scale. Only
+ordinary intraday timing changes; existing allocation, holding/event exits and
+funding remain shared. Results are not available yet. No advantage is claimed.
+The first launch missed a private settings input before planning; it is retained,
+and the corrected isolated runtime reuses the verified bank without rerunning it.
+
+After accounts close, saved cash/shares/actions/marks/costs and decision traces
+will be independently reconciled against the rule,SPY,QQQ in every declared
+period. This remains a component screen, not full live qualification or a
+confidence/holding-exit model. Earlier tables below are separate completed studies.
+
 ## Matched cost-inclusive incumbent and benchmarks
 
 The third saved snapshot independently verifies75closed controls:72reused and

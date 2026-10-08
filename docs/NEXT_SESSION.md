@@ -1,5 +1,65 @@
 # Next session
 
+## 2026-10-08 — funded continuation path implemented and actual accounts started
+
+Objective remains a qualified live entry/holding-exit/sizing replacement, INCOMPLETE.
+This turn closes the missing funded runner, numeric-bank admission and saved-ledger
+verification path. No new agents, fits, data generation, orders or live deployment.
+Main source checkpoint6edd52dea64590ec62182af1b46a9b18c25c6b33 is pushed.
+
+VERIFIED new overlay against the exact frozen e396841b control engine:18actual
+account/admission cases,0fail/0skip,1.88seconds,Ruff clean. Native container
+bb415f8c407a94e441485321f91793acaf679c187eb2cbdf389ad3ee41214f6b,
+original5c6cimage,networknone/ROroot/user1000/CPU1/memory4GB/allsourceRO.
+These exercise the frozen component path, not complete current-production parity.
+Initial Docker nested new-file mount failed before startup; preserved. Subsequent
+pytest13/18 passes initially had Ruff cache/style findings, corrected without
+loosening assertions. Final18tests include changed side means/intent/coordinates.
+
+Training1f2faa5a is COMPLETE,terminal0/OOMfalse:141source months,25insufficient
+history and116fitted. Independent numeric verificatione72ac2262fa14797c23f5f1a536506ad1434de64cd7c3c5735428ae328abc262
+also COMPLETE,terminal0/OOMfalse:every monthly head/calendar/source/checkpoint
+and global forecast matches the actual numeric scoring,0fits/0account replays.
+Root scratch/nonlinear-funded-screen-20261008; completed bank under
+results/forecast-output/bank. Receipt SHA
+4b5bf8cf0f1059b9355a217f32e26a66fa706ea243e9d3fe2c7edd9c05d8af83;
+original fitted manifest972d783eed6e7bc22673d9a6b16876675c88563e11ef3763c30f70f560f6e396.
+This verifies transport/arithmetic, not economic advantage or historical publication.
+
+ACTIVE exact economic container
+736e55e7b376db33796672214352e195e237e21b87b5ebb5007989a41c2bcfa5,
+name continuation-funded-screen-runtimefix1-20261008. Original image,CPU1/memory4GB,
+networknone/ROroot/user1000;financial source/forecasts/original inputs read-only,
+only results/account-output-runtimefix1 writable. Actual account identity published:
+5,083,225available observations match mechanical original session_scale AND raw
+cube bars, no fitted ratios. continuation-0-0 private state exists; no account
+closed yet at handoff. Then10/25bp use the same declared start0, funding, planner,
+selection, event/holding exits, pending retries and settlement. Only timing changes.
+NEVER edit its financial-source or restart/duplicate it.
+
+The first economic c2bfbc70 failed on a missing isolated SECRET_KEY settings input
+BEFORE planning or private state. Original root/log/failure retained. Runtimefix1
+adds only a private nonproduction test key in a distinct container/output; source,
+thresholds,assertions and verified forecasts unchanged,141months NOT rechecked.
+Do not confuse retained failure.json with the new stage's failure-runtimefix1.json.
+
+Read-only supervisor is scratch/retry-continuation-screen-runtime-20261008.py,
+log scratch/retry-continuation-screen-runtime-20261008.log. After three accounts
+close, it starts exact saved-account verifier using independent cash/share/action/
+mark/cost arithmetic and side-forecast trace checks; no producer replay. Six old
+matched0/10bp rule/SPY/QQQ proofs reused; only three new25bp controls reconciled
+if coordinator-acknowledged. All full,2018–20,2021–26,reused recent metrics kept.
+Output results/proof-output-runtimefix1/proof/results.json, completion-runtimefix1.json.
+Inspect compact exact process/completion first, never restart an active supervisor.
+If its first boundary fails, retain evidence and fix narrowly under distinct identity.
+
+UNVERIFIED economic outcome/whole20start qualification, calibrated sizing,
+holding/profit-exit replacement and current-production activation/API/browser.
+The new three-account screen does not authorize adoption. Existing300account
+continuation2ff5c7ea remains untouched; snapshot03 is still the independently
+accepted75predecessor. No repeated old fits/scoring/refetches/model gates/UI changes.
+Diagram impact NONE: explicit research adapter on the existing execution boundary.
+
 ## 2026-10-07 — monthly continuation runner and actual sender acceptance
 
 Previous turn PROGRESS: numeric model/data compatibility. This turn PROGRESS:
