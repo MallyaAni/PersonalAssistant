@@ -46,6 +46,16 @@ active stage or edit its mounted source/runner. It runs producer then independen
 saved-ledger/calibration proof with no second account replay. No economic result,
 current-production release/API/browser or performance advantage claimed yet.
 
+Runtimefix3 is now ADMITTED and ACTIVE: container14fa418ea1cb41d499777eaeca499767e003b23ae4bb0d9d94b36a4df94753e3,
+same5c6cimage, networknone/ROroot/user1000/CPU1/memory4GB, only/results writable.
+At15:13:14NewYork, first account completed320sessions through2019-05-09, past
+the fixed V6 transition. No closed account/economic outcome yet. Original2381-file
+manifest2c95c400fc3bd296e3a61d568373f1e393e1093378d26e780d1ce0a47d44bdd6;
+runner703cf8c341882befcb1cf8b72c4b6e27a3c6d258736eb7f8318ae3268ffca8a0;
+admissioneba6d05c9b5d490727233c1835c20d90133a038550c75f6767c8929947215dad.
+Existing continuation heartbeat updated for compact20minute supervision of this
+bounded work, quiet if unchanged, with no repeated old experiments or new agents.
+
 ## 2026-10-08 — paper loss attributed; continuation screen complete
 
 Latest user reports about $4,000 lost today in the PAPER account. VERIFIED at
