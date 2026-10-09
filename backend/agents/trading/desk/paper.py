@@ -368,7 +368,7 @@ def _state_json(value):
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
-# Replace the state atomically with the same JSON bytes and durable intent guarantees.
+# Stream identical JSON bytes before atomically replacing the durable account state.
 def save_state(root: Path, state: PaperState) -> Path:
     """Write the PaperState and return its path."""
     path = state_path(root)
@@ -378,7 +378,7 @@ def save_state(root: Path, state: PaperState) -> Path:
     ) as handle:
         temporary = Path(handle.name)
         try:
-            handle.write(json.dumps(state, indent=2, default=_state_json))
+            json.dump(state, handle, indent=2, default=_state_json)
             handle.flush()
             os.fsync(handle.fileno())
         except BaseException:
