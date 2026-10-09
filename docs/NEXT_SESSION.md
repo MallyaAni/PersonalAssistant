@@ -1,5 +1,57 @@
 # Next session
 
+## 2026-10-09 — carried screen memory failure corrected without changing decisions
+
+Objective remains INCOMPLETE: qualify the shared V6 entry, sizing and holding
+replacement, then use the guarded release path. Production remains92b11bb9;
+no policy activation, account writes or deployment in this correction.
+
+FAILED original runtimefix3 producer14fa418e: exit137/OOMKilled=true at
+2026-10-09T09:08:14Z. Its first account had2085 durable history sessions;
+last progress receipt2080/2026-05-11. ZERO accounts closed, no account report,
+saved proof or economic result. Preserve the entire old root/source/runner/state
+and supervisor-failure.json; do not restart it or treat partial state as a result.
+The process died during the next state serialization, leaving an empty temporary
+file. Original paper.save_state materialized all formatted JSON before writing.
+
+VERIFIED checkpointad89d2274d6d5d3a2d3986c22a7ced1a363d4adb pushed to main.
+Only implementation change: stream the existing JSON encoder to the same private
+temporary file before unchanged flush/fsync/atomic replacement. No accounting,
+policy, risk bank, timing model, threshold, window or fee changed. Two new tests
+pin exact old bytes/reload and preservation/cleanup after interrupted writes.
+Native source-mounted image5c6c:297passed,0skipped,28.74seconds,Ruff clean.
+Acceptance root scratch/held-stream-acceptance-20261009; container4aa13aa1,
+manifest5a197b66d0c1387e2b3a8a70b0922c9daa7072930935421d2cba4028e498b149,
+pytestb8754f11e76c9fe185bb349e49b4219463898fbe3ecd2cef2418a6d507ed41aa.
+Includes unchanged V6, carried-account, saved-receipt and paper allocation tests.
+Host Python has no pytest; container execution is the acceptance evidence.
+
+Read-only probes used the exact preserved278208888-byte state: original writer
+peak1717324KiB versus streaming758816KiB, identical SHA
+105cd75f39f4f27d4fbb16cb37ceee071c4071d9a611e180def109887e0c5f53.
+Actual corrected atomic save in a separate private output also matched that
+SHA/byte count, peak759888KiB, exit0/OOMfalse. Probe logs are original-memory.json,
+stream-memory.json and actual-write-proof.json in the acceptance root. Original
+failed output was read-only. This proves the write correction, not completion
+of the full economic account or freedom from every later memory boundary.
+Diagram impact: NONE — existing account store and execution boundaries unchanged.
+
+One retry of the INCOMPLETE fixed screen now uses distinct immutable source/output:
+scratch/held-carried-screen-20261009-ad89d227-streamfix1. Supervisor
+scratch/held-carried-supervision-20261009-ad89d227-streamfix1.log; producer
+36b57c53c14ca2a2915c53f93de169c94d6a5b07962c4a2b07c889f3d1f4a990.
+Same4GB/CPU1/native5c6c/networknone/ROroot/input mounts; source2382files, manifest
+e7f53bccc467aa77ecdb90106d312f0d0b85116f702adc92551fcce4491049f8.
+Frozen economic runner remains703cf8c341882befcb1cf8b72c4b6e27a3c6d258736eb7f8318ae3268ffca8a0.
+Lint passed and producer started; admission/full completion still UNVERIFIED.
+Do not mutate/restart this active run. Original protocol/cost0/10/25/start0,
+2019-03-01 carried transition, original banks and verified controls are unchanged;
+no completed experiment/controls repeated or base heads refitted. Supervisor
+will independently verify saved artifacts after all three accounts close.
+These current-vintage/reused recent accounts remain a component screen, not
+live adoption qualification. Next action: inspect compact current stage, address
+only a concrete failing boundary, or review terminal evidence when available.
+
 ## 2026-10-08 — retained holding planner shared with carried-account evaluation
 
 Latest user priority: live replacement ASAP, including holding/exposure reductions
