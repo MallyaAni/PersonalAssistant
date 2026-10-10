@@ -193,7 +193,7 @@ def test_market_screen_releases_archived_account_before_next_replay(
         references.append(weakref.ref(result))
         return result
 
-    # Isolate event dependencies while retaining actual planning, sending and accounting.
+    # Isolate event dependencies while retaining actual planning and accounting.
     def cached_features(key):
         return journey.features
 
@@ -211,7 +211,8 @@ def test_market_screen_releases_archived_account_before_next_replay(
     for row in report["accounts"]:
         saved = verifier.ledger.read_account(output, row)
         assert saved["cost_bps"] == row["cost_bps"]
-        assert saved["sessions"] and saved["forecast_decisions"]
+        assert saved["sessions"]
+        assert saved["forecast_decisions"]
         assert any(fill["filled_qty"] > 0 for fill in saved["fills"])
 
 
