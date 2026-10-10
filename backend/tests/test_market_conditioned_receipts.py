@@ -1,6 +1,7 @@
 """Saved calibration proof refuses changed dates, coefficients and uncertainty."""
 
 import hashlib
+import weakref
 from copy import deepcopy
 from dataclasses import replace
 from datetime import datetime
@@ -158,6 +159,60 @@ def test_market_screen_carries_original_timing_to_real_account(
         for row in account["intents"]
         if row["execution_timing"] == "dip_or_close"
     )
+
+
+# Release each fully archived account before starting another real account replay.
+def test_market_screen_releases_archived_account_before_next_replay(
+    reader, screen_inputs, tmp_path, monkeypatch
+):
+    panel, raw, cubes, timing = screen_inputs
+    first, last = len(reader.dates) - 2, len(reader.dates) - 1
+    references = []
+
+    # Make an actual account result observable without retaining it in the test.
+    class ObservedAccount(dict):
+        pass
+
+    # Keep both declared costs while limiting this synthetic journey's dates.
+    def component_grid(dates, *, policy):
+        return [
+            {
+                "id": f"market-{cost}-0", "arm": policy, "cost_bps": cost,
+                "start": 0, "first": first, "last": last,
+                "first_session": str(dates[first]),
+            }
+            for cost in (0, 10)
+        ]
+
+    # Run the real account path and reject any earlier account still held by the driver.
+    def observed_replay(*args, **kwargs):
+        assert all(reference() is None for reference in references), (
+            "Archived account remains resident during the next account"
+        )
+        result = ObservedAccount(run_account(*args, **kwargs))
+        references.append(weakref.ref(result))
+        return result
+
+    # Isolate event dependencies while retaining actual planning, sending and accounting.
+    def cached_features(key):
+        return journey.features
+
+    monkeypatch.setattr(joint_funded_accounts, "candidate_grid", component_grid)
+    monkeypatch.setattr(joint_funded_accounts, "run_account", observed_replay)
+    monkeypatch.setattr(joint_funded_accounts, "FeatureCache", cached_features)
+    output = tmp_path / "screen"
+    report = joint_funded_accounts.evaluate(
+        panel, raw, cubes, reader, output,
+        {"manifest_sha256": "a" * 64, "source_revision": "b" * 40},
+        policy=verifier.MARKET_TIMED_POLICY, timing=timing,
+    )
+    assert all(reference() is None for reference in references)
+    assert report["declared"] == len(report["accounts"]) == 2
+    for row in report["accounts"]:
+        saved = verifier.ledger.read_account(output, row)
+        assert saved["cost_bps"] == row["cost_bps"]
+        assert saved["sessions"] and saved["forecast_decisions"]
+        assert any(fill["filled_qty"] > 0 for fill in saved["fills"])
 
 
 # Build a real numeric fitted receipt with an explicit synthetic historical bank.

@@ -148,6 +148,8 @@ def evaluate(
                 },
             }
         )
+        # The immutable archive and scores now own all completed-account evidence.
+        del result
         write_json(
             output / "progress.json",
             {
