@@ -1,5 +1,74 @@
 # Next session
 
+## 2026-10-10 — second carried screen OOM; completed account preserved
+
+Objective INCOMPLETE: qualify shared V6 entry, holding exits and sizing, then
+guarded release. Production92b11bb9 remains on the same Oct7 backend/image;
+no live policy activation, orders, deployment or model-service changes.
+
+FAILED streamfix1 producer36b57c53: exit137/OOMKilled=true at
+2026-10-10T13:13:10.350893648Z (09:13 New York). Preserve the entire
+scratch/held-carried-screen-20261009-ad89d227-streamfix1 root and inspection.
+Its zero-cost retained-0-0 account DID close:2178 progress sessions, gzip SHA
+c9079bb1ebfb7c9e75f95dd453b69160c1955e75c800977d31db91e1596fbb86,
+verified again after the failure. Preliminary full gain965.27%, CAGR31.50%,
+drawdown42.42%, Sharpe1.053, turnover277.01, missing NAV0. Independently
+verified incumbent control gain763.51%, turnover184.21. These candidate
+numbers remain UNVERIFIED until saved proof; reused recent candidate gain1.03%
+versus incumbent5.37% must remain visible. The10bp account did not close;
+last progress2040/2026-03-13, durable state272792918bytes, third not started.
+Do not turn partial state into an economic result or replay completed zero cost.
+
+VERIFIED source1c4694265a8ae3e36ee0cfcf88d332b974f62e34 pushed to main.
+Only implementation change releases the fully archived/scored account result
+before the next run. Python kept the previous result during evaluation of the
+next run's right-hand side. New real two-account synthetic journey reproduced
+that boundary against ad89d227, then passed after the correction, checking
+persisted archives, scores, forecasts and fills. Read-only native probe of the
+actual first account: expanded272211763bytes; RSS before18916KiB,
+loaded1241296KiB, after release186684KiB, peak1506784KiB. Releasing this
+completed result freed about1GiB; this is a demonstrated contributor to the
+4GB failure, not a proof that every remaining memory boundary is resolved.
+The earlier streaming state writer and all economic decisions remain unchanged.
+
+Native5c6c exact committed source acceptance:298passed,0skipped,27.52seconds,
+Ruff clean, exit0/OOMfalse; scratch/held-memory-acceptance-20261010-lintfix1,
+containerdffaa3f1fd7af4a12671bfd6a077a31559516d7edf7b1becc96fccdefd73395d.
+Manifest62400b65b5882f732c9b8f7563e9c62f270969e9369bab492e09a4a3b6094bc7;
+pytest821c157347bb47fc552dcb9c0bb17fb279711bd2e433d9e30fee45e62425a417;
+Ruff82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18.
+The first acceptance root is retained:298 tests passed but two new-test lint
+issues failed; corrected assertions/comments were verified on the exact new tree.
+Diagram impact: NONE — only completed private result lifetime changes.
+
+Distinct recovery now frozen at
+scratch/held-carried-screen-20261010-1c469426-memoryfix2; supervisor
+scratch/held-carried-supervision-20261010-1c469426-memoryfix2.log;
+producer45a1f4112e75d303ae13bdb301dd70ea0b63b17d802fca0d4b89c7a81aeadbdd.
+Same native5c6c/CPU1/4GB/networknone/ROroot and original RO inputs; entire
+failed streamfix1 root mounted /previous:ro. Whole source manifest as above;
+private recovery runner4d09fd1e9b712ed2f49ea95bb243c861c613411b9873db862410d675e51f9e83.
+Lint and reuse admission passed; reuse admission SHA
+7e24e5e245926a4703f146be5cb8a7e8fa12ca109c7236335b5b60a3b219d9ed.
+It authenticates old whole source and completed archive, pins the sole code
+change to result release plus regression test and the exact prior handoff doc.
+Only unfinished10/25 costs are replayed; zero-cost archive and existing scores
+are copied/hash-reused afterwards, with per-account producer source identities
+in inputs/report and a separate recovery receipt. Original dates, costs, start,
+2019-03-01 carried transition, risk bank and boosting timing remain fixed.
+No completed economic account/control repeated or base heads refitted.
+Private memoryfix1 admission failure is retained, no economic accounts there:
+the checker initially omitted the already-published handoff doc from source diff.
+
+Full producer/input admission and completion remain UNVERIFIED at launch;
+inspect compact status first. Supervisor will verify all three saved accounts
+with the unchanged independent accounting/calibration criteria after the two
+unfinished accounts close. Preserve every missing/refused fill and all windows.
+These current-vintage/reused recent accounts remain a component screen, not
+live adoption qualification. Do not restart/mutate frozen jobs or duplicate
+accounts. The existing20minute heartbeat now follows this recovery root;
+notify only substantive findings/failure/completion, pause on bounded completion.
+
 ## 2026-10-09 — carried screen memory failure corrected without changing decisions
 
 Objective remains INCOMPLETE: qualify the shared V6 entry, sizing and holding
