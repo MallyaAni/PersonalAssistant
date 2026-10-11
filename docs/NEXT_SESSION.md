@@ -1,5 +1,59 @@
 # Next session
 
+## 2026-10-11 — resumed release; installed admission passes; actual code deploy active
+
+The user challenged the repeated ETA after the bounded monitor had been paused.
+Acknowledged the inactivity and resumed the concrete release work. Objective
+remains INCOMPLETE; do not repeat an unsupported elapsed-time estimate.
+
+VERIFIED private installed holding/timing admission on exact1c469426 and the
+original eight October artifact files, at the three already declared0/10/25bp
+costs. Real configuration/release/model readers and prepare() persist and reload
+one dated close per cost, using authenticated October9stored bars/grades and a
+fresh GET-only actual paper-book snapshot.344joint dates, SNDK retained,3/1/1
+private planned sells, cash/share/retained-order guards pass. Invalid release
+hash, timing hash and personal-broker endpoint are rejected. Root
+scratch/installed-held-admission-20261011-1c469426; producerb84b0b076c43 exits0/
+OOMfalse, native5c6c/CPU1/4GB/networknone/ROinputs/privateproofRW. Exact planning
+proof cb9e31d216aea5ec7a75ecdb91f431f240e619019388e835c4006ff8e7a6eafb.
+
+VERIFIED subsequent admission of the persisted decisions against a fresh actual
+paper-broker GET /clock, supplied through the exact client's saved-data transport;
+no invented/future market timestamp. Clock verifier395436e8e9fb exits0/OOMfalse,
+same constrained image/source, private installation and bars now RO. Proof
+1f7d01d8614f63d29839482d89cc67cc448f5c6ee539a46e9958bd43f04bbde2.
+Exact28runtime files match frozen source. The approved=true receipts are clearly
+PRIVATE TEST FIXTURES; production approval and actual deployed broker admission
+remain UNVERIFIED. No orders submitted, production selectors still absent.
+Summary: [installed admission](research/learned-installed-admission-2026-10-11.md).
+
+ACTIVE actual canonical code release, not another dry run: launcher PID643524,
+started2026-10-11T21:50:24Z, root
+scratch/learned-live-code-release-20261011-d0633fde; claim.json/deploy.log and,
+on exit, execution.json. Target d0633fde6ae5f608413616127aa681726cbb5430;
+source implementation remains1c469426 plus published evidence docs. Command
+existing isolated scripts/deploy.sh --deploy-dir=/home/animallya96/deploy/anios;
+all gates enabled, serial1worker, separate anios_gate_live_release_20261011 DB.
+Never restart/duplicate this running deployment or mutate its gate tree. The
+canonical script alone may move/build/restart production after its gates pass;
+learned configurations are NOT activated by this launcher. Production started
+at92b11bb9. Authenticate terminal target/image/counts/log/model identity and
+cheap post-deploy result before claiming code release. Preserve user/main edits.
+
+Execution-cost clarification is pending: proposed10bp per filled side above the
+incumbent paper.py comment's previously measured roughly6bp slippage, with25bp
+as the declared conservative alternative. Neither is selected from backtest
+winners; no cost chosen or approved yet. Continue independent code deployment
+and reviewable evidence while awaiting the user's answer; do not install a
+holding selector with an unapproved/unknown cost. Sunday fresh intraday timing
+cannot be fabricated; actual market-session, deployed API/browser, current-book
+reconciliation, ordinary nightly and subsequent execution remain UNVERIFIED.
+Next ordinary nightly is Monday19:30ET; following ordinary execution Tuesday.
+The earlier bounded-gate heartbeat remains paused at this checkpoint. Do not
+reuse its obsolete completed-gate prompt as a monitor of the new deployment.
+No new fits/accounts/controls, real orders, paid data or model-service changes.
+Diagram impact: NONE — existing release code, private acceptance and evidence.
+
 ## 2026-10-11 — current-source canonical gate passes; bounded monitor complete
 
 VERIFIED exact implementation1c4694265a8ae3e36ee0cfcf88d332b974f62e34:

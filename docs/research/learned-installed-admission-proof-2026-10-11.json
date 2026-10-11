@@ -1,0 +1,127 @@
+{
+  "status": "verified_private_installed_admission_against_actual_saved_paper_clock",
+  "container": {
+    "Id": "395436e8e9fb2b964c6df495505cae8ebcf0bcdc8b52a890d2c121a236ec12d8",
+    "Image": "sha256:5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d",
+    "State": {
+      "Status": "exited",
+      "Running": false,
+      "Paused": false,
+      "Restarting": false,
+      "OOMKilled": false,
+      "Dead": false,
+      "Pid": 0,
+      "ExitCode": 0,
+      "Error": "",
+      "StartedAt": "2026-10-11T21:49:21.785900172Z",
+      "FinishedAt": "2026-10-11T21:49:26.304560051Z"
+    },
+    "Mounts": [
+      {
+        "Type": "bind",
+        "Source": "/home/animallya96/scratch/installed-held-admission-20261011-1c469426/clock-runner.py",
+        "Destination": "/runner.py",
+        "Mode": "ro",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/home/animallya96/scratch/installed-held-admission-20261011-1c469426/clock-proof",
+        "Destination": "/output",
+        "Mode": "rw",
+        "RW": true,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/home/animallya96/scratch/held-carried-screen-20261010-1c469426-memoryfix2/source",
+        "Destination": "/app",
+        "Mode": "ro",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/home/animallya96/deploy/anios/data/market",
+        "Destination": "/market",
+        "Mode": "ro",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/home/animallya96/scratch/installed-held-admission-20261011-1c469426/proof",
+        "Destination": "/proof",
+        "Mode": "ro",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/home/animallya96/scratch/installed-held-admission-20261011-1c469426/clock.json",
+        "Destination": "/clock.json",
+        "Mode": "ro",
+        "RW": false,
+        "Propagation": "rprivate"
+      }
+    ]
+  },
+  "proof_sha256": "1f7d01d8614f63d29839482d89cc67cc448f5c6ee539a46e9958bd43f04bbde2",
+  "planning_proof_sha256": "cb9e31d216aea5ec7a75ecdb91f431f240e619019388e835c4006ff8e7a6eafb",
+  "clock_capture_sha256": "2a3fa566f58f2d87af7b83671056276581965123ea1f9781a5fdffeb3f287c89",
+  "clock_runner_sha256": "f4d2441ec45055d5d905f6814896fb674d0e95ffd4196365ac24de23254fcc49",
+  "source_revision": "1c4694265a8ae3e36ee0cfcf88d332b974f62e34",
+  "runtime_files": 28,
+  "summaries": [
+    {
+      "cost_bps": 0,
+      "planned_orders": 3,
+      "retained": [
+        "SNDK"
+      ],
+      "joint_dates": 344,
+      "config_sha256": "2a19104af94c39e473142f82078651c0a48b69c004cc286e8bf900b3984f7706",
+      "close_receipt_sha256": "22eaca4dac00a3fbd773a5abe620a27f1ae014e7041eb129447d38bb416cdd16",
+      "refusals": {
+        "release_hash": "Original holding release approval differs",
+        "timing_hash": "Installed holding and execution configuration differ",
+        "personal_endpoint": "Installed learned policy permits only the paper endpoint"
+      }
+    },
+    {
+      "cost_bps": 10,
+      "planned_orders": 1,
+      "retained": [
+        "SNDK"
+      ],
+      "joint_dates": 344,
+      "config_sha256": "be66bfbaff47e04ee1c8bc67f7c54d99130df0df0b2cf04f900548c65cffc180",
+      "close_receipt_sha256": "24214e415524334d26f48ab358ce571210751637967d2d8a3f7b01d0baeb683e",
+      "refusals": {
+        "release_hash": "Original holding release approval differs",
+        "timing_hash": "Installed holding and execution configuration differ",
+        "personal_endpoint": "Installed learned policy permits only the paper endpoint"
+      }
+    },
+    {
+      "cost_bps": 25,
+      "planned_orders": 1,
+      "retained": [
+        "SNDK"
+      ],
+      "joint_dates": 344,
+      "config_sha256": "73a734a91a1d48461d354c7334d79f03a6ca162fb6587047f1e6b1e0d72d009d",
+      "close_receipt_sha256": "3dd4dfa666fe9555ca8d153e1a2760565cfb87e0eafc7b973adb5dd1c1977310",
+      "refusals": {
+        "release_hash": "Original holding release approval differs",
+        "timing_hash": "Installed holding and execution configuration differ",
+        "personal_endpoint": "Installed learned policy permits only the paper endpoint"
+      }
+    }
+  ],
+  "production_approval": false,
+  "actual_deployed_admission": false,
+  "orders_submitted": false,
+  "fresh_intraday_execution": false
+}
