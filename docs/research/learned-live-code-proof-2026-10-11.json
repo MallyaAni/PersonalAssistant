@@ -1,0 +1,129 @@
+{
+  "status": "verified_actual_canonical_code_release_and_serving_source",
+  "source_revision": "d0633fde6ae5f608413616127aa681726cbb5430",
+  "tracked_runtime_regular_files_checked": 2385,
+  "architecture": "arm64",
+  "unit": {
+    "passed": 10586,
+    "skipped": 93,
+    "xfailed": 6,
+    "warnings": 439,
+    "seconds": 582.5
+  },
+  "real_model_routing": {
+    "passed": 100,
+    "skipped": 0,
+    "log_result": "100 passed in 408.32s (0:06:48)"
+  },
+  "started_at": "2026-10-11T21:50:24.735523+00:00",
+  "finished_at": "2026-10-11T22:11:09.150487+00:00",
+  "serving": {
+    "anios_frontend": {
+      "id": "392e61d4a68ba36de11b278709ca49f45618299a91c9abcad912861156bd083f",
+      "image": "sha256:4e188ebd94743f915741f557c1eeee857e5862ab5584c45325bc6adbecb857c5",
+      "started_at": "2026-10-11T22:11:05.053878493Z"
+    },
+    "anios_gateway": {
+      "id": "2bb25ae8b542519a32113726bbc03d13989f418b2e743ee2694407e0c9d14c39",
+      "image": "sha256:555386d4d2833eac6394c55ee697c3b31ed94b536ddd2ffaa8c76c7829285632",
+      "started_at": "2026-10-11T22:11:05.05607959Z"
+    },
+    "anios_backend": {
+      "id": "cfe8b7b50228b83e7ca53874ae650ae454f02b66bd4862f45b9f573ecc8f6146",
+      "image": "sha256:e479059eb2bb3fbe66494234e7e1e4176dd4a54e604a4c0437645fe584da4cfc",
+      "started_at": "2026-10-11T22:11:04.874217708Z"
+    },
+    "anios_discovery_worker": {
+      "id": "799838f92ac1083ec63fa7e37e26595c9b46eee96adc0feb88b11b851d72a81a",
+      "image": "sha256:bdf3e69d14dedda897aa25a77ffe9b3eaf783e1f6d6020ca8250b31c2736c6d6",
+      "started_at": "2026-10-11T22:11:04.383072853Z"
+    },
+    "anios-storage-collection-1": {
+      "id": "9d88bdf8029c17aca2482a7c060dbd2690e9e4f675ca0be3f795e79430763b70",
+      "image": "sha256:e8f25fc617f5457a4343b3ab7f1531a428a23f5e25888dc80140dbed4984adb8",
+      "started_at": "2026-10-11T22:11:04.385958803Z"
+    },
+    "anios-memory-maintenance-1": {
+      "id": "486178b72adfd678545dde068089c6725324ed642fc2dcb0f2dc18020a1b934c",
+      "image": "sha256:7611a0309c7bd6c96f904cb25ca64e09b74b1317b33ee84d8abc32d39de6929e",
+      "started_at": "2026-10-11T22:11:04.391435065Z"
+    },
+    "anios_local_capabilities": {
+      "id": "a414c986afd88d5404120112cff36c9d9ededf3f5cc22e9f2f7b72f8a526b004",
+      "image": "sha256:4f077e845a18589b5cdd16d9f0e6d68ce3817aa04abffe27e90297bf6b61a0c5",
+      "started_at": "2026-10-11T22:10:51.518948559Z"
+    },
+    "anios_presentation_worker": {
+      "id": "fc5d9d697ed7f55bdcaa18d351c170f59ae61205827b4fd4f2a66216f3065b6c",
+      "image": "sha256:2eb06e06a0ed5d9773cccc1d5c909a3b8ba104e8b6e988a9a6c4def376041295",
+      "started_at": "2026-10-11T22:10:51.521262158Z"
+    },
+    "actual-continuation-57e044b1a4ef": {
+      "id": "2ff5c7eade4bd7e7d33e5f1dfb45c922d7d1a501b2a7c74fa2398b1099e1420b",
+      "image": "sha256:5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d",
+      "started_at": "2026-10-07T18:52:18.276409293Z"
+    },
+    "trading-safety-vite": {
+      "id": "c62d7020f416388e78865e526374dc773a8160978aacd33f4865b56c514455c4",
+      "image": "sha256:b240638242514ba4138c65dd71fd205644b002ed1560ba87b4bc5263f07dac87",
+      "started_at": "2026-09-23T22:45:12.235540311Z"
+    },
+    "trading-evidence-vite": {
+      "id": "700821a23d6f323f2db3dd23124e5b6707a677dd4b5e7abb21c215213b9d5abc",
+      "image": "sha256:b240638242514ba4138c65dd71fd205644b002ed1560ba87b4bc5263f07dac87",
+      "started_at": "2026-09-23T22:05:09.3814613Z"
+    },
+    "desk-root-vite": {
+      "id": "14aa2f0f61f6596eef6978676dda14215f2c921e714c24c7df5c2fd05dadc7fc",
+      "image": "sha256:ec3f503ee6578b549b00f8c1b8c74508586a3b1b19c39dc1a86b79d9379dc9d2",
+      "started_at": "2026-09-23T03:44:09.44044942Z"
+    },
+    "desk-release-pw": {
+      "id": "1ae8e2a371404d482588e0068739c057c0852925e7b40ae0004d5f2815af5c59",
+      "image": "sha256:ec3f503ee6578b549b00f8c1b8c74508586a3b1b19c39dc1a86b79d9379dc9d2",
+      "started_at": "2026-09-23T01:32:37.880074578Z"
+    },
+    "anios-vision-analysis-recovery-1": {
+      "id": "f6e494e2cfd2bc393475bc44c107e0f319657c89534eb74d1322a69700e03438",
+      "image": "sha256:3a6859c9d000170d9e54cd23881510fcfe621e1da6088fcf0f7bc79476a1215b",
+      "started_at": "2026-09-08T03:49:41.194038894Z"
+    },
+    "anios_browser": {
+      "id": "f6311c7b9d97eb5008b2627a35e57563fca213ac733c49aad58f4a2931b9873b",
+      "image": "sha256:f858acd4e23b2c176993f071a33697657e710b08a0c65deded29f111305325f5",
+      "started_at": "2026-08-29T22:09:18.954267573Z"
+    },
+    "anios_presentation_renderer": {
+      "id": "8f1d675c62a926dbb049190629bcf174c6f16d3045f7e20bfb76219f43a7528f",
+      "image": "sha256:e4af02b5888231ebe9d72e49849320616e8103292c3a9fda8bb4c77b986f2822",
+      "started_at": "2026-08-25T18:10:28.914161138Z"
+    },
+    "anios_db": {
+      "id": "62587b974dca6369274533fc1f94e23594c8081cb3b8c19415daea36598b3c38",
+      "image": "sha256:2dbfde49c067cafff2a69e7019423181adca6328b94f197ac93fbb01a96a3a9d",
+      "started_at": "2026-08-25T03:32:53.198904916Z"
+    },
+    "anios_redis": {
+      "id": "b814577e7a395838aa96e7beb4b258d3ab8ef7ddb7f381ee74014d1501ed2097",
+      "image": "sha256:9a56851f1a97e0586f85f8d7f7652e65cb589b2409d965c5d6e275dfc2551907",
+      "started_at": "2026-08-25T01:07:27.76136706Z"
+    },
+    "anios_vllm_embedding": {
+      "id": "eeb4064aa6610a927cd16781f1f1533212a973afe4f031b398998bfe7963ab6e",
+      "image": "sha256:3430d6614a8e2925f34d059af6caf05aff42387326db4d05639a60f10f2654d8",
+      "started_at": "2026-08-24T03:13:18.154525139Z"
+    },
+    "anios_cloudflared": {
+      "id": "e4162bb46c04712d790a86b650554dae4ea3c3f90e59cd38bbdd59d5fa00ffc4",
+      "image": "sha256:fa2b55d1106a6f3a72d844d4d25fb6e8fc8fb940ff532d159ee15c24b2370072",
+      "started_at": "2026-08-23T13:47:54.487324896Z"
+    }
+  },
+  "main_model_unchanged": true,
+  "post_deploy": "2026-10-11T22:11:09Z d0633fde ok (cheap)",
+  "log_sha256": "0615b0577ec6086e58951dedace979b1e1628ab7f7649d165d3ccde9dd110847",
+  "execution_sha256": "120c4ae598aa0bd6d6f2d4ff69199ff37f9cefe9063f66c4fae8665328c0a402",
+  "full_functional_suite": false,
+  "learned_account_acceptance": false,
+  "general_superiority": false
+}

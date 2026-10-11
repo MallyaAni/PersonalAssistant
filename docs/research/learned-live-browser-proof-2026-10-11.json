@@ -1,0 +1,30 @@
+{
+  "status": "verified_manual_live_browser_desk_session",
+  "source_revision": "d0633fde6ae5f608413616127aa681726cbb5430",
+  "date": "2026-10-11",
+  "browser": "Codex in-app browser, existing authenticated live desk tab",
+  "url": "https://deep-matter.com/?deskView=live#desk",
+  "after_canonical_deployment": true,
+  "workflow": [
+    "Signed in using the existing populated login and captured the pre-deploy baseline",
+    "Reloaded the live desk after the canonical deployment and selector installation",
+    "Verified stock rankings and current paper-account summary rendered",
+    "Expanded SNDK details: grade A+ as of2026-10-09, paper position and No order",
+    "Expanded paper account history/positions/fills:10open positions and No fills for2026-10-11",
+    "Collapsed transient panels and retained the existing live desk tab"
+  ],
+  "console_errors": 0,
+  "console_warnings": 0,
+  "authentication_survived_deployment_reload": true,
+  "paper_positions_match_actual_gateway_api": 10,
+  "old_record_not_retagged": true,
+  "recorded_decision_session": "2026-10-09",
+  "recorded_paper_policy": "graded-equal-weight/5",
+  "preexisting_prose_status": "7of9written,2failed; unchanged baseline, not a new deployment failure",
+  "screenshot": "/tmp/learned-live-desk-20261011.png",
+  "screenshot_sha256": "8aead1bb025ec75369497a433092983758ae9cb2845aa729d973496b29633bde",
+  "holding_or_account_data_edits": false,
+  "trades_submitted": false,
+  "new_ordinary_nightly_model_ui_verified": false,
+  "fresh_intraday_model_timing_verified": false
+}

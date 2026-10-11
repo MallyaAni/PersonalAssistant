@@ -1,0 +1,59 @@
+{
+  "status": "verified_actual_deployed_readers_broker_gets_and_api_reads",
+  "source_revision": "d0633fde6ae5f608413616127aa681726cbb5430",
+  "container": {
+    "id": "cfe8b7b50228b83e7ca53874ae650ae454f02b66bd4862f45b9f573ecc8f6146",
+    "image": "sha256:e479059eb2bb3fbe66494234e7e1e4176dd4a54e604a4c0437645fe584da4cfc",
+    "started_at": "2026-10-11T22:11:04.874217708Z"
+  },
+  "results": [
+    {
+      "status": "verified_actual_deployed_installed_readers_and_get_only_paper_admission",
+      "script_sha256": "ea8797cc26f33e6a4f61b51d7b4546d48179082f976cc629de346e35288a47b3",
+      "proof_sha256": "23883df8d13547bf7b885601066db0ec2ab6a5792319ee12a2c8add671fd7abb",
+      "cost_bps": 10,
+      "planned_orders": 0,
+      "existing_session_no_op": true,
+      "decision_preview": "available",
+      "retained": [
+        "SNDK"
+      ],
+      "joint_dates": 344
+    },
+    {
+      "status": "verified_actual_deployed_gateway_desk_reads_and_owner_isolation",
+      "script_sha256": "6105e7a193c15112c0f977bbe64a1240bcde30ce38845a8f6dc0dfd990d91dd8",
+      "proof_sha256": "8c5a6dd31448a6254d9eb4ebcf42e4c576a3b548acedb4de724ee7929cf7c569",
+      "endpoints": {
+        "desk": {
+          "http_status": 200,
+          "body_sha256": "05d90b9039e9c75916f229c526c1ff981c6091fbe6b1f783fab7c6bad135dda1"
+        },
+        "desk/paper": {
+          "http_status": 200,
+          "body_sha256": "1c0fd1e67cd484996375bf3f3995877818a7407ae9c0a4d8670b87f1556db041"
+        },
+        "desk/holdings": {
+          "http_status": 200,
+          "body_sha256": "3528fd456135c3c438c3484ecb05873a5e0da0464510cfe3cc7e485255313696"
+        },
+        "desk/live": {
+          "http_status": 200,
+          "body_sha256": "ad4ae44642fefe921992766ea7e1036e8fb924522b21969e64ccf5ef4134fa4e"
+        }
+      },
+      "foreign_owner_status": 403,
+      "unauthenticated_status": 401,
+      "current_record_session": "2026-10-09",
+      "current_record_policy": "graded-equal-weight/5",
+      "paper_plan_policy": "graded-equal-weight/5",
+      "paper_positions": 10,
+      "open_paper_orders": 0
+    }
+  ],
+  "cost_bps": 10,
+  "orders_submitted": false,
+  "browser_acceptance": false,
+  "ordinary_nightly_acceptance": false,
+  "first_paper_execution": false
+}

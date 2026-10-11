@@ -1,0 +1,14 @@
+{
+  "status": "installed_reviewed_paper_only_learned_release",
+  "activated_at": "2026-10-11T22:12:21.363351+00:00",
+  "source_revision": "d0633fde6ae5f608413616127aa681726cbb5430",
+  "cost_bps": 10,
+  "holding_config_sha256": "d4ff38db0f136462f5ff0246fdb0737a9947603d4a5fe9ad0d46792e626c2704",
+  "timing_config_sha256": "d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a",
+  "release_sha256": "6a771eb87d97b8b754d95e6e69627841bbf67339ee7a719d3a92215a76bf8085",
+  "evidence_sha256": "d480d5deb44f4983c34cf616ca89c6760039a69376aa7b6c5a2e806ccee80a2a",
+  "deployment_execution_sha256": "120c4ae598aa0bd6d6f2d4ff69199ff37f9cefe9063f66c4fae8665328c0a402",
+  "existing_prediction_and_account_state_unchanged": true,
+  "orders_submitted": false,
+  "new_fits": false
+}

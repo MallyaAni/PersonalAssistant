@@ -1,0 +1,34 @@
+{
+  "status": "verified_installed_release_and_actual_deployed_acceptance",
+  "source_revision": "d0633fde6ae5f608413616127aa681726cbb5430",
+  "cost_bps": 10,
+  "activation_sha256": "67c52063a022df09a1ab6ef2a783ed63c5f82e846911cc934967b65c3e0410a7",
+  "deployed_acceptance_sha256": "e27351c8ff4f85bcae1f6cb50b11f5381a1491e8bfc188407fed5fa2a38139c3",
+  "original_artifacts_checked": 8,
+  "runtime_source_files_checked": 28,
+  "owner_only_artifacts": true,
+  "observations_readable_by_host_nightly_owner": true,
+  "dated_record_and_paper_state_unchanged": true,
+  "existing_session_no_op_verified": true,
+  "paper_positions": 10,
+  "open_paper_orders": 0,
+  "actual_paper_broker_get_admission": true,
+  "actual_gateway_read_routes": 4,
+  "foreign_owner_status": 403,
+  "anonymous_status": 401,
+  "failure_receipts_preserved": {
+    "accept_deployed_learned_20261011-failure.json": "f7eb667a1c1a10d2620092611d1728713301630bf1f7bbf82d38af39950151a4",
+    "accept_deployed_http_20261011-failure.json": "897c5b118b415c38d25d8bbcffe364e227d3aa4b7bf1a9f5ea8bb91756271377",
+    "accept_deployed_learned_20261011_v2-failure.json": "f6f089bd308a6b4d9f5e47bcf07ed01285980390319aefad9e32618ba102ac30"
+  },
+  "harness_failures": [
+    "UID1000 could not read root-owned image module; actual serving identity used with host-owned observations",
+    "already-recorded session correctly returned no allocation receipt/no orders; asserted no-op and used separate read-only decision preview",
+    "gateway listens on8080, not80; corrected HTTP harness origin"
+  ],
+  "orders_submitted_by_acceptance": false,
+  "ordinary_nightly_verified": false,
+  "subsequent_paper_execution_verified": false,
+  "fresh_intraday_verified": false,
+  "general_superiority_verified": false
+}

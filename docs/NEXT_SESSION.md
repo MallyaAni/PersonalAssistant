@@ -1,5 +1,79 @@
 # Next session
 
+## 2026-10-11 — updated code deployed; learned paper selectors installed and accepted
+
+VERIFIED actual canonical release and runtime source at
+d0633fde6ae5f608413616127aa681726cbb5430. scripts/deploy.sh with every required
+gate enabled finished2026-10-11T22:11:09Z (18:11 New York), exit0. Unit:
+10586passed,93skipped,6xfailed,439warnings,582.50seconds. Real-model routing:
+100passed,0skips,408.32seconds. Backup/mirrors/migration/build/restart and cheap
+post-deploy smoke passed. Independent check matched2385tracked regular runtime
+files to Git; native arm64 backend image
+e479059eb2bb3fbe66494234e7e1e4176dd4a54e604a4c0437645fe584da4cfc,
+containercfe8b7b50228; gateway2bb25ae8b542/image555386d4. Main text and embedding
+model identities unchanged. Full functional suite not claimed. Root
+scratch/learned-live-code-release-20261011-d0633fde; claim/execution/deploy.log/
+independent-verification.json. Never repeat this finished deploy/gate for docs.
+Log0615b0577ec6086e58951dedace979b1e1628ab7f7649d165d3ccde9dd110847;
+terminal execution120c4ae598aa0bd6d6f2d4ff69199ff37f9cefe9063f66c4fae8665328c0a402.
+
+User directed the agent to finish updated live code and resolve routine release
+decisions. Resolved10bp per filled side from the previously declared allowance
+above the original paper.py comment's approximately6bp recorded slippage; no
+selection from historical winners, new fit or parameter experiment. Ignore the
+obsolete optional cost question. VERIFIED reviewed paper-only activation at
+22:12:21Z: original8Octoberfiles authenticated and unchanged; actual28runtime
+hashes, full mixed economic/saved-ledger proof and failure history bound into
+evidence. Timing published first, holding selector atomically last. Risk/model
+and timing/residual loaders admit current month/cohort. Existing dated records,
+paper state and personal holdings unchanged by installation, no submitted orders.
+Root scratch/learned-live-activation-20261011-10bp-d0633fde; activation.json,
+bundle, independent-activation-verification.json and completed acceptance.
+Holding configd4ff38db0f136462f5ff0246fdb0737a9947603d4a5fe9ad0d46792e626c2704;
+timingd03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a;
+release6a771eb87d97b8b754d95e6e69627841bbf67339ee7a719d3a92215a76bf8085;
+evidenced480d5deb44f4983c34cf616ca89c6760039a69376aa7b6c5a2e806ccee80a2a.
+
+VERIFIED actual serving prepare/readers/persisted close and real GET-only paper
+clock/account/positions admission. Current decision preview available,344joint
+dates,SNDK retained. Real Friday session was already recorded: plan() correctly
+returns no orders and identical state; never erase sessions_seen to manufacture
+a new account day. Actual original paper state and Friday record bytes remain
+unchanged. GET-only actual gateway reads desk,desk/paper,desk/holdings,desk/live
+return meaningful200content; foreign owner403,anonymous401.10paper positions,
+0open broker orders. Model files0600/UID1000; observations readable by host
+nightly UID1000. Account proof23883df8d13547bf7b885601066db0ec2ab6a5792319ee12a2c8add671fd7abb;
+HTTP8c5a6dd31448a6254d9eb4ebcf42e4c576a3b548acedb4de724ee7929cf7c569.
+Original failed private harnesses retained: UID1000 cannot read root-owned image
+modules; use actual serving identity and preserve host observation ownership.
+An already-processed session has no allocation receipt; assert the correct no-op,
+use separate read-only decide() preview. Gateway port is8080,not80. These were
+harness assumptions, no production code regression or weakened gate. Completed
+successful broker proof reused for HTTP correction, never replayed.
+
+VERIFIED manual browser session on existing deep-matter.com live desk: actual
+post-deploy reload/auth persistence,stock table,SNDK A+details/No order and
+paper positions/fills panel;10positions match API, no console errors/warnings.
+Old7of9prose/2failed banner matches pre-deploy baseline. Screenshot
+/tmp/learned-live-desk-20261011.png, SHA
+8aead1bb025ec75369497a433092983758ae9cb2845aa729d973496b29633bde.
+Exact compact proof/findings: [live release](research/learned-live-release-2026-10-11.md).
+
+Updated code/installed selectors are LIVE; full operational replacement acceptance
+remains INCOMPLETE until first ordinary nightly, fresh actual-session timing and
+subsequent paper execution/reconciliation. Existing Friday record/API/board still
+correctly report graded-equal-weight/5 and Friday's targets; do not retag or
+rewrite them to claim model adoption. Next ordinary nightly Monday2026-10-12
+19:30ET (verified crontab30 19 * * 1-5 desk_daily.sh); its following execution
+Tuesday. Continue existing monitor only for those new real boundaries. Before
+Monday's ordinary nightly, stay quiet without rerunning completed qualification,
+deploy, admission or experiment. Never fake clocks, force a past account day,
+call desk.run, refit original heads or duplicate accounts/controls. Preserve mixed
+component findings and all failed roots; no general-superiority guarantee.
+No real-money orders, paid data, model-service changes, history rewrites or
+unguarded deployments. Pause heartbeat after all applicable actual acceptance
+is recorded. Diagram impact: NONE — existing release/configuration and evidence.
+
 ## 2026-10-11 — resumed release; installed admission passes; actual code deploy active
 
 The user challenged the repeated ETA after the bounded monitor had been paused.
