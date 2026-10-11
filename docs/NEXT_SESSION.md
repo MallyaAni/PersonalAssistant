@@ -47,10 +47,15 @@ API/browser/nightly acceptance remain UNVERIFIED. Original preflight marker-
 length error is retained, failed before broker capture; v2 authenticates both
 8character marker and40character full deployment Git HEAD.
 
-NEXT exact current-source canonical release dry run: implementation1c469426,
+NEXT/ACTIVE exact current-source canonical release dry run: implementation1c469426,
 existing isolated checkout /home/animallya96/codex-worktrees/learned-live-held-release-20261007,
 root scratch/learned-live-current-preflight-20261011-1c469426, separate throwaway
-DB anios_gate_live_current_20261011. Inspect claim/execution/log/process first;
+DB anios_gate_live_current_20261011. Launcher PID4106270, run.py/claim.json and
+deploy-dry-run.log in that root. It started only after confirming the isolated
+checkout had no tracked modifications and no prior gate was active; shared
+data/secrets symlinks remain. Command scripts/deploy.sh --no-pull --dry-run;
+serial gate worker1. No deployment or activation. Findings published on main
+6041c22d; no code changed in the publication. Inspect claim/execution/log/process first;
 never restart an active gate. Prior full gates predate shared V6/memory changes.
 No new historical cohort or cost choice is justified. After this bounded gate,
 persist its actual outcome, review exact artifacts/evidence and release sequence,
