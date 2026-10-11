@@ -49,8 +49,11 @@ holding selector with an unapproved/unknown cost. Sunday fresh intraday timing
 cannot be fabricated; actual market-session, deployed API/browser, current-book
 reconciliation, ordinary nightly and subsequent execution remain UNVERIFIED.
 Next ordinary nightly is Monday19:30ET; following ordinary execution Tuesday.
-The earlier bounded-gate heartbeat remains paused at this checkpoint. Do not
-reuse its obsolete completed-gate prompt as a monitor of the new deployment.
+The existing heartbeat has been reactivated with the new exact code-release
+root and a replaced prompt; it must not poll the obsolete completed gate. It
+tracks the active deployment quietly, then records the terminal outcome and
+remaining decision. If the cost input remains unavailable, pause after recording
+that bounded outcome rather than repeatedly asking or consuming usage.
 No new fits/accounts/controls, real orders, paid data or model-service changes.
 Diagram impact: NONE — existing release code, private acceptance and evidence.
 
