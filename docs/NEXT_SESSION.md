@@ -1,5 +1,48 @@
 # Next session
 
+## 2026-10-11 — current-source canonical gate passes; bounded monitor complete
+
+VERIFIED exact implementation1c4694265a8ae3e36ee0cfcf88d332b974f62e34:
+scripts/deploy.sh --no-pull --dry-run passed10586unit tests,93skips,6xfails,
+439warnings in570.27seconds;100real-model routing tests,0skips in424.81seconds.
+Finished2026-10-11T13:26:21Z (09:26 New York), exit0. Source2382tracked regular
+files independently match Git; native arm64 test image
+2be3b7fd962190b8c5800d650cdbd04ea9e5f40cd5fad317c2dc4a57027c088b.
+Root scratch/learned-live-current-preflight-20261011-1c469426:
+execution023824205f55d530e958a1ae4529ce5ac5a52b912cc63e393fd34027d068a3d8;
+log6411dfca4a344fe9be1005a09150d0614b2bc341bcf7e2b41fb8b6260cb7082c;
+launcher5e38cc8af4125dc5af7a6b45864aca0188f319375e5b9e8ed0b0628bce0e950b.
+Independent-verification.json checks source/image/logs, identical serving/model
+IDs/images/start times before/after/fresh review, full production HEAD92b11bb9,
+same marker and both learned selectors absent. Gate used1worker and its separate
+database anios_gate_live_current_20261011. It has exited: NEVER repeat it for
+documentation changes. Gate temporary worktree/test containers removed normally.
+Isolated checkout remains detached1c469426; pre-existing data/secrets preserved.
+
+Objective live replacement remains INCOMPLETE. Completed carried screen and
+fresh paper-book planning remain VERIFIED as below; no new account, control,
+base fit, cost choice, deployment, activation, order submission or model-service
+change. Unit skips/xfails do not disappear; canonical routing gate is not the
+entire real-model functional suite. No live/superiority claim from these tests.
+
+Decision: advance to reviewable paper-only release preparation, not another
+historical experiment. Next concrete boundary is private installed holding/
+timing admission using the original eight October artifact files, exact28
+runtime source hashes and complete evidence; explicitly resolve the original
+execution-cost policy without selecting from observed winners. Then guarded
+scripts/deploy.sh deployment, actual API/browser/account reconciliation and next
+ordinary nightly publication. Installed approval/config/timing and all those
+deployed/operational boundaries remain UNVERIFIED. Preserve existing orders and
+prediction history, personal-account protections and monthly expiry guards.
+Full decision/evidence: [release decision](research/learned-live-release-decision-2026-10-11.md).
+
+Bounded screen/current-gate outcome is recorded; pause heartbeat
+continue-trading-implementation-on-mac as explicitly requested. Do not consume
+usage polling completed work. Resume at installed admission/release preparation
+when directed. No real orders, paid data, models/secrets/production data changes,
+UI detours, desk.run, old October5cohorts, history rewrites or unguarded deployment.
+Diagram impact: NONE — evidence and release decision only.
+
 ## 2026-10-11 — carried screen closes; fresh paper-book planning passes
 
 Objective still INCOMPLETE: live entry, holding-exit and sizing replacement.

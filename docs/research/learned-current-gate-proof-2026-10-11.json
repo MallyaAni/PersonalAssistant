@@ -1,0 +1,45 @@
+{
+  "status": "verified_complete_current_source_canonical_dry_run",
+  "source_revision": "1c4694265a8ae3e36ee0cfcf88d332b974f62e34",
+  "tracked_regular_files_checked": 2382,
+  "test_image": "sha256:2be3b7fd962190b8c5800d650cdbd04ea9e5f40cd5fad317c2dc4a57027c088b",
+  "architecture": "arm64",
+  "unit": {
+    "passed": 10586,
+    "skipped": 93,
+    "xfailed": 6,
+    "warnings": 439,
+    "seconds": 570.27
+  },
+  "real_model_routing": {
+    "passed": 100,
+    "skipped": 0,
+    "seconds": 424.81
+  },
+  "started_at": "2026-10-11T13:08:59.559701+00:00",
+  "finished_at": "2026-10-11T13:26:21.226596+00:00",
+  "hashes": {
+    "run.py": "5e38cc8af4125dc5af7a6b45864aca0188f319375e5b9e8ed0b0628bce0e950b",
+    "claim.json": "2e471a04ac0d83c5dad8cf6cb4d0b6522895e4e59cabd2926adb753b3f1d81b9",
+    "execution.json": "023824205f55d530e958a1ae4529ce5ac5a52b912cc63e393fd34027d068a3d8",
+    "deploy-dry-run.log": "6411dfca4a344fe9be1005a09150d0614b2bc341bcf7e2b41fb8b6260cb7082c"
+  },
+  "serving_and_model_unchanged": true,
+  "production_head": "92b11bb981fb42a580dd98f140c8aa440c462f3e",
+  "production_marker": "92b11bb9",
+  "selectors_absent": true,
+  "gate_database": "anios_gate_live_current_20261011",
+  "gate_workers": 1,
+  "deployed": false,
+  "activated": false,
+  "orders_submitted": false,
+  "full_functional_suite_run": false,
+  "unverified": [
+    "reviewed installed release/configuration",
+    "installed timing and holding artifact admission",
+    "deployed API and browser behavior",
+    "current account execution/reconciliation",
+    "ordinary nightly target and intent publication",
+    "general superiority or full adoption qualification"
+  ]
+}
