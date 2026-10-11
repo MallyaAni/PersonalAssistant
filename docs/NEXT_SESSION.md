@@ -1,5 +1,64 @@
 # Next session
 
+## 2026-10-11 — carried screen closes; fresh paper-book planning passes
+
+Objective still INCOMPLETE: live entry, holding-exit and sizing replacement.
+VERIFIED bounded shared V6 carried component screen and independently checked
+saved ledger/calibration proof. Production92b11bb9 remains unchanged, learned
+selectors absent, no submitted orders or production writes. Do not replay any
+account/control, refit heads, tune costs/windows or restart preserved jobs.
+
+Root scratch/held-carried-screen-20261010-1c469426-memoryfix2:
+producer45a1f4112e75 finished2026-10-11T12:49:30Z; verifierb81b072f681f
+finished12:50:33Z (08:50 New York). Both exit0/OOMfalse, native5c6c/CPU1/4GiB/
+networknone/ROroot and original RO inputs including /previous; private/results
+only writable. Three complete2177scored-session accounts,272matching incumbent
+prefix sessions each, nine exact reused controls and36paired all-window checks.
+Completion SHAe191d1a8d8140a61723d1ec9484e21e20680ede9ed5e53ccc7d391c917ee56eb;
+saved proof38fb9f2a2bcfbb1cced0f398a25264b7bee0f8a1db2f5b66b33d06094333d6d9;
+reportb28cd38b039a457a7004a3882c386d39617ede42260f8176e7408ce3fe7f62bb.
+Archive SHAs0c9079bb1ebfb7c9e75f95dd453b69160c1955e75c800977d31db91e1596fbb86,
+10896fac34e5c13a16b0d418d477e22e65c313ca49e637bc797f6000c1b163be8d,
+258b5646f4e741722531783f489253448e1246c380414d27115afcbe1a4ae4cade.
+Zero cost retains originalad89d227source/manifest/runner;10/25use1c469426.
+Both identities authenticated. Zero copied unchanged, never replayed.
+
+Full gains965.27/643.50/576.99% versus rule763.51/603.10/432.96%. Evidence MIXED:
+zero-cost turnover277.01versus184.21;10bp Sharpe0.906versus0.914;25bp drawdown
+47.17%versus46.43%. Reused recent gains1.03/4.13/5.27% versus5.37/4.93/4.45%,
+candidate recent drawdown worse at every cost. Missing NAV/held marks/unknown
+claim marks0; preserve all missed/refused fills. No adoption/superiority claim:
+three current-vintage start0screens and already exposed recent data are not
+full qualification, conditional raw-open fills are not actual broker/midpoint.
+All costs/windows/controls/missingness and exact saved JSON:
+[completion findings](research/learned-carried-results-2026-10-11.md).
+
+VERIFIED next bounded current-paper-book planning: GET-only fresh paper account
+and positions with latest authenticated2026-10-09stored daily/history/grades;
+original October heads/risk bank, no new fits. Shared1c46942628runtime hashes
+matched immutable whole source before/after; container398641d2ff3f exited0/
+OOMfalse, same5c6c/CPU1/4GiB/networknone/allinputsRO/privateproofRW. SNDK
+retained,344joint mature dates,3/1/1private sell adjustments at0/10/25bp;
+cash/share/no-retained-orders/projected-cash guards pass. Root
+scratch/current-held-qualification-20261011-1c469426-v2;
+proof96e0f0dad712bceb4e2fa6a8de0564b0b27a6e713fbe8ea963c944efcef85274.
+Account contents stay private. Installed approval/timing/execution and deployed
+API/browser/nightly acceptance remain UNVERIFIED. Original preflight marker-
+length error is retained, failed before broker capture; v2 authenticates both
+8character marker and40character full deployment Git HEAD.
+
+NEXT exact current-source canonical release dry run: implementation1c469426,
+existing isolated checkout /home/animallya96/codex-worktrees/learned-live-held-release-20261007,
+root scratch/learned-live-current-preflight-20261011-1c469426, separate throwaway
+DB anios_gate_live_current_20261011. Inspect claim/execution/log/process first;
+never restart an active gate. Prior full gates predate shared V6/memory changes.
+No new historical cohort or cost choice is justified. After this bounded gate,
+persist its actual outcome, review exact artifacts/evidence and release sequence,
+pause the completed monitor rather than polling old accounts. Eventual release
+only scripts/deploy.sh with required gates and actual API/browser/account and
+ordinary nightly publication proof. No real orders or model-service changes.
+Diagram impact: NONE — evidence and private qualification only.
+
 ## 2026-10-10 — second carried screen OOM; completed account preserved
 
 Objective INCOMPLETE: qualify shared V6 entry, holding exits and sizing, then
