@@ -179,7 +179,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await expect(chart.locator('[aria-label="AAPL paper fills"] li')).toHaveText(['Sep 15 · 9:30 AM ET · BUY 7 @ $225.10 · idle cash put to work', 'Sep 15 · 9:30 AM ET · BUY 63 @ $224.81'])
       await expect(chart.getByRole('checkbox', {name: 'Paper trades'})).toBeChecked()
       // The trades reach the real canvas on the bar they filled in; the signal is off by default.
-      await expect.poll(() => drawn(page, '15m')).toEqual(expect.arrayContaining(['BUY 63 @ $224.81', 'BUY 7 @ $225.10']))
+      await expect.poll(() => drawn(page, '15m')).toContain('BUY 70 sh')
       expect((await drawn(page, '15m')).filter(text => /signal/.test(text))).toEqual([])
       await expect(chart.locator('[aria-label="AAPL strategy signals"]')).toHaveCount(0)
       // Shown, the signal is listed with the close it was made at and drawn on the 15:45 bar, in the
@@ -210,7 +210,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await page.evaluate(() => {(window as unknown as CanvasState).__markerDraws = []})
       await sessions.getByRole('button', {name: '5', exact: true}).click()
       await expect.poll(() => intradayReads(fixture)).toHaveLength(3)
-      await expect.poll(() => drawn(page, '15m')).toContain('BUY 63 @ $224.81')
+      await expect.poll(() => drawn(page, '15m')).toContain('BUY 70 sh')
       expect(await drawn(page, '15m')).not.toEqual(expect.arrayContaining(['BUY signal 14% at the close']))
       await expect(decisions).toContainText('BUY 63 @ $224.81')
       // Back on daily the sessions selector goes away and the daily markers return.

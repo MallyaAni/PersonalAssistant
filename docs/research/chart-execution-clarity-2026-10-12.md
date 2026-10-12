@@ -79,3 +79,24 @@ canonical scratch/learned-chart-labels-release-20261012 remains pending at this 
 Never rerun the first deployment.
 
 Diagram impact: NONE — existing chart layers and order presentation.
+
+The bounds release c5ba98f002a606312a9d25faa85c024471162125 completed canonical
+frontend deployment at15:52Z, with independent exact source/bundle checks.
+FAILED live readability on crowded AAOI weekly views: long individual labels
+overlapped and dynamic vertical margins distorted the stock-price scale.
+Fixtures passing text bounds did not prove legibility on a dense real chart.
+Both semantic and bounds roots/screenshots remain preserved; never rerun them.
+
+The final presentation replaces stacks with BUY/SELL filled-share totals per
+candle: per day on D, per week on W, per containing15-minute bar on15m. BUY and
+SELL are never netted. A label is a sum of recorded filled shares, not a single
+new order or a reconstructed model trigger. Individual records, original dates,
+quantities and unadjusted fill prices remain unchanged in the list. Removed the
+extra vertical-margin algorithm; retained edge spacing and small circles.
+Stock-price axis padding below zero is not labelled as a price. Markers say
+action and shares only; their legend defines the grouping.110browser cases
+passed/no skips on this candidate; all11final-source cases passed afterward,
+including D/W/15m, both ranges, phone/desktop, nonnegative price labels,
+same-candle totals and separate BUY/SELL weekly totals.111unique cases overall.
+Canonical scratch/learned-chart-shares-release-20261012 pending. No data, trading rules,
+model artifacts or backend services change.

@@ -4,7 +4,7 @@ const USER = 'chart-decisions-fixture'
 const POLICY = 'graded-equal-weight/4'
 const NOTE = 'signals at each close; sizes are % of the account'
 const DISPLAY_NOTE = 'Recalculated close decisions; not recorded recommendations or fills. Sizes are portfolio weights.'
-type CanvasState = Window & {__markerDraws: {text: string; timeframe: string | null; left: number; right: number; top: number; bottom: number; width: number; height: number}[]}
+type CanvasState = Window & {__markerDraws: {text: string; timeframe: string | null; left: number; right: number; top: number; bottom: number; width: number; height: number}[]; __chartPrices: string[]}
 const REBALANCE_NOTE = 'reset sessions from the paper state\'s rebalance clock and the nightly records; add/trim markers only on those, target drift between resets is not traded'
 type DecisionRow = {date: string; grade: string; action?: string; target_weight?: number; delta_weight?: number; rebalance?: boolean}
 type LiveFixture = {price: number; failNextChart?: boolean; fills: {symbol: string; side: string; qty: number; price: number; filled_at?: string}[]}
@@ -64,9 +64,11 @@ async function install(page: Page, frontendURL: string, options: {fills?: (typeo
     localStorage.setItem('anios.theme', 'light')
     const state = window as unknown as CanvasState
     state.__markerDraws = []
+    state.__chartPrices = []
     const fillText = CanvasRenderingContext2D.prototype.fillText
     // Preserve every production paint call while recording marker labels and the selected timeframe.
     CanvasRenderingContext2D.prototype.fillText = function (this: CanvasRenderingContext2D, ...args: Parameters<CanvasRenderingContext2D['fillText']>) {
+      if (this.canvas.closest('[data-testid="ticker-chart-canvas"]') && args[0].startsWith('$')) state.__chartPrices.push(args[0])
       if (this.canvas.closest('[data-testid="ticker-chart-canvas"]') && /^(BUY |SELL |ADD |TRIM |RESET |Grade |Saved grade|Recalculated grade)/.test(args[0])) {
         const timeframe = this.canvas.closest('section')?.querySelector('[aria-label="Chart timeframe"] [aria-pressed="true"]')?.textContent ?? null
         const metrics = this.measureText(args[0]), rect = this.canvas.getBoundingClientRect()
@@ -170,12 +172,16 @@ for (const width of [1280, 390]) test(`full chart fill labels stay inside the ca
     for (const frame of ['D', 'W', '15m']) {
       await chart.getByRole('button', {name: frame, exact: true}).click()
       for (const mode of ['Full history', 'Recent']) {
-        await page.evaluate(() => {(window as unknown as CanvasState).__markerDraws = []})
+        await page.evaluate(() => {(window as unknown as CanvasState).__markerDraws = []; (window as unknown as CanvasState).__chartPrices = []})
         await chart.getByRole('button', {name: mode, exact: true}).click()
         await page.clock.runFor(200)
-        await expect.poll(() => drawn(page, frame)).toContain('BUY 7 @ $111.00')
+        await expect.poll(() => drawn(page, frame)).toContain('BUY 25 sh')
         const paints = await page.evaluate(frame => (window as unknown as CanvasState).__markerDraws.filter(row => row.timeframe === frame && /^(BUY|SELL) \d/.test(row.text)), frame)
-        expect(paints.length).toBeGreaterThanOrEqual(frame === '15m' ? 6 : 7)
+        expect(paints.length).toBeGreaterThanOrEqual(frame === '15m' ? 2 : 3)
+        expect(paints.map(row => row.text)).toContain('SELL 25 sh')
+        const prices = await page.evaluate(() => (window as unknown as CanvasState).__chartPrices)
+        expect(prices.length).toBeGreaterThan(0)
+        expect(prices.some(price => price.includes('-'))).toBe(false)
         for (const row of paints) {
           expect(row.left, `${frame} ${mode} ${row.text}`).toBeGreaterThanOrEqual(0)
           expect(row.right, `${frame} ${mode} ${row.text}`).toBeLessThanOrEqual(row.width)
@@ -196,13 +202,13 @@ test('chart defaults to recorded executions with a clear share-size legend', asy
     const chart = page.getByRole('region', {name: 'AAPL price chart'})
     await expect(chart.getByRole('checkbox', {name: 'Grade changes'})).not.toBeChecked()
     await expect(chart.getByRole('checkbox', {name: 'Policy replay'})).not.toBeChecked()
-    await expect(chart.getByLabel('Chart legend')).toContainText('shares @ fill price')
-    await expect.poll(() => drawn(page, 'D')).toContain('BUY 63 @ $224.81')
+    await expect(chart.getByLabel('Chart legend')).toContainText('shares filled per day')
+    await expect.poll(() => drawn(page, 'D')).toContain('BUY 63 sh')
     expect((await drawn(page, 'D')).some(text => /grade|signal|RESET/.test(text))).toBe(false)
     await chart.getByRole('button', {name: 'W', exact: true}).click()
-    await expect.poll(() => drawn(page, 'W')).toContain('BUY 63 @ $224.81')
-    await expect(chart.getByLabel('Chart legend')).toContainText('W groups fills by week')
-    await expect(chart.getByLabel('Chart legend')).toContainText('Fill prices are unadjusted')
+    await expect.poll(() => drawn(page, 'W')).toContain('BUY 63 sh')
+    await expect(chart.getByLabel('Chart legend')).toContainText('shares filled per week')
+    await expect(chart.getByLabel('Chart legend')).toContainText('Individual fills and prices below')
     expect((await drawn(page, 'W')).some(text => /grade|signal|RESET/.test(text))).toBe(false)
   } finally {await finish(testInfo, fixture)}
 })
@@ -222,8 +228,8 @@ test('15m marks only timestamped valid fills and leaves date-only fills in the l
     await expect(chart.getByLabel('Fill timing')).toContainText('no recorded time')
     await expect(chart.getByLabel('AAPL paper fills')).toContainText('BUY 63 @ $224.81')
     await expect(chart.getByLabel('AAPL paper fills')).not.toContainText('SELL -4')
-    await expect.poll(() => drawn(page, '15m')).toContain('BUY 3 @ $111.00')
-    expect(await drawn(page, '15m')).not.toContain('BUY 63 @ $224.81')
+    await expect.poll(() => drawn(page, '15m')).toContain('BUY 3 sh')
+    expect(await drawn(page, '15m')).not.toContain('BUY 63 sh')
   } finally {await finish(testInfo, fixture)}
 })
 
@@ -247,11 +253,11 @@ for (const width of [1280, 390]) {
       const fills = chart.locator('[aria-label="AAPL paper fills"] li')
       await expect(fills).toHaveCount(1)
       await expect(fills).toContainText('10:00 AM ET · BUY 3 @ $111.00')
-      await expect.poll(() => drawn(page, 'D')).toContain('BUY 3 @ $111.00')
+      await expect.poll(() => drawn(page, 'D')).toContain('BUY 3 sh')
       await chart.getByRole('button', {name: 'W', exact: true}).click()
-      await expect.poll(() => drawn(page, 'W')).toContain('BUY 3 @ $111.00')
+      await expect.poll(() => drawn(page, 'W')).toContain('BUY 3 sh')
       await chart.getByRole('button', {name: '15m', exact: true}).click()
-      await expect.poll(() => drawn(page, '15m')).toContain('BUY 3 @ $111.00')
+      await expect.poll(() => drawn(page, '15m')).toContain('BUY 3 sh')
       await expect(chart.getByLabel('Chart refresh status')).toContainText('refresh 20s · IEX')
       await chart.getByText('Indicators & price basis', {exact: true}).click()
       await expect(chart.getByLabel('Indicator readings')).toContainText('$111.00')
@@ -259,10 +265,10 @@ for (const width of [1280, 390]) {
       live.fills.push({symbol: 'AAPL', side: 'sell', qty: 1, price: 112, filled_at: '2026-09-24T14:00:25Z'})
       await page.clock.runFor(21000)
       await expect(fills).toHaveCount(2)
-      await expect.poll(() => drawn(page, '15m')).toContain('SELL 1 @ $112.00')
+      await expect.poll(() => drawn(page, '15m')).toContain('SELL 1 sh')
       await expect(chart.getByLabel('Indicator readings')).toContainText('$112.00')
       await chart.getByRole('button', {name: 'D', exact: true}).click()
-      await expect.poll(() => drawn(page, 'D')).toContain('SELL 1 @ $112.00')
+      await expect.poll(() => drawn(page, 'D')).toContain('SELL 1 sh')
       await expect(chart.getByLabel('Indicator readings')).toContainText('$112.00')
       expect((await drawn(page, '15m')).some(text => text.includes('$999'))).toBe(false)
       await chart.screenshot({path: testInfo.outputPath('current-paper-chart.png')})
@@ -319,7 +325,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await expect(fills).toHaveCount(2)
       await expect(fills.nth(0)).toHaveText('Sep 18 · SELL 63 @ $230.50')
       await expect(fills.nth(1)).toHaveText('Sep 15 · BUY 63 @ $224.81')
-      await expect(chart.locator('[aria-label="Chart legend"]')).toContainText('Circles: paper fills · shares @ fill price.')
+      await expect(chart.locator('[aria-label="Chart legend"]')).toContainText('Circles: shares filled per day.')
       await chart.getByRole('checkbox', {name: 'Grade changes'}).check()
       // Strategy signals are off by default: no list, no note, no legend, no markers.
       const signalsBox = chart.getByRole('checkbox', {name: 'Policy replay'})
@@ -328,7 +334,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await expect(tradesBox).toBeChecked()
       await expect(chart.locator('[aria-label="AAPL strategy signals"]')).toHaveCount(0)
       await expect(chart.locator('[aria-label="Policy decision note"]')).toHaveCount(0)
-      await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['BUY 63 @ $224.81', 'SELL 63 @ $230.50', 'Saved grade A+→B']))
+      await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['BUY 63 sh', 'SELL 63 sh', 'Saved grade A+→B']))
       expect((await drawn(page, 'D')).filter(text => /signal|RESET/.test(text))).toEqual([])
       // Shown, the signals are listed with the close they were decided at, and drawn.
       await signalsBox.check()
@@ -348,7 +354,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await expect(legend).toContainText('RESET rebalances to target')
       await expect(legend).toContainText('These are simulated decisions')
       await expect(legend).toContainText('Reset sessions from the paper state')
-      await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['BUY signal 9.1%', 'RESET +2.5%', 'SELL signal', 'BUY 63 @ $224.81', 'SELL 63 @ $230.50', 'Saved grade A+→B']))
+      await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['BUY signal 9.1%', 'RESET +2.5%', 'SELL signal', 'BUY 63 sh', 'SELL 63 sh', 'Saved grade A+→B']))
       expect((await drawn(page, 'D')).filter(text => /^(ADD|TRIM) /.test(text))).toEqual([])
       // Unchecking removes markers and nothing else.
       await signalsBox.uncheck()
@@ -358,7 +364,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await expect(chart).toContainText('3 weeks loaded')
       await expect.poll(() => drawn(page, 'W')).toContain('Saved grade A+→B')
       expect(await drawn(page, 'W')).not.toEqual(expect.arrayContaining(['BUY signal 9.1%']))
-      expect(await drawn(page, 'W')).not.toEqual(expect.arrayContaining(['BUY 63 @ $224.81']))
+      expect(await drawn(page, 'W')).not.toEqual(expect.arrayContaining(['BUY 63 sh']))
       await expect(fills).toHaveCount(2)
       // Checking again draws them on the weekly candles; a weekly candle is not the decision's close.
       await signalsBox.check()
@@ -427,7 +433,10 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await expect(fills.nth(2)).toHaveText('Sep 15 · BUY 63 @ $224.81')
       await chart.getByRole('checkbox', {name: 'Policy replay'}).check()
       await expect(chart.locator('[aria-label="Policy marker legend"]')).toContainText('No rebalance clock on file')
-      await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['BUY 7 @ $91.00', 'BUY 63 @ $224.81']))
+      await expect.poll(() => drawn(page, 'D')).toEqual(expect.arrayContaining(['BUY 7 sh', 'BUY 63 sh']))
+      await chart.getByRole('button', {name: 'W', exact: true}).click()
+      await expect.poll(() => drawn(page, 'W')).toEqual(expect.arrayContaining(['BUY 70 sh', 'SELL 63 sh']))
+      await expect(chart.locator('[aria-label="AAPL paper fills"] li')).toHaveCount(3)
     } finally {await finish(testInfo, fixture)}
   })
 }

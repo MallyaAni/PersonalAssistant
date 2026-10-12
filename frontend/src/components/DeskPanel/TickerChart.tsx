@@ -16,7 +16,7 @@ import {
 import { exportDeskPersonalReceipt, getDeskChart, getDeskPersonalHistory, DESK_CHART_DEFAULT_SESSIONS, type DeskPersonalReceipt, type DeskChart, type DeskChartBar, type DeskChartDecision, type DeskChartTimeframe } from '../../services/api'
 import type { DeskHistory, DeskHistoryFill, DeskHistoryRow, DeskLive, DeskPaperLive, DeskStructure } from '../../services/api'
 import { SessionPrice } from './StockBoard'
-import { LEVEL_NAME } from './TradeBoard'
+import { LEVEL_NAME, shares } from './TradeBoard'
 
 // The picture behind the grade. The board says what the desk concluded; this
 // shows adjusted price indicators beside recorded and replayed grade changes.
@@ -328,6 +328,19 @@ type ChartMarker = {
   size: number
 }
 
+type FillMarker = ChartMarker & {side: 'buy' | 'sell'; qty: number}
+
+// Show actual shares filled per candle and side while keeping individual records in the history list.
+const groupedFillMarkers = (markers: FillMarker[]): ChartMarker[] => {
+  const groups = new Map<string, FillMarker>()
+  for (const marker of markers) {
+    const key = `${marker.time}:${marker.side}`
+    const previous = groups.get(key)
+    groups.set(key, {...marker, qty: (previous?.qty ?? 0) + marker.qty})
+  }
+  return [...groups.values()].map(marker => ({...marker, text: `${marker.side === 'buy' ? 'BUY' : 'SELL'} ${shares(marker.qty)}`}))
+}
+
 const DECISION_BUY = '#15803d'
 const DECISION_SELL = '#b42318'
 // The paper account's trades, in the board's colours: BUY green, SELL red.
@@ -450,7 +463,7 @@ const currentFillRows = (history: DeskHistory | undefined, activity: DeskPaperLi
 }
 
 // Place timestamped fills only on their containing 15-minute candle, never on a nearest substitute.
-const currentIntradayMarkers = (fills: DeskHistoryFill[], bars: DeskChartBar[]): ChartMarker[] =>
+const currentIntradayMarkers = (fills: DeskHistoryFill[], bars: DeskChartBar[]): FillMarker[] =>
   fills.flatMap(fill => {
     const at = recordedInstant(fill.filled_at)?.getTime()
     if (at == null) return []
@@ -460,7 +473,7 @@ const currentIntradayMarkers = (fills: DeskHistoryFill[], bars: DeskChartBar[]):
     })
     return candle ? [{time: instantStamp(candle.time!), position: fill.side === 'buy' ? 'belowBar' as const : 'aboveBar' as const,
       color: fill.side === 'buy' ? TRADE_BUY : TRADE_SELL, shape: 'circle' as const,
-      text: tradeText(fill.side, fill.qty, fill.price), size: 1}] : []
+      text: tradeText(fill.side, fill.qty, fill.price), side: fill.side, qty: fill.qty, size: 1}] : []
   })
 
 // Whether a fill is the executor's redeploy of idle cash rather than an entry
@@ -471,7 +484,7 @@ const isRedeploy = (fill: {kind?: string}) => fill.kind === 'redeploy'
 // below the candle for a buy and above it for a sell, so a decision and the fill
 // it led to sit a candle apart on the same picture. A redeploy fill is purple
 // and says so; every other fill is blue.
-const fillMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], timeframe: Timeframe): ChartMarker[] =>
+const fillMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], timeframe: Timeframe): FillMarker[] =>
   fillRows(history).flatMap(fill => {
     const candle = markerCandle(fill.date, bars, timeframe)
     return candle ? [{
@@ -480,6 +493,7 @@ const fillMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], tim
       color: fill.side === 'buy' ? TRADE_BUY : TRADE_SELL,
       shape: 'circle' as const,
       text: tradeText(fill.side, fill.qty, fill.price),
+      side: fill.side, qty: fill.qty,
       size: 1,
     }] : []
   })
@@ -712,14 +726,14 @@ export const TickerChart = ({
   const changes = useMemo(() => gradeMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
   const decisions = useMemo(() => decisionMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
   const fills = useMemo(() => currentFillRows(history, paperActivity, ticker, now), [history, paperActivity, ticker, now])
-  const fillMarks = useMemo(() => fillMarkers({...history, fills} as DeskHistory, merged.bars, timeframe), [history, fills, merged, timeframe])
+  const fillMarks = useMemo(() => groupedFillMarkers(fillMarkers({...history, fills} as DeskHistory, merged.bars, timeframe)), [history, fills, merged, timeframe])
   // The fifteen-minute layers come timed from the payload rather than dated
   // from the history file, so they are empty on daily and weekly.
   // The 15m view marks the signal on the bar it was made; where a trade fills
   // is the paper account's own fill, drawn from the fills, never projected.
   const timedDecisions = useMemo(() => intradayDecisionMarkers(data), [data])
   // The payload's bar time may be an assumed open/close; require the original execution instant instead.
-  const timedFills = useMemo(() => timeframe === '15m' ? currentIntradayMarkers(fills, merged.bars) : [], [timeframe, fills, merged])
+  const timedFills = useMemo(() => timeframe === '15m' ? groupedFillMarkers(currentIntradayMarkers(fills, merged.bars)) : [], [timeframe, fills, merged])
 
   useEffect(() => {
     if (!holder.current || !data || !merged.bars.length) return
@@ -743,7 +757,8 @@ export const TickerChart = ({
         // be a POSIX tag that Intl rejects when it draws the time axis.
         localization: {
           locale: 'en-US',
-          priceFormatter: (v: number) => `$${v.toFixed(2)}`,
+          // Empty space below zero is chart padding, not a possible stock price.
+          priceFormatter: (v: number) => v < 0 ? '' : `$${v.toFixed(2)}`,
           ...(timeframe === '15m' ? { timeFormatter: (time: Time) => typeof time === 'number' ? `${newYorkClock(time, true)} ET` : String(time) } : {}),
         },
       })
@@ -885,31 +900,6 @@ export const TickerChart = ({
       ...(showFills ? [...fillMarks, ...timedFills] : []),
     ].filter(marker => Number.isFinite(marker.time)).sort((a, b) => Number(a.time) - Number(b.time))
     markersRef.current?.setMarkers(markers)
-    const chart = chartRef.current, candles = candlesRef.current
-    if (!chart || !candles) return
-    // Reserve vertical room for each visible same-candle label without combining executions.
-    const fitLabels = () => {
-      const range = chart.timeScale().getVisibleRange()
-      const depths = new Map<string, number>()
-      const spacing = chart.timeScale().options().barSpacing
-      const shapeHeight = Math.ceil(Math.min(Math.max(spacing, 12), 30)) + 2
-      const fontSize = chart.options().layout.fontSize
-      for (const marker of markers) {
-        if (!range || typeof range.from !== 'number' || typeof range.to !== 'number'
-          || marker.time < range.from || marker.time > range.to) continue
-        const key = `${marker.time}:${marker.position}`
-        depths.set(key, (depths.get(key) ?? 0) + shapeHeight * marker.size + fontSize * 1.2 + 6)
-      }
-      const height = Math.max(100, (holder.current?.clientHeight ?? 320) - 40)
-      const top = Math.max(.1, ...[...depths].filter(([key]) => key.endsWith(':aboveBar')).map(([, value]) => value / height))
-      const bottom = Math.max(.1, ...[...depths].filter(([key]) => key.endsWith(':belowBar')).map(([, value]) => value / height))
-      const scale = Math.min(1, .85 / (top + bottom))
-      candles.priceScale().applyOptions({scaleMargins: {top: top * scale, bottom: bottom * scale}})
-    }
-    fitLabels()
-    chart.timeScale().subscribeVisibleTimeRangeChange(fitLabels)
-    // Remove the viewport observer while the same chart is still mounted.
-    return () => {if (chartRef.current === chart) chart.timeScale().unsubscribeVisibleTimeRangeChange(fitLabels)}
   }, [data, merged, timeframe, fullHistory, showSignals, showRecommendations, showDecisions, showFills, actionMarkers, changes, decisions, fillMarks, timedDecisions, timedFills, personalHistory])
 
   // Everything the canvas shows, in text, for the tests and for anyone not
@@ -1055,7 +1045,7 @@ export const TickerChart = ({
             {merged.bars.length} {timeframe === 'weekly' ? 'weeks' : 'sessions'} loaded; pan or zoom for history.
           </p>}
           <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Chart legend">
-            Circles: paper fills · shares @ fill price.{timeframe !== '15m' ? ' Fill prices are unadjusted.' : ''}{timeframe === 'weekly' ? ' W groups fills by week; fill dates are listed below.' : ''}{showSignals ? ' Arrows: grade changes, labelled Saved or Recalculated when known.' : ''}{showDecisions ? ' Signal and RESET labels: policy replay, not trades.' : ''}{personalHistory && showRecommendations ? ' Saved Buy/Sell labels: recommendations, not fills.' : ''}
+            Circles: shares filled per {timeframe === 'weekly' ? 'week' : timeframe === 'daily' ? 'day' : '15-minute bar'}. Individual fills and prices below (unadjusted).{showSignals ? ' Arrows: grade changes, labelled Saved or Recalculated when known.' : ''}{showDecisions ? ' Signal and RESET labels: policy replay, not trades.' : ''}{personalHistory && showRecommendations ? ' Saved Buy/Sell labels: recommendations, not fills.' : ''}
           </p>
           {timeframe === '15m' && fills.some(fill => !recordedInstant(fill.filled_at)) && <p aria-label="Fill timing" className="mt-1 text-[11px] text-[#6e6e73]">Some fills have no recorded time; listed below, not marked on 15m.</p>}
           <p aria-label="Chart refresh status" role={refreshFailed ? 'status' : undefined} className="mt-1 text-[11px] text-[#6e6e73]">Regular-session chart · refresh 20s{data.live_feed ? ` · ${data.live_feed.toUpperCase()}` : ''}{data.live_as_of ? ` · checked ${recordedTime(data.live_as_of)}` : ''}{refreshFailed ? ' · Refresh failed; showing last snapshot' : data.live_reason ? ` · ${data.live_reason}` : ''}</p>

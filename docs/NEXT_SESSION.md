@@ -2,6 +2,19 @@
 
 ## 2026-10-12 — chart actions and execution timing correction
 
+FOLLOW-UP: c5ba98f0 bounds release completed canonical deployment15:52Z, but
+actual dense weekly acceptance FAILED readability/price-scale distortion.
+Preserve scratch/learned-chart-labels-release-20261012 and original screenshots.
+Final candidate groups actual filled shares per candle and side (D day/W week/
+15m bar), never nets BUY/SELL; individual records and raw prices remain listed.
+Removed extra vertical margins, retained edge padding and small circles; no
+negative stock-price labels for axis padding.110browser cases passed/no skips;
+all11final-source cases passed,111unique overall, type/build pass. Separate
+BUY/SELL weekly totals, individual list records and nonnegative price labels
+checked alongside bounds/ranges/timeframes/phone. Distinct canonical
+scratch/learned-chart-shares-release-20261012 pending. This changes presentation,
+not executions or historical quantities.
+
 User required simple action/size meaning on every timeframe. Paper-fill circles
 are actual recorded executions; grade/replay arrows are not. Source audit found
 15m could use assumed open/close placement for date-only fills. Corrected frontend
