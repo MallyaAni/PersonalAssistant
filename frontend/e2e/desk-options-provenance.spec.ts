@@ -67,7 +67,7 @@ async function installScenario(page: Page, frontendURL: string, evidence: Eviden
   return {live, reads, diagnostics}
 }
 
-// Preserve the stock quote and open its separate stored options diagnostic.
+// Preserve the actual old or new text before checking both existing options display locations.
 async function openOptions(page: Page, testInfo: TestInfo) {
   await page.getByRole('button', {name: 'AAA', exact: true}).click()
   const dialog = page.getByRole('dialog', {name: 'AAA history'})
@@ -76,7 +76,7 @@ async function openOptions(page: Page, testInfo: TestInfo) {
   await technical.locator(':scope > summary').click()
   await expect(technical).toContainText('Synthetic technical evidence remains available.')
   await testInfo.attach('observed-options-content', {body: JSON.stringify({latest: await latest.innerText(), technical: await technical.innerText()}, null, 2), contentType: 'application/json'})
-  const displays = [technical.getByLabel('Stored option OI levels', {exact: true})]
+  const displays = [latest.getByLabel('Stored option OI levels', {exact: true}), technical.getByLabel('Stored option OI levels', {exact: true})]
   for (const display of displays) {
     await expect(display).toBeVisible()
     await display.locator(':scope > summary').click()
@@ -85,7 +85,7 @@ async function openOptions(page: Page, testInfo: TestInfo) {
   return {dialog, latest, technical, displays}
 }
 
-// Check the options diagnostic's full provenance in the technical evidence panel.
+// Check both copies of the same provenance instead of sampling just the longer explanation.
 async function expectBoth(displays: Locator[], text: string) {
   for (const display of displays) await expect(display).toContainText(text)
 }

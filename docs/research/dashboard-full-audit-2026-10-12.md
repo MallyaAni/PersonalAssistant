@@ -28,9 +28,10 @@ The first audit attempts exposed outdated browser selectors and an environment
 mismatch: dev API defaults to localhost:8000, while strict fixtures require the
 same origin. The final sweep uses the TypeScript-checked production Vite build
 through a local preview, matching the gateway's compiled delivery. Tests now
-open actual row details for reasons and the separate technical panel for stored
-options evidence instead of expecting obsolete duplicate locations. Options
-provenance and technical assertions remain intact. Intentional conversation
+open actual row details for reasons. Options checks retain both existing copies
+in the latest-grade and full technical panels, with identical provenance and
+technical assertions; the original 17 both-surface cases passed separately after
+source/live review. Intentional conversation
 request cancellation during an explicit reload is recorded separately; required
 desk request failures still fail the fixture. No fixture can submit provider or
 broker writes. Failed logs, traces and screenshots remain private under /tmp.
@@ -50,8 +51,33 @@ production fix or relaxed numeric/provenance assertion was used for this race.
 TypeScript and Vite production build passed; existing CSS/chunk-size warnings
 remain. Full log SHA 80b3b7bda0b0a60ceb2f764feb3def691a32253aa1bb40e111f2a2d598ad5649;
 build log b879f6ec0792e36b4a1e5e4ee02f91ff726402cc80ad7ecf1165fb32c7768a7d.
-Baseline and all intermediate failed results remain private. Canonical deployment
-and actual live browser acceptance are pending at this code checkpoint.
+Baseline and all intermediate failed results remain private.
+
+VERIFIED canonical frontend deployment of
+`3d830395a53d862dcc28e55d3840628ba8e90897`, completed October12 08:58:26Z,
+exit0. The script selected its frontend-only path, ran type/build and cheap
+post-deploy checks, with no skip flags. Independent proof matched all changed
+Git files and compiled entry, and preserved all 28 reviewed trading files,
+original eight artifacts/configs/state/Friday record and non-frontend services.
+Root `scratch/learned-dashboard-full-audit-release-20261012`; execution SHA
+db506c085e49755579f49fd88e0357e332d3235bd1858c2e4be383d3742b43a7;
+deploy log d4c75362e2b26337cc94e6249e6dfef15523b08c4788a9fbf3aae5d5f7d21b18.
+Gateway4655a082520d/image36d634fc; entry `index-B2--2Pr0.js` SHA
+44cd6d35aabcc7fea405ed8ce2f23b3c38d5352543f72bbce86ec74ec1272796.
+[Exact proof](dashboard-full-audit-proof-2026-10-12.json).
+
+VERIFIED actual compiled browser walkthrough after authenticated reload: new
+help/trim wording, restored row fiscal dates, SNDK daily/weekly/15-minute charts,
+original fills, 10 positions/no open orders, 25 account-history records, simulation
+provenance, personal inputs without applying changes, AAOI explicit zero target,
+research cost switching and all published research disclosures. Browser loaded
+the same new entry. Console errors/warnings0. Earlier browser transport timeouts
+recovered; native accessible controls completed the interactions. Existing Friday
+partial prose remains disclosed (7/9, two failed), not hidden or regenerated.
+Screenshots stay private: `/tmp/dashboard-full-audit-board-live-20261012.png`
+and `/tmp/dashboard-full-audit-live-20261012.png`; hashes are in the proof.
+All14saved artifact/config/state/Friday-record hashes remained unchanged after
+the browser walkthrough as well.
 
 Only frontend source/tests and docs change. Preserve the reviewed 28 trading
 runtime files, original eight numeric artifacts, installed holding/timing
@@ -61,9 +87,8 @@ keeps its original graded-equal-weight policy. Do not rewrite it to learned.
 
 UNVERIFIED: first ordinary learned nightly, real-session timing observation and
 following paper execution/reconciliation. These browser fixtures do not close
-those boundaries. The live browser panel is presently queued/unavailable for
-attachment; its new release must not be labelled manually accepted without a
-fresh actual browser session.
+those boundaries. The earlier browser attachment issue is resolved; no further
+UI deployment or completed qualification replay is required for this audit.
 
 Diagram impact: NONE — presentation of existing evidence/decisions; no new
 agent, architecture boundary, model, API, database or execution path.

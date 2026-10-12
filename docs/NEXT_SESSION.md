@@ -1,6 +1,6 @@
 # Next session
 
-## 2026-10-12 — full dashboard audit, local acceptance complete
+## 2026-10-12 — full dashboard audit deployed and accepted
 
 User requested every dashboard surface be consistent. Corrected missing-plan
 help, next-open fallback, full-panel model observation/reason, event-priority
@@ -9,15 +9,24 @@ restored dated analyst evidence in row details without exposing personal control
 by default. Reference analysis stays separate from allocation/orders.
 VERIFIED 348 unique browser cases across27files:336 full-sweep passes plus16/16
 quote-file passes after correcting clock/setup and initial-response waits;
-12 original fixture failures and all baseline failures retained. No skips.
-TypeScript/production Vite build passed. Only frontend/tests/docs changed.
-Starting clean e1887e2a/main current. Canonical frontend deployment is next;
-distinct scratch/learned-dashboard-full-audit-release-20261012 with previous
-production641344eb and strict preservation guards. Never repeat completed
+12 original fixture failures and all baseline failures retained. Original17
+both-surface options cases also passed after source/live review; assertions for
+both stored-options copies are retained. No skips. TypeScript/Vite build passed.
+Only frontend/tests/docs changed. Starting clean e1887e2a/main current.
+VERIFIED canonical frontend release3d830395a53d862dcc28e55d3840628ba8e90897,
+finished08:58:26Z/exit0; type/build/cheap checks, no skip flags. Distinct
+scratch/learned-dashboard-full-audit-release-20261012 retains complete claim,
+execution and independent proof. Gateway4655a082520d/image36d634fc,
+entry index-B2--2Pr0.js SHA44cd6d35aabcc7fea405ed8ce2f23b3c38d5352543f72bbce86ec74ec1272796.
+Backendcfe8b7b50228/e479, all28reviewed files, original8artifacts/configs,
+paper state/Friday record and all non-frontend/model services unchanged.
+VERIFIED actual compiled browser reload/auth/new help, row fiscal dates,
+SNDK D/W/15m/history, paper10positions/no orders/25history records, zero-target
+unheld name, personal-input isolation and research controls/disclosures;
+console errors/warnings0. Attachment recovered; no user action needed.
+Never repeat completed
 backend gates, admissions, accounts, fits, activation or prior UI deployment.
-Actual live browser attachment is queued/unavailable; do not call the new UI
-manually accepted until a fresh session succeeds. First ordinary learned
-nightly/timing/fills remain pending as below. Heartbeat remains active for those
+First ordinary learned nightly/timing/fills remain pending as below. Heartbeat remains active for those
 real boundaries. [Audit](research/dashboard-full-audit-2026-10-12.md).
 
 ## 2026-10-12 — consistent dashboard deployed and accepted

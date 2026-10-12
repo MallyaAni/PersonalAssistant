@@ -1,0 +1,90 @@
+{
+  "status": "verified_dashboard_release",
+  "after_browser_saved_files": {
+    "checked": 14,
+    "all_unchanged": true
+  },
+  "verified_at": "2026-10-12T08:58:44.093148+00:00",
+  "revision": "3d830395a53d862dcc28e55d3840628ba8e90897",
+  "execution_sha256": "db506c085e49755579f49fd88e0357e332d3235bd1858c2e4be383d3742b43a7",
+  "deploy_log_sha256": "d4c75362e2b26337cc94e6249e6dfef15523b08c4788a9fbf3aae5d5f7d21b18",
+  "source_files_sha256": {
+    "docs/NEXT_SESSION.md": "0e64a66b9db96ca4a25ad8a5793f3e490f746eea21f24caa799a08699cbcf23e",
+    "docs/research/dashboard-full-audit-2026-10-12.md": "6c4024dcb881c62898dcaeaf09b6db0f486be1f34a75e7bf40b723d96394af9f",
+    "docs/research/learned-dashboard-consistency-2026-10-12.md": "c90c8ad9866e78dfb7e7688f9edb62cdb062ff16b57ef81ff273fb4233b0ef70",
+    "docs/research/learned-dashboard-proof-2026-10-12.json": "eaec3a92d9eefea355f70bdbd3b22b63781c8bf08f73c42d9d02c4453d5132a4",
+    "frontend/e2e/background-session-prices.spec.ts": "9f3d08bd0bdba597229b870c0e6733a3e5337ec7646920c81bfc4b43249808d5",
+    "frontend/e2e/desk-history-accuracy.spec.ts": "7307f0062201170339246404540e024977d7ff94764acd20ff502e3997b1909f",
+    "frontend/e2e/desk-level-gate.spec.ts": "73d5f464821349e3cbe90be84b22b11faa2afada4e1ce23508631df6d2bdb93c",
+    "frontend/e2e/desk-options-isolation.spec.ts": "5925ffa9f270d396813d6bff3309f750e01940cb34f0c0ed86d149eca52ddf3a",
+    "frontend/e2e/desk-options-provenance.spec.ts": "514eb9a68fcc707d7e30ac1050146d13059b35c2936cfe0de07e265570673303",
+    "frontend/e2e/desk-paper-account-history.spec.ts": "b269263a9156ec75c5a6d78624fbab8701fb96a7beebae08819dce255b299a72",
+    "frontend/e2e/desk-trade-board.spec.ts": "11f5f19a61992e2513189bee8f73d20c766c3d6e37426883827a1da7e647dbe8",
+    "frontend/e2e/desk.spec.ts": "2c061e9fe35ffb4dabfcb9437dfa9d661a62e1a64a7e19cc414dccdf5f54f4dd",
+    "frontend/e2e/independent-session-prices.spec.ts": "680137464aa6636d5696201b0ff82514b43be11e8757919f8e9912d8febeb288",
+    "frontend/src/components/DeskPanel/DeskPanel.tsx": "ade82667eb8760e1d1b2904f554d3ec2893c12991c10cef59f5cde2de729d310",
+    "frontend/src/components/DeskPanel/OpportunityCard.tsx": "8e9ad5e9829c48ccdb9292777593c98abc8dde9a71b136f7218a5787e9c88913",
+    "frontend/src/components/DeskPanel/TickerChart.tsx": "8107f64ff4315a6b9bf32ab4c9ff58bd24c56119919f369ab9687f5bd44371e5",
+    "frontend/src/components/DeskPanel/TradeBoard.tsx": "a87eccaaddb7d131ed75bf5fec81ba906d406d48df0aab152b2a653508a07d75"
+  },
+  "reviewed_trading_source_files_unchanged": 28,
+  "original_artifacts_configs_account_record_unchanged": true,
+  "backend_unchanged": {
+    "id": "cfe8b7b50228b83e7ca53874ae650ae454f02b66bd4862f45b9f573ecc8f6146",
+    "image": "sha256:e479059eb2bb3fbe66494234e7e1e4176dd4a54e604a4c0437645fe584da4cfc",
+    "started_at": "2026-10-11T22:11:04.874217708Z"
+  },
+  "gateway": {
+    "id": "4655a082520d6db66571b44a18df58c9d799d91fd9a2fbc33ec00185f3e4ba8a",
+    "image": "sha256:36d634fc96cf350587ba5c1185e10eff45de01654fc551e0cb00dc10d5adb80e",
+    "started_at": "2026-10-12T08:58:22.196361505Z"
+  },
+  "compiled_entry": {
+    "path": "/usr/share/nginx/html/assets/index-B2--2Pr0.js",
+    "sha256": "44cd6d35aabcc7fea405ed8ce2f23b3c38d5352543f72bbce86ec74ec1272796",
+    "new_ranking_text_present": true,
+    "old_grade_priority_text_absent": true
+  },
+  "post_deploy": "2026-10-12T08:58:25Z 3d830395 ok (cheap)",
+  "orders_submitted_by_verification": false,
+  "ordinary_learned_nightly_verified": false,
+  "fresh_session_learned_timing_verified": false,
+  "subsequent_execution_verified": false,
+  "local_browser_acceptance": {
+    "unique_cases": 348,
+    "full_sweep_passed": 336,
+    "full_sweep_fixture_failures_retained": 12,
+    "quote_file_passed": 16,
+    "options_both_surfaces_passed": 17,
+    "skips": 0,
+    "typecheck_and_production_build": "passed",
+    "full_sweep_log_sha256": "80b3b7bda0b0a60ceb2f764feb3def691a32253aa1bb40e111f2a2d598ad5649",
+    "logs_and_screenshots_sha256": {
+      "/tmp/dashboard-audit-quote-final-20261012.log": "90f7e86f87d042ecb49d39b1837bede2373e3908ede532e650a6672ebad4f8f9",
+      "/tmp/dashboard-audit-options-both-20261012.log": "eb30c9446f635e4a552d219ce8a120002c0bc5bd4b755952f2497783b08daff5",
+      "/tmp/dashboard-full-audit-live-20261012.png": "a2413acbddd77700a3fd27dc9be9f6650e7a56118e636bf79283b901f20d19f7",
+      "/tmp/dashboard-full-audit-board-live-20261012.png": "8241111e954d838adac61acf5c6bcee6a1a7a21ead24db044a9b5fbfc80643dc"
+    }
+  },
+  "live_browser_acceptance": {
+    "status": "verified",
+    "completed_at": "2026-10-12 09:09:23 UTC",
+    "url": "https://deep-matter.com/?deskView=live#desk",
+    "loaded_entry": "https://deep-matter.com/assets/index-B2--2Pr0.js",
+    "console_errors": 0,
+    "console_warnings": 0,
+    "checks": [
+      "authenticated reload and new help",
+      "restored dated analyst evidence in SNDK row",
+      "SNDK daily/weekly/15-minute charts and original fills",
+      "paper account positions, orders and 25 saved history records",
+      "historical simulation provenance and distinct execution assumptions",
+      "personal inputs viewed without applying or recording fills",
+      "AAOI unheld explicit zero target",
+      "research cost switch, saved signals, inflation, benchmarks, FOMC, execution and frozen comparison disclosures",
+      "original Friday policy retained"
+    ],
+    "orders_or_account_mutations_submitted": false,
+    "earlier_browser_transport_timeouts": "recovered; native accessible controls completed the workflow"
+  }
+}

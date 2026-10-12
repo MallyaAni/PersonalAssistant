@@ -95,7 +95,7 @@ async function openTechnicalEvidence(page: Page) {
   return {dialog, allEvidence}
 }
 
-// Verify the stored options status without losing unrelated rank, price or technical content.
+// Verify both options statuses without losing unrelated rank, price or technical content.
 async function expectOptionsState(dialog: Locator, allEvidence: Locator, state: OptionsState) {
   const latest = dialog.getByRole('region', {name: 'Latest available grade', exact: true})
   await expect(latest).toContainText('$100.00')
@@ -105,7 +105,7 @@ async function expectOptionsState(dialog: Locator, allEvidence: Locator, state: 
   await expect(allEvidence.getByText('· Daily support is $90.', {exact: true})).toBeVisible()
   await expect(allEvidence.getByText('· Weekly trend evidence remains available.', {exact: true})).toBeVisible()
   await expect(allEvidence.getByText('· Longer-term reference evidence remains available.', {exact: true})).toBeVisible()
-  for (const surface of [allEvidence]) {
+  for (const surface of [latest, allEvidence]) {
     const options = surface.getByLabel('Stored option OI levels', {exact: true})
     await expect(options).toBeVisible()
     await options.locator(':scope > summary').click()
