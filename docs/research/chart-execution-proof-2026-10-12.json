@@ -1,0 +1,976 @@
+{
+  "status": "verified_dashboard_release",
+  "verified_at": "2026-10-12T16:54:56.241733+00:00",
+  "revision": "f83e2353eba344573c159e8f9191d64556873b97",
+  "execution_sha256": "9dfecd6c06defe65a82ad1f4d9380f49a63a98517c7cd10a9faec0055037e715",
+  "deploy_log_sha256": "4c0ead5182adc4fec8627022617a2da5f161b22ed80a72abc98e59f183a9bd0d",
+  "source_files_sha256": {
+    "docs/NEXT_SESSION.md": "9c2fec07a3bfab1563acde788bac1b96abfe249c834c394092a289903247cc9d",
+    "docs/research/chart-execution-clarity-2026-10-12.md": "ad6c0ee039d297f3ef29b416f0cbd95b6492048640eb28105ecd7f30d34bb1b5",
+    "frontend/src/components/DeskPanel/TickerChart.tsx": "c72f9a4670b38d59dfe0dad48ade51a8932c56d4179b25519c1047d8e662c9cb"
+  },
+  "reviewed_trading_source_files_unchanged": 28,
+  "original_artifacts_configs_account_record_unchanged": true,
+  "backend_unchanged": {
+    "id": "cfe8b7b50228b83e7ca53874ae650ae454f02b66bd4862f45b9f573ecc8f6146",
+    "image": "sha256:e479059eb2bb3fbe66494234e7e1e4176dd4a54e604a4c0437645fe584da4cfc",
+    "started_at": "2026-10-11T22:11:04.874217708Z"
+  },
+  "gateway": {
+    "id": "2d4d4a3c0d3f58dfacee950ecb1e4c0e61f232df3885f91141a0e34548fc4356",
+    "image": "sha256:5a18a396f73fbf9ca8b2938dd13680826f5e7d16526dad46541963e240cc76d9",
+    "started_at": "2026-10-12T16:46:39.664966651Z"
+  },
+  "compiled_entry": {
+    "path": "/usr/share/nginx/html/assets/index-C3QFDrWX.js",
+    "sha256": "846f4f0184076279a01c8981e2b74c15f585fc7b55b193172b5aafe4d2866c9d",
+    "new_ranking_text_present": true,
+    "old_grade_priority_text_absent": true
+  },
+  "post_deploy": "2026-10-12T16:46:40Z f83e2353 ok (cheap)",
+  "orders_submitted_by_verification": false,
+  "ordinary_learned_nightly_verified": false,
+  "fresh_session_learned_timing_verified": false,
+  "subsequent_execution_verified": false,
+  "chart_semantics": {
+    "default_markers": "Recorded paper filled-share totals per candle and side",
+    "daily": "day",
+    "weekly": "week",
+    "intraday": "containing 15-minute bar with original execution time",
+    "opposite_sides_netted": false,
+    "individual_history_changed": false,
+    "negative_stock_price_padding_labels": false,
+    "grade_replay_recommendation_layers_default": false,
+    "current_plan": "Each recorded order leg retains its planned/submitted/filled quantity basis and state",
+    "new_model_historical_counterfactual_proven": false
+  },
+  "automated_acceptance": {
+    "unique_cases": 111,
+    "broad_source_cases_passed": 110,
+    "final_source_cases_passed": 11,
+    "skipped": 0,
+    "type_build": "passed",
+    "actual_canvas_bounds": "D/W/15m, Recent/Full history, desktop1280/phone390; first/last markers and grouped same-candle totals",
+    "opposite_side_weekly_totals": "BUY and SELL separately verified; original individual records retained",
+    "logs_sha256": {
+      "broad": "3c5e3d046738a00770b54882661c083fe388fd2ed9a9804131390d0f86c97a44",
+      "share_final": "4009c3e5d48b857d17ed3d8d96ba94aa11136faf7af762b5d9672fbd1849fc03",
+      "spacing_final": "015c19d59955ff17cfcb7dfddfbf5884d11249742d8be9badd48092a97d7edb9",
+      "spacing_build": "7dc039e1ebe21e21cc9ecdbb7b0f6f14fe32d099b19c67678cc9670f2e2fd1e1"
+    }
+  },
+  "saved_history_audit": {
+    "status": "verified",
+    "histories": 94,
+    "fills": 104,
+    "timestamped_fills": 80,
+    "policies": {
+      "graded-equal-weight/5": 94
+    },
+    "asof": {
+      "2026-10-09": 94
+    },
+    "source_sha256": {
+      "backend/agents/trading/desk/decision_history.py": "3faf89295b077eea8ea8b82bbadfc6a7d0d8b75bd401645442440105c1b4c6c7",
+      "backend/market/ticker_chart_intraday.py": "c61169da7fdf8f58e05353e6bd37ad6950f5aa49e3862c9ed712b9216214d457"
+    },
+    "rows": [
+      {
+        "ticker": "AAOI",
+        "sha256": "a4f81b90ce7d8e0753a6555308b238fa40d83e4b9b6170066edabc7f9b1ad564",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 11,
+        "timestamped": 10,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "AAPL",
+        "sha256": "26f521e2f48d6c8073fa29a681e702d0f1eb09d4934baa590d0339cf9d016ec1",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "ACN",
+        "sha256": "fdedc37839c9e0059415e8b468cf778b68c362d768cff8eb4157a1237fe0d5ae",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "ADBE",
+        "sha256": "05d582ff4ae2dba55b1e20459962c5d32a9f6cb2b65f6c6f9fc52682cd36fa21",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 2,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "ADI",
+        "sha256": "fb77e57270bd63893771e1e5cf53823177c2550c3f3e7087909d4363ff9b220f",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "ADSK",
+        "sha256": "136c8f59e3429a5ba4fe1a21c16816cd05d199cefcf7d8be7f28dec20935746e",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "ALAB",
+        "sha256": "f8f3ebdacfa63684115aef166e0481bb0aad5fdf549ee604536e83667a7de62d",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 3,
+        "timestamped": 3,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "AMAT",
+        "sha256": "eb32ab80b2304cef89ca439a3a9a0fe91261289da1efa462b5ad4c5345c7c363",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "AMD",
+        "sha256": "98da7db31e3c8c17ba089a178d87e503ed7de52b447c2d62799aec83bedfbff9",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 3,
+        "timestamped": 1,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "AMZN",
+        "sha256": "19423c10e9153c520c70a6c87a5a5567ff0fc1d5d15aadd5d2c4099907e028fa",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "ANET",
+        "sha256": "9563d5cfd29f0fc2d7ead6ddeadbf3b18272d0d5caedbc90022042d3fec9e29c",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 4,
+        "timestamped": 3,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "APLD",
+        "sha256": "45a39dee907a0bd0edfce4a896de6ac74391a9b66dd924ce18a004e6667367e8",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "ARM",
+        "sha256": "1c0b94ba3024394a6be690718531b237e68062adbfc59971f97063dcdcd1e3c6",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "ASML",
+        "sha256": "8159de9ee6fe843857911d5acc59e69bc78bfe6afa367c000720ff02842c3226",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "AVGO",
+        "sha256": "0bc90e4bb7493e24c519451338637e2a3ede06d4c136b86daabf9510ce8a83c7",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "BE",
+        "sha256": "16555da7422576d93c175c75b4862c32e0c3ced2b7a5f52c7e83a998ca312f87",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "CDNS",
+        "sha256": "fde066f173b38553625bf06ec4873f3be963b56fd55ce71d8ba8f84020ee5ad6",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "CEG",
+        "sha256": "fcbd6ffe7523051fe3c4e3cc40143849cb33c83a6fcc9448b02fe58016433d42",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "CIEN",
+        "sha256": "2c5b2ab52a726d9ab6e2413106db7714340709db411c846bf2315853e89434de",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "CIFR",
+        "sha256": "9eeeb0c96e3da67a04663cd873f5d0c1f5354179fc441a6371e4d4bc037e5cdd",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "COHR",
+        "sha256": "f9422e4214b7fdbefe40dc0acb10f193f080760f9c20aa6fab2a79293723ffb8",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 3,
+        "timestamped": 3,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "CORZ",
+        "sha256": "d71e5a7f8e30fe64f460aef9e0147136f496118e530400eef7bb2071c5a6b5da",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "CRDO",
+        "sha256": "b39bf01ebc0cdaeaf1278e358aa83d430db321b81d67feae0aaed356a7fb5aec",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "CRM",
+        "sha256": "3b8d2cbe20e365929ef8f57497ebc317517e43b5d0d16db6c1f509973d076fe7",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "CRWD",
+        "sha256": "51d2de0004a964d07e21e224a6cf5673d76fede160cd43a71d88559cd50af82b",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "CRWV",
+        "sha256": "8c4e0979bbc689d2343b739f6b795fad530bc25a10ac2cfec05b94d90e944473",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "CSCO",
+        "sha256": "29bbe17257b95fc1709e4a94d24a5e024e143559aea85dd5d60d6b660be9640c",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "DDOG",
+        "sha256": "f1fda2459100f70094cd1f008613ad435e95bc9533ed7c55a97850af59390350",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "DELL",
+        "sha256": "a480873e3d20b91927ee1f36c072fd329ceca5ea71a6e71dffcb4e6081299f69",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "ETN",
+        "sha256": "22c9686343fa8e41074ab80c9ed4fa8d048d6d5412225762cbe405cef2ad3b12",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 2,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "FFIV",
+        "sha256": "672c678be4aef8bb1798552e93a283684d357fa0ee35910fe3a8d38ed267a0ed",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "FICO",
+        "sha256": "f05fac22e6b8dfac8672bc9e0c8d358de7963a1e64d49012f5d5a6201afca2d5",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "FN",
+        "sha256": "4fbabe741985325400dcc21ff89e8a857303449b8bea28a5c2ea731823f8208e",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "FSLR",
+        "sha256": "11fdc66d1848dd2032241446af3fa262e629f5fb14e361b0baa65b430b99abc2",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "FTNT",
+        "sha256": "0fbec9bc29d0c120e28fefceb3fed428c851af9a03a6bc809d070dc47ec461dd",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "GEN",
+        "sha256": "a7fe8cd5b16bf1d6c4c7a84c92839afd2234b35bb960bccd37d488e122fc6e3a",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "GEV",
+        "sha256": "1a3a245eaf35c6489d46b46dff7529e51e5a74ed2c022873c8b8a808dd465f7a",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 2,
+        "timestamped": 2,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "GLW",
+        "sha256": "0c20cc794f735a3076cd7e600ce78da1f96b26e6844627b45004914b96ed2d72",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "GLXY",
+        "sha256": "e6f2ab283983f2e489a3db119e978952d401a05ab4e2958be4230ea77db12054",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "GOOGL",
+        "sha256": "61be5fb5ee3a1cdf9074af6affcdab1afe6840d0be0c7bbfb25f3d62bedf421b",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "HPE",
+        "sha256": "b200731a79e5c6015f19b49cf78c58b3a5e76a9e39ea5b13e3085d8cc594b3b8",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 8,
+        "timestamped": 8,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "HUT",
+        "sha256": "6b0c22977fc16c996d385a8e3c44d87b419e5298672ec190af10abe25dbe7f9d",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "IBM",
+        "sha256": "7644bb0d811ec28caf44ad85b7eb5b5d3a53766e541c18be2b7d834ddb7874c1",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "INTC",
+        "sha256": "b338523885d05b566da7d2339f29f8bb3b5918e02f9ccdc22b7901d62af0fbf3",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 2,
+        "timestamped": 2,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "INTU",
+        "sha256": "2ca76c30ff0121ebf004c0d2c5a9857149761de542c64bb3a5013c9b80496b21",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "IREN",
+        "sha256": "cc551fbea808943b270975bb20cb624c359c4d1f885f6877776cb36df5aaff28",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "KLAC",
+        "sha256": "b5734afbf1f2b4dd9a7738b5c93b12362312ae556463b7aae9abf11fbdb7af23",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "LITE",
+        "sha256": "b971c062f2712cbd257e7f6bbc7dcc113c7657a7d9ff5e67b8ae63a4443cc570",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 4,
+        "timestamped": 3,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "LRCX",
+        "sha256": "dbd119d07fb0c6fb97bb7031df4b900018b476e21e5a19e537edd55edd46e9ed",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "MCHP",
+        "sha256": "3541dcda62ccd4c9ae21a779da696e1be265c811b5e51c403c0e73078f6c6b6b",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "MDB",
+        "sha256": "2327dae8b048309685c17f449a704c87003118952c24362ca319251e1cb17bef",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 9,
+        "timestamped": 8,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "META",
+        "sha256": "9b8392ecc919fc1f537c0128affe1cbab3eeda083d8483cb3358f98cf1fab77a",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "MOD",
+        "sha256": "09502f4a53e118c29c8aa371910dad569237270ade3647c0fc133dc17f5548fb",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "MPWR",
+        "sha256": "36ded80cffa91bc08dd0a8a2968fd1ed3858b434147eb19c33f98cb3e524e105",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "MRVL",
+        "sha256": "7fe22b3cc39f1bf50a0f10da6657dc03dad41d76cf318b14b0aa19eca241a08b",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 2,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "MSFT",
+        "sha256": "9d98fc815c106e8f486469996ca65bfbd9b9be3541cd2e6c4517b929526a0c8f",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "MSI",
+        "sha256": "cb0c87e36d343db55964b7a19557bf41fd5ce534ca4dd0f95140b3c513d855f2",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "MU",
+        "sha256": "3c6ff158c7df5ab2f1a8a7c838add2e1ddc01b999db70df81f806a276b8ecb05",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 3,
+        "timestamped": 3,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "NBIS",
+        "sha256": "52d85abfcb8998c47fb76b6163de6d70e73f279ae96b14d0d5feb4f768cf4158",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "NET",
+        "sha256": "049c60a4c0509c9e476753f4023f2edce280b6a2741069cffcded6ead78d2855",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "NOW",
+        "sha256": "fe270d7f0e0c97c20ebef948d71c5474eb1178cdb5078f5c875001a2abfcef5e",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 2,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "NTAP",
+        "sha256": "50d8acb82079c79a6ad85ae1df2485cc6f6c9d3c880438004f5de9f0b0672c5e",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 4,
+        "timestamped": 2,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "NVDA",
+        "sha256": "f8acf7a83a51ce1bc1b792671b0f065e52721bb7e5683831e75ff1ae8a8e1a8d",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 8,
+        "timestamped": 6,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "NXPI",
+        "sha256": "5f20ec41ec123ab23fd718229116fd6d6827a6962972c9642f95fcfd8f760ad2",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "OKLO",
+        "sha256": "e1e9db0a776d8f198c95967a3ac1f51229590c3c471a5160be9d787a21801cc0",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "ON",
+        "sha256": "8f78d0aa0537cd7204a6a3b1825377ddb00781fef5c57b7ba36cc9262a8ecc30",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "ORCL",
+        "sha256": "3de22f0bd5c4fa02b64122fc2e37cd65fc6eef918691d8570a6368f8e98d34b5",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "PANW",
+        "sha256": "fbc0c4e658ad64bff112aaf18ba82ca36df55a596c191640f93459af1939a995",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 2,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "PLTR",
+        "sha256": "e6fdca1b862a338ffe598a5b8344f227f93fce8cb2b8337c9cec15410a543485",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "POWL",
+        "sha256": "dca5f45c4f12400c5a48c16b750f6dceb9916ce2c3dcb4dcde5a6f84166e1408",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "PTC",
+        "sha256": "10cbd4109197016f4d1e3205ce44b9601eb56ad006a413664ba5270e98fcbb74",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "Q",
+        "sha256": "bcf88f324384d62a030c447ef2e8a0118b6942cb7b8afe667ef21bfa25c86bc3",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "QCOM",
+        "sha256": "b7fb5e0ccf2c9f78f1ca02d2f50d81c2d5bed1eea23155d39bf6ee9ed1bf61e7",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "SIMO",
+        "sha256": "6af05342ce5d488698fc134be578c1d3f399a5bb78f772ee3fbaac33de68b270",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 2,
+        "timestamped": 2,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "SMCI",
+        "sha256": "8f594f550df99ed89c56fffbda410a59810257abc0fda9670f31fcba86732333",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 10,
+        "timestamped": 7,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "SMR",
+        "sha256": "6c83cc34e0c8da45d6baecb7685e34956c1f8028b4a3ada705bfadad3e65fc46",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "SNDK",
+        "sha256": "026d73e9dc84d135923f9d2e070e7e87c2a8411c93cd0250cb46263d85199625",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 4,
+        "timestamped": 3,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "SNOW",
+        "sha256": "e01935aadb03e3acdca2960060fad8bebc3c97bb8c59110231a1beaba1d33d59",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "SNPS",
+        "sha256": "f63b15f2b6d4afea9b2fdd8aa63064e2ca3bde5ada16bfd72fbf5d50f639fd0b",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 1,
+        "timestamped": 1,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "STX",
+        "sha256": "2924463359c774f3843e1cce52869f52c4f74f72f45acd32d2fa836a0d1049c5",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 5,
+        "timestamped": 5,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "SWKS",
+        "sha256": "1f1c7516c6e2ef37e8f5bc65517edba0bf21a4598f0f016475e45f3d9325da33",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 8,
+        "timestamped": 8,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "TEAM",
+        "sha256": "a1d9805b7b45af1759d9a908d70b0e946189c0685512d3c1ad0a2b6e55d7c3ab",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "TER",
+        "sha256": "e5cb0dc27c290fd14bd76e6e8bb4ad2ea2445fbedc31d2998e3d9bdb0ddbd2eb",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "TLN",
+        "sha256": "09d874458880213c80d10759901e86f6db857106c7dd9757e3b27a27abf5b6f9",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "TRMB",
+        "sha256": "f812026872a242d2536357b6b9132112d653fc13c152c33b6d5ad341762b747d",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "TSM",
+        "sha256": "e3dba8814353044b5e9bab07ae0c5155b790768723dac67d367d1b3c61398679",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "TXN",
+        "sha256": "a5db180cb2d48caa4d89e60547c5ec17652bab2c89a150f539a93d4f1f27b559",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "TYL",
+        "sha256": "e7685e0d67383df264c4a58a72862d92eb44216de85cc66f73e8acb6e3a950e4",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "VRT",
+        "sha256": "8e8c9597d17c14bdde3b4e95cc6e126501cb4e2536f3ba622bffa8f0b492ca61",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "VST",
+        "sha256": "67fe38bb92c6bf3612a6e32b84fbea6972759126a8fbd0efd3f5d8c6dfda9020",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "WDAY",
+        "sha256": "6b8cc5c2db8363a5aad7be7f9c851c2683bf06261b0b3e2fe12ebac6b7bb4d08",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "WDC",
+        "sha256": "93471e538de34509b92d925593e7331a999715e25d3c57a2a9ee1b410bf14558",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "WULF",
+        "sha256": "637d8d3b52571d74c3a958f7bf26b58cb46bdffca0b06c9fa3d8a300478988e5",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      },
+      {
+        "ticker": "ZS",
+        "sha256": "511e777d97f7650b6ec5e2ae931b86358fad4830ca07be62897188e44caf33aa",
+        "asof": "2026-10-09",
+        "policy": "graded-equal-weight/5",
+        "fills": 0,
+        "timestamped": 0,
+        "settled_rows_match": true
+      }
+    ],
+    "orders_submitted": false,
+    "history_rewritten": false,
+    "private_proof_sha256": "b8d6d5d4c917689ef0ec5bc19080c945980232ad11e87b75b65c6d0b615491b1"
+  },
+  "browser_acceptance": {
+    "status": "VERIFIED",
+    "authenticated_reload": true,
+    "compiled_asset": "index-C3QFDrWX.js",
+    "final_stock": "AAOI",
+    "final_timeframes": [
+      "D",
+      "W",
+      "15m"
+    ],
+    "checks": [
+      "Daily filled-share legend and unchanged individual fill list",
+      "Weekly filled-share totals separately readable with normal stock-price scale",
+      "15m filled-share totals and date-only timing disclosure",
+      "Default grade/replay layers off",
+      "Original SNDK/NTAP and all intraday session windows checked on predecessor with unchanged records"
+    ],
+    "errors": 0,
+    "warnings": 0,
+    "orders_submitted": false,
+    "private_report_sha256": "7ee6b533e68a97d944cebee3fe4d1975d83e701d4f9a963a4ba75003df167992",
+    "weekly_screenshot_sha256": "66db195806b5fc2e778b858c5a4bde274ebd8fe84b4efcffc67970d73fe0ac9a",
+    "intraday_screenshot_sha256": "92a5c0b86c79a6e01f85b3cfd88dd81fbef7a69626d5d3a9dd9a3df17b916370",
+    "preserved_files_after_browser": 108,
+    "all_preserved_files_unchanged": true
+  },
+  "prior_roots": [
+    {
+      "revision": "9f028b8208640ecf2c476205503be920c6765a4e",
+      "root": "scratch/learned-chart-execution-release-20261012",
+      "result": "semantic/timing verified; live edge label clipping failed",
+      "execution_sha256": "9715fb47a6e6499263495e8e0bf5625f8e4bd895b5242c28c98c11b5b6e5ed22"
+    },
+    {
+      "revision": "c5ba98f002a606312a9d25faa85c024471162125",
+      "root": "scratch/learned-chart-labels-release-20261012",
+      "result": "bounds fixtures passed; dense live weekly readability/scale failed",
+      "execution_sha256": "143ccf10308d927a8e5acd718cda191e69dfd16d837f3456bb47ebe99ec3173b"
+    },
+    {
+      "revision": "9bb741752e6975dff3ff3ef1236454e1fe537554",
+      "root": "scratch/learned-chart-shares-release-20261012",
+      "result": "share totals and price scale verified; final recent weekly spacing supersedes",
+      "execution_sha256": "d16f8732f4f9a840aa59d3894243eccb92194c95b2af8f420c125deddcb9de32"
+    }
+  ],
+  "exhaustive_numerical_audit_of_all_displayed_financial_values": false
+}

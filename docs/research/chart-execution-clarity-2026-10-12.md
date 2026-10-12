@@ -111,3 +111,20 @@ does not alter a strategy or qualification window.11targeted final-source cases
 passed, including every timeframe/range/phone path. Distinct canonical
 scratch/learned-chart-weekly-spacing-release-20261012 pending; no prior release
 rerun.
+
+VERIFIED final canonical frontend releasef83e2353eba344573c159e8f9191d64556873b97
+completed16:46:40Z; type/build/cheap checks passed, no skip flags. Root
+scratch/learned-chart-weekly-spacing-release-20261012. Independent execution
+9dfecd6c06defe65a82ad1f4d9380f49a63a98517c7cd10a9faec0055037e715,
+log4c0ead5182adc4fec8627022617a2da5f161b22ed80a72abc98e59f183a9bd0d.
+Gateway2d4d4a3c0d3f/image5a18a396; index-C3QFDrWX.js SHA
+846f4f0184076279a01c8981e2b74c15f585fc7b55b193172b5aafe4d2866c9d.
+Final authenticated actual browser D/W/15m matched that asset. Weekly separate
+BUY/SELL quantities readable; ordinary price scale, clear per-candle legend,
+unaltered individual fill list; intraday completed records and missing-time
+disclosure correct.0console errors/warnings/no orders. After browser all108
+artifact/config/state/record/history hashes unchanged; all28reviewed source and
+backend/model identities unchanged.111unique browser cases/no skips with11final
+source cases, type/build passed. [Exact proof](chart-execution-proof-2026-10-12.json).
+Never rerun any completed release, tests or original qualification for docs.
+Ordinary learned nightly/actual new-session timing/fills remain unverified.

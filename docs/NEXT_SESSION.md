@@ -2,6 +2,28 @@
 
 ## 2026-10-12 — chart actions and execution timing correction
 
+COMPLETE bounded chart correction: final canonical frontend release
+f83e2353eba344573c159e8f9191d64556873b97 finished16:46:40Z; type/build/cheap
+checks passed/no skip flags. Root scratch/learned-chart-weekly-spacing-release-20261012,
+gateway2d4d4a3c0d3f/image5a18a396, index-C3QFDrWX.js SHA
+846f4f0184076279a01c8981e2b74c15f585fc7b55b193172b5aafe4d2866c9d.
+VERIFIED111unique browser cases/no skips and11final-source cases; all3timeframes,
+both ranges and desktop/phone actual canvas bounds. Filled shares summed per
+candle and side, never BUY/SELL netted; individual records/prices unchanged;
+15m requires original execution time, date-only entries remain unmarked/listed.
+VERIFIED final authenticated compiled AAOI D/W/15m, clear separate weekly sizes,
+ordinary stock-price scale/legend/default layers and original individual list;
+0console errors/warnings/no orders. After browser all108saved hashes including
+all94histories unchanged, all28reviewed trading source/backend/model identities
+unchanged. Preserve every preceding failed/complete root below, never repeat
+completed UI releases/tests or old qualification for docs. [Exact proof](research/chart-execution-proof-2026-10-12.json).
+All94saved histories/104fills matched settled records;80times/24date-only.
+Past markers are actual recorded paper totals under original policies, not
+proof what today's learned model would have traded. Ordinary new-model nightly,
+intraday timing and subsequent execution/reconciliation remain pending.
+Heartbeat remains ACTIVE for those real boundaries. Earlier pending sections
+below are chronological evidence superseded by this final chart acceptance.
+
 FOLLOW-UP: c5ba98f0 bounds release completed canonical deployment15:52Z, but
 actual dense weekly acceptance FAILED readability/price-scale distortion.
 Preserve scratch/learned-chart-labels-release-20261012 and original screenshots.
