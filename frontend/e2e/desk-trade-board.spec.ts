@@ -35,7 +35,7 @@ const record = () => {
 }
 
 // Route every desk read to the scenario at `now`; any write or unknown read fails the test.
-async function scenario(page: Page, {now, plan, orders, sessionQuotes = {}, nightly = record(), paperPlan}: {now: string; plan: 'thursday' | 'wednesday'; orders?: object[]; sessionQuotes?: Record<string, number>; nightly?: object; paperPlan?: object}) {
+async function scenario(page: Page, {now, plan, orders, sessionQuotes = {}, nightly = record(), paperPlan, noPaper = false}: {now: string; plan: 'thursday' | 'wednesday'; orders?: object[]; sessionQuotes?: Record<string, number>; nightly?: object; paperPlan?: object; noPaper?: boolean}) {
   const errors: string[] = []
   const writes: string[] = []
   page.on('pageerror', error => errors.push(error.message))
@@ -76,7 +76,7 @@ async function scenario(page: Page, {now, plan, orders, sessionQuotes = {}, nigh
     else if (url.pathname === `${base}/live`) json = {as_of: now, data_at: bar, stale: false, market_status: market, quotes, technical: {}, technical_detail: {}, structure}
     else if (url.pathname === `${base}/session-prices`) json = {session: open ? 'regular' : 'post-market', as_of: now, signal_scope: 'regular-session', quotes: Object.fromEntries(Object.entries(sessionQuotes).map(([ticker, price]) => [ticker, {price, feed: 'iex', at: now, status: 'fresh', session: open ? 'regular' : 'post-market', valid_until: new Date(Date.parse(now) + 60000).toISOString()}]))}
     else if (url.pathname === `${base}/holdings`) json = {holdings: []}
-    else if (url.pathname === `${base}/paper`) json = paper
+    else if (url.pathname === `${base}/paper`) json = noPaper ? {reason: 'Synthetic broker unavailable'} : paper
     else if (url.pathname === `${base}/paper/history`) json = {user_id: USER, rows: []}
     else if (url.pathname.startsWith(`${base}/history/`)) json = {user_id: USER, ticker: url.pathname.split('/').pop(), asof: SESSION, horizon: 20, policy: 'graded-equal-weight/4', rows: [], fills: [], backtest: null}
     else if (url.pathname.startsWith(`${base}/chart/`)) json = {ticker: url.pathname.split('/').pop(), timeframe: 'daily', bars: [], overlays: {}, levels: {}}
@@ -185,6 +185,51 @@ test('stale learned allocation evidence remains unavailable', async ({page}) => 
   await expect(page.getByLabel('COHR allocation basis')).toContainText('Model allocation unavailable')
   await expect(page.getByRole('region', {name: 'COHR position'})).toContainText('16.0%')
   await expect(page.getByLabel('COHR action status')).not.toContainText('reset')
+  expect(diagnostics.writes).toEqual([])
+  expect(diagnostics.errors).toEqual([])
+})
+
+// Help must preserve an unknown timing rule rather than supplying a legacy trigger.
+test('missing paper plan does not inherit the old percentage rule', async ({page}) => {
+  const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', nightly: learnedRecord(), noPaper: true})
+  await page.goto('/#desk')
+  await page.getByRole('button', {name: 'How to use this page', exact: true}).click()
+  const help = page.getByText('Reading this page').locator('..')
+  await expect(help).toContainText('Order timing unavailable; see each order.')
+  await expect(help).not.toContainText('1%')
+  expect(diagnostics.writes).toEqual([])
+  expect(diagnostics.errors).toEqual([])
+})
+
+// An event-priority record must explain the overlay without claiming missing model evidence.
+test('recorded FOMC targets remain separate from model targets', async ({page}) => {
+  const nightly = {...learnedRecord(), paper: {joint_funded: {policy: LEARNED, status: 'event_priority'}}}
+  const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', nightly, orders: [], paperPlan: {policy: LEARNED, until_rebalance: null}})
+  await page.goto('/#desk')
+  await page.getByRole('button', {name: 'details for COHR', exact: true}).click()
+  await expect(page.getByLabel('COHR allocation basis')).toContainText('FOMC allocation')
+  await expect(page.getByLabel('COHR allocation basis')).not.toContainText('unavailable')
+  expect(diagnostics.writes).toEqual([])
+  expect(diagnostics.errors).toEqual([])
+})
+
+// Stock details and the board must carry the same original model wait and its timestamp.
+test('full stock panel preserves recorded model observation and historical policy', async ({page}) => {
+  const source = fixture.thursday.orders[0]
+  const order = {...source, symbol: 'COHR', client_order_id: 'model-wait', state: 'waiting', timing: 'next_open', level: null,
+    why: 'Joint net-growth allocation', status: 'Awaiting current learned decision', when: 'Recorded learned timing',
+    learned_timing: {policy: 'live-probability-timing/1-research', state: 'wait', reason: 'Waiting has higher expected utility', observed_at: THURSDAY, current: false, fill_proven: false},
+  }
+  const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', nightly: learnedRecord(), orders: [order], paperPlan: {policy: LEARNED, rule: 'live-probability-timing/1-research', until_rebalance: null}})
+  await page.goto('/#desk')
+  await page.getByRole('button', {name: 'details for COHR', exact: true}).click()
+  await expect(page.getByLabel('COHR recorded model decision')).toContainText('Waiting has higher expected utility')
+  await page.getByRole('button', {name: 'COHR', exact: true}).click()
+  const dialog = page.getByRole('dialog', {name: 'COHR history'})
+  await expect(dialog.getByLabel('COHR recorded model decision')).toContainText('historical observation; not a fill')
+  await expect(dialog.getByLabel('COHR recorded model decision')).toContainText('Waiting has higher expected utility')
+  await expect(dialog.getByLabel('Historical policy comparison')).toContainText('graded-equal-weight/4')
+  await expect(dialog.getByLabel('Historical policy comparison')).toContainText(LEARNED)
   expect(diagnostics.writes).toEqual([])
   expect(diagnostics.errors).toEqual([])
 })

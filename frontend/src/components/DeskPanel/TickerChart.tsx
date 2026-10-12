@@ -563,6 +563,7 @@ export const TickerChart = ({
   userId,
   ticker,
   history,
+  currentPolicy,
   paperActivity,
   quote,
   live,
@@ -577,6 +578,7 @@ export const TickerChart = ({
   userId: string
   ticker: string
   history?: DeskHistory
+  currentPolicy?: string
   paperActivity?: DeskPaperLive['activity']
   quote?: LiveQuote
   live?: DeskLive
@@ -1075,6 +1077,9 @@ export const TickerChart = ({
           <p aria-label="Chart refresh status" role={refreshFailed ? 'status' : undefined} className="mt-1 text-[11px] text-[#6e6e73]">Regular-session chart · refresh 20s{data.live_feed ? ` · ${data.live_feed.toUpperCase()}` : ''}{data.live_as_of ? ` · checked ${recordedTime(data.live_as_of)}` : ''}{refreshFailed ? ' · Refresh failed; showing last snapshot' : data.live_reason ? ` · ${data.live_reason}` : ''}</p>
           {showDecisions && history?.policy && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy decision note">
             {history.policy}: {DECISION_NOTE}
+          </p>}
+          {history?.policy && currentPolicy && history.policy !== currentPolicy && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Historical policy comparison">
+            History uses {history.policy}; the displayed allocation uses {currentPolicy}. Historical replay signals and grade statistics do not describe the current allocator's decisions or performance.
           </p>}
           {/* What the markers mean under the equal-weight policy, and how the
               reset sessions were found: without a clock on file no session is

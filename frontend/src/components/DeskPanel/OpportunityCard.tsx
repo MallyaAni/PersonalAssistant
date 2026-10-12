@@ -17,6 +17,7 @@ export const OpportunityCard = ({reading, now}: {reading?: DeskOpportunity; now:
       : last !== null ? `Last reading${barTime ? ` at the ${barTime} ET bar` : ''} · refreshes with the next candle`
       : 'Fresh, complete analyst evidence is required.'}</p>
     <p className="mt-1 text-[11px] text-[#6e6e73]">Continuous analyst conviction, not the combined grade. {EVENING_VOTE_CONTEXT}</p>
+    <p className="mt-1 text-[11px] text-[#6e6e73]">Reference analysis; allocation and execution follow the recorded policy's targets and orders.</p>
     {shown && <>
       <p className="mt-1 text-[11px] text-[#6e6e73]">Analyst evidence index · not a return forecast{!reading!.valuation_current ? ' · valuation is nightly' : ''}</p>
       <div className="mt-3 space-y-2">{[...reading!.parts].sort((a, b) => b.weight * (b.score - 5) - a.weight * (a.score - 5)).map(part => <div key={part.analyst} className="text-xs">

@@ -165,7 +165,7 @@ test('keeps a planned Sell on its session clock alongside a fresh overnight quot
     await expect(quote).toHaveAttribute('title', /^Last observed .* ET\. BOATS\. /)
     const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
     await expect(board.getByLabel('AAOI strategy intent', {exact: true})).toHaveText('SELL')
-    await expect(board.getByLabel('AAOI action status', {exact: true})).toHaveText('Exit: the grade fell to B')
+    await expect(board.getByLabel('AAOI strategy intent', {exact: true}).locator('..')).toHaveAttribute('title', 'Exit: the grade fell to B')
     await expect(board.getByLabel('AAOI order status', {exact: true})).toContainText('Planned')
     await expect(board.getByLabel('AAOI order status', {exact: true})).toContainText('Fri Sep 25 · 15-min close 1% over the open, else at the close')
     await expect(board.getByLabel('AAOI order status', {exact: true})).not.toContainText('sending')

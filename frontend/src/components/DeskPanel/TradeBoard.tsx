@@ -30,7 +30,7 @@ export const rankingText = 'Exceptions first, then due and waiting paper orders 
 // Prefer the executor's recorded rule rather than assigning legacy timing to a new policy.
 export const executionRuleText = (plan?: DeskPaperPlan): string => {
   if (plan?.rule_text) return [...new Set(Object.values(plan.rule_text))].join(' · ')
-  if (plan?.rule === 'next_open') return 'Buys go in at the next open and sells at the next close.'
+  if (plan?.rule === 'next_open') return 'Recorded timing: next open. Each order states its execution session and timing.'
   if (plan?.rule === 'dip_or_close') return 'Buys wait for a 15-minute close at least 1% under the day’s open; sells wait for one at least 1% over. Otherwise, a market order goes in at 3:45 PM ET, the last 15-minute candle before the regular close.'
   return 'Order timing unavailable; see each order.'
 }
@@ -54,7 +54,7 @@ export type BoardRow = {
   avgCost: number | null
   unrealized: number | null
   target: number | null
-  allocation: 'modeled' | 'retained' | 'unavailable' | 'recorded'
+  allocation: 'modeled' | 'retained' | 'unavailable' | 'recorded' | 'event'
   allocationNote: string
   status: string
   state: string
@@ -289,6 +289,7 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
   const untilReset = paper?.plan?.until_rebalance ?? null
   const learned = learnedAllocation(latest)
   const evidence = latest.paper?.joint_funded
+  const eventAllocation = learned && evidence?.policy === latest.targets?.policy && evidence?.status === 'event_priority'
   const receipt = evidence?.policy === latest.targets?.policy && evidence?.as_of === latest.session ? evidence.receipt : undefined
   const retained = receipt?.transition?.retained_weights ?? {}
   const blocked = new Set((latest.actions ?? []).filter(a => (a as {rejecting_band?: boolean}).rejecting_band).map(a => a.ticker))
@@ -302,9 +303,10 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
     const recordedTarget = targets[ticker]
     const target = typeof recordedTarget === 'number' && Number.isFinite(recordedTarget) && recordedTarget >= 0 && recordedTarget <= 1
       ? recordedTarget : !learned && !(ticker in targets) && ticker in latest.grades ? 0 : null
-    const allocation = !learned ? 'recorded' : ticker in retained ? 'retained'
+    const allocation = !learned ? 'recorded' : eventAllocation ? 'event' : ticker in retained ? 'retained'
       : receipt?.status === 'available' && target !== null ? 'modeled' : 'unavailable'
     const allocationNote = !learned ? `Recorded target · ${latest.session}`
+      : allocation === 'event' ? 'FOMC allocation · recorded event policy takes priority over model targets'
       : allocation === 'retained' ? 'Retained holding · risk unavailable; target preserves existing capital'
       : allocation === 'modeled' ? `Model allocation · ${latest.session}; cash and costs included`
       : 'Model allocation unavailable · recorded target is not a fresh recommendation'
@@ -322,6 +324,7 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
     const why = mine.length
       ? [...new Set(mine.map(o => o.why))].join(' + ')
       : allocation === 'retained' ? allocationNote
+      : allocation === 'event' ? `${allocationNote} · no recorded order`
       : learned && allocation === 'unavailable' ? allocationNote
       : learned && target === 0 ? 'Model target 0.0% · no recorded order'
       : held > 0 ? holdReason(heldWeight, target, learned ? null : untilReset)
@@ -368,7 +371,7 @@ const ranked = (rows: BoardRow[]) => [...rows].sort((a, b) => {
       - pendingActions(a).reduce((sum, order) => sum + order.notional!, 0)
     return size || (b.target ?? -1) - (a.target ?? -1) || a.ticker.localeCompare(b.ticker)
   }
-  const support = {modeled: 0, recorded: 0, retained: 1, unavailable: 2}
+  const support = {modeled: 0, recorded: 0, event: 0, retained: 1, unavailable: 2}
   return support[a.allocation] - support[b.allocation]
     || (b.target ?? -1) - (a.target ?? -1)
     || (b.notional ?? 0) - (a.notional ?? 0)
@@ -410,6 +413,18 @@ const AccountStrip = ({paper, orders}: {paper: DeskPaperLive | null | undefined;
   </p>
 }
 
+// Show the same dated model observation beside an order on every dashboard surface.
+export const RecordedModelDecision = ({order}: {order: DeskPaperOrder}) => {
+  if (!order.learned_timing) return null
+  const reading = order.learned_timing
+  const at = Date.parse(reading.observed_at)
+  return <p aria-label={`${order.symbol} recorded model decision`} className="text-[#6e6e73]">
+    Model: {reading.state} · {Number.isFinite(at) ? `${new Date(at).toLocaleString('en-US', {timeZone: 'America/New_York'})} ET` : 'observation time unavailable'}
+    {' · '}{reading.current ? 'current observation' : 'historical observation'}; not a fill
+    {reading.reason && <span className="block">{reading.reason}</span>}
+  </p>
+}
+
 // The details under a row: every order for the name with its own status, the
 // position against its target, and why the desk grades it as it does.
 const RowDetails = ({row, latest, myAccount, onOpen, extra, structure, displayed}: {row: BoardRow; latest: DeskRecord; myAccount: number | null; onOpen: (ticker: string) => void; extra?: ReactNode; structure?: DeskStructure; displayed: ReturnType<typeof displayedBoardPrice>}) => {
@@ -429,10 +444,7 @@ const RowDetails = ({row, latest, myAccount, onOpen, extra, structure, displayed
           {row.orders.length > 1 && <p className="text-[#6e6e73]">{order.why}</p>}
           <p><span className={`mr-1 inline-block h-2 w-2 rounded-full ${STATE_DOT[order.state] ?? 'bg-[#86868b]'}`} aria-hidden="true" />{order.status}</p>
           <p className="text-[#6e6e73]">{order.when}</p>
-          {order.learned_timing && <p aria-label={`${order.symbol} recorded model decision`} className="text-[#6e6e73]">
-            Model: {order.learned_timing.state} · {new Date(order.learned_timing.observed_at).toLocaleString('en-US', {timeZone: 'America/New_York'})} ET
-            {' · '}{order.learned_timing.current ? 'current observation' : 'historical observation'}; not a fill
-          </p>}
+          <RecordedModelDecision order={order} />
         </div>
       })}
     </section>
@@ -579,7 +591,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
               <td className="py-2 text-xs" aria-label={`${row.ticker} displayed grade`}><span className={`font-semibold ${row.grade === 'A+' || row.grade === 'A' ? 'text-[#248a3d]' : row.grade === 'C' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{row.grade || '—'}</span></td>
               <td className="py-2 text-xs" aria-label={`${row.ticker} position`}>
                 {row.held > 0 ? <>{shares(row.held)}{row.heldWeight !== null ? ` · ${percent(row.heldWeight)}` : ''}</> : <span className="text-[#86868b]">none</span>}
-                {row.target !== null && row.target > 0 && <div className="text-[10px] text-[#6e6e73]">target {percent(row.target)}</div>}
+                {row.target !== null && <div className="text-[10px] text-[#6e6e73]">target {percent(row.target)}</div>}
               </td>
               <td className="py-2 text-[11px]" aria-label={`${row.ticker} levels`} title={levels.length ? `${row.ticker}: outstanding paper trigger on a completed 15-minute close; not a limit order or predicted support. ${row.when}` : `${row.ticker}: no outstanding price trigger. Technical references are in details.`}>
                 {levels.length ? levels.map(line => <div key={line} className="whitespace-nowrap text-[#6e6e73]">{line}</div>) : <span className="text-[#86868b]">—</span>}

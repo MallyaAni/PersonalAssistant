@@ -9,7 +9,7 @@ import { RecommendationTimeline } from './RecommendationTimeline'
 import { PersonalDecisionHistory, type PersonalHistoryContext } from './PersonalDecisionHistory'
 import { PaperAccountHistory } from './PaperAccountHistory'
 import { TickerChart } from './TickerChart'
-import { TradeBoard, boardRows, dollars, percent, orderWord, quantityLabel, executionRuleText, learnedAllocation, rankingText, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
+import { TradeBoard, RecordedModelDecision, boardRows, dollars, percent, orderWord, quantityLabel, executionRuleText, learnedAllocation, rankingText, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
 import { StrategyBench } from './StrategyBench'
 import { NeuralStudy } from './NeuralStudy'
 import { OpportunityCard } from './OpportunityCard'
@@ -1014,7 +1014,7 @@ const HowToUse = ({ onClose, compact = false, plan }: { onClose?: () => void; co
         <dd className="text-[#6e6e73]">
           BUY, SELL and TRIM are the paper account&apos;s recorded orders. SELL closes the position;
           TRIM reduces it toward the selected policy&apos;s target, including when the grade remains strong. HOLD means no order: the position stays.
-          The small line under the word says why.
+          Open the row details for the recorded reason and timing observation.
         </dd>
       </div>
       <div>
@@ -1027,10 +1027,7 @@ const HowToUse = ({ onClose, compact = false, plan }: { onClose?: () => void; co
       <div>
         <dt className="font-medium">When</dt>
         <dd className="text-[#6e6e73]">
-          {plan && plan.rule !== 'dip_or_close' ? executionRuleText(plan) : <>The nightly plan decides the orders after the close. The next session, a buy goes in on the first 15-minute
-          close 1% or more under the day&apos;s open, a sell or trim on one 1% or more over it; with none, the order goes in
-          as a market order at 3:45 PM ET, just before the close. The status shows where each order is: planned, waiting for its level, sent,
-          filled.</>}
+          {executionRuleText(plan)} Timing belongs to the recorded plan; each new plan follows its selected policy. Planned, waiting, sent and filled are separate states.
         </dd>
       </div>
       <div>
@@ -1421,7 +1418,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     decisionDate: event?.decision_date ?? null, calendarUnknown: event?.calendar_known === false,
   } : null} orders={paperLive?.orders?.length ?? eventLive?.pending_orders ?? 0}
     plan={paperLive?.plan?.orders ?? null} /> : null
-  // Keep a stock's diagnostics and confirmed-fill controls in its existing board expansion.
+  // Share dated analyst evidence with the full panel, revealing personal guidance only on request.
   const expandRow = (ticker: string) => {
     const g = latest?.grades?.[ticker]
     if (!latest || !g) return null
@@ -1440,14 +1437,13 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           <AnalystRatings ranks={ranks} stances={stances} session={latest.session} />
           {currentStances && <VoteChanges evening={g.stances ?? {}} current={currentStances} />}
           <p className="mt-2 text-[#6e6e73]">{quote ? <>Bar price {priceMoney(quote.last)} · interval start {marketTime(quote.bar)}{now - Date.parse(quote.bar) >= 30 * 60 * 1000 ? ' · last known bar' : ''}</> : 'Bar price unavailable'}. A bar price is not an executable quote.</p>
-          <div className="mt-2 text-[#6e6e73]"><DecisionCell ticker={ticker} decisions={decisions} latest={latest} now={now} /></div>
         </section>
         <EveningAnalysis grade={g} session={latest.session} written={latest.written} fundamental={latest.fundamental} ticker={ticker} />
         {(latest.briefs?.[ticker] || g.read) && <ArchivedCommentary brief={latest.briefs?.[ticker]} read={g.read} written={latest.written} />}
       </div>
       <div className="flex flex-col items-start gap-2">
         <button type="button" className="text-[#0071e3] hover:underline" onClick={() => setOpenName(ticker)}>Open the full panel</button>
-        {canWrite && holdingsReady && <ConfirmedBuy ticker={ticker} disabled={marking !== null} onSave={recordBuy} error={saveError} />}
+        {personalOpen && canWrite && holdingsReady && <ConfirmedBuy ticker={ticker} disabled={marking !== null} onSave={recordBuy} error={saveError} />}
       </div>
     </section>
   }
@@ -1575,10 +1571,13 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       <ReleaseCoverageNote coverage={latest.release_coverage} />
       <ToneExpiryNote expiry={latest.tone_expiry} />
       <TradeBoard latest={latest} live={live} paper={paperLive} now={now} onOpen={setOpenName} closes={closes} paused={eventPaused}
-        extra={personalOpen ? ticker => <section aria-label={`${ticker} personal guidance`} className="mt-3 border-t border-black/[0.08] pt-2">
-          <h4 className="font-medium text-[#6e6e73]">Personal action</h4>
-          <DecisionCell ticker={ticker} decisions={decisions} latest={latest} now={now} />
-        </section> : undefined}
+        extra={ticker => <>
+          {expandRow(ticker)}
+          {personalOpen && <section aria-label={`${ticker} personal guidance`} className="mt-3 border-t border-black/[0.08] pt-2">
+            <h4 className="font-medium text-[#6e6e73]">Personal action</h4>
+            <DecisionCell ticker={ticker} decisions={decisions} latest={latest} now={now} />
+          </section>}
+        </>}
         footer={<>
           <details aria-label="Personal portfolio" onToggle={event => setPersonalOpen(event.currentTarget.open)} className="border-t border-black/[0.05] px-3 py-2 text-xs">
             <summary className="cursor-pointer font-medium">Personal portfolio</summary>
@@ -2954,6 +2953,7 @@ const PaperOrderCard = ({ticker, row, session}: {ticker: string; row: BoardRow; 
       {o.planned_qty !== undefined && o.planned_qty !== o.qty && <p>Originally planned: {sharesText(o.planned_qty)}</p>}
       <p className="text-[#1d1d1f]">{o.status}</p>
       <p className="text-[#6e6e73]">{o.when}</p>
+      <RecordedModelDecision order={o} />
     </div>)}
     <p className="mt-2 text-xs text-[#6e6e73]">Position {row.held > 0 ? `${sharesText(row.held)}${row.heldValue !== null ? ` · ${dollars(row.heldValue)}` : ''}${row.heldWeight !== null ? ` · ${percent(row.heldWeight)}` : ''}` : 'none'}{row.target !== null ? ` · target ${percent(row.target)}` : ''}{row.avgCost !== null ? ` · average cost ${priceText(row.avgCost)}` : ''} · grade {row.grade || '—'} at the {session} close</p>
     <p className="text-xs text-[#6e6e73]">{row.allocationNote}</p>
@@ -3061,7 +3061,7 @@ const NameDetail = ({
     { label: 'Annualized mean while an A', value: bt?.in_annualised != null ? `${(bt.in_annualised * 100).toFixed(0)}% a year` : '—', note: 'mean of its daily log returns on days graded A or better, × 252' },
     { label: 'Annualized mean while not', value: bt?.out_annualised != null ? `${(bt.out_annualised * 100).toFixed(0)}% a year` : '—', note: 'mean of its daily log returns on days it was not an A, × 252' },
     { label: 'Sessions it was an A', value: bt ? `${bt.sessions_in} of ${bt.sessions}` : '—', note: 'of all sessions since the history starts' },
-    { label: 'Position changes', value: bt ? `${bt.switches}` : '—', note: 'times the position size changed — grade moves and regime exposure — each paying the trade cost' },
+    { label: 'Position changes', value: bt ? `${bt.switches}` : '—', note: 'times the historical replay changed position size under its recorded policy, each paying the trade cost' },
   ]
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/25" onClick={onClose} role="dialog" aria-label={`${ticker} history`}>
@@ -3080,7 +3080,7 @@ const NameDetail = ({
             so it leads on a phone and holds the right two-fifths of a wide
             window, staying in place while the reasoning scrolls beside it. */}
         <div className="mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0">
-          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} paperActivity={paperActivity} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} />
+          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
         {order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}

@@ -63,7 +63,8 @@ function hold(state: Scenario, endpoint: string, reply: Omit<Reply, 'gate'> = {}
 
 // Install read-only synthetic APIs and fail closed on real writes, external requests or unknown routes.
 async function install(page: Page, state: Scenario, baseURL: string) {
-  await page.clock.install({time: new Date(INITIAL)})
+  // Install before the intended pause instant so transport latency cannot make it a past time.
+  await page.clock.install({time: new Date(Date.parse(INITIAL) - 3_600_000)})
   await page.clock.pauseAt(new Date(INITIAL))
   page.on('pageerror', error => state.diagnostics.pageErrors.push(error.message))
   page.on('console', message => {if (message.type() === 'error') state.diagnostics.consoleErrors.push(message.text())})
@@ -176,8 +177,9 @@ const test = base.extend<{scenario: Scenario}>({
 async function openDesk(page: Page, state: Scenario) {
   await page.goto('/#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
-  await expect(board.getByLabel('AAPL session price')).toContainText('$102.00')
+  await expect.poll(() => state.requests.some(entry => entry.path === `${DESK}/session-prices` && entry.completed), {timeout: 5000}).toBe(true)
   await settle(page, state)
+  await expect(board.getByLabel('AAPL session price')).toContainText('$102.00')
   await openChart(page)
   await expect(page.getByRole('region', {name: 'AAPL price chart'}).getByLabel('AAPL session price')).toContainText('$102.00')
   await settle(page, state)
