@@ -9,7 +9,7 @@ import { RecommendationTimeline } from './RecommendationTimeline'
 import { PersonalDecisionHistory, type PersonalHistoryContext } from './PersonalDecisionHistory'
 import { PaperAccountHistory } from './PaperAccountHistory'
 import { TickerChart } from './TickerChart'
-import { TradeBoard, boardRows, dollars, percent, orderWord, quantityLabel, executionRuleText, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
+import { TradeBoard, boardRows, dollars, percent, orderWord, quantityLabel, executionRuleText, learnedAllocation, rankingText, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
 import { StrategyBench } from './StrategyBench'
 import { NeuralStudy } from './NeuralStudy'
 import { OpportunityCard } from './OpportunityCard'
@@ -470,7 +470,7 @@ const PlannedCash = ({record, paused}: {record: DeskRecord; paused: boolean}) =>
     && sum !== undefined && sum <= 1 + 1e-8
   return <section aria-label="Your planned cash" className="flex flex-wrap gap-x-5 gap-y-1 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-xs">
     <span title="Cash implied by recorded allocation targets, before fees; not actual holdings">{legacy ? 'Legacy planned cash' : 'Planned cash'} <b>{valid ? `${(100 * Math.max(0, 1 - sum!)).toFixed(1)}%` : 'Unavailable'}</b></span>
-    <span className="text-[#6e6e73]">{paused ? 'FOMC overrides the scheduled plan' : legacy ? 'Legacy book · active targets not recorded' : 'Weights apply at the reset'}</span>
+    <span className="text-[#6e6e73]">{paused ? 'FOMC overrides the scheduled plan' : legacy ? 'Legacy book · active targets not recorded' : learnedAllocation(record) ? 'Recorded model targets · actual funded orders determine changes' : 'Weights apply at the reset'}</span>
   </section>
 }
 
@@ -1012,8 +1012,8 @@ const HowToUse = ({ onClose, compact = false, plan }: { onClose?: () => void; co
       <div>
         <dt className="font-medium">Action</dt>
         <dd className="text-[#6e6e73]">
-          BUY, SELL and TRIM are the paper account&apos;s orders. SELL closes the position (the grade fell below A, or the
-          name left the book); TRIM cuts it back to its target. HOLD means no order: the position stays.
+          BUY, SELL and TRIM are the paper account&apos;s recorded orders. SELL closes the position;
+          TRIM reduces it toward the selected policy&apos;s target, including when the grade remains strong. HOLD means no order: the position stays.
           The small line under the word says why.
         </dd>
       </div>
@@ -1037,7 +1037,7 @@ const HowToUse = ({ onClose, compact = false, plan }: { onClose?: () => void; co
         <dt className="font-medium">Grade</dt>
         <dd className="text-[#6e6e73]">
           A+ down to C, from five analysts: growth &amp; margins (F), price trend (T), earnings-release tone (S), relative
-          valuation (V) and group leadership (R). {plan && plan.rule !== 'dip_or_close' ? 'The selected policy determines portfolio weights.' : 'A and A+ names are in the book at equal weight, up to 20% each.'} Grades
+          valuation (V) and group leadership (R). The selected allocation policy determines portfolio weights and orders; the grade alone does not determine size. Grades
           are set at the close.
         </dd>
       </div>
@@ -1595,6 +1595,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             <h3 aria-label="Plan status" className="text-xs font-medium text-[#1d1d1f]">
               {eventPaused ? 'The FOMC cycle takes priority over the scheduled plan.'
                 : paperLive?.plan?.until_rebalance != null ? paperLive.plan.until_rebalance <= 1 ? 'Paper weights reset at the next plan.' : `Paper weights reset in ${paperLive.plan.until_rebalance} sessions.`
+                : learnedAllocation(latest) ? 'Model allocations are evaluated at the nightly close; funded orders use their recorded execution timing.'
                 : countdown !== null ? `Paper weights reset in ${countdown} session${countdown === 1 ? '' : 's'}.`
                 : 'No paper weight reset scheduled.'}
               {live.as_of && (
@@ -2420,10 +2421,12 @@ const DeskGuide = ({latest, open}: {latest: DeskRecord; open: boolean}) => {
         <summary className="cursor-pointer font-medium">Desk guide · ranking and timing</summary>
       <details className="mt-3">
         <summary className="cursor-pointer text-[#0071e3]">How ranking and sizing work</summary>
-        <p className="mt-2">{TRIGGER_LEGEND} Numbers beside these letters are rounded cross-sectional percentiles, not individual letter grades or probabilities of profit. A+/A/B/C is the combined grade. Default ranking puts exceptions first, then outstanding paper actions by readiness, grade-based action priority and planned size. Reset ranking restores automatic ordering after column sorting. Intraday inputs update where available; other votes and theses remain from the evening decision.</p>
+        <p className="mt-2">{TRIGGER_LEGEND} Numbers beside these letters are rounded cross-sectional percentiles, not individual letter grades or probabilities of profit. A+/A/B/C is the combined grade. {rankingText} Reset ranking restores automatic ordering after column sorting. Intraday inputs update where available; other votes and theses remain from the evening decision.</p>
         <p className="mt-2">Current voting rules: growth &amp; margins, price trend, earnings-release tone and relative valuation each carry one vote;
           rotation carries half a vote. A bearish core analyst caps the grade at B.
-          Position sizes also depend on volatility, grade multipliers, concentration limits and market exposure.</p>
+          {learnedAllocation(latest)
+            ? ' The recorded learned allocation uses joint return and risk distributions, transaction costs and available cash. It can reduce exposure while grades remain strong. Unsupported holdings retain capital separately; a missing forecast is not a zero target. The nightly decision sets targets; the learned timing model decides when supported orders are ready in the actual session.'
+            : ' This recorded decision uses its historical allocation policy; it is not retagged when a newer policy is installed.'}</p>
         <p className="mt-2">{latest.provenance?.rule?.inputs?.includes('expectations-gap')
           ? 'This evening decision includes the LightGBM expectations gap: model-estimated revenue growth minus a relative-P/S valuation proxy, blended with relative valuation.'
           : latest.provenance?.rule?.inputs
@@ -2953,6 +2956,7 @@ const PaperOrderCard = ({ticker, row, session}: {ticker: string; row: BoardRow; 
       <p className="text-[#6e6e73]">{o.when}</p>
     </div>)}
     <p className="mt-2 text-xs text-[#6e6e73]">Position {row.held > 0 ? `${sharesText(row.held)}${row.heldValue !== null ? ` · ${dollars(row.heldValue)}` : ''}${row.heldWeight !== null ? ` · ${percent(row.heldWeight)}` : ''}` : 'none'}{row.target !== null ? ` · target ${percent(row.target)}` : ''}{row.avgCost !== null ? ` · average cost ${priceText(row.avgCost)}` : ''} · grade {row.grade || '—'} at the {session} close</p>
+    <p className="text-xs text-[#6e6e73]">{row.allocationNote}</p>
   </section>
 )
 

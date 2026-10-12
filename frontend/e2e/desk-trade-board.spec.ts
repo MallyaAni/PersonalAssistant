@@ -35,7 +35,7 @@ const record = () => {
 }
 
 // Route every desk read to the scenario at `now`; any write or unknown read fails the test.
-async function scenario(page: Page, {now, plan, orders, sessionQuotes = {}}: {now: string; plan: 'thursday' | 'wednesday'; orders?: object[]; sessionQuotes?: Record<string, number>}) {
+async function scenario(page: Page, {now, plan, orders, sessionQuotes = {}, nightly = record(), paperPlan}: {now: string; plan: 'thursday' | 'wednesday'; orders?: object[]; sessionQuotes?: Record<string, number>; nightly?: object; paperPlan?: object}) {
   const errors: string[] = []
   const writes: string[] = []
   page.on('pageerror', error => errors.push(error.message))
@@ -60,7 +60,7 @@ async function scenario(page: Page, {now, plan, orders, sessionQuotes = {}}: {no
     // A name the store could not read: no levels, only the price's age.
     SMCI: {ema_21: null, ema_21_slope_5: null, high_20: null, level_tag: null, price_as_of: priced, price_age_seconds: 300},
   }
-  const paper = {user_id: USER, as_of: now, equity: fixture.equity, cash: fixture.cash, day_pl: 864, day_pl_pct: .0087, pl_pct: .0002, positions: fixture.positions, orders: [], activity: {session: '2026-10-01', complete: true, fills: []}, plan: orders ? {...fixture[plan], orders} : fixture[plan]}
+  const paper = {user_id: USER, as_of: now, equity: fixture.equity, cash: fixture.cash, day_pl: 864, day_pl_pct: .0087, pl_pct: .0002, positions: fixture.positions, orders: [], activity: {session: '2026-10-01', complete: true, fills: []}, plan: {...fixture[plan], ...(orders ? {orders} : {}), ...paperPlan}}
   await page.route('**/api/**', async route => {
     const request = route.request()
     const url = new URL(request.url())
@@ -72,7 +72,7 @@ async function scenario(page: Page, {now, plan, orders, sessionQuotes = {}}: {no
     let json: unknown
     if (url.pathname === '/api/v1/auth/session') json = {authentication_required: true, user_id: USER, expires_at: '2026-10-02T00:00:00Z', is_admin: true, desk_access: true, desk_write: true}
     else if (url.pathname.startsWith('/api/v1/conversations/')) json = {conversations: [], messages: []}
-    else if (url.pathname === base) json = {latest: record(), sessions: [SESSION]}
+    else if (url.pathname === base) json = {latest: nightly, sessions: [SESSION]}
     else if (url.pathname === `${base}/live`) json = {as_of: now, data_at: bar, stale: false, market_status: market, quotes, technical: {}, technical_detail: {}, structure}
     else if (url.pathname === `${base}/session-prices`) json = {session: open ? 'regular' : 'post-market', as_of: now, signal_scope: 'regular-session', quotes: Object.fromEntries(Object.entries(sessionQuotes).map(([ticker, price]) => [ticker, {price, feed: 'iex', at: now, status: 'fresh', session: open ? 'regular' : 'post-market', valid_until: new Date(Date.parse(now) + 60000).toISOString()}]))}
     else if (url.pathname === `${base}/holdings`) json = {holdings: []}
@@ -106,6 +106,106 @@ test('level hovers distinguish stocks and use the displayed session price', asyn
   await expect(page.getByLabel('AAOI reference levels')).toHaveAttribute('title', /AAOI: above 21-EMA; below 20-day high\. EMA rising over five sessions\. Compared with post-market price \$110\.00\./)
   if (await page.getByRole('button', {name: 'details for SMCI', exact: true}).getAttribute('aria-expanded') !== 'true') await page.getByRole('button', {name: 'details for SMCI', exact: true}).click()
   await expect(page.getByLabel('SMCI reference levels')).toHaveAttribute('title', 'SMCI: reference levels unavailable.')
+  expect(diagnostics.writes).toEqual([])
+  expect(diagnostics.errors).toEqual([])
+})
+
+const LEARNED = 'joint-stock-risk-funded/6-retained-holdings-probability-timing-research'
+
+// Supply dated allocator targets and retained-risk evidence through the same record API.
+const learnedRecord = () => ({
+  ...record(),
+  grades: {...record().grades, NVDA: {...record().grades.NVDA as object, grade: 'C'}},
+  targets: {policy: LEARNED, weights: {AAOI: 0, COHR: .16, HPE: .08, NTAP: .02, SNDK: .4, NVDA: 0}},
+  paper: {joint_funded: {policy: LEARNED, as_of: SESSION, receipt: {
+    status: 'available', reason: 'joint_net_growth', transition: {
+      retained_weights: {SNDK: .4}, risk_unavailable: {SNDK: {reason: 'joint_risk_unavailable'}},
+    },
+  }}},
+})
+
+// Model-sized buys and strong-grade trims outrank smaller orders without a grade heuristic.
+test('learned board ranking follows funded actions and recorded allocations', async ({page}) => {
+  const source = fixture.thursday.orders[0]
+  const orders = [
+    {...source, symbol: 'COHR', client_order_id: 'model-buy', side: 'buy', action: 'BUY', state: 'due', qty: 80, notional: 8000, weight: .08, status: 'Model entry ready', why: 'Joint net-growth allocation', timing: 'next_open', level: null, when: 'Current model observation'},
+    {...source, symbol: 'NTAP', client_order_id: 'model-trim', side: 'sell', action: 'TRIM', state: 'due', qty: 90, notional: 9000, weight: .09, status: 'Model reduction ready', why: 'Joint net-growth allocation', timing: 'next_open', level: null, when: 'Current model observation'},
+    {...source, symbol: 'NVDA', client_order_id: 'company-exit', side: 'sell', action: 'SELL', state: 'due', qty: 10, notional: 1000, weight: .01, status: 'Exit ready', why: 'Company exit', timing: 'next_open', level: null},
+  ]
+  const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', nightly: learnedRecord(), orders, paperPlan: {
+    policy: LEARNED, rule: 'live-probability-timing/1-research', until_rebalance: null,
+    rule_text: {buy: 'Supported orders use the current probability timing observation.', sell: 'Supported orders use the current probability timing observation.'},
+  }})
+  await page.goto('/#desk')
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  // Read only stock rows, excluding expanded detail rows and the cash footer.
+  const names = () => board.locator('tbody tr').filter({has: page.getByLabel(/displayed grade$/)}).locator('td:nth-child(2) button').allTextContents()
+  await expect.poll(async () => (await names()).slice(0, 3)).toEqual(['NTAP', 'COHR', 'NVDA'])
+  await expect(page.getByLabel('NTAP displayed grade')).toHaveText('A+')
+  await expect(page.getByLabel('NTAP strategy intent')).toHaveText('TRIM')
+  await page.getByRole('group', {name: 'Board view'}).getByRole('button', {name: /All names/}).click()
+  const all = await names()
+  expect(all.indexOf('HPE')).toBeLessThan(all.indexOf('SNDK'))
+  await page.getByRole('button', {name: 'details for SNDK', exact: true}).click()
+  await expect(page.getByLabel('SNDK allocation basis')).toContainText('Retained holding · risk unavailable')
+  await page.getByRole('button', {name: 'details for AAOI', exact: true}).click()
+  await expect(page.getByLabel('AAOI action status')).toContainText('0.0%')
+  await expect(page.getByLabel('AAOI action status')).not.toContainText('grade')
+  await page.getByRole('button', {name: 'details for ALAB', exact: true}).click()
+  await expect(page.getByLabel('ALAB allocation basis')).toContainText('Model allocation unavailable')
+  await expect(page.getByRole('region', {name: 'ALAB position'})).toContainText('Target —')
+  await page.getByRole('button', {name: 'NTAP', exact: true}).click()
+  const card = page.getByRole('region', {name: 'NTAP paper order'})
+  await expect(card).toContainText('TRIM')
+  await expect(card).toContainText('Model allocation')
+  await page.getByRole('dialog', {name: 'NTAP history'}).getByRole('button', {name: 'Close', exact: true}).click()
+  await board.getByRole('button', {name: 'Grade', exact: true}).click()
+  await page.getByRole('button', {name: 'Reset ranking', exact: true}).click()
+  await expect.poll(async () => (await names()).slice(0, 3)).toEqual(['NTAP', 'COHR', 'NVDA'])
+  await page.getByLabel('Order rules', {exact: true}).locator('summary').click()
+  await expect(page.getByLabel('Ranking basis')).toContainText('Grades do not set automatic priority')
+  await expect(page.getByLabel('Execution rule')).not.toContainText('1%')
+  await page.locator('details[aria-label="Strategy details"] > summary').click()
+  await expect(page.getByRole('heading', {name: 'Plan status'})).toContainText('Model allocations are evaluated at the nightly close')
+  await page.getByText('Desk guide · ranking and timing', {exact: true}).click()
+  await page.getByText('How ranking and sizing work', {exact: true}).click()
+  await expect(page.getByRole('region', {name: 'Desk guide'})).toContainText('reduce exposure while grades remain strong')
+  await expect(page.getByRole('region', {name: 'Desk guide'})).not.toContainText('grade multipliers')
+  expect(diagnostics.writes).toEqual([])
+  expect(diagnostics.errors).toEqual([])
+})
+
+// A receipt from another day cannot promote stored weights to a current model decision.
+test('stale learned allocation evidence remains unavailable', async ({page}) => {
+  const nightly = learnedRecord()
+  nightly.paper.joint_funded.as_of = '2026-09-29'
+  const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', nightly, orders: [], paperPlan: {policy: LEARNED, until_rebalance: null}})
+  await page.goto('/#desk')
+  await page.getByRole('button', {name: 'details for COHR', exact: true}).click()
+  await expect(page.getByLabel('COHR allocation basis')).toContainText('Model allocation unavailable')
+  await expect(page.getByRole('region', {name: 'COHR position'})).toContainText('16.0%')
+  await expect(page.getByLabel('COHR action status')).not.toContainText('reset')
+  expect(diagnostics.writes).toEqual([])
+  expect(diagnostics.errors).toEqual([])
+})
+
+// A higher model target leads the untraded names even when its analyst grade is lower.
+test('learned target ranking preserves missing and retained evidence', async ({page}) => {
+  const nightly = learnedRecord()
+  const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', nightly, orders: [], paperPlan: {policy: LEARNED, until_rebalance: null}})
+  await page.goto('/#desk')
+  await page.getByRole('group', {name: 'Board view'}).getByRole('button', {name: /All names/}).click()
+  const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  // Inspect target ordering separately from account position size and analyst grades.
+  const names = () => board.locator('tbody tr').filter({has: page.getByLabel(/displayed grade$/)}).locator('td:nth-child(2) button').allTextContents()
+  const all = await names()
+  expect(all.indexOf('COHR')).toBeLessThan(all.indexOf('NTAP'))
+  expect(all.indexOf('NTAP')).toBeLessThan(all.indexOf('SNDK'))
+  await page.getByRole('button', {name: 'details for COHR', exact: true}).click()
+  await expect(page.getByLabel('COHR allocation basis')).toContainText('Model allocation')
+  await expect(page.getByRole('region', {name: 'COHR position'})).toContainText('16.0%')
+  await page.reload()
+  await expect(page.getByLabel('COHR strategy intent')).toHaveText('HOLD')
   expect(diagnostics.writes).toEqual([])
   expect(diagnostics.errors).toEqual([])
 })

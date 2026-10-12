@@ -2139,6 +2139,17 @@ export interface DeskAction {
   reason: string;
 }
 export interface DeskPaper {
+  // Recorded allocator evidence; retained capital is not a model recommendation.
+  joint_funded?: {
+    policy: string;
+    as_of?: string;
+    status?: string;
+    receipt?: {
+      status: string;
+      reason?: string;
+      transition?: {retained_weights: Record<string, number>; risk_unavailable: Record<string, {reason?: string}>};
+    };
+  };
   session: string;
   until_rebalance?: number;
   equity: number;

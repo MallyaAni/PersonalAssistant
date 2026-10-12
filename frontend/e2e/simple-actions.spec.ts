@@ -389,8 +389,8 @@ test('ticker panels disclose chart gaps and retain the board decision', async ({
   expect(errors).toEqual([])
 })
 
-// Automatic ranking prioritizes eligible buy plans by grade before size; manual sorting remains available.
-test('default ranking follows order stage, size, position and grade', async ({page}) => {
+// Recorded funded orders rank by size without the frontend imposing a grade eligibility rule.
+test('default ranking follows recorded funded actions and target weights', async ({page}) => {
   const grades = {
     NVDA: {grade: 'B', score: .99}, AAPL: {grade: 'A+', score: .9},
     MSFT: {grade: 'A+', score: .8}, AMZN: {grade: 'A+', score: .7}, AMD: {grade: 'A', score: 1},
@@ -411,15 +411,15 @@ test('default ranking follows order stage, size, position and grade', async ({pa
   const order_ = () => board.locator('tbody tr').filter({has: page.getByLabel(/displayed grade$/)}).locator('td:nth-child(2) button').allTextContents()
   await expect(board.getByLabel('NVDA displayed grade', {exact: true})).toHaveText('B')
   // The board opens on the portfolio: the orders and the holdings.
-  await expect.poll(order_).toEqual(['AAPL', 'NVDA', 'MSFT', 'AMZN'])
+  await expect.poll(order_).toEqual(['NVDA', 'AAPL', 'MSFT', 'AMZN'])
   await page.getByRole('group', {name: 'Board view'}).getByRole('button', {name: /All names/}).click()
-  await expect.poll(order_).toEqual(['AAPL', 'NVDA', 'MSFT', 'AMZN', 'AMD'])
+  await expect.poll(order_).toEqual(['NVDA', 'AAPL', 'MSFT', 'AMZN', 'AMD'])
   await board.getByRole('button', {name: 'Size', exact: true}).click()
   await expect.poll(order_).toEqual(['MSFT', 'NVDA', 'AAPL', 'AMZN', 'AMD'])
   await board.getByRole('button', {name: 'Size', exact: true}).click()
   await expect.poll(order_).toEqual(['AMZN', 'AMD', 'AAPL', 'NVDA', 'MSFT'])
   await board.getByRole('button', {name: 'Size', exact: true}).click()
-  await expect.poll(order_).toEqual(['AAPL', 'NVDA', 'MSFT', 'AMZN', 'AMD'])
+  await expect.poll(order_).toEqual(['NVDA', 'AAPL', 'MSFT', 'AMZN', 'AMD'])
   await expect(board.getByLabel('NVDA size', {exact: true})).toContainText('$4,000 · 4.0%')
   expect(errors).toEqual([])
 })

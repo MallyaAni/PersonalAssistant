@@ -19,6 +19,14 @@ import { displayedBoardPrice, SessionPrice } from './StockBoard'
 // holds nor trades.
 export type BoardWord = 'BUY' | 'SELL' | 'TRIM' | 'HOLD' | '—' | 'ORDERS'
 
+const LEARNED_HOLDING_POLICY = 'joint-stock-risk-funded/6-retained-holdings-probability-timing-research'
+
+// Identify the recorded learned allocator without reclassifying older decisions.
+export const learnedAllocation = (latest: DeskRecord): boolean => latest.targets?.policy === LEARNED_HOLDING_POLICY
+
+// Explain the board's presentation of recorded decisions without inventing a stock score.
+export const rankingText = 'Exceptions first, then due and waiting paper orders by funded order size. Other names follow recorded target weight; retained holdings with unavailable risk stay separate. Grades do not set automatic priority. This ordering is not a return forecast.'
+
 // Prefer the executor's recorded rule rather than assigning legacy timing to a new policy.
 export const executionRuleText = (plan?: DeskPaperPlan): string => {
   if (plan?.rule_text) return [...new Set(Object.values(plan.rule_text))].join(' · ')
@@ -46,6 +54,8 @@ export type BoardRow = {
   avgCost: number | null
   unrealized: number | null
   target: number | null
+  allocation: 'modeled' | 'retained' | 'unavailable' | 'recorded'
+  allocationNote: string
   status: string
   state: string
   when: string
@@ -277,15 +287,27 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
   const positions = paper?.positions ?? []
   const targets = latest.targets?.weights ?? {}
   const untilReset = paper?.plan?.until_rebalance ?? null
+  const learned = learnedAllocation(latest)
+  const evidence = latest.paper?.joint_funded
+  const receipt = evidence?.policy === latest.targets?.policy && evidence?.as_of === latest.session ? evidence.receipt : undefined
+  const retained = receipt?.transition?.retained_weights ?? {}
   const blocked = new Set((latest.actions ?? []).filter(a => (a as {rejecting_band?: boolean}).rejecting_band).map(a => a.ticker))
-  const names = [...new Set([...Object.keys(latest.grades), ...positions.map(p => p.symbol), ...orders.map(o => o.symbol)])]
+  const names = [...new Set([...Object.keys(latest.grades), ...Object.keys(targets), ...positions.map(p => p.symbol), ...orders.map(o => o.symbol)])]
   return names.map(ticker => {
     const mine = orders.filter(o => o.symbol === ticker)
     const position = positions.find(p => p.symbol === ticker)
     const held = position ? position.qty : 0
     const heldValue = position ? position.market_value : null
     const heldWeight = heldValue !== null && equity ? heldValue / equity : null
-    const target = ticker in targets ? targets[ticker] : ticker in latest.grades ? 0 : null
+    const recordedTarget = targets[ticker]
+    const target = typeof recordedTarget === 'number' && Number.isFinite(recordedTarget) && recordedTarget >= 0 && recordedTarget <= 1
+      ? recordedTarget : !learned && !(ticker in targets) && ticker in latest.grades ? 0 : null
+    const allocation = !learned ? 'recorded' : ticker in retained ? 'retained'
+      : receipt?.status === 'available' && target !== null ? 'modeled' : 'unavailable'
+    const allocationNote = !learned ? `Recorded target · ${latest.session}`
+      : allocation === 'retained' ? 'Retained holding · risk unavailable; target preserves existing capital'
+      : allocation === 'modeled' ? `Model allocation · ${latest.session}; cash and costs included`
+      : 'Model allocation unavailable · recorded target is not a fresh recommendation'
     const grade = latest.grades[ticker]?.grade ?? ''
     const lead = [...mine].sort((a, b) => (PROGRESS[a.state] ?? 9) - (PROGRESS[b.state] ?? 9))[0]
     const combined = new Set(mine.map(o => `${o.side}:${o.state}:${quantityLabel(o)}`)).size <= 1
@@ -299,7 +321,11 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
     const done = mine.length > 0 && mine.every(isDone)
     const why = mine.length
       ? [...new Set(mine.map(o => o.why))].join(' + ')
-      : held > 0 ? holdReason(heldWeight, target, untilReset)
+      : allocation === 'retained' ? allocationNote
+      : learned && allocation === 'unavailable' ? allocationNote
+      : learned && target === 0 ? 'Model target 0.0% · no recorded order'
+      : held > 0 ? holdReason(heldWeight, target, learned ? null : untilReset)
+      : learned ? target === null ? 'Target unavailable · no recorded order' : `Model target ${percent(target)} · no recorded order`
       : target && target > 0 ? blocked.has(ticker) ? 'In the book · no buy while its daily rejects the upper band' : `In the book at ${percent(target)} · no order tonight`
       : grade ? `Not in the book (grade ${grade})` : 'Not graded'
     return {
@@ -309,7 +335,7 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
       held, heldValue, heldWeight,
       avgCost: position?.avg_entry_price ?? null,
       unrealized: position ? position.unrealized_pl : null,
-      target,
+      target, allocation, allocationNote,
       status,
       state: lead?.state ?? '',
       when: lead?.when ?? '',
@@ -321,12 +347,11 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
 const pendingActions = (row: BoardRow): DeskPaperOrder[] =>
   row.orders.filter(order => !isDone(order) && canScale(order)
       && Number.isFinite(order.qty) && order.qty > 0
-      && typeof order.notional === 'number' && Number.isFinite(order.notional) && order.notional > 0
-      && (order.side === 'sell' || ['A', 'A+'].includes(row.grade)))
+      && typeof order.notional === 'number' && Number.isFinite(order.notional) && order.notional > 0)
 
 // Give both sides the same readiness priority, with exceptions ahead of normal actions.
 const band = (row: BoardRow): number => {
-  if (!row.orders.length) return row.word === 'HOLD' ? 5 : 6
+  if (!row.orders.length) return row.held > 0 || (row.target ?? 0) > 0 ? 5 : 6
   if (['problem', 'missed', 'rejected'].includes(row.state)) return 0
   const actions = pendingActions(row)
   if (actions.some(order => order.state === 'due')) return 1
@@ -334,26 +359,21 @@ const band = (row: BoardRow): number => {
   return row.orders.every(order => isDone(order) || order.state === 'held') ? 4 : 3
 }
 
-// Use the policy's grade-based entry and exit priority, never a probability of profit.
-const actionPriority = (row: BoardRow): number => {
-  if (row.word === 'SELL') return row.grade === 'C' ? 2 : row.grade === 'B' ? 1 : 0
-  if (row.word === 'BUY') return row.grade === 'A+' ? 2 : row.grade === 'A' ? 1 : 0
-  return 0
-}
-
-// Rank due actions before waiting plans, then policy priority and remaining planned size.
+// Present actual funded actions and target weights without adding a grade-based policy.
 const ranked = (rows: BoardRow[]) => [...rows].sort((a, b) => {
   const stage = band(a), other = band(b)
   if (stage !== other) return stage - other
-  const grade = (GRADE_RANK[b.grade] ?? -1) - (GRADE_RANK[a.grade] ?? -1)
   if (stage === 1 || stage === 2) {
     const size = pendingActions(b).reduce((sum, order) => sum + order.notional!, 0)
       - pendingActions(a).reduce((sum, order) => sum + order.notional!, 0)
-    return actionPriority(b) - actionPriority(a) || size || a.ticker.localeCompare(b.ticker)
+    return size || (b.target ?? -1) - (a.target ?? -1) || a.ticker.localeCompare(b.ticker)
   }
-  return (b.notional ?? 0) - (a.notional ?? 0)
+  const support = {modeled: 0, recorded: 0, retained: 1, unavailable: 2}
+  return support[a.allocation] - support[b.allocation]
+    || (b.target ?? -1) - (a.target ?? -1)
+    || (b.notional ?? 0) - (a.notional ?? 0)
     || (b.heldWeight ?? 0) - (a.heldWeight ?? 0)
-    || grade || a.ticker.localeCompare(b.ticker)
+    || a.ticker.localeCompare(b.ticker)
 })
 
 // A proportional reference size only; it does not know personal holdings or cash.
@@ -423,6 +443,7 @@ const RowDetails = ({row, latest, myAccount, onOpen, extra, structure, displayed
         {row.avgCost !== null && <p className="text-[#6e6e73]">average cost {price(row.avgCost)}{row.unrealized !== null ? <> · <span className={row.unrealized >= 0 ? 'text-[#248a3d]' : 'text-[#b42318]'}>{row.unrealized >= 0 ? '+' : '−'}{dollars(Math.abs(row.unrealized))}</span> unrealized</> : ''}</p>}
       </> : <p>Not held</p>}
       <p className="text-[#6e6e73]">Target {row.target !== null ? percent(row.target) : '—'} ({latest.targets?.policy ?? 'the active policy'})</p>
+      <p aria-label={`${row.ticker} allocation basis`} className="text-[#6e6e73]">{row.allocationNote}</p>
       <div aria-label={`${row.ticker} reference levels`} title={levelDescription(row.ticker, structure, displayed)} className="mt-2 text-[#6e6e73]">
         <h4 className="font-medium">Technical references</h4>
         {references.length ? references.map(line => <p key={line}>{line}</p>) : <p>—</p>}
@@ -506,6 +527,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
       <details aria-label="Order rules" className="text-xs text-[#6e6e73]">
         <summary className="cursor-pointer">Order rules</summary>
         <p aria-label="Execution rule">{paused ? 'FOMC cycle: the paper account follows the FOMC risk rule; its orders say when. ' : ''}{ruleText} Paper order status is shown below; submitted or completed orders are not new trade instructions.</p>
+        <p aria-label="Ranking basis">{rankingText}</p>
       </details>
       {myAccount !== null && <p className="text-xs text-[#6e6e73]">Reference sizes are proportional examples for unsent plans, not adjusted for your holdings or cash.</p>}
       {paper?.plan?.reason && <p className="text-xs text-[#b25e00]">{paper.plan.reason}; statuses may lag.</p>}
@@ -518,7 +540,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
             </button>)}
         </div>
         <button type="button" aria-pressed={sort === null} onClick={() => setSort(null)}
-          title="Restores automatic ranking after column sorting. Immediate paper actions, then waiting plans. A+ buys and C exits precede A buys and B exits; planned size breaks ties. Exceptions remain first. Filled orders are history. Priority is not confidence or a return forecast."
+          title={`Restores automatic ranking after column sorting. ${rankingText} Filled orders are history.`}
           className={`rounded-md px-2 py-0.5 text-xs ${sort === null ? 'bg-[#e8f2ff] text-[#0071e3]' : 'text-[#6e6e73] hover:text-[#0071e3]'}`}>Reset ranking</button>
         <input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search a ticker" aria-label="Search the stock list"
           className="w-full max-w-44 rounded-md border border-black/[0.08] bg-white px-2 py-0.5 text-sm text-[#1d1d1f]" />
@@ -530,7 +552,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
           <tr>
             <th className="w-7 py-2"><span className="sr-only">Details</span></th>
             <Head label="Stock" column="ticker" sort={sort} onSort={onSort} />
-            <Head label="Grade" column="grade" sort={sort} onSort={onSort} title="The desk's grade at the last close; A and A+ are in the book." />
+            <Head label="Grade" column="grade" sort={sort} onSort={onSort} title="The recorded analyst grade; allocation and orders come from the selected policy. Click to sort by grade." />
             <Head label="Position" column="position" sort={sort} onSort={onSort} title="Paper-account shares and share of the account, against the policy's target." />
             <Head label="Levels" sort={sort} onSort={onSort} title="Outstanding paper order triggers, tested on completed 15-minute closes. Technical references are in stock details. Not guaranteed fill prices." />
             <Head label="Action" sort={sort} onSort={onSort} title="The paper account's order for the name. HOLD: no order, the position stays. A finished order keeps its word, greyed; the status column says what happened to it." />

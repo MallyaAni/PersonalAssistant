@@ -1,5 +1,23 @@
 # Next session
 
+## 2026-10-12 — dashboard consistency correction qualified; deployment next
+
+User required live rankings and explanations to follow the learned system.
+Corrected the frontend's separate grade priority: actual order readiness/funded
+size, then recorded allocation targets; retained-risk holdings distinct from
+modeled targets, missingness preserved. Grades remain informative. Details,
+guide and plan wording follow the same recorded policy, including strong-grade
+trims. VERIFIED33board/personal browser tests plus1analyst-guide test, no skips;
+TypeScript/Vite build passed. Both new ranking cases fail on unchanged68617e2b.
+Only frontend/docs changed; all28reviewed trading files and installed original
+artifacts/configs must remain identical. Starting branch codex/learned-live-release-20261006,
+HEAD68617e2b44ca10407acba6299662908bcb6504bb, clean; main pulled/up to date.
+Canonical frontend deployment and actual compiled browser acceptance next;
+never rerun original complete gates/accounts/activation for this correction.
+[Findings](research/learned-dashboard-consistency-2026-10-12.md).
+Remaining ordinary nightly/timing/paper-execution boundaries below still apply.
+Diagram impact: NONE — existing allocation/order presentation.
+
 ## 2026-10-11 — updated code deployed; learned paper selectors installed and accepted
 
 VERIFIED actual canonical release and runtime source at
