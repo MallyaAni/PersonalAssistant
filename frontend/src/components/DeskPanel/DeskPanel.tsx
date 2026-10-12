@@ -3037,13 +3037,10 @@ const NameDetail = ({
   const currentStances = row
     ? row.grade_source === 'intraday' ? row.stances_live ?? liveGrades[ticker]?.stances_live : undefined
     : liveGrades[ticker]?.stances_live
-  // The live suggestion for this name, worded exactly as the board's Action
-  // column words it (BUY/SELL/TRIM/Hold, or the board's readiness words on the
-  // timed board). The chart's "Now:" line shows it so the panel cannot tell a
-  // different story from the board beside it; when there is no current decision
-  // the chart falls back to the recorded history's latest row.
+  // Keep the board's current order legs and quantity bases separate on the chart.
+  // Historical replay never supplies a missing current order or executable size.
   const liveSuggestion = order ? {word: order.word === '—' ? 'No order' : order.word, detail: order.orders.length
-    ? `${sharesText(order.qty)} · ${order.status}`
+    ? order.orders.map(leg => `${order.orders.length > 1 ? `${orderWord(leg)} ` : ''}${sharesText(leg.qty)} ${quantityLabel(leg)} · ${leg.state}`).join(' · ')
     : order.held > 0 ? `${sharesText(order.held)}${order.heldWeight !== null ? ` (${percent(order.heldWeight)})` : ''} · ${savedTargetText(order, latest.session)}` : order.why} : null
   const bt = history?.backtest
   const recent = history?.rows.slice(-12) ?? []

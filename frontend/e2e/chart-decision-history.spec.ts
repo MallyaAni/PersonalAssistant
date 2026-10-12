@@ -37,7 +37,7 @@ const FILLS = [
 ]
 
 // Serve one name's history with replayed decisions and paper fills behind the real chart, and record its paint calls.
-async function install(page: Page, frontendURL: string, options: {fills?: (typeof FILLS[number] & {kind?: string; filled_at?: string})[]; policy?: string; rows?: DecisionRow[]; rebalanceNote?: string | null; live?: LiveFixture} = {}) {
+async function install(page: Page, frontendURL: string, options: {fills?: (typeof FILLS[number] & {kind?: string; filled_at?: string})[]; policy?: string; rows?: DecisionRow[]; rebalanceNote?: string | null; live?: LiveFixture; assumedFill?: boolean} = {}) {
   const rebalanceNote = options.rebalanceNote === undefined ? REBALANCE_NOTE : options.rebalanceNote
   const history = {
     ticker: 'AAPL', asof: '2026-09-18', horizon: 20,
@@ -112,6 +112,7 @@ async function install(page: Page, frontendURL: string, options: {fills?: (typeo
         json = {ticker: 'AAPL', timeframe: '15m', adjusted: false, basis: 'raw prices; current IEX', sessions: 1,
           bars: ['13:30', '13:45', '14:00'].map(time => ({date: '2026-09-24', time: `2026-09-24T${time}:00Z`, open: 100, high: 130, low: 90, close: options.live!.price, volume: 100})),
           overlays: {session_vwap: [100, 101, options.live.price]}, levels: {}, entries: [],
+          fills: options.assumedFill ? [{time: '2026-09-24T13:30:00Z', date: '2026-09-24', side: 'buy', qty: 63, price: 224.81, label: 'Filled buy 63 @ 224.81'}] : [],
           live_as_of: new Date(await page.evaluate(() => Date.now())).toISOString(), live_feed: 'iex', data_status: 'complete', last_bar_complete: false,
         }
         return route.fulfill({json})
@@ -148,6 +149,46 @@ async function finish(testInfo: TestInfo, fixture: Awaited<ReturnType<typeof ins
 // Read the marker texts the canvas actually drew under one timeframe.
 const drawn = (page: Page, frame: string) => page.evaluate(selected =>
   (window as unknown as CanvasState).__markerDraws.filter(row => row.timeframe === selected).map(row => row.text), frame)
+
+// A trade-looking default marker must name an actual fill, not a grade or replay target.
+test('chart defaults to recorded executions with a clear share-size legend', async ({page, baseURL}, testInfo) => {
+  const fixture = await install(page, baseURL!)
+  try {
+    await page.goto('/#desk')
+    await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
+    const chart = page.getByRole('region', {name: 'AAPL price chart'})
+    await expect(chart.getByRole('checkbox', {name: 'Grade changes'})).not.toBeChecked()
+    await expect(chart.getByRole('checkbox', {name: 'Policy replay'})).not.toBeChecked()
+    await expect(chart.getByLabel('Chart legend')).toContainText('shares @ fill price')
+    await expect.poll(() => drawn(page, 'D')).toContain('BUY 63 @ $224.81')
+    expect((await drawn(page, 'D')).some(text => /grade|signal|RESET/.test(text))).toBe(false)
+    await chart.getByRole('button', {name: 'W', exact: true}).click()
+    await expect.poll(() => drawn(page, 'W')).toContain('BUY 63 @ $224.81')
+    await expect(chart.getByLabel('Chart legend')).toContainText('W groups fills by week')
+    await expect(chart.getByLabel('Chart legend')).toContainText('Fill prices are unadjusted')
+    expect((await drawn(page, 'W')).some(text => /grade|signal|RESET/.test(text))).toBe(false)
+  } finally {await finish(testInfo, fixture)}
+})
+
+// A date-only archive cannot establish a fifteen-minute execution time or a valid negative size.
+test('15m marks only timestamped valid fills and leaves date-only fills in the list', async ({page, baseURL}, testInfo) => {
+  const fixture = await install(page, baseURL!, {fills: [
+    {date: '2026-09-24', side: 'buy', qty: 63, price: 224.81},
+    {date: '2026-09-24', side: 'sell', qty: -4, price: 110},
+    {date: '2026-09-24', side: 'buy', qty: 0, price: 110},
+  ], assumedFill: true, live: {price: 110, fills: [{symbol: 'AAPL', side: 'buy', qty: 3, price: 111, filled_at: '2026-09-24T13:40:05Z'}]}})
+  try {
+    await page.goto('/#desk')
+    await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
+    const chart = page.getByRole('region', {name: 'AAPL price chart'})
+    await chart.getByRole('button', {name: '15m', exact: true}).click()
+    await expect(chart.getByLabel('Fill timing')).toContainText('no recorded time')
+    await expect(chart.getByLabel('AAPL paper fills')).toContainText('BUY 63 @ $224.81')
+    await expect(chart.getByLabel('AAPL paper fills')).not.toContainText('SELL -4')
+    await expect.poll(() => drawn(page, '15m')).toContain('BUY 3 @ $111.00')
+    expect(await drawn(page, '15m')).not.toContain('BUY 63 @ $224.81')
+  } finally {await finish(testInfo, fixture)}
+})
 
 for (const width of [1280, 390]) {
   // A broker fill arriving after opening the chart appears in every timeframe without a reload.
@@ -241,7 +282,8 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await expect(fills).toHaveCount(2)
       await expect(fills.nth(0)).toHaveText('Sep 18 · SELL 63 @ $230.50')
       await expect(fills.nth(1)).toHaveText('Sep 15 · BUY 63 @ $224.81')
-      await expect(chart.locator('[aria-label="Chart legend"]')).toContainText('Circles: paper fills.')
+      await expect(chart.locator('[aria-label="Chart legend"]')).toContainText('Circles: paper fills · shares @ fill price.')
+      await chart.getByRole('checkbox', {name: 'Grade changes'}).check()
       // Strategy signals are off by default: no list, no note, no legend, no markers.
       const signalsBox = chart.getByRole('checkbox', {name: 'Policy replay'})
       const tradesBox = chart.getByRole('checkbox', {name: 'Paper trades'})

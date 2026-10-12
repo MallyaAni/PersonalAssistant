@@ -13,7 +13,7 @@ import {
   type Time,
   type UTCTimestamp,
 } from 'lightweight-charts'
-import { exportDeskPersonalReceipt, getDeskChart, getDeskPersonalHistory, DESK_CHART_DEFAULT_SESSIONS, type DeskPersonalReceipt, type DeskChart, type DeskChartBar, type DeskChartDecision, type DeskChartFill, type DeskChartTimeframe } from '../../services/api'
+import { exportDeskPersonalReceipt, getDeskChart, getDeskPersonalHistory, DESK_CHART_DEFAULT_SESSIONS, type DeskPersonalReceipt, type DeskChart, type DeskChartBar, type DeskChartDecision, type DeskChartTimeframe } from '../../services/api'
 import type { DeskHistory, DeskHistoryFill, DeskHistoryRow, DeskLive, DeskPaperLive, DeskStructure } from '../../services/api'
 import { SessionPrice } from './StockBoard'
 import { LEVEL_NAME } from './TradeBoard'
@@ -28,11 +28,9 @@ import { LEVEL_NAME } from './TradeBoard'
 // view would invite a trader to reason from a bar size no analyst looks at,
 // which is the disagreement this chart exists to remove.
 //
-// The 15m view is not a third analyst timeframe: it is the last few sessions
-// of raw fifteen-minute bars, so the operator can see at what time in the
-// session a buy, trim or sell is decided (the last bar before the close) and
-// at what time it fills (the next session's open for a buy, its close for a
-// sell). Nothing the desk grades on is drawn there, only the session VWAP.
+// The 15m view places paper fills only from their original execution time.
+// Date-only fills remain listed without an assumed open or close marker.
+// Optional policy replay shows recalculated close decisions, separate from fills.
 //
 // Canvas content is mirrored into text for screen readers. Browser tests also
 // observe actual drawing calls: a correct caption does not prove marker placement.
@@ -413,8 +411,8 @@ const decisionMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[],
 // Only a fill with a date, a side, a quantity and a price is drawable or listable.
 const drawableFill = (fill: DeskHistoryFill) =>
   Boolean(fill) && typeof fill.date === 'string' && (fill.side === 'buy' || fill.side === 'sell')
-  && typeof fill.qty === 'number' && Number.isFinite(fill.qty)
-  && typeof fill.price === 'number' && Number.isFinite(fill.price)
+  && typeof fill.qty === 'number' && Number.isFinite(fill.qty) && fill.qty > 0
+  && typeof fill.price === 'number' && Number.isFinite(fill.price) && fill.price > 0
 
 // The paper account's real fills, oldest first, malformed rows left out.
 const fillRows = (history: DeskHistory | undefined): DeskHistoryFill[] => {
@@ -508,38 +506,6 @@ const intradayDecisionMarkers = (data: DeskChart | null): ChartMarker[] =>
     }
   })
 
-// Where each decision fills: a small circle in the decision's colour on the
-// next session's opening bar for a buy or an add and its closing bar for a
-// sell or a trim, labelled "... fills at the open/close" by the server.
-const intradayFillsAtMarkers = (data: DeskChart | null): ChartMarker[] =>
-  (data?.timeframe === '15m' && Array.isArray(data.fills_at) ? data.fills_at : []).filter(drawableDecision).map(row => {
-    const up = row.action === 'buy' || row.action === 'add'
-    return {
-      time: instantStamp(row.time),
-      position: up ? 'belowBar' as const : 'aboveBar' as const,
-      color: up ? DECISION_BUY : DECISION_SELL,
-      shape: 'circle' as const,
-      text: row.label, size: 1,
-    }
-  })
-
-// Only a payload fill with a parseable time, a side and a label is drawable.
-const drawableTimedFill = (fill: DeskChartFill) =>
-  Boolean(fill) && typeof fill.time === 'string' && Number.isFinite(Date.parse(fill.time))
-  && (fill.side === 'buy' || fill.side === 'sell')
-  && typeof fill.qty === 'number' && Number.isFinite(fill.qty) && typeof fill.price === 'number' && Number.isFinite(fill.price)
-
-// The paper account's real fills on the bar they filled in, as circles (blue,
-// or purple for a redeploy), below for a buy and above for a sell, labelled
-// "Filled buy 63 @ 224.81" by the server.
-const intradayFillMarkers = (data: DeskChart | null): ChartMarker[] =>
-  (data?.timeframe === '15m' && Array.isArray(data.fills) ? data.fills : []).filter(drawableTimedFill).map(fill => ({
-    time: instantStamp(fill.time),
-    position: fill.side === 'buy' ? 'belowBar' as const : 'aboveBar' as const,
-    color: fill.side === 'buy' ? TRADE_BUY : TRADE_SELL,
-    shape: 'circle' as const,
-    text: tradeText(fill.side, fill.qty, fill.price), size: 2,
-  }))
 
 // A session as a trader writes it: the month and day, with the year only when
 // it is not the year of the newest row, so a list spanning years stays honest.
@@ -601,8 +567,8 @@ export const TickerChart = ({
   const [timeframe, setTimeframe] = useState<Timeframe>('daily')
   // How many sessions of fifteen-minute bars to load; only 15m reads it.
   const [intradaySessions, setIntradaySessions] = useState(DESK_CHART_DEFAULT_SESSIONS['15m'])
-  const [showSignals, setShowSignals] = useState(true)
-  const [showRecommendations, setShowRecommendations] = useState(true)
+  const [showSignals, setShowSignals] = useState(false)
+  const [showRecommendations, setShowRecommendations] = useState(false)
   const [showDecisions, setShowDecisions] = useState(false)
   const [showFills, setShowFills] = useState(true)
   const [receipts, setReceipts] = useState<ChartReceipt[]>([])
@@ -752,20 +718,8 @@ export const TickerChart = ({
   // The 15m view marks the signal on the bar it was made; where a trade fills
   // is the paper account's own fill, drawn from the fills, never projected.
   const timedDecisions = useMemo(() => intradayDecisionMarkers(data), [data])
-  const timedFills = useMemo(() => {
-    const recorded = intradayFillMarkers(data)
-    const current = currentIntradayMarkers(fills, merged.bars)
-    const counts = new Map<string, number>()
-    // Keep separate identical executions while avoiding the same fill arriving through both sources.
-    const key = (marker: ChartMarker) => `${marker.time}:${marker.text}`
-    recorded.forEach(marker => counts.set(key(marker), (counts.get(key(marker)) ?? 0) + 1))
-    return [...recorded, ...current.filter(marker => {
-      const id = key(marker), remaining = counts.get(id) ?? 0
-      if (!remaining) return true
-      counts.set(id, remaining - 1)
-      return false
-    })]
-  }, [data, fills, merged])
+  // The payload's bar time may be an assumed open/close; require the original execution instant instead.
+  const timedFills = useMemo(() => timeframe === '15m' ? currentIntradayMarkers(fills, merged.bars) : [], [timeframe, fills, merged])
 
   useEffect(() => {
     if (!holder.current || !data || !merged.bars.length) return
@@ -919,7 +873,7 @@ export const TickerChart = ({
   useEffect(() => {
     // Series points require uniqueness, but distinct markers on the same date must survive.
     // Grade changes do not apply on 15m (a grade is a session's reading, not a
-    // bar's); the decision and fill layers there are the payload's timed ones.
+    // bar's); intraday fills require the original recorded execution instant.
     const markers = [
       ...(personalHistory && showRecommendations ? actionMarkers : []),
       ...(showSignals ? changes : []),
@@ -1072,8 +1026,9 @@ export const TickerChart = ({
             {merged.bars.length} {timeframe === 'weekly' ? 'weeks' : 'sessions'} loaded; pan or zoom for history.
           </p>}
           <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Chart legend">
-            Circles: paper fills. Arrows: grade changes, labelled Saved or Recalculated when known.{showDecisions ? ' Signal and RESET labels: policy replay, not recorded recommendations.' : ''}
+            Circles: paper fills · shares @ fill price.{timeframe !== '15m' ? ' Fill prices are unadjusted.' : ''}{timeframe === 'weekly' ? ' W groups fills by week; dates below are execution dates.' : ''}{showSignals ? ' Arrows: grade changes, labelled Saved or Recalculated when known.' : ''}{showDecisions ? ' Signal and RESET labels: policy replay, not trades.' : ''}{personalHistory && showRecommendations ? ' Saved Buy/Sell labels: recommendations, not fills.' : ''}
           </p>
+          {timeframe === '15m' && fills.some(fill => !recordedInstant(fill.filled_at)) && <p aria-label="Fill timing" className="mt-1 text-[11px] text-[#6e6e73]">Some fills have no recorded time; listed below, not marked on 15m.</p>}
           <p aria-label="Chart refresh status" role={refreshFailed ? 'status' : undefined} className="mt-1 text-[11px] text-[#6e6e73]">Regular-session chart · refresh 20s{data.live_feed ? ` · ${data.live_feed.toUpperCase()}` : ''}{data.live_as_of ? ` · checked ${recordedTime(data.live_as_of)}` : ''}{refreshFailed ? ' · Refresh failed; showing last snapshot' : data.live_reason ? ` · ${data.live_reason}` : ''}</p>
           {showDecisions && history?.policy && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy decision note">
             {history.policy}: {DECISION_NOTE}

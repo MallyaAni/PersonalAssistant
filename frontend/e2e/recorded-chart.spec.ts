@@ -77,6 +77,7 @@ async function setup(page: Page, personal = true, gap?: CandleGap) {
   await page.goto('/#desk')
   await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
   const chart = page.getByRole('region', {name: 'AAPL price chart'})
+  await chart.getByRole('checkbox', {name: 'Grade changes'}).check()
   await expect(chart.getByLabel('Research publication groups')).toContainText(gap === 'absent' ? '2026-09-17: Not recorded · 1' : '2026-09-15: Dip→Wait · 2')
   return {chart, errors, writes, changeQuote: () => { last = 150 }}
 }

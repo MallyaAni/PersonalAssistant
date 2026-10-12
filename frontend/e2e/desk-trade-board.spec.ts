@@ -91,6 +91,22 @@ async function scenario(page: Page, {now, plan, orders, sessionQuotes = {}, nigh
 const rowOf = (page: Page, ticker: string) =>
   page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('row').filter({has: page.getByRole('button', {name: ticker, exact: true})})
 
+// Chart action sizes must retain each mixed leg instead of adding opposing quantities together.
+test('chart current action preserves each order leg and quantity basis', async ({page}) => {
+  const source = fixture.thursday.orders[0]
+  const orders = [
+    {...source, symbol: 'COHR', client_order_id: 'chart-buy', side: 'buy', action: 'BUY', state: 'due', qty: 8, quantity_basis: 'planned'},
+    {...source, symbol: 'COHR', client_order_id: 'chart-trim', side: 'sell', action: 'TRIM', state: 'waiting', qty: 4, quantity_basis: 'planned'},
+  ]
+  const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', nightly: learnedRecord(), orders})
+  await page.goto('/#desk')
+  await rowOf(page, 'COHR').getByRole('button', {name: 'COHR', exact: true}).click()
+  await expect(page.getByLabel('COHR now')).toHaveText('Now: ORDERS · BUY 8 sh planned · due · TRIM 4 sh planned · waiting')
+  await expect(page.getByLabel('COHR now')).not.toContainText('12 sh')
+  expect(diagnostics.writes).toEqual([])
+  expect(diagnostics.errors).toEqual([])
+})
+
 // The Action heading must narrow actual orders, including mixed orders, without changing their rank or funding.
 test('Action heading filters recorded actions and composes with search', async ({page}) => {
   const source = fixture.thursday.orders[0]

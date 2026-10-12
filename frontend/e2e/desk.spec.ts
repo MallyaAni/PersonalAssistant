@@ -2422,6 +2422,8 @@ test('the ticker chart draws the desk’s own timeframes and mirrors its reading
 
   // Both grade changes are named, and the published one is distinguished.
   const showSignals = chart.getByRole('checkbox', {name: 'Grade changes', exact: true})
+  await expect(showSignals).not.toBeChecked()
+  await showSignals.check()
   await expect(showSignals).toBeChecked()
   await expect(chart).toContainText('3 grade changes marked')
   await expect(chart).toContainText('Saved grade C→B')

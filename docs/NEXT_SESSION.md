@@ -1,5 +1,21 @@
 # Next session
 
+## 2026-10-12 — chart actions and execution timing correction
+
+User required simple action/size meaning on every timeframe. Paper-fill circles
+are actual recorded executions; grade/replay arrows are not. Source audit found
+15m could use assumed open/close placement for date-only fills. Corrected frontend
+to require original execution instant/containing candle;24date-only fills stay
+listed without invented15m placement. Grade arrows off by default; short legend
+shares@fillprice/raw-price/weekly grouping. Current mixed orders retain each
+leg's own size/basis/state. VERIFIED serving read-only94histories/104fills match
+settled records,80timestamps,24date-only; allOctober9/graded-equal-weight5.
+VERIFIED108browser cases/no skips plus6final source cases (109unique), type/build
+passed; canonical deployment/browser acceptance pending. No backend/config/model/
+record/account change. [Findings](research/chart-execution-clarity-2026-10-12.md).
+Never replay old experiments or retag old trades as learned-policy history.
+Ordinary nightly/timing/subsequent paper execution remain pending as below.
+
 ## 2026-10-12 — Action-filter regression and ambiguous saved targets
 
 User reported Action no longer filtered and bare target10% was misleading.

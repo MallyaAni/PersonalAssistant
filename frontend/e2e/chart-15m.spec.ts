@@ -16,8 +16,8 @@ const ROWS: DecisionRow[] = [
   {date: '2026-09-15', grade: 'A', action: 'hold', target_weight: 0.15, delta_weight: 0.01, rebalance: false},
 ]
 const FILLS = [
-  {date: '2026-09-15', side: 'buy', qty: 63, price: 224.81},
-  {date: '2026-09-15', side: 'buy', qty: 7, price: 225.1, kind: 'redeploy'},
+  {date: '2026-09-15', side: 'buy', qty: 63, price: 224.81, filled_at: '2026-09-15T09:30:18-04:00'},
+  {date: '2026-09-15', side: 'buy', qty: 7, price: 225.1, kind: 'redeploy', filled_at: '2026-09-15T09:30:25-04:00'},
 ]
 // The two sessions of fifteen-minute bars the 15m view serves, in September (EDT).
 const SESSIONS = ['2026-09-14', '2026-09-15']
@@ -176,7 +176,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       // The Now line is the board's row; the trades are listed in the board's words, the redeploy named.
       const decisions = chart.locator('[aria-label="AAPL decisions"]')
       await expect(chart.locator('[aria-label="AAPL now"]')).toHaveText('Now: No order · Not in the book (grade B)')
-      await expect(chart.locator('[aria-label="AAPL paper fills"] li')).toHaveText(['Sep 15 · BUY 7 @ $225.10 · idle cash put to work', 'Sep 15 · BUY 63 @ $224.81'])
+      await expect(chart.locator('[aria-label="AAPL paper fills"] li')).toHaveText(['Sep 15 · 9:30 AM ET · BUY 7 @ $225.10 · idle cash put to work', 'Sep 15 · 9:30 AM ET · BUY 63 @ $224.81'])
       await expect(chart.getByRole('checkbox', {name: 'Paper trades'})).toBeChecked()
       // The trades reach the real canvas on the bar they filled in; the signal is off by default.
       await expect.poll(() => drawn(page, '15m')).toEqual(expect.arrayContaining(['BUY 63 @ $224.81', 'BUY 7 @ $225.10']))
@@ -194,6 +194,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await expect.poll(() => drawn(page, '15m')).toEqual(expect.arrayContaining(['BUY signal 14% at the close']))
       expect(await drawn(page, '15m')).not.toEqual(expect.arrayContaining(['BUY signal 14% fills at the open']))
       // Grade changes are session readings and are not drawn on the bars.
+      await chart.getByRole('checkbox', {name: 'Grade changes'}).check()
       expect(await drawn(page, '15m')).not.toEqual(expect.arrayContaining(['Saved grade A→B']))
       await expect(chart).toContainText('not marked on fifteen-minute bars')
       // The sessions selector re-reads the chart with the chosen count.
