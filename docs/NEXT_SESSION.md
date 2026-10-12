@@ -15,6 +15,14 @@ checked alongside bounds/ranges/timeframes/phone. Distinct canonical
 scratch/learned-chart-shares-release-20261012 pending. This changes presentation,
 not executions or historical quantities.
 
+Share totals9bb74175 deployed16:30:49Z, root
+scratch/learned-chart-shares-release-20261012; exact source/bundle/preserved files
+verified. Real AAOI D/W totals/list checked; scale distortion resolved. Final
+weekly recent spacing reduces visible-candle density only (all260weeks/indicators
+unchanged),11source cases passed/no skips/type-build. Distinct
+scratch/learned-chart-weekly-spacing-release-20261012 pending. No trade/model/
+data/qualification-window change; previous roots never rerun.
+
 User required simple action/size meaning on every timeframe. Paper-fill circles
 are actual recorded executions; grade/replay arrows are not. Source audit found
 15m could use assumed open/close placement for date-only fills. Corrected frontend

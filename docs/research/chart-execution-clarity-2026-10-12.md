@@ -100,3 +100,14 @@ including D/W/15m, both ranges, phone/desktop, nonnegative price labels,
 same-candle totals and separate BUY/SELL weekly totals.111unique cases overall.
 Canonical scratch/learned-chart-shares-release-20261012 pending. No data, trading rules,
 model artifacts or backend services change.
+
+Share-total release9bb741752e6975dff3ff3ef1236454e1fe537554 completed16:30:49Z,
+root scratch/learned-chart-shares-release-20261012; source/bundle/preserved files
+verified. Real AAOI daily and weekly totals matched the individual list; price
+scale distortion resolved. A final recent-W spacing adjustment shows fewer
+candles at once so adjacent weekly quantity labels have room on desktop/phone.
+All260weekly candles and21/9-week indicators remain loaded and unchanged; this
+does not alter a strategy or qualification window.11targeted final-source cases
+passed, including every timeframe/range/phone path. Distinct canonical
+scratch/learned-chart-weekly-spacing-release-20261012 pending; no prior release
+rerun.

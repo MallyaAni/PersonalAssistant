@@ -838,9 +838,10 @@ export const TickerChart = ({
       } else {
         const count = timeframe === '15m'
           ? Math.max(27, Math.min(108, Math.floor((width - margin) / 8)))
+          : timeframe === 'weekly' ? Math.max(3, Math.min(16, Math.floor((width - margin) / 72)))
           : Math.max(12, Math.min(40, Math.floor((width - margin) / 22)))
         const padding = Math.min(count, merged.bars.length) * margin / (width - margin)
-        chart.timeScale().setVisibleLogicalRange({from: merged.bars.length <= count ? -padding : merged.bars.length - count, to: merged.bars.length - 1 + padding})
+        chart.timeScale().setVisibleLogicalRange({from: merged.bars.length <= count ? -padding : merged.bars.length - count - padding, to: merged.bars.length - 1 + padding})
       }
     }
     const scope = `${userId}:${ticker}:${timeframe}:${fullHistory}:${intradaySessions}`
