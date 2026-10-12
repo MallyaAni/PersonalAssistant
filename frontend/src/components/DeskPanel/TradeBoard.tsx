@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { DeskLevelTag, DeskLive, DeskPaperLive, DeskPaperOrder, DeskPaperPlan, DeskRecord, DeskStructure } from '../../services/api'
 import { displayedBoardPrice, SessionPrice } from './StockBoard'
 
@@ -65,6 +65,18 @@ export type BoardRow = {
 // the whole portfolio (orders and holdings), and every graded name.
 type View = 'orders' | 'portfolio' | 'all'
 type SortKey = 'ticker' | 'grade' | 'position' | 'size'
+const FILTER_ACTIONS = ['BUY', 'SELL', 'TRIM', 'HOLD', '—'] as const
+type FilterAction = typeof FILTER_ACTIONS[number]
+type ActionSelection = Record<FilterAction, boolean>
+const ALL_ACTIONS: ActionSelection = {BUY: true, SELL: true, TRIM: true, HOLD: true, '—': true}
+
+// Match each recorded leg of mixed orders while keeping non-traded names in their displayed category.
+const hasAction = (row: BoardRow, action: FilterAction) => row.orders.length
+  ? row.orders.some(order => orderWord(order) === action) : row.word === action
+
+// Date a plan's saved allocation wherever it appears beside live holdings or prices.
+export const savedTargetText = (row: BoardRow, session: string) =>
+  `Saved target ${row.target === null ? 'unavailable' : percent(row.target)} · ${session}`
 
 const GRADE_RANK: Record<string, number> = { 'A+': 3, A: 2, B: 1, C: 0 }
 // Where the viewer's own account size is kept: a per-browser convenience that
@@ -264,18 +276,14 @@ const filledTogether = (orders: DeskPaperOrder[]): string => {
   return `${verb} ${qty.toLocaleString('en-US')}${cost > 0 ? ` @ ${price(cost / qty)} avg` : ''}${at ? ` · ${at}` : ''}`
 }
 
-// Why a held name has no order, against its target: at it, above it (the reset
-// trims it), below it (the reset or idle cash tops it up), or out of the book.
-export const holdReason = (weight: number | null, target: number | null, untilReset: number | null): string => {
-  const reset = untilReset === null ? 'the next reset' : untilReset <= 1 ? 'the next reset (next session)' : `the reset in ${untilReset} sessions`
-  if (target === null || target <= 0) return 'Not in the book; no order tonight'
-  if (weight === null) return `Target ${percent(target)}`
+// Compare holdings with saved targets without turning a missing order into a future trade promise.
+export const holdReason = (weight: number | null, target: number | null): string => {
+  if (target === null) return 'Saved target unavailable · no recorded order'
+  if (target <= 0) return 'Saved target 0.0% · no recorded order'
+  if (weight === null) return `Saved target ${percent(target)} · no recorded order`
   const gap = weight - target
-  if (Math.abs(gap) < 0.01) return `Near its ${percent(target)} target`
-  if (untilReset === null) return `${gap > 0 ? 'Above' : 'Below'} its ${percent(target)} target · no current order`
-  return gap > 0
-    ? `Above its ${percent(target)} target · trimmed at ${reset}`
-    : `Below its ${percent(target)} target · topped up at ${reset}`
+  if (Math.abs(gap) < 0.01) return `Near its saved ${percent(target)} target · no recorded order`
+  return `${gap > 0 ? 'Above' : 'Below'} its saved ${percent(target)} target · no recorded order`
 }
 
 // Build every row the board can show from the record, the paper account and
@@ -286,7 +294,6 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
   const orders = paper?.plan?.orders ?? []
   const positions = paper?.positions ?? []
   const targets = latest.targets?.weights ?? {}
-  const untilReset = paper?.plan?.until_rebalance ?? null
   const learned = learnedAllocation(latest)
   const evidence = latest.paper?.joint_funded
   const eventAllocation = learned && evidence?.policy === latest.targets?.policy && evidence?.status === 'event_priority'
@@ -327,7 +334,7 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
       : allocation === 'event' ? `${allocationNote} · no recorded order`
       : learned && allocation === 'unavailable' ? allocationNote
       : learned && target === 0 ? 'Model target 0.0% · no recorded order'
-      : held > 0 ? holdReason(heldWeight, target, learned ? null : untilReset)
+      : held > 0 ? holdReason(heldWeight, target)
       : learned ? target === null ? 'Target unavailable · no recorded order' : `Model target ${percent(target)} · no recorded order`
       : target && target > 0 ? blocked.has(ticker) ? 'In the book · no buy while its daily rejects the upper band' : `In the book at ${percent(target)} · no order tonight`
       : grade ? `Not in the book (grade ${grade})` : 'Not graded'
@@ -394,6 +401,37 @@ const Head = ({label, column, sort, onSort, title}: {label: string; column?: Sor
   </th>
 }
 
+// Restore the Action heading's multi-select filter using actual paper-order actions.
+const ActionHead = ({open, onOpen, shown, onShown, rows}: {open: boolean; onOpen: (value: boolean) => void; shown: ActionSelection; onShown: (value: ActionSelection) => void; rows: BoardRow[]}) => {
+  const box = useRef<HTMLDivElement>(null)
+  const button = useRef<HTMLButtonElement>(null)
+  const filtered = FILTER_ACTIONS.some(action => !shown[action])
+  // Dismiss an open menu without attaching permanent listeners to the page.
+  useEffect(() => {
+    if (!open) return
+    // Close the menu when a reader clicks another part of the page.
+    const away = (event: MouseEvent) => {if (box.current && !box.current.contains(event.target as Node)) onOpen(false)}
+    // Restore keyboard focus to the heading when dismissing the filter.
+    const key = (event: KeyboardEvent) => {if (event.key === 'Escape') {onOpen(false); button.current?.focus()}}
+    document.addEventListener('mousedown', away)
+    document.addEventListener('keydown', key)
+    // Remove the temporary dismissal listeners when the menu closes.
+    return () => {document.removeEventListener('mousedown', away); document.removeEventListener('keydown', key)}
+  }, [open, onOpen])
+  return <th className="py-2 font-normal"><div ref={box} className="relative">
+    <button ref={button} type="button" aria-label="Action" aria-expanded={open} aria-haspopup="true"
+      title="Click to filter BUY, SELL, TRIM, HOLD or names with no order. Mixed orders match each recorded action; completed orders remain history."
+      className={filtered ? 'text-[#0071e3]' : 'hover:text-[#0071e3]'} onClick={() => onOpen(!open)}>Action <span aria-hidden="true">{filtered ? '•' : '▾'}</span></button>
+    {open && <div role="group" aria-label="Show actions" className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-black/[0.1] bg-white p-2 shadow-lg">
+      {FILTER_ACTIONS.map(action => <label key={action} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-[#1d1d1f] hover:bg-[#f5f5f7]">
+        <input type="checkbox" aria-label={`Show ${action === '—' ? 'No order' : action} rows`} checked={shown[action]} onChange={event => onShown({...shown, [action]: event.target.checked})} />
+        <span className="flex-1">{action === '—' ? 'No order' : action}</span><span>{rows.filter(row => hasAction(row, action)).length}</span>
+      </label>)}
+      <button type="button" className="mt-1 px-1 py-1 text-[#0071e3]" onClick={() => onShown(ALL_ACTIONS)}>Show all</button>
+    </div>}
+  </div></th>
+}
+
 // The account's money and the day's orders in one line above the board.
 const AccountStrip = ({paper, orders}: {paper: DeskPaperLive | null | undefined; orders: DeskPaperOrder[]}) => {
   if (!paper || paper.reason !== undefined || paper.equity === undefined) {
@@ -409,7 +447,7 @@ const AccountStrip = ({paper, orders}: {paper: DeskPaperLive | null | undefined;
     <span>cash {dollars(cash)} ({percent(equity > 0 ? cash / equity : 0)})</span>
     {typeof paper.day_pl === 'number' && <span className={paper.day_pl >= 0 ? 'text-[#248a3d]' : 'text-[#b42318]'}>today {paper.day_pl >= 0 ? '+' : '−'}{dollars(Math.abs(paper.day_pl))}{typeof paper.day_pl_pct === 'number' ? ` (${paper.day_pl_pct >= 0 ? '+' : '−'}${Math.abs(paper.day_pl_pct * 100).toFixed(2)}%)` : ''}</span>}
     <span>{orders.length === 0 ? 'no orders' : `${orders.length} order${orders.length === 1 ? '' : 's'} (${buys} buy${buys === 1 ? '' : 's'}, ${sells} sell${sells === 1 ? '' : 's'})`}</span>
-    {typeof reset === 'number' && <span>reset {reset <= 1 ? 'next session' : `in ${reset} sessions`}</span>}
+    {typeof reset === 'number' && <span>recorded reset {reset <= 1 ? 'next session' : `in ${reset} sessions`}</span>}
   </p>
 }
 
@@ -454,7 +492,7 @@ const RowDetails = ({row, latest, myAccount, onOpen, extra, structure, displayed
         <p>{shares(row.held)}{row.heldValue !== null ? ` · ${dollars(row.heldValue)}` : ''}{row.heldWeight !== null ? ` · ${percent(row.heldWeight)}` : ''}</p>
         {row.avgCost !== null && <p className="text-[#6e6e73]">average cost {price(row.avgCost)}{row.unrealized !== null ? <> · <span className={row.unrealized >= 0 ? 'text-[#248a3d]' : 'text-[#b42318]'}>{row.unrealized >= 0 ? '+' : '−'}{dollars(Math.abs(row.unrealized))}</span> unrealized</> : ''}</p>}
       </> : <p>Not held</p>}
-      <p className="text-[#6e6e73]">Target {row.target !== null ? percent(row.target) : '—'} ({latest.targets?.policy ?? 'the active policy'})</p>
+      <p className="text-[#6e6e73]">{savedTargetText(row, latest.session)} ({latest.targets?.policy ?? 'policy not recorded'})</p>
       <p aria-label={`${row.ticker} allocation basis`} className="text-[#6e6e73]">{row.allocationNote}</p>
       <div aria-label={`${row.ticker} reference levels`} title={levelDescription(row.ticker, structure, displayed)} className="mt-2 text-[#6e6e73]">
         <h4 className="font-medium">Technical references</h4>
@@ -489,12 +527,14 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
   // graded name when the paper account holds and trades nothing (or cannot be read).
   const [chosen, setView] = useState<View | null>(null)
   const [query, setQuery] = useState('')
+  const [shownActions, setShownActions] = useState<ActionSelection>(ALL_ACTIONS)
+  const [actionMenu, setActionMenu] = useState(false)
   const [sort, setSort] = useState<{key: SortKey; down: boolean} | null>(null)
   const [opened, setOpened] = useState<string | null>(null)
   const [visible, setVisible] = useState(25)
   const [myAccount, setMyAccount] = useState<number | null>(readMyAccount)
   const [draft, setDraft] = useState(() => (readMyAccount() ?? '').toString())
-  useEffect(() => { setVisible(25) }, [chosen, query])
+  useEffect(() => { setVisible(25) }, [chosen, query, shownActions])
   const rows = useMemo(() => ranked(boardRows(latest, paper)), [latest, paper])
   const orders = paper?.plan?.orders ?? []
   const counts = {
@@ -513,7 +553,9 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
     : key === 'grade' ? GRADE_RANK[row.grade] ?? -1
     : key === 'position' ? row.heldWeight ?? -1
     : row.notional ?? -1
-  const shown = !sort ? inView : [...inView].sort((a, b) => {
+  const allSelected = FILTER_ACTIONS.every(action => shownActions[action])
+  const filtered = allSelected ? inView : inView.filter(row => FILTER_ACTIONS.some(action => shownActions[action] && hasAction(row, action)))
+  const shown = !sort ? filtered : [...filtered].sort((a, b) => {
     const left = measure(a, sort.key), right = measure(b, sort.key)
     const order = typeof left === 'string' ? left.localeCompare(right as string) : left - (right as number)
     return sort.down ? -order : order
@@ -534,6 +576,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
             className="w-24 rounded-md border border-black/[0.08] bg-white px-2 py-0.5 text-right text-[#1d1d1f]" />
         </label>
       </div>
+      <p aria-label="Allocation record" title={`Saved policy: ${latest.targets?.policy ?? 'not recorded'}`} className="text-[11px] text-[#6e6e73]">Saved allocation · {latest.session}. These are the saved plan's targets, not new orders. Live holdings can differ.</p>
       <AccountStrip paper={paper} orders={orders} />
       {paused && <p role="status" aria-label="Trading restriction" className="text-xs text-[#b25e00]">FOMC cycle: the paper account follows the FOMC risk rule; its orders say when.</p>}
       <details aria-label="Order rules" className="text-xs text-[#6e6e73]">
@@ -554,20 +597,21 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
         <button type="button" aria-pressed={sort === null} onClick={() => setSort(null)}
           title={`Restores automatic ranking after column sorting. ${rankingText} Filled orders are history.`}
           className={`rounded-md px-2 py-0.5 text-xs ${sort === null ? 'bg-[#e8f2ff] text-[#0071e3]' : 'text-[#6e6e73] hover:text-[#0071e3]'}`}>Reset ranking</button>
+        {FILTER_ACTIONS.some(action => !shownActions[action]) && <button type="button" className="px-2 py-0.5 text-xs text-[#0071e3]" onClick={() => setShownActions(ALL_ACTIONS)}>Show all actions</button>}
         <input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search a ticker" aria-label="Search the stock list"
           className="w-full max-w-44 rounded-md border border-black/[0.08] bg-white px-2 py-0.5 text-sm text-[#1d1d1f]" />
       </div>
     </div>
-    <div className="min-h-0 flex-1 overflow-auto">
+    <div className={`min-h-0 flex-1 overflow-auto ${actionMenu ? 'min-h-64' : ''}`}>
       <table className="w-full min-w-max text-left text-sm tabular-nums [&_td]:px-2 [&_th]:px-2" aria-label="Ranked stocks and cash">
         <thead className="sticky top-0 z-10 bg-[#f5f5f7] text-xs text-[#6e6e73]">
           <tr>
             <th className="w-7 py-2"><span className="sr-only">Details</span></th>
             <Head label="Stock" column="ticker" sort={sort} onSort={onSort} />
             <Head label="Grade" column="grade" sort={sort} onSort={onSort} title="The recorded analyst grade; allocation and orders come from the selected policy. Click to sort by grade." />
-            <Head label="Position" column="position" sort={sort} onSort={onSort} title="Paper-account shares and share of the account, against the policy's target." />
+            <Head label="Position" column="position" sort={sort} onSort={onSort} title="Live paper holdings and share of the account. Saved targets belong to the dated allocation record; they are not new orders." />
             <Head label="Levels" sort={sort} onSort={onSort} title="Outstanding paper order triggers, tested on completed 15-minute closes. Technical references are in stock details. Not guaranteed fill prices." />
-            <Head label="Action" sort={sort} onSort={onSort} title="The paper account's order for the name. HOLD: no order, the position stays. A finished order keeps its word, greyed; the status column says what happened to it." />
+            <ActionHead open={actionMenu} onOpen={setActionMenu} shown={shownActions} onShown={setShownActions} rows={inView} />
             <Head label="Size" column="size" sort={sort} onSort={onSort} title="Planned or submitted sizes use a price estimate; filled sizes use execution prices. Percentages use current paper equity." />
             <Head label="When / status" sort={sort} onSort={onSort} title="The order's rule for its session and what has happened to it." />
           </tr>
@@ -591,7 +635,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
               <td className="py-2 text-xs" aria-label={`${row.ticker} displayed grade`}><span className={`font-semibold ${row.grade === 'A+' || row.grade === 'A' ? 'text-[#248a3d]' : row.grade === 'C' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{row.grade || '—'}</span></td>
               <td className="py-2 text-xs" aria-label={`${row.ticker} position`}>
                 {row.held > 0 ? <>{shares(row.held)}{row.heldWeight !== null ? ` · ${percent(row.heldWeight)}` : ''}</> : <span className="text-[#86868b]">none</span>}
-                {row.target !== null && <div className="text-[10px] text-[#6e6e73]">target {percent(row.target)}</div>}
+                {row.target !== null && <div className="text-[10px] text-[#6e6e73]" title={latest.targets?.policy ?? 'Policy not recorded'}>{savedTargetText(row, latest.session)}</div>}
               </td>
               <td className="py-2 text-[11px]" aria-label={`${row.ticker} levels`} title={levels.length ? `${row.ticker}: outstanding paper trigger on a completed 15-minute close; not a limit order or predicted support. ${row.when}` : `${row.ticker}: no outstanding price trigger. Technical references are in details.`}>
                 {levels.length ? levels.map(line => <div key={line} className="whitespace-nowrap text-[#6e6e73]">{line}</div>) : <span className="text-[#86868b]">—</span>}
@@ -619,7 +663,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
           </Fragment>
         })}</tbody>
       </table>
-      {shown.length === 0 && <p className="border-t border-black/[0.05] px-3 py-2 text-xs text-[#6e6e73]">{search ? `No name matches “${query}”.` : view === 'orders' ? 'No orders for the paper account right now.' : 'Nothing to show.'}</p>}
+      {shown.length === 0 && <p role="status" className="border-t border-black/[0.05] px-3 py-2 text-xs text-[#6e6e73]">{!allSelected ? 'No stocks match this view and the selected actions.' : search ? `No name matches “${query}”.` : view === 'orders' ? 'No orders for the paper account right now.' : 'Nothing to show.'}</p>}
       {shown.length > visible && <button type="button" className="w-full border-t border-black/[0.05] px-3 py-2 text-left text-xs text-[#0071e3]" onClick={() => setVisible(v => v + 25)}>Show more · {Math.min(shown.length, visible + 25)} of {shown.length} names</button>}
       {footer}
     </div>

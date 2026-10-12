@@ -142,7 +142,7 @@ test('visible grades and concise actions expose diagnostics only on request', as
   await expect(board.getByLabel('AAPL grade', {exact: true})).toContainText('Grade A')
   await expect(board.getByLabel('AAPL grade', {exact: true})).toContainText('above its 50-day average')
   await expect(board.getByLabel('AAPL position', {exact: true}).last()).toContainText('Not held')
-  await expect(board.getByLabel('AAPL position', {exact: true}).last()).toContainText('Target 9.1% (graded-equal-weight/4)')
+  await expect(board.getByLabel('AAPL position', {exact: true}).last()).toContainText('Saved target 9.1% · 2026-09-24 (graded-equal-weight/4)')
   await expect(board.getByLabel('AAPL orders', {exact: true})).toContainText('BUY 20 sh planned · $2,000 · 2.0% of current equity')
   await page.setViewportSize({width: 390, height: 844})
   if (await page.getByRole('button', {name: 'Hide Sidebar'}).isVisible()) await page.mouse.click(380, 500)
@@ -373,7 +373,7 @@ test('ticker panels disclose chart gaps and retain the board decision', async ({
   await page.getByRole('button', {name: 'MSFT', exact: true}).click()
   const card = page.getByRole('region', {name: 'MSFT paper order'})
   await expect(card).toContainText('In the book at 9.1% · no order tonight')
-  await expect(card).toContainText('Position none · target 9.1%')
+  await expect(card).toContainText('Position none · Saved target 9.1% · 2026-09-24')
   const chart = page.getByLabel('MSFT price chart', {exact: true})
   await expect(chart.getByLabel('Chart data quality')).toContainText('Chart data incomplete · 1 missing session')
   await chart.getByLabel('Chart data quality').locator('summary').click()
@@ -474,17 +474,16 @@ test('automatic action ranking updates with paper readiness and completion', asy
   expect(errors).toEqual([])
 })
 
-// Under the `/4` policy a held name with no order says where it stands against its target and
-// when the reset moves it; a name in the book with no order says so; the plan is in the details.
+// A held name compares against a saved target without promising a trade that has no recorded order.
 test('a held name without an order says where it stands against its target', async ({page}) => {
   const {errors} = await setup(page, {open: false, account: paper([], {NVDA: 91, MSFT: 140}, 5)})
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(board.getByLabel('NVDA strategy intent')).toHaveText('HOLD')
-  await expect(board.getByLabel('NVDA strategy intent').locator('..')).toHaveAttribute('title', 'Near its 9.1% target')
+  await expect(board.getByLabel('NVDA strategy intent').locator('..')).toHaveAttribute('title', 'Near its saved 9.1% target · no recorded order')
   await expect(board.getByLabel('NVDA size')).toHaveText('—')
   await expect(board.getByLabel('NVDA position', {exact: true})).toContainText('91 sh · 9.1%')
   await expect(board.getByLabel('MSFT strategy intent')).toHaveText('HOLD')
-  await expect(board.getByLabel('MSFT strategy intent').locator('..')).toHaveAttribute('title', 'Above its 9.1% target · trimmed at the reset in 5 sessions')
+  await expect(board.getByLabel('MSFT strategy intent').locator('..')).toHaveAttribute('title', 'Above its saved 9.1% target · no recorded order')
   await expect(board.getByLabel('MSFT size')).toHaveText('—')
   await page.getByRole('group', {name: 'Board view'}).getByRole('button', {name: /All names/}).click()
   await expect(board.getByLabel('AAPL strategy intent')).toHaveText('—')
@@ -493,9 +492,9 @@ test('a held name without an order says where it stands against its target', asy
   await expect(page.getByLabel('Today', {exact: true})).toContainText('No paper orders.')
   await page.getByRole('button', {name: 'details for MSFT', exact: true}).click()
   await expect(board.getByLabel('MSFT orders', {exact: true})).toContainText('No order')
-  await expect(board.getByLabel('MSFT orders', {exact: true})).toContainText('trimmed at the reset in 5 sessions')
+  await expect(board.getByLabel('MSFT orders', {exact: true})).toContainText('no recorded order')
   await expect(board.getByLabel('MSFT position', {exact: true}).last()).toContainText('140 sh · $14,000 · 14.0%')
-  await expect(board.getByLabel('MSFT position', {exact: true}).last()).toContainText('Target 9.1%')
+  await expect(board.getByLabel('MSFT position', {exact: true}).last()).toContainText('Saved target 9.1%')
   expect(errors).toEqual([])
 })
 

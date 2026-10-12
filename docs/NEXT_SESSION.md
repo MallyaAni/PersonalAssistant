@@ -1,5 +1,25 @@
 # Next session
 
+## 2026-10-12 — Action-filter regression and ambiguous saved targets
+
+User reported Action no longer filtered and bare target10% was misleading.
+Prior UI audit missed this affordance and did not clearly date compact/chart
+targets. VERIFIED actual October9 graded-equal-weight/5 record: ten10% weights,
+84zeros, published23:47:24Z; installed learned configd4ff38db unchanged.
+Do not recompute or retag that saved record. Action heading now opens actual
+BUY/SELL/TRIM/HOLD/No order filters; mixed orders match their legs, live refresh
+and search preserve selection, phone/empty-state recovery supported. Targets
+are dated in rows/details/stock cards/chart summaries; no-order text no longer
+promises a future reset trade. VERIFIED52board/personal/chart cases plus6layout
+cases, no skips; two regression cases fail unchanged baseline. Type/build pass.
+VERIFIED final3focused cases passed after copy refinement; canonical frontend deployment
+next at distinct scratch/learned-dashboard-actions-targets-release-20261012,
+previous production3d830395. Preserve all28reviewed files, original8artifacts,
+configs/state/Friday record/model services. Original gates/admissions/accounts
+must not be repeated. [Findings](research/dashboard-actions-targets-2026-10-12.md).
+Ordinary nightly/timing/execution remain unverified as below. This is not an
+independent numerical audit of all displayed financial values for all94stocks.
+
 ## 2026-10-12 — full dashboard audit deployed and accepted
 
 User requested every dashboard surface be consistent. Corrected missing-plan

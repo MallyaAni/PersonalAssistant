@@ -91,6 +91,83 @@ async function scenario(page: Page, {now, plan, orders, sessionQuotes = {}, nigh
 const rowOf = (page: Page, ticker: string) =>
   page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('row').filter({has: page.getByRole('button', {name: ticker, exact: true})})
 
+// The Action heading must narrow actual orders, including mixed orders, without changing their rank or funding.
+test('Action heading filters recorded actions and composes with search', async ({page}) => {
+  const source = fixture.thursday.orders[0]
+  const orders = [
+    {...source, symbol: 'COHR', client_order_id: 'filter-buy', side: 'buy', action: 'BUY', state: 'due', qty: 8, notional: 800, weight: .008},
+    {...source, symbol: 'COHR', client_order_id: 'filter-trim', side: 'sell', action: 'TRIM', state: 'waiting', qty: 4, notional: 400, weight: .004},
+    {...source, symbol: 'NVDA', client_order_id: 'filter-exit', side: 'sell', action: 'SELL', state: 'filled'},
+  ]
+  const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', nightly: learnedRecord(), orders})
+  await page.goto('/#desk')
+  await page.getByRole('button', {name: 'Action', exact: true}).click()
+  const filters = page.getByRole('group', {name: 'Show actions', exact: true})
+  for (const action of ['BUY', 'SELL', 'HOLD', 'No order']) await filters.getByRole('checkbox', {name: `Show ${action} rows`, exact: true}).uncheck()
+  await expect(rowOf(page, 'COHR')).toBeVisible()
+  await expect(rowOf(page, 'COHR').getByLabel('COHR strategy intent')).toHaveText('ORDERS')
+  await expect(rowOf(page, 'SNDK')).toHaveCount(0)
+  await expect(rowOf(page, 'NVDA')).toHaveCount(0)
+  orders.splice(1, 1, {...source, symbol: 'NTAP', client_order_id: 'refreshed-trim', side: 'sell', action: 'TRIM', state: 'due'})
+  await page.clock.fastForward(21_000)
+  await expect(rowOf(page, 'COHR')).toHaveCount(0)
+  await expect(rowOf(page, 'NTAP')).toBeVisible()
+  await page.getByLabel('Search the stock list').fill('NVDA')
+  await expect(rowOf(page, 'NVDA')).toHaveCount(0)
+  await expect(page.getByText('No stocks match this view and the selected actions.')).toBeVisible()
+  await filters.getByRole('checkbox', {name: 'Show SELL rows', exact: true}).check()
+  await expect(rowOf(page, 'NVDA')).toBeVisible()
+  await expect(rowOf(page, 'NVDA').getByLabel('NVDA strategy intent')).toHaveText('SELL')
+  await page.keyboard.press('Escape')
+  await expect(filters).toHaveCount(0)
+  await page.getByRole('button', {name: 'Show all actions', exact: true}).click()
+  await page.getByLabel('Search the stock list').fill('')
+  await expect(rowOf(page, 'SNDK')).toBeVisible()
+  expect(diagnostics.writes).toEqual([])
+  expect(diagnostics.errors).toEqual([])
+})
+
+// Empty action selections remain recoverable on a phone without page overflow or hidden controls.
+test('Action filters stay usable on a phone with no matching orders', async ({page}) => {
+  await page.setViewportSize({width: 390, height: 844})
+  const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', orders: []})
+  await page.goto('/#desk')
+  await page.getByRole('button', {name: 'Action', exact: true}).click()
+  const filters = page.getByRole('group', {name: 'Show actions', exact: true})
+  await filters.getByRole('checkbox', {name: 'Show HOLD rows', exact: true}).uncheck()
+  await expect(page.getByText('No stocks match this view and the selected actions.')).toBeVisible()
+  await filters.getByRole('button', {name: 'Show all', exact: true}).click()
+  await expect(rowOf(page, 'SNDK')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(filters).toHaveCount(0)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  expect(diagnostics.writes).toEqual([])
+  expect(diagnostics.errors).toEqual([])
+})
+
+// A saved equal-weight target must keep its decision date across the compact row, details and chart.
+test('saved 10 percent targets stay dated without promising a future reset trade', async ({page}) => {
+  const nightly = {...record(), targets: {policy: 'graded-equal-weight/5', weights: {SNDK: .1}}}
+  const original = JSON.stringify(nightly)
+  const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', nightly, orders: [], paperPlan: {policy: 'graded-equal-weight/5', until_rebalance: 11}})
+  await page.goto('/#desk')
+  await expect(page.getByLabel('Allocation record')).toContainText(`Saved allocation · ${SESSION}`)
+  await expect(page.getByLabel('Allocation record')).toHaveAttribute('title', 'Saved policy: graded-equal-weight/5')
+  await expect(rowOf(page, 'SNDK').getByLabel('SNDK position')).toContainText(`Saved target 10.0% · ${SESSION}`)
+  await page.getByRole('button', {name: 'details for SNDK', exact: true}).click()
+  const details = page.getByLabel('SNDK details', {exact: true})
+  await expect(details).toContainText(`Saved target 10.0% · ${SESSION}`)
+  await expect(details).not.toContainText('trimmed at the reset')
+  await expect(details).not.toContainText('topped up at the reset')
+  await page.getByRole('button', {name: 'SNDK', exact: true}).click()
+  const dialog = page.getByRole('dialog', {name: 'SNDK history'})
+  await expect(dialog.getByLabel('SNDK now')).toContainText(`Saved target 10.0% · ${SESSION}`)
+  await expect(dialog.getByLabel('SNDK paper order')).toContainText(`Saved target 10.0% · ${SESSION}`)
+  expect(JSON.stringify(nightly)).toBe(original)
+  expect(diagnostics.writes).toEqual([])
+  expect(diagnostics.errors).toEqual([])
+})
+
 // Stock-specific level hovers and distances must use the same dated price shown in the row.
 test('level hovers distinguish stocks and use the displayed session price', async ({page}) => {
   const diagnostics = await scenario(page, {now: WEDNESDAY, plan: 'wednesday', sessionQuotes: {NVDA: 240, AAOI: 110}})
@@ -153,7 +230,7 @@ test('learned board ranking follows funded actions and recorded allocations', as
   await expect(page.getByLabel('AAOI action status')).not.toContainText('grade')
   await page.getByRole('button', {name: 'details for ALAB', exact: true}).click()
   await expect(page.getByLabel('ALAB allocation basis')).toContainText('Model allocation unavailable')
-  await expect(page.getByRole('region', {name: 'ALAB position'})).toContainText('Target —')
+  await expect(page.getByRole('region', {name: 'ALAB position'})).toContainText('Saved target unavailable')
   await page.getByRole('button', {name: 'NTAP', exact: true}).click()
   const card = page.getByRole('region', {name: 'NTAP paper order'})
   await expect(card).toContainText('TRIM')
@@ -287,7 +364,7 @@ test('the board shows the paper account’s orders mid-session', async ({page}, 
   await expect(page.getByLabel('ANET order status')).toContainText('Sold 32 @ $205.10 · 9:46 AM')
   // A held name with no order says why.
   await expect(page.getByLabel('NTAP strategy intent')).toHaveText('HOLD')
-  await expect(page.getByLabel('NTAP strategy intent').locator('..')).toHaveAttribute('title', 'Above its 8.3% target · trimmed at the reset in 18 sessions')
+  await expect(page.getByLabel('NTAP strategy intent').locator('..')).toHaveAttribute('title', 'Above its saved 8.3% target · no recorded order')
   await expect(page.getByLabel('NTAP position')).toContainText('78 sh · 16.5%')
   await expect(page.getByLabel('NTAP size')).toHaveText('—')
   // No personal-planner words anywhere on the board.

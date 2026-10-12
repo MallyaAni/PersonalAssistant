@@ -9,7 +9,7 @@ import { RecommendationTimeline } from './RecommendationTimeline'
 import { PersonalDecisionHistory, type PersonalHistoryContext } from './PersonalDecisionHistory'
 import { PaperAccountHistory } from './PaperAccountHistory'
 import { TickerChart } from './TickerChart'
-import { TradeBoard, RecordedModelDecision, boardRows, dollars, percent, orderWord, quantityLabel, executionRuleText, learnedAllocation, rankingText, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
+import { TradeBoard, RecordedModelDecision, boardRows, dollars, percent, orderWord, quantityLabel, executionRuleText, learnedAllocation, rankingText, savedTargetText, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
 import { StrategyBench } from './StrategyBench'
 import { NeuralStudy } from './NeuralStudy'
 import { OpportunityCard } from './OpportunityCard'
@@ -2955,7 +2955,7 @@ const PaperOrderCard = ({ticker, row, session}: {ticker: string; row: BoardRow; 
       <p className="text-[#6e6e73]">{o.when}</p>
       <RecordedModelDecision order={o} />
     </div>)}
-    <p className="mt-2 text-xs text-[#6e6e73]">Position {row.held > 0 ? `${sharesText(row.held)}${row.heldValue !== null ? ` · ${dollars(row.heldValue)}` : ''}${row.heldWeight !== null ? ` · ${percent(row.heldWeight)}` : ''}` : 'none'}{row.target !== null ? ` · target ${percent(row.target)}` : ''}{row.avgCost !== null ? ` · average cost ${priceText(row.avgCost)}` : ''} · grade {row.grade || '—'} at the {session} close</p>
+    <p className="mt-2 text-xs text-[#6e6e73]">Position {row.held > 0 ? `${sharesText(row.held)}${row.heldValue !== null ? ` · ${dollars(row.heldValue)}` : ''}${row.heldWeight !== null ? ` · ${percent(row.heldWeight)}` : ''}` : 'none'} · {savedTargetText(row, session)}{row.avgCost !== null ? ` · average cost ${priceText(row.avgCost)}` : ''} · grade {row.grade || '—'} at the {session} close</p>
     <p className="text-xs text-[#6e6e73]">{row.allocationNote}</p>
   </section>
 )
@@ -3044,7 +3044,7 @@ const NameDetail = ({
   // the chart falls back to the recorded history's latest row.
   const liveSuggestion = order ? {word: order.word === '—' ? 'No order' : order.word, detail: order.orders.length
     ? `${sharesText(order.qty)} · ${order.status}`
-    : order.held > 0 ? `${sharesText(order.held)}${order.heldWeight !== null ? ` (${percent(order.heldWeight)}` : ''}${order.target !== null && order.heldWeight !== null ? `, target ${percent(order.target)})` : order.heldWeight !== null ? ')' : ''}` : order.why} : null
+    : order.held > 0 ? `${sharesText(order.held)}${order.heldWeight !== null ? ` (${percent(order.heldWeight)})` : ''} · ${savedTargetText(order, latest.session)}` : order.why} : null
   const bt = history?.backtest
   const recent = history?.rows.slice(-12) ?? []
   // The sessions where the grade actually moved, newest first, each with
