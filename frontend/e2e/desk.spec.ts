@@ -1851,7 +1851,7 @@ test('an uncovered holding is a review state, not a sell', async ({ page }) => {
   await page.goto('/?deskView=paper&deskDetails=1#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(board.getByLabel('IREN strategy intent')).toHaveText('HOLD')
-  await expect(board.getByLabel('IREN strategy intent').locator('..')).toHaveAttribute('title', 'Not in the book; no order tonight')
+  await expect(board.getByLabel('IREN strategy intent').locator('..')).toHaveAttribute('title', 'Saved target unavailable · no recorded order')
   await expect(board.getByLabel('IREN displayed grade')).toHaveText('—')
   await expect(board.getByLabel('IREN size')).toHaveText('—')
   const details = await stockDetails(page, 'IREN')
