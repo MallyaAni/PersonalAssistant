@@ -37,8 +37,29 @@ compiled prior release; private logs/traces retained under
 VERIFIED candidate: 52 board/personal/chart browser tests plus six targeted
 layout/stock-panel cases passed without skips. TypeScript and Vite production
 build passed, with existing build warnings. All three focused cases passed on
-the final source after the copy adjustments. Canonical deployment and actual
-compiled browser acceptance are pending at this code checkpoint.
+the final source after the copy adjustments. This is 58 unique cases, with the
+three final-source cases rerun, not 61 distinct cases.
+
+VERIFIED canonical frontend release 9fee373ce9eb779478bc0cd614ae0e0e48187efb
+through scripts/deploy.sh, no skip flags; type/build and cheap post-deploy checks
+passed. Independent execution SHA
+7b46c6f497c74f7a20d4e3a047ad5a4f4123ff3f311576451979483fcbb00ba9;
+log SHA faf10fe2314b2549c9f7bb85de762f9cb9514cd30342da6377f961e20b563a2d.
+Root scratch/learned-dashboard-actions-targets-release-20261012, gateway
+d2ec12494487/image75272b7f; compiled index-B_QZE9i-.js SHA
+126e6008839bfe571ef0eed5e1a75c685f04422da8e672e225926415a00e5af7.
+Backend cfe8b7b50228/e479 and model services unchanged. All28 reviewed trading
+source files and14 original artifact/config/state/record hashes match before,
+after deployment and after browser acceptance. Never redeploy for this proof.
+
+VERIFIED actual authenticated browser reload of that compiled asset: Action's
+five filters open; deselecting HOLD hides ten portfolio rows and yields the
+correct empty state; Show all recovers them; Escape dismisses the menu. All-name
+counts are BUY0/SELL0/TRIM0/HOLD10/No order84. No order selection composes with
+SNDK search and Show all actions recovers it. SNDK expanded row, full card and
+chart Now summary all show Saved target10.0% with October9 session; row details
+retain graded-equal-weight/5. Restored default portfolio view. No console errors
+or warnings, no submitted orders. [Exact proof](dashboard-actions-targets-proof-2026-10-12.json).
 
 Only frontend source/tests and docs change. Preserve all28 reviewed trading
 files, original eight numeric artifacts, configs, Friday record and paper state,

@@ -12,9 +12,17 @@ and search preserve selection, phone/empty-state recovery supported. Targets
 are dated in rows/details/stock cards/chart summaries; no-order text no longer
 promises a future reset trade. VERIFIED52board/personal/chart cases plus6layout
 cases, no skips; two regression cases fail unchanged baseline. Type/build pass.
-VERIFIED final3focused cases passed after copy refinement; canonical frontend deployment
-next at distinct scratch/learned-dashboard-actions-targets-release-20261012,
-previous production3d830395. Preserve all28reviewed files, original8artifacts,
+VERIFIED final3focused cases passed after copy refinement. VERIFIED canonical
+frontend release9fee373ce9eb779478bc0cd614ae0e0e48187efb; type/build/cheap
+post checks passed, no skip flags. Distinct
+scratch/learned-dashboard-actions-targets-release-20261012 complete execution
+and independent verification, gatewayd2ec12494487/image75272b7f,
+index-B_QZE9i-.js SHA126e6008839bfe571ef0eed5e1a75c685f04422da8e672e225926415a00e5af7.
+VERIFIED actual browser Action/filter/empty recovery/search/Escape, all-name
+counts0/0/0/10/84; SNDK row/full card/chart saved-date/policy labels,
+0console errors/warnings/no orders. All14saved file hashes unchanged after
+browser; all28reviewed source and backend/model identities unchanged.
+Never repeat this completed release or tests for docs. Preserve original8artifacts,
 configs/state/Friday record/model services. Original gates/admissions/accounts
 must not be repeated. [Findings](research/dashboard-actions-targets-2026-10-12.md).
 Ordinary nightly/timing/execution remain unverified as below. This is not an

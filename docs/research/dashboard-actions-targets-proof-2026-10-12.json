@@ -1,0 +1,83 @@
+{
+  "status": "verified_dashboard_release",
+  "verified_at": "2026-10-12T12:02:22.938134+00:00",
+  "revision": "9fee373ce9eb779478bc0cd614ae0e0e48187efb",
+  "execution_sha256": "7b46c6f497c74f7a20d4e3a047ad5a4f4123ff3f311576451979483fcbb00ba9",
+  "deploy_log_sha256": "faf10fe2314b2549c9f7bb85de762f9cb9514cd30342da6377f961e20b563a2d",
+  "source_files_sha256": {
+    "docs/NEXT_SESSION.md": "dfc2f6e8d7c5840f884476a514cadd6f33269be2c291d3e5ccd64b4a52700a60",
+    "docs/research/dashboard-actions-targets-2026-10-12.md": "5e39f26397ce3d2cf0269ce8f97c24f133c5effa04248ed356fbb539c258726e",
+    "docs/research/dashboard-full-audit-2026-10-12.md": "c27d7cebdc169932c6340d919fdd5ce3d090e8177c2b3eb925958765215fd7a1",
+    "docs/research/dashboard-full-audit-proof-2026-10-12.json": "45630f18480a1990de437f56dbd5f5571a117e64cff9384bdbeca2ed66046d9a",
+    "frontend/e2e/desk-options-isolation.spec.ts": "03258cc0da702d098916e0102cdacecbd6313aa26a3404560bae5a388e34831d",
+    "frontend/e2e/desk-options-provenance.spec.ts": "74cb98914f7ff9c56f378efcd56048a92ad0a0b10370ae65513b2b45d2bbbfb5",
+    "frontend/e2e/desk-trade-board.spec.ts": "6a61858a0fbdcb32ff84fa0510cc0fd3719bb7d3673ea190b6d54c8ef311bd08",
+    "frontend/e2e/simple-actions.spec.ts": "c53b86be383f79d077d9897dcbe345f9239d85b409989b42ff9fa86a46dd51c4",
+    "frontend/src/components/DeskPanel/DeskPanel.tsx": "263a2df94170f7273b3fe2cea9db63951a10ff183b60b33a78f91a1d9256555e",
+    "frontend/src/components/DeskPanel/TradeBoard.tsx": "7eaedfecf5da394311760f7e7d0659cb2acd398b9c252a2605a2a42c56c67c5a"
+  },
+  "reviewed_trading_source_files_unchanged": 28,
+  "original_artifacts_configs_account_record_unchanged": true,
+  "backend_unchanged": {
+    "id": "cfe8b7b50228b83e7ca53874ae650ae454f02b66bd4862f45b9f573ecc8f6146",
+    "image": "sha256:e479059eb2bb3fbe66494234e7e1e4176dd4a54e604a4c0437645fe584da4cfc",
+    "started_at": "2026-10-11T22:11:04.874217708Z"
+  },
+  "gateway": {
+    "id": "d2ec12494487ba049684f3aca74de659f1cefefdfec10a3da35c774ce4a33d88",
+    "image": "sha256:75272b7f5250f8900e7f6c7b791e966ecd56dae396be6e3c37c9d84330de0865",
+    "started_at": "2026-10-12T12:02:12.811935746Z"
+  },
+  "compiled_entry": {
+    "path": "/usr/share/nginx/html/assets/index-B_QZE9i-.js",
+    "sha256": "126e6008839bfe571ef0eed5e1a75c685f04422da8e672e225926415a00e5af7",
+    "new_ranking_text_present": true,
+    "old_grade_priority_text_absent": true
+  },
+  "post_deploy": "2026-10-12T12:02:13Z 9fee373c ok (cheap)",
+  "orders_submitted_by_verification": false,
+  "ordinary_learned_nightly_verified": false,
+  "fresh_session_learned_timing_verified": false,
+  "subsequent_execution_verified": false,
+  "browser_acceptance": {
+    "status": "VERIFIED",
+    "url": "https://deep-matter.com/?deskView=live#desk",
+    "asset": "index-B_QZE9i-.js",
+    "checks": [
+      "Authenticated compiled reload",
+      "Action opens five filters",
+      "HOLD filter hides ten held rows",
+      "Contextual empty state and Show all recovery",
+      "Escape closes menu",
+      "All-name counts: BUY 0, SELL 0, TRIM 0, HOLD 10, No order 84",
+      "No order filter composes with SNDK search",
+      "Show all actions restores rows",
+      "SNDK row, full card and chart Now display saved target/date",
+      "Original record policy remains graded-equal-weight/5",
+      "Portfolio view restored"
+    ],
+    "console_errors": 0,
+    "console_warnings": 0,
+    "preserved_files_after_browser": 14,
+    "all_preserved_files_unchanged": true,
+    "orders_submitted": false,
+    "private_report_sha256": "853f3acd85fd2f5f5be92337bccd643478c0f887a81999e8abae144b6844ae89",
+    "private_screenshot_sha256": "02e54f3faff13ef92f4bdca64ee06cef5598a160e1a6650290644d4bc693dd74"
+  },
+  "automated_acceptance": {
+    "baseline_regressions_failed": 2,
+    "board_personal_chart_passed": 52,
+    "layout_stock_passed": 6,
+    "final_source_focused_rerun_passed": 3,
+    "skipped": 0,
+    "type_build": "passed",
+    "unique_browser_cases": 58,
+    "logs_sha256": {
+      "board_personal_chart": "c9798b4a6acd81240fa4bcf18a42d4686d9c10ea4aebfd876247ee9a4ecd6c77",
+      "layout_stock": "1071cb11250c162a890929f9e0cd40d2b018018797922ea10d251b5c17791d87",
+      "final_source_focused": "66484f4411c695559d6c5df306e71e0a343ba7185ea3e3e9f0a32eeff16e13d2",
+      "final_source_build": "fd9fcea3c2072833c9e7307d7be015cfc21daa80e618136fc767a66d59b6d72d"
+    }
+  },
+  "exhaustive_numerical_audit_of_all_stock_values": false
+}
