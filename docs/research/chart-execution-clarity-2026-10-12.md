@@ -51,4 +51,31 @@ Deployment only through scripts/deploy.sh, distinct
 scratch/learned-chart-execution-release-20261012. Do not repeat old gates/accounts.
 Ordinary learned nightly and subsequent paper execution remain unverified.
 
+VERIFIED first semantic release9f028b8208640ecf2c476205503be920c6765a4e,
+canonical frontend deployment finished15:25:17Z, type/build/cheap checks passed,
+no skip flags. Root scratch/learned-chart-execution-release-20261012, independent
+execution9715fb47a6e6499263495e8e0bf5625f8e4bd895b5242c28c98c11b5b6e5ed22.
+Actual browser authenticated compiled asset index-lOo_4x1O.js; SNDK, NTAP and
+AAOI D/W/15m share sizes and dated fill lists; NTAP5/10/20/60intraday windows;
+0console errors/warnings. SNDK timed BUY1/BUY2 and AAOI SELL127 were painted on
+their recorded intraday bars. FAILED full-range label bounds: some edge BUY
+labels clipped horizontally and same-candle labels could exceed vertical space.
+Two new actual-canvas bounds regressions reproduce clipping on desktop/phone.
+
+Targeted follow-up preserves every fill separately, reduces circle size and
+reserves space for each visible label. Full history gets edge padding; panning
+and zoom keep the selected range and update vertical room. No quantities,
+prices, times or trade logic change. Bounds tests check actual painted text lies
+inside the canvas on D/W/15m at1280/390px, including first/last fills and five
+same-candle executions. Initial bounds candidate2/2passed; broad suite108other
+cases passed while two expanded bounds cases failed because the harness cleared
+paint evidence before clicking an already selected D view, which requests no
+redraw. Retained the failed run, fixed its interaction sequence and kept every
+bounds assertion. All8 source checks passed, including Recent/Full history.
+Shortened the default15m caption and collapsed the detailed historical policy
+comparison. VERIFIED all9 final source cases passed, no skips; type/build passed.
+This covers111 unique cases across the broad suite and focused runs. Distinct
+canonical scratch/learned-chart-labels-release-20261012 remains pending at this checkpoint.
+Never rerun the first deployment.
+
 Diagram impact: NONE — existing chart layers and order presentation.

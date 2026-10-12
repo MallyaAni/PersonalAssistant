@@ -11,8 +11,19 @@ shares@fillprice/raw-price/weekly grouping. Current mixed orders retain each
 leg's own size/basis/state. VERIFIED serving read-only94histories/104fills match
 settled records,80timestamps,24date-only; allOctober9/graded-equal-weight5.
 VERIFIED108browser cases/no skips plus6final source cases (109unique), type/build
-passed; canonical deployment/browser acceptance pending. No backend/config/model/
-record/account change. [Findings](research/chart-execution-clarity-2026-10-12.md).
+passed. First semantic canonical release9f028b8208640ecf2c476205503be920c6765a4e
+completed15:25:17Z; root scratch/learned-chart-execution-release-20261012.
+Authenticated actual SNDK/NTAP/AAOI D/W/15m and5/10/20/60session controls;
+0console errors/warnings. FAILED full-history label clipping in live acceptance;
+new desktop/phone canvas bounds cases reproduce. Targeted edge/vertical padding
+and smaller circles preserve individual fills; initial2bounds cases passed.
+VERIFIED108other broad cases and9 final-source cases (111unique)/no skips,
+including actual painted bounds on D/W/15m, Recent/Full at1280/390px. Failed
+expanded harness clearing before a selected-D click retained/corrected; no
+assertion weakened. Type/build passed; caption shortened, historical policy
+details collapsed. Distinct scratch/learned-chart-labels-release-20261012 pending.
+Never repeat first deployment. No backend/config/model/record/account change.
+[Findings](research/chart-execution-clarity-2026-10-12.md).
 Never replay old experiments or retag old trades as learned-policy history.
 Ordinary nightly/timing/subsequent paper execution remain pending as below.
 

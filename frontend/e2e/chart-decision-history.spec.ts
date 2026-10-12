@@ -4,7 +4,7 @@ const USER = 'chart-decisions-fixture'
 const POLICY = 'graded-equal-weight/4'
 const NOTE = 'signals at each close; sizes are % of the account'
 const DISPLAY_NOTE = 'Recalculated close decisions; not recorded recommendations or fills. Sizes are portfolio weights.'
-type CanvasState = Window & {__markerDraws: {text: string; timeframe: string | null}[]}
+type CanvasState = Window & {__markerDraws: {text: string; timeframe: string | null; left: number; right: number; top: number; bottom: number; width: number; height: number}[]}
 const REBALANCE_NOTE = 'reset sessions from the paper state\'s rebalance clock and the nightly records; add/trim markers only on those, target drift between resets is not traded'
 type DecisionRow = {date: string; grade: string; action?: string; target_weight?: number; delta_weight?: number; rebalance?: boolean}
 type LiveFixture = {price: number; failNextChart?: boolean; fills: {symbol: string; side: string; qty: number; price: number; filled_at?: string}[]}
@@ -69,7 +69,11 @@ async function install(page: Page, frontendURL: string, options: {fills?: (typeo
     CanvasRenderingContext2D.prototype.fillText = function (this: CanvasRenderingContext2D, ...args: Parameters<CanvasRenderingContext2D['fillText']>) {
       if (this.canvas.closest('[data-testid="ticker-chart-canvas"]') && /^(BUY |SELL |ADD |TRIM |RESET |Grade |Saved grade|Recalculated grade)/.test(args[0])) {
         const timeframe = this.canvas.closest('section')?.querySelector('[aria-label="Chart timeframe"] [aria-pressed="true"]')?.textContent ?? null
-        state.__markerDraws.push({text: args[0], timeframe})
+        const metrics = this.measureText(args[0]), rect = this.canvas.getBoundingClientRect()
+        const transform = this.getTransform()
+        const left = new DOMPoint(args[1], args[2] - metrics.actualBoundingBoxAscent).matrixTransform(transform)
+        const right = new DOMPoint(args[1] + metrics.width, args[2] + metrics.actualBoundingBoxDescent).matrixTransform(transform)
+        state.__markerDraws.push({text: args[0], timeframe, left: left.x * rect.width / this.canvas.width, right: right.x * rect.width / this.canvas.width, top: left.y * rect.height / this.canvas.height, bottom: right.y * rect.height / this.canvas.height, width: rect.width, height: rect.height})
       }
       return fillText.apply(this, args)
     }
@@ -149,6 +153,39 @@ async function finish(testInfo: TestInfo, fixture: Awaited<ReturnType<typeof ins
 // Read the marker texts the canvas actually drew under one timeframe.
 const drawn = (page: Page, frame: string) => page.evaluate(selected =>
   (window as unknown as CanvasState).__markerDraws.filter(row => row.timeframe === selected).map(row => row.text), frame)
+
+// Keep first/last fills and multiple same-candle executions readable on desktop and phone.
+for (const width of [1280, 390]) test(`full chart fill labels stay inside the canvas at ${width}px`, async ({page, baseURL}, testInfo) => {
+  await page.setViewportSize({width, height: 900})
+  const fixture = await install(page, baseURL!, {fills: [
+    {date: '2026-09-14', side: 'buy', qty: 2, price: 111, filled_at: '2026-09-14T13:30:00Z'},
+    ...[3, 4, 5, 6, 7].map(qty => ({date: '2026-09-24', side: 'buy', qty, price: 111, filled_at: `2026-09-24T13:30:0${qty}Z`})),
+    {date: '2026-09-24', side: 'sell', qty: 25, price: 112, filled_at: '2026-09-24T14:00:00Z'},
+  ], live: {price: 110, fills: []}})
+  try {
+    await page.goto('/#desk')
+    await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
+    const chart = page.getByRole('region', {name: 'AAPL price chart'})
+    await expect(chart.getByLabel('AAPL paper fills').locator('li')).toHaveCount(7)
+    for (const frame of ['D', 'W', '15m']) {
+      await chart.getByRole('button', {name: frame, exact: true}).click()
+      for (const mode of ['Full history', 'Recent']) {
+        await page.evaluate(() => {(window as unknown as CanvasState).__markerDraws = []})
+        await chart.getByRole('button', {name: mode, exact: true}).click()
+        await page.clock.runFor(200)
+        await expect.poll(() => drawn(page, frame)).toContain('BUY 7 @ $111.00')
+        const paints = await page.evaluate(frame => (window as unknown as CanvasState).__markerDraws.filter(row => row.timeframe === frame && /^(BUY|SELL) \d/.test(row.text)), frame)
+        expect(paints.length).toBeGreaterThanOrEqual(frame === '15m' ? 6 : 7)
+        for (const row of paints) {
+          expect(row.left, `${frame} ${mode} ${row.text}`).toBeGreaterThanOrEqual(0)
+          expect(row.right, `${frame} ${mode} ${row.text}`).toBeLessThanOrEqual(row.width)
+          expect(row.top, `${frame} ${mode} ${row.text}`).toBeGreaterThanOrEqual(0)
+          expect(row.bottom, `${frame} ${mode} ${row.text}`).toBeLessThanOrEqual(row.height)
+        }
+      }
+    }
+  } finally {await finish(testInfo, fixture)}
+})
 
 // A trade-looking default marker must name an actual fill, not a grade or replay target.
 test('chart defaults to recorded executions with a clear share-size legend', async ({page, baseURL}, testInfo) => {

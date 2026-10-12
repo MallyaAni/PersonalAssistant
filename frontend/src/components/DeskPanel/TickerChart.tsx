@@ -460,7 +460,7 @@ const currentIntradayMarkers = (fills: DeskHistoryFill[], bars: DeskChartBar[]):
     })
     return candle ? [{time: instantStamp(candle.time!), position: fill.side === 'buy' ? 'belowBar' as const : 'aboveBar' as const,
       color: fill.side === 'buy' ? TRADE_BUY : TRADE_SELL, shape: 'circle' as const,
-      text: tradeText(fill.side, fill.qty, fill.price), size: 2}] : []
+      text: tradeText(fill.side, fill.qty, fill.price), size: 1}] : []
   })
 
 // Whether a fill is the executor's redeploy of idle cash rather than an entry
@@ -480,7 +480,7 @@ const fillMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], tim
       color: fill.side === 'buy' ? TRADE_BUY : TRADE_SELL,
       shape: 'circle' as const,
       text: tradeText(fill.side, fill.qty, fill.price),
-      size: 2,
+      size: 1,
     }] : []
   })
 
@@ -812,16 +812,20 @@ export const TickerChart = ({
 
     markersRef.current = createSeriesMarkers(candles, [])
     candlesRef.current = candles
-    // Give recent candles enough horizontal space; all loaded bars remain available to pan and zoom.
+    // Leave room for edge labels while keeping recent candles readable.
     // On 15m a session is 27 bars, so the recent view holds about two sessions.
     const frameView = () => {
-      if (fullHistory) chart.timeScale().fitContent()
-      else {
-        const width = (holder.current?.clientWidth ?? 390) - 65
+      const width = Math.max(100, (holder.current?.clientWidth ?? 390) - 65)
+      const margin = Math.min(90, width * .3)
+      if (fullHistory) {
+        const padding = merged.bars.length * margin / (width - 2 * margin)
+        chart.timeScale().setVisibleLogicalRange({from: -padding, to: merged.bars.length - 1 + padding})
+      } else {
         const count = timeframe === '15m'
-          ? Math.max(27, Math.min(108, Math.floor(width / 8)))
-          : Math.max(12, Math.min(40, Math.floor(width / 22)))
-        chart.timeScale().setVisibleLogicalRange({from: Math.max(0, merged.bars.length - count), to: merged.bars.length + 1})
+          ? Math.max(27, Math.min(108, Math.floor((width - margin) / 8)))
+          : Math.max(12, Math.min(40, Math.floor((width - margin) / 22)))
+        const padding = Math.min(count, merged.bars.length) * margin / (width - margin)
+        chart.timeScale().setVisibleLogicalRange({from: merged.bars.length <= count ? -padding : merged.bars.length - count, to: merged.bars.length - 1 + padding})
       }
     }
     const scope = `${userId}:${ticker}:${timeframe}:${fullHistory}:${intradaySessions}`
@@ -881,6 +885,31 @@ export const TickerChart = ({
       ...(showFills ? [...fillMarks, ...timedFills] : []),
     ].filter(marker => Number.isFinite(marker.time)).sort((a, b) => Number(a.time) - Number(b.time))
     markersRef.current?.setMarkers(markers)
+    const chart = chartRef.current, candles = candlesRef.current
+    if (!chart || !candles) return
+    // Reserve vertical room for each visible same-candle label without combining executions.
+    const fitLabels = () => {
+      const range = chart.timeScale().getVisibleRange()
+      const depths = new Map<string, number>()
+      const spacing = chart.timeScale().options().barSpacing
+      const shapeHeight = Math.ceil(Math.min(Math.max(spacing, 12), 30)) + 2
+      const fontSize = chart.options().layout.fontSize
+      for (const marker of markers) {
+        if (!range || typeof range.from !== 'number' || typeof range.to !== 'number'
+          || marker.time < range.from || marker.time > range.to) continue
+        const key = `${marker.time}:${marker.position}`
+        depths.set(key, (depths.get(key) ?? 0) + shapeHeight * marker.size + fontSize * 1.2 + 6)
+      }
+      const height = Math.max(100, (holder.current?.clientHeight ?? 320) - 40)
+      const top = Math.max(.1, ...[...depths].filter(([key]) => key.endsWith(':aboveBar')).map(([, value]) => value / height))
+      const bottom = Math.max(.1, ...[...depths].filter(([key]) => key.endsWith(':belowBar')).map(([, value]) => value / height))
+      const scale = Math.min(1, .85 / (top + bottom))
+      candles.priceScale().applyOptions({scaleMargins: {top: top * scale, bottom: bottom * scale}})
+    }
+    fitLabels()
+    chart.timeScale().subscribeVisibleTimeRangeChange(fitLabels)
+    // Remove the viewport observer while the same chart is still mounted.
+    return () => {if (chartRef.current === chart) chart.timeScale().unsubscribeVisibleTimeRangeChange(fitLabels)}
   }, [data, merged, timeframe, fullHistory, showSignals, showRecommendations, showDecisions, showFills, actionMarkers, changes, decisions, fillMarks, timedDecisions, timedFills, personalHistory])
 
   // Everything the canvas shows, in text, for the tests and for anyone not
@@ -1013,8 +1042,8 @@ export const TickerChart = ({
           {timeframe === '15m'
             ? <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Fifteen-minute chart caption">
               Latest session: {data.bars[data.bars.length - 1]?.date ?? 'unavailable'}.{' '}
-              {data.sessions} {data.live_feed ? '' : 'complete '}session{data.sessions === 1 ? '' : 's'} of fifteen-minute (15m) bars loaded ({merged.bars.length} bars, New York time, closing auction included where stored); pan or zoom for history.
-              Paper fills use their recorded time. Policy replay uses the last regular bar of its decision session.
+              {data.sessions} {data.live_feed ? '' : 'complete '}session{data.sessions === 1 ? '' : 's'} of fifteen-minute (15m) bars loaded ({merged.bars.length} bars, New York time).
+              {showDecisions && ' Policy replay uses the last regular bar of its decision session.'}
             </p>
             : <p className="mt-1 text-[11px] text-[#6e6e73]">
             {merged.live && summary?.last.close !== null
@@ -1026,16 +1055,17 @@ export const TickerChart = ({
             {merged.bars.length} {timeframe === 'weekly' ? 'weeks' : 'sessions'} loaded; pan or zoom for history.
           </p>}
           <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Chart legend">
-            Circles: paper fills · shares @ fill price.{timeframe !== '15m' ? ' Fill prices are unadjusted.' : ''}{timeframe === 'weekly' ? ' W groups fills by week; dates below are execution dates.' : ''}{showSignals ? ' Arrows: grade changes, labelled Saved or Recalculated when known.' : ''}{showDecisions ? ' Signal and RESET labels: policy replay, not trades.' : ''}{personalHistory && showRecommendations ? ' Saved Buy/Sell labels: recommendations, not fills.' : ''}
+            Circles: paper fills · shares @ fill price.{timeframe !== '15m' ? ' Fill prices are unadjusted.' : ''}{timeframe === 'weekly' ? ' W groups fills by week; fill dates are listed below.' : ''}{showSignals ? ' Arrows: grade changes, labelled Saved or Recalculated when known.' : ''}{showDecisions ? ' Signal and RESET labels: policy replay, not trades.' : ''}{personalHistory && showRecommendations ? ' Saved Buy/Sell labels: recommendations, not fills.' : ''}
           </p>
           {timeframe === '15m' && fills.some(fill => !recordedInstant(fill.filled_at)) && <p aria-label="Fill timing" className="mt-1 text-[11px] text-[#6e6e73]">Some fills have no recorded time; listed below, not marked on 15m.</p>}
           <p aria-label="Chart refresh status" role={refreshFailed ? 'status' : undefined} className="mt-1 text-[11px] text-[#6e6e73]">Regular-session chart · refresh 20s{data.live_feed ? ` · ${data.live_feed.toUpperCase()}` : ''}{data.live_as_of ? ` · checked ${recordedTime(data.live_as_of)}` : ''}{refreshFailed ? ' · Refresh failed; showing last snapshot' : data.live_reason ? ` · ${data.live_reason}` : ''}</p>
           {showDecisions && history?.policy && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy decision note">
             {history.policy}: {DECISION_NOTE}
           </p>}
-          {history?.policy && currentPolicy && history.policy !== currentPolicy && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Historical policy comparison">
-            History uses {history.policy}; the displayed allocation uses {currentPolicy}. Historical replay signals and grade statistics do not describe the current allocator's decisions or performance.
-          </p>}
+          {history?.policy && currentPolicy && history.policy !== currentPolicy && <details className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Historical policy comparison">
+            <summary className="cursor-pointer">Historical policy</summary>
+            <p>History uses {history.policy}; the displayed allocation uses {currentPolicy}. Historical replay signals and grade statistics do not describe the current allocator's decisions or performance.</p>
+          </details>}
           {/* What the markers mean under the equal-weight policy, and how the
               reset sessions were found: without a clock on file no session is
               a reset, and the chart says so rather than guessing one. */}
