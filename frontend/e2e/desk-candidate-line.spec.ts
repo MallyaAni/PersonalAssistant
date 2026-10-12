@@ -141,7 +141,7 @@ async function recordDiagnostics(testInfo: TestInfo, diagnostics: object) {
 
 // Open the separate historical simulation and return its chart.
 async function openTrackRecord(page: Page) {
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   const account = page.locator('details[aria-label="Historical simulation"]')
   if ((await account.getAttribute('open')) === null) await account.locator(':scope > summary').click()
   const record = account.locator('section', {has: page.getByRole('heading', {name: 'Historical simulation', exact: true})})

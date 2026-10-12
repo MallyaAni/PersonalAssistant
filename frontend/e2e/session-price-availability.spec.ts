@@ -105,7 +105,7 @@ const test = base.extend<{scenario: Scenario}>({
 // Open the real board and ticker chart without assuming that the quote already rendered correctly.
 async function openDesk(page: Page, state: Scenario) {
   await page.clock.setFixedTime(new Date(state.stamp))
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(board).toBeVisible()
   await settle(page, state)

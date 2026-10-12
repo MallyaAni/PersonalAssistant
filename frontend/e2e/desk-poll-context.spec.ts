@@ -142,7 +142,7 @@ async function settle(page: Page, state: Scenario, ignoreHeld = false) {
 
 // Reach a settled desk: the board and the first poll's read chain complete.
 async function openDesk(page: Page, state: Scenario) {
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await expect(page.getByRole('table', {name: 'Ranked stocks and cash'})).toBeVisible()
   await settle(page, state)
 }

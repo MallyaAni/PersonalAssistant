@@ -118,7 +118,7 @@ async function recordDiagnostics(testInfo: TestInfo, diagnostics: object) {
 test('separates the latest grade from the recorded wording', async ({page, baseURL}, testInfo) => {
   const {fixture, diagnostics} = await installEvidenceFixture(page, baseURL!)
   try {
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     await expect(page.getByLabel('AAOI displayed grade', {exact: true})).toHaveText('A+')
     const dialog = await openPanelFromRow(page)
     await expectSeparatedEvidence(dialog)
@@ -161,7 +161,7 @@ test('dated evening details fit a phone with usable archive controls', async ({p
   const {diagnostics} = await installEvidenceFixture(page, baseURL!)
   try {
     await page.setViewportSize({width: 390, height: 844})
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     if (await page.getByRole('button', {name: 'Hide Sidebar'}).isVisible()) await page.mouse.click(380, 500)
     await page.getByRole('button', {name: 'details for AAOI', exact: true}).click()
     const grade = page.getByRole('region', {name: 'AAOI grade', exact: true})

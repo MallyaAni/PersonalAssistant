@@ -64,7 +64,7 @@ for (const [name, targets, expected] of [
   // A legacy book must not silently replace active targets or conceal malformed target data.
   test(`planned cash uses ${name}`, async ({page}) => {
     const diagnostics = await scenario(page, {targets, book: [{ticker: 'AAOI', weight: .2, grade: 'A+'}]})
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     await page.locator('details[aria-label="Strategy details"] > summary').click()
     await expect(page.getByLabel('Your planned cash', {exact: true})).toContainText(expected)
     expect(diagnostics.writes).toEqual([])
@@ -75,7 +75,7 @@ for (const [name, targets, expected] of [
 // Actual recorded balances keep their own dates and gaps, independent of today's broker value.
 test('shows saved daily account history without manufacturing returns or closing prices', async ({page}, testInfo) => {
   const diagnostics = await scenario(page)
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   expect(diagnostics.historyReads).toEqual([])
   await page.locator('summary', {hasText: 'Paper account'}).click()
   await expect(page.locator('details[aria-label="Paper account"]')).not.toContainText('CAGR')
@@ -111,7 +111,7 @@ test('shows saved daily account history without manufacturing returns or closing
 // A failed read must not masquerade as a valid account with no recorded history.
 test('distinguishes unavailable paper history from an empty record set', async ({page}) => {
   const diagnostics = await scenario(page, {historyFailure: true})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await page.locator('summary', {hasText: 'Paper account'}).click()
   await page.getByRole('button', {name: /Daily account history/}).click()
   await expect(page.getByRole('alert')).toContainText('Account history unavailable')
@@ -135,7 +135,7 @@ for (const [name, order, word, detail, size] of [
   // The board's word for a name comes from the plan's orders alone, never from the broker's fill list.
   test(`current action with ${name} beside the paper account's opening fill`, async ({page}) => {
     const diagnostics = await scenario(page, {order})
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     const board = page.getByRole('region', {name: 'Stocks and cash', exact: true})
     if (!order) await page.getByRole('group', {name: 'Board view'}).getByRole('button', {name: /All names/}).click()
     await expect(board.getByLabel('AAOI strategy intent', {exact: true})).toHaveText(word)

@@ -155,7 +155,7 @@ async function recordDiagnostics(testInfo: TestInfo, diagnostics: object) {
 
 // Open the desk and wait for the board's grades to be on the page.
 async function openBoard(page: Page) {
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await expect(page.getByRole('heading', {name: 'Desk', exact: true})).toBeVisible()
   await expect(page.getByText('AAPL', {exact: true}).first()).toBeVisible()
 }

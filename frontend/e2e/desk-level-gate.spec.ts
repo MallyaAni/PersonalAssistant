@@ -85,7 +85,7 @@ async function setup(page: Page, {orders, held = {}, blocked = []}: {orders: Ret
     } else if (path.endsWith('/paper/history')) json = {user_id: 'ani.mallya', rows: []}
     await route.fulfill({json})
   })
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   return {errors, log, board}
 }

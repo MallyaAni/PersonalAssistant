@@ -134,7 +134,7 @@ async function openDesk(page: Page, state: Scenario, reload = false) {
     state.reloading = true
     try {await page.reload()} finally {state.reloading = false}
   }
-  else await page.goto('/#desk')
+  else await page.goto('/?deskView=paper#desk')
   await expect(page.getByRole('table', {name: 'Ranked stocks and cash'})).toBeVisible()
   await settle(page, state)
   await expect.poll(() => state.reads.length).toBeGreaterThan(before)

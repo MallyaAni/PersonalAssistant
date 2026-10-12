@@ -157,7 +157,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
     await page.setViewportSize(viewport)
     const fixture = await install(page, baseURL!)
     try {
-      await page.goto('/#desk')
+      await page.goto('/?deskView=paper#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
       // The daily view is the default and loads first; the sessions selector belongs to 15m alone.
@@ -230,7 +230,7 @@ test('the chart draws the board’s levels on the fifteen-minute bars', async ({
   await page.setViewportSize({width: 1280, height: 900})
   const fixture = await install(page, baseURL!)
   try {
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     if (await page.getByRole('button', {name: 'details for AAPL', exact: true}).getAttribute('aria-expanded') !== 'true') await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()
     await expect(page.getByLabel('AAPL reference levels')).toContainText('21-EMA 104.4 (+5.4%) ↓')
     if (await page.getByRole('button', {name: 'details for AAPL', exact: true}).getAttribute('aria-expanded') !== 'true') await page.getByRole('button', {name: 'details for AAPL', exact: true}).click()

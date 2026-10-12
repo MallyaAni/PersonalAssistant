@@ -1,0 +1,87 @@
+{
+  "status": "VERIFIED_PRIVATE_ACCEPTANCE_NOT_DEPLOYED",
+  "parent_account": {
+    "status": "VERIFIED_ALL_STOCK_PROJECTION",
+    "version": "f9d442382d2e4f9d063ce5617020a331320691be7e49d07a1ccbe220b5efbc92",
+    "stocks": 94,
+    "simulated_trades": 2695,
+    "all_original_quantities_times_prices_fees_targets_and_holdings_preserved": true,
+    "split_metadata_sha256": "46484d407f3c04db4507244cad1583198d523c95117cce0db1667ba8b24230d1",
+    "parent_account_sha256": "896fac34e5c13a16b0d418d477e22e65c313ca49e637bc797f6000c1b163be8d",
+    "continuation_sha256": "7779de6ec8e18240611bf666b24ded650a7b64ae37968b8c43d59eb860988ab7",
+    "manifest_sha256": "70ddfdc2b39115486823fc8c27a2cc6ea197f9cdae4e4e1e42a8cd8995f4fa7f",
+    "through": "2026-10-09",
+    "real_orders": false
+  },
+  "continuation": {
+    "status": "VERIFIED_COUNTERFACTUAL_CONTINUATION",
+    "sha256": "7779de6ec8e18240611bf666b24ded650a7b64ae37968b8c43d59eb860988ab7",
+    "parent_account_sha256": "896fac34e5c13a16b0d418d477e22e65c313ca49e637bc797f6000c1b163be8d",
+    "seed_sha256": "0cdb6daa1ef38ef99049b6a16fac308ddc4b2cb205259ab43a6ab753b3acbaf3",
+    "config_sha256": "d4ff38db0f136462f5ff0246fdb0737a9947603d4a5fe9ad0d46792e626c2704",
+    "sessions_added": 7,
+    "simulated_trades": 9,
+    "intents": 11,
+    "source_chart_sha256": "2823650e5f121c6cad0746b407ef65a17067507ee1aace6bbb2681637b51cac5",
+    "cash_holdings_fees_raw_execution_prices_and_seed_reconciled": true,
+    "original_model_publication_preserved": "2026-10-04T18:35:30.875637-04:00",
+    "original_account_replayed": false,
+    "base_models_fitted": 0,
+    "real_orders": false,
+    "through": "2026-10-09"
+  },
+  "runtime": {
+    "status": "VERIFIED_ISOLATED_COUNTERFACTUAL_RUNTIME",
+    "continuation_sha256": "7779de6ec8e18240611bf666b24ded650a7b64ae37968b8c43d59eb860988ab7",
+    "container": "c1d0d64258cf6e52da773841e4e4967411717e423c7b05f4856cf1cae4939370",
+    "image": "sha256:5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d",
+    "source_revision": "f6d191ea777e1ca5c9a5dbd0ebf6698406c7ca11",
+    "additional_source_sha256": {
+      "backend/cli/market_strategy_continue.py": "ea3e4a8c82b2c218d5d88fa6a0040fb4c475d99bcf783a1668bb6c44de80062d",
+      "backend/market/counterfactual_holding.py": "af8b06a13f9ffeb6f8635cf35852051ed10fb267e3d2d861dd87d9ee984e2fad"
+    },
+    "reviewed_source_files_unchanged": 28,
+    "actual_input_files_rechecked": 862,
+    "installed_files_sha256": {
+      "desk/learned-holding/release.json": "6a771eb87d97b8b754d95e6e69627841bbf67339ee7a719d3a92215a76bf8085",
+      "desk/learned-holding/evidence.json": "d480d5deb44f4983c34cf616ca89c6760039a69376aa7b6c5a2e806ccee80a2a",
+      "desk/learned-holding/config.json": "d4ff38db0f136462f5ff0246fdb0737a9947603d4a5fe9ad0d46792e626c2704",
+      "desk/learned-holding/model/publication.json": "858163d5e414ee658f28a10532a934528c72fe98fd1cb685e655d6d3a2c75825",
+      "desk/learned-holding/model/model.npz": "e0c42cc2c636db332058424ebe52e153cc364b65eba6b45720e38d900c86cccb",
+      "desk/learned-holding/risk/bank.npz": "fcb0f04c847a10a2842d26418b872bb1fc758a1d2752727eda72a25c8f122f7a",
+      "desk/learned-holding/risk/bank.json": "79b33d54253001ba0f907ae0b41f49c81ae436800e43e05b75cd5f58bb653cfe",
+      "desk/learned-holding/observations/a0a9d1ddf07a40219105127686e6f20e/close.json": "2cdc1ce45c6db7e55d3274a64eee5917e12b37468fc293a37f9e9b423a1ebbe9",
+      "desk/learned-holding/observations/a0a9d1ddf07a40219105127686e6f20e/close.npz": "1bc364c10967b55c15d84ea2d022003ced3c274f2c83f5df9a13db7e8b57a957",
+      "desk/learned-holding/observations/d0e3403599c34fe8af158b8028c9be1b/close.json": "ae423171f2093a4d5a70b5ee4b0c4c2748d7bfbc715d23551cd7877b18ac28c7",
+      "desk/learned-holding/observations/d0e3403599c34fe8af158b8028c9be1b/close.npz": "1bc364c10967b55c15d84ea2d022003ced3c274f2c83f5df9a13db7e8b57a957",
+      "desk/learned-timing/config.json": "d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a",
+      "desk/learned-timing/model/publication.json": "7759572d79f1bc4e0cb288c04f9d14d318c8d51f15d447efd7a6bf47864d60a8",
+      "desk/learned-timing/model/models.npz": "14a47423e82608361c0810b399a17bb817b119c4783f7995728b18323f5d5c41",
+      "desk/learned-timing/residual/residuals.npz": "4616b41cc6e39b2e8c763417def0baaa1bdd01800e5535a412594671d1d3f94e",
+      "desk/learned-timing/residual/residuals.json": "348b81ca6018a73701aaa8e76970facf514ebba6b6a0e68e204b1f28eb4aca9b"
+    },
+    "read_only_sources": true,
+    "network_disabled": true,
+    "real_orders": false
+  },
+  "browser": {
+    "full_cohort_passed": 97,
+    "full_cohort_skipped": 0,
+    "final_spacing_flow_passed": 6,
+    "native_projection_http_passed": 22,
+    "typecheck": "passed",
+    "build": "passed",
+    "through": "2026-10-09"
+  },
+  "operational_acceptance": {
+    "ordinary_nightly": false,
+    "actual_session_intraday": false,
+    "following_execution_reconciliation": false
+  },
+  "notes": [
+    "User explicitly requested latest-strategy counterfactual history instead of actual paper fills.",
+    "Past trades use original monthly heads; new October continuation uses installed original October heads as if available earlier.",
+    "Weekly totals use week-close share units, individual execution records remain unchanged.",
+    "Preserve all failed and completed roots; no parent account or controls rerun."
+  ]
+}

@@ -3324,6 +3324,88 @@ export const getDeskChart = async (
   return (await response.json()) as DeskChart;
 };
 
+export interface DeskStrategyDecision {
+  id: string;
+  ticker: string;
+  date: string;
+  at: string;
+  execute_on: string | null;
+  action: 'BUY' | 'SELL' | 'TRIM';
+  qty: number;
+  weight: number | null;
+  target_weight: number | null;
+  reason: string;
+  timing: string | null;
+  executed_qty: number;
+  state: 'executed' | 'partial' | 'not_executed';
+}
+
+export interface DeskStrategyTrade {
+  id: string;
+  date: string;
+  at: string;
+  action: 'BUY' | 'SELL' | 'TRIM';
+  qty: number;
+  price: number;
+  fee: number;
+  weight: number;
+  decision_at: string;
+  decision_date: string;
+}
+
+export interface DeskStrategySimulation {
+  schema: 'latest-strategy-simulation/1';
+  policy: string;
+  start: string;
+  through: string;
+  counterfactual: true;
+  real_orders: false;
+  provenance: {cost_bps: number; account_sha256: string; config_sha256: string; basis: string};
+}
+
+export interface DeskStrategyStock extends DeskStrategySimulation {
+  ticker: string;
+  decisions: DeskStrategyDecision[];
+  trades: DeskStrategyTrade[];
+  targets: {date: string; weight: number | null}[];
+  latest_target: number | null;
+  latest_holding: number;
+  splits?: {date: string; ratio: number}[];
+}
+
+export interface DeskStrategySummary extends DeskStrategySimulation {
+  initial_cash: number;
+  starting_equity: number;
+  starting_holdings: Record<string, number>;
+  starting_basis: string;
+  ending_equity: number | null;
+  ending_cash: number;
+  ending_holdings: Record<string, number>;
+  latest_targets: Record<string, number | null>;
+  latest_decisions: DeskStrategyDecision[];
+  latest_positions: {symbol: string; qty: number; current_price: number; market_value: number; avg_entry_price: number}[];
+  stock_overview: Record<string, {target: number | null; holding: number; last_trade: DeskStrategyTrade | null; trades: number}>;
+  curve: {date: string; equity: number | null; cash: number}[];
+}
+
+// Read the explicit counterfactual portfolio without requesting account advice or orders.
+export const getDeskStrategySimulation = async (userId: string): Promise<DeskStrategySummary> => {
+  const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/strategy-simulation`);
+  if (!response.ok) throw new Error('Latest-strategy simulation unavailable.');
+  const result = await response.json() as DeskStrategySummary;
+  if (result.schema !== 'latest-strategy-simulation/1' || result.counterfactual !== true || result.real_orders !== false || !result.stock_overview || !Array.isArray(result.latest_decisions)) throw new Error('Invalid latest-strategy simulation.');
+  return result;
+};
+
+// Read one stock's simulated actions and sizes independently of old paper fills.
+export const getDeskStrategyStock = async (userId: string, ticker: string): Promise<DeskStrategyStock> => {
+  const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/strategy-simulation/${encodeURIComponent(ticker)}`);
+  if (!response.ok) throw new Error('Latest-strategy simulation unavailable for this stock.');
+  const result = await response.json() as DeskStrategyStock;
+  if (result.schema !== 'latest-strategy-simulation/1' || result.ticker !== ticker || result.counterfactual !== true || result.real_orders !== false || !Array.isArray(result.splits)) throw new Error('Invalid latest-strategy simulation.');
+  return result;
+};
+
 // The newest earnings release read for one name, straight from the release
 // reader's store: the tone it scored (guidance / demand / pricing / capex),
 // the numbers it extracted, and the session the market could first react.

@@ -175,7 +175,7 @@ const test = base.extend<{scenario: Scenario}>({
 
 // Reach the actual stock board and open chart only after the initial response batch settles.
 async function openDesk(page: Page, state: Scenario) {
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect.poll(() => state.requests.some(entry => entry.path === `${DESK}/session-prices` && entry.completed), {timeout: 5000}).toBe(true)
   await settle(page, state)

@@ -1,5 +1,104 @@
 # Next session
 
+## 2026-10-12 — latest-strategy dashboard backfill requested (IN PROGRESS)
+
+The user superseded the paper-fill-only chart objective: "forget the paper
+fills"; all dashboard history must assume the latest strategy was in place,
+with consistent simulated actions/sizes. They also requested removal or updating
+of missing, incorrect and redundant dashboard information. This is an explicitly
+authorized counterfactual display/replay task, not permission to rewrite broker
+records, send real orders, refit base heads or claim historical availability.
+The ordinary-nightly acceptance below remains pending and must not be forced.
+
+Starting owned branch codex/learned-live-release-20261006 was clean at
+f6d191ea777e1ca5c9a5dbd0ebf6698406c7ca11; pulled main, already current.
+Production is STILL f83e2353 frontend/d0633fde backend. No new deployment.
+Current implementation has bounded private validation below, but is NOT DEPLOYED
+and is not yet a released checkpoint.
+
+Update22:34Z: counterfactual chart/data acceptance VERIFIED across all94stocks:
+97browser tests passed/no skips against the compiled candidate;6final spacing/
+filter/reload tests also passed. Native real-router/read-only/integrity tests22
+passed; type/build passed. Original parent account was NOT replayed. Separate
+Oct1–9 continuation completed7new sessions,9simulated trades/11intents, no base
+model fits or real orders. Independent cash/share/fee/raw-bar accounting and
+862actual input files/28reviewed sources/16installed files verified. Preserve
+v1–v4failed private roots; all failed before the first October close. V5complete
+root scratch/latest-strategy-dashboard-20261012-v5. Holding head publication
+is actually2026-10-04T18:35:30.875637-04:00; retained in evidence, explicitly
+assumed available at earlier October closes only for this private simulation.
+
+Independent projection proof verifies all2695simulated trades with original
+times/quantities/prices/fees and all94latest targets/holdings unchanged. New
+manifest versionf9d442382d2e4f9d063ce5617020a331320691be7e49d07a1ccbe220b5efbc92,
+manifest SHA70ddfdc2b39115486823fc8c27a2cc6ea197f9cdae4e4e1e42a8cd8995f4fa7f,
+local /tmp/latest-strategy-projection-20261012/desk/strategy-simulation.
+Coverage2019-03-01–2026-10-09. Original monthly heads before October, installed
+October heads in new continuation; current-vintage hypothetical study, NOT an
+historically published or guaranteed broker counterfactual.
+
+Found/corrected actual 60-session15m Full-history clipping (minimum bar spacing),
+and mixed pre/post-split weekly share units: ANET Dec2024 and KLAC Jun2026.
+Weekly totals now use week-close share units; individual original trade records
+and D/15m sizes stay untouched. Raw split metadata SHA
+46484d407f3c04db4507244cad1583198d523c95117cce0db1667ba8b24230d1.
+Latest strategy is default, actual paper and archived research separate; dated
+targets/last trades, action filters/sorting/search/recovery/persisted views,
+Go to last trade, tiny-positive targets, precise original share/price details.
+Old grade/paper/personal chart layers, grade statistics, old action prose and
+duplicate diagnostics removed from new view. All original paper histories stay
+unchanged; no ordinary jobs forced. Actual daily-data continuation after new
+ordinary source publication remains a follow-up; never pretend Oct9 is current.
+
+Remaining now: finish separate paper-view regression (legacy tests had stale
+saved-target/date and Research-reload expectations; correct fixtures/assertions,
+not production history), commit/push candidate, publish read-only projection,
+canonical backend/frontend deployment with all applicable gates, exact-source
+API/all-stock readback and actual authenticated browser acceptance. Keep THIS
+heartbeat active for the real ordinary-nightly/intraday/execution boundaries.
+
+Read-only live ORCL reproduced a blank default chart: its original paper fills
+are empty. Enabling the optional old-policy replay/grade layers draws signals,
+but these do not answer the latest-strategy counterfactual. Screenshot retained
+/tmp/orcl-chart-before-20261012.png. Old paper records/histories remain untouched.
+
+Reuse the already independently verified 10bp shared-V6 carried account,
+scratch/held-carried-screen-20261010-1c469426-memoryfix2/results/study/accounts/
+retained-10-0.json.gz SHA896fac34e5c13a16b0d418d477e22e65c313ca49e637bc797f6000c1b163be8d.
+Local authenticated copy /tmp/learned-dashboard-retained-10-0.json.gz.
+The existing proof38fb9f2a2bcfbb1cced0f398a25264b7bee0f8a1db2f5b66b33d06094333d6d9
+remains authoritative for that completed account only. Never replay that account
+or controls. Its learned policy begins2019-03-01 and ends2026-09-30; exclude the
+carried incumbent prefix rather than retagging it. There ARE ORCL simulated trades
+(latest Apr24 BUY71, Apr27 TRIM11, Apr30 SELL60) despite zero real paper fills.
+
+New read-only projection module/CLI/API and frontend latest-strategy view are
+being implemented in the owned worktree. Separate actual paper account view;
+latest-strategy chart uses simulated quantities and original simulation instants,
+not old /5 replay or real fills. Per-stock grade-based performance statistics
+and old recorded action prose hidden in strategy mode. No production/config,
+model or real account changes. Initial local projection failures retained:
+immediate company-exit intents lack execute_on; expired/missing-price zero-fill
+receipts are not executed trades. Corrected these shape assumptions, no invented
+next session or execution price. V3/V4 projection logs retain94stock output.
+Pure projection tests8passed (isolated pytest; one asyncio-config warning);
+TypeScript passed initial candidate. NOT actual API/browser release proof.
+Local projected root /tmp/latest-strategy-projection-20261012 (private).
+
+Remaining: strengthen provenance binding and actual projection readback/tests;
+extend ONLY missing Oct1 onward in a separate private counterfactual account,
+using original installed October heads/10bp and Sept30 carried state, no base
+refits or completed-account replay. Current saved projection endsSep30 and MUST
+show this limit until extension verifies. Do not weaken production publication
+guards to pretend October8 artifacts were really available October1: any such
+assumption belongs solely in a clearly counterfactual private adapter. Read actual
+sources before implementing; reuse funded planner/timing/ledger, not approximate
+per-stock weight differences. All94stocks/allD,W,15m and loaded-window/missing
+coverage/action-size/status cases need browser acceptance; audit all new/default
+dashboard wording and functionality, then canonical scripts/deploy.sh gates/API/
+browser and preserve installed28source/config/model/old-account history identities.
+No user-facing completion claim until these requirements are met.
+
 ## 2026-10-12 — chart actions and execution timing correction
 
 COMPLETE bounded chart correction: final canonical frontend release

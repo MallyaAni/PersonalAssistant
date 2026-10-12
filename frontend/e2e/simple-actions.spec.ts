@@ -57,7 +57,7 @@ async function setup(page: Page, {open = true, paused = false, account, policy =
     await route.fulfill({json})
   })
   if (beforeNavigate) await beforeNavigate()
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   return {errors}
 }
 

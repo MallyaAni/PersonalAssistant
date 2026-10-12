@@ -34,7 +34,7 @@ async function setup(page: Page, session = 'post-market', transition = false) {
     else if (path.endsWith('/paper')) json = {reason: 'unavailable'}
     await route.fulfill({json})
   })
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   await expect(board.getByLabel('AAPL session price')).toContainText('$102.00')
   return {board, errors, writes, replace: (value: unknown) => { envelope = value }, regular: () => { open = true; if (transition) time = '2026-09-25T13:30:10Z' }}

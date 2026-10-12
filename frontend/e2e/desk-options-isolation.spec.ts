@@ -136,7 +136,7 @@ for (const state of ['unavailable', 'available', 'absent'] as const) {
     const {diagnostics, reads, live} = await installOptionsFixture(page, baseURL!, state)
     const original = JSON.stringify(live)
     try {
-      await page.goto('/#desk')
+      await page.goto('/?deskView=paper#desk')
       const initial = await openTechnicalEvidence(page)
       await expectOptionsState(initial.dialog, initial.allEvidence, state)
       await initial.dialog.screenshot({path: testInfo.outputPath(`${state}-options.png`)})

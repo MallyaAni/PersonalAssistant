@@ -165,7 +165,7 @@ for (const width of [1280, 390]) test(`full chart fill labels stay inside the ca
     {date: '2026-09-24', side: 'sell', qty: 25, price: 112, filled_at: '2026-09-24T14:00:00Z'},
   ], live: {price: 110, fills: []}})
   try {
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
     const chart = page.getByRole('region', {name: 'AAPL price chart'})
     await expect(chart.getByLabel('AAPL paper fills').locator('li')).toHaveCount(7)
@@ -197,7 +197,7 @@ for (const width of [1280, 390]) test(`full chart fill labels stay inside the ca
 test('chart defaults to recorded executions with a clear share-size legend', async ({page, baseURL}, testInfo) => {
   const fixture = await install(page, baseURL!)
   try {
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
     const chart = page.getByRole('region', {name: 'AAPL price chart'})
     await expect(chart.getByRole('checkbox', {name: 'Grade changes'})).not.toBeChecked()
@@ -221,7 +221,7 @@ test('15m marks only timestamped valid fills and leaves date-only fills in the l
     {date: '2026-09-24', side: 'buy', qty: 0, price: 110},
   ], assumedFill: true, live: {price: 110, fills: [{symbol: 'AAPL', side: 'buy', qty: 3, price: 111, filled_at: '2026-09-24T13:40:05Z'}]}})
   try {
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
     const chart = page.getByRole('region', {name: 'AAPL price chart'})
     await chart.getByRole('button', {name: '15m', exact: true}).click()
@@ -240,7 +240,7 @@ for (const width of [1280, 390]) {
     const live: LiveFixture = {price: 110, fills: []}
     const fixture = await install(page, baseURL!, {live, fills: []})
     try {
-      await page.goto('/#desk')
+      await page.goto('/?deskView=paper#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
       await expect(chart.locator('details[aria-label="Chart indicators"]')).not.toHaveAttribute('open', '')
@@ -281,7 +281,7 @@ test('current fills preserve execution multiplicity and disclose a failed refres
   const live: LiveFixture = {price: 111, fills: []}
   const fixture = await install(page, baseURL!, {live, fills: [{date: '2026-09-24', side: 'buy', qty: 3, price: 111}]})
   try {
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
     const chart = page.getByRole('region', {name: 'AAPL price chart'})
     live.fills.push({symbol: 'AAPL', side: 'buy', qty: 3, price: 111, filled_at: '2026-09-24T14:00:05Z'},
@@ -314,7 +314,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
     await page.setViewportSize(viewport)
     const fixture = await install(page, baseURL!)
     try {
-      await page.goto('/#desk')
+      await page.goto('/?deskView=paper#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
       const decisions = chart.locator('[aria-label="AAPL decisions"]')
@@ -380,7 +380,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
     await page.setViewportSize(viewport)
     const fixture = await install(page, baseURL!, {fills: []})
     try {
-      await page.goto('/#desk')
+      await page.goto('/?deskView=paper#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
       await expect(chart.getByRole('checkbox', {name: 'Policy replay'})).not.toBeChecked()
@@ -398,7 +398,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
     await page.setViewportSize(viewport)
     const fixture = await install(page, baseURL!, {policy: 'inverse-volatility/3', rows: SIZING_ROWS, rebalanceNote: null})
     try {
-      await page.goto('/#desk')
+      await page.goto('/?deskView=paper#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
       await chart.getByRole('checkbox', {name: 'Policy replay'}).check()
@@ -423,7 +423,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       rebalanceNote: 'no rebalance clock on file: no session is marked as a reset, so the series shows entries and exits only',
     })
     try {
-      await page.goto('/#desk')
+      await page.goto('/?deskView=paper#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
       await expect(chart.getByRole('checkbox', {name: 'Paper trades'})).toBeChecked()
@@ -447,7 +447,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
 test('chart reads a /5 history with the equal-weight legend and reset markers', async ({page, baseURL}, testInfo) => {
   const fixture = await install(page, baseURL!, {policy: 'graded-equal-weight/5'})
   try {
-      await page.goto('/#desk')
+      await page.goto('/?deskView=paper#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
     await chart.getByRole('checkbox', {name: 'Policy replay'}).check()
@@ -472,7 +472,7 @@ test('chart reads a /5 history with the equal-weight legend and reset markers', 
 test('chart keeps the sizing reading for a version that only shares the equal-weight prefix', async ({page, baseURL}, testInfo) => {
   const fixture = await install(page, baseURL!, {policy: 'graded-equal-weight/3', rows: SIZING_ROWS, rebalanceNote: null})
   try {
-      await page.goto('/#desk')
+      await page.goto('/?deskView=paper#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
     await chart.getByRole('checkbox', {name: 'Policy replay'}).check()

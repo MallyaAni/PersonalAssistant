@@ -9,6 +9,7 @@ import { RecommendationTimeline } from './RecommendationTimeline'
 import { PersonalDecisionHistory, type PersonalHistoryContext } from './PersonalDecisionHistory'
 import { PaperAccountHistory } from './PaperAccountHistory'
 import { TickerChart } from './TickerChart'
+import { StrategySimulationBoard } from './StrategySimulationBoard'
 import { TradeBoard, RecordedModelDecision, boardRows, dollars, percent, orderWord, quantityLabel, executionRuleText, learnedAllocation, rankingText, savedTargetText, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
 import { StrategyBench } from './StrategyBench'
 import { NeuralStudy } from './NeuralStudy'
@@ -18,6 +19,7 @@ import {
   getDesk,
   getDeskEarnings,
   getDeskHistory,
+  getDeskStrategyStock,
   getDeskHoldings,
   getDeskIntraday,
   getDeskLive,
@@ -36,6 +38,7 @@ import {
   type DeskHolding,
   type DeskHistory,
   type DeskHistoryRow,
+  type DeskStrategyStock,
   type DeskIntraday,
   type DeskLive,
   type DeskLiveRead,
@@ -424,7 +427,7 @@ const KNOWN_STRATEGY_POLICIES = [
   'graded-equal-weight/5',
 ]
 
-// Say whether a stored simulation is of the strategy the account runs.
+// Compare an archived simulation with the paper policy saved in this record.
 // `active` is the record's own `targets.policy` (`live_policy.ACTIVE`), the
 // allocation policy; it is never the execution policy string, which is a
 // different versioned thing (the executor's conventions) and never equals a
@@ -433,20 +436,20 @@ const KNOWN_STRATEGY_POLICIES = [
 const describeSimulationPolicy = (source: unknown, active: unknown) => {
   if (source === undefined || source === null || source === '') return {
     current: false, label: 'Policy not recorded',
-    note: 'Strategy policy was not recorded; alignment with the active strategy is unverified.',
+    note: 'The historical simulation did not record its strategy policy.',
   }
   if (typeof source !== 'string' || !KNOWN_STRATEGY_POLICIES.includes(source)) return {
     current: false, label: 'Unrecognized policy simulation',
-    note: 'Recorded strategy policy is not recognized; alignment with the active strategy is unverified.',
+    note: 'Recorded strategy policy is not recognized; alignment with the saved paper policy is unverified.',
   }
   if (typeof active !== 'string' || active === '') return {
     current: false, label: 'Recorded policy simulation',
-    note: `Simulation of ${source}; the record does not name the active strategy, so alignment is unverified.`,
+    note: `Simulation of ${source}; the record does not name its saved paper policy, so alignment is unverified.`,
   }
-  if (source === active) return {current: true, label: 'Policy simulation', note: ''}
+  if (source === active) return {current: true, label: 'Policy simulation', note: 'Matches this saved paper policy. Latest-strategy history is in the separate view.'}
   return {
     current: false, label: 'Older policy simulation',
-    note: `Uses an earlier recorded strategy policy (${source}); not the active strategy (${active}).`,
+    note: `Uses an earlier recorded strategy policy (${source}); differs from the saved paper policy (${active}).`,
   }
 }
 
@@ -1001,7 +1004,15 @@ const TrackRecord = ({ curve, latest }: { curve: DeskCurve | undefined; latest: 
 
 // The one-screen explanation for someone who has never seen the page, used
 // both as the help popover and the empty-state guide.
-const HowToUse = ({ onClose, compact = false, plan }: { onClose?: () => void; compact?: boolean; plan?: DeskPaperPlan }) => (
+const HowToUse = ({ onClose, compact = false, plan, strategy = false }: { onClose?: () => void; compact?: boolean; plan?: DeskPaperPlan; strategy?: boolean }) => strategy ? (
+  <section aria-label="Strategy guide" className="my-2 max-w-2xl rounded-xl border p-3 text-xs">
+    <p>Latest strategy shows a hypothetical portfolio, not your paper account.</p>
+    <p>BUY adds shares; TRIM reduces a position; SELL exits. Sizes and targets come from one portfolio replay.</p>
+    <p>Open any stock for D, W or 15m. Chart labels total simulated shares per candle; individual actions are listed below.</p>
+    <p>The coverage date is explicit. Current prices and analyst grades are separate from the simulation.</p>
+    {onClose && <button type="button" className="mt-2 text-[#0071e3]" onClick={onClose}>Close guide</button>}
+  </section>
+) : (
   <div className={`rounded-xl border border-black/[0.08] bg-[#f5f5f7] p-4 text-sm text-[#1d1d1f] ${compact ? '' : 'my-2 max-w-2xl'}`}>
     <p className="font-medium">Reading this page</p>
     <p className="mt-1 text-[#6e6e73]">
@@ -1129,8 +1140,19 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // slower clock: the gate, execution quality, forward evidence, the ML
   // shadow, the practice account. Mixing them made one long scroll.
   const [research, setResearch] = useState(() => new URLSearchParams(window.location.search).get('deskView') === 'research')
+  const [strategyView, setStrategyView] = useState(() => !['paper', 'research'].includes(new URLSearchParams(window.location.search).get('deskView') ?? ''))
+  const returningView = useRef<'strategy' | 'paper'>(strategyView ? 'strategy' : 'paper')
+  // Preserve the selected account basis when the user reloads this page.
+  const chooseView = (view: 'strategy' | 'paper' | 'research') => {
+    if (view === 'research') returningView.current = strategyView ? 'strategy' : 'paper'
+    setStrategyView(view === 'strategy')
+    setResearch(view === 'research')
+    const url = new URL(window.location.href)
+    url.searchParams.set('deskView', view)
+    window.history.replaceState(null, '', url)
+  }
   const historyCapture = useRef(false)
-  historyCapture.current = canWrite && !research
+  historyCapture.current = canWrite && !research && !strategyView
   const [editing, setEditing] = useState(false)
   const [personalOpen, setPersonalOpen] = useState(false)
   const [saveError, setSaveError] = useState('')
@@ -1516,13 +1538,15 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
   return (
     <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 [&>section]:shrink-0 [&>details]:shrink-0">
-      {todayLine}
-      <RecordStatus status={payload.record_status} prose={latest ? {state: latest.prose_state, status: latest.prose_status} : undefined} session={latest?.session} />
+      {!strategyView && todayLine}
+      {!strategyView && <RecordStatus status={payload.record_status} prose={latest ? {state: latest.prose_state, status: latest.prose_status} : undefined} session={latest?.session} />}
       <header className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-semibold text-[#1d1d1f]">Desk</h2>
-            {latest && <button type="button" onClick={() => setResearch(!research)} className="text-xs text-[#0071e3]">{research ? 'Back to the desk' : 'Research'}</button>}
+            <button type="button" aria-pressed={strategyView && !research} className="text-xs text-[#0071e3]" onClick={() => chooseView('strategy')}>Latest strategy</button>
+            <button type="button" aria-pressed={!strategyView && !research} className="text-xs text-[#0071e3]" onClick={() => chooseView('paper')}>Paper account</button>
+            {latest && <button type="button" onClick={() => chooseView(research ? returningView.current : 'research')} className="text-xs text-[#0071e3]">{research ? 'Back to the desk' : 'Archived research'}</button>}
             <button
               type="button"
               onClick={() => setHelp(!help)}
@@ -1532,17 +1556,17 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             >
               i
             </button>
-            <button
+            {!strategyView && <button
               type="button"
               onClick={() => setAutopsy(!autopsy)}
               className="rounded-full border border-black/[0.08] bg-white px-2.5 py-0.5 text-xs font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]"
             >
               {autopsy ? 'Hide the review' : 'Analyze my trading'}
-            </button>
+            </button>}
           </div>
-          {help && <HowToUse onClose={() => setHelp(false)} plan={paperLive?.plan} />}
+          {help && <HowToUse onClose={() => setHelp(false)} plan={paperLive?.plan} strategy={strategyView} />}
           <p className="text-sm text-[#6e6e73]">
-            {latest ? `Decision session ${latest.session} · published ${marketTime(latest.written)}` : 'No decision on file yet'}
+            {strategyView ? 'Historical actions and sizes under the latest strategy' : latest ? `Decision session ${latest.session} · published ${marketTime(latest.written)}` : 'No decision on file yet'}
           </p>
         </div>
         <button
@@ -1561,9 +1585,10 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
       {!latest && <GettingStarted hasRecord={false} hasPositions={holdings.length > 0} onEnterPositions={() => setEditing(true)} />}
 
-      {latest && <RegimeBanner regime={latest.regime} session={latest.session} />}
+      {!strategyView && latest && <RegimeBanner regime={latest.regime} session={latest.session} />}
 
-      {!research && <>
+      {strategyView && !research && latest && <StrategySimulationBoard userId={userId} names={Object.keys(latest.grades)} live={live} onOpen={setOpenName} />}
+      {!strategyView && !research && <>
       {/* On phones, diagnostics use page scrolling instead of a tiny nested viewport. */}
       {latest && <div className="flex flex-col sm:max-h-[75vh]">
       <GradeParityBanner parity={payload.grade_parity} />
@@ -1730,6 +1755,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           userId={userId}
           order={latest ? boardRows(latest, paperLive).find(r => r.ticker === openName) ?? null : null}
           personalHistory={false}
+          strategy={strategyView}
           paperActivity={paperLive?.activity}
           historyGeneration={accountGen.current}
           personalReceiptId={historyContext?.userId === userId
@@ -2980,6 +3006,7 @@ const NameDetail = ({
   personalReceiptId,
   order = null,
   lastClose = null,
+  strategy = false,
 }: {
   userId: string
   ticker: string
@@ -3005,7 +3032,18 @@ const NameDetail = ({
   historyGeneration?: number
   paperActivity?: DeskPaperLive['activity']
   personalReceiptId?: string
+  strategy?: boolean
 }) => {
+  const [simulation, setSimulation] = useState<DeskStrategyStock | null>(null)
+  const [simulationError, setSimulationError] = useState('')
+  // Keep a missing or stale simulation explicit instead of falling back to predecessor signals.
+  useEffect(() => {
+    let alive = true
+    setSimulation(null)
+    setSimulationError('')
+    if (strategy) getDeskStrategyStock(userId, ticker).then(value => {if (alive) setSimulation(value)}).catch(reason => {if (alive) setSimulationError(reason.message)})
+    return () => {alive = false}
+  }, [userId, ticker, strategy])
   const [history, setHistory] = useState<DeskHistory | null>(null)
   const [error, setError] = useState('')
   useEffect(() => {
@@ -3066,7 +3104,7 @@ const NameDetail = ({
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-[#1d1d1f]">
             {ticker}
-            {latest.grades?.[ticker] && <span className="ml-2 text-sm font-normal text-[#6e6e73]">grade {latest.grades[ticker].grade}</span>}
+            {!strategy && latest.grades?.[ticker] && <span className="ml-2 text-sm font-normal text-[#6e6e73]">grade {latest.grades[ticker].grade}</span>}
           </h3>
           <button type="button" onClick={onClose} aria-label="Close" className="flex h-8 w-8 items-center justify-center rounded-full border border-black/[0.1] text-[#6e6e73] hover:bg-white">
             <X size={16} />
@@ -3077,11 +3115,11 @@ const NameDetail = ({
             so it leads on a phone and holds the right two-fifths of a wide
             window, staying in place while the reasoning scrolls beside it. */}
         <div className="mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0">
-          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} />
+          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} strategy={strategy} simulation={simulation} simulationError={simulationError} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
-        {order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}
-        {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}
+        {!strategy && order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}
+        {!strategy && history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}
         <section aria-label="Latest available grade" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
         <h4 className="mb-1 font-medium text-[#6e6e73]">Latest available grade</h4>
         {row && (
@@ -3110,10 +3148,10 @@ const NameDetail = ({
             {live.quotes[ticker]?.last != null ? `${priceMoney(live.quotes[ticker].last)} at the ${live.quotes[ticker].bar ? marketTime(live.quotes[ticker].bar) : 'last'} bar` : 'No live price'}
             {live.technical?.[ticker]?.now != null ? ` · technical rank ${Math.round((live.technical[ticker].now ?? 0) * 100)} of 100` : ''}
           </p>
-          <StoredOptionOILevels evidence={live.options_evidence?.[ticker]} />
+          {!strategy && <StoredOptionOILevels evidence={live.options_evidence?.[ticker]} />}
         </section>
         {/* Recorded reasons retain their original scope even when a newer grade or price is available. */}
-        {latest.grades?.[ticker] && <section aria-label="In short" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
+        {!strategy && latest.grades?.[ticker] && <section aria-label="In short" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
           <EveningAnalysis grade={latest.grades[ticker]} session={latest.session} written={latest.written} fundamental={latest.fundamental} ticker={ticker} />
         </section>}
         <details aria-label="All the evidence" className="mb-3">
@@ -3140,25 +3178,26 @@ const NameDetail = ({
             })}
           </div>
         )}
-        {(brief || gradeRead) && <ArchivedCommentary brief={brief ?? undefined} read={gradeRead} written={latest.written} />}
+        {!strategy && (brief || gradeRead) && <ArchivedCommentary brief={brief ?? undefined} read={gradeRead} written={latest.written} />}
         {/* The live technical read renders for any covered name, even one
             the board does not carry: the backend computes it on demand from
             a fresh quote, so a name outside the candle's snapshot (not in
             the book, not held) still gets its short/medium/long read. */}
-        <LiveTechnical
+        {!strategy && <LiveTechnical
           userId={userId}
           ticker={ticker}
           detail={live.technical_detail?.[ticker]}
           quote={live.quotes[ticker]}
           row={row ?? null}
           optionsEvidence={live.options_evidence?.[ticker]}
-        />
+        />}
+        {strategy && <StoredOptionOILevels evidence={live.options_evidence?.[ticker]} />}
         <EarningsPanel key={ticker} userId={userId} ticker={ticker} />
         </details>
         {/* Everything derived or historical sits under one fold: the
             continuous score, the fifteen-minute log, the grade changes and
             the backtest. A person opens the panel to ask why, not to scroll. */}
-        <details open={!compact} aria-label="Score, log and backtest">
+        {!strategy && <details open={!compact} aria-label="Score, log and backtest">
           <summary className="cursor-pointer text-xs text-[#0071e3]">Score, log & backtest</summary>
           <div className="mt-3">
           <OpportunityCard reading={decisions?.session === latest.session ? decisions.rows[ticker]?.opportunity : undefined} now={now} />
@@ -3242,7 +3281,7 @@ const NameDetail = ({
             </>
           )}
           </div>
-        </details>
+        </details>}
         </div>
         </div>
       </div>

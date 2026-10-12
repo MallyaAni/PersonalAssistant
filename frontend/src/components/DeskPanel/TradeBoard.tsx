@@ -67,7 +67,7 @@ type View = 'orders' | 'portfolio' | 'all'
 type SortKey = 'ticker' | 'grade' | 'position' | 'size'
 const FILTER_ACTIONS = ['BUY', 'SELL', 'TRIM', 'HOLD', '—'] as const
 type FilterAction = typeof FILTER_ACTIONS[number]
-type ActionSelection = Record<FilterAction, boolean>
+export type ActionSelection = Record<FilterAction, boolean>
 const ALL_ACTIONS: ActionSelection = {BUY: true, SELL: true, TRIM: true, HOLD: true, '—': true}
 
 // Match each recorded leg of mixed orders while keeping non-traded names in their displayed category.
@@ -401,8 +401,8 @@ const Head = ({label, column, sort, onSort, title}: {label: string; column?: Sor
   </th>
 }
 
-// Restore the Action heading's multi-select filter using actual paper-order actions.
-const ActionHead = ({open, onOpen, shown, onShown, rows}: {open: boolean; onOpen: (value: boolean) => void; shown: ActionSelection; onShown: (value: ActionSelection) => void; rows: BoardRow[]}) => {
+// Share the Action heading's checkbox, dismissal and recovery workflow across account and simulation views.
+export const ActionHead = ({open, onOpen, shown, onShown, rows = [], counts, title}: {open: boolean; onOpen: (value: boolean) => void; shown: ActionSelection; onShown: (value: ActionSelection) => void; rows?: BoardRow[]; counts?: Record<FilterAction, number>; title?: string}) => {
   const box = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
   const filtered = FILTER_ACTIONS.some(action => !shown[action])
@@ -420,12 +420,12 @@ const ActionHead = ({open, onOpen, shown, onShown, rows}: {open: boolean; onOpen
   }, [open, onOpen])
   return <th className="py-2 font-normal"><div ref={box} className="relative">
     <button ref={button} type="button" aria-label="Action" aria-expanded={open} aria-haspopup="true"
-      title="Click to filter BUY, SELL, TRIM, HOLD or names with no order. Mixed orders match each recorded action; completed orders remain history."
+      title={title ?? 'Click to filter BUY, SELL, TRIM, HOLD or names with no order. Mixed orders match each recorded action; completed orders remain history.'}
       className={filtered ? 'text-[#0071e3]' : 'hover:text-[#0071e3]'} onClick={() => onOpen(!open)}>Action <span aria-hidden="true">{filtered ? '•' : '▾'}</span></button>
     {open && <div role="group" aria-label="Show actions" className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-black/[0.1] bg-white p-2 shadow-lg">
       {FILTER_ACTIONS.map(action => <label key={action} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-[#1d1d1f] hover:bg-[#f5f5f7]">
         <input type="checkbox" aria-label={`Show ${action === '—' ? 'No order' : action} rows`} checked={shown[action]} onChange={event => onShown({...shown, [action]: event.target.checked})} />
-        <span className="flex-1">{action === '—' ? 'No order' : action}</span><span>{rows.filter(row => hasAction(row, action)).length}</span>
+        <span className="flex-1">{action === '—' ? 'No order' : action}</span><span>{counts?.[action] ?? rows.filter(row => hasAction(row, action)).length}</span>
       </label>)}
       <button type="button" className="mt-1 px-1 py-1 text-[#0071e3]" onClick={() => onShown(ALL_ACTIONS)}>Show all</button>
     </div>}

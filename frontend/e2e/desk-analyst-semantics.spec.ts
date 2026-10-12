@@ -126,7 +126,7 @@ async function openPanelFromRow(page: Page) {
 test('defines analyst parts and dates each stored metric', async ({page, baseURL}, testInfo) => {
   const diagnostics = await installScenario(page, baseURL!)
   try {
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     const dialog = await openPanelFromRow(page)
     await expectMeanings(dialog)
     await dialog.getByText('All the evidence', {exact: true}).click()
@@ -160,7 +160,7 @@ for (const [name, periods] of [['older absent block', null], ['empty date map', 
   test(`keeps fiscal dates unknown for ${name}`, async ({page, baseURL}, testInfo) => {
     const diagnostics = await installScenario(page, baseURL!, {periods, source: 'edgar-frozen'})
     try {
-      await page.goto('/#desk')
+      await page.goto('/?deskView=paper#desk')
       await page.getByRole('button', {name: 'AAOI', exact: true}).click()
       const dialog = page.getByRole('dialog', {name: 'AAOI history'})
       await dialog.getByText('Evidence dates for this decision', {exact: true}).click()
@@ -180,7 +180,7 @@ for (const [name, periods] of [['older absent block', null], ['empty date map', 
 test('keeps missing percentiles distinct from zero and individual grades', async ({page, baseURL}, testInfo) => {
   const diagnostics = await installScenario(page, baseURL!, {ranks: {}})
   try {
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     await page.getByRole('button', {name: 'AAOI', exact: true}).click()
     const dialog = page.getByRole('dialog', {name: 'AAOI history'})
     const current = dialog.getByRole('region', {name: 'Latest available grade', exact: true})
@@ -202,7 +202,7 @@ test('distinguishes invalid analyst parts from a valid zero percentile', async (
     stances: {fundamental: 1, technical: 0, sentiment: 2, value: 1},
   })
   try {
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     await page.getByRole('button', {name: 'AAOI', exact: true}).click()
     const dialog = page.getByRole('dialog', {name: 'AAOI history'})
     const detail = dialog.getByRole('region', {name: 'Latest available grade', exact: true})
@@ -228,7 +228,7 @@ for (const valueChanged of [true, false]) {
       {date: SESSION, grade: 'A+', stances: STANCES},
     ]})
     try {
-      await page.goto('/#desk')
+      await page.goto('/?deskView=paper#desk')
       await page.getByRole('button', {name: 'AAOI', exact: true}).click()
       const dialog = page.getByRole('dialog', {name: 'AAOI history'})
       const move = dialog.getByRole('region', {name: 'Why the grade moved', exact: true})
@@ -255,7 +255,7 @@ for (const valueChanged of [true, false]) {
 test('qualifies reaction dates and the valuation proxy', async ({page, baseURL}, testInfo) => {
   const diagnostics = await installScenario(page, baseURL!, {revision: true})
   try {
-    await page.goto('/?deskDetails=1#desk')
+    await page.goto('/?deskView=paper&deskDetails=1#desk')
     await page.locator('details[aria-label="Strategy details"] > summary').click()
     await page.getByText('How ranking and sizing work', {exact: true}).click()
     const guide = page.getByRole('region', {name: 'Desk guide', exact: true})
@@ -279,7 +279,7 @@ test('qualifies reaction dates and the valuation proxy', async ({page, baseURL},
 test('preserves older earnings withholding independently of recorded fiscal dates', async ({page, baseURL}, testInfo) => {
   const diagnostics = await installScenario(page, baseURL!, {oldEarnings: true})
   try {
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     await page.getByRole('button', {name: 'AAOI', exact: true}).click()
     const dialog = page.getByRole('dialog', {name: 'AAOI history'})
     await dialog.getByText('All the evidence', {exact: true}).click()
@@ -300,7 +300,7 @@ test('fits analyst meanings and mixed fiscal dates on a phone', async ({page, ba
   const diagnostics = await installScenario(page, baseURL!)
   try {
     await page.setViewportSize({width: 390, height: 844})
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     if (await page.getByRole('button', {name: 'Hide Sidebar'}).isVisible()) await page.mouse.click(380, 500)
     await page.getByRole('group', {name: 'Board view'}).getByRole('button', {name: /All names/}).click()
     await page.getByRole('button', {name: 'details for AAOI', exact: true}).click()

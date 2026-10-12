@@ -14,9 +14,9 @@ import {
   type UTCTimestamp,
 } from 'lightweight-charts'
 import { exportDeskPersonalReceipt, getDeskChart, getDeskPersonalHistory, DESK_CHART_DEFAULT_SESSIONS, type DeskPersonalReceipt, type DeskChart, type DeskChartBar, type DeskChartDecision, type DeskChartTimeframe } from '../../services/api'
-import type { DeskHistory, DeskHistoryFill, DeskHistoryRow, DeskLive, DeskPaperLive, DeskStructure } from '../../services/api'
+import type { DeskHistory, DeskHistoryFill, DeskHistoryRow, DeskLive, DeskPaperLive, DeskStructure, DeskStrategyStock } from '../../services/api'
 import { SessionPrice } from './StockBoard'
-import { LEVEL_NAME, shares } from './TradeBoard'
+import { LEVEL_NAME, percent, shares } from './TradeBoard'
 
 // The picture behind the grade. The board says what the desk concluded; this
 // shows adjusted price indicators beside recorded and replayed grade changes.
@@ -341,6 +341,27 @@ const groupedFillMarkers = (markers: FillMarker[]): ChartMarker[] => {
   return [...groups.values()].map(marker => ({...marker, text: `${marker.side === 'buy' ? 'BUY' : 'SELL'} ${shares(marker.qty)}`}))
 }
 
+// Draw simulated quantities on their own candles, retaining BUY/SELL/TRIM separately.
+const simulatedTradeMarkers = (simulation: DeskStrategyStock | null | undefined, bars: DeskChartBar[], timeframe: Timeframe): ChartMarker[] => {
+  const groups = new Map<string, ChartMarker & {action: string; qty: number}>()
+  for (const trade of simulation?.trades ?? []) {
+    const at = recordedInstant(trade.at)?.getTime()
+    if (at == null || !Number.isFinite(trade.qty) || trade.qty <= 0) continue
+    const candle = timeframe === '15m' ? bars.find(bar => {
+      const start = recordedInstant(bar.time)?.getTime()
+      return start != null && bar.date === trade.date && start <= at && at < start + 900_000 && drawableCandle(bar)
+    }) : markerCandle(trade.date, bars, timeframe)
+    if (!candle) continue
+    const time = timeframe === '15m' ? instantStamp(candle.time!) : stamp(candle.date)
+    const key = `${time}:${trade.action}`
+    const factor = timeframe === 'weekly' ? (simulation?.splits ?? []).filter(event => event.date > trade.date && event.date <= candle.date).reduce((value, event) => value * event.ratio, 1) : 1
+    const qty = (groups.get(key)?.qty ?? 0) + trade.qty * factor
+    groups.set(key, {time, action: trade.action, qty, position: trade.action === 'BUY' ? 'belowBar' : 'aboveBar',
+      color: trade.action === 'BUY' ? TRADE_BUY : TRADE_SELL, shape: 'circle', text: `${trade.action} ${shares(qty)}`, size: 1})
+  }
+  return [...groups.values()]
+}
+
 const DECISION_BUY = '#15803d'
 const DECISION_SELL = '#b42318'
 // The paper account's trades, in the board's colours: BUY green, SELL red.
@@ -554,6 +575,9 @@ export const TickerChart = ({
   close,
   suggestion,
   levels = null,
+  strategy = false,
+  simulation = null,
+  simulationError = '',
 }: {
   userId: string
   ticker: string
@@ -577,6 +601,9 @@ export const TickerChart = ({
   // latest decision, which is what the board shows only when no live decision
   // exists for the record on screen.
   suggestion?: { word: string; detail: string } | null
+  strategy?: boolean
+  simulation?: DeskStrategyStock | null
+  simulationError?: string
 }) => {
   const [timeframe, setTimeframe] = useState<Timeframe>('daily')
   // How many sessions of fifteen-minute bars to load; only 15m reads it.
@@ -596,6 +623,7 @@ export const TickerChart = ({
   const [receiptFailures, setReceiptFailures] = useState<string[]>([])
   const [receiptReload, setReceiptReload] = useState(0)
   const [fullHistory, setFullHistory] = useState(false)
+  const [allSimulatedTrades, setAllSimulatedTrades] = useState(false)
   const [indicatorsOpen, setIndicatorsOpen] = useState(false)
   const [receivedData, setData] = useState<DeskChart | null>(null)
   const [refreshFailed, setRefreshFailed] = useState(false)
@@ -684,7 +712,7 @@ export const TickerChart = ({
     // Only the newest request may publish its coherent candle/indicator snapshot.
     const read = (first: boolean) => {
       const sequence = ++request
-      getDeskChart(userId, ticker, timeframe, timeframe === '15m' ? intradaySessions : DESK_CHART_DEFAULT_SESSIONS[timeframe])
+      getDeskChart(userId, ticker, timeframe, timeframe === '15m' ? intradaySessions : strategy ? 2000 : DESK_CHART_DEFAULT_SESSIONS[timeframe])
         .then((payload) => {
           if (!live || sequence !== request) return
           setData(payload)
@@ -710,7 +738,7 @@ export const TickerChart = ({
       window.clearInterval(timer)
       document.removeEventListener('visibilitychange', resume)
     }
-  }, [userId, ticker, timeframe, intradaySessions, quote?.bar, quote?.last])
+  }, [userId, ticker, timeframe, intradaySessions, quote?.bar, quote?.last, strategy])
 
   // Candles and indicators share the endpoint's snapshot. The independently
   // polled board quote triggers refresh but must never replace just the candle.
@@ -734,6 +762,7 @@ export const TickerChart = ({
   const timedDecisions = useMemo(() => intradayDecisionMarkers(data), [data])
   // The payload's bar time may be an assumed open/close; require the original execution instant instead.
   const timedFills = useMemo(() => timeframe === '15m' ? groupedFillMarkers(currentIntradayMarkers(fills, merged.bars)) : [], [timeframe, fills, merged])
+  const simulatedTrades = useMemo(() => simulatedTradeMarkers(simulation, merged.bars, timeframe), [simulation, merged, timeframe])
 
   useEffect(() => {
     if (!holder.current || !data || !merged.bars.length) return
@@ -750,8 +779,8 @@ export const TickerChart = ({
         // On 15m the axis shows the clock, in New York time: the library
         // would otherwise write the bar starts as UTC.
         timeScale: timeframe === '15m'
-          ? { borderColor: 'rgba(0,0,0,0.1)', rightOffset: 4, timeVisible: true, secondsVisible: false, tickMarkFormatter: newYorkTick }
-          : { borderColor: 'rgba(0,0,0,0.1)', rightOffset: 4 },
+          ? { borderColor: 'rgba(0,0,0,0.1)', rightOffset: 4, minBarSpacing: strategy ? .01 : .5, timeVisible: true, secondsVisible: false, tickMarkFormatter: newYorkTick }
+          : { borderColor: 'rgba(0,0,0,0.1)', rightOffset: 4, minBarSpacing: strategy ? .01 : .5 },
         crosshair: { mode: CrosshairMode.Normal },
         // The chart library otherwise trusts navigator.language, which can
         // be a POSIX tag that Intl rejects when it draws the time axis.
@@ -895,13 +924,13 @@ export const TickerChart = ({
     // Grade changes do not apply on 15m (a grade is a session's reading, not a
     // bar's); intraday fills require the original recorded execution instant.
     const markers = [
-      ...(personalHistory && showRecommendations ? actionMarkers : []),
-      ...(showSignals ? changes : []),
-      ...(showDecisions ? [...decisions, ...timedDecisions] : []),
-      ...(showFills ? [...fillMarks, ...timedFills] : []),
+      ...(personalHistory && showRecommendations && !strategy ? actionMarkers : []),
+      ...(!strategy && showSignals ? changes : []),
+      ...(!strategy && showDecisions ? [...decisions, ...timedDecisions] : []),
+      ...(showFills ? strategy ? simulatedTrades : [...fillMarks, ...timedFills] : []),
     ].filter(marker => Number.isFinite(marker.time)).sort((a, b) => Number(a.time) - Number(b.time))
     markersRef.current?.setMarkers(markers)
-  }, [data, merged, timeframe, fullHistory, showSignals, showRecommendations, showDecisions, showFills, actionMarkers, changes, decisions, fillMarks, timedDecisions, timedFills, personalHistory])
+  }, [data, merged, timeframe, fullHistory, showSignals, showRecommendations, showDecisions, showFills, actionMarkers, changes, decisions, fillMarks, timedDecisions, timedFills, personalHistory, strategy, simulatedTrades])
 
   // Everything the canvas shows, in text, for the tests and for anyone not
   // reading pixels. The last drawn bar is the one a trader is looking at.
@@ -928,34 +957,42 @@ export const TickerChart = ({
   const latestDecision = useMemo(() => [...(history?.rows ?? [])].reverse().find(row => row.action), [history])
   const recentDecisions = useMemo(() => decisionRows(history).slice(-12).reverse(), [history])
   const currentYear = (latestDecision?.date ?? history?.asof ?? '').slice(0, 4)
+  // Center the latest simulated action without inventing bars outside the loaded window.
+  const focusLastTrade = () => {
+    const marker = [...simulatedTrades].sort((a, b) => Number(b.time) - Number(a.time))[0]
+    if (!marker || !chartRef.current) return
+    const index = merged.bars.findIndex(bar => Number(barStamp(bar, timeframe)) === Number(marker.time))
+    const half = timeframe === 'weekly' ? 1.5 : 5
+    if (index >= 0) chartRef.current.timeScale().setVisibleLogicalRange({from: index - half, to: index + half})
+  }
 
   return (
     <section className="mb-4" aria-label={`${ticker} price chart`}>
       {live && <div className="mb-2 text-xs"><SessionPrice live={live} ticker={ticker} now={now} close={close} /></div>}
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h4 className="text-xs font-medium text-[#1d1d1f]">
-          Price, indicators and grade history
+          {strategy ? 'Price and strategy actions' : 'Price, indicators and grade history'}
         </h4>
         <div className="flex flex-wrap gap-1">
           <div className="flex gap-1" role="group" aria-label="Chart range">
           <button type="button" aria-pressed={!fullHistory} className="rounded px-2 py-0.5 text-xs" onClick={() => setFullHistory(false)}>Recent</button>
           <button type="button" aria-pressed={fullHistory} className="rounded px-2 py-0.5 text-xs" onClick={() => setFullHistory(true)}>Full history</button>
           </div>
-          {personalHistory && <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]" title="Your saved personal Buy and Sell recommendations, recorded at generation time; not fills.">
+          {personalHistory && !strategy && <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]" title="Your saved personal Buy and Sell recommendations, recorded at generation time; not fills.">
             <input type="checkbox" checked={showRecommendations} onChange={event => setShowRecommendations(event.target.checked)} />
             Saved recommendations
           </label>}
-          <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]" title="Saved nightly grades where available; otherwise recalculated grades. Markers identify their source, not a trade.">
+          {!strategy && <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]" title="Saved nightly grades where available; otherwise recalculated grades. Markers identify their source, not a trade.">
             <input type="checkbox" checked={showSignals} onChange={event => setShowSignals(event.target.checked)} />
             Grade changes
-          </label>
-          <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]" title="Historical decisions recalculated under the displayed policy. These are not recorded live recommendations or paper fills.">
+          </label>}
+          {!strategy && <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]" title="Historical decisions recalculated under the displayed policy. These are not recorded live recommendations or paper fills.">
             <input type="checkbox" checked={showDecisions} onChange={event => setShowDecisions(event.target.checked)} />
             Policy replay
-          </label>
-          {fills.length > 0 && <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]">
+          </label>}
+          {(strategy || fills.length > 0) && <label className="mr-2 flex items-center gap-1 text-[11px] text-[#6e6e73]">
             <input type="checkbox" checked={showFills} onChange={event => setShowFills(event.target.checked)} />
-            Paper trades
+            {strategy ? 'Strategy actions' : 'Paper trades'}
           </label>}
           {timeframe === '15m' && <div className="flex gap-1" role="group" aria-label="Chart sessions">
           {INTRADAY_SESSIONS.map((count) => (
@@ -1024,6 +1061,8 @@ export const TickerChart = ({
             ref={holder}
             className={`w-full ${drawFailed ? 'hidden' : tall ? 'h-[52vh] min-h-80' : 'h-72'}`}
             data-testid="ticker-chart-canvas"
+            data-chart-timeframe={data.timeframe}
+            data-bar-count={merged.bars.length}
           />
           {drawFailed && (
             <p className="rounded bg-[#f5f5f7] p-2 text-xs text-[#6e6e73]">
@@ -1046,21 +1085,21 @@ export const TickerChart = ({
             {merged.bars.length} {timeframe === 'weekly' ? 'weeks' : 'sessions'} loaded; pan or zoom for history.
           </p>}
           <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Chart legend">
-            Circles: shares filled per {timeframe === 'weekly' ? 'week' : timeframe === 'daily' ? 'day' : '15-minute bar'}. Individual fills and prices below (unadjusted).{showSignals ? ' Arrows: grade changes, labelled Saved or Recalculated when known.' : ''}{showDecisions ? ' Signal and RESET labels: policy replay, not trades.' : ''}{personalHistory && showRecommendations ? ' Saved Buy/Sell labels: recommendations, not fills.' : ''}
+            {strategy ? timeframe === 'weekly' ? 'Simulated actions · weekly share totals, on the week’s closing share basis.' : `Simulated actions · shares per ${timeframe === 'daily' ? 'day' : '15-minute bar'}.` : `Circles: shares filled per ${timeframe === 'weekly' ? 'week' : timeframe === 'daily' ? 'day' : '15-minute bar'}. Individual fills and prices below (unadjusted).`}{!strategy && showSignals ? ' Arrows: grade changes, labelled Saved or Recalculated when known.' : ''}{!strategy && showDecisions ? ' Signal and RESET labels: policy replay, not trades.' : ''}{!strategy && personalHistory && showRecommendations ? ' Saved Buy/Sell labels: recommendations, not fills.' : ''}
           </p>
-          {timeframe === '15m' && fills.some(fill => !recordedInstant(fill.filled_at)) && <p aria-label="Fill timing" className="mt-1 text-[11px] text-[#6e6e73]">Some fills have no recorded time; listed below, not marked on 15m.</p>}
+          {!strategy && timeframe === '15m' && fills.some(fill => !recordedInstant(fill.filled_at)) && <p aria-label="Fill timing" className="mt-1 text-[11px] text-[#6e6e73]">Some fills have no recorded time; listed below, not marked on 15m.</p>}
           <p aria-label="Chart refresh status" role={refreshFailed ? 'status' : undefined} className="mt-1 text-[11px] text-[#6e6e73]">Regular-session chart · refresh 20s{data.live_feed ? ` · ${data.live_feed.toUpperCase()}` : ''}{data.live_as_of ? ` · checked ${recordedTime(data.live_as_of)}` : ''}{refreshFailed ? ' · Refresh failed; showing last snapshot' : data.live_reason ? ` · ${data.live_reason}` : ''}</p>
-          {showDecisions && history?.policy && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy decision note">
+          {!strategy && showDecisions && history?.policy && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy decision note">
             {history.policy}: {DECISION_NOTE}
           </p>}
-          {history?.policy && currentPolicy && history.policy !== currentPolicy && <details className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Historical policy comparison">
+          {!strategy && history?.policy && currentPolicy && history.policy !== currentPolicy && <details className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Historical policy comparison">
             <summary className="cursor-pointer">Historical policy</summary>
             <p>History uses {history.policy}; the displayed allocation uses {currentPolicy}. Historical replay signals and grade statistics do not describe the current allocator's decisions or performance.</p>
           </details>}
           {/* What the markers mean under the equal-weight policy, and how the
               reset sessions were found: without a clock on file no session is
               a reset, and the chart says so rather than guessing one. */}
-          {showDecisions && isEqualWeight(history?.policy) && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy marker legend">
+          {!strategy && showDecisions && isEqualWeight(history?.policy) && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy marker legend">
             {EQUAL_WEIGHT_LEGEND}{history?.rebalance_note ? ` ${history.rebalance_note[0].toUpperCase()}${history.rebalance_note.slice(1)}.` : ''}
           </p>}
 
@@ -1068,7 +1107,25 @@ export const TickerChart = ({
               the policy's stance today, then the sessions it would have traded
               on, newest first. This list is the decisions, not the markers, so
               the marker checkbox leaves it in place. */}
-          {(latestDecision || suggestion || fills.length > 0) && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label={`${ticker} decisions`}>
+          {strategy && <div className="mt-2 text-xs text-[#6e6e73]" aria-label={`${ticker} strategy simulation`}>
+            {simulationError ? <p role="alert">{simulationError}</p> : !simulation ? <p>Loading strategy simulation…</p> : <>
+              <p>Latest-strategy simulation · {simulation.start}–{simulation.through} · {simulation.provenance.cost_bps} bp per side.</p>
+              <p>Target {simulation.latest_target == null ? 'unavailable' : percent(simulation.latest_target)} · {shares(simulation.latest_holding)} held · {simulation.through}.</p>
+              {simulation.trades.length > 0 && <p>Last simulated trade: {simulation.trades[simulation.trades.length - 1].date}. {simulatedTrades.length > 0 && <button type="button" className="text-[#0071e3]" onClick={focusLastTrade}>Go to last trade</button>}</p>}
+              {simulatedTrades.length === 0 && <p aria-label="Strategy marker status">No simulated trades in these loaded bars.</p>}
+              {simulation.trades.length > 0 && <ul className="mt-1" aria-label={`${ticker} simulated trades`}>
+                {[...simulation.trades].reverse().slice(0, allSimulatedTrades ? undefined : 12).map((trade, index) => <li key={`${trade.id}-${index}`}>
+                  {sessionLabel(trade.date, simulation.through.slice(0, 4))} · {newYorkClock(Date.parse(trade.at) / 1000, false)} ET · {trade.action} {shares(trade.qty)} · ${trade.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})}
+                </li>)}
+              </ul>}
+              {simulation.trades.length > 12 && <button type="button" className="mt-1 text-[#0071e3]" onClick={() => setAllSimulatedTrades(value => !value)}>{allSimulatedTrades ? 'Show recent trades' : `Show all ${simulation.trades.length} trades`}</button>}
+              {simulation.decisions.filter(decision => decision.date === simulation.through && decision.executed_qty < decision.qty).map(decision => <p key={decision.id}>Planned {decision.action} {shares(decision.qty - decision.executed_qty)} · {decision.date} · awaiting simulated execution.</p>)}
+              <details className="mt-1"><summary className="cursor-pointer">Simulation basis</summary>
+                <p>One carried portfolio using the latest strategy, historical monthly models and available prices. Sizes are simulated and trade prices are unadjusted. These are not past broker trades.</p>
+              </details>
+            </>}
+          </div>}
+          {!strategy && (latestDecision || suggestion || fills.length > 0) && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label={`${ticker} decisions`}>
             <p className="font-medium text-[#1d1d1f]" aria-label={`${ticker} now`}>Now: {suggestion ? `${suggestion.word} · ${suggestion.detail}` : 'no paper order'}</p>
             {fills.length > 0 && <ul className="mt-1" aria-label={`${ticker} paper fills`}>
               {[...fills].reverse().slice(0, 12).map((fill, index) => (
@@ -1109,7 +1166,7 @@ export const TickerChart = ({
             </details>
           </div>}
 
-          <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label="Recorded setup history">
+          {!strategy && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label="Recorded setup history">
             <p className="sr-only" aria-label="Research publication groups">{groups.length ? `${groups.length} recorded ${timeframe === 'weekly' ? 'weeks' : 'sessions'} · ${groups.map(group => `${group.date}: ${group.label}`).join(' · ')}` : 'No recorded setups on the loaded candles.'}</p>
             <details className="mt-1">
               <summary className="cursor-pointer">Original readings ({observations.length})</summary>
@@ -1126,14 +1183,14 @@ export const TickerChart = ({
               {history?.recommendations?.older_records_not_shown && <p>Only recent archives are loaded; older records are not shown.</p>}
               {!!history?.recommendations?.invalid_archives && <p>Some archived records could not be read.</p>}
             </details>
-          </div>
+          </div>}
 
           {summary && (
             <details aria-label="Chart indicators" open={indicatorsOpen} onToggle={event => setIndicatorsOpen(event.currentTarget.open)} className="mt-2 text-[11px] text-[#6e6e73]">
             <summary className="cursor-pointer">Indicators &amp; price basis</summary>
             {timeframe === '15m'
-              ? <p className="mt-2 text-[11px] text-[#6e6e73]" aria-label="Fifteen-minute price basis">Prices: {data.basis}; not adjusted for splits or dividends, so a fill can be checked against the print it crossed at. The daily averages, bands and levels are not drawn at this resolution.</p>
-              : <p className="mt-2 text-[11px] text-[#6e6e73]">Prices: {data.basis}. Indicators can update during a session; weekly overlays include the forming week when present and can differ from a saved grade.</p>}
+              ? <p className="mt-2 text-[11px] text-[#6e6e73]" aria-label="Fifteen-minute price basis">Prices: {data.basis}{strategy ? '; compare simulated trade prices with these original bars.' : '; not adjusted for splits or dividends, so a fill can be checked against the print it crossed at. The daily averages, bands and levels are not drawn at this resolution.'}</p>
+              : <p className="mt-2 text-[11px] text-[#6e6e73]">Prices: {data.basis}. {strategy ? 'Indicators describe prices; they do not set the strategy actions.' : 'Indicators can update during a session; weekly overlays include the forming week when present and can differ from a saved grade.'}</p>}
             {timeframe !== '15m' && <p className="mt-1 text-[11px] text-[#6e6e73]">EMA means exponential moving average of candle closes; recent closes carry more weight.</p>}
             <details className="mt-1 text-[11px] text-[#6e6e73]">
               <summary className="cursor-pointer">Indicator definitions</summary>
@@ -1168,7 +1225,7 @@ export const TickerChart = ({
             </details>
           )}
 
-          {showSignals && <p className="mt-2 text-[11px] text-[#6e6e73]">
+          {!strategy && showSignals && <p className="mt-2 text-[11px] text-[#6e6e73]">
             {timeframe === '15m'
               ? 'Grade changes are session readings and are not marked on fifteen-minute bars; switch to D or W to see them.'
               : changes.length === 0

@@ -85,7 +85,7 @@ for (const scenario of scenarios) {
     if (scenario.phone) await page.setViewportSize({width: 390, height: 844})
     const fixture = await install(page, baseURL!, scenario)
     try {
-      await page.goto('/#desk')
+      await page.goto('/?deskView=paper#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
       await chart.getByText('Indicators & price basis', {exact: true}).click()

@@ -22,6 +22,7 @@ from backend.api.v1.discovery import feed_router as discovery_feed_router
 from backend.api.v1.discovery import router as discovery_router
 from backend.api.v1.images import router as images_router
 from backend.api.v1.market import router as market_router
+from backend.api.v1.market_simulation import router as market_simulation_router
 from backend.api.v1.memory import router as memory_router
 from backend.api.v1.presentations import router as presentations_router
 from backend.api.v1.runs import router as runs_router
@@ -52,6 +53,7 @@ router.include_router(auth_router)
 router.include_router(tool_memory_router)
 router.include_router(agent_memory_router)
 router.include_router(memory_router)
+router.include_router(market_simulation_router)
 router.include_router(market_router)
 router.include_router(artifacts_router)
 router.include_router(conversations_router)

@@ -101,7 +101,7 @@ async function recordDiagnostics(testInfo: TestInfo, diagnostics: object, reads:
 test('separates a fresh stock quote from old collection and historical raw reference', async ({page, baseURL}, testInfo) => {
   const {diagnostics, reads} = await installScenario(page, baseURL!, {...RECORDED})
   try {
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     const {latest, displays} = await openOptions(page, testInfo)
     await expect(latest).toContainText('$150.00')
     await expectBoth(displays, 'Collected Sep 1, 2026, 09:05:00 AM ET')
@@ -140,7 +140,7 @@ for (const [name, evidence, explanation] of [
   test(`withholds legacy numeric levels for ${name}`, async ({page, baseURL}, testInfo) => {
     const {diagnostics, reads} = await installScenario(page, baseURL!, evidence)
     try {
-      await page.goto('/#desk')
+      await page.goto('/?deskView=paper#desk')
       const {displays} = await openOptions(page, testInfo)
       await expectBoth(displays, explanation)
       for (const display of displays) {
@@ -156,7 +156,7 @@ for (const [name, evidence, explanation] of [
 test('shows same-date selection with OI freshness unknown and reference bar unavailable', async ({page, baseURL}, testInfo) => {
   const {diagnostics, reads} = await installScenario(page, baseURL!, {...RECORDED, calculated_on: '2026-09-25', calculation_date_status: 'same_date', reference_session: '2026-09-25', reference_bar_start: null, expiry: '2026-10-16', through: '2026-11-20'})
   try {
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     const {displays} = await openOptions(page, testInfo)
     await expectBoth(displays, 'Expiry selection date: 2026-09-25')
     await expectBoth(displays, 'Put $95.00')
@@ -173,7 +173,7 @@ test('shows same-date selection with OI freshness unknown and reference bar unav
 test('keeps a newer panel row date separate from its older source bar', async ({page, baseURL}, testInfo) => {
   const {diagnostics, reads} = await installScenario(page, baseURL!, {...RECORDED, calculated_on: '2026-09-25', calculation_date_status: 'same_date', reference_session: '2026-09-25', expiry: '2026-10-16', through: '2026-11-20'})
   try {
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     const {displays} = await openOptions(page, testInfo)
     await expectBoth(displays, 'Raw panel row date: 2026-09-25')
     await expectBoth(displays, 'Reference bar Sep 1, 2026, 10:15:00 AM ET (15-minute interval start)')
@@ -190,7 +190,7 @@ for (const [status, collected, explanation] of [
   test(`makes a ${status} collection clock explicit`, async ({page, baseURL}, testInfo) => {
     const {diagnostics, reads} = await installScenario(page, baseURL!, {...RECORDED, collection_status: status, collected_at: collected, collection_age_seconds: null})
     try {
-      await page.goto('/#desk')
+      await page.goto('/?deskView=paper#desk')
       const {displays} = await openOptions(page, testInfo)
       await expectBoth(displays, explanation)
       await expectBoth(displays, 'Collection age unknown as of Sep 25, 2026, 11:35:00 AM ET')
@@ -203,7 +203,7 @@ for (const [status, collected, explanation] of [
 test('shows zero distance neutrally at the recorded reference', async ({page, baseURL}, testInfo) => {
   const {diagnostics, reads} = await installScenario(page, baseURL!, {...RECORDED, put_level: 100, call_level: 100, put_distance: 0, call_distance: 0})
   try {
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     const {displays} = await openOptions(page, testInfo)
     await expectBoth(displays, 'Put $100.00 · 1,200 summed contracts · at recorded reference (0.0%)')
     await expectBoth(displays, 'Call $100.00 · 1,800 summed contracts · at recorded reference (0.0%)')
@@ -215,7 +215,7 @@ test('shows zero distance neutrally at the recorded reference', async ({page, ba
 test('distinguishes no qualifying levels from unavailable data', async ({page, baseURL}, testInfo) => {
   const {diagnostics, reads} = await installScenario(page, baseURL!, {...RECORDED, put_level: null, call_level: null, put_oi: 0, call_oi: 0, put_distance: null, call_distance: null})
   try {
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     const {displays} = await openOptions(page, testInfo)
     await expectBoth(displays, 'Put: no qualifying level')
     await expectBoth(displays, 'Call: no qualifying level')
@@ -228,7 +228,7 @@ test('distinguishes no qualifying levels from unavailable data', async ({page, b
 test('withholds an invalid method description without inventing numeric bounds', async ({page, baseURL}, testInfo) => {
   const {diagnostics, reads} = await installScenario(page, baseURL!, {...RECORDED, method: {...RECORDED.method, strike_range_fraction: null}})
   try {
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     const {displays} = await openOptions(page, testInfo)
     await expectBoth(displays, 'Method scope unavailable')
     for (const display of displays) await expect(display).not.toContainText('±0%')
@@ -240,7 +240,7 @@ test('keeps age pinned to checked_at until a refreshed response arrives', async 
   const evidence = {...RECORDED}
   const {live, diagnostics, reads} = await installScenario(page, baseURL!, evidence)
   try {
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     let opened = await openOptions(page, testInfo)
     await page.clock.fastForward(60_000)
     await expectBoth(opened.displays, '24d 2h 30m 0s as of Sep 25, 2026, 11:35:00 AM ET')

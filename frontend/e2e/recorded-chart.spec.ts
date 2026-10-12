@@ -74,7 +74,7 @@ async function setup(page: Page, personal = true, gap?: CandleGap) {
     } else if (path.endsWith('/paper')) json = {reason: 'unavailable'}
     await route.fulfill({json})
   })
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
   const chart = page.getByRole('region', {name: 'AAPL price chart'})
   await chart.getByRole('checkbox', {name: 'Grade changes'}).check()

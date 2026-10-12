@@ -137,7 +137,7 @@ for (const scenario of cases) {
     if (scenario.phone) await page.setViewportSize({width: 390, height: 844})
     const fixture = await install(page, baseURL!, scenario)
     try {
-      await page.goto('/?deskDetails=1#desk')
+      await page.goto('/?deskView=paper&deskDetails=1#desk')
       for (const reloaded of [false, true]) {
         if (reloaded) await page.reload()
         await page.getByRole('group', {name: 'Strategy details'}).locator(':scope > summary').click()

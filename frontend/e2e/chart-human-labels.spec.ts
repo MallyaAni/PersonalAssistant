@@ -97,7 +97,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
     await page.setViewportSize(viewport)
     const fixture = await install(page, baseURL!)
     try {
-      await page.goto('/#desk')
+      await page.goto('/?deskView=paper#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
       await chart.getByRole('checkbox', {name: 'Grade changes'}).check()
@@ -126,7 +126,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
     await page.setViewportSize(viewport)
     const fixture = await install(page, baseURL!)
     try {
-      await page.goto('/#desk')
+      await page.goto('/?deskView=paper#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
       await expect(chart.locator('details[aria-label="Chart indicators"]')).not.toHaveAttribute('open', '')
@@ -175,7 +175,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
             ? `${nextSaved ? 'Saved' : 'Recalculated'} grade ${before}→${after}`
             : `Grade ${before} (${previousSaved ? 'saved' : 'recalculated'})→${after} (${nextSaved ? 'saved' : 'recalculated'})`
           try {
-            await page.goto('/#desk')
+            await page.goto('/?deskView=paper#desk')
             await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
             const chart = page.getByRole('region', {name: 'AAPL price chart'})
             await chart.getByRole('checkbox', {name: 'Grade changes'}).check()
@@ -207,7 +207,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
         ])
         const label = unknownFirst ? 'Grade A (source unknown)→B (saved)' : 'Grade A (saved)→B (source unknown)'
         try {
-          await page.goto('/#desk')
+          await page.goto('/?deskView=paper#desk')
           await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
           const chart = page.getByRole('region', {name: 'AAPL price chart'})
           await chart.getByRole('checkbox', {name: 'Grade changes'}).check()
@@ -232,7 +232,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       {date: '2026-09-16', grade: 'A', said: true},
     ])
     try {
-      await page.goto('/#desk')
+      await page.goto('/?deskView=paper#desk')
       await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
       const chart = page.getByRole('region', {name: 'AAPL price chart'})
       await chart.getByRole('checkbox', {name: 'Grade changes'}).check()

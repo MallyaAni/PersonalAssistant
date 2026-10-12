@@ -87,7 +87,7 @@ async function recordDiagnostics(testInfo: TestInfo, diagnostics: object) {
 
 // Open the actual stock history and disclose its dated statistics.
 async function openHistory(page: Page) {
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await page.getByRole('button', {name: 'AAOI', exact: true}).click()
   const dialog = page.getByRole('dialog', {name: 'AAOI history'})
   const details = dialog.getByLabel('Score, log and backtest', {exact: true})
@@ -159,7 +159,7 @@ for (const [name, before, after, transition] of [
 test('keeps a planned Sell on its session clock alongside a fresh overnight quote', async ({page, baseURL}, testInfo) => {
   const diagnostics = await installScenario(page, baseURL!, {overnight: true})
   try {
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     const quote = page.getByLabel('AAOI session price', {exact: true}).first()
     await expect(quote).toContainText(/^\$99\.50\s?overnight/)
     await expect(quote).toHaveAttribute('title', /^Last observed .* ET\. BOATS\. /)

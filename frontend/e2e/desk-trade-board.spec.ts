@@ -99,7 +99,7 @@ test('chart current action preserves each order leg and quantity basis', async (
     {...source, symbol: 'COHR', client_order_id: 'chart-trim', side: 'sell', action: 'TRIM', state: 'waiting', qty: 4, quantity_basis: 'planned'},
   ]
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', nightly: learnedRecord(), orders})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await rowOf(page, 'COHR').getByRole('button', {name: 'COHR', exact: true}).click()
   await expect(page.getByLabel('COHR now')).toHaveText('Now: ORDERS · BUY 8 sh planned · due · TRIM 4 sh planned · waiting')
   await expect(page.getByLabel('COHR now')).not.toContainText('12 sh')
@@ -116,7 +116,7 @@ test('Action heading filters recorded actions and composes with search', async (
     {...source, symbol: 'NVDA', client_order_id: 'filter-exit', side: 'sell', action: 'SELL', state: 'filled'},
   ]
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', nightly: learnedRecord(), orders})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await page.getByRole('button', {name: 'Action', exact: true}).click()
   const filters = page.getByRole('group', {name: 'Show actions', exact: true})
   for (const action of ['BUY', 'SELL', 'HOLD', 'No order']) await filters.getByRole('checkbox', {name: `Show ${action} rows`, exact: true}).uncheck()
@@ -147,7 +147,7 @@ test('Action heading filters recorded actions and composes with search', async (
 test('Action filters stay usable on a phone with no matching orders', async ({page}) => {
   await page.setViewportSize({width: 390, height: 844})
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', orders: []})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await page.getByRole('button', {name: 'Action', exact: true}).click()
   const filters = page.getByRole('group', {name: 'Show actions', exact: true})
   await filters.getByRole('checkbox', {name: 'Show HOLD rows', exact: true}).uncheck()
@@ -166,7 +166,7 @@ test('saved 10 percent targets stay dated without promising a future reset trade
   const nightly = {...record(), targets: {policy: 'graded-equal-weight/5', weights: {SNDK: .1}}}
   const original = JSON.stringify(nightly)
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', nightly, orders: [], paperPlan: {policy: 'graded-equal-weight/5', until_rebalance: 11}})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await expect(page.getByLabel('Allocation record')).toContainText(`Saved allocation · ${SESSION}`)
   await expect(page.getByLabel('Allocation record')).toHaveAttribute('title', 'Saved policy: graded-equal-weight/5')
   await expect(rowOf(page, 'SNDK').getByLabel('SNDK position')).toContainText(`Saved target 10.0% · ${SESSION}`)
@@ -187,7 +187,7 @@ test('saved 10 percent targets stay dated without promising a future reset trade
 // Stock-specific level hovers and distances must use the same dated price shown in the row.
 test('level hovers distinguish stocks and use the displayed session price', async ({page}) => {
   const diagnostics = await scenario(page, {now: WEDNESDAY, plan: 'wednesday', sessionQuotes: {NVDA: 240, AAOI: 110}})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await expect(page.getByLabel('NVDA session price', {exact: true})).toContainText('$240.00')
   if (await page.getByRole('button', {name: 'details for NVDA', exact: true}).getAttribute('aria-expanded') !== 'true') await page.getByRole('button', {name: 'details for NVDA', exact: true}).click()
   await expect(page.getByLabel('NVDA reference levels')).toContainText('21-EMA 238.7 (+0.5%) ↓')
@@ -229,7 +229,7 @@ test('learned board ranking follows funded actions and recorded allocations', as
     policy: LEARNED, rule: 'live-probability-timing/1-research', until_rebalance: null,
     rule_text: {buy: 'Supported orders use the current probability timing observation.', sell: 'Supported orders use the current probability timing observation.'},
   }})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   // Read only stock rows, excluding expanded detail rows and the cash footer.
   const names = () => board.locator('tbody tr').filter({has: page.getByLabel(/displayed grade$/)}).locator('td:nth-child(2) button').allTextContents()
@@ -273,7 +273,7 @@ test('stale learned allocation evidence remains unavailable', async ({page}) => 
   const nightly = learnedRecord()
   nightly.paper.joint_funded.as_of = '2026-09-29'
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', nightly, orders: [], paperPlan: {policy: LEARNED, until_rebalance: null}})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await page.getByRole('button', {name: 'details for COHR', exact: true}).click()
   await expect(page.getByLabel('COHR allocation basis')).toContainText('Model allocation unavailable')
   await expect(page.getByRole('region', {name: 'COHR position'})).toContainText('16.0%')
@@ -285,7 +285,7 @@ test('stale learned allocation evidence remains unavailable', async ({page}) => 
 // Help must preserve an unknown timing rule rather than supplying a legacy trigger.
 test('missing paper plan does not inherit the old percentage rule', async ({page}) => {
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', nightly: learnedRecord(), noPaper: true})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await page.getByRole('button', {name: 'How to use this page', exact: true}).click()
   const help = page.getByText('Reading this page').locator('..')
   await expect(help).toContainText('Order timing unavailable; see each order.')
@@ -298,7 +298,7 @@ test('missing paper plan does not inherit the old percentage rule', async ({page
 test('recorded FOMC targets remain separate from model targets', async ({page}) => {
   const nightly = {...learnedRecord(), paper: {joint_funded: {policy: LEARNED, status: 'event_priority'}}}
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', nightly, orders: [], paperPlan: {policy: LEARNED, until_rebalance: null}})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await page.getByRole('button', {name: 'details for COHR', exact: true}).click()
   await expect(page.getByLabel('COHR allocation basis')).toContainText('FOMC allocation')
   await expect(page.getByLabel('COHR allocation basis')).not.toContainText('unavailable')
@@ -314,7 +314,7 @@ test('full stock panel preserves recorded model observation and historical polic
     learned_timing: {policy: 'live-probability-timing/1-research', state: 'wait', reason: 'Waiting has higher expected utility', observed_at: THURSDAY, current: false, fill_proven: false},
   }
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', nightly: learnedRecord(), orders: [order], paperPlan: {policy: LEARNED, rule: 'live-probability-timing/1-research', until_rebalance: null}})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await page.getByRole('button', {name: 'details for COHR', exact: true}).click()
   await expect(page.getByLabel('COHR recorded model decision')).toContainText('Waiting has higher expected utility')
   await page.getByRole('button', {name: 'COHR', exact: true}).click()
@@ -331,7 +331,7 @@ test('full stock panel preserves recorded model observation and historical polic
 test('learned target ranking preserves missing and retained evidence', async ({page}) => {
   const nightly = learnedRecord()
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', nightly, orders: [], paperPlan: {policy: LEARNED, until_rebalance: null}})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await page.getByRole('group', {name: 'Board view'}).getByRole('button', {name: /All names/}).click()
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   // Inspect target ordering separately from account position size and analyst grades.
@@ -353,7 +353,7 @@ test('learned target ranking preserves missing and retained evidence', async ({p
 test('the board shows the paper account’s orders mid-session', async ({page}, testInfo) => {
   await page.setViewportSize({width: 1440, height: 1000})
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday'})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   const board = page.getByRole('region', {name: 'Stocks and cash'})
   await expect(board).toContainText('the paper account’s orders')
   await expect(page.getByLabel('Paper account summary')).toContainText('$100,018 paper account')
@@ -396,7 +396,7 @@ test('the summary never promotes due or partially filled orders', async ({page})
   const due = fixture.thursday.orders.find((o: {state: string}) => o.state === 'due')
   const partial = {...fixture.thursday.orders.find((o: {state: string}) => o.state === 'sent'), state: 'partial', filled_qty: 2, status: 'Bought 2 of 6 so far'}
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', orders: [due, partial]})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await expect(page.getByLabel('Today')).toContainText('Paper orders: 1 due · 1 partially filled.')
   await expect(page.getByLabel('Today')).not.toContainText('1 sent')
   await expect(page.getByLabel('Today')).not.toContainText('1 filled')
@@ -410,7 +410,7 @@ test('the summary retains held and unknown order states', async ({page}) => {
   const states = ['queued', 'sent', 'filled', 'held', 'future-state']
   const orders = states.map((state, i) => ({...base, state, client_order_id: `summary-${i}`}))
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', orders})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await expect(page.getByLabel('Today')).toContainText('Paper orders: 1 queued · 1 sent · 1 filled · 1 held · 1 status unknown.')
   expect(diagnostics.writes).toEqual([])
   expect(diagnostics.errors).toEqual([])
@@ -420,7 +420,7 @@ test('the summary retains held and unknown order states', async ({page}) => {
 test('the evening board shows tomorrow’s orders as planned', async ({page}, testInfo) => {
   await page.setViewportSize({width: 1440, height: 1000})
   const diagnostics = await scenario(page, {now: WEDNESDAY, plan: 'wednesday'})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await expect(page.getByLabel('SMCI strategy intent')).toHaveText('BUY')
   await expect(page.getByLabel('SMCI order status')).toContainText('Planned')
   await expect(page.getByLabel('SMCI order status')).toContainText('Thu Oct 1 · 15-min close 1% under the open, else at the close')
@@ -436,7 +436,7 @@ test('the evening board shows tomorrow’s orders as planned', async ({page}, te
 test('views, search and your account size', async ({page}) => {
   await page.setViewportSize({width: 1440, height: 1000})
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday'})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   const view = page.getByRole('group', {name: 'Board view'})
   await expect(view.getByRole('button', {name: /Orders 8/})).toBeVisible()
   await expect(view.getByRole('button', {name: /Portfolio 13/})).toHaveAttribute('aria-pressed', 'true')
@@ -465,7 +465,7 @@ test('views, search and your account size', async ({page}) => {
 test('the row details and the ticker panel repeat the board’s words', async ({page}, testInfo) => {
   await page.setViewportSize({width: 1440, height: 1000})
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday'})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await page.getByRole('button', {name: 'details for HPE'}).click()
   const orders = page.getByRole('region', {name: 'HPE orders'})
   await expect(orders).toContainText('BUY 6 sh submitted')
@@ -503,7 +503,7 @@ test('the row details and the ticker panel repeat the board’s words', async ({
 test('the levels and a rejected first bar are shown, not acted on', async ({page}, testInfo) => {
   await page.setViewportSize({width: 1440, height: 1000})
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday'})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   if (await page.getByRole('button', {name: 'details for NVDA', exact: true}).getAttribute('aria-expanded') !== 'true') await page.getByRole('button', {name: 'details for NVDA', exact: true}).click()
   await expect(page.getByLabel('NVDA reference levels')).toContainText('21-EMA 238.7 (−4.4%) ↓')
   if (await page.getByRole('button', {name: 'details for NVDA', exact: true}).getAttribute('aria-expanded') !== 'true') await page.getByRole('button', {name: 'details for NVDA', exact: true}).click()
@@ -540,7 +540,7 @@ test('the levels and a rejected first bar are shown, not acted on', async ({page
 test('the board on a phone', async ({page}, testInfo) => {
   await page.setViewportSize({width: 390, height: 844})
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday'})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await expect(page.getByLabel('NVDA strategy intent')).toHaveText('SELL')
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)
   expect(overflow).toBeLessThanOrEqual(1)
@@ -553,7 +553,7 @@ for (const [state, word] of [['filled', 'BUY'], ['cancelled', 'BUY'], ['rejected
   test(`${state} buy stays historical in the board, details and ticker panel`, async ({page}) => {
     const order = {...fixture.thursday.orders.find((o: {symbol: string}) => o.symbol === 'AAOI'), state, terminal: true, qty: 5, planned_qty: 20, submitted_qty: 5, remaining_qty: 0, quantity_basis: state === 'filled' ? 'filled' : 'submitted', status: state === 'filled' ? 'Bought 5 @ $100.00' : `Not filled: order ${state}`, filled_qty: state === 'filled' ? 5 : 0, notional: 500, price: 100, weight: .005}
     const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', orders: [order]})
-    await page.goto('/#desk')
+    await page.goto('/?deskView=paper#desk')
     await page.getByLabel('Reference account size').fill('50000')
     await page.getByLabel('Reference account size').press('Enter')
     await expect(page.getByLabel('AAOI strategy intent')).toHaveText(word)
@@ -579,7 +579,7 @@ test('mixed orders stay separate and cannot be scaled together', async ({page}) 
   const source = fixture.thursday.orders.find((o: {symbol: string}) => o.symbol === 'AAOI')
   const orders = [source, {...source, client_order_id: 'second', side: 'sell', action: 'SELL', state: 'filled', qty: 2, filled_qty: 2, quantity_basis: 'filled', status: 'Sold 2 @ $100.00'}]
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', orders})
-  await page.goto('/#desk')
+  await page.goto('/?deskView=paper#desk')
   await page.getByLabel('Reference account size').fill('50000')
   await page.getByLabel('Reference account size').press('Enter')
   await expect(page.getByLabel('AAOI strategy intent')).toHaveText('ORDERS')
