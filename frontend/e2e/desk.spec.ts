@@ -2309,7 +2309,7 @@ test('the Desk icon appears for an allowlisted account and stays hidden for a gu
   await page.route('**/api/v1/market/vjmallya/desk/holdings', route => route.fulfill({json: {holdings: []}}))
   await page.route('**/api/v1/market/vjmallya/desk/live', route => route.fulfill({json: {quotes: {}, technical: {}, technical_detail: {}}}))
   await page.route('**/api/v1/market/vjmallya/desk/paper', route => route.fulfill({json: {equity: 100000, cash: 100000, positions: [], orders: [], plan: paperPlan([])}}))
-  await page.goto('/')
+  await page.goto('/?deskView=paper')
   await expect(page.getByRole('button', {name: 'Desk', exact: true})).toBeVisible()
   await page.getByRole('button', {name: 'Desk', exact: true}).click()
   await expect(page.getByRole('table', {name: 'Ranked stocks and cash'})).toBeVisible()

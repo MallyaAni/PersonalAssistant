@@ -1,5 +1,5 @@
 {
-  "status": "VERIFIED_PRIVATE_ACCEPTANCE_NOT_DEPLOYED",
+  "status": "VERIFIED_DEPLOYED_LATEST_STRATEGY_DASHBOARD",
   "parent_account": {
     "status": "VERIFIED_ALL_STOCK_PROJECTION",
     "version": "f9d442382d2e4f9d063ce5617020a331320691be7e49d07a1ccbe220b5efbc92",
@@ -71,7 +71,10 @@
     "native_projection_http_passed": 22,
     "typecheck": "passed",
     "build": "passed",
-    "through": "2026-10-09"
+    "through": "2026-10-09",
+    "legacy_paper_unique_passed": 169,
+    "legacy_paper_skipped": 0,
+    "unique_browser_cases": 266
   },
   "operational_acceptance": {
     "ordinary_nightly": false,
@@ -82,6 +85,96 @@
     "User explicitly requested latest-strategy counterfactual history instead of actual paper fills.",
     "Past trades use original monthly heads; new October continuation uses installed original October heads as if available earlier.",
     "Weekly totals use week-close share units, individual execution records remain unchanged.",
-    "Preserve all failed and completed roots; no parent account or controls rerun."
-  ]
+    "Preserve all failed and completed roots; no parent account or controls rerun.",
+    "Canonical scripts/deploy.sh used without skip flags; source00f220f9, all original108data files and28trading sources unchanged after live browser.",
+    "Private verification harness failures were wrong expected wording, host-bound gateway port and helper invocation; corrected using observed runtime configuration, preserved original errors."
+  ],
+  "deployment": {
+    "status": "VERIFIED_EXACT_DEPLOYED_SOURCE",
+    "checked_at": "2026-10-12T23:08:12.176157+00:00",
+    "revision": "00f220f9f97a5a955d9d0e4efa1e1186ad4e53da",
+    "backend_files_matched": 1631,
+    "containers": {
+      "anios_backend": {
+        "id": "e151328803c646779495ce0d785b1b836d6e9b4d49ec7a47d15cf9e8540cc0b3",
+        "image": "sha256:e15add96236d4880c2fbb53dd02f649aab601ec3811f3a3c9c520d00b43433cf",
+        "started_at": "2026-10-12T23:07:24.414372198Z"
+      },
+      "anios_gateway": {
+        "id": "21c1e2531d2a385258eb64391f0b99b9e350f6e34b40892b49e90acfc367c6ce",
+        "image": "sha256:eda86e88989b51f3483a1b4c54c4aba69600b6bb4b6265c4bcbc8704da6254e7",
+        "started_at": "2026-10-12T23:07:24.646572814Z"
+      }
+    },
+    "compiled_asset": "/assets/index-BvTcgoH9.js",
+    "compiled_sha256": "3827d975b0889e025e3013f0930d6efe9332126ddf6bef4cff8d1af1d1022bf2",
+    "unit": {
+      "passed": 10608,
+      "skipped": 93,
+      "xfail": 6,
+      "warnings": 439
+    },
+    "real_routing": {
+      "passed": 100,
+      "skipped": 0
+    },
+    "post": "2026-10-12T23:07:28Z 00f220f9 ok (cheap)",
+    "all_original_bytes_unchanged": true,
+    "reviewed_source_files_preserved": 28,
+    "models_unchanged": true,
+    "execution_sha256": "2da24eae1821972b5c2823fa2cf5d4bb579faca51ddd728479250ccc5b72d4c0"
+  },
+  "deployed_http": {
+    "status": "VERIFIED_DEPLOYED_ALL_STOCK_HTTP",
+    "stocks": 94,
+    "simulated_trades": 2695,
+    "summary_and_stock_content_exact": true,
+    "gateway_stock_reads": 94,
+    "backend_summary_matches_gateway": true,
+    "owner": 200,
+    "foreign": 403,
+    "anonymous": 401,
+    "original_state_friday_record_and_histories_unchanged": 96,
+    "manifest_sha256": "70ddfdc2b39115486823fc8c27a2cc6ea197f9cdae4e4e1e42a8cd8995f4fa7f",
+    "through": "2026-10-09",
+    "real_orders": false
+  },
+  "deployed_browser": {
+    "status": "VERIFIED_DEPLOYED_BROWSER_AND_PRESERVATION",
+    "checked_at": "2026-10-12T23:12:16.124897+00:00",
+    "revision": "00f220f9f97a5a955d9d0e4efa1e1186ad4e53da",
+    "original_files_unchanged": 108,
+    "reviewed_source_files_unchanged": 28,
+    "serving_identities_unchanged_since_deploy": true,
+    "manual_workflows": [
+      "authenticated compiled reload",
+      "94-stock board",
+      "ORCL D/W historical BUY71/TRIM11/SELL60",
+      "ORCL 60-session15m explicit no-trades coverage",
+      "AAOI D/15m individual trims84/65/81 and W230",
+      "Action filters BUY1/SELL0/TRIM1/HOLD4/Noorder88",
+      "search/empty/Escape/Showall recovery",
+      "separate actual Paper10positions/noorders/savedOctober9targets",
+      "paper reload persists view",
+      "latest-strategy help and return",
+      "latest-strategy reload persists view and94stocks"
+    ],
+    "console_errors": 0,
+    "console_warnings": 0,
+    "screenshots_sha256": {
+      "latest-strategy-live-orcl-20261012.png": "d5c0b1d5b2a966dc8f478243937e6accb851d88932c8805be9e5a09f0c7851d4",
+      "latest-strategy-live-aaoi-20261012.png": "a28100077da6d06721c9c3b9d2a8ba2aea497403bea1153b70feb6be829893e0"
+    },
+    "real_orders": false,
+    "simulation_through": "2026-10-09",
+    "limitations": [
+      "No independent numerical audit of every fundamental value.",
+      "Real ordinary nightly/intraday/following execution acceptance remains pending."
+    ],
+    "harness_failures_preserved": [
+      "independent-verification-v1-failed.log",
+      "http-acceptance-v1-failed-errors.log",
+      "http-acceptance-v2-failed-errors.log"
+    ]
+  }
 }

@@ -1,6 +1,72 @@
 # Next session
 
-## 2026-10-12 — latest-strategy dashboard backfill requested (IN PROGRESS)
+## 2026-10-12 — latest-strategy dashboard backfill (DEPLOYED / VERIFIED)
+
+The human superseded paper-fill-only charts: the default dashboard/history now
+shows latest-strategy counterfactual actions and sizes. Actual Paper account and
+Archived research remain separate. Dashboard release acceptance is COMPLETE;
+ordinary nightly/intraday/following execution acceptance remains pending. Keep
+THIS heartbeat ACTIVE. Never repeat this release, gates or passed UI acceptance
+for documentation. All sections below are chronological, superseded build notes.
+
+Canonical scripts/deploy.sh, no skip flags, completed23:07:29Z for
+00f220f9f97a5a955d9d0e4efa1e1186ad4e53da (feature174730de52e5b88308e103929d51759e3a970a9f).
+Production checkout/marker00f220f9. VERIFIED10608unit pass/93skip/6xfail/439warnings,
+100real routing pass/no skips, type/build and automatic cheap post checks.
+Backende151328803c6/imagee15add96236d4880c2fbb53dd02f649aab601ec3811f3a3c9c520d00b43433cf;
+gateway21c1e2531d2a/imageeda86e88989b51f3483a1b4c54c4aba69600b6bb4b6265c4bcbc8704da6254e7;
+compiled index-BvTcgoH9.js SHA3827d975b0889e025e3013f0930d6efe9332126ddf6bef4cff8d1af1d1022bf2.
+1631actual backend files match the exact Git tree. Root
+scratch/latest-strategy-dashboard-release-20261012 has execution, independent-
+verification, http-acceptance and browser-acceptance. All108original artifact/
+config/state/Friday-record/history hashes and28reviewed trading sources unchanged
+after live browser; model services unchanged. [Exact proof](research/latest-strategy-dashboard-proof-2026-10-12.json).
+
+VERIFIED97all-stock browser cases/no skips,6final spacing/filter/reload overlap
+cases,169unique legacy paper browser cases (266unique overall),22native real-router/
+projection/integrity tests. Real gateway summary/all94stock reads match all2695
+simulated trades/targets/holdings; owner200, foreign403, anonymous401, private
+no-store. Actual public compiled browser: ORCL D/W BUY71/TRIM11/SELL60 and explicit
+no covered trades in60-session15m; AAOI D/15m trims84/65/81 and W230; Action
+filters1BUY/0SELL/1TRIM/4HOLD/88Noorder, search/empty/Escape/Showall recovery,
+separate actual Paper10positions/noorders/savedOct9targets, paper and strategy
+reload persistence, new guide;0console errors/warnings. Screenshot identities in
+proof. Not an independent numerical audit of every financial/fundamental value.
+
+Read-only projection f9d442382d2e4f9d063ce5617020a331320691be7e49d07a1ccbe220b5efbc92,
+manifestSHA70ddfdc2b39115486823fc8c27a2cc6ea197f9cdae4e4e1e42a8cd8995f4fa7f,
+coverage2019-03-01–2026-10-09. One shared carriedV6 portfolio,10bp per filled side;
+historical monthly heads before October and installed October heads assumed
+available earlier only counterfactually. Original publicationOct4 preserved.
+Never claim historically published predictions, guaranteed fills, general
+superiority or thatOct9is current. Dated targets/holdings/last trades, tiny-positive
+targets, Go to last trade, precise share/price records; old grade/paper/personal
+action layers/statistics/prose and redundant diagnostics removed from new view.
+Full-history15m clipping fixed; weekly quantities on week-close split units,
+individual D/15m/list records unchanged. Original parent/controls NOT replayed;
+only7missingOct1–9sessions added in privatev5,9trades/no basefits/no realorders.
+Independent862inputs/28sources/16installed files/accounting checked. Preserve
+v1–v4failed roots and private verification harness failures; corrected using
+observed runtime ports/text/helper invocation, no production regression.
+
+NEXT: ordinary Monday2026-10-12nightly19:30ET, actual-session learned intraday,
+following paper execution/reconciliation and matching real model UI. Before that
+window stay quiet/end; never repeat completed admissions/deployments/previews.
+At/after window SSH animallya96@172.16.8.3, inspect compact current process/nightly/
+dated record/state/intents/forecasts/brokerGET evidence first; never duplicate or
+restart an active job. Verify exact source/config/publication identities, learned
+targets/funded tags, supported trims with strong grades, retained holdings/cash/
+share guards, personal isolation and timing/wait/fills. FridayOct9record/state
+legitimately remain graded-equal-weight5; NEVER retag/replay them. No fake actual
+clocks, desk.run, forced past actual-account days, new base fits, parameter tuning,
+paid data, real-money orders or model-service changes. Keep original artifacts/
+secrets/history and concurrent user/main changes. When ordinary data permits,
+advance only missing simulation dates in a verified separate continuation with
+seed/provenance conservation; publisher currently accepts parent plus one child,
+so chain extension is a follow-up, not already automated. Pause heartbeat only
+after all applicable real operational acceptance is recorded.
+
+## 2026-10-12 — private dashboard build notes (SUPERSEDED ABOVE)
 
 The user superseded the paper-fill-only chart objective: "forget the paper
 fills"; all dashboard history must assume the latest strategy was in place,
