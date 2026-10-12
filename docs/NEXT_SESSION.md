@@ -1,6 +1,6 @@
 # Next session
 
-## 2026-10-12 — dashboard consistency correction qualified; deployment next
+## 2026-10-12 — consistent dashboard deployed and accepted
 
 User required live rankings and explanations to follow the learned system.
 Corrected the frontend's separate grade priority: actual order readiness/funded
@@ -12,8 +12,18 @@ TypeScript/Vite build passed. Both new ranking cases fail on unchanged68617e2b.
 Only frontend/docs changed; all28reviewed trading files and installed original
 artifacts/configs must remain identical. Starting branch codex/learned-live-release-20261006,
 HEAD68617e2b44ca10407acba6299662908bcb6504bb, clean; main pulled/up to date.
-Canonical frontend deployment and actual compiled browser acceptance next;
-never rerun original complete gates/accounts/activation for this correction.
+VERIFIED canonical frontend deployment641344ebe10135fbc5d0ae74b2605d9294a8430f
+finished07:51:19Z, exit0; canonical frontend-only path/type build/cheap smoke,
+no skip flags. Gateway609d205281f2/imagea860c48f; backendcfe8b7b50228/imagee479
+unchanged. Independent exact Git/compiled bundle verification and all28reviewed
+trading files, original8artifacts/configs/paper state/Friday record and model
+identities unchanged. Root scratch/learned-dashboard-release-20261012.
+VERIFIED real compiled browser reload/auth persistence,10positions/no orders,
+explicit grade sort/reset to allocator ordering, SNDK old Friday policy/details,
+new ranking and trim help;0console errors/warnings after reload. Local screenshot
+/tmp/learned-dashboard-ranking-live-20261012.png.33diagram pairs synchronized;
+ancillary architecture.html fingerprint remains stale on unchanged inputs.
+Never rerun this completed frontend deploy or original gates/accounts/activation.
 [Findings](research/learned-dashboard-consistency-2026-10-12.md).
 Remaining ordinary nightly/timing/paper-execution boundaries below still apply.
 Diagram impact: NONE — existing allocation/order presentation.
