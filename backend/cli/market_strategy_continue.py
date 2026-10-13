@@ -6,6 +6,7 @@ available earlier only inside this explicitly synthetic, isolated account.
 
 import argparse
 import json
+from copy import deepcopy
 from dataclasses import asdict, replace
 from datetime import UTC, date, datetime, timedelta
 from hashlib import sha256
@@ -46,6 +47,52 @@ def read_json(path, digest=None):
     if digest is not None and sha256(raw).hexdigest() != digest:
         raise ValueError("Counterfactual input bytes differ")
     return json.loads(raw)
+
+
+# Carry only authenticated, never-submitted intents into the next private session.
+def seed_intents(seed, through):
+    last = date.fromisoformat(seed["last"])
+    if last >= through:
+        raise ValueError("Unreplayed subsequent sessions required")
+    pending = seed["paper_state"]["pending"]
+    carried = seed.get("carried_intents", [])
+    if pending != carried:
+        raise ValueError("Exact original unsent seed intents required")
+    following = intraday_orders.next_session(last)
+    if carried and following is None:
+        raise ValueError("Reviewed next-session seed date required")
+    result = {}
+    for row in carried:
+        execution = row.get("execution") or {}
+        decision = datetime.fromisoformat(execution["decision_at"])
+        identity = row["client_order_id"]
+        if (
+            not identity
+            or identity in result
+            or row.get("sent")
+            or row.get("event_id")
+            or row.get("status")
+            or row.get("execution_timing") != intraday_orders.INTRADAY_TIMING
+            or row.get("side") not in ("buy", "sell")
+            or type(row.get("qty")) is not int
+            or row["qty"] <= 0
+            or not row.get("symbol")
+            or row.get("session") != last.isoformat()
+            or row.get("execute_on") != following.isoformat()
+            or decision.utcoffset() is None
+            or decision.isoformat() != seed["nightly"]["at"]
+            or execution.get("reference_session") != last.isoformat()
+            or set(execution)
+            - {
+                "decision_at",
+                "reference_price",
+                "reference_session",
+                "reference_source",
+            }
+        ):
+            raise ValueError("Unacknowledged next-session seed intent required")
+        result[identity] = deepcopy(row)
+    return result
 
 
 # Read dated grades and mechanical share conversions without model prose.
@@ -250,10 +297,7 @@ def run(market, seed_path, seed_sha, output, through):
     if output.is_relative_to(market) or output.exists():
         raise ValueError("Exclusive output outside the read-only market root required")
     seed = read_json(seed_path, seed_sha)
-    if seed["last"] >= through.isoformat() or seed["paper_state"]["pending"]:
-        raise ValueError(
-            "Unreplayed subsequent sessions and an empty settled pending book required"
-        )
+    carried = seed_intents(seed, through)
     actual_now = datetime.now(UTC)
     holding_path = market / "desk/learned-holding/config.json"
     timing_path = market / "desk/learned-timing/config.json"
@@ -345,7 +389,7 @@ def run(market, seed_path, seed_sha, output, through):
     logs, sessions, intents, forecasts, observations = (
         [seed["nightly"]],
         [seed["session"]],
-        {},
+        carried,
         [],
         [],
     )

@@ -1,5 +1,25 @@
 # Next session
 
+## 2026-10-13 — Oct12 private continuation in progress
+
+VERIFIED46focused tests/no skips for authenticated unsent seed carry and existing
+projection semantics. Original CLI refusal reproduced with exactOct9seed before
+the change; only private market_strategy_continue changes, all28reviewed trading
+modules unchanged. No diagram impact: existing isolated replay/data flows retained.
+New root scratch/latest-strategy-continuation-20261013-v1 contains exact seed,
+94private grade overlays from the genuineOct12close, original-row/hash proof and
+focused tests. Seed6b350c7784f6767638f3b4f125df0f56031361f32322aa0890aeb091e6a1874a,
+parentv5SHA7779de6ec8e18240611bf666b24ded650a7b64ae37968b8c43d59eb860988ab7.
+LITEsell5/STXbuy2 preserved exactly with originalOct9decision clocks/ids.
+v1container failed at settings startup for missing synthetic SECRET_KEY before
+reading/running any session; log/container preserved. v2container
+latest-strategy-continuation-20261013-v2 ACTIVE with a synthetic private key,
+networknone/readonly/UID1000/CPU1/4g, source/input fromv1, outputv2/results/replay.
+Never duplicate/restart it. Inspect compact process/log/complete.json first.
+UNVERIFIED: Oct12cash/shares/fees/raw SIP reconciliation, chain aggregation,
+publication/all-stock/UI readback; retainOct9projection until verified.
+Production grade histories and failedMondayreal account must remain unchanged.
+
 ## 2026-10-12 — nightly correction DEPLOYED / VERIFIED; actual acceptance pending
 
 Canonical correction eb9f5c323112fc86ff548903187e498805459ad3 completed
