@@ -296,6 +296,7 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
   const positions = paper?.positions ?? []
   const targets = latest.targets?.weights ?? {}
   const learned = learnedAllocation(latest)
+  const gradeLed = latest.targets?.policy === 'grade-led-learned-sizing/1'
   const evidence = latest.paper?.joint_funded
   const eventAllocation = learned && evidence?.policy === latest.targets?.policy && evidence?.status === 'event_priority'
   const receipt = evidence?.policy === latest.targets?.policy && evidence?.as_of === latest.session ? evidence.receipt : undefined
@@ -316,7 +317,7 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
     const allocationNote = !learned ? `Recorded target · ${latest.session}`
       : allocation === 'event' ? 'FOMC allocation · recorded event policy takes priority over model targets'
       : allocation === 'retained' ? 'Retained holding · risk unavailable; target preserves existing capital'
-      : allocation === 'modeled' ? `Model allocation · ${latest.session}; cash and costs included`
+      : allocation === 'modeled' ? `${gradeLed ? 'Grade-led allocation' : 'Model allocation'} · ${latest.session}; cash and costs included`
       : 'Model allocation unavailable · recorded target is not a fresh recommendation'
     const grade = latest.grades[ticker]?.grade ?? ''
     const signalRow = latest.actions?.find(row => row.ticker === ticker)

@@ -523,6 +523,9 @@ class GradeLedFundedPolicy(RetainedMarketConditionedFundedPolicy):
         targets = {**dict.fromkeys(readings, 0.0), **targets}
         receipt["targets"] = targets
         receipt["sizing_model_targets"] = dict(targets)
+        # The model certificate describes its proposal, not the later grade constraint.
+        if "optimizer" in receipt:
+            receipt["sizing_optimizer"] = receipt.pop("optimizer")
         if receipt["status"] == "available":
             return grade_led_policy.preserve_grade_holdings(
                 targets, receipt, readings, prices, equity

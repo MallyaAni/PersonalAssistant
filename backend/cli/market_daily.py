@@ -1040,6 +1040,8 @@ def _holding_actions(
 
         if policy.version == grade_led_policy.POLICY:
             receipt = signal_receipt or {}
+            if not event_plan and name in (receipt.get("sizing_model_targets") or {}):
+                row["model_target_weight"] = receipt["sizing_model_targets"][name]
             known = (receipt.get("grade_signals") or {}).get(name, {})
             grade = row.get("grade")
             signal = (
@@ -1096,6 +1098,8 @@ def _holding_actions(
                 else (
                     blocker
                     if signal in ("buy", "sell")
+                    else "Grade remains A/A+; holding retained despite the model's zero size"
+                    if name in receipt.get("grade_preserved_holdings", [])
                     else "A/A+ holding; learned quantities may resize it"
                     if signal == "hold"
                     else "Grade below A; no entry"

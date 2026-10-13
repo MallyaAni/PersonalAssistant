@@ -90,6 +90,8 @@ def test_zero_model_size_preserves_signal_and_eligible_holding(monkeypatch, read
     assert receipt["sizing_model_targets"]["AAA"] == 0
     assert receipt["grade_signals"]["BBB"]["action"] == "buy"
     assert receipt["targets"].get("BBB", 0) == 0
+    assert "optimizer" not in receipt
+    assert receipt["sizing_optimizer"]["status"] == "optimized"
     assert not orders
     rows = actions.build(shown, receipt["targets"], {"AAA": actions.Holding(0.1)}, 0)
     actual = market_daily._holding_actions(
@@ -109,6 +111,10 @@ def test_zero_model_size_preserves_signal_and_eligible_holding(monkeypatch, read
     assert blocked["signal_reason"] == "Learned size is zero"
     assert blocked["order_quantity"] == 0
     assert blocked["is_fill"] is False
+    retained = next(row for row in actual if row["ticker"] == "AAA")
+    assert retained["model_target_weight"] == 0
+    assert retained["target_weight"] == 0.1
+    assert "retained despite the model's zero size" in retained["signal_reason"]
 
 
 # A tiny positive target leaves one whole share rather than becoming a full exit.
