@@ -580,7 +580,7 @@ which conversations it may read and how a proposal is recorded.
 
 Two capabilities that share a folder and share nothing else.
 
-**The desk** grades a fixed book of ninety-three AI-infrastructure and software
+**The desk** grades a fixed book of ninety-four AI-infrastructure and software
 names every session and sizes a portfolio from those grades. Five analysts each
 read one kind of evidence and give an opinion on every name — filings, the
 tape and where price sits against support and resistance, what the company said
@@ -593,13 +593,25 @@ whole thing after each close, writes a record of the session, and the Desk view
 reads that record. The desk belongs to one person: `MARKET_DESK_USER` names
 them and every other user is refused.
 
-The only model in the desk's decision path reads documents, not prices. It
-scores each earnings release for what the company said about its outlook, and
-those scores become the sentiment analyst. It also writes the plain-English
-brief for each held name. Six neural networks were trained on price history
-during development and every one measured zero out of sample, which is why the
-grades are rules whose every number was measured in a walk-forward harness
-rather than weights fitted to the past.
+The document model scores each earnings release and writes the held-name brief.
+The installed `grade-led-learned-sizing/1` policy keeps grades as the entry/exit
+boundary: A/A+ permits entry and retains holdings, below-A exits, and missing
+grades protect existing shares. Published numerical holding models provide risk
+scenarios and proposed sizes; the funded planner applies cash and whole-share
+guards. Published timing models choose execute or wait for pending quantities
+from completed intraday bars. These numerical models do not run new base fits
+during account inference. A price decline can change an eligible holding's size
+at the nightly decision; it is not an automatic intraday averaging-down trigger.
+
+The current Stocks overview contains live quotes and actual current paper sizes.
+The new historical sizing pipeline applies the exact installed model versions
+retrospectively to authenticated dated chart grades and historical price prefixes
+in a separate cash-only account. Its private full account is running; publication
+and actual browser delivery remain unverified. Historical sized decisions,
+simulated executions, preserved earlier model-only research and confirmed paper
+executions have separate identities. Current-model retrospective use does not
+establish historical model availability or investment quality. See the
+[historical sizing contract](research/live-model-historical-sizing-contract-2026-10-13.md).
 
 **The autopsy** is the older capability and reads the person's own uploaded
 statements, journals and notes to name the behaviours that repeat and what they

@@ -3412,6 +3412,50 @@ export const getDeskStrategyStock = async (userId: string, ticker: string): Prom
   return result;
 };
 
+export interface DeskLiveModelDecision {
+  id: string;
+  ticker: string;
+  date: string;
+  at: string;
+  action: 'BUY' | 'ADD' | 'SELL' | 'TRIM';
+  qty: number;
+  grade: string | null;
+  previous_grade: string | null;
+  grade_signal: string;
+  target_weight: number | null;
+  model_target_weight: number | null;
+  holding: number;
+  reason: string;
+  status: string;
+  executed_qty: number;
+  state: 'executed' | 'partial' | 'not_executed' | 'no_order';
+}
+
+export interface DeskLiveModelHistory {
+  schema: 'live-model-historical-sizing/1';
+  policy: 'grade-led-learned-sizing/1';
+  ticker: string;
+  start: string;
+  through: string;
+  starting_cash: number;
+  starting_holdings: Record<string, number>;
+  counterfactual: true;
+  real_orders: false;
+  provenance: {cost_bps: number; original_holding_publication: string; original_holding_fit_date: string; basis: string};
+  decisions: DeskLiveModelDecision[];
+  trades: Array<Omit<DeskStrategyTrade, 'action' | 'weight'> & {action: DeskLiveModelDecision['action']}>;
+  targets: {date: string; weight: number | null; model_weight?: number | null; holding?: number; grade?: string | null; status: string; reason?: string}[];
+}
+
+// Read current live-model historical quantities without substituting an older policy.
+export const getDeskLiveModelHistory = async (userId: string, ticker: string): Promise<DeskLiveModelHistory> => {
+  const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/live-model-history/${encodeURIComponent(ticker)}`);
+  if (!response.ok) throw new Error('Live-model historical sizing unavailable for this stock.');
+  const result = await response.json() as DeskLiveModelHistory;
+  if (result.schema !== 'live-model-historical-sizing/1' || result.policy !== 'grade-led-learned-sizing/1' || result.ticker !== ticker || result.counterfactual !== true || result.real_orders !== false || !Array.isArray(result.decisions) || !Array.isArray(result.trades)) throw new Error('Invalid live-model historical sizing.');
+  return result;
+};
+
 // The newest earnings release read for one name, straight from the release
 // reader's store: the tone it scored (guidance / demand / pricing / capex),
 // the numbers it extracted, and the session the market could first react.

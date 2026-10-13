@@ -2,6 +2,55 @@
 
 ## 2026-10-13 — Human requests live-model sizing throughout historical charts
 
+Candidate display/publication pipeline now VERIFIED17 focused backend checks
+in7.12s/0skip at scratch/live-history-api-tests-20261013-v4: exact amounts,
+adds/partial trims/zero signals, missing-stock plan states, config/source and
+payload guards, owner HTTP200/foreign403/anonymous401/no-store/no writes,
+original research surviving separately, all94 publication readbacks and failure
+before manifest selection. Private actual bounded publication at scratch/
+live-history-publication-tests-20261013-v1 VERIFIED94 payloads through2019-03-04,
+version8289b56e32617515f91c79d6f90ed62f27a12866897a8f41ff3095b98f0b0430;
+NO production publication, no replay/orders. Full-account completion remains
+pending and this bounded stage MUST NOT be copied into production.
+
+Compiled candidate frontend VERIFIED12 automated browser workflows/0skip at
+/tmp/live-history-browser-20261013-v4: default BUY13/ADD2/SELL13/BUY0 share
+arrows on D/W, A+ partialTRIM3, exact simulated fill13 versus actual paper3 and
+old research71, zero/missing/unavailable reasons, no invented15m decision clock,
+recent/full ranges, reload, phone overflow, realtime overview and separated
+paper/research. TypeScript/build passed;12 are controlled browser fixtures,
+NOT actual deployed new-data acceptance. Source serving remains42b11a76.
+Preserve local failed browserv1/v2 and passing targetedv3: harness first read
+prior-frame paint during transition, then expected an offscreen older fill in
+Recent view; corrected by awaiting actual15m data/Full history. Negative503
+is explicitly asserted; it is not ignored as a clean runtime. TypeScript caught
+unsupportedArray.at and it was replaced with explicit final-row indexing.
+New architecture prose and trading-desk diagram mark publication pending;
+33diagram syntax/fingerprint checks and published page passed. Unrelated host-
+platform SVG rerenders were retained separately and restored to original bytes.
+
+The full account remains ACTIVE, never restart: latest inspected Nov1,2019 at
+22:55:34Z,172sessions/191fills/274intents; nightlyplanned/marked_raw_close.
+Next: wait for this SAME full account, independently verify its complete
+cash/shares/actions/raw prices/timing/source chain, stage/read all94 payloads,
+then canonical release and actual compiled-browser new amounts. API/source/UI
+candidate is not a full verified release or fresh real operational acceptance.
+First ordinary19:30ET nightly remains pending; inspect genuinely new data only
+at/after that window and never duplicate an active job.
+
+ACTIVE FULL ACCOUNT: scratch/live-model-history-full-20261013-v1,
+output/account, containerlive-model-history-full-20261013-v1 /
+1e8f440a3b5b75dcabd299f5eaba58c7929fb6f96bc822fdb46b641ecf3e598d.
+Source27471b9c61b958f759e9f48b80acaf60cdf75f2e,2431files; actual runtime
+networknone/read-only/UID1000/CPU1/4g; ONLYoutput is writable, all source,
+artifacts, grades and original raw SIP/action inputs read-only. NEVER duplicate
+or restart. March13progress22:17:32Z:9sessions/25fills/27intents; progress is
+not full acceptance. Candidate private-engine checkpoint pushed27471b9c;
+no production release/data publication. Full completion requires independent
+verification and new primary chart/UI/API acceptance. New reader/API and their
+tests are uncommitted work in the owned worktree; preserve them. Heartbeat
+updated with this active human-approved history objective and exact job identity.
+
 NEW progress22:14:55Z: authentic installed-model comparison VERIFIED96 stock/ETF
 scenario/probability vectors, final feature/forecast/support/price rows, live
 funded targets and quantities;3 independently recomputed historical prefixes.

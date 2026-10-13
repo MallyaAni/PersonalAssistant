@@ -19,6 +19,7 @@ import {
   getDeskEarnings,
   getDeskHistory,
   getDeskStrategyStock,
+  getDeskLiveModelHistory,
   getDeskHoldings,
   getDeskIntraday,
   getDeskLive,
@@ -38,6 +39,7 @@ import {
   type DeskHistory,
   type DeskHistoryRow,
   type DeskStrategyStock,
+  type DeskLiveModelHistory,
   type DeskIntraday,
   type DeskLive,
   type DeskLiveRead,
@@ -1008,7 +1010,7 @@ const HowToUse = ({ onClose, compact = false, plan, strategy = false }: { onClos
     <p>The stock list shows current paper-account actions, sizes and order status.</p>
     <p>A/A+ gives entry permission; below A exits an existing holding. The signal stays visible if sizing or funding blocks an order.</p>
     <p>Order size and timing are separate. TRIM is a sizing reduction that keeps shares; SELL exits.</p>
-    <p>Open a ticker for historical grade signals and executions. The model-only simulation is available as a separate research layer.</p>
+    <p>Open a ticker for historical grade-led decisions with current live-model quantities and simulated executions. Confirmed paper executions and earlier model-only research are separate layers.</p>
     <p>Saved targets and grades retain their dates; prices and order status refresh live.</p>
     {onClose && <button type="button" className="mt-2 text-[#0071e3]" onClick={onClose}>Close guide</button>}
   </section>
@@ -3036,6 +3038,16 @@ const NameDetail = ({
 }) => {
   const [simulation, setSimulation] = useState<DeskStrategyStock | null>(null)
   const [simulationError, setSimulationError] = useState('')
+  const [sizedHistory, setSizedHistory] = useState<DeskLiveModelHistory | null>(null)
+  const [sizedHistoryError, setSizedHistoryError] = useState('')
+  // Fetch historical live-model quantities only after opening a ticker.
+  useEffect(() => {
+    let alive = true
+    setSizedHistory(null)
+    setSizedHistoryError('')
+    if (strategy) getDeskLiveModelHistory(userId, ticker).then(value => {if (alive) setSizedHistory(value)}).catch(reason => {if (alive) setSizedHistoryError(reason.message)})
+    return () => {alive = false}
+  }, [userId, ticker, strategy])
   // Keep a missing or stale simulation explicit instead of falling back to predecessor signals.
   useEffect(() => {
     let alive = true
@@ -3115,7 +3127,7 @@ const NameDetail = ({
             so it leads on a phone and holds the right two-fifths of a wide
             window, staying in place while the reasoning scrolls beside it. */}
         <div className="mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0">
-          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} strategy={strategy} simulation={simulation} simulationError={simulationError} />
+          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} strategy={strategy} simulation={simulation} simulationError={simulationError} sizedHistory={sizedHistory} sizedHistoryError={sizedHistoryError} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
         {order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}

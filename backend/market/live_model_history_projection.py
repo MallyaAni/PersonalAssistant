@@ -34,6 +34,20 @@ def validate_intent(intent, quantity, date):
         raise ValueError("Historical order quantity differs from durable intent")
 
 
+# Keep an excluded stock's missing plan explicit rather than carrying a prior amount.
+def complete_targets(stocks, date):
+    for stock in stocks.values():
+        if not stock["targets"] or stock["targets"][-1]["date"] != date:
+            stock["targets"].append(
+                {
+                    "date": date,
+                    "weight": None,
+                    "status": "not_covered_by_plan",
+                    "reason": "The live planner did not return a size for this stock.",
+                }
+            )
+
+
 # Preserve funded order quantities, zero signals and raw model targets separately.
 def nightly(value, stocks, decisions):
     night = value["nightly"]
@@ -104,6 +118,7 @@ def nightly(value, stocks, decisions):
             raise ValueError("Duplicate historical decision identity")
         decisions[identity] = decision
         stocks[name]["decisions"].append(decision)
+    complete_targets(stocks, night["session"])
 
 
 # Match simulated execution receipts to their original decisions and raw shares.

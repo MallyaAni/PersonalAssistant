@@ -88,6 +88,18 @@ def test_historical_decisions_keep_funded_shares_and_zero_reasons():
     assert all(not stock["trades"] for stock in stocks.values())
 
 
+# An excluded name stays explicitly unavailable instead of inheriting a past size.
+def test_historical_projection_preserves_missing_stock_plan():
+    value, stocks = example()
+    value["nightly"]["entry"]["actions"] = value["nightly"]["entry"]["actions"][:1]
+    nightly(value, stocks, {})
+    for name in ("BBB", "CCC", "DDD"):
+        assert stocks[name]["targets"][-1]["date"] == "2021-01-04"
+        assert stocks[name]["targets"][-1]["weight"] is None
+        assert stocks[name]["targets"][-1]["status"] == "not_covered_by_plan"
+        assert stocks[name]["decisions"] == []
+
+
 # Historical chart receipts reject quantity drift and preserve partial simulated fills.
 def test_historical_execution_matches_original_decision_size_and_clock():
     value, stocks = example()
