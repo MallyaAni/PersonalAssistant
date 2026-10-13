@@ -1,6 +1,45 @@
 # Next session
 
-## 2026-10-12 — first ordinary nightly FAILED; correction in progress
+## 2026-10-12 — nightly correction DEPLOYED / VERIFIED; actual acceptance pending
+
+Canonical correction eb9f5c323112fc86ff548903187e498805459ad3 completed
+2026-10-13T00:27:51Z. VERIFIED10616unit/93skip/6xfail/439warnings,
+100real routing/no skips, cheap post passed;1631actual backend files match.
+Backend71d91a1ecc93/image48536b527e1cc07e3a0edfa1b8702519c8b411975c89286882d9b302e876ff47;
+gateway/index unchanged. Exact runtime approval checked; only market_daily changed
+among28reviewed modules. Config6713db802790ded44d1fc7e59688a448ae5b9fffb147aaa597ad489ade6b0fb9,
+release098347f24a6037a55f7e7c550951fa6addf13c22162c38db2e390f8d58326926.
+Original configs/release archived under correction root/prior. Economics, models,
+timing and106original data files unchanged. Never repeat deployment/gates for docs.
+
+VERIFIED approval-only projection rebind:95payloads equal except provenance,
+version1ce7216937ac0964995a14d919da35ccb698da75b12d3134b8fa6acd74602f9b,
+manifest012e8f654c21da6eb4799c3b647bfe9d1f1ef90984dd41a9f268ae4203eb9bb0.
+Real gateway summary/all94stocks/2695trades exact; owner200/foreign403/anonymous401,
+no-store. Actual authenticated compiled browser reload/94rows/ORCL weekly
+BUY71/TRIM11/SELL60/dateOct9 verified,0console errors/warnings. All106original
+files unchanged after browser. [Exact corrected release proof](research/learned-nightly-correction-proof-2026-10-12.json).
+
+Monday actual nightly remains FAILED; no real-account replay or synthetic full
+record. NEXT missing-date simulation: ordinary20:30ET SIP append completed for
+94stocks+SPY+QQQ, no active append. Production grade histories remainOct9; genuine
+publishedOct12learned close can supply an authenticated private grade overlay only.
+Continue from verifiedOct9private seed, conserving its unsentLITEsell5/STXbuy2
+intents. Existing continuation CLI refuses pending seeds: add validated carry
+support and test it before any continuation. Preserve original parent and v5;
+publisher accepts parent+onechild, so chain extension must authenticate exact seed,
+prior rows and provenance. No new fits, real orders, desk.run or original replay.
+Fresh ordinary nightly/intraday/following execution/model UI acceptance remains
+UNVERIFIED. Keep THIS heartbeat ACTIVE. Prior sections below are historical.
+
+## 2026-10-12 — first ordinary nightly FAILED; correction preparation (superseded)
+
+Correction eb9f5c323112fc86ff548903187e498805459ad3 pushed. Canonical deployment
+ACTIVE, launcher2865959, root scratch/learned-nightly-correction-release-20261012,
+all gates enabled; NEVER duplicate/restart this job. Launcher will stage/validate
+and activate only source approval plus an identical95payload simulation rebind
+after the canonical release passes. Inspect execution.json, approval-activation.json
+and compact logs first; failed jobs must be preserved, never silently repeated.
 
 FAILED actual19:30ET cron on deployed00f220f9: processedMondayOct12state and
 published genuine learned close19:45:13ET, then record() crashed at int(None)

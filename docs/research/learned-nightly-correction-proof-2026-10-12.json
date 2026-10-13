@@ -1,0 +1,97 @@
+{
+  "independent-verification": {
+    "status": "VERIFIED_DEPLOYED_NIGHTLY_CORRECTION",
+    "checked_at": "2026-10-13T00:38:40.751293+00:00",
+    "revision": "eb9f5c323112fc86ff548903187e498805459ad3",
+    "backend_files_matched": 1631,
+    "serving": {
+      "anios_backend": {
+        "id": "71d91a1ecc93316b344bb0cf921e075e8b7b8dd865a2773072e1691c52f5d12e",
+        "image": "sha256:48536b527e1cc07e3a0edfa1b8702519c8b411975c89286882d9b302e876ff47",
+        "started_at": "2026-10-13T00:27:46.458164633Z"
+      },
+      "anios_gateway": {
+        "id": "21c1e2531d2a385258eb64391f0b99b9e350f6e34b40892b49e90acfc367c6ce",
+        "image": "sha256:eda86e88989b51f3483a1b4c54c4aba69600b6bb4b6265c4bcbc8704da6254e7",
+        "started_at": "2026-10-12T23:07:24.646572814Z"
+      }
+    },
+    "unit": {
+      "passed": 10616,
+      "skipped": 93,
+      "xfail": 6,
+      "warnings": 439
+    },
+    "routing": {
+      "passed": 100,
+      "skipped": 0
+    },
+    "post": "2026-10-13T00:27:50Z eb9f5c32 ok (cheap)",
+    "original_files_unchanged": 106,
+    "reviewed_source_delta": [
+      "backend/cli/market_daily.py"
+    ],
+    "exact_runtime_source_approval": true,
+    "models_unchanged": true,
+    "projection_payloads_equal_except_provenance": 95,
+    "approval_sha256": "4bd7c87d08845d03178d39e44acc777b92723bfab0502e1b4977834c63796428",
+    "ordinary_nightly_acceptance": false,
+    "paper_session_replayed": false
+  },
+  "approval-activation": {
+    "status": "VERIFIED_SOURCE_APPROVAL_ONLY_CORRECTION",
+    "revision": "eb9f5c323112fc86ff548903187e498805459ad3",
+    "approved_at": "2026-10-13T00:27:53.498450+00:00",
+    "changed_reviewed_modules": [
+      "backend/cli/market_daily.py"
+    ],
+    "release_sha256": "098347f24a6037a55f7e7c550951fa6addf13c22162c38db2e390f8d58326926",
+    "config_sha256": "6713db802790ded44d1fc7e59688a448ae5b9fffb147aaa597ad489ade6b0fb9",
+    "manifest_sha256": "012e8f654c21da6eb4799c3b647bfe9d1f1ef90984dd41a9f268ae4203eb9bb0",
+    "projection_version": "1ce7216937ac0964995a14d919da35ccb698da75b12d3134b8fa6acd74602f9b",
+    "original_95_projection_payloads_equal_except_provenance": true,
+    "original_economics_and_artifacts_unchanged": true,
+    "original_data_files_unchanged": 106,
+    "paper_session_replayed": false,
+    "real_orders": false,
+    "model_fits": 0,
+    "through": "2026-10-09",
+    "ordinary_acceptance_complete": false
+  },
+  "http-acceptance": {
+    "status": "VERIFIED_DEPLOYED_ALL_STOCK_HTTP",
+    "stocks": 94,
+    "simulated_trades": 2695,
+    "summary_and_stock_content_exact": true,
+    "gateway_stock_reads": 94,
+    "backend_summary_matches_gateway": true,
+    "owner": 200,
+    "foreign": 403,
+    "anonymous": 401,
+    "original_state_friday_record_and_histories_unchanged": 96,
+    "manifest_sha256": "012e8f654c21da6eb4799c3b647bfe9d1f1ef90984dd41a9f268ae4203eb9bb0",
+    "through": "2026-10-09",
+    "real_orders": false
+  },
+  "browser": {
+    "status": "VERIFIED_ACTUAL_AUTHENTICATED_BROWSER_CONTINUITY",
+    "url": "https://deep-matter.com/?deskView=strategy#desk",
+    "summary_stocks": 94,
+    "ORCL_weekly": [
+      "BUY 71",
+      "TRIM 11",
+      "SELL 60"
+    ],
+    "through": "2026-10-09",
+    "reload_persistence": true,
+    "console_errors": 0,
+    "console_warnings": 0,
+    "screenshot": "scratch/learned-nightly-correction-release-20261012/browser-orcl.png",
+    "original_files_unchanged_after_browser": 106
+  },
+  "remaining": [
+    "Monday ordinary nightly failed and was not replayed",
+    "Next fresh ordinary nightly and intraday/paper execution acceptance",
+    "Missing-date counterfactual continuation from conserved October 9 seed"
+  ]
+}
