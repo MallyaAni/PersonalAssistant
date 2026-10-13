@@ -286,12 +286,11 @@ export const holdReason = (weight: number | null, target: number | null): string
   return `${gap > 0 ? 'Above' : 'Below'} its saved ${percent(target)} target · no recorded order`
 }
 
-// Build every row the board can show from the record, the paper account and
-// its orders. A name is on the board when the desk grades it, the account
-// holds it, or an order names it.
-export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | undefined): BoardRow[] => {
+// Build recorded account rows, excluding settled orders when the caller needs current actions only.
+// Names come from grades, saved targets, current holdings and the retained orders.
+export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | undefined, currentOnly = false): BoardRow[] => {
   const equity = paper?.equity && paper.equity > 0 ? paper.equity : null
-  const orders = paper?.plan?.orders ?? []
+  const orders = (paper?.plan?.orders ?? []).filter(order => !currentOnly || !isDone(order))
   const positions = paper?.positions ?? []
   const targets = latest.targets?.weights ?? {}
   const learned = learnedAllocation(latest)
@@ -510,9 +509,8 @@ const RowDetails = ({row, latest, myAccount, onOpen, extra, structure, displayed
   </div>
 }
 
-// The board. `extra` adds per-name content under a row's details (the fill
-// recorder when the viewer can write), and `footer` sits under the list.
-export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = false, extra, footer}: {
+// Show current actions on the main stock list, retaining completed orders only in the account view.
+export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = false, currentOnly = false, extra, footer}: {
   latest: DeskRecord
   live: DeskLive
   paper: DeskPaperLive | null | undefined
@@ -520,11 +518,11 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
   onOpen: (ticker: string) => void
   closes?: Record<string, number | null>
   paused?: boolean
+  currentOnly?: boolean
   extra?: (ticker: string) => ReactNode
   footer?: ReactNode
 }) => {
-  // Until the viewer picks one, the board opens on the portfolio, or on every
-  // graded name when the paper account holds and trades nothing (or cannot be read).
+  // Open the current overview on all stocks; the account view starts with its portfolio.
   const [chosen, setView] = useState<View | null>(null)
   const [query, setQuery] = useState('')
   const [shownActions, setShownActions] = useState<ActionSelection>(ALL_ACTIONS)
@@ -535,14 +533,14 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
   const [myAccount, setMyAccount] = useState<number | null>(readMyAccount)
   const [draft, setDraft] = useState(() => (readMyAccount() ?? '').toString())
   useEffect(() => { setVisible(25) }, [chosen, query, shownActions])
-  const rows = useMemo(() => ranked(boardRows(latest, paper)), [latest, paper])
-  const orders = paper?.plan?.orders ?? []
+  const rows = useMemo(() => ranked(boardRows(latest, paper, currentOnly)), [latest, paper, currentOnly])
+  const orders = (paper?.plan?.orders ?? []).filter(order => !currentOnly || !isDone(order))
   const counts = {
     orders: rows.filter(r => r.orders.length > 0).length,
     portfolio: rows.filter(r => r.orders.length > 0 || r.held > 0).length,
     all: rows.length,
   }
-  const view: View = chosen ?? (counts.portfolio > 0 ? 'portfolio' : 'all')
+  const view: View = chosen ?? (currentOnly ? 'all' : counts.portfolio > 0 ? 'portfolio' : 'all')
   const search = query.trim().toUpperCase()
   const inView = rows.filter(r => search ? r.ticker.includes(search)
     : view === 'orders' ? r.orders.length > 0
@@ -566,7 +564,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
   return <section aria-label="Stocks and cash" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-black/[0.08] bg-white [container-type:inline-size]">
     <div className="shrink-0 space-y-2 border-b border-black/[0.06] px-3 py-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-sm font-semibold text-[#1d1d1f]">Stock rankings <span className="font-normal text-[#6e6e73]">· the paper account’s orders</span></h3>
+        <h3 className="text-sm font-semibold text-[#1d1d1f]">Stock rankings <span className="font-normal text-[#6e6e73]">{currentOnly ? '· current actions' : '· the paper account’s orders'}</span></h3>
         <label className="flex items-center gap-1 text-xs text-[#6e6e73]" title="Scales unsent plans only. Does not check your holdings or available cash. Kept in this browser only.">
           Reference account $
           <input aria-label="Reference account size" inputMode="decimal" value={draft} placeholder="optional"
@@ -576,7 +574,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
             className="w-24 rounded-md border border-black/[0.08] bg-white px-2 py-0.5 text-right text-[#1d1d1f]" />
         </label>
       </div>
-      <p aria-label="Allocation record" title={`Saved policy: ${latest.targets?.policy ?? 'not recorded'}`} className="text-[11px] text-[#6e6e73]">Saved allocation · {latest.session}. These are the saved plan's targets, not new orders. Live holdings can differ.</p>
+      <p aria-label="Allocation record" title={`Saved policy: ${latest.targets?.policy ?? 'not recorded'}`} className="text-[11px] text-[#6e6e73]">{currentOnly ? `Targets saved ${latest.session} · prices and order status refresh live.` : `Saved allocation · ${latest.session}. These are the saved plan's targets, not new orders. Live holdings can differ.`}</p>
       <AccountStrip paper={paper} orders={orders} />
       {paused && <p role="status" aria-label="Trading restriction" className="text-xs text-[#b25e00]">FOMC cycle: the paper account follows the FOMC risk rule; its orders say when.</p>}
       <details aria-label="Order rules" className="text-xs text-[#6e6e73]">
@@ -595,7 +593,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
             </button>)}
         </div>
         <button type="button" aria-pressed={sort === null} onClick={() => setSort(null)}
-          title={`Restores automatic ranking after column sorting. ${rankingText} Filled orders are history.`}
+          title={`Restores automatic ranking after column sorting. ${rankingText}${currentOnly ? '' : ' Filled orders are history.'}`}
           className={`rounded-md px-2 py-0.5 text-xs ${sort === null ? 'bg-[#e8f2ff] text-[#0071e3]' : 'text-[#6e6e73] hover:text-[#0071e3]'}`}>Reset ranking</button>
         {FILTER_ACTIONS.some(action => !shownActions[action]) && <button type="button" className="px-2 py-0.5 text-xs text-[#0071e3]" onClick={() => setShownActions(ALL_ACTIONS)}>Show all actions</button>}
         <input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search a ticker" aria-label="Search the stock list"
@@ -611,8 +609,8 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
             <Head label="Grade" column="grade" sort={sort} onSort={onSort} title="The recorded analyst grade; allocation and orders come from the selected policy. Click to sort by grade." />
             <Head label="Position" column="position" sort={sort} onSort={onSort} title="Live paper holdings and share of the account. Saved targets belong to the dated allocation record; they are not new orders." />
             <Head label="Levels" sort={sort} onSort={onSort} title="Outstanding paper order triggers, tested on completed 15-minute closes. Technical references are in stock details. Not guaranteed fill prices." />
-            <ActionHead open={actionMenu} onOpen={setActionMenu} shown={shownActions} onShown={setShownActions} rows={inView} />
-            <Head label="Size" column="size" sort={sort} onSort={onSort} title="Planned or submitted sizes use a price estimate; filled sizes use execution prices. Percentages use current paper equity." />
+            <ActionHead open={actionMenu} onOpen={setActionMenu} shown={shownActions} onShown={setShownActions} rows={inView} title={currentOnly ? 'Current recorded paper-account actions. HOLD means no current order; No order means the account does not hold or trade the stock.' : undefined} />
+            <Head label="Size" column="size" sort={sort} onSort={onSort} title={currentOnly ? 'Current planned or submitted shares. Dollars use the recorded price estimate; percentages use current paper equity.' : 'Planned or submitted sizes use a price estimate; filled sizes use execution prices. Percentages use current paper equity.'} />
             <Head label="When / status" sort={sort} onSort={onSort} title="The order's rule for its session and what has happened to it." />
           </tr>
         </thead>

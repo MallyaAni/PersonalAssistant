@@ -32,11 +32,14 @@ const controlChart = (ticker: string, frame: string) => {
 }
 
 // Freeze the browser's data transport while rendering the real compiled dashboard.
-async function install(page: Page, stock: Stock, failure = false) {
+async function install(page: Page, stock: Stock, failure = false, current = {done: false}) {
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   page.on('console', message => {if (message.type() === 'error') errors.push(message.text())})
-  page.on('requestfailed', request => errors.push(request.url()))
+  page.on('requestfailed', request => {
+    // Reload may abort the unrelated chat read; every failed desk request remains a failure.
+    if (!(request.url().includes('/conversations/') && request.failure()?.errorText === 'net::ERR_ABORTED')) errors.push(request.url())
+  })
   await page.addInitScript(() => {
     localStorage.setItem('anios.theme', 'light')
     ;(window as any).__strategyPaint = []
@@ -60,8 +63,12 @@ async function install(page: Page, stock: Stock, failure = false) {
     else if (path.endsWith('/desk')) json = {latest: {session: '2026-10-09', written: '2026-10-09T20:30:00Z', grades: Object.fromEntries(stocks.map(row => [row.ticker, {grade: 'A', votes: 3, score: .8, stances: {}, ranks: {}}])), book: [], actions: [], briefs: {}, regime: {exposure: 1, flags: []}}, sessions: ['2026-10-09']}
     else if (path.endsWith('/live')) json = {as_of: '2026-10-12T17:00:00Z', quotes: {}, technical: {}, technical_detail: {}}
     else if (path.endsWith('/holdings')) json = {holdings: []}
-    else if (path.endsWith('/paper')) json = {reason: 'separate account'}
-    else if (path.endsWith('/strategy-simulation')) json = summary
+    else if (path.endsWith('/paper')) json = {equity: 100000, cash: 99000, positions: [{symbol: stocks[0].ticker, qty: 4, market_value: 400, avg_entry_price: 100, current_price: 100, unrealized_pl: 0, unrealized_plpc: 0}], plan: {orders: [
+      {symbol: stocks[0].ticker, client_order_id: 'current-buy', action: 'BUY', side: 'buy', state: current.done ? 'filled' : 'waiting', terminal: current.done, status: current.done ? 'Bought 3 today' : 'Waiting for the model timing', qty: 3, quantity_basis: current.done ? 'filled' : 'planned', notional: 300, weight: .003, price: 100, why: 'Recorded current plan', when: 'Next completed bar'},
+      {symbol: stocks.at(-1)!.ticker, client_order_id: 'old-sell', action: 'SELL', side: 'sell', state: 'filled', terminal: true, status: 'Sold 5 yesterday', qty: 5, filled_qty: 5, quantity_basis: 'filled', notional: 500, weight: .005, price: 100, why: 'Completed old order', when: 'Yesterday'},
+    ]}}
+    else if (path.endsWith('/paper/history')) json = {rows: []}
+    else if (path.endsWith('/strategy-simulation')) {errors.push('Overview requested historical simulation'); json = summary}
     else if (path.includes('/strategy-simulation/')) {
       if (failure) return route.fulfill({status: 503, json: {detail: 'Unavailable'}})
       json = stock
@@ -81,7 +88,8 @@ async function install(page: Page, stock: Stock, failure = false) {
     return route.fulfill({json})
   })
   await page.goto('/#desk')
-  await page.getByRole('table', {name: 'Latest-strategy stocks'}).getByRole('button', {name: stock.ticker, exact: true}).click()
+  await page.getByRole('searchbox', {name: 'Search the stock list'}).fill(stock.ticker)
+  await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: stock.ticker, exact: true}).click()
   return errors
 }
 
@@ -160,51 +168,77 @@ test('unavailable strategy history stays explicit without predecessor trades', a
   expect(await page.evaluate(() => (window as any).__strategyPaint)).toEqual([])
 })
 
-// Search and Action filters retain dated planned sizes, including empty-state phone recovery.
-test('strategy filters sorting and empty-state recovery preserve the full cohort', async ({page}) => {
+// Refresh removes a settled action from the live list while its historical chart remains separate.
+test('current overview refresh removes completed actions without inventing sizes', async ({page}) => {
+  const current = {done: false}
+  const errors = await install(page, stocks[0], false, current)
+  await page.getByRole('button', {name: 'Close', exact: true}).click()
+  const table = page.getByRole('table', {name: 'Ranked stocks and cash'})
+  const row = table.getByRole('row').filter({has: page.getByRole('button', {name: stocks[0].ticker, exact: true})})
+  await expect(row).toContainText('3 sh planned')
+  current.done = true
+  await page.getByRole('button', {name: 'Refresh', exact: true}).click()
+  await expect(row).toContainText('HOLD')
+  await expect(row.getByLabel(`${stocks[0].ticker} size`)).toHaveText('—')
+  await expect(table).not.toContainText('Bought 3 today')
+  expect(errors).toEqual([])
+})
+
+// The main board filters current plans and never borrows historical simulated holdings or sizes.
+test('current overview filters sorting and phone recovery preserve current sizes', async ({page}) => {
   const errors = await install(page, stocks[0])
   await page.getByRole('button', {name: 'Close', exact: true}).click()
-  const section = page.getByRole('region', {name: 'Latest-strategy simulation'})
+  const section = page.getByRole('region', {name: 'Stocks and cash'})
   const table = section.getByRole('table')
-  await expect(table.locator('tbody tr')).toHaveCount(stocks.length)
+  await section.getByRole('searchbox').fill('')
+  await expect(table.locator('tbody tr')).toHaveCount(Math.min(stocks.length, 25))
   await table.getByRole('button', {name: 'Stock', exact: true}).click()
   await expect(table.locator('tbody tr').first()).toContainText([...stocks].sort((a, b) => a.ticker.localeCompare(b.ticker))[0].ticker)
   await table.getByRole('button', {name: 'Action', exact: true}).click()
   for (const action of ['SELL', 'TRIM', 'HOLD', 'No order']) await section.getByRole('checkbox', {name: `Show ${action} rows`, exact: true}).uncheck()
-  const buys = new Set(summary.latest_decisions.filter((row: any) => row.action === 'BUY').map((row: any) => row.ticker))
-  await expect(table.locator('tbody tr')).toHaveCount(buys.size)
-  for (const decision of summary.latest_decisions.filter((row: any) => row.action === 'BUY')) await expect(table.locator('tbody tr').filter({hasText: decision.ticker})).toContainText(`${decision.qty} sh planned`)
+  await expect(table.locator('tbody tr')).toHaveCount(1)
+  await expect(table.locator('tbody tr')).toContainText('3 sh planned')
+  await expect(table.locator('tbody tr')).toContainText('4 sh')
   await page.getByRole('button', {name: 'Hide Sidebar', exact: true}).click()
   await page.setViewportSize({width: 390, height: 844})
   await table.getByRole('button', {name: 'Action', exact: true}).click()
   await section.getByRole('checkbox', {name: 'Show BUY rows', exact: true}).uncheck()
   await expect(table.locator('tbody tr')).toHaveCount(0)
   await section.getByRole('group', {name: 'Show actions'}).getByRole('button', {name: 'Show all', exact: true}).click()
-  await expect(table.locator('tbody tr')).toHaveCount(stocks.length)
+  await expect(table.locator('tbody tr')).toHaveCount(Math.min(stocks.length, 25))
   await page.keyboard.press('Escape')
   await expect(table.getByRole('button', {name: 'Action', exact: true})).toBeFocused()
   await section.getByRole('searchbox').fill('NONEXISTENT')
   await expect(table.locator('tbody tr')).toHaveCount(0)
-  await section.getByRole('button', {name: 'Show all', exact: true}).click()
-  await expect(table.locator('tbody tr')).toHaveCount(stocks.length)
+  await section.getByRole('searchbox').fill('')
+  await expect(table.locator('tbody tr')).toHaveCount(Math.min(stocks.length, 25))
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
   expect(errors).toEqual([])
 })
 
-// Reloads preserve the selected account basis and the guide never teaches the old grade rules.
-test('latest strategy and separate paper view survive reload without mixed history', async ({page}) => {
+// Current actions stay on the overview and completed orders stay in the separate account view.
+test('current stocks and separate paper view survive reload without mixed history', async ({page}) => {
   const errors = await install(page, stocks[0])
   await page.getByRole('button', {name: 'Close', exact: true}).click()
+  await page.getByRole('searchbox', {name: 'Search the stock list'}).fill('')
+  const overview = page.getByRole('region', {name: 'Stocks and cash'})
+  await expect(overview).not.toContainText('Sold 5 yesterday')
+  await expect(overview).not.toContainText('Last simulated trade')
+  await expect(overview).not.toContainText('Simulated value')
+  await expect(overview).not.toContainText('None in replay')
+  await expect(overview.getByRole('button', {name: `All names ${stocks.length}`, exact: true})).toHaveAttribute('aria-pressed', 'true')
   await page.getByRole('button', {name: 'How to use this page'}).click()
   await expect(page.getByRole('region', {name: 'Strategy guide'})).toContainText('BUY adds shares; TRIM reduces a position; SELL exits')
   await expect(page.getByRole('region', {name: 'Strategy guide'})).not.toContainText('A+ buys')
   await page.getByRole('button', {name: 'Paper account', exact: true}).click()
+  await expect(page.getByRole('region', {name: 'Stocks and cash'})).toContainText('Sold 5 yesterday')
   await expect(page).toHaveURL(/deskView=paper/)
   await page.reload()
   await expect(page.getByRole('button', {name: 'Paper account', exact: true})).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByRole('region', {name: 'Latest-strategy simulation'})).toHaveCount(0)
-  await page.getByRole('button', {name: 'Latest strategy', exact: true}).click()
+  await page.getByRole('button', {name: 'Stocks', exact: true}).click()
   await page.reload()
-  await expect(page.getByRole('table', {name: 'Latest-strategy stocks'}).locator('tbody tr')).toHaveCount(stocks.length)
+  await expect(page.getByRole('table', {name: 'Ranked stocks and cash'}).locator('tbody tr')).toHaveCount(Math.min(stocks.length, 25))
+  await expect(page.getByRole('region', {name: 'Stocks and cash'})).not.toContainText('Sold 5 yesterday')
   expect(errors).toEqual([])
 })

@@ -9,7 +9,6 @@ import { RecommendationTimeline } from './RecommendationTimeline'
 import { PersonalDecisionHistory, type PersonalHistoryContext } from './PersonalDecisionHistory'
 import { PaperAccountHistory } from './PaperAccountHistory'
 import { TickerChart } from './TickerChart'
-import { StrategySimulationBoard } from './StrategySimulationBoard'
 import { TradeBoard, RecordedModelDecision, boardRows, dollars, percent, orderWord, quantityLabel, executionRuleText, learnedAllocation, rankingText, savedTargetText, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
 import { StrategyBench } from './StrategyBench'
 import { NeuralStudy } from './NeuralStudy'
@@ -1006,10 +1005,10 @@ const TrackRecord = ({ curve, latest }: { curve: DeskCurve | undefined; latest: 
 // both as the help popover and the empty-state guide.
 const HowToUse = ({ onClose, compact = false, plan, strategy = false }: { onClose?: () => void; compact?: boolean; plan?: DeskPaperPlan; strategy?: boolean }) => strategy ? (
   <section aria-label="Strategy guide" className="my-2 max-w-2xl rounded-xl border p-3 text-xs">
-    <p>Latest strategy shows a hypothetical portfolio, not your paper account.</p>
-    <p>BUY adds shares; TRIM reduces a position; SELL exits. Sizes and targets come from one portfolio replay.</p>
-    <p>Open any stock for D, W or 15m. Chart labels total simulated shares per candle; individual actions are listed below.</p>
-    <p>The coverage date is explicit. Current prices and analyst grades are separate from the simulation.</p>
+    <p>The stock list shows current paper-account actions, sizes and order status.</p>
+    <p>BUY adds shares; TRIM reduces a position; SELL exits. HOLD means no current order.</p>
+    <p>Open a ticker for D, W or 15m history under the latest strategy. Historical actions and sizes are simulated.</p>
+    <p>Saved targets and grades retain their dates; prices and order status refresh live.</p>
     {onClose && <button type="button" className="mt-2 text-[#0071e3]" onClick={onClose}>Close guide</button>}
   </section>
 ) : (
@@ -1088,11 +1087,8 @@ const GettingStarted = ({ hasRecord, hasPositions, onEnterPositions }: { hasReco
   )
 }
 
-// The desk's day for a person trading their own account: one board of
-// what to do at the next open, computed against the positions they
-// entered, with the live candle beside each name; the warnings; and the
-// record's detail folded away. Everything shown is read from the record
-// the desk wrote and the positions the person saved.
+// Show current stock actions on the main desk and load latest-strategy history only in ticker details.
+// Paper-account history, personal guidance and archived research retain their separate views.
 const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [payload, setPayload] = useState<DeskPayload | null>(null)
   const [error, setError] = useState('')
@@ -1538,13 +1534,13 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
   return (
     <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 [&>section]:shrink-0 [&>details]:shrink-0">
-      {!strategyView && todayLine}
-      {!strategyView && <RecordStatus status={payload.record_status} prose={latest ? {state: latest.prose_state, status: latest.prose_status} : undefined} session={latest?.session} />}
+      {!research && todayLine}
+      {!research && <RecordStatus status={payload.record_status} prose={latest ? {state: latest.prose_state, status: latest.prose_status} : undefined} session={latest?.session} />}
       <header className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-semibold text-[#1d1d1f]">Desk</h2>
-            <button type="button" aria-pressed={strategyView && !research} className="text-xs text-[#0071e3]" onClick={() => chooseView('strategy')}>Latest strategy</button>
+            <button type="button" aria-pressed={strategyView && !research} className="text-xs text-[#0071e3]" onClick={() => chooseView('strategy')}>Stocks</button>
             <button type="button" aria-pressed={!strategyView && !research} className="text-xs text-[#0071e3]" onClick={() => chooseView('paper')}>Paper account</button>
             {latest && <button type="button" onClick={() => chooseView(research ? returningView.current : 'research')} className="text-xs text-[#0071e3]">{research ? 'Back to the desk' : 'Archived research'}</button>}
             <button
@@ -1566,7 +1562,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           </div>
           {help && <HowToUse onClose={() => setHelp(false)} plan={paperLive?.plan} strategy={strategyView} />}
           <p className="text-sm text-[#6e6e73]">
-            {strategyView ? 'Historical actions and sizes under the latest strategy' : latest ? `Decision session ${latest.session} · published ${marketTime(latest.written)}` : 'No decision on file yet'}
+            {strategyView ? 'Current actions and sizes · open a ticker for history' : latest ? `Decision session ${latest.session} · published ${marketTime(latest.written)}` : 'No decision on file yet'}
           </p>
         </div>
         <button
@@ -1587,7 +1583,9 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
       {!strategyView && latest && <RegimeBanner regime={latest.regime} session={latest.session} />}
 
-      {strategyView && !research && latest && <StrategySimulationBoard userId={userId} names={Object.keys(latest.grades)} live={live} onOpen={setOpenName} />}
+      {strategyView && !research && latest && <div className="flex flex-col sm:max-h-[75vh]">
+        <TradeBoard key="current-stocks" latest={latest} live={live} paper={paperLive} now={now} onOpen={setOpenName} closes={closes} paused={eventPaused} currentOnly />
+      </div>}
       {!strategyView && !research && <>
       {/* On phones, diagnostics use page scrolling instead of a tiny nested viewport. */}
       {latest && <div className="flex flex-col sm:max-h-[75vh]">
@@ -1753,7 +1751,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <NameDetail
           compact
           userId={userId}
-          order={latest ? boardRows(latest, paperLive).find(r => r.ticker === openName) ?? null : null}
+          order={latest ? boardRows(latest, paperLive, strategyView).find(r => r.ticker === openName) ?? null : null}
           personalHistory={false}
           strategy={strategyView}
           paperActivity={paperLive?.activity}

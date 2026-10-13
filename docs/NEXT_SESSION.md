@@ -1,5 +1,34 @@
 # Next session
 
+## 2026-10-13 — Restore current stock overview; historical strategy remains in ticker details
+
+Human requested the previous stock-ranking format for the main all-stock page,
+with current actions/sizes only and historical simulation after clicking a ticker.
+The default Stocks view now uses TradeBoard and the actual current paper plan,
+holdings and timestamped quotes; starts on All names, excludes settled orders,
+and keeps saved target/grade dates explicit. No simulated portfolio balance,
+holding, past trade or historical simulation summary is requested by the overview.
+Ticker D/W/15m history continues to use the unchanged verified latest-strategy
+projection. Paper account and Archived research retain their separate views.
+
+Candidate frontend-only changes: DeskPanel.tsx, TradeBoard.tsx and the focused
+strategy-simulation browser acceptance. Type/build VERIFIED;8 unique browser
+cases passed/0 skipped at the final source: current action/settlement refresh,
+chart boundaries, phone/search/filter and separate account workflows. Canonical deployment and actual
+compiled browser acceptance still UNVERIFIED until this entry is updated.
+No backend, model, policy, cost, approval, historical data or simulation changes.
+Diagram impact NONE: existing read-only current account and ticker-history paths.
+Starting branch codex/learned-live-release-20261006, HEAD e6f869fa6a4f6ef415b99cdbf1e5970c50fd2df9,
+clean before this work; origin/main up to date. Preserve all original evidence.
+Failed private harnesses remain in /tmp/current-overview-tests-20261013*: missing
+local browser, incomplete position fixture and chat-read abort during reload;
+corrected fixtures retain strict failures for required desk requests/page errors.
+
+Remaining real operational acceptance remains UNVERIFIED: first fresh ordinary
+corrected nightly Tuesday Oct13 19:30ET, then actual intraday and subsequent paper
+execution/reconciliation. Monday failed actual record must NEVER be replayed.
+Current Oct12 simulation is COMPLETE; NEVER replay/republish it or old UI matrices.
+
 ## 2026-10-13 — Oct12 simulation PUBLISHED / VERIFIED; real acceptance pending
 
 Code support08df36f8bfba1774e9378b0050201a8f0fd32629 canonical scripts/deploy.sh

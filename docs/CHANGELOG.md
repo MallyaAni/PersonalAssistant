@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-13 — Current stock overview with history inside each ticker
+
+- Restore the stock-ranking layout on the default Stocks page: live quotes,
+  grades, positions, current actions, sizes and order status. Open All names by
+  default and remove settled orders from current actions on refresh.
+- Remove the historical simulation portfolio and last-trade list from that
+  overview. Ticker details retain latest-strategy simulated history on D/W/15m;
+  actual Paper account and Archived research remain separate.
+- Preserve saved target/grade dates and missing-record notices. No backend,
+  strategy, source approval, models, stored histories or orders change.
+- Validation: frontend type/build and focused automated browser workflows;
+  canonical frontend-only deployment and actual compiled browser proof recorded
+  in NEXT_SESSION.md. Diagram impact: NONE.
+
 ## 2026-10-02 — Paper planner `/6`: the redeploy spends its whole-share remainder (fix/paper-target-tracking)
 
 - Why: the operator reported the account "doesn't know when to buy and
