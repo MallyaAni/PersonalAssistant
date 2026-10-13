@@ -1,5 +1,47 @@
 # Next session
 
+## 2026-10-13 — Human requests live-model sizing throughout historical charts
+
+NEW active objective supersedes grade-only historical delivery: the human wants
+the currently installed grade-led policy and live model versions applied to the
+historical account, with explicit quantities on primary chart decisions and
+separate simulated fills. No original model-only trades or legacy equal-weight
+targets may be relabeled as these new sizes. Preserve all old publications and
+actual paper history. This authorizes a NEW separate current-model retrospective
+simulation, not replay or replacement of a completed prior account/control.
+
+VERIFIED current live grade-led implementation42b11a76 and its delivery remain
+complete. FAILED user acceptance: primary historical arrows show BUY/SELL without
+new-policy amounts. UNVERIFIED new historical sizing, full ledger/projection,
+installed-model parity and actual compiled-browser quantity acceptance. The human
+also asks whether an A+ price decline adds shares: shared decide/plan permits an
+add only when the learned funded target exceeds the marked holding; cash/risk/
+whole-share/timing guards remain. A drop is not itself an averaging-down rule.
+
+Use exact installed holding/timing numeric heads, risk/residual banks and shared
+grade-led decide/plan/sender. Fixed current models applied retrospectively are
+explicitly hypothetical, including their original actual publication/training
+dates; never claim historically available forecasts or out-of-sample performance.
+Historical features must use only each simulated observation's bar prefix.
+No base fits/tuning, cost/risk/timing changes, real orders, paid data, model-service
+changes or production history rewrites. New private roots and failed attempts
+remain immutable. First ordinary19:30ET nightly/intraday/paper acceptance remains
+a separate pending boundary; never duplicate or force an ordinary job.
+
+Starting owned branch codex/learned-live-release-20261006 at e917fe4e, clean;
+git pull --rebase origin main up to date. New private live_model_history adapter
+freezes current numeric-head inference and calibration bank while selecting each
+historical feature prefix; shared live grade-led planner and timing remain.
+VERIFIED4 focused real-numeric synthetic-publication tests in5.58s: exact live
+current-observation targets/quantities/timing and scenarios, causal prefix features,
+same current residual fit across earlier dates, refusal of real brokers/wrong
+historical close, A+ drop allowing more shares under positive modeled edge and
+cashless/negative-edge refusal. Source/log preserved at scratch/
+live-model-history-source-20261013-v1 and live-model-history-tests-20261013-v1.log.
+No production modules/configs or model services changed; no full simulation yet.
+Next freeze authentic installed models, grade evidence and physical input bytes;
+verify genuine installed-model parity and bounded account path before full run.
+
 ## 2026-10-13 — Human approved grade-led direction with learned sizing
 
 The human clarified that grades must lead the entry/exit signal, with other
