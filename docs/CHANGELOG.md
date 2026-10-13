@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-10-13 — Grade signals lead; learned models size and time orders
+
+- Restore A/A+ entry permission and below-A held exits in
+  `grade-led-learned-sizing/1`. Missing grades protect existing shares. Model
+  sizing may trim an eligible holding, but model zero cannot independently
+  liquidate it. Preserved holdings do not provide cash for new purchases.
+- Show the grade signal and its date even when model size, funding, risk or
+  timing prevents an order. Distinguish raw model proposals from final
+  grade-constrained targets. Keep actual cash, whole-share and execution guards.
+- Make original-dated grade signals the default ticker chart. Separate actual
+  paper executions and model-only research fills; daily grades never receive
+  invented intraday times. Keep the main Stocks overview current-only.
+- Preserve model-only research against its original content-addressed config,
+  independently of the live account selector. Keep original projection source,
+  policy, costs, provenance and payload integrity checks; no replay or republish.
+- Focused validation:226 backend checks,32 research reader/API checks and8
+  automated browser workflows without skips. Canonical release and actual-site
+  proof are recorded in NEXT_SESSION.md. Fresh ordinary nightly/intraday/paper
+  execution acceptance and comparative performance remain UNVERIFIED.
+- Diagram impact: grade direction now feeds learned sizing and primary ticker
+  markers; updated trading-desk diagram pair and architecture page.
+
 ## 2026-10-13 — Current stock overview with history inside each ticker
 
 - Restore the stock-ranking layout on the default Stocks page: live quotes,

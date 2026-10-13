@@ -1,0 +1,165 @@
+{
+  "actual_browser": {
+    "console_errors": [],
+    "failures": [],
+    "finished_at": "2026-10-13T18:23:37.172Z",
+    "harness_events": [
+      {
+        "corrected": "Verify actual session-reading disclaimer and absence of marked grade changes",
+        "event": "15m wording assertion expected nonexistent phrase",
+        "observed": "Grade changes are session readings and are not marked on fifteen-minute bars; switch to D or W to see them."
+      }
+    ],
+    "started_at": "2026-10-13T18:20:04.480Z",
+    "workflows": [
+      {
+        "name": "All94 realtime names/reload persistence/current-only",
+        "passed": true,
+        "saved_target_date": "2026-10-09",
+        "stocks": 94
+      },
+      {
+        "name": "ORCL daily original Saved Sep15BUY/Sep18SELL",
+        "passed": true
+      },
+      {
+        "name": "ORCL weekly preserves individual original signal dates",
+        "passed": true
+      },
+      {
+        "name": "ORCL15m grades have no invented intraday timestamp",
+        "passed": true
+      },
+      {
+        "name": "Repaired ORCL research original71/11/60 quantities and prices",
+        "passed": true
+      },
+      {
+        "name": "ORCL actual paper executions empty and separate",
+        "passed": true
+      },
+      {
+        "name": "LITE preservedOct12 research5shares10AM1036.34",
+        "passed": true
+      },
+      {
+        "name": "STX preservedOct12 BUY2 at15:45/755.78 and distinct unfilledTRIM5",
+        "passed": true
+      },
+      {
+        "name": "Current filters0orders/10positions separate from research",
+        "passed": true
+      },
+      {
+        "name": "Actual Paper10/0 remains originalOct9 not inventedMonday",
+        "passed": true
+      }
+    ]
+  },
+  "backend_files_verified": 1636,
+  "comparative_performance": "UNVERIFIED; not claimed",
+  "compiled": {
+    "asset": "/assets/index-CEdM8iYg.js",
+    "sha256": "3a132e9819cbc4ea89089da7d96d3420dfa132cc9a12b633854774377f38db71"
+  },
+  "deployed_at": "2026-10-13T18:19:26.621162+00:00",
+  "failed_delivery_preserved": "v3 research HTTP503, corrected in v4; original v1/v2 gates and independent host-permission harness failure remain preserved",
+  "first_fresh_ordinary_nightly_intraday_execution": "UNVERIFIED",
+  "focused": {
+    "automated_browser_passed": 8,
+    "backend_passed": 226,
+    "browser_skipped": 0,
+    "research_reader_api_passed": 32
+  },
+  "gates": {
+    "canonical_no_skip_flags": true,
+    "cheap_post": "passed",
+    "real_routing_passed": 100,
+    "routing_skipped": 0,
+    "unit_passed": 10649,
+    "unit_skipped": 93,
+    "unit_xfailed": 6,
+    "warnings": 439
+  },
+  "models_costs_timing_unchanged": true,
+  "original_configuration_sha256": "6713db802790ded44d1fc7e59688a448ae5b9fffb147aaa597ad489ade6b0fb9",
+  "policy": "grade-led-learned-sizing/1",
+  "preserved": {
+    "live_unchanged_files": 105,
+    "manifest_sha256": "d5e1c139a8eb0dde0c4d4efa5851f478586887b8efe90dcc9d3b8b29dc670c6b",
+    "model_only_payloads": 95,
+    "original_files": 108,
+    "selector_files_archived": 3
+  },
+  "private_proof_root": "scratch/grade-led-release-20261013-v4",
+  "private_receipts": {
+    "browser-acceptance.json": "40e4610d41934c45c12a57de564ab532cd4db7b6c5cf9ddadcdba85199d9fb1a",
+    "execution.json": "e93ec2da8f8b786f666dd32603652cd2bf7856855de968900e2e322080a08dbc",
+    "independent-verification.json": "b02665cc735182b6f1e24191f6a06076c3f82496080203764e4e5c4427a23120"
+  },
+  "real_orders": false,
+  "research_http": {
+    "anonymous": 401,
+    "exact_original_payloads": 95,
+    "foreign": 403,
+    "no_store": true,
+    "owner": 200,
+    "version": "601b48b9fd90b793a5867ddd7ad041bac55f6d6959e3f51ea171cf18cf465cfe"
+  },
+  "reviewed_trading_sources": {
+    "backend/agents/trading/desk/event_execution.py": "76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f",
+    "backend/agents/trading/desk/event_risk.py": "34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973",
+    "backend/agents/trading/desk/funded_execution.py": "6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c",
+    "backend/agents/trading/desk/intraday_orders.py": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c",
+    "backend/agents/trading/desk/nightly_plan.py": "9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca",
+    "backend/agents/trading/desk/paper.py": "e2eef2f0270497d9a5944212d6581b7ebf503d2675687a172e76690fcc7bc3c3",
+    "backend/api/v1/market.py": "0647fb9b2986451676b9ab9fcc730d9263b89b6eb4ab32e3c25c6edda1377882",
+    "backend/cli/market_daily.py": "0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819",
+    "backend/market/adaptive_growth_policy.py": "35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34",
+    "backend/market/alpaca_trading.py": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2",
+    "backend/market/decision_view.py": "8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca",
+    "backend/market/entry_timing.py": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88",
+    "backend/market/forward_arithmetic.py": "9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882",
+    "backend/market/forward_execution.py": "62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295",
+    "backend/market/forward_market_evidence.py": "737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2",
+    "backend/market/forward_probability_timing.py": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92",
+    "backend/market/grade_led_policy.py": "4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66",
+    "backend/market/holding_risk_bank.py": "4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158",
+    "backend/market/joint_funded_policy.py": "5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339",
+    "backend/market/learned_holding_transition.py": "c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55",
+    "backend/market/learned_live_holding.py": "992d9efe47a73afe7077c9dd3d377035daa1b4df66792d8289a9de688cae022f",
+    "backend/market/learned_live_timing.py": "80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f",
+    "backend/market/learned_order_observation.py": "e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff",
+    "backend/market/learned_personal_guidance.py": "37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721",
+    "backend/market/live_probability_timing.py": "3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721",
+    "backend/market/market_conditioned_holding.py": "e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4",
+    "backend/market/personal_history.py": "8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a",
+    "backend/market/sequential_shadow_context.py": "5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92",
+    "docs/research/grade-led-sizing-contract-2026-10-13.md": "51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6",
+    "docs/research/learned-held-transition-2026-10-07.md": "f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a"
+  },
+  "screenshots": {
+    "grade-led-orcl-daily-final-20261013.png": "e5f12241df7a09ed0cf1bbd25ec200e22c7ce8c94b66ef0b0c36f016e27b0297",
+    "grade-led-orcl-research-final-20261013.png": "e5fae81fdad63e71194fa8ac80ab7993215d34a47bc0fe75dcc55798595fbe92"
+  },
+  "selector_sha256": {
+    "config.json": "1a14980a66a1cb5994f0bb82667dd46fce40ec7eb0705728d93e36b18faf5901",
+    "evidence.json": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9",
+    "release.json": "5bbbc6ddf1ba570077f1ec760732d925bf215320774f5abd52907edfb44ecad8"
+  },
+  "serving": {
+    "anios_backend": {
+      "id": "2a490c27c822112413adc2aed69fe95840bc0863b5ce56592ca44f7a2bca1247",
+      "image": "sha256:030f53611a5d356c863880bb51d158b65f8d96390eb9de28b932471da4772832",
+      "started_at": "2026-10-13T18:19:21.179139161Z"
+    },
+    "anios_gateway": {
+      "id": "32351991a784393e197cdb10d943736b551cf49a8d7a56cde8f1ff8853b74b92",
+      "image": "sha256:d1c9f4238e7b7ab77d06fa39d15601a962c04eef7e3e6e3b39cbfffb8c251c4b",
+      "started_at": "2026-10-13T17:48:43.393474204Z"
+    }
+  },
+  "source_revision": "42b11a76cbbdfd0e329f6e47ca2e532f369e2eba",
+  "status": "VERIFIED_GRADE_LED_IMPLEMENTATION",
+  "verified_at": "2026-10-13T18:24:35.266831+00:00"
+}

@@ -1,5 +1,101 @@
 # Next session
 
+## 2026-10-13 — Human approved grade-led direction with learned sizing
+
+The human clarified that grades must lead the entry/exit signal, with other
+evidence providing quantities and timing. This supersedes the earlier default
+model-only allocation goal. New `grade-led-learned-sizing/1` restores the A/A+
+entry and holding boundary and below-A exits. Missing grades protect holdings.
+Zero/unfunded buys remain visible as signals. An unowned downgrade stays visible
+with no-position status rather than a fictitious blocked sale. Model zero does
+not independently liquidate an eligible holding; sizing trims preserve a whole
+share. Original model targets and optimization certificates are explicitly
+separate from the grade-constrained final targets. Costs, cash, whole-share
+guards, reviewed risk/models and learned timing remain unchanged.
+
+The main Stocks list keeps current quotes, dated grades/signals and actual
+paper sizes/status, with no historical portfolio or trade list. Ticker charts
+default to grade signals and offer separate confirmed paper executions and
+model-only research fill modes. Original dates, raw execution quantities and
+prices and saved/recalculated grade provenance are retained. Grade-only history
+does not invent hybrid-policy fills or returns; daily readings are not given
+invented intraday clocks. The preserved model-only simulation remains research.
+
+Candidate source09688defba94fa3260f6ecc85c69fdf2dcbcd2e7: VERIFIED226 targeted
+backend checks,8 browser workflows/no skips, type/build and33 diagram checks.
+Final canonical gates VERIFIED10645unit pass/93skip/6xfail/439warnings and
+100real routing pass/0skip. Canonical deployment COMPLETE17:48:50Z and cheap
+post green. Root scratch/grade-led-release-20261013-v3, launcher172627 COMPLETE;
+NEVER restart. Guarded selector installed under the real paper/state.lock;
+original config/release/evidence archived and original models, costs, timing,
+every history/version and actual paper state preserved. No new real orders/fits.
+Actual compiled browser VERIFIED ORCL SavedSep15BUY/Sep18SELL D/W markers,
+no invented 15m grade clocks, and actual paper executions kept separate. It
+FAILED model-only research HTTP503: reader tied the historical configuration
+to the newly installed selector. Original v1 browser receipt and screenshot
+are preserved in v3; never claim this release fully accepted before repair.
+
+Reader-only repair42b11a76cbbdfd0e329f6e47ca2e532f369e2eba VERIFIED32 targeted
+reader/API checks: original-config digest archive, live selector changes,
+source/payload corruption, ownership and no writes on GET. Original projection
+module and95payloads/manifest remain byte-for-byte unchanged; no replay or
+republish. Future publishers archive the original config before manifest switch.
+Canonical v4 gates VERIFIED10649unit pass/93skip/6xfail/439warnings and100real
+routing pass/0skip. Deployment COMPLETE18:19:26Z, cheap post green. Root
+scratch/grade-led-release-20261013-v4 launcher258933 COMPLETE; NEVER restart.
+Actual authenticated compiled browser VERIFIED10 bounded workflows,0 console
+errors/warnings: current94 rows and reload persistence, ORCL SavedSep15BUY and
+Sep18SELL on D/W with original dates, no invented15m grade clocks, research
+71/11/60 original ORCL fills and LITE5/STX2 Oct12 fills/awaiting STXtrim5 plan,
+separate actual ORCL executions and actual Paper10positions/0orders/Oct9 targets.
+The main overview remains current-only. Original Monday missing-record notice
+remains explicit. Final daily/research screenshots and receipts saved in v4.
+
+Independent verification18:24:35Z VERIFIED1636 actual backend files match exact
+42b11a76 source;30 reviewed trading sources and installed selector unchanged
+from the grade-led admission. Config1a14980a66a1cb5994f0bb82667dd46fce40ec7eb0705728d93e36b18faf5901,
+release5bbbc6ddf1ba570077f1ec760732d925bf215320774f5abd52907edfb44ecad8,
+evidence4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9.
+All108 originals preserved:105 unchanged live plus3 original selectors archived
+in v3/prior; all95 model-only payloads and manifest unchanged. All95 actual
+gateway research reads equal original payloads, owner200/foreign403/anonymous401,
+private/no-store. Original config6713db80 snapshot matches original archived bytes;
+no replay/republish. Models, costs, timing and actual paper state unchanged.
+Backend2a490c27c822/image030f53611a5d356c863880bb51d158b65f8d96390eb9de28b932471da4772832;
+gateway32351991a784/imaged1c9f4238e7b7ab77d06fa39d15601a962c04eef7e3e6e3b39cbfffb8c251c4b
+unchanged from v3. Actual index-CEdM8iYg.js SHA3a132e9819cbc4ea89089da7d96d3420dfa132cc9a12b633854774377f38db71.
+[Exact delivery proof](research/grade-led-delivery-proof-2026-10-13.json).
+An initial independent host read failed on the correctly protected backend-owned
+config snapshot; v5 harness reads through the existing backend and retains byte/
+hash comparisons without changing permissions. Both failed v4 harness and
+corrected v5 remain preserved. Browser wording assertion failure is a harness
+event, not invented evidence: actual15m disclaimer explicitly excludes grade
+markers. Original v3 research503 and all failed gates remain recorded.
+
+Failed roots remain intact: grade-led-release-20261013 first canonical attempt
+on c494 stopped before mutation:10644unit pass but99routing pass/1fail, where
+"no thanks" incorrectly selected list tasks. The exact case passed3 isolated
+repeats unchanged. V2 on f491 stopped before mutation:10643unit pass/1fail;
+equivalent private replays crossed a wall-clock second in their generation
+metadata. The test now verifies real aware timestamps and compares every other
+field exactly; production and broker clocks were never changed. The abandoned
+private clock-class test attempt failed the aware-clock guard and is preserved
+with all earlier local browser failures. No routing assertions/floors or prompt
+were weakened. Diagram impact: grade direction now feeds learned sizing and
+the primary chart; canonical trading-desk pair and architecture page updated.
+
+First fresh ordinary grade-led nightly Oct13 at19:30ET, actual-session intraday
+and subsequent paper execution/model UI remain UNVERIFIED. Never replay Monday
+actual account or invent its missing full record. The completed Oct12 model-only
+simulation and its carried pending intents must remain separate and unchanged.
+Never repeat completed grade-led deployment, gates, browser workflows or old
+qualification for documentation. Before the ordinary nightly window an unattended
+heartbeat stays quiet and ends without SSH. Any later model-only research
+continuation preserves its original policy/config/child chain and cannot silently
+become grade-led history; missing dates require completed ordinary20:30ET free SIP.
+Starting branch codex/learned-live-release-20261006, HEAD75ff5434, clean; final
+released source42b11a76. Desktop shared checkout and unrelated changes untouched.
+
 ## 2026-10-13 — Restore current stock overview; historical strategy remains in ticker details
 
 Human requested the previous stock-ranking format for the main all-stock page,
