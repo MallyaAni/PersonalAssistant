@@ -2,6 +2,46 @@
 
 ## 2026-10-13 — Human requests live-model sizing throughout historical charts
 
+NEW progress22:14:55Z: authentic installed-model comparison VERIFIED96 stock/ETF
+scenario/probability vectors, final feature/forecast/support/price rows, live
+funded targets and quantities;3 independently recomputed historical prefixes.
+New isolated bounded account March1–4,2019 completed in
+scratch/live-model-history-bounded-20261013-v10:2sessions/7fills/11intents.
+Independent scratch/live-history-bounded-verification-20261013-v6 conserves
+cash/shares/acquisition bases/economic entitlements and raw SIP prices/10bp fees;
+94stock projections/42decisions. Accountdd50e9d2d5e1ab9c11e11cfaa9d29c15c077910337ff421ce431359941b57a5e,
+parity71a6c8eec6b980ef9c6af18874a2ed6ff6c7e50bdd9d51f85e785d684051e9e2.
+Six focused adapter/projection tests passed0skip in4.91s, source/log preserved
+at scratch/live-history-projection-tests-20261013-v2. Full account, publication,
+API/compiled-browser amounts and fresh real operational acceptance remain
+UNVERIFIED. New reader module is still untested work in progress.
+
+Frozen authentic input root scratch/live-model-history-20261013-v4 has204
+original artifact/daily/action files plus94 authenticated grade histories and
+the genuine lost-record Oct12close grade-only overlay. Original full actual
+Monday record remains absent. Current raw live history differs from saved chart
+grades:2063 known cells and48062 coverage cells; preserved chart history remains
+the historical grade-direction input, including original ORCL saved signals.
+Current grades/features/forecasts/scenarios/targets/quantities match the authentic
+live observation; do NOT claim all past grade values equal the raw live archive.
+Benchmark context retains authenticated live archive grades. Earlier v2 capture
+mistakenly reported preparation despite empty overlay stdin; corrected v3 checks
+94 actual output hashes. V4 adds96 companion action files paired with frozen
+daily bars. All preceding roots/bytes remain intact, no production mutation.
+
+Preserve bounded failed rootsv1–9: missing test settings key; absent overlay;
+absent companion splits; factor diagnosis; benchmark grade mismatch; saved versus
+raw historical grade mismatch; dtype/provenance bridge error; JSON NaN save.
+Preserve independent verification failedv1–5: omitted zero-share initial-night
+entitlements and numpy string scalar normalization in independent source-event
+keys; the sorting hypothesis did not fix it and was removed. Failed projection
+testv1 mounted a new file under a read-only missing mountpoint; v2 uses a complete
+separate source tree. Final verifier normalizes only source symbol key type,
+keeps original receipt ordering and compares every monetary/receipt field.
+No model fitting, tuning, real orders, history rewrite or completed old-control
+replay. New journal runner uses original live nightly/sender and reviewed
+historical economics; inherited marks outside original coverage remain missing.
+
 NEW active objective supersedes grade-only historical delivery: the human wants
 the currently installed grade-led policy and live model versions applied to the
 historical account, with explicit quantities on primary chart decisions and

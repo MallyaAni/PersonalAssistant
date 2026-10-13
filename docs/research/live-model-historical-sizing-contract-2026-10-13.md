@@ -13,6 +13,16 @@ parameters were trained later: this is a retrospective current-model simulation,
 not historically published forecasts, out-of-sample evidence or broker fills.
 Original model publication and training dates remain visible in provenance.
 
+Historical direction preserves the authenticated ticker history's saved and
+recalculated grades. These differ from the raw grade archive rebuilt by the
+current nightly; neither is silently substituted for the other. The Oct12
+current feature row, forecasts and scenarios match the authentic live observation.
+Parity planning compares each reader against its own authenticated grade prefix,
+with identical current grades, targets and quantities. Historical feature-prefix
+checks use the preserved chart-grade inputs. Benchmark context grades retain
+the authentic live input archive's values, not missing values inferred from the
+absence of an ETF chart-history endpoint.
+
 Use a separate $100,000 synthetic cash account, zero initial shares and10bp
 per side, starting2019-03-01 with the prior completed close as its first planning
 observation. Preserve missing-data refusals, pending orders, corporate actions,
