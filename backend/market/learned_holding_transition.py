@@ -3,6 +3,8 @@
 import math
 from dataclasses import dataclass
 
+from backend.market.grade_led_policy import POLICY as GRADE_LED_POLICY
+
 POLICY = "joint-stock-risk-funded/6-retained-holdings-probability-timing-research"
 PROTOCOL = "docs/research/learned-held-transition-2026-10-07.md"
 
@@ -81,7 +83,7 @@ def partition(equity, cash, held, prices, retained):
 
 # Validate retained paper accounting before using it in another account.
 def recorded(record):
-    if (record.get("targets") or {}).get("policy") != POLICY:
+    if (record.get("targets") or {}).get("policy") not in (POLICY, GRADE_LED_POLICY):
         return None
     receipt = ((record.get("paper") or {}).get("joint_funded") or {}).get(
         "receipt"
@@ -185,7 +187,7 @@ def _risk_exclusion(name, row, session):
 
 # Authenticate missing-risk exclusions separately from a zero model allocation.
 def personal_support(record):
-    if (record.get("targets") or {}).get("policy") != POLICY:
+    if (record.get("targets") or {}).get("policy") not in (POLICY, GRADE_LED_POLICY):
         return True, set()
     block = (record.get("paper") or {}).get("joint_funded") or {}
     if not isinstance(block, dict):

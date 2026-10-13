@@ -139,6 +139,7 @@ def _record_fingerprint(record: dict) -> str:
 def project(decisions: dict, record: dict, snapshot: dict, entries: dict) -> dict:
     from backend.agents.trading.desk.paper import POLICY_VERSION
     from backend.market import desk_freshness, holdings
+    from backend.market.grade_led_policy import POLICY as GRADE_LED_POLICY
     from backend.market.joint_funded_policy import MARKET_TIMED_POLICY
     from backend.market.learned_holding_transition import POLICY as RETAINED_POLICY
 
@@ -173,6 +174,20 @@ def project(decisions: dict, record: dict, snapshot: dict, entries: dict) -> dic
         rows[ticker] = {
             **{key: decision.get(key) for key in ROW_FIELDS},
             **(
+                {
+                    key: decision.get(key)
+                    for key in (
+                        "grade_signal",
+                        "signal_session",
+                        "signal_basis",
+                        "signal_status",
+                        "signal_reason",
+                    )
+                }
+                if "grade_signal" in decision
+                else {}
+            ),
+            **(
                 {"entry_guard": decision["entry_guard"]}
                 if "entry_guard" in decision
                 else {}
@@ -195,7 +210,7 @@ def project(decisions: dict, record: dict, snapshot: dict, entries: dict) -> dic
         "policy_version": (
             record["targets"]["policy"]
             if (record.get("targets") or {}).get("policy")
-            in (MARKET_TIMED_POLICY, RETAINED_POLICY)
+            in (MARKET_TIMED_POLICY, RETAINED_POLICY, GRADE_LED_POLICY)
             else POLICY_VERSION
         ),
         "decision_version": decisions["version"],

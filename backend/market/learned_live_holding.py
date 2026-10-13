@@ -16,7 +16,12 @@ import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from backend.market import calendar, holding_risk_bank, learned_live_timing
+from backend.market import (
+    calendar,
+    grade_led_policy,
+    holding_risk_bank,
+    learned_live_timing,
+)
 from backend.market import forward_arithmetic as forward
 from backend.market import joint_funded_policy as funded
 from backend.market import learned_holding_transition as transition
@@ -49,6 +54,8 @@ def source_identity():
         Path(holding_risk_bank.__file__),
         Path(learned_live_timing.__file__),
         Path(funded.__file__),
+        Path(grade_led_policy.__file__),
+        root / funded.GradeLedFundedPolicy.protocol,
         Path(transition.__file__),
         root / transition.PROTOCOL,
         Path(context.__file__),
@@ -305,6 +312,11 @@ class RetainedHoldingPolicy(
     pass
 
 
+# Apply grade-led direction with the same installed artifact and paper-broker guards.
+class GradeLedHoldingPolicy(funded.GradeLedFundedPolicy, InstalledHoldingPolicy):
+    pass
+
+
 # Authenticate one installed configuration for nightly and personal decision readers.
 def read_configuration(root, now):
     raw = (Path(root) / CONFIG).read_bytes()
@@ -321,7 +333,8 @@ def read_configuration(root, now):
             "timing_config_sha256",
             "release_receipt_sha256",
         }
-        or config["policy"] not in (funded.MARKET_TIMED_POLICY, transition.POLICY)
+        or config["policy"]
+        not in (funded.MARKET_TIMED_POLICY, transition.POLICY, grade_led_policy.POLICY)
         or isinstance(config["cost_bps"], bool)
         or not isinstance(config["cost_bps"], (int, float))
         or not np.isfinite(config["cost_bps"])
@@ -380,8 +393,12 @@ def prepare(root, report, *, clock=None):
         "provenance": provenance,
     }
     factory = (
-        RetainedHoldingPolicy
-        if config["policy"] == transition.POLICY
-        else InstalledHoldingPolicy
+        GradeLedHoldingPolicy
+        if config["policy"] == grade_led_policy.POLICY
+        else (
+            RetainedHoldingPolicy
+            if config["policy"] == transition.POLICY
+            else InstalledHoldingPolicy
+        )
     )
     return factory(reader, config["cost_bps"], root, raw, admission, completed)

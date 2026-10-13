@@ -1225,6 +1225,7 @@ def _paper_plan(
     from backend.market import learned_order_observation
     from backend.market.joint_funded_policy import MARKET_TIMED_POLICY, TIMED_POLICY
     from backend.market.learned_holding_transition import POLICY as RETAINED_POLICY
+    from backend.market.grade_led_policy import POLICY as GRADE_LED_POLICY
 
     observed_rule, observed_text = learned_order_observation.plan_timing(state)
     return {
@@ -1245,7 +1246,7 @@ def _paper_plan(
         )
         if state.last_rebalance
         and state.policy_version
-        not in (MARKET_TIMED_POLICY, TIMED_POLICY, RETAINED_POLICY)
+        not in (MARKET_TIMED_POLICY, TIMED_POLICY, RETAINED_POLICY, GRADE_LED_POLICY)
         else None,
         "last_rebalance": state.last_rebalance,
         "reason": reason,

@@ -26,6 +26,7 @@ from backend.market import (
     learned_live_timing,
 )
 from backend.market import forward_probability_timing as timing
+from backend.market.grade_led_policy import POLICY as GRADE_LED_POLICY
 from backend.market.joint_funded_policy import MARKET_TIMED_POLICY
 from backend.market.live_probability_timing import POLICY
 
@@ -37,6 +38,7 @@ def adopted(record):
     return (record.get("targets") or {}).get("policy") in (
         MARKET_TIMED_POLICY,
         learned_holding_transition.POLICY,
+        GRADE_LED_POLICY,
     )
 
 
@@ -172,7 +174,8 @@ def _personal_targets(record, weights, shares, prices, equity, cash):
     elif (
         boundary is not None
         or unsupported
-        or record["targets"]["policy"] == learned_holding_transition.POLICY
+        or record["targets"]["policy"]
+        in (learned_holding_transition.POLICY, GRADE_LED_POLICY)
     ):
         desired = learned_holding_transition.personal_weights(
             boundary or {"retained_weights": {}, "modeled_fraction": 1},
@@ -185,6 +188,20 @@ def _personal_targets(record, weights, shares, prices, equity, cash):
         )
     else:
         desired = dict(weights)
+    if record["targets"]["policy"] == GRADE_LED_POLICY:
+        for name in set(desired) | set(shares):
+            grade = (record["grades"].get(name) or {}).get("grade")
+            current = shares.get(name, 0) * prices.get(name, 0) / equity
+            if grade in ("A+", "A") and current > 0:
+                desired[name] = (
+                    current
+                    if desired.get(name, 0) <= 0
+                    else max(desired[name], min(current, prices[name] / equity))
+                )
+            elif grade in ("B", "C"):
+                desired[name] = 0.0
+            elif current > 0:
+                desired[name] = current
     return desired, boundary, available, unsupported
 
 
@@ -648,4 +665,30 @@ def build(
                 reason=str(exc),
             )
             row.pop("timing", None)
+    if (record.get("targets") or {}).get("policy") == GRADE_LED_POLICY:
+        owned = {position.ticker for position in held if position.shares > 0}
+        for name, row in result["rows"].items():
+            grade = (record.get("grades", {}).get(name) or {}).get("grade")
+            signal = (
+                "hold"
+                if grade in ("A+", "A") and name in owned
+                else "buy"
+                if grade in ("A+", "A")
+                else "sell"
+                if grade in ("B", "C") and name in owned
+                else "avoid"
+                if grade in ("B", "C")
+                else "unavailable"
+            )
+            row.update(
+                grade_signal=signal,
+                signal_session=record.get("session"),
+                signal_basis="observed_close_grade",
+                signal_status="executable"
+                if row.get("executable")
+                else "blocked"
+                if signal in ("buy", "sell")
+                else "no_new_order",
+                signal_reason=row.get("blocker") or row.get("reason"),
+            )
     return result, current_snapshot

@@ -1006,8 +1006,9 @@ const TrackRecord = ({ curve, latest }: { curve: DeskCurve | undefined; latest: 
 const HowToUse = ({ onClose, compact = false, plan, strategy = false }: { onClose?: () => void; compact?: boolean; plan?: DeskPaperPlan; strategy?: boolean }) => strategy ? (
   <section aria-label="Strategy guide" className="my-2 max-w-2xl rounded-xl border p-3 text-xs">
     <p>The stock list shows current paper-account actions, sizes and order status.</p>
-    <p>BUY adds shares; TRIM reduces a position; SELL exits. HOLD means no current order.</p>
-    <p>Open a ticker for D, W or 15m history under the latest strategy. Historical actions and sizes are simulated.</p>
+    <p>A/A+ gives entry permission; below A exits an existing holding. The signal stays visible if sizing or funding blocks an order.</p>
+    <p>Order size and timing are separate. TRIM is a sizing reduction that keeps shares; SELL exits.</p>
+    <p>Open a ticker for historical grade signals and executions. The model-only simulation is available as a separate research layer.</p>
     <p>Saved targets and grades retain their dates; prices and order status refresh live.</p>
     {onClose && <button type="button" className="mt-2 text-[#0071e3]" onClick={onClose}>Close guide</button>}
   </section>
@@ -3116,8 +3117,8 @@ const NameDetail = ({
           <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} strategy={strategy} simulation={simulation} simulationError={simulationError} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
-        {!strategy && order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}
-        {!strategy && history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}
+        {order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}
+        {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}
         <section aria-label="Latest available grade" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
         <h4 className="mb-1 font-medium text-[#6e6e73]">Latest available grade</h4>
         {row && (

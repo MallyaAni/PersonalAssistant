@@ -64,6 +64,7 @@ def _account(equity, held, prices, cash):
 
 # Bind the reviewed reader and fixed fees without fitting or contacting a broker.
 class JointFundedPolicy:
+    minimum_held_grade = 1
     version = POLICY
     protocol = PROTOCOL
 
@@ -95,7 +96,8 @@ class JointFundedPolicy:
             sorted(
                 name
                 for name, grade in grades.items()
-                if grade >= 2 or (grade == 1 and current.get(name, 0) > 0)
+                if grade >= 2
+                or (grade >= self.minimum_held_grade and current.get(name, 0) > 0)
             )
         )
         return names, {}
@@ -133,7 +135,11 @@ class JointFundedPolicy:
         current, reserve, reason = _account(equity, held, prices, cash)
         receipt["reserved_wealth"] = reserve
         receipt["current_weights"] = current
-        exits = sorted(name for name in current if grades.get(name) == 0)
+        exits = sorted(
+            name
+            for name in current
+            if 0 <= grades.get(name, -1) < self.minimum_held_grade
+        )
         protected = sorted(
             name for name in current if name not in grades or grades[name] < 0
         )
@@ -497,3 +503,50 @@ class RetainedMarketConditionedFundedPolicy(MarketConditionedTimedFundedPolicy):
             modeled_decision=modeled_decision,
         )
         return lifted, known
+
+
+# Restore the A/A+ holding boundary while using the original learned models only for sizing.
+class GradeLedFundedPolicy(RetainedMarketConditionedFundedPolicy):
+    version = "grade-led-learned-sizing/1"
+    protocol = "docs/research/grade-led-sizing-contract-2026-10-13.md"
+    minimum_held_grade = 2
+
+    # Record every grade signal even when no executable size can be funded.
+    def decide(self, session, report, equity, held, prices, cash, blocked):
+        from backend.market import grade_led_policy
+
+        targets, receipt = super().decide(
+            session, report, equity, held, prices, cash, blocked
+        )
+        readings = grade_led_policy.signals(report, held)
+        receipt["sizing_model_targets"] = dict(targets)
+        if receipt["status"] == "available":
+            return grade_led_policy.preserve_grade_holdings(
+                targets, receipt, readings, prices, equity
+            )
+        receipt["grade_signals"] = readings
+        return targets, receipt
+
+    # Label grade exits and model sizing adjustments without changing quantities or timing.
+    def plan(self, session, state, equity, held, prices, report, cash, blocked):
+        orders, updated, note = super().plan(
+            session, state, equity, held, prices, report, cash, blocked
+        )
+        exits = (
+            set(updated.allocation_state["receipt"].get("company_exits", []))
+            if updated.allocation_state
+            else set()
+        )
+        return (
+            [
+                replace(
+                    order,
+                    reason="Grade below A; exit"
+                    if order.symbol in exits
+                    else "Grade-led learned sizing adjustment",
+                )
+                for order in orders
+            ],
+            updated,
+            note,
+        )

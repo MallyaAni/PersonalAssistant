@@ -870,9 +870,14 @@ def _holding_broker(policy, client, decision_at):
     from backend.market.learned_live_holding import (
         InstalledHoldingPolicy,
         RetainedHoldingPolicy,
+        GradeLedHoldingPolicy,
     )
 
-    if type(policy) in (InstalledHoldingPolicy, RetainedHoldingPolicy):
+    if type(policy) in (
+        InstalledHoldingPolicy,
+        RetainedHoldingPolicy,
+        GradeLedHoldingPolicy,
+    ):
         policy.admit_broker(client, decision_at)
         return
     from backend.market.replay_broker import ReplayBroker
@@ -897,9 +902,14 @@ def _holding_prices(policy, prices, positions):
     from backend.market.learned_live_holding import (
         InstalledHoldingPolicy,
         RetainedHoldingPolicy,
+        GradeLedHoldingPolicy,
     )
 
-    if type(policy) in (InstalledHoldingPolicy, RetainedHoldingPolicy):
+    if type(policy) in (
+        InstalledHoldingPolicy,
+        RetainedHoldingPolicy,
+        GradeLedHoldingPolicy,
+    ):
         return {
             **prices,
             **{
@@ -975,8 +985,18 @@ def _holding_plan_metadata(
     return targets, name, metadata
 
 
-# Describe the private candidate's funded orders without legacy thresholds or exits.
-def _holding_actions(policy, rows, orders, holdings, held, prices, equity, event_plan):
+# Describe funded orders separately from grade permission and any sizing blocker.
+def _holding_actions(
+    policy,
+    rows,
+    orders,
+    holdings,
+    held,
+    prices,
+    equity,
+    event_plan,
+    signal_receipt=None,
+):
     if policy is None:
         return rows
     by_name = {order.symbol: order for order in orders}
@@ -1016,6 +1036,74 @@ def _holding_actions(policy, rows, orders, holdings, held, prices, equity, event
             stops={},
             why=order.reason if order is not None else "",
         )
+        from backend.market import grade_led_policy
+
+        if policy.version == grade_led_policy.POLICY:
+            receipt = signal_receipt or {}
+            known = (receipt.get("grade_signals") or {}).get(name, {})
+            grade = row.get("grade")
+            signal = (
+                "unavailable"
+                if grade not in ("A+", "A", "B", "C")
+                else (
+                    "hold"
+                    if grade in ("A+", "A") and held.get(name, 0) > 0
+                    else "buy"
+                    if grade in ("A+", "A")
+                    else "sell"
+                    if held.get(name, 0) > 0
+                    else "avoid"
+                )
+            )
+            signal = known.get("action", signal)
+            execution = receipt.get("execution") or {}
+            blockers = [
+                value
+                for value in [
+                    *execution.get("blocked", []),
+                    *execution.get("missing", []),
+                ]
+                if name in value
+            ]
+            excluded = (
+                (receipt.get("entry_qualification") or {}).get("excluded_entries") or {}
+            ).get(name, {})
+            blocker = (
+                "Explicit event policy takes priority"
+                if event_plan
+                else "; ".join(blockers)
+                if blockers
+                else excluded.get("reason")
+                if excluded
+                else receipt.get("reason", "Sizing unavailable")
+                if receipt.get("status") != "available"
+                else "Learned size is zero"
+                if row["model_target_weight"] <= 0
+                else "No additional whole shares can be funded"
+            )
+            row.update(
+                grade_signal=signal,
+                previous_grade=known.get("previous_grade"),
+                signal_session=known.get("session"),
+                signal_basis="observed_close_grade",
+                signal_status="planned"
+                if order
+                else "blocked"
+                if signal in ("buy", "sell")
+                else "no_new_order",
+                signal_reason=order.reason
+                if order
+                else (
+                    blocker
+                    if signal in ("buy", "sell")
+                    else "A/A+ holding; learned quantities may resize it"
+                    if signal == "hold"
+                    else "Grade below A; no entry"
+                    if signal == "avoid"
+                    else "Grade unavailable"
+                ),
+                leaves_if="Grade below A or explicit event exit",
+            )
         result.append(row)
     result.sort(
         key=lambda row: (
@@ -1295,6 +1383,7 @@ def _paper_trade(
         prices,
         account.equity,
         event_plan,
+        (new_state.allocation_state or {}).get("receipt"),
     )
     # The band-rejection flag each action row decided on, so the record and
     # the board can show which names the desk refused to buy tonight.
@@ -1502,6 +1591,7 @@ def _record_targets(report, paper_entry):
     from backend.agents.trading.desk import live_policy
     from backend.market import joint_funded_policy as funded
     from backend.market.learned_holding_transition import POLICY as RETAINED_POLICY
+    from backend.market.grade_led_policy import POLICY as GRADE_LED_POLICY
 
     selected = (paper_entry or {}).get("selected_targets")
     if selected is None:
@@ -1517,6 +1607,7 @@ def _record_targets(report, paper_entry):
             funded.TIMED_POLICY,
             funded.MARKET_TIMED_POLICY,
             RETAINED_POLICY,
+            GRADE_LED_POLICY,
         )
         or (paper_entry or {}).get("policy") != selected.get("policy")
         or set(weights) != names

@@ -2116,6 +2116,12 @@ export interface TradingAutopsy {
 // the row scales to any account; stops are risk controls, not signals.
 export interface DeskAction {
   ticker: string;
+  grade_signal?: 'buy' | 'sell' | 'hold' | 'avoid' | 'unavailable';
+  signal_session?: string | null;
+  previous_grade?: string | null;
+  signal_status?: string;
+  signal_reason?: string;
+  signal_basis?: string;
   action: 'buy' | 'add' | 'trim' | 'sell' | 'hold';
   grade: string;
   rank: number | null;

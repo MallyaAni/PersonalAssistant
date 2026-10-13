@@ -9,7 +9,8 @@ flowchart TB
     Grades --> Plan[Adopted scheduled allocation<br/>risk caps and FOMC policy]
     Artifacts --> Admission[Optional reviewed learned release<br/>source, evidence, model and configuration hashes<br/>not enabled by test results]
     Store --> Admission
-    Admission --> LearnedPlan[Installed learned nightly selector<br/>stock-specific whole-share funded targets<br/>no assumed sale proceeds]
+    Admission --> LearnedPlan[Grade-led nightly selector<br/>learned sizes and whole-share funding<br/>signals remain visible when blocked]
+    Grades -->|A/A+ entry, below A exit| LearnedPlan
     LearnedPlan --> Journal
     LearnedPlan --> Records
     Admission --> LearnedTiming[Shared learned completed-bar inference<br/>original published models; no runtime fitting]
@@ -23,6 +24,7 @@ flowchart TB
     Grades --> Records[(Dated desk records<br/>and completed 15-minute observations)]
     Plan --> Records
     Records --> View[Desk API and dashboard<br/>dated advice and manual position recording]
+    Grades -->|Dated primary signals, separate from fills| View
     Journal --> View
     Providers -->|Current regular IEX candles<br/>read-only chart refresh, 20s cache| View
     Broker -->|Actual timestamped paper fills<br/>20s display refresh| View
@@ -43,7 +45,7 @@ flowchart TB
     Research --> Audit[RL readiness audit<br/>research only; no policy promotion]
     Store --> Pilot[Isolated daily neural and RL pilot<br/>net wealth, pre/post-event evaluation]
     Pilot --> Artifacts[(Research run artifacts<br/>frozen models and account paths<br/>no automatic promotion)]
-    Artifacts --> Frozen[Frozen validation-selected neural model<br/>nightly NumPy inference]
+    Artifacts --> Frozen[Frozen model-only research<br/>original histories preserved]
     Store --> Frozen
     Frozen --> MLForward[(Independent prospective accounts<br/>ML, rules, SPY, USD; delayed fills)]
     MLForward --> View

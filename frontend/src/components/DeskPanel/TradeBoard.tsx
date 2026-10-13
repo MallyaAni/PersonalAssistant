@@ -22,10 +22,10 @@ export type BoardWord = 'BUY' | 'SELL' | 'TRIM' | 'HOLD' | '—' | 'ORDERS'
 const LEARNED_HOLDING_POLICY = 'joint-stock-risk-funded/6-retained-holdings-probability-timing-research'
 
 // Identify the recorded learned allocator without reclassifying older decisions.
-export const learnedAllocation = (latest: DeskRecord): boolean => latest.targets?.policy === LEARNED_HOLDING_POLICY
+export const learnedAllocation = (latest: DeskRecord): boolean => [LEARNED_HOLDING_POLICY, 'grade-led-learned-sizing/1'].includes(latest.targets?.policy ?? '')
 
 // Explain the board's presentation of recorded decisions without inventing a stock score.
-export const rankingText = 'Exceptions first, then due and waiting paper orders by funded order size. Other names follow recorded target weight; retained holdings with unavailable risk stay separate. Grades do not set automatic priority. This ordering is not a return forecast.'
+export const rankingText = 'Grades give entry and exit signals. Orders show funded size and execution status separately. Exceptions and due orders come first, followed by unfilled grade signals and other holdings. This ordering is not a return forecast.'
 
 // Prefer the executor's recorded rule rather than assigning legacy timing to a new policy.
 export const executionRuleText = (plan?: DeskPaperPlan): string => {
@@ -59,6 +59,8 @@ export type BoardRow = {
   status: string
   state: string
   when: string
+  signal?: string
+  signalReason?: string
 }
 
 // The views a trader switches between: what the account is trading today,
@@ -317,6 +319,13 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
       : allocation === 'modeled' ? `Model allocation · ${latest.session}; cash and costs included`
       : 'Model allocation unavailable · recorded target is not a fresh recommendation'
     const grade = latest.grades[ticker]?.grade ?? ''
+    const signalRow = latest.actions?.find(row => row.ticker === ticker)
+    const signal = currentOnly ? signalRow?.grade_signal ?? (
+      grade === 'A' || grade === 'A+' ? held > 0 ? 'hold' : 'buy'
+      : grade === 'B' || grade === 'C' ? held > 0 ? 'sell' : 'avoid' : 'unavailable'
+    ) : undefined
+    const signalReason = !currentOnly ? undefined : signalRow?.signal_reason ??
+      `Grade ${grade || 'unavailable'} · ${latest.session}; ${latest.targets?.policy === 'grade-led-learned-sizing/1' ? 'no executable order' : 'awaiting a fresh grade-led sizing plan'}`
     const lead = [...mine].sort((a, b) => (PROGRESS[a.state] ?? 9) - (PROGRESS[b.state] ?? 9))[0]
     const combined = new Set(mine.map(o => `${o.side}:${o.state}:${quantityLabel(o)}`)).size <= 1
     const status = !lead ? '' : mine.length < 2 ? lead.status
@@ -325,7 +334,7 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
       : `${lead.status} · ${mine.filter(o => o.state === 'filled').length} of ${mine.length} orders filled`
     const qty = mine.reduce((sum, o) => sum + o.qty, 0)
     const notional = combined && mine.length && mine.every(o => o.notional !== null) ? mine.reduce((sum, o) => sum + (o.notional ?? 0), 0) : null
-    const word: BoardWord = mine.length ? wordOf(mine) : held > 0 ? 'HOLD' : '—'
+    const word: BoardWord = mine.length ? wordOf(mine) : signal === 'buy' ? 'BUY' : signal === 'sell' ? 'SELL' : held > 0 ? 'HOLD' : '—'
     const done = mine.length > 0 && mine.every(isDone)
     const why = mine.length
       ? [...new Set(mine.map(o => o.why))].join(' + ')
@@ -345,7 +354,8 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
       avgCost: position?.avg_entry_price ?? null,
       unrealized: position ? position.unrealized_pl : null,
       target, allocation, allocationNote,
-      status,
+      status: status || (signal === 'buy' || signal === 'sell' ? `Signal only · ${signalReason}` : ''),
+      signal, signalReason,
       state: lead?.state ?? '',
       when: lead?.when ?? '',
     }
@@ -360,6 +370,7 @@ const pendingActions = (row: BoardRow): DeskPaperOrder[] =>
 
 // Give both sides the same readiness priority, with exceptions ahead of normal actions.
 const band = (row: BoardRow): number => {
+  if (!row.orders.length && (row.signal === 'buy' || row.signal === 'sell')) return 3
   if (!row.orders.length) return row.held > 0 || (row.target ?? 0) > 0 ? 5 : 6
   if (['problem', 'missed', 'rejected'].includes(row.state)) return 0
   const actions = pendingActions(row)
@@ -368,7 +379,7 @@ const band = (row: BoardRow): number => {
   return row.orders.every(order => isDone(order) || order.state === 'held') ? 4 : 3
 }
 
-// Present actual funded actions and target weights without adding a grade-based policy.
+// Rank order readiness first, then visible grade signals without fabricating their size.
 const ranked = (rows: BoardRow[]) => [...rows].sort((a, b) => {
   const stage = band(a), other = band(b)
   if (stage !== other) return stage - other
@@ -640,6 +651,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
               </td>
               <td className="py-2 text-xs" title={row.why}>
                 <span aria-label={`${row.ticker} strategy intent`} className={`font-semibold ${row.done ? 'text-[#6e6e73]' : WORD_STYLE[row.word]}`}>{row.word}</span>
+                {row.signal && <div aria-label={`${row.ticker} grade signal`} className="text-[10px] text-[#6e6e73]">Grade signal: {row.signal.toUpperCase()}{row.orders.length ? ` · ${latest.session}` : ' · no order'}</div>}
               </td>
               <td className="py-2 text-xs" aria-label={`${row.ticker} size`}>
                 {row.orders.length ? <>
