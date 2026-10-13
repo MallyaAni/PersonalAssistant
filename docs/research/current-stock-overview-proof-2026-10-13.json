@@ -1,0 +1,41 @@
+{
+  "status": "VERIFIED_CURRENT_STOCK_OVERVIEW",
+  "checked_at": "2026-10-13T13:24:07.149872+00:00",
+  "source_revision": "8761e0febacf915864f2c43f1762f1e08b69c90e",
+  "serving": {
+    "anios_backend": {
+      "id": "8847c4faefa4f52741703951df2f43c349589b088ec95eb37df632c5b09894a0",
+      "image": "sha256:f4fde19ca15c5d44f51e45425f038a3955306706855df2a534ac7d0348a0dbdf",
+      "started_at": "2026-10-13T01:10:20.940160768Z"
+    },
+    "anios_gateway": {
+      "id": "e264225ab95ff10ba1193e56ce8b47ab0857e42d7dd6abe3445350c6fb597bf0",
+      "image": "sha256:f71f3b0eadbcc9a64fc0bb58a5b12d9312bb3cfff0192f158fafcd7811bde204",
+      "started_at": "2026-10-13T13:16:57.587733483Z"
+    }
+  },
+  "compiled_asset": "/assets/index-BaxM_rlN.js",
+  "compiled_asset_sha256": "137e593201154e59acaece30fa4dc2a7d4799024fed518efd3cdc0056c661d65",
+  "frontend_source_sha256": {
+    "frontend/src/components/DeskPanel/DeskPanel.tsx": "d9099dbb6107953233542c9aa8fad63d96b93fd5d0b673ce5128b0d2a770aa92",
+    "frontend/src/components/DeskPanel/TradeBoard.tsx": "577b9434128d8e52629d7c063575e7b911eee0ed9e47a462e8f973be044ed9a4",
+    "frontend/e2e/strategy-simulation.spec.ts": "a68ec10029a9f4b6963fed44f4d6c7f6e1094c3d5582b5ec1a86d1e18cc78372"
+  },
+  "post_deploy": "2026-10-13T13:17:00Z 8761e0fe ok (cheap)",
+  "browser_workflows": 8,
+  "automated_browser_cases": 8,
+  "skipped_browser_cases": 0,
+  "console_errors": 0,
+  "console_warnings": 0,
+  "reviewed_trading_sources_unchanged": 28,
+  "original_files_unchanged": 108,
+  "simulation_payloads_unchanged": 95,
+  "simulation_manifest_sha256": "d5e1c139a8eb0dde0c4d4efa5851f478586887b8efe90dcc9d3b8b29dc670c6b",
+  "backend_and_model_services_unchanged": true,
+  "real_orders": false,
+  "actual_nightly_acceptance": false,
+  "screenshots": {
+    "current-stock-overview-20261013.png": "93353bec583e4905ec940efaf0db53aa4d9b57d325dc7f0ce673ce1f56e2a59b",
+    "current-stock-overview-mobile-20261013.png": "b2f6a25b745e7603dbd6ac3cfb68d7148a90cd41aa288bfb53e41e1a6d7960df"
+  }
+}

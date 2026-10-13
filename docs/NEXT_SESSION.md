@@ -11,11 +11,23 @@ holding, past trade or historical simulation summary is requested by the overvie
 Ticker D/W/15m history continues to use the unchanged verified latest-strategy
 projection. Paper account and Archived research retain their separate views.
 
-Candidate frontend-only changes: DeskPanel.tsx, TradeBoard.tsx and the focused
+VERIFIED frontend-only release8761e0febacf915864f2c43f1762f1e08b69c90e:
+DeskPanel.tsx, TradeBoard.tsx and the focused
 strategy-simulation browser acceptance. Type/build VERIFIED;8 unique browser
 cases passed/0 skipped at the final source: current action/settlement refresh,
-chart boundaries, phone/search/filter and separate account workflows. Canonical deployment and actual
-compiled browser acceptance still UNVERIFIED until this entry is updated.
+chart boundaries, phone/search/filter and separate account workflows. Canonical
+scripts/deploy.sh frontend-only deployment completed13:17:01Z, no skip flags,
+type/build/cheap post passed. Backend/model containers unchanged. Gateway
+e264225ab95f/imagef71f3b0eadbcc9a64fc0bb58a5b12d9312bb3cfff0192f158fafcd7811bde204,
+compiled index-BaxM_rlN.js SHA137e593201154e59acaece30fa4dc2a7d4799024fed518efd3cdc0056c661d65.
+Actual authenticated compiled browser8bounded workflows VERIFIED: all94rows,
+current filter counts0/0/0/10/84, search/empty recovery/Escape, ORCL ticker D/W/15m
+history, mobile390px/no page overflow, guide/refresh/reload/All names persistence.
+0console errors/warnings. Independent post-browser verification13:24:07Z preserves
+all108original files,28reviewed sources and95simulation payloads/manifest plus
+exact current holding/timing configs/approval. No real orders. Root
+scratch/current-stock-overview-release-20261013 contains execution, browser,
+independent verification and screenshots. [Exact proof](research/current-stock-overview-proof-2026-10-13.json).
 No backend, model, policy, cost, approval, historical data or simulation changes.
 Diagram impact NONE: existing read-only current account and ticker-history paths.
 Starting branch codex/learned-live-release-20261006, HEAD e6f869fa6a4f6ef415b99cdbf1e5970c50fd2df9,
@@ -23,6 +35,17 @@ clean before this work; origin/main up to date. Preserve all original evidence.
 Failed private harnesses remain in /tmp/current-overview-tests-20261013*: missing
 local browser, incomplete position fixture and chat-read abort during reload;
 corrected fixtures retain strict failures for required desk requests/page errors.
+First launcher failed preflight on abbreviated marker comparison (no gates or
+deployment began); fixed comparison resolves marker to exact SHA. Second3975964
+completed; never restart it. First independent HTTP harness was blocked403 by
+the public edge; v2 instead binds the actual browser-observed compiled asset
+and nginx bytes. Original scripts/failures retained. NEVER repeat passed release,
+browser matrices or preservation checks for documentation.
+
+NEW human reports ORCL chart signals still look wrong; specific timeframe/date
+requested asynchronously. Do not presume earlier ledger matching proves the
+placement/model semantics the human is questioning. Inspect focused actual
+ORCL candles/markers and simulation decisions before any targeted correction.
 
 Remaining real operational acceptance remains UNVERIFIED: first fresh ordinary
 corrected nightly Tuesday Oct13 19:30ET, then actual intraday and subsequent paper
