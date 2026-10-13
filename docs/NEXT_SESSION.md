@@ -55,6 +55,20 @@ Source inspection: TickerChart.simulatedTradeMarkers; read-only evidence
 scratch/orcl-signal-inspection-20261013.json. This focused check does NOT establish
 that the model's investment decisions are good or every fundamental value correct.
 
+Human clarified the missing ORCL signals were the grade-based BUY after earnings.
+Focused actual GET-only gateway history/strategy/earnings reads VERIFIED the
+distinction: original graded-equal-weight/5 history has Sep15,2026 A+ BUY target
+9.0909%, then Sep18 B SELL target0. Latest-strategy projection target is0 on
+Sep11/Sep15/Sep18 and no ORCL intents/trades occur June–Oct12. Stored earnings
+reaction_date isSep11. These are different strategy outputs, not evidence of a
+missing latest-strategy chart marker. Prior execution-date explanation was not
+the cause of this post-earnings case; communicated that correction to the human.
+Read-only proof scratch/orcl-earnings-signal-inspection-20261013.json SHA
+477622cd0ec3787e3c56fbee3b405db88646a2a6905fa0d1675d95fea1e8088e.
+No new fits, account replay, chart retiming, data rewrite or deployment. This
+proves the displayed strategy basis differs; it does NOT prove the newer model
+made the better investment decision. Preserve old grade-based BUY/SELL records.
+
 Remaining real operational acceptance remains UNVERIFIED: first fresh ordinary
 corrected nightly Tuesday Oct13 19:30ET, then actual intraday and subsequent paper
 execution/reconciliation. Monday failed actual record must NEVER be replayed.
