@@ -6,12 +6,16 @@ from fastapi.testclient import TestClient
 from backend.api.v1.api import router
 from backend.config.settings import settings
 from backend.core.auth import issue_user_token
+from backend.market.strategy_research import archive_configuration
 from backend.tests.test_strategy_simulation import publication
 
 
 # Exercise the real router, authentication and integrity reader over HTTP.
 def test_strategy_http_content_ownership_integrity_and_no_writes(tmp_path, monkeypatch):
     path, _, _ = publication(tmp_path)
+    config_path = tmp_path / "desk/learned-holding/config.json"
+    archive_configuration(tmp_path, config_path.read_bytes())
+    config_path.write_text('{"policy":"grade-led-learned-sizing/1","cost_bps":10}')
     monkeypatch.setattr(settings, "AUTH_REQUIRED", True)
     monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
     monkeypatch.setattr(settings, "MARKET_DESK_USER", "strategy_owner")

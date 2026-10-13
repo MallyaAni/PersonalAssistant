@@ -9,7 +9,7 @@ from fastapi import Path as PathParam
 from backend.api.v1.market import _operator_only
 from backend.config.settings import settings
 from backend.core.auth import authorize_path_user
-from backend.market import strategy_simulation
+from backend.market import strategy_research
 
 router = APIRouter(
     prefix="/market/{user_id}/desk/strategy-simulation",
@@ -25,7 +25,7 @@ async def view(user_id, response, ticker=None):
     response.headers["Cache-Control"] = "private, no-store"
     try:
         value = await asyncio.to_thread(
-            strategy_simulation.read, settings.MARKET_DATA_ROOT, ticker
+            strategy_research.read, settings.MARKET_DATA_ROOT, ticker
         )
     except (OSError, ValueError, KeyError, TypeError) as exc:
         raise HTTPException(

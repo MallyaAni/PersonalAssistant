@@ -9,6 +9,7 @@ from datetime import date
 from pathlib import Path
 
 from backend.market import strategy_simulation as simulation
+from backend.market.strategy_research import archive_configuration
 
 
 # Authenticate original input bytes before loading private replay evidence.
@@ -155,6 +156,7 @@ def publish(
         manifest["files"][name] = hashlib.sha256(path.read_bytes()).hexdigest()
     if (Path(root) / "desk/learned-holding/config.json").read_bytes() != config_bytes:
         raise ValueError("Installed simulation configuration changed during projection")
+    archive_configuration(root, config_bytes)
     pending = parent / (version + ".manifest.tmp")
     pending.write_text(json.dumps(manifest, indent=2))
     pending.chmod(0o600)
