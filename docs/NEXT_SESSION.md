@@ -1,5 +1,58 @@
 # Next session
 
+## 2026-10-13 — Oct12 simulation PUBLISHED / VERIFIED; real acceptance pending
+
+Code support08df36f8bfba1774e9378b0050201a8f0fd32629 canonical scripts/deploy.sh
+COMPLETE01:10:26Z, all gates enabled;10635unit pass/93skip/6xfail/439warnings,
+100real routing pass/0skip, cheap post passed. Exact1632actual backend files match
+08df; backend8847c4faefa4/imagef4fde19ca15c5d44f51e45425f038a3955306706855df2a534ac7d0348a0dbdf.
+Gateway21c1e2531d2a/imageeda86e88989b51f3483a1b4c54c4aba69600b6bb4b6265c4bcbc8704da6254e7
+and compiled index-BvTcgoH9.js SHA3827d975b0889e025e3013f0930d6efe9332126ddf6bef4cff8d1af1d1022bf2
+unchanged. All28reviewed trading modules,6713holding config/0983release approval,
+d033timing config, models and108original artifacts/state/Friday record/histories
+unchanged. Source approval was checked against the actual runtime. No diagram
+impact: same isolated replay and read-only display flows. NEVER repeat this
+release, gates, original UI matrices or prior qualification for documentation.
+
+Oct12projection PUBLISHED01:27:12Z, fully VERIFIED after actual browser reads
+01:35:28Z. Version601b48b9fd90b793a5867ddd7ad041bac55f6d6959e3f51ea171cf18cf465cfe,
+manifestd5e1c139a8eb0dde0c4d4efa5851f478586887b8efe90dcc9d3b8b29dc670c6b.
+94stocks/95payloads/2697simulated trades; all2695prior trades preserved, only
+Oct12LITE TRIM5@10:00ET/$1036.34 andSTX BUY2@15:45ET/$755.78 added. MU BUY5
+andSTX TRIM5 are unfilled hypotheticalOct13plans, distinct from historical fills.
+Old version/prior manifest retained; no parent/v5/Oct12replay or model fits.
+Validated carried seed and full child-chain proof remain under
+scratch/latest-strategy-continuation-20261013-v2; code execution/proof under
+scratch/latest-strategy-carry-release-20261013. Original failed harnesses retained.
+
+VERIFIED real gateway summary+all94stock reads match all2697trades/targets/holdings;
+owner200/foreign403/anonymous401/no-store, backend summary identical.12new-fill
+chart windows pass: bothLITE/STX D/W/15m5/10/20/60 have their original candles.
+9bounded actual authenticated compiled-browser workflows pass: LITE andSTX D/W/
+15mmarkers, original dates/quantities/raw prices, distinct plannedSTX/MU sizes,
+94-stock/reload persistence and separate actual Paper10positions/0orders/saved
+Oct9targets.0console errors/warnings. Actual grade cards remain explicitly dated
+Oct9; only authenticated PRIVATE genuineOct12close grades supplied continuation,
+never fabricated a missing production report. Seven screenshots and hashes saved.
+All108original files/28sources and serving identities unchanged after browser.
+[Exact publication/release/HTTP/browser proof](research/latest-strategy-oct12-publication-proof-2026-10-13.json).
+
+NEXT only real operational windows: corrected fresh ordinary nightly, actual-session
+learned intraday observation, following paper execution/reconciliation and matching
+actual model UI. Monday actual nightly remains FAILED/unavailable and must NEVER
+be rerun/retagged; missing full record fields stay unavailable. Current real paper
+state d1fdf82d0ca3222a5ea669cdb280ff3631657639dde39ad793eb6edf244d155e unchanged.
+Inspect compact process/dated record/state/intents/forecasts and broker GET-only
+evidence first at an applicable window; never duplicate active jobs. Validate
+exact runtime/config/publication identity, learned allocation/funded tags, supported
+strong-grade trims, retained holdings/cash/shares, owner isolation and real timing/
+wait/fill reconciliation. No artificial actual clocks, desk.run or forced real days.
+Any separately available simulation date must use ordinary completed20:30ET SIP,
+exact last seed/pending/chain provenance, missing dates only and no parent replay.
+Current simulation throughOct12is complete; NEVER rerun/publish it for docs.
+Keep THIS heartbeat ACTIVE until all applicable real acceptance is recorded.
+Prior sections below are chronological, superseded progress notes.
+
 ## 2026-10-13 — Oct12 private continuation VERIFIED; source gate ACTIVE
 
 Canonical support source08df36f8bfba1774e9378b0050201a8f0fd32629 ACTIVE,

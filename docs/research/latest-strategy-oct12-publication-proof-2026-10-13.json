@@ -1,0 +1,231 @@
+{
+  "publication": {
+    "status": "PUBLISHED_VERIFIED_OCT12_COUNTERFACTUAL_SIMULATION",
+    "actual_at": "2026-10-13T01:27:12.120329+00:00",
+    "source_revision": "08df36f8bfba1774e9378b0050201a8f0fd32629",
+    "manifest_sha256": "d5e1c139a8eb0dde0c4d4efa5851f478586887b8efe90dcc9d3b8b29dc670c6b",
+    "previous_manifest_sha256": "012e8f654c21da6eb4799c3b647bfe9d1f1ef90984dd41a9f268ae4203eb9bb0",
+    "projection_version": "601b48b9fd90b793a5867ddd7ad041bac55f6d6959e3f51ea171cf18cf465cfe",
+    "through": "2026-10-12",
+    "stocks": 94,
+    "simulated_trades": 2697,
+    "old_2695_trades_preserved": true,
+    "original_data_files_unchanged": 108,
+    "config_approval_and_models_unchanged": true,
+    "real_orders": false,
+    "new_fits": 0,
+    "actual_nightly_acceptance": false,
+    "http_and_browser_acceptance": false
+  },
+  "http-acceptance": {
+    "status": "VERIFIED_PUBLISHED_OCT12_ALL_STOCK_HTTP",
+    "stocks": 94,
+    "simulated_trades": 2697,
+    "new_fills": [
+      [
+        "LITE",
+        "TRIM",
+        5
+      ],
+      [
+        "STX",
+        "BUY",
+        2
+      ]
+    ],
+    "planned_orders_distinct_from_fills": true,
+    "summary_and_stock_content_exact": true,
+    "backend_summary_matches_gateway": true,
+    "owner": 200,
+    "foreign": 403,
+    "anonymous": 401,
+    "private_no_store": true,
+    "original_state_friday_record_and_histories_unchanged": 96,
+    "new_fill_chart_windows": [
+      {
+        "ticker": "LITE",
+        "timeframe": "daily",
+        "sessions": 2000,
+        "new_fill_candle_covered": true
+      },
+      {
+        "ticker": "LITE",
+        "timeframe": "weekly",
+        "sessions": 2000,
+        "new_fill_candle_covered": true
+      },
+      {
+        "ticker": "LITE",
+        "timeframe": "15m",
+        "sessions": 5,
+        "new_fill_candle_covered": true
+      },
+      {
+        "ticker": "LITE",
+        "timeframe": "15m",
+        "sessions": 10,
+        "new_fill_candle_covered": true
+      },
+      {
+        "ticker": "LITE",
+        "timeframe": "15m",
+        "sessions": 20,
+        "new_fill_candle_covered": true
+      },
+      {
+        "ticker": "LITE",
+        "timeframe": "15m",
+        "sessions": 60,
+        "new_fill_candle_covered": true
+      },
+      {
+        "ticker": "STX",
+        "timeframe": "daily",
+        "sessions": 2000,
+        "new_fill_candle_covered": true
+      },
+      {
+        "ticker": "STX",
+        "timeframe": "weekly",
+        "sessions": 2000,
+        "new_fill_candle_covered": true
+      },
+      {
+        "ticker": "STX",
+        "timeframe": "15m",
+        "sessions": 5,
+        "new_fill_candle_covered": true
+      },
+      {
+        "ticker": "STX",
+        "timeframe": "15m",
+        "sessions": 10,
+        "new_fill_candle_covered": true
+      },
+      {
+        "ticker": "STX",
+        "timeframe": "15m",
+        "sessions": 20,
+        "new_fill_candle_covered": true
+      },
+      {
+        "ticker": "STX",
+        "timeframe": "15m",
+        "sessions": 60,
+        "new_fill_candle_covered": true
+      }
+    ],
+    "manifest_sha256": "d5e1c139a8eb0dde0c4d4efa5851f478586887b8efe90dcc9d3b8b29dc670c6b",
+    "through": "2026-10-12",
+    "real_orders": false
+  },
+  "browser-acceptance": {
+    "status": "VERIFIED_ACTUAL_PUBLISHED_OCT12_BROWSER",
+    "url": "https://deep-matter.com/?deskView=strategy#desk",
+    "source_revision": "08df36f8bfba1774e9378b0050201a8f0fd32629",
+    "compiled_asset": "index-BvTcgoH9.js",
+    "compiled_asset_sha256": "3827d975b0889e025e3013f0930d6efe9332126ddf6bef4cff8d1af1d1022bf2",
+    "through": "2026-10-12",
+    "stocks": 94,
+    "workflows": [
+      "LITE D TRIM 5 / October 12",
+      "LITE W TRIM 5 / forming October 12 week",
+      "LITE 15m TRIM 5 / original 10:00 ET execution",
+      "STX D BUY 2 / October 12; TRIM 5 remains planned",
+      "STX W BUY 2 / forming October 12 week; prior BUY 192 and TRIM 2 remain separate",
+      "STX 15m BUY 2 / original 15:45 ET execution",
+      "MU BUY 5 clearly planned, 172 held, target 23.6%, dated October 12",
+      "Separate actual Paper account: 10 positions, 0 orders, original saved October 9 targets",
+      "Latest strategy survives authenticated reload: 94 stocks through October 12"
+    ],
+    "unique_workflows": 9,
+    "console_errors": 0,
+    "console_warnings": 0,
+    "real_orders": false,
+    "actual_ordinary_nightly_acceptance": false,
+    "harness_failure": "AX reported timeframe controls as checkboxes; DOM identified actual buttons and corrected selector passed."
+  },
+  "post-browser-verification": {
+    "status": "VERIFIED_PUBLISHED_OCT12_BROWSER_AND_PRESERVATION",
+    "checked_at": "2026-10-13T01:35:28.914716+00:00",
+    "source_revision": "08df36f8bfba1774e9378b0050201a8f0fd32629",
+    "manifest_sha256": "d5e1c139a8eb0dde0c4d4efa5851f478586887b8efe90dcc9d3b8b29dc670c6b",
+    "stocks": 94,
+    "simulated_trades": 2697,
+    "original_trades_unchanged": 2695,
+    "new_trades": 2,
+    "actual_browser_workflows": 9,
+    "http_chart_windows": 12,
+    "console_errors": 0,
+    "console_warnings": 0,
+    "original_files_unchanged": 108,
+    "reviewed_sources_unchanged": 28,
+    "serving_identities_unchanged_since_canonical_release": true,
+    "models_unchanged": true,
+    "screenshot_sha256": {
+      "oct12-simulation-board.png": "e2c2d9ac14ff280b2bcde30ea8fe0da03de1994f57a79da893050867b0037f60",
+      "oct12-simulation-lite-daily.png": "63418bea8ad4668437cdc75ed9123061bb9e02431690f120ab2e4fd1650ebf2c",
+      "oct12-simulation-lite-weekly.png": "00257ef90b94a47ae94fed880d0658f432490218354b9f6053e2213afaa76a40",
+      "oct12-simulation-lite-15m.png": "c26fb2af143379c5189d81278b395e1d055db1d8d6790247b6bcd4ca75aede20",
+      "oct12-simulation-stx-daily.png": "120fb0fb42ee52b42c26511a6528a0b4138125823717e985e40cb6e196d6aa35",
+      "oct12-simulation-stx-weekly.png": "3da25d3230e45afccd96433f67c300aad213a561026e3387f51ddedc704f7d30",
+      "oct12-simulation-stx-15m.png": "88ee1806d861bc9bdd6da3b086c9ddf50ea280ce4945c937eaf6d0c88e15be47"
+    },
+    "real_orders": false,
+    "actual_ordinary_nightly_acceptance": false
+  },
+  "canonical_release": {
+    "status": "VERIFIED_DEPLOYED_PRIVATE_CARRY_SUPPORT",
+    "checked_at": "2026-10-13T01:26:51.630848+00:00",
+    "revision": "08df36f8bfba1774e9378b0050201a8f0fd32629",
+    "backend_files_matched": 1632,
+    "serving": {
+      "anios_backend": {
+        "id": "8847c4faefa4f52741703951df2f43c349589b088ec95eb37df632c5b09894a0",
+        "image": "sha256:f4fde19ca15c5d44f51e45425f038a3955306706855df2a534ac7d0348a0dbdf",
+        "started_at": "2026-10-13T01:10:20.940160768Z"
+      },
+      "anios_gateway": {
+        "id": "21c1e2531d2a385258eb64391f0b99b9e350f6e34b40892b49e90acfc367c6ce",
+        "image": "sha256:eda86e88989b51f3483a1b4c54c4aba69600b6bb4b6265c4bcbc8704da6254e7",
+        "started_at": "2026-10-12T23:07:24.646572814Z"
+      }
+    },
+    "unit": {
+      "passed": 10635,
+      "skipped": 93,
+      "xfail": 6,
+      "warnings": 439
+    },
+    "routing": {
+      "passed": 100,
+      "skipped": 0
+    },
+    "post": "2026-10-13T01:10:25Z 08df36f8 ok (cheap)",
+    "original_files_unchanged": 108,
+    "reviewed_sources_unchanged": 28,
+    "source_approval_unchanged": true,
+    "models_unchanged": true,
+    "paper_session_replayed": false,
+    "ordinary_acceptance": false,
+    "continuation_cli_sha256": "14357ed7b87618ee514dd3cd4e4a71e2c27290875c3df257e692773e524cfaaf"
+  },
+  "status": "VERIFIED_PUBLISHED_OCT12_SIMULATION_AND_CANONICAL_CARRY_RELEASE",
+  "private_and_staged_proof": "latest-strategy-oct12-continuation-proof-2026-10-13.json",
+  "projection": {
+    "version": "601b48b9fd90b793a5867ddd7ad041bac55f6d6959e3f51ea171cf18cf465cfe",
+    "manifest_sha256": "d5e1c139a8eb0dde0c4d4efa5851f478586887b8efe90dcc9d3b8b29dc670c6b",
+    "aggregate_sha256": "d228fd0bed482202b49a30f4e1aec9c660f6c148ee6fc4aae858e9705e75f85f",
+    "child_sha256": "81e02c2960676631aef3205e3fe3985c624e712d4e96237b86a0cc9a59310ffe"
+  },
+  "remaining": [
+    "Fresh corrected ordinary nightly (Monday failure remains preserved and was not replayed)",
+    "Actual-session learned intraday observation and following paper execution/reconciliation",
+    "Matching actual model UI; separately verified continuation only when new ordinary inputs are complete"
+  ],
+  "limitations": [
+    "Counterfactual model availability and completed-bar execution proxies; no guaranteed historical fills or historically published predictions.",
+    "No general superiority claim or independent numerical audit of every fundamental financial value.",
+    "Actual Paper account and its original policies, history, records and failed Monday state remain separate."
+  ]
+}
