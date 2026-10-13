@@ -81,7 +81,7 @@ async function install(page: Page, stock: Stock, failure = false, current = {don
       {date: '2026-10-06', grade: 'A+', said: true},
       {date: '2026-10-07', grade: 'A', said: false},
       {date: '2026-10-08', grade: 'B', said: false},
-    ], fills: [], backtest: null}
+    ], fills: [{date: '2026-10-07', filled_at: '2026-10-07T15:00:00Z', side: 'buy', qty: 3, price: 101}], backtest: null}
     else if (path.includes('/chart/')) {
       const frame = url.searchParams.get('timeframe') ?? 'daily'
       json = captured ? captured.stocks[stock.ticker][frame === '15m' ? `15m-${url.searchParams.get('sessions')}` : frame] : controlChart(stock.ticker, frame)
@@ -279,5 +279,24 @@ test('grade direction survives a zero research target with dated provenance', as
   await expect(row.getByLabel(`${stocks.at(-1)!.ticker} strategy intent`)).toHaveText('BUY')
   await expect(row.getByLabel(`${stocks.at(-1)!.ticker} size`)).toHaveText('—')
   await expect(row).toContainText('awaiting a fresh grade-led sizing plan')
+  await row.getByRole('button', {name: stocks.at(-1)!.ticker, exact: true}).click()
+  await expect(page.getByLabel(`${stocks.at(-1)!.ticker} paper order`, {exact: true})).toContainText('Grade signal · no paper order')
+  await expect(page.getByLabel(`${stocks.at(-1)!.ticker} signal status`, {exact: true})).toContainText('awaiting a fresh grade-led sizing plan')
+  expect(errors).toEqual([])
+})
+
+// Confirmed account executions retain their quantity and clock instead of borrowing research trades.
+test('actual paper execution chart mode stays separate from grade and model research', async ({page}) => {
+  const errors = await install(page, stocks[0])
+  const chart = page.getByRole('region', {name: `${stocks[0].ticker} price chart`})
+  await chart.getByRole('checkbox', {name: 'Actual paper executions', exact: true}).check()
+  await expect(chart.getByRole('checkbox', {name: 'Grade signals'})).not.toBeChecked()
+  await expect(chart.getByRole('checkbox', {name: 'Model-only research fills'})).not.toBeChecked()
+  await expect(chart.getByLabel(`${stocks[0].ticker} actual paper executions`, {exact: true})).toContainText('2026-10-07 · 11:00 AM ET · BUY 3 @ $101.00')
+  await chart.getByRole('button', {name: '15m', exact: true}).click()
+  await expect(chart.getByTestId('ticker-chart-canvas')).toHaveAttribute('data-chart-timeframe', '15m')
+  await expect.poll(() => page.evaluate(() => (window as any).__strategyPaint)).toEqual(expect.arrayContaining([expect.objectContaining({text: 'BUY 3 sh'})]))
+  await chart.getByRole('checkbox', {name: 'Grade signals'}).check()
+  await expect(chart.getByRole('checkbox', {name: 'Actual paper executions'})).not.toBeChecked()
   expect(errors).toEqual([])
 })

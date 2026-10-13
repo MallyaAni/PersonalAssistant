@@ -5,9 +5,9 @@ import { displayedBoardPrice, SessionPrice } from './StockBoard'
 // The Stock rankings board, rebuilt around one question a trader asks of it:
 // what is the paper account doing about each name, how big, and when.
 //
-// Every action on this board is the paper account's own order, read from
-// `/desk/paper` (`plan.orders`), and the paper account sends exactly those
-// orders using their recorded policy. The wording of each order (why, when, what happened) comes
+// Orders come from `/desk/paper` (`plan.orders`). Grade signals are shown
+// separately, including when no order can be sized or funded. The paper account
+// sends only its recorded orders. Their wording (why, when, what happened) comes
 // from the backend in one place, so this board, the ticker panel and the
 // chart cannot tell different stories. A name with no order is HOLD when the
 // account holds it and a dash when it does not.

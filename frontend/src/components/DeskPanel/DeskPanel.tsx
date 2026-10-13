@@ -2967,12 +2967,13 @@ const TodayLine = ({exchange, event, boardEvent, orders, plan}: {
 // position against its target. Every order on the name is listed.
 const PaperOrderCard = ({ticker, row, session}: {ticker: string; row: BoardRow; session: string}) => (
   <section aria-label={`${ticker} paper order`} className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
-    <h4 className="mb-1 font-medium text-[#6e6e73]">Paper account</h4>
+    <h4 className="mb-1 font-medium text-[#6e6e73]">{row.signal && !row.orders.length ? 'Grade signal · no paper order' : 'Paper account'}</h4>
     <p className="text-base">
       <span className={`font-semibold ${row.done ? 'text-[#6e6e73]' : WORD_STYLE[row.word]}`}>{row.word}</span>
       {row.orders.length > 0 && <span className="ml-2 text-[#1d1d1f]">{row.combined ? `${sharesText(row.qty)} ${row.sizeLabel}` : `${row.orders.length} orders · see below`}{row.notional !== null ? ` · ${dollars(row.notional)}` : ''}{row.weight !== null ? ` · ${percent(row.weight)} of current equity` : ''}</span>}
     </p>
     <p className="text-xs text-[#6e6e73]">{row.why}</p>
+    {row.signal && <p aria-label={`${ticker} signal status`} className="text-xs text-[#6e6e73]">Grade signal {row.signal.toUpperCase()} · {session} · {row.signalReason}</p>}
     {row.orders.map(o => <div key={o.client_order_id} className="mt-2 text-xs">
       {row.orders.length > 1 && <p className="font-medium text-[#1d1d1f]">{orderWord(o)} {sharesText(o.qty)} {quantityLabel(o)} · {o.why}</p>}
       {o.planned_qty !== undefined && o.planned_qty !== o.qty && <p>Originally planned: {sharesText(o.planned_qty)}</p>}
