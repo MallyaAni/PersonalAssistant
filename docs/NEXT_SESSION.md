@@ -43,9 +43,17 @@ and nginx bytes. Original scripts/failures retained. NEVER repeat passed release
 browser matrices or preservation checks for documentation.
 
 NEW human reports ORCL chart signals still look wrong; specific timeframe/date
-requested asynchronously. Do not presume earlier ledger matching proves the
-placement/model semantics the human is questioning. Inspect focused actual
-ORCL candles/markers and simulation decisions before any targeted correction.
+and decision-versus-execution basis requested asynchronously. Focused actual
+gateway read and compiled browser D/W/15m show current markers match simulated
+execution dates/quantities: BUY71 decisionApr23/executionApr24@10:00ET/$174.75;
+TRIM11 Apr24/Apr27@09:45/$170.35;SELL60 Apr29/Apr30@09:30/$162.02. The position
+is reduced71→60→0. D candles have those dates; weekly grouping retains separate
+BUY/TRIM/SELL. ORCL has no splits. Current marker code uses trade.date/at, NOT
+decision_date/decision_at. This is a potential semantic mismatch if the human
+means decision-day signals; do not silently change their historical timestamps.
+Source inspection: TickerChart.simulatedTradeMarkers; read-only evidence
+scratch/orcl-signal-inspection-20261013.json. This focused check does NOT establish
+that the model's investment decisions are good or every fundamental value correct.
 
 Remaining real operational acceptance remains UNVERIFIED: first fresh ordinary
 corrected nightly Tuesday Oct13 19:30ET, then actual intraday and subsequent paper
