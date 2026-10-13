@@ -1,0 +1,124 @@
+{
+  "independent-verification": {
+    "status": "VERIFIED_COUNTERFACTUAL_CONTINUATION",
+    "sha256": "81e02c2960676631aef3205e3fe3985c624e712d4e96237b86a0cc9a59310ffe",
+    "parent_account_sha256": "7779de6ec8e18240611bf666b24ded650a7b64ae37968b8c43d59eb860988ab7",
+    "seed_sha256": "6b350c7784f6767638f3b4f125df0f56031361f32322aa0890aeb091e6a1874a",
+    "config_sha256": "6713db802790ded44d1fc7e59688a448ae5b9fffb147aaa597ad489ade6b0fb9",
+    "sessions_added": 1,
+    "simulated_trades": 2,
+    "intents": 4,
+    "carried_intents": 2,
+    "cash_holdings_fees_raw_execution_prices_and_seed_reconciled": true,
+    "original_model_publication_preserved": "2026-10-04T18:35:30.875637-04:00",
+    "original_account_replayed": false,
+    "base_models_fitted": 0,
+    "real_orders": false,
+    "through": "2026-10-12",
+    "actual_input_files_rechecked": 286,
+    "container": "e4811a6ab1ba86d0cb5c377cb351ef96e3bd9a8c94392cd86e65d9785a153b07",
+    "image": "sha256:5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d",
+    "network_disabled": true,
+    "original_history_rows_unchanged": 94,
+    "reviewed_source_files_unchanged": 28,
+    "pending_seed_conserved": true,
+    "checked_at": "2026-10-13T00:56:24.540359+00:00"
+  },
+  "runtime-verification": {
+    "status": "VERIFIED_EXACT_PRIVATE_OCT12_RUNTIME",
+    "source_revision": "08df36f8bfba1774e9378b0050201a8f0fd32629",
+    "backend_files_matched": 1632,
+    "reviewed_sources_unchanged": 28,
+    "original_data_and_installed_config_artifacts_unchanged": 108,
+    "private_grade_overlays_authenticated": 94,
+    "production_histories_unchanged": 94,
+    "real_orders": false,
+    "new_base_fits": 0,
+    "continuation_source_sha256": "14357ed7b87618ee514dd3cd4e4a71e2c27290875c3df257e692773e524cfaaf"
+  },
+  "aggregate-proof": {
+    "status": "VERIFIED_COUNTERFACTUAL_CONTINUATION",
+    "sha256": "d228fd0bed482202b49a30f4e1aec9c660f6c148ee6fc4aae858e9705e75f85f",
+    "parent_account_sha256": "896fac34e5c13a16b0d418d477e22e65c313ca49e637bc797f6000c1b163be8d",
+    "seed_sha256": "0cdb6daa1ef38ef99049b6a16fac308ddc4b2cb205259ab43a6ab753b3acbaf3",
+    "config_sha256": "6713db802790ded44d1fc7e59688a448ae5b9fffb147aaa597ad489ade6b0fb9",
+    "sessions_added": 8,
+    "simulated_trades": 11,
+    "intents": 13,
+    "carried_intents": 2,
+    "cash_holdings_fees_raw_execution_prices_and_seed_reconciled": true,
+    "original_model_publication_preserved": "2026-10-04T18:35:30.875637-04:00",
+    "original_account_replayed": false,
+    "base_models_fitted": 0,
+    "real_orders": false,
+    "through": "2026-10-12",
+    "actual_input_files_rechecked": 286,
+    "container": "e4811a6ab1ba86d0cb5c377cb351ef96e3bd9a8c94392cd86e65d9785a153b07",
+    "image": "sha256:5c6c560537b3e7c70202edd6dfc872d299e2a268aa302ec23c3f48a3f49d099d",
+    "network_disabled": true,
+    "original_history_rows_unchanged": 94,
+    "reviewed_source_files_unchanged": 28,
+    "pending_seed_conserved": true,
+    "checked_at": "2026-10-13T00:56:24.540359+00:00",
+    "continuation_chain": [
+      {
+        "sha256": "7779de6ec8e18240611bf666b24ded650a7b64ae37968b8c43d59eb860988ab7",
+        "parent_account_sha256": "896fac34e5c13a16b0d418d477e22e65c313ca49e637bc797f6000c1b163be8d",
+        "config_sha256": "d4ff38db0f136462f5ff0246fdb0737a9947603d4a5fe9ad0d46792e626c2704",
+        "proof_sha256": "15b883049ba7c3699fbed7142c8bf520aa53c44533b629d6bf31bf968aaf401b"
+      },
+      {
+        "sha256": "81e02c2960676631aef3205e3fe3985c624e712d4e96237b86a0cc9a59310ffe",
+        "parent_account_sha256": "7779de6ec8e18240611bf666b24ded650a7b64ae37968b8c43d59eb860988ab7",
+        "seed_sha256": "6b350c7784f6767638f3b4f125df0f56031361f32322aa0890aeb091e6a1874a",
+        "config_sha256": "6713db802790ded44d1fc7e59688a448ae5b9fffb147aaa597ad489ade6b0fb9",
+        "proof_sha256": "6a81d6f2030703b3ad868be17d8578db2e0be0eabb2b6b662b2a538b30e4117e"
+      }
+    ],
+    "prior_rows_and_original_sizes_unchanged": true,
+    "identical_carried_intents_deduplicated": 2,
+    "source_approval_only_config_compatibility_verified": true
+  },
+  "staged-projection-proof": {
+    "status": "VERIFIED_STAGED_OCT12_SIMULATION",
+    "through": "2026-10-12",
+    "checked_at": "2026-10-13T00:58:50.258346+00:00",
+    "manifest_sha256": "d5e1c139a8eb0dde0c4d4efa5851f478586887b8efe90dcc9d3b8b29dc670c6b",
+    "projection_version": "601b48b9fd90b793a5867ddd7ad041bac55f6d6959e3f51ea171cf18cf465cfe",
+    "aggregate_sha256": "d228fd0bed482202b49a30f4e1aec9c660f6c148ee6fc4aae858e9705e75f85f",
+    "stocks": 94,
+    "original_trades_unchanged": 2695,
+    "simulated_trades_added": 2,
+    "prior_targets_and_decision_id_size_time_price_unchanged": true,
+    "original_decisions_with_new_execution_receipts": [
+      "anios-2026-10-09-buy-stx-3158",
+      "anios-2026-10-09-sell-lite-3157"
+    ],
+    "old_curve_prefix_unchanged": true,
+    "no_parent_replay": true,
+    "real_orders": false,
+    "base_models_fitted": 0,
+    "published_to_live": false
+  },
+  "status": "VERIFIED_PRIVATE_OCT12_CONTINUATION_STAGED_NOT_PUBLISHED",
+  "canonical_release": {
+    "source_revision": "08df36f8bfba1774e9378b0050201a8f0fd32629",
+    "status": "ACTIVE",
+    "launcher": 2963597,
+    "root": "scratch/latest-strategy-carry-release-20261013",
+    "focused_passed": 46,
+    "focused_skipped": 0
+  },
+  "failed_harness_evidence": [
+    "latest-strategy-continuation-20261013-v1/run.log (missing synthetic private SECRET_KEY at startup)",
+    "latest-strategy-continuation-20261013-v1/original-seed-refusal.log (original pending guard)",
+    "latest-strategy-continuation-20261013-v2/independent-verification-v1.log (wrong IntradayBar attribute; corrected to start)",
+    "latest-strategy-continuation-20261013-v2/staged-projection-v1.log (wrong summary key; successful stage preserved and independently verified)",
+    "latest-strategy-carry-launch-20261013.log (preflight used superseded source identity; no gate or deployment began)"
+  ],
+  "remaining": [
+    "Canonical carry-source gates and deployed identity",
+    "Publish separately verified October 12 projection and actual HTTP/browser acceptance",
+    "Fresh ordinary real nightly, intraday observation and following paper execution/reconciliation"
+  ]
+}

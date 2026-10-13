@@ -1,6 +1,44 @@
 # Next session
 
-## 2026-10-13 — Oct12 private continuation in progress
+## 2026-10-13 — Oct12 private continuation VERIFIED; source gate ACTIVE
+
+Canonical support source08df36f8bfba1774e9378b0050201a8f0fd32629 ACTIVE,
+launcher2963597, root scratch/latest-strategy-carry-release-20261013. Inspect
+compact process/log/execution.json first; NEVER duplicate/restart or repeat gates.
+Original launcher2961705 failed at preflight using a superseded source identity;
+no gates/deployment began. Original script/log preserved;v2 binds the verified
+eb9f correction approval instead, refusing every unapproved source/data change.
+All28reviewed trading modules and108original data/config/artifact files unchanged.
+
+VERIFIED privatev2 completedOct12ONLY, SHA81e02c2960676631aef3205e3fe3985c624e712d4e96237b86a0cc9a59310ffe:
+2trades/4intents (2original carried),286inputs rechecked, seed/cash/whole-shares/
+10bp fees/raw SIP prices reconciled. OriginalOct4publication preserved, no base
+fits/real orders/parent replay. Exact1632private backend files match08dfsource;
+108original files/28sources/94production histories unchanged. Original pending
+LITEsell5/STXbuy2 filled in privateOct12; new plansMUbuy5/STXtrim5 executeOct13
+only hypothetically, never shown as actual broker orders.
+
+VERIFIED non-replayed aggregate SHA d228fd0bed482202b49a30f4e1aec9c660f6c148ee6fc4aae858e9705e75f85f,
+originalSept30anchor and v5all7sessions/9trades/11intents unchanged, original
+2695projected trades byte/semantic identical;2newOct12trades only. Durable prior
+decisions retain IDs/sizes/times/prices; only2carried decisions gain new execution
+receipts. Staged94stocks/95payloads throughOct12, version601b48b9fd90b793a5867ddd7ad041bac55f6d6959e3f51ea171cf18cf465cfe,
+manifestd5e1c139a8eb0dde0c4d4efa5851f478586887b8efe90dcc9d3b8b29dc670c6b.
+STILL NOT LIVE; serving projection remainsOct9 until gates pass. [Exact private/staged proof](research/latest-strategy-oct12-continuation-proof-2026-10-13.json).
+
+NEXT after gateexit0: verify serving08dfCLI/source/current6713config/0983release
+approval unchanged; run prepared scratch/publish_strategy_oct12_projection.py
+from deploy with research-venv/PYTHONPATHdeploy ONLY after verifying its exact
+staged proof. It refuses unfinished/failed code release, altered prior012e manifest
+or config/data/source. Then real gateway all94/2697content/auth/read-only proof and
+bounded actual browser Oct12date/LITE5/STX2/history plus plannedMU5/STXtrim5.
+Never replay parent, v5or completedOct12 or republish passed stage for docs.
+Preserve failed harness logs (bar.start fix; summary.start fix); stage was complete
+and independently verified without rerunning publisher. Fresh real ordinary
+nightly/intraday/following execution acceptance remainsUNVERIFIED; Monday failed
+is not a pass. Keep THIS heartbeat ACTIVE; report substantive results only.
+
+### Preparation evidence (chronological)
 
 VERIFIED46focused tests/no skips for authenticated unsent seed carry and existing
 projection semantics. Original CLI refusal reproduced with exactOct9seed before
