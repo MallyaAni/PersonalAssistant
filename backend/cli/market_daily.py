@@ -889,10 +889,25 @@ def _holding_broker(policy, client, decision_at):
         policy.reader.validate_clock(decision_at)
 
 
-# Preserve fresh inherited position marks without granting stock eligibility.
+# Value installed paper holdings on the broker's equity basis;
+# preserve private replay prices.
 def _holding_prices(policy, prices, positions):
     if policy is None:
         return prices
+    from backend.market.learned_live_holding import (
+        InstalledHoldingPolicy,
+        RetainedHoldingPolicy,
+    )
+
+    if type(policy) in (InstalledHoldingPolicy, RetainedHoldingPolicy):
+        return {
+            **prices,
+            **{
+                row.symbol: row.market_value / row.qty
+                for row in positions
+                if row.qty > 0
+            },
+        }
     return {**{row.symbol: row.current_price for row in positions}, **prices}
 
 
@@ -1678,7 +1693,7 @@ def record(
                 (
                     actions.REBALANCE
                     - int(paper.get("until_rebalance", actions.REBALANCE))
-                    if paper
+                    if paper and paper.get("until_rebalance") is not None
                     else 0
                 ),
             )

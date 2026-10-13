@@ -17,6 +17,41 @@ from backend.market.strategy_simulation import (
 )
 
 
+# Reject economic or artifact changes even when source approval is renewed.
+@pytest.mark.parametrize(
+    "changed", [None, "cost_bps", "policy", "model", "risk", "timing"]
+)
+def test_approval_only_configuration_preserves_original_economic_binding(
+    tmp_path, changed
+):
+    from backend.cli.market_strategy_simulation import prior_configuration
+
+    original = {
+        "release_receipt_sha256": "old",
+        "cost_bps": 10,
+        "policy": POLICY,
+        "model": "frozen-model",
+        "risk": "frozen-bank",
+        "timing": "frozen-timing",
+    }
+    path = tmp_path / "original-config.json"
+    raw = json.dumps(original).encode()
+    path.write_bytes(raw)
+    digest = hashlib.sha256(raw).hexdigest()
+    updated = {**original, "release_receipt_sha256": "reviewed-correction"}
+    if changed is not None:
+        updated[changed] = "changed"
+        with pytest.raises(ValueError, match="Only source-release approval"):
+            prior_configuration(updated, digest, path)
+    else:
+        prior_configuration(updated, digest, path)
+        with pytest.raises(ValueError, match="Original continuation configuration"):
+            prior_configuration(updated, digest, None)
+        with pytest.raises(ValueError, match="evidence hash differs"):
+            prior_configuration(updated, "0" * 64, path)
+    assert path.read_bytes() == raw
+
+
 # Build a carried account with predecessor trades and a partially executed trim.
 def account():
     order = {

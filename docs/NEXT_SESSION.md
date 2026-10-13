@@ -1,5 +1,49 @@
 # Next session
 
+## 2026-10-12 — first ordinary nightly FAILED; correction in progress
+
+FAILED actual19:30ET cron on deployed00f220f9: processedMondayOct12state and
+published genuine learned close19:45:13ET, then record() crashed at int(None)
+for until_rebalance. Mondaydated desk record/history capture/prose NOT published.
+Persisted paper entry has26sessions_seen, policyV6, until_rebalanceNone,10positions,
+no pending or submitted orders. Allocation unavailable: inconsistent_account_equity.
+The old close-price marks plus cash were$99,345.5684 against$98,480.31broker equity;
+original broker marks plus cash$98,477.4111. Preserve this original unavailable
+decision; NEVER rerun/force/replayMonday's account or fabricate missing original
+record fields. Existing Friday record stays unchanged. [Exact failure proof](research/learned-first-nightly-failure-proof-2026-10-12.json).
+
+Candidate corrections: market_daily.record uses zero technical-reference cadence
+when the selected policy has no reset countdown, preservingNone on paper/action
+fields. Only exact installed live policy types use broker market_value/qty for
+held valuation; private replay and incumbent mark behavior unchanged. Strict cash,
+equity, whole-share guards remain unchanged. Source-approval-only projection update
+requires original config bytes/hash and equality of every other config key;
+changing policy/cost/model/risk/timing is refused, prior producing config retained
+in provenance.2failure regressions reproduced;180focused tests passed/no skips,
+real original snapshot mark correction verified read-only, no new plan/orders or
+desk.run.6old lint findings in test_market_daily untouched;changed production/
+publisher/projection tests lint clean. NOT deployed or actual operational success.
+
+Root scratch/learned-nightly-first-ordinary-failure-20261012 has original state,
+original learned observation, original configs/Fridayrecord, GET-only paper clock/
+account/positions/orders, failure/mark-correction proof and failed harness logs.
+StateSHAd1fdf82d0ca3222a5ea669cdb280ff3631657639dde39ad793eb6edf244d155e,
+observation8dd2f8e132ffc8698741de469cef9d6194583b0708ba392d4cd2e58a619fea01;
+all preserved. Private permission/one-ULP harness failures retained/corrected;
+production account guard was not changed. Actual source approval binds28modules,
+so corrected CLI needs a NEW reviewed release receipt/config reference (only
+that reference changes), preserving original artifacts/evidence/costs/models.
+Existing read-only projection must be republished under that approval-only config
+with original continuation config/proof retained, never replaying completed account.
+
+NEXT: canonical corrected-source release/all applicable gates; never repeat an
+active job. Then exact runtime/source/config approval and read-only projection
+checks/API data continuity. Do not create a fake Monday full record or call
+desk.run; retained original snapshot is authoritative, lost fields stay unavailable.
+New ordinary SIP inputs after20:30ET allow separately verified missing-date
+simulation continuation only. Real next-nightly/intraday/execution acceptance still
+pending. Keep THIS heartbeat ACTIVE; notify substantive failures/results only.
+
 ## 2026-10-12 — latest-strategy dashboard backfill (DEPLOYED / VERIFIED)
 
 The human superseded paper-fill-only charts: the default dashboard/history now

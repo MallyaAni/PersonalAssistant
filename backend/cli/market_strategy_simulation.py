@@ -36,6 +36,21 @@ def attach_splits(projected, splits_path, splits_sha):
     projected["provenance"]["split_metadata_sha256"] = splits_sha
 
 
+# Authenticate a prior configuration when only its reviewed source approval changes.
+def prior_configuration(config, original_sha, prior_path):
+    if prior_path is None:
+        raise ValueError("Original continuation configuration required")
+    prior = json.loads(verified(prior_path, original_sha))
+    before = {
+        key: value for key, value in prior.items() if key != "release_receipt_sha256"
+    }
+    after = {
+        key: value for key, value in config.items() if key != "release_receipt_sha256"
+    }
+    if before != after:
+        raise ValueError("Only source-release approval may change for preserved replay")
+
+
 # Publish content-addressed stock views and switch the manifest only after readback.
 def publish(
     account_path,
@@ -48,6 +63,7 @@ def publish(
     continuation_proof=None,
     splits_path=None,
     splits_sha=None,
+    prior_config_path=None,
 ):
     raw = verified(account_path, account_sha)
     proof = json.loads(verified(proof_path, proof_sha))
@@ -81,10 +97,13 @@ def publish(
             evidence["status"] != "VERIFIED_COUNTERFACTUAL_CONTINUATION"
             or evidence["sha256"] != continuation_sha
             or evidence["parent_account_sha256"] != account_sha
-            or evidence["config_sha256"] != provenance["config_sha256"]
             or evidence["real_orders"] is not False
         ):
             raise ValueError("Independent continuation verification required")
+        if evidence["config_sha256"] != provenance["config_sha256"]:
+            prior_configuration(config, evidence["config_sha256"], prior_config_path)
+            provenance["continuation_config_sha256"] = evidence["config_sha256"]
+            provenance["configuration_change"] = "source_release_approval_only"
         child = json.loads(
             gzip.decompress(verified(continuation_path, continuation_sha))
         )
@@ -166,6 +185,7 @@ def main():
         "continuation",
         "continuation-sha256",
         "continuation-proof",
+        "prior-config-path",
     ):
         parser.add_argument("--" + name)
     args = parser.parse_args()
@@ -182,6 +202,7 @@ def main():
                 args.continuation_proof,
                 args.splits,
                 args.splits_sha256,
+                args.prior_config_path,
             )
         )
     )

@@ -242,6 +242,61 @@ def test_record_and_save(tmp_path):
     assert json.loads(path.read_text(encoding="utf-8"))["session"] == "2026-09-03"
 
 
+# Publish a continuous learned decision without inventing a reset countdown.
+def test_record_persists_learned_policy_without_rebalance_cadence(tmp_path):
+    from backend.market.learned_holding_transition import POLICY
+
+    entry = {
+        "equity": 100.0,
+        "until_rebalance": None,
+        "policy": POLICY,
+        "selected_targets": {
+            "policy": POLICY,
+            "weights": {"SNDK": 0.25, "IREN": 0.0},
+        },
+        "actions": [],
+    }
+    core = market_daily.record(_report(), paper=entry)
+    path = market_daily.save(tmp_path, core)
+    saved = json.loads(path.read_bytes())
+    assert saved["paper"]["until_rebalance"] is None
+    assert saved["targets"] == entry["selected_targets"]
+    assert saved["actions"] == []
+    assert set(saved["levels"]) == {"SNDK", "IREN"}
+
+
+# Use broker valuation for installed holdings while preserving private replay prices.
+def test_installed_holding_marks_reconcile_account_without_relaxing_guards():
+    from backend.market import joint_funded_policy, learned_live_holding
+
+    positions = [
+        SimpleNamespace(
+            symbol="SNDK", qty=10, market_value=900.0, current_price=90.0
+        )
+    ]
+    prices = {"SNDK": 100.0, "IREN": 80.0}
+    policy = object.__new__(learned_live_holding.RetainedHoldingPolicy)
+    before = joint_funded_policy._account(901.0, {"SNDK": 10}, prices, 1.0)
+    assert before[2] == "inconsistent_account_equity"
+    marked = market_daily._holding_prices(policy, prices, positions)
+    current, reserved, reason = joint_funded_policy._account(
+        901.0, {"SNDK": 10}, marked, 1.0
+    )
+    assert reason is None
+    assert reserved == 0.0
+    assert current == {"SNDK": 900.0 / 901.0}
+    assert marked == {"SNDK": 90.0, "IREN": 80.0}
+    private = object.__new__(joint_funded_policy.JointFundedPolicy)
+    assert market_daily._holding_prices(private, prices, positions) == prices
+    assert market_daily._holding_prices(None, prices, positions) == prices
+    assert joint_funded_policy._account(890.0, {"SNDK": 10}, marked, 1.0)[2] == (
+        "inconsistent_account_equity"
+    )
+    assert joint_funded_policy._account(901.0, {"SNDK": 10.5}, marked, 1.0)[2] == (
+        "whole_share_holdings_unavailable"
+    )
+
+
 # Every graded name carries the executor's band-gate flag on the record: the
 # value `_band_blocked` hands `paper.plan(entry_blocked=...)` in the nightly,
 # which is `exit.evidence(panel).signalled()` on the decision session (the
