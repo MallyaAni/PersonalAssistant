@@ -519,6 +519,9 @@ class GradeLedFundedPolicy(RetainedMarketConditionedFundedPolicy):
             session, report, equity, held, prices, cash, blocked
         )
         readings = grade_led_policy.signals(report, held)
+        # Include zero-size names so a grade exit remains visible without any owned shares.
+        targets = {**dict.fromkeys(readings, 0.0), **targets}
+        receipt["targets"] = targets
         receipt["sizing_model_targets"] = dict(targets)
         if receipt["status"] == "available":
             return grade_led_policy.preserve_grade_holdings(

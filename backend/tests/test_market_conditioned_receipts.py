@@ -484,30 +484,60 @@ def test_retained_actual_account_saved_proof(retained_account, monkeypatch):
 def test_retained_transition_carries_incumbent_holdings(
     reader, timing, tmp_path, monkeypatch, retained_account
 ):
+    from datetime import UTC
+
+    observed = datetime.now(UTC)
     panel, raw, cubes = fixture(tuple(map(str, reader.dates)))
     first, last = len(reader.dates) - 3, len(reader.dates) - 1
     cutoff = str(reader.dates[first])
     incumbent = run_account(
-        panel, raw, cubes, tmp_path / "incumbent", first, last, 10,
+        panel,
+        raw,
+        cubes,
+        tmp_path / "incumbent",
+        first,
+        last,
+        10,
         feature_reader=journey.features,
     )
     chosen = RetainedMarketConditionedFundedPolicy(reader, 10)
     carried = run_account(
-        panel, raw, cubes, tmp_path / "carried", first, last, 10,
-        holding_policy=chosen, holding_start=cutoff,
-        feature_reader=journey.features, reader_builder=build_reader,
+        panel,
+        raw,
+        cubes,
+        tmp_path / "carried",
+        first,
+        last,
+        10,
+        holding_policy=chosen,
+        holding_start=cutoff,
+        feature_reader=journey.features,
+        reader_builder=build_reader,
         provider=timing.provider,
     )
     assert carried["sessions"][0] == incumbent["sessions"][0]
     assert carried["sessions"][1]["holdings"] == incumbent["sessions"][1]["holdings"]
     assert carried["sessions"][1]["holdings"]["AAA"] > 0
     assert carried["sessions"][1]["cash"] == incumbent["sessions"][1]["cash"]
-    assert carried["nightlies"][0] == incumbent["nightlies"][0]
+    # Generation time may cross a real second; broker clocks and every other field must match.
+    before = deepcopy(incumbent["nightlies"][0])
+    after = deepcopy(carried["nightlies"][0])
+    first_written = datetime.fromisoformat(before["entry"]["written"])
+    second_written = datetime.fromisoformat(after["entry"]["written"])
+    assert first_written.utcoffset() is not None
+    assert second_written.utcoffset() is not None
+    assert observed.replace(microsecond=0) <= first_written <= second_written <= datetime.now(UTC)
+    after["entry"]["written"] = before["entry"]["written"]
+    assert after == before
     assert carried["nightlies"][1]["entry"]["policy"] == chosen.version
     assert carried["holding_start"] == cutoff
     _, data, source, bank = retained_account
     counts = verifier.candidate_receipts(
-        carried, data, source, policy=chosen.version, holding_start=cutoff,
+        carried,
+        data,
+        source,
+        policy=chosen.version,
+        holding_start=cutoff,
         market_calibration=MarketCalibrationVerifier(bank, source),
     )
     assert counts["ordinary_receipts"] == 3
@@ -515,7 +545,11 @@ def test_retained_transition_carries_incumbent_holdings(
     changed["nightlies"][0]["persisted_policy"] = chosen.version
     with pytest.raises(ValueError, match="Carried incumbent"):
         verifier.candidate_receipts(
-            changed, data, source, policy=chosen.version, holding_start=cutoff,
+            changed,
+            data,
+            source,
+            policy=chosen.version,
+            holding_start=cutoff,
             market_calibration=MarketCalibrationVerifier(bank, source),
         )
 
@@ -527,7 +561,10 @@ def test_unadmitted_transition_is_refused(retained_account):
     account["holding_start"] = "2099-01-01"
     with pytest.raises(ValueError, match="Declared holding start"):
         verifier.candidate_receipts(
-            account, data, source, policy=account["policy"],
+            account,
+            data,
+            source,
+            policy=account["policy"],
             market_calibration=MarketCalibrationVerifier(bank, source),
         )
 

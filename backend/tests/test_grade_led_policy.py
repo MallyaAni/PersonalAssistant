@@ -207,3 +207,31 @@ def test_personal_grade_direction_preserves_a_and_exits_b():
     )
     assert available
     assert desired == {"AAA": 0.3, "BBB": 0}
+
+
+# An unowned downgrade stays a directional signal without pretending a sale is blocked.
+def test_exit_signal_without_shares_needs_no_order(monkeypatch, reader):
+    policy = chosen(monkeypatch, reader, {"AAA": [0.05, 0.06], "BBB": [-0.02, -0.03]})
+    shown = report(reader, grades=(1, 2))
+    shown.graded.grades[-2, 0] = 3
+    prices = {"AAA": 100, "BBB": 100}
+    orders, state, _ = policy.plan(
+        str(shown.panel.dates[-1]),
+        paper.PaperState(),
+        10000,
+        {},
+        prices,
+        shown,
+        10000,
+        set(),
+    )
+    receipt = state.allocation_state["receipt"]
+    rows = actions.build(shown, receipt["targets"], {}, 0)
+    rows = market_daily._holding_actions(
+        policy, rows, orders, {}, {}, prices, 10000, None, receipt
+    )
+    exit_signal = next(row for row in rows if row["ticker"] == "AAA")
+    assert exit_signal["grade_signal"] == "sell"
+    assert exit_signal["signal_status"] == "no_position"
+    assert exit_signal["signal_reason"] == "No shares held; no sell order needed"
+    assert exit_signal["order_quantity"] == 0

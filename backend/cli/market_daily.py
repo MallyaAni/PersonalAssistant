@@ -1104,6 +1104,11 @@ def _holding_actions(
                 ),
                 leaves_if="Grade below A or explicit event exit",
             )
+            if signal == "sell" and held.get(name, 0) <= 0 and order is None:
+                row.update(
+                    signal_status="no_position",
+                    signal_reason="No shares held; no sell order needed",
+                )
         result.append(row)
     result.sort(
         key=lambda row: (
