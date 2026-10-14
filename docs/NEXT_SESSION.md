@@ -1,5 +1,33 @@
 # Next session
 
+## 2026-10-14 — Fresh dashboard assessment is the urgent active task
+
+Human explicitly requested a fresh assessment at the current price, after CRWV
+showed live prices beside yesterday's grade. Production-based patch
+352d915c4046f7764809bdca2d1ccd42e611c7ea is pushed separately; canonical
+scripts/deploy.sh is RUNNING at scratch/fresh-assessment-release-20261014-v1.
+Do not duplicate its launcher or gate. Production stays42b11a76 until that
+guarded release completes. This urgent patch deliberately excludes the pending
+historical-sizing publication and staged parity correction; those still wait
+for the ONE original full account and independent verification.
+
+79 backend checks/0skip/3.21s and9 compiled controlled browser workflows/20.0s
+passed on the urgent patch, TypeScript/build passed,33 diagram checks passed.
+The merged main candidate additionally passed13 compiled controlled browser
+workflows/26.8s and type/build, preserving historical-sizing features. Only the
+two documentation headers conflicted on merge; both originals were retained.
+The current-assessment fixture now also explicitly serves the candidate's
+separate retrospective history response. No app code conflict or lost change.
+
+Main Stocks consumes freshness-qualified grades independently of personal
+guidance, shows the exact assessed candle price/time and live chart read,
+and keeps stored fundamental/earnings scope and saved allocation dated.
+Expired/missing evidence says fresh assessment unavailable. Saved orders,
+target quantities, models and history are untouched. Genuine Oct13 record
+hash remains37d7541f5ce12a080a4c0538939b95f99367fc9b5318e21eba03d96963927c32;
+full simulation remains original container1e8f440a, running. Actual-site
+acceptance remains UNVERIFIED until canonical release finishes.
+
 ## 2026-10-14 — First ordinary grade-led record exists; parity checker correction staged
 
 The genuine Oct13 19:30ET cron finished on deployed42b11a76. Learned close
