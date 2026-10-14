@@ -257,6 +257,26 @@ test('shows the record data-update note when a grade moved on a data update', as
   }
 })
 
+// A saved-size mismatch remains visible without falsely reporting current grades as failed.
+test('scopes target-only failure to original saved allocation sizes', async ({page, baseURL}, testInfo) => {
+  const diagnostics = await installParity(page, baseURL!, {ok: false, date: SESSION, names: 1, mismatches: [
+    {kind: 'target', ticker: 'AAPL', live: .08, replay: .125, detail: 'saved target differs from replay'},
+  ]})
+  try {
+    await openBoard(page)
+    const banner = page.getByRole('alert', {name: BANNER, exact: true})
+    await expect(banner).toContainText(`Saved allocation check failed for ${SESSION}: 1 name`)
+    await expect(banner).toContainText('do not use these saved targets to size a trade')
+    await expect(banner).toContainText('AAPL (target: live 0.08, replay 0.125)')
+    await expect(banner).toContainText('Current candle grades and chart judgments are assessed separately')
+    await expect(banner).not.toContainText('Grade parity failed')
+    await expect(banner).toHaveCSS('background-color', 'rgb(254, 242, 242)')
+    await banner.screenshot({path: testInfo.outputPath('saved-target-failure.png')})
+  } finally {
+    await recordDiagnostics(testInfo, diagnostics)
+  }
+})
+
 // A passing verdict, or a record from before the check, shows nothing.
 for (const [label, parity] of [['passed', {ok: true, date: SESSION, names: 2, mismatches: []}], ['absent', null]] as const) {
   test(`hides the banner when parity ${label}`, async ({page, baseURL}, testInfo) => {

@@ -702,7 +702,8 @@ function RecordStatus({status, prose, session}: {status?: DeskPayload['record_st
 // said in the plain Data updates note above instead; every other row stays
 // in the banner exactly as before, and with no row left the banner is not
 // drawn. Rows are only taken out in drift mode and when the note has words
-// for them; the red parity banner is never thinned.
+// for them; the red parity banner is never thinned. A target-only mismatch
+// remains a failed saved-size check, distinct from current candle grades.
 function GradeParityBanner({parity}: {parity?: DeskPayload['grade_parity']}) {
   if (!parity || parity.ok) return null
   const note = parity.mode === 'drift' && (parity.data_vintage?.lines?.length ?? 0) > 0 ? parity.data_vintage : null
@@ -728,8 +729,10 @@ function GradeParityBanner({parity}: {parity?: DeskPayload['grade_parity']}) {
       </div>
     </>
   }
+  const targetsOnly = open.length > 0 && open.every(m => m.kind === 'target')
   return <div role="alert" aria-label="Grade parity" className="border-b border-[#b42318]/30 bg-[#fef2f2] px-3 py-2 text-sm text-[#b42318]">
-    <p className="font-semibold">Grade parity failed for {date}: {count} — do not trade from this board</p>
+    <p className="font-semibold">{targetsOnly ? `Saved allocation check failed for ${date}: ${count} — do not use these saved targets to size a trade` : `Grade parity failed for ${date}: ${count} — do not trade from this board`}</p>
+    {targetsOnly && <p className="text-xs">Current candle grades and chart judgments are assessed separately. This failed check concerns the dated allocation targets; it has not been relabeled as passed.</p>}
     {rows}
     {details}
   </div>
