@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { DeskLevelTag, DeskLive, DeskPaperLive, DeskPaperOrder, DeskPaperPlan, DeskRecord, DeskStructure } from '../../services/api'
 import { displayedBoardPrice, SessionPrice } from './StockBoard'
+import {currentAssessments, assessmentPermission} from './liveAssessment'
 
 // The Stock rankings board, rebuilt around one question a trader asks of it:
 // what is the paper account doing about each name, how big, and when.
@@ -546,6 +547,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
   const [draft, setDraft] = useState(() => (readMyAccount() ?? '').toString())
   useEffect(() => { setVisible(25) }, [chosen, query, shownActions])
   const rows = useMemo(() => ranked(boardRows(latest, paper, currentOnly)), [latest, paper, currentOnly])
+  const assessments = currentOnly ? currentAssessments(live, latest.session, now) : {}
   const orders = (paper?.plan?.orders ?? []).filter(order => !currentOnly || !isDone(order))
   const counts = {
     orders: rows.filter(r => r.orders.length > 0).length,
@@ -560,7 +562,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
     : true)
   const measure = (row: BoardRow, key: SortKey): number | string =>
     key === 'ticker' ? row.ticker
-    : key === 'grade' ? GRADE_RANK[row.grade] ?? -1
+    : key === 'grade' ? GRADE_RANK[assessments[row.ticker]?.grade_live ?? row.grade] ?? -1
     : key === 'position' ? row.heldWeight ?? -1
     : row.notional ?? -1
   const allSelected = FILTER_ACTIONS.every(action => shownActions[action])
@@ -586,7 +588,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
             className="w-24 rounded-md border border-black/[0.08] bg-white px-2 py-0.5 text-right text-[#1d1d1f]" />
         </label>
       </div>
-      <p aria-label="Allocation record" title={`Saved policy: ${latest.targets?.policy ?? 'not recorded'}`} className="text-[11px] text-[#6e6e73]">{currentOnly ? `Targets saved ${latest.session} · prices and order status refresh live.` : `Saved allocation · ${latest.session}. These are the saved plan's targets, not new orders. Live holdings can differ.`}</p>
+      <p aria-label="Allocation record" title={`Saved policy: ${latest.targets?.policy ?? 'not recorded'}`} className="text-[11px] text-[#6e6e73]">{currentOnly ? `Assessments refresh on completed 15-minute candles. Targets and order signals saved ${latest.session}; prices and order status refresh live.` : `Saved allocation · ${latest.session}. These are the saved plan's targets, not new orders. Live holdings can differ.`}</p>
       <AccountStrip paper={paper} orders={orders} />
       {paused && <p role="status" aria-label="Trading restriction" className="text-xs text-[#b25e00]">FOMC cycle: the paper account follows the FOMC risk rule; its orders say when.</p>}
       <details aria-label="Order rules" className="text-xs text-[#6e6e73]">
@@ -634,6 +636,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
           const displayed = displayedBoardPrice(live, row.ticker, now, closes?.[row.ticker], latest.session)
           const levels = decisionLevels(row)
           const age = priceAge(structure, now)
+          const assessedGrade = assessments[row.ticker]?.grade_live ?? row.grade
           return <Fragment key={row.ticker}>
             <tr className="border-t border-black/[0.05] align-top">
               <td className="py-2 text-xs"><button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={open} className="w-5 text-[#0071e3]" onClick={() => setOpened(open ? null : row.ticker)}>{open ? '▾' : '▸'}</button></td>
@@ -642,7 +645,10 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
                 <div className="text-[11px] text-[#6e6e73]"><SessionPrice live={live} ticker={row.ticker} now={now} compact close={closes?.[row.ticker]} closeSession={latest.session} /></div>
                 {age && <div aria-label={`${row.ticker} price age`} title="Completed regular-session bar used by the strategy; the displayed quote has its own timestamp." className="whitespace-nowrap text-[10px] text-[#86868b]">{age}</div>}
               </td>
-              <td className="py-2 text-xs" aria-label={`${row.ticker} displayed grade`}><span className={`font-semibold ${row.grade === 'A+' || row.grade === 'A' ? 'text-[#248a3d]' : row.grade === 'C' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{row.grade || '—'}</span></td>
+              <td className="py-2 text-xs" aria-label={`${row.ticker} displayed grade`}>
+                <span className={`font-semibold ${assessedGrade === 'A+' || assessedGrade === 'A' ? 'text-[#248a3d]' : assessedGrade === 'C' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{assessedGrade || '—'}</span>
+                {currentOnly && <div className="text-[10px] text-[#6e6e73]">{assessments[row.ticker] ? 'intraday assessment' : `${latest.session} close · fresh assessment unavailable`}</div>}
+              </td>
               <td className="py-2 text-xs" aria-label={`${row.ticker} position`}>
                 {row.held > 0 ? <>{shares(row.held)}{row.heldWeight !== null ? ` · ${percent(row.heldWeight)}` : ''}</> : <span className="text-[#86868b]">none</span>}
                 {row.target !== null && <div className="text-[10px] text-[#6e6e73]" title={latest.targets?.policy ?? 'Policy not recorded'}>{savedTargetText(row, latest.session)}</div>}
@@ -652,7 +658,8 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
               </td>
               <td className="py-2 text-xs" title={row.why}>
                 <span aria-label={`${row.ticker} strategy intent`} className={`font-semibold ${row.done ? 'text-[#6e6e73]' : WORD_STYLE[row.word]}`}>{row.word}</span>
-                {row.signal && <div aria-label={`${row.ticker} grade signal`} className="text-[10px] text-[#6e6e73]">Grade signal: {row.signal.toUpperCase()}{row.orders.length ? ` · ${latest.session}` : ' · no order'}</div>}
+                {row.signal && <div aria-label={`${row.ticker} grade signal`} className="text-[10px] text-[#6e6e73]">{currentOnly ? 'Saved grade signal' : 'Grade signal'}: {row.signal.toUpperCase()} · {latest.session}{row.orders.length ? '' : ' · no order'}</div>}
+                {assessments[row.ticker] && <div aria-label={`${row.ticker} current assessment`} className="text-[10px] text-[#6e6e73]">Now: {assessmentPermission(assessments[row.ticker].grade_live)}</div>}
               </td>
               <td className="py-2 text-xs" aria-label={`${row.ticker} size`}>
                 {row.orders.length ? <>

@@ -37,6 +37,15 @@
   execution acceptance and comparative performance remain UNVERIFIED.
 - Diagram impact: grade direction now feeds learned sizing and primary ticker
   markers; updated trading-desk diagram pair and architecture page.
+## 2026-10-14 — Current assessment on the Stocks dashboard
+
+The main stock list and ticker detail now receive fresh intraday grades without
+opening personal guidance. The detail shows the assessment's actual candle
+price/time and current chart read, with stored fundamentals/earnings and saved
+allocation clearly dated. Expired evidence explicitly becomes unavailable.
+79 backend checks and9 compiled controlled browser workflows passed; live
+delivery remains pending. No saved account orders, model versions or history
+changed. Details: research/current-assessment-2026-10-14.md.
 
 ## 2026-10-13 — Current stock overview with history inside each ticker
 

@@ -2500,6 +2500,9 @@ export type DeskOptionsEvidence = {
 
 export interface DeskLive {
   as_of: string | null;
+  // Fresh assessments are available without entering a personal account.
+  grades_live?: Record<string, DeskLiveGrade>;
+  grade_valid_until?: Record<string, string>;
   extended_hours?: DeskSessionPrices;
   market_status?: DeskMarketStatus;
   data_at?: string | null;
