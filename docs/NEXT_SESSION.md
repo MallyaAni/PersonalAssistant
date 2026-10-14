@@ -1,5 +1,19 @@
 # Next session
 
+## 2026-10-14 — Urgent current-price assessment patch
+
+Human requested a fresh assessment on the ordinary Stocks dashboard after CRWV
+showed today's quote beside yesterday's grade. This production-based branch
+fixes the live endpoint and main-view wiring independently of personal account
+guidance. Current grade/candle price/time/chart read lead the ticker panel;
+saved allocation/signals/orders remain dated. Stale evidence says unavailable.
+79 private backend checks/0skip and9 compiled controlled browser workflows
+passed; TypeScript/build passed. See research/current-assessment-2026-10-14.md.
+Canonical deployment and actual authenticated browser acceptance are pending.
+The separately owned learned-live-release worktree/main candidate, checker fix,
+and ONE active historical run remain preserved. Do not deploy the bounded
+historical stage or restart any original job.
+
 ## 2026-10-13 — Restore current stock overview; historical strategy remains in ticker details
 
 Human requested the previous stock-ranking format for the main all-stock page,

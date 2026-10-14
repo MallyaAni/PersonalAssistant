@@ -9,6 +9,7 @@ import { RecommendationTimeline } from './RecommendationTimeline'
 import { PersonalDecisionHistory, type PersonalHistoryContext } from './PersonalDecisionHistory'
 import { PaperAccountHistory } from './PaperAccountHistory'
 import { TickerChart } from './TickerChart'
+import {currentAssessments, assessmentPermission} from './liveAssessment'
 import { TradeBoard, RecordedModelDecision, boardRows, dollars, percent, orderWord, quantityLabel, executionRuleText, learnedAllocation, rankingText, savedTargetText, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
 import { StrategyBench } from './StrategyBench'
 import { NeuralStudy } from './NeuralStudy'
@@ -1349,12 +1350,12 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
   // Expire displayed quotes and signals even when no network refresh completes.
   useEffect(() => {
-    const deadlines = [...Object.values(gradeContext.until), payload?.intraday_research?.valid_until ?? '', ...Object.values(decisions?.rows ?? {}).map(row => row.valid_until ?? ''), ...Object.values(live.extended_hours?.quotes ?? {}).map(row => row.valid_until ?? '')].map(Date.parse).filter(value => value > now)
+    const deadlines = [...Object.values(gradeContext.until), ...Object.values(live.grade_valid_until ?? {}), payload?.intraday_research?.valid_until ?? '', ...Object.values(decisions?.rows ?? {}).map(row => row.valid_until ?? ''), ...Object.values(live.extended_hours?.quotes ?? {}).map(row => row.valid_until ?? '')].map(Date.parse).filter(value => value > now)
     deadlines.push(...[live.extended_hours?.as_of, ...Object.values(live.extended_hours?.quotes ?? {}).map(row => row.at)].map(value => Date.parse(value ?? '') + 60_000).filter(value => value > now))
     if (!deadlines.length) return
     const timer = window.setTimeout(() => setNow(Date.now()), Math.min(...deadlines) - now + 1)
     return () => window.clearTimeout(timer)
-  }, [gradeContext, now, payload?.intraday_research?.valid_until, decisions, live.extended_hours])
+  }, [gradeContext, now, payload?.intraday_research?.valid_until, decisions, live.extended_hours, live.grade_valid_until])
 
   // Re-read the paper account's orders every 20 seconds while the page is
   // visible, so a level reached on the candle, the order it sends and the fill
@@ -1391,7 +1392,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // A grade needs both the current decision and an unexpired evidence deadline.
   const gradeCurrent = (ticker: string) => gradeContext.session === latest?.session
     && Date.parse(gradeContext.until[ticker] ?? '') > now
-  const liveGrades = Object.fromEntries(Object.entries(storedGrades).filter(([ticker]) => gradeCurrent(ticker)))
+  const liveGrades = {...Object.fromEntries(Object.entries(storedGrades).filter(([ticker]) => gradeCurrent(ticker))), ...currentAssessments(live, latest?.session, now)}
   const rows = gradeContext.session && gradeContext.session !== latest?.session ? []
     : storedRows.map(row => gradeCurrent(row.ticker) ? row : eveningRow(row)).sort((a, b) =>
       Number(b.in_book) - Number(a.in_book)
@@ -3072,6 +3073,7 @@ const NameDetail = ({
   const brief = latest.briefs?.[ticker]
   const gradeRead = latest.grades?.[ticker]?.read ?? null
   const gradeReads = latest.grades?.[ticker]?.reads
+  const currentAssessment = currentAssessments(live, latest.session, now)[ticker]
   const currentStances = row
     ? row.grade_source === 'intraday' ? row.stances_live ?? liveGrades[ticker]?.stances_live : undefined
     : liveGrades[ticker]?.stances_live
@@ -3118,9 +3120,24 @@ const NameDetail = ({
           <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} strategy={strategy} simulation={simulation} simulationError={simulationError} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
+        {strategy && <section aria-label="Current assessment" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
+          <h4 className="font-medium">Current assessment</h4>
+          {currentAssessment ? <>
+            <p aria-label="Current assessment grade" className="font-semibold">{currentAssessment.grade_live} · {assessmentPermission(currentAssessment.grade_live)}</p>
+            <p className="text-xs text-[#6e6e73]">At {live.quotes[ticker]?.last != null ? priceMoney(live.quotes[ticker].last) : 'unavailable price'} · completed 15-minute candle starting {marketTime(live.quotes[ticker]?.bar)} · assessment {marketTime(live.as_of)}.</p>
+            <AnalystRatings ranks={currentAssessment.ranks_live} stances={currentAssessment.stances_live ?? {}} session={latest.session} />
+            <p className="mt-1 text-xs text-[#6e6e73]">Price-sensitive technical and available valuation votes refreshed. Fundamentals and earnings use the latest stored evidence from the {latest.session} assessment. This reading does not create an order.</p>
+          </> : <p role="status">Fresh assessment unavailable. The {latest.session} saved grade below is historical; a live quote does not refresh it.</p>}
+          <LiveTechnical userId={userId} ticker={ticker} detail={live.technical_detail?.[ticker]} quote={live.quotes[ticker]} row={row} optionsEvidence={live.options_evidence?.[ticker]} />
+        </section>}
         {order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}
         {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}
-        <section aria-label="Latest available grade" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
+        {strategy && <section aria-label="Saved assessment" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
+          <h4 className="font-medium">Saved assessment · {latest.session} close</h4>
+          <p>Grade {latest.grades?.[ticker]?.grade ?? 'unavailable'}</p>
+          <p className="text-xs text-[#6e6e73]">This dated assessment supplies the saved allocation and orders.</p>
+        </section>}
+        {!strategy && <section aria-label="Latest available grade" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
         <h4 className="mb-1 font-medium text-[#6e6e73]">Latest available grade</h4>
         {row && (
           <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
@@ -3149,7 +3166,7 @@ const NameDetail = ({
             {live.technical?.[ticker]?.now != null ? ` · technical rank ${Math.round((live.technical[ticker].now ?? 0) * 100)} of 100` : ''}
           </p>
           {!strategy && <StoredOptionOILevels evidence={live.options_evidence?.[ticker]} />}
-        </section>
+        </section>}
         {/* Recorded reasons retain their original scope even when a newer grade or price is available. */}
         {!strategy && latest.grades?.[ticker] && <section aria-label="In short" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
           <EveningAnalysis grade={latest.grades[ticker]} session={latest.session} written={latest.written} fundamental={latest.fundamental} ticker={ticker} />

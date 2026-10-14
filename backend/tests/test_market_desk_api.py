@@ -664,6 +664,7 @@ async def test_the_live_snapshot_is_marked_stale_when_older_than_a_candle(
 # Freshness is measured from a real candle during an open session.
 @pytest.mark.asyncio
 async def test_a_fresh_live_snapshot_is_not_stale(tmp_path, monkeypatch):
+    from backend.api.v1 import market
     from backend.market import desk_freshness
 
     # Freeze an open session so freshness does not depend on the test's day.
@@ -674,6 +675,7 @@ async def test_a_fresh_live_snapshot_is_not_stale(tmp_path, monkeypatch):
             return datetime(2026, 9, 11, 14, 0, tzinfo=UTC)
 
     monkeypatch.setattr(desk_freshness, "datetime", Clock)
+    monkeypatch.setattr(market, "datetime", Clock)
     monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
     monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
     live_dir = tmp_path / "desk"
@@ -1201,6 +1203,7 @@ async def test_the_autopsy_without_documents_explains_why(tmp_path, monkeypatch)
 async def test_the_live_endpoints_serve_the_persisted_snapshot(
     tmp_path, monkeypatch, growth_model
 ):
+    from backend.api.v1 import market
     from backend.market import desk_freshness
 
     class Clock(datetime):
@@ -1210,6 +1213,7 @@ async def test_the_live_endpoints_serve_the_persisted_snapshot(
             return datetime(2026, 9, 8, 14, 0, tzinfo=UTC)
 
     monkeypatch.setattr(desk_freshness, "datetime", Clock)
+    monkeypatch.setattr(market, "datetime", Clock)
     monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
     monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
     _write(tmp_path, "2026-09-04", {"SNDK": "A+", "MU": "B"}, [("SNDK", 0.08)], [])

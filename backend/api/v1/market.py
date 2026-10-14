@@ -236,25 +236,36 @@ async def desk_session_prices(user_id: UserId, response: Response) -> dict:
     return await asyncio.to_thread(session_price_snapshot.read, _root(), symbols)
 
 
-# One earlier session's record, as it was written.
+# Project current grades from fresh display evidence without changing saved decisions.
+def _with_live_assessment(snapshot: dict, record: dict, now: datetime) -> dict:
+    technical, value = desk_freshness.grade_inputs(snapshot, record, now)
+    readings = holdings.live_grades(record, technical, value)
+    return {
+        **desk_freshness.describe(snapshot, now),
+        "grades_live": readings,
+        "grade_valid_until": desk_freshness.grade_expiries(snapshot, readings),
+    }
+
+
 # The current candle against the board's levels: the last fifteen-minute
 # close, the session's high and low, for every name on the board. Read
 # from Alpaca's free feed and remembered for a candle. Declared before the
 # session route so "live" is not taken for a session.
 @router.get("/desk/live")
-async def desk_live(user_id: UserId) -> dict[str, object]:
-    """Return the candle's live quotes and technical read for the board."""
+async def desk_live(user_id: UserId, response: Response) -> dict[str, object]:
+    """Return fresh candle assessments independently of account guidance."""
     _operator_only(user_id)
+    response.headers["Cache-Control"] = "private, no-store"
     now = datetime.now(UTC)
     market_status = exchange_calendar.exchange_status(now)
+    latest, _previous = deskrecord.latest_pair(_root())
     snap = _live_snapshot()
     if snap is not None and snap.get("quotes"):
         return {
             "user_id": user_id,
-            **desk_freshness.describe(snap),
+            **_with_live_assessment(snap, latest or {}, now),
             "market_status": market_status,
         }
-    latest, _previous = deskrecord.latest_pair(_root())
     rows = (latest or {}).get("actions") or []
     symbols = [str(r.get("ticker")) for r in rows if r.get("ticker")]
     try:
@@ -264,6 +275,8 @@ async def desk_live(user_id: UserId) -> dict[str, object]:
             "user_id": user_id,
             "as_of": None,
             "quotes": {},
+            "grades_live": {},
+            "grade_valid_until": {},
             "reason": "no keys",
             "market_status": market_status,
         }
@@ -286,7 +299,7 @@ async def desk_live(user_id: UserId) -> dict[str, object]:
         except Exception as exc:  # noqa: BLE001 - the quotes must still reach the page
             technical = {"reason": str(exc)}  # type: ignore[dict-item]
     return {
-        **desk_freshness.describe(
+        **_with_live_assessment(
             {
                 "technical": technical,
                 "value": value,
@@ -297,7 +310,9 @@ async def desk_live(user_id: UserId) -> dict[str, object]:
                 "stale": False,
                 "quotes": {symbol: asdict(quote) for symbol, quote in found.items()},
                 "decision_session": (latest or {}).get("session"),
-            }
+            },
+            latest or {},
+            now,
         ),
         "market_status": market_status,
     }
@@ -1223,9 +1238,9 @@ def _paper_plan(
         else None,
     )
     from backend.market import learned_order_observation
+    from backend.market.grade_led_policy import POLICY as GRADE_LED_POLICY
     from backend.market.joint_funded_policy import MARKET_TIMED_POLICY, TIMED_POLICY
     from backend.market.learned_holding_transition import POLICY as RETAINED_POLICY
-    from backend.market.grade_led_policy import POLICY as GRADE_LED_POLICY
 
     observed_rule, observed_text = learned_order_observation.plan_timing(state)
     return {
