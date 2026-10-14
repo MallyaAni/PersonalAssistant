@@ -1,5 +1,38 @@
 # Next session
 
+## 2026-10-14 — Fresh assessment delivered for all94 tracked stocks
+
+Production is now352d915c4046f7764809bdca2d1ccd42e611c7ea, urgent current-assessment
+patch from42b11a76. Canonical retryv2 completed17:06:47Z:10654unit pass/93skip/
+6xfail/439warnings in565.48s;100 real routing pass/0skip in423.69s, supported
+one worker, cheap post green. Preserve failedv1 and all isolation/harness roots;
+never repeat completed gates for documentation. Upstream restored origin/main.
+306 original model/config/research files unchanged; installed release mapping
+unchanged. Actual runtime checks29 unchanged modules plus the intentionally new
+API SHA15542d8b55a799c6316422180206017defd0e8970a0285ceb6a7565d43cb8ff3.
+
+VERIFIED17:22:33Z actual gateway:94 fresh grades, owner200/private-no-store,
+foreign403/anonymous401. Actual authenticated public compiled browser CRWV
+shows fresh C, exact candle66.10/17:00Z and17:15Z assessment, chart technical
+read and separately dated saved Oct13 signal/target. Observed automatic expiry
+and next-candle recovery; zero captured console warnings/errors. Technical and
+available valuation refresh each completed15m candle; fundamentals/earnings
+remain latest stored dated evidence. No new funded sizing/timing inference or
+investment-quality proof. Concise exact-source proof:
+research/current-assessment-delivery-proof-2026-10-14.json.
+
+Broker GET-only observed original STX135 exit12 filled13:32:46.922719Z at
+739.236667 and SWKS136 exit130 filled13:33:32.086665Z at76.181923, original IDs,
+quantities and created clocks preserved. This is a NEW observation; the original
+Oct13 queued capture and failed parity result are unchanged, full record hash
+37d7541f5ce12a080a4c0538939b95f99367fc9b5318e21eba03d96963927c32. Complete
+actual-session learned timing/fill/UI reconciliation is still UNVERIFIED.
+
+The full historical account remains same running container1e8f440a/source27471.
+Urgent production excludes pending historical quantities and parity correction;
+they still require full-account completion/independent verification then canonical
+main release. Keep heartbeat ACTIVE and quiet on unchanged active jobs.
+
 ## 2026-10-14 — Fresh dashboard assessment is the urgent active task
 
 Human explicitly requested a fresh assessment at the current price, after CRWV

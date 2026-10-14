@@ -26,7 +26,21 @@ TypeScript and the production build passed. Nine compiled controlled browser
 workflows passed in 20.0 seconds, including current grade changes, stale
 assessment removal, dated saved targets, no personal preview or other writes,
 chart reads and separate paper/research history. Those fixtures are not live
-delivery proof. Runtime acceptance and canonical deployment remain pending.
+delivery proof. Canonical source352d915c is now deployed:10654 unit passes,
+93 skips,6 xfails;100 real routing passes/0skip and cheap post green. The first
+guarded attempt failed one unchanged declined-offer routing case and did not
+deploy; preserve it. The identical case passed three isolated real-model runs
+before the complete canonical retry passed with one worker.
+
+Actual deployed gateway verification at17:22:33Z returned94 fresh assessments,
+owner200/private-no-store, foreign403/anonymous401. Actual authenticated public
+compiled browser exercised CRWV list/detail/chart with personal guidance closed,
+current C at66.10 for the17:00Z candle,17:15Z assessment, dated saved signal and
+target, live technical read, automatic expiry and next-candle recovery; zero
+captured console errors/warnings. The exact API and serving bundle hashes and
+private evidence are in current-assessment-delivery-proof-2026-10-14.json.
+This applies to tracked names with valid evidence; it is not a validated dip
+profitability ranking or a newly inferred funded target/timing decision.
 
 This urgent patch starts from production 42b11a76, separately from the pending
 historical-sizing and parity-checker candidate. The one full historical account

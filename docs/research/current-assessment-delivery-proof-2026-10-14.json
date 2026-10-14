@@ -1,0 +1,106 @@
+{
+  "status": "VERIFIED_current_assessment_delivery",
+  "source": "352d915c4046f7764809bdca2d1ccd42e611c7ea",
+  "base": "42b11a76cbbdfd0e329f6e47ca2e532f369e2eba",
+  "checked_at": "2026-10-14T17:22:33.911632+00:00",
+  "runtime_root": "scratch/fresh-assessment-runtime-20261014-v7",
+  "capture_sha256": "412b95dd03c84685cda1a153996bfa8da56d9f91167ab68c09037fd798cef74a",
+  "api_sha256": "15542d8b55a799c6316422180206017defd0e8970a0285ceb6a7565d43cb8ff3",
+  "serving_js": "index-DBaZp3D7.js",
+  "serving_js_sha256": "890305eaac220352342501cc66faea210416416c63e00e42eef59232401fc8e1",
+  "backend_image": "sha256:e85f0d6be257e63101fc062631b6ed18e429418e661d777f45c2eb42cf871212",
+  "gateway_image": "sha256:54aec982d696555f65789ddec58270bf1a5eaee1abc07bc44a7d43651c3352b0",
+  "canonical": {
+    "root": "scratch/fresh-assessment-release-20261014-v2",
+    "completed_at": "2026-10-14T17:06:47.247988Z",
+    "units": {
+      "pass": 10654,
+      "skip": 93,
+      "xfail": 6,
+      "warnings": 439,
+      "seconds": 565.48
+    },
+    "real_routing": {
+      "pass": 100,
+      "skip": 0,
+      "seconds": 423.69
+    },
+    "workers": 1,
+    "cheap_post": "ok",
+    "preserved_original_files": 306
+  },
+  "runtime": {
+    "gateway_scope": "actual internal gateway; public HTTPS exercised by authenticated compiled browser",
+    "owner_http": 200,
+    "anonymous_http": 401,
+    "foreign_http": 403,
+    "cache_control": "private, no-store",
+    "actual_reviewed_modules": 30,
+    "unchanged_numeric_and_other_modules": 29,
+    "intentional_api_change_sha256": "15542d8b55a799c6316422180206017defd0e8970a0285ceb6a7565d43cb8ff3",
+    "original_oct13_record_sha256": "37d7541f5ce12a080a4c0538939b95f99367fc9b5318e21eba03d96963927c32",
+    "fresh_grade_names": 94,
+    "snapshot_at": "2026-10-14T17:15:33+00:00",
+    "decision_session": "2026-10-13",
+    "crwv_assessed_price": 66.1,
+    "crwv_candle_start": "2026-10-14T17:00:00+00:00",
+    "crwv_grade": "C",
+    "valid_until": "2026-10-14T17:30:00+00:00"
+  },
+  "browser": {
+    "site": "https://deep-matter.com/?deskView=strategy#desk",
+    "source_bundle": "index-DBaZp3D7.js",
+    "workflow": "Stocks CRWV detail with personal guidance closed; current C/entry permission, assessed candle price/time, live technical read, separate dated saved C/signal/target, daily chart original grade dates",
+    "expiry": "observed 17:15:14Z fresh assessment unavailable while saved Oct13 grade remains dated",
+    "recovery": "observed automatic next completed candle assessment: 66.10,17:00Z candle,17:15Z assessment",
+    "console_warnings": 0,
+    "console_errors": 0
+  },
+  "private_checks": {
+    "backend_pass": 79,
+    "backend_skip": 0,
+    "backend_seconds": 3.21,
+    "urgent_compiled_browser_pass": 9,
+    "urgent_browser_seconds": 20,
+    "merged_candidate_browser_pass": 13,
+    "merged_browser_seconds": 26.8,
+    "type_build": "pass",
+    "diagrams": 33
+  },
+  "original_exits_get_only": [
+    {
+      "client_order_id": "anios-2026-10-13-sell-swks-136",
+      "symbol": "SWKS",
+      "original_created_at": "2026-10-13T23:46:44.630871Z",
+      "submitted_at": "2026-10-14T08:00:28.088222Z",
+      "status": "filled",
+      "qty": "130",
+      "filled_qty": "130",
+      "filled_avg_price": "76.181923",
+      "filled_at": "2026-10-14T13:33:32.086665Z"
+    },
+    {
+      "client_order_id": "anios-2026-10-13-sell-stx-135",
+      "symbol": "STX",
+      "original_created_at": "2026-10-13T23:46:44.596905Z",
+      "submitted_at": "2026-10-14T08:00:28.163303Z",
+      "status": "filled",
+      "qty": "12",
+      "filled_qty": "12",
+      "filled_avg_price": "739.236667",
+      "filled_at": "2026-10-14T13:32:46.922719Z"
+    }
+  ],
+  "scope_limits": [
+    "Price-sensitive technical and available valuation regrade; latest stored fundamentals/earnings stay dated.",
+    "No new funded quantities/timing model inference or investment-quality/performance proof.",
+    "Saved orders, original failed Oct13 parity check and historical records preserved.",
+    "Full retrospective publication, staged parity correction, fresh corrected ordinary and complete learned intraday/fill/UI reconciliation remain pending."
+  ],
+  "failed_evidence": [
+    "canonical release v1:10654units passed;99routing pass/1declined-offer fail; no deployment",
+    "routing isolation v1 missing temporary gate tree; v2 same real case3/3 passed",
+    "runtime v1-v4:urllib public HTTPS request rejected Cloudflare1010; actual browser HTTPS successful",
+    "runtime v5-v6:original release API hash comparison rejected intended urgent API change; v7 independently checks pinned29 and exact new API hash"
+  ]
+}

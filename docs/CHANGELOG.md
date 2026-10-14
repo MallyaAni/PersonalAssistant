@@ -39,6 +39,13 @@
   markers; updated trading-desk diagram pair and architecture page.
 ## 2026-10-14 — Current assessment on the Stocks dashboard
 
+Delivered source352d915c through the canonical deploy:10654 unit passes,
+93 skips/6 xfails,100 real routing passes/0skip, cheap post green. Actual gateway
+returned94 fresh assessments; authenticated compiled browser verified CRWV
+current grade/candle/chart read, separately dated saved plan, expiry and recovery
+with zero captured console warnings/errors.306 original model/config/research
+files are unchanged. Full historical sizing and parity correction remain pending.
+
 The main stock list and ticker detail now receive fresh intraday grades without
 opening personal guidance. The detail shows the assessment's actual candle
 price/time and current chart read, with stored fundamentals/earnings and saved
