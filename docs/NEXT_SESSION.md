@@ -22,6 +22,7 @@ Preserve pending IDs/quantities/clocks and all original receipts. Do not rerun
 nightly, rewrite Oct13's failed checker result or manufacture a fill.
 
 Targeted grade_parity correction is staged, NOT deployed: compare grade-led
+code checkpoint6a485914941b8fb3d0dc18409b200cd54d0406a7 is pushed to main.
 targets to the recorded learned proposal with original grade constraints
 reapplied, validating all receipt/policy/session/grade/target maps and holding
 inputs. Incumbent equal-weight comparison remains unchanged. This is receipt
