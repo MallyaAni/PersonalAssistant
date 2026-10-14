@@ -26,7 +26,7 @@ test('current opportunities rerank and completed exits do not reappear', async (
       quotes: Object.fromEntries(names.map(ticker => [ticker, {last: 102.125, open: 103, high: 104, low: 99, bar, as_of: at}])),
       grades_live: Object.fromEntries(names.map(ticker => [ticker, {grade_live: ticker === 'EXITED' ? 'C' : ticker === 'HELD' ? stage === 'review-held' ? 'A' : 'B' : 'A+', score_live: ticker === 'WAITING' ? .9 : .8}])),
       grade_valid_until: Object.fromEntries(names.map(ticker => [ticker, stage === 'expired' ? '2020-01-01T00:00:00Z' : until])),
-      opportunities: {status: 'complete', rows: {READY: setup('READY', stage === 'swapped' ? 'wait' : 'ready', stage === 'swapped' ? 'The bounce failed; buyers need to regain control.' : 'Buyers defended the pullback and held the retest.'), WAITING: setup('WAITING', stage === 'swapped' ? 'ready' : 'wait', 'Wait for buyers to reclaim the session reference.'), HELD: setup('HELD', 'wait', 'The eligible holding needs a downside review.'), EXITED: setup('EXITED', 'avoid', 'Failed rebounds argue against a new entry.')}}, technical_detail: {}}
+      opportunities: {status: stage === 'closed' ? 'pending' : 'complete', rows: stage === 'closed' ? {} : {READY: setup('READY', stage === 'swapped' ? 'wait' : 'ready', stage === 'swapped' ? 'The bounce failed; buyers need to regain control.' : 'Buyers defended the pullback and held the retest.'), WAITING: setup('WAITING', stage === 'swapped' ? 'ready' : 'wait', 'Wait for buyers to reclaim the session reference.'), HELD: setup('HELD', 'wait', 'The eligible holding needs a downside review.'), EXITED: setup('EXITED', 'avoid', 'Failed rebounds argue against a new entry.')}}, technical_detail: {}}
     else if (path.endsWith('/session-prices')) {
       const observed = new Date().toISOString()
       json = {session: 'regular', signal_scope: 'regular-session', as_of: observed, quotes: Object.fromEntries(names.map(ticker => [ticker, {price: stage === 'invalidated' && ticker === 'READY' ? 97 : 102, status: 'fresh', session: 'regular', feed: 'iex', at: observed, valid_until: stage === 'quote-expired' ? '2020-01-01T00:00:00Z' : until}]))}
@@ -84,6 +84,8 @@ test('current opportunities rerank and completed exits do not reappear', async (
   stage = 'closed'
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
   await expect(page.getByLabel('READY strategy intent', {exact: true})).toHaveText('WAIT')
+  await expect(page.getByLabel('Chart judgment coverage', {exact: true})).toContainText('awaiting regular-session evidence')
+  await expect(page.getByLabel('Chart judgment coverage', {exact: true})).not.toContainText('updating')
   stage = 'sold'
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
   await expect(page.getByLabel('HELD strategy intent', {exact: true})).not.toHaveText('SELL')
