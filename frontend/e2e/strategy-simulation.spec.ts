@@ -80,7 +80,14 @@ async function install(page: Page, stock: Stock, failure = false, current = {don
     if (path.endsWith('/auth/session')) json = {authentication_required: true, user_id: 'cohort-reader', is_admin: false, desk_access: true, desk_write: false}
     else if (path.includes('/conversations/')) json = {conversations: [], messages: []}
     else if (path.endsWith('/desk')) json = {latest: {session: '2026-10-09', written: '2026-10-09T20:30:00Z', grades: Object.fromEntries(stocks.map(row => [row.ticker, {grade: 'A', votes: 3, score: .8, stances: {}, ranks: {}}])), book: [], actions: [], briefs: {}, regime: {exposure: 1, flags: []}}, sessions: ['2026-10-09']}
-    else if (path.endsWith('/live')) json = {as_of: '2026-10-12T17:00:00Z', quotes: {}, technical: {}, technical_detail: {}}
+    else if (path.endsWith('/live')) {
+      const now = new Date(), at = now.toISOString(), bar = new Date(+now - 16 * 60000).toISOString(), until = new Date(+now + 10 * 60000).toISOString()
+      json = {as_of: at, decision_session: '2026-10-09',
+        quotes: Object.fromEntries(stocks.map(row => [row.ticker, {last: 100, bar, as_of: at}])),
+        grades_live: Object.fromEntries(stocks.map(row => [row.ticker, {grade_live: 'A', score_live: .8}])),
+        grade_valid_until: Object.fromEntries(stocks.map(row => [row.ticker, until])),
+        opportunities: {status: 'complete', rows: Object.fromEntries(stocks.map(row => [row.ticker, {ticker: row.ticker, status: 'model_assessment', entry: 'ready', exit: 'hold', entry_priority: 'high', exit_priority: 'low', reason: 'The supported pullback held its reference.', confirmation: 'none', confirmation_ref: 'none', invalidation_ref: 'none', levels: {}, price: 100, bar, generated_at: at, valid_until: until}]))}, technical: {}, technical_detail: {}}
+    }
     else if (path.endsWith('/holdings')) json = {holdings: []}
     else if (path.endsWith('/paper')) json = {equity: 100000, cash: 99000, positions: [{symbol: stocks[0].ticker, qty: 4, market_value: 400, avg_entry_price: 100, current_price: 100, unrealized_pl: 0, unrealized_plpc: 0}], plan: {orders: [
       {symbol: stocks[0].ticker, client_order_id: 'current-buy', action: 'BUY', side: 'buy', state: current.done ? 'filled' : 'waiting', terminal: current.done, status: current.done ? 'Bought 3 today' : 'Waiting for the model timing', qty: 3, quantity_basis: current.done ? 'filled' : 'planned', notional: 300, weight: .003, price: 100, why: 'Recorded current plan', when: 'Next completed bar'},
@@ -108,7 +115,10 @@ async function install(page: Page, stock: Stock, failure = false, current = {don
     else if (path.includes('/live/read/')) json = {symbol: stock.ticker, now: null, read: '', lines: {short: [], medium: [], long: []}}
     else if (path.endsWith('/personal-history')) json = {items: [], next_cursor: null}
     else if (path.endsWith('/mine')) json = {rows: [], decisions: {rows: {}}, grades_live: {}}
-    else if (path.endsWith('/session-prices')) json = {quotes: {}}
+    else if (path.endsWith('/session-prices')) {
+      const now = new Date(), at = now.toISOString(), until = new Date(+now + 60000).toISOString()
+      json = {session: 'regular', signal_scope: 'regular-session', as_of: at, quotes: Object.fromEntries(stocks.map(row => [row.ticker, {price: 100, status: 'fresh', session: 'regular', feed: 'iex', at, valid_until: until}]))}
+    }
     else if (path.endsWith('/entries')) json = {rows: []}
     else if (path.endsWith('/intraday')) json = {rows: [], changed: [], top_buys: []}
     else errors.push(`Unspecified endpoint: ${path}`)
@@ -208,7 +218,7 @@ test('current overview refresh removes completed actions without inventing sizes
   await expect(row).toContainText('3 sh planned')
   current.done = true
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect(row).toContainText('HOLD')
+  await expect(row.getByLabel(`${stocks[0].ticker} strategy intent`, {exact: true})).toHaveText('ADD')
   await expect(row.getByLabel(`${stocks[0].ticker} size`)).toHaveText('—')
   await expect(table).not.toContainText('Bought 3 today')
   expect(errors).toEqual([])
@@ -229,7 +239,7 @@ test('current overview filters sorting and phone recovery preserve current sizes
   await expect(table.locator('tbody tr')).toHaveCount(stocks.length)
   await expect(table).toContainText('3 sh planned')
   await expect(table).toContainText('4 sh')
-  await expect(table).toContainText('Signal only')
+  await expect(table).toContainText('The supported pullback held its reference.')
   await page.getByRole('button', {name: 'Hide Sidebar', exact: true}).click()
   await page.setViewportSize({width: 390, height: 844})
   await table.getByRole('button', {name: 'Action', exact: true}).click()
@@ -287,8 +297,13 @@ test('grade direction survives a zero research target with dated provenance', as
     await expect(chart.getByLabel(`${stocks[0].ticker} grade signals`, {exact: true})).toContainText('2026-10-08 · SELL signal · Recalculated grade A→B')
     await expect.poll(() => page.evaluate(() => (window as any).__gradePaint)).toEqual(expect.arrayContaining(['BUY · A+', 'SELL · B']))
   }
-  await page.evaluate(() => {(window as any).__gradePaint = []})
   await chart.getByRole('button', {name: '15m', exact: true}).click()
+  // A poll can repaint the previous frame during the request; qualify the new
+  // candle payload before measuring that fifteen-minute canvas's markers.
+  await expect(chart.getByTestId('ticker-chart-canvas')).toHaveAttribute('data-chart-timeframe', '15m')
+  await page.evaluate(() => {(window as any).__gradePaint = []})
+  await chart.getByRole('checkbox', {name: 'Grade signals'}).uncheck()
+  await chart.getByRole('checkbox', {name: 'Grade signals'}).check()
   await expect(chart.getByLabel(`${stocks[0].ticker} grade signals`, {exact: true})).toContainText('not marked on fifteen-minute bars')
   expect(await page.evaluate(() => (window as any).__strategyPaint)).toEqual([])
   expect(await page.evaluate(() => (window as any).__gradePaint)).toEqual([])
@@ -297,7 +312,7 @@ test('grade direction survives a zero research target with dated provenance', as
   const row = page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('row').filter({has: page.getByRole('button', {name: stocks.at(-1)!.ticker, exact: true})})
   await expect(row.getByLabel(`${stocks.at(-1)!.ticker} strategy intent`)).toHaveText('BUY')
   await expect(row.getByLabel(`${stocks.at(-1)!.ticker} size`)).toHaveText('—')
-  await expect(row).toContainText('awaiting a fresh grade-led sizing plan')
+  await expect(row).toContainText('The supported pullback held its reference.')
   await row.getByRole('button', {name: stocks.at(-1)!.ticker, exact: true}).click()
   await expect(page.getByLabel(`${stocks.at(-1)!.ticker} paper order`, {exact: true})).toContainText('Grade signal · no paper order')
   await expect(page.getByLabel(`${stocks.at(-1)!.ticker} signal status`, {exact: true})).toContainText('awaiting a fresh grade-led sizing plan')

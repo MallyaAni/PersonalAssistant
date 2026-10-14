@@ -10,6 +10,7 @@ import { PersonalDecisionHistory, type PersonalHistoryContext } from './Personal
 import { PaperAccountHistory } from './PaperAccountHistory'
 import { TickerChart } from './TickerChart'
 import {currentAssessments, assessmentPermission} from './liveAssessment'
+import {currentSetup, confirmationText, invalidationText} from './currentRanking'
 import { TradeBoard, RecordedModelDecision, boardRows, dollars, percent, orderWord, quantityLabel, executionRuleText, learnedAllocation, rankingText, savedTargetText, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
 import { StrategyBench } from './StrategyBench'
 import { NeuralStudy } from './NeuralStudy'
@@ -64,11 +65,11 @@ interface DeskPanelProps {
   canWrite: boolean
 }
 
-// The page asks for a fresh record every few minutes: the desk writes one
-// a session, so that is plenty. Prices follow the fifteen-minute candle.
+// Keep saved records dated while polling quotes and current judgments every
+// twenty seconds; model evidence advances only on completed fifteen-minute bars.
 const REFRESH_MS = 60 * 1000
 const CANDLE_MS = 15 * 60 * 1000
-const POLL_MS = 60 * 1000
+const POLL_MS = 20 * 1000
 
 // Revert an expired intraday opinion to the recorded evening evidence.
 const eveningRow = (row: DeskMineRow): DeskMineRow => ({
@@ -3086,6 +3087,7 @@ const NameDetail = ({
   const gradeRead = latest.grades?.[ticker]?.read ?? null
   const gradeReads = latest.grades?.[ticker]?.reads
   const currentAssessment = currentAssessments(live, latest.session, now)[ticker]
+  const chartSetup = currentSetup(live, latest.session, ticker, now)
   const currentStances = row
     ? row.grade_source === 'intraday' ? row.stances_live ?? liveGrades[ticker]?.stances_live : undefined
     : liveGrades[ticker]?.stances_live
@@ -3135,6 +3137,16 @@ const NameDetail = ({
         {strategy && <section aria-label="Current assessment" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
           <h4 className="font-medium">Current assessment</h4>
           {currentAssessment ? <>
+            <section aria-label="Current chart judgment" className="mb-3 rounded-lg bg-[#f5f5f7] p-3">
+              <h4 className="font-semibold">{chartSetup ? chartSetup.entry === 'ready' ? 'Entry setup ready for review' : chartSetup.entry === 'wait' ? 'Wait for confirmation' : chartSetup.entry === 'avoid' ? 'Avoid a new entry' : 'Chart judgment unavailable' : 'Chart judgment updating'}</h4>
+              {chartSetup ? <>
+                <p className="mt-1 text-sm">{chartSetup.reason}</p>
+                {chartSetup.exit === 'review' && <p className="mt-1 text-xs font-medium">Existing holding: review downside risk before adding.</p>}
+                <p className="mt-1 text-xs">{confirmationText(chartSetup)}</p>
+                <p className="text-xs">{invalidationText(chartSetup)}</p>
+                <p className="mt-1 text-[11px] text-[#6e6e73]">Read at ${chartSetup.price.toFixed(2)} · candle {marketTime(chartSetup.bar)} · judgment generated {marketTime(chartSetup.generated_at)}. Funded quantities and execution timing require their separate plan.</p>
+              </> : <p className="text-xs">{live.opportunities?.unavailable?.[ticker] ?? 'The current grade is available; a fresh chart judgment has not arrived. No ready entry is inferred.'}</p>}
+            </section>
             <p aria-label="Current assessment grade" className="font-semibold">{currentAssessment.grade_live} · {assessmentPermission(currentAssessment.grade_live)}</p>
             <p className="text-xs text-[#6e6e73]">At {live.quotes[ticker]?.last != null ? priceMoney(live.quotes[ticker].last) : 'unavailable price'} · completed 15-minute candle starting {marketTime(live.quotes[ticker]?.bar)} · assessment {marketTime(live.as_of)}.</p>
             <AnalystRatings ranks={currentAssessment.ranks_live} stances={currentAssessment.stances_live ?? {}} session={latest.session} />

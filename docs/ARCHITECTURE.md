@@ -613,16 +613,32 @@ executions have separate identities. Current-model retrospective use does not
 establish historical model availability or investment quality. See the
 [historical sizing contract](research/live-model-historical-sizing-contract-2026-10-13.md).
 
+Current opportunities use fresh grades and bounded structured chart judgments,
+collected independently of open browsers. The collector reads the exact live
+grade snapshot and completed raw current-session IEX candle prefixes; it writes
+a separate display store under an interprocess lock. It never reads holdings
+or sends orders. Entry readiness and exit-review priority are model judgments;
+entry permission remains grade constrained. The API checks snapshot identity
+and original expiry, and the UI uses displayed-price freshness validation to
+demote a setup when its selected level is lost. Current holdings determine
+whether an exit applies; completed exits remain in paper history. Saved target
+sizes do not rank current opportunities. Numerical holding/timing models,
+original accounts and retrospective producers are unchanged.
+
 **The autopsy** is the older capability and reads the person's own uploaded
 statements, journals and notes to name the behaviours that repeat and what they
 have cost. Nothing numeric is invented: a cost is stated only when the number is
 present in the passages.
 
-*The model decides:* what a results release says about the future, the wording
-of each brief, and — in the autopsy — the behaviours and the plan. *Code
-decides:* every grade, every size, every trade rule, and every number.
+*The language model decides:* release outlook, brief wording, autopsy judgments,
+and current chart readiness/downside review. Published numerical models supply
+risk, proposed sizes and timing judgments. *Code enforces:* grade direction,
+funding, whole-share and execution guards, original clocks and validated measured
+price references. Display interpretation does not send trades.
 *Folder:* `agents/trading/` and `agents/trading/desk/`, driving
-`backend/market/`. *Prompts:* `prompts/trading/` — three.
+`backend/market/`. *Prompts:* three under `prompts/trading/`, plus the current
+chart judgment under `backend/agents/trading/current_setup.md` with its real-model
+functional pin.
 
 Display prices have a [separate collection path](diagrams/session-price-collection.svg).
 `SessionPriceCollector` belongs to FastAPI's lifetime, not a browser request.

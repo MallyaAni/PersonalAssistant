@@ -300,8 +300,8 @@ const publishedDiagrams = [
   {
     name: "session-price-collection",
     title: "Session prices — collection and display",
-    scope: "Backend lifetime collection, one bounded latest snapshot, read-only dashboard access",
-    change: "How dated quotes reach the desk without browser-triggered provider calls, retimestamping old evidence, or changing execution.",
+    scope: "Backend lifetime quotes and current chart judgments, bounded snapshots, read-only dashboard access",
+    change: "How fresh prices and grounded chart judgments reach opportunity ranking without retimestamping evidence or changing account execution.",
   },
   {
     name: "tool-memory-subsystem",

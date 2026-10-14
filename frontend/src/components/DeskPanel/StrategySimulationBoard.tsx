@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react'
 import {getDeskStrategySimulation, type DeskLive, type DeskStrategySummary} from '../../services/api'
 import {ActionHead, percent, shares, type ActionSelection} from './TradeBoard'
 
-const ALL_ACTIONS: ActionSelection = {BUY: true, SELL: true, TRIM: true, HOLD: true, '—': true}
+const ALL_ACTIONS: ActionSelection = {BUY: true, ADD: true, SELL: true, TRIM: true, REVIEW: true, WAIT: true, HOLD: true, '—': true}
 
 // Keep the latest-strategy hypothetical portfolio separate from real paper-account state.
 export const StrategySimulationBoard = ({userId, names, live, onOpen}: {userId: string; names: string[]; live: DeskLive; onOpen: (ticker: string) => void}) => {

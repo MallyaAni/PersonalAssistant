@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-14 — Current opportunity ranking and trader-like chart judgment
+
+Current dashboard ranking now distinguishes ready entries, waits and existing
+holdings needing exit review using a source-bound display model judgment over
+completed candles. Rows and ticker details share reasons and measured levels;
+expired evidence/quotes, closed sessions and lost levels withhold ready entries.
+Settled exits with no remaining holding cannot remain new SELL signals. The
+overview refreshes every twenty seconds. Funded sizing, execution timing and
+historical accounts remain separate and unchanged. Exact-source validation and
+delivery status are recorded in NEXT_SESSION.md and the research proof.
+
 ## 2026-10-14 — Grade-led target parity uses the learned allocation basis
 
 - Correct the checker that compared grade-led learned weights with incumbent

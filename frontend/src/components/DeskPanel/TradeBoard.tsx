@@ -1,7 +1,8 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import type { DeskLevelTag, DeskLive, DeskPaperLive, DeskPaperOrder, DeskPaperPlan, DeskRecord, DeskStructure } from '../../services/api'
+import type { DeskCurrentSetup, DeskLevelTag, DeskLive, DeskPaperLive, DeskPaperOrder, DeskPaperPlan, DeskRecord, DeskStructure } from '../../services/api'
 import { displayedBoardPrice, SessionPrice } from './StockBoard'
 import {currentAssessments, assessmentPermission} from './liveAssessment'
+import {rankCurrent, confirmationText, invalidationText} from './currentRanking'
 
 // The Stock rankings board, rebuilt around one question a trader asks of it:
 // what is the paper account doing about each name, how big, and when.
@@ -18,7 +19,7 @@ import {currentAssessments, assessmentPermission} from './liveAssessment'
 
 // The four words a row can say, and the dash for a name the account neither
 // holds nor trades.
-export type BoardWord = 'BUY' | 'SELL' | 'TRIM' | 'HOLD' | '—' | 'ORDERS'
+export type BoardWord = 'BUY' | 'ADD' | 'SELL' | 'TRIM' | 'HOLD' | 'WAIT' | 'REVIEW' | '—' | 'ORDERS'
 
 const LEARNED_HOLDING_POLICY = 'joint-stock-risk-funded/6-retained-holdings-probability-timing-research'
 
@@ -26,7 +27,7 @@ const LEARNED_HOLDING_POLICY = 'joint-stock-risk-funded/6-retained-holdings-prob
 export const learnedAllocation = (latest: DeskRecord): boolean => [LEARNED_HOLDING_POLICY, 'grade-led-learned-sizing/1'].includes(latest.targets?.policy ?? '')
 
 // Explain the board's presentation of recorded decisions without inventing a stock score.
-export const rankingText = 'Grades give entry and exit signals. Orders show funded size and execution status separately. Exceptions and due orders come first, followed by unfilled grade signals and other holdings. This ordering is not a return forecast.'
+export const rankingText = 'Current opportunities rank outstanding orders, exits of remaining below-A holdings, chart exit reviews, then ready entries and waits. Fresh chart judgment, grade and analyst conviction break ties; saved target sizes do not rank opportunities. Prices refresh separately; judgments use completed 15-minute candles. This is an evidence ranking, not a profit forecast.'
 
 // Prefer the executor's recorded rule rather than assigning legacy timing to a new policy.
 export const executionRuleText = (plan?: DeskPaperPlan): string => {
@@ -62,16 +63,18 @@ export type BoardRow = {
   when: string
   signal?: string
   signalReason?: string
+  currentSetup?: DeskCurrentSetup | null
+  freshGrade?: string
 }
 
 // The views a trader switches between: what the account is trading today,
 // the whole portfolio (orders and holdings), and every graded name.
 type View = 'orders' | 'portfolio' | 'all'
 type SortKey = 'ticker' | 'grade' | 'position' | 'size'
-const FILTER_ACTIONS = ['BUY', 'SELL', 'TRIM', 'HOLD', '—'] as const
+const FILTER_ACTIONS = ['BUY', 'ADD', 'SELL', 'TRIM', 'REVIEW', 'WAIT', 'HOLD', '—'] as const
 type FilterAction = typeof FILTER_ACTIONS[number]
 export type ActionSelection = Record<FilterAction, boolean>
-const ALL_ACTIONS: ActionSelection = {BUY: true, SELL: true, TRIM: true, HOLD: true, '—': true}
+const ALL_ACTIONS: ActionSelection = {BUY: true, ADD: true, SELL: true, TRIM: true, REVIEW: true, WAIT: true, HOLD: true, '—': true}
 
 // Match each recorded leg of mixed orders while keeping non-traded names in their displayed category.
 const hasAction = (row: BoardRow, action: FilterAction) => row.orders.length
@@ -199,6 +202,9 @@ export const priceAge = (structure: DeskStructure | undefined, now: number): str
 // The colour of each word: green buys, red sells, amber trims, grey holds.
 export const WORD_STYLE: Record<BoardWord, string> = {
   BUY: 'text-[#248a3d]',
+  ADD: 'text-[#248a3d]',
+  WAIT: 'text-[#b25e00]',
+  REVIEW: 'text-[#b25e00]',
   SELL: 'text-[#b42318]',
   TRIM: 'text-[#b25e00]',
   HOLD: 'text-[#6e6e73]',
@@ -322,7 +328,7 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
       : 'Model allocation unavailable · recorded target is not a fresh recommendation'
     const grade = latest.grades[ticker]?.grade ?? ''
     const signalRow = latest.actions?.find(row => row.ticker === ticker)
-    const signal = currentOnly ? signalRow?.grade_signal ?? (
+    const signal = currentOnly ? (
       grade === 'A' || grade === 'A+' ? held > 0 ? 'hold' : 'buy'
       : grade === 'B' || grade === 'C' ? held > 0 ? 'sell' : 'avoid' : 'unavailable'
     ) : undefined
@@ -546,7 +552,9 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
   const [myAccount, setMyAccount] = useState<number | null>(readMyAccount)
   const [draft, setDraft] = useState(() => (readMyAccount() ?? '').toString())
   useEffect(() => { setVisible(25) }, [chosen, query, shownActions])
-  const rows = useMemo(() => ranked(boardRows(latest, paper, currentOnly)), [latest, paper, currentOnly])
+  const rows = useMemo(() => currentOnly
+    ? rankCurrent(boardRows(latest, paper, true), live, latest.session, now, paper?.reason === undefined && paper?.equity !== undefined)
+    : ranked(boardRows(latest, paper, false)), [latest, paper, currentOnly, live, now])
   const assessments = currentOnly ? currentAssessments(live, latest.session, now) : {}
   const orders = (paper?.plan?.orders ?? []).filter(order => !currentOnly || !isDone(order))
   const counts = {
@@ -578,7 +586,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
   return <section aria-label="Stocks and cash" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-black/[0.08] bg-white [container-type:inline-size]">
     <div className="shrink-0 space-y-2 border-b border-black/[0.06] px-3 py-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-sm font-semibold text-[#1d1d1f]">Stock rankings <span className="font-normal text-[#6e6e73]">{currentOnly ? '· current actions' : '· the paper account’s orders'}</span></h3>
+        <h3 className="text-sm font-semibold text-[#1d1d1f]">Stock rankings <span className="font-normal text-[#6e6e73]">{currentOnly ? '· current opportunities' : '· the paper account’s orders'}</span></h3>
         <label className="flex items-center gap-1 text-xs text-[#6e6e73]" title="Scales unsent plans only. Does not check your holdings or available cash. Kept in this browser only.">
           Reference account $
           <input aria-label="Reference account size" inputMode="decimal" value={draft} placeholder="optional"
@@ -589,6 +597,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
         </label>
       </div>
       <p aria-label="Allocation record" title={`Saved policy: ${latest.targets?.policy ?? 'not recorded'}`} className="text-[11px] text-[#6e6e73]">{currentOnly ? `Assessments refresh on completed 15-minute candles. Targets and order signals saved ${latest.session}; prices and order status refresh live.` : `Saved allocation · ${latest.session}. These are the saved plan's targets, not new orders. Live holdings can differ.`}</p>
+      {currentOnly && <p aria-label="Chart judgment coverage" className="text-[11px] text-[#6e6e73]">Current chart judgments: {rows.filter(row => row.currentSetup).length} of {rows.length} names{live.opportunities?.unavailable && Object.keys(live.opportunities.unavailable).length > 0 ? ` · ${Object.keys(live.opportunities.unavailable).length} missing complete candle evidence` : ''}{live.opportunities?.status === 'building' || live.opportunities?.status === 'pending' ? ' · updating' : ''}. Expired evidence cannot produce a buy signal.</p>}
       <AccountStrip paper={paper} orders={orders} />
       {paused && <p role="status" aria-label="Trading restriction" className="text-xs text-[#b25e00]">FOMC cycle: the paper account follows the FOMC risk rule; its orders say when.</p>}
       <details aria-label="Order rules" className="text-xs text-[#6e6e73]">
@@ -658,8 +667,9 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
               </td>
               <td className="py-2 text-xs" title={row.why}>
                 <span aria-label={`${row.ticker} strategy intent`} className={`font-semibold ${row.done ? 'text-[#6e6e73]' : WORD_STYLE[row.word]}`}>{row.word}</span>
-                {row.signal && <div aria-label={`${row.ticker} grade signal`} className="text-[10px] text-[#6e6e73]">{currentOnly ? 'Saved grade signal' : 'Grade signal'}: {row.signal.toUpperCase()} · {latest.session}{row.orders.length ? '' : ' · no order'}</div>}
+                {row.signal && <div aria-label={`${row.ticker} grade signal`} className="text-[10px] text-[#6e6e73]">{currentOnly ? row.orders.length ? 'Outstanding paper order' : 'Current signal' : 'Grade signal'}: {row.signal.toUpperCase()}{currentOnly ? '' : ` · ${latest.session}`}{row.orders.length ? '' : ' · no order'}</div>}
                 {assessments[row.ticker] && <div aria-label={`${row.ticker} current assessment`} className="text-[10px] text-[#6e6e73]">Now: {assessmentPermission(assessments[row.ticker].grade_live)}</div>}
+                {currentOnly && row.currentSetup && <div aria-label={`${row.ticker} chart judgment`} className="mt-1 max-w-64 text-[11px] text-[#1d1d1f]">{row.currentSetup.reason}<div className="text-[#6e6e73]">{confirmationText(row.currentSetup)}</div><div className="text-[#6e6e73]">{invalidationText(row.currentSetup)}</div><div className="text-[10px] text-[#6e6e73]">Candle {new Date(row.currentSetup.bar).toLocaleTimeString('en-US', {timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit'})} ET · model judgment</div></div>}
               </td>
               <td className="py-2 text-xs" aria-label={`${row.ticker} size`}>
                 {row.orders.length ? <>

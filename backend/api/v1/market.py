@@ -238,12 +238,15 @@ async def desk_session_prices(user_id: UserId, response: Response) -> dict:
 
 # Project current grades from fresh display evidence without changing saved decisions.
 def _with_live_assessment(snapshot: dict, record: dict, now: datetime) -> dict:
+    from backend.market import current_opportunities
+
     technical, value = desk_freshness.grade_inputs(snapshot, record, now)
     readings = holdings.live_grades(record, technical, value)
     return {
         **desk_freshness.describe(snapshot, now),
         "grades_live": readings,
         "grade_valid_until": desk_freshness.grade_expiries(snapshot, readings),
+        "opportunities": current_opportunities.read(_root(), record, snapshot, now),
     }
 
 

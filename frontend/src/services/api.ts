@@ -2499,6 +2499,7 @@ export type DeskOptionsEvidence = {
 });
 
 export interface DeskLive {
+  opportunities?: {status: string; rows: Record<string, DeskCurrentSetup>; unavailable?: Record<string, string>; generated_at?: string; snapshot_at?: string};
   as_of: string | null;
   // Fresh assessments are available without entering a personal account.
   grades_live?: Record<string, DeskLiveGrade>;
@@ -2546,6 +2547,24 @@ export interface DeskLive {
   // The structure the board shows and the desk does not act on, by name:
   // written by the balancer on each candle beside the plan's rows.
   structure?: Record<string, DeskStructure>;
+}
+
+export interface DeskCurrentSetup {
+  ticker: string;
+  entry: 'ready' | 'wait' | 'avoid' | 'unavailable';
+  exit: 'review' | 'hold';
+  entry_priority: 'high' | 'medium' | 'low';
+  exit_priority: 'high' | 'medium' | 'low';
+  reason: string;
+  confirmation: 'hold_above' | 'reclaim_above' | 'none';
+  confirmation_ref: string;
+  invalidation_ref: string;
+  price: number;
+  bar: string;
+  generated_at: string;
+  valid_until: string;
+  status: string;
+  levels: Record<string, {label: string; price: number}>;
 }
 
 // A level the session's first 15-minute bar reached from below: which one,

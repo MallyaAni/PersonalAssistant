@@ -1,5 +1,38 @@
 # Next session
 
+## 2026-10-14 — Current opportunity ranking and chart judgment
+
+Human requires current best-buy/exit review judgments on the dashboard, not an
+explanation only in chat. Actual production352d915c had fresh grades but ranked
+saved allocations; completed STX/SWKS sells still led despite no remaining
+holdings. Source ef7428baa1961d79ad1f5bd9dac0122b54ce0fea is pushed on the urgent
+production-based branch. ONE canonical deployment is RUNNING at
+scratch/current-opportunities-release-20261014-v1; do not duplicate its gate.
+It excludes pending historical sizing and parity correction. The display-only
+collector, current ranking and list/detail judgments preserve numerical model
+versions, account history and original order identities.
+
+VERIFIED private66logic/0skip4.46s,2real functional/0skip14.30s, final compiled
+browser10pass/0skip31.1s, type/build and33diagram checks. Actual current-candle
+private-output v5 accounts for all94:93validated judgments and explicit MOD
+missing grid in278.461s. Exact hashes and preserved failed predecessors:
+research/current-opportunities-private-proof-2026-10-14.json. This is display
+judgment, not numerical sizing/timing inference or investment-performance proof.
+Actual deployed compiled browser and canonical completion remain UNVERIFIED.
+
+Main combines this urgent source with pending historical quantities/parity;
+candidate type/build,14compiled workflows/0skip38.7s and33diagram checks pass.
+The new automatic-poll check also passes on both compiled trees without Refresh:
+urgent1pass23.9s, merged1pass24.6s. The candidate's first browser run preserved
+13passes/1failure: the grade-paint trace included the prior weekly canvas during
+the timeframe request. The corrected harness qualifies actual15m candle data
+then toggles the grade layer and retains the strict zero-marker assertion.
+No chart grade or execution clock changed. ONE frozen retrospective
+container1e8f440a/source27471 remains untouched. Never publish the bounded stage.
+Filled IDs135/136, original clocks/quantities and original failed Oct13 parity
+remain preserved. Historical publication and complete real operational acceptance
+are pending; heartbeat stays ACTIVE. Newer handoffs supersede older status below.
+
 ## 2026-10-14 — Fresh assessment delivered for all94 tracked stocks
 
 Production is now352d915c4046f7764809bdca2d1ccd42e611c7ea, urgent current-assessment

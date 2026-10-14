@@ -21,7 +21,7 @@ flowchart TB
         Discovery[Scout ambient discovery]
         Visual[Image and vision services]
         Tools[MCP and search gates]
-        DisplayPrices[Backend-lifetime<br/>display quote collector]
+        DisplayPrices[Backend-lifetime display collection<br/>quotes and current chart judgments]
     end
 
     subgraph LocalAI[Replaceable local AI and rendering]
@@ -36,7 +36,7 @@ flowchart TB
         Repositories[Owned persistence services]
         Database[(PostgreSQL<br/>and pgvector)]
         Files[(Opaque artifact files)]
-        QuoteSnapshot[(Bounded latest<br/>display quote snapshot)]
+        QuoteSnapshot[(Bounded latest display snapshots<br/>quotes and chart judgments)]
         Repositories --> Database
         Repositories --> Files
     end
@@ -61,6 +61,7 @@ flowchart TB
     Conversation --> Tools --> Integrations
     Discovery --> Tools
     DisplayPrices -->|read only| QuoteFeeds
+    DisplayPrices -->|Bounded display judgments only| Inference
     DisplayPrices -->|atomic latest replacement| QuoteSnapshot
     QuoteSnapshot -->|aged, owner-only display read| API
 
