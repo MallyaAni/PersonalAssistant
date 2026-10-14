@@ -27,7 +27,10 @@ test('current opportunities rerank and completed exits do not reappear', async (
       grades_live: Object.fromEntries(names.map(ticker => [ticker, {grade_live: ticker === 'EXITED' ? 'C' : ticker === 'HELD' ? 'B' : 'A+', score_live: ticker === 'WAITING' ? .9 : .8}])),
       grade_valid_until: Object.fromEntries(names.map(ticker => [ticker, stage === 'expired' ? '2020-01-01T00:00:00Z' : until])),
       opportunities: {status: 'complete', rows: {READY: setup('READY', stage === 'swapped' ? 'wait' : 'ready', stage === 'swapped' ? 'The bounce failed; buyers need to regain control.' : 'Buyers defended the pullback and held the retest.'), WAITING: setup('WAITING', stage === 'swapped' ? 'ready' : 'wait', 'Wait for buyers to reclaim the session reference.'), EXITED: setup('EXITED', 'avoid', 'Failed rebounds argue against a new entry.')}}, technical_detail: {}}
-    else if (path.endsWith('/session-prices')) json = {session: 'regular', signal_scope: 'regular-session', as_of: at, quotes: Object.fromEntries(names.map(ticker => [ticker, {price: stage === 'invalidated' && ticker === 'READY' ? 97 : 102, status: 'fresh', session: 'regular', feed: 'iex', at, valid_until: stage === 'quote-expired' ? '2020-01-01T00:00:00Z' : until}]))}
+    else if (path.endsWith('/session-prices')) {
+      const observed = new Date().toISOString()
+      json = {session: 'regular', signal_scope: 'regular-session', as_of: observed, quotes: Object.fromEntries(names.map(ticker => [ticker, {price: stage === 'invalidated' && ticker === 'READY' ? 97 : 102, status: 'fresh', session: 'regular', feed: 'iex', at: observed, valid_until: stage === 'quote-expired' ? '2020-01-01T00:00:00Z' : until}]))}
+    }
     else if (path.endsWith('/paper')) json = {equity: 100000, cash: 50000, positions: [{symbol: 'HELD', qty: stage === 'sold' ? 0 : 10, market_value: 1020, avg_entry_price: 100, unrealized_pl: 20}], plan: {orders: [{symbol: 'EXITED', side: 'sell', action: 'SELL', qty: 12, state: 'filled', terminal: true, client_order_id: 'original-exit', filled_at: at, status: 'Filled', price: 102, notional: 1224, weight: .01224}]}}
     else if (path.endsWith('/holdings')) json = {holdings: []}
     else if (path.includes('/history/')) json = {rows: [], fills: [], backtest: null}
@@ -56,8 +59,8 @@ test('current opportunities rerank and completed exits do not reappear', async (
   await expect(judgment).toContainText('Existing holding: review downside risk')
   await page.getByRole('button', {name: 'Close', exact: true}).click()
   stage = 'swapped'
-  await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect(table.getByRole('row').nth(2)).toContainText('WAITING')
+  // An unattended price/assessment poll must update ranking without a refresh click.
+  await expect(table.getByRole('row').nth(2)).toContainText('WAITING', {timeout: 30000})
   await expect(page.getByLabel('READY strategy intent', {exact: true})).toHaveText('WAIT')
   stage = 'invalidated'
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
