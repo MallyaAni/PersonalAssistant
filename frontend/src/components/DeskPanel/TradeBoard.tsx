@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from '
 import type { DeskCurrentSetup, DeskLevelTag, DeskLive, DeskPaperLive, DeskPaperOrder, DeskPaperPlan, DeskRecord, DeskStructure } from '../../services/api'
 import { displayedBoardPrice, SessionPrice } from './StockBoard'
 import {currentAssessments, assessmentPermission} from './liveAssessment'
-import {rankCurrent, confirmationText, invalidationText} from './currentRanking'
+import {rankCurrent, confirmationText, invalidationText, quoteReferenceText} from './currentRanking'
 
 // The Stock rankings board, rebuilt around one question a trader asks of it:
 // what is the paper account doing about each name, how big, and when.
@@ -669,7 +669,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
                 <span aria-label={`${row.ticker} strategy intent`} className={`font-semibold ${row.done ? 'text-[#6e6e73]' : WORD_STYLE[row.word]}`}>{row.word}</span>
                 {row.signal && <div aria-label={`${row.ticker} grade signal`} className="text-[10px] text-[#6e6e73]">{currentOnly ? row.orders.length ? 'Outstanding paper order' : 'Current signal' : 'Grade signal'}: {row.signal.toUpperCase()}{currentOnly ? '' : ` · ${latest.session}`}{row.orders.length ? '' : ' · no order'}</div>}
                 {assessments[row.ticker] && <div aria-label={`${row.ticker} current assessment`} className="text-[10px] text-[#6e6e73]">Now: {assessmentPermission(assessments[row.ticker].grade_live)}</div>}
-                {currentOnly && row.currentSetup && <div aria-label={`${row.ticker} chart judgment`} className="mt-1 max-w-64 text-[11px] text-[#1d1d1f]">{row.currentSetup.reason}<div className="text-[#6e6e73]">{confirmationText(row.currentSetup)}</div><div className="text-[#6e6e73]">{invalidationText(row.currentSetup)}</div><div className="text-[10px] text-[#6e6e73]">Candle {new Date(row.currentSetup.bar).toLocaleTimeString('en-US', {timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit'})} ET · model judgment</div></div>}
+                {currentOnly && row.currentSetup && <div aria-label={`${row.ticker} chart judgment`} className="mt-1 max-w-64 text-[11px] text-[#1d1d1f]">Completed candle: {row.currentSetup.reason}<div aria-label={`${row.ticker} latest quote check`} className="text-[#0071e3]">{quoteReferenceText(live, row.ticker, row.currentSetup, now)}</div><div className="text-[#6e6e73]">{confirmationText(row.currentSetup)}</div><div className="text-[#6e6e73]">{invalidationText(row.currentSetup)}</div><div className="text-[10px] text-[#6e6e73]">Candle {new Date(row.currentSetup.bar).toLocaleTimeString('en-US', {timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit'})} ET · model judgment</div></div>}
               </td>
               <td className="py-2 text-xs" aria-label={`${row.ticker} size`}>
                 {row.orders.length ? <>
