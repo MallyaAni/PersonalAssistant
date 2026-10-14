@@ -47,6 +47,17 @@ export const invalidationText = (setup: DeskCurrentSetup): string => {
     : `Reassessment reference: ${reference.label} at $${reference.price.toFixed(2)}.`
 }
 
+// Compare the fresh quote with the model-selected reference without creating a new verdict.
+export const quoteReferenceText = (live: DeskLive, ticker: string, setup: DeskCurrentSetup, now: number): string => {
+  const quote = displayedBoardPrice(live, ticker, now)
+  if (!quote?.current || quote.kind !== 'midpoint' || quote.word !== 'regular')
+    return 'Latest regular-session quote unavailable; wait for a fresh price.'
+  const reference = setup.levels[setup.confirmation_ref]
+  if (!reference) return `Latest quote $${quote.price.toFixed(2)}; entry confirmation is not established.`
+  const relation = quote.price >= reference.price ? 'above' : 'below'
+  return `Latest quote $${quote.price.toFixed(2)} is ${relation} the $${reference.price.toFixed(2)} confirmation reference; ${setup.entry === 'ready' ? 'setup remains ready for review' : `entry remains ${setup.entry.toUpperCase()} until reassessed`}.`
+}
+
 // Rank fresh opportunity judgments and actual holdings without borrowing saved targets.
 export const rankCurrent = (rows: BoardRow[], live: DeskLive, session: string, now: number, accountAvailable: boolean): BoardRow[] => {
   const assessments = currentAssessments(live, session, now)
@@ -60,7 +71,7 @@ export const rankCurrent = (rows: BoardRow[], live: DeskLive, session: string, n
     const category = row.orders.length ? 0 : exit ? 1 : review ? 2 : ready ? 3 : eligible ? 4 : grade ? 5 : 6
     const word: BoardRow['word'] = row.orders.length ? row.word : exit ? 'SELL' : review ? 'REVIEW' : ready ? row.held > 0 ? 'ADD' : 'BUY'
       : eligible ? 'WAIT' : row.held > 0 ? 'HOLD' : '—'
-    const signal = row.orders.length ? row.signal : exit ? 'sell' : ready ? row.held > 0 ? 'add' : 'buy'
+    const signal = row.orders.length ? row.signal : exit ? 'sell' : review ? 'review' : ready ? row.held > 0 ? 'add' : 'buy'
       : eligible ? 'wait' : grade ? row.held > 0 ? 'hold' : 'avoid' : 'unavailable'
     const why = row.orders.length ? row.why : exit ? 'Current grade below A; remaining holding requires an exit plan.'
       : setup?.reason ?? live.opportunities?.unavailable?.[row.ticker] ?? (grade ? eligible ? 'Chart judgment updating; entry permission alone is not an entry decision.'

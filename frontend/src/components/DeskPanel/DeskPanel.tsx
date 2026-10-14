@@ -10,7 +10,7 @@ import { PersonalDecisionHistory, type PersonalHistoryContext } from './Personal
 import { PaperAccountHistory } from './PaperAccountHistory'
 import { TickerChart } from './TickerChart'
 import {currentAssessments, assessmentPermission} from './liveAssessment'
-import {currentSetup, confirmationText, invalidationText} from './currentRanking'
+import {currentSetup, confirmationText, invalidationText, quoteReferenceText} from './currentRanking'
 import { TradeBoard, RecordedModelDecision, boardRows, dollars, percent, orderWord, quantityLabel, executionRuleText, learnedAllocation, rankingText, savedTargetText, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
 import { StrategyBench } from './StrategyBench'
 import { NeuralStudy } from './NeuralStudy'
@@ -3131,7 +3131,8 @@ const NameDetail = ({
             <section aria-label="Current chart judgment" className="mb-3 rounded-lg bg-[#f5f5f7] p-3">
               <h4 className="font-semibold">{chartSetup ? chartSetup.entry === 'ready' ? 'Entry setup ready for review' : chartSetup.entry === 'wait' ? 'Wait for confirmation' : chartSetup.entry === 'avoid' ? 'Avoid a new entry' : 'Chart judgment unavailable' : 'Chart judgment updating'}</h4>
               {chartSetup ? <>
-                <p className="mt-1 text-sm">{chartSetup.reason}</p>
+                <p className="mt-1 text-sm">Completed candle: {chartSetup.reason}</p>
+                <p aria-label={`${ticker} latest quote check`} className="mt-1 text-xs text-[#0071e3]">{quoteReferenceText(live, ticker, chartSetup, now)}</p>
                 {chartSetup.exit === 'review' && <p className="mt-1 text-xs font-medium">Existing holding: review downside risk before adding.</p>}
                 <p className="mt-1 text-xs">{confirmationText(chartSetup)}</p>
                 <p className="text-xs">{invalidationText(chartSetup)}</p>
