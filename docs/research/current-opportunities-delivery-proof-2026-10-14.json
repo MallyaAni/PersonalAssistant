@@ -1,6 +1,6 @@
 {
   "status": "VERIFIED_current_dashboard_delivery",
-  "frontend_source": "65f88673d6caa4141fc0af29c61822c2ecdfb2af",
+  "frontend_source": "a64f9c149893d06fb0f48d4c3aa8d2906780b8a5",
   "backend_source": "ef7428baa1961d79ad1f5bd9dac0122b54ce0fea",
   "base": "352d915c4046f7764809bdca2d1ccd42e611c7ea",
   "canonical": {
@@ -9,12 +9,12 @@
     "unit": {"passed": 10666, "skipped": 93, "xfailed": 6, "warnings": 439, "seconds": 557.73},
     "real_routing": {"passed": 100, "skipped": 0, "seconds": 438.89, "workers": 1},
     "live_post": {"completed_at": "2026-10-14T19:54:28Z", "routed_journeys": 47, "traced_turns": 70, "search_harness": "passed on built-in retry; initial offers-link/price format failure preserved"},
-    "final_frontend_root": "scratch/current-opportunities-targets-release-20261014-v1",
-    "final_completed_at": "2026-10-14T20:34:10.700360+00:00",
+    "final_frontend_root": "scratch/current-opportunities-closed-release-20261014-v1",
+    "final_completed_at": "2026-10-14T20:56:46.276136+00:00",
     "final_cheap_post": "pass",
     "original_model_config_research_files_preserved": 306,
     "ordinary_oct13_record_sha256": "37d7541f5ce12a080a4c0538939b95f99367fc9b5318e21eba03d96963927c32",
-    "frontend_followups": ["05c404b8", "6d448b4c", "95eb4fd8", "65f88673"],
+    "frontend_followups": ["05c404b8", "6d448b4c", "95eb4fd8", "65f88673", "a64f9c14"],
     "followup_scope": "canonical frontend-only changes; backend and inference services unchanged; no repeated backend gates"
   },
   "runtime": {
@@ -43,13 +43,13 @@
     "crwv_generated_at": "2026-10-14T20:02:50.458571+00:00",
     "crwv_original_deadline": "2026-10-14T20:15:00+00:00",
     "backend_image": "sha256:11e973863120d0de4eac5b13b6a42fe06205043cf34e9e5cebc130f920c532d0",
-    "gateway_image": "sha256:bad7e6252e2603ff4277d0105290c7f89c33fe9a8ba88074c98e4f9ea7bd3230",
+    "gateway_image": "sha256:b679d2b912d27398e352e1fd73d4b8d051f6eea8e52baa6358d5df4b3bfbd452",
     "inference_image_unchanged": "sha256:3430d6614a8e2925f34d059af6caf05aff42387326db4d05639a60f10f2654d8"
   },
   "browser": {
     "site": "https://deep-matter.com/?deskView=strategy#desk",
-    "serving_js": "index-DkR8EoAn.js",
-    "serving_js_sha256": "36c44af38ee4002e2b2940c8c916f6d3fc81d05191f8f99c71ec5841dcbf91b5",
+    "serving_js": "index-CparDMqC.js",
+    "serving_js_sha256": "074f6e471ff1fe7da04d1aa8bf42ec8f017f292df80b483f884ca208377c5f4f",
     "observed": [
       "current opportunity ranking overrides saved allocation hierarchy; held chart review precedes waits",
       "background coverage progressed from 84 to 93 of 94 without a Refresh click; MOD missing evidence explicit",
@@ -58,6 +58,7 @@
       "same assessed price renders consistently as 65.78 in both sections from original 65.775",
       "STX and SWKS have no remaining holding and no new SELL in Stocks; original filled shares and times remain in Paper account",
       "actual original eight targets differences retain all values under a dated saved-allocation failure heading; result is not relabeled passed",
+      "after-close pending evidence explicitly awaits a regular-session candle instead of indefinitely claiming an update",
       "original partial Oct13 prose and original failed parity remain visible and unchanged"
     ],
     "captured_console_errors": 0,
@@ -66,6 +67,7 @@
     "latest_targets_and_auto_poll_workflows": {"passed": 9, "skipped": 0, "seconds": 24.9},
     "merged_candidate_workflows": {"passed": 22, "skipped": 0, "seconds": 48.0},
     "additional_price_consistency_and_auto_poll": "release 1pass/22.9s; merged 1pass/23.0s",
+    "final_closed_evidence_and_auto_poll": {"passed": 1, "skipped": 0, "seconds": 23.1},
     "source_limits": "controlled cases test price loss, recovery, expiry, closed clocks and ready entries; real current market did not supply a supported ready entry"
   },
   "private": {"logic_passed": 66, "logic_skipped": 0, "real_functional_passed": 2, "real_functional_skipped": 0, "diagrams": 33, "proof": "current-opportunities-private-proof-2026-10-14.json"},

@@ -2,7 +2,7 @@
 
 ## 2026-10-14 — Current dashboard opportunities delivered; historical quantities remain pending
 
-VERIFIED production frontend65f88673d6caa4141fc0af29c61822c2ecdfb2af and
+VERIFIED production frontenda64f9c149893d06fb0f48d4c3aa8d2906780b8a5 and
 backendef7428baa1961d79ad1f5bd9dac0122b54ce0fea. Current ranking uses fresh
 chart judgments/grades and actual remaining holdings; list/detail show trader
 interpretation, measured levels and separate live quote context. Quote loss,
@@ -14,8 +14,8 @@ Canonical core19:29:03Z:10666unit pass/93skip/6xfail/439warnings557.73s;
 100real routing pass/0skip438.89s. Full live post19:54:28Z:47routed journeys,
 70traced turns, search harness passed built-in retry after an offers-format miss.
 All failed results retained. Frontend-only correctness followups use canonical
-short path; final20:34:10Z/cheap post green,306original files unchanged each time.
-Final index-DkR8EoAn.js SHA36c44af38ee4002e2b2940c8c916f6d3fc81d05191f8f99c71ec5841dcbf91b5.
+short path; final20:56:46Z/cheap post green,306original files unchanged each time.
+Final index-CparDMqC.js SHA074f6e471ff1fe7da04d1aa8bf42ec8f017f292df80b483f884ca208377c5f4f.
 
 Actual gateway20:14:38Z:owner200/private-no-store,foreign403,anonymous401,
 1643backend files match;29reviewed modules unchanged, API intentionallyb73d11fc.
@@ -37,6 +37,11 @@ poll1pass23.0s and target-kind8pass9.2s; type/build/33diagrams pass. Local main
 v4 browser output directory was reused by one supplemental run; its22pass log
 survives, but raw outputs may have been replaced. Final v5 captures remain
 exclusive; no real account/research evidence was touched.
+
+Final closed-session header observed live: awaiting regular-session evidence,
+not a false continuous update after expiry. Focused compiled1pass/0skip23.1s
+also checks automatic polling, price rounding and holding review. No clocks or
+model policies changed; only the waiting state is described accurately.
 
 ONE full current-model retrospective container1e8f440a/source27471 remains
 RUNNING unchanged. Never duplicate/restart it, publish the bounded stage or
