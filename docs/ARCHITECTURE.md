@@ -593,13 +593,23 @@ whole thing after each close, writes a record of the session, and the Desk view
 reads that record. The desk belongs to one person: `MARKET_DESK_USER` names
 them and every other user is refused.
 
-The only model in the desk's decision path reads documents, not prices. It
-scores each earnings release for what the company said about its outlook, and
-those scores become the sentiment analyst. It also writes the plain-English
-brief for each held name. Six neural networks were trained on price history
-during development and every one measured zero out of sample, which is why the
-grades are rules whose every number was measured in a walk-forward harness
-rather than weights fitted to the past.
+The document model reads releases and writes held-name briefs. The installed
+grade-led policy uses grades as the entry/exit boundary, published numerical
+holding models for risk and proposed sizes, the funded whole-share planner,
+and published timing models for execute/wait decisions. Current chart judgments
+are separate display interpretations and never change these models or orders.
+
+Current opportunities use fresh grades and bounded structured chart judgments,
+collected independently of open browsers. The collector reads the exact live
+grade snapshot and completed raw current-session IEX candle prefixes; it writes
+a separate display store under an interprocess lock. It never reads holdings
+or sends orders. Entry readiness and exit-review priority are model judgments;
+entry permission remains grade constrained. The API checks snapshot identity
+and original expiry, and the UI uses displayed-price freshness validation to
+demote a setup when its selected level is lost. Current holdings determine
+whether an exit applies; completed exits remain in paper history. Saved target
+sizes do not rank current opportunities. Numerical holding/timing models,
+original accounts and retrospective producers are unchanged.
 
 **The autopsy** is the older capability and reads the person's own uploaded
 statements, journals and notes to name the behaviours that repeat and what they

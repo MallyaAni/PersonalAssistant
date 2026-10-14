@@ -13,12 +13,18 @@ flowchart TB
     UI -. read only; never starts collection .-> API
     Evidence[Original quote and capture times<br/>never advanced by a browser read] -.-> Snapshot
     Policy[Separate regular-session policy<br/>candles, execution and receipts unchanged] --> UI
+    Lifetime --> ChartCollector[Current-chart collector<br/>completed IEX candle prefixes]
+    Universe --> ChartCollector
+    Feeds -->|Free IEX only| ChartCollector
+    ChartCollector --> ChartModel[Installed structured model<br/>bounded chart judgments; no sizing authority]
+    ChartModel --> ChartStore[(Current judgments<br/>source identity and original expiry)]
+    ChartStore -->|Fresh rows only| API
 
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#fdf1e6,stroke:#c98a3d,color:#4a2c0a;
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
-    class Lifetime,Collector,Reader,API,Policy application;
-    class Universe,Snapshot,Evidence data;
+    class Lifetime,Collector,Reader,API,Policy,ChartCollector application;
+    class Universe,Snapshot,Evidence,ChartStore data;
     class Feeds external;
-    class UI interface;
+    class UI,ChartModel interface;

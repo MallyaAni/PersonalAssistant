@@ -208,9 +208,9 @@ what repeats, what it has cost, and what to stop, start, and keep.
 | Diagram | the desk: [agent-trading-desk.svg](diagrams/agent-trading-desk.svg) · [source](diagrams/agent-trading-desk.mmd); the autopsy: [agent-trading.svg](diagrams/agent-trading.svg) · [source](diagrams/agent-trading.mmd) |
 | Agent folder | `backend/agents/trading/`, and `backend/agents/trading/desk/` |
 | Domain package | `backend/market/` (the desk), `backend/memory/` (the autopsy) |
-| Prompts | `prompts/trading/release_tone.md`, `desk_brief.md`, `autopsy.md` — three |
+| Prompts | `prompts/trading/release_tone.md`, `desk_brief.md`, `autopsy.md`; `backend/agents/trading/current_setup.md` for bounded current chart judgments |
 | Card | `agents/trading/card.py` |
-| Functional tests | `test_release_tone_behaviour.py`, `test_desk_brief_behaviour.py`, `test_trading_autopsy_behaviour.py` |
+| Functional tests | `test_release_tone_behaviour.py`, `test_desk_brief_behaviour.py`, `test_trading_autopsy_behaviour.py`, `test_current_setup_behaviour.py` |
 | Runs | `python -m backend.cli.market_daily --refresh --brief-book`, on spark1 after each close |
 | Whose | one person's: `MARKET_DESK_USER`; every other user is refused |
 

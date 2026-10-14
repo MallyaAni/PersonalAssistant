@@ -1,5 +1,37 @@
 # Next session
 
+## 2026-10-14 — Current opportunity ranking and chart judgment
+
+Human requires current best-buy/exit review judgments on the dashboard, not an
+explanation only in chat. Actual production352d915c had fresh grades but ranked
+saved allocations; completed STX/SWKS sells still led despite no remaining
+holdings. The urgent production-based branch adds an independent display-only
+model chart collector, exact factual receipts/deadlines, current opportunity
+ranking, shared list/detail reasons and confirmation/invalidation, quote loss
+and closed-session guards, and twenty-second overview refresh. No executable
+sizes are invented. See research/current-opportunities-2026-10-14.md.
+
+VERIFIED private66logic/0skip4.46s and2real model functional/0skip14.30s.
+Actual observations/private-output v5 accounts for all94:93validated fresh chart
+judgments plus explicitly missing MOD candle grid,278.461s. Exact source/proof
+hashes are in research/current-opportunities-private-proof-2026-10-14.json.
+Native tool-call validation works on the installed unchanged model; earlier
+schema-mode and partial native failures remain preserved. Browser/type/build and
+33diagram checks pass. Final compiled browser v7:10pass/0skip31.1s, including
+automatic current ranking, expired quotes, closed session, shared downside
+review, actual-held exits and unchanged separate historical date/quantity modes.
+Canonical deployment and actual compiled delivery remain UNVERIFIED.
+Preserve all failed/corrected roots under
+scratch/current-opportunities-tests-20261014-v*, actual-v*, and the local compiled
+browser captures. Never claim deployment until scripts/deploy.sh and actual
+authenticated compiled acceptance pass. Source branch starts352d915c and excludes
+main's pending historical-sizing/parity changes. The ONE full retrospective
+container1e8f440a/source27471 remains untouched and must never be restarted.
+Original filled IDs135/136 and failed Oct13 parity record remain original.
+Historical quantity publication and real operational acceptance remain pending;
+heartbeat stays ACTIVE. Older pending-delivery wording below predates the verified
+352d915c release, whose source-bound proof is already pushed to mainb80174a0.
+
 ## 2026-10-14 — Urgent current-price assessment patch
 
 Human requested a fresh assessment on the ordinary Stocks dashboard after CRWV

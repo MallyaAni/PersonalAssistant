@@ -1,0 +1,63 @@
+{
+  "status": "VERIFIED_private_checks_NOT_live_delivery",
+  "base": "352d915c4046f7764809bdca2d1ccd42e611c7ea",
+  "source_hashes": {
+    "backend/agents/trading/current_setup.md": "0caf267e3f616cf353a755a4bd114ce66982bb2a986688395c3a6d5d869fd296",
+    "backend/agents/trading/current_setup.py": "13f474dd5ead153cf53c5aee2fc6cf10b6bb4ada3a56b29d983d8ebf8b98b68a",
+    "backend/market/current_opportunities.py": "c9d0ca9af99f5ef9a83edfe559dcaeddd2351e15826ed5c8da1806f90c33fd6b"
+  },
+  "logic": {
+    "root": "scratch/current-opportunities-tests-20261014-v7",
+    "passed": 66,
+    "skipped": 0,
+    "seconds": 4.46
+  },
+  "real_functional": {
+    "root": "scratch/current-opportunities-tests-20261014-v7",
+    "passed": 2,
+    "skipped": 0,
+    "seconds": 14.30,
+    "model": "deepseek-v4-flash",
+    "cases": "defended bullish pullback, failed rebounds with exit review, grade-blocked entry, missing intraday confirmation"
+  },
+  "actual_observations_private_output": {
+    "root": "scratch/current-opportunities-actual-20261014-v5",
+    "started_at": "2026-10-14T19:01:01.496786+00:00",
+    "completed_at": "2026-10-14T19:05:39.957880+00:00",
+    "seconds": 278.461094,
+    "universe": 94,
+    "validated_fresh_judgments": 93,
+    "explicit_missing_grid": ["MOD"],
+    "snapshot_sha256": "c66b06d2d0176a95ef3e2bf17f58ab74cb8b097d077c882852f552a1037ce46e",
+    "grade_record_sha256": "a8dcbf05095a0daba276843c8320f59899b4d42f0408dc7c601c55dbdb366370",
+    "proof_sha256": "2cc5138da5a85d88f59e9844057a641c61e4e4c8f05238c7e62b7ae7d24a98d8",
+    "native_receipts_sha256": "572984a848708a0ef009f1e25653e0bece5a64c141927471e76f27fb15296760",
+    "original_market_read_only": true,
+    "real_orders": false,
+    "server_changes": false,
+    "interpretation": "current candle display judgment; not numerical sizing/timing inference or investment-performance proof"
+  },
+  "diagrams": {"synchronized": 33, "published_page": "pass"},
+  "compiled_browser": {
+    "root": "/tmp/current-opportunities-browser-20261014-v7",
+    "passed": 10,
+    "skipped": 0,
+    "seconds": 31.1,
+    "type_build": "pass",
+    "workflow": "fresh ranking changes, completed exits, shared chart judgment and exit review, lost levels, expired quote/grade, closed session, separate paper/research, historical dates and quantities, reload and mobile"
+  },
+  "preserved_failures": {
+    "tests_v1": "real model missed exit review and invented confirmation from missing current candles",
+    "actual_v1": "schema-mode actual output malformed; zero accepted judgments",
+    "actual_v2": "81 accepted judgments; one failed twelve-name batch and MOD missing grid",
+    "actual_v3": "capture began during snapshot rollover; no fresh input",
+    "actual_v4": "69 accepted judgments; partial native response validation",
+    "browser_v1": "fixtures lacked quote provenance and fresh judgment evidence",
+    "browser_v4": "old HOLD expectation contradicted a newly supplied fresh ready judgment; completed order still removed and no new shares invented"
+  },
+  "remaining": [
+    "canonical deployment and actual authenticated compiled-browser acceptance",
+    "full current-model historical quantity delivery after the ONE account completes and independently verifies",
+    "staged parity correction and fresh ordinary/intraday/fill operational acceptance"
+  ]
+}

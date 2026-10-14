@@ -16,6 +16,7 @@ from backend.core.dependencies import (
 )
 from backend.core.logging_config import setup_logging
 from backend.core.telemetry import configure_telemetry
+from backend.services.current_opportunity_collector import CurrentOpportunityCollector
 from backend.services.document_parse_queue import DocumentParseQueue
 from backend.services.document_retention import DocumentArchiver
 from backend.services.google_drive_source import DriveSync
@@ -50,9 +51,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         settings.MARKET_SESSION_PRICES_ENABLED,
     )
     session_prices.start()
+    opportunities = CurrentOpportunityCollector(
+        settings.MARKET_DATA_ROOT, settings.MARKET_SESSION_PRICES_ENABLED
+    )
+    opportunities.start()
     try:
         yield
     finally:
+        await opportunities.stop()
         await session_prices.stop()
         await drive_sync.stop()
         await archiver.stop()
