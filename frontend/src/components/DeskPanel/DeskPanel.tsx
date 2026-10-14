@@ -3136,7 +3136,7 @@ const NameDetail = ({
                 {chartSetup.exit === 'review' && <p className="mt-1 text-xs font-medium">Existing holding: review downside risk before adding.</p>}
                 <p className="mt-1 text-xs">{confirmationText(chartSetup)}</p>
                 <p className="text-xs">{invalidationText(chartSetup)}</p>
-                <p className="mt-1 text-[11px] text-[#6e6e73]">Read at ${chartSetup.price.toFixed(2)} · candle {marketTime(chartSetup.bar)} · judgment generated {marketTime(chartSetup.generated_at)}. Funded quantities and execution timing require their separate plan.</p>
+                <p className="mt-1 text-[11px] text-[#6e6e73]">Read at {priceMoney(chartSetup.price)} · candle {marketTime(chartSetup.bar)} · judgment generated {marketTime(chartSetup.generated_at)}. Funded quantities and execution timing require their separate plan.</p>
               </> : <p className="text-xs">{live.opportunities?.unavailable?.[ticker] ?? 'The current grade is available; a fresh chart judgment has not arrived. No ready entry is inferred.'}</p>}
             </section>
             <p aria-label="Current assessment grade" className="font-semibold">{currentAssessment.grade_live} · {assessmentPermission(currentAssessment.grade_live)}</p>

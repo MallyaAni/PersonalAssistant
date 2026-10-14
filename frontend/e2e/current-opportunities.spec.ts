@@ -11,7 +11,7 @@ test('current opportunities rerank and completed exits do not reappear', async (
   const old = (grade: string) => ({grade, score: -.5, stances: {fundamental: 1, technical: -1, sentiment: 1}, ranks: {fundamental: .9, technical: .1, sentiment: .8}})
   const grades = {READY: old('B'), WAITING: old('A+'), EXITED: old('C'), HELD: old('B')}
   // Supply a dated judgment independently of saved allocations and broker fills.
-  const setup = (ticker: string, entry: string, reason: string) => ({ticker, entry, exit: ticker === 'WAITING' || ticker === 'HELD' ? 'review' : 'hold', entry_priority: 'high', exit_priority: 'high', reason, confirmation: 'hold_above', confirmation_ref: 'vwap', invalidation_ref: 'support', price: 102, bar, generated_at: at, valid_until: until, status: 'model_assessment', levels: {vwap: {label: 'session VWAP', price: 100}, support: {label: 'daily support', price: 98}}})
+  const setup = (ticker: string, entry: string, reason: string) => ({ticker, entry, exit: ticker === 'WAITING' || ticker === 'HELD' ? 'review' : 'hold', entry_priority: 'high', exit_priority: 'high', reason, confirmation: 'hold_above', confirmation_ref: 'vwap', invalidation_ref: 'support', price: 102.125, bar, generated_at: at, valid_until: until, status: 'model_assessment', levels: {vwap: {label: 'session VWAP', price: 100}, support: {label: 'daily support', price: 98}}})
   page.on('pageerror', error => errors.push(error.message))
   page.on('console', message => {if (message.type() === 'error' || message.type() === 'warning') errors.push(message.text())})
   page.on('requestfailed', request => errors.push(request.url()))
@@ -23,7 +23,7 @@ test('current opportunities rerank and completed exits do not reappear', async (
     else if (path.includes('/conversations/')) json = {conversations: [], messages: []}
     else if (path.endsWith('/desk')) json = {latest: {session: previous, grades, targets: {policy: 'grade-led-learned-sizing/1', weights: {READY: 0, WAITING: .8, HELD: .15, EXITED: 0}}, actions: names.map(ticker => ({ticker, grade_signal: ticker === 'EXITED' || ticker === 'HELD' ? 'sell' : 'buy', last_close: 101})), book: [], briefs: {}, regime: {exposure: 1, flags: []}}, sessions: [previous]}
     else if (path.endsWith('/live')) json = {as_of: at, decision_session: previous, market_status: {phase: stage === 'closed' ? 'post' : 'open', as_of: at},
-      quotes: Object.fromEntries(names.map(ticker => [ticker, {last: 102, open: 103, high: 104, low: 99, bar, as_of: at}])),
+      quotes: Object.fromEntries(names.map(ticker => [ticker, {last: 102.125, open: 103, high: 104, low: 99, bar, as_of: at}])),
       grades_live: Object.fromEntries(names.map(ticker => [ticker, {grade_live: ticker === 'EXITED' ? 'C' : ticker === 'HELD' ? stage === 'review-held' ? 'A' : 'B' : 'A+', score_live: ticker === 'WAITING' ? .9 : .8}])),
       grade_valid_until: Object.fromEntries(names.map(ticker => [ticker, stage === 'expired' ? '2020-01-01T00:00:00Z' : until])),
       opportunities: {status: 'complete', rows: {READY: setup('READY', stage === 'swapped' ? 'wait' : 'ready', stage === 'swapped' ? 'The bounce failed; buyers need to regain control.' : 'Buyers defended the pullback and held the retest.'), WAITING: setup('WAITING', stage === 'swapped' ? 'ready' : 'wait', 'Wait for buyers to reclaim the session reference.'), HELD: setup('HELD', 'wait', 'The eligible holding needs a downside review.'), EXITED: setup('EXITED', 'avoid', 'Failed rebounds argue against a new entry.')}}, technical_detail: {}}
@@ -59,6 +59,8 @@ test('current opportunities rerank and completed exits do not reappear', async (
   await expect(judgment).toContainText('Buyers defended the pullback')
   await expect(judgment).toContainText('$100.00')
   await expect(judgment).toContainText('$98.00')
+  await expect(judgment).toContainText('Read at $102.13')
+  await expect(page.getByRole('region', {name: 'Current assessment', exact: true})).toContainText('At $102.13')
   await expect(judgment.getByLabel('READY latest quote check', {exact: true})).toContainText('Latest quote $102.00')
   await page.getByRole('button', {name: 'Close', exact: true}).click()
   await page.getByRole('button', {name: 'WAITING', exact: true}).click()
