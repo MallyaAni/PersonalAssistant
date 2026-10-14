@@ -1,0 +1,68 @@
+{
+  "status": "ORDINARY_RECORD_CAPTURED_TARGET_CHECKER_FAILED_CORRECTION_STAGED",
+  "source_revision": "42b11a76cbbdfd0e329f6e47ca2e532f369e2eba",
+  "session": "2026-10-13",
+  "ordinary_cron": "30 19 * * 1-5 desk_daily.sh",
+  "close_published_at": "2026-10-13T19:46:40.294838-04:00",
+  "paper_written_at": "2026-10-13T23:46:44+00:00",
+  "record_written_at": "2026-10-13T23:47:45+00:00",
+  "model_published_at": "2026-10-04T18:35:30.875637-04:00",
+  "model_fit_date": "2026-10-01",
+  "model_publication_sha256": "858163d5e414ee658f28a10532a934528c72fe98fd1cb685e655d6d3a2c75825",
+  "reviewed_source_files_matched": 30,
+  "grade_names_matched": 94,
+  "original_target_parity": {
+    "status": "FAILED",
+    "mismatches": 8,
+    "cause": "Grade-led learned targets compared against incumbent equal weights of 0.125",
+    "original_record_retained": true
+  },
+  "paper_orders": [
+    {"symbol": "STX", "side": "sell", "qty": 12, "client_order_id": "anios-2026-10-13-sell-stx-135", "timing": "next_open", "basis": "Grade below A; exit", "state": "queued_not_filled"},
+    {"symbol": "SWKS", "side": "sell", "qty": 130, "client_order_id": "anios-2026-10-13-sell-swks-136", "timing": "next_open", "basis": "Grade below A; exit", "state": "queued_not_filled"}
+  ],
+  "broker_get_only": {
+    "captured_at": "2026-10-14T00:02:19.459984+00:00",
+    "positions": 10,
+    "open_orders": 2,
+    "cash": 12.65,
+    "sha256": "8acb4cb8ba123b57b510accc55fcccdca154e96fbc1b1cdc556a50474dd4e929"
+  },
+  "original_evidence": {
+    "root": "/home/animallya96/scratch/grade-led-first-ordinary-20261013-v1",
+    "observation_proof_sha256": "b5f086853ebbdf432e61eef8046ab2b066def48ba6d4c17fce951e6311cd33d9",
+    "record_sha256": "37d7541f5ce12a080a4c0538939b95f99367fc9b5318e21eba03d96963927c32",
+    "state_sha256": "28d3e8ed8c09b1611c57ee0133ae620e430b4b57973b9d28634030d8b80d16fd",
+    "learned_inputs_sha256": "a631fda25de9b3db8b83238188d6fe851dcee99f3edf6a8c288d082dc4a3edd8",
+    "close_sha256": "c763d1a54ea497050b91518ff7c018945c4d2c867251942886dc4ea37ad9f069",
+    "arrays_sha256": "2ab35fa8cd2b9f15c0495e74c2fd6eff3f2d7451f9a3eede4f2a66fda1d04b1d",
+    "config_sha256": "1a14980a66a1cb5994f0bb82667dd46fce40ec7eb0705728d93e36b18faf5901",
+    "release_sha256": "5bbbc6ddf1ba570077f1ec760732d925bf215320774f5abd52907edfb44ecad8",
+    "timing_config_sha256": "d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a"
+  },
+  "staged_checker_correction": {
+    "deployed": false,
+    "checker_sha256": "755ae2ff29d832a75136a2e71d80b0676f5b79f7a9eb490a1178e2ce56652465",
+    "root": "/home/animallya96/scratch/grade-led-parity-correction-20261013-v2",
+    "tests_passed": 37,
+    "tests_skipped": 0,
+    "test_seconds": 5.78,
+    "tests_log_sha256": "dfaf1f40ad27dc7ef460e89b5c35b61def53772c807a7900f74ed3e793bce608",
+    "snapshot_verified_at": "2026-10-14T00:08:48.962072+00:00",
+    "snapshot_verification_sha256": "2bd21288f43af7f95d7aab7312c6b6587a6efdda4232ec3f611564d0a7c417f1",
+    "corrected_target_mismatches": 0,
+    "altered_target_and_missing_receipt_rejected": true,
+    "original_record_unchanged": true,
+    "model_inference_repeated": false,
+    "basis": "Recorded learned proposal with grade constraints reapplied using original marked weights, observed equity and conserved quantities; later broker marks are not the original decision inputs"
+  },
+  "preserved_failed_harnesses": [
+    "/home/animallya96/scratch/grade-led-parity-correction-20261013-v1/snapshot-verification.log",
+    "/home/animallya96/scratch/grade-led-parity-snapshot-20261013-v2/verification.log"
+  ],
+  "monday_missing_record_still_absent": true,
+  "ordinary_acceptance_complete": false,
+  "following_session_intraday_execution_ui": "UNVERIFIED",
+  "historical_current_model_delivery": "PENDING_ACTIVE_FULL_ACCOUNT",
+  "performance_superiority": "UNVERIFIED_NOT_CLAIMED"
+}

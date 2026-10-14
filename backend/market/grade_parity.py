@@ -39,8 +39,9 @@ What is compared, for the record's session d:
 * membership: names on the board that are not members on d (the replay
   grades them C whatever the board says), and members on d with no grade on
   the board;
-* targets: `record["targets"]["weights"]` against `live_policy.targets`
-  recomputed on the rebuilt report, to 1e-9, every name either side;
+* targets: incumbent weights against `live_policy.targets`, or grade-led
+  weights against the saved learned proposal with grade constraints reapplied
+  from the original account snapshot, to 1e-9, every name either side;
 * the session: a rebuilt report whose last session is not d means the
   store moved on since the record (after-hours bars, a later filing
   version) and the replay is not the same evening's evidence. It is
@@ -212,6 +213,132 @@ def mode_of(context: dict | None) -> str:
     return PARITY if same_code and not ctx.get("moved_inputs") else DRIFT
 
 
+# Recheck grade constraints and receipt consistency on the learned sizing basis.
+def _grade_led_targets(record: dict, report) -> dict:
+    from backend.market import grade_led_policy
+
+    policy = grade_led_policy.POLICY
+    day = record["session"]
+    paper = record.get("paper") or {}
+    selected = paper.get("selected_targets") or {}
+    allocation = paper.get("joint_funded") or {}
+    receipt = allocation.get("receipt") or {}
+    if (
+        any(
+            row.get("policy") != policy
+            for row in (record["targets"], paper, selected, allocation, receipt)
+        )
+        or allocation.get("as_of") != day
+        or receipt.get("session") != day
+        or paper.get("session") != day
+        or receipt.get("status") != "available"
+        or receipt.get("target_basis") != "grade_constrained_learned_sizes"
+    ):
+        raise ValueError("Matching available grade-led allocation receipt required")
+    names = {name for name in report.panel.tickers if name != report.panel.benchmark}
+    maps = [
+        receipt.get("sizing_model_targets"),
+        receipt.get("targets"),
+        allocation.get("targets"),
+        selected.get("weights"),
+    ]
+    for weights in maps:
+        if (
+            not isinstance(weights, dict)
+            or set(weights) != names
+            or any(
+                isinstance(v, bool)
+                or not isinstance(v, (int, float))
+                or not math.isfinite(v)
+                or not 0 <= v <= 1
+                for v in weights.values()
+            )
+            or sum(weights.values()) > 1 + TOLERANCE
+        ):
+            raise ValueError("Complete finite grade-led target maps required")
+    equity = float(receipt["observed_equity"])
+    if not math.isfinite(equity) or equity <= 0:
+        raise ValueError("Positive observed grade-led account equity required")
+    held = {row["symbol"]: float(row["qty"]) for row in paper.get("positions", [])}
+    current = receipt.get("current_weights")
+    if not isinstance(current, dict) or any(
+        isinstance(v, bool)
+        or not isinstance(v, (int, float))
+        or not math.isfinite(v)
+        or not 0 <= v <= 1
+        for v in current.values()
+    ):
+        raise ValueError("Finite observed grade-led holding weights required")
+    if any(
+        not math.isfinite(qty) or qty <= 0 or current.get(name, 0) <= 0
+        for name, qty in held.items()
+    ):
+        raise ValueError("Positive observed grade-led holding sizes required")
+    # The later positions GET can have a different mark. Decode the planner's
+    # original price from its recorded weight, equity and conserved quantity.
+    prices = {name: current[name] * equity / qty for name, qty in held.items()}
+    signals = grade_led_policy.signals(report, held)
+    ordinals = {
+        name: int(report.graded.grades[-1, column])
+        for column, name in enumerate(report.panel.tickers)
+        if name in names
+    }
+    if receipt.get("grades") != ordinals:
+        raise ValueError("Learned allocation grades differ from the rebuilt report")
+    wanted, _ = grade_led_policy.preserve_grade_holdings(
+        maps[0], {"current_weights": dict(current)}, signals, prices, equity
+    )
+    if any(
+        signal["grade"] in ("B", "C") and wanted.get(name, 0) > TOLERANCE
+        for name, signal in signals.items()
+    ):
+        raise ValueError("Below-A grade-led target must be zero")
+    if any(
+        not _same_weight(weights[name], wanted.get(name))
+        for weights in maps[1:]
+        for name in names
+    ):
+        raise ValueError("Saved targets differ from the constrained learned proposal")
+    return wanted
+
+
+# Compare targets on their recorded policy basis, preserving failures in the result.
+def _compare_targets(record: dict, report) -> tuple[list[dict], bool, str]:
+    from backend.agents.trading.desk import live_policy
+    from backend.market import grade_led_policy
+
+    basis = "live_policy.targets on the same report"
+    grade_led = grade_led_policy.POLICY in (
+        (record.get("targets") or {}).get("policy"),
+        (record.get("paper") or {}).get("policy"),
+    )
+    if grade_led:
+        basis = (
+            "recorded learned proposal with grade constraints reapplied to the "
+            "original account snapshot; not a new model inference"
+        )
+        try:
+            wanted = _grade_led_targets(record, report)
+        except (ValueError, KeyError, TypeError, ZeroDivisionError) as exc:
+            return [{"kind": TARGETS, "detail": str(exc)}], False, basis
+    else:
+        wanted = live_policy.targets(report)
+    live = dict((record.get("targets") or {}).get("weights") or {})
+    rows = [
+        {
+            "kind": TARGETS,
+            "ticker": ticker,
+            "live": live.get(ticker),
+            "replay": wanted.get(ticker),
+            "detail": "record target differs from its policy target basis "
+            f"by more than {TOLERANCE:g}",
+        }
+        for ticker in sorted(set(live) | set(wanted))
+        if not _same_weight(live.get(ticker), wanted.get(ticker))
+    ]
+    return rows, True, basis
+
+
 # The comparison itself, on data already in hand: the saved record, the
 # desk report the nightly decided from (rebuilt or the very object), and
 # the date. Pure: reads nothing, writes nothing, so a test can inject a
@@ -227,8 +354,6 @@ def compare(
     context: dict | None = None,
 ) -> dict:
     """Return the parity result for `record` against `report_pit` on `day`."""
-    from backend.agents.trading.desk import live_policy
-
     ctx = dict(context or {})
     moved_inputs = [str(x) for x in (ctx.get("moved_inputs") or [])]
     day_text = str(day)
@@ -295,24 +420,12 @@ def compare(
                 }
             )
     targets_compared = False
+    target_basis = "live_policy.targets on the same report"
     if same_evening:
-        targets_compared = True
-        live_targets = dict((record.get("targets") or {}).get("weights") or {})
-        wanted = live_policy.targets(report_pit)
-        for ticker in sorted(set(live_targets) | set(wanted)):
-            if not _same_weight(live_targets.get(ticker), wanted.get(ticker)):
-                mismatches.append(
-                    {
-                        "kind": TARGETS,
-                        "ticker": ticker,
-                        "live": live_targets.get(ticker),
-                        "replay": wanted.get(ticker),
-                        "detail": (
-                            "record target differs from live_policy.targets "
-                            f"by more than {TOLERANCE:g}"
-                        ),
-                    }
-                )
+        target_rows, targets_compared, target_basis = _compare_targets(
+            record, report_pit
+        )
+        mismatches.extend(target_rows)
     return {
         "version": VERSION,
         "date": day_text,
@@ -328,13 +441,14 @@ def compare(
         "members": len(members),
         "on_board": len(board),
         "targets_compared": targets_compared,
+        "target_basis": target_basis,
         "replay_session": rep["last_session"],
         "membership_history": str(_history(history_path)),
         "basis": (
             "replay = market_daily.desk_report (live inputs, fundamentals=current) "
             "restricted by point_in_time.point_in_time, letter at the record's "
             "session; "
-            "targets = live_policy.targets on the same report"
+            f"targets = {target_basis}"
         ),
         "mismatches": mismatches,
         **_explain_vintage(mismatches, ctx, day_text),

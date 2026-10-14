@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-10-14 — Grade-led target parity uses the learned allocation basis
+
+- Correct the checker that compared grade-led learned weights with incumbent
+  equal weights. Reapply grade constraints to the saved model proposal and
+  original observed holding weights; retain independent grade/membership checks
+  and reject incomplete, stale or inconsistent receipts and changed targets.
+- Preserve the genuine Oct13 record and its failed checker result. Queued paper
+  exits remain orders, not fills. No model, sizing, timing, configuration or
+  production account/history changes.
+- VERIFIED:37 focused checks/0skip and read-only validation on the preserved
+  genuine close/record, including corruption rejection. Production delivery and
+  the following real session remain UNVERIFIED; correction joins the pending
+  historical quantity release after full-account verification.
+- Diagram impact: NONE — checker comparison inside the existing nightly path;
+  no component, store or trust-boundary changes.
+
 ## 2026-10-13 — Grade signals lead; learned models size and time orders
 
 - Restore A/A+ entry permission and below-A held exits in

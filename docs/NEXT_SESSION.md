@@ -1,5 +1,58 @@
 # Next session
 
+## 2026-10-14 — First ordinary grade-led record exists; parity checker correction staged
+
+The genuine Oct13 19:30ET cron finished on deployed42b11a76. Learned close
+published23:46:40Z, paper state written23:46:44Z, full dated record written
+23:47:45Z, learned-input capture and94 histories written. Monday's full record
+remains absent. Original evidence preserved in scratch/grade-led-first-ordinary-
+20261013-v1, observation-proof SHA b5f086853ebbdf432e61eef8046ab2b066def48ba6d4c17fce951e6311cd33d9.
+Actual reviewed30 source files/config/model publication match the installed
+release. Original grade replay agrees for all94 names; FAILED target check
+compared learned weights against incumbent equal weights0.125, giving8 false
+target differences. It must not be relabeled as fully passed acceptance.
+
+GET-only broker evidence00:02:19Z:10positions,2open paper orders, no capture
+mutation. Genuine below-A exits: STX12 andSWKS130, next_open; accepted/queued,
+NOT fills. Cash12.65; no new purchases. Original allocation retains ALAB and
+SNPS when raw model proposals are zero, and SNDK has unavailable joint-risk
+support. Original state28d3e8ed8c09b1611c57ee0133ae620e430b4b57973b9d28634030d8b80d16fd;
+record37d7541f5ce12a080a4c0538939b95f99367fc9b5318e21eba03d96963927c32.
+Preserve pending IDs/quantities/clocks and all original receipts. Do not rerun
+nightly, rewrite Oct13's failed checker result or manufacture a fill.
+
+Targeted grade_parity correction is staged, NOT deployed: compare grade-led
+targets to the recorded learned proposal with original grade constraints
+reapplied, validating all receipt/policy/session/grade/target maps and holding
+inputs. Incumbent equal-weight comparison remains unchanged. This is receipt
+consistency, explicitly NOT a new numerical model inference or performance
+audit. Read prices from original recorded marked weights/equity/quantities:
+HPE's later broker GET changed its market value by3, so the later snapshot
+must not silently reprice the original decision. No sizing/trading source,
+model/config or original account data changed.
+
+Private37 checker/grade-led regression checks passed0skip in5.78s at scratch/
+grade-led-parity-correction-20261013-v2. Exact preserved real close/record target
+check passed00:08:48Z, altered target and absent receipt still rejected, original
+record unchanged. Checker SHA755ae2ff29d832a75136a2e71d80b0676f5b79f7a9eb490a1178e2ce56652465.
+Preserve initial37-suite predecessor36pass rootv1 and both failed snapshot
+harnesses: v1 lacked diagnostic output; v2 exposed the incorrect assumption
+that the later broker marks must equal the earlier planner input. Corrected
+evidence is in v2 correction root. Concise proof:
+research/grade-led-first-ordinary-proof-2026-10-14.json.
+
+Pending delivery: include the checker correction in the canonical release with
+the historical quantity candidate after the ONE full account completes and is
+independently verified. Production remains42b11a76; original Oct13 warning is
+preserved. No repeat deployment/gates for documentation. Fresh corrected checker
+nightly, genuine next-session intraday/queued-exit reconciliation and matching
+actual UI remain UNVERIFIED. Do not pause heartbeat.
+
+ONE full current-model retrospective account is still running, same source27471
+and container1e8f440a; inspected00:09:03Z through2020-05-20,309sessions/413fills/
+561intents. No restart, source change or performance claim. Continue only after
+its completed journal is available; preserve all existing originals and roots.
+
 ## 2026-10-13 — Human requests live-model sizing throughout historical charts
 
 Candidate display/publication pipeline now VERIFIED17 focused backend checks
