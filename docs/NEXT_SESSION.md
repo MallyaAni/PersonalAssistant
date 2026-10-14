@@ -4,9 +4,21 @@
 
 Human explicitly requested a fresh assessment at the current price, after CRWV
 showed live prices beside yesterday's grade. Production-based patch
-352d915c4046f7764809bdca2d1ccd42e611c7ea is pushed separately; canonical
-scripts/deploy.sh is RUNNING at scratch/fresh-assessment-release-20261014-v1.
-Do not duplicate its launcher or gate. Production stays42b11a76 until that
+352d915c4046f7764809bdca2d1ccd42e611c7ea is pushed separately. Canonical v1
+FAILED the unchanged declined-offer routing case:99pass/1fail; the model chose
+a search after "no thanks". Its10654unit/93skip/6xfail/439warnings passed in
+552.03s; routing took258.92s. Preserve scratch/fresh-assessment-release-
+20261014-v1; production remained42b11a76 and306 original model/config/research
+files plus30 reviewed trading sources were unchanged. No gate bypass.
+
+Identical failing check then passed all three isolated real-model runs in
+6.77/6.08/5.95s at scratch/fresh-assessment-routing-isolation-20261014-v2.
+The v1 isolation harness assumed the canonical temporary gate tree persisted;
+it had been removed by the normal exit handler. Preserve that failed harness.
+ONE canonical retry is RUNNING at scratch/fresh-assessment-release-20261014-v2,
+same source352d915c, supported ANIOS_GATE_WORKERS=1, all original assertions
+and cases retained. Do not duplicate its launcher or gate. Production stays
+42b11a76 until that
 guarded release completes. This urgent patch deliberately excludes the pending
 historical-sizing publication and staged parity correction; those still wait
 for the ONE original full account and independent verification.
