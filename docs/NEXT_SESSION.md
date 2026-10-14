@@ -1,5 +1,39 @@
 # Next session
 
+## 2026-10-14 — Ordinary nightly FAILED exact source approval after dashboard API changes
+
+The genuine19:30ET cron ended23:44:58Z on hosta64f9c14/backendef7428ba.
+FAILED first boundary: learned_live_holding.read_configuration -> _release,
+"Exact reviewed learned holding release required". Preserving the original
+receipt through the dashboard release left its API approval at0647fb9b;
+the actual reviewed API isb73d11fc. All29other reviewed host/container files
+match; the guard includes the API and correctly refused it before inference
+or broker access. Earlier306-file preservation did NOT prove live admission.
+
+GET-only capture23:49:30Z:8positions/0open orders/0newOct14orders. Actual
+paper state remains28d3e8ed (last sessionOct13); Oct14 full record and learned
+inputs are ABSENT. Original Oct13 record37d7541f and its failed parity are
+unchanged; Monday record remains absent. Never replay either missed ordinary
+day, substitute incumbent plans, relax the guard or invent lost fields.
+
+Private exclusive scratch/grade-led-ordinary-source-failure-20261014-v1
+preserves original nightly log, config/release/evidence/timing, paper state,
+Oct13 record, actual30-source comparison and broker GETs. Observation proof
+SHA6628f809b42949761ed574e70a548d3b365063d52e724c4b7476bb50290b1441.
+Concise exact-source proof: research/grade-led-ordinary-source-failure-2026-10-14.json.
+No code/config/models/services/orders were changed or jobs restarted.
+
+ONE retrospective1e8f440a/source27471 remains RUNNING untouched. After its
+completion and independent verification, the pending canonical release MUST
+include exact candidate source approval retaining original model/economic
+evidence and archived original approval/config snapshots. Verify actual host
+AND container read_configuration admission before claiming delivery; source
+file preservation alone misses changed approved API bytes. Include the staged
+parity checker then, never publish the bounded stage. This correction is NOT
+deployed; ordinary operational acceptance is FAILED, historical quantities
+and complete learned intraday/fill acceptance remain UNVERIFIED. Keep heartbeat
+ACTIVE and quiet on unchanged runs; newest handoff overrides older statuses.
+
 ## 2026-10-14 — Current dashboard opportunities delivered; historical quantities remain pending
 
 VERIFIED production frontenda64f9c149893d06fb0f48d4c3aa8d2906780b8a5 and

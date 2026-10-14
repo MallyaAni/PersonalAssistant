@@ -1,0 +1,53 @@
+{
+  "status": "FAILED_EXACT_REVIEWED_SOURCE_GUARD",
+  "session": "2026-10-14",
+  "ordinary_cron": "30 19 * * 1-5 desk_daily.sh",
+  "captured_at": "2026-10-14T23:49:30.649689+00:00",
+  "nightly_log_last_modified_at": "2026-10-14T23:44:58.101475+00:00",
+  "host_source": "a64f9c149893d06fb0f48d4c3aa8d2906780b8a5",
+  "backend_source": "ef7428baa1961d79ad1f5bd9dac0122b54ce0fea",
+  "first_failing_boundary": "learned_live_holding.read_configuration -> _release: Exact reviewed learned holding release required",
+  "reviewed_sources": 30,
+  "unchanged_host_and_container_sources": 29,
+  "mismatch": {
+    "path": "backend/api/v1/market.py",
+    "approved_sha256": "0647fb9b2986451676b9ab9fcc730d9263b89b6eb4ab32e3c25c6edda1377882",
+    "actual_host_and_container_sha256": "b73d11fc6931c95e1bc47ff12f4ecc564db5cd1b02628ee7681f87bf6bdb25d7"
+  },
+  "cause": "Current dashboard API changed, while the preserved installed release receipt still approves the original API bytes. The exact-source guard includes this API and correctly refuses the mismatch before planning or broker access.",
+  "effects": {
+    "new_oct14_broker_orders": 0,
+    "broker_open_orders": 0,
+    "broker_positions": 8,
+    "last_persisted_paper_session": "2026-10-13",
+    "oct14_full_record": "ABSENT",
+    "oct14_learned_inputs": "ABSENT",
+    "monday_oct12_full_record": "STILL_ABSENT",
+    "incumbent_plan_substituted": false
+  },
+  "preservation": {
+    "paper_state_sha256": "28d3e8ed8c09b1611c57ee0133ae620e430b4b57973b9d28634030d8b80d16fd",
+    "oct13_record_sha256": "37d7541f5ce12a080a4c0538939b95f99367fc9b5318e21eba03d96963927c32",
+    "holding_config_sha256": "1a14980a66a1cb5994f0bb82667dd46fce40ec7eb0705728d93e36b18faf5901",
+    "original_release_sha256": "5bbbc6ddf1ba570077f1ec760732d925bf215320774f5abd52907edfb44ecad8",
+    "original_evidence_sha256": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9",
+    "timing_config_sha256": "d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a",
+    "originals_unchanged_by_capture": true,
+    "broker_get_only": true,
+    "ordinary_job_replayed": false,
+    "release_guard_relaxed": false
+  },
+  "evidence": {
+    "root": "/home/animallya96/scratch/grade-led-ordinary-source-failure-20261014-v1",
+    "observation_proof_sha256": "6628f809b42949761ed574e70a548d3b365063d52e724c4b7476bb50290b1441",
+    "nightly_log_sha256": "51de8a885633ac9d037764450d0b42db1db923826011b4988d3804e5b9e34330",
+    "source_comparison_sha256": "2dff203a85f94e9d4f6956c4a35cf5c5dcbb2dba6aa3e2aac4db9edabc463a3f",
+    "broker_get_only_sha256": "d87799e262b24902601f1e1d6e3877a30cab08a307480e454945a33b80922b39"
+  },
+  "required_release_boundary": "After the ONE full retrospective run completes and is independently verified, the pending canonical release must obtain exact candidate source approval with the original model/economic evidence chain retained, and prove read_configuration succeeds on actual host and container before claiming delivery. Preserve original approval/config snapshots. Never bypass source checks or replay the missed ordinary day.",
+  "historical_full_container": "1e8f440a3b5b75dcabd299f5eaba58c7929fb6f96bc822fdb46b641ecf3e598d",
+  "historical_full_state": "RUNNING_UNCHANGED",
+  "correction_deployed": false,
+  "fresh_ordinary_operational_acceptance": "FAILED",
+  "historical_quantity_delivery": "UNVERIFIED"
+}
