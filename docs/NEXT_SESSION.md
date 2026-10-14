@@ -1,5 +1,52 @@
 # Next session
 
+## 2026-10-14 — Current dashboard opportunities delivered; historical quantities remain pending
+
+VERIFIED production frontend65f88673d6caa4141fc0af29c61822c2ecdfb2af and
+backendef7428baa1961d79ad1f5bd9dac0122b54ce0fea. Current ranking uses fresh
+chart judgments/grades and actual remaining holdings; list/detail show trader
+interpretation, measured levels and separate live quote context. Quote loss,
+expiry and closed-session guards withhold ready entries. Automatic20s poll
+passes without Refresh; quotes collect15s, models read completed15m candles.
+No new funded numerical quantities/timing inference, model services or orders.
+
+Canonical core19:29:03Z:10666unit pass/93skip/6xfail/439warnings557.73s;
+100real routing pass/0skip438.89s. Full live post19:54:28Z:47routed journeys,
+70traced turns, search harness passed built-in retry after an offers-format miss.
+All failed results retained. Frontend-only correctness followups use canonical
+short path; final20:34:10Z/cheap post green,306original files unchanged each time.
+Final index-DkR8EoAn.js SHA36c44af38ee4002e2b2940c8c916f6d3fc81d05191f8f99c71ec5841dcbf91b5.
+
+Actual gateway20:14:38Z:owner200/private-no-store,foreign403,anonymous401,
+1643backend files match;29reviewed modules unchanged, API intentionallyb73d11fc.
+94fresh grades,93validated model judgments and explicitly missing MOD grid.
+Exact proof: research/current-opportunities-delivery-proof-2026-10-14.json.
+Public compiled browser verifies current priority, automatic84→93coverage,
+CRWV C/avoid/review with original closing65.775 rendered consistently65.78,
+separate dated prices/clocks, natural expiry/closed-session behavior, no new
+SELL for zero-held STX/SWKS, original actual filled quantities/times and dated
+failed target check.0captured console warnings/errors. Original Oct13 partial
+prose and failed parity stay original; Monday full record stays absent.
+
+Actual browser caught source95's singular target fixture assumption: backend
+kind is targets. Source65 preserves the red failed saved-size warning and all
+eight original values, without falsely calling current grades failed. The
+numeric checker correction remains STAGED, NOT deployed. New private v1 target
+checks9pass/0skip24.9s; merged candidate22pass/0skip48.0s, plus final price/auto
+poll1pass23.0s and target-kind8pass9.2s; type/build/33diagrams pass. Local main
+v4 browser output directory was reused by one supplemental run; its22pass log
+survives, but raw outputs may have been replaced. Final v5 captures remain
+exclusive; no real account/research evidence was touched.
+
+ONE full current-model retrospective container1e8f440a/source27471 remains
+RUNNING unchanged. Never duplicate/restart it, publish the bounded stage or
+borrow old fills. After COMPLETE, independently verify full ledger, original
+models/configuration, raw prices, causal prefixes and all94payloads, then ship
+canonical main with staged parity correction and actual compiled quantities.
+Historical share sizes, fresh corrected ordinary and complete real intraday/
+fill operational acceptance remain UNVERIFIED. Keep heartbeat ACTIVE and quiet
+on unchanged jobs. Newest handoff supersedes older status below.
+
 ## 2026-10-14 — Current opportunity ranking and chart judgment
 
 Human requires current best-buy/exit review judgments on the dashboard, not an

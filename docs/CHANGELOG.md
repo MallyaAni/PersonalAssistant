@@ -2,6 +2,16 @@
 
 ## 2026-10-14 — Current opportunity ranking and trader-like chart judgment
 
+Delivered backendef7428ba/frontend65f88673 through canonical deployment;
+10666unit and100real routing passes, full live journey/search post passed
+(search-format case passed built-in retry). Actual owner gateway exposes94fresh
+grades and93current chart judgments, with one missing grid explicit. Public
+browser verifies automatic updates, current chart/quote separation, completed
+exits and correctly dated saved-target failure. Original assets and records
+are unchanged. Historical quantities and full real operational acceptance remain
+pending. Exact source/image/asset/acceptance proof is in research/
+current-opportunities-delivery-proof-2026-10-14.json.
+
 Current dashboard ranking now distinguishes ready entries, waits and existing
 holdings needing exit review using a source-bound display model judgment over
 completed candles. Rows and ticker details share reasons and measured levels;
