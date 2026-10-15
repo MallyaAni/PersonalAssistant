@@ -17,9 +17,8 @@ import {rankCurrent, confirmationText, invalidationText, quoteReferenceText} fro
 // Levels shows the account's unsubmitted price triggers. Technical references
 // belong in stock details; a reference indicator is never an order price.
 
-// The four words a row can say, and the dash for a name the account neither
-// holds nor trades.
-export type BoardWord = 'BUY' | 'ADD' | 'SELL' | 'TRIM' | 'HOLD' | 'WAIT' | 'REVIEW' | '—' | 'ORDERS'
+// Trading actions, waiting status and a dash for names without an action.
+export type BoardWord = 'BUY' | 'SELL' | 'TRIM' | 'HOLD' | 'WAIT' | '—' | 'ORDERS'
 
 const LEARNED_HOLDING_POLICY = 'joint-stock-risk-funded/6-retained-holdings-probability-timing-research'
 
@@ -71,10 +70,10 @@ export type BoardRow = {
 // the whole portfolio (orders and holdings), and every graded name.
 type View = 'orders' | 'portfolio' | 'all'
 type SortKey = 'ticker' | 'grade' | 'position' | 'size'
-const FILTER_ACTIONS = ['BUY', 'ADD', 'SELL', 'TRIM', 'REVIEW', 'WAIT', 'HOLD', '—'] as const
+const FILTER_ACTIONS = ['BUY', 'SELL', 'TRIM', 'WAIT', 'HOLD', '—'] as const
 type FilterAction = typeof FILTER_ACTIONS[number]
 export type ActionSelection = Record<FilterAction, boolean>
-const ALL_ACTIONS: ActionSelection = {BUY: true, ADD: true, SELL: true, TRIM: true, REVIEW: true, WAIT: true, HOLD: true, '—': true}
+const ALL_ACTIONS: ActionSelection = {BUY: true, SELL: true, TRIM: true, WAIT: true, HOLD: true, '—': true}
 
 // Match each recorded leg of mixed orders while keeping non-traded names in their displayed category.
 const hasAction = (row: BoardRow, action: FilterAction) => row.orders.length
@@ -202,9 +201,7 @@ export const priceAge = (structure: DeskStructure | undefined, now: number): str
 // The colour of each word: green buys, red sells, amber trims, grey holds.
 export const WORD_STYLE: Record<BoardWord, string> = {
   BUY: 'text-[#248a3d]',
-  ADD: 'text-[#248a3d]',
   WAIT: 'text-[#b25e00]',
-  REVIEW: 'text-[#b25e00]',
   SELL: 'text-[#b42318]',
   TRIM: 'text-[#b25e00]',
   HOLD: 'text-[#6e6e73]',

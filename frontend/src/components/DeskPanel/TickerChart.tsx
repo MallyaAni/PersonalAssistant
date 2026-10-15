@@ -366,6 +366,9 @@ const simulatedTradeMarkers = (simulation: DeskStrategyStock | null | undefined,
   return [...groups.values()]
 }
 
+// Display additional purchases as BUY while preserving the original action in stored evidence.
+const tradingAction = (action: string): string => action === 'ADD' ? 'BUY' : action
+
 // Keep each historical funded amount on its original decision day, including zero signals.
 const sizedDecisionMarkers = (history: DeskLiveModelHistory | null | undefined, bars: DeskChartBar[], timeframe: Timeframe): ChartMarker[] =>
   (history?.decisions ?? []).flatMap(row => {
@@ -374,7 +377,7 @@ const sizedDecisionMarkers = (history: DeskLiveModelHistory | null | undefined, 
     const up = row.action === 'BUY' || row.action === 'ADD'
     return [{time: stamp(candle.date), position: up ? 'belowBar' as const : 'aboveBar' as const,
       color: up ? TRADE_BUY : TRADE_SELL, shape: up ? 'arrowUp' as const : 'arrowDown' as const,
-      text: `${row.action} ${shares(row.qty)}${row.grade ? ` · ${row.grade}` : ''}`, size: row.qty ? 2 : 1}]
+      text: `${tradingAction(row.action)} ${shares(row.qty)}${row.grade ? ` · ${row.grade}` : ''}`, size: row.qty ? 2 : 1}]
   })
 
 // Draw only genuine simulated execution receipts from the new grade-led account.
@@ -390,7 +393,7 @@ const sizedFillMarkers = (history: DeskLiveModelHistory | null | undefined, bars
     const up = row.action === 'BUY' || row.action === 'ADD'
     return [{time: timeframe === '15m' ? instantStamp(candle.time!) : stamp(candle.date),
       position: up ? 'belowBar' as const : 'aboveBar' as const, color: up ? TRADE_BUY : TRADE_SELL,
-      shape: 'circle' as const, text: `${row.action} ${shares(row.qty)}`, size: 1}]
+      shape: 'circle' as const, text: `${tradingAction(row.action)} ${shares(row.qty)}`, size: 1}]
   })
 
 const DECISION_BUY = '#15803d'
@@ -441,7 +444,7 @@ const decisionText = (row: DeskHistoryRow, policy?: string | null) => {
     case 'sell': return 'SELL signal'
     case 'add':
     case 'trim': {
-      if (!isEqualWeight(policy)) return `${row.action === 'add' ? 'ADD' : 'TRIM'} signal →${percentText(row.target_weight)}`
+      if (!isEqualWeight(policy)) return `${row.action === 'add' ? 'BUY' : 'TRIM'} signal →${percentText(row.target_weight)}`
       const delta = row.delta_weight
       if (typeof delta !== 'number' || !Number.isFinite(delta)) return `RESET →${percentText(row.target_weight)}`
       return `RESET ${delta >= 0 ? '+' : '−'}${percentText(Math.abs(delta))}`
@@ -1180,19 +1183,19 @@ export const TickerChart = ({
             {sizedHistoryError ? <p role="alert">{sizedHistoryError}</p> : !sizedHistory ? <p>Loading live-model historical sizes…</p> : <>
               <p className="font-medium text-[#1d1d1f]">Historical sizes · current live models · through {sizedHistory.through}</p>
               {latestSizedTarget && latestSizedTarget.weight == null && <p role="status">Sizing unavailable on {latestSizedTarget.date}: {latestSizedTarget.reason ?? 'The simulated account could not supply a complete funded plan.'}</p>}
-              <p>Grade-led direction with learned sizing and timing, applied to historical observations. BUY and ADD increase shares; TRIM reduces a holding; SELL exits it. A zero amount means no order.</p>
+              <p>Grade-led direction with learned sizing and timing, applied to historical observations. BUY increases shares; TRIM reduces a holding; SELL exits it. A zero amount means no order.</p>
               {showSized && <p aria-label={`${ticker} sized markers`}>{timeframe === '15m' ? 'Nightly decisions are listed below, without an invented fifteen-minute marker. Select Simulated fills for execution times.' : sizedDecisions.length ? `${sizedDecisions.length} sized decisions on these candles: ${sizedDecisions.slice(-6).map(row => row.text).join(' · ')}.` : 'No sized decisions on these loaded candles.'}</p>}
               <details open={showSized || showSizedFills}>
                 <summary className="cursor-pointer">Historical decisions and amounts</summary>
                 {sizedHistory.decisions.length === 0 ? <p>No decisions in the simulated history.</p> : <div className="max-h-64 overflow-auto"><table className="w-full text-left [&_td]:p-1 [&_th]:p-1" aria-label={`${ticker} sized decision history`}>
                   <thead><tr><th>Decision date</th><th>Action · amount</th><th>Grade</th><th>Held before plan</th><th>Funded target</th><th>Outcome</th></tr></thead>
                   <tbody>{[...sizedHistory.decisions].reverse().slice(0, allSizedDecisions ? undefined : 12).map(row => <tr key={row.id}>
-                    <td>{row.date}</td><td>{row.action} {shares(row.qty)}</td><td>{row.grade ?? 'Unavailable'}</td><td>{shares(row.holding)}</td><td>{row.target_weight == null ? 'Unavailable' : percent(row.target_weight)}</td>
+                    <td>{row.date}</td><td>{tradingAction(row.action)} {shares(row.qty)}</td><td>{row.grade ?? 'Unavailable'}</td><td>{shares(row.holding)}</td><td>{row.target_weight == null ? 'Unavailable' : percent(row.target_weight)}</td>
                     <td>{row.qty === 0 ? row.status === 'no_position' ? 'No position' : 'No order' : row.state === 'executed' ? `${shares(row.executed_qty)} simulated filled` : row.state === 'partial' ? `${shares(row.executed_qty)} simulated filled; ${shares(row.qty - row.executed_qty)} unfilled` : 'Unfilled plan'} · {row.reason}</td>
                   </tr>)}</tbody>
                 </table></div>}
                 {sizedHistory.decisions.length > 12 && <button type="button" className="mt-1 text-[#0071e3]" onClick={() => setAllSizedDecisions(value => !value)}>{allSizedDecisions ? 'Show recent sizes' : `Show all ${sizedHistory.decisions.length} decisions`}</button>}
-                {showSizedFills && <ul aria-label={`${ticker} live-model simulated fills`}>{sizedHistory.trades.length ? [...sizedHistory.trades].reverse().map((row, index) => <li key={`${row.id}:${index}`}>{row.date} · {newYorkClock(Date.parse(row.at) / 1000, false)} ET · {row.action} {shares(row.qty)} @ ${row.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})} · decision {row.decision_date}</li>) : <li>No simulated fills in this history.</li>}</ul>}
+                {showSizedFills && <ul aria-label={`${ticker} live-model simulated fills`}>{sizedHistory.trades.length ? [...sizedHistory.trades].reverse().map((row, index) => <li key={`${row.id}:${index}`}>{row.date} · {newYorkClock(Date.parse(row.at) / 1000, false)} ET · {tradingAction(row.action)} {shares(row.qty)} @ ${row.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6})} · decision {row.decision_date}</li>) : <li>No simulated fills in this history.</li>}</ul>}
               </details>
               <details className="mt-1"><summary className="cursor-pointer">Historical sizing basis</summary><p>Current model versions were applied retrospectively to the dated grade and price inputs in a separate account starting with ${sizedHistory.starting_cash.toLocaleString('en-US')} cash and no shares. {sizedHistory.provenance.cost_bps} bp per side. Model publication: {recordedTime(sizedHistory.provenance.original_holding_publication)}. These sizes and fills are hypothetical.</p></details>
             </>}

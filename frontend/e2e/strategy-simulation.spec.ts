@@ -218,7 +218,7 @@ test('current overview refresh removes completed actions without inventing sizes
   await expect(row).toContainText('3 sh planned')
   current.done = true
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect(row.getByLabel(`${stocks[0].ticker} strategy intent`, {exact: true})).toHaveText('ADD')
+  await expect(row.getByLabel(`${stocks[0].ticker} strategy intent`, {exact: true})).toHaveText('BUY')
   await expect(row.getByLabel(`${stocks[0].ticker} size`)).toHaveText('—')
   await expect(table).not.toContainText('Bought 3 today')
   expect(errors).toEqual([])
@@ -349,13 +349,14 @@ test('historical live-model amounts stay primary across dates ranges and reload'
   await expect(chart.getByRole('checkbox', {name: 'Live-model sizes'})).toBeChecked()
   await expect(chart.getByRole('checkbox', {name: 'Grade signals'})).not.toBeChecked()
   await expect(chart.getByRole('table', {name: `${stocks[0].ticker} sized decision history`})).toContainText('BUY 13 sh')
-  await expect(chart.getByRole('table', {name: `${stocks[0].ticker} sized decision history`})).toContainText('ADD 2 sh')
+  await expect(chart.getByRole('table', {name: `${stocks[0].ticker} sized decision history`})).toContainText('BUY 2 sh')
+  await expect(chart.getByRole('table', {name: `${stocks[0].ticker} sized decision history`})).not.toContainText('ADD')
   await expect(chart.getByRole('table', {name: `${stocks[0].ticker} sized decision history`})).toContainText('BUY 0 sh')
   await expect(chart).toContainText('Learned size is zero')
   for (const frame of ['D', 'W']) {
     await chart.getByRole('button', {name: frame, exact: true}).click()
     await chart.getByRole('button', {name: 'Full history', exact: true}).click()
-    await expect.poll(() => page.evaluate(() => (window as any).__sizedPaint)).toEqual(expect.arrayContaining(['BUY 13 sh · A+', 'ADD 2 sh · A', 'SELL 13 sh · B', 'BUY 0 sh · A+']))
+    await expect.poll(() => page.evaluate(() => (window as any).__sizedPaint)).toEqual(expect.arrayContaining(['BUY 13 sh · A+', 'BUY 2 sh · A', 'SELL 13 sh · B', 'BUY 0 sh · A+']))
     await chart.getByRole('button', {name: 'Recent', exact: true}).click()
   }
   await page.evaluate(() => {(window as any).__sizedPaint = []; (window as any).__strategyPaint = []})

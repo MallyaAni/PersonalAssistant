@@ -69,9 +69,9 @@ export const rankCurrent = (rows: BoardRow[], live: DeskLive, session: string, n
     const review = accountAvailable && row.held > 0 && eligible && setup?.exit === 'review'
     const ready = eligible && setup?.entry === 'ready'
     const category = row.orders.length ? 0 : exit ? 1 : review ? 2 : ready ? 3 : eligible ? 4 : grade ? 5 : 6
-    const word: BoardRow['word'] = row.orders.length ? row.word : exit ? 'SELL' : review ? 'REVIEW' : ready ? row.held > 0 ? 'ADD' : 'BUY'
+    const word: BoardRow['word'] = row.orders.length ? row.word : exit ? 'SELL' : review ? 'HOLD' : ready ? 'BUY'
       : eligible ? 'WAIT' : row.held > 0 ? 'HOLD' : '—'
-    const signal = row.orders.length ? row.signal : exit ? 'sell' : review ? 'review' : ready ? row.held > 0 ? 'add' : 'buy'
+    const signal = row.orders.length ? row.signal : exit ? 'sell' : review ? 'hold' : ready ? 'buy'
       : eligible ? 'wait' : grade ? row.held > 0 ? 'hold' : 'avoid' : 'unavailable'
     const why = row.orders.length ? row.why : exit ? 'Current grade below A; remaining holding requires an exit plan.'
       : setup?.reason ?? live.opportunities?.unavailable?.[row.ticker] ?? (grade ? eligible ? 'Chart judgment updating; entry permission alone is not an entry decision.'
