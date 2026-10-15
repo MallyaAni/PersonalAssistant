@@ -3154,9 +3154,12 @@ const NameDetail = ({
             <p aria-label="Current assessment grade" className="font-semibold">{currentAssessment.grade_live} · {assessmentPermission(currentAssessment.grade_live)}</p>
             <p className="text-xs text-[#6e6e73]">At {live.quotes[ticker]?.last != null ? priceMoney(live.quotes[ticker].last) : 'unavailable price'} · completed 15-minute candle starting {marketTime(live.quotes[ticker]?.bar)} · assessment {marketTime(live.as_of)}.</p>
             <AnalystRatings ranks={currentAssessment.ranks_live} stances={currentAssessment.stances_live ?? {}} session={latest.session} />
-            <p className="mt-1 text-xs text-[#6e6e73]">Price-sensitive technical and available valuation votes refreshed. Fundamentals and earnings use the latest stored evidence from the {latest.session} assessment. This reading does not create an order.</p>
-          </> : <p role="status">Fresh assessment unavailable. The {latest.session} saved grade below is historical; a live quote does not refresh it.</p>}
-          <LiveTechnical userId={userId} ticker={ticker} detail={live.technical_detail?.[ticker]} quote={live.quotes[ticker]} row={row} optionsEvidence={live.options_evidence?.[ticker]} />
+          </> : <p role="status" className="text-xs text-[#6e6e73]">Fresh assessment unavailable · saved grade from {latest.session}.</p>}
+          <details className="mt-2" aria-label="Technical evidence">
+            <summary className="cursor-pointer text-xs text-[#0071e3]">Technical evidence</summary>
+            {currentAssessment && <p className="my-2 text-xs text-[#6e6e73]">Technical and available valuation votes use the completed candle. Fundamentals and earnings use stored evidence from {latest.session}. An assessment does not create an order.</p>}
+            <LiveTechnical userId={userId} ticker={ticker} detail={live.technical_detail?.[ticker]} quote={live.quotes[ticker]} row={row} optionsEvidence={live.options_evidence?.[ticker]} />
+          </details>
         </section>}
         {order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}
         {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}
