@@ -450,6 +450,7 @@ test('views, search and your account size', async ({page}) => {
   await expect(page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('row')).toHaveCount(2)
   await page.getByLabel('Search the stock list').fill('')
   // Your account at $50,000: NVDA's 15.3% is 33 shares at $229.10.
+  await page.getByLabel('Order rules', {exact: true}).locator('summary').click()
   await page.getByLabel('Reference account size').fill('50000')
   await page.getByLabel('Reference account size').press('Enter')
   await expect(page.getByLabel('NVDA size')).toContainText('ref. 33 sh')
@@ -554,6 +555,7 @@ for (const [state, word] of [['filled', 'BUY'], ['cancelled', 'BUY'], ['rejected
     const order = {...fixture.thursday.orders.find((o: {symbol: string}) => o.symbol === 'AAOI'), state, terminal: true, qty: 5, planned_qty: 20, submitted_qty: 5, remaining_qty: 0, quantity_basis: state === 'filled' ? 'filled' : 'submitted', status: state === 'filled' ? 'Bought 5 @ $100.00' : `Not filled: order ${state}`, filled_qty: state === 'filled' ? 5 : 0, notional: 500, price: 100, weight: .005}
     const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', orders: [order]})
     await page.goto('/?deskView=paper#desk')
+    await page.getByLabel('Order rules', {exact: true}).locator('summary').click()
     await page.getByLabel('Reference account size').fill('50000')
     await page.getByLabel('Reference account size').press('Enter')
     await expect(page.getByLabel('AAOI strategy intent')).toHaveText(word)
@@ -580,6 +582,7 @@ test('mixed orders stay separate and cannot be scaled together', async ({page}) 
   const orders = [source, {...source, client_order_id: 'second', side: 'sell', action: 'SELL', state: 'filled', qty: 2, filled_qty: 2, quantity_basis: 'filled', status: 'Sold 2 @ $100.00'}]
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday', orders})
   await page.goto('/?deskView=paper#desk')
+  await page.getByLabel('Order rules', {exact: true}).locator('summary').click()
   await page.getByLabel('Reference account size').fill('50000')
   await page.getByLabel('Reference account size').press('Enter')
   await expect(page.getByLabel('AAOI strategy intent')).toHaveText('ORDERS')

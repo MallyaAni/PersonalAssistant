@@ -447,7 +447,7 @@ test('automatic action ranking updates with paper readiness and completion', asy
   // Read the visible stock order independently of expanded details.
   const names = () => board.locator('tbody tr').filter({has: page.getByLabel(/displayed grade$/)}).locator('td:nth-child(2) button').allTextContents()
   await expect.poll(names).toEqual(['META', 'AMD', 'NVDA', 'MSFT', 'AAPL', 'ZERO', 'AMZN'])
-  await expect(page.getByRole('button', {name: 'Reset ranking', exact: true})).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', {name: 'Reset ranking', exact: true})).toHaveCount(0)
   account = structuredClone(account)
   account.plan.orders.find(o => o.symbol === 'AMD')!.state = 'filled'
   account.plan.orders.find(o => o.symbol === 'MSFT')!.state = 'due'

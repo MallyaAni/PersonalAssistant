@@ -1,5 +1,28 @@
 # Next session
 
+## 2026-10-15 — Simplify dashboard wording and controls
+
+Human requested removal of dashboard clutter. Frontend-only cleanup keeps one
+action per stock row, moves chart rationale/quote checks/levels into row Details,
+folds technical commentary and the chart key, and removes the duplicate six-item
+grade-history preview. Reference sizing and rules live under one disclosure;
+Reset ranking appears only after manual sorting. Original dates, stale-data
+guards, exact order sizes and separate grade/research/actual-fill modes remain.
+The paper-view ranking description now describes its existing allocation sort.
+
+VERIFIED compiled type/build and50unique controlled browser workflows:49pass
+in108s plus1corrected disclosure workflow pass6.3s. Preserve failed v1/v2
+captures under /tmp/dashboard-cleanup-browser-20261015-v*. Deployment and actual
+authenticated browser acceptance are pending. Diagram impact: NONE — only
+existing presentation/disclosures changed, with no new data or trust boundary.
+
+Keep the ONE retrospective container1e8f440a/source27471 untouched. Oct14
+ordinary acceptance FAILED the exact-source release guard; this frontend change
+does not repair that failure. Original approval/config/model/economic evidence,
+Oct13 failed parity and missing Oct12/Oct14 records remain original. Exact source
+approval, staged parity correction and historical quantities stay in the pending
+main release after full completion/independent verification. Heartbeat ACTIVE.
+
 ## 2026-10-14 — Current opportunity ranking and chart judgment
 
 Human requires current best-buy/exit review judgments on the dashboard, not an

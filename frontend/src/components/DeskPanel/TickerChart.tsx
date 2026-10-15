@@ -1095,9 +1095,12 @@ export const TickerChart = ({
               : `Newest stored ${timeframe === 'weekly' ? 'week' : 'session'}: ${data.bars[data.bars.length - 1]?.date ?? 'unavailable'}${data.last_bar_complete === false ? summary?.last.close === null ? ' (incomplete candle)' : ' (forming candle)' : ''}.`}{' '}
             {merged.bars.length} {timeframe === 'weekly' ? 'weeks' : 'sessions'} loaded; pan or zoom for history.
           </p>}
-          <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Chart legend">
+          <details className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Chart legend">
+            <summary className="cursor-pointer">Chart key</summary>
+            <p>
             {strategy ? showPaperFills ? 'Circles: confirmed actual paper executions. Original fills and prices are listed below.' : showFills ? 'Research circles: model-only simulated fills, separate from grade signals and the paper account.' : 'Arrows: grade-led signals, independent of model size.' : `Circles: shares filled per ${timeframe === 'weekly' ? 'week' : timeframe === 'daily' ? 'day' : '15-minute bar'}. Individual fills and prices below (unadjusted).`}{showSignals ? ' Grade readings are labelled Saved or Recalculated when known; signals are not fills.' : ''}{!strategy && showDecisions ? ' Signal and RESET labels: policy replay, not trades.' : ''}{!strategy && personalHistory && showRecommendations ? ' Saved Buy/Sell labels: recommendations, not fills.' : ''}
-          </p>
+            </p>
+          </details>
           {!strategy && timeframe === '15m' && fills.some(fill => !recordedInstant(fill.filled_at)) && <p aria-label="Fill timing" className="mt-1 text-[11px] text-[#6e6e73]">Some fills have no recorded time; listed below, not marked on 15m.</p>}
           <p aria-label="Chart refresh status" role={refreshFailed ? 'status' : undefined} className="mt-1 text-[11px] text-[#6e6e73]">Regular-session chart · refresh 20s{data.live_feed ? ` · ${data.live_feed.toUpperCase()}` : ''}{data.live_as_of ? ` · checked ${recordedTime(data.live_as_of)}` : ''}{refreshFailed ? ' · Refresh failed; showing last snapshot' : data.live_reason ? ` · ${data.live_reason}` : ''}</p>
           {!strategy && showDecisions && history?.policy && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy decision note">
@@ -1247,10 +1250,7 @@ export const TickerChart = ({
               ? 'Grade changes are session readings and are not marked on fifteen-minute bars; switch to D or W to see them.'
               : changes.length === 0
               ? `No grade change marked on these candles.`
-              : `${changes.length} grade change${changes.length === 1 ? '' : 's'} marked: ${changes
-                  .slice(-6)
-                  .map((c) => c.detail)
-                  .join(', ')}${changes.length > 6 ? ' (most recent six)' : ''}.`}
+              : `${changes.length} grade change${changes.length === 1 ? '' : 's'} marked.`}
           </p>}
           {strategy && showSignals && timeframe !== '15m' && changes.length > 0 && <details className="mt-2 text-xs text-[#6e6e73]">
             <summary className="cursor-pointer">Grade signal history</summary>
