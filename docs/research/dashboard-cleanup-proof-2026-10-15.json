@@ -1,0 +1,72 @@
+{
+  "status": "VERIFIED_FRONTEND_CLEANUP_DELIVERY",
+  "frontend_source": "6e2c3d0028cfdac75ad7641613c5cf666455cc57",
+  "merged_pending_candidate": "ba349a2bbfb66cb28869c5ffcc8930e594d467b8",
+  "backend_source_unchanged": "ef7428baa1961d79ad1f5bd9dac0122b54ce0fea",
+  "scope": [
+    "One action label per Stocks row; rationale, quote checks and reference levels remain in Details",
+    "Saved targets move from current rows to dated position details",
+    "Reference sizing and rules are folded; Reset ranking appears only after manual sorting",
+    "Technical commentary and chart key are folded; full dated grade history remains available",
+    "Paper-view ranking explanation describes its existing allocation sort"
+  ],
+  "validation": {
+    "typescript": "PASS",
+    "production_build": "PASS",
+    "release_controlled_browser_unique_workflows": 50,
+    "release_browser_runs": [
+      {"root": "/tmp/dashboard-cleanup-browser-20261015-v2", "passed": 49, "failed": 1, "seconds": 108, "remaining_failure": "Old test expected explanatory prose in the compact row; corrected to assert it remains in the opened chart judgment"},
+      {"root": "/tmp/dashboard-cleanup-browser-20261015-v3", "passed": 1, "failed": 0, "skipped": 0, "seconds": 6.3}
+    ],
+    "earlier_failed_capture": "/tmp/dashboard-cleanup-browser-20261015-v1",
+    "merged_candidate_browser": {"root": "/tmp/dashboard-cleanup-main-browser-20261015-v1", "passed": 22, "failed": 0, "skipped": 0, "seconds": 44.7},
+    "merged_candidate_type_build": "PASS",
+    "diagram_check": "33 synchronized; published page synchronized",
+    "diagram_impact": "NONE: presentation and disclosures only"
+  },
+  "canonical": {
+    "root": "/home/animallya96/scratch/dashboard-cleanup-release-20261015-v1",
+    "completed_at": "2026-10-15T09:34:31.443342+00:00",
+    "command": "bash scripts/deploy.sh",
+    "path": "canonical frontend-only; no skip flags",
+    "exit_code": 0,
+    "cheap_post": "2026-10-15T09:34:31Z 6e2c3d00 ok (cheap)",
+    "result_sha256": "a6e78147e41d2bb33d0d240b1553ded5feedc1ee4553847ae8293ca127182a6f",
+    "original_model_configuration_research_files_preserved": 306,
+    "before_and_after_sha256": "e9681980aea3f5a3004042424b2934c936475ac05faa410e70f42f9df1afe78b",
+    "unchanged_container_identity_receipts_sha256": "5e9b470ac2c780f57b17f8632bf6f38732f77bbdeddfae41f0fd0963c2e39c57",
+    "unchanged_containers": ["anios_backend", "ds4-head", "anios_vllm_embedding", "anios-vision-analysis-recovery-1", "live-model-history-full-20261013-v1"],
+    "preserved_oct13_record_sha256": "37d7541f5ce12a080a4c0538939b95f99367fc9b5318e21eba03d96963927c32"
+  },
+  "actual_public_browser": {
+    "url": "https://deep-matter.com/?deskView=strategy#desk",
+    "method": "Documented authenticated CUA browser session after reload",
+    "serving_js": "index-cFMQ6jk6.js",
+    "serving_js_sha256": "7b06b5254b9e1f08ce0d7d1f93365eb99d4340b7536e7fb223c1620a274b8889",
+    "gateway_image": "sha256:068ab2ff12416382e914c78620da332df4a75536629bcbba48c45660420392ad",
+    "observed": [
+      "All94 names retained; stock search and row disclosure work",
+      "No duplicate current signal or Now permission text in compact rows",
+      "CRWV details retain original dated target, grade, allocation and no-order reason",
+      "CRWV current panel explicitly reports unavailable fresh assessment and saved Oct13 grade",
+      "Technical evidence starts folded, opens to actual dated Oct14 reading, and closes",
+      "Chart shows concise16grade-change count and separate full history disclosure",
+      "Reference sizing folded and Reset ranking absent before manual sorting",
+      "Partial Oct13 report warning remains visible; no failed evidence removed",
+      "Closed session explicitly awaits regular-session evidence"
+    ],
+    "captured_console_errors": 0,
+    "captured_console_warnings": 0,
+    "screenshot": "/tmp/dashboard-cleanup-live-20261015.png"
+  },
+  "operational_limits": {
+    "oct14_exact_source_admission": "FAILED_UNCHANGED",
+    "admission_correction_deployed": false,
+    "historical_quantity_delivery": "UNVERIFIED_PENDING_FULL_RUN",
+    "complete_real_intraday_fill_acceptance": "UNVERIFIED",
+    "full_run_source_preserved": "27471b9c61b958f759e9f48b80acaf60cdf75f2e",
+    "full_run_container_preserved": "1e8f440a3b5b75dcabd299f5eaba58c7929fb6f96bc822fdb46b641ecf3e598d",
+    "preserved_approval_is_live_admission": false,
+    "heartbeat": "ACTIVE"
+  }
+}

@@ -1,5 +1,29 @@
 # Next session
 
+## 2026-10-15 — Dashboard clutter cleanup delivered; operational failure remains
+
+VERIFIED frontend6e2c3d0028cfdac75ad7641613c5cf666455cc57, canonical
+scratch/dashboard-cleanup-release-20261015-v1 completed09:34:31Z/cheap green.
+One action per row; chart rationale and quote/reference checks stay in Details.
+Sizing options, technical commentary and chart key are folded; duplicate grade
+history preview removed. Dates, quantities, stale guards and distinct history
+modes remain. No backend/API/model/config/account changes. All306original files
+and five backend/model/retrospective container identities preserved. The actual
+authenticated public browser passed search/details/ticker disclosure workflows,
+0console errors/warnings. Served index-cFMQ6jk6.js SHA7b06b5254b9e1f08ce0d7d1f93365eb99d4340b7536e7fb223c1620a274b8889.
+50unique controlled release workflows passed (49+1corrected disclosure check),
+type/build and33diagram check passed. Pending-main mergeba349a2b passed22compiled
+workflows/0skip44.7s and type/build; preserve pending historical quantities and
+its full simulated ledger semantics. Diagram impact: NONE — existing display
+only. Exact proof: research/dashboard-cleanup-proof-2026-10-15.json.
+
+This does NOT correct Oct14 failed live source admission. Original306-file
+preservation is not admission; exact candidate-source approval and actual HOST
+and CONTAINER read_configuration checks are still required with the pending
+canonical historical/parity release after full completion/independent audit.
+ONE container1e8f440a/source27471 stays untouched; never duplicate/restart it.
+Missing actual days and failed parity remain original. Heartbeat ACTIVE/quiet.
+
 ## 2026-10-14 — Ordinary nightly FAILED exact source approval after dashboard API changes
 
 The genuine19:30ET cron ended23:44:58Z on hosta64f9c14/backendef7428ba.
