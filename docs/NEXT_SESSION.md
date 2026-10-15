@@ -1,5 +1,36 @@
 # Next session
 
+## 2026-10-15 — Trading labels corrected; chart signals are not funded orders
+
+Human rejected ADD/REVIEW and asked whether they were model training actions,
+and why When/status mostly says No order. VERIFIED frontend a01542b7f4c3048f350ef8103345000f4b50ec32:
+BUY covers initial/additional purchases; held risk concern with no sale decision
+shows HOLD, retaining the concern in details. No ADD/REVIEW filters. Older replay
+additional purchases also display BUY, while original records remain unchanged.
+Canonical scratch/trading-labels-release-20261015-v1 completed14:26:40Z/cheap
+green.306original files and five backend/model/full-run identities preserved.
+Actual authenticated browser: NTAP78held/BUY/no funded quantity, ALAB27held/HOLD;
+action filters and Portfolio8 verified,0console errors/warnings. Served
+index-B4_tZBbJ.js SHAed011cb7e9285b41b83999f31ee6b54df32744938b6689c2e7db80e1251a7623.
+Type/build and final5compiled checks/0skip24.2s pass. Pending-main merge45325a1e
+also uses BUY for historical ADD display while preserving raw ADD receipts;
+22compiled checks/0skip42.4s and type/build pass. Preserve all failed private
+browser/build roots, including main v1 wrong-cwd Tailwind build. Diagram impact:
+NONE — labels only. Exact proof: research/trading-labels-proof-2026-10-15.json.
+
+Critical semantic distinction: ADD/REVIEW were frontend terms, not numeric
+training action classes. Holding head trains next-session open-to-open return;
+execution heads train immediate-versus15minute-later price advantage and risk.
+The policy/planner converts forecasts to targets and buy/sell orders. Current
+Stocks BUY/WAIT/HOLD is a separate display-only current_setup chart judgment,
+not a new funded numeric-model plan. When/status is paper execution metadata;
+No order does NOT mean HOLD. Human finds this presentation confusing; do not
+claim the label fix proves end-to-end trained-model action/quantity consistency.
+Actual numeric planner admission remains FAILED (original API approval mismatch),
+not repaired here. ONE retrospective1e8f440a/source27471 stays untouched; pending
+full audit/source-approval/parity/quantity release and real acceptance remain.
+Heartbeat ACTIVE and quiet on unchanged jobs.
+
 ## 2026-10-15 — Dashboard clutter cleanup delivered; operational failure remains
 
 VERIFIED frontend6e2c3d0028cfdac75ad7641613c5cf666455cc57, canonical

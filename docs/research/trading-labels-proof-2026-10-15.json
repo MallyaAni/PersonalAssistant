@@ -1,0 +1,45 @@
+{
+  "status": "VERIFIED_FRONTEND_LABEL_DELIVERY",
+  "source": "a01542b7f4c3048f350ef8103345000f4b50ec32",
+  "pending_main_merge": "45325a1ef1815bb872f5c3cc90888c8cf4661557",
+  "pending_main_validation": {"type_build": "PASS", "browser_root": "/tmp/trading-labels-main-browser-20261015-v2", "passed": 22, "skipped": 0, "seconds": 42.4, "failed_prior_capture": "/tmp/trading-labels-main-browser-20261015-v1", "prior_failure": "Wrong build working directory omitted Tailwind content; preserved and rebuilt from frontend without loosening assertions"},
+  "changes": ["ADD displays as BUY", "Held-stock risk review displays as HOLD with its concern retained in details", "ADD and REVIEW are removed from action filters", "Older additional-purchase replay markers display BUY"],
+  "unchanged": ["Ranking priorities", "Quantities", "Timing", "Grade and price guards", "Models and prompts", "Backend and API", "Configuration and approvals", "Account and historical records"],
+  "release_validation": {
+    "type_build": "PASS",
+    "final_browser": {"root": "/tmp/trading-labels-browser-20261015-v2", "passed": 5, "skipped": 0, "seconds": 24.2},
+    "earlier_browser": {"root": "/tmp/trading-labels-browser-20261015-v1", "passed": 8, "failed": 1, "reason": "Old ADD assertion; changed to assert BUY while preserving the same quantity"},
+    "initial_type_failure": "StrategySimulationBoard still declared old filter keys; corrected consistently",
+    "diagram_impact": "NONE: existing labels only"
+  },
+  "canonical": {
+    "root": "/home/animallya96/scratch/trading-labels-release-20261015-v1",
+    "completed_at": "2026-10-15T14:26:40.443305+00:00",
+    "command": "bash scripts/deploy.sh",
+    "path": "canonical frontend-only; no skip flags",
+    "exit_code": 0,
+    "cheap_post": "2026-10-15T14:26:40Z a01542b7 ok (cheap)",
+    "result_sha256": "75fb422f8b6dce110b65d26325bf35cace49bab10412a0a86db44cffe249f3f1",
+    "preserved_original_files": 306,
+    "before_after_sha256": "e9681980aea3f5a3004042424b2934c936475ac05faa410e70f42f9df1afe78b",
+    "preserved_backend_models_history_containers_sha256": "5e9b470ac2c780f57b17f8632bf6f38732f77bbdeddfae41f0fd0963c2e39c57"
+  },
+  "actual_public_browser": {
+    "url": "https://deep-matter.com/?deskView=strategy#desk",
+    "served_js": "index-B4_tZBbJ.js",
+    "served_js_sha256": "ed011cb7e9285b41b83999f31ee6b54df32744938b6689c2e7db80e1251a7623",
+    "method": "Authenticated CUA browser after reload",
+    "observed": ["NTAP held78shares with a BUY chart signal, no invented funded quantity", "ALAB held27shares with HOLD and no paper order", "Action menu contains BUY/SELL/TRIM/WAIT/HOLD/No order; no ADD or REVIEW", "Portfolio8 and current grades/prices remain", "No blocking browser errors or console warnings observed"],
+    "console_errors": 0,
+    "console_warnings": 0,
+    "screenshot": "/tmp/trading-labels-live-20261015.png"
+  },
+  "semantic_limits": {
+    "training": "The numeric holding head predicts next-session open-to-open return; timing heads predict immediate-versus15minute-later log price advantage and its second moment. These are not ADD/REVIEW action classifiers.",
+    "current_dashboard_signal": "Display-only chart judgment from the existing current_setup prompt plus grade/holding/quote guards; it is not the funded learned-model order.",
+    "when_status": "Actual paper-order execution state; No order does not mean HOLD or a rejected model proposal.",
+    "live_numeric_planner_admission": "FAILED_UNCHANGED: original source-approval mismatch remains; this release does not repair it.",
+    "historical_quantity_delivery": "UNVERIFIED_PENDING_FULL_RUN_AND_AUDIT",
+    "full_run": "Original1e8f440a/source27471 untouched; no restart, duplication or source edit"
+  }
+}
