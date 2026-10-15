@@ -1,5 +1,22 @@
 # Next session
 
+## 2026-10-15 — Use BUY for additional purchases; remove REVIEW as an action
+
+Human rejected ADD and REVIEW action labels. Current rows now say BUY for
+both initial and additional purchases, and HOLD for a held-stock risk concern
+that has no sell decision. The existing concern remains in Details. Removed
+ADD/REVIEW filter choices and renamed the older replay's ADD marker to BUY.
+No ranking, quantity, timing, model, API, config, order or history mutation.
+VERIFIED type/build; final5compiled browser checks pass/0skip24.2s, including
+held-stock BUY/HOLD labels and filters, expiry/quote guards and desktop/phone
+historical BUY markers. Earlier8checks passed; the old ADD expectation failed
+and was corrected to BUY. Preserve /tmp/trading-labels-browser-20261015-v1/v2.
+Canonical deployment and actual public browser acceptance remain pending.
+Production starts6e2c3d00, the previous cleanup is delivered (main proof8ce5335a).
+Oct14 source admission remains FAILED; pending correction is not deployed.
+ONE retrospective1e8f440a/source27471 must remain untouched. Heartbeat ACTIVE.
+Diagram impact: NONE — existing labels only, no architecture change.
+
 ## 2026-10-15 — Simplify dashboard wording and controls
 
 Human requested removal of dashboard clutter. Frontend-only cleanup keeps one

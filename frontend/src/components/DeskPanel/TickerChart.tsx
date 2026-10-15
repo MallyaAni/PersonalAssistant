@@ -414,7 +414,7 @@ const decisionText = (row: DeskHistoryRow, policy?: string | null) => {
     case 'sell': return 'SELL signal'
     case 'add':
     case 'trim': {
-      if (!isEqualWeight(policy)) return `${row.action === 'add' ? 'ADD' : 'TRIM'} signal →${percentText(row.target_weight)}`
+      if (!isEqualWeight(policy)) return `${row.action === 'add' ? 'BUY' : 'TRIM'} signal →${percentText(row.target_weight)}`
       const delta = row.delta_weight
       if (typeof delta !== 'number' || !Number.isFinite(delta)) return `RESET →${percentText(row.target_weight)}`
       return `RESET ${delta >= 0 ? '+' : '−'}${percentText(Math.abs(delta))}`

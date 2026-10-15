@@ -200,7 +200,7 @@ test('current overview refresh removes completed actions without inventing sizes
   await expect(row).toContainText('3 sh planned')
   current.done = true
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect(row.getByLabel(`${stocks[0].ticker} strategy intent`, {exact: true})).toHaveText('ADD')
+  await expect(row.getByLabel(`${stocks[0].ticker} strategy intent`, {exact: true})).toHaveText('BUY')
   await expect(row.getByLabel(`${stocks[0].ticker} size`)).toHaveText('—')
   await expect(table).not.toContainText('Bought 3 today')
   expect(errors).toEqual([])
