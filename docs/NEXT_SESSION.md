@@ -1,5 +1,29 @@
 # Next session
 
+## 2026-10-15 — Second ordinary nightly FAILED unchanged exact-source admission
+
+The genuine19:30ET cron finished23:46:55Z on hosta01542b7/backendef7428ba.
+FAILED again at learned_live_holding.read_configuration -> _release:
+"Exact reviewed learned holding release required". Actual host/container API
+b73d11fc still differs from preserved approval0647fb9b;29other sources match.
+No correction is deployed. GET-only00:01:18Z:8positions/0open/0Oct15orders.
+Oct15 full record/learned inputs are ABSENT; Oct14 and Monday remain absent.
+Paper state28d3e8ed and original Oct13 record37d7541f/failed parity unchanged.
+Never replay missing actual days, substitute incumbent or weaken the guard.
+
+Private scratch/grade-led-ordinary-source-failure-20261015-v1 preserves log,
+original config/release/evidence/state,30-source comparison, backend identity
+and broker GETs. Observation proof2ed0aa33345ffd62e4bf28f4e7af557b32093520c6ac2948a71051cd2238f1cf.
+Exact record: research/grade-led-ordinary-source-failure-2026-10-15.json.
+This is read-only failure evidence, not a runtime release or passing acceptance.
+ONE retrospective1e8f440a/source27471 remains RUNNING untouched (1504sessions,
+through2025-02-21 observed23:57:12Z). Keep heartbeat ACTIVE and quiet while
+unchanged. Pending full independent audit, exact candidate-source approval
+with original economic/model chain and archived approvals/config, actual HOST
+AND CONTAINER admission, canonical historical/parity release, compiled quantities
+and real operational acceptance remain required. Do not repeat completed gates
+or deployments for this documentation-only checkpoint.
+
 ## 2026-10-15 — Trading labels corrected; chart signals are not funded orders
 
 Human rejected ADD/REVIEW and asked whether they were model training actions,
