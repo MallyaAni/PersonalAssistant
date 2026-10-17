@@ -1,5 +1,5 @@
 {
-  "status": "CONTROLLED_COMBINED_CANDIDATE_VERIFIED_NO_DELIVERY",
+  "status": "CONTROLLED_CONTENT_VERIFIED_VISUAL_FAILED_CANDIDATE_HELD",
   "parents": [
     "a7d0d955c49e1c4f039f97aad2a97269456be979",
     "6a1d77bc1d8bdeb080bdee26b8e1ef95507a9ea1"
@@ -51,6 +51,9 @@
   "controlled_frontend": {
     "distinct_workflows_passed": 34,
     "skipped": 0,
+    "visual_acceptance": "FAILED: independent screenshot inspection confirms the green simulated-fill circle near Oct7 is clipped at the bottom plot boundary. Candidate is held; content and source assertions do not prove marker visibility.",
+    "visual_failure_screenshot": "/tmp/trading-historical-merge-review-20261017-v5/browser-v1/strategy-simulation-histor-8e45d-oss-dates-ranges-and-reload/current-model-default-three-sources.png",
+    "visual_correction": "Pending scoped marker-bounds fix, corrected screenshot and meaningful automated bounds validation.",
     "v4": {
       "root": "/tmp/trading-historical-merge-review-20261017-v4",
       "type_and_build": "PASS",

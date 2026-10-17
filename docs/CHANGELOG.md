@@ -12,6 +12,10 @@ reviewed serving transitions rather than relabelling the frozen run.
 Controlled backend/API, history corruption and deploy rollback checks passed
 246/0skip in 26.45s. All 34 distinct compiled browser workflows passed after
 correcting only a synthetic fixture clock; type/build and all 33 diagrams passed.
+Independent screenshot inspection then found a simulated-fill circle clipped at
+the default chart's bottom boundary. Visual acceptance FAILED and the private
+candidate is held for a marker-bounds correction; passing canvas content checks
+do not close that boundary.
 The historical chart retains three account choices, with current-model decisions
 and distinct simulated fills together by default; grade context and historical
 tables remain inside existing disclosures. The original urgent source-extension fixture failure is
