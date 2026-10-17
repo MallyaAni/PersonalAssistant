@@ -1,0 +1,67 @@
+{
+  "scope": "BOUNDED_SYNTHETIC_CURRENT_SETTLEMENT_CYCLE_ONLY",
+  "starting_source": "924f6bb8a4333ef9ea718aad51a857f20b811235",
+  "source_sha256": {
+    "backend/market/historical_conditional_cycle.py": "f55b51fa3ff896e6a3a6f32e651816fd2372d079ad8cfb4781d5d3c48ffaf1d2",
+    "backend/tests/test_historical_current_settlement_cycle.py": "0bfa7fe7f3726fc76ab79609790f7614b207f2d3c422185f096067fcf0f93c1b"
+  },
+  "native": {
+    "source": "3b72cd4e0bc15acd24432d501918c721685a5333",
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "container": "b80aa471c8cabebbadf48e3b43d7e196149a69d2dbf15113a5f7667daf09852b",
+    "root": "/home/animallya96/scratch/historical-current-settlement-cycle-tests-20261017-v2",
+    "proof_path": "out/proof.json",
+    "proof_sha256": "887ac09e20f82f0a18030bd082f4743a97c8986b2fca93ae9d0dd4eb2d78884c",
+    "binding_path": "runtime-binding.json",
+    "binding_sha256": "80e6e92c5551ef007f9a7a27c3088ae747483681ff38faf5b1770373047531e7",
+    "runner_sha256": "4f752649ff682d035463e0398a2cb39d5487ce1eddba9d9b378f6d083d051b7d",
+    "manifest_sha256": "fc5a5ef01735e91670ccfa0cc29e8f816a068159c9b60f861c29b869720d712f",
+    "guarded_source_overlays": false,
+    "unused_helper_readonly_mounts": 14,
+    "network": "none",
+    "root_filesystem": "readonly",
+    "cpus": 1,
+    "memory_bytes": 2147483648,
+    "total_memory_and_swap_bytes": 2147483648,
+    "exit_code": 0,
+    "oom_killed": false,
+    "functions": 11,
+    "expanded_cases": 14,
+    "passed": 14,
+    "skipped": 0,
+    "pytest_seconds": 15.24,
+    "maxrss_kib_linux": 181532,
+    "source_and_helper_before_after": "UNCHANGED"
+  },
+  "verified": [
+    "Default opt-out retains sent pending instructions and its existing no-reconciliation receipt semantics.",
+    "Opt-in CURRENT final components include native settlement with original desired/submitted/sender/filled domains, capped SELL and no same-batch sale funding.",
+    "WAIT, unavailable forecast, missing mark and outer final skip preserve unsent instructions; unresolved accepted market orders refuse settlement.",
+    "PRE_SETTLEMENT CAS graph and externally supplied submission/context/demand/registry/packet commitments reject corruption or substitution.",
+    "Actual SIGKILL after native save and after final Store commit both restore byte-identical broker, paper, latch and final receipt without repeating decisions or submissions.",
+    "Post-commit restore forbids resolver, mark selection and settlement recomputation; precommit recovery uses only committed SUBMISSION components in a fresh root.",
+    "No Store stage, operation or schema changes; exact baked guarded31, broker and calendar bytes unchanged."
+  ],
+  "measurements": {
+    "retained_cases": 10,
+    "raw_paper_bytes_min_max": [407, 1754],
+    "journal_rows_min_max": [0, 2],
+    "history_rows_min_max": [0, 0],
+    "pending_rows_min_max": [0, 1],
+    "broker_bytes_min_max": [5094, 8062]
+  },
+  "preserved_failure": {
+    "root": "/home/animallya96/scratch/historical-current-settlement-cycle-tests-20261017-v1",
+    "container": "c88927c96510084d265680e8890c6816ba8532ea955b84474cb24628068c5382",
+    "passed": 13,
+    "failed": 1,
+    "reason": "Fixture initialized native marks from an unordered set; spawned-process mapping insertion order differed. Retained _marks/_mark_times had identical keys, values and timestamps, and entire normalized codec content was equal. Only fixture initialization was sorted; codec and exact byte-equality assertions remained unchanged.",
+    "diagnosis_path": "ordering-diagnosis.json"
+  },
+  "unverified_limits": [
+    "Paper, latch and receipt cap remains256KiB. Full-horizon journal size and cumulative whole-snapshot CAS storage feasibility remain unresolved launch blockers; no truncation or cap expansion performed.",
+    "No genuine model inference, account, provider GET, original-run output, production observation, deployment or real operational acceptance.",
+    "No power-loss or dual-host durability claim. These are bounded private synthetic process-crash fixtures.",
+    "Original source-bound receipt bytes remain original; existing receipts are not relabelled as this new Cycle source."
+  ]
+}
