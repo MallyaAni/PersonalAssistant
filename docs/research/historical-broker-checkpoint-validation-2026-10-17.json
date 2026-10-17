@@ -1,0 +1,85 @@
+{
+  "status": "VERIFIED_PRIVATE_SYNTHETIC_BROKER_CODEC_ONLY",
+  "base_source": "375bb69d7bdae340f5e6256a556682b03e5a0ffa",
+  "native_source": "ad44d536a70d5c037cb931836a3c9f48b014d84a",
+  "backend_image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+  "source_sha256": {
+    "backend/market/historical_broker_checkpoint.py": "0c76756f9bf79bddd0c0e2a18612882c48a82deabd7483c13730c58c98a111b6",
+    "backend/tests/test_historical_broker_checkpoint.py": "0881628f95f01b8ffa1c51033629db973a2c9d776bd587f77a59fdac0bfea3d3",
+    "backend/market/replay_broker.py": "c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616",
+    "backend/market/calendar.py": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4",
+    "backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+    "backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3"
+  },
+  "frozen_selector_sha256": {
+    "holding_config": "338e2a490d13cc889667d577ec93ba68f775863a8c1db385fed3dd77fee26dcc",
+    "holding_release": "bb6c24aabb33daff30bd7af5b6c505208cc996c38929a84b54573662bab1bd4c",
+    "timing_config": "d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a"
+  },
+  "native_proof": {
+    "path": "/home/animallya96/scratch/historical-broker-checkpoint-tests-20261017-v4/out/proof.json",
+    "sha256": "9b8561d11251525b3502665433747567c74af694174a3fd225ad2fae7e67a80b",
+    "container_name": "historical-broker-checkpoint-tests-20261017-v4",
+    "container_id": "e0abea000efcf9e25d6636cd4ccdc7eacef22fb9d889fd5de764f93546fb7c43",
+    "pytest_command": "python /runner.py -> pytest /tests/test_historical_broker_checkpoint.py -q -c /dev/null -p no:cacheprovider",
+    "passed": 56,
+    "failed": 0,
+    "skipped": 0,
+    "pytest_seconds": 0.27,
+    "helper_seconds": 0.3516803476959467,
+    "max_rss_kib": 53268,
+    "numpy": "2.5.3",
+    "numpy_origin": "/usr/local/lib/python3.12/site-packages/numpy/__init__.py",
+    "pytest_origin": "/testdeps/pytest/__init__.py",
+    "cpu": 1,
+    "memory_bytes": 536870912,
+    "network": "none",
+    "rootfs_readonly": true,
+    "exit_code": 0,
+    "all31_source_files_verified_before_and_after": true,
+    "local31_source_differences": [],
+    "runner_sha256": "ddcb8f029612958cfe6ece5638504407cc5442b9013ace7ef7a1b8a0a3de1b15",
+    "run_sh_sha256": "d25c68c5a94b434729787bb7004af28fa89bc2f083d0fab213581a8bceace1e5",
+    "staged_sha256": "d696b7ea40f6b41acf2e8e53baddfff6d9f1fd82ab14a1f3ef5df04c6a361d0d"
+  },
+  "preserved_prior_results": [
+    {
+      "root": "/home/animallya96/scratch/historical-broker-checkpoint-tests-20261017-v1",
+      "proof_sha256": "ccbc345b6b594913e8335e7b7f4b506bde13e4a40c498d11b7a11de86481a0e8",
+      "passed": 51,
+      "failed": 2,
+      "cause": "Fixtures assumed on-open queues during regular hours; native method chooses market. Corrected nondue reservation to close and queued-open fixture to an actual after-close observation. Codec bytes unchanged between v1 and v2."
+    },
+    {
+      "root": "/home/animallya96/scratch/historical-broker-checkpoint-tests-20261017-v2",
+      "proof_sha256": "05778606203ffb2fb5ef77d8466ec13a0aebc791e25a4214867541c8a5fd164e",
+      "passed": 53,
+      "failed": 0,
+      "codec_sha256": "7c95aa520203886acd09912e932b983a76484bec02e645c7e4419ba9856b0f37"
+    },
+    {
+      "root": "/home/animallya96/scratch/historical-broker-checkpoint-tests-20261017-v3",
+      "proof_sha256": "9f3cbab7c963987fca9dfb95bf6bc04cf2902d8b3f5fd646a08852918cf693b7",
+      "passed": 0,
+      "failed": 3,
+      "deselected": 53,
+      "cause": "Old codec accepted bool cash_credit, fractional merger quantity and None basis on zero fraction. Added strict native type/entitlement checks; preserved the same regression assertions in final56."
+    }
+  ],
+  "verified_scope": [
+    "All20 actual native fields; insertion-order mappings, tuple keys, UTC datetime objects versus receipt strings and numeric int/float/zero/None distinctions retained",
+    "Original snapshot SHA, own codec SHA and externally pinned N2/e0/338/bb6/d033/31-source identity required before native construction",
+    "Native FIFO continuation, no same-batch sale funding, nondue reservations, partial/zero/missing/filled/canceled and auction receipts, duplicate successful and refused CIDs",
+    "Native split fraction, zero/unallocated bases, dated/unspendable dividends, distribution/consolidation/exchange/merger claims and later original native payment methods",
+    "Unknown fields/types/tags, duplicate/nonfinite JSON, malformed quantities/phase/fees/clocks/entitlements and changed source/config/header rejected",
+    "Scaled exact-byte/over-byte, container/string/depth/record cap ordering; stream reads bounded64KiB; over-cap returns explicit PAUSE"
+  ],
+  "limits": [
+    "Unused private synthetic-only codec; no production restoration, runner/coordinator/durability wiring or new corrected run",
+    "Native receipts and current-state checks do not establish complete independent economic history conservation or external provenance",
+    "Synthetic ledger cash checked against independently stated Decimal values with absolute1e-10 float arithmetic allowance; byte roundtrip itself exact",
+    "Maximum8MiB checkpoint and declared record/name caps may pause operational coverage; no full-horizon sufficiency or maximum-envelope stress-memory claim",
+    "Selector/config hashes are frozen external declarations, not freshly read current serving selectors or a new release-admission proof",
+    "No providerGET, model inference/fit, actual account, credential, original active output, production state/config/order change or deployment"
+  ]
+}
