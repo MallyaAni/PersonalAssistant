@@ -1,0 +1,12 @@
+{
+  "status": "VERIFIED_WIFI_RECOVERY_INFERENCE_STILL_UNAVAILABLE",
+  "observed_at_utc": "2026-10-17T08:42:45Z",
+  "objective": "Check whether Spark2 is on the wrong network or its Wi-Fi adapter is not working",
+  "spark2": {"hostname": "animallya-spark2", "interface": "wlP9s9", "state": "connected", "network": "GiGstreem", "ipv4_address": "172.16.8.5/24", "gateway": "172.16.8.1", "firmware_missing": false, "networkmanager_managed": true, "wifi_radio_enabled": true, "rfkill_soft_blocked": false, "rfkill_hard_blocked": false, "active_access_point_signal_percent": 69, "reported_link_rate": "270 Mbit/s"},
+  "spark1": {"network": "GiGstreem", "ipv4_address": "172.16.8.3/24", "gateway": "172.16.8.1"},
+  "actual_acceptance": {"spark2_router_ping_sent": 2, "spark2_router_ping_received": 2, "mac_ssh_to_172_16_8_5": "PASS", "returned_hostname": "animallya-spark2", "wrong_network_currently": false},
+  "remaining_failure": {"inference_models_endpoint": "http://127.0.0.1:8000/v1/models on Spark1", "result": "Connection refused", "inference_recovery": "UNVERIFIED", "parity_release": "NOT_DEPLOYED"},
+  "causality": {"initial_disconnect_cause": "UNVERIFIED", "reconnection_actor": "UNVERIFIED", "successful_network_change_by_this_task": false, "previous_denied_activation_preserved": true},
+  "preservation": "No model service, configuration, account, order, historical simulation or original failure evidence changed",
+  "heartbeat": "ACTIVE"
+}

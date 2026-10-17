@@ -1,5 +1,22 @@
 # Next session
 
+## 2026-10-17 — Spark2 Wi-Fi recovered; inference remains unavailable
+
+VERIFIED actual08:42:45Z: Spark2 wlP9s9 is now connected toGiGstreem, the same
+network as Spark1, at172.16.8.5/24 via172.16.8.1. Active AP signal69%, reported
+link270Mbit/s; router ping2/2 and direct Mac SSH172.16.8.5 PASS. Adapter is managed,
+firmware present, radio enabled and unblocked. It is not currently on a different
+network. Reconnection actor and original disconnect cause remain UNVERIFIED;
+this task made no successful network change. Preserve the earlier disconnected
+observation and denied reconnect rather than rewriting them. Exact observation:
+research/spark-wifi-recovery-2026-10-17.json.
+
+Inference127.0.0.1:8000/v1/models STILL connection refused at that observation.
+Wi-Fi recovery is not inference recovery or parity delivery. Existing explicit
+no-model-service-change boundary remains; original full retrospective untouched,
+source approval repaired and parity still UNDEPLOYED. Keep heartbeat ACTIVE and
+quiet on unchanged inference failure; do not repeat gates until inference works.
+
 ## 2026-10-17 — Spark2 reachable over direct cable; Wi-Fi and inference failures distinct
 
 Human challenged the unreachable-Spark diagnosis. VERIFIED08:02Z: Spark2 is
