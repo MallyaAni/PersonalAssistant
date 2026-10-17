@@ -1,5 +1,30 @@
 # Next session
 
+## 2026-10-17 — Shared timing-path equality FAILED in controlled comparison
+
+Exact original27471 function bodies and16 entire timing/call-site modules match
+the current source. With the same feature/validity hashes and one explicitly
+synthetic fixed distribution, zero price transport is an equal-output positive
+control. With midpoint100/next-open99.8, historical timing EXECUTEs while the
+actual forward path WAITs; saved-proxy-only quote or wide book is accepted by
+historical timing but actual forward timing is UNAVAILABLE. Source counterexample
+proofcf2897349fc29c740fd71113dbe7b3eeea3cee740ac381bfc4af5d93f9041704
+is copied exactly to research/historical-timing-path-failure-proof-2026-10-17.json.
+Harness4b75d57c and failed initial test-seam capture remain in
+/tmp/history-timing-path-boundary-20261017-v1. No original model arrays/account
+data/services/sender were loaded; actual-run divergent decisions are UNMEASURED.
+
+The generic historical account proof cannot satisfy full shared-live timing
+acceptance. Do NOT publish the original run as exact current-live timing, weaken
+guards, fabricate quotes/clocks, reinterpret its provenance, alter/restart it or
+launch a replacement under the ONE-run restriction. Historical agent is preparing
+a structural publication barrier after its separate ledger/cohort fixes. Pure
+saved-trace arithmetic auditing can prove the proxy path, not recover a different
+live-timed account. A faithful correction needs an explicit retrospective quote/
+availability contract and a separate reviewed implementation; replacement/replay
+requires user direction. Original-source, original-account and economic evidence
+remain preserved. Live urgent N2 release is independent and continues its gates.
+
 ## 2026-10-17 — Historical publication additionally HELD for timing/audit gaps
 
 Source-only requirement audit found that independent_parity recomputes96 holding

@@ -1,0 +1,241 @@
+{
+  "account_replayed": false,
+  "current_model_arrays_loaded": false,
+  "historical_bid_ask_evidence_claimed": false,
+  "limits": "Exact selected original function bodies and shared features execute; numerical inference is held constant to isolate guards/transport. This proves a path counterexample, not the actual number or outcome of divergent original-run decisions.",
+  "orders_submitted": false,
+  "original_account_or_market_arrays_loaded": false,
+  "original_source": "27471b9c61b958f759e9f48b80acaf60cdf75f2e",
+  "runtime_services_called": false,
+  "shared_observations": [
+    {
+      "case": "same qualified quote; zero transport",
+      "forward": {
+        "expected_log_utility": -1.0015107421855021e-05,
+        "reason": "",
+        "state": "execute",
+        "trade_fraction": 0.01
+      },
+      "forward_permission": "market",
+      "historical": {
+        "expected_log_utility": -1.0015107421855021e-05,
+        "reason": "",
+        "state": "execute",
+        "trade_fraction": 0.01
+      },
+      "historical_permission": "market",
+      "quote": {
+        "as_of": "2026-10-13T09:45:00-04:00",
+        "ask": 100.01,
+        "ask_size": 10,
+        "bar": "2026-10-13T09:30:00-04:00",
+        "basis": "raw_current_shares",
+        "bid": 99.99,
+        "bid_size": 10,
+        "feed": "sip",
+        "last": 100.0,
+        "next_open": 100.0,
+        "next_open_at": "2026-10-13T09:45:00-04:00",
+        "next_open_published_at": "2026-10-13T09:45:00-04:00",
+        "open": 100.0,
+        "received_at": "2026-10-13T09:45:00-04:00",
+        "source": "synthetic_explicit_observation"
+      },
+      "same_feature_hash": "01a7bc1596abe40c45905ce2151f6fc3160d195393455e7511a6b954226fa09c",
+      "same_valid_hash": "740b20a5710aa7b8dee19f524a211e9ce2503cc09596f4ac1df42893325d137e"
+    },
+    {
+      "case": "same qualified quote; nonzero transport",
+      "forward": {
+        "expected_log_utility": 1.0024922595019574e-05,
+        "reason": "",
+        "state": "wait",
+        "trade_fraction": 0.01
+      },
+      "forward_permission": null,
+      "historical": {
+        "expected_log_utility": -1.0015107421855021e-05,
+        "reason": "",
+        "state": "execute",
+        "trade_fraction": 0.01
+      },
+      "historical_permission": "market",
+      "quote": {
+        "as_of": "2026-10-13T09:45:00-04:00",
+        "ask": 100.01,
+        "ask_size": 10,
+        "bar": "2026-10-13T09:30:00-04:00",
+        "basis": "raw_current_shares",
+        "bid": 99.99,
+        "bid_size": 10,
+        "feed": "sip",
+        "last": 100.0,
+        "next_open": 99.8,
+        "next_open_at": "2026-10-13T09:45:00-04:00",
+        "next_open_published_at": "2026-10-13T09:45:00-04:00",
+        "open": 100.0,
+        "received_at": "2026-10-13T09:45:00-04:00",
+        "source": "synthetic_explicit_observation"
+      },
+      "same_feature_hash": "01a7bc1596abe40c45905ce2151f6fc3160d195393455e7511a6b954226fa09c",
+      "same_valid_hash": "740b20a5710aa7b8dee19f524a211e9ce2503cc09596f4ac1df42893325d137e"
+    },
+    {
+      "case": "only historical saved quote fields",
+      "forward": {
+        "expected_log_utility": null,
+        "reason": "missing or stale completed raw quote",
+        "state": "unavailable",
+        "trade_fraction": 0.0
+      },
+      "forward_permission": null,
+      "historical": {
+        "expected_log_utility": -1.0015107421855021e-05,
+        "reason": "",
+        "state": "execute",
+        "trade_fraction": 0.01
+      },
+      "historical_permission": "market",
+      "quote": {
+        "as_of": "2026-10-13T09:45:00-04:00",
+        "bar": "2026-10-13T09:30:00-04:00",
+        "last": 100.0,
+        "open": 100.0,
+        "source": "synthetic_explicit_observation"
+      },
+      "same_feature_hash": "01a7bc1596abe40c45905ce2151f6fc3160d195393455e7511a6b954226fa09c",
+      "same_valid_hash": "740b20a5710aa7b8dee19f524a211e9ce2503cc09596f4ac1df42893325d137e"
+    },
+    {
+      "case": "same quote; wide observed book",
+      "forward": {
+        "expected_log_utility": null,
+        "reason": "missing or stale completed raw quote",
+        "state": "unavailable",
+        "trade_fraction": 0.0
+      },
+      "forward_permission": null,
+      "historical": {
+        "expected_log_utility": -1.0015107421855021e-05,
+        "reason": "",
+        "state": "execute",
+        "trade_fraction": 0.01
+      },
+      "historical_permission": "market",
+      "quote": {
+        "as_of": "2026-10-13T09:45:00-04:00",
+        "ask": 101.0,
+        "ask_size": 10,
+        "bar": "2026-10-13T09:30:00-04:00",
+        "basis": "raw_current_shares",
+        "bid": 99.0,
+        "bid_size": 10,
+        "feed": "sip",
+        "last": 100.0,
+        "next_open": 100.0,
+        "next_open_at": "2026-10-13T09:45:00-04:00",
+        "next_open_published_at": "2026-10-13T09:45:00-04:00",
+        "open": 100.0,
+        "received_at": "2026-10-13T09:45:00-04:00",
+        "source": "synthetic_explicit_observation"
+      },
+      "same_feature_hash": "01a7bc1596abe40c45905ce2151f6fc3160d195393455e7511a6b954226fa09c",
+      "same_valid_hash": "740b20a5710aa7b8dee19f524a211e9ce2503cc09596f4ac1df42893325d137e"
+    }
+  ],
+  "source_sha256": {
+    "backend/agents/trading/desk/intraday_orders.py": {
+      "current_sha256": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c",
+      "original_sha256": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c",
+      "whole_module_identical": true
+    },
+    "backend/cli/market_live_model_history.py": {
+      "current_sha256": "cb4d0d514b3af35b647534a08c3f0e450c50a085071d69d84eb2f3db94e52166",
+      "original_sha256": "cb4d0d514b3af35b647534a08c3f0e450c50a085071d69d84eb2f3db94e52166",
+      "whole_module_identical": true
+    },
+    "backend/cli/market_strategy_continue.py": {
+      "current_sha256": "14357ed7b87618ee514dd3cd4e4a71e2c27290875c3df257e692773e524cfaaf",
+      "original_sha256": "14357ed7b87618ee514dd3cd4e4a71e2c27290875c3df257e692773e524cfaaf",
+      "whole_module_identical": true
+    },
+    "backend/market/alpaca_trading.py": {
+      "current_sha256": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2",
+      "original_sha256": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2",
+      "whole_module_identical": true
+    },
+    "backend/market/calendar.py": {
+      "current_sha256": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4",
+      "original_sha256": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4",
+      "whole_module_identical": true
+    },
+    "backend/market/daily_arithmetic_bridge.py": {
+      "current_sha256": "e55d955c5b39b004f2ca7d6f8a11b1c26d7dd459dedcf714d6c170994a5db8a0",
+      "original_sha256": "e55d955c5b39b004f2ca7d6f8a11b1c26d7dd459dedcf714d6c170994a5db8a0",
+      "whole_module_identical": true
+    },
+    "backend/market/entry_timing.py": {
+      "current_sha256": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88",
+      "original_sha256": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88",
+      "whole_module_identical": true
+    },
+    "backend/market/execution_quotes.py": {
+      "current_sha256": "4dc6415247b79faba9b557478702facfc0a74950bc9edba7cd679d89aa8bf2f2",
+      "original_sha256": "4dc6415247b79faba9b557478702facfc0a74950bc9edba7cd679d89aa8bf2f2",
+      "whole_module_identical": true
+    },
+    "backend/market/forward_entry_features.py": {
+      "current_sha256": "e196e754ce11692700d0eeebfc3ae78104726248f2f8f3b05fd6501875b20f25",
+      "original_sha256": "e196e754ce11692700d0eeebfc3ae78104726248f2f8f3b05fd6501875b20f25",
+      "whole_module_identical": true
+    },
+    "backend/market/forward_execution.py": {
+      "current_sha256": "62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295",
+      "original_sha256": "62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295",
+      "whole_module_identical": true
+    },
+    "backend/market/forward_market_evidence.py": {
+      "current_sha256": "737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2",
+      "original_sha256": "737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2",
+      "whole_module_identical": true
+    },
+    "backend/market/forward_probability_timing.py": {
+      "current_sha256": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92",
+      "original_sha256": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92",
+      "whole_module_identical": true
+    },
+    "backend/market/learned_entry_data.py": {
+      "current_sha256": "4b0555a6fd929c8a73a9063ef933fde22ce581fa85f37badb37fe611a9123365",
+      "original_sha256": "4b0555a6fd929c8a73a9063ef933fde22ce581fa85f37badb37fe611a9123365",
+      "whole_module_identical": true
+    },
+    "backend/market/learned_live_timing.py": {
+      "current_sha256": "80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f",
+      "original_sha256": "80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f",
+      "whole_module_identical": true
+    },
+    "backend/market/live_probability_timing.py": {
+      "current_sha256": "3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721",
+      "original_sha256": "3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721",
+      "whole_module_identical": true
+    },
+    "backend/market/probabilistic_execution.py": {
+      "current_sha256": "cfd586859920f06d385447b1aa171f17e515d8e34bc07a8752164ef2b3705af2",
+      "original_sha256": "cfd586859920f06d385447b1aa171f17e515d8e34bc07a8752164ef2b3705af2",
+      "whole_module_identical": true
+    }
+  },
+  "status": "VERIFIED_BOUNDED_SOURCE_COUNTEREXAMPLE_NOT_ORIGINAL_MODEL_OR_ACCOUNT_PROOF",
+  "synthetic_distribution": {
+    "mean": -0.001,
+    "residuals": [
+      -1.0,
+      1.0
+    ],
+    "scale": 0.0001,
+    "weights": [
+      0.5,
+      0.5
+    ]
+  }
+}
