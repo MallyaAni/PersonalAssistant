@@ -1,5 +1,42 @@
 # Next session
 
+## 2026-10-17 — Isolated historical/numeric candidate passed controlled acceptance
+
+Candidate code checkpoint93794a46651c6a867aea92391584f7b88cac4e36 combines the
+historical a7d0d955 tree with urgent6a, then preserves exact test-only N2ad44
+ancestry. All31 guarded runtime sources are byte-identical to N2; no third or
+no-op source approval is needed. Original source27471/config1a14980a remain
+frozen30, linked only by the exact8b628c76 and2f048a80 reviewed transitions.
+The fixture correction preserves that distinction rather than rewriting history.
+
+VERIFIED controlled private backend/API/reader/publication/corruption and actual
+shell deployment guards:246pass/0skip26.45s. The compiled UI has34 distinct
+content workflows covered green, type/build and33 diagram synchronization checks
+passed. Current-model history defaults to decisions plus distinct simulated fill
+circles; original research and actual paper are mutually exclusive choices.
+Historical tables are folded; optional dated Grade context stays in Indicators.
+
+Initial visual acceptance FAILED: the same-date fill circle clipped below the
+plot. The failed screenshot and size1-only failed attempt remain preserved.
+The narrow follow-up uses compact arrows and a20percent bottom margin:
+7 affected compiled workflows pass/0skip18.9s, with measured circle/label bounds
+inside desktop and390px plots and independent screenshot inspection. Final
+compiled index-BVtJBFAB.js SHA
+b83c9acc6e477a5ffd5ddf52fb84443b6b574e3dee6a366e9db36e7180846053.
+Phone decision labels remain dense; this does not declare every clutter or
+source-mixing concern resolved. Exact evidence and all failed captures:
+research/historical-numeric-merge-validation-2026-10-17.json.
+
+This is a private source candidate, NOT historical publication or production
+delivery. No model/config/account/order/full-run changes, audit, replay or
+deployment occurred. Preserve the one original retrospective; inspect compact
+status and wait for COMPLETE before independent full ledger/model/causal/raw
+price/all94-payload/preservation audit. Actual compiled historical quantities,
+fresh ordinary and learned intraday/fill/UI operational acceptance remain
+UNVERIFIED. Root separately recorded completed live parity in main6f54e3cd;
+never repeat that release or use obsolete6a-bound launch/settlement helpers.
+Root reviews/integrates this branch; urgent N2 delivery remains independent.
+
 ## 2026-10-17 — Spark2 Wi-Fi recovered; inference remains unavailable
 
 VERIFIED actual08:42:45Z: Spark2 wlP9s9 is now connected toGiGstreem, the same
