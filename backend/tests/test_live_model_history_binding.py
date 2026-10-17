@@ -3,6 +3,7 @@
 import ast
 import json
 from copy import deepcopy
+from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
 
@@ -258,6 +259,10 @@ def test_guard_extension_checks_exact_paths_predecessors_and_function_bodies(
     }
     with pytest.raises(ValueError, match="paths"):
         binding.guard_extension(dict(sources), altered)
+    altered = deepcopy(review)
+    altered["source_changes"]["backend/api/v1/market.py"]["extra_approval"] = True
+    with pytest.raises(ValueError, match="schema"):
+        binding.guard_extension(dict(sources), altered)
     path = tmp_path / "holding.py"
     path.write_text(
         Path(learned_live_holding.__file__)
@@ -332,6 +337,9 @@ def test_review_chain_admits_exact31_source_extension_only_in_order(
     path.write_bytes(encoded(review))
     receipt = sha256(path.read_bytes()).hexdigest()
     monkeypatch.setattr(binding, "REVIEWS", (*binding.REVIEWS, str(path)))
+    monkeypatch.setattr(
+        binding, "REVIEW_SHA256", {**binding.REVIEW_SHA256, str(path): receipt}
+    )
     serving = {
         **current,
         **{name: change["after_sha256"] for name, change in changes.items()},
@@ -345,3 +353,186 @@ def test_review_chain_admits_exact31_source_extension_only_in_order(
         )
     with pytest.raises(ValueError, match="Unreviewed"):
         binding.reviewed_sources(value["provenance"]["source_sha256"], serving, reviews)
+
+
+# Reconstruct both real reviewed transitions without importing the urgent API candidate.
+def exact_numeric_chain():
+    root = Path(binding.__file__).resolve().parents[2]
+    rows = [json.loads((root / name).read_bytes()) for name in binding.REVIEWS]
+    original = learned_live_holding.source_identity()
+    original[rows[0]["changed_reviewed_file"]] = rows[0]["previous_approved_sha256"]
+    serving = dict(original)
+    serving[rows[0]["changed_reviewed_file"]] = rows[0]["reviewed_serving_sha256"]
+    for name, change in rows[1]["source_changes"].items():
+        assert serving.get(name) == change["before_sha256"]
+        serving[name] = change["after_sha256"]
+    receipts = [binding.REVIEW_SHA256[name] for name in binding.REVIEWS]
+    return original, serving, receipts
+
+
+# Trust one explicit test-only receipt without adding any future production approval.
+def fixture_api_review(tmp_path, monkeypatch, serving, **changes):
+    api = "backend/api/v1/market.py"
+    review = {
+        "status": "REVIEWED_EXACT_SERVING_SOURCE_APPROVAL_CANDIDATE",
+        "changed_reviewed_file": api,
+        "previous_approved_sha256": serving[api],
+        "reviewed_serving_sha256": "e" * 64,
+        "other_reviewed_sources_unchanged": len(serving) - 1,
+        "scope": "Controlled test receipt only; not a production approval",
+        **changes,
+    }
+    path = tmp_path / "fixture-third-api-review.json"
+    path.write_bytes(encoded(review))
+    receipt = sha256(path.read_bytes()).hexdigest()
+    monkeypatch.setattr(binding, "REVIEWS", (*binding.REVIEWS, str(path)))
+    monkeypatch.setattr(
+        binding, "REVIEW_SHA256", {**binding.REVIEW_SHA256, str(path): receipt}
+    )
+    return receipt
+
+
+# Exact committed reviews admit30 original sources to the new31-source binding.
+def test_committed_numeric_review_admits_original30_to_exact31():
+    original, serving, receipts = exact_numeric_chain()
+    assert len(original) == 30
+    assert len(serving) == 31
+    assert receipts[1] == (
+        "2f048a8040532bfdaa49b1101e552457454b526b510b4ee9f2422f3a67a3e5f7"
+    )
+    binding.reviewed_sources(original, serving, receipts)
+
+
+# A laterAPI-only31-source review preserves30 other hashes and all original provenance.
+def test_later_exact_api31_review_requires30_unchanged_sources(tmp_path, monkeypatch):
+    original, serving, receipts = exact_numeric_chain()
+    frozen_original = deepcopy(original)
+    receipt = fixture_api_review(tmp_path, monkeypatch, serving)
+    latest = {**serving, "backend/api/v1/market.py": "e" * 64}
+    binding.reviewed_sources(original, latest, [*receipts, receipt])
+    assert original == frozen_original
+    assert {name for name in serving if serving[name] != latest[name]} == {
+        "backend/api/v1/market.py"
+    }
+
+
+# The longer chain preserves frozen provenance and cannot permit changed economics.
+def test_full31_binding_keeps_original_archive_and_rejects_changed_cost(
+    tmp_path, monkeypatch
+):
+    value, _, frozen, _ = renewed(tmp_path)
+    original = deepcopy(value["provenance"])
+    archive = {
+        name: (frozen / path).read_bytes() for name, path in binding.SNAPSHOTS.items()
+    }
+    _, serving, receipts = exact_numeric_chain()
+    receipt = fixture_api_review(tmp_path, monkeypatch, serving)
+    latest = {**serving, "backend/api/v1/market.py": "e" * 64}
+    monkeypatch.setattr(learned_live_holding, "source_identity", lambda: latest)
+    release = json.loads((tmp_path / binding.SNAPSHOTS["release"]).read_bytes())
+    release.update(source_sha256=latest, approved_at=datetime.now(UTC).isoformat())
+    release_sha = store(tmp_path, "release", encoded(release))
+    config = json.loads((tmp_path / binding.SNAPSHOTS["holding"]).read_bytes())
+    config["release_receipt_sha256"] = release_sha
+    store(tmp_path, "holding", encoded(config))
+    chain = binding.build(
+        tmp_path, frozen, value["provenance"], source_reviews=[*receipts, receipt]
+    )
+    assert value["provenance"] == original
+    assert len(original["source_sha256"]) == 30
+    assert len(chain["serving_source_sha256"]) == 31
+    assert binding.archived(chain) == archive
+    config["cost_bps"] = 11
+    chain["serving_holding_config_sha256"] = store(tmp_path, "holding", encoded(config))
+    with pytest.raises(ValueError, match="changed models, economics or release"):
+        binding.validate(tmp_path, chain, value["provenance"])
+
+
+# Every31-sourceAPI renewal still rejects stale predecessors, counts and extra changes.
+@pytest.mark.parametrize(
+    "corruption",
+    [
+        "old_count",
+        "float_count",
+        "boolean_count",
+        "old_api",
+        "same_api",
+        "wrong_path",
+        "model",
+        "projection",
+        "extra",
+        "missing",
+    ],
+)
+def test_later_api31_review_rejects_unreviewed_source_changes(
+    tmp_path, monkeypatch, corruption
+):
+    original, serving, receipts = exact_numeric_chain()
+    changes = {}
+    if corruption == "old_count":
+        changes["other_reviewed_sources_unchanged"] = 29
+    elif corruption == "float_count":
+        changes["other_reviewed_sources_unchanged"] = 30.0
+    elif corruption == "boolean_count":
+        changes["other_reviewed_sources_unchanged"] = True
+    elif corruption == "old_api":
+        changes["previous_approved_sha256"] = original["backend/api/v1/market.py"]
+    elif corruption == "same_api":
+        changes["reviewed_serving_sha256"] = serving["backend/api/v1/market.py"]
+    elif corruption == "wrong_path":
+        changes["changed_reviewed_file"] = "backend/market/forward_arithmetic.py"
+    receipt = fixture_api_review(tmp_path, monkeypatch, serving, **changes)
+    latest = {**serving, "backend/api/v1/market.py": "e" * 64}
+    if corruption == "model":
+        latest["backend/market/forward_arithmetic.py"] = "f" * 64
+    elif corruption == "projection":
+        latest["backend/market/live_model_decision.py"] = "f" * 64
+    elif corruption == "extra":
+        latest["backend/market/unreviewed.py"] = "f" * 64
+    elif corruption == "missing":
+        del latest["backend/market/forward_arithmetic.py"]
+    with pytest.raises(ValueError, match="Unreviewed"):
+        binding.reviewed_sources(original, latest, [*receipts, receipt])
+
+
+# A chain cannot omit, reorder, repeat or substitute one of its exact review receipts.
+@pytest.mark.parametrize(
+    "corruption",
+    ["reordered", "duplicate", "missing_first", "missing_guard", "unknown"],
+)
+def test_real_numeric_chain_rejects_incomplete_or_forged_receipt_sequences(
+    tmp_path, monkeypatch, corruption
+):
+    original, serving, receipts = exact_numeric_chain()
+    receipt = fixture_api_review(tmp_path, monkeypatch, serving)
+    latest = {**serving, "backend/api/v1/market.py": "e" * 64}
+    if corruption == "reordered":
+        chain = [receipts[1], receipts[0], receipt]
+    elif corruption == "duplicate":
+        chain = [*receipts, receipts[1], receipt]
+    elif corruption == "missing_first":
+        chain = [receipts[1], receipt]
+    elif corruption == "missing_guard":
+        chain = [receipts[0], receipt]
+    else:
+        chain = [*receipts, "0" * 64]
+    with pytest.raises(ValueError, match="(predecessor|Unique|Unreviewed|catalog)"):
+        binding.reviewed_sources(original, latest, chain)
+
+
+# Editing a cataloged review cannot create another trusted hash from the same filename.
+def test_review_catalog_pins_actual_committed_numeric_review_bytes(
+    tmp_path, monkeypatch
+):
+    original, serving, receipts = exact_numeric_chain()
+    source = Path(binding.__file__).resolve().parents[2] / binding.REVIEWS[1]
+    path = tmp_path / "changed-numeric-review.json"
+    path.write_bytes(source.read_bytes() + b"\n")
+    monkeypatch.setattr(binding, "REVIEWS", (binding.REVIEWS[0], str(path)))
+    monkeypatch.setattr(
+        binding,
+        "REVIEW_SHA256",
+        {binding.REVIEWS[0]: receipts[0], str(path): receipts[1]},
+    )
+    with pytest.raises(ValueError, match="bytes differ"):
+        binding.reviewed_sources(original, serving, receipts)
