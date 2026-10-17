@@ -21,6 +21,12 @@ Human explicitly authorized parallel agents to finish the trading issues.
 Separate candidates now address the Stocks action/quantity/timing source mix,
 authenticated frozen-history serving chain and original execution reconciliation.
 These candidates are not delivered until their acceptance and canonical release.
+Candidate98bae301 adds a saved-only execution reconciliation audit:21tests pass,
+and the preserved STX/SWKS fills, eight remaining positions and cash reconcile;
+these next-open exits do not prove learned intraday timing. Candidate94ac941a
+adds an exact archived-to-serving historical binding and full-calendar publish
+guard:30focused checks pass. No full audit/publication or runtime change yet.
+The final new projection source review still needs its trusted catalog entry.
 The original full historical run remains active and untouched; full audit and
 publication wait for its COMPLETE output. Fresh ordinary and learned intraday
 acceptance remain separate. Keep heartbeat ACTIVE and quiet on unchanged jobs.
