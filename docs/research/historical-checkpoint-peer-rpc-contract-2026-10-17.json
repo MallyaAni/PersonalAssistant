@@ -1,0 +1,26 @@
+{
+  "schema": "historical-checkpoint-peer-rpc-contract/1",
+  "status": "APPROVED_SOURCE_TEST_ONLY_NO_NETWORK_OR_RUNTIME_ADMISSION",
+  "objective": "Prepare the explicit process/stream/root-ownership boundary required before actual two-host checkpoint orchestration, preserving the tested local-only protocol.",
+  "owner": "Existing trading_action_consistency in settlement worktree at private80c14522; ROOT owns future runner and source/resource/invocation review",
+  "allowed_new_files": ["backend/market/historical_checkpoint_peer_rpc.py", "backend/tests/test_historical_checkpoint_peer_rpc.py"],
+  "verified": "Private fixed-slot local protocol17 checks and two expected RED regression failures; actual two-host protocol remains UNVERIFIED",
+  "source_review": "Pair directly owns local peer paths, controls, metadata records, heads, content reads and flock contexts. FixtureTransport.call covers only four methods. Replacing that method is not a complete remote adapter; exact local-only type guards remain unchanged.",
+  "allowed_contract": [
+    "Separate unused protocol/version, exact new source plus fixed-slot a15/raw5d closure and CURRENT declaration/writer. No changes to existing Pair/Peer/raw/native/Store/Nightly/Cycle/schema/stages/caps/pins/false flags.",
+    "Actual finite precreated session/permit/control files bound to externally pinned launch, owner, peer, profile/source, root device/inode and physical reservation identity. Caller messages never supply filesystem paths, code or credentials. Hold the real local peer lock continuously for the ordinary session.",
+    "Expose HELLO/STATUS, LOCK+ARM, bounded PUT and VERIFY/PREPARED only. No generic method dispatch, arbitrary record writes, owner decision, ACK/FINISH, election, adoption, native/model/sender methods or effect callback.",
+    "Strict unique-key finite control envelope at most256KiB; binary object no larger than declared span at most20MiB, page at most256KiB;64KiB reads and exact length/SHA/framing/sequence/control-preimage checks. Explicit request/cumulative body/page/operation quotas count transmitted duplicates too. No base64, decompression or retries.",
+    "Durably consume a unique ordinary session and charge bounded ingress before receiving body bytes. Broken channel/process reopens STATUS-only, including disconnect before ARM; no fresh mutation permission from a reset process counter or unknown ACK. Never repeat effects or infer adoption from readable bytes.",
+    "Fake-only streams and small synthetic process/filesystem tests may be prepared. No default network transport/client/SSH/provider/credential access. No runtime, imports of native/model code, tests, commits or integration until ROOT reviews final exact source, resource bounds and isolated invocation. Source-only Ruff is allowed.",
+    "Return a coherent narrower source boundary if the complete stage cannot be implemented in these two files, without exposing partly authenticated mutation authority."
+  ],
+  "proposed_acceptance_not_yet_authorized": ["Exact launch/source/owner/root/sequence/control-preimage mismatches cause zero mutations", "Finite real session resource preparation and one-time ordinary grant", "Fragmented/short/overflow/hash/extra-field/trailing-frame rejection", "Disconnect before/after ARM and partial/after-durable PUT; process SIGKILL and STATUS-only reopen without another mutation", "Worst20MiB payload plus readback memory under a freshly reviewed bounded runtime", "No post-ARM namespace creation or generic RPC methods"],
+  "actual_two_host_limits": {
+    "root_read_only_spark2_observation": "Python3.12.3/kernel6.17.0-1031-nvidia; available2444337152B/scratchfree3492066295808B; exact f612 image absent (Docker No such image)",
+    "meaning": "Measured headroom only; no image transfer/install/start or model-service change. Do not substitute a model image or call the two-local-root proof actual two-host evidence.",
+    "later_gate": "Exact runtime/closure and safe image availability/physical reservations on both hosts, pinned explicit SSH streams and source-reviewed remote coordinator/owner decision commit; no full worker on Spark2"
+  },
+  "excluded": "Actual network/SSH, image transfer/install, genuine account/model/provider calls, native metadata guarantee, full remote Pair/commit/consensus/failover, v6 replay/adoption, deployment/publication",
+  "diagram_impact": "NONE: source/test-only unused prerequisite, no deployed relationships changed"
+}

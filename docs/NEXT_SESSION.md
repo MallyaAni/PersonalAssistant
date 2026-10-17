@@ -1,5 +1,35 @@
 # Next session
 
+## 2026-10-17 — Peer process/stream boundary SOURCE/TEST work approved
+
+Read research/historical-checkpoint-peer-rpc-contract-2026-10-17.json.
+ROOT reviewed direct-local mapping: Pair touches paths/controls/records/heads/
+content/flocks outside FixtureTransport.call. Do not loosen its type guards or
+pretend swapping the four dispatches yields actual two-host orchestration.
+Healthy existing trading_action_consistency may write ONLY new
+historical_checkpoint_peer_rpc.py and its test in private80c145 settlement tree.
+Separate unused version: pinned launch/source/profile/owner/peer/root/resources,
+actual precreated finite session files, continuous lock+ARM, bounded binary PUT,
+VERIFY/PREPARED and HELLO/STATUS only. No arbitrary dispatch/paths/record writes,
+owner DECISION/ACK/FINISH/effect callback/network/defaultclient/SSH. Consume
+unique ordinary session/charge ingress durably before body; disconnect/process
+reopen STATUS-only, no mutation grant/replay/adoption from reset counters.
+Strict finite256KiB envelope/20MiB body cap/64KiB reads/full hash+length and
+duplicate-aware cumulative quotas. Worst-cap memory must be measured, not
+inferred from the prior4KiB fixture. No existing source/pins/caps/flags change.
+Source-only Ruff allowed; no runtime/tests/native imports/commits/integration
+until ROOT final source/resource/invocation review. No duplicate runner/worker.
+
+ROOT bounded read-only direct-link Spark2 metadata probe worked:Python3.12.3,
+kernel6.17.0-1031-nvidia, available2444337152B/free3492066295808B. Docker exact
+f612 image is ABSENT (No such image), not a host/model outage diagnosis. No
+image transfer/install/model or other service change. Later actual two-host
+runtime/source/resource admission remains required; no model image substitute.
+All completed local17/native15/raw21 checks remain proof-scoped and are not
+repeated. Original timing FAILED/publication CLOSED/missing receipts unchanged;
+v6 OPEN/PAUSED/no replay/adoption/new genuine run. Productione237/f612 unchanged;
+actual weekday/intraday/fill/UI and historical delivery remain UNVERIFIED.
+
 ## 2026-10-17 — Fixed-slot local peer protocol VERIFIED privately
 
 Read research/historical-fixed-slot-checkpoint-proof-2026-10-17.json.
