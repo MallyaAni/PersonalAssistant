@@ -1,5 +1,49 @@
 # Next session
 
+## 2026-10-17 — Local native writer inode and crash tests VERIFIED privately
+
+Read research/historical-native-write-reservation-proof-2026-10-17.json.
+Private feature356f282d9934b3e3670eb59b8e9a825d15771d29 on the existing physical
+checkpoint branch contains only unused adaptera058ab10/test7a986a04 plus proof.
+It is NOT main-integrated/deployed. Actual989853b2/f612 finished22:31:55.956642527Z
+exit0/noOOM:15tests/0skip1.625s,62024KiB peak. Root
+scratch/native-write-synthetic-20261017-v2 is COMPLETE; never restart. Exact
+UID1000/noneRO/1CPU/512MiB=swap/tmp64MiB/four mounts independently checked;
+smallsource/publicfixture/native-readable-copy RO, sole privateout RW.
+Source10/native6 and native writer/global bindings beforeafter exact. Terminal
+3933c9c0/inspect0e45bf89/ROOTproof785e97e3. Retained184561664 allocated file bytes,
+167 unique file inodes. Exact imported native writer byte parity and two actual
+SIGKILL controls verified: before native replace and after native return both
+leave charged OPEN slot0/currentnull/lastnull with exact90-byte anchors.
+
+NEW callable uses exact native writer code with only private tempfile facade;
+actual preallocated inode, bounded nontruncating UTF8 stream, native flush/fsync,
+close then same-inode trim/fsync and original atomic replace. Prior anchors,
+strict physical preimage/source/clone/receipt/fd/path/sparse/overflow/locking
+guards passed. Completion binds local bytes only, never caller observation or
+native operation adoption. Existing v1 raw helper/Store/schema/stages/Nightly/
+Cycle/codec/pins/caps are unchanged. Strict original writer self-binding still
+rejects NativeCapture observer replacement; this is not a drop-in integration.
+
+Failedv1 actuala61029f4 is retained unchanged: native parity passed,14pure tests
+stopped at code guard/28subtesterrors. Source-only full-vs-selected-AST comparison
+found save_state bytecode/line-table differences despite equal flags/no future
+directives; flags-only hypothesis disproved. Corrected ONLY fixture to extract
+exact3code objects from full compilation without executing module/imports;
+adapter guard unchanged. Preserve failed verifier that wrongly expected kill
+effects in this pre-effect failed suite; separate corrected verifier retained.
+
+Healthy trading_action_consistency has ONE READONLY next design assignment:
+fixed-slot metadata plus dual-host allocation/ack/commit for unused primitives.
+No edits/imports/runtime/genuine-state reads/model/provider operations/runner.
+Directory/native-rename/Store/SQLite/latch/evidence metadata, peer reservation,
+restore/full-horizon quota/full native-model lifecycle RAM remain OPEN. Fresh
+22:22Z measured headroom (not reservations): Spark1~2.82TB free/9.35GB available,
+Spark2~3.49TB free/2.45GB available via direct link. No full worker on Spark2.
+Original timing FAILED/publication CLOSED/missing receipts unchanged; genuinev6
+PAUSED/no replay/adoption/new genuine run. Productione237/f612 unchanged; real
+weekday ordinary/intraday/fill/UI acceptance still UNVERIFIED.
+
 ## 2026-10-17 — Native writer adapter SOURCE/TEST work approved after review
 
 Read research/historical-native-write-reservation-contract-2026-10-17.json.

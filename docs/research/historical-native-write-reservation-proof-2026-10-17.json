@@ -1,0 +1,57 @@
+{
+  "status": "VERIFIED_PRIVATE_SYNTHETIC_LOCAL_NATIVE_WRITER_ONLY",
+  "base_revision": "3cc93ae65dd836c6d39ae4667f20b4dc7796b48e",
+  "branch": "codex/historical-physical-checkpoint-20261017",
+  "source_sha256": {
+    "backend/market/historical_native_write_reservation.py": "a058ab1051190c85d2080ed1dfbfd5ff02cda9221f48f26fa4500c76a3cfaaf2",
+    "backend/tests/test_historical_native_write_reservation.py": "7a986a04b0ac8a0c3328e28203706c4656c418696b7a78f58ec44b080585ae63",
+    "backend/market/historical_physical_checkpoint.py": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+  },
+  "root": "/home/animallya96/scratch/native-write-synthetic-20261017-v2",
+  "container": "989853b20dec46cb57602d302951d713b6629802d6b05af335396f71fb126fc4",
+  "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+  "finished_at": "2026-10-17T22:31:55.956642527Z",
+  "exit_code": 0,
+  "oom": false,
+  "tests": {"passed": 15, "skipped": 0, "errors": 0, "failures": 0, "elapsed_seconds": 1.6253794841468334, "peak_kib": 62024},
+  "static_validation": "Ruff format/check passed on the two new files; no general full-backend gate claim",
+  "isolation": {"uid": "1000:1000", "network": "none", "readonly": true, "cpus": 1, "ram_bytes": 536870912, "swap_total_bytes": 536870912, "tmp_bytes": 67108864, "mounts": ["small source RO", "public CURRENT identity and writer/map fixture RO", "previously authenticated readable native source copy RO", "sole private out RW"]},
+  "verified": [
+    "Exact imported a8 native writer versus NEW FunctionType callable byte parity, including opaque NaN and Unicode bytes; no shared tempfile mutation",
+    "Native source map modules, writer callable and module globals unchanged; all ten small source/fixture identities and hashes unchanged",
+    "Actual preallocated native working inode, bounded nontruncating writes, native flush/fsync block, close then same-inode truncate/fsync and original native atomic replace",
+    "Authoritative physical preimage, retained prior anchors, finite slot charging, shared/exclusive lock and fd/path bookends",
+    "Strict source/global/clone/receipt/argument guards, allocation/sparse/overflow/corruption refusals",
+    "Thirteen named adapter failure cuts and two actual SIGKILL cuts: before native replace and after native return; both retained OPEN operation0/next_slot1/currentnull/lastnull and 90-byte original anchor",
+    "Independent stopped-runtime/mount/source/control review; 184561664 allocated file bytes and 167 unique file inodes retained"
+  ],
+  "evidence_sha256": {
+    "out/proof.json": "3933c9c00c6b0d8cb03cce1a2d66cd872539924419cb94bfccd72ae9085a4599",
+    "inspect-after.json": "0e45bf89f1242ce0778a11309ac3819141e13a03f403200bddd53bae8a8f7987",
+    "run.log": "4adaacfe0c1f48c2e5781cef3f25f7b5a66d0f4385bd8bb2d92f2ddca8415871",
+    "source/plan.json": "0a0b0fe4df90d8bb6028608b5f1ecabae4f8c95f1bd1f935ca28e7478a7c5a25",
+    "runner": "d7a84805576cd531846de97bb88a74d08fc63d28133f67610fd0fff375304716",
+    "controller": "239e6a6ff07586ca78c2848a95dcd51d5748377692ba399257abd707daf60c8f",
+    "independent-proof.json": "785e97e38f9c6840998ee59af7b5459e1b6cd48270db308c662f0259a853fcfb",
+    "independent-verifier": "7ffb505fd956d2df2cb54ae72f8c6e2629af02d74e6e1fd54c7e40f812e6130b"
+  },
+  "failed_v1_preserved": {
+    "root": "/home/animallya96/scratch/native-write-synthetic-20261017-v1",
+    "container": "a61029f46014816a0948e6342899113c3597d3ebffdeddf47196793eb1352877",
+    "exit_code": 1,
+    "oom": false,
+    "test_sha256": "62b1ae068232c5ad0e08977cf1ab08f7df14c80e2eeeb4c0c13b588e55d13783",
+    "result": "Actual native parity passed; 14 pure functions stopped at exact source-code guard, producing28 subtest errors before native effect",
+    "first_boundary": "Selected-AST fixture compilation changed save_state co_code/co_linetable relative to complete original source; source has no future directives. Compiler-flags-only hypothesis was disproved without a save/test replay",
+    "targeted_change": "Test fixture now compiles complete original source without executing it and instantiates only three extracted exact code objects in an explicitly synthetic namespace; adapter/source guard unchanged",
+    "proof_sha256": "bd7fb03a2a60d2e0eb122554edb4117a6f61d58ef0dc963d88d8ca57128d88a1",
+    "inspect_sha256": "dbcef0c6fbb9785be6864c3b91e7eb61a20c86510b1b6c03b9b6bc4e9945ff4c",
+    "independent_verifier_failure": "First independent verifier incorrectly required killed controls even in a suite that failed before its kill effects; failed verifier retained, separate corrected verifier only enforces kill acceptance on a successful suite"
+  },
+  "not_proved": ["Directory and rename metadata reservation", "Two-host reservation and durable acknowledgement", "Restore and full-horizon quota", "Full native/model/snapshot/reconciliation/CAS memory lifecycle", "Every fsync/rename syscall crash cut", "Caller-observed native operation success or simulator adoption", "Nightly/Cycle/Store integration", "Genuine historical/financial/model acceptance"],
+  "next_boundary": "Read-only fixed-slot metadata and dual-host reservation design; existing strict self-binding intentionally rejects NativeCapture observer replacement",
+  "production": "UNCHANGED; unused helper not main-integrated or deployed",
+  "original_timing": "FAILED; publication CLOSED; missing original initial raw receipts unchanged",
+  "genuine_v6": "PAUSED/OPEN; no replay, adoption or further genuine run",
+  "fresh_weekday_intraday_fill_ui": "UNVERIFIED"
+}
