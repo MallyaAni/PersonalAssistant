@@ -35,9 +35,50 @@
     "before_and_after_map_sha256": "61338cb4c5365826377bd84f585924af83c9492dc1d27cd3383d056d631357ca",
     "preserved_uid1000_failure": {"reason": "Archived configuration directory root-owned mode0700; actual application runs as root", "proof_sha256": "a5f988cba6ced7be7368d1d44be1e4331da6aab007fad9ea81022fd09c240b51"}
   },
+  "approval_preflight": {
+    "status": "VERIFIED_READ_ONLY_PREFLIGHT_NOT_ACTIVATED",
+    "root": "/home/animallya96/scratch/trading-numeric-preparation-20261017-v1",
+    "candidate_worktree": "candidate",
+    "bundle": "approval-bundle.json",
+    "bundle_sha256": "477e7bb5ce8d2eb0718c6ef5438cbf6c8982a15db85027614905781536b919a8",
+    "new_config_sha256": "338e2a490d13cc889667d577ec93ba68f775863a8c1db385fed3dd77fee26dcc",
+    "new_release_sha256": "bb6c24aabb33daff30bd7af5b6c505208cc996c38929a84b54573662bab1bd4c",
+    "unchanged_evidence_sha256": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9",
+    "predecessor_config_sha256": "9bb6764be3b4c38e11ab18cf205aa6fba2682ca2b243b1be44c9d7e339a88388",
+    "predecessor_release_sha256": "3d7b8359c65935d11506ae35a272df23f89ea8d5cffa51b6a267fd70ad50c42e",
+    "reviewed_sources": 31,
+    "proof": "preflight-proof.json",
+    "observed_at": "2026-10-17T09:47:06.462494+00:00",
+    "original_selectors_state_record_frozen_config_and_full_run_unchanged": true,
+    "activated": false,
+    "canonical_deploy_launched": false
+  },
+  "prepared_execution_helpers": {
+    "root": "/home/animallya96/scratch/trading-numeric-preparation-20261017-v1",
+    "launch.py": "82fdfa90098fe81f3d483e937a8b724015b7d4606bd9a2a16051b96be9007af8",
+    "release_contract.py": "f663c34302388bea1d850b38dcade7db054ffd614c7451fd191a49f1d28eb75c",
+    "verify_after_canonical.py": "24bf4eb27777273d7d0f4f1d03b34718bfd1533c128b980e4e1a987fe271ca13",
+    "inert_check_receipt_sha256": "b8a37da6d73c5bbc5bec63b10c5236f15e087b1105184219b7023e1ff7cb832d",
+    "preflight_proof_sha256": "4745f9959cd507e55e69e95058f1f88719dc7fd63120cbc4ec740fa60c9aabfe",
+    "validation": "Three Python modules and three embedded commands compile; two help-only invocations and E/F/I lint pass",
+    "canonical_launched": false,
+    "independent_verifier_executed": false,
+    "requires": "Explicit freshly reviewed parity v3 proof SHA before launch; target cheap-post green before exclusive independent verification"
+  },
+  "prepared_settlement_wrapper": {
+    "path": "/home/animallya96/scratch/numeric-known-fill-wrapper-preparation-20261017-v1/apply_known_fill_reconciliation_20261017_NUMERIC_CANDIDATE_PROPOSED_v3.py",
+    "sha256": "f2507e0811fb6dc4bc66899ac31e4b3d0fcf0183c8c0a400d6cd223b112e6b2e",
+    "binding_tests": {"passed": 20, "skipped": 0, "seconds": 0.92},
+    "receipt_sha256": "9efb4093ad1d0ca9194e9e7d8505892d009bd52e6b7ce3ccec8d9f61dbf0556e",
+    "unchanged_helper_sha256": "9d2883bc2e51925a3179e9a5ffeec46ca4c92b12b08441adbeecbdefb414ed4b",
+    "independent_proof": "/home/animallya96/scratch/trading-numeric-independent-20261017-v1/independent-verification.json",
+    "requires": "Explicit reviewed independent numeric proof SHA, actual exact source/image and all originals outside two reviewed selectors",
+    "executed": false,
+    "future_exclusive_root": "/home/animallya96/scratch/paper-settlement-recovery-20261017-numeric-v1"
+  },
   "pending": [
     "Finish existing canonical parity v3 and independent preservation before account mutation",
-    "Exact approval bundle preflight, canonical numeric release and actual HOST/CONTAINER admission",
+    "Canonical numeric release with the exact admitted bundle and actual HOST/CONTAINER admission",
     "Fresh source-bound current-clock settlement of only original known filled orders, with idempotence",
     "Actual authenticated compiled public-browser acceptance",
     "Full historical audit/publication and fresh ordinary/learned intraday acceptance"

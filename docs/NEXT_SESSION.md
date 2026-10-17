@@ -20,6 +20,22 @@ All95 original research payloads passed against exact candidate source, using
 the actual app UID0 and original archived config;97 original hashes unchanged.
 The initial UID1000 permission failure is preserved, not relabelled passed.
 Exact candidate/proof identities:research/trading-numeric-release-preparation-2026-10-17.json.
+Exact pinned approval bundle preflight also PASS at09:47:06Z in
+/home/animallya96/scratch/trading-numeric-preparation-20261017-v1. No activation:
+original selectors/state/record/frozen config/full-run identity unchanged.
+Bundle477e7bb5 admits31sources; new config338e2a49/releasebb6c24aa retain original
+evidence4d6af1bb and all numerical/economic settings. Use only the pinned bundle
+and final candidate6a1d77bc; actual activation/delivery remain UNVERIFIED.
+Prepared-only launcher/verifier in that private root:launch.py82fdfa90,
+release_contract.pyf663c343,verify_after_canonical.py24bf4eb2. Full hashes and
+inert-check receipt are in the preparation proof. After independently reviewing
+the completed parity v3 proof and its SHA, use research-venv Python with
+launch.py --execute --parity-proof-sha256 <exact-reviewed-v3-proof-SHA>.
+The launcher requires basea237, clean exact candidate, origin/main upstream,
+free deploy lock and reachable real inference; restores upstream after canonical.
+After canonical completion AND the target cheap-post green marker, run
+verify_after_canonical.py --verify-after-canonical exactly once. It creates
+/home/animallya96/scratch/trading-numeric-independent-20261017-v1 exclusively.
 
 Canonical parity v3 remains ACTIVE on a2378e95:10676 unit pass/93skip/6xfail,
 100 real routing pass/0skip. Backup WAL replication is still transferring;
@@ -38,6 +54,13 @@ quantities and nanosecond created clocks; reconcile at the genuine current clock
 submit no orders, verify the second invocation writes nothing. Then run actual
 authenticated compiled public-browser acceptance with the post-settlement state
 SHA. No current production UI or settlement acceptance claim yet.
+Fresh numeric-bound wrapper is now prepared at
+/home/animallya96/scratch/numeric-known-fill-wrapper-preparation-20261017-v1/apply_known_fill_reconciliation_20261017_NUMERIC_CANDIDATE_PROPOSED_v3.py
+SHAf2507e08;20 proof-binding tests pass/0skip0.92s. Requires
+--independent-proof-sha256 <reviewed-actual-numeric-proof-SHA>, actual6a1d77bc
+image/source31/selectors338e2a49/bb6c24aa/4d6af1bb and original310 baseline minus
+the two reviewed selectors before invoking unchanged helper9d2883bc. It creates
+paper-settlement-recovery-20261017-numeric-v1 exclusively. Not executed.
 
 ONE full historical run remains running untouched: compact09:45Z observation
 1851 sessions through2026-07-13,2848 fills/3790 intents, updated09:38:27Z.
