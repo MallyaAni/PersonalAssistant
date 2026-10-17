@@ -1,5 +1,33 @@
 # Next session
 
+## 2026-10-17 — Current settlement and process-crash recovery verified
+
+Feature b9f5d7cd integrated as 0ce3da37 after ROOT full Cycle diff/test/runner/
+binding review, Ruff/format, and independent actual b80aa471/f612 Docker mounts,
+resource limits, source identities and proof887ac09e checks. Read
+research/historical-current-settlement-cycle-proof-2026-10-17.json. Exact Cycle
+f55b51fa/test0bfa7fe7:14 expanded synthetic native cases/0skip15.24s, networknone,
+RO/1CPU/2GiB RAM+total swap/tmp128MiB/exit0/OOMfalse; baked31 unchanged.
+
+Optional CURRENT settlement binds its mode and exact helper81286 to the prior
+and committed submission. A retained PRE fold graph binds complete original
+broker/paper/latch and inputs. Both actual SIGKILL windows (after paper save,
+after final append) restore exact uninterrupted broker/paper/latch/receipt bytes
+into a fresh private descendant without reader/decision/sender repetition.
+Postcommit restore also forbids resolver/marks/fold. Desired8/submitted5/sender5/
+filled5 remains terminalpartial; same-batch sales never expand BUY budget.
+Default opt-out keeps sent/pending semantics. Store/schema/stages unchanged.
+
+Preserve failedv1:13pass and one cross-process fixture ordering mismatch in
+native marks/mark_times; keys, values and timestamps matched. Only fixture setup
+now sorts its initial names; codec and byte-equality assertions unchanged.
+Measured bounded cases have407–1754B paper and5094–8062B broker,0–2 journal rows.
+Existing256KiB paper/receipt cap and cumulative CAS full-horizon feasibility
+remain UNVERIFIED launch blockers; do not truncate or silently expand caps.
+No genuine model/account/provider/production/full-run acceptance is claimed.
+Diagram impact NONE: optional private existing-native reconciliation path;
+no deployed relationship changed. Original full remains compact-only while active.
+
 ## 2026-10-17 — Current-source timing input path verified on retained real data
 
 Feature991b4394 integrated as748cc9b8 after ROOT full helper/tests/runner/compact
