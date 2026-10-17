@@ -1,5 +1,34 @@
 # Next session
 
+## 2026-10-17 — Combined draft preserves all31 approved source hashes
+
+Correction to the earlier third-API-review assumption below: actual inspection
+of the isolated combined historical/numeric backend finds ALL31 guarded files
+byte-identical to urgent6a1d77bc, including APIfb35aa68. Historical GET routes
+live in separate market_history_sizing.py and api.py router integration; they
+do not change the guarded market.py. Root and independent reviewer compared
+physical files with git-show6a and the pinned urgent source map: zero changes.
+Do NOT manufacture a third/no-op approval. If the final combined map remains
+identical, installed338e2a49/bb6c24aa after urgent delivery is sufficient, with
+the existing8b628c76+2f048a80 historical review chain. Final combined artifact,
+route/browser validation and actual admission still require proof.
+
+Draft source review72ad8ff8 is in the historical-provenance worktree as
+docs/research/historical-numeric-merge-source-review-PROPOSED-2026-10-17.json.
+The merge is NOT committed/deployed yet. Historical agent owns backend/DeskPanel
+and Git index; frontend agent owns TickerChart/tests without index mutations.
+Review found five adjacent chart source checkboxes and an open historical table
+in the old pending candidate. Human forbids more UI concepts: approved repair
+keeps three source choices, current-model decisions plus distinct simulated fills
+as primary, original research and actual paper separate. Table/explanations fold
+inside existing closed Details; optional Saved/Recalculated grade context moves
+inside existing Indicators, off by default, explicitly grade-labelled, never
+replacing funded amounts or inventing15m clocks. Preserve original ORCL dates,
+BUY0/reasons and eligible additions/trims. This is candidate work, not delivery.
+Urgent6a/prepared approval/launcher remain frozen; parity v3 is still ACTIVE,
+now transferring WAL to Mac after successful Spark2 mirror. No job interruption,
+full historical audit/publication, model/config/account changes or actual-day replay.
+
 ## 2026-10-17 — Historical review catalog extension verified; no deployment
 
 Static candidate a7d0d955 was integrated as90450285. Its exact source/test/review
