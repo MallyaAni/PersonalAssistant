@@ -1,0 +1,20 @@
+{
+  "status": "VERIFIED_GIT_BLOB_IDENTITY_ONLY",
+  "revision": "27471b9c61b958f759e9f48b80acaf60cdf75f2e",
+  "files": 2431,
+  "allowed_modes": ["100644", "100755"],
+  "map_path": "/home/animallya96/scratch/original-history-git-map-20261017-v1/original-history-git-27471b9c-20261017-v1.json",
+  "map_sha256": "c7abe1641a5510902c9f4ada1bd26faa23681232bdcace74b55a698740080eb0",
+  "map_bytes": 267877,
+  "created_at": "2026-10-17T15:20:40.889773+00:00",
+  "helper_sha256": "5323517a8b3a1ca0c564f1a51ae512b47ceae569b65ad4bf70f28b55c6faf9d5",
+  "provenance_sha256": "61464cc945b74521e964c3cb5751e6c10266897fe25fef01f8c68ecfa9fcecd8",
+  "method": "git ls-tree -rz --full-tree exact revision; reject all nonregular modes and duplicate/unsafe paths; stream each exact tree object's git cat-file blob bytes into SHA256",
+  "schema": {"revision": "exact original full revision", "files": "relative path -> lowercase SHA256 of exact Git blob bytes"},
+  "remote_copy_independently_hashed": true,
+  "active_run_reads_or_changes": 0,
+  "full_run_source_manifest_comparison": "UNVERIFIED_UNTIL_COMPLETE_ADMISSION",
+  "model_economic_causal_ledger_audit": "UNVERIFIED",
+  "bounded_test_profile": "Separate TEST2428 profile requires null Git map; never substitute this FULL2431 profile",
+  "publication_barrier": "CLOSED"
+}

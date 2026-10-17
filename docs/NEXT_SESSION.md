@@ -33,8 +33,12 @@ sender/latch work. Outcome paper remains original sent/pending; settled journal
 reconciliation NOT RUN. This is hardcoded Mar1/AAPL private cycle, NOT generic
 multi-symbol/full runner or current holding-policy quantity proof. Agent now
 designs minimal generic seam; no new launch/provider/deployment permission.
-Root independently builds original2431 regular Git-blob map from exact27471
-without reading active run; it still requires later COMPLETE input comparison.
+Root completed exact2431 regular Git-blob map from original27471 without reading
+active run. Remote source mapc7abe164/267877bytes plus helper5323517a/provenance
+61464cc9 independently hashed after copy; exact reference in research/historical-
+original-git-source-map-proof-2026-10-17.json. This proves Git bytes only; FULL
+profile still requires later COMPLETE source-manifest comparison. TEST2428 profile
+must keep null Git map. No original runtime/input/model/ledger audit claimed.
 
 ## 2026-10-17 — Physical packet spool integrated; acquisition remains closed
 
