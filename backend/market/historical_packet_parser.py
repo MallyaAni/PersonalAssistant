@@ -1,4 +1,10 @@
-"""Multi-symbol original-byte parsing only; no reference selection or acquisition."""
+"""Multi-symbol original-byte parsing only; no reference selection or acquisition.
+
+The8MiB envelope cap is an operational coverage pause, never missing market data.
+It bounds this in-memory entry point, not all Python expansion or full-run memory.
+A later coordinator must cap files before allocating reads and stream separately
+pinned group/page references rather than concatenate unbounded source envelopes.
+"""
 
 import base64
 import hashlib
@@ -8,6 +14,13 @@ from urllib.parse import parse_qs, urlsplit
 from backend.market import historical_packet_demand as dem
 from backend.market import historical_packet_registry as reg
 from backend.market.historical_timing_packet import _clocks, _decode, _digest, _ordered
+
+MAX_CAPTURE_BYTES = 8 * 1024**2
+
+
+# Report operational coverage pauses without pretending completed missing evidence.
+class PacketEnvelopePause(ValueError):  # noqa: N818 -- Explicit pause contract.
+    """Preserve resource exhaustion separately from completed empty market evidence."""
 
 
 # Retain source bytes and independent pins rather than accepting detached parsed rows.
@@ -128,6 +141,12 @@ def _group(pages, query, verified):
 def read(packet, demand, registry):
     if type(packet) is not Packets or packet.demand_sha256 != demand.sha256:
         raise ValueError("Immutable demand-bound packets required")
+    if type(packet.raw) is not bytes:
+        raise ValueError("Original immutable capture bytes required")
+    if len(packet.raw) > MAX_CAPTURE_BYTES:
+        raise PacketEnvelopePause(
+            "Packet envelope cap; acquisition PAUSED, not missing market data"
+        )
     manifest = dem.read(demand, registry)
     data = reg.pinned(packet.raw, packet.sha256)
     if (

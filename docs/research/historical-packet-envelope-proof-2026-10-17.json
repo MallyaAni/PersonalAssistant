@@ -1,0 +1,68 @@
+{
+  "schema": "historical-packet-envelope-proof/1",
+  "status": "VERIFIED_ENTRY_BYTE_CAP_NOT_FULL_HORIZON_MEMORY_PROOF",
+  "starting_revision": "f4b58d9d7b0080569734aa8d1fbf1118d9735bba",
+  "parser_sha256": "d617eaceae212bf5dab16280727c5330867506b4b2b47e4b4dce787be01b4155",
+  "test_sha256": "0aa8f60250241c4f7117432a6015c2a8f60585318d043f094bc4d85be36fc070",
+  "new_entry_bound_bytes": 8388608,
+  "boundary": "Exact bytes length is checked before canonical demand rebuild, hashing, JSON decoding or base64 expansion",
+  "oversize_result": "PacketEnvelopePause: operational acquisition PAUSED, not completed empty/missing market data",
+  "preserved_prior_proof": {
+    "path": "/home/animallya96/scratch/historical-generic-packet-tests-20261017-v1/out/proof.json",
+    "sha256": "ba53b7ab179d3921471b64d8049da52552852d422a6df2d4bd4c3bf11f0658a7",
+    "parser_sha256": "9c28bb68076f2060e1a5c83414516bc39693164f879480793997605465b24e32",
+    "prior51_tests_rerun": false
+  },
+  "reproduction": {
+    "path": "/tmp/historical-packet-envelope-red-20261017-v2",
+    "source": "Retained f4b58 parser and new scaled-size envelope tests",
+    "result": "2 failed, 2 passed in0.76s",
+    "first_boundary": "Oversized retained envelope reached pinned-byte/JSON decoder before resource admission",
+    "earlier_collection_failure_preserved": "/tmp/historical-packet-envelope-red-20261017-v1",
+    "collection_failure_reason": "Private local test invocation lacked test-helper import path; no parser behavior exercised"
+  },
+  "focused_native": {
+    "proof_path": "/home/animallya96/scratch/historical-packet-envelope-tests-20261017-v1/out/proof.json",
+    "proof_sha256": "a765a02a31b1fbed3fd14718875f831ce48abe9c255de36233b2770a5a787384",
+    "source": "ad44d536a70d5c037cb931836a3c9f48b014d84a",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "container_name": "historical-packet-envelope-tests-20261017-v1",
+    "container_id": "d38def0dd187ec02724164e8297fdfd05870bee221aa63487303ab7275c9f1e8",
+    "network": "none",
+    "read_only": true,
+    "cpus": 1,
+    "memory_bytes": 536870912,
+    "passed": 5,
+    "skipped": 0,
+    "exit_code": 0,
+    "pytest_seconds": 0.05,
+    "helper_seconds": 0.12527435179799795,
+    "max_rss_kib": 66236,
+    "guarded_native_sources_match_before_and_after": 31,
+    "command": "bash /home/animallya96/scratch/historical-packet-envelope-tests-20261017-v1/run.sh",
+    "helper_sha256": "795a139faf9328ea4c12abf2575819bda0e30e2784eb0835b879b6aa6e9e6521",
+    "launcher_sha256": "f2741735ae49c3ca3968be46144f2388ee1bbcab6fe4d5719daf4093dd0424e0",
+    "cases": [
+      "Scaled over-limit retained envelope cannot reach any decoder/canonical rebuild",
+      "Exact-limit envelope preserves both original groups and all-held coverage",
+      "Default8MiB+1 envelope cannot reach decoding",
+      "Small tampered envelope still rejects original hash mismatch",
+      "Existing genuine166AAPL rows still exactly equal unchanged pilot parser"
+    ]
+  },
+  "unchanged": [
+    "AAPL primitive/resolver and contract033",
+    "Generic demand, registry and checkpoint modules",
+    "Native guarded31 sources and native dependencies",
+    "Original source/output/account and all prior proof roots"
+  ],
+  "limits": [
+    "This byte entry cap does not bound allocation already performed by the caller",
+    "It is not a proof of worst-case Python object expansion or full-horizon memory feasibility",
+    "Future reader/coordinator must enforce file/read limits before allocation and stream separately pinned group/page references",
+    "Oversize pauses the same identity; never drops groups, changes windows or becomes market absence",
+    "Fresh post-resolution marking convention remains design-only and unimplemented",
+    "No provider GET, model call, account read, connected full runner or deployment"
+  ],
+  "diagram_impact": "NONE: bounded pure entry-point correction only"
+}
