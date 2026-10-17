@@ -1,0 +1,24 @@
+{
+  "schema": "original-complete-input-auth-invocation-proof/1",
+  "status": "RUNNING_UNVERIFIED",
+  "root": "/home/animallya96/scratch/original-complete-input-auth-20261017-v1",
+  "container": "4cb6103b35feac31ee76e05000c9e7cd85d13206e1bf5799d1229092fa6f0f5f",
+  "started_at": "2026-10-17T21:52:54.454986654Z",
+  "root_exec_session": 21052,
+  "source_revision": "6d4729c3df9b0ef2d62ab9b848c1499f2c3d954d",
+  "runner_sha256": "f9d1c36824fb540d11cb0d0b6676c1af63b240a42d7392e5950a983a2d282af3",
+  "controller_sha256": "92e37e3627ee34d663d76b4c61643b62501656a863e18c1003620ab8eb4d27c1",
+  "source_files": 5,
+  "helpers": {
+    "live_model_history_input_auth.py": "35ad5f5f96fa7951b6163512ab733a9168869eef17038e030b7dad4dcbb1b111",
+    "original_history_json.py": "de29c1017f4c9eadd874b2fbe0d85b4c80ced8e7a43fb6bd4f779c3d726cb2eb"
+  },
+  "scope": "Read-only byte authentication of all2431 original source files and164833 input hashes, two physical read passes per input by one tested library call; exact external Git-map/manifest match checked. No model/library numerical imports, models executed or account replay.",
+  "runtime": "e0a54c1f image; UID1000:1000/networknone/readonly/1CPU/2GiB RAM=swap/tmp64MiB, solefreshoutRW; original11 readonly receipt host namespaces RO plus exact completion/manifest/execution/Git-mapRO and smallpurehelpersRO. Original writable output namespace is not admitted as an input.",
+  "git_map_sha256": "c7abe1641a5510902c9f4ada1bd26faa23681232bdcace74b55a698740080eb0",
+  "phase_observed": "HELPER_AND_GIT_MANIFEST_BOUND; full authentication still active at21:56:45Z.",
+  "receipt_resource_scope": "After actual byte authentication returns, source-pinned runner measures full JSON serialization and two separately decoded receipt graphs coexisting. It does not run another authentication call or load a model cache; full numerical audit RAM remains unproven.",
+  "limits": "256MiB serialized receipt guard within2GiB process; >=3GiB scratch-free gate before launch. No original source/model/config/hash guard weakened.",
+  "forbidden": "Never duplicate/restart/adopt partial output, substitute current config for archived originals, rewrite history, execute account/model policy or publish original run.",
+  "publication": "CLOSED"
+}

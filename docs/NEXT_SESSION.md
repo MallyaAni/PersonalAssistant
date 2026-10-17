@@ -1,5 +1,52 @@
 # Next session
 
+## 2026-10-17 — Complete byte-authentication started; disk headroom recovered
+
+Read research/original-complete-input-auth-invocation-proof-2026-10-17.json.
+ONE read-only full source/input authentication is RUNNING at
+scratch/original-complete-input-auth-20261017-v1, actual
+4cb6103b35feac31ee76e05000c9e7cd85d13206e1bf5799d1229092fa6f0f5f,
+started21:52:54.454986654Z; ROOT execsession21052. Runnerf9d1c368/controller92e37e36.
+Exact tested pure helpers35ad/de29 on private reader6d4729c3; no numerical,
+native/backend model modules, provider calls or actual-account replay. Metadata
+externally binds original Gitmapc7abe164 to full source manifest2431, original
+executioneaa07107 and completionb9ad. Only original receipt's11 readonly host
+namespaces are mappedRO; all writes stay in fresh privateout. Original writable
+/results is never admitted as an input. Actual e0/UID1000/noneRO/1CPU/2GiB RAM=swap/
+tmp64MiB confirmed. Initial phase HELPER_AND_GIT_MANIFEST_BOUND; full result remains
+UNVERIFIED. Inspect actual handle/root before work; NEVER duplicate or restart.
+One auth call reads each declared source/input twice; a later detached receipt
+copy/serialization measures metadata memory only, with no model cache or second
+auth call. No financial/model/timing/full-audit or publication claim.
+
+The raw physical checkpoint helper is SOURCE-ONLY draft on settlement worktree
+9eabe3c8: exactly two new untracked files, no tests, commits or integration.
+ROOT reviewed the proposal and initial draft, identifying pending overflow/header/
+fd-identity/readback/sparse-slot and committed-operation refinements. Healthy
+existing trading_action_consistency is authorized to finish only those source/test
+refinements, then return code and isolated synthetic runner for ROOT review.
+No existing Store/schema/stages/Nightly/Cycle/codec/pins/caps changes or runtime
+authorized. Opaque prefix/history-row/suffix spans are bounded, but changing
+whole prefix/suffix storage still needs an honest quota; no full-state horizon
+nonquadratic or dual-host/native-lifecycle claim.
+
+A follow-up source write failed at23MiB free. Read
+research/trading-workspace-disk-recovery-proof-2026-10-17.json. Exact intact draft
+257a524e/5d329e82 was backed up on Spark at
+scratch/physical-checkpoint-draft-backup-20261017-v1 and rehashed locally unchanged.
+ROOT audited pip cache and evicted ONLY2062 regenerable HTTP download-cache files,
+recovering1691774976B (free23937024 ->1715712000B, about1.6GiB free). All38 locally
+built wheels51.5MB, installed dependencies, browser/primarynode_modules, backups,
+original assets/history/evidence remain untouched. Optional third WAL mirror
+stays stopped, never autoretry/delete backups. Source-only refinements may resume;
+draft remains UNTESTED, no readiness/PASS claim.
+
+Original two-file intake30b7 COMPLETE as below; do not rerun for documentation.
+Original timing FAILED/publication CLOSED, corrected genuinev6 PAUSED/no replay,
+source graph integration and full native lifecycle/RAM/dual-host pre-effect
+capacity remain OPEN. Productione237/f612 unchanged. Real weekday ordinary,
+intraday/fill/UI acceptance still UNVERIFIED.
+
 ## 2026-10-17 — Original two-file intake COMPLETE; source and state preservation verified
 
 Read research/original-two-file-intake-proof-2026-10-17.json. Actual

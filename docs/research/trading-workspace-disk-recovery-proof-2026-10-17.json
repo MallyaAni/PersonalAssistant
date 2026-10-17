@@ -1,0 +1,44 @@
+{
+  "schema": "trading-workspace-disk-recovery/1",
+  "status": "VERIFIED_HTTP_CACHE_EVICTION_ONLY",
+  "trigger": "A source-only checkpoint draft follow-up failed when Mac free space reached23MiB; draft files remained intact.",
+  "pip_cache_before": {
+    "path": "/Users/animallya/Library/Caches/pip",
+    "http_reported_mb": 1684.4,
+    "http_files": 2062,
+    "built_wheels_reported_mb": 51.5,
+    "built_wheels": 38,
+    "active_pip_install_or_download_processes": 0
+  },
+  "operation": {
+    "removed_only": [
+      "/Users/animallya/Library/Caches/pip/http-v2",
+      "/Users/animallya/Library/Caches/pip/http"
+    ],
+    "guards": "Exact resolved cache root; directory and nonsymlink checks; only HTTP download cache children removed. No package-manager installs, runtime restart or privilege changes.",
+    "free_bytes_before": 23937024,
+    "free_bytes_after": 1715712000,
+    "free_bytes_gained": 1691774976
+  },
+  "after": {
+    "http_files": 0,
+    "http_bytes": 0,
+    "built_wheels_reported_mb": 51.5,
+    "built_wheels": 38,
+    "installed_dependencies": "UNCHANGED",
+    "primary_node_modules": "PRESERVED",
+    "browser_cache": "PRESERVED",
+    "backups_research_history_assets": "PRESERVED",
+    "optional_third_wal_mirror": "REMAINS_STOPPED"
+  },
+  "draft_preservation": {
+    "source_parent": "9eabe3c8f5483a6df2f2b2671e366738609af44b",
+    "backup_root": "/home/animallya96/scratch/physical-checkpoint-draft-backup-20261017-v1",
+    "local_and_remote_exact_sha256": {
+      "backend/market/historical_physical_checkpoint.py": "257a524eeda5cf3f1ada93076b10b37a457a72d47ebcebe648fb7a5ab7220993",
+      "backend/tests/test_historical_physical_checkpoint.py": "5d329e827ad08959022986fe8ea117c5db443c4a3d84fad6c153e26b59220497"
+    },
+    "status": "UNTESTED_DRAFT_ONLY; no checkpoint implementation readiness, source integration or model acceptance claimed."
+  },
+  "remaining": "Agent may resume source/test refinements only; ROOT review still required before any synthetic runtime."
+}
