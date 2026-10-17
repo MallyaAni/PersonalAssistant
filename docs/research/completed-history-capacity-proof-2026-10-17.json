@@ -1,0 +1,73 @@
+{
+  "status": "MEASURED_COMPLETED_ORIGINAL_PHYSICAL_FRAMING_ONLY",
+  "evidence_root": "/home/animallya96/scratch/completed-history-capacity-evidence-20261017-v1",
+  "scanner_sha256": "dc7cbd22cfc1bc11e40a1da3be83d1d2a1ba479d025c6d22d0c44d0fee6d4ffa",
+  "scanner_result_sha256": "385f316cbe4867699f85081f1b1c7d6d2d28ffac143a32dcc41e1c50c10ce63c",
+  "broker_section_result_sha256": "582737c46c3c53dd84bf5a249c83d3b07cc4f76e1ca9dba121bc84383d458d86",
+  "root_review": "Complete scanner and both retained summaries independently read; exact source/result hashes recomputed. Scanner is native indent framing, not a JSON/economic validator.",
+  "physical_paper": {
+    "path": "/home/animallya96/scratch/live-model-history-full-20261013-v1/output/account/state/paper/state.json",
+    "sha256": "f334e3a5c691fb4dbcc8ea4e7236f395eb5e26e34bae2f1fd4fac64fc5935130",
+    "bytes": 832110254,
+    "history_rows": 1916,
+    "history_bytes": 829262224,
+    "largest_history_row_bytes": 681694,
+    "sessions_seen": 1916,
+    "journal_rows": 3910,
+    "journal_bytes": 2639183,
+    "largest_journal_row_bytes": 807,
+    "pending_rows": 2,
+    "event_outcomes": 15,
+    "allocation_state_bytes": 169929,
+    "bare_nan_tokens": 145046,
+    "bare_nan_scope": "All in history; no Infinity tokens detected by native string-aware physical framing scan",
+    "identity": "dev/inode/size/mtime/ctime identical before and after complete read",
+    "scanner_seconds": 30.220813371241093,
+    "scanner_max_rss_kib": 14904,
+    "scanner_limits": "256MiB address space,180CPU seconds,nice10,oneMiB maximum line; actual maximum line125B; no arrays or full JSON loaded"
+  },
+  "completion_public_broker_section": {
+    "prefix_read_limit_bytes": 1048576,
+    "section_bytes": 214707,
+    "section_sha256": "c81e03fdc33e70ffc7a171405c795eecfbb2532e5fba9040f27bc8b753d755db",
+    "holdings": 6,
+    "average_prices": 6,
+    "dividends": 1204,
+    "security_distributions": 3,
+    "security_exchanges": 1,
+    "share_consolidations": 1,
+    "cash_mergers": 1,
+    "limit": "This public ledger section is not the private ReplayBroker checkpoint and does not prove its8MiB codec admission."
+  },
+  "session_archive_metadata": {
+    "files": 1915,
+    "total_compressed_bytes": 33236348299,
+    "smallest_compressed_bytes": 73672,
+    "largest_compressed_bytes": 35698296,
+    "expanded_total": "UNVERIFIED_NOT_DECOMPRESSED_BY_THIS_INSPECTION"
+  },
+  "findings": [
+    "Native history dominates actual final physical size. A journal-only storage optimization would not resolve the demonstrated boundary.",
+    "Both completion373782589B and physical paper832110254B exceed existing256MiB original-auditor limits. Additional session/asdict/comparison materialization also needs a bounded implementation.",
+    "All1916 rows include initialization and must remain independently accounted for; no historical output may seed or substitute for the corrected account.",
+    "Native load_state/asdict/snapshot consumers materialize complete history; transparent lazy-list substitution is not established.",
+    "Finite larger worker memory may be considered from observed headroom, with native behavior unchanged. The2GiB fixture profile is not a human-mandated full-account ceiling.",
+    "Full checkpoint storage requires bounded persistent manifests and physical reservations on both hosts; source-bound row-relative storage must avoid whole-file offset shifts and repeated quadratic history copies."
+  ],
+  "live_readiness_observation": {
+    "at": "2026-10-17T17:00:34.561668+00:00",
+    "host_source": "3b72cd4e0bc15acd24432d501918c721685a5333",
+    "backend_container": "3e4edfca9185e0cfbc108e4ed1628ec18cbc4a795e8c559b19d874600ed84b59",
+    "actual_backend_image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "backend_running": true,
+    "models_endpoint": "deepseek-v4-flash advertised; reachability only, not a new model behavior test",
+    "nightly_cron": "30 19 * * 1-5 /home/animallya96/desk_daily.sh",
+    "intraday_cron": "*/15 9-16 * * 1-5 /home/animallya96/desk_intraday.sh",
+    "fresh_ordinary_or_execution_acceptance": "UNVERIFIED; no job forced, model inference, order or replay performed"
+  },
+  "full_audit_memory_capacity_and_corrected_account": "UNVERIFIED",
+  "original_timing_contract": "FAILED_UNCHANGED",
+  "publication": "CLOSED",
+  "original_or_production_changes": false,
+  "diagram_impact": "NONE: read-only capacity measurement of existing artifacts."
+}

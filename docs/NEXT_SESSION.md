@@ -1,5 +1,31 @@
 # Next session
 
+## 2026-10-17 — Completed native history capacity measured; live identity unchanged
+
+Read research/completed-history-capacity-proof-2026-10-17.json. ROOT reviewed
+scannerdc7cbd22 and summaries385f316c/582737c4, preserved without rescan in
+scratch/completed-history-capacity-evidence-20261017-v1. Physical original832110254B
+SH Af334e3a5 (concatenate: f334e3a5c691fb4dbcc8ea4e7236f395eb5e26e34bae2f1fd4fac64fc5935130)
+contains1916history rows829262224B/max681694B,3910journal rows2639183B/pending2.
+145046bareNaNs are allhistory. Scanner used14904KiB RSS/30.22s/stablefileidentity;
+native indent framing only, NOT strictJSON/economic admission. Keep initialrow.
+1915session gzipfiles total33236348299B; expanded I/O is not yet measured.
+Bounded214707B broker PUBLIC ledger section is not full private brokercodec proof.
+
+Current audit256MiB limits and repeated native wholehistory materialization
+require source-backed streaming/capacity work. No blindcapraise/truncation/lazy
+semantic substitution. Inert4GiB native load/empty-fold/save probe is under ROOT
+review with conservative immediate host headroom;2GiB was fixturebudget, not
+human fullaccount ceiling. Exact original history/economics must be preserved.
+Original-only streaming auditor and corrected physical storage remain separate.
+
+Read-only17:00:34Z readiness check confirms live host3b72/backend3e4edf/f612 still
+running; models endpoint advertises deepseek-v4-flash. Nightly19:30weekday and
+15minweekdayintraday schedules present. This is identity/reachability/schedule,
+NOT a new behavior or actual operational acceptance proof. No model service,
+deployment, order or ordinary job changed/forced. Fresh ordinary/intraday/fill/UI
+acceptance remains pending next ordinary window. Historical publication CLOSED.
+
 ## 2026-10-17 — Private current nightly lifecycle and memory commitments integrated
 
 Feature796a7d88 integrated as4e6bb4ff; targeted1498c830 integrated ase6971960.
