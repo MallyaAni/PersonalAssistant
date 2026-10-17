@@ -1,0 +1,29 @@
+{
+  "status": "VERIFIED_SOURCE_APPROVAL_REPAIR_ONLY",
+  "review_source": "36c90f760e3d01766d46219c8e1b3d03314459e6",
+  "backend_source": "ef7428baa1961d79ad1f5bd9dac0122b54ce0fea",
+  "activated_at": "2026-10-17T07:34:50.528051+00:00",
+  "independently_verified_at": "2026-10-17T07:36:09.623512+00:00",
+  "authorization": "Human challenged waiting for the full historical run; recover live approval independently while preserving the running simulation",
+  "private_root": "/home/animallya96/scratch/trading-source-approval-repair-20261017-v2",
+  "canonical": {"command": "bash scripts/deploy.sh", "exit_code": 0, "post": "2026-10-17T07:34:48Z 36c90f76 ok (cheap)", "application_code_changes": 0, "containers_changed": 0},
+  "actual_admission": {"host": "PASS", "container": "PASS", "all_30_source_hashes_match": true, "private_candidate_checks_per_runtime": 37},
+  "focused_checks": {"passed": 54, "skipped": 0, "seconds": 13.21},
+  "approval_changes": ["Reviewed dashboard API hash 0647fb9b -> b73d11fc", "Actual approval timestamp", "Configuration link to the new release receipt"],
+  "installed_config_sha256": "9bb6764be3b4c38e11ab18cf205aa6fba2682ca2b243b1be44c9d7e339a88388",
+  "installed_release_sha256": "3d7b8359c65935d11506ae35a272df23f89ea8d5cffa51b6a267fd70ad50c42e",
+  "original_economic_evidence_sha256": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9",
+  "preservation": {"unchanged_files": 308, "changed_files": ["desk/learned-holding/config.json", "desk/learned-holding/release.json"], "original_selectors_archived": true, "original_research_payloads_read": 95, "frozen_history_configuration_unchanged": true, "model_and_account_containers_unchanged": true, "orders_submitted": 0, "ordinary_sessions_replayed": 0},
+  "evidence_sha256": {
+    "candidate-checks.json": "1cb8bf6d03999e2fb31bfcde90eb130194ad827623e32e90736370105e7d99af",
+    "activated.json": "c412b6f95b345000cea8d5e3e9d9c2cc69b48438c5678bd325f6a3193117a509",
+    "prepared.json": "7b9a67b34c612126c08827e3b0188ba2579b8ef4c9454641f89b6d6664650e93",
+    "preserved-before.json": "36b2e493df350b70192b6e342d14d151c0e47860b5f8f4878823aca1472f1a36",
+    "preserved-after.json": "5a8e228b15222a4c6208097edc789ee0911bc462d56d504f386b34cf5ef1cdb3"
+  },
+  "preserved_failed_attempts": ["25 host checks passed; five failed for absent FastAPI/SQLAlchemy; complete application image passed all54 without assertion changes", "v1 private stage passed admission checks but host research archive permissions blocked its reader; v2 uses application-container reader without permission changes"],
+  "semantic_limits": ["Source admission repair is not fresh ordinary acceptance", "Original Oct12/14/15/16 missing actual records remain absent", "Original Oct13 failed parity remains unchanged", "Historical quantities and complete learned timing/fill/UI acceptance remain unverified", "Current chart judgments remain separate from funded numeric orders"],
+  "next_work": "Release the already-staged parity checker independently; keep the one frozen retrospective running, then independently audit and deliver historical quantities",
+  "heartbeat": "ACTIVE",
+  "diagram_impact": "NONE: existing approval mechanism, no architecture changes"
+}

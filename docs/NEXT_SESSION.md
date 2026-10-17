@@ -1,5 +1,31 @@
 # Next session
 
+## 2026-10-17 — Live exact-source approval repaired independently; parity release next
+
+Human challenged waiting for the historical run. Recover live acceptance
+independently; the old instruction bundling source repair behind that run is
+superseded. VERIFIED approval activation07:34:50Z, independent check07:36:09Z:
+actual HOST AND CONTAINER read_configuration pass; all30 exact source hashes
+match. Review source36c90f76 is a01542b7 application bytes plus the reviewed
+approval record, canonically delivered with cheap post green; no container or
+application-code changes. Backend remains ef7428ba and frontend bundle unchanged.
+Installed config9bb6764b, release3d7b8359; original economic evidence4d6af1bb
+unchanged. Only config/release links changed; both old originals and evidence
+archived privately.308other files,95research payloads and frozen full-run config
+preserved.37admission/corruption checks pass on each runtime;54focused checks
+pass/0skip13.21s in the complete application image. Preserve failed host-only
+dependency checks and v1 protected-archive reader failure; no permission change.
+Exact proof: research/trading-source-approval-proof-2026-10-17.json, private
+scratch/trading-source-approval-repair-20261017-v2. No orders or actual-day replay.
+
+Next: release the already-staged parity correction independently. Do not deploy
+pending historical code or bounded payloads. ONE full1e8f440a/source27471 remains
+untouched; full independent audit and actual compiled quantities still required.
+Fresh ordinary acceptance and learned intraday/fill/UI reconciliation remain
+UNVERIFIED; Oct12/14/15/16 absent records and original Oct13 failed parity remain
+original. No claim of complete model/action/quantity consistency. Keep heartbeat
+ACTIVE, quiet on unchanged jobs; do not repeat this completed approval repair.
+
 ## 2026-10-16 — Third ordinary nightly FAILED unchanged exact-source admission
 
 The genuine19:30ET cron finished23:45:05Z on hosta01542b7/backendef7428ba.
