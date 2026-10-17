@@ -35,6 +35,22 @@ CONFIGS = {
         "d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a"
     ),
 }
+PROFILES = MappingProxyType(
+    {
+        N2: (
+            IMAGE,
+            CONFIGS["holding_config_sha256"],
+            CONFIGS["holding_release_sha256"],
+            "99e62ab9f8b02bc315ce59b81f8b461ae5c988e275cdf09cacf2d36b1025f8ab",
+        ),
+        "3b72cd4e0bc15acd24432d501918c721685a5333": (
+            "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+            "f96a29777403f5f08623709b70f36b15300500065202acbd215cd43f3c99a588",
+            "1c1c6e9bcc7e9fa8d095f6ce5e6bf973c99ed19531e88c38a9aba5ed8410cd3e",
+            "bfbcb6ece4ea500726e00abbb06fc2c84d63d386bb307958016915357aaef5b3",
+        ),
+    }
+)
 CAPS = MappingProxyType(
     {
         "bytes": 8 * 1024**2,
@@ -167,7 +183,7 @@ def _time(value):
     return instant
 
 
-# Check externally pinned frozen source/config without reading live selectors.
+# Admit only exact reviewed profiles and maps without reading live selectors.
 def _identity(identity, expected_sha256):
     _fields(
         identity,
@@ -182,18 +198,27 @@ def _identity(identity, expected_sha256):
     )
     if _digest(identity) != digest(expected_sha256):
         raise ValueError("Externally pinned checkpoint identity differs")
+    revision = identity["source_revision"]
+    profile = PROFILES.get(revision) if type(revision) is str else None
+    if profile is None:
+        raise ValueError("Frozen N2/CURRENT checkpoint source profile differs")
     expected = {
-        "source_revision": N2,
-        "backend_image": IMAGE,
+        "backend_image": profile[0],
         "broker_sha256": BROKER,
         "calendar_sha256": CALENDAR,
-        **CONFIGS,
+        "holding_config_sha256": profile[1],
+        "holding_release_sha256": profile[2],
+        "timing_config_sha256": CONFIGS["timing_config_sha256"],
     }
     if any(identity[k] != v for k, v in expected.items()):
-        raise ValueError("Frozen N2 source/config identity differs")
+        raise ValueError("Frozen N2/CURRENT source/config identity differs")
     sources = identity["source_sha256"]
-    if type(sources) is not dict or len(sources) != 31:
-        raise ValueError("Exact externally pinned31-source chain required")
+    if (
+        type(sources) is not dict
+        or len(sources) != 31
+        or _digest(sources) != profile[3]
+    ):
+        raise ValueError("Exact reviewed31-source chain required")
     root = Path(native.__file__).resolve().parents[2]
     for name, expected_hash in {
         **sources,
