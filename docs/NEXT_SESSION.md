@@ -1,5 +1,28 @@
 # Next session
 
+## 2026-10-17 — Original auditor requires both executed verifier source pins
+
+Feature9020d8c2 integrated asaf4103d7 after ROOT complete66line source/test diff,
+runner245b and compactproof review, independent actual9e372/e0/UID1000 mounts/
+limits/results and local Ruff/format. CLI nowcf960a7a/test8c46922b. Existing
+source_admission floor now requires verify_actual_policy_timing.py and
+verify_live_model_history.py, whose economic/physical/cohort functions the
+stream executes; original producer Git authentication is a separate namespace.
+No economic function, model, native31 or actual account changed. Read
+research/original-audit-source-floor-proof-2026-10-17.json.
+
+Actual old6f777 reproduced2missing refusals/56deselected. Preserve red runner
+statusFAILED: its expected-red text classifier anticipated older pytest wording;
+actual DIDNOTRAISE failures are retained without rerun or relabelling. Newcf960
+passed7focused/51deselected/0skip0.12s on exact e0/none/RO/1CPU/2GiB/tmp64MiB/
+soleoutRW/exit0/OOMfalse,15sourcepins beforeafter exact. Tests cover both missing
+pins, wrong digests, stale actual private source bytes and affected positive.
+Existing52/bounded numerical gates were not repeated. No original active input/
+output, model or audit invocation occurred. Cmd/Entrypoint still needs exact
+completed original receipt comparison and remains UNVERIFIED. Full invocation
+must pin its complete actual auditor snapshot, not rely only on this floor.
+Diagram impact NONE: existing private source-admission metadata only.
+
 ## 2026-10-17 — Retained forecast and same-source opening bridge integrated
 
 Feature0c80a67f integrated asf728dd86 after ROOT full source/tests/runner/proof
