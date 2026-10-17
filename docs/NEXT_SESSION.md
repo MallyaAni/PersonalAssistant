@@ -1,5 +1,30 @@
 # Next session
 
+## 2026-10-17 — Authorized worker recovery verified; parity v3 active
+
+VERIFIED real inference08:55:11Z: one human-approved restart of the existing
+Spark2 worker23c2f8f7 at08:47:38Z restored both-node inference. Same image3430d661,
+same worker configuration and serving scripts;310original files and the sole
+full historical container unchanged. Three real production prompt cases passed,
+with no fallback. No head restart, model/weight/settings/prompt changes. The
+initial helper stopped after its post-restart stdout assertion; independent
+actual identity/start-time/config checks passed. NEVER repeat the recovery
+helper: authorization for the one restart is spent. Exact proof:
+research/trading-inference-recovery-proof-2026-10-17.json. Original crash cause
+remains UNVERIFIED; preserve earlier failed observations.
+
+Canonical parity release scratch/trading-parity-release-20261017-v3 is ACTIVE
+on isolated production-based a2378e9565e6a557fbc3782ac1a5536bae961a75. Do not
+duplicate/restart it, bypass gates or deploy pending historical main. After it
+finishes, run its prepared independent actual-image/Oct13-snapshot verifier.
+Human explicitly authorized parallel agents to finish the trading issues.
+Separate candidates now address the Stocks action/quantity/timing source mix,
+authenticated frozen-history serving chain and original execution reconciliation.
+These candidates are not delivered until their acceptance and canonical release.
+The original full historical run remains active and untouched; full audit and
+publication wait for its COMPLETE output. Fresh ordinary and learned intraday
+acceptance remain separate. Keep heartbeat ACTIVE and quiet on unchanged jobs.
+
 ## 2026-10-17 — Spark2 Wi-Fi recovered; inference remains unavailable
 
 VERIFIED actual08:42:45Z: Spark2 wlP9s9 is now connected toGiGstreem, the same
