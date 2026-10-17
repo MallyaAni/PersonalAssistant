@@ -1,5 +1,34 @@
 # Next session
 
+## 2026-10-17 — Final dispatch and pure current settlement integrated
+
+Final95510855 integrated asfe2a77de after ROOT complete diff/source/tests/runner
+review and independent actual image/mount/proof/pin/report checks. Exact proof:
+research/historical-session-completion-proof-2026-10-17.json. NativeN2/e0
+22pass/0skip10.01s =16new final +6selected unchanged compatibility. Cycle d8d09,
+marketb990,Demand25e712,observer33348,test5c7eba. Explicit final context/Demand
+branch, exact early-close/calendar boundary, raw native latch/calendar with
+quotes:{}; original_ready once and decide once/row measured, annotations retained
+AFTER_ready BEFOREfactory; no model reader/inference. Missing marks/actual unknown
+claim/stale clock produce honest outer skip/verdictnull before native dispatch.
+Actual stale-clock red0b54 preserved; final3334 captures nativeclock error/raw
+now and observed clock without constructing account evidence. All31 native files
+unchanged; paper remains sent/pending, journal NOTRUN. Proof remains N2, not
+currentf612 composition. Ruff/format pass; no repeated generic34/genuine gates.
+
+Pure settlement8788d03d integrated asbe500527 after ROOT full adapter/tests/final
+testdiff/runner and actualf612 runtime/proof/source review. Adapter81286/testc017;
+9native functions/0skip0.196s, exactf612/none/RO/1CPU512MiB RAM+total swap/exit0/
+OOMfalse/no31overlays, sourcebeforeafter exact. Preserves desired8/submitted5/
+sender5/filled5 terminalpartial through private save/read, cashpartial3/zeroexpiry,
+futureauction/unsent windows and native rollback; original broker/input state exact.
+Missing sent/ack receipt, unresolved market batch and corrupted identities refuse.
+research/historical-conditional-settlement-proof-2026-10-17.json. Caller outcome
+digest is ONLY a reference commitment; returned durabilityfalse. Actual fixture
+uses old Demandf4 serialization dependency, not new Demand25 composition. No Cycle
+settlement integration yet. Diagram impact NONE: unused private existing-native
+boundary/fold, no deployed flow change. Production unchanged; pending main closed.
+
 ## 2026-10-17 — Pending historical source retains deployed settlement metadata
 
 ROOT copied ONLY exact3b72 paper.py and its exact quantity-test file onto pending

@@ -1,0 +1,42 @@
+{
+  "status": "VERIFIED_PRIVATE_CURRENT_NATIVE_PURE_RECONCILIATION",
+  "feature_commit": "8788d03d428ad9fa3600fa85b2343161c1dd60a8",
+  "integration_commit": "be500527",
+  "adapter_sha256": "81286e30aabef22eeb2d05e68fb74ffdf6a060dc1e1813eda80cae9cfd5c5a0b",
+  "test_sha256": "c017eecb79c5d2c99183d913abad9617932d298a549da7f061ed4a9971061226",
+  "binding_sha256": "982cf6eb67060a3dd4ad60df500dd54211f447e31a1a72c62931244e65429a6f",
+  "native": {
+    "root": "/home/animallya96/scratch/historical-conditional-settlement-tests-20261017-v1",
+    "container": "672de178de64d47288844068cacf6b8e5c394c470316706f637079a12bc54153",
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "proof_sha256": "548a8074ff3758ad15e54d560e2f48a9fafc608c46242ca52d942f2d137b5503",
+    "runner_sha256": "735c99f547181b34051922f1ffe3135487c57f43432ac73d3a73863929695e39",
+    "passed_functions": 9,
+    "skipped": 0,
+    "seconds": 0.196,
+    "network": "none",
+    "readonly": true,
+    "cpus": 1,
+    "memory_and_total_swap_bytes": 536870912,
+    "exit_code": 0,
+    "oom_killed": false,
+    "guarded31_overlays": false,
+    "codec_sha256": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08",
+    "demand_sha256": "f4d91dd5804fe93b89201a209951230b0d1eb79e8ea2abdc4400b5f90fb13697"
+  },
+  "verified": [
+    "Exact current source tuple and complete native codec before/after; broker and input state byte/content unchanged.",
+    "Native settle/apply plus private save/reload retains desired8/submitted5/sender5/filled5 terminal partial and conditional fill/submission clocks.",
+    "Cash-limited BUY3 and zero-price expiry preserve native terminal outcomes; future accepted auction/fresh marks and unsent future window retained.",
+    "Missing sent/acknowledged CID, unresolved market request, duplicate/CID/symbol/side/quantity corruption, wrong clocks/profile/outcome digest refuse.",
+    "Repeated pure fold does not duplicate journal/fills; native desired-relative rebalance rollback retained."
+  ],
+  "root_review": "Read full adapter/tests, final test diff and runner; independently inspected actual image/mounts/resource/exits, proof/runner/helper hashes and source equality. Ruff/format pass.",
+  "limits": [
+    "Outcome digest is a reference commitment only; caller must authenticate original committed outcome.",
+    "Pure returned state says durable_state_committed:false. Cycle/Store composition and crash-atomic durability remain unverified.",
+    "Native fixture Demand f4 is the earlier unmodified serialization dependency, not new final Demand25 composition.",
+    "All economic inputs synthetic; no actual broker/model/provider/original-account operations or full-run/publication claims."
+  ],
+  "diagram_impact": "NONE — unused private fold of existing native paper reconciliation."
+}
