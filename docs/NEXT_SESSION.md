@@ -1,5 +1,41 @@
 # Next session
 
+## 2026-10-17 — Joined conditional sender and pilot venue verified on synthetic inputs
+
+NEW8 joined nativee0 checks/0skip1.16s passed, without rerunning old12/36 suites.
+Actual retained ca035e55: read-only/networknone/1CPU512MiB/exit0;161020KiB RSS,
+1.242s total. Exact31 native sources, packet5476/resolvera6d2/transporta22 checked
+before/after. No repository implementation edits, model inference, provider GET,
+real broker call or original account/artifact read. Test helper96bc161a and native
+proof2ded10b2 retained at scratch/historical-timing-joined-tests-20261017-v2.
+
+Shared reader at31.100 -> reviewed factory -> SAME exact native broker acceptance
+31.200 -> committed resolver's first post-arrival quote31.332, conservative native
+outcome31.333; missing quote expires33. Original native coarse sender strings are
+not rewritten. Declared synthetic pending/observed/submitted/conditionally filled
+quantities remain separate; genuine_joint_funded_qty is NULL in every case.
+Examples: synthetic SELL8/held5 observes/submits/fills5; BUY9 submits9 but price-gap
+cash guard fills4, remainder expires. Fees, basis, all-held marks, WAIT/no factory/
+no attempt/no venue and no samebatch sale funding pass. No settlement/journal or
+genuine model-funded basket claim; genuine separate6176 remains WAIT.
+
+ROOT independent proofd64b6b9c folds all8 recorded outcomes with separate Decimal
+cash/share/fee/basis arithmetic and inspects actual retained container/image/
+resource/mount identity, without inference/test rerun. Both exact proof copies:
+research/historical-timing-joined-proof-2026-10-17.json and
+research/historical-timing-joined-independent-proof-2026-10-17.json.
+Firstv1 retains8 fixture failures before sender/factory/venue because the fixture
+passed UTC completed_at to a native exact-NY-string receipt boundary. No production
+guard changed; only fixture input uses original reviewed NY completion in freshv2.
+
+Current work is now generalized authenticated demand/packet/checkpoint design in
+actual_policy_review, and NEW pure source-bound legacy pending-receipt fold in
+historical_chain_completion. Both retain explicit scope; old trace integrity is
+not current-live timing correctness. No generic GET/full corrected launch yet.
+Original full run stays immutable; publisher closed; fresh natural-session
+acceptance pending. Heartbeat ACTIVE/quiet unchanged. Diagram impact NONE: joined
+private fixture only, no connected production flow or new deployed store/service.
+
 ## 2026-10-17 — Independent nightly numeric primitive integrated and bounded outputs exact
 
 Atomic fbe74cc1 integrated asa07039c9: ONLY new helperf242be25, tests54569010 and
