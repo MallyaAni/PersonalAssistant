@@ -156,3 +156,26 @@ Only a newly authorized, separately named conditional simulation could use that
 contract. Its results would remain retrospective/current-model/assumption-based,
 not historically published, not actual fills, not adoption or investment proof.
 The current original run cannot be silently promoted to that meaning.
+
+## Primary-source limits checked October17
+
+Quote quantity cannot use one undocumented conversion across the whole calendar.
+Alpaca's October30,2025 notice says CTA/UTP sizes change from round lots to shares
+on November3,2025. It does not establish whether present-day historical requests
+normalize older records. Retain raw2019 size values and require a provider/date/
+security-specific interpretation before claiming a share quantity or liquidity.
+[Alpaca size-change notice](https://docs.alpaca.markets/us/changelog/marketdata-bid-and-ask-size-display-change).
+
+Alpaca's current aggregation rules apply the strictest combined trade condition.
+An `I` odd-lot condition prevents price updates; `@` and `F` individually permit
+them. Thus the retained first `@,I` trade cannot establish the bar opening under
+those rules. A later eligible price match does not prove it was the first eligible
+uncorrected event. The current FAQ uses SIP timestamps for minute bucketing;
+that timestamp is not a historical local receipt or publication clock. It also
+distinguishes consolidated SIP from the single-exchange IEX feed. Archival SIP
+cannot silently stand for equality with the installed IEX acquisition path.
+[Alpaca aggregation and feed rules](https://docs.alpaca.markets/us/docs/market-data-faq).
+
+The illustrative50ms availability scenario remains hypothetical; no provider
+publication guarantee was established. These documentation checks made no market
+data requests and authorize neither replacement simulation nor changed economics.

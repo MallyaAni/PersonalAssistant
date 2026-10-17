@@ -2,6 +2,15 @@
 
 ## 2026-10-17 — One actual-image frozen timing observation independently checked
 
+Proposed correction document now has a dated primary-source addendum, current
+SHAec92868661ead1b3381f468310ccf924a8a042a190dd29733504d3e09b0e0124;
+original base designf95c1ef3 remains unchanged in its private root and prior Git
+checkpoint. Alpaca's dated quote-size change and trade-condition/aggregation rules
+must be pinned before any new execution convention; do not infer historical
+normalization, local receipt/publication times, fill availability or liquidity.
+Only public documentation was read, no additional market-data GETs or runtime
+changes. The50ms prototype remains explicitly illustrative, not provider timing.
+
 Root additionally bound the bounded proof directly to22 actual current files in
 anios_backend: all5 timing config/model/residual bytes and17 unique source paths
 match the native proof, actual imagee0a54c1f and hostad44. No inference/account read
