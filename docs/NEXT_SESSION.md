@@ -1,5 +1,45 @@
 # Next session
 
+## 2026-10-17 — One actual-image frozen timing observation independently checked
+
+Native model arrays and residual bank were exercised once in the ACTUAL N2 image
+e0a54c1f, separately from a publication-runtime image.28 retained fields match
+exactly: native two-head outputs, independent tree arithmetic, residual hashes,
+price transport, forward utility and whole verdict. Actual N2 runtime is
+NumPy2.5.3/sklearn1.9.1, matching publication. Do not infer its runtime from the
+deploy-gate image3487777d or old run image136ebb46 (both inspected2.5.4).
+The earlier private exact-publication-runtime assertion on348 is NOT a production
+admission failure; native source accepted arrays before that assertion. Failed
+helper assuming N2 also used2.5.4 is retained; metadata-only correction required
+no inference rerun. No further native captures needed for this bounded point.
+
+Actual proof5430a775ee2aae095ced12a75001b8d4a0652021a0961aa4dd261449ae475683
+is copied exactly to research/historical-timing-native-artifact-proof-2026-10-17.json;
+comparison0f0c7281f8d4e35894671f6e3d8c608d9ec7234f88818bdfcdfc60a4b392a77a
+to research/historical-timing-native-comparison-proof-2026-10-17.json. Remote roots
+history-timing-real-artifact-20261017-v1/v2/v3 preserved. Actual image ran private
+network-none/read-only,1CPU/2GiB,175512KiB peakRSS; measured inference0.0282s is
+current-container timing, NOT a historical latency assumption. Model bank had
+16491 residual observations; native mean−0.00013353985559660941 and utility
+−2.944524673191591e−7 yield BUY1/execute under the explicitly synthetic account.
+
+Features are a DECLARED SYNTHETIC21-column row, not authentic historical features;
+AAPL packet is genuine but availability clocks are explicitly hypothetical.
+Transport changes utility here, not the verdict. This does NOT repair the earlier
+general timing counterexample or establish all-history/fill/account acceptance.
+No original run/output, sender, account replay, model service/config or order
+was touched. Full historical publication remains structurally blocked.
+
+Original full account compact check12:01Z: exact1e8f440a still RUNNING,1872sessions
+through2026-08-11/2880fills/3824intents, progress updated11:58:41Z, no completion.
+Keep it untouched. Historical reviewer is designing every-saved-night numeric
+proposal/target/action verification from original independent ledger and saved
+controls; event-priority nights must be counted separately because no model was
+called. Only COMPLETE private v10 bounded archives were inspected read-only;
+raw-sizing/constrained/action corruption reproductions are private scope findings,
+not claims that the original running account is corrupted. Design first, no
+full-run read, producer change or publication-barrier weakening.
+
 ## 2026-10-17 — Live numeric contract deployed; known fills reconciled
 
 Exact urgent N2ad44d536 canonical release completed11:50:16Z; cheap post green

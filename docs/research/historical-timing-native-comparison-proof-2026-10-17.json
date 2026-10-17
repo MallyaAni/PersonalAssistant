@@ -1,0 +1,131 @@
+{
+  "actual_N2_image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+  "actual_N2_runtime": {
+    "numpy": "2.5.3",
+    "sklearn": "1.9.1"
+  },
+  "actual_fills": false,
+  "actual_historical_local_receive_publication_clocks": null,
+  "current_runtime_numeric_equality_scope": "Exactly this one fixed21-column input and saved conditional packet, not all model paths or historical forecasts",
+  "exact_equal_fields": {
+    "archival_quote": true,
+    "artifact_sha256": true,
+    "benchmark_excluded": true,
+    "capture_sha256": true,
+    "conditional_assumption_receipt": true,
+    "conditional_selected_scenario": true,
+    "feature_row": true,
+    "feature_sha256": true,
+    "head_mean_float32": true,
+    "head_second_float32": true,
+    "independent_tree_outputs_equal": true,
+    "independent_utility_equal": true,
+    "input_packet_unchanged": true,
+    "missing_actual_clock_rejected": true,
+    "model_source_sha256": true,
+    "native_forward_verdict": true,
+    "original_model_available_observed_at": true,
+    "real_native_observations": true,
+    "residual_array_sha256": true,
+    "residual_sample_count": true,
+    "scale": true,
+    "source_sha256": true,
+    "symbols": true,
+    "synthetic_account": true,
+    "transport": true,
+    "untransported_same_synthetic_basis": true,
+    "valid_symbol": true,
+    "variance_float64": true
+  },
+  "execution": {
+    "memory": 2147483648,
+    "mounts": [
+      {
+        "Destination": "/out",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": true,
+        "Source": "/home/animallya96/scratch/history-timing-real-artifact-20261017-v3/out",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/artifacts",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/live-model-history-20261013-v4/market/desk/learned-timing",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/capture.json",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/live-model-history-20261013-v4/market/capture.json",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/packet",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/history-timing-real-artifact-20261017-v1/packet",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/infer.py",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/history-timing-real-artifact-20261017-v3/infer.py",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/prior-proof.json",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/history-timing-real-artifact-20261017-v2/out/proof.json",
+        "Type": "bind"
+      }
+    ],
+    "nano_cpus": 1000000000,
+    "network": "none",
+    "readonly_rootfs": true,
+    "state": {
+      "Dead": false,
+      "Error": "",
+      "ExitCode": 0,
+      "FinishedAt": "2026-10-17T12:02:07.034664128Z",
+      "OOMKilled": false,
+      "Paused": false,
+      "Pid": 0,
+      "Restarting": false,
+      "Running": false,
+      "StartedAt": "2026-10-17T12:02:05.285844223Z",
+      "Status": "exited"
+    }
+  },
+  "failed_comparison_metadata_assumption": "compare.py assumed actual N2 NumPy2.5.4 before checking retained proof; actual N2 is2.5.3. Original helper retained unchanged; no model inference repeated",
+  "failed_private_runtime_assertion_preserved": "/home/animallya96/scratch/history-timing-real-artifact-20261017-v1",
+  "feature_and_account_basis": "DECLARED_SYNTHETIC_NOT_AUTHENTIC_HISTORICAL_INPUT",
+  "genuine_bounded_AAPL_quote_fields": true,
+  "helper_sha256": {
+    "/home/animallya96/scratch/history-timing-real-artifact-20261017-v3/compare_v2.py": "b6c4c333f16ff9f0c4120ff0ee75ee860236b0092e3d13ec7e9e17965a39ceb0",
+    "/home/animallya96/scratch/history-timing-real-artifact-20261017-v3/infer.py": "bf8b445ad1f81cea32ecaec55ea66268b754187279ac0e00cc05b45a27dafda5",
+    "/home/animallya96/scratch/history-timing-real-artifact-20261017-v3/run.sh": "a63783819e2ef1a081c50f37f49fc1b75c1ac445757179a46332b40bc86c0783"
+  },
+  "historical_timing_acceptance": "UNVERIFIED",
+  "proof_sha256": {
+    "/home/animallya96/scratch/history-timing-real-artifact-20261017-v2/out/proof.json": "2e690b8fb4da939d12062d588e9cf24a8f75deae565beb4fd14ca6e0ee4d05ea",
+    "/home/animallya96/scratch/history-timing-real-artifact-20261017-v3/out/proof.json": "5430a775ee2aae095ced12a75001b8d4a0652021a0961aa4dd261449ae475683"
+  },
+  "publication_runtime": {
+    "numpy": "2.5.3",
+    "sklearn": "1.9.1"
+  },
+  "publication_runtime_image": "sha256:5cca29457a07fba77102396d63e3e67233db6bb8d83d20ed0e5d3ddf4c420c75",
+  "real_artifact_inference": true,
+  "replacement_run_authorized": false,
+  "status": "VERIFIED_SAME_SINGLE_SYNTHETIC_OBSERVATION_ARITHMETIC_ACROSS_PUBLICATION_AND_N2_RUNTIME_ONLY"
+}
