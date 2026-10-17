@@ -1,5 +1,41 @@
 # Next session
 
+## 2026-10-17 — Bounded conditional cycle and forecast binding integrated
+
+Cyclea0f integrated as5d5e3afa; correction3f230c7d as55a01cff; final Store
+integration proofacd35b6a as5d1d7d14. ROOT read full source/diff/tests/runner,
+independently checked actual v3/v4/v7/v8 runtime mounts/isolation/source pins and
+proof hashes. Adapter7e455aa2/testf3f89709; unchanged frozen31native sources.
+Ruff/format pass. Diagram impact NONE: unused private AAPL test adapter only.
+
+Original0b19 source proof89ed4164:20native checks/0skip8.43s; separate SELL-first
+checkb3aeeeb1 adds1distinct, no final21-run claim. All broker/paper/latch refs
+share committed receipts; BUY5/desiredSELL8->submitted5/WAIT/no same-batch sale
+funding, missing/conflicting marks and interrupted operations tested. Genuine
+6176output/residuals reused as separately labelled PILOT_RETAINED_INPUT: WAIT,
+no factory/attempt/fill; hypothetical held AAPL latest quote conflict stays
+MISSING. No new head/feature inference or generic genuine-capture acceptance.
+
+ROOT controlled mutation found real gap: saved forecast serialized before
+caller replaced distribution during capture_account, so native verdict differed.
+Exact final regression REDv6c5522208 -> GREENv7d60b5fae/1pass0skip1.13s.
+Single deepcopy before both receipt and account capture retains same local input
+for native reader. Original first probev5 and all earlier proofs preserved.
+Final Storebe+spool705 composition v8:3existing BUY/WAIT/unavailable cases with
+full committed-state restoration,0skip2.61s; actual5a9c9071/e0/networknone/RO/
+1CPU2GiB RAM+total swap/exit0/OOMfalse. No new distinct-count inflation.
+Exact research/historical-connected-cycle-proof-2026-10-17.json,
+historical-connected-forecast-binding-proof-2026-10-17.json and
+historical-connected-store-integration-proof-2026-10-17.json retain source scopes.
+
+Decision checkpoint is INSIDE final reader callback, before remaining native
+sender/latch work. Outcome paper remains original sent/pending; settled journal
+reconciliation NOT RUN. This is hardcoded Mar1/AAPL private cycle, NOT generic
+multi-symbol/full runner or current holding-policy quantity proof. Agent now
+designs minimal generic seam; no new launch/provider/deployment permission.
+Root independently builds original2431 regular Git-blob map from exact27471
+without reading active run; it still requires later COMPLETE input comparison.
+
 ## 2026-10-17 — Physical packet spool integrated; acquisition remains closed
 
 Spool3b6c70d9 integrated asfc0aaa2b after ROOT full source/Store diff/test/runner
