@@ -1,0 +1,104 @@
+{
+  "status": "VERIFIED_STREAM_ADMISSION_HARDENING_AND_VALID_INPUT_COMPATIBILITY_ONLY",
+  "parent": "59eab30c333ab928fb6f0a19be5a06c42d19f74f",
+  "source_sha256": {
+    "backend/market/live_model_history_stream_audit.py": "cb0d3032c5b21cff33b943d54bdf80fd27c9694775bfcb8742fb8f90b420571a",
+    "backend/tests/test_live_model_history_stream_audit.py": "7e7b1600509907f1acf12c96aa0ae62d782e8def4c1ab15989802e197cfe3eb7"
+  },
+  "scope": "Only admission in the new private stream helper; no numerical/control algorithm, producer, existing verifier, publisher or CLI change",
+  "preserved_reproductions": {
+    "original_admission": {
+      "root": "/home/animallya96/scratch/historical-stream-admission-red-20261017-v1",
+      "actual_module_sha256": "e6269d6cffd0dcb726e5bc6bdb92efdca4f2307b55f8306152ed5def7783567d",
+      "result": "22 failures/15deselected/2.67s against retained59e bytes: oversized metadata, duplicate/nonfinite JSON through five real decoder paths, mutable initial receipt bytes",
+      "container_id": "8cc9cd8a11a8e493cb959408c49956c9c12947e4e8fc52d993ae661287fc5d4e",
+      "inspect_exit_code": 1,
+      "test_log_sha256": "bccca45c487d5d2886d74544cf54b7069ebf0736625ed15062c33fbd09938993"
+    },
+    "nested_identity": {
+      "root": "/home/animallya96/scratch/historical-stream-nested-identity-red-20261017-v1",
+      "actual_module_sha256": "4cbdd201c4114b008ea91dddde3a35b4ae5310a7f491a8ddc704ea27faafb0b0",
+      "result": "8 failures/41deselected/1.93s: outer frozen fields still allowed sources/input-digest/session-list/session-record and public bookkeeping mutations",
+      "container_id": "6217968d580e59fa23befe94cefa4f38c60aabf4e2079fb66e706a688f9d2468",
+      "inspect_exit_code": 1,
+      "test_log_sha256": "8311544d842df5be5ff617c0a9f230c0a6f537206047ef5ece45d5f201844b19"
+    },
+    "intermediate_scopes": "Admission v1 passed185 tests with two test-style lint findings; v2 passed185/0skip6.21s and Ruff, then the independently identified nested-mutation reproduction correctly remained FAILED. Its compatibility v1 result proves only its declared metadata-decoding scope, not immutable nested identities. All roots and old proof files remain unchanged"
+  },
+  "correction": {
+    "bounded_metadata": "Check regular-file identity and stat size before opening; read at most limit+1; verify descriptor/path identity and size/mtime/ctime afterward; authenticate SHA before decoding",
+    "bounds": {
+      "ordinary_json_bytes": 16777216,
+      "completion_json_bytes": 268435456,
+      "compressed_archive_bytes": 67108864,
+      "expanded_archive_bytes": 268435456
+    },
+    "binary_authentication": "Digest-only fixed1MiB chunks with before/after file identity; large captured model/source/raw inputs never use read_bytes or metadata buffers",
+    "json": "All metadata paths share duplicate-key, NaN/Infinity and overflow rejection, including completion, source manifest, capture, config, initial standalone receipts and gzip archives",
+    "identity": "External raw bytes/selectors are frozen/slotted. Completion metadata and source maps are recursively readonly dict/list-compatible values; ordinary nested mutators fail. The large final paper_state is removed and hash-bound once before metadata freezing; access never reparses or rehashes it",
+    "bookkeeping": "Consumed hashes live in private mutable bookkeeping and have a readonly MappingProxy public view, with no external assignment or dictionary mutation path",
+    "consumer_properties": "Original comparison/serialization schemas and values remain equal; nested values are detached from original mutable parse trees; immutable deepcopy shares safely; public bookkeeping reflects legitimate internal authentication only"
+  },
+  "focused_native_validation": {
+    "root": "/home/animallya96/scratch/historical-stream-admission-validation-20261017-v3",
+    "source_mount": "/home/animallya96/scratch/historical-stream-admission-validation-20261017-v3/source",
+    "container_name": "historical-stream-admission-tests-20261017-v3",
+    "container_id": "7dd58bed6c2c9e03d384d7fde9755108397cc5b5f89654cd59414dcbedb0a70e",
+    "actual_image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "inspect_exit_code": 0,
+    "inspect_started_at": "2026-10-17T14:18:54.443917068Z",
+    "inspect_finished_at": "2026-10-17T14:19:02.248562863Z",
+    "network": "none",
+    "readonly": true,
+    "cpus": 1,
+    "memory_bytes": 2147483648,
+    "passed": 195,
+    "skipped": 0,
+    "seconds": 7.01,
+    "new_admission_properties": 36,
+    "prior_retained_cases": 159,
+    "test_log_sha256": "f14bea3f523f14f730619eeefa3396a89cd6fa8f7c18ef25797573d578884bc7",
+    "ruff": "PASS",
+    "lint_log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "format_log_sha256": "10869b88a75066aa23546ef1f95fcd4678c3fb92a56ed46ef91688052b67976a",
+    "runner_warning": "One unknown asyncio_mode option from the deliberately pytest-only runner; all selected checks are synchronous"
+  },
+  "original_v10_admission_compatibility": {
+    "root": "/home/animallya96/scratch/historical-stream-admission-v10-compatibility-20261017-v2",
+    "proof_sha256": "bd8d46be78caaf895a4ce22061b84c27b5303b6857a375332351a53a4d144196",
+    "runner_sha256": "b8e0824d389ad7e2fb6fabb7c4fc35a22937c30cbe9b1668b5f558c02b51b4d0",
+    "container_name": "historical-stream-admission-v10-compatibility-20261017-v2",
+    "container_id": "3ac6f3c363f78b871fe71b68b2ff16be3e64866b84a2499257ed60c9bdfa9662",
+    "actual_image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "inspect_exit_code": 0,
+    "inspect_started_at": "2026-10-17T14:19:55.652879927Z",
+    "inspect_finished_at": "2026-10-17T14:19:58.40363355Z",
+    "network": "none",
+    "readonly": true,
+    "cpus": 1,
+    "memory_bytes": 2147483648,
+    "consumed_inputs_stream_authenticated_before_after": 449,
+    "unused_legacy_inputs_not_read": 103,
+    "metadata": "Exact original completion/source-manifest/capture/config/initial/two sessions are accepted under strict bounded readers and yield exactly the same original valid JSON values; readonly consumer comparison and serialization also match",
+    "unchanged_numerical_control_ast_functions": ["digest", "closing_marks", "cancellation_receipts", "compare_account", "candidate_acknowledgments", "StreamAudit.economic_close", "StreamAudit.nightly", "StreamAudit.initial", "StreamAudit.step", "StreamAudit.verify"],
+    "other_stream_methods": "Constructor changes exactly one json.loads callee to strict_json; quote_prefix changes exactly one ignored-result pinned callee to digest-only authenticate_file; all other AST structure is identical",
+    "numerical_model_policy_provider_broker_sender_replay_calls": 0,
+    "active_full_output_access": false
+  },
+  "numerical_proof_boundary": {
+    "original_native_source_sha256": "e6269d6cffd0dcb726e5bc6bdb92efdca4f2307b55f8306152ed5def7783567d",
+    "original_native_proof_sha256": "6eac8afb84ae67366b2b8044a92c3c36935f85c2a3781efa8d487ba12caf19ef",
+    "original_native_root": "/home/animallya96/scratch/historical-stream-native-bounded-20261017-v1",
+    "assessment": "No fresh numerical rerun: exact unchanged numeric/control AST and genuine original valid-input compatibility establish that this admission-only correction does not alter the previously verified three-night computation. This new receipt is not represented as a new model inference run; the original source/proof remain distinct and immutable"
+  },
+  "preservation": {
+    "all31_guarded_sources": "UNCHANGED",
+    "old59e_code_and_private_proofs": "UNCHANGED and retained",
+    "existing_verifier_producer_publisher_CLI": "UNCHANGED",
+    "original_full_account_and_runtime": "No active full-output access or account/model/config/service/order changes",
+    "current_live_timing": "FAILED_SEPARATE_ORIGINAL_PATH_CONTRACT",
+    "publication_barrier": "CLOSED",
+    "complete_original_input_manifest_and_all_nights": "UNVERIFIED; still requires independent post-COMPLETE full authentication/audit, including unused original artifacts"
+  },
+  "diagram_impact": "NONE: private audit admission only; no live architecture relationship changed"
+}

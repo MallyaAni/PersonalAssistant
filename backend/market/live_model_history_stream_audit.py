@@ -3,12 +3,14 @@
 import gzip
 import io
 import json
+import os
+import stat
 from copy import deepcopy
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from datetime import timedelta
 from hashlib import sha256
 from pathlib import Path
-from types import SimpleNamespace
+from types import MappingProxyType, SimpleNamespace
 
 import numpy as np
 
@@ -39,6 +41,8 @@ from backend.market.live_model_history_receipts import ReceiptLedger, instant, r
 from backend.market.store import MarketStore
 
 MAX_STATE_BYTES = 256 * 1024 * 1024
+MAX_METADATA_BYTES = 16 * 1024 * 1024
+HASH_CHUNK_BYTES = 1024 * 1024
 SOURCE_PATHS = (
     "backend/market/live_model_history.py",
     "backend/market/live_policy_replay.py",
@@ -58,15 +62,142 @@ def digest(value):
     ).hexdigest()
 
 
-# Authenticate caller-pinned bytes before interpreting an original evidence file.
-def pinned(path, expected):
+# Validate an external content identity without accepting coerced digest values.
+def expected_digest(expected):
     require(
-        type(expected) is str and len(expected) == 64,
+        type(expected) is str
+        and len(expected) == 64
+        and all(char in "0123456789abcdef" for char in expected),
         "External original evidence digest required",
     )
-    raw = Path(path).read_bytes()
+
+
+# Identify the same regular file before and after an authenticated read.
+def file_identity(value):
+    require(stat.S_ISREG(value.st_mode), "Regular original evidence file required")
+    return (
+        value.st_dev,
+        value.st_ino,
+        value.st_size,
+        value.st_mtime_ns,
+        value.st_ctime_ns,
+    )
+
+
+# Reject concurrent replacement or size/content changes while evidence is read.
+def stable_file(stream, path, before):
+    require(
+        file_identity(os.fstat(stream.fileno())) == before
+        and file_identity(path.stat()) == before,
+        "Original evidence changed during authentication",
+    )
+
+
+# Read small metadata only after its size check, with a bounded growth sentinel.
+def pinned(path, expected, *, max_bytes=None):
+    expected_digest(expected)
+    limit = MAX_METADATA_BYTES if max_bytes is None else max_bytes
+    require(type(limit) is int and limit >= 0, "Exact evidence size bound required")
+    path = Path(path)
+    before = file_identity(path.stat())
+    require(before[2] <= limit, "Original metadata size exceeds bound")
+    with path.open("rb") as stream:
+        require(
+            file_identity(os.fstat(stream.fileno())) == before,
+            "Original evidence changed before reading",
+        )
+        raw = stream.read(limit + 1)
+        require(len(raw) <= limit, "Original metadata size exceeds bound")
+        stable_file(stream, path, before)
     require(sha256(raw).hexdigest() == expected, "Pinned stream input bytes differ")
     return raw
+
+
+# Authenticate large source/model/input files with fixed-memory digest-only reads.
+def authenticate_file(path, expected):
+    expected_digest(expected)
+    path = Path(path)
+    before = file_identity(path.stat())
+    value = sha256()
+    with path.open("rb") as stream:
+        require(
+            file_identity(os.fstat(stream.fileno())) == before,
+            "Original evidence changed before hashing",
+        )
+        while chunk := stream.read(HASH_CHUNK_BYTES):
+            value.update(chunk)
+        stable_file(stream, path, before)
+    require(value.hexdigest() == expected, "Pinned stream input bytes differ")
+    return value.hexdigest()
+
+
+# Reject duplicate fields, nonfinite constants and overflow in every metadata route.
+def strict_json(raw):
+    require(type(raw) is bytes, "Immutable original JSON bytes required")
+    return json.loads(
+        raw,
+        object_pairs_hook=pending.unique,
+        parse_constant=pending.reject_constant,
+        parse_float=pending.finite_float,
+    )
+
+
+# Reject ordinary mutation of an already admitted nested metadata value.
+def _immutable(*args, **kwargs):
+    raise TypeError("Admitted original metadata is readonly")
+
+
+# Retain dict-compatible reads without exposing mutable admitted expectations.
+class _ReadOnlyDict(dict):
+    __slots__ = ()
+
+    # Populate once during construction, before this mapping is exposed.
+    def __new__(cls, value):
+        result = dict.__new__(cls)
+        dict.update(result, value)
+        return result
+
+    # Reinitializing an admitted mapping cannot replace its contents.
+    def __init__(self, value):
+        pass
+
+    # Immutable nested metadata can be shared safely by detached audit copies.
+    def __deepcopy__(self, memo):
+        return self
+
+    __setitem__ = __delitem__ = __ior__ = _immutable
+    clear = pop = popitem = setdefault = update = _immutable
+
+
+# Retain list-compatible reads while blocking mutations of admitted session records.
+class _ReadOnlyList(list):
+    __slots__ = ()
+
+    # Populate once during construction, with already frozen nested values.
+    def __new__(cls, value):
+        result = list.__new__(cls)
+        list.extend(result, value)
+        return result
+
+    # Reinitializing an admitted sequence cannot change its records.
+    def __init__(self, value):
+        pass
+
+    # Immutable session metadata needs no mutable duplicate during audit copying.
+    def __deepcopy__(self, memo):
+        return self
+
+    __setitem__ = __delitem__ = __iadd__ = __imul__ = _immutable
+    append = clear = extend = insert = pop = remove = reverse = sort = _immutable
+
+
+# Freeze admitted metadata once after removing the large comparison-only final state.
+def _freeze(value):
+    if type(value) is dict:
+        return _ReadOnlyDict({name: _freeze(row) for name, row in value.items()})
+    if type(value) is list:
+        return _ReadOnlyList([_freeze(row) for row in value])
+    return value
 
 
 # Decode bounded original gzip bytes with strict finite and duplicate-free JSON.
@@ -79,45 +210,74 @@ def archive_value(raw):
     require(
         len(expanded) <= pending.MAX_JSON_BYTES, "Original stream expansion too large"
     )
-    return json.loads(
-        expanded,
-        object_pairs_hook=pending.unique,
-        parse_constant=pending.reject_constant,
-        parse_float=pending.finite_float,
-    )
+    return strict_json(expanded)
 
 
 # Admit optional standalone initial venue facts only under an external byte identity.
+@dataclass(frozen=True, slots=True)
 class InitialReceipts:
+    raw: bytes
+
     # Keep a separate original receipt file outside the saved initial control state.
     def __init__(self, path, expected_sha256):
-        self.raw = pinned(path, expected_sha256)
+        object.__setattr__(self, "raw", pinned(path, expected_sha256))
 
     # Decode venue attempts without borrowing saved control metadata.
     def attempts(self):
-        value = json.loads(self.raw)
+        value = strict_json(self.raw)
         require(type(value) is list, "Original standalone initial attempts required")
         return deepcopy(value)
 
 
 # Retain authenticated metadata and yield only one immutable session archive at a time.
+@dataclass(frozen=True, slots=True)
 class OriginalArchives:
+    root: Path
+    completion_raw: bytes
+    completion: dict
+    initial_sha256: str
+    manifest_path: Path
+    manifest_sha256: str
+    sources: dict
+    ending_state: str
+    source_root: Path
+    _consumed_inputs: dict
+    unused_inputs: int
+
     # Bind the completed account, initial state and original source manifest externally.
     def __init__(
         self, root, completion_sha256, initial_sha256, manifest, manifest_sha256
     ):
-        self.root = Path(root)
-        self.completion_raw = pinned(self.root / "completion.json", completion_sha256)
-        self.completion = json.loads(self.completion_raw)
+        root = Path(root)
+        completion_raw = pinned(
+            root / "completion.json", completion_sha256, max_bytes=MAX_STATE_BYTES
+        )
+        completion = strict_json(completion_raw)
         require(
-            self.completion["status"] == "COMPLETED_UNVERIFIED_CURRENT_MODEL_ACCOUNT",
+            completion["status"] == "COMPLETED_UNVERIFIED_CURRENT_MODEL_ACCOUNT",
             "Genuine completed original account required",
         )
-        self.initial_sha256 = initial_sha256
-        self.manifest_path, self.manifest_sha256 = Path(manifest), manifest_sha256
-        self.sources = json.loads(pinned(manifest, manifest_sha256))["files"]
-        self.ending_state = digest(self.completion.pop("paper_state"))
-        self.source_root = Path(__file__).resolve().parents[2]
+        ending_state = digest(completion.pop("paper_state"))
+        values = {
+            "root": root,
+            "completion_raw": completion_raw,
+            "completion": _freeze(completion),
+            "initial_sha256": initial_sha256,
+            "manifest_path": Path(manifest),
+            "manifest_sha256": manifest_sha256,
+            "sources": _freeze(strict_json(pinned(manifest, manifest_sha256))["files"]),
+            "ending_state": ending_state,
+            "source_root": Path(__file__).resolve().parents[2],
+            "_consumed_inputs": {},
+            "unused_inputs": 0,
+        }
+        for name, value in values.items():
+            object.__setattr__(self, name, value)
+
+    # Expose bookkeeping read-only without allowing callers to replace evidence.
+    @property
+    def consumed_inputs(self):
+        return MappingProxyType(self._consumed_inputs)
 
     # Admit only exact original financial code and the existing explicit source reviews.
     def authenticate_sources(self):
@@ -127,7 +287,7 @@ class OriginalArchives:
             [REVIEW_SHA256[name] for name in REVIEWS],
         )
         for name in SOURCE_PATHS:
-            pinned(self.source_root / name, self.sources[name])
+            authenticate_file(self.source_root / name, self.sources[name])
         require(
             {name: self.sources[name] for name in pending.ORIGINAL_SOURCES}
             == pending.ORIGINAL_SOURCES,
@@ -139,17 +299,18 @@ class OriginalArchives:
         capture_raw = pinned(
             Path(market) / "capture.json", self.completion["capture_sha256"]
         )
-        capture = json.loads(capture_raw)
-        self.consumed_inputs = {
-            str(Path(market) / "capture.json"): self.completion["capture_sha256"]
-        }
+        capture = strict_json(capture_raw)
+        self._consumed_inputs.clear()
+        self._consumed_inputs.update(
+            {str(Path(market) / "capture.json"): self.completion["capture_sha256"]}
+        )
         for name, expected in capture["files"].items():
             require(
                 not Path(name).is_absolute() and ".." not in Path(name).parts,
                 "Relative original capture path required",
             )
-            pinned(Path(market) / name, expected)
-            self.consumed_inputs[str(Path(market) / name)] = expected
+            authenticate_file(Path(market) / name, expected)
+            self._consumed_inputs[str(Path(market) / name)] = expected
         checked = set()
         for name, expected in self.completion["input_sha256"].items():
             if (
@@ -157,15 +318,23 @@ class OriginalArchives:
                 or name
                 == "/app/docs/research/actual-policy-action-review-2026-10-04.json"
             ):
-                pinned(name, expected)
+                authenticate_file(name, expected)
                 checked.add(name)
-                self.consumed_inputs[name] = expected
-        self.unused_inputs = len(set(self.completion["input_sha256"]) - checked)
+                self._consumed_inputs[name] = expected
+        object.__setattr__(
+            self, "unused_inputs", len(set(self.completion["input_sha256"]) - checked)
+        )
         return capture
 
     # Read the initial prior-close snapshot as a comparison target, never a state seed.
     def initial(self):
-        return archive_value(pinned(self.root / "initial.json.gz", self.initial_sha256))
+        return archive_value(
+            pinned(
+                self.root / "initial.json.gz",
+                self.initial_sha256,
+                max_bytes=pending.MAX_COMPRESSED_BYTES,
+            )
+        )
 
     # Read one original session only after its completion-bound digest matches.
     def sessions(self):
@@ -177,7 +346,11 @@ class OriginalArchives:
                 and instant(name + "T00:00:00+00:00").date().isoformat() == name,
                 "Exact original stream session required",
             )
-            raw = pinned(self.root / "sessions" / (name + ".json.gz"), record["sha256"])
+            raw = pinned(
+                self.root / "sessions" / (name + ".json.gz"),
+                record["sha256"],
+                max_bytes=pending.MAX_COMPRESSED_BYTES,
+            )
             value = archive_value(raw)
             require(value["session"] == name, "Original stream session differs")
             evidence = pending.OriginalProxyEvidence(
@@ -189,14 +362,13 @@ class OriginalArchives:
 
     # Recheck immutable source and account selectors without rewriting original files.
     def unchanged(self):
-        require(
-            (self.root / "completion.json").read_bytes() == self.completion_raw,
-            "Original completion changed during streaming audit",
+        authenticate_file(
+            self.root / "completion.json", sha256(self.completion_raw).hexdigest()
         )
-        pinned(self.root / "initial.json.gz", self.initial_sha256)
-        pinned(self.manifest_path, self.manifest_sha256)
-        for path, expected in self.consumed_inputs.items():
-            pinned(path, expected)
+        authenticate_file(self.root / "initial.json.gz", self.initial_sha256)
+        authenticate_file(self.manifest_path, self.manifest_sha256)
+        for path, expected in self._consumed_inputs.items():
+            authenticate_file(path, expected)
         self.authenticate_sources()
 
 
@@ -291,7 +463,7 @@ class StreamAudit:
             capture["source_sha256"] == self.completion["source_sha256"],
             "Original capture source profile differs",
         )
-        original_holding = json.loads(
+        original_holding = strict_json(
             pinned(
                 Path(market) / "desk/learned-holding/config.json",
                 self.completion["holding_config_sha256"],
@@ -389,7 +561,7 @@ class StreamAudit:
             if expected is None:
                 require(not path.exists(), "Original missing raw quote file changed")
                 continue
-            pinned(path, expected)
+            authenticate_file(path, expected)
             found = intraday_sip.read_session_full(
                 MarketStore(self.market), str(name), dates[day].astype(object)
             )
