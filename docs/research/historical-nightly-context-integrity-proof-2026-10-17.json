@@ -1,0 +1,68 @@
+{
+  "schema": "historical-nightly-context-integrity-proof/1",
+  "status": "VERIFIED_SYNTHETIC_MEMORY_COMMITMENTS_ONLY",
+  "parent_revision": "796a7d88a019a422d4f30aa51fb1b168726ea144",
+  "source_sha256": {
+    "backend/market/historical_conditional_nightly.py": "299385947a709ecc301f8fabbd3394b26d8cf8e1e95739c481f1aaf0a014012b",
+    "backend/tests/test_historical_conditional_nightly.py": "ac1f6a982f49809529f944f5cde4886692f809bd62032b1334f9b290424abb96"
+  },
+  "targeted_change": {
+    "function": "historical_conditional_nightly.arrays",
+    "added_array_commitments": ["reader._market", "raw.passive.dates", "raw.passive.session_open", "raw.passive.observation_close", "raw.passive.daily_close"],
+    "added_metadata_commitment": "Exact passive ticker order and recursively plain original provenance; absent passive inputs committed as null",
+    "native_math_source_economic_logic_and_tolerances": "UNCHANGED",
+    "original_5064_sha256": "5064c8886c9c4dc44503a3f1b1555fc60336e61e47161634a260d04c891d1cc7"
+  },
+  "red": {
+    "root": "/home/animallya96/scratch/historical-nightly-context-integrity-20261017-red-v1",
+    "container": "1be04f5c6c5406ef74025e174873f1309014478fbf542c630ebcf56fb10f6275",
+    "proof_sha256": "3624ad89aa557963862bfe95150d584b7f98d2bbfc4d663896313dc029be1f37",
+    "runtime_proof_sha256": "f0a40c2484c183f9c5a4d860a5c3cf8c99ed957365ffd8f5c09ec9e6532a533d",
+    "log_sha256": "f93d3b182885a073394005874a9dd37aba56a22e66851a72f869b05eb6313c06",
+    "pins_sha256": "2dd63a2ed5c2f8fc71b5a2a492f923ba4f6971770a5aa706da5c3356496bb744",
+    "command_sha256": "c0b00e28ca4f462d0ecd054f276a7d24bce5ebff952cb758d1b820e04bec6849",
+    "selection": "Exactly owned_buffer_mutation[daily_close] and [market] against frozen5064",
+    "result": "2 failed, 0 skipped in0.27seconds; pytest exit1; both actual call bodies DID NOT RAISE ValueError",
+    "economic_relevance": "Native account_marks CHILD inherited close changed12 to13 while original validation accepted",
+    "runner_result": "EXPECTED_RED_REPRODUCED; exit0 only after explicit pytest status1 and exact two intended assertion failures",
+    "preserved": true
+  },
+  "green": {
+    "root": "/home/animallya96/scratch/historical-nightly-context-integrity-20261017-green-v1",
+    "container": "c968c2d90fb7a1b40c87c861a47921b7b8beb98920dbdc0be7afe78d66cd7364",
+    "proof_sha256": "07aa128d4b39912334fc282efbfb6df6db60d6c091a50801880e694706b87078",
+    "runtime_proof_sha256": "e1448eb9039130578280db422d7e17ec38e645917a5847b25e0e69d40ce9820a",
+    "log_sha256": "7e76b36251fd50b11d55bd8cea96836e968714bac58cf82bc5006bb50e8ab1d1",
+    "pins_sha256": "5b9a0ebe85dd925423fc42bcb46c182b56832628210397acddb08afc0ff9c4b5",
+    "command_sha256": "586641d06aa02690c2f33efb91201b1470b64e993406496f91622c648126da70",
+    "selection": "test_historical_conditional_nightly.py -k context_integrity",
+    "result": "10 passed, 21 deselected, 0 skipped in0.27seconds; pytest exit0",
+    "coverage": ["Unchanged owned arrays and recursively frozen passive provenance admitted", "All4 passive arrays and independent market copy reject in-memory mutation after WRITEABLE is reset false", "Reversed passive ticker order and changed provenance refuse", "Passive removal and addition refuse"]
+  },
+  "native_runtime": {
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "source31_map_sha256": "bfbcb6ece4ea500726e00abbb06fc2c84d63d386bb307958016915357aaef5b3",
+    "identity": "Actual Config.User1000:1000; Entrypoint python; Cmd /runner.py red or green; NumPy2.5.3/sklearn1.9.1",
+    "isolation": "Actual networknone/readonly/1CPU/RAM=MemorySwap2147483648/tmp64MiB; threads1; sole exclusive out mount RW; both exit0/OOMfalse",
+    "source_copy": "/home/animallya96/scratch/historical-conditional-nightly-validation-20261017-v2/source",
+    "source_copy_preparation_sha256": "a4f3293b4c591c478fbb4b5382d8a20a8849af7a0e7c44a600459eab2b108b56",
+    "source_copy_scope": "Original1655 plus reviewed37 added unused source/docs; only nightly module/test explicitly overlaid; original image/live permissions unchanged",
+    "checks": "All1694 mounted source/alias/runner identities and actual native31 map equal before/after for each run; original1692 source-copy hashes checked before launch",
+    "runner": "/tmp/validate_nightly_context_integrity_20261017.py",
+    "runner_retained_each_root": "runner.py",
+    "runner_sha256": "a102236ac2a87a7b1bc0ee7116a9366a2fddd2412583c38d31550abb09f3e21d",
+    "preparation_helper": "/home/animallya96/scratch/historical-nightly-context-integrity-upload-20261017-v1/prepare.py",
+    "preparation_helper_sha256": "4e0d9fb89d89cab13a169624c65cd2af9cee56535c80ed6eeb6c4012ee65e959",
+    "exact_commands_retained": "command.json in each exclusive root; native pytest -c /dev/null --noconftest --confcutdir=/tests -p no:cacheprovider with only named new cases",
+    "actual_inspection": "actual-inspect.json retained each root; no model, genuine data, account or active-original mounts"
+  },
+  "limits": [
+    "Synthetic approval/model stand-ins exercise real HoldingContext.validate and source authentication, native RawExecutionInputs/PassiveMarks/readonly/account_marks; they do not authenticate a genuine model or input context",
+    "load_context/admit/infer/prepare/model publication/risk-bank restore/current_distributions/direct predict structurally forbidden; no numerical inference, provider GET, account replay or active-original input read",
+    "Prior nightly20 unchanged passes plus1 corrected fixture proof remain separate; none repeated or promoted as whole final31 acceptance",
+    "Genuine bounded prior-close load and native model calibration/quantities remain UNVERIFIED pending separately reviewed acceptance",
+    "No native31, model/economic artifact, source selector, tolerance, cap, deployed source or service changed; publication CLOSED"
+  ],
+  "local_checks": "Ruff check, Ruff format --check and git diff --check passed",
+  "diagram_impact": "NONE: additional commitments inside an unused private helper; no architectural relationship changed"
+}
