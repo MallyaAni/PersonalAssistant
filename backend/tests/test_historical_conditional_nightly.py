@@ -2,7 +2,8 @@
 
 import os
 from contextlib import closing
-from dataclasses import asdict
+from dataclasses import asdict, replace
+from datetime import UTC, datetime
 from hashlib import sha256
 from types import SimpleNamespace
 
@@ -18,7 +19,13 @@ from backend.market import historical_timing_packet as packet
 from backend.market import replay_broker as native
 from backend.market.alpaca_trading import AlpacaTradingError
 from backend.market.historical_packet_store import Store, StorePause
+from backend.market.live_execution_inputs import (
+    PassiveMarks,
+    RawExecutionInputs,
+    _freeze,
+)
 from backend.market.live_model_history import FrozenCurrentGradePolicy
+from backend.market.live_model_history_audit_inputs import readonly
 from backend.tests.test_joint_funded_policy import report
 
 COHORT = ("AAA", "BBB", "SPY", "QQQ", *("S" + str(i) for i in range(92)))
@@ -492,3 +499,157 @@ def test_source_manifest_is_literal_and_current_native_map_unchanged(pins):
     assert all(len(value) == 64 for value in declared.values())
     assert "backend/market/data/fomc_decisions.csv" in declared
     assert "docs/research/forward-arithmetic-publication-2026-10-04.md" in declared
+
+
+# Exercise real context validation over declared synthetic buffers, without a loader.
+def integrity_context():
+    dates = np.array(["2019-02-28"], dtype="datetime64[D]")
+    panel = SimpleNamespace(dates=dates, tickers=("AAA", "SPY", "QQQ"))
+    for name in ("open", "high", "low", "close", "adj_close", "volume"):
+        setattr(panel, name, np.full((1, 3), 100.0))
+    passive = PassiveMarks(
+        dates.copy(),
+        ("CHILD", "OTHER"),
+        np.full((1, 2), 10.0),
+        np.full((1, 26, 2), 11.0),
+        np.array([[12.0, 15.0]]),
+        _freeze({"synthetic": True, "supplied": {"source": "fixture-only"}}),
+    )
+    raw = readonly(
+        RawExecutionInputs(
+            dates,
+            panel.tickers,
+            np.zeros((1, 3), dtype=np.int16),
+            np.ones((1, 3), dtype=bool),
+            *(getattr(panel, name).copy() for name in ("open", "high", "low", "close")),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            np.ones((1, 3)),
+            {},
+            {"synthetic": True},
+            passive,
+            {},
+        )
+    )
+    parent = SimpleNamespace(_bank={"features": np.full((1, 3, 21), 1.0)})
+    for name in (
+        "_frozen_dates",
+        "_features",
+        "_forecasts",
+        "_support",
+        "_prices",
+        "_history_prices",
+        "_history_grades",
+    ):
+        setattr(
+            parent, name, dates.copy() if name == "_frozen_dates" else np.ones((1, 3))
+        )
+    reader = SimpleNamespace(
+        _parent=parent, _market=np.full((1, 4), 0.25), symbols=panel.tickers
+    )
+    reader._market.flags.writeable = False
+
+    # Identify this capability as a synthetic approval, never authentic model admission.
+    def approval_validate():
+        return {"synthetic": True}
+
+    provenance = {
+        "source_sha256": adapter.sources(),
+        "input_sha256": {},
+        "symbols": list(panel.tickers),
+        "array_sha256": adapter.arrays(panel, raw, reader),
+        "actions_sha256": packet._digest(raw.actions),
+        "inherited_actions_sha256": packet._digest(raw.inherited_actions),
+        "model_fit_date": datetime.now(UTC).date().isoformat(),
+        "scope": "SYNTHETIC_MEMORY_COMMITMENT_ONLY_NO_MODEL_OR_INPUT_ADMISSION",
+    }
+    context = object.__new__(adapter.HoldingContext)
+    for name, value in {
+        "approval": SimpleNamespace(validate=approval_validate),
+        "panel": panel,
+        "raw": raw,
+        "reader": reader,
+        "provenance": adapter.admitted.encoded(provenance),
+    }.items():
+        object.__setattr__(context, name, value)
+    return context
+
+
+# Unchanged native-shaped buffers and recursively frozen passive metadata remain usable.
+def test_context_integrity_unchanged_passive_and_market():
+    context = integrity_context()
+    assert context.validate()["scope"].startswith("SYNTHETIC_MEMORY")
+    assert context.raw.passive.daily_close.flags.owndata
+    assert context.reader._market.flags.owndata
+
+
+# Re-enabling NumPy writes must not bypass any consumed passive or market commitment.
+@pytest.mark.parametrize(
+    "field", ["dates", "session_open", "observation_close", "daily_close", "market"]
+)
+def test_context_integrity_rejects_owned_buffer_mutation(field):
+    context = integrity_context()
+    context.validate()
+    before = adapter.live_policy_replay.account_marks(
+        context.raw,
+        0,
+        datetime.fromisoformat("2019-02-28T21:01:00+00:00"),
+        context.raw.daily_close[0],
+    )
+    value = (
+        context.reader._market
+        if field == "market"
+        else getattr(context.raw.passive, field)
+    )
+    value.setflags(write=True)
+    value.flat[0] += np.timedelta64(1, "D") if field == "dates" else 1.0
+    value.setflags(write=False)
+    if field == "daily_close":
+        after = adapter.live_policy_replay.account_marks(
+            context.raw,
+            0,
+            datetime.fromisoformat("2019-02-28T21:01:00+00:00"),
+            context.raw.daily_close[0],
+        )
+        assert before["CHILD"] == 12.0
+        assert after["CHILD"] == 13.0
+    with pytest.raises(ValueError, match="Nightly input/model arrays changed"):
+        context.validate()
+
+
+# Equal-shaped passive buffers cannot be rebound to different identities or provenance.
+@pytest.mark.parametrize("field", ["tickers", "provenance", "absent"])
+def test_context_integrity_rejects_passive_binding_mutation(field):
+    context = integrity_context()
+    context.validate()
+    passive = context.raw.passive
+    if field == "tickers":
+        passive = replace(passive, tickers=tuple(reversed(passive.tickers)))
+    elif field == "provenance":
+        passive = replace(
+            passive, provenance=_freeze({"synthetic": True, "source": "changed"})
+        )
+    else:
+        passive = None
+    object.__setattr__(context, "raw", replace(context.raw, passive=passive))
+    with pytest.raises(ValueError, match="Nightly input/model arrays changed"):
+        context.validate()
+
+
+# Absence is committed too, so later adding passive valuation inputs is refused.
+def test_context_integrity_rejects_added_passive_binding():
+    context = integrity_context()
+    passive = context.raw.passive
+    raw = replace(context.raw, passive=None)
+    object.__setattr__(context, "raw", raw)
+    provenance = adapter.admitted.decoded(context.provenance)
+    provenance["array_sha256"] = adapter.arrays(context.panel, raw, context.reader)
+    object.__setattr__(context, "provenance", adapter.admitted.encoded(provenance))
+    context.validate()
+    object.__setattr__(context, "raw", replace(raw, passive=passive))
+    with pytest.raises(ValueError, match="Nightly input/model arrays changed"):
+        context.validate()

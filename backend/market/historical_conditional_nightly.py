@@ -145,7 +145,7 @@ def sources():
     }
 
 
-# Hash immutable input arrays without treating the reader's selected row as an oracle.
+# Bind consumed arrays and passive identities independently of the selected model row.
 def arrays(panel, raw, reader):
     values = {
         "panel." + name: getattr(panel, name)
@@ -181,7 +181,29 @@ def arrays(panel, raw, reader):
         }
     )
     values.update({"bank." + name: value for name, value in parent._bank.items()})
-    return {name: _hash(value) for name, value in values.items()}
+    values["market.context"] = reader._market
+    if raw.passive is not None:
+        values.update(
+            {
+                "passive." + name: getattr(raw.passive, name)
+                for name in (
+                    "dates",
+                    "session_open",
+                    "observation_close",
+                    "daily_close",
+                )
+            }
+        )
+    return {
+        **{name: _hash(value) for name, value in values.items()},
+        "passive.metadata": packet._digest(
+            None
+            if raw.passive is None
+            else live_policy_replay.plain(
+                {"tickers": raw.passive.tickers, "provenance": raw.passive.provenance}
+            )
+        ),
+    }
 
 
 # Keep actual model restoration separate from hypothetical historical close decisions.
