@@ -1,5 +1,27 @@
 # Next session
 
+## 2026-10-17 — HOLD prepared6a launch for a test-only integration correction
+
+Do NOT launch the prepared urgent6a numeric candidate yet. Integration review
+found test_market_release_admission.py:264 constructs the old source-list
+extension fixture from current source_identity(), which now already includes
+the31st projection path. Production admission correctly rejects that invalid
+predecessor. Exact private6a reproduction is in progress; independent static
+review found no other count-assumption defect in the urgent guard/holding tests.
+Correct only the test predecessor to the original30-source shape, run scoped
+guard/source integration checks, then create a test-only urgent child N2. All31
+runtime hashes, source review2f048a80 and economic selectors338e2a49/bb6c24aa/4d6
+must remain unchanged. Preserve existing6a/privatev1 preparation; re-pin NEW
+bundle/launcher/verifier/reconciliation roots to the final N2 commit before use.
+The old6a-bound settlement wrapper must reject N2, not be bypassed.
+
+This does not stop or change the active parity v3 a2378e95 release: its unit and
+routing gates passed; it is still mirroring WAL to Mac. Do not interrupt/restart
+it. No model/config/account/history/order changes. Combined historical backend
+fixtures are separately being corrected to preserve frozen30 vs serving31;
+frontend simplification/type/build passed and controlled browser checks run in
+a private snapshot. Keep the urgent fix separate from those combined changes.
+
 ## 2026-10-17 — Combined draft preserves all31 approved source hashes
 
 Correction to the earlier third-API-review assumption below: actual inspection
