@@ -1,5 +1,37 @@
 # Next session
 
+## 2026-10-17 — Human approved one distinct corrected simulation; owner isolation verified
+
+Human answered "yes" to the pending question authorizing ONE separately named
+corrected historical simulation with explicit latency/fill assumptions, preserving
+the original. This supersedes older pending/no-replacement instructions below.
+It does not authorize editing, restarting or duplicating original1e8f440a/source27471,
+historical-main deployment, model-service changes, fitting or paid data. No corrected
+run has launched. Preregistered contract, bounded authentic packet/feature/model/
+ledger checks and independent review precede one corrected full launch. Existing
+PROPOSED document and prototype proofs remain historical originals. Shared forward
+guard and original frozen heads remain exact; assumed archival availability and
+post-arrival reference fills must never become actual historical receipt/fill clocks.
+
+Independent numeric-plan privacy check through actual gateway:8080 completed
+12:22:59Z. Owner200/private-no-store with8positions/94stale rows, foreign-token
+owner-path403, foreign-token own-path403, anonymous401; denial bodies contain only
+detail. Statee44 and originalOct13record37d unchanged. Token scope memory:read,
+120s lifetime, memory-only; no users created, model inference, nightly/sender or
+application HTTP writes. Actual APIfb35, hostad44, backendimagee0a54c1f and
+gatewayb2e0ca8e independently match. Initial harness erroneously used port80 and
+refused before content checks; original helper/empty stdout retained, stderr was
+observed but not saved. Corrected harness uses configured8080; no runtime change.
+Proof:research/trading-numeric-access-isolation-proof-2026-10-17.json.
+
+Original account compact12:24Z check remains exact RUNNING/1876sessions through
+2026-08-17/2885fills/3830intents, updated12:22:08Z, completion absent. No account
+archive read. Phase2 independent nightly numeric audit continues in separate tree;
+corrected-run design proceeds separately. Publisher stays closed, fresh ordinary/
+learned intraday and historical delivery remain unverified. Heartbeat ACTIVE with
+human approval recorded; no repeated completed release or old gates for docs.
+Diagram impact: NONE — proof and authorization records only; no architecture change.
+
 ## 2026-10-17 — Independent pre-plan reconstruction primitive integrated
 
 Agent code34a24f67 integrated as19e3a1a2. Pure before_plan accepts only prior

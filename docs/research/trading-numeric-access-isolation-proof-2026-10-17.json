@@ -1,0 +1,67 @@
+{
+  "actual_api_sha256": "fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88",
+  "actual_transport": "http://gateway:8080; Host: deep-matter.com; Compose internal network",
+  "application_http_methods": [
+    "GET"
+  ],
+  "backend_container": "7d9dc02f043334c88e74392a065751b003b74f138bcd539adbbf74e2752a6c5c",
+  "backend_image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+  "diagram_impact": "NONE: existing authorization boundary exercised, no implementation change",
+  "fresh_ordinary_or_learned_intraday_acceptance": "UNVERIFIED",
+  "gateway_container": "68ac6fafc5b31565219b6b6692ebaa3044a1fad3ae152eb10f3bd947ba9ec844",
+  "gateway_image": "sha256:b2e0ca8e5131dd96f467922da38cec659f0bf82aee2794d18dcbe56213426b91",
+  "helper_sha256": "def9d1413f6d1cfbb0b5ba4933deef64f9dc08261bb6d173e9886f83a4881129",
+  "initial_harness_failure": {
+    "boundary": "Private harness used gateway default port80 instead of configured8080",
+    "claim": "HARNESS_TRANSPORT_FAILURE; no application/privacy result",
+    "helper_sha256": "976032a9d792e9ed8c4c6b1a821e631983085a3b8e9f30e9baeb595221ae150a",
+    "observed_error": "urllib.error.URLError: <urlopen error [Errno 111] Connection refused>",
+    "original_stderr_capture_retained": false,
+    "original_stdout_empty": true,
+    "runtime_changed": false
+  },
+  "model_inference_calls": 0,
+  "nightly_or_sender_invocations": 0,
+  "orders_submitted": 0,
+  "protected_hashes_after": {
+    "desk/asof=2026-10-13/desk.json": "37d7541f5ce12a080a4c0538939b95f99367fc9b5318e21eba03d96963927c32",
+    "paper/state.json": "e44a5161e730ed0ed907ca320f7ee54c6dd58a81e5ee7eada8e338234dc62f2d"
+  },
+  "protected_hashes_before": {
+    "desk/asof=2026-10-13/desk.json": "37d7541f5ce12a080a4c0538939b95f99367fc9b5318e21eba03d96963927c32",
+    "paper/state.json": "e44a5161e730ed0ed907ca320f7ee54c6dd58a81e5ee7eada8e338234dc62f2d"
+  },
+  "raw_result_sha256": "343dc35524d8a107acb52a5804d8ed0bb05ad681a8efec865b8b74ecdbb08744",
+  "results": {
+    "anonymous_owner_path": {
+      "body_sha256": "9a15b0a3fe33ddcd5af28fef761c068e8d2c5a3d736275728f3fbeef79f0cbc9",
+      "cache_control": null,
+      "no_private_plan_content": true,
+      "status": 401
+    },
+    "foreign_token_own_path": {
+      "body_sha256": "468f3ca43e0f12b73744d98365c2e5b536df7e3926ae68ae889f92912f344939",
+      "cache_control": null,
+      "no_private_plan_content": true,
+      "status": 403
+    },
+    "foreign_token_owner_path": {
+      "body_sha256": "5ccf28c0afedd74fb556b2fe5b212e52f4b8ef8002a1ff8bf802f44600438194",
+      "cache_control": null,
+      "no_private_plan_content": true,
+      "status": 403
+    },
+    "owner": {
+      "body_sha256": "b11aba81ab3b84b229c0d0a77cade99c8f57e1035a2d6d04279bb5ccde65f20e",
+      "cache_control": "private, no-store",
+      "owner_content_matches": true,
+      "status": 200
+    }
+  },
+  "source_revision": "ad44d536a70d5c037cb931836a3c9f48b014d84a",
+  "status": "VERIFIED_CURRENT_NUMERIC_PLAN_OWNER_ISOLATION",
+  "token_scope": "memory:read",
+  "tokens_retained": false,
+  "users_created": 0,
+  "verified_at": "2026-10-17T12:22:59.751881+00:00"
+}
