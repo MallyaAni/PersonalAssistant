@@ -1,0 +1,40 @@
+{
+  "scope": "UNUSED_SYNTHETIC_FAKE_TRANSPORT_ONLY_NO_REAL_GET_PERMISSION",
+  "base": "3b6c70d9f65c38046711d6fa11e4d7c740ee8585",
+  "source_sha256": "889908babda4f460239f3c54fe76570b9fa1d4d8cb550cfe57f7e75a8a1e2154",
+  "test_sha256": "97fe8dce895fb041b13edab1acbdd635a7e4fce9b90fd5a4302d70521722a754",
+  "binding_sha256": "991b0d7929ca58b5311b7e22a5518e694325df5ac039715a1f83e774123f337b",
+  "distinct_passed_functions": 18,
+  "passing_functions_from_v3": 17,
+  "affected_cap_function_passed_v4": 1,
+  "final_v4_proof_sha256": "58d9df74c1b464825cda9500e029fdf7c3ae82736ae2345d577bb4e71135912f",
+  "preserved_failures": {
+    "v1": "16 setup errors before coordinator entry: missing parent fixture directory",
+    "v2": "Actual reader-property cleanup failure and failed-close fresh-resume auto-finalization defect against unchanged440eda31",
+    "v3": "17 pass; old cap spy armed on close rather than actual retained commit after lifecycle correction"
+  },
+  "lifecycle": {
+    "ownership": "Capture original close before reader-property lookup",
+    "successful_close": "Detach original close into local closing and set cleanup slot None before invoking it; RETAINED commits occur only afterward",
+    "failed_close": "OPEN/charged attempt retained; fresh Store resume refuses before any fake transport call",
+    "body_failure": "Finally invokes retained original close; no retry",
+    "exactly_once_bound": "Source control-flow proof; runtime tests verify owned response closed and failed-close resume refusal, not an independent close-call counter"
+  },
+  "verified": [
+    "Two passive local spools physically allocated before fake transport",
+    "GET/rate/body reservations precede fake transport and reads",
+    "Exact permit/source/identity/demand/registry/schema/budget refusal before fake calls",
+    "Either local allocation failure and second-reservation partial charge preserve uncertainty",
+    "Header/URL/encoding/body/cleanup failure retains charge and refuses automatic refetch",
+    "Immutable complete pagination reconstructs existing parser Packets from original CAS refs",
+    "Actual three-boundary SIGKILL and180-slot rolling rate refusal through composition"
+  ],
+  "unverified_or_limited": [
+    "No real GET transport, launch permission, provider receipt or historical coverage claim",
+    "Two local fixture roots do not establish real dual-host issuance/resource acceptance",
+    "Finite read slots PAUSE on arbitrary short reads lacking explicit observed EOF",
+    "Existing8MiB aggregate parser cap is a resource PAUSE, not missingness",
+    "Physical extents do not reserve SQLite/directory headroom",
+    "No production/model/account/original simulation changes"
+  ]
+}

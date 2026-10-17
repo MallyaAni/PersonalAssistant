@@ -1,5 +1,56 @@
 # Next session
 
+## 2026-10-17 — Generic cycle and synthetic acquisition integrated
+
+Generic7e92b44c integrated asda66c75a after ROOT full final source/diff/alltest/
+proof/runner review and independent actualv4 image/mounts/pins/proof checks.
+Cycle86ef2cde/newadapterbff27f11/newtest39f52751; oldtestf3 unchanged. Native
+34pass/0skip18.04s (30new +4selected compatibility),252a4f07/e0/networknone/RO/
+1CPU/RAM+total swap2GiB/exit0/OOMfalse. Ruff/format pass. Exact evidence:
+research/historical-generic-cycle-proof-2026-10-17.json. Genuine6176 not rerun.
+
+New prior freeze precedes packet examination; all-preheld fresh decision marks
+admit before native observation. Two-symbol SELL-first retains899.9 original
+buybudget excluding100.1 nondue reserve:SELL5thenBUY4, cash1198.15005, basis200,
+separate bid/ask and full-state restoration. FullCID/side/submission binding,
+fractional/missing/expiry/latestconflict/calendar/crash/idempotence checks pass.
+Actual recent-account defect reproduced: oldT+10 native account passed30s guard
+while NVDA packet missing, AAPL execute reached failed factory/OPEN submission.
+Structural empty reader-price snapshot fixes it, preserving original parsed
+quote evidence and exact old-account receipt/clocks with outer unavailable reason.
+Preserve redv3/413153dd receipt extraction and all fixture failures. No fake
+account observation. Final/auction phases refuse before execution; outcome paper
+still sent/pending, settlement NOTRUN. All new numerical inputs remain SYNTHETIC.
+
+Acquirer4c382640 integrated asf6ef9f64 after ROOT allsource/tests/runner/binding
+review and actualv3/v4 image/mount/source/proof verification. Only2newfiles,
+source889908ba/test97fe8dce; Store/rate/spool/parser unchanged.18distinct passed
+=17unchanged v3 workflows plus1affected cap-spy v4/0skip6.077s; no final18-run
+claim. Actuale2141d8e/e0/networknone/RO/1CPU2GiB RAM/total swap4GiB/exit0/OOMfalse.
+ROOT reproduced two lifecycle defects against old440e: failed read-property
+lookup skipped close; failedclose afterRETained allowed freshresume completion.
+Final capturesclose first, detaches cleanup slot before invokingclose ONCE by
+source flow, and only commitsRETAINED after successfulclose. Runtime verifies
+cleanup/refetch0/refusedresume, not an independent close-call counter. All setup,
+product-red and cap-spy failure roots retained. Exact completion0fc79f44 copied
+unchanged to research/historical-packet-acquisition-proof-2026-10-17.json;
+binding991b0d79 and nativev3/v4 proof roots remain on Spark. Ruff/format pass.
+
+Explicit synthetic-only permit pins actual8modules/demand/registry/head/budget.
+Both local extents and durable GET/rate/body charges precede fake callbacks;
+180-slot composed refusal,3actualSIGKILL/resume, paging/header/read/cap/cleanup
+failures tested. Finite short-read slots may PAUSE without EOF;8MiB envelopecap
+is not historical coverage. Actual dual-host issuance/metadataheadroom/real GET
+permission remain UNVERIFIED. No HTTPclient/CLI/credentials/defaultlive path.
+Diagram impact NONE: unused private conditional helpers, no deployed flow change.
+
+Next: actual_policy_review awaits separate final-native-observer assignment;
+historical_chain_completion implements approved ONE current-source conditional
+feature/distribution helper and retained6176/f612 acceptance (numeric CPU only,
+not modelservice); trading_action_consistency owns exact CURRENT codec identity
+profile extension and narrow nativef612+N2 validation. Original full nextcompact
+>=15:48; no provider/modelservice/account/deployment/fullrun action from above.
+
 ## 2026-10-17 — Corrected account identity must retain delivered metadata patch
 
 New research/historical-correction-current-source-continuation-2026-10-17.json
