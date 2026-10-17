@@ -1,5 +1,37 @@
 # Next session
 
+## 2026-10-17 — Historical publication additionally HELD for timing/audit gaps
+
+Source-only requirement audit found that independent_parity recomputes96 holding
+scenarios and3 daily feature prefixes, but does not independently recompute saved
+forecast_decisions/15-minute timing outcomes. Historical timing_reader uses
+live_probability_timing.build_reader with completed-SIP-close proxy snapshots;
+installed learned_live_timing.observe uses forward_probability_timing's stricter
+quote admission and midpoint/next-open transport. Exact timing parity across the
+original account remains UNVERIFIED. Reviewer is building a small pure-path
+counterexample/design from original source27471 and current unchanged timing
+sources, without original model arrays, services or heavy run reads. Do not
+silently replace this requirement with receipt consistency, fabricate bid/ask,
+weaken guards, relabel/replay the ONE original run or publish generic audit status
+as full acceptance. A structural publication blocker must close this boundary.
+
+Three private corrupted-fixture reproductions DID NOT RAISE on the old auditor:
+attempt99 against funded5; vanished durable intent; substituted untraded ticker
+within a94-name cohort. Root:
+/home/animallya96/scratch/historical-audit-contract-reproduction-20261017-v1.
+These prove audit coverage failures, not an observed violation by the running
+original account. Historical agent is correcting exact frozen overlay/cohort,
+submission/receipt/status/clock/durable conservation and same-clock cash budgets;
+valid timing-submitted3 against original-funded5 must remain valid. Producer,
+model/policy/economic/configuration and original run remain untouched.
+
+NEW actual public harness /tmp/verify_trading_numeric_public_20261017_v2.cjs,
+SHA8b40041b0dc5f7bbfd27581fb3e9d3737959afaff161e24bfd4291aa38443c8f,
+adds exact94 stale/null rows before and after refresh, original CID/nanosecond
+creation/quantity/fill clocks and visible prices, plus read-only native canvas
+paint/bounds observation. Syntax and28 local guard checks pass; no public run yet.
+Use it only after N2 independent proof and guarded settlement. Preserve oldharness.
+
 ## 2026-10-17 — ONE urgent N2 canonical release ACTIVE; do not duplicate
 
 N2ad44d536 canonical release launched11:15:45Z using NEWv2 exact bundle51e3e89a,
