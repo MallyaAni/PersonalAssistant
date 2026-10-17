@@ -446,6 +446,43 @@ def check_restores(value, result):
         assert set(saved["components"]) == {"broker", "paper", "latch"}
 
 
+# Freeze caller-owned forecasts before account capture can replace an input.
+def test_forecast_replacement_after_receipt_cannot_change_verdict(make, monkeypatch):
+    value = make()
+    external = value["distributions"]
+    original = forward.capture_account
+
+    # Replace only the external distribution after its receipt has been retained.
+    def replacing(*args, **kwargs):
+        observed = original(*args, **kwargs)
+        external["AAPL"] = probability.Distribution(
+            0.02, 0.001, np.array([-1.0, 1.0]), np.array([0.5, 0.5])
+        )
+        return observed
+
+    monkeypatch.setattr(forward, "capture_account", replacing)
+    result = run(value)
+    store = value["store"]
+    entry = store.recover_operation(result["decision_operation"])
+    receipt = packet._decode(
+        store.read_blob(entry["receipt_sha256"], limit=connected.META_CAP)
+    )
+    frozen = packet._decode(
+        store.read_blob(receipt["detail"]["forecast"], limit=2 * 1024**2)
+    )
+    verdict = result["verdicts"][0]["verdict"]["timed"]["forward_receipt"]
+    assert frozen["forecast_identity"]["AAPL"]["mean"] == -0.02
+    identity = verdict["forecast_identity"]["AAPL"]
+    assert identity["mean"] == frozen["forecast_identity"]["AAPL"]["mean"]
+    assert identity["scale"] == frozen["forecast_identity"]["AAPL"]["scale"]
+    for name in ("residuals", "weights"):
+        raw = np.asarray(frozen["arrays"]["AAPL"][name], dtype=np.float64).tobytes()
+        assert identity[name] == connected.sha(raw)
+    assert external["AAPL"].mean == 0.02
+    assert value["client"]._cash == pytest.approx(9494.495, abs=1e-10, rel=0)
+    assert value["client"]._held == {"AAPL": 5}
+
+
 # Check connected BUY, post-arrival touch, fees, midpoint NAV and restoration.
 def test_connected_buy_and_complete_restoration(make):
     value = make()
