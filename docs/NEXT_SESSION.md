@@ -1,5 +1,40 @@
 # Next session
 
+## 2026-10-17 — Exact image archives authenticated on both Sparks
+
+Read research/historical-checkpoint-image-archive-proof-2026-10-17.json.
+ROOT reviewed one-off archive helper233dd03f/controller5929e7d0 and exported
+existing immutable f612 without changing it or starting/loading any image.
+Root on EACH host: scratch/checkpoint-peer-image-archive-20261017-v1 is COMPLETE,
+never rerun/overwrite. Export exec75643 and direct-transfer exec67290 finished0.
+Actual2GiB preallocated body inodes retained at1519489536B; full rawSHA9d8c2074
+matches both. Config digest/exactlinuxarm64 image/all10 layer hashes/27bounded
+tar members authenticated on both hosts without extraction. Bulk stayed Spark.
+Explicit existing ed25519 keys pinned both hops; source beforeafter image list
+matched. Controller independent-verifierd4eb2fe6/exec19958 rehashed both archives
+and exact physical receipt/inode/size/mtime/ctime bindings; independentproof
+15cb6275 and all three sources preserved on both hosts. No Mac bulk artifact.
+
+Archive helper uses Python softAS256MiB/hard4GiB, Docker child virtualAS4GiB/
+nice10/stderr1MiB cap, raising900s alarm and terminate/wait/kill/reap. Fresh
+export gate requires6GiB available; receive1GiB; both8GiB disk/1024inodes.
+These are admission gates/virtual limits, NOT Docker daemon physical-memory
+proof. Both AST syntax checks passed; local Ruff unavailable, no lint/test
+claim. Source-reviewed archive cap/crash behavior is not a new crash test.
+
+Spark2 archive is available but Docker LOAD remains NOT DONE/NOT ADMITTED.
+Healthy existing trading_action_consistency has ONE READONLY official
+Docker29.2.1 load-source/resource proposal: no host probes/code/imports/runtime/
+transfers/load/container/service/model work. ROOT reviews before load. Prior
+Spark2 MemAvailable2442342400B/overlay2/free3492056764416B is headroom only;
+peer512MiB cannot constrain daemon memory. Do not claim archive copy proves
+runtime availability or actual two-host RPC. Standalone stdio runner remains
+NOT PREPARED/NOT RUN; next acceptance remains durable PREPARED only, no owner
+DECISION/ACK/commit/adoption. Original timing FAILED/publication CLOSED/missing
+receipts unchanged; v6 OPEN/PAUSED/no replay/adoption/new genuine run. No model,
+account/history/config or production changes by this task. Actual weekday/
+intraday/fill/UI and corrected historical delivery remain UNVERIFIED.
+
 ## 2026-10-17 — Bounded peer stream/session protocol VERIFIED privately
 
 Read research/historical-checkpoint-peer-rpc-proof-2026-10-17.json.

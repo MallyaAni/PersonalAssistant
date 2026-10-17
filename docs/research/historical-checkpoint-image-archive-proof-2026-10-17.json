@@ -1,0 +1,180 @@
+{
+  "status": "VERIFIED_PRIVATE_TWO_HOST_IMAGE_ARCHIVES_ONLY",
+  "base_revision": "8a636648",
+  "root_on_each_spark": "/home/animallya96/scratch/checkpoint-peer-image-archive-20261017-v1",
+  "source_image": {
+    "architecture": "arm64",
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "layers": [
+      "sha256:41d6505109809884e681a97f978542a2d4d3506af0124f18b3f3a471edfcc9b7",
+      "sha256:c26df6d1045bcd70c62e835f44e2ce60fef71630493a92f17faa184941c0af7f",
+      "sha256:1fb14899b8ee7fc3e7a87a848cb065309798a1d922935345520f4d51701287e0",
+      "sha256:de965252ed39aa516a700a7d73a3441f6aceb27dca16b329e958c447d191347b",
+      "sha256:201a1d369eba0e86044d9339e167a5274ad2667a2a8841e87327753d3c4cb0f4",
+      "sha256:11f0911189887d9864396960b94704297e04e1633826f600eb2ef46233b2008c",
+      "sha256:f16f59b40e6fda1c6f1a102d487e1eb79bb114d3cda2b7609557f3f97e345327",
+      "sha256:76ac3f8d0298429567486b36f4cc3163b6cd7df13c0632741417ecfb5339ada2",
+      "sha256:f679d1d6f2bfc984d5dddbcbb0f4dadecb6b38933f88722cad91d1661090e4a0",
+      "sha256:e0d0f546be19000b681e06d5117c82b1fcdd209bdff1e1b068b1b5792498b6d8"
+    ],
+    "os": "linux"
+  },
+  "archive": {
+    "bytes": 1519489536,
+    "sha256": "9d8c20747b52e6b316da95e0bd14dd1bcb87472c3bf891f84c0ff311545f17bf",
+    "tar_members": 27,
+    "layers": 10
+  },
+  "scope": "Exact existing f612 image export and direct Spark1-to-Spark2 archive copy/authentication. No image load, start, native/model/account or production operation.",
+  "verified": [
+    "Fresh exclusive archive roots; actual2GiB posix_fallocate bodies before bytes; same reserved device/inode retained at final1519489536B on each host.",
+    "Exact image ID linux/arm64/layer list checked before and after Docker save; config digest and all10 saved layer stream digests match that immutable image on each host.",
+    "Direct Spark1-to-Spark2 transfer over explicit pre-existing pinned ed25519 keys; no archive bytes passed through Mac.",
+    "Both full archive SHA and byte count match; independent verifier rehashed both bodies and checked source/receipt/inode/size/mtime/ctime identities.",
+    "27 bounded tar members inspected without extraction, no link/device members accepted; full raw archive equality separately authenticates all bytes including any tar padding.",
+    "Export and receive each completed successfully; source authentication and receiver authentication completed; exact helper/controller/verifier and independent proof preserved on both hosts."
+  ],
+  "source_sha256": {
+    "helper": "233dd03f7f1817ab8414b7c3de6be2e60496d7edd0b976bee94256c86d27fd71",
+    "controller": "5929e7d0d2239a46a1ca42ca2e140c4b937adaa9cd29141f0c99848a46f45faa",
+    "verifier": "d4eb2fe63831fc356afb73906a6aaa21460551efea2461857c59fbc6bf053132",
+    "independent_proof": "15cb62758c58946120a8afcfef4482b05a3b25d87ce02d3ca9992eb9ca4b2cb3"
+  },
+  "physical_receipts": {
+    "spark1": {
+      "archive": {
+        "bytes": 1519489536,
+        "ctime_ns": 1792280376823942000,
+        "device": 66306,
+        "inode": 42896040,
+        "mtime_ns": 1792280376823942000
+      },
+      "members": 27,
+      "mode": "export",
+      "record_sha256": {
+        "complete.json": "8cace2175c242c627086ef858a50b63f8f9ce9dfb0154360497f783f56abf8e1",
+        "reservation.json": "f3ad64bee54e0c44157668d1fcb273fa1bef531286d67759e9bc8673bb70e0e0",
+        "source-image.json": "cd06f1f7c63d5871241f226fa948235c5c094ad53a24fe5910134e00db3765d4",
+        "verified.json": "f5e842e745b3f8993f4d40eee0526f0d6da98857d9fc0651248af3d7298a148a"
+      },
+      "reserved_source": {
+        "architecture": "arm64",
+        "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+        "layers": [
+          "sha256:41d6505109809884e681a97f978542a2d4d3506af0124f18b3f3a471edfcc9b7",
+          "sha256:c26df6d1045bcd70c62e835f44e2ce60fef71630493a92f17faa184941c0af7f",
+          "sha256:1fb14899b8ee7fc3e7a87a848cb065309798a1d922935345520f4d51701287e0",
+          "sha256:de965252ed39aa516a700a7d73a3441f6aceb27dca16b329e958c447d191347b",
+          "sha256:201a1d369eba0e86044d9339e167a5274ad2667a2a8841e87327753d3c4cb0f4",
+          "sha256:11f0911189887d9864396960b94704297e04e1633826f600eb2ef46233b2008c",
+          "sha256:f16f59b40e6fda1c6f1a102d487e1eb79bb114d3cda2b7609557f3f97e345327",
+          "sha256:76ac3f8d0298429567486b36f4cc3163b6cd7df13c0632741417ecfb5339ada2",
+          "sha256:f679d1d6f2bfc984d5dddbcbb0f4dadecb6b38933f88722cad91d1661090e4a0",
+          "sha256:e0d0f546be19000b681e06d5117c82b1fcdd209bdff1e1b068b1b5792498b6d8"
+        ],
+        "os": "linux"
+      },
+      "root_device": 66306,
+      "root_inode": 42896039,
+      "sha256": "9d8c20747b52e6b316da95e0bd14dd1bcb87472c3bf891f84c0ff311545f17bf",
+      "source": {
+        "architecture": "arm64",
+        "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+        "layers": [
+          "sha256:41d6505109809884e681a97f978542a2d4d3506af0124f18b3f3a471edfcc9b7",
+          "sha256:c26df6d1045bcd70c62e835f44e2ce60fef71630493a92f17faa184941c0af7f",
+          "sha256:1fb14899b8ee7fc3e7a87a848cb065309798a1d922935345520f4d51701287e0",
+          "sha256:de965252ed39aa516a700a7d73a3441f6aceb27dca16b329e958c447d191347b",
+          "sha256:201a1d369eba0e86044d9339e167a5274ad2667a2a8841e87327753d3c4cb0f4",
+          "sha256:11f0911189887d9864396960b94704297e04e1633826f600eb2ef46233b2008c",
+          "sha256:f16f59b40e6fda1c6f1a102d487e1eb79bb114d3cda2b7609557f3f97e345327",
+          "sha256:76ac3f8d0298429567486b36f4cc3163b6cd7df13c0632741417ecfb5339ada2",
+          "sha256:f679d1d6f2bfc984d5dddbcbb0f4dadecb6b38933f88722cad91d1661090e4a0",
+          "sha256:e0d0f546be19000b681e06d5117c82b1fcdd209bdff1e1b068b1b5792498b6d8"
+        ],
+        "os": "linux"
+      }
+    },
+    "spark2": {
+      "archive": {
+        "bytes": 1519489536,
+        "ctime_ns": 1792280389171255000,
+        "device": 66306,
+        "inode": 5265547,
+        "mtime_ns": 1792280389171255000
+      },
+      "members": 27,
+      "mode": "receive",
+      "record_sha256": {
+        "complete.json": "22a704b534fed9edee19f229e0b07c667469066f18dedabbf29c1c25b4ba260b",
+        "reservation.json": "596a3df9f246bcf3e986a41dfa5f1c799ba7957e315fea969d9580aa7f2f04a3",
+        "source-image.json": "cd06f1f7c63d5871241f226fa948235c5c094ad53a24fe5910134e00db3765d4",
+        "verified.json": "004629cf2f32f285b3ae39337423dfc339b62642fcc5775669203876eb2d36a5"
+      },
+      "reserved_source": {
+        "architecture": "arm64",
+        "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+        "layers": [
+          "sha256:41d6505109809884e681a97f978542a2d4d3506af0124f18b3f3a471edfcc9b7",
+          "sha256:c26df6d1045bcd70c62e835f44e2ce60fef71630493a92f17faa184941c0af7f",
+          "sha256:1fb14899b8ee7fc3e7a87a848cb065309798a1d922935345520f4d51701287e0",
+          "sha256:de965252ed39aa516a700a7d73a3441f6aceb27dca16b329e958c447d191347b",
+          "sha256:201a1d369eba0e86044d9339e167a5274ad2667a2a8841e87327753d3c4cb0f4",
+          "sha256:11f0911189887d9864396960b94704297e04e1633826f600eb2ef46233b2008c",
+          "sha256:f16f59b40e6fda1c6f1a102d487e1eb79bb114d3cda2b7609557f3f97e345327",
+          "sha256:76ac3f8d0298429567486b36f4cc3163b6cd7df13c0632741417ecfb5339ada2",
+          "sha256:f679d1d6f2bfc984d5dddbcbb0f4dadecb6b38933f88722cad91d1661090e4a0",
+          "sha256:e0d0f546be19000b681e06d5117c82b1fcdd209bdff1e1b068b1b5792498b6d8"
+        ],
+        "os": "linux"
+      },
+      "root_device": 66306,
+      "root_inode": 5265546,
+      "sha256": "9d8c20747b52e6b316da95e0bd14dd1bcb87472c3bf891f84c0ff311545f17bf",
+      "source": {
+        "architecture": "arm64",
+        "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+        "layers": [
+          "sha256:41d6505109809884e681a97f978542a2d4d3506af0124f18b3f3a471edfcc9b7",
+          "sha256:c26df6d1045bcd70c62e835f44e2ce60fef71630493a92f17faa184941c0af7f",
+          "sha256:1fb14899b8ee7fc3e7a87a848cb065309798a1d922935345520f4d51701287e0",
+          "sha256:de965252ed39aa516a700a7d73a3441f6aceb27dca16b329e958c447d191347b",
+          "sha256:201a1d369eba0e86044d9339e167a5274ad2667a2a8841e87327753d3c4cb0f4",
+          "sha256:11f0911189887d9864396960b94704297e04e1633826f600eb2ef46233b2008c",
+          "sha256:f16f59b40e6fda1c6f1a102d487e1eb79bb114d3cda2b7609557f3f97e345327",
+          "sha256:76ac3f8d0298429567486b36f4cc3163b6cd7df13c0632741417ecfb5339ada2",
+          "sha256:f679d1d6f2bfc984d5dddbcbb0f4dadecb6b38933f88722cad91d1661090e4a0",
+          "sha256:e0d0f546be19000b681e06d5117c82b1fcdd209bdff1e1b068b1b5792498b6d8"
+        ],
+        "os": "linux"
+      }
+    }
+  },
+  "limits": {
+    "archive_cap_bytes": 2147483648,
+    "python_soft_address_space_bytes": 268435456,
+    "python_hard_address_space_bytes": 4294967296,
+    "docker_cli_address_space_bytes": 4294967296,
+    "docker_cli_stderr_file_cap_bytes": 1048576,
+    "helper_wall_seconds": 900,
+    "helper_cpu_seconds": 600,
+    "controller_outer_timeout_seconds": 2200,
+    "export_gate_available_memory_bytes": 6442450944,
+    "receive_gate_available_memory_bytes": 1073741824,
+    "free_disk_gate_bytes": 8589934592,
+    "free_inode_gate": 1024,
+    "docker_daemon_memory_limit": "NOT_CLAIMED",
+    "notes": "Python soft-AS differs from child Docker4GiB virtual-AS; these are not physical memory measurements. Helper stdout is controlled finite JSON; launcher pipe limits are checked after collection, not streaming caps."
+  },
+  "reviewed_corrections": "Before execution, worker identified Docker Go CLI inheriting hard256MiB AS and default-alarm cleanup risks. ROOT changed parent soft256MiB/hard4GiB, explicit Docker child4GiB+stderr1MiB, raising alarm handler, terminate/wait/kill/reap. Outer transfer timeout aligned with finite receive+verify phases; transfer receipt file+directory fsync added. No old failed runtime was replayed.",
+  "static_validation": "Both exact sources parsed with Python AST. Local Ruff unavailable; no Ruff or automated-test pass claim. Acceptance was actual archive export/copy plus independent readback, not a deployment.",
+  "not_proved": [
+    "Spark2 Docker image load/daemon memory admission",
+    "Actual two-host RPC durable PREPARED protocol",
+    "Native metadata/full model lifecycle/horizon/restore",
+    "Corrected retrospective publication or genuine weekday trading acceptance"
+  ],
+  "next_boundary": "Healthy existing trading_action_consistency has ONE READONLY official Docker29.2.1 source/resource proposal for archive load without starting images or model/service changes; ROOT reviews before any load. Standalone two-host stdio runner still not prepared or run.",
+  "unchanged": "No model/network/service restart, image load/start, account/order/history/config or production change by this task. Original timing FAILED/publication CLOSED/missing receipts unchanged. Genuinev6 OPEN/PAUSED/no replay/adoption. Completed gates not repeated.",
+  "diagram_impact": "NONE — private one-off image archive preparation did not change deployed architecture"
+}
