@@ -1,5 +1,31 @@
 # Next session
 
+## 2026-10-16 — Third ordinary nightly FAILED unchanged exact-source admission
+
+The genuine19:30ET cron finished23:45:05Z on hosta01542b7/backendef7428ba.
+FAILED at learned_live_holding.read_configuration -> _release:
+"Exact reviewed learned holding release required". Actual host/container API
+b73d11fc still differs from preserved approval0647fb9b;29other sources match.
+GET-only00:03:11Z:8positions/0open/0Oct16orders. Oct16 full record/learned
+inputs are ABSENT; Oct15, Oct14 and Monday records remain absent. Paper state
+28d3e8ed and original Oct13 record37d7541f/failed parity are unchanged.
+No runtime correction, replay, incumbent substitution or guard relaxation.
+
+Private scratch/grade-led-ordinary-source-failure-20261016-v1 preserves the
+dated log, original approvals/config/evidence/state,30-source comparison,
+backend identity and broker GETs. Observation proof
+d736bd9843e9b11d49e73454588493b4afc7282d04baf510c252ce4be31f392f.
+Exact record: research/grade-led-ordinary-source-failure-2026-10-16.json.
+VERIFIED failure observation; operational acceptance FAILED; historical
+quantity delivery UNVERIFIED. ONE retrospective1e8f440a/source27471 remains
+RUNNING untouched (1764sessions, through2026-03-06 observed23:56:56Z).
+Keep heartbeat ACTIVE and quiet while unchanged. Full independent audit,
+exact candidate-source approval retaining original model/economic evidence
+and archived approval/config, actual HOST AND CONTAINER admission, canonical
+historical/parity release, compiled quantities and real acceptance remain
+required. This documentation-only checkpoint does not repeat completed gates
+or deployments.
+
 ## 2026-10-15 — Second ordinary nightly FAILED unchanged exact-source admission
 
 The genuine19:30ET cron finished23:46:55Z on hosta01542b7/backendef7428ba.

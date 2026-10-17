@@ -1,0 +1,58 @@
+{
+  "status": "FAILED_EXACT_REVIEWED_SOURCE_GUARD",
+  "session": "2026-10-16",
+  "ordinary_cron": "30 19 * * 1-5 desk_daily.sh",
+  "captured_at": "2026-10-17T00:03:11.250554+00:00",
+  "nightly_log_last_modified_at": "2026-10-16T23:45:05.620053+00:00",
+  "host_source": "a01542b7f4c3048f350ef8103345000f4b50ec32",
+  "backend_source": "ef7428baa1961d79ad1f5bd9dac0122b54ce0fea",
+  "backend_container": "7df450dcf13e1a1cee2978da2af0b9b059014019b0a3e2f5ad33034d8490cce5",
+  "backend_image": "sha256:11e973863120d0de4eac5b13b6a42fe06205043cf34e9e5cebc130f920c532d0",
+  "first_failing_boundary": "learned_live_holding.read_configuration -> _release: Exact reviewed learned holding release required",
+  "reviewed_sources": 30,
+  "unchanged_host_and_container_sources": 29,
+  "mismatch": {
+    "path": "backend/api/v1/market.py",
+    "approved_sha256": "0647fb9b2986451676b9ab9fcc730d9263b89b6eb4ab32e3c25c6edda1377882",
+    "actual_host_and_container_sha256": "b73d11fc6931c95e1bc47ff12f4ecc564db5cd1b02628ee7681f87bf6bdb25d7"
+  },
+  "effects": {
+    "new_oct16_broker_orders": 0,
+    "broker_open_orders": 0,
+    "broker_positions": 8,
+    "oct16_full_record": "ABSENT",
+    "oct16_learned_inputs": "ABSENT",
+    "oct15_full_record_and_learned_inputs": "STILL_ABSENT",
+    "oct14_full_record_and_learned_inputs": "STILL_ABSENT",
+    "monday_oct12_full_record": "STILL_ABSENT",
+    "incumbent_plan_substituted": false
+  },
+  "preservation": {
+    "paper_state_sha256": "28d3e8ed8c09b1611c57ee0133ae620e430b4b57973b9d28634030d8b80d16fd",
+    "oct13_record_sha256": "37d7541f5ce12a080a4c0538939b95f99367fc9b5318e21eba03d96963927c32",
+    "holding_config_sha256": "1a14980a66a1cb5994f0bb82667dd46fce40ec7eb0705728d93e36b18faf5901",
+    "original_release_sha256": "5bbbc6ddf1ba570077f1ec760732d925bf215320774f5abd52907edfb44ecad8",
+    "original_evidence_sha256": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9",
+    "timing_config_sha256": "d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a",
+    "originals_unchanged_by_capture": true,
+    "broker_get_only": true,
+    "ordinary_job_replayed": false,
+    "release_guard_relaxed": false
+  },
+  "evidence": {
+    "root": "/home/animallya96/scratch/grade-led-ordinary-source-failure-20261016-v1",
+    "observation_proof_sha256": "d736bd9843e9b11d49e73454588493b4afc7282d04baf510c252ce4be31f392f",
+    "nightly_log_sha256": "cc5a852a8164c84fcb81389a17e20579dfeec6c63766bf86c681f5d8e5be8482",
+    "source_comparison_sha256": "2dff203a85f94e9d4f6956c4a35cf5c5dcbb2dba6aa3e2aac4db9edabc463a3f",
+    "broker_get_only_sha256": "4dd6b60259301ab15fdc2d9c5a90934ed3c09992c3f770f6530e082f040fadee",
+    "backend_identity_sha256": "7d9d6eb23c841359c4d1635b4cb88f73dff9c82ae34d1a3c8bd51f576fe78cb9"
+  },
+  "required_release_boundary": "After the ONE full retrospective completes and independent verification passes, obtain exact candidate-source approval retaining original model/economic evidence and archived original approval/config snapshots; prove actual HOST and CONTAINER read_configuration admission before canonical historical/parity delivery. Never replay missed ordinary days or weaken the source guard.",
+  "historical_full_container": "1e8f440a3b5b75dcabd299f5eaba58c7929fb6f96bc822fdb46b641ecf3e598d",
+  "historical_full_state": "RUNNING_UNCHANGED",
+  "historical_progress": {"session": "2026-03-06", "sessions_completed": 1764, "actual_updated_at": "2026-10-16T23:56:56.040139+00:00"},
+  "correction_deployed": false,
+  "fresh_ordinary_operational_acceptance": "FAILED",
+  "historical_quantity_delivery": "UNVERIFIED",
+  "validation_scope": "Read-only actual cron, source comparison, preservation and broker evidence; documentation-only checkpoint, no repeated deployment or completed gates"
+}
