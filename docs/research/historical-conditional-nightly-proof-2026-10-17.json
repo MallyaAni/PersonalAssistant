@@ -1,0 +1,96 @@
+{
+  "schema": "conditional-current-nightly-adapter-proof/1",
+  "status": "VERIFIED_SYNTHETIC_NATIVE_NIGHTLY_BOUNDARY_ONLY",
+  "source_sha256": {
+    "backend/market/historical_conditional_nightly.py": "5064c8886c9c4dc44503a3f1b1555fc60336e61e47161634a260d04c891d1cc7",
+    "backend/tests/test_historical_conditional_nightly.py": "a4b8ed57993a54b947b01a2bc8b08dd3f877e95719f83596e9b8b00a9d76a740"
+  },
+  "native_profile": {
+    "source": "3b72cd4e0bc15acd24432d501918c721685a5333",
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "source31_map_sha256": "bfbcb6ece4ea500726e00abbb06fc2c84d63d386bb307958016915357aaef5b3",
+    "paper_sha256": "a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c",
+    "identity_scope": "Actual31 source bytes and exact declared CURRENT codec profile; actual approval/model files are NOT mounted or re-admitted by these synthetic tests",
+    "numpy": "2.5.3",
+    "sklearn": "1.9.1"
+  },
+  "implementation": {
+    "native_lifecycle": "Exact private ReplayBroker plus FrozenCurrentGradePolicy and market_daily.paper_trade; no alternate allocator, whole-share planner, sender or paper schema",
+    "reservation": "Exclusive0700 descendant under existing locked Store; exclusive0600 reservation/result files plus existing CAS, no packet stage/head mutation",
+    "recovery": "Completed result returns authenticated original component references; incomplete reservation pauses without any repeated model/account effect",
+    "raw_receipts": "Native physical paper writes and pre-ack raw submission request/attempt/response/refusal retained; observation serialization failure pauses after native persistence and never replaces the native outcome",
+    "clock": "Unused corrected account/context capability validates exact canonical assumed_submission_at and literal native dip_or_close; original auditor and stored legacy rows unchanged",
+    "source_pinned_optional_cycle": "f55b51fa3ff896e6a3a6f32e651816fd2372d079ad8cfb4781d5d3c48ffaf1d2",
+    "optional_cycle_predecessor_runtime": "UNVERIFIED_NOT_EXERCISED",
+    "standalone_adapter_packet_pipeline_integrated": false
+  },
+  "source_copy": {
+    "original_readable_image_copy_root": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1",
+    "image_provenance_proof_sha256": "671e236f75ee6e420ae09c2f54029119b1c096c0703a0a55fb90298853ae3c2f",
+    "original1655_map_sha256": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5",
+    "native_overrides": 0,
+    "added_unused_helper_and_documentation_files": 37,
+    "added_current_cycle_and_settlement": "Exact reviewed f55 and81286e30; no old d8 replacement or semantic Cycle change",
+    "permission_scope": "Private source copies only; actual image and live source permissions unchanged",
+    "unoverlaid_image_acceptance_claim": false,
+    "all_native_and_added_bytes_before_after_equal": true
+  },
+  "validation_v1": {
+    "root": "/home/animallya96/scratch/historical-conditional-nightly-validation-20261017-v1",
+    "container": "a8f64177a94d3d942be6fd99041b13bb9e230e0e1ed2ea6c97abdf305b0b8d4e",
+    "runner_sha256": "bbf5c9dc750739d091e7d32fecb8fb356fce545490bbd38e33db9db57eaa3a2f",
+    "overlay_manifest_sha256": "1d5dcfc95bd0deed03f3e92137790f2d1307ddf7e725d169527dcc62b7ae66f7",
+    "overlay_tar_sha256": "7cf04bee42e5f44d0273a44240538ae3662d2d289b80ed64a22ee78f0661158f",
+    "test_sha256": "e34ffcf90becfd1bd2332fa3394c12c4d2051877e737fdeaf8160d8f853a25eb",
+    "result": "21collected;20passed/1failed/0skipped in2.73seconds",
+    "failure": "Physical-NaN fixture used nonexistent PaperState.seed_equity; native constructor rejected before that test exercised the adapter",
+    "log_sha256": "fac24eb3e7b04678feee9c41b64cc9c5e126783aa462b8bba4450f1f8d60aa52",
+    "runtime_proof_sha256": "759aec01f5960c6e4134b9c62ded3ea7b077aa37745805d71d5f7437a025d36d",
+    "native_source_and_thread_proof_sha256": "c9d672ae3b824ed3beb0ad5a3c08d6157dacbcea22119b25e801f1c302de7273",
+    "retained": true
+  },
+  "validation_v2": {
+    "root": "/home/animallya96/scratch/historical-conditional-nightly-validation-20261017-v2",
+    "container": "2c8d27c388bec8f0b3bd6043466e8faae93bce7eda05e376d1d27b6e83524f57",
+    "runner_sha256": "0e0a04a5f006f48ac84472cf504f22f5c49e3daae457fd0e93610f262c62a0f6",
+    "overlay_manifest_sha256": "bee8bd04f9f267a9f5bbfdda9686f9377d547e23473ee4269d57fb5df924f90a",
+    "overlay_tar_sha256": "5f0a992f1ff0779f8ba9e7e1aa509d6e70e3187824ce63cda15580283f98ce73",
+    "result": "ONLY affected physical-NaN case:1collected/1passed/0skipped in0.32seconds",
+    "test_only_fix": "PaperState(seed_equity=float('nan')) -> PaperState(start_equity=float('nan')); all other test bytes and adapter5064 unchanged",
+    "log_sha256": "3a6504404ab639ac8fe2940ac1654603c072a999c0ae65ca7ef9701ab97a0954",
+    "runtime_proof_sha256": "ee19a4bcac829022feb95d05a9aaa5c0c3bf675c039893d54cd958f924f43c07",
+    "native_source_and_thread_proof_sha256": "63aae8d653dab0573564bf7ff4c6bc67db3e61bce28cb045fa6bc9fe0c3a6299",
+    "actual_outcome": "Exact native NaN physical bytes retained in CAS and on disk; finite outer admission refused without normalization"
+  },
+  "combined_acceptance": {
+    "statement": "20unchanged case passes from v1 plus1 corrected previously unexercised case from v2; no claim that the whole21 were repeated on v2",
+    "runtime_both": "Exactf612/UID1000/networknone/readonly/1CPU/2147483648RAM=MemorySwap/tmp64MiB; all mountsRO except exclusive newoutRW; exit1 for preserved v1 and exit0 for v2; OOMfalse",
+    "genuine_loaders": "Structurally forbidden: adapter.load_context; admitted.admit/infer; learned_live_holding.prepare; forward_arithmetic.load_publication; holding_risk_bank.load_bank",
+    "test_environment": "ANIOS_TEST_MODE; synthetic SECRET_KEY; --noconftest; no auto plugins or cache; pytest-only testdeps; actual native NumPy/sklearn imports retained",
+    "threads": "OPENBLAS_NUM_THREADS/OMP_NUM_THREADS/MKL_NUM_THREADS/NUMEXPR_NUM_THREADS all1; every actual before/after threadpool entry1",
+    "ruff_and_format": "PASSED",
+    "py_compile": "PASSED"
+  },
+  "coverage": [
+    "Exact100k/zero native birth, unchanged Store head, strict physical marker lineage and forged CAS-result rejection",
+    "Interrupted operation refuses automatic replay; completed birth/close returns original refs without another broker/model call",
+    "One synthetic prior-close uses actual native nightly lifecycle and grade allocator; raw zero proposal remains distinct from constrained targets",
+    "Eligible zero-size holding retained and missing-grade holding protected by real native grade policy over declared synthetic risk scenarios",
+    "Unknown-NAV broker refusal preserves pre-reconciliation paper/control/history and records0 model calls",
+    "Original raw immediate accepted/refused requests, quantities and pre-submission paper bytes retained without replacing outcomes",
+    "Nonfinite decision recording waits until native persistence then pauses; submission recording failure preserves accepted/refused broker behavior",
+    "Corrected exact31.2second clock, wrong clock, literal legacy intraday, wrong symbol and missing birth marker rejection",
+    "Exact physicalNaN bytes retained/refused, cap/symlink rejection, atime-only read accepted while mtime/ctime changes rejected"
+  ],
+  "limits": [
+    "Actual current holding-bank/daily-input loader, real frozen model restoration/inference and genuine nightly quantities remain UNVERIFIED and held pending separate bounded runner review",
+    "Tests use synthetic declared scenarios and a clearly labelled patched context capability, never old saved targets as model inputs",
+    "Current optional Cycle predecessor graph is source-pinned but not exercised here; no standalone-to-Cycle coordinator integration claim",
+    "Corporate-action due phases deliberately fail for missing coordinator evidence; no late entitlement application, auction execution or event-history fabrication",
+    "Independent ReceiptLedger/corporate-claim audit and all-history source/calendar/preservation acceptance remain separate required boundaries",
+    "Physical paper256KiB and existing codec/CAS caps remain explicit; no feasibility or capacity relaxation",
+    "Original source27471/config1a and N2 selectors/history remain untouched; original current-live timing equality remains FAILED",
+    "Publisher remains CLOSED; no provider GET, live inference/model service, fit/tuning, account replay, corrected full simulation or production deployment"
+  ],
+  "diagram_impact": "NONE: unused private adapter around existing planner and existing Store/CAS; no service, endpoint, agent or deployed relationship changed"
+}
