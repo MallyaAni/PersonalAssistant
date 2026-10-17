@@ -6,6 +6,7 @@ import os
 from hashlib import sha256
 from pathlib import Path
 
+from backend.market import live_model_history_binding as binding
 from backend.market import live_model_history_projection as projection
 from backend.market.live_model_history_reader import _read_version
 
@@ -33,22 +34,53 @@ def write_stock(folder, name, value):
 
 
 # Save a new immutable version and select it only after complete integrity readback.
-def publish(account, proof_path, proof_sha, root):
+def publish(
+    account, proof_path, proof_sha, root, *, frozen_market=None, source_reviews=()
+):
     proof = evidence(proof_path, proof_sha)
     stocks = projection.project(account, proof)
     if len(stocks) != 94:
         raise ValueError("Complete installed historical stock cohort required")
+    if any(
+        stock["start"] != "2019-03-01" or stock["through"] != "2026-10-12"
+        for stock in stocks.values()
+    ):
+        raise ValueError(
+            "Complete requested historical calendar required; bounded stage refused"
+        )
     root = Path(root)
     before = {
         name: (root / ("desk/learned-" + name + "/config.json")).read_bytes()
         for name in ("holding", "timing")
     }
+    binding_raw = None
+    if frozen_market is not None:
+        chain = binding.build(
+            root,
+            frozen_market,
+            next(iter(stocks.values()))["provenance"],
+            source_reviews=source_reviews,
+        )
+        binding_raw = json.dumps(
+            chain, allow_nan=False, sort_keys=True, separators=(",", ":")
+        ).encode()
     for stock in stocks.values():
-        for name, raw in before.items():
-            if sha256(raw).hexdigest() != stock["provenance"][name + "_config_sha256"]:
-                raise ValueError(
-                    "Historical account differs from installed live model configuration"
-                )
+        if binding_raw is not None:
+            binding.validate(root, chain, stock["provenance"])
+            stock["provenance"] = {
+                **stock["provenance"],
+                "serving_binding_sha256": sha256(binding_raw).hexdigest(),
+            }
+        else:
+            for name, raw in before.items():
+                if (
+                    sha256(raw).hexdigest()
+                    != stock["provenance"][name + "_config_sha256"]
+                ):
+                    raise ValueError(
+                        "Historical account differs from installed live model "
+                        "configuration"
+                    )
     version = sha256(
         json.dumps(
             {
@@ -57,6 +89,9 @@ def publish(account, proof_path, proof_sha, root):
                 "projection_source": sha256(
                     Path(projection.__file__).read_bytes()
                 ).hexdigest(),
+                "serving_binding": sha256(binding_raw).hexdigest()
+                if binding_raw
+                else None,
             },
             sort_keys=True,
         ).encode()
@@ -71,6 +106,11 @@ def publish(account, proof_path, proof_sha, root):
         "proof_sha256": proof_sha,
         "files": {},
     }
+    if binding_raw is not None:
+        with (folder / "serving-binding.json").open("xb") as stream:
+            stream.write(binding_raw)
+        (folder / "serving-binding.json").chmod(0o600)
+        manifest["serving_binding_sha256"] = sha256(binding_raw).hexdigest()
     for name, value in stocks.items():
         manifest["files"][name] = write_stock(folder, name, value)
     for name, expected in stocks.items():
@@ -81,6 +121,8 @@ def publish(account, proof_path, proof_sha, root):
         for name, raw in before.items()
     ):
         raise ValueError("Live configuration changed during historical publication")
+    if binding_raw is not None:
+        binding.verify_artifacts(root, chain)
     temporary = parent / (version + ".manifest.tmp")
     with temporary.open("x") as stream:
         json.dump(manifest, stream, indent=2)
@@ -101,8 +143,21 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("account", "proof", "proof-sha256", "root"):
         parser.add_argument("--" + name, required=True)
+    parser.add_argument("--frozen-market")
+    parser.add_argument("--source-review-sha256", action="append", default=[])
     args = parser.parse_args()
-    print(json.dumps(publish(args.account, args.proof, args.proof_sha256, args.root)))
+    print(
+        json.dumps(
+            publish(
+                args.account,
+                args.proof,
+                args.proof_sha256,
+                args.root,
+                frozen_market=args.frozen_market,
+                source_reviews=args.source_review_sha256,
+            )
+        )
+    )
 
 
 if __name__ == "__main__":
