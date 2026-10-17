@@ -1,5 +1,48 @@
 # Next session
 
+## 2026-10-17 — Genuine nightly context exposed immutable-action failure; fixed privately
+
+Featureb04513c8 integrated as8de77fc6 after ROOT full diff/runner/runtime/proof
+review. Read research/historical-conditional-nightly-action-metadata-proof-2026-10-17.json.
+Helperac320967/test8d4d7852 preserve exact finite action values/keys while hashing
+nested immutable mappings; original299 reproduced3actual failures, corrected51
+native/synthetic cases passed/0skip2.64s on actual43037f13/f612, UID1000/none/RO/
+1CPU/2GiB RAM=total swap/tmp64MiB. All1695 source/alias pins and native31 unchanged.
+This unused private adapter correction is NOT a production release or genuine
+funded-plan acceptance. Production frontend remains0655/backend3e4edf/f612.
+
+Preserve genuinev1 namespace failure (no heads/context/birth/close), corrected
+runner33e7979d and genuinev2 actual7f79ff03 failure920535b7/runtimefa3e1482. V2
+completed exactly two frozen holding calls:1x96x13/93opportunities and2961x96x13/
+206595opportunities,0nonfinite/0below-minus-one; then failed on mappingproxy JSON.
+Actual18:00:38–18:00:52Z/399360KiB RSS; no birth/close,1692sources/326inputs unchanged.
+Do not call those calls a complete causal/funded/model-quality acceptance.
+
+Genuinev3 metadata-only prepared closure remains INERT, no CID/output. Do not
+launch it: pinned economic preflightab6a0930 found ADI/NVDA dividends onFeb28.
+The current blanket due-action guard would reject the initial prior close.
+Original source run523–539 plans prior close on a new100k/zero book; economic
+actions begin only in the March1 loop566. Next atomic BIRTH correction must prove
+exact original birth/zero native components and preserve pre-inception declarations
+without applying them or changing dates; normal/Cycle economic guards stay strict.
+Even already-applied normal-session events need a later authenticated coordinator
+proof; current blanket guard is not full economic integration. No favorable dates,
+actual-account replay or model-service changes. Main is not deployed.
+
+Independent original-only streamed-reader work remains in the execution-reconciliation
+tree. ROOT reviewed its full parser/control-history bridge. Pure40 passed as38
+unchanged plus2 corrected rejection-message cases; original38/2failure retained.
+Full affected legacy196 passed/0skip6.472s on36dcad69/e0, synthetic head only;
+no actual model/archive mounts. Source nativeN2 map99e62 is separate from servingbfb.
+832110254B/1916row SYNTHETIC capacity processa3e28c2637e9086bb110e77817c1c59c4639b51a4f89b86fa2b692bb8191b345
+started18:10:48Z and was directly confirmed RUNNING. Root is
+scratch/original-streamed-history-resource-832110254-20261017-v1. Poll this actual
+handle; never restart/adopt partial output. Its result and source integration are
+pending; no original full numerical parse/audit or publication is authorized by
+these fixtures. Preserve created-before-Python legacyv1 EROFS and new source clones.
+Original-only auditor and corrected current-account paths remain separate; their
+combined private source graph must be explicitly re-pinned and tested, not weakened.
+
 ## 2026-10-17 — Single-action dashboard and dead frontend cleanup delivered
 
 Read research/trading-dashboard-single-action-proof-2026-10-17.json. Production
