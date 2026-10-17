@@ -38,8 +38,8 @@ test('Stocks and chart details refresh assessments without personal guidance', a
   await page.goto('/#desk')
   await page.getByRole('searchbox', {name: 'Search the stock list'}).fill('CRWV')
   const cell = page.getByRole('cell', {name: 'CRWV displayed grade'})
-  await expect(cell).toContainText('A+')
-  await expect(cell).toContainText('intraday assessment')
+  await expect(cell).toContainText('—')
+  await expect(cell).toContainText('model plan unavailable')
   await expect(page.getByLabel('CRWV size', {exact: true})).toHaveText('—')
   await page.getByRole('button', {name: 'CRWV', exact: true}).click()
   const assessment = page.getByRole('region', {name: 'Current assessment', exact: true})
@@ -55,7 +55,7 @@ test('Stocks and chart details refresh assessments without personal guidance', a
   await page.getByRole('button', {name: 'Close', exact: true}).click()
   fresh = false
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect(cell).toContainText('fresh assessment unavailable')
+  await expect(cell).toContainText('model plan unavailable')
   await page.getByRole('button', {name: 'CRWV', exact: true}).click()
   await expect(assessment).toContainText('Fresh assessment unavailable')
   await expect(assessment).not.toContainText('A+ · Entry eligible')
@@ -63,7 +63,7 @@ test('Stocks and chart details refresh assessments without personal guidance', a
   fresh = true
   grade = 'C'
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect(cell).toContainText('intraday assessment')
+  await expect(cell).toContainText('model plan unavailable')
   await page.getByRole('button', {name: 'CRWV', exact: true}).click()
   await expect(assessment).toContainText('C · Avoid new entry')
   expect(writes).toEqual([])

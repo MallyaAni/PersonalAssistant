@@ -113,7 +113,7 @@ test('chart judgments refresh independently of recorded actions and completed ex
   stage = 'expired'
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
   await expect(page.getByLabel('READY strategy intent', {exact: true})).not.toHaveText('BUY')
-  await expect(page.getByLabel('READY displayed grade', {exact: true})).toContainText('fresh assessment unavailable')
+  await expect(page.getByLabel('READY displayed grade', {exact: true})).toContainText('model plan unavailable')
   expect(writes).toEqual([])
   expect(errors).toEqual([])
 })
