@@ -1,5 +1,34 @@
 # Next session
 
+## 2026-10-17 — Fresh-mark boundary integrated; release routing gate active
+
+Fresh-mark375bb69d integrated as07d4620a, exact selector8194ecbc/test7749c97a.
+ROOT checked actual retained0815a821/e0/exit0/OOMfalse/networknone/read-only/
+1CPU512MiB and mounted source bytes; proof0cedd8cb matches.21native checks/0skip
+pass. Original033 and all existing timing primitives unchanged. New explicit
+addendum4dcb2995 declares33.101s observation and prior-observation1ms tolerance;
+these are assumptions, not recovered clocks. All actual positive held shares,
+including fractions, need fresh candidate prices; no native observe/account yet,
+NAV always null. Genuine166-row AAPL capture's latest equal-clock J/K rows remain
+conflicting under the unchanged full-row rule: missing/no older fallback. Do not
+relax a source rule to turn this sample green. Agent now validates a NEW private
+selector-to-native-account join, not a production runner or new acquisition.
+
+ONE metadata canonical release PID4045370 remained active14:03:57Z, target3b72,
+and had advanced from unit tests to real-model routing; no completed gate,
+activation or delivery claim yet. Never duplicate it. Stream composition59eab30c
+passed genuine bounded3night/11intent/7fill recomputation, but is NOT integrated:
+ROOT review found unbounded read-before-cap and plain JSON metadata decoders.
+Agent is reproducing/fixing that admission boundary with focused tests; original
+native6eac8afb/159check proof and all failures remain unchanged. Full audit and
+publication still not admitted. Atomic packet store implementation approved in
+two NEW unused files only, with actual multiprocess/SIGKILL acceptance required.
+
+Compact original full-run14:03:57Z: exact1e8f440a/image136ebb46 running/OOMfalse,
+1894sessions through2026-09-11/2906fills/3850intents, updated14:01:49Z, completion
+absent. No other active output read. Heartbeat ACTIVE/quiet unchanged. No new
+model/network/order/account/provider activity. Diagram impact NONE.
+
 ## 2026-10-17 — Canonical live metadata release active; generic packet bounds integrated
 
 ONE canonical metadata release started at genuine13:53:48.967457Z, controller
