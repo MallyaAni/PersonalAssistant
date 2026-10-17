@@ -1,0 +1,45 @@
+{
+  "schema": "original-complete-input-auth-proof/1",
+  "status": "VERIFIED_COMPLETE_ORIGINAL_BYTE_AUTHENTICATION_ONLY",
+  "root": "/home/animallya96/scratch/original-complete-input-auth-20261017-v1",
+  "container": "4cb6103b35feac31ee76e05000c9e7cd85d13206e1bf5799d1229092fa6f0f5f",
+  "started_at": "2026-10-17T21:52:54.454986654Z",
+  "finished_at": "2026-10-17T22:03:25.393798992Z",
+  "exit_code": 0,
+  "oom_killed": false,
+  "source_revision": "6d4729c3df9b0ef2d62ab9b848c1499f2c3d954d",
+  "original_source_revision": "27471b9c61b958f759e9f48b80acaf60cdf75f2e",
+  "helpers": {
+    "live_model_history_input_auth.py": "35ad5f5f96fa7951b6163512ab733a9168869eef17038e030b7dad4dcbb1b111",
+    "original_history_json.py": "de29c1017f4c9eadd874b2fbe0d85b4c80ced8e7a43fb6bd4f779c3d726cb2eb"
+  },
+  "scope": "All2431 original source hashes and164833 declared input hashes authenticated twice by one tested library call; full external2431 Git-map equals original source manifest. No model, policy/account replay, provider or numerical audit.",
+  "authenticated_bytes_per_pass": 1117467819,
+  "actual_authenticate_calls": 1,
+  "read_passes_per_input": 2,
+  "elapsed_seconds": 630.633471056819,
+  "resources": {
+    "runtime": "Frozen original-auditor N2/e0, UID1000/networknone/readonly/1CPU/2GiB RAM=swap/tmp64MiB;17 exact plan mounts, sole freshoutRW, original11 readonly host namespaces plus pure source/completion/manifest/execution/Git-mapRO. Original writable /results excluded.",
+    "authentication_peak_kib": 347068,
+    "full_receipt_serialization_and_two_detached_graphs_peak_kib": 947364,
+    "receipt_bytes": 137832798,
+    "memory_limit": "This is byte authentication and receipt allocation only. No model cache, numerical audit or full simulator lifecycle was loaded or proved."
+  },
+  "preservation": "Five helper/runner source file identities and original completion/manifest/execution/Git-map SHA and physical identities unchanged. All input paths and symlink identities rechecked between passes. No original physical state mounted or rewritten; no guard/source/config substitutions.",
+  "evidence_sha256": {
+    "terminal_progress": "49713399d0280b8df9d714163c5d2c3bb2b57c571c67347b3af29a171206692d",
+    "actual_terminal_inspect": "4a7453c5197a46eea8f02d669f2e9cee1caa53aa02d86239fec15f0c196115a3",
+    "full_receipt_retained_on_spark": "795d4c6b5b252682cedfefd4df4ba0a3039e8167baba15dc8878ea006954e4f7",
+    "independent_terminal_runtime_and_receipt_verification": "f08728840cb4fa8b814c356728213aa1a4b439a7570ea634b61b1ef9435d1bf3",
+    "independent_verifier": "5028226fc27ea44694234155e136464b33bdfb938c86a8e99d83609d7a5a73b0"
+  },
+  "not_proved": [
+    "Independent original model, causal feature, raw-price, economic, ledger, calendar or94payload acceptance",
+    "Missing original initial raw receipts; they remain missing",
+    "Combined source graph integration into current nightly helper",
+    "Corrected full account, dual-host pre-effect checkpoint capacity or genuine weekday/intraday/fill/UI acceptance"
+  ],
+  "original_timing_contract": "FAILED_UNCHANGED",
+  "publication": "CLOSED",
+  "diagram_impact": "NONE: private read-only source/input authentication; no deployed component or relationship changed"
+}

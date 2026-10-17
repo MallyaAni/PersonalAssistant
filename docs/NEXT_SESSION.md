@@ -1,5 +1,31 @@
 # Next session
 
+## 2026-10-17 — Complete original source/input byte authentication VERIFIED
+
+Read research/original-complete-input-auth-proof-2026-10-17.json. Actual4cb6103b
+exited0/noOOM22:03:25.393798992Z; ROOT execsession21052 finished. NEVER restart it.
+All2431 original source files and164833 declared input hashes passed two physical
+read/identity passes in one tested auth call,1117467819B per pass. External full
+Git-map equals the original2431 source manifest. Pure helpers35ad/de29 unchanged;
+original completion/manifest/execution/Git-map SHA and identities unchanged.
+No current/archive substitution or source/config guard weakening was needed.
+
+Terminal proof49713399/actual inspect4a7453c5 independently checked against the
+exact17 planned mounts and stopped e0/UID1000/noneRO/1CPU/2GiB RAM=swap/tmp64MiB
+runtime. Independent ROOT proof f0872884/verifier5028226f rehashed the complete
+137832798B receipt795d4c6b without decoding it on Mac. Bulk receipt stays Spark.
+Elapsed630.633s; auth peak347068KiB, full serialization plus two detached receipt
+graphs peak947364KiB. This proves byte/receipt memory only: no model cache,
+numerical/financial/causal audit or simulator lifecycle was loaded or proved.
+
+Original timing remains FAILED, missing initial raw receipts stay MISSING,
+publication CLOSED. Original file/state intake30b7 is also complete; no repeats
+for documentation. Full numerical audit/source integration and corrected native
+physical capture/CAS/dual-host capacity/coordinator remain OPEN. Genuinev6 stays
+PAUSED/no replay. Healthy agent is finishing source-only raw primitive/tests on
+settlement9eabe; ROOT synthetic runner is inert pending final source review.
+Productione237/f612 unchanged; real weekday/intraday/fill/UI still UNVERIFIED.
+
 ## 2026-10-17 — Complete byte-authentication started; disk headroom recovered
 
 Read research/original-complete-input-auth-invocation-proof-2026-10-17.json.
