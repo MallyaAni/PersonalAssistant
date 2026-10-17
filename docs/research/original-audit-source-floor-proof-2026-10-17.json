@@ -1,0 +1,73 @@
+{
+  "schema": "original-audit-source-floor-proof/1",
+  "status": "VERIFIED_METADATA_SOURCE_FLOOR_ONLY",
+  "starting_revision": "908f5e282f56fd5261dc90cab9a70dc948ae2f5e",
+  "branch": "codex/original-audit-source-floor-20261017",
+  "scope": "Two required executed-verifier source paths, exact actual-source fixture pins and six focused admission regressions. No other original/auditor/model/economic logic changes.",
+  "source_sha256": {
+    "backend/cli/audit_original_live_model_history.py": "cf960a7a019b2ef87327517424098ba5ffa3b65eb46676d3c5cd779a043c83cd",
+    "backend/tests/test_original_live_model_history_entrypoint.py": "8c46922beeaa4c20674d409af5ebb9b5f0d0c10973e1470f0c1596e2b120d5f2"
+  },
+  "first_boundary": "The original12-entry required source floor omitted verify_actual_policy_timing.py and verify_live_model_history.py while the stream executed their economic folds, physical fills/attempts and cohort checks. Missing hashes passed source_admission before any model call. Complete original Git authentication concerns the producer's separate original source namespace, not these actual auditor dependency bytes.",
+  "change": "Require both exact relative paths in the existing source map; existing authenticate_file behavior now checks their independently provided SHA256. Fixture adds actual hashes; omission, digest substitution and stale private source-copy bytes refuse. No admission stubs.",
+  "dependency_bytes_in_test_runtime": {
+    "backend/cli/verify_actual_policy_timing.py": "bb38ed77c6a91123404586d72d080682e36e19e92970d09280b3e0f35e335aa3",
+    "backend/cli/verify_live_model_history.py": "fc1d14cea382c7f7d66f67ed14d2db7b71f20258e0447aa9033a96faa7ce7cd9"
+  },
+  "runtime": {
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "isolation": "ActualUID1000:1000/networknone/readonly/1CPU/2147483648RAM=MemorySwap/tmp64MiB; only new privateout RW",
+    "readonly_source_baseline": "/home/animallya96/scratch/original-history-entrypoint-validation-20261017-v7/source",
+    "source_baseline_scope": "Existing completed v7 SOURCE snapshot only, CLI and test overlaid individually; no original account/input/model mounts",
+    "runner_only_dependencies": "/home/animallya96/scratch/historical-native-pytest-deps-20261017-v2/modules",
+    "runner_sha256": "245b3a2570b4a05238abae5b0fb4d5f2d5e35af6d5fb9aab7beb8b4e0bae0b80",
+    "selection": "pytest -q -c /dev/null --noconftest -p no:cacheprovider backend/tests/test_original_live_model_history_entrypoint.py -k <selected source-admission cases>",
+    "guards": "audit, loader.load, StreamAudit.verify, forward_arithmetic.load_publication and holding_risk_bank.load_bank raise if called; plugin autoload disabled",
+    "source_pins_checked_before_after": 15,
+    "source_pins_before_after_equal": true
+  },
+  "red": {
+    "root": "/home/animallya96/scratch/original-audit-source-floor-red-20261017-v1",
+    "container": "02d926f5476815d51011967d1fdef0062a38d9a4df31d195ac4d2d8bffcfd1f7",
+    "original_cli_sha256": "6f777ed0084f2ee5e0bbabe4a0dfc81df5907cdb1dbb687819cbfea139af14d6",
+    "actual_result": "2failed56deselected in0.15seconds; both omission tests DID NOT RAISE ValueError",
+    "proof_sha256": "eeb5da9a9c87124c4044c9a0dff446862f1cec6691d847e6fac7508f46e88c03",
+    "inspect_sha256": "d61e81f355ed4d3f491d20b3f60fed0da806006ca2e59fd84e4df0857890858e",
+    "log_sha256": "f9aa01510d3ed9fc50b87cce37755ae67557599dcf57c4491e1f0cd17e555b65",
+    "source_pins_sha256": "c71b392e457327e21a28974681d7e22e146479367544b4b7b378e110d3b774ce",
+    "exit_code": 1,
+    "oom": false,
+    "max_rss_kib": 183172,
+    "retained_harness_limit": "Proof status remains FAILED: private expected-red classifier anticipated older pytest wording DID NOT RAISE <class 'ValueError'> but actual runner used DID NOT RAISE ValueError. Both actual missing-refusal assertions are retained; no red rerun or status rewrite."
+  },
+  "green": {
+    "root": "/home/animallya96/scratch/original-audit-source-floor-green-20261017-v1",
+    "container": "9e372de989ed78024a31e83de2532339d5b86ab3fa306e4eef4144328acb0d84",
+    "actual_result": "7passed51deselected0skipped in0.12seconds",
+    "proof_sha256": "5a3baa39f58461679f43cb5440a69d73fef561a77c54bb7315638782f964979d",
+    "inspect_sha256": "667fbb47ccd747efa3db3d15c36a7c8d1edbf72dd79ec4cf05a759210cb99f1e",
+    "log_sha256": "a71d871e423a904fffa9f2db4061cb3897b3ac5a242db7c053072adec1feb305",
+    "source_pins_sha256": "0137117dfa0207fe29f31ed09156670b8834b1e60517701e5ec8afd5c9079811",
+    "exit_code": 0,
+    "oom": false,
+    "max_rss_kib": 183648,
+    "coverage": "Two omission refusals, two wrong-but-valid source digest substitutions, two stale actual private source-copy files, and one affected positive exact full Git-map admission; all original Git data in these fixtures is explicitly synthetic",
+    "existing52_or_bounded_audit_rerun": false,
+    "all58_test_file_cases_claimed_passed": false
+  },
+  "checks": {
+    "ruff_check": "PASS",
+    "ruff_format_check": "PASS",
+    "git_diff_check": "PASS",
+    "numerical_audit_model_provider_calls": 0,
+    "original_active_input_or_output_reads": false,
+    "production_or_native31_changes": false
+  },
+  "remaining_boundaries": [
+    "Producer Config.Cmd/Entrypoint comparison to retained execution remains source-only, UNVERIFIED and unchanged; genuine completed receipt must be captured by root first",
+    "This fixes only two concrete required source-map omissions; it does not independently certify every possible transitive Python import",
+    "Original full audit remains UNVERIFIED and was not launched; original active container/manifest/execution/account and all preserved roots were untouched",
+    "Current live timing parity remains the existing FAILED separate original-path contract; publication remains CLOSED"
+  ],
+  "diagram_impact": "NONE: existing private source-admission floor and its tests only"
+}

@@ -498,6 +498,8 @@ def source_fixture(tmp_path):
     root = cli.Path(cli.__file__).resolve().parents[2]
     names = (
         "backend/cli/audit_original_live_model_history.py",
+        "backend/cli/verify_actual_policy_timing.py",
+        "backend/cli/verify_live_model_history.py",
         "backend/market/live_model_history_audit_inputs.py",
         "backend/market/live_model_history_stream_audit.py",
         "backend/market/live_model_history_pending_audit.py",
@@ -529,6 +531,68 @@ def test_exact_full_source_map_admission(tmp_path):
     result = cli.source_admission(value, archives)
     assert result["files"] == 2431
     assert result["revision"] == cli.FULL_REVISION
+
+
+# Every executed verifier dependency needs its own independently supplied source pin.
+@pytest.mark.parametrize(
+    "name",
+    [
+        "backend/cli/verify_actual_policy_timing.py",
+        "backend/cli/verify_live_model_history.py",
+    ],
+)
+def test_executed_verifier_dependency_pin_is_required(tmp_path, name):
+    value, archives, _ = source_fixture(tmp_path)
+    value["audit_source_sha256"].pop(name)
+    with pytest.raises(ValueError, match="ALL_AUDIT_COMPONENT_SOURCE_PINS_REQUIRED"):
+        cli.source_admission(value, archives)
+
+
+# A different valid source digest cannot substitute for an executed verifier's bytes.
+@pytest.mark.parametrize(
+    "name",
+    [
+        "backend/cli/verify_actual_policy_timing.py",
+        "backend/cli/verify_live_model_history.py",
+    ],
+)
+def test_executed_verifier_dependency_pin_cannot_be_substituted(tmp_path, name):
+    value, archives, _ = source_fixture(tmp_path)
+    value["audit_source_sha256"][name] = value["audit_source_sha256"][
+        "backend/cli/audit_original_live_model_history.py"
+    ]
+    with pytest.raises(ValueError, match="Pinned stream input bytes differ"):
+        cli.source_admission(value, archives)
+
+
+# Later changes to a private faithful source copy fail without altering native files.
+@pytest.mark.parametrize(
+    "name",
+    [
+        "backend/cli/verify_actual_policy_timing.py",
+        "backend/cli/verify_live_model_history.py",
+    ],
+)
+def test_executed_verifier_dependency_rejects_stale_actual_bytes(
+    tmp_path, monkeypatch, name
+):
+    value, archives, _ = source_fixture(tmp_path)
+    original_root = cli.Path(cli.__file__).resolve().parents[2]
+    private = tmp_path / "source-copy"
+    for relative in value["audit_source_sha256"]:
+        copied = private / relative
+        copied.parent.mkdir(parents=True, exist_ok=True)
+        copied.write_bytes((original_root / relative).read_bytes())
+    monkeypatch.setattr(
+        cli,
+        "__file__",
+        str(private / "backend/cli/audit_original_live_model_history.py"),
+    )
+    assert cli.source_admission(value, archives)["files"] == 2431
+    changed = private / name
+    changed.write_bytes(changed.read_bytes() + b"\n# Private stale-source fixture.\n")
+    with pytest.raises(ValueError, match="Pinned stream input bytes differ"):
+        cli.source_admission(value, archives)
 
 
 # A missing blob, changed digest, wrong revision or extra schema member cannot pass.

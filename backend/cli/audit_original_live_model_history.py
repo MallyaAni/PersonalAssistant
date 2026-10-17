@@ -182,6 +182,8 @@ def source_admission(value, archives):
     files = value["audit_source_sha256"]
     required = {
         "backend/cli/audit_original_live_model_history.py",
+        "backend/cli/verify_actual_policy_timing.py",
+        "backend/cli/verify_live_model_history.py",
         "backend/market/live_model_history_audit_inputs.py",
         "backend/market/live_model_history_stream_audit.py",
         "backend/market/live_model_history_pending_audit.py",
