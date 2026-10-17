@@ -1,0 +1,61 @@
+{
+  "status": "VERIFIED_PRIVATE_SYNTHETIC_TWO_LOCAL_ROOTS_ONLY",
+  "base_revision": "356f282d9934b3e3670eb59b8e9a825d15771d29",
+  "branch": "codex/historical-physical-checkpoint-20261017",
+  "source_sha256": {
+    "backend/market/historical_fixed_slot_checkpoint.py": "a15a3720fe368a75d9aaf4e59d767347b7cb863dd180c531ebfa3c41f0b1ab2b",
+    "backend/tests/test_historical_fixed_slot_checkpoint.py": "b8180db1942789c0c79390e52aa1a1bb9542d34e901576ea6e790e2990d5e62d",
+    "backend/market/historical_physical_checkpoint.py": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+  },
+  "root": "/home/animallya96/scratch/fixed-slot-checkpoint-synthetic-20261017-v1",
+  "container": "5acc3b430f2f8e47d26b045b4a85aa4feb27e3a4a2066119e8a3dff05dc310df",
+  "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+  "finished_at": "2026-10-17T23:02:15.246019773Z",
+  "exit_code": 0,
+  "oom": false,
+  "tests": {"passed": 17, "skipped": 0, "errors": 0, "failures": 0, "elapsed_seconds": 40.32497831899673, "peak_kib": 30932},
+  "static_validation": "Ruff format/check passed on the two new files; no general full-backend gate or deployed behavior claim",
+  "isolation": {"uid": "1000:1000", "network": "none", "readonly": true, "cpus": 1, "ram_bytes": 536870912, "swap_total_bytes": 536870912, "tmp_bytes": 67108864, "pids": 64, "caps": "ALL dropped", "security": "no-new-privileges", "mounts": ["small source RO with empty backend packages", "public CURRENT identity and inert a8 writer fixture RO", "sole private out RW"]},
+  "verified": [
+    "Exact source/profile/owner/genesis/peer/resource bindings; real initialized/readback/fsynced numeric body/page/index/head/ARM/PREPARED/DECISION/ACK inodes with finite arithmetic",
+    "Checkpoint namespace spy rejects post-ARM O_CREAT/mkdir/link/rename/replace/unlink; body/page files stay padded in actual reserved inodes",
+    "Opaque NaN/Unicode bytes,128-way persistent pages, append/replaced-last-row/identical content sharing and complete byte/inode verification",
+    "Both local ARM readback acknowledgments precede fake counter effect; matching PREPARED witnesses, mirrored owner decision and durable peer ACKs precede returned receipt",
+    "Known quota/stale head/source/profile/duplicate peer/resource/missing/sparse/symlink/torn metadata/content/index/head/wrong slot/reordered manifest/false claim refusal",
+    "Real short object writes, body fsync/readback faults, initialization/allocation failures and unknown ARM/final ACK pause without effect repetition or orphan adoption",
+    "Externally pinned operation and owner decision permit idempotent metadata recovery with no callback parameter; final receipt rechecks source/content/mirrored decisions/ACKs/controls/head banks",
+    "Actual SIGKILL after only peer a ARM leaves aOPEN0/next1,bOPENnull/next0,counter0 and no owner decision; actual SIGKILL after owner decision leaves counter1 and later metadata-only recovery commits equal peer heads without another effect",
+    "Independent stopped runtime/source9/hash/identity/crash-control review;376696832 allocated file bytes and3701 unique file inodes retained"
+  ],
+  "evidence_sha256": {
+    "out/proof.json": "6422526fc238d97ff195a0bfb1c85d1a8c7436eaa064a84f000064295871a72a",
+    "inspect-after.json": "83fa43d791173a429f99462c4e166ff0bc202f49e7c2a5f9f8a5b0567d81e9d3",
+    "run.log": "69af2d34bb569c84e1070d71394f46d5c127acabf05a3939d7d85deb5196cab8",
+    "source/plan.json": "c61f1061a1fdb83100075f2801793352891cb2d5c46130b3cb40c80c4eee7810",
+    "runner": "b1019272eea8b7298ed904d9838f80b9dfd95cda1f676d6eb611884390da3e06",
+    "controller": "696e8711bdd2d9d09a05175ea5637d84931073b45fd520fc4a2f2cffb02ce3dc",
+    "independent-proof.json": "20e3c92e99389b0cebba31aba7c11adc8fd487309875daee5936532ba78f8dfd",
+    "independent-verifier": "8f617ff0482adcc46571146dd3bc4ad7bd90555c6d3fd004ea0afbea9ff09606"
+  },
+  "expected_red_preserved": {
+    "root": "/home/animallya96/scratch/fixed-slot-checkpoint-red-20261017-v1",
+    "container": "e2ed81c39a1e6313a893d3b31756cf3f76280879a43d6b2a0d15e9557b560eea",
+    "old_source_sha256": "d863fcbc76e24b9d8aea78261ca93d660900d98089fa07ec97576f15b773fc3a",
+    "test_sha256": "b8180db1942789c0c79390e52aa1a1bb9542d34e901576ea6e790e2990d5e62d",
+    "outcome": "Exactly2 new regressions failed with Expected refusal,0errors/0skip; wrapper exited0 only because expected RED was observed. This is NOT acceptance of the old source.",
+    "elapsed_seconds": 3.5639069974422455,
+    "peak_kib": 30080,
+    "first_boundary": "history_rows126 gives128spans; eager page carry adds a singleton top page, requiring3pages while old budget allowed2. Copied seq0 decision in seq1 record could be recovered without checking externally requested sequence.",
+    "targeted_change": "Reserve one conservative extra manifest page; exact int/notbool/inrange external sequence must equal decision sequence; final already-locked receipt validator rechecks durable state before return. Existing caps/source guards unchanged.",
+    "proof_sha256": "c7845c64d25b5689419ecf4777041c266b22af4efff28f8f65362a8156961211",
+    "inspect_sha256": "37d4d65ea6c59fbc5fe12f4eed57b44aa556e7d306664e09763a7367ecb197f8",
+    "independent_proof_sha256": "478bf6d1c484dcf3bd33ab0a130a5474d3edec1546a050180b051c4d8332504a",
+    "controller_sha256": "80f18ec2394ae8cc83ce39cacb69fdf4e2905704281da52f733ec10e9f943ddf"
+  },
+  "not_proved": ["Real two-machine transport/resource issuance/durability", "Native writer filesystem metadata/journal capacity", "Restore and whole-horizon capacity", "Full native/model/coordinator/corporate-action lifecycle", "Simulator operation adoption or historical publication", "Every syscall/power-loss cut or automatic failover/consensus"],
+  "unchanged": "Existing raw/native helpers, Store/schema/stages/Nightly/Cycle/codec/pins/caps and production remain unchanged. Only two new unused source/test files and this proof are private-branch changes.",
+  "next_boundary": "Read-only mapping of complete actual two-host peer transport and resource-safe acceptance, including every direct local Pair/Peer access; no transparent fake-to-real adapter claim",
+  "original_timing": "FAILED; publication CLOSED; missing original initial raw receipts unchanged",
+  "genuine_v6": "OPEN/PAUSED; no adoption/replay/further genuine run",
+  "fresh_weekday_intraday_fill_ui": "UNVERIFIED"
+}

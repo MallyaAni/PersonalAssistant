@@ -1,5 +1,55 @@
 # Next session
 
+## 2026-10-17 — Fixed-slot local peer protocol VERIFIED privately
+
+Read research/historical-fixed-slot-checkpoint-proof-2026-10-17.json.
+Private80c145226652cb4fd6d2cc235dd9c0cd49bc4b85 contains unused fixed-slot source
+a15a3720/testb8180db1 and proof, NOT main-integrated/deployed. Actual5acc3b43/f612
+finished23:02:15.246019773Z exit0/noOOM:17pass/0skip40.325s/30932KiB. Root
+scratch/fixed-slot-checkpoint-synthetic-20261017-v1/exec17104 is COMPLETE; never
+restart. Exact UID1000/noneRO/1CPU/512MiB=swap/tmp64MiB/three mounts independently
+reviewed:smallsource/publicCURRENT+inertwriter RO/soleprivateoutRW. Source9
+hash/inode/size/mtime/ctime beforeafter exact; no native/NumPy/model/backend
+account imports. Terminal6422526f/inspect83fa43d7/ROOTproof20e3c92e/verifier8f617ff0.
+Retained376696832 allocated file bytes/3701unique inodes, all cases preserved.
+
+Actual numeric body/page/index/head/phase file extents are initialized/fsynced/
+read back before ARM. No checkpoint O_CREAT/mkdir/link/rename/replace/unlink
+after ARM; bounded opaque NaN bytes/128-ref pages/append and last-row sharing,
+source/profile/resources/quota/corruption/write-fault guards passed. Both local
+ARM ACKs precede fake effect; matching PREPARED content and exact mirrored owner
+decision/ACKs precede returned receipt. Exact external sequence/prior/owner pin
+is required for idempotent metadata recovery, with no callback/replay/election/
+orphan adoption. Real SIGKILL after first ARM retains aOPEN0/bunarmed/counter0;
+after owner decision retains counter1 and later metadata-only recovery reaches
+equal heads without another effect. Independent controls/false flags checked.
+
+ROOT review found2 omissions and retained expected RED e2ed81c3: exact FANOUT
+carry needs an extra singleton top page, and copied seq0 decision in seq1 slot
+was accepted without binding requested sequence. Two new regressions FAILED
+old sourced863 with Expected refusal/0errors/0skip3.564s; wrapper exit0 means
+expected RED observed, NOT old-source acceptance. Green fixes conservative page
+budget and exact sequence; final source/content/decision/ACK/head recheck added.
+All old helpers/caps/source guards and initial15 cases retained; no whole old
+suite replay. Red root scratch/fixed-slot-checkpoint-red-20261017-v1/exec77431
+is COMPLETE; preserve all bytes/controls. Redterminalc7845c64/inspect37d4d65e/
+ROOTproof478bf6d1. Separate containers/roots, no retries/overwrite/adoption.
+
+This proves synthetic TWO LOCAL ROOTS only. Native metadata capacity, actual
+two-Spark resource issuance/durability/transport, restore/horizon and full
+native/model/coordinator/corporate-action lifecycle remain UNVERIFIED. Flags
+native_metadata_reserved/native_operation_adopted/real_two_host_proof/restore
+remain FALSE. Original timing FAILED/publication CLOSED/missing receipts
+unchanged; v6 OPEN/PAUSED/no replay/adoption/new genuine run. Productione237/
+f612 unchanged; actual weekday/intraday/fill/UI acceptance remains UNVERIFIED.
+
+Existing healthy trading_action_consistency has ONE READONLY next mapping of
+the complete actual two-host transport boundary, every direct local Pair/Peer
+access, finite wire/streaming/owner/root/source/ACK semantics and resource-safe
+minimal acceptance. No code/import/runtime/host probe/network/model/genuine
+state work/runner authorized to that worker. Do not loosen local-only type
+guards or claim transparent remote readiness. ROOT reviews proposal first.
+
 ## 2026-10-17 — Fixed-slot peer checkpoint SOURCE/TEST work approved independently
 
 Read research/historical-fixed-slot-checkpoint-contract-2026-10-17.json.
