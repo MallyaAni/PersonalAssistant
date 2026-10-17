@@ -1,0 +1,39 @@
+{
+  "status": "VERIFIED_PHASE1_PURE_PREPLAN_PRIMITIVE_NOT_FULL_NIGHTLY_MODEL_ACCEPTANCE",
+  "base": "a6643051",
+  "scope": {
+    "implementation": "Pure previous-state and original-receipt fold; no current post-plan state parameter, broker, sender, producer or writes",
+    "cancellation": "A stale withdrawal request is insufficient. Exact original confirmed cancellation identity, quantity, accepted clocks, closing canceled_at and terminal-zero status are required; original text is preserved",
+    "branches": "model-required, already-planned, event-priority reasons and independently proven missing-account reasons; required is not an inference-verification count",
+    "integration_into_full_verifier": "NOT YET IMPLEMENTED",
+    "per_session_model_receipt_target_action_order_checks": "NEXT PHASE; UNVERIFIED",
+    "publication_barrier": "UNCHANGED/CLOSED"
+  },
+  "source_requirement_map": {
+    "pre_plan_controls": "nightly_plan.plan dispatch and JointFundedPolicy.plan depend on prior sessions_seen/order_seq/opened/deferred/event/rebalance controls; current saved allocation is never reconstruction input",
+    "receipt_fold": "market_daily._reconciliation_pending, _ids_to_withdraw and pure paper.settle/apply_settlements; original attempts/outcomes and explicit confirmed cancellation rows supply evidence",
+    "event_bypass": "nightly_plan.event_plan_required and event_execution.plan; separate from model calls",
+    "missing_account": "Original paper_trade reads account before reconciliation/planning; callers must independently derive missing held marks/unknown entitlement before selecting this branch",
+    "future_model_phase": "Recompute causal features/frozen head/scenarios; pure nightly_plan/FrozenCurrentGradePolicy.plan; compare raw proposal, grade constraint, full actions and original funded intent identities without executing expected orders"
+  },
+  "validation": {
+    "root": "/home/animallya96/scratch/historical-nightly-audit-phase1-validation-20261017-v5",
+    "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+    "isolation": "networknone/read-only/1CPU/2GiB; only private source and explicitly authorized COMPLETE two-session v10 fixture read-only",
+    "tests": {"passed": 70, "skipped": 0, "seconds": 2.07, "sha256": "092b9658c3c75f9b55df83d2944baebae6c94dbce9b0dec3e1557c2e56e77072"},
+    "ruff": "PASS",
+    "format": "2files already formatted",
+    "accepted_two_file_archive_sha256": "370c99a42b0e261532f876587cf23069b256bd133de529187b0001c375297120",
+    "local_source_matches_archive": true,
+    "bounded_v10": {"sessions": 2, "original_settled_receipts": 7, "model_inference_run": false, "scope": "Pre-plan fold compatibility from each original prior bounded snapshot; full prior-model control validation remains next phase", "proof_sha256": "af115333e5c08def009cb36bf18a296f0a2bd9385f6783538d61d6400eedb1fd", "original_input_bytes_unchanged": true},
+    "guarded_sources": {"count": 31, "changed": 0},
+    "diagram_impact": "NONE; internal existing private audit path, no service/store/route/trust-boundary addition"
+  },
+  "preserved_failures": {
+    "initial_cancel_draft": {"root": "/home/animallya96/scratch/historical-nightly-cancellation-red-20261017-v1", "result": "DID NOT RAISE without cancellation confirmation", "sha256": "e9f000f0f9e34d67958c3d1d0a8eb69dfd990eab2b79f099d2a7a6ca41224edc"},
+    "v1": "16pass but independent cancellation review exposed missing confirmation;5comment lint findings retained",
+    "v4": "11failed/59pass because current-only calendar was incorrectly applied to historical dates; corrected to original producer reviewed_sessions"
+  },
+  "receipt_only_model_gap": {"proof": "/home/animallya96/scratch/nightly-model-audit-gap-20261017-v2/proof.json", "sha256": "56944ce70ce977dc877aa176f971f0f8902782be0fe6688807ebfb6c5dbc3747", "result": "Original11intent receipts and three in-memory raw-target/constrained-target/funded-action corruptions accepted by receipt checker only", "full_verifier_or_actual_run_corruption_proven": false},
+  "not_performed": ["original active output read", "heavy models/arrays load", "account replay", "order submission/cancellation", "model fitting", "production mutation", "publication", "deployment"]
+}

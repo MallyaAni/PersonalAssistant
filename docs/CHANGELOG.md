@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-17 — Reconstruct the original nightly pre-plan state without execution
+
+A new private audit primitive derives pre-plan controls from the previous
+verified state and conserved submission/outcome receipts. It never accepts the
+current saved allocation as input. Confirmed cancellations require exact
+original evidence; selecting an ID for withdrawal does not prove cancellation.
+Event/calendar/settlement and missing-account branches are explicit and cannot
+be counted as completed model evaluations.
+
+70 focused checks/0skip2.07s, Ruff and formatting passed. Read-only compatibility
+with the completed two-session private v10 fixture matched all7 original settled
+receipts and preserved every input byte. The initial false cancellation
+acceptance and historical-calendar failure remain recorded in
+research/historical-nightly-preplan-proof-2026-10-17.json. This is phase1 only:
+per-session model/scenario/target/action recomputation and verifier integration
+remain unverified. All31 guarded sources and the closed publication barrier are
+unchanged; no active original-run data, models, orders or runtime were touched.
+
 ## 2026-10-17 — Block historical publication without full model and timing acceptance
 
 The historical verifier now reports only ledger/source and bounded holding
