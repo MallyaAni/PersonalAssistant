@@ -238,7 +238,7 @@ test('unavailable strategy history stays explicit without predecessor trades', a
   await expect.poll(() => page.evaluate(() => (window as any).__strategyPaint)).toEqual(expect.arrayContaining([expect.objectContaining({text: 'BUY 13 sh'})]))
 })
 
-// Refresh removes a settled action from the live list while its historical chart remains separate.
+// Completed decisions stop being current actions while recorded fills remain in the paper account.
 test('current overview refresh removes completed actions without inventing sizes', async ({page}) => {
   const current = {done: false}
   const errors = await install(page, stocks[0], false, current)
@@ -246,15 +246,24 @@ test('current overview refresh removes completed actions without inventing sizes
   const table = page.getByRole('table', {name: 'Ranked stocks and cash'})
   const row = table.getByRole('row').filter({has: page.getByRole('button', {name: stocks[0].ticker, exact: true})})
   await expect(row).toContainText('3 sh funded')
+  await expect(row.getByLabel(`${stocks[0].ticker} strategy intent`, {exact: true})).toHaveText('BUY')
+  await page.getByRole('button', {name: `details for ${stocks[0].ticker}`, exact: true}).click()
+  await expect(page.getByLabel(`${stocks[0].ticker} orders`, {exact: true})).toContainText('3 sh planned')
+  await page.getByRole('button', {name: `details for ${stocks[0].ticker}`, exact: true}).click()
   current.done = true
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
   await expect(row.getByLabel(`${stocks[0].ticker} strategy intent`, {exact: true})).toHaveText('—')
   await expect(row.getByLabel(`${stocks[0].ticker} size`)).toHaveText('—')
   await expect(table).not.toContainText('Bought 3 today')
+  await expect(page.getByLabel('Strategy plan status', {exact: true})).toHaveCount(0)
+  await page.getByRole('button', {name: 'Paper account', exact: true}).click()
+  await expect(table).toContainText('Bought 3 today')
+  await page.getByRole('button', {name: 'Stocks', exact: true}).click()
+  await expect(row.getByLabel(`${stocks[0].ticker} strategy intent`, {exact: true})).toHaveText('—')
   expect(errors).toEqual([])
 })
 
-// The main board filters current plans and never borrows historical simulated holdings or sizes.
+// Filters preserve admitted funded quantities and hide rows without a matching current action.
 test('current overview filters sorting and phone recovery preserve current sizes', async ({page}) => {
   const errors = await install(page, stocks[0])
   await page.getByRole('button', {name: 'Close', exact: true}).click()
@@ -265,12 +274,18 @@ test('current overview filters sorting and phone recovery preserve current sizes
   await table.getByRole('button', {name: 'Stock', exact: true}).click()
   await expect(table.locator('tbody tr').first()).toContainText([...stocks].sort((a, b) => a.ticker.localeCompare(b.ticker))[0].ticker)
   await table.getByRole('button', {name: 'Action', exact: true}).click()
-  for (const action of ['SELL', 'TRIM', 'HOLD', 'No order']) await section.getByRole('checkbox', {name: `Show ${action} rows`, exact: true}).uncheck()
+  await expect(section.getByRole('checkbox')).toHaveCount(4)
+  for (const action of ['SELL', 'TRIM', 'HOLD']) await section.getByRole('checkbox', {name: `Show ${action} rows`, exact: true}).uncheck()
   await expect(table.locator('tbody tr')).toHaveCount(1)
   await expect(table).toContainText('3 sh funded')
+  await section.getByRole('group', {name: 'Show actions'}).getByRole('button', {name: 'Show all', exact: true}).click()
+  await page.keyboard.press('Escape')
+  await expect(table.locator('tbody tr')).toHaveCount(Math.min(stocks.length, 25))
+  await expect(table).not.toContainText('3 sh planned')
   await expect(table).toContainText('4 sh')
   await expect(table).not.toContainText('The supported pullback held its reference.')
   await page.getByRole('button', {name: `details for ${stocks[0].ticker}`, exact: true}).click()
+  await expect(page.getByLabel(`${stocks[0].ticker} orders`, {exact: true})).toContainText('3 sh planned')
   await expect(page.getByLabel(`${stocks[0].ticker} chart judgment`, {exact: true})).toContainText('The supported pullback held its reference.')
   await page.getByRole('button', {name: `details for ${stocks[0].ticker}`, exact: true}).click()
   await page.getByRole('button', {name: 'Hide Sidebar', exact: true}).click()
@@ -317,7 +332,7 @@ test('current stocks and separate paper view survive reload without mixed histor
   expect(errors).toEqual([])
 })
 
-// Original grade changes remain independently available with their dated provenance.
+// Dated chart-grade directions stay visible without inventing current numeric orders or sizes.
 test('grade direction survives a zero research target with dated provenance', async ({page}) => {
   const errors = await install(page, {...stocks[0], latest_target: 0})
   const chart = page.getByRole('region', {name: `${stocks[0].ticker} price chart`})
@@ -349,11 +364,15 @@ test('grade direction survives a zero research target with dated provenance', as
   const row = page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('row').filter({has: page.getByRole('button', {name: stocks.at(-1)!.ticker, exact: true})})
   await expect(row.getByLabel(`${stocks.at(-1)!.ticker} strategy intent`)).toHaveText('—')
   await expect(row.getByLabel(`${stocks.at(-1)!.ticker} size`)).toHaveText('—')
+  await expect(row.getByLabel(`${stocks.at(-1)!.ticker} strategy timing`)).toHaveText('—')
+  await expect(page.getByLabel('Strategy plan status', {exact: true})).toHaveCount(0)
   await expect(row).not.toContainText('The supported pullback held its reference.')
   await row.getByRole('button', {name: stocks.at(-1)!.ticker, exact: true}).click()
-  await expect(page.getByRole('region', {name: 'Current chart judgment', exact: true})).toContainText('The supported pullback held its reference.')
-  await expect(page.getByLabel(`${stocks.at(-1)!.ticker} paper order`, {exact: true})).toContainText('Model plan')
+  await expect(page.getByRole('region', {name: 'Current chart judgment', exact: true})).not.toBeVisible()
   await expect(page.getByLabel(`${stocks.at(-1)!.ticker} paper order`, {exact: true})).toContainText('No current admitted entry')
+  await page.getByRole('dialog').getByLabel('All the evidence', {exact: true}).locator(':scope > summary').click()
+  await expect(page.getByRole('region', {name: 'Current chart judgment', exact: true})).toContainText('The supported pullback held its reference.')
+  await expect(page.getByLabel(`${stocks.at(-1)!.ticker} paper order`, {exact: true}).getByRole('heading')).toHaveText('Model plan')
   expect(errors).toEqual([])
 })
 
