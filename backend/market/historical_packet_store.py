@@ -93,6 +93,7 @@ class Store:
         self.owner = uuid4().hex
         self.fault = None
         self.connection = None
+        self._spools = {}
         self._last_clock = None
         self._opened_clock = self._sample_clock()
         if create:
@@ -469,6 +470,64 @@ class Store:
         )
         return raw
 
+    # Require explicit original spool admission after any allocation was attempted.
+    def _spool_for(self, attempt, spool):
+        from backend.market.historical_packet_spool import ReservedSpool
+
+        _require(spool is self._spools.get(attempt), "Original attempt spool required")
+        if spool is not None:
+            _require(
+                type(spool) is ReservedSpool and spool.store is self,
+                "Local original spool required",
+            )
+
+    # Adopt exact sealed preallocated extents without copying into a new body file.
+    def adopt_spool(self, spool, ref, *, expected_sha256, length):
+        self._spool_for(spool.attempt, spool)
+        source = spool.resolve(ref, expected_sha256, length)
+        registry.digest(expected_sha256)
+        descriptor = os.open(source, os.O_RDONLY | os.O_NOFOLLOW)
+        try:
+            info = os.fstat(descriptor)
+            _require(
+                info.st_size == length
+                and (info.st_dev, info.st_ino) == (ref.device, ref.inode),
+                "Exact sealed spool inode/length required",
+            )
+            digest, total = hashlib.sha256(), 0
+            while total < length:
+                raw = os.read(descriptor, min(CHUNK, length - total))
+                _require(bool(raw), "Sealed spool truncated")
+                digest.update(raw)
+                total += len(raw)
+            _require(
+                digest.hexdigest() == expected_sha256,
+                "Original sealed spool digest differs",
+            )
+        finally:
+            os.close(descriptor)
+        self._point("spool_fsynced")
+        destination = self.root / "blobs" / expected_sha256
+        try:
+            os.link(source, destination)
+            linked = destination.lstat()
+            _require(
+                (linked.st_dev, linked.st_ino) == (ref.device, ref.inode),
+                "CAS must adopt the original reserved inode",
+            )
+        except FileExistsError:
+            self.read_blob(expected_sha256, limit=ref.capacity)
+        except OSError as error:
+            raise StorePause("CAS adoption failed; retain reserved orphan") from error
+        try:
+            _sync_directory(self.root / "blobs")
+        except OSError as error:
+            raise StorePause(
+                "CAS directory sync failed; retain uncertain orphan"
+            ) from error
+        self._point("spool_linked")
+        return expected_sha256, length
+
     # Append using indexed membership and the existing pure transition primitives.
     def append(self, *, expected_head, cycle_sha256, stage, receipt_sha256):
         _require(
@@ -735,7 +794,7 @@ class Store:
         return row
 
     # Confirm retained chunk bytes independently of the nonrefundable charged allowance.
-    def confirm_read(self, reservation, raw):
+    def confirm_read(self, reservation, raw, *, spool=None):
         row = self.connection.execute(
             "SELECT * FROM reads WHERE id=?", (reservation,)
         ).fetchone()
@@ -747,21 +806,44 @@ class Store:
             "Exact unconfirmed bounded read required",
         )
         self._owned_attempt(row["attempt"])
-        sha, size = self.put_stream(io.BytesIO(raw), limit=row["allowance"])
-        with self._transaction():
-            self.connection.execute(
-                "UPDATE reads SET actual=?,blob=? WHERE id=?", (size, sha, reservation)
-            )
-            state = self._state()
-            state["confirmed_bytes"] += size
-            state["unresolved_bytes"] -= row["allowance"]
-            self._write_state(state)
+        self._spool_for(row["attempt"], spool)
+        if spool is None:
+            sha, size = self.put_stream(io.BytesIO(raw), limit=row["allowance"])
+        else:
+            _require(spool.attempt == row["attempt"], "Original attempt spool required")
+            ref, sha, size = spool.chunk(reservation, raw, row["allowance"])
+            self.adopt_spool(spool, ref, expected_sha256=sha, length=size)
+        try:
+            with self._transaction():
+                self.connection.execute(
+                    "UPDATE reads SET actual=?,blob=? WHERE id=?",
+                    (size, sha, reservation),
+                )
+                state = self._state()
+                state["confirmed_bytes"] += size
+                state["unresolved_bytes"] -= row["allowance"]
+                self._write_state(state)
+        except sqlite3.Error as error:
+            if spool is None:
+                raise
+            raise StorePause(
+                "Read commit failed; retain orphan CAS and pause"
+            ) from error
 
     # Retain complete/failed response bytes without declaring parsed market evidence.
     def finish_attempt(
-        self, attempt, *, status, complete, failure, requested_at, received_at
+        self,
+        attempt,
+        *,
+        status,
+        complete,
+        failure,
+        requested_at,
+        received_at,
+        spool=None,
     ):
         row = self._owned_attempt(attempt)
+        self._spool_for(attempt, spool)
         chunks = self.connection.execute(
             "SELECT * FROM reads WHERE attempt=? ORDER BY sequence LIMIT 322",
             (attempt,),
@@ -772,10 +854,18 @@ class Store:
         )
         size = sum(chunk["actual"] for chunk in chunks)
         _require(size <= demand.BUDGET["bytes_per_group"], "Group body cap")
-        body = b"".join(self.read_blob(chunk["blob"], limit=CHUNK) for chunk in chunks)
-        sha, _ = self.put_stream(
-            io.BytesIO(body), limit=demand.BUDGET["bytes_per_group"]
-        )
+        if spool is None:
+            body = b"".join(
+                self.read_blob(chunk["blob"], limit=CHUNK) for chunk in chunks
+            )
+            sha, _ = self.put_stream(
+                io.BytesIO(body), limit=demand.BUDGET["bytes_per_group"]
+            )
+        else:
+            _require(spool.attempt == attempt, "Original response spool required")
+            ref, sha, length = spool.body(chunks)
+            self.adopt_spool(spool, ref, expected_sha256=sha, length=length)
+            body = self.read_blob(sha, limit=demand.BUDGET["bytes_per_group"])
         next_token, retained, invalid = None, False, None
         if (
             type(status) is int
@@ -821,16 +911,34 @@ class Store:
             "body_validation_failure": invalid,
             "market_packet_validation": "NOT_PERFORMED",
         }
+        if spool is not None:
+            metadata["spool_allocation_sha256"] = spool.allocation
         raw = demand.encoded(metadata)
         _require(len(raw) <= MAX_ENTRY, "Page receipt cap")
-        with self._transaction():
-            self.connection.execute(
-                "UPDATE attempts SET status=?,body=?,next_token=?,raw=? WHERE id=?",
-                ("RETAINED" if retained else "FAILED", sha, next_token, raw, attempt),
-            )
-            state = self._state()
-            state["unresolved_gets"] -= 1
-            self._write_state(state)
+        if spool is not None:
+            ref, receipt_sha, length = spool.receipt(raw)
+            self.adopt_spool(spool, ref, expected_sha256=receipt_sha, length=length)
+        try:
+            with self._transaction():
+                self.connection.execute(
+                    "UPDATE attempts SET status=?,body=?,next_token=?,raw=? WHERE id=?",
+                    (
+                        "RETAINED" if retained else "FAILED",
+                        sha,
+                        next_token,
+                        raw,
+                        attempt,
+                    ),
+                )
+                state = self._state()
+                state["unresolved_gets"] -= 1
+                self._write_state(state)
+        except sqlite3.Error as error:
+            if spool is None:
+                raise
+            raise StorePause(
+                "Response commit failed; retain orphan CAS and pause"
+            ) from error
         return metadata
 
     # Expose one bounded page-reference list without concatenating all groups/history.
