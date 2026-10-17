@@ -13,8 +13,9 @@ import {modelDecisionFor} from './modelDecisions'
 // Levels shows the account's unsubmitted price triggers. Technical references
 // belong in stock details; a reference indicator is never an order price.
 
-// Trading actions, waiting status and a dash for names without an action.
-export type BoardWord = 'BUY' | 'SELL' | 'TRIM' | 'HOLD' | 'WAIT' | '—' | 'ORDERS'
+// Keep strategy direction separate from timing and recorded mixed order groups.
+const STRATEGY_ACTIONS = ['BUY', 'SELL', 'TRIM', 'HOLD'] as const
+export type BoardWord = typeof STRATEGY_ACTIONS[number] | '—' | 'ORDERS'
 
 const LEARNED_HOLDING_POLICY = 'joint-stock-risk-funded/6-retained-holdings-probability-timing-research'
 
@@ -59,8 +60,6 @@ export type BoardRow = {
   status: string
   state: string
   when: string
-  signal?: string
-  signalReason?: string
   currentSetup?: DeskCurrentSetup | null
   freshGrade?: string
 }
@@ -69,10 +68,10 @@ export type BoardRow = {
 // the whole portfolio (orders and holdings), and every graded name.
 type View = 'orders' | 'portfolio' | 'all'
 type SortKey = 'ticker' | 'grade' | 'position' | 'size'
-const FILTER_ACTIONS = ['BUY', 'SELL', 'TRIM', 'WAIT', 'HOLD', '—'] as const
+const FILTER_ACTIONS = [...STRATEGY_ACTIONS, '—'] as const
 type FilterAction = typeof FILTER_ACTIONS[number]
 export type ActionSelection = Record<FilterAction, boolean>
-const ALL_ACTIONS: ActionSelection = {BUY: true, SELL: true, TRIM: true, WAIT: true, HOLD: true, '—': true}
+const ALL_ACTIONS: ActionSelection = {BUY: true, SELL: true, TRIM: true, HOLD: true, '—': true}
 
 // Match each recorded leg of mixed orders while keeping non-traded names in their displayed category.
 const hasAction = (row: BoardRow, action: FilterAction) => !row.modelPlan && row.orders.length
@@ -200,7 +199,6 @@ export const priceAge = (structure: DeskStructure | undefined, now: number): str
 // The colour of each word: green buys, red sells, amber trims, grey holds.
 export const WORD_STYLE: Record<BoardWord, string> = {
   BUY: 'text-[#248a3d]',
-  WAIT: 'text-[#b25e00]',
   SELL: 'text-[#b42318]',
   TRIM: 'text-[#b25e00]',
   HOLD: 'text-[#6e6e73]',
@@ -376,7 +374,6 @@ const band = (row: BoardRow): number => {
   if (row.modelPlan) return row.modelDecision?.status === 'blocked' ? 0
     : row.modelDecision?.status === 'planned' && row.qty > 0 ? 1
     : row.modelDecision?.action === 'hold' ? 4 : 6
-  if (!row.orders.length && (row.signal === 'buy' || row.signal === 'sell')) return 3
   if (!row.orders.length) return row.held > 0 || (row.target ?? 0) > 0 ? 5 : 6
   if (['problem', 'missed', 'rejected'].includes(row.state)) return 0
   const actions = pendingActions(row)
@@ -417,11 +414,12 @@ const Head = ({label, column, sort, onSort, title}: {label: string; column?: Sor
   </th>
 }
 
-// Share the Action heading's checkbox, dismissal and recovery workflow across account and simulation views.
-export const ActionHead = ({open, onOpen, shown, onShown, rows = [], counts, title}: {open: boolean; onOpen: (value: boolean) => void; shown: ActionSelection; onShown: (value: ActionSelection) => void; rows?: BoardRow[]; counts?: Record<FilterAction, number>; title?: string}) => {
+// Filter strategy directions separately from recorded execution states and absent actions.
+export const ActionHead = ({open, onOpen, shown, onShown, rows = [], counts, title, modelPlan = false}: {open: boolean; onOpen: (value: boolean) => void; shown: ActionSelection; onShown: (value: ActionSelection) => void; rows?: BoardRow[]; counts?: Record<FilterAction, number>; title?: string; modelPlan?: boolean}) => {
   const box = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
-  const filtered = FILTER_ACTIONS.some(action => !shown[action])
+  const actions = modelPlan ? STRATEGY_ACTIONS : FILTER_ACTIONS
+  const filtered = actions.some(action => !shown[action])
   // Dismiss an open menu without attaching permanent listeners to the page.
   useEffect(() => {
     if (!open) return
@@ -439,7 +437,7 @@ export const ActionHead = ({open, onOpen, shown, onShown, rows = [], counts, tit
       title={title ?? 'Click to filter BUY, SELL, TRIM, HOLD or names with no order. Mixed orders match each recorded action; completed orders remain history.'}
       className={filtered ? 'text-[#0071e3]' : 'hover:text-[#0071e3]'} onClick={() => onOpen(!open)}>Action <span aria-hidden="true">{filtered ? '•' : '▾'}</span></button>
     {open && <div role="group" aria-label="Show actions" className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-black/[0.1] bg-white p-2 shadow-lg">
-      {FILTER_ACTIONS.map(action => <label key={action} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-[#1d1d1f] hover:bg-[#f5f5f7]">
+      {actions.map(action => <label key={action} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-[#1d1d1f] hover:bg-[#f5f5f7]">
         <input type="checkbox" aria-label={`Show ${action === '—' ? 'No order' : action} rows`} checked={shown[action]} onChange={event => onShown({...shown, [action]: event.target.checked})} />
         <span className="flex-1">{action === '—' ? 'No order' : action}</span><span>{counts?.[action] ?? rows.filter(row => hasAction(row, action)).length}</span>
       </label>)}
@@ -487,9 +485,15 @@ const RowDetails = ({row, latest, myAccount, onOpen, extra, structure, displayed
   const flag = levelFlag(structure)
   return <div aria-label={`${row.ticker} details`} className="grid gap-3 text-xs sm:grid-cols-3">
     <section aria-label={`${row.ticker} orders`}>
+      {row.modelPlan && <>
+        <h4 className="font-medium text-[#6e6e73]">Strategy plan</h4>
+        <p>{row.status}{row.when ? ` · ${row.when}` : ''}</p>
+        <p aria-label={`${row.ticker} action status`}>{row.why}</p>
+        {decisionLevels(row).map(line => <p key={line}>{line}</p>)}
+      </>}
       <h4 className="font-medium text-[#6e6e73]">{row.modelPlan ? 'Recorded paper executions' : row.orders.length ? `Order${row.orders.length > 1 ? 's' : ''}` : 'No order'}</h4>
       {row.modelPlan && !row.orders.length && <p>No outstanding paper order.</p>}
-      <p aria-label={`${row.ticker} action status`}>{row.why}</p>
+      {!row.modelPlan && <p aria-label={`${row.ticker} action status`}>{row.why}</p>}
       {row.orders.map(order => {
         const mine = canScale(order) ? myShares(order.weight, myAccount, order.price) : null
         const word = orderWord(order)
@@ -555,24 +559,31 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
     ? rankCurrent(ranked(boardRows(latest, paper, true, now)), live, latest.session, now)
     : ranked(boardRows(latest, paper, false)), [latest, paper, currentOnly, live, now])
   const orders = (paper?.plan?.orders ?? []).filter(order => !currentOnly || !isDone(order))
+  // A stock's proposed change comes from its numeric decision, not its paper-order history.
+  const changes = (row: BoardRow) => currentOnly
+    ? Boolean(row.modelDecision?.action && row.modelDecision.action !== 'hold')
+    : row.orders.length > 0
   const counts = {
-    orders: rows.filter(r => r.orders.length > 0).length,
-    portfolio: rows.filter(r => r.orders.length > 0 || r.held > 0).length,
+    orders: rows.filter(changes).length,
+    portfolio: rows.filter(r => changes(r) || r.held > 0).length,
     all: rows.length,
   }
+  // Explain a missing shared plan once instead of repeating execution status in every row.
+  const planUnavailable = currentOnly && rows.length > 0 && rows.every(row => !row.modelDecision)
   const view: View = chosen ?? (currentOnly ? 'all' : counts.portfolio > 0 ? 'portfolio' : 'all')
   const search = query.trim().toUpperCase()
   const inView = rows.filter(r => search ? r.ticker.includes(search)
-    : view === 'orders' ? r.orders.length > 0
-    : view === 'portfolio' ? r.orders.length > 0 || r.held > 0
+    : view === 'orders' ? changes(r)
+    : view === 'portfolio' ? changes(r) || r.held > 0
     : true)
   const measure = (row: BoardRow, key: SortKey): number | string =>
     key === 'ticker' ? row.ticker
     : key === 'grade' ? GRADE_RANK[currentOnly ? row.modelDecision?.grade ?? '' : row.grade] ?? -1
     : key === 'position' ? row.heldWeight ?? -1
     : currentOnly ? row.modelDecision?.qty ?? -1 : row.notional ?? -1
-  const allSelected = FILTER_ACTIONS.every(action => shownActions[action])
-  const filtered = allSelected ? inView : inView.filter(row => FILTER_ACTIONS.some(action => shownActions[action] && hasAction(row, action)))
+  const actionChoices = currentOnly ? STRATEGY_ACTIONS : FILTER_ACTIONS
+  const allSelected = actionChoices.every(action => shownActions[action])
+  const filtered = allSelected ? inView : inView.filter(row => actionChoices.some(action => shownActions[action] && hasAction(row, action)))
   const shown = !sort ? filtered : [...filtered].sort((a, b) => {
     const left = measure(a, sort.key), right = measure(b, sort.key)
     const order = typeof left === 'string' ? left.localeCompare(right as string) : left - (right as number)
@@ -585,13 +596,14 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
   return <section aria-label="Stocks and cash" className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-black/[0.08] bg-white [container-type:inline-size]">
     <div className="shrink-0 space-y-2 border-b border-black/[0.06] px-3 py-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-sm font-semibold text-[#1d1d1f]">Stock rankings{!currentOnly && <span className="font-normal text-[#6e6e73]"> · the paper account’s orders</span>}</h3>
+        <h3 className="text-sm font-semibold text-[#1d1d1f]">{currentOnly ? 'Stock rankings' : 'Paper orders'}</h3>
       </div>
-      {currentOnly && <p aria-label="Chart judgment coverage" className="text-[11px] text-[#6e6e73]">{rows.filter(row => row.currentSetup).length} of {rows.length} current assessments{live.opportunities?.status === 'building' || live.opportunities?.status === 'pending' ? live.market_status?.phase === 'open' ? ' · updating' : ' · awaiting regular-session evidence' : ''}{live.opportunities?.unavailable && Object.keys(live.opportunities.unavailable).length > 0 ? ` · ${Object.keys(live.opportunities.unavailable).length} unavailable` : ''}</p>}
+      {planUnavailable && <p role="status" aria-label="Strategy plan status" className="text-xs text-[#b25e00]">Current strategy plan unavailable. Latest saved decision: {latest.session}. {rows[0].why}</p>}
       <AccountStrip paper={paper} orders={orders} />
       {paused && <p role="status" aria-label="Trading restriction" className="text-xs text-[#b25e00]">FOMC cycle: the paper account follows the FOMC risk rule; its orders say when.</p>}
       <details aria-label="Order rules" className="text-xs text-[#6e6e73]">
         <summary className="cursor-pointer">About these signals & options</summary>
+        {currentOnly && <p aria-label="Chart judgment coverage" className="my-2 text-[11px]">{rows.filter(row => row.currentSetup).length} of {rows.length} current chart assessments{live.opportunities?.status === 'building' || live.opportunities?.status === 'pending' ? live.market_status?.phase === 'open' ? ' · updating' : ' · awaiting regular-session evidence' : ''}{live.opportunities?.unavailable && Object.keys(live.opportunities.unavailable).length > 0 ? ` · ${Object.keys(live.opportunities.unavailable).length} unavailable` : ''}</p>}
         <p aria-label="Allocation record" title={`Saved policy: ${latest.targets?.policy ?? 'not recorded'}`} className="my-2 text-[11px]">{currentOnly ? `Action, funded shares and timing use the same admitted numeric plan. No paper order does not mean HOLD. Saved allocation: ${latest.session}. Recorded paper executions and chart judgments stay in Details.` : `Saved allocation · ${latest.session}. These are the saved plan's targets, not new orders. Live holdings can differ.`}</p>
         {!currentOnly && <label className="flex items-center gap-1 text-xs text-[#6e6e73]" title="Scales unsent plans only. Does not check your holdings or available cash. Kept in this browser only.">
           Reference account $
@@ -611,13 +623,13 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
           {([['orders', 'Orders'], ['portfolio', 'Portfolio'], ['all', 'All names']] as const).map(([value, label]) =>
             <button key={value} type="button" aria-pressed={view === value} onClick={() => setView(value)}
               className={`rounded-full px-2.5 py-0.5 ${view === value ? 'bg-[#1d1d1f] text-white' : 'bg-[#f5f5f7] text-[#6e6e73] hover:text-[#0071e3]'}`}>
-              {label} <span className="tabular-nums">{counts[value]}</span>
+              {currentOnly && value === 'orders' ? 'Changes' : label} <span className="tabular-nums">{counts[value]}</span>
             </button>)}
         </div>
         {sort !== null && <button type="button" onClick={() => setSort(null)}
           title={`Restores automatic ranking after column sorting. ${rankingDescription}${currentOnly ? '' : ' Filled orders are history.'}`}
           className="rounded-md px-2 py-0.5 text-xs text-[#0071e3]">Reset ranking</button>}
-        {FILTER_ACTIONS.some(action => !shownActions[action]) && <button type="button" className="px-2 py-0.5 text-xs text-[#0071e3]" onClick={() => setShownActions(ALL_ACTIONS)}>Show all actions</button>}
+        {actionChoices.some(action => !shownActions[action]) && <button type="button" className="px-2 py-0.5 text-xs text-[#0071e3]" onClick={() => setShownActions(ALL_ACTIONS)}>Show all actions</button>}
         <input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search a ticker" aria-label="Search the stock list"
           className="w-full max-w-44 rounded-md border border-black/[0.08] bg-white px-2 py-0.5 text-sm text-[#1d1d1f]" />
       </div>
@@ -630,10 +642,10 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
             <Head label="Stock" column="ticker" sort={sort} onSort={onSort} />
             <Head label="Grade" column="grade" sort={sort} onSort={onSort} title={currentOnly ? 'The admitted numeric plan’s recorded grade. Fresh chart assessments remain in Details.' : 'The recorded analyst grade; allocation and orders come from the selected policy. Click to sort by grade.'} />
             <Head label="Position" column="position" sort={sort} onSort={onSort} title="Live paper holdings and share of the account. Saved targets belong to the dated allocation record; they are not new orders." />
-            <Head label="Levels" sort={sort} onSort={onSort} title={currentOnly ? 'Execution triggers linked to the admitted numeric plan. Chart references and other paper orders stay in Details.' : 'Outstanding paper order triggers, tested on completed 15-minute closes. Technical references are in stock details. Not guaranteed fill prices.'} />
-            <ActionHead open={actionMenu} onOpen={setActionMenu} shown={shownActions} onShown={setShownActions} rows={inView} title={currentOnly ? 'Admitted numeric model actions. A dash means no current model action is available; no paper order does not imply HOLD.' : undefined} />
+            {!currentOnly && <Head label="Levels" sort={sort} onSort={onSort} title="Outstanding paper order triggers, tested on completed 15-minute closes. Technical references are in stock details. Not guaranteed fill prices." />}
+            <ActionHead open={actionMenu} onOpen={setActionMenu} shown={shownActions} onShown={setShownActions} rows={inView} modelPlan={currentOnly} title={currentOnly ? 'BUY, SELL, TRIM and HOLD come from the same numeric strategy plan. A dash means there is no current action. Waiting and paper execution status are in Details.' : undefined} />
             <Head label="Size" column="size" sort={sort} onSort={onSort} title={currentOnly ? 'Funded whole-share change from the same admitted numeric decision. Recorded paper execution quantities stay in Details.' : 'Planned or submitted sizes use a price estimate; filled sizes use execution prices. Percentages use current paper equity.'} />
-            <Head label="When / status" sort={sort} onSort={onSort} title={currentOnly ? 'Timing and status of the admitted numeric decision. Paper executions stay in Details.' : "The order's rule for its session and what has happened to it."} />
+            <Head label={currentOnly ? 'Timing' : 'When / status'} sort={sort} onSort={onSort} title={currentOnly ? 'Execution timing from the same numeric strategy plan. Reasons, triggers and paper executions stay in Details.' : "The order's rule for its session and what has happened to it."} />
           </tr>
         </thead>
         <tbody>{shown.slice(0, visible).map(row => {
@@ -655,37 +667,36 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
               </td>
               <td className="py-2 text-xs" aria-label={`${row.ticker} displayed grade`}>
                 <span className={`font-semibold ${assessedGrade === 'A+' || assessedGrade === 'A' ? 'text-[#248a3d]' : assessedGrade === 'C' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{assessedGrade || '—'}</span>
-                {currentOnly && <div className="text-[10px] text-[#6e6e73]">{row.modelDecision ? `${row.modelDecision.signal_session ?? latest.session} plan` : 'model plan unavailable'}</div>}
+                {currentOnly && row.modelDecision && <div className="text-[10px] text-[#6e6e73]">{row.modelDecision.signal_session ?? latest.session} plan</div>}
               </td>
               <td className="py-2 text-xs" aria-label={`${row.ticker} position`}>
                 {row.positionKnown === false ? <span className="text-[#86868b]">unavailable</span> : row.held > 0 ? <>{shares(row.held)}{row.heldWeight !== null ? ` · ${percent(row.heldWeight)}` : ''}</> : <span className="text-[#86868b]">none</span>}
                 {!currentOnly && row.target !== null && <div className="text-[10px] text-[#6e6e73]" title={latest.targets?.policy ?? 'Policy not recorded'}>{savedTargetText(row, latest.session)}</div>}
               </td>
-              <td className="py-2 text-[11px]" aria-label={`${row.ticker} levels`} title={levels.length ? `${row.ticker}: outstanding paper trigger on a completed 15-minute close; not a limit order or predicted support. ${row.when}` : `${row.ticker}: no outstanding price trigger. Technical references are in details.`}>
+              {!currentOnly && <td className="py-2 text-[11px]" aria-label={`${row.ticker} levels`} title={levels.length ? `${row.ticker}: outstanding paper trigger on a completed 15-minute close; not a limit order or predicted support. ${row.when}` : `${row.ticker}: no outstanding price trigger. Technical references are in details.`}>
                 {levels.length ? levels.map(line => <div key={line} className="whitespace-nowrap text-[#6e6e73]">{line}</div>) : <span className="text-[#86868b]">—</span>}
-              </td>
+              </td>}
               <td className="py-2 text-xs" title={row.why}>
                 <span aria-label={`${row.ticker} strategy intent`} className={`font-semibold ${row.done ? 'text-[#6e6e73]' : WORD_STYLE[row.word]}`}>{row.word}</span>
-                {!currentOnly && row.signal && <div aria-label={`${row.ticker} grade signal`} className="text-[10px] text-[#6e6e73]">Grade signal: {row.signal.toUpperCase()} · {latest.session}</div>}
               </td>
               <td className="py-2 text-xs" aria-label={`${row.ticker} size`}>
                 {currentOnly ? row.modelDecision?.action && row.modelDecision.qty !== null
-                  ? <span className="font-medium text-[#1d1d1f]">{shares(row.modelDecision.qty)}{row.modelDecision.action === 'hold' ? ' change' : ' funded'}</span> : '—'
+                  ? <><span className="font-medium text-[#1d1d1f]">{shares(row.modelDecision.qty)}{row.modelDecision.action === 'hold' ? ' change' : ' funded'}</span>
+                    {row.modelDecision.status === 'blocked' && <p aria-label={`${row.ticker} sizing constraint`} className="text-[10px] text-[#b25e00]">Blocked · {row.why}</p>}</> : '—'
                   : row.orders.length ? <>
                   <span className="font-medium text-[#1d1d1f]">{row.combined ? `${shares(row.qty)} ${row.sizeLabel}` : `${row.orders.length} orders · see details`}</span>
                   <div className="text-[10px] text-[#6e6e73]">{row.notional !== null ? dollars(row.notional) : ''}{row.weight !== null ? ` · ${percent(row.weight)}` : ''}</div>
                   {mine !== null && <div className="text-[10px] text-[#0071e3]">ref. {shares(mine)}</div>}
                 </> : '—'}
               </td>
-              <td className="max-w-72 whitespace-normal py-2 text-xs" aria-label={`${row.ticker} order status`}>
-                {row.status ? <>
+              <td className="max-w-72 whitespace-normal py-2 text-xs" aria-label={`${row.ticker} ${currentOnly ? 'strategy timing' : 'order status'}`}>
+                {currentOnly ? row.modelDecision?.qty && row.when ? row.when : '—' : row.status ? <>
                   <span className={`mr-1 inline-block h-2 w-2 rounded-full ${STATE_DOT[row.state] ?? 'bg-[#86868b]'}`} aria-hidden="true" />{row.status}
                   <div className="text-[10px] text-[#6e6e73]">{row.when}</div>
-                  {currentOnly && row.modelDecision?.status === 'blocked' && <div className="text-[10px] text-[#6e6e73]">{row.why}</div>}
                 </> : <span className="text-[#86868b]">—</span>}
               </td>
             </tr>
-            {open && <tr><td colSpan={8} className="border-t border-black/[0.05] bg-[#f0f7ff] px-3 py-2"><div className="w-[calc(100cqw-1.5rem)] whitespace-normal">
+            {open && <tr><td colSpan={currentOnly ? 7 : 8} className="border-t border-black/[0.05] bg-[#f0f7ff] px-3 py-2"><div className="w-[calc(100cqw-1.5rem)] whitespace-normal">
               {currentOnly && row.currentSetup && <div aria-label={`${row.ticker} chart judgment`} className="mb-3 text-xs">
                 {row.freshGrade && <p className="text-[#6e6e73]">Chart assessment {row.freshGrade}</p>}
                 <p>{row.currentSetup.reason}</p>
@@ -698,7 +709,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
           </Fragment>
         })}</tbody>
       </table>
-      {shown.length === 0 && <p role="status" className="border-t border-black/[0.05] px-3 py-2 text-xs text-[#6e6e73]">{!allSelected ? 'No stocks match this view and the selected actions.' : search ? `No name matches “${query}”.` : view === 'orders' ? 'No orders for the paper account right now.' : 'Nothing to show.'}</p>}
+      {shown.length === 0 && <p role="status" className="border-t border-black/[0.05] px-3 py-2 text-xs text-[#6e6e73]">{!allSelected ? 'No stocks match this view and the selected actions.' : search ? `No name matches “${query}”.` : view === 'orders' ? currentOnly ? 'No current strategy changes available.' : 'No orders for the paper account right now.' : 'Nothing to show.'}</p>}
       {shown.length > visible && <button type="button" className="w-full border-t border-black/[0.05] px-3 py-2 text-left text-xs text-[#0071e3]" onClick={() => setVisible(v => v + 25)}>Show more · {Math.min(shown.length, visible + 25)} of {shown.length} names</button>}
       {footer}
     </div>
