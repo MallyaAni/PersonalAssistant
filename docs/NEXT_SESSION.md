@@ -1,5 +1,46 @@
 # Next session
 
+## 2026-10-17 — Current-source timing input path verified on retained real data
+
+Feature991b4394 integrated as748cc9b8 after ROOT full helper/tests/runner/compact
+proof review, Ruff/format, and independent actualv6/genuinev2/runtime/source-map
+checks. Helper68536cfe/testdc9e2c00, exact packet54763a69. Read
+research/historical-conditional-forecast-proof-2026-10-17.json for exact pins.
+38pure checks/0skip1.79s on actualf612 (real feature extraction, artifact inference
+mocked);7separate schema checks/0skip1.61s. Genuinev2 a8021732/f612/UID1000/
+none/RO/1CPU/RAM+total swap2GiB/exclusiveoutRW/exit0/OOMfalse, proof56414456.
+All14 exact comparisons pass:1046prior dates since2015/full96cohort/21AAPL
+features/fullframe+valid/native typed and reader sample identities/horizon,
+mean-scale and16491residuals. Only AAPL prefix valid,95names unavailable. Actual
+compute16:00:26.274522->model.401706->finish.606639Z is separately recorded from
+fixed hypothetical2019 availability. No live inference receipt or historical
+publication claim. Frozen current-month guard remains, never backdate.
+
+Current31bfb/configf96/release1c1/originaleconomic4d6 authenticated with exact
+predecessor archives; original1a/capture1b/27471 stay separate. UID1000 required
+a private readable byte-identical backend copy: ROOT independently inspected
+neverstarted extractor d5cd/noMounts/exactf612 and original native hashcontainer
+40dc/f612/none/RO/noMounts/exit0; full actual Docker hashstdout exactly equals
+source-map1d126a0 (1652backend+3docs). All1655 byte identities rechecked;145
+PRIVATE chmod-only changes, no image/live permission changes. Do not equate
+unrelated production69164 map serialization or claim unoverlaid permission proof.
+
+Preserve v1/v2 permission/collection failures and actual causal red: full-session
+complete flag erased a valid morning prefix; fixed completed-prefix-only gate.
+First genuinev1 compared different identity schemas and failed: typed current
+_hash+horizon vs native reader raw sampled SHA/nohorizon. Both PREtransport;
+transport hypothesis rejected. Exact runner-only schema conversion, corruption
+tests and freshv2 passed without helper/model changes; v1 remains failed.
+No further head calls needed. Retain exact ONE_AAPL arraysab5c072e/127661B and
+receipt285f438b/21896B on Spark for next bridge; never seed from comparison6176.
+
+Next agents: new retained-result/source-aware opening bridge; opt-in current
+Cycle settlement/recovery from committed submission; current nightly-planner
+reuse design ONLY. No new GET, full corrected run, actual-day replay, service
+restart or production deployment. Generic account/anchor/holding/fill/all-history
+acceptance remain separate. Original full next compact>=16:08; publicationCLOSED.
+Diagram impact NONE: unused private numerical input adapter; no deployed flow.
+
 ## 2026-10-17 — Final dispatch and pure current settlement integrated
 
 Final95510855 integrated asfe2a77de after ROOT complete diff/source/tests/runner
