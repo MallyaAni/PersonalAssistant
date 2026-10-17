@@ -1,0 +1,30 @@
+{
+  "schema": "historical-native-write-reservation-contract/1",
+  "status": "APPROVED_SOURCE_AND_TEST_IMPLEMENTATION_ONLY_NOT_RUNTIME_VERIFIED",
+  "objective": "Reserve the actual private native writer inode before a native call, preserve exact CURRENT writer bytes and retained failure evidence, and keep the result distinct from simulator admission.",
+  "owner": "Existing trading_action_consistency; settlement worktree, private feature3cc93ae6",
+  "allowed_new_files": [
+    "backend/market/historical_native_write_reservation.py",
+    "backend/tests/test_historical_native_write_reservation.py"
+  ],
+  "current_writer": "Exacta8c5083f/currentf612, full CURRENT31 identity and externally pinned readable source; no live/native source or permission change.",
+  "adapter_contract": [
+    "Explicit new infrastructure callable: exact native save_state code/defaults/closure with copied globals and ONLY tempfile replaced by a private factory facade. Never mutate shared tempfile or claim original SAVE_STATE callable identity.",
+    "Finite actual preallocated inode slots and durable anchor plus precreated workname; private ownership, kernel lock, same-device fd/path identities, source/profile binding and exact native tempfile arguments.",
+    "Nontruncating byte-bounded UTF8 output; native json.dump/flush/fsync remain. After successful writer close, retain final byte offset, truncate and fsync the same inode before native Path.replace.",
+    "Bind any legitimate existing destination to its authoritative preimage. Refuse unknown destinations, symlinks, substitutions, globals/source/code drift, unsupported arguments, quota/byte overflow or uncertain operations.",
+    "Verify final destination inode and complete raw bytes after return; keep OPEN/charged slots and anchors on failure or interruption. No replay or successful-operation adoption from orphan bytes.",
+    "Only small synthetic writer tests may be prepared. No tests/native imports/runtime, commits or integration until ROOT reviews source and exact isolated invocation. Source-only static checks are permitted."
+  ],
+  "proposed_experiment_not_yet_authorized": "Separately named currentf612/a8 synthetic writer parity and retained crash fixture; bounded8MiB slots, UTF8/NaN/escaped/BMP/nonBMP/surrogate values, exact byte parity, argument/source/global/preimage rejection and observable failure/SIGKILL boundaries. Actual filesystem resources and exact runtime require ROOT review first.",
+  "integration_inventory_still_open": [
+    "Nightly physical/components/NativeCapture.save/BIRTH direct save, complete(entry), captured native decisions and full asdict state comparisons",
+    "Cycle components/restore/final-settlement/fold-current; settlement prior/final finite digests and simultaneous asdict/deepcopy histories",
+    "Native sender, latch and forecast-evidence writes",
+    "Raw CAS hash-named link creation, Store files, SQLite DELETE journals/temp metadata and restoration",
+    "Whole changing prefix/suffix storage and full native planning/model/capture/restore memory"
+  ],
+  "metadata_and_dual_host_boundary": "Existing v1 raw helper explicitly measures directory headroom rather than reserving it. Fixed precreated slot filenames plus finite preallocated hash-to-slot/manifest/control storage is a candidate separate version, not an existing21-test guarantee. All native rename/Store/latch/evidence paths and exact reservations/acknowledgements on both Sparks remain unproved. No dummy reservation, cap raise or generic NaN normalization.",
+  "excluded": "No existing Store/schema/stages/Nightly/Cycle/codec/source pins/caps changes, model/provider/account invocation, original artifact parsing, v6 replay, new genuine run, deployment, production admission or publication.",
+  "diagram_impact": "NONE: approved unused private source work only; no deployed relationship changed"
+}

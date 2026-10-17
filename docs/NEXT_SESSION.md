@@ -1,5 +1,37 @@
 # Next session
 
+## 2026-10-17 — Native writer adapter SOURCE/TEST work approved after review
+
+Read research/historical-native-write-reservation-contract-2026-10-17.json.
+Healthy existing trading_action_consistency completed the read-only integration
+inventory. ROOT now authorizes ONLY two new native-write-reservation source/test
+files on private3cc93 settlement worktree; no execution, imports of native/model
+code, commits or integration until exact source and synthetic invocation review.
+Source-only static checks permitted. Existing v1 helper/Store/schema/stages/
+Nightly/Cycle/codec/pins/caps/native files stay unchanged. No duplicate workers.
+
+The adapter is a NEW infrastructure callable, not original SAVE_STATE identity:
+exact a8 writer code/defaults/closure, copied globals with only private tempfile
+facade changed, actual preallocated nontruncating UTF8 inode, exact native args,
+authoritative preimage/exclusive private lock and retained anchors. Close then
+truncate/fsync same inode before original Path.replace; verify final raw bytes.
+Unknown arguments/source/globals/destinations and interrupted slots must refuse.
+Only small synthetic parity/crash tests may be prepared; no genuine run/replay.
+
+Review exposed additional finite-JSON boundaries: Nightly complete embeds native
+entry, decisions may contain native payloads; Cycle final digests and settlement
+asdict/deepcopy hashes also encounter native history NaNs. Typed opaque physical
+references must not be relabelled old canonical finite digests or normalized.
+V1 hash-named CAS links/Store/SQLite/latch/evidence/native rename metadata and
+dual-host reservations remain OPEN. Fixed filenames/index/control storage is a
+candidate separate version, not existing21-test capacity or simulator admission.
+The approved adapter closes only a future local writer-inode seam. Whole-horizon
+and full native/model lifecycle memory still need bounded evidence.
+
+All completed source/input/state/private21-test evidence below remains unchanged.
+Original timing FAILED/publication CLOSED; v6 PAUSED/no replay. Productione237/
+f612 unchanged. Fresh real weekday/intraday/fill/UI acceptance still UNVERIFIED.
+
 ## 2026-10-17 — Private raw checkpoint primitive verified; native integration still open
 
 Private branch codex/historical-physical-checkpoint-20261017 at
