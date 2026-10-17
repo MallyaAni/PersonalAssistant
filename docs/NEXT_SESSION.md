@@ -1,5 +1,27 @@
 # Next session
 
+## 2026-10-17 — Independent live parity repair VERIFIED; continue N2 preparation
+
+Canonical parity v3 completed11:04:00Z at exacta2378e9565e6a557fbc3782ac1a5536bae961a75;
+cheap post green11:04:01Z.10676 unit pass/93skip/6xfail/439warnings584.74s;
+100 real routing pass/0skip501.85s. Both backup mirrors completed; no bypass.
+Independent11:04:50Z proof matches1644 actual backend files and image
+3b90fcb64496940afcf120646c2bc630776b5c0a892c228046bbab029ec49045.
+Actual checker755ae2ff passes the original saved target boundary, rejects corrupt
+targets/missing receipts; HOST and CONTAINER source admission pass. All310
+original files unchanged, original Oct13failed parity/record37d7541f and state
+28d3e8ed remain original. Zero actual-day replay, orders or new model inference.
+This is receipt consistency, not fresh ordinary or learned intraday acceptance.
+
+Private root:/home/animallya96/scratch/trading-parity-release-20261017-v3.
+Independent proof66387176b7995850ee6f17933cdf790d6f79ef8bd96600e113e1a1d8cdf736a7
+is copied exactly to research/trading-parity-recovery-proof-2026-10-17.json.
+Original v1/v2 failures and trading-parity-proof-2026-10-17.json remain intact.
+Never rerun this completed release. Continue NEW N2ad44 preparation/root bindings,
+then canonical numeric release and independent preservation/public-browser proof,
+then guarded settlement. Do not execute the old6a-bound preparation or wrappers.
+No historical main deployment before original full run completion and full audit.
+
 ## 2026-10-17 — Test-only urgent child N2 passed integration; re-pin new roots
 
 Exact candidate ad44d536a70d5c037cb931836a3c9f48b014d84a is pushed on the

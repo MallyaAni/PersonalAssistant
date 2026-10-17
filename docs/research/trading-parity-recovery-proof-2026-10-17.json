@@ -1,0 +1,29 @@
+{
+  "actual_saved_snapshot_targets": "PASS",
+  "backend_files_match": 1644,
+  "backend_image": "sha256:3b90fcb64496940afcf120646c2bc630776b5c0a892c228046bbab029ec49045",
+  "checker_sha256": "755ae2ff29d832a75136a2e71d80b0676f5b79f7a9eb490a1178e2ce56652465",
+  "corrupt_targets_and_missing_receipts": "REJECTED",
+  "evidence_sha256": {
+    "canonical-result.json": "0b8a6c4aada3134c64133460386ff01f32006f39ce52ce421b7ddbe7958b9cbb",
+    "claim.json": "5a7fd57efa640b864bdcc4b52cf61a65c150a572bc685e41a19623231b0e264f",
+    "containers-after.json": "184c1b8090b5c2fda6a0f43b0f38fef196cb3860d03d8d84c5512a8758bc5e7c",
+    "containers-before.json": "1e4cc5d11535073301e113c897abed498e5b0f4b09b50ec6fc30a3bfad5113f7",
+    "preserved-after.json": "5a8e228b15222a4c6208097edc789ee0911bc462d56d504f386b34cf5ef1cdb3",
+    "preserved-before.json": "5a8e228b15222a4c6208097edc789ee0911bc462d56d504f386b34cf5ef1cdb3",
+    "release-result.json": "64d86cf3ea0b67921c3c126f8a15917bb48655efad9269389cf99750b714c3e3",
+    "snapshot-verification.json": "01a4fdb65328a3255ce5b24877e54db351d1eeaaf176ac5ee245109e67d1b4cf"
+  },
+  "fresh_ordinary_acceptance": "UNVERIFIED",
+  "historical_delivery": "UNVERIFIED",
+  "host_and_container_source_admission": "PASS",
+  "new_model_inference": false,
+  "orders_submitted": 0,
+  "ordinary_sessions_replayed": 0,
+  "original_failed_parity_preserved": true,
+  "original_files_unchanged": 310,
+  "post": "2026-10-17T11:04:01Z a2378e95 ok (cheap)",
+  "source": "a2378e9565e6a557fbc3782ac1a5536bae961a75",
+  "status": "VERIFIED_DEPLOYED_PARITY_CORRECTION",
+  "verified_at": "2026-10-17T11:04:50.172425+00:00"
+}
