@@ -1010,7 +1010,7 @@ const HowToUse = ({ onClose, compact = false, plan, strategy = false }: { onClos
     <p>The stock list uses one admitted numeric plan for action, funded shares and timing. Missing or stale plans stay unavailable.</p>
     <p>A/A+ gives entry permission, not a funded buy. An admitted BUY with zero shares keeps its blocking reason. No paper order does not imply HOLD.</p>
     <p>TRIM reduces a holding; SELL exits. Chart judgments and actual paper executions are supporting details.</p>
-    <p>Open a ticker for historical grade-led decisions with current live-model quantities and simulated executions. Confirmed paper executions and earlier model-only research are separate layers.</p>
+    <p>Open a ticker for dated history. Current-model historical quantities are shown only when that stock’s research is available. Confirmed paper executions and earlier model-only research remain separate.</p>
     <p>Saved targets and grades retain their dates; prices and order status refresh live.</p>
     {onClose && <button type="button" className="mt-2 text-[#0071e3]" onClick={onClose}>Close guide</button>}
   </section>
