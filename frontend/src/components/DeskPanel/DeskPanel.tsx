@@ -1701,7 +1701,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               <p>{paperLive?.orders ? `${paperLive.orders.length} order${paperLive.orders.length === 1 ? '' : 's'} open at the broker` : 'Open orders unavailable'}</p>
               {paperLive?.orders?.map((order, i) => <p key={i}>{order.side.toUpperCase()} {order.qty} {order.symbol} · {order.status}</p>)}
               <p>{paperLive?.activity?.fills ? `${paperLive.activity.fills.length === 0 && paperLive.activity.complete ? 'No fills' : `${paperLive.activity.fills.length}${paperLive.activity.complete ? '' : '+'} fills`} · ${paperLive.activity.session}` : 'Today’s fill history unavailable'}</p>
-              {[...recordedExecutions].reverse().map((fill, i) => <p key={fill.client_order_id ?? i} data-client-order-id={fill.client_order_id ?? undefined}>{fill.side === 'buy' ? 'Bought' : 'Sold'} {fill.qty} {fill.symbol} @ {priceMoney(fill.price)} · <time dateTime={fill.filled_at} title={fill.filled_at}>{executionTime(fill.filled_at)}</time></p>)}
+              {[...recordedExecutions].reverse().map((fill, i) => <p key={`${fill.client_order_id ?? 'fill'}-${i}`} data-client-order-id={fill.client_order_id ?? undefined}>{fill.side === 'buy' ? 'Bought' : 'Sold'} {fill.qty} {fill.symbol} @ {priceMoney(fill.price)} · <time dateTime={fill.filled_at} title={fill.filled_at}>{executionTime(fill.filled_at)}</time></p>)}
             </section>
           </div>
         </details>

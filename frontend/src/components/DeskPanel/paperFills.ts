@@ -15,25 +15,28 @@ const validFill = (fill: unknown, now: number): fill is DeskRecordedPaperFill =>
 // Date an actual execution in the exchange timezone instead of borrowing its decision session.
 export const paperFillSession = (at: string): string => new Intl.DateTimeFormat('en-CA', {timeZone: 'America/New_York'}).format(new Date(at))
 
-// Merge saved terminal fills and today's broker activity as a multiset without changing today's count.
+// Identify an explicit broker activity day even when its read is incomplete or contains no fills.
+export const paperActivitySession = (activity: DeskPaperLive['activity']): string | null => {
+  const session = activity?.session
+  if (!Array.isArray(activity?.fills) || typeof session !== 'string') return null
+  const at = Date.parse(`${session}T00:00:00Z`)
+  return Number.isFinite(at) && new Date(at).toISOString().slice(0, 10) === session ? session : null
+}
+
+// Use broker events exclusively for their dated read and journal totals on other days, never summing both.
 export const confirmedPaperFills = (recorded: DeskPaperLive['recorded_fills'], activity: DeskPaperLive['activity'], now: number): DeskRecordedPaperFill[] => {
+  const activitySession = paperActivitySession(activity)
   const rows: DeskRecordedPaperFill[] = []
   for (const fill of recorded ?? []) {
-    if (!validFill(fill, now)) continue
+    if (!validFill(fill, now) || paperFillSession(fill.filled_at) === activitySession) continue
     const index = fill.client_order_id ? rows.findIndex(row => row.client_order_id === fill.client_order_id) : -1
     if (index < 0) rows.push({...fill})
     else if (Date.parse(fill.reconciled_at ?? fill.filled_at) > Date.parse(rows[index].reconciled_at ?? rows[index].filled_at)) rows[index] = {...fill}
   }
-  const matched = new Set<number>()
   for (const fill of activity?.fills ?? []) {
-    if (!validFill(fill, now) || paperFillSession(fill.filled_at) !== activity?.session) continue
-    const byId = fill.client_order_id ? rows.findIndex(row => row.client_order_id === fill.client_order_id) : -1
-    if (byId >= 0) {matched.add(byId); continue}
-    const index = rows.findIndex((row, i) => !matched.has(i) && (
-      row.client_order_id && fill.client_order_id ? row.client_order_id === fill.client_order_id
-        : row.symbol === fill.symbol && row.side === fill.side && row.qty === fill.qty && row.price === fill.price && Date.parse(row.filled_at) === Date.parse(fill.filled_at)))
-    if (index >= 0) {matched.add(index); if (!rows[index].client_order_id && fill.client_order_id) rows[index] = {...rows[index], client_order_id: fill.client_order_id}}
-    else {matched.add(rows.length); rows.push({...fill})}
+    if (!validFill(fill, now) || paperFillSession(fill.filled_at) !== activitySession) continue
+    // Separate broker events may share an order ID or tuple; only the broker can identify an event duplicate.
+    rows.push({...fill})
   }
   return rows.sort((a, b) => Date.parse(a.filled_at) - Date.parse(b.filled_at) || (a.client_order_id ?? '').localeCompare(b.client_order_id ?? ''))
 }

@@ -17,7 +17,7 @@ import { exportDeskPersonalReceipt, getDeskChart, getDeskPersonalHistory, DESK_C
 import type { DeskHistory, DeskHistoryFill, DeskHistoryRow, DeskLive, DeskPaperLive, DeskStructure, DeskStrategyStock } from '../../services/api'
 import { SessionPrice } from './StockBoard'
 import { LEVEL_NAME, percent, shares } from './TradeBoard'
-import {confirmedPaperFills, paperFillSession} from './paperFills'
+import {confirmedPaperFills, paperActivitySession, paperFillSession} from './paperFills'
 
 // The picture behind the grade. The board says what the desk concluded; this
 // shows adjusted price indicators beside recorded and replayed grade changes.
@@ -466,14 +466,16 @@ const fillRows = (history: DeskHistory | undefined): DeskHistoryFill[] => {
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
-// Merge actual journal, broker and archive fills by identity or conservative one-to-one matching.
+// Use broker events for their day and conservatively merge journal identities with older archived fills.
 const currentFillRows = (history: DeskHistory | undefined, activity: DeskPaperLive['activity'], recorded: DeskPaperLive['recorded_fills'], ticker: string, now: number): DeskHistoryFill[] => {
-  const archived = fillRows(history)
+  const activitySession = paperActivitySession(activity)
+  const confirmed = confirmedPaperFills(recorded, activity, now).filter(fill => fill.symbol === ticker)
+  const archived = fillRows(history).filter(fill => fill.date !== activitySession)
   const matched = new Set<number>()
   // Match old archive rows without an execution identity conservatively, without deduplicating distinct fills.
   const identity = (fill: DeskHistoryFill) => `${fill.date}:${fill.side}:${fill.qty}:${fill.price}`
   const fresh: DeskHistoryFill[] = []
-  for (const fill of confirmedPaperFills(recorded, activity, now)) {
+  for (const fill of confirmed) {
     const instant = recordedInstant(fill.filled_at)
     if (fill.symbol !== ticker || !instant || instant.getTime() > now
       || !['buy', 'sell'].includes(fill.side) || !Number.isFinite(fill.qty) || fill.qty <= 0
@@ -517,9 +519,10 @@ const isRedeploy = (fill: {kind?: string}) => fill.kind === 'redeploy'
 // Mark the paper account's real fills as circles on the session they filled,
 // below the candle for a buy and above it for a sell, so a decision and the fill
 // it led to sit a candle apart on the same picture. A redeploy fill is purple
-// and says so; every other fill is blue.
-const fillMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[], timeframe: Timeframe): FillMarker[] =>
-  fillRows(history).flatMap(fill => {
+// and says so; every other fill is blue. The selected multiset is already conserved;
+// multiple broker events can share an order ID and must not be deduplicated again.
+const fillMarkers = (fills: DeskHistoryFill[], bars: DeskChartBar[], timeframe: Timeframe): FillMarker[] =>
+  fills.filter(drawableFill).flatMap(fill => {
     const candle = markerCandle(fill.date, bars, timeframe)
     return candle ? [{
       time: stamp(candle.date),
@@ -771,7 +774,7 @@ export const TickerChart = ({
   const changes = useMemo(() => gradeMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
   const decisions = useMemo(() => decisionMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
   const fills = useMemo(() => currentFillRows(history, paperActivity, paperRecordedFills, ticker, now), [history, paperActivity, paperRecordedFills, ticker, now])
-  const fillMarks = useMemo(() => groupedFillMarkers(fillMarkers({...history, fills} as DeskHistory, merged.bars, timeframe)), [history, fills, merged, timeframe])
+  const fillMarks = useMemo(() => groupedFillMarkers(fillMarkers(fills, merged.bars, timeframe)), [fills, merged, timeframe])
   // The fifteen-minute layers come timed from the payload rather than dated
   // from the history file, so they are empty on daily and weekly.
   // The 15m view marks the signal on the bar it was made; where a trade fills
@@ -1153,7 +1156,7 @@ export const TickerChart = ({
           </details>}
           {strategy && showPaperFills && <div className="mt-2 text-xs text-[#6e6e73]" aria-label={`${ticker} actual paper executions`}>
             <p>Confirmed paper fills at their original date, quantity and price. These are executions, not grade signals or research fills.</p>
-            {fills.length === 0 ? <p>No confirmed paper executions in the loaded history.</p> : <ul>{[...fills].reverse().map((fill, index) => <li key={fill.client_order_id ?? `${fill.date}-${index}`} data-client-order-id={fill.client_order_id ?? undefined}><time dateTime={fill.filled_at} title={fill.filled_at}>{fill.date}{fill.filled_at ? ` · ${newYorkClock(Date.parse(fill.filled_at) / 1000, false)} ET` : ''}</time> · {tradeText(fill.side, fill.qty, fill.price)}</li>)}</ul>}
+            {fills.length === 0 ? <p>No confirmed paper executions in the loaded history.</p> : <ul>{[...fills].reverse().map((fill, index) => <li key={`${fill.client_order_id ?? fill.date}-${index}`} data-client-order-id={fill.client_order_id ?? undefined}><time dateTime={fill.filled_at} title={fill.filled_at}>{fill.date}{fill.filled_at ? ` · ${newYorkClock(Date.parse(fill.filled_at) / 1000, false)} ET` : ''}</time> · {tradeText(fill.side, fill.qty, fill.price)}</li>)}</ul>}
             {timeframe === '15m' && fills.some(fill => !recordedInstant(fill.filled_at)) && <p>Fills without a recorded execution time are listed but not marked on 15m.</p>}
           </div>}
           {!strategy && (latestDecision || suggestion || fills.length > 0) && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label={`${ticker} decisions`}>
