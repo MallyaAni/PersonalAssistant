@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-17 — Keep the complete original input manifest outside resident controls
+
+The private original-only reader now streams the explicitly selected root input
+hash map into sealed pair/index files. Every pair, decoded-key uniqueness,
+source ordering, lookup and full canonical digest remain checked. The existing
+16MiB control limit stays unchanged; the distinct manifest profile has explicit
+32MiB/200000-pair bounds. Native models, economics and publication guards are unchanged.
+
+The old parser reproduced the size failure. Distinct parser coverage73 passed
+as72 unchanged cases plus1 corrected error-message expectation; preserve the
+original72pass/1failure. The complete164833-pair/21.4MB synthetic manifest passed
+under512MiB, suite peak38444KiB. All198 affected legacy cases passed0skip7.859s.
+Actual two-original-file comparison is running separately and remains unverified;
+no full numerical audit, account replay, model inference or publication is claimed.
+Exact evidence and the active handle are in
+research/original-external-input-map-proof-2026-10-17.json. Main integration and
+the combined current-nightly source closure remain open.
+
 ## 2026-10-17 — Stream the completed original audit history without loading it whole
 
 The private original-only auditor now authenticates and strictly parses large

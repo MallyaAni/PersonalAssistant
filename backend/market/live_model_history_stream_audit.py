@@ -259,6 +259,7 @@ class OriginalArchives:
         manifest_sha256,
         *,
         scratch=None,
+        external_inputs=False,
     ):
         root = Path(root)
         if scratch is None:
@@ -267,7 +268,10 @@ class OriginalArchives:
             scratch = Path(scratch)
             scratch.mkdir(mode=0o700, parents=True, exist_ok=False)
         completion = streamed.read(
-            root / "completion.json", completion_sha256, directory=scratch
+            root / "completion.json",
+            completion_sha256,
+            directory=scratch,
+            external_inputs=external_inputs,
         )
         require(
             completion["status"] == "COMPLETED_UNVERIFIED_CURRENT_MODEL_ACCOUNT",
@@ -342,7 +346,9 @@ class OriginalArchives:
                 checked.add(name)
                 self._consumed_inputs[name] = expected
         object.__setattr__(
-            self, "unused_inputs", len(set(self.completion["input_sha256"]) - checked)
+            self,
+            "unused_inputs",
+            sum(name not in checked for name in self.completion["input_sha256"]),
         )
         return capture
 
@@ -387,6 +393,9 @@ class OriginalArchives:
 
     # Recheck immutable source and account selectors without rewriting original files.
     def unchanged(self):
+        inputs = self.completion.get("input_sha256")
+        if type(inputs) is streamed.ShaMap:
+            inputs.verify()
         authenticate_file(self.root / "completion.json", self.completion_sha256)
         authenticate_file(self.root / "initial.json.gz", self.initial_sha256)
         authenticate_file(self.manifest_path, self.manifest_sha256)

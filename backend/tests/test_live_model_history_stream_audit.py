@@ -805,6 +805,38 @@ def test_streamed_completion_exceeds_legacy_aggregate_limit(tmp_path, monkeypatc
     )
 
 
+# Preserve indexed input hashes without changing complete state digests.
+def test_external_input_map_archive_binding_and_tamper_guard(tmp_path):
+    state = {"history": [{"session": "initial"}]}
+    completion = {
+        "status": "COMPLETED_UNVERIFIED_CURRENT_MODEL_ACCOUNT",
+        "paper_state": state,
+        "input_sha256": {"/private/a": "a" * 64},
+    }
+    raw = json.dumps(completion).encode()
+    (tmp_path / "completion.json").write_bytes(raw)
+    manifest = tmp_path / "manifest.json"
+    manifest.write_bytes(b'{"files":{}}')
+    archives = audit.OriginalArchives(
+        tmp_path,
+        sha256(raw).hexdigest(),
+        "0" * 64,
+        manifest,
+        sha256(manifest.read_bytes()).hexdigest(),
+        external_inputs=True,
+    )
+    mapping = archives.completion["input_sha256"]
+    assert type(mapping) is streamed.ShaMap
+    assert list(mapping.items()) == [("/private/a", "a" * 64)]
+    assert (
+        archives.ending_state
+        == sha256(json.dumps(state, sort_keys=True).encode()).hexdigest()
+    )
+    mapping.spool.write_bytes(b"changed")
+    with pytest.raises(ValueError, match="changed"):
+        archives.unchanged()
+
+
 # New external history consumes the same native controls and preserves old full SHA.
 def test_streamed_history_native_controls_and_canonical_equivalence(
     tmp_path, monkeypatch

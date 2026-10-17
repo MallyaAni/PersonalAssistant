@@ -462,6 +462,7 @@ def audit(value):
             value["manifest"],
             value["manifest_sha256"],
             scratch=destination / "streamed-history",
+            external_inputs=value["profile"] == "original-full-27471",
         )
         git = source_admission(value, archives)
         producer = producer_admission(value)
@@ -480,6 +481,8 @@ def audit(value):
             value["manifest"],
             value["execution"],
             pins,
+            external_inputs=value["profile"] == "original-full-27471",
+            scratch=destination / "input-auth-before",
         )
         loaded = loader.load(archives, value["market"], observed_at=started)
         stream = StreamAudit(
@@ -515,6 +518,8 @@ def audit(value):
             value["manifest"],
             value["execution"],
             pins,
+            external_inputs=value["profile"] == "original-full-27471",
+            scratch=destination / "input-auth-after",
         )
         require(
             bytes_before == bytes_after, "COMPLETE_INPUT_BYTES_CHANGED_DURING_AUDIT"

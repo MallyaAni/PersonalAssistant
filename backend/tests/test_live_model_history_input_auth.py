@@ -85,6 +85,21 @@ def test_all_bytes_are_authenticated(cohort):
     assert result["publication"] == "CLOSED"
 
 
+# Sealed-map mode authenticates every source/input twice and retains identical receipts.
+def test_external_input_map_preserves_all_authentication_receipts(cohort, tmp_path):
+    expected = run(cohort)
+    paths, *_ = cohort
+    pins = auth.Pins(
+        "complete-private-v10", *(digest(path.read_bytes()) for path in paths)
+    )
+    actual = auth.authenticate(
+        *paths, pins, external_inputs=True, scratch=tmp_path / "map-auth"
+    )
+    assert actual == expected
+    assert actual["input_files"] == 1
+    assert len(actual["files"]) == 2429
+
+
 # A bounded receipt cannot be relabelled as the original full source profile.
 def test_full_and_bounded_profiles_are_distinct(cohort):
     with pytest.raises(ValueError, match="PROFILE_COUNT"):
@@ -363,6 +378,7 @@ def test_no_numerical_imports():
         "math",
         "os",
         "stat",
+        "sqlite3",
         "dataclasses",
         "hashlib",
         "pathlib",

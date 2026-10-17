@@ -1,0 +1,117 @@
+{
+  "schema": "original-external-input-map-proof/1",
+  "status": "VERIFIED_SYNTHETIC_PARSER_AND_AFFECTED_LEGACY_ONLY",
+  "starting_revision": "6f7d9ddf855f21bc5462332fa77392892b691701",
+  "branch": "codex/original-audit-streamed-history-20261017",
+  "starting_worktree": "Six tracked files modified and one new test from interrupted worker; preserved. Root reviewed complete diff, ran prepared tests, and corrected only one rejection-message expectation.",
+  "source_sha256": {
+    "backend/cli/audit_original_live_model_history.py": "22d374f166b77d4b0346120aa55b3f9e652496503b88d3fae0681be04b9ab5d5",
+    "backend/market/live_model_history_input_auth.py": "35ad5f5f96fa7951b6163512ab733a9168869eef17038e030b7dad4dcbb1b111",
+    "backend/market/live_model_history_stream_audit.py": "f404e15be6e97caf856a4ba6db22eedef51ff5a4e3304dcbed90cf8e0abac2ff",
+    "backend/market/original_history_json.py": "de29c1017f4c9eadd874b2fbe0d85b4c80ced8e7a43fb6bd4f779c3d726cb2eb",
+    "backend/tests/test_live_model_history_input_auth.py": "a4a23439c45020cd669b2991719de2534b9d799341385b1df6a55e3cccb39c18",
+    "backend/tests/test_live_model_history_stream_audit.py": "3ca309bf7ec7a541dd5b44beedacac923431e3c576e68c3406e8115f0c243d61",
+    "backend/tests/test_original_history_sha_map.py": "fde4c0c27d9d5b9044dc723f77dcd32e158b32271e3b48619dd215376ae8879a"
+  },
+  "design": {
+    "first_actual_failure": "Original completion input_sha256 occupies20,031,274B/164833pairs and exceeds unchanged16MiB resident control cap; earlier actual intake failure preserved.",
+    "scope": "Explicit original completion-root input_sha256 opt-in only. Nested metadata and physical comparison remain on original strict paths; CLI opts in only for original-full-27471.",
+    "storage": "Complete source-order canonical pair spool plus SQLite decoded-key UNIQUE index, ordinal and exact Unicode canonical-order index. Bounded lookup verifies identities and row bytes; full before/after acceptance rehashes files and all canonical pairs.",
+    "limits": "64KiB source reads;32MiB processed SHA map;200000pairs;4096B framed key/128B value;16MiB resident control limit unchanged. No truncation, count-only equality or generic JSON normalization.",
+    "strictness": "Reject escaped duplicate decoded keys, invalid/nonfinite/overflow digests, malformed grammar, cap excess, changed index/spool/identity, replacement or seal. Exact Unicode ordering includes non-BMP and surrogate keys.",
+    "retained_contract": "All ordered input pairs, canonical JSON digest, full source authentication and native N2/source/config/publication guards retained.",
+    "resource_limits": "These tests do not prove full requested/records/_consumed_inputs dictionaries, final proof serialization, or full original numerical-audit memory/I/O."
+  },
+  "runtime": {
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "profile": "Frozen N2, native31 map99e62ab9f8b02bc315ce59b81f8b461ae5c988e275cdf09cacf2d36b1025f8ab; distinct from serving f612/bfb.",
+    "isolation": "UID1000:1000/networknone/readonly/1CPU/RAM=swap512MiB parser or2GiB legacy/tmp64MiB; fresh soleprivateout writable; no original account/data/model/socket mounts.",
+    "source_files_before_after_identical": 58,
+    "native_sources_before_after_identical": 31,
+    "genuine_model_context_or_full_audit_calls": "FORBIDDEN; legacy allows only declared four-name synthetic features and tree-free constant NumericHead."
+  },
+  "evidence": {
+    "red": {
+      "root": "/home/animallya96/scratch/original-sha-map-red-20261017-v1",
+      "container": "9903973d116b3b6fb416aa8f003287d1b7fee1e025451465dae122c3342acd17",
+      "result": "One intended call failure: Original JSON unit exceeds bound; pytest1, expected-red wrapper0/noOOM.",
+      "seconds": 6.09398537222296,
+      "rss_kib": 54124,
+      "proof_sha256": "1da0205bca59b66fd7eed5a5b44f841dba93ee79f836db7e7d15683b09e0c4b0",
+      "inspect_sha256": "c3bbe20b42d1d23af156d109b96d364500187d4fd88b6bb25c41130452d04084"
+    },
+    "pure_original": {
+      "root": "/home/animallya96/scratch/original-sha-map-pure-20261017-v1",
+      "container": "c6d2e4e0f4b57d52e57b66088f7c0c0e2e63e549be763beb789c1f064b4fefc1",
+      "passed": 72,
+      "failed": 1,
+      "skipped": 0,
+      "seconds": 106.70190421398729,
+      "rss_kib": 38444,
+      "result": "The invalid numeric key correctly raised ValueError Extra data. Only the expected-message pattern was incomplete. Original failure/root preserved; no production correction.",
+      "proof_sha256": "c2f20ab10133d821a6d82c63bbac90a638acb033105d006281e1bdc93a60928b",
+      "inspect_sha256": "bd61cbdcd24200c6157340ec5cb0988e5dbb1b1f70e2306daed19d3917a2f4fb",
+      "executed_test_sha256": "44c5e0ee3b4577a63851da4a4aec7a67e256a7052dcdadb12641f450346252f7"
+    },
+    "message_correction": {
+      "root": "/home/animallya96/scratch/original-sha-map-correction-20261017-v1",
+      "container": "c0a37b5d96d5a7c64e10acb8b52ca346d60970bd68fb20a017f9a00b42845864",
+      "passed": 1,
+      "skipped": 0,
+      "seconds": 0.08198097255080938,
+      "result": "Only exact failed parameter rerun; passed. Distinct parser coverage73 as72 unchanged plus1 corrected message case, not a whole73-case green rerun.",
+      "proof_sha256": "ff8592c0c35b1907a1160c8caa9c7427c7722a875ec5c9954d5614f69d473589",
+      "inspect_sha256": "b818a5dd5a4a4af6567cf1d8e528bcad45e1989b22cf27b8021de973a952ece0"
+    },
+    "large_manifest": {
+      "scope": "SYNTHETIC_ONLY_INCLUDED_IN_PURE72_PASSES",
+      "pairs": 164833,
+      "input_bytes": 21428308,
+      "pair_spool_bytes": 21428290,
+      "index_bytes": 131325952,
+      "canonical_digest_full_pair_comparison": "PASS",
+      "lost_replaced_reordered_and_duplicate_inputs": "REJECTED_BY_SEPARATE_CASES",
+      "numpy_imported": false
+    },
+    "legacy": {
+      "root": "/home/animallya96/scratch/original-sha-map-legacy-20261017-v1",
+      "container": "2c92fd1102665fd97c3057adc62011a0d725345bdc7ec445a0cbf59d15461547",
+      "passed": 198,
+      "skipped": 0,
+      "seconds": 7.8587166126817465,
+      "rss_kib": 197788,
+      "proof_sha256": "8ea0aed52a716af17833a7ebf843305937245720b7e04537e2242f9c0f02ca36",
+      "inspect_sha256": "1ab98465f8f574ce2ac0037a064453c83a24034e4de02e0304e653ff3293e41b",
+      "synthetic_features_calls": 14,
+      "synthetic_constant_predict_calls": 11,
+      "result": "Exit0/noOOM; previous196 plus2 new external-map authentication/archive-binding cases. No genuine model/account acceptance."
+    }
+  },
+  "next_bounded_original_intake": {
+    "status": "RUNNING_UNVERIFIED",
+    "root": "/home/animallya96/scratch/original-two-file-map-intake-20261017-v1",
+    "container": "30b7dd803198aaaf08901ca9f868436355a676e4d47d02abb7341e2df8a0f5f7",
+    "started_at": "2026-10-17T21:25:13.255991233Z",
+    "controller_session": 19106,
+    "runner_sha256": "20bbc5d74a52781e2463ec8be9ea39685b12df20fc71f8c49e5fa467bca38881",
+    "controller_sha256": "42e9dca4ad63d6d053d5a6627afc70184c3287c208454e5aa504cee709826168",
+    "source_review": "Prior reviewed two-file runner plus explicit external map, exact164833 count and before/after map seals. Source AST schemas and complete ordered1916 rows/control/canonical equality unchanged.",
+    "scope": "Only pinned completion373782589B/b9ad and physical832110254B/f334 mountedRO, small sourceRO, privateoutRW; no account directory/config/model artifacts or backend imports.",
+    "resources": "Same N2/e0, UID1000/noneRO/1CPU/512MiB RAM=swap/tmp64MiB; source-matched test evidence and >=3GiB scratch-free gate before launch.",
+    "barriers": "No numerical/economic/timing audit, model inference, account replay or publication. Never duplicate/restart/adopt partial output."
+  },
+  "validation": {
+    "git_diff_check": "PASS",
+    "lint": "NOT_RUN; no host Ruff binary and critically low Mac disk; no installation performed.",
+    "diagram_impact": "NONE — extends the existing private audit spool within unchanged trust boundaries; native/live flows unchanged."
+  },
+  "remaining": {
+    "main_integration": "NOT_DONE; CURRENT nightly pins old streamc64; combined parser/stream/numerical/pending source closure requires explicit repinning and tests.",
+    "production": "UNCHANGED e237 frontend/f612 backend; no deployment.",
+    "original_full_numerical_audit": "NOT_RUN",
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "corrected_genuine_v6": "PAUSED; no replay",
+    "full_historical_delivery": "UNVERIFIED"
+  }
+}

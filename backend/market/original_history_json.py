@@ -9,8 +9,10 @@ import io
 import json
 import math
 import os
+import sqlite3
 import stat
-from dataclasses import dataclass
+import tempfile
+from dataclasses import dataclass, replace
 from hashlib import sha256
 from pathlib import Path
 
@@ -18,6 +20,9 @@ CHUNK_BYTES = 64 * 1024
 ROW_BYTES = 1024 * 1024  # Original observed largest physical row681694B.
 CONTROL_BYTES = 16 * 1024 * 1024
 HISTORY_ROWS = 1916  # Original1915 sessions plus independent initial prior close.
+SHA_MAP_BYTES = 32 * 1024 * 1024
+SHA_MAP_ENTRIES = 200000
+SHA_MAP_KEY_BYTES = 4096
 DEPTH = 128
 STREAM_BYTES = (
     832110254  # Observed original physical832110254B; processed, not resident.
@@ -183,6 +188,13 @@ class Rows:
             yield self[index]
 
 
+# Select every map pair in the exact Unicode order used by json.dumps sort_keys.
+def canonical_items(value):
+    if isinstance(value, ShaMap):
+        return value.pairs(canonical=True)
+    return ((name, value[name]) for name in sorted(value))
+
+
 # Encode the exact existing sort_keys/default-separator digest representation.
 def chunks(value):
     if isinstance(value, Rows):
@@ -192,14 +204,14 @@ def chunks(value):
                 yield b", "
             yield row.raw()
         yield b"]"
-    elif isinstance(value, dict):
+    elif isinstance(value, (dict, ShaMap)):
         yield b"{"
-        for index, name in enumerate(sorted(value)):
+        for index, (name, item) in enumerate(canonical_items(value)):
             if index:
                 yield b", "
             yield json.dumps(name, allow_nan=False).encode()
             yield b": "
-            yield from chunks(value[name])
+            yield from chunks(item)
         yield b"}"
     elif isinstance(value, (tuple, list)):
         yield b"["
@@ -220,10 +232,184 @@ def digest(value):
     return result.hexdigest()
 
 
+# Keep a complete SHA map in sealed private files, not in one resident dictionary.
+@dataclass(frozen=True, eq=False)
+class ShaMap:
+    index: Path
+    spool: Path
+    count: int
+    index_identity: tuple
+    spool_identity: tuple
+    index_sha256: str
+    spool_sha256: str
+    canonical_sha256: str
+    __hash__ = None
+
+    # Preserve the sealed immutable mapping through native metadata-only copies.
+    def __deepcopy__(self, memo):
+        return self
+
+    # Return the complete admitted pair count without truncation.
+    def __len__(self):
+        self._stable()
+        return self.count
+
+    # Check both physical paths before any indexed read or cursor advance.
+    def _stable(self):
+        require(identity(self.index) == self.index_identity, "SHA map index changed")
+        require(identity(self.spool) == self.spool_identity, "SHA map spool changed")
+
+    # Decode one indexed row only after its bounded bytes and hash agree.
+    def _row(self, key, offset, size, expected):
+        self._stable()
+        require(
+            type(size) is int and 0 < size <= SHA_MAP_KEY_BYTES + 128,
+            "SHA map row exceeds bound",
+        )
+        with self.spool.open("rb") as source:
+            stable(source, self.spool, self.spool_identity)
+            source.seek(offset)
+            raw = source.read(size)
+            stable(source, self.spool, self.spool_identity)
+        require(
+            len(raw) == size and sha256(raw).hexdigest() == expected,
+            "SHA map row changed",
+        )
+        row = decode(raw)
+        require(
+            type(row) is list
+            and len(row) == 2
+            and type(row[0]) is str
+            and json.dumps(row[0], allow_nan=False).encode() == key,
+            "SHA map index row differs",
+        )
+        require(
+            type(row[1]) is str
+            and len(row[1]) == 64
+            and all(char in "0123456789abcdef" for char in row[1]),
+            "SHA map digest differs",
+        )
+        self._stable()
+        return row
+
+    # Stream pairs in source insertion order or exact Python Unicode sort order.
+    def pairs(self, *, canonical=False):
+        self._stable()
+        with self.index.open("rb") as guard:
+            stable(guard, self.index, self.index_identity)
+            connection = sqlite3.connect(
+                self.index.as_uri() + "?mode=ro&immutable=1", uri=True
+            )
+            try:
+                connection.execute("PRAGMA cache_size=-512")
+                order = "sort_key" if canonical else "ordinal"
+                cursor = connection.execute(
+                    "SELECT key,offset,size,sha FROM entries ORDER BY " + order
+                )
+                seen = 0
+                for record in cursor:
+                    yield tuple(self._row(*record))
+                    seen += 1
+                    stable(guard, self.index, self.index_identity)
+                require(seen == self.count, "SHA map index count differs")
+            finally:
+                connection.close()
+            stable(guard, self.index, self.index_identity)
+        self._stable()
+
+    # Match dictionary items while retaining every original pair and source order.
+    def items(self):
+        return self.pairs()
+
+    # Yield exact decoded keys without materializing all names.
+    def __iter__(self):
+        for key, _ in self.pairs():
+            yield key
+
+    # Resolve one exact key without hashing or decoding the whole map again.
+    def __getitem__(self, name):
+        if type(name) is not str:
+            raise KeyError(name)
+        self._stable()
+        key = json.dumps(name, allow_nan=False).encode()
+        with self.index.open("rb") as guard:
+            stable(guard, self.index, self.index_identity)
+            connection = sqlite3.connect(
+                self.index.as_uri() + "?mode=ro&immutable=1", uri=True
+            )
+            try:
+                row = connection.execute(
+                    "SELECT key,offset,size,sha FROM entries WHERE key=?", (key,)
+                ).fetchone()
+            finally:
+                connection.close()
+            stable(guard, self.index, self.index_identity)
+        if row is None:
+            raise KeyError(name)
+        return self._row(*row)[1]
+
+    # Preserve ordinary dictionary missing-key behavior without inventing a digest.
+    def get(self, name, default=None):
+        try:
+            return self[name]
+        except KeyError:
+            return default
+
+    # Check membership through the same verified bounded indexed lookup.
+    def __contains__(self, name):
+        try:
+            self[name]
+            return True
+        except KeyError:
+            return False
+
+    # Compare every canonical pair rather than accepting count or digest alone.
+    def __eq__(self, other):
+        if type(other) is ShaMap:
+            if len(self) != len(other):
+                return False
+            return all(
+                a == b
+                for a, b in zip(
+                    self.pairs(canonical=True), other.pairs(canonical=True), strict=True
+                )
+            )
+        if type(other) is dict:
+            return len(self) == len(other) and all(
+                key in other and other[key] == value for key, value in self.pairs()
+            )
+        return NotImplemented
+
+    # Rehash both complete sealed files and every canonical pair at acceptance edges.
+    def verify(self):
+        self._stable()
+        authenticate(self.index, self.index_sha256)
+        authenticate(self.spool, self.spool_sha256)
+        require(
+            digest(self) == self.canonical_sha256, "SHA map canonical digest differs"
+        )
+        self._stable()
+        return {
+            "pairs": self.count,
+            "canonical_sha256": self.canonical_sha256,
+            "index_sha256": self.index_sha256,
+            "spool_sha256": self.spool_sha256,
+        }
+
+
+# Hash newly sealed private bytes with bounded reads before exposing their identity.
+def private_digest(path):
+    value = sha256()
+    with Path(path).open("rb") as source:
+        while raw := source.read(CHUNK_BYTES):
+            value.update(raw)
+    return value.hexdigest()
+
+
 # Frame every source token with bounded buffers before strict unit decoding.
 class Cursor:
     # Begin with no evidence consumed and a bounded Unicode decoder buffer.
-    def __init__(self, stream, physical, directory, retain):
+    def __init__(self, stream, physical, directory, retain, external_inputs=False):
         self.stream, self.physical, self.directory, self.retain = (
             stream,
             physical,
@@ -231,6 +417,7 @@ class Cursor:
             retain,
         )
         self.buffer, self.index, self.control_bytes, self.stream_bytes = "", 0, 0, 0
+        self.external_inputs, self.map_bytes = external_inputs, None
 
     # Fetch one bounded block without a whole-source read or hidden rewind.
     def peek(self):
@@ -248,7 +435,104 @@ class Cursor:
         value = self.peek()
         require(bool(value), "Truncated original JSON framing")
         self.index += 1
+        if self.map_bytes is not None:
+            self.map_bytes += len(value.encode("utf-8"))
+            require(self.map_bytes <= SHA_MAP_BYTES, "SHA map bytes exceed bound")
         return value
+
+    # Parse only the explicitly selected root SHA map as bounded unique pairs.
+    def sha_map(self):
+        require(self.directory is not None, "Private SHA map directory required")
+        paths = []
+        for prefix in ("original-sha-index-", "original-sha-pairs-"):
+            descriptor, name = tempfile.mkstemp(prefix=prefix, dir=self.directory)
+            os.close(descriptor)
+            paths.append(Path(name))
+        index, spool = paths
+        count, connection = 0, None
+        self.map_bytes = 0
+        try:
+            connection = sqlite3.connect(index)
+            connection.execute("PRAGMA cache_size=-512")
+            connection.execute(
+                "CREATE TABLE entries (key BLOB PRIMARY KEY,"
+                "sort_key BLOB UNIQUE NOT NULL,ordinal INTEGER UNIQUE NOT NULL,"
+                "offset INTEGER NOT NULL,size INTEGER NOT NULL,sha TEXT NOT NULL)"
+            )
+            self.expect("{")
+            with spool.open("wb") as output:
+                self.whitespace()
+                if self.peek() != "}":
+                    while True:
+                        key = self.unit(SHA_MAP_KEY_BYTES)
+                        require(type(key) is str, "SHA map key must be a string")
+                        self.expect(":")
+                        value = self.unit(128)
+                        require(
+                            type(value) is str
+                            and len(value) == 64
+                            and all(char in "0123456789abcdef" for char in value),
+                            "SHA map value must be a lower-case SHA256",
+                        )
+                        count += 1
+                        require(
+                            count <= SHA_MAP_ENTRIES,
+                            "SHA map entry count exceeds bound",
+                        )
+                        raw = json.dumps([key, value], allow_nan=False).encode()
+                        require(
+                            len(raw) <= SHA_MAP_KEY_BYTES + 128,
+                            "SHA map row exceeds bound",
+                        )
+                        offset = output.tell()
+                        output.write(raw)
+                        try:
+                            connection.execute(
+                                "INSERT INTO entries VALUES (?,?,?,?,?,?)",
+                                (
+                                    json.dumps(key, allow_nan=False).encode(),
+                                    key.encode("utf-32-be", errors="surrogatepass"),
+                                    count - 1,
+                                    offset,
+                                    len(raw),
+                                    sha256(raw).hexdigest(),
+                                ),
+                            )
+                        except sqlite3.IntegrityError as exc:
+                            raise ValueError(
+                                "Duplicate original SHA map decoded key"
+                            ) from exc
+                        self.whitespace()
+                        if self.peek() == "}":
+                            break
+                        self.expect(",")
+                self.expect("}")
+                output.flush()
+                os.fsync(output.fileno())
+            connection.commit()
+            connection.close()
+            connection = None
+            result = ShaMap(
+                index.absolute(),
+                spool.absolute(),
+                count,
+                identity(index),
+                identity(spool),
+                private_digest(index),
+                private_digest(spool),
+                "",
+            )
+            result = replace(result, canonical_sha256=digest(result))
+            result.verify()
+            return result
+        except BaseException:
+            if connection is not None:
+                connection.close()
+            for path in paths:
+                path.unlink(missing_ok=True)
+            raise
+        finally:
+            self.map_bytes = None
 
     # Admit only JSON whitespace between values and delimiters.
     def whitespace(self):
@@ -367,7 +651,9 @@ class Cursor:
                     "DUPLICATE_JSON_MEMBER: Duplicate original JSON field",
                 )
                 self.expect(":")
-                if name == "paper_state" and not state:
+                if name == "input_sha256" and not state and self.external_inputs:
+                    result[name] = self.sha_map()
+                elif name == "paper_state" and not state:
                     result[name] = self.object(state=True)
                 elif name == "history":
                     result[name] = self.history()
@@ -383,8 +669,23 @@ class Cursor:
 
 # Authenticate and parse every byte, including all streamed history and gzip trailers.
 def read(
-    path, expected, *, directory=None, compressed=False, physical=False, retain=True
+    path,
+    expected,
+    *,
+    directory=None,
+    compressed=False,
+    physical=False,
+    retain=True,
+    external_inputs=False,
 ):
+    require(
+        type(external_inputs) is bool and not (external_inputs and physical),
+        "Explicit root SHA map mode required",
+    )
+    require(
+        not external_inputs or directory is not None,
+        "Private SHA map directory required",
+    )
     before = authenticate(path, expected)
     require(
         not retain or directory is not None, "Private history spool directory required"
@@ -393,7 +694,7 @@ def read(
         stable(raw, path, before)
         binary = gzip.GzipFile(fileobj=raw) if compressed else raw
         text = io.TextIOWrapper(binary, encoding="utf-8", errors="strict", newline="")
-        cursor = Cursor(text, physical, directory, retain)
+        cursor = Cursor(text, physical, directory, retain, external_inputs)
         try:
             value = cursor.object(state=physical)
             cursor.whitespace()

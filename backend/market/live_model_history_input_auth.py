@@ -264,10 +264,34 @@ def resolve_input(name, mounts):
     raise ValueError("ORIGINAL_NAMESPACE_SYMLINK_LIMIT")
 
 
-# Authenticate every declared input and source twice without interpreting their bytes.
-def authenticate(completion_path, manifest_path, execution_path, pins):
+# Verify sealed external maps completely at authentication acceptance boundaries.
+def verify_sha_map(value):
+    if type(value) is streamed.ShaMap:
+        value.verify()
+
+
+# Authenticate every declared input and source twice, optionally using a sealed SHA map.
+def authenticate(
+    completion_path,
+    manifest_path,
+    execution_path,
+    pins,
+    *,
+    external_inputs=False,
+    scratch=None,
+):
     require(type(pins) is Pins, "FROZEN_EXTERNAL_PINS_REQUIRED")
-    completion = streamed.read(completion_path, pins.completion_sha256, retain=False)
+    if external_inputs:
+        require(scratch is not None, "PRIVATE_INPUT_MAP_SCRATCH_REQUIRED")
+        scratch = Path(scratch)
+        scratch.mkdir(mode=0o700, parents=True, exist_ok=False)
+    completion = streamed.read(
+        completion_path,
+        pins.completion_sha256,
+        retain=False,
+        directory=scratch,
+        external_inputs=external_inputs,
+    )
     manifest_raw = metadata(manifest_path, pins.manifest_sha256)
     execution_raw = metadata(execution_path, pins.execution_sha256)
     manifest, execution = map(decode, (manifest_raw, execution_raw))
@@ -290,7 +314,11 @@ def authenticate(completion_path, manifest_path, execution_path, pins):
         require(manifest.get("base_revision") == revision, "BOUNDED_REVISION_MISMATCH")
     mounts = mounts_from_receipt(execution)
     inputs = completion.get("input_sha256")
-    require(type(inputs) is dict and bool(inputs), "COMPLETE_INPUT_MANIFEST_REQUIRED")
+    require(
+        type(inputs) in (dict, streamed.ShaMap) and bool(inputs),
+        "COMPLETE_INPUT_MANIFEST_REQUIRED",
+    )
+    verify_sha_map(inputs)
     requested = {}
     for name, expected in files.items():
         canonical(name, absolute=False)
@@ -324,11 +352,19 @@ def authenticate(completion_path, manifest_path, execution_path, pins):
         (execution_path, pins.execution_sha256, execution_raw, METADATA_BYTES),
     ):
         require(metadata(path, expected, limit=limit) == raw, "METADATA_CHANGED")
+    after_completion = streamed.read(
+        completion_path,
+        pins.completion_sha256,
+        retain=False,
+        directory=scratch,
+        external_inputs=external_inputs,
+    )
     require(
-        streamed.read(completion_path, pins.completion_sha256, retain=False)
-        == completion,
+        after_completion == completion,
         "COMPLETION_METADATA_CHANGED",
     )
+    verify_sha_map(inputs)
+    verify_sha_map(after_completion["input_sha256"])
     return {
         "status": "INPUT_BYTES_AUTHENTICATED_ONLY",
         "profile": pins.profile,
