@@ -1,0 +1,59 @@
+{
+  "status": "VERIFIED_BOUNDED_SYNTHETIC_BUY_WAIT_STORE_INTEGRATION_ONLY",
+  "adapter_checkpoint": "3f230c7d4f608d74542806e81cfa3cc63cde8c7c",
+  "store_checkpoint": "fc0aaa2bc4d6525b16c4a0144049b1619c50bbd6",
+  "source_sha256": {
+    "backend/market/historical_conditional_cycle.py": "7e455aa29afb99fd5629e3e7cd878fb25849ca04dce454d0e8940598d2d3baba",
+    "backend/tests/test_historical_conditional_cycle.py": "f3f89709cc441e234ec65d2416340977e352cf923b62ea3aba9108329a9332a2",
+    "backend/market/historical_packet_store.py": "be90098bf2c64e7e8da390f2b40db646b50c7d0be659e1a3c9391b8b5595fdbf",
+    "backend/market/historical_packet_spool.py": "705300210493d46e1a65225c371a05dd9bc8e30dff2c5ae8da43b85041b3f6ac"
+  },
+  "native_source": "ad44d536a70d5c037cb931836a3c9f48b014d84a",
+  "guarded31_map_sha256": "99e62ab9f8b02bc315ce59b81f8b461ae5c988e275cdf09cacf2d36b1025f8ab",
+  "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+  "proof_path": "/home/animallya96/scratch/historical-connected-cycle-tests-20261017-v8/out/proof.json",
+  "proof_sha256": "0e09722fe2712936126cdcd4a4cef92cd794c5ceb756460d670e8a52e2ed9d04",
+  "container_name": "historical-connected-cycle-20261017-v8",
+  "container_id": "5a9c9071123423f9a2301ff7394411969b95875b2106dd06e1bf2b1fe3b9b615",
+  "command": "python /runner.py -> pytest /tests/test_historical_conditional_cycle.py -q -c /dev/null -p no:cacheprovider --basetemp /out/fixtures -k 'connected_buy_and_complete_restoration or wait_unavailable_empty_submission_no_factory'",
+  "passed": 3,
+  "failed": 0,
+  "skipped": 0,
+  "deselected": 19,
+  "pytest_seconds": 2.61,
+  "helper_seconds": 2.758468330837786,
+  "max_rss_kib": 162556,
+  "runtime": {
+    "network": "none",
+    "rootfs_readonly": true,
+    "cpu": 1,
+    "memory_bytes": 2147483648,
+    "total_memory_swap_bytes": 2147483648,
+    "exit_code": 0,
+    "oom_killed": false,
+    "numpy": "2.5.3 from /usr/local",
+    "pytest": "runner-only /testdeps"
+  },
+  "helpers": {
+    "runner_path": "/home/animallya96/scratch/historical-connected-cycle-tests-20261017-v8/runner.py",
+    "runner_sha256": "cdfb262b4044848d16bf63132306739bb96a102dd8b7dfcaf931cb3f7071c6fb",
+    "original_runner_sha256": "05ab57fa33161d23422a9931fb7f210124f98f94fffca2b6eb60b53b893a72d8",
+    "run_sh_sha256": "8bb7f236fc6f88ad98add7fc09ad392454910458dc0d57c3b54d5198cc7c9aa8",
+    "staged_sha256": "693a9748707eee380a9aa885aac232ac7ccb867ab0f49cb1dbbcb761fc047bfe"
+  },
+  "verified": [
+    "Final Store's default no-spool synthetic retained-page import, parser admission and connected decision/submission/outcome operations compose",
+    "BUY5 at101 preserves fee0.505/cash9494.495/held5/basis101 and midpoint NAV9999.47",
+    "WAIT and unavailable commit explicit empty submission without a factory, attempted order or fill",
+    "All three scenarios restore exact full broker state and original paper/latch bytes from same committed decision/submission/outcome receipts",
+    "Native31, broker/calendar, new helper and retained source hashes checked before and after"
+  ],
+  "limits": [
+    "Existing three cases were selected for new Store integration; no new distinct case count or full final22-case rerun is claimed",
+    "Original source0b19's21-case evidence and separate7e mutation red/green evidence remain unchanged",
+    "No actual spool allocation branch, new provider GET, model/head/feature inference or genuine retained branch was rerun",
+    "Paper outcome remains native sent/pending until later reconciliation; this is not settled-journal acceptance",
+    "No generic multi-symbol adapter, historical account run or production deployment",
+    "All new connected data/accounts/forecasts are synthetic and all retrospective clocks/fills remain declared conditional assumptions"
+  ]
+}
