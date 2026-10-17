@@ -1,0 +1,138 @@
+{
+  "actual_authenticated_compiled_workflows": "SEPARATE_ACCEPTANCE_REQUIRED",
+  "actual_days_replayed": 0,
+  "actual_runtime_identities": {
+    "/anios-vision-analysis-recovery-1": {
+      "id": "f6e494e2cfd2bc393475bc44c107e0f319657c89534eb74d1322a69700e03438",
+      "image": "sha256:3a6859c9d000170d9e54cd23881510fcfe621e1da6088fcf0f7bc79476a1215b",
+      "started_at": "2026-09-08T03:49:41.194038894Z"
+    },
+    "/anios_backend": {
+      "id": "7d9dc02f043334c88e74392a065751b003b74f138bcd539adbbf74e2752a6c5c",
+      "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+      "started_at": "2026-10-17T11:50:10.032056636Z"
+    },
+    "/anios_frontend": {
+      "id": "d8b79be1c466f25ac391f70147b22be1e6b3d0cdfc40b1cfddfb1719e8c85d9b",
+      "image": "sha256:7c435b17cc163e49e2431b2033f1816ee9998138b45d1ff0cbeba13c42622206",
+      "started_at": "2026-10-17T11:50:10.354776214Z"
+    },
+    "/anios_gateway": {
+      "id": "68ac6fafc5b31565219b6b6692ebaa3044a1fad3ae152eb10f3bd947ba9ec844",
+      "image": "sha256:b2e0ca8e5131dd96f467922da38cec659f0bf82aee2794d18dcbe56213426b91",
+      "started_at": "2026-10-17T11:50:10.351979437Z"
+    },
+    "/anios_vllm_embedding": {
+      "id": "eeb4064aa6610a927cd16781f1f1533212a973afe4f031b398998bfe7963ab6e",
+      "image": "sha256:3430d6614a8e2925f34d059af6caf05aff42387326db4d05639a60f10f2654d8",
+      "started_at": "2026-08-24T03:13:18.154525139Z"
+    },
+    "/ds4-head": {
+      "id": "d30f9725c9ce888453ef39c34e46b1668a3f86b944ea158b10b49ea950deea5b",
+      "image": "sha256:3430d6614a8e2925f34d059af6caf05aff42387326db4d05639a60f10f2654d8",
+      "started_at": "2026-10-17T08:42:31.548684362Z"
+    },
+    "/live-model-history-full-20261013-v1": {
+      "id": "1e8f440a3b5b75dcabd299f5eaba58c7929fb6f96bc822fdb46b641ecf3e598d",
+      "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "started_at": "2026-10-13T22:16:46.13711934Z"
+    },
+    "spark2:/ds4-worker": {
+      "id": "23c2f8f7d027c0a8bc8b904108e07192c85bb2f866a328661842eb8068876f89",
+      "image": "sha256:3430d6614a8e2925f34d059af6caf05aff42387326db4d05639a60f10f2654d8",
+      "started_at": "2026-10-17T08:47:38.350348026Z"
+    }
+  },
+  "approval_archive": {
+    "path": "/home/animallya96/deploy/anios/data/trading-approval-archives/20261017T114958-21000ff525424d55b4d3db5880d53cd4",
+    "receipt_sha256": "fb679eed9b09c355f40f2be787b29d549644cfd719c87dc3b1597b1f376f4943"
+  },
+  "backend_files_match": 1650,
+  "backend_image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+  "bundle_sha256": "51e3e89a249ca01219e59ade039d690602dbe7697a169d6bc36492036e71f5be",
+  "changed_original_files": [
+    "desk/learned-holding/config.json",
+    "desk/learned-holding/release.json"
+  ],
+  "checker_sha256": "755ae2ff29d832a75136a2e71d80b0676f5b79f7a9eb490a1178e2ce56652465",
+  "compiled_assets": {
+    "assets": {
+      "/assets/index-tWiGLbQI.js": "131c6e4f5cfe2b3ba025fa32c1faa4c63d28a8bb1c1ed4d5828b2a8dda4a71d6"
+    },
+    "gateway_image": "sha256:b2e0ca8e5131dd96f467922da38cec659f0bf82aee2794d18dcbe56213426b91",
+    "index_sha256": "4a2f281800fcc9cd852b8004416a07991c020dc54feac9be21a92e6e32b4dfa5"
+  },
+  "config_sha256": "338e2a490d13cc889667d577ec93ba68f775863a8c1db385fed3dd77fee26dcc",
+  "corrupt_target_and_missing_receipt": "REJECTED",
+  "evidence_sha256": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9",
+  "evidence_sha256_by_name": {
+    "actual-backend-source-sha256.json": "1311285a4d5cd1a8cc114a66897723d13caf0d305778f403fd89c5641418a43a",
+    "actual-containers.json": "8e863ba3152b70396e3be763bd0fb080757f16317ad750631eb171273c1a507e",
+    "admission.json": "44bd30db45c3eb3788cb154e722bdf10c472ed84502e4db14ee68701dbf24ad2",
+    "approval-archive-receipt.json": "fb679eed9b09c355f40f2be787b29d549644cfd719c87dc3b1597b1f376f4943",
+    "compiled-asset-verification.json": "1049cd19c41ee07bc56cb27e2744d2c273736fa8d92dc3840e5bd98f8faa692d",
+    "preserved-after.json": "68024a5b8c453c0d35aa4e3820e826358b0d8a9d2389ea05fb11f037118c6f08",
+    "preserved-before.json": "5a8e228b15222a4c6208097edc789ee0911bc462d56d504f386b34cf5ef1cdb3",
+    "snapshot-verification.json": "608dff7fc740b4cf419838da3cd5378e80409784b57dc8ef24f56619149e6218"
+  },
+  "fresh_ordinary_acceptance": "UNVERIFIED",
+  "historical_delivery": "UNVERIFIED",
+  "learned_intraday_acceptance": "UNVERIFIED",
+  "orders_submitted": 0,
+  "original_failed_parity_preserved": true,
+  "original_files_total": 310,
+  "original_files_unchanged": 308,
+  "original_oct13_record_sha256": "37d7541f5ce12a080a4c0538939b95f99367fc9b5318e21eba03d96963927c32",
+  "original_paper_state_sha256": "28d3e8ed8c09b1611c57ee0133ae620e430b4b57973b9d28634030d8b80d16fd",
+  "original_research_payloads_read": 95,
+  "post": "2026-10-17T11:50:18Z ad44d536 ok (cheap)",
+  "preserved_manifest_path": "/home/animallya96/scratch/trading-numeric-release-20261017-v2/preserved-before.json",
+  "preserved_manifest_sha256": "5a8e228b15222a4c6208097edc789ee0911bc462d56d504f386b34cf5ef1cdb3",
+  "release_sha256": "bb6c24aabb33daff30bd7af5b6c505208cc996c38929a84b54573662bab1bd4c",
+  "review_sha256": "2f048a8040532bfdaa49b1101e552457454b526b510b4ee9f2422f3a67a3e5f7",
+  "saved_receipt_consistency": "PASS",
+  "source": "ad44d536a70d5c037cb931836a3c9f48b014d84a",
+  "source_sha256": {
+    "backend/agents/trading/desk/event_execution.py": "76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f",
+    "backend/agents/trading/desk/event_risk.py": "34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973",
+    "backend/agents/trading/desk/funded_execution.py": "6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c",
+    "backend/agents/trading/desk/intraday_orders.py": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c",
+    "backend/agents/trading/desk/nightly_plan.py": "9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca",
+    "backend/agents/trading/desk/paper.py": "e2eef2f0270497d9a5944212d6581b7ebf503d2675687a172e76690fcc7bc3c3",
+    "backend/api/v1/market.py": "fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88",
+    "backend/cli/market_daily.py": "0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819",
+    "backend/market/adaptive_growth_policy.py": "35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34",
+    "backend/market/alpaca_trading.py": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2",
+    "backend/market/decision_view.py": "8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca",
+    "backend/market/entry_timing.py": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88",
+    "backend/market/forward_arithmetic.py": "9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882",
+    "backend/market/forward_execution.py": "62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295",
+    "backend/market/forward_market_evidence.py": "737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2",
+    "backend/market/forward_probability_timing.py": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92",
+    "backend/market/grade_led_policy.py": "4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66",
+    "backend/market/holding_risk_bank.py": "4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158",
+    "backend/market/joint_funded_policy.py": "5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339",
+    "backend/market/learned_holding_transition.py": "c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55",
+    "backend/market/learned_live_holding.py": "25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1",
+    "backend/market/learned_live_timing.py": "80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f",
+    "backend/market/learned_order_observation.py": "e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff",
+    "backend/market/learned_personal_guidance.py": "37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721",
+    "backend/market/live_model_decision.py": "b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93",
+    "backend/market/live_probability_timing.py": "3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721",
+    "backend/market/market_conditioned_holding.py": "e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4",
+    "backend/market/personal_history.py": "8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a",
+    "backend/market/sequential_shadow_context.py": "5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92",
+    "docs/research/grade-led-sizing-contract-2026-10-13.md": "51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6",
+    "docs/research/learned-held-transition-2026-10-07.md": "f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a"
+  },
+  "state_mutations_by_verifier": 0,
+  "status": "VERIFIED_DEPLOYED_NUMERIC_DECISION_CONTRACT",
+  "unchanged_model_and_full_run_names": [
+    "/anios-vision-analysis-recovery-1",
+    "/anios_vllm_embedding",
+    "/ds4-head",
+    "/live-model-history-full-20261013-v1",
+    "spark2:/ds4-worker"
+  ],
+  "verified_at": "2026-10-17T11:50:47.833605+00:00"
+}

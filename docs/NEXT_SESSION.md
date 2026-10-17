@@ -1,5 +1,84 @@
 # Next session
 
+## 2026-10-17 — Live numeric contract deployed; known fills reconciled
+
+Exact urgent N2ad44d536 canonical release completed11:50:16Z; cheap post green
+11:50:18Z.10801 unit pass/93skip/6xfail/439warnings589.26s and100 real routing
+pass/0skip435.96s. Both required backup mirrors completed without bypass.
+Independent11:50:47Z proof7dc84622 matches1650 actual backend files/image
+e0a54c1f and31 approved sources; actual HOST+CONTAINER admission passes. Original
+economic evidence4d6 remains unchanged; config338e2a49/releasebb6c24aa activated
+with exact original selectors archived.308 of310 original files unchanged;
+95 original research payloads read; all original model/full-run identities intact.
+Proof:research/trading-numeric-delivery-proof-2026-10-17.json. Never repeat release.
+
+Known original STX13512/SWKS136130 broker-confirmed exits reconciled at actual
+11:51:07Z. Original creation nanosecond strings and Oct14 fill clocks/prices are
+preserved; pending becomes empty and only two terminal journal records are added.
+State now e44a5161e730ed0ed907ca320f7ee54c6dd58a81e5ee7eada8e338234dc62f2d;
+Oct13 record37d7541f/failed parity and all missing actual days remain original.
+The broker's terminal submitted_at is retained separately from archived original
+acknowledgment; no past clock was invented.307 other originals unchanged. No
+broker mutations, actual-day replay, inference or model changes.
+
+N2v4 wrapper's FIRST write succeeded, then its HOST readback failed PermissionError
+because the protected new state is container-owned. Do NOT rerun that wrapper or
+change permissions. Independent container-identity follow-through verified exact
+before/after state and310-file inventory; known no-write invocation preserved
+bytes/inode/mtime/ctime. Proofd600840b at
+/home/animallya96/scratch/paper-settlement-recovery-20261017-numeric-v2-verification-v3
+is copied to research/paper-known-fill-reconciliation-proof-2026-10-17.json.
+Readbackv1 correctly caught broker submitted_at updates;v2 caught serializer's
+event_id:null; both failed private harnesses are preserved. Neither rewrote state.
+
+Actual public browser v1 exercised all94 stale rows before/after refresh,8holdings,
+both exact journal fills and actual in-bounds canvas labels/circles, but failed
+only because its blanket POST blocker aborted ordinary Cloudflare /cdn-cgi/rum.
+Preserve /tmp/trading-numeric-public-acceptance-20261017-v1. New v3 harness permits
+and records only that exact ordinary telemetry path; all application mutations
+remain blocked, API responses/clocks remain real and zero console/network errors
+are still required. Accepted browser root:/tmp/trading-numeric-public-acceptance-20261017-v2.
+Completed11:56:02Z:94 stale withheld names before AND after refresh,8 actual
+holdings, exact original12/130share fills/CIDs/nanosecond creation/actual fill
+clocks/prices and native actual-paper canvas labels/circles all pass. Zero page,
+console warning/error, network, HTTP or application-write failures. Only ordinary
+Cloudflare telemetry POSTs allowed and recorded; no API response or clock mocking.
+Root viewed actual Stocks, STX and SWKS screenshots; both actual markers fit in
+their plot and original prices/times appear in execution lists. Proof copied to
+research/trading-numeric-public-browser-proof-2026-10-17.json. This verifies the
+expired-plan boundary and next_open fill rendering, NOT fresh numerical model
+decisions, genuine new ordinary nightly or learned intraday execution. Do not
+repeat completed release/browser checks merely for documentation.
+
+Atomic historical hardening7e88e83c and publication barrierb00b5160 integrated as
+ca8ba3fd/20cf19c0.94 bounded audit checks and102 barrier checks pass/0skip; Ruff,
+format and33 diagrams pass. Integrated backend/frontend/scripts differ from the
+accepted branch only in the three previously verified independent execution-audit
+files.31 guarded runtime sources unchanged. Production publisher structurally
+rejects all current/legacy/forged proofs before account reads or destination writes;
+controlled staging exists only in private pytest fixtures. Ledger/source/bounded
+holding result no longer claims full model/timing or all94 payload acceptance.
+Do NOT deploy historical main. Original sole run remains unchanged; no full audit.
+
+Concrete conditional packet prototype proofd118e942 and designf95c1ef3 are copied
+to research/historical-timing-packet-prototype-proof-2026-10-17.json and
+research/historical-timing-correction-PROPOSED-2026-10-17.md. Genuine tiny AAPL SIP
+packets plus declared synthetic distribution/latencies exercise unchanged forward
+guards; consumed opening cannot be a later execution. This is NOT real frozen-model
+or fill acceptance. Actual historical receive/publication clocks remain unknown.
+No replacement/replay is authorized under ONE-run restriction. Reviewer preparing
+one bounded actual frozen timing-model arithmetic check, no account/run reads.
+
+Mac old captures: all8578 original regular files/632226718bytes verified in BOTH
+Spark archives375967de3c682aea7fbccd7c1cada596725491a8273174026be627c83c621e34,
+manifest3a6d66fd. Original paths retain restoration pointers. Tar added8259
+AppleDouble entries; initial strict-set failure and empty-directory metadata
+failure retained; every original byte/path matches. Extended attributes are NOT
+independently verified. Host-key retry used existing Spark1/direct-peer trust,
+never bypassed it. Proof:research/mac-old-captures-preservation-proof-2026-10-17.json.
+No source/history/model/broker data/backups discarded. Fresh ordinary and learned
+intraday acceptance and historical quantities remain open; heartbeat stays ACTIVE.
+
 ## 2026-10-17 — Shared timing-path equality FAILED in controlled comparison
 
 Exact original27471 function bodies and16 entire timing/call-site modules match

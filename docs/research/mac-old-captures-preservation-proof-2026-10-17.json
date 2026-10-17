@@ -1,0 +1,27 @@
+{
+  "archive_path": "/home/animallya96/scratch/mac-old-trading-captures-preservation-20261017-v1/captures.tar.gz",
+  "archive_sha256": "375967de3c682aea7fbccd7c1cada596725491a8273174026be627c83c621e34",
+  "extended_attributes_claim": "not independently verified; tar metadata warnings retained",
+  "extra_appledouble_metadata_entries": 8259,
+  "files": 8578,
+  "manifest_sha256": "3a6d66fd0f3361036d0677826145aa69614e15722eac782d4e0f0c2d6bf5e28f",
+  "original_bytes": 632226718,
+  "status": "VERIFIED_EVERY_ORIGINAL_FILE_BYTE_ARCHIVED",
+  "replicas": [
+    "animallya96@172.16.8.3",
+    "animallya96@192.168.100.2"
+  ],
+  "original_names": [
+    "latest-strategy-paper-regression-results-20261012",
+    "latest-strategy-seed-20261012.json",
+    "latest-strategy-paper-desk-results-v6-20261012",
+    "urgent-numeric-guard-integration-20261017-v1.tar",
+    "latest-strategy-source-20261012-v2.tar",
+    "latest-strategy-source-20261012.tar",
+    "latest-strategy-paper-desk-results-v5-20261012",
+    "latest-strategy-paper-desk-results-v3-20261012",
+    "latest-strategy-paper-desk-results-v4-20261012",
+    "latest-strategy-paper-desk-results-v2-20261012"
+  ],
+  "restore": "Extract captures.tar.gz in /tmp to restore every original path; original regular-file bytes all match."
+}

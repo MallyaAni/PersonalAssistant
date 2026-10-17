@@ -1,0 +1,43 @@
+{
+  "actual_days_replayed": 0,
+  "after_state_sha256": "e44a5161e730ed0ed907ca320f7ee54c6dd58a81e5ee7eada8e338234dc62f2d",
+  "before_state_sha256": "28d3e8ed8c09b1611c57ee0133ae620e430b4b57973b9d28634030d8b80d16fd",
+  "broker_mutations": 0,
+  "changed_fields": [
+    "pending",
+    "journal"
+  ],
+  "evidence": {
+    "after-state.json": "e44a5161e730ed0ed907ca320f7ee54c6dd58a81e5ee7eada8e338234dc62f2d",
+    "all-310-after.json": "9085bb1067615357452d5271736a06b5f367f87571ba37279261900b06f87977",
+    "first.stdout": "4651300ea0b72887f0e2f50f7bd650122879faead6808624ccfd2aa0d7fe29c8",
+    "second.stdout": "3fa6add7a01be88becba68f2add2ff894e6eda890abc4460719e89619f5aeaec"
+  },
+  "first_reconciliation_at": "2026-10-17T11:51:07.265275+00:00",
+  "idempotent_bytes_inode_mtime_ctime_unchanged": true,
+  "independent_release_proof_sha256": "7dc84622b0ecb9e7bb30ac28e9524045e65b226b90e29b74f711789701ecd356",
+  "original_created_and_filled_clocks_preserved": true,
+  "original_files_unchanged_after_settlement": 307,
+  "original_record_sha256": "37d7541f5ce12a080a4c0538939b95f99367fc9b5318e21eba03d96963927c32",
+  "original_wrapper_failure": "Post-write HOST read permission denied; first write succeeded. Original wrapper not rerun. Existing CONTAINER identity used for protected readback; no permission changes.",
+  "runtime": {
+    "container": "7d9dc02f043334c88e74392a065751b003b74f138bcd539adbbf74e2752a6c5c",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "labels": {
+      "com.docker.compose.config-hash": "4adca099a36068f8a1b02049070f4b6b81ca4d6ed45ba95af12a75414c1df69f",
+      "com.docker.compose.container-number": "1",
+      "com.docker.compose.depends_on": "db:service_healthy:false,redis:service_started:false,local-capabilities:service_started:false,presentation-renderer:service_healthy:false,presentation-worker:service_started:false,browser:service_started:false,vllm-embedding:service_healthy:false",
+      "com.docker.compose.image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+      "com.docker.compose.oneoff": "False",
+      "com.docker.compose.project": "anios",
+      "com.docker.compose.project.config_files": "/home/animallya96/deploy/anios/docker-compose.yml",
+      "com.docker.compose.project.working_dir": "/home/animallya96/deploy/anios",
+      "com.docker.compose.replace": "anios_backend",
+      "com.docker.compose.service": "backend",
+      "com.docker.compose.version": "5.0.2"
+    }
+  },
+  "source": "ad44d536a70d5c037cb931836a3c9f48b014d84a",
+  "status": "VERIFIED_CURRENT_CLOCK_EXISTING_FILL_RECONCILIATION",
+  "verified_at": "2026-10-17T11:53:40.458915+00:00"
+}

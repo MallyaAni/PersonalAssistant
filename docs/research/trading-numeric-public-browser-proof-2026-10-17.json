@@ -1,0 +1,150 @@
+{
+  "started_at": "2026-10-17T11:55:44.152Z",
+  "source": "ad44d536a70d5c037cb931836a3c9f48b014d84a",
+  "harness_sha256": "d6c4972e98814455d5763b26241b4aae7053965cfa473efdb1a0e39c060158fa",
+  "status": "VERIFIED_PUBLIC_COMPILED_STALE_BOUNDARY",
+  "real_public_browser": true,
+  "fixtures": false,
+  "actual_clock": true,
+  "orders_submitted": false,
+  "protected_hashes_before": {
+    "paper/state.json": "e44a5161e730ed0ed907ca320f7ee54c6dd58a81e5ee7eada8e338234dc62f2d",
+    "desk/asof=2026-10-13/desk.json": "37d7541f5ce12a080a4c0538939b95f99367fc9b5318e21eba03d96963927c32"
+  },
+  "actual_marker_paint": {
+    "anios-2026-10-13-sell-stx-135": {
+      "expected_label": "SELL 12 sh",
+      "observed_label": {
+        "ticker": "STX",
+        "text": "SELL 12 sh",
+        "left": 356.63124930728145,
+        "right": 411.99111258853145,
+        "top": 291.8830541718009,
+        "bottom": 300.1545385468009,
+        "canvasWidth": 508,
+        "canvasHeight": 492
+      },
+      "observed_circle": {
+        "ticker": "STX",
+        "left": 378.5,
+        "right": 392.5,
+        "top": 305.0406713593009,
+        "bottom": 319.0406713593009,
+        "canvasWidth": 508,
+        "canvasHeight": 492
+      }
+    },
+    "anios-2026-10-13-sell-swks-136": {
+      "expected_label": "SELL 130 sh",
+      "observed_label": {
+        "ticker": "SWKS",
+        "text": "SELL 130 sh",
+        "left": 355.19929640292526,
+        "right": 417.81013624667526,
+        "top": 244.31858236414317,
+        "bottom": 252.59006673914317,
+        "canvasWidth": 512,
+        "canvasHeight": 492
+      },
+      "observed_circle": {
+        "ticker": "SWKS",
+        "left": 380.5,
+        "right": 394.5,
+        "top": 257.47619955164316,
+        "bottom": 271.47619955164316,
+        "canvasWidth": 512,
+        "canvasHeight": 492
+      }
+    }
+  },
+  "protected_hashes_after": {
+    "paper/state.json": "e44a5161e730ed0ed907ca320f7ee54c6dd58a81e5ee7eada8e338234dc62f2d",
+    "desk/asof=2026-10-13/desk.json": "37d7541f5ce12a080a4c0538939b95f99367fc9b5318e21eba03d96963927c32"
+  },
+  "checked_stocks": 94,
+  "checked_stocks_after_refresh": 94,
+  "withheld_numeric_fields": [
+    "grade",
+    "action",
+    "qty",
+    "when",
+    "execute_on"
+  ],
+  "held_positions": 8,
+  "model_status": "stale",
+  "model_reason": "Saved model plan has expired; awaiting the next model plan",
+  "original_executions": [
+    {
+      "client_order_id": "anios-2026-10-13-sell-stx-135",
+      "symbol": "STX",
+      "side": "sell",
+      "qty": 12,
+      "price": 739.236667,
+      "filled_at": "2026-10-14T13:32:46.922719Z",
+      "session": "2026-10-13",
+      "created_at": "2026-10-13T23:46:44.596904903Z",
+      "reconciled_at": "2026-10-17T11:51:07.265275+00:00",
+      "original_qty": 12,
+      "source": "recorded_paper_journal"
+    },
+    {
+      "client_order_id": "anios-2026-10-13-sell-swks-136",
+      "symbol": "SWKS",
+      "side": "sell",
+      "qty": 130,
+      "price": 76.181923,
+      "filled_at": "2026-10-14T13:33:32.086665Z",
+      "session": "2026-10-13",
+      "created_at": "2026-10-13T23:46:44.630871025Z",
+      "reconciled_at": "2026-10-17T11:51:07.265275+00:00",
+      "original_qty": 130,
+      "source": "recorded_paper_journal"
+    }
+  ],
+  "public_entry": [
+    {
+      "path": "/assets/index-tWiGLbQI.js",
+      "sha256": "131c6e4f5cfe2b3ba025fa32c1faa4c63d28a8bb1c1ed4d5828b2a8dda4a71d6"
+    }
+  ],
+  "current_day_fill_source": "Broker activity exclusively for its explicit session; journal aggregates and archived totals are withheld for that day.",
+  "incomplete_activity_limit": "An incomplete broker read shows only returned events and the existing plus-count. It does not prove all current-day fills or reconstruct missing partial events from journal totals.",
+  "older_partial_identity_reconciliation": "UNVERIFIED for archives and journal records with different execution granularity and no shared identity.",
+  "current_numeric_fresh_session_acceptance": "UNVERIFIED",
+  "fresh_ordinary_nightly_acceptance": "UNVERIFIED",
+  "learned_intraday_acceptance": "UNVERIFIED: original STX/SWKS exits used execution-side next_open, not the learned timing path",
+  "current_model_historical_delivery": "UNVERIFIED",
+  "fixture_results_claimed_as_live": false,
+  "completed_at": "2026-10-17T11:56:02.987Z",
+  "ordinary_cloudflare_telemetry_posts": [
+    {
+      "method": "POST",
+      "path": "/cdn-cgi/rum"
+    },
+    {
+      "method": "POST",
+      "path": "/cdn-cgi/rum"
+    },
+    {
+      "method": "POST",
+      "path": "/cdn-cgi/rum"
+    },
+    {
+      "method": "POST",
+      "path": "/cdn-cgi/rum"
+    },
+    {
+      "method": "POST",
+      "path": "/cdn-cgi/rum"
+    }
+  ],
+  "application_requests_are_get_only": true,
+  "application_response_mocking": false,
+  "failures": {
+    "page": [],
+    "console": [],
+    "network": [],
+    "http": [],
+    "writes": []
+  }
+}

@@ -1,0 +1,324 @@
+{
+  "SPY_is_still_benchmark_excluded": true,
+  "account_replayed": false,
+  "actual_receipt_only_quote_unavailable": true,
+  "actual_retrieval_clocks": [
+    {
+      "actual_received_at": "2026-10-17T11:38:52.688551+00:00",
+      "actual_requested_at": "2026-10-17T11:38:52.482437+00:00",
+      "kind": "quotes",
+      "raw_body_sha256": "d72425b3e7715c5d1abb2d2a1751d6e809d797ba4296a59c28481147fb736f77"
+    },
+    {
+      "actual_received_at": "2026-10-17T11:38:52.849132+00:00",
+      "actual_requested_at": "2026-10-17T11:38:52.688702+00:00",
+      "kind": "trades",
+      "raw_body_sha256": "4ee7d11c02ba5d960fee735c83b1c3bdcd6207a1da4015fcccc6e8821bf5eaa1"
+    }
+  ],
+  "assumption_contract": {
+    "approved_for_new_history_run": false,
+    "contract": "EXPLICIT_ILLUSTRATIVE_RETROSPECTIVE_AVAILABILITY_NOT_OBSERVED/1",
+    "historical_actual_inference_duration_ns": null,
+    "historical_actual_received_at": null,
+    "opening_anchor_evidence": "original_raw_15m_open_plus_first_matching_trade; official_trade_condition_eligibility_not_yet_verified",
+    "scenarios": [
+      {
+        "anchor_publication_delay_ns": 50000000,
+        "bar_publication_delay_ns": 50000000,
+        "broker_route_delay_ns": 20000000,
+        "inference_duration_ns": 100000000,
+        "name": "illustrative_50ms_data_100ms_inference_20ms_sender_20ms_route",
+        "quote_receive_delay_ns": 50000000,
+        "sender_delay_ns": 20000000
+      },
+      {
+        "anchor_publication_delay_ns": 50000000,
+        "bar_publication_delay_ns": 1000000000,
+        "broker_route_delay_ns": 20000000,
+        "inference_duration_ns": 100000000,
+        "name": "illustrative_1s_bar_publication_sample_cannot_price_later_execution",
+        "quote_receive_delay_ns": 50000000,
+        "sender_delay_ns": 20000000
+      }
+    ]
+  },
+  "input_sha256": {
+    "aapl-observations.json": "3343062549278d01ff745325bc85d8603c1941b681f8f1ce88d41ef50a5e9919",
+    "assumptions.json": "b1a6351685a75f78ece5462a8d2fd771f775e939539e81e5eb18cfb1b820a9bc",
+    "raw-bars.json": "65402bdc171cdb26c12626d024d1160aa20b56f5cb5158580de14c179336c5c2"
+  },
+  "limits": [
+    "Not current-model inference proof",
+    "SIP historical evidence is distinct from the installed IEX acquisition path",
+    "All 2019 receive/inference clocks are explicitly conditional, not observed",
+    "Matching trade price is not official bar-opening condition proof",
+    "Later executable-side quote is a conditional reference, never a broker fill or fill-probability proof",
+    "No existing run can be corrected post hoc when different timing changes carried cash/shares"
+  ],
+  "missing_or_invalid_assumption_checks": 9,
+  "models_loaded": false,
+  "network_calls_by_prototype": 0,
+  "orders_submitted": 0,
+  "quote_count": 94,
+  "scenarios": [
+    {
+      "actual_broker_fill": false,
+      "actual_current_model_inference": false,
+      "actual_order_submitted": false,
+      "archival_fields": {
+        "completed_bar_close": 174.015,
+        "first_matching_anchor_trade": {
+          "c": [
+            "@",
+            "F"
+          ],
+          "i": 10562,
+          "p": 174.01,
+          "s": 100,
+          "t": "2019-03-01T14:45:00.007Z",
+          "x": "K",
+          "z": "C"
+        },
+        "first_returned_trade": {
+          "c": [
+            "@",
+            "I"
+          ],
+          "i": 10561,
+          "p": 174.03,
+          "s": 6,
+          "t": "2019-03-01T14:45:00.006Z",
+          "x": "D",
+          "z": "C"
+        },
+        "quote": {
+          "ap": 174.01,
+          "as": 5,
+          "ax": "P",
+          "bp": 174,
+          "bs": 1,
+          "bx": "P",
+          "c": [
+            "?"
+          ],
+          "t": "2019-03-01T14:45:00.1Z",
+          "z": "C"
+        },
+        "raw_next_bar_open": 174.01,
+        "raw_session_open": 174.34
+      },
+      "assumed_anchor_available_at": "2019-03-01T14:45:00.057000000Z",
+      "assumed_bar_available_at": "2019-03-01T14:45:00.050000000Z",
+      "assumed_decision_at": "2019-03-01T14:45:00.150000000Z",
+      "assumed_forecast_available_at": "2019-03-01T14:45:00.150000000Z",
+      "assumed_order_routed_at": "2019-03-01T14:45:00.190000000Z",
+      "assumed_quote_available_at": "2019-03-01T14:45:00.150000000Z",
+      "assumed_submission_at": "2019-03-01T14:45:00.170000000Z",
+      "basis": {
+        "cash": 100000,
+        "cost_bps_per_side": 10,
+        "nav": 100000,
+        "shares": 1,
+        "synthetic_account": true
+      },
+      "conditional_execution_reference": {
+        "actual_fill_proven": false,
+        "after_assumed_routing_at": "2019-03-01T14:45:00.190000000Z",
+        "one_share_10bp_fee_if_this_reference_were_executed": 0.17403000000000002,
+        "price": 174.03,
+        "quote": {
+          "ap": 174.03,
+          "as": 5,
+          "ax": "K",
+          "bp": 174.01,
+          "bs": 4,
+          "bx": "Z",
+          "c": [
+            "?"
+          ],
+          "t": "2019-03-01T14:45:00.196Z",
+          "z": "C"
+        },
+        "status": "CONDITIONAL_EXECUTABLE_SIDE_PRICE_REFERENCE_NOT_A_FILL"
+      },
+      "conditional_not_actual_receive_or_inference": true,
+      "earlier_opening_execution_rejected": true,
+      "fixed_distribution_not_current_model": {
+        "mean": -0.001,
+        "residuals": [
+          -1.0,
+          1.0
+        ],
+        "scale": 0.0001,
+        "weights": [
+          0.5,
+          0.5
+        ]
+      },
+      "historical_actual_open_published_at": null,
+      "historical_actual_quote_received_at": null,
+      "native_clock_field_semantics": "Ephemeral values map EXPLICIT assumptions into the unchanged pure interface; not actual historical receipts or production admission",
+      "official_opening_trade_condition_eligibility": "UNVERIFIED; equality of price alone does not prove it",
+      "scenario": {
+        "anchor_publication_delay_ns": 50000000,
+        "bar_publication_delay_ns": 50000000,
+        "broker_route_delay_ns": 20000000,
+        "inference_duration_ns": 100000000,
+        "name": "illustrative_50ms_data_100ms_inference_20ms_sender_20ms_route",
+        "quote_receive_delay_ns": 50000000,
+        "sender_delay_ns": 20000000
+      },
+      "shared_quote_pair": [
+        174.005,
+        174.01
+      ],
+      "shared_verdict_expected_log_utility": -1.79277165055916e-06,
+      "shared_verdict_permission": "market",
+      "shared_verdict_state": "execute",
+      "transport_log_midpoint_over_anchor": -2.873439363515473e-05
+    },
+    {
+      "actual_broker_fill": false,
+      "actual_current_model_inference": false,
+      "actual_order_submitted": false,
+      "archival_fields": {
+        "completed_bar_close": 174.015,
+        "first_matching_anchor_trade": {
+          "c": [
+            "@",
+            "F"
+          ],
+          "i": 10562,
+          "p": 174.01,
+          "s": 100,
+          "t": "2019-03-01T14:45:00.007Z",
+          "x": "K",
+          "z": "C"
+        },
+        "first_returned_trade": {
+          "c": [
+            "@",
+            "I"
+          ],
+          "i": 10561,
+          "p": 174.03,
+          "s": 6,
+          "t": "2019-03-01T14:45:00.006Z",
+          "x": "D",
+          "z": "C"
+        },
+        "quote": {
+          "ap": 174.05,
+          "as": 19,
+          "ax": "T",
+          "bp": 174.03,
+          "bs": 4,
+          "bx": "Z",
+          "c": [
+            "?"
+          ],
+          "t": "2019-03-01T14:45:00.666Z",
+          "z": "C"
+        },
+        "raw_next_bar_open": 174.01,
+        "raw_session_open": 174.34
+      },
+      "assumed_anchor_available_at": "2019-03-01T14:45:00.057000000Z",
+      "assumed_bar_available_at": "2019-03-01T14:45:01.000000000Z",
+      "assumed_decision_at": "2019-03-01T14:45:01.100000000Z",
+      "assumed_forecast_available_at": "2019-03-01T14:45:01.100000000Z",
+      "assumed_order_routed_at": "2019-03-01T14:45:01.140000000Z",
+      "assumed_quote_available_at": "2019-03-01T14:45:00.716000000Z",
+      "assumed_submission_at": "2019-03-01T14:45:01.120000000Z",
+      "basis": {
+        "cash": 100000,
+        "cost_bps_per_side": 10,
+        "nav": 100000,
+        "shares": 1,
+        "synthetic_account": true
+      },
+      "conditional_execution_reference": {
+        "actual_fill_proven": false,
+        "price": null,
+        "reason": "No genuine qualifying quote after assumed order routing in the bounded sample",
+        "status": "unavailable"
+      },
+      "conditional_not_actual_receive_or_inference": true,
+      "earlier_opening_execution_rejected": true,
+      "fixed_distribution_not_current_model": {
+        "mean": -0.001,
+        "residuals": [
+          -1.0,
+          1.0
+        ],
+        "scale": 0.0001,
+        "weights": [
+          0.5,
+          0.5
+        ]
+      },
+      "historical_actual_open_published_at": null,
+      "historical_actual_quote_received_at": null,
+      "native_clock_field_semantics": "Ephemeral values map EXPLICIT assumptions into the unchanged pure interface; not actual historical receipts or production admission",
+      "official_opening_trade_condition_eligibility": "UNVERIFIED; equality of price alone does not prove it",
+      "scenario": {
+        "anchor_publication_delay_ns": 50000000,
+        "bar_publication_delay_ns": 1000000000,
+        "broker_route_delay_ns": 20000000,
+        "inference_duration_ns": 100000000,
+        "name": "illustrative_1s_bar_publication_sample_cannot_price_later_execution",
+        "quote_receive_delay_ns": 50000000,
+        "sender_delay_ns": 20000000
+      },
+      "shared_quote_pair": [
+        174.04000000000002,
+        174.01
+      ],
+      "shared_verdict_expected_log_utility": -1.4424210838334638e-06,
+      "shared_verdict_permission": "market",
+      "shared_verdict_state": "execute",
+      "transport_log_midpoint_over_anchor": 0.00017238902499183695
+    }
+  ],
+  "source_revision": "27471b9c61b958f759e9f48b80acaf60cdf75f2e",
+  "source_sha256": {
+    "backend/agents/trading/desk/intraday_orders.py": {
+      "current_sha256": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c",
+      "original_sha256": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c",
+      "whole_module_identical": true
+    },
+    "backend/market/calendar.py": {
+      "current_sha256": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4",
+      "original_sha256": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4",
+      "whole_module_identical": true
+    },
+    "backend/market/entry_timing.py": {
+      "current_sha256": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88",
+      "original_sha256": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88",
+      "whole_module_identical": true
+    },
+    "backend/market/execution_quotes.py": {
+      "current_sha256": "4dc6415247b79faba9b557478702facfc0a74950bc9edba7cd679d89aa8bf2f2",
+      "original_sha256": "4dc6415247b79faba9b557478702facfc0a74950bc9edba7cd679d89aa8bf2f2",
+      "whole_module_identical": true
+    },
+    "backend/market/forward_probability_timing.py": {
+      "current_sha256": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92",
+      "original_sha256": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92",
+      "whole_module_identical": true
+    },
+    "backend/market/live_probability_timing.py": {
+      "current_sha256": "3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721",
+      "original_sha256": "3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721",
+      "whole_module_identical": true
+    },
+    "backend/market/probabilistic_execution.py": {
+      "current_sha256": "cfd586859920f06d385447b1aa171f17e515d8e34bc07a8752164ef2b3705af2",
+      "original_sha256": "cfd586859920f06d385447b1aa171f17e515d8e34bc07a8752164ef2b3705af2",
+      "whole_module_identical": true
+    }
+  },
+  "status": "BOUNDED_CONDITIONAL_ARCHIVAL_FORWARD_READER_PROTOTYPE_NOT_APPROVED_HISTORY",
+  "trade_count": 69
+}
