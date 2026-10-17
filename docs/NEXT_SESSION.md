@@ -1,5 +1,49 @@
 # Next session
 
+## 2026-10-17 — Authorized correction's source-bound packet primitive integrated
+
+Atomic agente9c0c121 integrated ase76500f2: only four NEW files, all preexisting
+tracked bytes and31 guarded sources unchanged. Packet module54763a69 and unchanged
+preregistered contract033934aa;34 fixture checks/0skip0.51s,4 bounded fake-transport
+checks/0skip0.44s, Ruff/compile pass. Exact source/test/contract/proof blobs match
+accepted agent tree; no repeat deployment/gates. Proof:
+research/historical-timing-packet-phase1-proof-2026-10-17.json.
+
+The already approved tiny old-data acquisition completed12:43:36Z: ONE HTTP200,
+17,746 original bytes/166 AAPL SIP quotes, complete/no nextpage, zero retries or
+redirects. Exact2019-03-01T14:45:30Z..33Z/asof2019-03-01 query; no other new GET.
+Reuse69 original trades. Raw receiptf9529d33/bodyad22cfdd and full original bodies
+remain private at scratch/historical-timing-packet-pilot-20261017-v1. Unique private
+container/tmp proof writes then docker cp; no appdata/config/model/account writes.
+
+Authentic selector proof6369d56f and ROOT independent original-byte/reference
+binding9b7b01a3 agree: first eligible raw opening174.01@14:45:00.007; conservative
+decision quote30.570/midpoint174.105; FIRST post-arrival event31.332 has buyask174.14
+and sellbid174.12. The consumed opening is not reused as an execution. Raw displayed
+sizes and quote conditions remain original; no size-unit conversion or liquidity/
+actual-fill claim. Sealed packets reject byte/query/clock drift, duplicate JSON,
+incomplete/failed pages and2099 metadata. Decisions exclude future and ambiguous
+quotes; later irrelevant trade conditions cannot erase an established opening.
+Streamed capture enforces20MiB bound before accepting bodies, preserving failures.
+
+Availability remains the fixed hypothetical final-archive T+30s,1s inference,
+100ms quote/sender/route delays and declared symmetric1ms clock uncertainty.
+Final historical bars may include later corrections: this does NOT establish
+historical as-published causal prices or recover actual receipt/publication clocks.
+Native model publication/computation must remain actually dated2026. Packet phase
+does NOT run genuine feature/model inference, sender, funded quantity or ledger.
+Next is a separate bounded genuine all96-symbol prior-context/frozen-head/shared
+guard proof in exact N2 native image, not another synthetic feature row. Current
+approved acquisition is exhausted; no further GET or full corrected launch until
+later validated runner/resolver and independent ledger/source review. Original
+source27471/container1e8f440a stays immutable. Compact12:44Z: RUNNING1880sessions
+through2026-08-21/2888fills/3832intents, updated12:41:58Z, completion absent.
+
+Independent nightly numeric audit continues separately, no every-night integration
+or full-run acceptance yet. Publisher remains structurally closed. No production
+or historical-main deployment. Heartbeat ACTIVE; notify only substantive outcomes.
+Diagram impact: NONE — unused pure packet primitive, no connected runtime flow.
+
 ## 2026-10-17 — Human approved one distinct corrected simulation; owner isolation verified
 
 Human answered "yes" to the pending question authorizing ONE separately named
