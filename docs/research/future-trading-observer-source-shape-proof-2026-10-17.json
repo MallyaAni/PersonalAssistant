@@ -1,0 +1,34 @@
+{
+  "status": "VERIFIED_SYNTHETIC_SOURCE_SHAPE_CORRECTION_ONLY",
+  "written_at": "2026-10-17T12:59:43.253171+00:00",
+  "original_helper_sha256": "0f2058ff25ea88f53a26f2957b09c6d287a35ed1f79a61332e457e8e07577a22",
+  "original_red_log_sha256": "a188f2aea0a97ae3cf1c6bd9809703ab5c7cb5fbd756954e72d32d6511db4d8e",
+  "original_red_observed_at": "2026-10-17T12:58:19Z",
+  "green_observed_at": "2026-10-17T12:59:25Z",
+  "green": {
+    "distinct_tests": 17,
+    "skipped": 0,
+    "seconds": 1.242
+  },
+  "source_shape": "29 backend Python plus 2 exact reviewed Markdown paths; separate calendar pins",
+  "reviewed_key_source_proof_sha256": "7dc84622b0ecb9e7bb30ac28e9524045e65b226b90e29b74f711789701ecd356",
+  "files_sha256": {
+    "observer.py": "c7be79c0f180d535e6521a6b02f8be2d2d930eedbfd37fedbee3a2d2fb06d755",
+    "test_observer.py": "2803e91fd047eea58c2aed4facc1d3468bb355c68e5255ca6abdcf8b35d974d9",
+    "test_source_shape.py": "f3505db9901b245953ab89c39cd62866f3b4f96fb7e8d4bfb34083885dda737e",
+    "n2-source-key-shape.json": "01e7b739c51c8830010c8dc362112b635bba9425c7fde98d7bddd969f4cdd9b4",
+    "README.txt": "de6cd1b54947bbe4288e6fb5dce4507bebeaccca1dc0eca41c9138b2215a7c40",
+    "synthetic-tests-v4-source-shape.log": "16079c011810c8fdfa7a0c4b71036b042556f8bb870955cbd89499f8abc66593"
+  },
+  "preserved_logs": [
+    "synthetic-tests.log",
+    "synthetic-tests-v2.log",
+    "synthetic-tests-v3-source-shape.log",
+    "retained-source-shape-red-v1/legitimate-shape-red.log"
+  ],
+  "earlier_v3_note": "30 executions included duplicate imported test cases; final v4 contains17 distinct cases",
+  "live_invoked": false,
+  "repo_edits": false,
+  "runtime_or_model_calls": 0,
+  "scope": "Private capture-only helper, no acceptance or deployment"
+}

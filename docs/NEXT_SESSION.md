@@ -1,5 +1,34 @@
 # Next session
 
+## 2026-10-17 — Future ordinary capture helper corrected and preserved privately
+
+Private helper sourcec7be79c0 now accepts the ACTUAL N2 guard-map shape:29 Python
+files plus the two exact guarded Markdown contracts. Earlier0f2058ff assumed31
+Python files and rejected every legitimate source map; preserved first real-shape
+red loga188f2ae at actual12:58:19Z demonstrates that failure before the fix.
+Unknown Markdown and replacement guards still reject; all pins must equal the
+hardpinned original N2 proof7dc84622.17 DISTINCT synthetic checks/0skip1.242s,
+not the earlier30 executions containing imported duplicate test cases.
+
+Exact correction proof4b9ff53f copied to
+research/future-trading-observer-source-shape-proof-2026-10-17.json. Entire private
+helper/tests/old failure logs preserved in local /tmp/future-trading-observer-20261017-v1
+and byte-identical archive7078aa63 on Spark at
+/home/animallya96/scratch/future-trading-observer-20261017-v2/helper.tar.gz. ROOT
+checked archive hash on both machines and all six proof-listed files inside it.
+No live invocation, source/runtime/model/API/broker change or qualification.
+
+This helper ONLY captures naturally available filesystem evidence after actual
+reviewed weekday19:30ET; no live clock override or forced past date. It cannot
+declare acceptance: supplied runtime identity is not freshly observed, model
+arrays are not loaded/hashed, validators/API/browser/broker remain unobserved.
+Do not invoke on old days or call its fixture success a fresh ordinary pass.
+Sender clock-transport design/fixtures now proceed privately, separately from
+the resolver and nightly audit; no new container/model/provider call yet.
+Original full account compact13:03Z remains RUNNING1884 sessions through2026-08-27,
+2889 fills/3833 intents, updated13:00:42Z; completion absent. No full-output reads.
+Heartbeat ACTIVE/quiet unchanged. Diagram impact NONE: private unused helper.
+
 ## 2026-10-17 — Genuine historical feature and native timing boundary verified
 
 Separate private native proof6176e4e4 completed12:50:50Z in ACTUAL N2imagee0a54c1f,
