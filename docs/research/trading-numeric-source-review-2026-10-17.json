@@ -1,0 +1,50 @@
+{
+  "approval_bundle": {
+    "acceptance": "Mandatory actual HOST and CONTAINER read_configuration before canonical success",
+    "archive": "Preserve exact previous config/release/evidence bytes before activation",
+    "configuration_changes": [
+      "release_receipt_sha256"
+    ],
+    "release_changes": [
+      "source_sha256",
+      "actual approved_at"
+    ]
+  },
+  "base_source": "a2378e9565e6a557fbc3782ac1a5536bae961a75",
+  "diff_review": [
+    "API reads the saved numeric decision and actual execution journal; private no-store and original owner authorization remain",
+    "Projection authenticates saved record, input capture, close/publication bytes, installed source/configuration, original grades, targets, basket quantities and execution identities",
+    "Expired, inconsistent, completed or unknown instructions cannot borrow chart judgments, broker quantities or current marks",
+    "GET projection does not restore a model, predict, size, send orders or modify account/history",
+    "Holding module only extends source_identity from30 to31 exact source paths; every other byte and holding function is unchanged",
+    "Current models, numerical policy, timing, risk, costs and original economic evidence remain unchanged"
+  ],
+  "fresh_ordinary_and_learned_intraday_acceptance": "UNVERIFIED",
+  "historical_delivery": "UNVERIFIED",
+  "original_holding_function_ast_sha256": {
+    "_folder": "7c092c6afb1dc410f9397dcfa696d067bc90bd9d2a91e6ed563b039126f77d69",
+    "_inputs": "eafc429904a001e4d0278e4942871db00ec5a99cea48b630b4b6b9379c908488",
+    "_model_report": "c018062ca7c354217c60526d09cfdf910e8a56c5146f888df9b7b0876997571a",
+    "_release": "7065a667c3aa44385c80951c6f757877f5ea119948a360a2034314555c134b2e",
+    "_timing": "d0442ed243c82ebc24fa8330b19782363f0056769c65c90556ee636b159c33ab",
+    "configured": "f30ffc6c5bf14fba305dadbbac7c1640e53f80900a026040fb8241cd47b67b2e",
+    "prepare": "24c67ae7dddd01156822369cd434b479134d26ae294dfec2976a0060a229c7fc",
+    "read_configuration": "c466f3322404eaf9079127150654dde068e496f3e27c7d3edfa630aa05590259"
+  },
+  "scope": "One read-only saved numeric plan for Stocks; actual settled executions remain separate",
+  "source_changes": {
+    "backend/api/v1/market.py": {
+      "after_sha256": "fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88",
+      "before_sha256": "b73d11fc6931c95e1bc47ff12f4ecc564db5cd1b02628ee7681f87bf6bdb25d7"
+    },
+    "backend/market/learned_live_holding.py": {
+      "after_sha256": "25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1",
+      "before_sha256": "992d9efe47a73afe7077c9dd3d377035daa1b4df66792d8289a9de688cae022f"
+    },
+    "backend/market/live_model_decision.py": {
+      "after_sha256": "b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93",
+      "before_sha256": null
+    }
+  },
+  "status": "REVIEWED_EXACT_SERVING_SOURCE_GUARD_EXTENSION"
+}

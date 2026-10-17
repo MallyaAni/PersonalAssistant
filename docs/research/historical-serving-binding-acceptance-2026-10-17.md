@@ -34,13 +34,24 @@ again before the new manifest is selected. Original versions remain untouched.
 Source evolution requires explicit ordered `--source-review-sha256` arguments.
 Each exact receipt must exist in the checked-in `REVIEWS` catalog. The original
 Oct17 API approval review permits only its exact0647fb9b→b73d11fc API change,
-with29 other source hashes unchanged. A later source-guard extension needs a
-second trusted review, exact predecessor/successor hashes for the API, holding
-module and new read-only decision module, and the original AST digests of every
-holding function except `source_identity`. The reader rechecks those function
-bodies and final admitted source map. This does not authorize arbitrary future
-source changes or a new model. The no-binding reader retains its original
-strict source/config byte equality.
+with29 other source hashes unchanged. The catalog now also pins exact committed
+numeric review2f048a8040532bfdaa49b1101e552457454b526b510b4ee9f2422f3a67a3e5f7
+from candidate6a1d77bc. That review permits only its APIb73d→fb35, holding-list
+992d→25fe and new read-only projectionb86a transitions. Every original holding
+function except `source_identity` must retain its original AST digest.
+
+Both catalog entries pin exact review bytes, not only their filenames. A later
+API-only transition must name the exact preceding API digest and retain every
+other source:29 when its predecessor has30 sources,30 when it has31. Counts
+must be integers, and source digests and final installed admission remain exact.
+The final historical API merge still requires a third committed review and
+catalog entry for its actual digest; this candidate contains no such approval.
+Tests exercise that future shape only with a temporary, explicitly controlled
+test receipt. See `historical-source-chain-candidate-proof-2026-10-17.json`.
+The reader rechecks the unchanged holding functions, original archive/economics
+and final admitted source map. This does not authorize arbitrary future source
+changes or a new model. The no-binding reader retains its original strict
+source/config byte equality.
 
 ## Full audit after the sole producer completes
 

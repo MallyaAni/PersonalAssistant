@@ -10,7 +10,14 @@ from backend.market import learned_live_holding
 from backend.market.grade_led_policy import POLICY
 
 SCHEMA = "live-model-history-serving-binding/1"
-REVIEWS = ("docs/research/trading-source-approval-review-2026-10-17.json",)
+REVIEWS = (
+    "docs/research/trading-source-approval-review-2026-10-17.json",
+    "docs/research/trading-numeric-source-review-2026-10-17.json",
+)
+REVIEW_SHA256 = {
+    REVIEWS[0]: "8b628c76066f62ee724a36d3d07219848786d49d51bb243d73e3e056d7c72bd4",
+    REVIEWS[1]: "2f048a8040532bfdaa49b1101e552457454b526b510b4ee9f2422f3a67a3e5f7",
+}
 SNAPSHOTS = {
     "capture": "capture.json",
     "holding": "desk/learned-holding/config.json",
@@ -48,6 +55,8 @@ def guard_extension(candidate, review):
     if set(review["source_changes"]) != paths:
         raise ValueError("Exact reviewed source guard extension paths required")
     for name, change in review["source_changes"].items():
+        if set(change) != {"before_sha256", "after_sha256"}:
+            raise ValueError("Exact reviewed source guard extension schema required")
         if candidate.get(name) != change["before_sha256"]:
             raise ValueError("Historical source guard extension predecessor differs")
         if (name not in candidate) != (name == "backend/market/live_model_decision.py"):
@@ -71,6 +80,7 @@ def reviewed_sources(original, serving, reviews):
     catalog = {}
     for path in REVIEWS:
         raw = (Path(__file__).resolve().parents[2] / path).read_bytes()
+        require_hash(raw, REVIEW_SHA256[path])
         catalog[sha256(raw).hexdigest()] = json.loads(raw)
     candidate = dict(original)
     if not isinstance(reviews, list) or len(set(reviews)) != len(reviews):
@@ -86,7 +96,9 @@ def reviewed_sources(original, serving, reviews):
         if (
             review["status"] != "REVIEWED_EXACT_SERVING_SOURCE_APPROVAL_CANDIDATE"
             or name != "backend/api/v1/market.py"
-            or review["other_reviewed_sources_unchanged"] != 29
+            or isinstance(review["other_reviewed_sources_unchanged"], bool)
+            or not isinstance(review["other_reviewed_sources_unchanged"], int)
+            or review["other_reviewed_sources_unchanged"] != len(candidate) - 1
             or candidate.get(name) != review["previous_approved_sha256"]
             or review["reviewed_serving_sha256"] == candidate.get(name)
         ):

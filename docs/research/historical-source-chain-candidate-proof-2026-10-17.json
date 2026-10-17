@@ -1,0 +1,54 @@
+{
+  "status": "VERIFIED_STATIC_CANDIDATE_NOT_DEPLOYED",
+  "starting_revision": "8a36f502c9869ed68f3ed67e77a1cc71e2545815",
+  "latest_main_handoff_read": "025b8d8894edbdbc124f915ef4af908b59330cfe",
+  "branch": "codex/historical-provenance-20261017",
+  "scope": "Pin the exact numeric source review and permit a later exact API-only review to conserve all predecessor sources after the guarded source count grows from30 to31.",
+  "trusted_catalog": {
+    "docs/research/trading-source-approval-review-2026-10-17.json": "8b628c76066f62ee724a36d3d07219848786d49d51bb243d73e3e056d7c72bd4",
+    "docs/research/trading-numeric-source-review-2026-10-17.json": "2f048a8040532bfdaa49b1101e552457454b526b510b4ee9f2422f3a67a3e5f7"
+  },
+  "numeric_review_source": "Exact committed bytes from6a1d77bc1d8bdeb080bdee26b8e1ef95507a9ea1; no urgent API/model implementation was merged.",
+  "validation": {
+    "private_root": "/home/animallya96/scratch/historical-provenance-tests-20261017-v1",
+    "runtime": "/home/animallya96/research-venv/bin/python",
+    "test_log": "history-review-chain-validation-v3.log",
+    "test_log_sha256": "4a1f73158d97374768f3939f6ef26a717147fc27eb725e0c45cfe471393777d9",
+    "passed": 49,
+    "skipped": 0,
+    "seconds": 9.87,
+    "modules": ["test_live_model_history", "test_live_model_history_binding", "test_live_model_history_reader", "test_live_model_history_publication", "test_live_model_history_projection", "test_live_model_history_verification"],
+    "checks": [
+      "Actual committed original API review followed by exact committed31-source guard extension",
+      "Temporary test-only later API receipt conserves30 unchanged predecessor hashes; no production third review is added",
+      "Reject stale29-count, floating/bool counts, wrong predecessor/path, no-op approval, unreviewed model/projection change, extra/missing source and unknown/reordered/duplicate/omitted receipts",
+      "Pinned catalog review bytes cannot be changed into another trusted receipt at the same filename",
+      "Complete31-source binding retains original30-source provenance and exact archive bytes; self-consistently rehashed cost change is rejected",
+      "Existing controlled94-payload readback, model/config/archive corruption, independent ledger and bounded-publication guards continue passing"
+    ],
+    "lint": "Ruff E,F,I passed for both changed Python files using the existing complete application test image",
+    "lint_log": "history-review-chain-lint-v1.log",
+    "lint_log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "python_compile": "PASS",
+    "git_diff_check": "PASS",
+    "diagram_check": "33 architecture diagrams and published architecture page synchronized",
+    "diagram_log": "/tmp/historical-source-chain-diagram-check-20261017.log"
+  },
+  "code_sha256": {
+    "backend/market/live_model_history_binding.py": "096adbd45c98fabbfebe1904cf951d34dda91ff31061311be3f138cb5e463801",
+    "backend/tests/test_live_model_history_binding.py": "4116755038a9db548ec9957b5d644b540a7f9e04742fbecdc1feb790fbf1a2fb",
+    "docs/research/trading-numeric-source-review-2026-10-17.json": "2f048a8040532bfdaa49b1101e552457454b526b510b4ee9f2422f3a67a3e5f7"
+  },
+  "original_run": {
+    "source": "27471b9c61b958f759e9f48b80acaf60cdf75f2e",
+    "container": "1e8f440a3b5b75dcabd299f5eaba58c7929fb6f96bc822fdb46b641ecf3e598d",
+    "frozen_config_sha256": "1a14980a66a1cb5994f0bb82667dd46fce40ec7eb0705728d93e36b18faf5901",
+    "mutated": false,
+    "restarted": false,
+    "audited": false,
+    "published": false
+  },
+  "limits": ["Future historical API source hash remains unknown and unapproved: a third exact committed review and catalog entry are still required", "No production admission or release was performed", "Full historical account audit/publication and actual compiled historical quantities remain UNVERIFIED", "No model/config/economics/history changes or actual-day replay"],
+  "diagram_impact": "NONE — review catalog and count/schema checks stay inside the existing archived-to-serving authentication boundary.",
+  "main_pushed": false
+}
