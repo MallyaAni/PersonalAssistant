@@ -1,0 +1,170 @@
+{
+  "schema": "trading-dashboard-single-action-proof/1",
+  "status": "VERIFIED_FRONTEND_DELIVERY_WITH_SEPARATE_OPEN_MODEL_AND_OPERATIONAL_BOUNDARIES",
+  "objective": "Remove redundant trading displays and proven unused frontend paths; present one numeric strategy action with separate size, timing and recorded paper execution.",
+  "source": {
+    "production_base": "3b72cd4e0bc15acd24432d501918c721685a5333",
+    "released": "0655eea00ab4d42cda1041b510d36301c9aff715",
+    "source_audit": "trading-dead-frontend-audit-2026-10-17.json",
+    "source_audit_sha256": "3056f6a2739f785aa7a3206b218c56c792ba6204cf067ce6823b9b9f133ecad5",
+    "source_audit_preparation_status_is_preserved": true
+  },
+  "delivered_changes": [
+    "One Stocks action column and exactly BUY, SELL, TRIM and HOLD filter choices; unavailable plan rows have no invented direction.",
+    "A separate Timing column; real nonzero admitted proposal timing is not an action or paper-order status.",
+    "One global missing or expired numeric-plan notice instead of repeated unavailable labels and grade sublines.",
+    "Changes selects numeric proposed changes, including blocked BUY zero with its reason; it does not borrow paper orders or chart judgments.",
+    "Position, recorded submission/fill quantities, levels and reasons remain available in Details.",
+    "Numeric model plan leads the ticker; existing Current and Saved assessments are folded under the existing closed All the evidence disclosure.",
+    "Corrected help that conflated no paper order with HOLD, target reference sizes with submissions, and different price clocks.",
+    "Removed unmounted EntriesNow, FundingPreview and StrategySimulationBoard components, declaration-only helpers and the unreachable manual-entry form.",
+    "Removed obsolete fixtures and corrected chart-grade tests that expected a funded current action without an admitted numeric plan."
+  ],
+  "cleanup_limits": {
+    "scope": "Trading frontend and associated controlled browser fixtures; not a repository-wide certification that every file is necessary.",
+    "preserved": [
+      "Active personal tracker afterTrade, recordBuy, save and ConfirmedBuy source blocks",
+      "Shared StockBoard price/action/research helpers",
+      "PersonalDecisionHistory module and exported shared context type",
+      "API wrappers and backend routes",
+      "Research, actual history, original accounts, backups and failed evidence"
+    ],
+    "deferred_source_only_findings": [
+      "The unmounted StockBoard component shares its module with active helpers; the module was not deleted wholesale.",
+      "PersonalDecisionHistory has an unmounted component but shared exported types; no stored history or module was deleted."
+    ]
+  },
+  "compiled_acceptance": {
+    "status": "VERIFIED_CONTROLLED_FRONTEND_ONLY",
+    "image": "sha256:7e11780237209f8747e8023d2ba777723d9aba451a548bbcc0563511e28a2c9a",
+    "runtime": "Node 24.17, Playwright 1.61.1, Chromium 1228 ARM64, TypeScript 5.9.3, Vite 8.1.4",
+    "isolation": "UID1000; network none; source, fixtures and cached dependencies readonly; 1CPU; 2GiB RAM and total swap; tmp128MiB; shm256MiB; only private output writable",
+    "type_and_build": "PASS; production build inputs are identical across the subsequent test-only commits",
+    "distinct_passing_workflows": 64,
+    "pass_union_proof": "/home/animallya96/scratch/trading-dashboard-production-pass-union-20261017.json",
+    "pass_union_sha256": "ed208ba3c900a781ab8bdb3fc54c2453ae26c5137e76d0a8fe43d8caaf8bd71b",
+    "v1": {
+      "root": "/home/animallya96/scratch/trading-dashboard-compiled-20261017-v1",
+      "pass": 1,
+      "skip": 0,
+      "seconds": 5.7,
+      "proof_sha256": "7911515b484311ec5e61bd6ca4b004d2d711a4907a7998f5a026d4feecb03cc7",
+      "results_sha256": "f34b0bc28af992ac32324910996801613ae1c3c2c6af0e3f0c4dbba69ebb2e4d",
+      "strict_diagnostics": [],
+      "properties": "Admitted BUY5, TRIM2, HOLD0, blocked BUY0 and reason, recorded BUY3 kept separate; four filters; expiry and missing account do not invent actions; no writes."
+    },
+    "v3": {
+      "root": "/home/animallya96/scratch/trading-dashboard-compiled-20261017-v3",
+      "source": "88753065b65f4b2387cd410b5287452fedfe5670",
+      "pass": 58,
+      "failed": 1,
+      "skip": 0,
+      "seconds": 76.704,
+      "proof_sha256": "12200cb4b61c0e589db7f695934868a856dd7c80b9ad651aeee67b3e2fa839c7",
+      "results_sha256": "12d570eeb6be3558760b4402e93b4acce38b5013983a6398450454dba071c336",
+      "failure": "An original grade-provenance test incorrectly expected chart-grade BUY as the primary action without a current numeric plan. Original dated grade and chart checks passed; failed result retained."
+    },
+    "v4": {
+      "root": "/home/animallya96/scratch/trading-dashboard-compiled-20261017-v4",
+      "source": "0655eea00ab4d42cda1041b510d36301c9aff715",
+      "pass": 5,
+      "skip": 0,
+      "seconds": 6.508,
+      "proof_sha256": "2babe733ba0c587d00cfbdbdd4fdf6406c3be86580181ae03a5995c3d7a5d4a4",
+      "results_sha256": "614fbaa85f09c0dad238a2e941b5d4b68ab31532ce1494ed21008f2c7e87356c",
+      "scope": "Three corrected strategy cases and two original explicit unavailable-history cases; no repeated broad gate."
+    },
+    "diagnostic_scope": "V1 has strict global warning/error/page/network/write guards; broader original specifications retain their own handlers/assertions and have no global warning guarantee.",
+    "failed_v2": "Preserved CJS import.meta collection failure; zero tests executed, corrected by native ESM specification loading.",
+    "provider_model_or_live_account_calls": 0
+  },
+  "diagrams": {
+    "status": "VERIFIED_33_AND_PUBLISHED_ARCHITECTURE_PAGE_SYNCHRONIZED",
+    "root": "/home/animallya96/scratch/trading-dashboard-diagrams-20261017-v3",
+    "command": "node /app/frontend/scripts/architecture-diagram.mjs check",
+    "seconds": 44.128,
+    "proof_sha256": "1874b0c16c15eb2f957a0e521d91273edf4eac6d5b3d3da6ff76434961262bc4",
+    "stdout_sha256": "50a823426fd755d9cc0a1083f81a597b714dcca7bb3144d7ff321227cf00ba48",
+    "source_unchanged": true,
+    "failed_roots_preserved": "v1 missing test-source mount; v2 isolated Chromium sandbox startup failure",
+    "fixture_browser_mode": "Documented test browser launcher uses cached Chromium with Playwright's default no-sandbox mode inside the isolated readonly network-none fixture; no production privilege or service settings changed.",
+    "impact": "NONE — removes unmounted frontend code and folds existing supporting details; no architectural relationship changes."
+  },
+  "canonical_release": {
+    "root": "/home/animallya96/scratch/trading-dashboard-release-20261017-v1",
+    "finished_at": "2026-10-17T17:41:41.405694+00:00",
+    "command": "bash scripts/deploy.sh --deploy-dir=/home/animallya96/deploy/anios --wait-post",
+    "path": "Canonical frontend-only short path; no skip flags, clock override or source-approval renewal",
+    "cheap_post": "2026-10-17T17:41:35Z 0655eea0 ok (cheap)",
+    "release_result_sha256": "5e3b7a8504e6e162b6a0ca495da2dcdc2b44fdc9d6738bdb38bc46a6321104a5",
+    "canonical_result_sha256": "593fa8d5d7da79502ff31d65c4a4cb5a3621fd0089102d9b6e23752c935cad5a",
+    "preserved_controller_failure": "v3 controller rejected default-separator serialization of the native31 hash map before any deployment mutation. Corrected v4 uses the original compact canonical serialization; every source/config guard remains unchanged.",
+    "controller_sha256": "9ebdee1df1cec4a218b3076a508983b732237edbc927290ffbc30a562336b934",
+    "gateway_container": "fb1d906e3ca3d294b4e2ae36c51a5682750a9cfdc49f0801ade3f03baddf8a01",
+    "gateway_image": "sha256:0364b8496576196c564e43860ac72276706c0be47d02fcb09fbfc6a13e872a93",
+    "frontend_image": "sha256:2114ee5c787b67bb6fb622408bae88cf9decf06d85b0806e236ae818ab5c95b1",
+    "actual_bundle": "index-DADkosXW.js",
+    "actual_bundle_sha256": "130d399186eb288cd1ed84b37d165fedc986d9df8495c9ae1257af2b1bb47d47",
+    "bundle_matches_compiled_acceptance": true
+  },
+  "independent_authenticated_public_browser": {
+    "status": "VERIFIED_MANUAL_SESSION_AFTER_CANONICAL_DELIVERY",
+    "url": "https://deep-matter.com/?deskView=strategy#desk",
+    "surface": "Codex in-app browser tab1; reloaded from the public gateway and exact deployed bundle observed",
+    "separately_recorded_wall_clock": null,
+    "checks": [
+      "Seven headers: Details, Stock, Grade, Position, Action, Size, Timing.",
+      "Exactly four filter checkboxes BUY, SELL, TRIM, HOLD; no WAIT or No order action bucket.",
+      "Exactly one expired-plan notice: latest saved decision 2026-10-13; no chart-judgment or holdings fallback to a numeric action.",
+      "All94 names and Portfolio8; narrowing action filters hides unavailable dash rows and Show all recovers.",
+      "Changes0 displays No current strategy changes available, not a claim about the paper account's order state.",
+      "Portfolio search NTAP shows78 held, dated saved target18.9percent/gradeA+, and dash action/size/timing; Details preserves supporting information and paper status.",
+      "NTAP ticker leads with expired numeric model plan; Current and Saved assessments are initially folded and appear after All the evidence opens.",
+      "Ticker chart loads2000 sessions through2026-10-16 and identifies no current exchange session.",
+      "Console warning/error query returns an empty array; actual screenshots emitted in the session; no orders or account writes performed."
+    ],
+    "warning_error_logs": [],
+    "unclaimed": "This session did not independently instrument every network request or page exception. Controlled core diagnostics are recorded separately."
+  },
+  "preservation": {
+    "original_files_unchanged": 310,
+    "before_and_after_manifest_sha256": "b059b8df785a1652c3c7194ea3aa77494c8951bdf3465c923d19bf6877fda460",
+    "host_and_container_read_configuration": "ADMITTED_BEFORE_AND_AFTER",
+    "native_source_count": 31,
+    "native_source_map_sha256": "bfbcb6ece4ea500726e00abbb06fc2c84d63d386bb307958016915357aaef5b3",
+    "admission_before_and_after_sha256": "60ad3da086978af86fe6c68151aba37ebbacc5487a47d8887a3ba09ee30008b4",
+    "config_sha256": "f96a29777403f5f08623709b70f36b15300500065202acbd215cd43f3c99a588",
+    "release_sha256": "1c1c6e9bcc7e9fa8d095f6ce5e6bf973c99ed19531e88c38a9aba5ed8410cd3e",
+    "economic_evidence_sha256": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9",
+    "backend_container_unchanged": "3e4edfca9185e0cfbc108e4ed1628ec18cbc4a795e8c559b19d874600ed84b59",
+    "backend_image_unchanged": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "model_and_original_completed_account_containers": "UNCHANGED",
+    "orders_submitted": 0
+  },
+  "main_integration": {
+    "status": "VERIFIED_CONTROLLED_SOURCE_INTEGRATION_NOT_DEPLOYED",
+    "source": "8809d0a1dcc5e8fc6f4abc9a0c80984a5405e7e0",
+    "root": "/home/animallya96/scratch/trading-dashboard-main-compiled-20261017-v1",
+    "source_manifest_sha256": "b94680e9191fcc8c6d2a2d54067295512fbd4851259ec2907602bf96af409fdb",
+    "fixture_manifest_sha256": "70df4163528c9b307cd5217f3ba837439dba9e0e15c9090fcea25b61fe093f6b",
+    "proof_sha256": "6da99b5b5cb98ccbfb7585f4ec28086c630bb78596c010ace16b2219740527cd",
+    "results_sha256": "24fcebd664435877b68aca0b30d6f265421757797ed30c296e4b14d21b956649",
+    "inspect_sha256": "cabc0b03a73f7e7423c333f3ee858cb8eba253a4deb01006ed0adbc1389955e1",
+    "type_and_new_build": "PASS",
+    "complete_original_model_action_and_strategy_specs": "15 pass; 0 skipped, unexpected or flaky; 22.758 seconds",
+    "source_files_before_after_unchanged": 106,
+    "container": "a7b18eca1ddfcd7ca6bf71e49d1759c8855b730b377b334860fcd4a5e321e516",
+    "runtime": "Same cached image and frontend-only isolated resources as production controlled checks; exit0/OOMfalse",
+    "fixture_distinction": "Main's valid numeric BUY3 fixture is retained; missing/completed signals withhold current quantities. Historical share markers, Saved/Recalculated grade dates, separate paper fills and source selectors remain exercised.",
+    "boundary": "Pending historical main remains undeployed. This acceptance does not authorize historical publication or prove real numerical inference."
+  },
+  "remaining_boundaries": {
+    "current_numeric_plan": "EXPIRED; latest saved decision2026-10-13; no fabricated current funded direction or quantity",
+    "full_training_action_quantity_consistency": "UNVERIFIED_BY_THIS_FRONTEND_CHANGE",
+    "fresh_ordinary_learned_intraday_fill_and_matching_ui_acceptance": "UNVERIFIED",
+    "original_full_retrospective": "COMPLETE; original timing FAILED and source/output preserved",
+    "historical_publication": "CLOSED_PENDING_INDEPENDENT_FULL_MODEL_TIMING_LEDGER_SOURCE_AND_ALL94_PAYLOAD_ACCEPTANCE",
+    "whole_system_reliability": "NOT_CLAIMED",
+    "heartbeat": "KEEP_ACTIVE_QUIET_ON_UNCHANGED_NONACTIONABLE_STATE"
+  }
+}

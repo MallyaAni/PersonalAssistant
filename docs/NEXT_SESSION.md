@@ -1,11 +1,70 @@
 # Next session
 
+## 2026-10-17 — Single-action dashboard and dead frontend cleanup delivered
+
+Read research/trading-dashboard-single-action-proof-2026-10-17.json. Production
+is0655eea00ab4d42cda1041b510d36301c9aff715, canonical frontend-only release
+scratch/trading-dashboard-release-20261017-v1 completed17:41:41Z/cheap post green.
+Actual public index-DADkosXW.js SHA130d399186eb288cd1ed84b37d165fedc986d9df8495c9ae1257af2b1bb47d47
+matches the tested build. Actual backend3e4edf/f612, models, native31/config
+f96a2977/release1c1c6e9b/economic evidence4d6af1bb and310protected files unchanged;
+HOST and CONTAINER read_configuration remain ADMITTED. No orders submitted.
+
+Stocks has one numeric Action, separate Size/Timing, exactly BUY/SELL/TRIM/HOLD
+filters, one expired-plan notice, no grade/holdings fallback. Changes uses numeric
+proposals including blocked BUY0/reasons; recorded paper sizes remain in Details.
+The numeric model plan leads the ticker; unchanged supporting assessments fold
+under existing All the evidence. Removed3proven unmounted views, unreachable
+manual-entry form/declaration-only helpers and stale test fixtures. Active personal
+tracker/shared helpers/API routes/history/research/failed evidence are retained.
+The audit is trading-frontend scoped, not a whole-repository junk-free claim.
+
+64distinct compiled controlled workflows passed1+58+5/0skip, type/build and33
+diagrams/page check passed. Preserve broadv3's original58pass/1failed stale
+chart-grade assertion and correctedv4's5passes, v2 ESM collection failure,
+diagramv1/v2 startup failures and pre-mutation release-controller serialization
+failure. No guard was weakened. ROOT independently inspected actual artifacts,
+resources, native31/preservation and source-bound public authenticated browser:
+four filters, search/Portfolio8/NTAP78, Changes0, Details and closed/open ticker
+assessment disclosure passed; console warning/error query returned[]. Screenshots
+were emitted in the session. No repeat completed release/gates for documentation.
+
+Exact main integration8809d0a1dcc5e8fc6f4abc9a0c80984a5405e7e0 separately passed
+new type/build and15complete controlled model-action/strategy workflows/0skip
+22.758s; source106files unchanged, private network-none frontend-only fixture.
+Main retains its pending historical quantities/source choices and valid BUY3
+fixture. This main tree is NOT deployed and historical publication stays CLOSED.
+
+Current numeric plan is still expired/latest decisionOct13; the browser showed
+dash action/size/timing rather than inventing new funded orders. This frontend
+delivery does not prove full training/action/quantity consistency, fresh ordinary
+or actual learned intraday/fill/UI acceptance. Original retrospective is COMPLETE
+with original timing FAILED; audit/corrected-chain/publication boundaries remain.
+Keep heartbeat ACTIVE and quiet on unchanged/nonactionable state. Diagram impact:
+NONE — unmounted frontend removal and existing disclosures, no relationship change.
+
+## 2026-10-17 — Completed native paper load/save capacity verified separately
+
+ROOT reviewed exact runner52b57594/controller12a06aac and actual35b3a062/f612
+probe in scratch/native-full-paper-capacity-20261017-v1. Retained probe-proof
+983fea806279f01ccadf5e84df29d458784613b143081d0ce96c3d4b085c2d19 and runtime-binding
+501a8ecaf7fc1b4e83b307784c636de1da067e10637b4c0deab53a41cf0e5f98 bind UID1000/
+networknone/RO/1CPU/4GiB RAM=total swap/tmp64MiB, exact private readability overlay,
+1655source files/native31unchanged. Native load/empty settlement fold/save preserves
+all fields,1916history rows/3910journal/pending2 and raw832110254B/f334e3a5 exactly,
+including original145046history NaNs. Elapsed20.246s/peak2211972KiB; this observed
+peak exceeds the earlier2GiB fixture budget, without a repeated2GiB/OOM trial.
+Separate physical reserve1731329372B is not native temporary/CAS extent proof.
+No model/planner/provider/snapshot/replay/new account was run. Full genuine planning,
+model/cache/corporate-action/CAS capacity and original numerical audit remain open.
+Preserve native copy/reserve only on Spark; no bulk Mac copies or installs.
+
 ## 2026-10-17 — Completed native history capacity measured; live identity unchanged
 
 Read research/completed-history-capacity-proof-2026-10-17.json. ROOT reviewed
 scannerdc7cbd22 and summaries385f316c/582737c4, preserved without rescan in
 scratch/completed-history-capacity-evidence-20261017-v1. Physical original832110254B
-SH Af334e3a5 (concatenate: f334e3a5c691fb4dbcc8ea4e7236f395eb5e26e34bae2f1fd4fac64fc5935130)
+SHA f334e3a5c691fb4dbcc8ea4e7236f395eb5e26e34bae2f1fd4fac64fc5935130
 contains1916history rows829262224B/max681694B,3910journal rows2639183B/pending2.
 145046bareNaNs are allhistory. Scanner used14904KiB RSS/30.22s/stablefileidentity;
 native indent framing only, NOT strictJSON/economic admission. Keep initialrow.

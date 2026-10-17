@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-10-17 — Remove redundant trading views and show one strategy action
+
+The live Stocks table now shows one numeric strategy Action, separate Size and
+Timing, and exactly BUY/SELL/TRIM/HOLD filter choices. A missing or expired plan
+is explained once, without turning chart judgments, grades or absent paper orders
+into funded actions. Supporting assessments and recorded execution details remain
+available through the existing disclosures. Three unmounted views, unreachable
+manual-entry code and obsolete fixtures were removed; shared helpers, the personal
+tracker and all backend/history paths were preserved.
+
+Production0655eea0 passed64distinct controlled browser workflows, type/build and
+33diagram checks, canonical frontend-only deploy/cheap post, and an authenticated
+public browser session on exact bundle130d3991 with no console warnings/errors.
+All310protected files and backend/model/native31/config identities were unchanged.
+The original broad58pass/1failed stale assertion and all harness/controller startup
+failures remain recorded. Main integration8809d0a1 separately passed15complete
+controlled workflows/type/build; pending historical main was not deployed.
+Read research/trading-dashboard-single-action-proof-2026-10-17.json. The current
+numeric plan remains expired/latestOct13; fresh numeric/ordinary/intraday/fill
+acceptance and historical publication are separate unfinished boundaries.
+
 ## 2026-10-17 — Reconstruct the original nightly pre-plan state without execution
 
 A new private audit primitive derives pre-plan controls from the previous
