@@ -1,0 +1,76 @@
+{
+  "status": "VERIFIED_PRIVATE_COMPLETE_INPUT_BYTE_AUTHENTICATOR_ONLY",
+  "parent_checkpoint": "1364f5094f31b78dbe1a00ab3e0e40eb558a4ea6",
+  "scope": "New separate stdlib-only helper authenticates every input_sha256 and all original source-manifest files twice, using externally pinned completion/source-manifest/original Docker execution receipt. No array interpretation, numerical inference, provider, broker, sender, replay, producer, publication or CLI wiring.",
+  "source_sha256": {
+    "backend/market/live_model_history_input_auth.py": "a10e238bced4685f493f69f6d380126e3415b037334f8fe3aa6fb80458887c6a",
+    "backend/tests/test_live_model_history_input_auth.py": "8998f1139906de9deececddfefa9c533e1467f3f0f6a0d689cf9b2bd8bd8f653"
+  },
+  "admission": {
+    "external_pins": "Frozen Pins requires exact SHA256 for all three receipts plus an explicit original-full-27471/2431 or distinct complete-private-v10/2428 profile. The full profile has NOT been exercised against the active original output.",
+    "revision_limit": "The external manifest pin and actual file hashes authenticate bytes. declared_source_revision is explicit provenance; source_revision_authenticated_by_git remains false. No Git object or absent full-run execution receipt is invented.",
+    "metadata": "Strict bounded reads before allocation, duplicate-member/nonfinite/exponent-overflow rejection, immutable external pins, regular files and stable descriptor/path identities.",
+    "inputs": "Every declared input and source is mandatory, including unused legacy arrays. Missing files, null/MISSING sentinels, corrupt bytes, writable/unmapped mounts, noncanonical paths and symlink escapes fail. No allow-missing or alias-substitution flag exists.",
+    "streaming": "1MiB digest chunks; full before/after passes compare exact file and namespace-symlink identities. No np.load or financial/model imports.",
+    "symlink_diagnosis": "An initial HOST-only metadata/stat check reported146 SIP aliases missing. Exact original namespace inspection corrected this: frozen market/bars_15m_sip is the original symlink -> /original/bars_15m_sip, and the pinned Docker receipt supplies that read-only mount. The helper reconstructs readlink/lstat chains within that receipt namespace, rejects cycles/unknown/writable escapes and host-root symlinks, and binds final bytes to original completion hashes. No original receipt or file was rewritten."
+  },
+  "native_validation": {
+    "root": "/home/animallya96/scratch/historical-input-auth-validation-20261017-v3",
+    "passed": 31,
+    "skipped": 0,
+    "seconds": 2.65,
+    "tests_sha256": "78494fb18788df314b19685e60a174b6f2cee0f8e7812f3d0c6bae9a173f3d3c",
+    "ruff": "PASS",
+    "format": "PASS",
+    "lint_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "format_sha256": "3bc53bf3e981a98a34a852e175bf9b77af841edea74fca595d9aedcbaf9a4938",
+    "container": "a9dd08f4fe174400281bd474ea0fe14cace10764d9fab45b1115e92ebd80fd14",
+    "container_inspect_sha256": "b68ff695cc818f5f1bf599dd8b739a70bb2a2cc08f5973309390c3160cba9c99",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "isolation": "network none; readonly root;1CPU;2GiB; bounded tmpfs; no original input mounts; pytest runner only",
+    "coverage": "All-source/all-unused-byte inclusion, full/bounded profile distinction, source corruption, missing/corrupt/null input, original namespace symlink positive case and remap/cycle/escape failures, host-root symlink rejection, strict actual completion decoder, pre-open metadata bound, fixed-size binary reads, concurrent file mutation, and no numerical imports.",
+    "preserved_attempts": "v1:28 tests passed. v2:31 tests passed with7 test-style Ruff findings; corrected only test code, helper unchanged. Initial formatter attempt in exact e0 failed because Ruff is absent; tooling-only formatter/linter used original136 image, and all actual tests/genuine byte checks used exact e0. All private roots and named containers retained."
+  },
+  "genuine_complete_v10": {
+    "root": "/home/animallya96/scratch/historical-input-auth-bounded-20261017-v1",
+    "proof_sha256": "90e9b3a970f411ef03a4872658f90c0db98e1efd3a9d75e654a16c73db6c548c",
+    "status": "INPUT_BYTES_AUTHENTICATED_ONLY",
+    "completion_sha256": "dd50e9d2d5e1ab9c11e11cfaa9d29c15c077910337ff421ce431359941b57a5e",
+    "source_manifest_sha256": "1d1a8372ba0131b15e8e19e034e7201fbcf07cdc58d05dcc4f7b27dec465560f",
+    "execution_receipt_sha256": "f0a110c2f80af87f7b02c482ed639fcecd0d83c59870aca84a5a25c95d62b43e",
+    "source_files": 2428,
+    "all_completion_inputs": 443,
+    "previously_unused_inputs_included": true,
+    "bytes_per_pass": 399420200,
+    "passes": 2,
+    "runner_sha256": "c2bf634daea3f7f6be10df01239b2eba0c0b2cbc1c5cef0629328e53a86e1f8f",
+    "launcher_sha256": "236825c5cd22ee3b474f4da59e5a40246c46cd0b28c0e560e6e31e56751d67c1",
+    "command_sha256": "9a181db3ebcd8caf2652f64f473a866d34ae688b6f819daa83d4b6cddb924130",
+    "container": "9b2186c667f4a9a9b9f4950b84ca46afda999e71490b6abe7b14c90b772d4a54",
+    "container_inspect_sha256": "5a32d48675a2beb8b1dff1359ae8b2bb723037b474ad30e57857ee972a057e0f",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "started_at": "2026-10-17T14:30:23.295630945Z",
+    "finished_at": "2026-10-17T14:30:26.185799878Z",
+    "exit": 0,
+    "oom": false,
+    "isolation": "network none; readonly root;1CPU;2GiB; all original receipt-derived host roots mounted readonly; only new exclusive proof root writable",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "models_or_policies_invoked": false
+  },
+  "preservation": {
+    "all_31_guarded_source_hashes_unchanged": true,
+    "source_baseline": "docs/research/historical-numeric-merge-source-review-PROPOSED-2026-10-17.json:source_sha256",
+    "old_stream_helper_and_proofs_unchanged": true,
+    "active_original_full_output_read": false,
+    "original_run_changed_or_restarted": false,
+    "runtime_or_account_or_models_changed": false,
+    "diagram_impact": "NONE: separate private byte authenticator; no caller, service, endpoint or architectural relationship changed"
+  },
+  "limits": {
+    "full_original_input_byte_authentication": "UNVERIFIED until original COMPLETE and externally pinned receipt review",
+    "current_live_timing_parity": "FAILED",
+    "full_model_action_acceptance": "UNVERIFIED",
+    "publication": "CLOSED",
+    "acceptance_scope": "Byte identity and unchanged filesystem/namespace evidence only; no source semantics, causal/model correctness, economic quality, history/fill or projected94-payload acceptance claim"
+  }
+}
