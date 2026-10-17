@@ -331,4 +331,40 @@ def test_no_numerical_imports():
         if isinstance(node, (ast.Import, ast.ImportFrom))
         for alias in (node.names if isinstance(node, ast.Import) else [None])
     }
-    assert roots <= {"json", "math", "os", "stat", "dataclasses", "hashlib", "pathlib"}
+    assert roots <= {
+        "json",
+        "math",
+        "os",
+        "stat",
+        "dataclasses",
+        "hashlib",
+        "pathlib",
+        "backend",
+    }
+    internal = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ImportFrom) and node.module.startswith("backend")
+    ]
+    assert len(internal) == 1
+    assert internal[0].module == "backend.market"
+    assert [name.name for name in internal[0].names] == ["original_history_json"]
+    helper = ast.parse(Path(auth.streamed.__file__).read_text())
+    pure_roots = {
+        (node.module if isinstance(node, ast.ImportFrom) else alias.name).split(".")[0]
+        for node in ast.walk(helper)
+        if isinstance(node, (ast.Import, ast.ImportFrom))
+        for alias in (node.names if isinstance(node, ast.Import) else [None])
+    }
+    assert pure_roots <= {
+        "gzip",
+        "io",
+        "json",
+        "math",
+        "os",
+        "stat",
+        "dataclasses",
+        "hashlib",
+        "pathlib",
+        "tempfile",
+    }

@@ -5,6 +5,7 @@ import io
 import json
 import os
 import stat
+import tempfile
 from copy import deepcopy
 from dataclasses import asdict, dataclass
 from datetime import timedelta
@@ -31,6 +32,7 @@ from backend.market import (
 from backend.market import live_model_history_nightly_audit as controls
 from backend.market import live_model_history_nightly_model as numerical
 from backend.market import live_model_history_pending_audit as pending
+from backend.market import original_history_json as streamed
 from backend.market.live_model_history import FrozenCurrentGradePolicy
 from backend.market.live_model_history_binding import (
     REVIEW_SHA256,
@@ -60,11 +62,7 @@ ORIGINAL_SOURCE_REVIEWS = (
 
 # Hash the complete JSON representation without treating approximate shares as equal.
 def digest(value):
-    return sha256(
-        json.dumps(
-            numerical.serialized(value), sort_keys=True, allow_nan=False
-        ).encode()
-    ).hexdigest()
+    return streamed.digest(numerical.serialized(value))
 
 
 # Validate an external content identity without accepting coerced digest values.
@@ -239,6 +237,7 @@ class InitialReceipts:
 class OriginalArchives:
     root: Path
     completion_raw: bytes
+    completion_sha256: str
     completion: dict
     initial_sha256: str
     manifest_path: Path
@@ -248,24 +247,39 @@ class OriginalArchives:
     source_root: Path
     _consumed_inputs: dict
     unused_inputs: int
+    scratch: Path
 
     # Bind the completed account, initial state and original source manifest externally.
     def __init__(
-        self, root, completion_sha256, initial_sha256, manifest, manifest_sha256
+        self,
+        root,
+        completion_sha256,
+        initial_sha256,
+        manifest,
+        manifest_sha256,
+        *,
+        scratch=None,
     ):
         root = Path(root)
-        completion_raw = pinned(
-            root / "completion.json", completion_sha256, max_bytes=MAX_STATE_BYTES
+        if scratch is None:
+            scratch = Path(tempfile.mkdtemp(prefix="original-audit-history-"))
+        else:
+            scratch = Path(scratch)
+            scratch.mkdir(mode=0o700, parents=True, exist_ok=False)
+        completion = streamed.read(
+            root / "completion.json", completion_sha256, directory=scratch
         )
-        completion = strict_json(completion_raw)
         require(
             completion["status"] == "COMPLETED_UNVERIFIED_CURRENT_MODEL_ACCOUNT",
             "Genuine completed original account required",
         )
-        ending_state = digest(completion.pop("paper_state"))
+        ending = completion.pop("paper_state")
+        ending_state = digest(ending)
+        streamed.release(ending)
         values = {
             "root": root,
-            "completion_raw": completion_raw,
+            "completion_raw": None,
+            "completion_sha256": completion_sha256,
             "completion": _freeze(completion),
             "initial_sha256": initial_sha256,
             "manifest_path": Path(manifest),
@@ -275,6 +289,7 @@ class OriginalArchives:
             "source_root": Path(__file__).resolve().parents[2],
             "_consumed_inputs": {},
             "unused_inputs": 0,
+            "scratch": scratch,
         }
         for name, value in values.items():
             object.__setattr__(self, name, value)
@@ -351,25 +366,28 @@ class OriginalArchives:
                 and instant(name + "T00:00:00+00:00").date().isoformat() == name,
                 "Exact original stream session required",
             )
-            raw = pinned(
-                self.root / "sessions" / (name + ".json.gz"),
-                record["sha256"],
-                max_bytes=pending.MAX_COMPRESSED_BYTES,
+            path = self.root / "sessions" / (name + ".json.gz")
+            require(
+                path.stat().st_size <= pending.MAX_COMPRESSED_BYTES,
+                "Original stream archive too large",
             )
-            value = archive_value(raw)
+            value = streamed.read(
+                path, record["sha256"], compressed=True, directory=self.scratch
+            )
             require(value["session"] == name, "Original stream session differs")
             evidence = pending.OriginalProxyEvidence(
-                raw,
+                streamed.ArchiveRef(path, record["sha256"]),
                 record["sha256"],
                 {name: self.sources[name] for name in pending.ORIGINAL_SOURCES},
             )
-            yield value, evidence
+            try:
+                yield value, evidence
+            finally:
+                streamed.release(value)
 
     # Recheck immutable source and account selectors without rewriting original files.
     def unchanged(self):
-        authenticate_file(
-            self.root / "completion.json", sha256(self.completion_raw).hexdigest()
-        )
+        authenticate_file(self.root / "completion.json", self.completion_sha256)
         authenticate_file(self.root / "initial.json.gz", self.initial_sha256)
         authenticate_file(self.manifest_path, self.manifest_sha256)
         for path, expected in self._consumed_inputs.items():
@@ -506,6 +524,7 @@ class StreamAudit:
             {},
             ReceiptLedger(),
         )
+        self.history = streamed.History(archives.scratch / "derived-history")
         self.cash, self.held, self.basis, self.dividends, self.seen = (
             100000,
             {},
@@ -630,10 +649,18 @@ class StreamAudit:
     def nightly(self, value, day, intraday, observed, *, initial=False):
         session, at = value["session"], value["nightly"]["at"]
         original_previous = self.state
-        prior_hash = digest(asdict(original_previous))
+        history = getattr(self, "history", None)
+        prior_hash = digest(self.state_value())
         if observed["problem"] is not None:
             pending.compare_unavailable(
-                value, original_previous, intraday, observed, self.held, session, at
+                value,
+                original_previous,
+                intraday,
+                observed,
+                self.held,
+                session,
+                at,
+                history=history,
             )
             require(
                 not value["attempts"],
@@ -693,6 +720,7 @@ class StreamAudit:
                 report=report,
                 started=self.completion["actual_started_at"],
                 verified_at=self.verified_at,
+                history=history,
             )
             for row in planned:
                 cid = row["client_order_id"]
@@ -708,16 +736,25 @@ class StreamAudit:
                 "prior_state_sha256": prior_hash,
                 "session": session,
                 "branch": mode["path"],
-                "derived_state_sha256": digest(asdict(self.state)),
+                "derived_state_sha256": digest(self.state_value()),
                 "account_sha256": digest(observed),
             }
         )
         require(
             len(json.dumps(numerical.serialized(asdict(self.state))).encode())
-            <= MAX_STATE_BYTES,
+            <= (MAX_STATE_BYTES if history is None else streamed.CONTROL_BYTES),
             "UNRECONSTRUCTIBLE_DERIVED_STATE_SIZE",
         )
         return mode
+
+    # Assemble complete independent state using immutable external row references.
+    def state_value(self):
+        value = asdict(self.state)
+        history = getattr(self, "history", None)
+        if history is not None:
+            require(not value["history"], "Full history entered native control state")
+            value["history"] = history.view()
+        return value
 
     # Recompute the real initial prior-close plan from an empty independent state.
     def initial(self, *, receipts=None):
@@ -841,7 +878,7 @@ class StreamAudit:
         for value, evidence in self.archives.sessions():
             self.step(value, evidence)
         require(
-            digest(asdict(self.state)) == self.archives.ending_state,
+            digest(self.state_value()) == self.archives.ending_state,
             "Complete final independently derived state differs",
         )
         require(
@@ -857,7 +894,7 @@ class StreamAudit:
             "status": "VERIFIED_STREAMED_ORIGINAL_NIGHTLY_AND_RECEIPT_CHECKS_ONLY",
             "counts": self.counts,
             "state_lineage_sha256": self.chain,
-            "final_derived_state_sha256": digest(asdict(self.state)),
+            "final_derived_state_sha256": digest(self.state_value()),
             "current_live_timing_parity": "FAILED_SEPARATE_ORIGINAL_PATH_CONTRACT",
             "historical_publication_authorized": False,
             "publication_barrier": "CLOSED",

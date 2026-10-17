@@ -1,0 +1,107 @@
+{
+  "schema": "original-streamed-history-proof/1",
+  "status": "VERIFIED_SYNTHETIC_PARSER_AND_AFFECTED_LEGACY_ONLY",
+  "starting_revision": "e61dcf1338ce1e3895bd4d983165fce7c9bf8d84",
+  "branch": "codex/original-audit-streamed-history-20261017",
+  "source_sha256": {
+    "backend/market/original_history_json.py": "daddc75ed4a026b2e9f80d85dd16b2a8b14a9d8fa7699ffcce1a5827a0442f7f",
+    "backend/cli/audit_original_live_model_history.py": "6c8891556387e268be0f3190fbba5163a148a732d2214225a88b595421b4251c",
+    "backend/market/live_model_history_input_auth.py": "4ae4ccd75011242fe9b2541cf355b51c6b7332fdcab6d5fc6ef0ad4edfd725e0",
+    "backend/market/live_model_history_stream_audit.py": "1d5b0097a8fb3ab7685a1c6f449424822f7604d5b68a894ef9d41c712b6e08be",
+    "backend/market/live_model_history_pending_audit.py": "74e7d9800bf1bdeb51655f09ae2846bfb0dbbcc67afdcad705405a849eb0cf02",
+    "backend/market/live_model_history_nightly_model.py": "ae35feda683debb13e83bbcd9d5c75a35b71b10b1417d571cc7c3fcdd3f3cde9",
+    "backend/tests/test_original_history_json.py": "5ed6e00d11145347337f93f856e8cd8e0aa78a2c180b0ce8653b0c3b61497af6",
+    "backend/tests/test_live_model_history_input_auth.py": "a622895382d852db8c9ca8c4e09bff2d61f4f60deff8f980119ea32143e4a30a",
+    "backend/tests/test_live_model_history_stream_audit.py": "0612a8c1f93f37ab2ec8e29d914933ca0a8ccddece01f2c580fa3c6e8cf4f00c",
+    "backend/tests/test_original_live_model_history_entrypoint.py": "9c1a500fa58bef058a065e0e2e7a6489a60c156733d2cc69cf603711ecd28c85"
+  },
+  "design": {
+    "caps": "64KiB source reads; 1MiB individual rows; 16MiB cumulative controls; depth128; complete1916-row profile; processed UTF8 bytes832110254, not resident allocation",
+    "strictness": "Stable regular-file descriptors and external SHA before/after, every nested duplicate/overflow/framing check, gzip full EOF/CRC; discarded history still parsed strictly",
+    "history_bridge": "Only the private native control working copy omits history. Independent history starts empty and records the recomputed initial and each saved-night row, preserving native same-session replacement/order. Every ordered saved row and the full canonical state/lineage SHA remain compared. Initial or saved controls never seed the ledger.",
+    "native_consumers": "pure_plan -> nightly_plan/GradeLed or event planner, controls.before_plan -> settle/apply_settlements, pending fold; these consume financial/control fields, not display-history values. Native snapshot/load/save and actual sender are not invoked by this audit.",
+    "physical_projection": "Externally pinned physical JSON alone permits writer NaN/Infinity literals to map to null for logical comparison; overflow and other malformed syntax still reject. Original physical bytes remain unchanged.",
+    "external_full_pins": "Completion373782589B/b9ad0b6c86b287f3557c635a5fca17703adc48a30a75470256084af911c8a3dd; physical832110254B/f334e3a5c691fb4dbcc8ea4e7236f395eb5e26e34bae2f1fd4fac64fc5935130. Neither file was parsed in this checkpoint."
+  },
+  "runtime": {
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "namespace": "Frozen N2/ad44 source map99e62ab9f8b02bc315ce59b81f8b461ae5c988e275cdf09cacf2d36b1025f8ab, distinct from later serving3b72/f612 mapbfbcb6",
+    "isolation": "UID1000:1000/networknone/readonly/1CPU/RAM=swap512MiB parser or2GiB composition/tmp64MiB; sole fresh privateout writable; no original/data/model/socket mounts",
+    "retained_source": "/home/animallya96/scratch/original-history-entrypoint-validation-20261017-v7/source",
+    "source_clone_proofs": {
+      "/home/animallya96/scratch/original-streamed-history-source-20261017-v1/source-preparation.json": "eac3ccb975d12fddd94f00c9ecf9893ebe02daa0fb9892b8ef52a4eb53da6fa3",
+      "/home/animallya96/scratch/original-streamed-history-legacy-source-20261017-v1/source-preparation.json": "6803dce3d8403fe1191a8ef859b2f2a0050dd3db809f09f50fe4ec746019a1a8"
+    },
+    "runner": "/tmp/validate_original_streamed_history_20261017.py",
+    "runner_final_sha256": "f418489290ea581ccc3b35cfa250814f6f44a3727fd8e15b5988e0014fb02fc0",
+    "controller_final_sha256": "0c43191940be25ab4dcfc503035029614bc60c7ea14cb6b7a7ebed910b8bf4a2",
+    "genuine_guards": "Audit, context loader and artifact restores raise; legacy feature arithmetic permits only exact synthetic400-row AAA/BBB/SPY/QQQ prices/grades and constant NumericHead baseline0.01 without trees"
+  },
+  "evidence": {
+    "root_prefix": "/home/animallya96/scratch/",
+    "red": {
+      "root": "original-streamed-history-red-20261017-v1",
+      "container": "c4610a609594be23184e6d7322d770de9c9037a6a0447e6bd176c93195e72b1a",
+      "result": "Two intended call failures reproduced, no setup/collection failure; pytest1, expected-red wrapper0",
+      "proof_sha256": "9d464a1b27032ed584940797b3410c75c09c506f9f5b6b1b56739b7b47ea10b5"
+    },
+    "pure_first": {
+      "root": "original-streamed-history-pure-20261017-v1",
+      "container": "96f200dc1262a3d47c05fcede4a8d843b62057d90dbbbfda2b571591f5e13e17",
+      "result": "38passed2failed; both malformed trueX inputs correctly raised ValueError Extra data, absent from expected-message pattern",
+      "proof_sha256": "23fac4ced6d10f6aca86eba76c3a28dceccc247ad2dfd610ec881b3ca4916ee7"
+    },
+    "pure_correction": {
+      "root": "original-streamed-history-pure-correction-20261017-v1",
+      "container": "9d691986eb8a438e6a70cf9240e7993626120545f86aca570066fbf2599c7307",
+      "result": "Only corrected2 trueX cases passed; prior38 not rerun; distinct parser coverage40",
+      "proof_sha256": "b07fcdab537a5ffa55fef8e61c9e429a2ae01fa6f1cb0be2474e9292cf0c452f"
+    },
+    "composition_subset": {
+      "root": "original-streamed-history-composition-20261017-v1",
+      "container": "c37a20f60a69ed75fb7da0e2507c96b4ca71988ef38dbbe1edc57e55effc8a93",
+      "result": "32passed0skip; these cases overlap legacy196 and are not added to its count",
+      "proof_sha256": "9cd23ed26db0cbcc3a4eaa1a7a47efb9239c8c8d3150222d01db836c101e15ec"
+    },
+    "legacy_setup_failure": {
+      "root": "original-streamed-history-legacy-full-20261017-v1",
+      "container": "63917a19991600b74548a6224f5e3d5a840059ce8caa555e6ea1bb8fa7f40c29",
+      "result": "Before-Python EROFS creating absent canonical test mountpoint; State.created/ExitCode128, no tests or proof.json",
+      "inspect_sha256": "1ff4099c4846949d4ebcca98eb35fecf555b0547000972c9275db57103abd4e9"
+    },
+    "legacy_full": {
+      "root": "original-streamed-history-legacy-full-20261017-v2",
+      "container": "36dcad697d0002464a8db8cbb5e7e1aeae684e02ad3c11554a586f884fad93c1",
+      "result": "196passed0skip, 6.472271s,184208KiB peak RSS;57source pins before=after; synthetic features14/predict11 only",
+      "proof_sha256": "d9fc894ab691494f048d555700ce552492a495e0f6924e6dc053a4f5934919e3",
+      "inspect_sha256": "2fd8229cf0802ebe8c21211e8dfe9297a3bb7a4413e6c04f009d546a8bec404e"
+    },
+    "small_diagnostic": {
+      "root": "original-streamed-history-8m-diagnostic-20261017-v1",
+      "container": "ae3b0d772d0e5393a17901198ee97fe7336fb9d870ba6d93fc87e2bd6d5df58f",
+      "result": "8388608B/1916rows/largest4284B; parse2.865191s,total3.058976s,RSS23380KiB;48source pins unchanged; diagnostic only",
+      "proof_sha256": "ffa15a5b1c818132701107f160aaa97aed662028beaea471ae8e8689f5833495"
+    },
+    "synthetic_full_size": {
+      "root": "original-streamed-history-resource-832110254-20261017-v1",
+      "container": "a3e28c2637e9086bb110e77817c1c59c4639b51a4f89b86fa2b692bb8191b345",
+      "result": "One832110254B/1916-row synthetic case passed290.400911s,RSS39744KiB/noNumPy;52source pins unchanged; exit0/noOOM under512MiB",
+      "input_sha256": "ef98239fafa43ea8c8193522ce15a5e11c363f5d426c6c5dd9ecb17f2a6987a2",
+      "spool_bytes": 831928006,
+      "spool_sha256": "bb42e4086d053d8fe6cbdf984eecece71aa2175e8c7f1ec0e4d1f38d1ca507bb",
+      "proof_sha256": "993e6a3deb1aa83de94aacd51f3696748792f36737ae5d41f89329cef41e12b3",
+      "inspect_sha256": "13081bb482473e0f99a7c9152d3353f34c37efe16a3b7bdce820f2d47e39aec8"
+    }
+  },
+  "final_test_formatting": {
+    "executed_test_sha256": "934341029e04a93fbb160d5f4142306c7cb80bc55459b59d0f9b6976756cc9b3",
+    "final_formatted_test_sha256": "5ed6e00d11145347337f93f856e8cd8e0aa78a2c180b0ce8653b0c3b61497af6",
+    "change": "Only line wrapping/parentheses; exact ast.dump(include_attributes=False) equality verified; no repeated native tests for formatting"
+  },
+  "checks": {"ruff": "PASS", "format": "PASS", "diff": "PASS", "native31_changed": false, "original_files_parsed": false, "numerical_original_audit": "UNVERIFIED", "original_timing": "FAILED", "publication": "CLOSED"},
+  "remaining": [
+    "Actual completion/physical strict streaming intake and full ordered logical equality are not yet exercised",
+    "Synthetic plain JSON capacity does not establish worst-case16MiB controls, gzip expansion or full-session I/O/runtime feasibility",
+    "The completed-original financial/model audit remains unperformed; no profitability, current timing parity or publication claim"
+  ]
+}

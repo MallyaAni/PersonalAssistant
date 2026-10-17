@@ -16,6 +16,7 @@ from backend.agents.trading.desk import paper
 from backend.market import calendar, entry_timing
 from backend.market import live_model_history_nightly_model as numerical
 from backend.market import live_model_history_stream_audit as audit
+from backend.market import original_history_json as streamed
 from backend.market.live_model_history_receipts import ReceiptLedger
 from backend.tests.test_live_model_history_nightly_model import analytic_policy, records
 from backend.tests.test_live_model_history_pending_audit import (
@@ -777,6 +778,171 @@ def test_initial_receipts_require_independently_pinned_file(tmp_path):
     assert receipts.attempts() == [{"client_order_id": "original"}]
     with pytest.raises(ValueError, match="standalone"):
         stream_boundary().initial(receipts=[])
+
+
+# A scaled legacy aggregate limit cannot reject a correctly bounded streamed history.
+def test_streamed_completion_exceeds_legacy_aggregate_limit(tmp_path, monkeypatch):
+    monkeypatch.setattr(audit, "MAX_STATE_BYTES", 32)
+    state = {"history": [{"session": "initial", "payload": "x" * 128}]}
+    completion = {
+        "status": "COMPLETED_UNVERIFIED_CURRENT_MODEL_ACCOUNT",
+        "paper_state": state,
+    }
+    raw = json.dumps(completion).encode()
+    (tmp_path / "completion.json").write_bytes(raw)
+    manifest = tmp_path / "manifest.json"
+    manifest.write_bytes(b'{"files":{}}')
+    archives = audit.OriginalArchives(
+        tmp_path,
+        sha256(raw).hexdigest(),
+        "0" * 64,
+        manifest,
+        sha256(manifest.read_bytes()).hexdigest(),
+    )
+    assert (
+        archives.ending_state
+        == sha256(json.dumps(state, sort_keys=True).encode()).hexdigest()
+    )
+
+
+# New external history consumes the same native controls and preserves old full SHA.
+def test_streamed_history_native_controls_and_canonical_equivalence(
+    tmp_path, monkeypatch
+):
+    policy, shown = analytic_policy()
+    previous = paper.PaperState(
+        history=[
+            {"session": "2019-02-28", "written": "2026-10-17T12:30:00+00:00", "qty": 1}
+        ]
+    )
+    observed = numerical.account(
+        9000, {"AAA": 10}, {"AAA": 100}, [], records(), {"AAA": 100}
+    )
+    target, expected = planned_target(policy, shown, previous, observed)
+    stream = stream_boundary(previous)
+    stream.history = streamed.History(tmp_path / "independent-derived")
+    stream.history.record(previous.history[0])
+    stream.state.history = []
+    stream.policy, stream.reader = policy, policy.reader
+    stream.panel, stream.raw = shown.panel, SimpleNamespace(grades=None, eligible=None)
+    calls = []
+    original_plan = numerical.pure_plan
+
+    # Observe the actual native-input boundary without substituting any output.
+    def inspected_plan(report, selected, before, *args):
+        assert before.history == []
+        calls.append(numerical.serialized(asdict(before)))
+        return original_plan(report, selected, before, *args)
+
+    # Keep this synthetic report fixed rather than restoring a frozen model artifact.
+    def report(*args):
+        return shown
+
+    # Synthetic analytic readers have no genuine model feature loader.
+    def selected(*args):
+        return None
+
+    monkeypatch.setattr(numerical, "pure_plan", inspected_plan)
+    monkeypatch.setattr(audit.continuation, "close_report", report)
+    monkeypatch.setattr(stream.reader, "select", selected, raising=False)
+    monkeypatch.setattr(numerical, "prefix_model", selected)
+    path = tmp_path / "session.gz"
+    raw = gzip.compress(json.dumps(target).encode(), mtime=0)
+    path.write_bytes(raw)
+    value = streamed.read(
+        path, sha256(raw).hexdigest(), compressed=True, directory=tmp_path
+    )
+    stream.nightly(value, len(shown.panel.dates) - 1, stream.state, observed)
+    assert len(calls) == 1
+    assert stream.state.history == []
+    assert (
+        audit.digest(stream.state_value())
+        == sha256(json.dumps(expected, sort_keys=True).encode()).hexdigest()
+    )
+    assert list(stream.history.view()) == expected["history"]
+    for history in (expected["history"][1:], list(reversed(expected["history"]))):
+        changed = {**value["paper_state"], "history": history}
+        with pytest.raises(ValueError, match="history|differs"):
+            numerical.compare_state(
+                changed,
+                numerical.serialized(asdict(stream.state)),
+                "Full state",
+                history=stream.history,
+            )
+
+
+# Path-bound and byte-bound pending readers extract identical original receipt inputs.
+def test_streamed_proxy_consumed_receipts_equal_legacy_bytes(tmp_path):
+    value = {
+        "session": "2019-03-01",
+        "forecast_decisions": [{"state": "wait", "qty": 1}],
+        "observations": [],
+        "attempts": [],
+        "paper_state": {"history": [{"session": "initial"}]},
+    }
+    raw = gzip.compress(json.dumps(value).encode(), mtime=0)
+    path = tmp_path / "session.gz"
+    path.write_bytes(raw)
+    expected = sha256(raw).hexdigest()
+    old = audit.pending.OriginalProxyEvidence(
+        raw, expected, audit.pending.ORIGINAL_SOURCES
+    )
+    new = audit.pending.OriginalProxyEvidence(
+        streamed.ArchiveRef(path, expected), expected, audit.pending.ORIGINAL_SOURCES
+    )
+    assert new.records(value["session"]) == old.records(value["session"])
+    path.write_bytes(
+        gzip.compress(
+            b'{"session":"2019-03-01","paper_state":{"history":[{"x":1,"x":2}]}}'
+        )
+    )
+    with pytest.raises(ValueError, match="SHA differs"):
+        new.records(value["session"])
+
+
+# Unavailable closes preserve the entire external history without a native plan.
+def test_streamed_unavailable_preserves_full_history_and_controls(tmp_path):
+    previous = paper.PaperState()
+    history = streamed.History(tmp_path / "derived")
+    row = {"session": "2019-02-28", "written": "2026-10-17T12:00:00+00:00"}
+    history.record(row)
+    session, at = "2019-03-01", "2019-03-01T16:01:00-05:00"
+    value = {
+        "session": session,
+        "nightly": {
+            "session": session,
+            "at": at,
+            "text": "",
+            "status": "nightly_broker_unavailable",
+            "reason": "Fresh raw held mark unavailable for AAA",
+        },
+        "new_intents": [],
+        "paper_state": {**asdict(previous), "history": [row]},
+    }
+    observed = {"problem": "missing_held_close", "missing_symbols": ["AAA"]}
+    audit.pending.compare_unavailable(
+        value,
+        previous,
+        deepcopy(previous),
+        observed,
+        {"AAA": 1},
+        session,
+        at,
+        history=history,
+    )
+    assert list(history.view()) == [row]
+    value["paper_state"]["history"] = []
+    with pytest.raises(ValueError, match="history length"):
+        audit.pending.compare_unavailable(
+            value,
+            previous,
+            deepcopy(previous),
+            observed,
+            {"AAA": 1},
+            session,
+            at,
+            history=history,
+        )
 
 
 # Session quote views retain global indices while storing one readonly day of prices.

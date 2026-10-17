@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import socket
+import tempfile
 from dataclasses import fields
 from datetime import UTC, datetime
 from hashlib import sha256
@@ -16,9 +17,9 @@ from backend.agents.trading.desk import paper
 from backend.market import calendar
 from backend.market import live_model_history_audit_inputs as loader
 from backend.market import live_model_history_input_auth as byte_auth
+from backend.market import original_history_json as streamed
 from backend.market.live_model_history_receipts import require
 from backend.market.live_model_history_stream_audit import (
-    MAX_STATE_BYTES,
     InitialReceipts,
     OriginalArchives,
     StreamAudit,
@@ -38,7 +39,15 @@ PRODUCER_IMAGE = (
 FULL_ACCOUNT = (
     "/home/animallya96/scratch/live-model-history-full-20261013-v1/output/account"
 )
-SCHEMA = "original-history-audit-invocation/1"
+SCHEMA = "original-history-audit-invocation/2"
+FULL_PHYSICAL_SHA256 = (
+    "f334e3a5c691fb4dbcc8ea4e7236f395eb5e26e34bae2f1fd4fac64fc5935130"
+)
+FULL_PHYSICAL_BYTES = 832110254
+FULL_COMPLETION_BYTES = 373782589
+FULL_COMPLETION_SHA256 = (
+    "b9ad0b6c86b287f3557c635a5fca17703adc48a30a75470256084af911c8a3dd"
+)
 
 
 # Decode only an externally pinned invocation; it cannot select another model image.
@@ -50,6 +59,8 @@ def invocation(path, expected):
         "account",
         "market",
         "completion_sha256",
+        "physical_sha256",
+        "physical_bytes",
         "initial_sha256",
         "manifest",
         "manifest_sha256",
@@ -76,6 +87,21 @@ def invocation(path, expected):
         value["manifest_sha256"],
         value["execution_sha256"],
     )
+    byte_auth.digest_value(value["physical_sha256"])
+    require(
+        type(value["physical_bytes"]) is int and value["physical_bytes"] >= 0,
+        "EXTERNAL_PHYSICAL_SIZE_REQUIRED",
+    )
+    if value["profile"] == "original-full-27471":
+        require(
+            value["physical_sha256"] == FULL_PHYSICAL_SHA256
+            and value["physical_bytes"] == FULL_PHYSICAL_BYTES,
+            "EXACT_ORIGINAL_FULL_PHYSICAL_PIN_REQUIRED",
+        )
+        require(
+            value["completion_sha256"] == FULL_COMPLETION_SHA256,
+            "EXACT_ORIGINAL_FULL_COMPLETION_PIN_REQUIRED",
+        )
     for name in (
         "account",
         "market",
@@ -192,6 +218,7 @@ def source_admission(value, archives):
         "backend/market/live_model_history_nightly_audit.py",
         "backend/market/live_model_history_receipts.py",
         "backend/market/live_model_history_input_auth.py",
+        "backend/market/original_history_json.py",
         "backend/market/live_model_history_binding.py",
         "backend/market/live_policy_replay.py",
         "backend/agents/trading/desk/paper.py",
@@ -342,21 +369,34 @@ def calendar_admission(archives, profile):
 
 
 # Hash every saved session and the actual final state outside model comparison.
-def preserved_archives(archives):
+def preserved_archives(archives, physical_sha256, physical_bytes):
     result = {}
     for row in archives.completion["sessions"]:
         path = archives.root / "sessions" / (row["session"] + ".json.gz")
         result[str(path)] = authenticate_file(path, row["sha256"])
     physical = paper.state_path(archives.root / "state")
     # The pinned completion authenticates the physical final state's JSON content.
-    before = physical.stat()
-    require(before.st_size <= MAX_STATE_BYTES, "FINAL_PHYSICAL_STATE_BOUND_REQUIRED")
-    raw_sha256 = byte_auth.stream_file(physical, file_sha256(physical))["sha256"]
-    raw = pinned(physical, raw_sha256, max_bytes=MAX_STATE_BYTES)
     require(
-        digest(physical_state(raw)) == archives.ending_state,
-        "FINAL_PHYSICAL_STATE_DIFFERS_FROM_COMPLETION",
+        type(physical_bytes) is int
+        and physical_bytes >= 0
+        and physical.stat().st_size == physical_bytes,
+        "EXTERNAL_PHYSICAL_SIZE_DIFFERS",
     )
+    raw_sha256 = byte_auth.stream_file(physical, physical_sha256)["sha256"]
+    with tempfile.TemporaryDirectory(
+        prefix="physical-history-", dir=getattr(archives, "scratch", None)
+    ) as directory:
+        value = streamed.read(physical, raw_sha256, directory=directory, physical=True)
+        require(
+            type(value) is dict
+            and set(value) == {field.name for field in fields(paper.PaperState)},
+            "EXACT_ORIGINAL_PHYSICAL_STATE_SCHEMA_REQUIRED",
+        )
+        require(
+            digest(value) == archives.ending_state,
+            "FINAL_PHYSICAL_STATE_DIFFERS_FROM_COMPLETION",
+        )
+        streamed.release(value)
     result[str(physical)] = raw_sha256
     return result
 
@@ -409,17 +449,26 @@ def audit(value):
             np.__version__ == "2.5.3" and sklearn.__version__ == "1.9.1",
             "EXACT_NATIVE_NUMERIC_PACKAGES_REQUIRED",
         )
+        if value["profile"] == "original-full-27471":
+            require(
+                (Path(value["account"]) / "completion.json").stat().st_size
+                == FULL_COMPLETION_BYTES,
+                "EXACT_ORIGINAL_FULL_COMPLETION_SIZE_REQUIRED",
+            )
         archives = OriginalArchives(
             value["account"],
             value["completion_sha256"],
             value["initial_sha256"],
             value["manifest"],
             value["manifest_sha256"],
+            scratch=destination / "streamed-history",
         )
         git = source_admission(value, archives)
         producer = producer_admission(value)
         calendar_proof = calendar_admission(archives, value["profile"])
-        preserved = preserved_archives(archives)
+        preserved = preserved_archives(
+            archives, value["physical_sha256"], value["physical_bytes"]
+        )
         pins = byte_auth.Pins(
             value["profile"],
             value["completion_sha256"],
@@ -455,7 +504,10 @@ def audit(value):
             )
         numerical = stream.verify(initial_receipts=initial)
         require(
-            preserved_archives(archives) == preserved,
+            preserved_archives(
+                archives, value["physical_sha256"], value["physical_bytes"]
+            )
+            == preserved,
             "ORIGINAL_SESSION_OR_FINAL_STATE_CHANGED",
         )
         bytes_after = byte_auth.authenticate(
@@ -479,6 +531,8 @@ def audit(value):
             "producer_runtime": producer,
             "source_git_authentication": git,
             "completion_sha256": value["completion_sha256"],
+            "physical_sha256": value["physical_sha256"],
+            "physical_bytes": value["physical_bytes"],
             "initial_sha256": value["initial_sha256"],
             "source_manifest_sha256": value["manifest_sha256"],
             "execution_receipt_sha256": value["execution_sha256"],

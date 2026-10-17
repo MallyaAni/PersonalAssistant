@@ -25,6 +25,7 @@ from backend.market import (
     live_policy_replay,
 )
 from backend.market import live_model_history_nightly_audit as controls
+from backend.market import original_history_json as streamed
 from backend.market.daily_arithmetic_bridge import _hash
 from backend.market.live_model_history import FrozenCurrentGradePolicy
 from backend.market.live_model_history_receipts import instant, require
@@ -391,12 +392,52 @@ def exact_integers(actual, expected, label):
 
 # Apply the producer's JSON representation without changing numeric quantities.
 def serialized(value):
+    if isinstance(value, dict) and isinstance(value.get("history"), streamed.Rows):
+        result = serialized(
+            {name: row for name, row in value.items() if name != "history"}
+        )
+        result["history"] = value["history"]
+        return result
     return json.loads(json.dumps(live_policy_replay.plain(value), allow_nan=False))
+
+
+# Compare every control and ordered historical row with unchanged arithmetic checks.
+def compare_state(actual, expected, label, *, history=None):
+    if history is None:
+        exact_integers(actual, expected, label)
+        same(actual, expected, label)
+        return
+    require(
+        isinstance(actual, dict) and "history" in actual,
+        "Complete original state required",
+    )
+    left = {name: row for name, row in actual.items() if name != "history"}
+    right = {name: row for name, row in expected.items() if name != "history"}
+    exact_integers(left, right, label)
+    same(left, right, label)
+    saved, derived = actual["history"], history.view()
+    require(
+        isinstance(saved, (list, streamed.Rows)) and len(saved) == len(derived),
+        "Complete ordered history length differs",
+    )
+    for index, (row, wanted) in enumerate(zip(saved, derived, strict=True)):
+        exact_integers(row, wanted, label + ".history." + str(index))
+        same(row, wanted, label + ".history." + str(index))
 
 
 # Compare all saved outputs while preserving original real written clocks verbatim.
 def compare_saved(
-    value, previous, state, pending, entry, settled, *, report, started, verified_at
+    value,
+    previous,
+    state,
+    pending,
+    entry,
+    settled,
+    *,
+    report,
+    started,
+    verified_at,
+    history=None,
 ):
     saved = value["nightly"]
     require(saved["status"] == "planned", "Expected original planned night")
@@ -411,9 +452,10 @@ def compare_saved(
     require(
         instant(started) <= written_at <= verified_at, "Original written clock differs"
     )
-    if previous.history:
+    previous_history = previous.history if history is None else history.view()
+    if previous_history:
         require(
-            instant(previous.history[-1]["written"]) <= written_at,
+            instant(previous_history[-1]["written"]) <= written_at,
             "Original written history clock moved backwards",
         )
     if state.start_equity is None:
@@ -438,14 +480,21 @@ def compare_saved(
         expected_pending,
         "Independent funded intents",
     )
-    state.history = [
-        row for row in previous.history if row["session"] != entry["session"]
-    ] + [expected]
+    if history is None:
+        state.history = [
+            row for row in previous.history if row["session"] != entry["session"]
+        ] + [expected]
+    else:
+        require(
+            not previous.history and not state.history,
+            "History entered native control state",
+        )
+        history.record(expected)
     expected_state = serialized(asdict(state))
-    exact_integers(value["paper_state"], expected_state, "Nightly state")
-    same(
+    compare_state(
         value["paper_state"],
         expected_state,
         "Independent complete nightly state",
+        history=history,
     )
     return state

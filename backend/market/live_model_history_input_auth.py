@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path, PurePosixPath
 
+from backend.market import original_history_json as streamed
+
 CHUNK_BYTES = 1024 * 1024
 METADATA_BYTES = 16 * 1024 * 1024
 COMPLETION_BYTES = 256 * 1024 * 1024
@@ -265,14 +267,10 @@ def resolve_input(name, mounts):
 # Authenticate every declared input and source twice without interpreting their bytes.
 def authenticate(completion_path, manifest_path, execution_path, pins):
     require(type(pins) is Pins, "FROZEN_EXTERNAL_PINS_REQUIRED")
-    completion_raw = metadata(
-        completion_path, pins.completion_sha256, limit=COMPLETION_BYTES
-    )
+    completion = streamed.read(completion_path, pins.completion_sha256, retain=False)
     manifest_raw = metadata(manifest_path, pins.manifest_sha256)
     execution_raw = metadata(execution_path, pins.execution_sha256)
-    completion, manifest, execution = map(
-        decode, (completion_raw, manifest_raw, execution_raw)
-    )
+    manifest, execution = map(decode, (manifest_raw, execution_raw))
     revision, source_count = PROFILES[pins.profile]
     require(
         completion.get("status") == "COMPLETED_UNVERIFIED_CURRENT_MODEL_ACCOUNT",
@@ -322,11 +320,15 @@ def authenticate(completion_path, manifest_path, execution_path, pins):
             "ORIGINAL_INPUT_IDENTITY_CHANGED_BETWEEN_PASSES",
         )
     for path, expected, raw, limit in (
-        (completion_path, pins.completion_sha256, completion_raw, COMPLETION_BYTES),
         (manifest_path, pins.manifest_sha256, manifest_raw, METADATA_BYTES),
         (execution_path, pins.execution_sha256, execution_raw, METADATA_BYTES),
     ):
         require(metadata(path, expected, limit=limit) == raw, "METADATA_CHANGED")
+    require(
+        streamed.read(completion_path, pins.completion_sha256, retain=False)
+        == completion,
+        "COMPLETION_METADATA_CHANGED",
+    )
     return {
         "status": "INPUT_BYTES_AUTHENTICATED_ONLY",
         "profile": pins.profile,

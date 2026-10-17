@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-17 — Stream the completed original audit history without loading it whole
+
+The private original-only auditor now authenticates and strictly parses large
+JSON/gzip evidence with bounded rows and controls. Native planning controls carry
+an empty display history; a separate independently reconstructed ledger retains
+every ordered history row for comparison and the unchanged canonical digest.
+Physical writer NaNs have an explicitly pinned logical comparison projection;
+the physical bytes are never rewritten or used to seed an account.
+
+The native N2 image passed196 affected legacy cases/0skip and40 parser cases
+(38 original passes plus2 corrected message-pattern cases). The separate
+832110254-byte/1916-row synthetic capacity case passed in290.401s with39744KiB
+peak RSS under512MiB. Initial failures and the Docker mountpoint failure remain
+preserved. Ruff, formatting and diff checks passed; no original archive or model
+was parsed. Original timing remains FAILED and publication CLOSED. Exact source,
+runtime and scope receipts are in
+research/original-streamed-history-proof-2026-10-17.json.
+
 ## 2026-10-17 — Reconstruct the original nightly pre-plan state without execution
 
 A new private audit primitive derives pre-plan controls from the previous
