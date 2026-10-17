@@ -1,5 +1,26 @@
 # Next session
 
+## 2026-10-17 — Historical publication now structurally refuses current proofs
+
+Code checkpointb00b5160 closes only the false-acceptance boundary. The verifier
+emits `VERIFIED_HISTORICAL_LEDGER_SOURCE_AND_HOLDING_CHECKS_ONLY`; full saved
+model/timing and all94 projected payload acceptance stay UNVERIFIED, and it no
+longer projects. The production publisher authenticates the proof digest then
+unconditionally rejects before account access, projection or destination writes.
+Legacy full-verified statuses and forged success flags cannot bypass it. There
+is no placeholder timing proof schema or config/CLI approval switch. Old staging
+code exists only in pytest fixtures with private markers, with no production
+caller or CLI.
+
+VERIFIED exact candidate:102 focused checks/0skip9.64s, Ruff and format PASS.
+Actual normal/Python-O CLI refusal preserved the selected manifest/all files.
+All31 guarded runtime sources remain unchanged. Proof:
+research/historical-publication-barrier-proof-2026-10-17.json. Failed lint/cache/
+format captures remain preserved. No original account/model/data mounts were
+used in tests and no runtime, account, publication or deployment changed.
+Full historical goal remains open; root's independent timing design/prototype
+must establish a real accepted model/timing path before publishing is possible.
+
 ## 2026-10-17 — Independent historical auditor hardening; timing acceptance open
 
 Code checkpoint7e88e83c hardens only the private historical verifier/projection/
@@ -25,8 +46,8 @@ The source-only counterexamplecf289734 shows the historical completed-close
 adapter can differ from installed forward quote transport under a declared
 synthetic distribution; it does not establish actual-run divergence counts.
 The old generic VERIFIED account status remains insufficient for full-contract
-publication. A separate fail-closed status/publication barrier is proposed to
-root and must be reviewed before editing. Do not publish the bounded stage or
+publication. The later b00b5160 boundary above now structurally refuses it.
+Do not publish the bounded stage or
 claim these receipt checks prove full model/timing acceptance. The exact
 requirement-to-current-code mapping is in the serving-binding acceptance doc.
 
