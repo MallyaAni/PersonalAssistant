@@ -1371,10 +1371,9 @@ def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
                 journal[s.client_order_id][key] = value
             elif key in previous:
                 journal[s.client_order_id][key] = previous[key]
-        if s.quantity_evidence:
-            journal[s.client_order_id]["quantity_evidence"] = s.quantity_evidence
-        elif "quantity_evidence" in previous:
-            journal[s.client_order_id]["quantity_evidence"] = previous["quantity_evidence"]
+        quantity_evidence = s.quantity_evidence or previous.get("quantity_evidence")
+        if quantity_evidence is not None:
+            journal[s.client_order_id]["quantity_evidence"] = quantity_evidence
         if "execution_policy" in prior:
             journal[s.client_order_id].update(
                 {

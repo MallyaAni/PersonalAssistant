@@ -1,0 +1,40 @@
+{
+  "status": "REVIEWED_EXACT_SETTLEMENT_QUANTITY_METADATA",
+  "base_source": "ad44d536a70d5c037cb931836a3c9f48b014d84a",
+  "source_changes": {
+    "backend/agents/trading/desk/paper.py": {
+      "before_sha256": "e2eef2f0270497d9a5944212d6581b7ebf503d2675687a172e76690fcc7bc3c3",
+      "after_sha256": "a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c"
+    }
+  },
+  "other_reviewed_sources_unchanged": 30,
+  "unchanged_paper_module_ast_sha256": "fd020b3dba801a47ed7e374e469b12cbaa1390d34de92121cb66148a61a65e7f",
+  "original_settled_ast_sha256": "92e332d28c784b26a0eb11096f807fc2d9cb2e5298a0ff66563bc7a121418bbf",
+  "reviewed_changes": [
+    "Append optional broker submitted and sender quantities to settlement receipts; existing positional fields remain original",
+    "Persist each observed domain only when known, including fractional broker adjustments, without changing desired or filled quantities",
+    "Retain malformed or inconsistent metadata as an explicit observation; never infer its cause or change terminal/control behavior",
+    "Preserve prior known metadata when a later receipt omits it; do not backfill old terminal journals",
+    "Only settlement receipt class, settle, apply_settlements, two private readers and the Decimal import change in paper.py",
+    "Narrow source-admission mode requires identical 31 paths, only this exact paper digest transition and original remaining module/class AST bindings"
+  ],
+  "admission_helper_sha256": "dada1d1e2d9995263f5f3221c58726a1d991c65c5a23c3d1275c05b04f5ac729",
+  "native_candidate_proof_sha256": "beaf4c1fb6da6b7ee12c0d90a25418781704e483d05b2cd11878a809d853bdba",
+  "validation": {
+    "native_test_functions_passed": 19,
+    "skipped": 0,
+    "seconds": 0.051,
+    "ruff": "PASS",
+    "original_models_policy_risk_costs_timing": "UNCHANGED",
+    "actual_paper_history_or_order_changes": "NONE",
+    "canonical_release": "NOT_STARTED",
+    "fresh_operational_and_historical_acceptance": "UNVERIFIED"
+  },
+  "approval_bundle": {
+    "configuration_changes": ["release_receipt_sha256"],
+    "release_changes": ["source_sha256", "actual approved_at"],
+    "evidence_bytes": "MUST REMAIN EXACT ORIGINAL",
+    "archive": "Exact live predecessor config/release/evidence before activation",
+    "acceptance": "Canonical deployment plus actual HOST and CONTAINER read_configuration, exact new-image persistence path and original preservation"
+  }
+}

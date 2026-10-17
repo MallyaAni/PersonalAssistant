@@ -7,10 +7,10 @@ the native sender's recorded quantity independently of the original desired and
 actual filled shares. Missing observations remain unknown; old terminal journals
 are not backfilled. Disagreement, adjusted quantities and malformed metadata are
 retained as non-diagnostic evidence without new quantity clamps or changes to
-settlement status, pending removal or rebalance controls. Fifteen native synthetic
-checks passed, zero skipped, after the retained original failure. Exact source,
+settlement status, pending removal or rebalance controls. Nineteen native synthetic
+checks passed, zero skipped, including the narrow source-renewal guard. Exact source,
 runtime and limits: research/settlement-quantity-retention-2026-10-17.md.
-Release admission and deployment remain pending. Diagram impact: NONE (metadata
+Actual selector admission and deployment remain pending. Diagram impact: NONE (metadata
 on the existing settlement boundary).
 
 ## 2026-10-17 — Keep Stocks actions, quantities and timing on one numeric plan

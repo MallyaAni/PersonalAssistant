@@ -89,8 +89,83 @@ def committed_review(bundle, revision):
     return json.loads(raw)
 
 
-# Require exact reviewed API changes and a function-preserving source guard extension.
+# Admit only the reviewed settlement metadata while preserving every other paper node.
+def settlement_metadata_review(old, new, review):
+    paper_path = "backend/agents/trading/desk/paper.py"
+    changes = {
+        name for name in old.keys() | new.keys() if old.get(name) != new.get(name)
+    }
+    if (
+        set(old) != set(new)
+        or len(old) != 31
+        or changes != {paper_path}
+        or set(review["source_changes"]) != {paper_path}
+        or review["source_changes"][paper_path]
+        != {"before_sha256": old[paper_path], "after_sha256": new[paper_path]}
+        or type(review["other_reviewed_sources_unchanged"]) is not int
+        or review["other_reviewed_sources_unchanged"] != 30
+    ):
+        raise ValueError("Exact paper-only settlement metadata review required")
+    raw = (Path(__file__).resolve().parents[2] / paper_path).read_bytes()
+    require_hash(raw, new[paper_path])
+    tree = ast.parse(raw)
+    changed = {"Settled", "settle", "apply_settlements"}
+    added = {"_settlement_quantity", "_settlement_quantity_evidence"}
+    definitions = [
+        node
+        for node in tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+    ]
+    if any(
+        sum(node.name == name for node in definitions) != 1 for name in changed | added
+    ):
+        raise ValueError("Exact settlement metadata definitions required")
+    settled = next(node for node in definitions if node.name == "Settled")
+    fields = {"submitted_qty", "sender_qty", "quantity_evidence"}
+    appended = [
+        node
+        for node in settled.body
+        if isinstance(node, ast.AnnAssign)
+        and isinstance(node.target, ast.Name)
+        and node.target.id in fields
+    ]
+    if len(appended) != 3 or {node.target.id for node in appended} != fields:
+        raise ValueError("Exact optional settlement quantity fields required")
+    settled.body = [node for node in settled.body if node not in appended]
+    if (
+        digest(ast.dump(settled, include_attributes=False).encode())
+        != review["original_settled_ast_sha256"]
+    ):
+        raise ValueError("Original settlement fields or behavior changed")
+    decimal_imports = [
+        node
+        for node in tree.body
+        if isinstance(node, ast.ImportFrom)
+        and node.level == 0
+        and node.module == "decimal"
+        and [(name.name, name.asname) for name in node.names]
+        == [("Decimal", None), ("InvalidOperation", None)]
+    ]
+    if len(decimal_imports) != 1:
+        raise ValueError("Exact settlement numeric reader import required")
+    tree.body = [
+        node
+        for node in tree.body
+        if node not in definitions or node.name not in changed | added
+    ]
+    tree.body = [node for node in tree.body if node not in decimal_imports]
+    if (
+        digest(ast.dump(tree, include_attributes=False).encode())
+        != review["unchanged_paper_module_ast_sha256"]
+    ):
+        raise ValueError("Unreviewed paper planning or persistence change")
+
+
+# Require an exact reviewed transition without broadening the production source guard.
 def reviewed_sources(old, new, review):
+    if review["status"] == "REVIEWED_EXACT_SETTLEMENT_QUANTITY_METADATA":
+        settlement_metadata_review(old, new, review)
+        return
     changes = {
         name for name in old.keys() | new.keys() if old.get(name) != new.get(name)
     }

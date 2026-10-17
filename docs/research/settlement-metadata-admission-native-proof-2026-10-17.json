@@ -1,0 +1,39 @@
+{
+  "actual_broker_calls": 0,
+  "container_id": "8a3328e141e8a33ae36c042c034452917557a5d6aec8cc8fa1e763c1e3d4f611",
+  "deployed": false,
+  "earlier_green_proofs_unchanged": [
+    "d40a024a58e6cb626c466d2fd4448c19b9d8596c09ea0312ffdab28cb995ad94"
+  ],
+  "exit_code": 0,
+  "historical_or_fresh_operational_acceptance": false,
+  "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+  "memory_bytes": 536870912,
+  "model_inferences": 0,
+  "nano_cpus": 1000000000,
+  "native_report": "test_adjusted_and_disagreeing_quantities_are_evidence_not_guards (test_paper_settlement_quantities.SettlementQuantityTests.test_adjusted_and_disagreeing_quantities_are_evidence_not_guards) ... ok\ntest_fill_exceeds_observed_broker_quantity_is_not_truncated (test_paper_settlement_quantities.SettlementQuantityTests.test_fill_exceeds_observed_broker_quantity_is_not_truncated) ... ok\ntest_fractional_broker_quantity_is_not_truncated (test_paper_settlement_quantities.SettlementQuantityTests.test_fractional_broker_quantity_is_not_truncated) ... ok\ntest_invalid_quantity_metadata_is_not_promoted (test_paper_settlement_quantities.SettlementQuantityTests.test_invalid_quantity_metadata_is_not_promoted) ... ok\ntest_later_partial_receipt_omitting_metadata_keeps_known_values (test_paper_settlement_quantities.SettlementQuantityTests.test_later_partial_receipt_omitting_metadata_keeps_known_values) ... ok\ntest_missing_broker_receipt_keeps_sender_observation_only (test_paper_settlement_quantities.SettlementQuantityTests.test_missing_broker_receipt_keeps_sender_observation_only) ... ok\ntest_missing_domains_are_not_inferred (test_paper_settlement_quantities.SettlementQuantityTests.test_missing_domains_are_not_inferred) ... ok\ntest_old_journal_and_duplicate_fold_are_unchanged (test_paper_settlement_quantities.SettlementQuantityTests.test_old_journal_and_duplicate_fold_are_unchanged) ... ok\ntest_original_positional_settled_construction_remains_compatible (test_paper_settlement_quantities.SettlementQuantityTests.test_original_positional_settled_construction_remains_compatible) ... ok\ntest_partial_buy_and_expired_zero_keep_independent_quantities (test_paper_settlement_quantities.SettlementQuantityTests.test_partial_buy_and_expired_zero_keep_independent_quantities) ... ok\ntest_pending_replace_retains_pending_and_observed_domains (test_paper_settlement_quantities.SettlementQuantityTests.test_pending_replace_retains_pending_and_observed_domains) ... ok\ntest_planned_order_schema_unchanged_and_settled_keywords_supported (test_paper_settlement_quantities.SettlementQuantityTests.test_planned_order_schema_unchanged_and_settled_keywords_supported) ... ok\ntest_terminal_capped_sell_survives_pending_removal (test_paper_settlement_quantities.SettlementQuantityTests.test_terminal_capped_sell_survives_pending_removal) ... ok\ntest_terminal_partial_preserves_rebalance_controls (test_paper_settlement_quantities.SettlementQuantityTests.test_terminal_partial_preserves_rebalance_controls) ... ok\ntest_unrepresentable_quantity_remains_unknown_with_evidence (test_paper_settlement_quantities.SettlementQuantityTests.test_unrepresentable_quantity_remains_unknown_with_evidence) ... ok\ntest_exact_metadata_transition_is_admitted (test_settlement_release_admission.SettlementAdmissionTests.test_exact_metadata_transition_is_admitted) ... ok\ntest_other_source_changes_and_map_membership_are_rejected (test_settlement_release_admission.SettlementAdmissionTests.test_other_source_changes_and_map_membership_are_rejected) ... ok\ntest_review_corruptions_are_rejected (test_settlement_release_admission.SettlementAdmissionTests.test_review_corruptions_are_rejected) ... ok\ntest_unrelated_paper_logic_changes_are_rejected (test_settlement_release_admission.SettlementAdmissionTests.test_unrelated_paper_logic_changes_are_rejected) ... ok\n\n----------------------------------------------------------------------\nRan 19 tests in 0.051s\n\nOK\n",
+  "network": "none",
+  "observed_at": "2026-10-17T13:46:18.583068+00:00",
+  "passed": 19,
+  "preserved_red_roots": [
+    "settlement-quantity-red-20261017-v1",
+    "settlement-admission-red-20261017-v1"
+  ],
+  "readonly": true,
+  "root_changes_after_first_candidate": "Dependency-free tests use Ruff-compliant assertions; metadata carry-forward simplified without changing its result; narrow paper-only approval added",
+  "seconds": 0.051,
+  "skipped": 0,
+  "source_overlays": [
+    "/app/backend/agents/trading/desk/paper.py",
+    "/app/backend/cli/market_release_admission.py"
+  ],
+  "source_sha256": {
+    "market_release_admission.py": "dada1d1e2d9995263f5f3221c58726a1d991c65c5a23c3d1275c05b04f5ac729",
+    "paper.py": "a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c",
+    "test_paper_settlement_quantities.py": "869574680d8f005f56c3080fe91597150199e8fa5cab02c0e893641026c60a7b",
+    "test_settlement_release_admission.py": "31b6b857d41c9f42cbf3156f001b76fee2bd53651826256c474765011a9b1936"
+  },
+  "status": "VERIFIED_NATIVE_METADATA_PERSISTENCE_AND_NARROW_SOURCE_ADMISSION_CANDIDATE",
+  "stderr_sha256": "039c3f314914b67e627984f9fcfef3210d134afe67f7329891a103d2faa2a796",
+  "test_functions": 19
+}
