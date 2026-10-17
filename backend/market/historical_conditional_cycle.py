@@ -409,6 +409,7 @@ class Cycle:
                 }
             }
         }
+        distributions = deepcopy(distributions)
         forecasts = forward._forecast_identity(distributions)
         frozen = _put(
             store,

@@ -1,0 +1,85 @@
+{
+  "status": "VERIFIED_TARGETED_SYNTHETIC_FORECAST_BINDING_ONLY",
+  "parent_checkpoint": "a0fcd390f677298e623b8a35522c5295b8b5359d",
+  "native_source": "ad44d536a70d5c037cb931836a3c9f48b014d84a",
+  "backend_image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+  "guarded31_map_sha256": "99e62ab9f8b02bc315ce59b81f8b461ae5c988e275cdf09cacf2d36b1025f8ab",
+  "source_sha256": {
+    "backend/market/historical_conditional_cycle.py": "7e455aa29afb99fd5629e3e7cd878fb25849ca04dce454d0e8940598d2d3baba",
+    "backend/tests/test_historical_conditional_cycle.py": "f3f89709cc441e234ec65d2416340977e352cf923b62ea3aba9108329a9332a2"
+  },
+  "first_boundary": "Caller-owned distributions were serialized before capture_account, but copied by the native reader only after capture_account. Replacing the caller's AAPL distribution in that gap changed the verdict without changing its referenced frozen forecast blob.",
+  "change": "Detach distributions once before both _forecast_identity/array serialization and account capture; pass that same detached local to the unchanged native build_reader.",
+  "regression": "test_forecast_replacement_after_receipt_cannot_change_verdict",
+  "command": "python /runner.py -> pytest /tests/test_historical_conditional_cycle.py -q -c /dev/null -p no:cacheprovider --basetemp /out/fixtures -k forecast_replacement_after_receipt_cannot_change_verdict",
+  "red": {
+    "source_sha256": "0b19a24259a396787668844102cf38a9b5c558af18c14d5ce94b49dd54a66e24",
+    "same_final_test_sha256": "f3f89709cc441e234ec65d2416340977e352cf923b62ea3aba9108329a9332a2",
+    "proof_path": "/home/animallya96/scratch/historical-connected-cycle-tests-20261017-v6/out/proof.json",
+    "proof_sha256": "c55222086a451c53b772eb434110dbcb38309462c16d033bdd7cf92ec85aa1d4",
+    "container_name": "historical-connected-cycle-20261017-v6",
+    "container_id": "7409736d4056a6ae764f11a1f5ffbb2f446bf8c8763dff8b0f2aee264699b07a",
+    "staged_sha256": "ec487ccde4eccdb0469766168485537f98a585b911de7d9a5c94fbdb3ece7654",
+    "failed": 1,
+    "deselected": 21,
+    "pytest_seconds": 1.85,
+    "helper_seconds": 1.9946311227977276,
+    "max_rss_kib": 165608,
+    "actual_failure": "assert 0.02 == -0.02: verdict mean differs from the saved forecast mean"
+  },
+  "green": {
+    "proof_path": "/home/animallya96/scratch/historical-connected-cycle-tests-20261017-v7/out/proof.json",
+    "proof_sha256": "d60b5fae242f456453e4df3fdbd6970faa5a27dd19e656cbfa503dedda70804c",
+    "container_name": "historical-connected-cycle-20261017-v7",
+    "container_id": "4e50205ee9b919316eb9a31080aef7ce1a04f40352703fc08724164bb6a36ce5",
+    "staged_sha256": "245c2ef7abd89d308d2a07924b8d2a73201eddec235e8803d2b3a1ed3c6586bf",
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "deselected": 21,
+    "pytest_seconds": 1.13,
+    "helper_seconds": 1.2318505588918924,
+    "max_rss_kib": 163060,
+    "checks": [
+      "External AAPL mean actually changes to +0.02 after the original frozen -0.02 receipt is retained",
+      "Native verdict retains original -0.02 mean and 0.001 scale",
+      "Native residual and weight raw-array hashes match the arrays retained in the frozen forecast blob",
+      "Original synthetic execute branch stays BUY5 at101 with fee0.505, cash9494.495, held5 and basis101"
+    ]
+  },
+  "runtime": {
+    "network": "none",
+    "rootfs_readonly": true,
+    "cpu": 1,
+    "memory_bytes": 2147483648,
+    "total_memory_swap_bytes": 2147483648,
+    "oom_killed": false,
+    "numpy": "2.5.3 from /usr/local",
+    "pytest": "runner-only /testdeps",
+    "source_helpers_and_retained_input_hashes_checked_before_after": true,
+    "provider_gets": 0,
+    "new_head_inference_calls": 0,
+    "actual_account_or_original_output_reads": 0
+  },
+  "helpers": {
+    "focused_runner_path": "/tmp/run_historical_connected_forecast_binding_20261017.py",
+    "focused_runner_sha256": "1a1d8e891426d0db57ce8d0304aa12168d2d0c1fd48b69d7fac7d02b91d1d212",
+    "retained_focused_runner_path": "/home/animallya96/scratch/historical-connected-cycle-tests-20261017-v7/runner.py",
+    "original_runner_sha256": "05ab57fa33161d23422a9931fb7f210124f98f94fffca2b6eb60b53b893a72d8",
+    "run_sh_sha256": "d7731dac779b260ac23f4565439c57c9c732118ba3c11c1d0af8d1b313aea2e9"
+  },
+  "preserved_first_probe": {
+    "proof_path": "/home/animallya96/scratch/historical-connected-cycle-tests-20261017-v5/out/proof.json",
+    "proof_sha256": "82bacd0bd22a9b882bc522cb893647fcdabdd91a42b830caac0860e2bb78ff91",
+    "test_sha256": "78321e2aa0e58b96d0189a8f663f30c86ed9fe309ac00018f7beee5567954cb1",
+    "note": "Already exposed the changed mean; final comparison was narrowed because native receipt hashes raw float64 arrays while _forecast_identity also authenticates shape/dtype and includes horizon. The exact final regression was then red/green in v6/v7."
+  },
+  "limits": [
+    "Only the new controlled distribution-replacement case ran; the old21 source0b19 proofs remain unchanged, not rerun on this corrected source",
+    "The genuine retained WAIT/missing test directly uses unchanged native build_reader rather than Cycle.run, so this seam does not require new head/feature inference or relabelling its original proof",
+    "All data, distributions, account and orders in the new regression are explicitly synthetic; no model behavior or actual live receipts proved",
+    "No guarded31 or native arithmetic source changed; no full simulation, acquisition, settlement, publication or production deployment",
+    "Historical availability/latency and fills remain explicit conditional assumptions, not actual measured clocks",
+    "Generic multi-symbol adapter design remains pending, separate from this correction"
+  ]
+}
