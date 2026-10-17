@@ -1,5 +1,49 @@
 # Next session
 
+## 2026-10-17 — Original pending metadata audit integrated; live quantity fix isolated
+
+Atomic33d2580f integrated as0c959486: ONLY new pending helper276b964e,
+testsdd93e06f and source-bound phase3a proof. Native144 checks/0skip4.50s passed;
+authentic COMPLETE privatev10 reconstructs7 accepted intraday transitions,12legacy
+traces,4due observations and7exact settled-journal rows across March1/4. All146
+consumed raw SIP files are pinned; all original inputs and31guarded files unchanged.
+The one March4 16:01 new request is separately conserved after the independently
+verified nightly checkpoint, never fed into prior intraday pending reconstruction.
+
+ROOT independently inspected retained native58e9d32b and bounded9ad383a4:
+exactN2e0/exit0/OOMfalse/networknone/read-only/1CPU2GiB, and actual mounted source
+bytes equal committed276b/dd93. Native proof's ambiguous tests_sha256=cc8e1d3d
+names tests.log stdout, NOT Python source; committed source digests remain exact.
+Unavailable complete-state paths are controlled fixtures only (no genuine missing-
+account night in v10); current-live original timing remains FAILED, publisher CLOSED.
+Streaming composition is now in progress: derive economic receipts, then pending,
+then first-account availability; reconcile/plan only when that first read succeeds.
+No saved current targets/controls may become inputs, and no active full output read.
+
+Separately, production-N2-based quantity-persistence candidate3b72cd4e is pushed
+on codex/settlement-quantity-retention-20261017, NEVER merged into historical main
+for deployment. paper a8c5083f keeps submitted/sender/desired/filled domains separate,
+preserves unknowns, original journals and terminal/control behavior; metadata
+anomalies do not invent a corporate-action diagnosis or add execution guards.
+Narrow admission helperdada1d1e requires identical31 paths, only reviewed paper
+change and original remaining module/Settled AST bindings. Final native19checks/
+0skip0.051s passed in retained8a3328e1 with EXPLICIT candidate source overlays;
+this is NOT a built new-image or delivered fix. Native proofbeaf4c1f and exact
+review875976f6 are committed on that isolated candidate. Earlier red/source-draft/
+lint failures and original native persistence counterexample remain preserved.
+Private exact-source approval/deploy/verification helpers are being prepared;
+no selector activation, canonical launch or runtime change yet. Full canonical
+gates, actual HOST+CONTAINER admission, new-image persistence and310preservation
+remain required. Original actual account/state/history/orders are unchanged.
+
+Generic registry/demand/parser/checkpoint51-check candidatef4b58d9d remains separate
+pending a resource fix: reject overlarge capture envelopes BEFORE any JSON/base64
+expansion. No generic GET/full corrected launch; issuer lineage/fresh marks remain
+explicit. Original full account compact13:44:46Z: exact1e8f440a/image136ebb46 running,
+1891sessions through2026-09-08/2896fills/3843intents, updated13:40:20Z; completion
+absent. No full-output access or restart. Heartbeat ACTIVE/quiet unchanged.
+Diagram impact NONE: unused audit helper and isolated metadata candidate only.
+
 ## 2026-10-17 — Native reconciliation exposed submitted-quantity persistence loss
 
 NEW private native N2 probe609b3c3c exercised all8 immutable synthetic joined
