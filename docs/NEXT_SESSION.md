@@ -1,5 +1,32 @@
 # Next session
 
+## 2026-10-17 — Independent pre-plan reconstruction primitive integrated
+
+Agent code34a24f67 integrated as19e3a1a2. Pure before_plan accepts only prior
+verified state and conserved submission/outcome/confirmed cancellation evidence,
+never current saved allocation/control output. It invokes no broker/sender and
+writes nothing. Withdrawal intent alone cannot count as cancellation: exact
+original closing cancellation receipt is mandatory. Historical reviewed-session
+calendar is used. Dispatch is explicit model-required/duplicate/event/missing
+evidence; required is NOT a completed numerical inference count.
+
+70 checks/0skip2.07s plus Ruff/format pass. COMPLETE privatev10 read-only
+compatibility matches7 original settled receipts across2 sessions; all original
+fixture hashes unchanged. Initial cancellation false-acceptance red log and
+historical-calendar harness failure remain preserved. Proof:
+research/historical-nightly-preplan-proof-2026-10-17.json. Both integrated new
+source/test files are exactly the accepted34a tree; backend/frontend/scripts
+otherwise differ only in the three independently verified execution-audit files.
+All31 guarded sources unchanged. No production/full-account/model/order changes.
+
+This phase is NOT hooked into the full verifier yet and does NOT recompute every
+night's model. Agent continues separate phase2: independently derived ledger/NAV,
+causal prefixes/frozen model/scenarios, raw/constrained targets, action rows and
+funded identities, preserving explicit bypass/unavailable branches. Real numeric
+checks use actual N2 imagee0a54c1f/runtime2.5.3, isolated network-none/read-only.
+No original full-run output until COMPLETE. Publisher stays structurally closed;
+the separate corrected-run human question remains pending, no elapsed approval.
+
 ## 2026-10-17 — One actual-image frozen timing observation independently checked
 
 Proposed correction document now has a dated primary-source addendum, current
