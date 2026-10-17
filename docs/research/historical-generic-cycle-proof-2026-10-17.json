@@ -1,0 +1,119 @@
+{
+  "status": "VERIFIED_BOUNDED_SYNTHETIC_GENERIC_MARKET_CYCLE_ONLY",
+  "source_base": "acd35b6a27e97b6c745c7c2b8abaa9e03aeb8c0a",
+  "native_source": "ad44d536a70d5c037cb931836a3c9f48b014d84a",
+  "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+  "guarded31_map_sha256": "99e62ab9f8b02bc315ce59b81f8b461ae5c988e275cdf09cacf2d36b1025f8ab",
+  "source_sha256": {
+    "backend/market/historical_conditional_cycle.py": "86ef2cde2d570a9ebd0216467487aedd559508dae8bb0cff019b69c70a702702",
+    "backend/market/historical_conditional_market.py": "bff27f114405d155837b65136082981647dc6e44df5787dfb3109604093a8d0c",
+    "backend/tests/test_historical_conditional_market.py": "39f52751a7efa28031a7310a8358cad45a4a81815c2eeafccf6184d0a1bbbb0c",
+    "backend/tests/test_historical_conditional_cycle.py": "f3f89709cc441e234ec65d2416340977e352cf923b62ea3aba9108329a9332a2",
+    "backend/market/historical_packet_store.py": "be90098bf2c64e7e8da390f2b40db646b50c7d0be659e1a3c9391b8b5595fdbf",
+    "backend/market/historical_packet_spool.py": "705300210493d46e1a65225c371a05dd9bc8e30dff2c5ae8da43b85041b3f6ac"
+  },
+  "unchanged": [
+    "All31 native guarded files, exact ReplayBroker c3d427e1 and calendar f5ceca3c",
+    "Pilot packet54763a69, PilotResolver a6d2fafb and original genuine6176 evidence",
+    "Registry, Demand, parser, marks8194ecbc, codec0c76756f and Store sources"
+  ],
+  "native_proof": {
+    "path": "/home/animallya96/scratch/historical-generic-cycle-tests-20261017-v4/out/proof.json",
+    "sha256": "2512bd5dfa68e26924f39c18ea67cefbaf66cba9febb2f7171d39b9fd96be2e4",
+    "container_name": "historical-generic-cycle-20261017-v4",
+    "container_id": "252a4f077004cdc7d1e92abd6a4b4b9bedf5d51e3625cfea04d83cd7456188db",
+    "passed": 34,
+    "failed": 0,
+    "skipped": 0,
+    "deselected": 18,
+    "new_generic_cases": 30,
+    "selected_existing_compatibility_cases": 4,
+    "pytest_seconds": 18.04,
+    "helper_seconds": 18.142850402742624,
+    "max_rss_kib": 162960,
+    "command": "python /runner.py -> pytest /tests/test_historical_conditional_market.py /tests/test_historical_conditional_cycle.py -q -c /dev/null -p no:cacheprovider --basetemp /out/fixtures -k 'test_historical_conditional_market or connected_buy_and_complete_restoration or wait_unavailable_empty_submission_no_factory or forecast_replacement_after_receipt_cannot_change_verdict'",
+    "network": "none",
+    "rootfs_readonly": true,
+    "cpu": 1,
+    "memory_bytes": 2147483648,
+    "total_memory_swap_bytes": 2147483648,
+    "exit_code": 0,
+    "oom_killed": false,
+    "numpy": "2.5.3 from /usr/local",
+    "pytest": "runner-only /testdeps",
+    "source_and_calendar_hashes_checked_before_after": true,
+    "provider_gets": 0,
+    "head_inference_calls": 0,
+    "actual_account_or_original_output_reads": 0
+  },
+  "helpers": {
+    "runner_path": "/home/animallya96/scratch/historical-generic-cycle-tests-20261017-v4/runner.py",
+    "runner_sha256": "0d4e2c59ae36215ad90ac036ae14d72b87fc4a4341c34372a0386960caa670c2",
+    "run_sh_sha256": "fc4d71618b6d6c25610a70ddf7ace3efa61c9ba4303a3661a22d606617dba806",
+    "staged_sha256": "6dc31f294e4fb03cdd1351e09438adc1df750ce6dbc8042c83a00d1f11a4feb8"
+  },
+  "verified_boundaries": [
+    "Explicit immutable arbitrary bar/calendar context and complete96 cohort order commitment, excluding benchmark distributions",
+    "Generic plural packet bodies consumed directly with immutable original request/entity-asof mapping; no pilot endpoint/body relabelling",
+    "Prior full broker/paper/latch frozen before packet examination; fresh all-preheld decision candidates admitted before native observation at T+31.1",
+    "Source-bound per-name raw anchor-row bytes retained in CAS and checked against earliest eligible fixed-window trades",
+    "Original detached distributions/arrays retained before account capture; unchanged native forward reader and sender arithmetic",
+    "Complete original CID/side/quantity/session/submission-clock binding; first conservative side-specific post-arrival references",
+    "All references admitted before preview arithmetic; one frozen budget excludes nondue reservations and same-batch sale proceeds",
+    "Opposite-side same-symbol references, expiry, idempotent resolution and changed-state refusal",
+    "Third-held coverage, missing names, native fractional-account unavailability, latest quote conflict and NAV-null behavior",
+    "WAIT/unavailable/no-intent empty submission, unsupported final/auction/calendar rejection, early-close supported bar and stale prior rejection",
+    "Decision/submission crash pause without replay; exact source-bound broker/paper/latch restoration from shared committed receipts",
+    "Original paper journal remains empty/sent-pending; later settlement NOT_RUN"
+  ],
+  "independent_synthetic_ledger_expectation": {
+    "original_sell_intent_qty": 8,
+    "native_sell_submitted_qty": 5,
+    "sell_filled_qty": 5,
+    "sell_bid": 199.99,
+    "sell_fee": 0.99995,
+    "buy_original_and_submitted_qty": 5,
+    "buy_filled_qty": 4,
+    "buy_ask": 200,
+    "buy_fee": 0.8,
+    "prebatch_cash": 1000,
+    "nondue_reserved_cash": 100.1,
+    "frozen_buy_budget": 899.9,
+    "ending_cash_decimal": "1198.15005",
+    "ending_holdings": {"MSFT": 4, "NVDA": 2},
+    "ending_basis": {"MSFT": 200, "NVDA": 100},
+    "post_mark_midpoint": 199.995,
+    "ending_nav_decimal": "2398.12005"
+  },
+  "preserved_failures": [
+    {
+      "root": "/home/animallya96/scratch/historical-generic-cycle-tests-20261017-v1",
+      "proof_sha256": "b3bea0ddd5135275abdc1131ab3e89eb3aec3a3cbbb8bc00d32111dde184027c",
+      "result": "31passed/2failed: fixture wrongly expected no pre-existing nondue attempt in restored decision; empty registry fixture correctly refused",
+      "fixture_followup_root": "/home/animallya96/scratch/historical-generic-cycle-tests-20261017-v2",
+      "fixture_followup_proof_sha256": "d1f9d5057399065bccc91ff1466e270901aa585cfbf189e3b39e6d4198397864",
+      "fixture_followup_result": "Only those two corrected fixture cases passed2/2.16s; production adapters unchanged"
+    },
+    {
+      "root": "/home/animallya96/scratch/historical-generic-cycle-tests-20261017-v3",
+      "proof_sha256": "8633aa8f13e9d79330e27aca3108b07a5e735f7f97bbdb32323fea8d6f7e6df0",
+      "old_cycle_sha256": "98a6449c525cf65698cbfa17cb15c2717b08db7919bbe32dcdb3ecf69b099c40",
+      "result": "Actual recent T+10 account passed native freshness despite missing held NVDA packet. AAPL produced execute then factory refused, leaving OPEN submission.",
+      "exact_original_receipt_evidence": "/home/animallya96/scratch/historical-generic-cycle-tests-20261017-v3/recent-account-red-evidence.json",
+      "exact_original_receipt_evidence_sha256": "413153dd5bae9d72ab724906b4f80bddd00f91b2dbccefa80215d7d07d4ed45d",
+      "extractor_sha256": "d1b4b2f79fba80a3e6db085e92b322fcb7ac20dc5cc86718d5f92e6706cd6b69",
+      "targeted_fix": "Withhold reader price snapshot globally when all-held decision admission fails. Retain original parsed quote evidence and exact native recent-account receipt separately; no fake reason, amount or broker clock."
+    }
+  ],
+  "limits": [
+    "All new anchors, forecasts, packets, account and intent quantities are explicitly SYNTHETIC; no actual current-model loader or genuine multi-symbol data proof",
+    "Declared96 cohort digest and pinned raw-row bytes are commitments, not independent model-artifact/cohort/issuer/provider authentication",
+    "Actual frozen-head feature extraction and current_distributions receipt integration remain separate work",
+    "Final session-completion dispatch, auctions and full paper settlement explicitly remain unsupported; no full corrected account launch",
+    "Actual historical local receipt/publication/inference/fill clocks are unknown; fixed033 assumptions and strict row-tie rules remain unchanged",
+    "No quote-size share conversion or liquidity/fill guarantee; finite resource caps can PAUSE and do not prove full-horizon sufficiency",
+    "Original AAPL genuine WAIT/missing proof and original failed historical simulation remain untouched, not relabelled",
+    "No new GET, training, model service change, production account action, publication or deployment",
+    "Diagram impact NONE: existing unused conditional cycle and private adapter boundary only"
+  ]
+}

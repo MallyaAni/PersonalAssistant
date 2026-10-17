@@ -1,4 +1,4 @@
-"""Unused, network-free AAPL conditional cycle; never a full historical runner.
+"""Unused, network-free conditional cycle; never a full historical runner.
 
 Generic execution is restricted to explicitly synthetic fixtures. Retained genuine
 pilot inputs have a separate receipt and are never renamed as generic captures.
@@ -24,6 +24,7 @@ from backend.agents.trading.desk import intraday_orders, paper
 from backend.market import calendar, entry_timing
 from backend.market import forward_probability_timing as forward
 from backend.market import historical_broker_checkpoint as codec
+from backend.market import historical_conditional_market as market
 from backend.market import historical_packet_demand as demand
 from backend.market import historical_packet_parser as parser
 from backend.market import historical_post_resolution_marks as marks
@@ -78,13 +79,16 @@ def _put(store, raw, limit=META_CAP):
 
 
 # Keep full broker, paper and optional latch in the same complete-operation receipt.
-def _components(store, client, root, pins):
+def _components(store, client, root, pins, session=DAY):
     state = _file(paper.state_path(root))
     document = packet._decode(state)
     if set(document) != {f.name for f in fields(paper.PaperState)}:
         raise ValueError("Complete native paper state required")
-    latch = _file(entry_timing.latch_path(root, DAY), absent=True)
-    if latch is not None and packet._decode(latch).get("session") != DAY.isoformat():
+    latch = _file(entry_timing.latch_path(root, session), absent=True)
+    if (
+        latch is not None
+        and packet._decode(latch).get("session") != session.isoformat()
+    ):
         raise ValueError("Original current-session latch required")
     encoded = codec.encode(client, **pins)
     return {
@@ -95,12 +99,15 @@ def _components(store, client, root, pins):
 
 
 # Persist one detached receipt containing all component references together.
-def _receipt(store, client, root, pins, detail):
+def _receipt(store, client, root, pins, detail, *, session=DAY, context=None):
     value = {
         "schema": "private-conditional-cycle-receipt/1",
         "identity_sha256": pins["identity_sha256"],
         "adapter_sha256": sha(Path(__file__).read_bytes()),
-        "components": _components(store, client, root, pins),
+        "session": session.isoformat(),
+        "context": context,
+        "generic_adapter_sha256": sha(Path(market.__file__).read_bytes()),
+        "components": _components(store, client, root, pins, session),
         "detail": deepcopy(detail),
         "actual_historical_clocks_or_fills": False,
         "paper_journal_reconciliation": "NOT_RUN_NATIVE_SENT_PENDING_RETAINED",
@@ -174,8 +181,21 @@ def restore_receipt(store, receipt_sha256, root, *, pins):
         receipt["schema"] != "private-conditional-cycle-receipt/1"
         or receipt["identity_sha256"] != pins["identity_sha256"]
         or receipt["adapter_sha256"] != sha(Path(__file__).read_bytes())
+        or receipt["generic_adapter_sha256"] != sha(Path(market.__file__).read_bytes())
     ):
         raise ValueError("Original source-bound operation receipt required")
+    session = date.fromisoformat(receipt["session"])
+    if session.isoformat() != receipt["session"]:
+        raise ValueError("Canonical original receipt session required")
+    if receipt["context"] is not None:
+        context = market.Context(
+            receipt["context"]["raw"].encode(), receipt["context"]["sha256"]
+        )
+        if (
+            market.read_context(context)["window"]["completed_at"][:10]
+            != session.isoformat()
+        ):
+            raise ValueError("Original context session differs")
     refs = receipt["components"]
     encoded = store.read_blob(refs["broker"], limit=codec.CAPS["bytes"])
     client = codec.restore(encoded, expected_sha256=refs["broker"], **pins)
@@ -189,7 +209,10 @@ def restore_receipt(store, receipt_sha256, root, *, pins):
         if refs["latch"] is None
         else store.read_blob(refs["latch"], limit=META_CAP)
     )
-    if latch is not None and packet._decode(latch).get("session") != DAY.isoformat():
+    if (
+        latch is not None
+        and packet._decode(latch).get("session") != session.isoformat()
+    ):
         raise ValueError("Original restored latch required")
     root = Path(root)
     if not root.resolve().is_relative_to(store.root.resolve()):
@@ -197,7 +220,7 @@ def restore_receipt(store, receipt_sha256, root, *, pins):
     root.mkdir(mode=0o700)
     for path, body in (
         (paper.state_path(root), state),
-        (entry_timing.latch_path(root, DAY), latch),
+        (entry_timing.latch_path(root, session), latch),
     ):
         if body is None:
             continue
@@ -219,42 +242,100 @@ def restore_operation(store, operation, root, *, pins):
 # Connect only an already private synthetic N2 account to retained Store operations.
 class Cycle:
     # Bind exact native objects and keep every sender write under the private Store.
-    def __init__(self, store, client, root, *, pins):
+    def __init__(self, store, client, root, *, pins, context=None):
         if type(store) is not Store or type(client) is not native.ReplayBroker:
             raise ValueError("Exact private Store and ReplayBroker required")
         self.store, self.client, self.root, self.pins = store, client, Path(root), pins
+        self.context = context
+        data = None if context is None else market.read_context(context)
+        self.window = WINDOW if data is None else data["window"]
+        self.day = (
+            native._instant(self.window["completed_at"])
+            .astimezone(calendar.NEW_YORK)
+            .date()
+        )
+        self.clock = (
+            int(
+                (
+                    native._instant(self.window["completed_at"]).astimezone(
+                        calendar.NEW_YORK
+                    )
+                    - entry_timing.session_clock(self.day)["open"]
+                ).total_seconds()
+                // 900
+            )
+            - 1
+        )
+        self.cohort = None if data is None else tuple(data["cohort"])
         if not self.root.resolve().is_relative_to(store.root.resolve()):
             raise ValueError("Private Store descendant required")
         codec._identity(pins["identity"], pins["identity_sha256"])
         if store.identity != pins["identity_sha256"]:
             raise ValueError("Store and frozen broker identities differ")
 
+    # Bind every snapshot to the current explicit context and both adapter sources.
+    def _retain(self, detail):
+        context = (
+            None
+            if self.context is None
+            else {"raw": self.context.raw.decode(), "sha256": self.context.sha256}
+        )
+        return _receipt(
+            self.store,
+            self.client,
+            self.root,
+            self.pins,
+            detail,
+            session=self.day,
+            context=context,
+        )
+
     # Derive demand from original full state before examining any response or forecast.
     def begin(self, registry):
         client, store = self.client, self.store
         if store.snapshot()["next_stage"] != "PRIOR_VERIFIED":
             raise StorePause("Cycle already started; never repeat decisions")
-        if packet.nanos(client._now.isoformat()) != packet.nanos(
-            WINDOW["assumed_decision_at"]
+        if (
+            client._now is None
+            or (
+                self.context is None
+                and packet.nanos(client._now.isoformat())
+                != packet.nanos(self.window["assumed_decision_at"])
+            )
+            or packet.nanos(client._now.isoformat())
+            > packet.nanos(self.window["assumed_decision_at"])
         ):
             raise ValueError("Original fixed decision observation required")
         state = paper.load_state(self.root)
-        rows = intraday_orders.due(state, DAY)
-        if not rows or any(
-            r["symbol"] != "AAPL" or "sending" in r or "execution_policy" in r
+        rows = intraday_orders.due(state, self.day)
+        if (self.context is None and not rows) or any(
+            (self.context is None and r["symbol"] != "AAPL")
+            or "sending" in r
+            or "execution_policy" in r
+            or r.get("execution_phase", "market") != "market"
+            or (self.cohort is not None and r["symbol"] not in self.cohort)
             for r in rows
         ):
             raise ValueError("New unsent AAPL-only synthetic pilot legs required")
-        prior = _components(store, client, self.root, self.pins)
+        if self.context is not None:
+            market.read_context(self.context)
+            # Prior market legs need their original outcome, never a new window.
+            if any(
+                r.get("status") == "accepted" and r.get("execution_phase") == "market"
+                for r in client._orders.values()
+            ):
+                raise ValueError("Unresolved prior market batch; no decision replay")
+        prior = _components(store, client, self.root, self.pins, self.day)
         cycle = packet._digest(
-            {"prior": prior, "window": WINDOW, "identity": store.identity}
+            {
+                "prior": prior,
+                "window": self.window,
+                "identity": store.identity,
+                "context": None if self.context is None else self.context.sha256,
+            }
         )
-        receipt = _receipt(
-            store,
-            client,
-            self.root,
-            self.pins,
-            {"stage": "PRIOR_VERIFIED", "origin": "SYNTHETIC_GENERIC_PACKET"},
+        receipt = self._retain(
+            {"stage": "PRIOR_VERIFIED", "origin": "SYNTHETIC_GENERIC_PACKET"}
         )
         entry = store.append(
             expected_head=store.snapshot()["head"],
@@ -266,7 +347,7 @@ class Cycle:
             registry,
             identity_sha256=store.identity,
             parent_sha256=entry["sha256"],
-            completed_at=WINDOW["completed_at"],
+            completed_at=self.window["completed_at"],
             prior={
                 "ledger": prior["broker"],
                 "pending": packet._digest(state.pending),
@@ -282,7 +363,7 @@ class Cycle:
                     "side": r["side"],
                     "qty": r["qty"],
                     "phase": "market",
-                    "session": DAY.isoformat(),
+                    "session": self.day.isoformat(),
                 }
                 for r in rows
             ],
@@ -324,11 +405,7 @@ class Cycle:
                 ):
                     raise ValueError("Original Store page bytes/clocks differ")
         digest = _put(self.store, captured.raw, parser.MAX_CAPTURE_BYTES)
-        receipt = _receipt(
-            self.store,
-            self.client,
-            self.root,
-            self.pins,
+        receipt = self._retain(
             {
                 "stage": "PACKETS_FINALIZED",
                 "origin": "SYNTHETIC_GENERIC_PACKET",
@@ -353,7 +430,16 @@ class Cycle:
         )
 
     # Run one native cycle with explicit synthetic inputs and atomic boundaries.
-    def run(self, manifest, registry, captured, distributions, *, original_open=100.0):  # noqa: C901 -- Sequential native/durable boundaries stay visible.
+    def run(  # noqa: C901 -- Native and durable boundaries remain sequential.
+        self,
+        manifest,
+        registry,
+        captured,
+        distributions,
+        *,
+        original_open=100.0,
+        anchors=None,
+    ):
         store, client, root, pins = self.store, self.client, self.root, self.pins
         if store.snapshot()["next_stage"] != "DECISION_FROZEN":
             raise StorePause(
@@ -370,45 +456,69 @@ class Cycle:
         prior = packet._decode(
             store.read_blob(declaration["prior"]["inputs"], limit=META_CAP)
         )
-        if _components(store, client, root, pins) != prior["components"]:
+        if _components(store, client, root, pins, self.day) != prior["components"]:
             raise ValueError("Full broker/paper/latch state changed before decisions")
-        parsed = parser.read(captured, manifest, registry)
-        raw = packet._decode(captured.raw)
-        quote_source = _quote_packet(raw, declaration, captured.verified_at)
-        _anchor(parsed, declaration, original_open)
-        selected = packet.decision_quote(WINDOW, quote_source)
-        if selected["status"] != "available":
-            raise StorePause("Decision packet unavailable; no fabricated quote")
-        rows = deepcopy(intraday_orders.due(paper.load_state(root), DAY))
+        decision_inputs = None
+        quote_source = None
+        if self.context is not None:
+            if (
+                declaration["window"] != self.window
+                or tuple(distributions) != self.cohort
+                or any(distributions[n] is not None for n in ("SPY", "QQQ"))
+            ):
+                raise ValueError(
+                    "Exact context/cohort and excluded benchmarks required"
+                )
+            decision_inputs = market.decision_inputs(
+                client, captured, manifest, registry, anchors, self.context
+            )
+        else:
+            parsed = parser.read(captured, manifest, registry)
+            raw = packet._decode(captured.raw)
+            quote_source = _quote_packet(raw, declaration, captured.verified_at)
+            _anchor(parsed, declaration, original_open)
+            selected = packet.decision_quote(self.window, quote_source)
+            if selected["status"] != "available":
+                raise StorePause("Decision packet unavailable; no fabricated quote")
+        rows = deepcopy(intraday_orders.due(paper.load_state(root), self.day))
         if declaration["prior"]["pending"] != packet._digest(
             paper.load_state(root).pending
         ):
             raise ValueError("Original pending changed before decisions")
-        decision = native._instant(WINDOW["assumed_decision_at"])
-        completed = native._instant(WINDOW["completed_at"]).astimezone(
+        decision = native._instant(self.window["assumed_decision_at"])
+        completed = native._instant(self.window["completed_at"]).astimezone(
             calendar.NEW_YORK
         )
-        q = selected["quote"]
-        snapshot = {
-            "quotes": {
-                "AAPL": {
-                    "bid": q["bp"],
-                    "ask": q["ap"],
-                    "bid_size": q["bs"],
-                    "ask_size": q["as"],
-                    "last": selected["price"],
-                    "open": original_open,
-                    "next_open": original_open,
-                    "bar": (completed - timedelta(minutes=15)).isoformat(),
-                    "as_of": q["t"],
-                    "received_at": selected["assumed_receive_upper_at"],
-                    "next_open_at": WINDOW["completed_at"],
-                    "next_open_published_at": WINDOW["assumed_anchor_available_at"],
-                    "basis": "raw_current_shares",
-                    "feed": "sip",
+        q = None if decision_inputs is not None else selected["quote"]
+        snapshot = (
+            decision_inputs["snapshot"]
+            if decision_inputs is not None
+            else {
+                "quotes": {
+                    "AAPL": {
+                        "bid": q["bp"],
+                        "ask": q["ap"],
+                        "bid_size": q["bs"],
+                        "ask_size": q["as"],
+                        "last": selected["price"],
+                        "open": original_open,
+                        "next_open": original_open,
+                        "bar": (completed - timedelta(minutes=15)).isoformat(),
+                        "as_of": q["t"],
+                        "received_at": selected["assumed_receive_upper_at"],
+                        "next_open_at": self.window["completed_at"],
+                        "next_open_published_at": self.window[
+                            "assumed_anchor_available_at"
+                        ],
+                        "basis": "raw_current_shares",
+                        "feed": "sip",
+                    }
                 }
             }
-        }
+        )
+        if decision_inputs is not None and decision_inputs["candidate_marks"] is None:
+            # A recent old account is not permission to skip full held-mark admission.
+            snapshot = {"quotes": {}}
         distributions = deepcopy(distributions)
         forecasts = forward._forecast_identity(distributions)
         frozen = _put(
@@ -417,6 +527,14 @@ class Cycle:
                 {
                     "origin": "SYNTHETIC_NUMERIC_FIXTURE",
                     "forecast_identity": forecasts,
+                    "cohort": list(distributions),
+                    "anchor_receipt": None if anchors is None else anchors.sha256,
+                    "anchor_sources": None
+                    if anchors is None
+                    else {ref: _put(store, body) for ref, body in anchors.sources},
+                    "anchor_bytes": None
+                    if anchors is None
+                    else _put(store, anchors.raw),
                     "arrays": {
                         n: None
                         if v is None
@@ -441,13 +559,22 @@ class Cycle:
             stage="DECISION_FROZEN",
             inputs=frozen,
         )
+        decision_admitted = (
+            decision_inputs is None or decision_inputs["candidate_marks"] is not None
+        )
+        if decision_inputs is not None and decision_admitted:
+            client.observe(
+                decision,
+                decision_inputs["candidate_marks"],
+                native._session(decision)[1],
+            )
         observed = forward.capture_account(client, completed, clock=lambda: decision)
         trace, verdicts = [], []
         reader = forward.build_reader(
             distributions,
             tuple(distributions),
-            0,
-            DAY,
+            self.clock,
+            self.day,
             decision,
             snapshot,
             rows,
@@ -455,7 +582,7 @@ class Cycle:
             10,
             trace,
             forecast_available_at=native._instant(
-                WINDOW["assumed_forecast_available_at"]
+                self.window["assumed_forecast_available_at"]
             ),
             source_identity={
                 "model_receipt": frozen,
@@ -465,13 +592,22 @@ class Cycle:
         )
         original_economics = _economics(client)
         decision_binding = marks.state_binding(client)
-        cached = {"AAPL": client._marks.get("AAPL")}
+        cached = (
+            {"AAPL": client._marks.get("AAPL")}
+            if decision_inputs is None
+            else decision_inputs["candidate_marks"]
+        )
         factory_calls = 0
         transport_complete = False
 
         # Freeze every native verdict before the sender can request a client.
         def wrapped(row, latch, quote, now, today):
-            if now != decision or today != DAY or client._now != decision:
+            if (
+                now != decision
+                or today != self.day
+                or (decision_admitted and client._now != decision)
+                or marks.state_binding(client) != decision_binding
+            ):
                 raise ValueError("Native decision domain changed")
             verdict = reader(row, latch, quote, now, today)
             if "inference" in (verdict["timed"].get("forward_receipt") or {}):
@@ -483,11 +619,7 @@ class Cycle:
                 }
             )
             if len(verdicts) == len(rows):
-                receipt = _receipt(
-                    store,
-                    client,
-                    root,
-                    pins,
+                receipt = self._retain(
                     {
                         "stage": "DECISION_FROZEN",
                         "snapshot_boundary": (
@@ -498,6 +630,10 @@ class Cycle:
                         "verdicts": verdicts,
                         "trace": trace,
                         "forecast": frozen,
+                        "decision_inputs": decision_inputs,
+                        "decision_guard": None
+                        if decision_admitted
+                        else "DECISION_OBSERVATION_UNAVAILABLE",
                     },
                 )
                 store.complete_operation(decision_op, receipt)
@@ -522,18 +658,32 @@ class Cycle:
                 stage="SUBMISSION_CAPTURED",
                 inputs=store.recover_operation(decision_op)["receipt_sha256"],
             )
-            if set(client._held) - {"AAPL"}:
+            if cached is None or set(client._held) - set(cached):
                 raise ValueError("All held cached marks required; pilot AAPL only")
             client.observe(
-                WINDOW["assumed_submission_at"],
+                self.window["assumed_submission_at"],
                 cached,
-                native._session(native._instant(WINDOW["assumed_submission_at"]))[1],
+                native._session(native._instant(self.window["assumed_submission_at"]))[
+                    1
+                ],
             )
             if _economics(client) != original_economics:
                 raise StorePause("Delayed transport changed native economics")
             transport_complete = True
             return client
 
+        if not rows:
+            receipt = self._retain(
+                {
+                    "stage": "DECISION_FROZEN",
+                    "origin": "SYNTHETIC_NUMERIC_FIXTURE",
+                    "verdicts": [],
+                    "trace": [],
+                    "forecast": frozen,
+                    "snapshot_boundary": "NO_DUE_INTENTS_EXPLICIT_EMPTY_DECISION",
+                }
+            )
+            store.complete_operation(decision_op, receipt)
         logs = intraday_orders.send_due(
             root, snapshot, decision, factory, timing_reader=wrapped
         )
@@ -555,11 +705,7 @@ class Cycle:
             for r in client._orders.values()
             if r["status"] == "accepted" and r["execution_phase"] == "market"
         ]
-        receipt = _receipt(
-            store,
-            client,
-            root,
-            pins,
+        receipt = self._retain(
             {
                 "stage": "SUBMISSION_CAPTURED",
                 "submitted": submitted,
@@ -567,27 +713,45 @@ class Cycle:
                 "factory_calls": factory_calls,
                 "empty_submission": factory_calls == 0,
                 "native_logs": logs,
-                "conditional_window": WINDOW,
+                "conditional_window": self.window,
             },
         )
         store.complete_operation(submission_op, receipt)
         venue = (
-            PilotResolver(client).resolve(
-                window=WINDOW,
+            market.Resolver(client).resolve(
+                ctx=self.context,
+                submitted=submitted,
+                captured=captured,
+                manifest=manifest,
+                entities=registry,
+                at=self.window["quote_end"],
+            )
+            if factory_calls and self.context is not None
+            else PilotResolver(client).resolve(
+                window=self.window,
                 submitted=submitted,
                 packet=quote_source,
-                at=WINDOW["quote_end"],
+                at=self.window["quote_end"],
             )
             if factory_calls
             else {"status": "NO_NATIVE_SUBMISSION", "outcomes": []}
         )
         binding = marks.state_binding(client)
-        candidates = marks.select(
-            client,
-            expected_state_sha256=binding,
-            packet=captured,
-            manifest=manifest,
-            entity_registry=registry,
+        candidates = (
+            marks.select(
+                client,
+                expected_state_sha256=binding,
+                packet=captured,
+                manifest=manifest,
+                entity_registry=registry,
+            )
+            if decision_admitted
+            else {
+                "candidate_marks": None,
+                "missing": decision_inputs["missing"],
+                "status": "DECISION_OBSERVATION_UNAVAILABLE",
+                "nav": None,
+            }
         )
         nav, reason = None, "Missing all-held candidate marks"
         if candidates["candidate_marks"] is not None:
@@ -607,8 +771,12 @@ class Cycle:
             "nav_reason": reason,
             "decision_operation": decision_op,
             "submission_operation": submission_op,
+            "decision_inputs": decision_inputs,
+            "decision_guard": None
+            if decision_admitted
+            else "DECISION_OBSERVATION_UNAVAILABLE",
         }
-        receipt = _receipt(store, client, root, pins, detail)
+        receipt = self._retain(detail)
         entry = store.append(
             expected_head=store.snapshot()["head"],
             cycle_sha256=cycle,
