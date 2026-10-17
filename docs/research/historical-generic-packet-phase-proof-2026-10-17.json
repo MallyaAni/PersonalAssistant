@@ -1,0 +1,110 @@
+{
+  "schema": "historical-generic-packet-phase-proof/1",
+  "status": "VERIFIED_PURE_LAYER_ONLY_NOT_CONNECTED_RUNNER",
+  "starting_branch": "codex/historical-timing-correction-20261017",
+  "starting_revision": "282d048432d2de61fd0f45addcf75bc48c1b55ff",
+  "native_source": "ad44d536a70d5c037cb931836a3c9f48b014d84a",
+  "native_image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+  "new_sources_sha256": {
+    "backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+    "backend/market/historical_packet_demand.py": "f4d91dd5804fe93b89201a209951230b0d1eb79e8ea2abdc4400b5f90fb13697",
+    "backend/market/historical_packet_parser.py": "9c28bb68076f2060e1a5c83414516bc39693164f879480793997605465b24e32",
+    "backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+    "backend/tests/test_historical_packet_demand.py": "a9ee094621285618f2de3990c840ca5f4b4c033710946d9606facef8692cda92"
+  },
+  "unchanged_boundaries": {
+    "native_guarded_sources_matched_before_and_after": 31,
+    "local_guarded_sources_match_native_proof": true,
+    "pilot_sha256": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+    "resolver_edited": false,
+    "contract033_edited": false,
+    "existing_tracked_files_changed": 0
+  },
+  "native_test": {
+    "proof_path": "/home/animallya96/scratch/historical-generic-packet-tests-20261017-v1/out/proof.json",
+    "proof_sha256": "ba53b7ab179d3921471b64d8049da52552852d422a6df2d4bd4c3bf11f0658a7",
+    "container_name": "historical-generic-packet-tests-20261017-v1",
+    "container_id": "7d2e84ad095d0b8a58c5110967aa18d5dda8111ff99590675b098aeb7d0ac1e4",
+    "started_at": "2026-10-17T13:40:43.992641734Z",
+    "finished_at": "2026-10-17T13:40:44.671352869Z",
+    "network": "none",
+    "read_only": true,
+    "cpus": 1,
+    "memory_bytes": 536870912,
+    "collected": 51,
+    "passed": 51,
+    "skipped": 0,
+    "pytest_seconds": 0.05,
+    "helper_seconds": 0.12218697741627693,
+    "max_rss_kib": 49556,
+    "exit_code": 0,
+    "command": "bash /home/animallya96/scratch/historical-generic-packet-tests-20261017-v1/run.sh",
+    "pytest_arguments": ["/tests/test_historical_packet_demand.py", "/tests/test_historical_packet_authentic.py", "-q", "-c", "/dev/null", "-p", "no:cacheprovider"],
+    "launcher_sha256": "a8614c709f6b808706f157fc029f3075cda2377b68a7ed62319f3132fed36673",
+    "helper_sha256": "b21b1aef385590da58e67ec409e8cfd9e1e483c4f322b31b5d6a49a90d04b521",
+    "dependency_boundary": "pytest-only /testdeps; native NumPy2.5.3 and sklearn1.9.1 unchanged"
+  },
+  "existing_genuine_packet": {
+    "capture_sha256": "f9529d3329ea7d0e051f1e67ed6210ad7c96e6580e6552ba3526c4b289fd85b5",
+    "body_sha256": "ad22cfddca99f4b681e2ace36eeaddd84f15ff135978a10d147532136f450859",
+    "generic_envelope_sha256": "1ea4659c5eb7f3fbb72aadc87d86f904a96669f0f84c506ce6818f8c06ec6c73",
+    "rows_equal_unchanged_pilot_parser": 166,
+    "new_gets": 0,
+    "mapping_status": "REVIEWED_CONDITIONAL_MAPPING",
+    "issuer_identity": null,
+    "multi_symbol_genuine_acceptance": "UNVERIFIED"
+  },
+  "metadata_inspection": {
+    "proof_path": "/home/animallya96/scratch/historical-entity-metadata-20261017-v2/proof.json",
+    "proof_sha256": "afda141fb4176c3bc1ea4263de8e71fef5241965ce3a17e6f6a88da3a06a43ed",
+    "helper_sha256": "b72bb20a4f7fd74a2288ffb8022797b064eaa784ca789e225e36103d07e1fe81",
+    "cohort_stocks": 94,
+    "old_dated_sec_metadata_records": 188,
+    "present": 188,
+    "distinct_facts_cik_candidates": 94,
+    "facts_events_cik_agree_per_name": true,
+    "sec_partitions_date": "2026-10-12",
+    "sec_partitions_in_original_capture_map": false,
+    "financial_column_rows_read": 0,
+    "active_account_output_reads": 0,
+    "frozen_META_action_sha256": "d24216b9df97fe34e0da2ab598bcbf19edaf3741b60fbc875f93afcf7d898a41",
+    "frozen_META_action_matches_capture": true,
+    "frozen_META_action_columns": ["action_date", "kind", "value"],
+    "conclusion": "Retained dated CIK metadata supplies issuer candidates, not authenticated historical share-class/provider entity mappings. Frozen actions example has no issuer identifiers or rename chain."
+  },
+  "preserved_failures": [
+    {
+      "kind": "local first synthetic acquisition-clock fixture failure",
+      "result": "43 passed, 3 failed",
+      "source_snapshot": "/tmp/historical-packet-generic-dev-20261017-v1",
+      "first_boundary": "Second synthetic page requested_at reused first page's time before previous receive; monotonic acquisition guard rejected correctly.",
+      "correction": "Sequential synthetic page clocks; no guard relaxation."
+    },
+    {
+      "kind": "local assertion-message mismatch",
+      "result": "45 passed, 1 failed",
+      "first_boundary": "Expected-message matcher omitted Acquisition failure while actual429 correctly rejected.",
+      "correction": "Explicit corruption-to-error matrix; no production behavior change."
+    },
+    {
+      "kind": "private metadata helper import failure",
+      "preserved_root": "/home/animallya96/scratch/historical-entity-metadata-20261017-v1",
+      "first_boundary": "Private inspect.py filename shadowed standard-library inspect during pyarrow import, before metadata loop.",
+      "correction": "Fresh v2 root uses lineage_metadata.py; old root retained."
+    }
+  ],
+  "limits": [
+    "No acquirer, provider GET, fitting, model inference, broker call, full simulation or deployment",
+    "Multi-symbol source pages, registry reviews and checkpoints are synthetic",
+    "Independently pinned source/review bytes retain claims; hashes alone do not authenticate issuer truth",
+    "REQUEST_NAME_ONLY and UNRESOLVED mappings fail demand admission",
+    "Held and potential-holding coverage is declared prior-state input, not independently reconciled ledger content",
+    "Fresh post-resolution marks remain UNRESOLVED_NO_FRESH_MARK_SELECTION",
+    "Only ordinary model-timed market demand is supported; final/deadline/auction handling remains separate",
+    "No generic post-arrival selector or multi-symbol resolver is connected",
+    "Checkpoint fold verifies supplied head/stage order and counters; exclusive atomic disk persistence and external fork detection are unimplemented",
+    "Resource caps are fixed safety limits, not proof the complete horizon can finish; coordinator pacing/disk reservation remain unimplemented",
+    "Original full run, source, account, outputs and all earlier failed roots remain unchanged"
+  ],
+  "diagram_impact": "NONE: unconnected pure value/receipt validators; no deployed service/store/data-flow change"
+}
