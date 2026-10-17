@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-17 — Keep Stocks actions, quantities and timing on one numeric plan
+
+Stocks now reads its grade, action, funded whole-share quantity and timing from
+one admitted saved numeric decision. Prompted chart judgments remain supporting
+details. Missing, expired or unverifiable plans cannot borrow an action from a
+chart, a holding or an old broker order. Authenticated blocked BUY0 keeps its
+reason; retained HOLD requires the recorded grade policy. Completed orders are
+not repeated as new instructions. Actual submissions and fills remain separate
+from the original funded decision quantity. The private read-only projection
+checks saved receipt/account/source/configuration identities without prediction,
+new sizing, order submission or historical changes. Exact delivery evidence and
+the source-approval renewal are recorded in NEXT_SESSION.md after release.
+
 ## 2026-10-17 — Compare grade-led saved targets on their learned sizing basis
 
 The grade parity checker now reapplies grade constraints to the saved learned
