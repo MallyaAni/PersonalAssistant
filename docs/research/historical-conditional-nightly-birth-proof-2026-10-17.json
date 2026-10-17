@@ -1,0 +1,87 @@
+{
+  "schema": "conditional-nightly-prior-close-birth-proof/1",
+  "status": "VERIFIED_SYNTHETIC_NATIVE_BOUNDARY_ONLY",
+  "starting_head": "b04513c850b9c81982e891673d4bea2221ba0edd",
+  "branch": "codex/conditional-nightly-action-metadata-20261017",
+  "source_sha256": {
+    "backend/market/historical_conditional_nightly.py": "1b7bdb8ca2314661127eb30a9acf35d62d11fbd611b3f48299df082917b5a5e0",
+    "backend/tests/test_historical_conditional_nightly.py": "ad7920d6506ff93802f2deac64bc1cb43c293bff11eba367c34646de01e34374"
+  },
+  "source_basis": {
+    "original_producer": "backend/cli/market_live_model_history.py run initializes the100k/zero broker and plans the prior close before entering the first-account-session corporate_actions loop; original source27471 remains untouched",
+    "boundary": "Exact NIGHTLY/BIRTH predecessor, previous==birth, February28 prior close and March1 inception; authenticated component equality plus every untouched native broker/PaperState field required before observe",
+    "effect": "Wrapper receipt records complete normalized due declarations/effective clocks as PRE_INCEPTION_NOT_APPLIED; no event application, event marking or native-entry/planner/submission/clock/source31 change",
+    "normal_sessions": "Nightly and Cycle due-event rejection remains closed; independently authenticated coordinator acceptance is still OPEN"
+  },
+  "metadata_only_event_preflight": {
+    "root": "/home/animallya96/scratch/nightly-birth-economic-preflight-20261017-v1",
+    "proof_sha256": "ab6a093074e500683f2fb90d5c5fc4e27c6f9157dcdcd49d9f9578bac1c59938",
+    "original_raw_values_not_normalized_or_applied": {"ADI": 0.54, "NVDA": 0.004},
+    "arrays_models_accounts_read": false
+  },
+  "red": {
+    "root": "/home/animallya96/scratch/nightly-birth-preparation-20261017-v1/red",
+    "container_id": "8e9ca7488d70187f6baee450797d64bb7d209f3c5373251c0b7be02076db5761",
+    "helper_sha256": "ac3209672af0cb18dd3fcc6922114902eff4d08c079edc343393079eebbc8575",
+    "result": "1 actual private native prior-close dividend acceptance fails at original Economic coordinator evidence required guard; no setup/collection/skip",
+    "proof_sha256": "f4351dc6242b4979ac3267e18854f4959d37e8ef9e82396b3a18cf8e7c97a8e3",
+    "runtime_proof_sha256": "193969da1ce41e40fe3337ac4e30cafa3a4eebfd39604d0b9ea5d9fb49caa269",
+    "log_sha256": "5625f2f55457d80c169a33ad3128078828287513e4de93b29fbeaca15bfe2974"
+  },
+  "preserved_green_v1_failure": {
+    "root": "/home/animallya96/scratch/nightly-birth-preparation-20261017-v1/green",
+    "container_id": "e733e487b0012a12fe8a55315c2ef7b91206dec5cee6ba522d963396e6cbf5f6",
+    "test_sha256": "de6671b3713158d93c2f36d403497d642049cf55dad9d1de9f5c8d8526a8b1b1",
+    "passed": 85,
+    "failed": 1,
+    "skipped": 0,
+    "elapsed_seconds": 3.56,
+    "failure": "New test receipt assertion omitted Store.read_blob's keyword-only limit after native close, event metadata, zero-entitlement and policy-call assertions passed",
+    "proof_sha256": "999b1b6124c67f364a0876a31b9cbdf5d6a5963a66f1ca6558d19265e4dddf46",
+    "runtime_proof_sha256": "cfe22e7d0b0cad76caff044e91bf27c07bbb3b7c183cced524dabc92e1bc2b8a",
+    "log_sha256": "0b003b74a9ce4cca8e593c8df6eca04df8a436aabb00650e6d0d5f3d3a0a9680"
+  },
+  "affected_correction_v2": {
+    "root": "/home/animallya96/scratch/nightly-birth-preparation-20261017-v2/green",
+    "container_id": "eea9591a39372d15fbc8ac61cf659da5326eba9cd95c3d5425589f5d58176389",
+    "only_test_change": "Add limit=adapter.CAP to the receipt read; helper unchanged",
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "deselected": 85,
+    "elapsed_seconds": 0.49,
+    "controller_sha256": "26f80f290306eaf078c00acd007e319ccb1726d0e4fee11370a8a1b0ebfc2469",
+    "runner_sha256": "a8c8218aa00b173336f4a4452b2fc1b1d74987fc1f9e59cbb344981657b55438",
+    "preparation_sha256": "1161023867f7c0c4e1c03213d37f2a3b8bd9cdc2cc67a9872bc89880e948c46c",
+    "proof_sha256": "1c5ce22e0a2dd6e96414d6544584efe842fe551cdacfe4434ca2170b8d677f0d",
+    "runtime_proof_sha256": "ed462a0cc8a3eb2404602d05a4abb6605f8d6cac1123a9ef90b953e0848f1e89",
+    "log_sha256": "e88c02d06eb0b6a5e8c299eccfe7c2b6e2542445e6904246b6637c3318095fd8"
+  },
+  "actual_validation_runtime": {
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "user": "1000:1000",
+    "network": "none",
+    "readonly_rootfs": true,
+    "cpus": 1,
+    "memory_bytes": 2147483648,
+    "memory_swap_total_bytes": 2147483648,
+    "tmpfs_mib": 64,
+    "only_writable_bind": "/out",
+    "all_four_thread_environment_and_observed_threadpool_limits": 1,
+    "source_and_alias_pins_before_after": "1695 unchanged in each native run",
+    "native31_compact_map_sha256": "bfbcb6ece4ea500726e00abbb06fc2c84d63d386bb307958016915357aaef5b3",
+    "genuine_models_context_provider_calls": "BLOCKED; genuine models/data/accounts not mounted"
+  },
+  "coverage": {
+    "distinct_passed_cases": 86,
+    "composition": "85 unchanged v1 passes plus1 corrected v2 pass; NOT a whole86 rerun",
+    "new_cases": "1 native dividend birth acceptance,6 false-boundary,20 individual broker-field,6 paper-control and2 controlled normal-predecessor rejections",
+    "raw_receipts_and_no_entitlement_effect": "VERIFIED synthetic native lifecycle",
+    "real_cycle_predecessor_graph": "UNEXERCISED; controlled predecessor used only to isolate existing event rejection",
+    "genuine_context_funded_close": "UNVERIFIED; old v1/v2 failures preserved and v3 remains inert",
+    "original_current_live_timing": "FAILED unchanged",
+    "publication": "CLOSED unchanged",
+    "combined_new_audit_source_graph": "UNVERIFIED; old stream c64 pin retained deliberately"
+  },
+  "diagram_impact": "NONE; private existing lifecycle boundary and wrapper metadata, no new service or architectural relationship"
+}

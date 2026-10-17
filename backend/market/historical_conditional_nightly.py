@@ -171,6 +171,61 @@ def action_digest(value):
     return packet._digest(action_primitives(value))
 
 
+# Admit only the untouched zero-account prior close and record earlier entitlements.
+def pre_inception_actions(
+    client, state, *, prior_kind, prior, previous, birth, birth_record, session, due
+):
+    admitted.require(
+        prior_kind == "NIGHTLY"
+        and prior["phase"] == "BIRTH"
+        and previous == birth
+        and session == prior["session"] == "2019-02-28"
+        and birth_record["first"] == "2019-03-01"
+        and session < birth_record["first"],
+        "Exact original prior-close birth boundary required",
+    )
+    mappings = ("_held", "_average", "_orders", "_actions", "_marks", "_mark_times")
+    sequences = ("_attempts", "_fills", "_dividends", *codec.CLAIMS)
+    admitted.require(
+        type(client) is native.ReplayBroker
+        and set(client.__dict__) == codec.FIELDS
+        and all(
+            type(getattr(client, name)) is dict and not getattr(client, name)
+            for name in mappings
+        )
+        and all(
+            type(getattr(client, name)) is list and not getattr(client, name)
+            for name in sequences
+        )
+        and type(client._cash) is float
+        and client._cash == 100000.0
+        and type(client.cost_bps) is float
+        and client.cost_bps == 10.0
+        and type(client._last_equity) is float
+        and client._last_equity == 100000.0
+        and client._now is client._observed_at is None
+        and client._market_open is False
+        and client._batch_open is False
+        and type(state) is paper.PaperState
+        and admitted.encoded(asdict(state))
+        == admitted.encoded(asdict(paper.PaperState())),
+        "Untouched native zero-account birth components required",
+    )
+    return {
+        "status": "PRE_INCEPTION_NOT_APPLIED",
+        "session": session,
+        "first_account_session": birth_record["first"],
+        "actions": [
+            {
+                "symbol": symbol,
+                "declaration": action_primitives(row),
+                "effective_at": effective.isoformat(),
+            }
+            for symbol, row, effective in due
+        ],
+    }
+
+
 # Bind consumed arrays and passive identities independently of the selected model row.
 def arrays(panel, raw, reader):
     values = {
@@ -1032,6 +1087,27 @@ class Nightly:
                     ),
                     "Sequential original nightly sessions required",
                 )
+            expected_actions = live_policy_replay.due_actions(context.raw, index, at)
+            pre_inception = None
+            if prior_kind == "NIGHTLY" and prior["phase"] == "BIRTH":
+                pre_inception = pre_inception_actions(
+                    client,
+                    paper.load_state(self.root),
+                    prior_kind=prior_kind,
+                    prior=prior,
+                    previous=previous,
+                    birth=birth,
+                    birth_record=birth_record,
+                    session=session,
+                    due=expected_actions,
+                )
+            else:
+                # Normal sessions still need authenticated earlier event phases.
+                admitted.require(
+                    not expected_actions,
+                    "Economic coordinator evidence required; "
+                    "no late action application",
+                )
             directory, reservation = self.reserve(
                 "NIGHTLY_CLOSE", session, context_hash, birth, current
             )
@@ -1042,12 +1118,6 @@ class Nightly:
                     context.raw, index, at, context.raw.daily_close[index]
                 ),
                 False,
-            )
-            # Earlier action phases belong to the coordinator, never a late close.
-            expected_actions = live_policy_replay.due_actions(context.raw, index, at)
-            admitted.require(
-                not expected_actions,
-                "Economic coordinator evidence required; no late action application",
             )
             before = deepcopy(client.__dict__)
             old_state = asdict(paper.load_state(self.root))
@@ -1111,6 +1181,7 @@ class Nightly:
                     "actual_elapsed_ns": time.monotonic_ns() - tick,
                     "previous": previous,
                     "birth": birth,
+                    "pre_inception_actions": pre_inception,
                     "context": put(self.store, context.provenance),
                     "components": after,
                     "raw_submission_receipts": raw_ref,

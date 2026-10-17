@@ -755,3 +755,166 @@ def test_action_metadata_context_rejects_nonfinite(field, value):
 def test_action_metadata_rejects_nonprimitive(value):
     with pytest.raises(ValueError, match="Action metadata requires"):
         adapter.action_digest(MappingProxyType(value))
+
+
+# Keep original same-date declarations visible without inventing account entitlements.
+def prior_close_dividends(context):
+    context.raw.actions = {
+        "AAA": (
+            MappingProxyType({"date": "2019-02-28", "kind": "dividend", "value": 0.54}),
+        ),
+        "BBB": (
+            MappingProxyType(
+                {"date": "2019-02-28", "kind": "dividend", "value": 0.004}
+            ),
+        ),
+    }
+
+
+# The original prior-close plan starts before the account's first economic session.
+def test_birth_prior_close_records_dividends_without_applying(
+    nightly, controlled_context
+):
+    prior_close_dividends(controlled_context)
+    broker, birth = nightly.initialize(controlled_context)
+    result = nightly.close(
+        controlled_context, broker, "2019-02-28", birth=birth, previous=birth
+    )
+    receipt = nightly.read_original(result)
+    evidence = receipt["pre_inception_actions"]
+    assert evidence["status"] == "PRE_INCEPTION_NOT_APPLIED"
+    assert evidence["session"] == "2019-02-28"
+    assert evidence["first_account_session"] == "2019-03-01"
+    assert evidence["actions"] == [
+        {
+            "symbol": name,
+            "declaration": {"date": "2019-02-28", "kind": "dividend", "value": value},
+            "effective_at": "2019-02-28T09:30:00-05:00",
+        }
+        for name, value in (("AAA", 0.54), ("BBB", 0.004))
+    ]
+    assert broker._cash == 100000.0
+    assert broker._held == broker._orders == broker._actions == {}
+    assert broker._dividends == []
+    assert broker.attempt_history == broker.fill_history == ()
+    assert receipt["holding_policy_calls"] == 1
+    assert receipt["native_capture"]["submissions"] == []
+    raw = adapter.admitted.decoded(
+        nightly.store.read_blob(receipt["raw_submission_receipts"], limit=adapter.CAP)
+    )
+    assert raw["attempts"] == raw["accepted"] == []
+    assert receipt["entry"] is not None
+    assert paper.load_state(nightly.root).sessions_seen == ["2019-02-28"]
+
+
+# Exercise the exact zero-state guard independently of authenticated component hashes.
+def birth_evidence(broker, state, **changes):
+    arguments = {
+        "prior_kind": "NIGHTLY",
+        "prior": {"phase": "BIRTH", "session": "2019-02-28"},
+        "previous": "original-birth",
+        "birth": "original-birth",
+        "birth_record": {"first": "2019-03-01"},
+        "session": "2019-02-28",
+        "due": [],
+        **changes,
+    }
+    return adapter.pre_inception_actions(broker, state, **arguments)
+
+
+# Neither a different predecessor nor a changed inception date can borrow the exception.
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"prior_kind": "CYCLE"},
+        {"prior": {"phase": "NIGHTLY_CLOSE", "session": "2019-02-28"}},
+        {"previous": "different-birth"},
+        {"session": "2019-03-01"},
+        {"birth_record": {"first": "2019-02-28"}},
+        {"birth_record": {"first": "2019-03-04"}},
+    ],
+)
+def test_birth_prior_close_rejects_false_boundary(changes):
+    with pytest.raises(ValueError, match="prior-close birth boundary"):
+        birth_evidence(native.ReplayBroker(100000, 10), paper.PaperState(), **changes)
+
+
+# Every nonempty broker economic, order, mark and observation component must fail.
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("_cash", 99999.0),
+        ("cost_bps", 11.0),
+        ("_last_equity", 99999.0),
+        ("_held", {"AAA": 1}),
+        ("_average", {"AAA": 100.0}),
+        ("_orders", {"accepted": {}}),
+        ("_attempts", [{}]),
+        ("_fills", [{}]),
+        ("_actions", {"dividend": True}),
+        ("_dividends", [{}]),
+        ("_security_distributions", [{}]),
+        ("_security_exchanges", [{}]),
+        ("_share_consolidations", [{}]),
+        ("_cash_mergers", [{}]),
+        ("_marks", {"AAA": 100.0}),
+        ("_mark_times", {"AAA": "2019-02-28T21:01:00+00:00"}),
+        ("_now", datetime(2019, 2, 28, 21, 1, tzinfo=UTC)),
+        ("_observed_at", datetime(2019, 2, 28, 21, 1, tzinfo=UTC)),
+        ("_market_open", True),
+        ("_batch_open", True),
+    ],
+)
+def test_birth_prior_close_rejects_nonzero_native_component(field, value):
+    broker = native.ReplayBroker(100000, 10)
+    setattr(broker, field, value)
+    with pytest.raises(ValueError, match="Untouched native zero-account"):
+        birth_evidence(broker, paper.PaperState())
+
+
+# Full paper controls and durable receipts must be empty, not just current holdings.
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("sessions_seen", ["2019-02-27"]),
+        ("journal", [{}]),
+        ("pending", [{}]),
+        ("order_seq", 1),
+        ("event_cycle", {"active": True}),
+        ("allocation_state", {"receipt": {}}),
+    ],
+)
+def test_birth_prior_close_rejects_nonempty_paper_state(field, value):
+    state = paper.PaperState()
+    setattr(state, field, value)
+    with pytest.raises(ValueError, match="Untouched native zero-account"):
+        birth_evidence(native.ReplayBroker(100000, 10), state)
+
+
+# Normal-session declarations still require a separate authenticated coordinator.
+@pytest.mark.parametrize("prior_kind", ["NIGHTLY", "CYCLE"])
+def test_normal_prior_close_still_requires_event_coordinator(
+    nightly, controlled_context, monkeypatch, prior_kind
+):
+    prior_close_dividends(controlled_context)
+    broker, birth = nightly.initialize(controlled_context)
+    original = nightly.read_birth(birth)
+    prior = dict(original, phase="NIGHTLY_CLOSE", session="2019-02-27", birth=birth)
+    if prior_kind == "CYCLE":
+        prior["session"] = "2019-02-28"
+
+    # Supply a declared synthetic predecessor only to isolate the unchanged event guard.
+    def predecessor(self, reference):
+        assert self is nightly
+        assert reference == birth
+        return prior, prior_kind
+
+    monkeypatch.setattr(adapter.Nightly, "predecessor", predecessor)
+    with pytest.raises(ValueError, match="Economic coordinator evidence required"):
+        nightly.close(
+            controlled_context, broker, "2019-02-28", birth=birth, previous=birth
+        )
+    assert broker._now is None
+    assert broker._actions == {}
+    assert broker._dividends == []
+    assert not broker.attempt_history

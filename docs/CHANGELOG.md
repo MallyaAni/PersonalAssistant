@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-10-17 — Preserve pre-inception events at the private prior close
+
+The private corrected-account adapter now records February28 declarations before
+its March1 inception without applying entitlements. This exception requires the
+exact authenticated birth predecessor and every native broker/paper component
+to remain the untouched100k/zero account. Normal nightly/Cycle event admission
+stays closed pending separate coordinator proof. The original producer's prior
+close, native planner, raw receipts, quantities, clocks and guarded31 files are
+unchanged. Pinned raw metadata contains ADI/NVDA dividends0.54/0.004; those raw
+values were neither normalized nor applied by the metadata inspection.
+
+The original guard failed the new acceptance case as expected. Native fixtures
+then passed85 cases with one preserved test-only missing-limit error; adding the
+required receipt-read limit passed the affected case once,0skip,0.49s. This is
+86distinct cases covered by85+1, not a repeated full86 run. Exact f612/UID1000/
+networknone/read-only/1CPU/2GiB resources and unchanged source31 were retained.
+No genuine model/account run or historical publication is proved; fresh genuine
+preparation remains inert. Read
+research/historical-conditional-nightly-birth-proof-2026-10-17.json.
+
 ## 2026-10-17 — Preserve frozen action metadata at private nightly admission
 
 The corrected-account helper now detaches immutable action mappings and tuples
