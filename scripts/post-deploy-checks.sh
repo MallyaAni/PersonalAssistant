@@ -34,6 +34,10 @@ trap 'status=$?; if [[ $status -ne 0 ]]; then echo "post-deploy-checks.sh: exiti
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 compose=(docker compose -f "$root/docker-compose.yml")
 after="${1:-unknown}"
+admission_ok=true
+if [[ -f "$root/data/market/desk/learned-holding/config.json" ]]; then
+    bash "$root/scripts/check-trading-admission.sh" "$root" || admission_ok=false
+fi
 
 # The cheap mode: run by deploy.sh when the change did not touch the search
 # chain or the router's tool choice, so the credit-consuming sweep and
@@ -43,7 +47,7 @@ after="${1:-unknown}"
 if [[ "$after" == "--cheap" ]]; then
     after="${2:-unknown}"
     status_file="$root/data/.post-deploy-status"
-    ok=true
+    ok="$admission_ok"
     code="$(curl -sS -o /dev/null -w '%{http_code}' -m 15 \
         -H 'Host: deep-matter.com' http://localhost:8080/api/v1/auth/session 2>/dev/null || true)"
     echo "gateway -> backend on /api/v1/auth/session: HTTP ${code:-unreachable} (expect 401)"
@@ -59,20 +63,26 @@ if [[ "$after" == "--cheap" ]]; then
     mkdir -p "$(dirname "$status_file")"
     if $ok; then
         printf '%s %s ok (cheap)\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$after" > "$status_file"
-        echo "cheap post-deploy checks: all green - gateway -> backend OK; backend /health OK"
+        echo "cheap post-deploy checks: all green - gateway -> backend OK; backend /health OK; trading admission OK"
         exit 0
     fi
     printf '%s %s FAILED (cheap)\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$after" > "$status_file"
     bash "$root/scripts/notify-operator.sh" \
-        "AniOS $after cheap post-deploy smoke failed: the gateway or the backend did not answer" || true
+        "AniOS $after cheap post-deploy smoke failed: serving path or installed trading admission failed" || true
     echo "cheap post-deploy checks: FAILED" >&2
     exit 1
 fi
 
 status_file="$root/data/.post-deploy-status"
 
-post_ok=true
+post_ok="$admission_ok"
 summary=()
+if ! $admission_ok; then
+    mkdir -p "$(dirname "$status_file")"
+    printf '%s %s FAILED (trading admission)\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$after" > "$status_file"
+    bash "$root/scripts/notify-operator.sh" "AniOS $after installed trading admission failed" || true
+    exit 1
+fi
 for check in backend.cli.sweep_journeys backend.cli.exercise_search_scenarios; do
     # Bounded: a journey that waits on a machine that is off keeps its
     # stream alive with heartbeats, and deploy #6's sweep never returned

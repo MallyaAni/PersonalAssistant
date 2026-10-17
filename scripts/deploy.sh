@@ -90,6 +90,8 @@ gate_tree=""
 prev_head=""
 root=""
 declare -A old_image_ids=()
+trading_approval_archive=""
+trading_python=""
 
 # Print a section heading the way every deploy log has shown them.
 step() { printf '\n\033[1m==> %s\033[0m\n' "$1"; }
@@ -416,6 +418,36 @@ roll_back_unrestarted() {
     nothing_changed "Rolled back."
 }
 
+# Check candidate approval before checkout movement, using the new gated helper.
+trading_preflight() {
+    if [[ ! -f "$root/data/market/desk/learned-holding/config.json" && -z "${ANIOS_TRADING_APPROVAL_BUNDLE:-}${ANIOS_TRADING_APPROVAL_BUNDLE_SHA256:-}" ]]; then
+        echo 'trading approval: NOT_CONFIGURED'
+        return 0
+    fi
+    trading_python="${ANIOS_TRADING_PYTHON:-$HOME/research-venv/bin/python}"
+    if [[ -z "${ANIOS_TRADING_PYTHON:-}" && ! -x "$trading_python" ]]; then trading_python=python3; fi
+    [[ -n "$gate_tree" ]] || make_gate_tree
+    local -a args=(preflight --root "$root/data/market" --revision "$target")
+    if [[ -n "${ANIOS_TRADING_APPROVAL_BUNDLE:-}" ]]; then args+=(--bundle "$ANIOS_TRADING_APPROVAL_BUNDLE"); fi
+    if [[ -n "${ANIOS_TRADING_APPROVAL_BUNDLE_SHA256:-}" ]]; then args+=(--bundle-sha256 "$ANIOS_TRADING_APPROVAL_BUNDLE_SHA256"); fi
+    (cd "$gate_tree" && PYTHONPATH="$gate_tree" "$trading_python" -m backend.cli.market_release_admission "${args[@]}")
+}
+
+# Install only explicit reviewed bytes after gates/builds; never generate approval.
+activate_trading_approval() {
+    [[ -n "${ANIOS_TRADING_APPROVAL_BUNDLE:-}" ]] || return 0
+    local receipt
+    receipt="$(cd "$root" && PYTHONPATH="$root" "$trading_python" -m backend.cli.market_release_admission activate --root "$root/data/market" --revision "$target" --bundle "$ANIOS_TRADING_APPROVAL_BUNDLE" --bundle-sha256 "$ANIOS_TRADING_APPROVAL_BUNDLE_SHA256" --archive-dir "${ANIOS_TRADING_APPROVAL_ARCHIVE_DIR:-$root/data/trading-approval-archives}")" || return 1
+    trading_approval_archive="$("$trading_python" -c 'import json,sys; print(json.loads(sys.argv[1])["archive"])' "$receipt")"
+    echo "$receipt"
+}
+
+# Restore archived selectors before an unrestarted code rollback restores old sources.
+rollback_trading_approval() {
+    [[ -n "$trading_approval_archive" ]] || return 0
+    (cd "$root" && PYTHONPATH="$root" "$trading_python" -m backend.cli.market_release_admission rollback --root "$root/data/market" --archive "$trading_approval_archive")
+}
+
 # On any exit: drop the gate tree, roll back a half-done deploy, and name the
 # line a failure stopped at. Deploys #6-#8 (2026-08-27/28) ended at the
 # post-deploy step with nothing in the log; whatever the cause, the next one
@@ -424,7 +456,11 @@ on_exit() {
     local status="$1" line="$2" command="$3"
     drop_gate_tree || true
     if [[ $status -ne 0 && "$phase" == moved ]]; then
-        roll_back_unrestarted || true
+        if rollback_trading_approval; then
+            roll_back_unrestarted || true
+        else
+            echo "TRADING APPROVAL ROLLBACK FAILED; code was not rolled back; inspect the preserved approval archive" >&2
+        fi
     fi
     if [[ $status -ne 0 ]]; then
         echo "deploy.sh: exiting with status $status at line $line ($command)" >&2
@@ -573,10 +609,13 @@ main() {
     elif $gate; then
         make_gate_tree
         run_gates || exit 1
-        drop_gate_tree
     else
         echo "WARNING: unit suite and routing gate skipped by request"
     fi
+
+    step "Trading approval preflight"
+    trading_preflight || { nothing_changed "Candidate trading approval failed; explicit reviewed bundle required for source changes."; exit 1; }
+    drop_gate_tree
 
     if $dry_run; then
         step "Dry run"
@@ -614,6 +653,9 @@ main() {
             exit 1
         fi
     fi
+
+    step "Reviewed trading approval"
+    activate_trading_approval
 
     step "Restarting"
     phase=restarted
@@ -656,6 +698,14 @@ main() {
     fi
 
     $ok || { echo "verification failed" >&2; exit 1; }
+
+    # A reachable API is insufficient: cron and actual container must admit the policy.
+    step "Installed trading source admission"
+    if [[ -f "$root/data/market/desk/learned-holding/config.json" ]]; then
+        bash "$root/scripts/check-trading-admission.sh" "$root"
+    else
+        echo 'trading approval: NOT_CONFIGURED'
+    fi
 
     # The live checks, on the code that is now serving: every journey a person
     # takes, and the search chain. They run after the restart because they need

@@ -55,6 +55,7 @@ exit "${GATE_STUB_EXIT:-0}"
 DOCKER_STUB = r"""#!/usr/bin/env bash
 # Test stand-in for docker: logs every call and keeps image tags as files.
 echo "docker $*" >> "$STUB_DIR/docker.log"
+echo "docker $*" >> "$STUB_DIR/order.log"
 images="$STUB_DIR/images"; mkdir -p "$images"
 # The file that holds one image reference's id.
 key() { local ref="$1" repo tag; if [[ "${ref##*/}" == *:* ]]; then repo="${ref%:*}"; tag="${ref##*:}"; else repo="$ref"; tag=latest; fi; echo "$images/${repo//\//_}@$tag"; }
@@ -68,6 +69,7 @@ case "$1" in
       build) shift; head="$(git -C "$root" rev-parse --short HEAD)"; for s in "$@"; do echo "built-$head" > "$(key "${COMPOSE_PROJECT_NAME}-$s")"; done ;;
       ps) [[ -f "$STUB_DIR/infra_down" ]] || printf 'db\nredis\n' ;;
       run) [[ -f "$STUB_DIR/fail_migration" ]] && exit 1 ;;
+      exec) if [[ "$*" == *backend.cli.market_release_admission* ]]; then printf '{"status":"ADMITTED","source_sha256":{"fixture":"%s"}}\n' "${ADMISSION_CONTAINER_SOURCE:-exact}"; exit "${ADMISSION_CONTAINER_EXIT:-0}"; fi ;;
     esac ;;
   image) f="$(key "${@: -1}")"; [[ -f "$f" ]] && cat "$f" || exit 1 ;;
   tag) if [[ -f "$(key "$2")" ]]; then cp "$(key "$2")" "$(key "$3")"; else echo "$2" > "$(key "$3")"; fi ;;
@@ -89,6 +91,30 @@ printf 401
 STUB_SCRIPT = """#!/usr/bin/env bash
 # Test stand-in for a deploy helper script: records that it ran.
 echo "$(basename "$0") $*" >> "$STUB_DIR/scripts.log"
+echo "$(basename "$0") $*" >> "$STUB_DIR/order.log"
+"""
+
+TRADING_PYTHON = r"""#!/usr/bin/env python3
+import json,os,pathlib,subprocess,sys
+if sys.argv[1:2]==['-c']:
+    os.execv(sys.executable,[sys.executable,*sys.argv[1:]])
+assert sys.argv[1:3]==['-m','backend.cli.market_release_admission']
+operation=sys.argv[3]
+with open(pathlib.Path(os.environ['STUB_DIR'])/'order.log','a') as log:
+    log.write(operation+'\n')
+with open(pathlib.Path(os.environ['STUB_DIR'])/'admission.log','a') as log:
+    log.write(operation+' code='+os.environ.get('PYTHONPATH','')+' deploy='+subprocess.check_output(['git','-C',os.environ['DEPLOY_DIR'],'rev-parse','--short','HEAD'],text=True).strip()+'\n')
+if operation=='preflight':
+    assert (pathlib.Path(os.environ['PYTHONPATH'])/'backend/cli/market_release_admission.py').exists()
+    sys.exit(int(os.environ.get('ADMISSION_PREFLIGHT_EXIT','0')))
+if operation=='check':
+    if int(os.environ.get('ADMISSION_HOST_EXIT','0')): sys.exit(1)
+    print(json.dumps({'status':'ADMITTED','source_sha256':{'fixture':'exact'}}))
+elif operation=='activate':
+    print(json.dumps({'status':'ADMITTED','archive':os.environ['STUB_DIR']+'/approval-archive'}))
+elif operation=='rollback':
+    print(json.dumps({'status':'RESTORED_ORIGINAL_APPROVAL'}))
+else: raise AssertionError(operation)
 """
 
 
@@ -131,10 +157,13 @@ class Rig:
         _exe(self.seed / "scripts" / "gate.sh", GATE_STUB)
         _exe(self.seed / "scripts" / "backup-db.sh", STUB_SCRIPT)
         _exe(self.seed / "scripts" / "post-deploy-checks.sh", STUB_SCRIPT)
+        shutil.copy(SCRIPTS / "check-trading-admission.sh", self.seed / "scripts" / "check-trading-admission.sh")
         (self.seed / "docker-compose.yml").write_text("services: {}\n")
         (self.seed / ".gitignore").write_text("data/\n.env\n")
         (self.seed / "backend").mkdir()
         (self.seed / "backend" / "app.py").write_text("VERSION = 1\n")
+        (self.seed / "backend" / "cli").mkdir()
+        shutil.copy(SCRIPTS.parent / "backend/cli/market_release_admission.py", self.seed / "backend/cli/market_release_admission.py")
         _git(self.seed, "add", "-A")
         _git(self.seed, *IDENTITY, "commit", "-qm", "first")
         _git(self.seed, "remote", "add", "origin", str(self.origin))
@@ -150,6 +179,7 @@ class Rig:
         _exe(self.bin / "docker", DOCKER_STUB)
         _exe(self.bin / "pgrep", PGREP_STUB)
         _exe(self.bin / "curl", CURL_STUB)
+        _exe(self.bin / "trading-python", TRADING_PYTHON)
         (self.stubs / "images").mkdir()
         (self.stubs / "images" / "anios-backend@latest").write_text("old-image\n")
 
@@ -170,6 +200,7 @@ class Rig:
             "ANIOS_DEPLOY_CLOCK": "1700",
             "ANIOS_DEPLOY_TICK_GUARD": "0",
             "ANIOS_DEPLOY_POLL_SECONDS": "1",
+            "ANIOS_TRADING_PYTHON": str(self.bin / "trading-python"),
             **env,
         }
         return subprocess.run(
