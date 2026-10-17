@@ -1,5 +1,41 @@
 # Next session
 
+## 2026-10-17 — Native reconciliation exposed submitted-quantity persistence loss
+
+NEW private native N2 probe609b3c3c exercised all8 immutable synthetic joined
+cases:7 test functions/0skip/0.272s,6passed and ONE confirmed expected failure.
+Original desired8 -> broker accepted5 -> fill5 correctly becomes terminalpartial,
+but paper.Settled/apply_settlements drops submitted5 when removing pending. The
+native journal retains desired8/fill5/clocks only. Quantity-domain persistence is
+FAILED; the outer broker receipt does not turn that missing journal evidence green.
+
+Other native checks preserve partial9/fill4 and zero-fill expiry, WAIT beforeclose
+versus missing afterdeadline, full saved-state readback/idempotence and existing
+explicit rebalance/control behavior. No new planner/model/broker API or execution
+occurred; only detached prior SYNTHETIC receipts passed through the unchanged real
+_reconcile/settle/apply_settlements functions in a private temporary state root.
+
+Retained runtimefb2dd5df: exact imagee0/read-only/networknone/1CPU512MiB/exit0;
+only new /out writable, no source/data/model/credential overlays. Independent
+runtime/finding proofeb699a12 verifies the original8/5/5 counterexample, all8case
+coverage and actual isolation without rerunning tests. Exact proof copies:
+research/historical-reconciliation-native-proof-2026-10-17.json and
+research/historical-reconciliation-runtime-proof-2026-10-17.json. Private root:
+scratch/private-joined-reconciliation-20261017-v2. Firstv1 remains original:
+Settings lacked SECRET_KEY before collection; freshv2 adds only an explicit
+nonsecret synthetic fixture value. Original helper2bb04708 is unchanged.
+
+trading_action_consistency now prepares a narrow production-N2-based future-only
+quantity-persistence candidate and regressions; no guarded edits/deployment yet.
+It must preserve unknown quantities, old unannotated journals and terminal/control
+semantics, including legitimate corporate adjustments. Root source/admission review
+still required. historical_chain_completion strengthens the new pure pending audit;
+actual_policy_review implements a separate generic no-GET packet/manifest boundary
+with unresolved entity lineage failing closed. No generic acquisition/full corrected
+launch yet. Original full run immutable; publisher closed; real natural-session
+acceptance pending; heartbeat ACTIVE/quiet unchanged. Diagram impact NONE: private
+fixture only, no connected production flow or new deployed store/service.
+
 ## 2026-10-17 — Joined conditional sender and pilot venue verified on synthetic inputs
 
 NEW8 joined nativee0 checks/0skip1.16s passed, without rerunning old12/36 suites.
