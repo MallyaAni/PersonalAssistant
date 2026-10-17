@@ -119,8 +119,19 @@ def _queries(mapping, names, legs, window):
 
 # Freeze fixed queries from authenticated identity and declared causal prior state.
 def build(
-    registry, *, identity_sha256, parent_sha256, completed_at, prior, held, legs, used
+    registry,
+    *,
+    identity_sha256,
+    parent_sha256,
+    completed_at,
+    prior,
+    held,
+    legs,
+    used,
+    branch="MODEL_TIMED_MARKET_ONLY",
 ):
+    if branch not in {"MODEL_TIMED_MARKET_ONLY", "SESSION_COMPLETION_MARKET"}:
+        raise ValueError("Explicit supported market branch required")
     reg.digest(identity_sha256)
     reg.digest(parent_sha256)
     if type(prior) is not dict or set(prior) != PRIOR:
@@ -143,7 +154,7 @@ def build(
         "queries": _queries(mapping, names, legs, window),
         "budget": dict(BUDGET),
         "used": usage(used),
-        "branch": "MODEL_TIMED_MARKET_ONLY",
+        "branch": branch,
         "post_resolution_marks": "UNRESOLVED_NO_FRESH_MARK_SELECTION",
         "coverage_basis": "DECLARED_PRIOR_HELD_AND_LEGS_NOT_LEDGER_RECONCILIATION",
         "acquisition_authorized": False,
@@ -166,6 +177,7 @@ def read(demand, registry):
         held=data["held"],
         legs=data["legs"],
         used=data["used"],
+        branch=data["branch"],
     )
     if rebuilt.raw != demand.raw:
         raise ValueError("Canonical original demand differs")

@@ -51,6 +51,28 @@ def context(completed_at, cohort, *, cohort_sha256):
         or native._instant(window["quote_end"]) >= clocks["close"]
     ):
         raise ValueError("Model-timed regular phase required; final/auctions refused")
+    return _context_bytes(window, cohort, cohort_sha256, "MODEL_TIMED_MARKET_ONLY")
+
+
+# Admit only the reviewed final boundary, without widening model-clock admission.
+def session_completion_context(completed_at, cohort, *, cohort_sha256):
+    window = packet.schedule(completed_at)
+    completed = native._instant(completed_at).astimezone(calendar.NEW_YORK)
+    clocks = entry_timing.session_clock(completed.date())
+    if (
+        not native._session(completed)[0]
+        or completed != clocks["final"]
+        or not clocks["final"]
+        <= native._instant(window["assumed_decision_at"])
+        < clocks["close"]
+        or native._instant(window["quote_end"]) >= clocks["close"]
+    ):
+        raise ValueError("Exact reviewed session-completion market window required")
+    return _context_bytes(window, cohort, cohort_sha256, "SESSION_COMPLETION_MARKET")
+
+
+# Preserve the original model context bytes while naming a separate final phase.
+def _context_bytes(window, cohort, cohort_sha256, phase):
     if (
         type(cohort) is not tuple
         or len(cohort) != 96
@@ -67,7 +89,7 @@ def context(completed_at, cohort, *, cohort_sha256):
             "window": window,
             "cohort": list(cohort),
             "cohort_sha256": cohort_sha256,
-            "phase": "MODEL_TIMED_MARKET_ONLY",
+            "phase": phase,
         }
     )
     return Context(raw, packet._digest(packet._decode(raw)))
@@ -82,7 +104,13 @@ def read_context(value):
     ):
         raise ValueError("Bounded immutable context required")
     data = registry.pinned(value.raw, value.sha256)
-    rebuilt = context(
+    builder = {
+        "MODEL_TIMED_MARKET_ONLY": context,
+        "SESSION_COMPLETION_MARKET": session_completion_context,
+    }.get(data.get("phase"))
+    if builder is None:
+        raise ValueError("Explicit supported context phase required")
+    rebuilt = builder(
         data["window"]["completed_at"],
         tuple(data["cohort"]),
         cohort_sha256=data["cohort_sha256"],
@@ -196,7 +224,11 @@ def decision_inputs(broker, captured, manifest, entities, anchor_receipt, ctx):
     data = read_context(ctx)
     declaration, supplied = rows(captured, manifest, entities)
     window = data["window"]
-    if declaration["window"] != window or type(broker) is not native.ReplayBroker:
+    if (
+        declaration["window"] != window
+        or declaration["branch"] != data["phase"]
+        or type(broker) is not native.ReplayBroker
+    ):
         raise ValueError("Exact context and private broker required")
     original = deepcopy(broker.__dict__)
     held = {n for n, q in broker._held.items() if q > 0}
@@ -310,8 +342,10 @@ class Resolver:
         context_data = read_context(ctx)
         declaration, supplied = rows(captured, manifest, entities)
         window = context_data["window"]
-        if declaration["window"] != window or packet.nanos(at) != packet.nanos(
-            window["quote_end"]
+        if (
+            declaration["window"] != window
+            or declaration["branch"] != context_data["phase"]
+            or packet.nanos(at) != packet.nanos(window["quote_end"])
         ):
             raise ValueError("Exact fixed current deadline required")
         signature = packet._digest(
