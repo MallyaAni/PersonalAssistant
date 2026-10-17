@@ -355,7 +355,7 @@ test('the board shows the paper account’s orders mid-session', async ({page}, 
   const diagnostics = await scenario(page, {now: THURSDAY, plan: 'thursday'})
   await page.goto('/?deskView=paper#desk')
   const board = page.getByRole('region', {name: 'Stocks and cash'})
-  await expect(board).toContainText('the paper account’s orders')
+  await expect(board.getByRole('heading', {name: 'Paper orders', exact: true})).toBeVisible()
   await expect(page.getByLabel('Paper account summary')).toContainText('$100,018 paper account')
   await expect(page.getByLabel('Paper account summary')).toContainText('10 orders (8 buys, 2 sells)')
   await expect(page.getByLabel('Execution rule')).toContainText('submitted or completed orders are not new trade instructions.')
