@@ -1,0 +1,53 @@
+{
+  "status": "VERIFIED_PRIVATE_SYNTHETIC_MARK_TO_NATIVE_ACCOUNT_JOIN_ONLY",
+  "selector_commit": "375bb69d7bdae340f5e6256a556682b03e5a0ffa",
+  "selector_sha256": "8194ecbceae7a3088515ad562aea0efb94f643a494f1395c311630d5aa930599",
+  "native_source": "ad44d536a70d5c037cb931836a3c9f48b014d84a",
+  "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+  "private_root": "/home/animallya96/scratch/historical-mark-account-join-tests-20261017-v1",
+  "proof_sha256": "8e9ce1fcc7e4a43f54dd7f1a39d80ed6abdea5ef2b213719d91a9c0532c79eaa",
+  "helper_sha256": "ecf82f1f34ebf74016a7546d8072efe73bc218bb7ceb51881df08ca79f36c4c1",
+  "runner_sha256": "c5c60669f713ac75c573aace6d8572238b8c1883892f3ba4d10c696a8adc0e41",
+  "launcher_sha256": "948163725e5f59a9cd18da4c346c6fff360b9efb4a1dd082e890389c3f8eebee",
+  "container_id": "3a8dbcb0d63030c411cf83b48635fa90b8f345f4c0fb891767e39680498f7e83",
+  "runtime": {
+    "started_at": "2026-10-17T14:08:19.226220857Z",
+    "finished_at": "2026-10-17T14:08:20.172795724Z",
+    "network": "none",
+    "readonly": true,
+    "cpus": 1,
+    "memory_bytes": 536870912,
+    "exit_code": 0,
+    "oom_killed": false,
+    "passed": 13,
+    "skipped": 0,
+    "pytest_seconds": 0.11,
+    "helper_seconds": 0.23787856381386518,
+    "max_rss_kib": 52140
+  },
+  "verified": [
+    "Exact broker state binding before selection and immediately before native observation; intervening cash change rejects",
+    "Calendar-derived session status agrees with unchanged native session implementation, including early close and weekend",
+    "All-held fresh candidates pass through actual native observe/account/positions; no copied account admission",
+    "Independent Decimal cash, all-held valuation, receivables, fees, basis, fractional shares and buying power; explicitly bounded four-ULP float arithmetic comparison",
+    "Partial BUY9/fill4, half-share residue, WAIT with no sender, and full exit with an outstanding100.1 reservation",
+    "Missing marks cause no observation/state mutation/NAV; unknown fractional cash claim rejects native NAV even with empty holdings",
+    "Retained166 genuine AAPL rows still produce missing latest-tie marks and no observation; the account is synthetic"
+  ],
+  "root_independent_review": {
+    "proof_and_helper_bytes_checked": true,
+    "retained_container_image_resources_mounts_inspected": true,
+    "full_helper_and_runner_reviewed": true,
+    "guarded31_and_extra_native_source_hashes_checked_before_after_by_runner": true,
+    "model_or_test_rerun_for_documentation": false
+  },
+  "limits": [
+    "Private fixture composition only; no connected coordinator, runner, production adapter or deployment",
+    "Eight synthetic economic cases; no genuine model-funded quantities, actual-account reads, provider GETs or inference",
+    "Only retained AAPL quote bytes are genuine; issuer lineage remains conditional",
+    "Observation clocks are declared retrospective assumptions, not recovered historical clocks",
+    "Original active full output and all existing sources/models/configuration/history are unchanged",
+    "Full corrected historical delivery and fresh ordinary/intraday acceptance remain UNVERIFIED"
+  ],
+  "diagram_impact": "NONE: private fixture only; no connected service, store or execution flow"
+}

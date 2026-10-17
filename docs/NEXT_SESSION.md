@@ -14,6 +14,17 @@ conflicting under the unchanged full-row rule: missing/no older fallback. Do not
 relax a source rule to turn this sample green. Agent now validates a NEW private
 selector-to-native-account join, not a production runner or new acquisition.
 
+That NEW private join now passes13native checks/0skip0.11s in retained3a8dbcb0,
+exacte0/networknone/read-only/1CPU512MiB/exit0/OOMfalse. ROOT read full helper/
+runner, independently authenticated exact8e9ce1fc proof/helper and inspected actual
+runtime/mounts; no model/test rerun. Independent Decimal arithmetic checks cash,
+all-held NAV, fees, fractions, bases, unpaid claims and buying power with explicit
+4ULP float allowance. Actual native observe/account/positions enforce claims and
+calendar-derived session guards. Missing/genuineAAPL-tie never observes; empty-held
+unknown fractional claim still rejects NAV. Private composition only, all account
+inputs synthetic; no connected runner. Exact research/historical-mark-account-join-
+proof-2026-10-17.json. Original contract and selector are unchanged.
+
 ONE metadata canonical release PID4045370 remained active14:03:57Z, target3b72,
 and had advanced from unit tests to real-model routing; no completed gate,
 activation or delivery claim yet. Never duplicate it. Stream composition59eab30c
