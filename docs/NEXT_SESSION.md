@@ -1,5 +1,23 @@
 # Next session
 
+## 2026-10-17 — Historical review catalog extension verified; no deployment
+
+Static candidate a7d0d955 was integrated as90450285. Its exact source/test/review
+bytes match the tested candidate; all referenced historical backend dependencies
+also match.49 focused checks pass/0skip9.87s, lint/compile/diff and33 diagram/page
+checks pass. Proof:research/historical-source-chain-candidate-proof-2026-10-17.json.
+The historical binding now pins both original API review8b628c76 and exact
+numeric extension review2f048a80. Each later API-only review must conserve all
+predecessor source hashes, using its exact count after30-to31 extension; changed
+catalog bytes, receipt order, schemas, economics and source drift are rejected.
+No third production API hash is approved. No urgent API implementation was
+merged into pending historical main; its eventual combined API still needs an
+exact third review/catalog entry and actual admission before delivery. This
+closes the catalog prerequisite mentioned below, not full historical acceptance.
+Original full run, models/config, actual account and deployment are untouched.
+Existing parity v3 backup remains the live release job; continue the prepared
+independent/parity/numeric/settlement/browser sequence below without duplication.
+
 ## 2026-10-17 — Numeric decision candidate ready; parity backup still active
 
 Isolated production-based candidate6a1d77bc1d8bdeb080bdee26b8e1ef95507a9ea1
