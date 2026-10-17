@@ -16,6 +16,7 @@ from backend.agents.trading.desk import paper
 from backend.cli.verify_actual_policy_timing import same
 from backend.market import calendar, entry_timing
 from backend.market import live_model_history_nightly_model as numerical
+from backend.market.live_model_history_observation_context import ObservationContext
 from backend.market.live_model_history_receipts import instant, require, whole
 from backend.market.live_probability_timing import POLICY
 
@@ -189,7 +190,8 @@ def proxy_timed(row, trace, quote, now, day, slot):
 
 
 # Reconstruct literal sender metadata without calling a sender or probability provider.
-def apply_attempt(row, attempt, accepted, timed, now):
+def apply_attempt(row, attempt, accepted, timed, now, *, context=None):
+    require(type(context) is ObservationContext, "Independent sender context required")
     cid = row["client_order_id"]
     require(
         attempt["client_order_id"] == cid
@@ -204,6 +206,7 @@ def apply_attempt(row, attempt, accepted, timed, now):
         not ({"forward_receipt", "forward_receipt_sha256"} & set(timed)),
         "UNRECONSTRUCTIBLE_FORWARD_REFERENCE: legacy sender metadata only",
     )
+    context.admit(row, attempt)
     row["sending"] = now.isoformat(timespec="seconds")
     if not attempt["accepted"]:
         require(
@@ -298,9 +301,41 @@ def advance_quotes(raw, day, slot, now, latches):
     return quotes
 
 
+# Preserve literal error mutations when no native request receipt was created.
+def apply_failure(row, result, now, line, logs):
+    if result["kind"] == "batch_unavailable":
+        logs[:] = [
+            "intraday orders: broker unavailable ("
+            + result["error"]
+            + "); nothing sent"
+        ]
+        return
+    if result["kind"] == "pre_attempt_error":
+        row["sending"] = now.isoformat(timespec="seconds")
+    row["send_error"] = result["error"]
+    logs.append(
+        line
+        + (
+            ": REFUSED " + result["error"]
+            if result["kind"] == "pre_attempt_error"
+            else ": not sent (" + result["error"] + ")"
+        )
+    )
+
+
 # Fold original metadata; terminal facts never reconcile controls here.
 def fold_pending(
-    previous, evidence, accepted, outcomes, raw, day, session, *, conserved_attempts
+    previous,
+    evidence,
+    accepted,
+    outcomes,
+    raw,
+    day,
+    session,
+    *,
+    conserved_attempts,
+    observation_context=None,
+    mark_reader=None,
 ):
     require(
         type(evidence) is OriginalProxyEvidence,
@@ -337,11 +372,21 @@ def fold_pending(
     attempts, traces, observations = receipt_indexes(
         records, pending, clock, conserved_attempts
     )
+    require(
+        type(observation_context) is ObservationContext,
+        "Independent sender context required",
+    )
     consumed_attempts, consumed_traces, consumed_observations = set(), set(), set()
     latches, transitions = {}, []
     for slot in range(count):
         now = clock["open"] + (slot + 1) * entry_timing.BAR
         quotes = advance_quotes(raw, day, slot, now, latches)
+        marks = (
+            mark_reader(now, slot)
+            if mark_reader
+            else {name: quote["last"] for name, quote in quotes.items()}
+        )
+        observation_context.advance(now, marks)
         due = [
             row
             for row in state.pending
@@ -361,6 +406,7 @@ def fold_pending(
             "Independently derived original due rows",
         )
         consumed_observations.add(now)
+        sender_logs = []
         for row in due:
             require(
                 row.get("timing_policy") == POLICY and "execution_policy" not in row,
@@ -371,6 +417,7 @@ def fold_pending(
             if now < clock["final"]:
                 require(key in traces, "Original proxy timing receipt missing")
                 timed = proxy_timed(row, traces[key], quote, now, day, slot)
+                observation_context.compare_trace(row, traces[key], quotes, due)
                 consumed_traces.add(key)
                 ready = timed["state"] == "execute"
             else:
@@ -384,14 +431,40 @@ def fold_pending(
                     level_fraction=None,
                     reason="Session completion",
                 )
-            require(
-                ready == (key in attempts),
-                "UNRECONSTRUCTIBLE_SENDER_RESULT: "
-                "ready/no-quantity/adoption or missing attempt evidence",
-            )
             if not ready:
+                require(key not in attempts, "Unready original row has sender attempt")
                 continue
-            apply_attempt(row, attempts[key], accepted, timed, now)
+            result = observation_context.result(row)
+            line = (
+                f"{row['side']} {row['qty']} {row['symbol']} (market, {timed['state']})"
+            )
+            if result["kind"] != "attempt":
+                require(
+                    key not in attempts,
+                    "Original pre-attempt failure has a request receipt",
+                )
+                apply_failure(row, result, now, line, sender_logs)
+                transitions.append(
+                    {
+                        "client_order_id": cid,
+                        "at": now.isoformat(),
+                        "accepted": False,
+                        "without_attempt": result["kind"],
+                    }
+                )
+                continue
+            require(key in attempts, "Original independent sender attempt missing")
+            apply_attempt(
+                row, attempts[key], accepted, timed, now, context=observation_context
+            )
+            sender_logs.append(
+                line
+                + (
+                    ": sent"
+                    if attempts[key]["accepted"]
+                    else ": REFUSED " + attempts[key]["reason"]
+                )
+            )
             consumed_attempts.add(key)
             transitions.append(
                 {
@@ -400,6 +473,10 @@ def fold_pending(
                     "accepted": attempts[key]["accepted"],
                 }
             )
+        require(
+            observations[now]["sender_logs"] == sender_logs,
+            "Independent original sender logs differ",
+        )
     require(consumed_attempts == set(attempts), "Unmatched original intraday attempts")
     require(consumed_traces == set(traces), "Unmatched original legacy timing receipts")
     require(
@@ -425,6 +502,7 @@ def fold_pending(
         "journal_control_history_reconciliation": False,
         "current_live_timing_parity": "FAILED_SEPARATE_ORIGINAL_PATH_CONTRACT",
         "model_provider_sender_broker_calls": 0,
+        "sender_quantity_context": "independently_folded_pre_clock",
     }
 
 
