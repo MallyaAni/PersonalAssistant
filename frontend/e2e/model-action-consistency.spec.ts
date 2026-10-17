@@ -86,8 +86,10 @@ test('chart judgments cannot invent funded actions or turn absent orders into HO
   await expect(table.getByLabel('TRIMMING strategy intent', {exact: true})).toHaveText('TRIM')
   // The client expires the full decision without waiting for an account refresh.
   projection.valid_until = new Date(await page.evaluate(() => Date.now()) + 10000).toISOString()
+  projection.rows.BUYING.reason = 'Accepted entry in the expiring numeric receipt'
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect(table.getByLabel('BUYING strategy intent', {exact: true})).toHaveText('BUY')
+  await page.getByRole('button', {name: 'details for BUYING', exact: true}).click()
+  await expect(page.getByLabel('BUYING details', {exact: true})).toContainText('Accepted entry in the expiring numeric receipt')
   await page.clock.runFor(10001)
   await expect(table.getByLabel('BUYING strategy intent', {exact: true})).toHaveText('—')
   await expect(table.getByLabel('BUYING size', {exact: true})).toHaveText('—')

@@ -2048,6 +2048,7 @@ export interface DeskHistoryRow {
 }
 // One real fill of the paper account in this name, read from the nightly records.
 export interface DeskHistoryFill {
+  client_order_id?: string | null;
   date: string;
   side: 'buy' | 'sell';
   qty: number;
@@ -2966,7 +2967,8 @@ export const getDeskIntraday = async (userId: string): Promise<DeskIntraday | nu
 // move, so the page can read percentages beside the dollar figures.
 export interface DeskPaperLive {
   model_decisions?: DeskModelDecisions;
-  activity?: { session?: string; complete?: boolean; reason?: string; fills?: { symbol: string; side: string; qty: number; price: number; filled_at?: string }[] };
+  recorded_fills?: DeskRecordedPaperFill[];
+  activity?: { session?: string; complete?: boolean; reason?: string; fills?: { client_order_id?: string | null; symbol: string; side: string; qty: number; price: number; filled_at?: string }[] };
   as_of?: string;
   reason?: string;
   equity?: number;
@@ -2979,6 +2981,19 @@ export interface DeskPaperLive {
   // The paper account's own orders as the board shows them, worded once by the
   // backend (`intraday_orders.board_orders`) so board, panel and chart agree.
   plan?: DeskPaperPlan;
+}
+
+// An actual positive terminal fill read from the saved journal after reconciliation.
+export interface DeskRecordedPaperFill {
+  client_order_id?: string | null;
+  symbol: string;
+  side: 'buy' | 'sell';
+  qty: number;
+  price: number;
+  filled_at: string;
+  session?: string | null;
+  created_at?: string | null;
+  reconciled_at?: string | null;
 }
 
 // One admitted numerical policy decision, independent of its actual paper executions.

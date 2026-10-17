@@ -8,6 +8,7 @@ import { actionPresentation, BoardSimulation, executionClockMessage, MlCompariso
 import { RecommendationTimeline } from './RecommendationTimeline'
 import { PersonalDecisionHistory, type PersonalHistoryContext } from './PersonalDecisionHistory'
 import { PaperAccountHistory } from './PaperAccountHistory'
+import {confirmedPaperFills} from './paperFills'
 import { TickerChart } from './TickerChart'
 import {currentAssessments, assessmentPermission} from './liveAssessment'
 import {currentSetup, confirmationText, invalidationText, quoteReferenceText} from './currentRanking'
@@ -1442,6 +1443,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     decisionDate: event?.decision_date ?? null, calendarUnknown: event?.calendar_known === false,
   } : null} orders={paperLive?.orders?.length ?? eventLive?.pending_orders ?? 0}
     plan={paperLive?.plan?.orders ?? null} /> : null
+  const recordedExecutions = confirmedPaperFills(paperLive?.recorded_fills, paperLive?.activity, now)
   // Share dated analyst evidence with the full panel, revealing personal guidance only on request.
   const expandRow = (ticker: string) => {
     const g = latest?.grades?.[ticker]
@@ -1699,7 +1701,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               <p>{paperLive?.orders ? `${paperLive.orders.length} order${paperLive.orders.length === 1 ? '' : 's'} open at the broker` : 'Open orders unavailable'}</p>
               {paperLive?.orders?.map((order, i) => <p key={i}>{order.side.toUpperCase()} {order.qty} {order.symbol} · {order.status}</p>)}
               <p>{paperLive?.activity?.fills ? `${paperLive.activity.fills.length === 0 && paperLive.activity.complete ? 'No fills' : `${paperLive.activity.fills.length}${paperLive.activity.complete ? '' : '+'} fills`} · ${paperLive.activity.session}` : 'Today’s fill history unavailable'}</p>
-              {paperLive?.activity?.fills?.map((fill, i) => <p key={i}>{fill.side === 'buy' ? 'Bought' : 'Sold'} {fill.qty} {fill.symbol} @ {priceMoney(fill.price)} · {executionTime(fill.filled_at)}</p>)}
+              {[...recordedExecutions].reverse().map((fill, i) => <p key={fill.client_order_id ?? i} data-client-order-id={fill.client_order_id ?? undefined}>{fill.side === 'buy' ? 'Bought' : 'Sold'} {fill.qty} {fill.symbol} @ {priceMoney(fill.price)} · <time dateTime={fill.filled_at} title={fill.filled_at}>{executionTime(fill.filled_at)}</time></p>)}
             </section>
           </div>
         </details>
@@ -1761,6 +1763,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           personalHistory={false}
           strategy={strategyView}
           paperActivity={paperLive?.activity}
+          paperRecordedFills={paperLive?.recorded_fills}
           historyGeneration={accountGen.current}
           personalReceiptId={historyContext?.userId === userId
             && historyContext.generation === accountGen.current
@@ -3008,6 +3011,7 @@ const NameDetail = ({
   personalHistory = false,
   historyGeneration = 0,
   paperActivity,
+  paperRecordedFills,
   personalReceiptId,
   order = null,
   lastClose = null,
@@ -3036,6 +3040,7 @@ const NameDetail = ({
   personalHistory?: boolean
   historyGeneration?: number
   paperActivity?: DeskPaperLive['activity']
+  paperRecordedFills?: DeskPaperLive['recorded_fills']
   personalReceiptId?: string
   strategy?: boolean
 }) => {
@@ -3122,7 +3127,7 @@ const NameDetail = ({
             so it leads on a phone and holds the right two-fifths of a wide
             window, staying in place while the reasoning scrolls beside it. */}
         <div className="mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0">
-          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} strategy={strategy} simulation={simulation} simulationError={simulationError} />
+          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} paperRecordedFills={paperRecordedFills} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} strategy={strategy} simulation={simulation} simulationError={simulationError} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
         {strategy && <section aria-label="Current assessment" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">

@@ -17,6 +17,7 @@ import { exportDeskPersonalReceipt, getDeskChart, getDeskPersonalHistory, DESK_C
 import type { DeskHistory, DeskHistoryFill, DeskHistoryRow, DeskLive, DeskPaperLive, DeskStructure, DeskStrategyStock } from '../../services/api'
 import { SessionPrice } from './StockBoard'
 import { LEVEL_NAME, percent, shares } from './TradeBoard'
+import {confirmedPaperFills, paperFillSession} from './paperFills'
 
 // The picture behind the grade. The board says what the desk concluded; this
 // shows adjusted price indicators beside recorded and replayed grade changes.
@@ -452,33 +453,41 @@ const drawableFill = (fill: DeskHistoryFill) =>
   && typeof fill.qty === 'number' && Number.isFinite(fill.qty) && fill.qty > 0
   && typeof fill.price === 'number' && Number.isFinite(fill.price) && fill.price > 0
 
-// The paper account's real fills, oldest first, malformed rows left out.
+// Keep real archived fills oldest first, deduplicating known identities while retaining anonymous multiplicity.
 const fillRows = (history: DeskHistory | undefined): DeskHistoryFill[] => {
   const raw: unknown = history?.fills
-  return (Array.isArray(raw) ? raw as DeskHistoryFill[] : []).filter(drawableFill)
+  const seen = new Set<string>()
+  return (Array.isArray(raw) ? raw as DeskHistoryFill[] : []).filter(drawableFill).filter(fill => {
+    if (!fill.client_order_id) return true
+    if (seen.has(fill.client_order_id)) return false
+    seen.add(fill.client_order_id)
+    return true
+  })
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
-// Merge confirmed broker fills with archived fills as a multiset, retaining same-price separate executions.
-const currentFillRows = (history: DeskHistory | undefined, activity: DeskPaperLive['activity'], ticker: string, now: number): DeskHistoryFill[] => {
+// Merge actual journal, broker and archive fills by identity or conservative one-to-one matching.
+const currentFillRows = (history: DeskHistory | undefined, activity: DeskPaperLive['activity'], recorded: DeskPaperLive['recorded_fills'], ticker: string, now: number): DeskHistoryFill[] => {
   const archived = fillRows(history)
   const matched = new Set<number>()
   // Match old archive rows without an execution identity conservatively, without deduplicating distinct fills.
   const identity = (fill: DeskHistoryFill) => `${fill.date}:${fill.side}:${fill.qty}:${fill.price}`
   const fresh: DeskHistoryFill[] = []
-  for (const fill of activity?.fills ?? []) {
+  for (const fill of confirmedPaperFills(recorded, activity, now)) {
     const instant = recordedInstant(fill.filled_at)
     if (fill.symbol !== ticker || !instant || instant.getTime() > now
       || !['buy', 'sell'].includes(fill.side) || !Number.isFinite(fill.qty) || fill.qty <= 0
       || !Number.isFinite(fill.price) || fill.price <= 0) continue
-    const date = recordedSession(fill.filled_at)!
-    if (date !== activity?.session) continue
-    const row: DeskHistoryFill = {date, side: fill.side as 'buy' | 'sell', qty: fill.qty, price: fill.price, filled_at: fill.filled_at}
+    const date = paperFillSession(fill.filled_at)
+    const row: DeskHistoryFill = {date, side: fill.side, qty: fill.qty, price: fill.price, filled_at: fill.filled_at, client_order_id: fill.client_order_id}
+    const byId = fill.client_order_id ? archived.findIndex(saved => saved.client_order_id === fill.client_order_id) : -1
+    if (byId >= 0) {matched.add(byId); archived[byId] = {...archived[byId], ...row}; continue}
     const index = archived.findIndex((saved, i) => !matched.has(i) && identity(saved) === identity(row)
+      && !(saved.client_order_id && row.client_order_id && saved.client_order_id !== row.client_order_id)
       && (!saved.filled_at || Date.parse(saved.filled_at) === instant.getTime()))
     if (index >= 0) {
       matched.add(index)
-      archived[index] = {...archived[index], filled_at: fill.filled_at}
+      archived[index] = {...archived[index], ...row}
       continue
     }
     fresh.push(row)
@@ -570,6 +579,7 @@ export const TickerChart = ({
   history,
   currentPolicy,
   paperActivity,
+  paperRecordedFills,
   quote,
   live,
   now = Date.now(),
@@ -588,6 +598,7 @@ export const TickerChart = ({
   history?: DeskHistory
   currentPolicy?: string
   paperActivity?: DeskPaperLive['activity']
+  paperRecordedFills?: DeskPaperLive['recorded_fills']
   quote?: LiveQuote
   live?: DeskLive
   now?: number
@@ -759,7 +770,7 @@ export const TickerChart = ({
   const actionMarkers = useMemo(() => recommendationMarkers(events, merged.bars, timeframe), [events, merged, timeframe])
   const changes = useMemo(() => gradeMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
   const decisions = useMemo(() => decisionMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
-  const fills = useMemo(() => currentFillRows(history, paperActivity, ticker, now), [history, paperActivity, ticker, now])
+  const fills = useMemo(() => currentFillRows(history, paperActivity, paperRecordedFills, ticker, now), [history, paperActivity, paperRecordedFills, ticker, now])
   const fillMarks = useMemo(() => groupedFillMarkers(fillMarkers({...history, fills} as DeskHistory, merged.bars, timeframe)), [history, fills, merged, timeframe])
   // The fifteen-minute layers come timed from the payload rather than dated
   // from the history file, so they are empty on daily and weekly.
@@ -1142,7 +1153,7 @@ export const TickerChart = ({
           </details>}
           {strategy && showPaperFills && <div className="mt-2 text-xs text-[#6e6e73]" aria-label={`${ticker} actual paper executions`}>
             <p>Confirmed paper fills at their original date, quantity and price. These are executions, not grade signals or research fills.</p>
-            {fills.length === 0 ? <p>No confirmed paper executions in the loaded history.</p> : <ul>{[...fills].reverse().map((fill, index) => <li key={`${fill.date}-${index}`}>{fill.date}{fill.filled_at ? ` · ${newYorkClock(Date.parse(fill.filled_at) / 1000, false)} ET` : ''} · {tradeText(fill.side, fill.qty, fill.price)}</li>)}</ul>}
+            {fills.length === 0 ? <p>No confirmed paper executions in the loaded history.</p> : <ul>{[...fills].reverse().map((fill, index) => <li key={fill.client_order_id ?? `${fill.date}-${index}`} data-client-order-id={fill.client_order_id ?? undefined}><time dateTime={fill.filled_at} title={fill.filled_at}>{fill.date}{fill.filled_at ? ` · ${newYorkClock(Date.parse(fill.filled_at) / 1000, false)} ET` : ''}</time> · {tradeText(fill.side, fill.qty, fill.price)}</li>)}</ul>}
             {timeframe === '15m' && fills.some(fill => !recordedInstant(fill.filled_at)) && <p>Fills without a recorded execution time are listed but not marked on 15m.</p>}
           </div>}
           {!strategy && (latestDecision || suggestion || fills.length > 0) && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label={`${ticker} decisions`}>
