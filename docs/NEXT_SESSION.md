@@ -1,5 +1,27 @@
 # Next session
 
+## 2026-10-17 — Exact N2 execution preparation VERIFIED, not yet launched
+
+NEW private /home/animallya96/scratch/trading-numeric-preparation-20261017-v2
+contains clean detached candidatead44d536, bundle51e3e89a and newly pinned
+helpers. Read-only committed-review preflight admits31 sources; original state,
+record and installed selectors remain unchanged.29 binding/corruption checks
+pass/0skip0.26s;7 Python files compile; help-only checks pass. Exact file hashes
+are in research/trading-numeric-n2-preparation-proof-2026-10-17.json, copied from
+inert receiptc057ec8b. Old6a/v1 roots are untouched. No activation/reconciliation.
+
+Only this NEWv2 launcher may use --execute and --parity-proof-sha256 followed by
+66387176b7995850ee6f17933cdf790d6f79ef8bd96600e113e1a1d8cdf736a7.
+New exclusive release/independent roots are
+trading-numeric-release-20261017-v2 and trading-numeric-independent-20261017-v2.
+Settlement wrapper in preparationv2 is
+apply_known_fill_reconciliation_20261017_NUMERIC_N2_PROPOSED_v4.py, requiring
+the later reviewed N2 independent proof SHA; recovery root numeric-v2 remains
+absent. Never execute a helper twice or substitute proof/source/root bindings.
+Root is recovering Mac backup headroom before starting the canonical release,
+preserving an old browser trace byte-for-byte in verified archives. No model,
+paper-account, order or historical-run change is involved.
+
 ## 2026-10-17 — Independent live parity repair VERIFIED; continue N2 preparation
 
 Canonical parity v3 completed11:04:00Z at exacta2378e9565e6a557fbc3782ac1a5536bae961a75;

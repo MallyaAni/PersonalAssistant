@@ -1,0 +1,64 @@
+{
+  "actual_parity_precondition_sha256": "66387176b7995850ee6f17933cdf790d6f79ef8bd96600e113e1a1d8cdf736a7",
+  "compiled_python_files": 7,
+  "future_execution_roots_absent": [
+    "/home/animallya96/scratch/trading-numeric-release-20261017-v2",
+    "/home/animallya96/scratch/trading-numeric-independent-20261017-v2",
+    "/home/animallya96/scratch/paper-settlement-recovery-20261017-numeric-v2"
+  ],
+  "help_checks": [
+    {
+      "command": [
+        "/home/animallya96/research-venv/bin/python",
+        "/home/animallya96/scratch/trading-numeric-preparation-20261017-v2/launch.py",
+        "--help"
+      ],
+      "exit_code": 0,
+      "stdout_sha256": "0f4756ce4483cf7c947508cfb31f6725d1c5ce29069924dbc76d374bde263fb1"
+    },
+    {
+      "command": [
+        "/home/animallya96/research-venv/bin/python",
+        "/home/animallya96/scratch/trading-numeric-preparation-20261017-v2/verify_after_canonical.py",
+        "--help"
+      ],
+      "exit_code": 0,
+      "stdout_sha256": "b5fa4b4bd58c8a38d500be64671fc699853cae8ce46a01cab3222065228cb9ed"
+    },
+    {
+      "command": [
+        "/home/animallya96/research-venv/bin/python",
+        "/home/animallya96/scratch/trading-numeric-preparation-20261017-v2/apply_known_fill_reconciliation_20261017_NUMERIC_N2_PROPOSED_v4.py",
+        "--help"
+      ],
+      "exit_code": 0,
+      "stdout_sha256": "4dfd041676f9f0877ec63e6cd16e4ea395f9ab54908d78a65d64f81cd34e26fe"
+    }
+  ],
+  "no_deployment_activation_reconciliation": true,
+  "observed_at": "2026-10-17T11:12:14.278981+00:00",
+  "old_v1_preparation_unchanged": {
+    "approval-bundle.json": "477e7bb5ce8d2eb0718c6ef5438cbf6c8982a15db85027614905781536b919a8",
+    "launch.py": "82fdfa90098fe81f3d483e937a8b724015b7d4606bd9a2a16051b96be9007af8",
+    "preflight-proof.json": "4745f9959cd507e55e69e95058f1f88719dc7fd63120cbc4ec740fa60c9aabfe",
+    "release_contract.py": "f663c34302388bea1d850b38dcade7db054ffd614c7451fd191a49f1d28eb75c",
+    "verify_after_canonical.py": "24bf4eb27777273d7d0f4f1d03b34718bfd1533c128b980e4e1a987fe271ca13"
+  },
+  "original_files_checked": 5,
+  "original_hashes_unchanged": true,
+  "original_helper_sha256": "9d2883bc2e51925a3179e9a5ffeec46ca4c92b12b08441adbeecbdefb414ed4b",
+  "preflight_proof_sha256": "2fd3f89f99fc7006c49b5be5da1b660483dc59e11a3c6dee3b4370c3699dd093",
+  "prepared_file_sha256": {
+    "apply_known_fill_reconciliation_20261017_NUMERIC_N2_PROPOSED_v4.py": "11efb83c6ef19ef9230b95b6bb62a1ac5e0c52b9b98b7351975f7735ebca337d",
+    "approval-bundle.json": "51e3e89a249ca01219e59ade039d690602dbe7697a169d6bc36492036e71f5be",
+    "check_inert_preparation.py": "2a366446282490913b7268d0fb09f5d6d570b87bb5611b9b6e50cbe00796dbcd",
+    "launch.py": "45837077eb532e975f3421ed4be54ea0851959488dadb822076746f101d214dc",
+    "parity-independent-proof.json": "66387176b7995850ee6f17933cdf790d6f79ef8bd96600e113e1a1d8cdf736a7",
+    "release_contract.py": "650cb8a156d8190ba4ba5b9f7c6f711f08f8bf75cf0f9daa1b2bf7235dbc60ef",
+    "test_n2_preparation_bindings.py": "0e33cac415139bbf76f6e32f19feaca45b2d1394a01484f80909685c6a399494",
+    "test_n2_recovery_release_binding.py": "0237c914e59e91dbf30829d72c31a2511f2cbe5e07021570250c173e2448732b",
+    "verify_after_canonical.py": "94cbd80ae5dbb18e2b27a8fdf12ef79f3ea939c34d07a470656c81757d6f6690"
+  },
+  "status": "PREPARED_NOT_EXECUTED",
+  "target": "ad44d536a70d5c037cb931836a3c9f48b014d84a"
+}
