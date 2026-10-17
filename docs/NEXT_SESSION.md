@@ -1,5 +1,53 @@
 # Next session
 
+## 2026-10-17 — Prior-close guard verified; original intake found a separate size boundary
+
+Feature1f41b31c integrated ascc5e9b11 after full source/runner/proof review.
+Read research/historical-conditional-nightly-birth-proof-2026-10-17.json.
+The private prior-close exception requires the authenticated original BIRTH and
+every untouched100k/zero broker/paper field. It retains pre-inception declarations
+without applying entitlements; normal nightly/Cycle event admission stays strict.
+Distinct86 checks passed as85 unchanged plus1 corrected receipt-read test; preserve
+the original85/1 test-only failure and correction1c5ce22e/runtimeed462a0c.
+This unused private correction is not deployed or genuine account acceptance.
+
+Genuinev4 actual1ef930ae892c39b91bd64c9cb00965d4a71bcf9fba20cabf9e3b425c8518d013
+ran18:24:50–18:25:02Z and FAILED before birth/close on the exact-string key check.
+Frozen native bank symbols retain np.str_ through panel construction and normalized
+actions. Exactly2 genuine holding calls completed, then action_primitives rejected
+the native key type; failure9d2f297b/peak399508KiB/1692sources+326inputaliases
+unchanged. Preservev4 and readinessv1/v2; no account/CAS was born. Next atomic fix
+must admit only the exact native np.str_ string-key type with unchanged canonical
+bytes and retain nonstring rejection; bounded native-action regression first.
+No further genuine model run is authorized by this note alone.
+
+Original-reader feature6f7d9ddf remains isolated in execution-reconciliation,
+NOT integrated into main. ROOT independently reviewed full legacy196 proofd9fc
+and actual stopped36dc runtime; source pins unchanged, synthetic arithmetic only.
+The full832110254B/1916-row SYNTHETIC reader case completed on actuala3e28c26:
+290.400911s/39744KiB peak/512MiB ceiling/exit0/noOOM, proof993e6a3d. Pure40
+and legacy196 are distinct; composition32 overlaps196 and is not added again.
+
+The next two-original-file intake actual6b311ea554c4e99ddfdf98c115ef61fbb7adfc4300e295288ec725f69ac2e425
+FAILED18:22:36Z/exit1/noOOM, before physical-file parsing, at a completion control
+unit exceeding16MiB. Exact runner35580475/controllerbf51ff0d/plan6c150e81;
+only completion373782589B/b9ad and physical832110254B/f334 were mountedRO,
+sourceRO/soleprivateoutRW,512MiB/1CPU/networknone. No model/backend imports.
+Preserve root scratch/original-two-file-streaming-intake-20261017-v1; do not
+restart/adopt it or raise the cap blindly. The source-backed hypothesis is the
+cumulative input_sha256 raw-SIP map saved by original producer27471. Confirm its
+bounded lexical extent before a separately tested streaming-map correction.
+This is not numerical audit, timing parity, economic admission or publication.
+
+Combined private graph remains explicitly OPEN: CURRENT nightly pins oldstreamc64;
+new original-reader stream1d5b imports parserdadd/numericalae35/pending74e7. A later
+merge must explicitly bind that changed closure and test it without changing
+native N2/e0/map99e62 versus CURRENTf612/mapbfb profiles, original27471 producer,
+original config/source chain or existing account reservations. Shared CURRENT
+loader APIs authenticate_file/pinned/strict_json are unchanged. Never deploy this
+historical main wholesale. Production remains0655 frontend/backend3e4edf/f612;
+fresh ordinary/intraday/fill/UI acceptance remains pending; publication CLOSED.
+
 ## 2026-10-17 — Genuine nightly context exposed immutable-action failure; fixed privately
 
 Featureb04513c8 integrated as8de77fc6 after ROOT full diff/runner/runtime/proof
