@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-17 — Block historical publication without full model and timing acceptance
+
+The historical verifier now reports only ledger/source and bounded holding
+checks, leaves full model/timing and all94 projected payload acceptance
+unverified, and does not invoke projection. The production publication command
+authenticates supplied proof bytes and then refuses every current proof format
+before account reads or destination writes. Legacy full-verified labels and
+forged success flags cannot authorize publication; no placeholder approval or
+bypass was added. Synthetic staging remains exclusively in pytest fixtures.
+
+The exact candidate passed102 focused checks/0skip9.64s, Ruff and formatting.
+Actual CLI checks under normal and optimized Python rejected forged proofs
+while preserving an existing manifest and all files. All31 guarded runtime
+sources and the original account remain unchanged. Evidence and initial lint/
+format failures are retained in
+research/historical-publication-barrier-proof-2026-10-17.json. This verifies
+the refusal boundary, not the still-open historical model/timing goal.
+
 ## 2026-10-17 — Harden independent historical account receipt and cohort checks
 
 Three bounded corrupted fixtures demonstrated that the prior verifier accepted

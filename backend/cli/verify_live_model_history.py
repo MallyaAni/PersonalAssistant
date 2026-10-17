@@ -15,7 +15,6 @@ from backend.cli.market_live_model_history import prepare, save, verify_installe
 from backend.market import calendar, intraday_sip
 from backend.market.live_model_history_projection import (
     overlay_digest,
-    project,
     session,
 )
 from backend.market.live_model_history_receipts import ReceiptLedger
@@ -318,7 +317,10 @@ def verify(market, account_root, output):
     ledger.same(completion["intents"], len(intents), "Original intent count")
     ledger.same(completion["fills"], all_fills, "Original complete fill receipt count")
     result = {
-        "status": "VERIFIED_CURRENT_MODEL_HISTORICAL_ACCOUNT",
+        "status": "VERIFIED_HISTORICAL_LEDGER_SOURCE_AND_HOLDING_CHECKS_ONLY",
+        "acceptance_scope": "ledger/source and bounded holding parity only",
+        "full_model_and_live_timing_acceptance": "UNVERIFIED",
+        "historical_publication_authorized": False,
         "account_sha256": sha256(raw_completion).hexdigest(),
         "verified_tickers": tickers,
         "grade_overlay_content_sha256": overlay_digest(overlay),
@@ -353,11 +355,7 @@ def verify(market, account_root, output):
         "historically_available_models": False,
         "investment_quality_verified": False,
     }
-    stocks = project(root, result)
-    result["projected_stocks"] = len(stocks)
-    result["projected_decisions"] = sum(
-        len(stock["decisions"]) for stock in stocks.values()
-    )
+    result["all94_projected_payload_acceptance"] = "UNVERIFIED"
     save(output, result)
     return result
 

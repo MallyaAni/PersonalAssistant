@@ -1,4 +1,4 @@
-"""Historical publication must persist original amounts before switching a manifest."""
+"""Private synthetic staging must conserve amounts; it cannot authorize publication."""
 
 import json
 from copy import deepcopy
@@ -6,9 +6,11 @@ from hashlib import sha256
 
 import pytest
 
-from backend.cli.market_publish_live_history import publish
 from backend.market import live_model_history_projection as projection
 from backend.market.live_model_history_reader import read
+from backend.tests.live_history_publication_fixture import (
+    stage_private_fixture as publish,
+)
 from backend.tests.test_live_model_history_reader import publication
 
 
@@ -17,6 +19,7 @@ def test_publication_readback_complete_cohort_and_bad_proof_no_write(
     tmp_path, monkeypatch
 ):
     value, old_path = publication(tmp_path)
+    (tmp_path / "PRIVATE_CONTROLLED_FIXTURE").touch()
     stock_views = {
         f"TEST{index}": {**deepcopy(value), "ticker": f"TEST{index}"}
         for index in range(94)
@@ -55,6 +58,7 @@ def test_publication_validates_contract_before_switching_manifest(
     tmp_path, monkeypatch
 ):
     value, _ = publication(tmp_path)
+    (tmp_path / "PRIVATE_CONTROLLED_FIXTURE").touch()
     value["provenance"]["source_sha256"] = {}
     stock_views = {
         f"TEST{index}": {**deepcopy(value), "ticker": f"TEST{index}"}
@@ -83,6 +87,7 @@ def test_publication_rejects_same_count_cohort_substitution_before_writes(
     tmp_path, monkeypatch
 ):
     value, _ = publication(tmp_path)
+    (tmp_path / "PRIVATE_CONTROLLED_FIXTURE").touch()
     names = sorted(f"TEST{index}" for index in range(94))
     proof_path = tmp_path / "proof.json"
     proof_path.write_text(
