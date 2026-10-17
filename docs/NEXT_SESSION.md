@@ -1,5 +1,73 @@
 # Next session
 
+## 2026-10-17 — Additional dead frontend removed; guarded release in progress
+
+Main38538a88 removes two more proven-unmounted value components and their
+private-only helpers: StockBoard and PersonalDecisionHistory,769 deleted lines.
+All active quote/action/research helpers and PersonalHistoryContext are byte
+identical; active tracker/API/backend/history remain intact. Exact main38538
+passed type/build and15 compiled controlled workflows/0skip22.899s, actual35c73f87,
+proof4d1b5939. Its103 built assets differ from prior main; do not claim byte
+equivalence. Source audit is /tmp/trading-dashboard-dead-exports-source-audit-20261017.json
+SHAfeb01bcbd81c44c19cecc5bbf09ed806e3093bc28a922666b339c9a761200b1a.
+
+Separate production-based candidatee237479c245ab78636913a4290c5e950d8fb143d is
+pushed on codex/trading-dashboard-dead-exports-20261017, parent exactlive0655.
+ONLY the two frontend files changed; backend/scripts match0655. Reused clean
+historical-provenance worktree; its prior a5e branch remains preserved. Candidate
+passed type/build and ALL9 original production-spec workflows/0skip15.0215s,
+actual111dd1bb/7e117 image/noneRO/UID1000/1CPU/2GiB, source106files unchanged,
+proofedaba0ef. Compiled entry index-D2HlhE-z.js SHA0468667cd88811f9b7058d83689019a76d2c39f2400a3486e5e2147cb04c27d4.
+
+Canonical cleanup release is NOW IN PROGRESS, ROOT execsession65496. Controller
+/home/animallya96/scratch/trading-dashboard-dead-exports-controller-20261017-v1.py
+SHA62afc004bc99bc2119de1e24bf505fb9c9b70b107ead459802162c81cfe32036 was reviewed
+against the successful prior release: only base/target/branch/root/two-file
+allowlist constants differ; all17 function bodies unchanged. Fresh release root
+scratch/trading-dashboard-dead-exports-release-20261017-v1 and candidate root
+scratch/trading-dashboard-dead-exports-candidate-20261017-v1. Initial source0655,
+release-root absent, no duplicate launched. Poll actual process/root; NEVER
+duplicate/restart it or deploy historical main. Exact310/config/native31/backend/
+model/completed-original preservation, HOST+CONTAINER admission and upstream
+restoration remain mandatory. Final artifacts/public browser acceptance PENDING.
+
+Private native-string fix9fe90e85 integrated asf009e477; prefix fix9eabe3c8 as
+7b3b87df. Read research/historical-conditional-nightly-native-string-proof-2026-10-17.json
+and research/historical-conditional-nightly-report-prefix-proof-2026-10-17.json.
+Only exact str/np.str_ keys admitted without conversion;95 native/synthetic cases
+passed. The private report seam authenticates full source first, retains full
+hashes, binds actual typed unscaled full96 causal prefixes, and invokes the
+unchanged native report validator. Red1 reproduced original price-source guard;
+green106/0skip3.36s actual84ee proof0dfa3224, all1695 pins/native31 unchanged.
+These unused private corrections are NOT production numerical acceptance.
+
+Genuinev5 completed BIRTH but failed the full-versus-prefix report guard. Its
+original BIRTH and close reservation PAUSE are preserved; inspectionccc3b046.
+Genuinev6 actual7f73a626b2996ca3e0ce6f4279e5b2f3492d77ebd817be8b16774d7b7f259c67
+then reached native paper.save_state and FAILED when observer physical() refused
+the actual289484B file under its256KiB cap. Failure957e7c1d; physicalSHA
+e09b98e516fc296bde1eaa29e9b473da1bdab3c531a7c97358813bab021ee876.
+Context2 head calls/BIRTH1/close1, source1692/input326 unchanged,397796KiB peak.
+Close reservation exists WITHOUT result; preserve root scratch/conditional-nightly-genuine-20261017-v6
+and NEVER replay/adopt it. No final wrapper quantities/pre-inception receipt or
+post-failure broker snapshot may be invented. Next boundary is full native
+physical-state capture/CAS capacity, not a model-price guard. No cap was raised,
+289KB state decoded or further genuine run authorized. Stream/CAS/coordinator
+and full-account native memory/restore remain OPEN.
+
+Original two-file intake failure was independently localized: input_sha256 is
+20,031,274B/164833 pairs, span223690..20254964, SHA8f994033d60e1780cdb4226c47df590bc28f7bd18bbd43333c36875297b32e2b.
+Shape-only diagnostic actualb196/e0 exited0/noOOM/23212KiB/3.598s, original and
+source identities unchanged, proof1beb5705. No paper history was interpreted.
+Original-reader feature6f7 remains isolated, with UNCOMMITTED external-SHA-map
+implementation/tests in execution-reconciliation. Worker stopped on account
+usage limit before returning validation; do not call these edits tested or
+overwrite them. Inspect actual processes/roots before continuing. Both original
+auditor and corrected-chain workers reported the same usage limitation; do not
+retry agents repeatedly or change model/account to bypass it. Root can finish
+independent guarded cleanup delivery. No full original numerical audit or full
+corrected launch occurred; publication CLOSED and real weekday acceptance OPEN.
+
 ## 2026-10-17 — Prior-close guard verified; original intake found a separate size boundary
 
 Feature1f41b31c integrated ascc5e9b11 after full source/runner/proof review.
