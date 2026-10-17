@@ -1,0 +1,61 @@
+{
+  "status": "VERIFIED_PRIVATE_N2_SERVING_BINDING_CANDIDATE_NOT_DEPLOYED",
+  "starting_revision": "e12c837a",
+  "scope": "Retain exact frozen N2 31-source history across the already delivered paper metadata renewal; original30 chain unchanged.",
+  "source_sha256": {
+    "backend/market/live_model_history_binding.py": "e734613fd6efe95f4de04b969e837d71be43d60abea3e2baf2d457aa6f2167c3",
+    "backend/tests/test_live_model_history_binding.py": "d79b8e8840e0a3df7809e5d3d5fb72d1aa7ebdf99a44e83fbbcc0115e5813290",
+    "backend/tests/test_live_model_history_n2_binding.py": "88a59f1983221f7c8e803036fdfb560c496061bfc94d82ed82e3fccbaab17358",
+    "docs/research/settlement-metadata-source-review-2026-10-17.json": "875976f63a530bc14898f3d3121e6177421f82e2275f7a8dabc5cf2b94266ac6"
+  },
+  "n2_source_map_sha256": "99e62ab9f8b02bc315ce59b81f8b461ae5c988e275cdf09cacf2d36b1025f8ab",
+  "native": {
+    "root": "/home/animallya96/scratch/historical-n2-binding-tests-20261017-v3",
+    "original_receipt": "historical-n2-serving-binding-native-proof-2026-10-17.json",
+    "sha256": "1f8d267eade64feb2bda966904b461823d8ebd5472b26c414c68a208efe727ef",
+    "container": "6ed4d71284d9963a2dd93cc8104429b2b95ed57e0dd29a84aab3998ddb7cd92c",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "passed": 58,
+    "skipped": 0,
+    "seconds": 3.22,
+    "isolation": {
+      "NetworkMode": "none",
+      "ReadonlyRootfs": true,
+      "NanoCpus": 1000000000,
+      "Memory": 536870912,
+      "MemorySwap": 536870912
+    },
+    "exit": 0,
+    "oom": false,
+    "actual_all31_source_identity": "PASS"
+  },
+  "checks": [
+    "Exact originalN2 profile, original30->N2->metadata ordered chain and exact delivered paper-only review",
+    "Arbitrary31-source profiles, missing/changed reviews, wrong predecessor/path/count and changed models/costs rejected",
+    "Complete archived N2 config/capture/release bytes and model receipts retained; existing controlled94-payload reader/publication and bounded-publication refusal pass",
+    "Ordinary tests use the committed declared N2 map when private /proof.json is absent; the explicit native image assertion is not counted verified outside its native fixture"
+  ],
+  "preserved_attempts": {
+    "red_v1": "Frozen image lacks new helper; collection failure preserved",
+    "red_v2": "Old binding genuinely rejects exact original31 profile at len(original)!=30:1failed1.51s",
+    "green_v1": "55passed3.74s",
+    "green_v2": "Added actual image and original30 metadata chain assertions:57passed3.38s",
+    "green_v3": "Added declared-fixture portability branch:58passed3.22s; no existing assertions loosened"
+  },
+  "validation": {
+    "ruff_changed_helper_and_new_tests": "PASS",
+    "format_three_python_files": "PASS",
+    "legacy_binding_test_lint": "Pre-existing style findings unchanged; only two exact_numeric_chain fixture catalog slices changed",
+    "guarded_sources": "All31 unchanged",
+    "production_changes": 0,
+    "model_calls": 0,
+    "provider_calls": 0,
+    "publication": "CLOSED",
+    "diagram_impact": "NONE: existing retrospective-to-serving binding boundary only"
+  },
+  "limits": [
+    "Private reader/binding and controlled94-payload fixtures only; no real historical publication or delivery",
+    "Archived N2 and original30 provenance stay separate; exact reviewed serving paper metadata transition only",
+    "Actual current HOST/CONTAINER serving selectors were not reopened or renewed; original deployed proof remains original"
+  ]
+}

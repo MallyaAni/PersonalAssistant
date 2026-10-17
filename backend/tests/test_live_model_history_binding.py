@@ -396,14 +396,14 @@ def test_review_chain_admits_exact31_source_extension_only_in_order(
 # Reconstruct both real reviewed transitions without importing the urgent API candidate.
 def exact_numeric_chain():
     root = Path(binding.__file__).resolve().parents[2]
-    rows = [json.loads((root / name).read_bytes()) for name in binding.REVIEWS]
+    rows = [json.loads((root / name).read_bytes()) for name in binding.REVIEWS[:2]]
     original = archived_source_identity()
     serving = dict(original)
     serving[rows[0]["changed_reviewed_file"]] = rows[0]["reviewed_serving_sha256"]
     for name, change in rows[1]["source_changes"].items():
         assert serving.get(name) == change["before_sha256"]
         serving[name] = change["after_sha256"]
-    receipts = [binding.REVIEW_SHA256[name] for name in binding.REVIEWS]
+    receipts = [binding.REVIEW_SHA256[name] for name in binding.REVIEWS[:2]]
     return original, serving, receipts
 
 

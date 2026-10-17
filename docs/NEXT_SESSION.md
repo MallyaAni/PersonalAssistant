@@ -1,5 +1,38 @@
 # Next session
 
+## 2026-10-17 — Exact frozen N2 historical serving binding candidate verified
+
+ROOT reproduced actual len(original)!=30 rejection of frozen N2's31-source map
+in private redv2 (1failed1.51s). Separate reader/binding candidate now accepts
+ONLY exact externally declared N2 map99e62ab9 and exact immutable delivered
+paper-only review875976f6, preserving original30->N2->metadata ordered chain.
+No wildcard31 profile or numerical/economic change admission. New bindings keep
+original archive/config/capture/model receipts byte-identical; current serving
+source still requires actual normal admission. This candidate is NOT deployed.
+
+Final private scratch/historical-n2-binding-tests-20261017-v3:58checks/0skip3.22s,
+actual6ed4d712/e0/networknone/readonly/1CPU512MiB RAM+total swap/exit0/OOMfalse.
+Native actual all31 source_identity equals retained N2 map. Original receipt
+1f8d267e copied unchanged to research/historical-n2-serving-binding-native-proof-
+2026-10-17.json; concise exact-source proof beside it. Final bindinge734613f,
+new tests88a59f19; original legacy fixture only limits its old two-review path to
+the original two receipts. Existing controlled94-payload reader/publication and
+bounded-publication rejection pass; these are synthetic fixtures, not delivery.
+Preserve redv1 missing-helper collection failure, genuine redv2,55/57-check earlier
+greens and final58. New checks added actual source/ordered legacy chain/portable
+declared fixture coverage, without weakening old assertions. Full Ruff new helper/
+test and formatting pass; old test style findings remain unrelated/unchanged.
+All31guarded sources unchanged. No new serving approval/redeploy/provider/model/
+actual-account operation. Diagram impact NONE: existing archived-serving boundary.
+
+Compact14:48:24Z original1e8f440a/image136ebb46 still running/OOMfalse,1901sessions
+through2026-09-22/2919fills/3867intents, updated14:47:25Z; completion absent.
+Only bounded progress/identity inspected. Next compact no earlier15:08 unless
+substantive event. Active agents continue connected cycle, independent execution
+context and durable rate slot; rateecf30f6e native34checks awaits ROOT review.
+Publisher remains CLOSED; fresh ordinary/intraday/full historical acceptance
+UNVERIFIED. Live3b72 metadata fix stays delivered; pending main must not deploy.
+
 ## 2026-10-17 — Input-byte authenticator and native checkpoint restoration integrated
 
 ROOT integrated d57acebd as f64fd5e0 and codec2487b5d5 as39550a3a after full

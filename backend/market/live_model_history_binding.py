@@ -13,11 +13,15 @@ SCHEMA = "live-model-history-serving-binding/1"
 REVIEWS = (
     "docs/research/trading-source-approval-review-2026-10-17.json",
     "docs/research/trading-numeric-source-review-2026-10-17.json",
+    "docs/research/settlement-metadata-source-review-2026-10-17.json",
 )
 REVIEW_SHA256 = {
     REVIEWS[0]: "8b628c76066f62ee724a36d3d07219848786d49d51bb243d73e3e056d7c72bd4",
     REVIEWS[1]: "2f048a8040532bfdaa49b1101e552457454b526b510b4ee9f2422f3a67a3e5f7",
+    REVIEWS[2]: "875976f63a530bc14898f3d3121e6177421f82e2275f7a8dabc5cf2b94266ac6",
 }
+# Exact source_identity map from independently retained installed N2ad44/e0.
+N2_SOURCE_SHA256 = "99e62ab9f8b02bc315ce59b81f8b461ae5c988e275cdf09cacf2d36b1025f8ab"
 SNAPSHOTS = {
     "capture": "capture.json",
     "holding": "desk/learned-holding/config.json",
@@ -75,13 +79,38 @@ def guard_extension(candidate, review):
         raise ValueError("Source guard renewal changed a holding function")
 
 
-# Require an exact chain of installed review receipts, never a source wildcard.
-def reviewed_sources(original, serving, reviews):
+# Load immutable committed reviews without trusting filename identity alone.
+def review_catalog():
     catalog = {}
     for path in REVIEWS:
         raw = (Path(__file__).resolve().parents[2] / path).read_bytes()
         require_hash(raw, REVIEW_SHA256[path])
         catalog[sha256(raw).hexdigest()] = json.loads(raw)
+    return catalog
+
+
+# Distinguish the original30-source chain from the exact later frozen N2 profile.
+def original_profile(original):
+    raw = json.dumps(original, sort_keys=True, separators=(",", ":")).encode()
+    return len(original) == 30 or (
+        len(original) == 31 and sha256(raw).hexdigest() == N2_SOURCE_SHA256
+    )
+
+
+# Reject coerced, incomplete or noncanonical source identities on either profile.
+def source_digests(source):
+    for value in source.values():
+        if (
+            not isinstance(value, str)
+            or len(value) != 64
+            or any(char not in "0123456789abcdef" for char in value)
+        ):
+            raise ValueError("Exact historical trading source digests required")
+
+
+# Require an exact chain of installed review receipts, never a source wildcard.
+def reviewed_sources(original, serving, reviews):
+    catalog = review_catalog()
     candidate = dict(original)
     if not isinstance(reviews, list) or len(set(reviews)) != len(reviews):
         raise ValueError("Unique reviewed historical serving source chain required")
@@ -91,6 +120,9 @@ def reviewed_sources(original, serving, reviews):
         review = catalog[receipt]
         if review["status"] == "REVIEWED_EXACT_SERVING_SOURCE_GUARD_EXTENSION":
             guard_extension(candidate, review)
+            continue
+        if review["status"] == "REVIEWED_EXACT_SETTLEMENT_QUANTITY_METADATA":
+            metadata_renewal(candidate, review)
             continue
         name = review["changed_reviewed_file"]
         if (
@@ -104,16 +136,34 @@ def reviewed_sources(original, serving, reviews):
         ):
             raise ValueError("Unreviewed historical-to-serving trading source change")
         candidate[name] = review["reviewed_serving_sha256"]
-    if len(original) != 30 or candidate != serving:
+    if not original_profile(original) or candidate != serving:
         raise ValueError("Unreviewed historical-to-serving trading source change")
-    for source in (original, serving):
-        for value in source.values():
-            if (
-                not isinstance(value, str)
-                or len(value) != 64
-                or any(char not in "0123456789abcdef" for char in value)
-            ):
-                raise ValueError("Exact historical trading source digests required")
+    source_digests(original)
+    source_digests(serving)
+
+
+# Apply only the reviewed future-receipt metadata change to the exact N2 predecessor.
+def metadata_renewal(candidate, review):
+    name = "backend/agents/trading/desk/paper.py"
+    if (
+        set(review["source_changes"]) != {name}
+        or type(review["other_reviewed_sources_unchanged"]) is not int
+        or review["other_reviewed_sources_unchanged"] != 30
+        or len(candidate) != 31
+    ):
+        raise ValueError("Exact31-source settlement metadata renewal required")
+    change = review["source_changes"][name]
+    if (
+        set(change) != {"before_sha256", "after_sha256"}
+        or candidate.get(name) != change["before_sha256"]
+        or change["before_sha256"] == change["after_sha256"]
+        or sha256(
+            json.dumps(candidate, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        != N2_SOURCE_SHA256
+    ):
+        raise ValueError("Exact N2 settlement metadata predecessor required")
+    candidate[name] = change["after_sha256"]
 
 
 # Admit approval renewal while retaining original numerical and economic fields.

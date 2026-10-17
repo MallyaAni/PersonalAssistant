@@ -1,0 +1,131 @@
+{
+  "actual_N2_all31_source_assertion": "PASS",
+  "command_sha256": "c906939fa06ff16eef6655fbe72464aabf2ca13652fafe624a19e5498338eae4",
+  "container": "6ed4d71284d9963a2dd93cc8104429b2b95ed57e0dd29a84aab3998ddb7cd92c",
+  "economic_inputs": "SYNTHETIC",
+  "exit": 0,
+  "finished_at": "2026-10-17T14:50:47.427429089Z",
+  "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+  "isolation": {
+    "Memory": 536870912,
+    "MemorySwap": 536870912,
+    "NanoCpus": 1000000000,
+    "NetworkMode": "none",
+    "ReadonlyRootfs": true
+  },
+  "junit_sha256": "d3a85dd1b4b2cf56643b0cbb418b7c57d556827638645bb544cce89431167165",
+  "limits": [
+    "Private reader/binding and controlled94-payload fixtures only; no real historical publication or delivery",
+    "Archived N2 and original30 provenance stay separate; exact reviewed serving paper metadata transition only",
+    "Actual current HOST/CONTAINER serving selectors were not reopened or renewed; original deployed proof remains original"
+  ],
+  "model_calls": 0,
+  "mounts": [
+    {
+      "Destination": "/app/docs/research/trading-source-approval-review-2026-10-17.json",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/historical-n2-binding-tests-20261017-v3/trading-source-approval-review-2026-10-17.json"
+    },
+    {
+      "Destination": "/app/backend/market/live_model_history_reader.py",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/historical-n2-binding-tests-20261017-v3/live_model_history_reader.py"
+    },
+    {
+      "Destination": "/app/backend/tests/test_live_model_history_n2_binding.py",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/historical-n2-binding-tests-20261017-v3/test_live_model_history_n2_binding.py"
+    },
+    {
+      "Destination": "/app/backend/market/live_model_history_binding.py",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/historical-n2-binding-tests-20261017-v3/live_model_history_binding.py"
+    },
+    {
+      "Destination": "/app/backend/tests/test_live_model_history_reader.py",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/historical-n2-binding-tests-20261017-v3/test_live_model_history_reader.py"
+    },
+    {
+      "Destination": "/app/docs/research/historical-numeric-merge-source-review-PROPOSED-2026-10-17.json",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/historical-n2-binding-tests-20261017-v3/historical-numeric-merge-source-review-PROPOSED-2026-10-17.json"
+    },
+    {
+      "Destination": "/app/backend/tests/live_history_publication_fixture.py",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/historical-n2-binding-tests-20261017-v3/live_history_publication_fixture.py"
+    },
+    {
+      "Destination": "/app/docs/research/trading-numeric-source-review-2026-10-17.json",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/historical-n2-binding-tests-20261017-v3/trading-numeric-source-review-2026-10-17.json"
+    },
+    {
+      "Destination": "/proof.json",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/private-sender-transport-20261017-v2/n2-proof.json"
+    },
+    {
+      "Destination": "/app/backend/market/live_model_history_projection.py",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/historical-n2-binding-tests-20261017-v3/live_model_history_projection.py"
+    },
+    {
+      "Destination": "/app/backend/tests/test_live_model_history_binding.py",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/historical-n2-binding-tests-20261017-v3/test_live_model_history_binding.py"
+    },
+    {
+      "Destination": "/app/docs/research/settlement-metadata-source-review-2026-10-17.json",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/historical-n2-binding-tests-20261017-v3/settlement-metadata-source-review-2026-10-17.json"
+    },
+    {
+      "Destination": "/out",
+      "RW": true,
+      "Source": "/home/animallya96/scratch/historical-n2-binding-tests-20261017-v3/out"
+    },
+    {
+      "Destination": "/app/backend/tests/test_live_model_history_publication.py",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/historical-n2-binding-tests-20261017-v3/test_live_model_history_publication.py"
+    },
+    {
+      "Destination": "/testdeps",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/historical-native-pytest-deps-20261017-v2/modules"
+    }
+  ],
+  "oom": false,
+  "production_changes": 0,
+  "provider_calls": 0,
+  "publication": "CLOSED",
+  "source_sha256": {
+    "backend/market/live_model_history_binding.py": "e734613fd6efe95f4de04b969e837d71be43d60abea3e2baf2d457aa6f2167c3",
+    "backend/market/live_model_history_projection.py": "2f2db482ec2a896a5708e4f17371048dfa0f8b9900f17bf6e2e021ccded1f45f",
+    "backend/market/live_model_history_reader.py": "e29e90ae798823d76e1f251dfcec74101b4a269a6172e50657fcaf7f06601f2d",
+    "backend/tests/live_history_publication_fixture.py": "0ed5ead29546f6575a703821486817d4bffe10bf1025b97b61b76defb8418a45",
+    "backend/tests/test_live_model_history_binding.py": "d79b8e8840e0a3df7809e5d3d5fb72d1aa7ebdf99a44e83fbbcc0115e5813290",
+    "backend/tests/test_live_model_history_n2_binding.py": "88a59f1983221f7c8e803036fdfb560c496061bfc94d82ed82e3fccbaab17358",
+    "backend/tests/test_live_model_history_publication.py": "74da5c0a76967cfbd9ec55c5fa9bc11351befb7d474f7333942dab641b965c10",
+    "backend/tests/test_live_model_history_reader.py": "48cf2095134bef9f769561556ac356d7127302201e0332f4ab717a6239dfe879",
+    "docs/research/historical-numeric-merge-source-review-PROPOSED-2026-10-17.json": "72ad8ff85259495ca39141bf8fff8e9eb73b13565f672534c147802ba8cac1ac",
+    "docs/research/settlement-metadata-source-review-2026-10-17.json": "875976f63a530bc14898f3d3121e6177421f82e2275f7a8dabc5cf2b94266ac6",
+    "docs/research/trading-numeric-source-review-2026-10-17.json": "2f048a8040532bfdaa49b1101e552457454b526b510b4ee9f2422f3a67a3e5f7",
+    "docs/research/trading-source-approval-review-2026-10-17.json": "8b628c76066f62ee724a36d3d07219848786d49d51bb243d73e3e056d7c72bd4"
+  },
+  "started_at": "2026-10-17T14:50:42.864114496Z",
+  "status": "VERIFIED_PRIVATE_N2_SERVING_BINDING_ONLY",
+  "tests": {
+    "errors": "0",
+    "failures": "0",
+    "hostname": "6ed4d71284d9",
+    "name": "pytest",
+    "skipped": "0",
+    "tests": "58",
+    "time": "3.217",
+    "timestamp": "2026-10-17T14:50:43.970719+00:00"
+  },
+  "tests_sha256": "164da9b55faed13cce196d9f6dcd0ae7a17156516231d772507ec156aa8553ce"
+}
