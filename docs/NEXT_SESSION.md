@@ -1,5 +1,32 @@
 # Next session
 
+## 2026-10-17 — ONE urgent N2 canonical release ACTIVE; do not duplicate
+
+N2ad44d536 canonical release launched11:15:45Z using NEWv2 exact bundle51e3e89a,
+reviewed parity proof66387176 and one gate worker. Private release root:
+/home/animallya96/scratch/trading-numeric-release-20261017-v2.
+Launcher session86121. Inspect compact canonical-deploy.log/result first; never
+restart the launcher, duplicate the release or bypass a failing gate. Current
+job began building/running the canonical unit gate. No numeric delivery claim,
+selector activation, settlement or public-browser acceptance yet. After success
+AND exactad44 cheap-post green, run NEWv2 verify_after_canonical.py once, review
+its proof and SHA, then use only the N2v4 settlement wrapper and actual public
+compiled-browser harness with the resulting state/asset/image identities.
+
+Main integration70553a9d preserves exact controlledf044 frontend/backend/scripts
+except the existing independent audit's three files;21 extra integration checks
+pass/0skip0.07s on exact merged source in a private network-none container.
+All31 guarded hashes match N2; resolved binding fixture exactly matchesf044.
+Proof:research/historical-numeric-main-integration-proof-2026-10-17.json.
+Do NOT deploy historical main until the original full run and full audit pass.
+
+Mac backup headroom recovered to983MiB by preserving all13520 old cohort trace
+files/912336091 bytes inside archivea3ac29c9 on BOTH Sparks, with every path/hash
+verified against manifest584a7e74. The original local traces directory retains
+ARCHIVED.json with restoration locations; other capture files remain in place.
+Proof:research/mac-trace-preservation-proof-2026-10-17.json. No backup, source,
+model, actual account/history or original historical-run evidence was discarded.
+
 ## 2026-10-17 — Combined historical/numeric candidate integrated; deployment held
 
 Integrated candidatef044d742 from the isolated historical branch, preserving

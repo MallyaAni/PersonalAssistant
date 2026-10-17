@@ -1,0 +1,18 @@
+{
+  "all_original_paths_and_hashes_match": true,
+  "archive_bytes": 515604480,
+  "archive_path": "/home/animallya96/scratch/mac-browser-trace-preservation-20261017-v1/traces.tar.gz",
+  "archive_sha256": "a3ac29c92e1d13a8043b8f9bc79bd14d16a0ad2138e37d99111871586bdb07cc",
+  "copies": [
+    "animallya96@172.16.8.3:/home/animallya96/scratch/mac-browser-trace-preservation-20261017-v1/traces.tar.gz",
+    "animallya96@192.168.100.2:/home/animallya96/scratch/mac-browser-trace-preservation-20261017-v1/traces.tar.gz"
+  ],
+  "files": 13520,
+  "manifest_sha256": "584a7e74def6db082b132d0e765b0f450026e5c88b640573a7031a6c409601c9",
+  "original_bytes": 912336091,
+  "original_path": "/tmp/latest-strategy-cohort-results-v2-20261012/.playwright-artifacts-0/traces",
+  "production_or_history_mutation": false,
+  "restore": "Copy traces.tar.gz from either verified archive and extract into the parent .playwright-artifacts-0 directory; manifest.json pins all original relative paths and bytes.",
+  "status": "VERIFIED_ALL_ORIGINAL_TRACE_BYTES_ARCHIVED",
+  "verified_at": "2026-10-17T11:13:10.788872+00:00"
+}

@@ -1,0 +1,29 @@
+{
+  "status": "VERIFIED_SOURCE_INTEGRATION_NOT_DEPLOYED",
+  "integration_commit": "70553a9d",
+  "controlled_candidate": "f044d7426bb6af47d227e8b155277db56e422686",
+  "urgent_live_candidate": "ad44d536a70d5c037cb931836a3c9f48b014d84a",
+  "guarded_source_count": 31,
+  "guarded_source_changes_from_urgent": 0,
+  "conflict_resolution": "Historical binding test exactly matches the controlled candidate; all current main and candidate handoff evidence retained.",
+  "runtime_difference_from_controlled_candidate": [
+    "backend/cli/market_execution_reconciliation.py",
+    "backend/market/execution_reconciliation_audit.py",
+    "backend/tests/test_execution_reconciliation_audit.py"
+  ],
+  "additional_merged_audit_validation": {
+    "source": "70553a9d",
+    "root": "/home/animallya96/scratch/main-integrated-audit-check-20261017-v1",
+    "image": "sha256:4dbbbe066fd62eefa03fcbc92b37e4ab4a55f5429f826b532fafb5769cce8e17",
+    "isolation": "network none, read-only exact archived source, uid1000, one CPU, 2GiB, private tmpfs",
+    "passed": 21,
+    "skipped": 0,
+    "seconds": 0.07,
+    "log_sha256": "f6c3428a72259cde0f5f3829b656f4ac62e77102cc8c0127acfed6e353f210ee"
+  },
+  "controlled_component_proof": "docs/research/historical-numeric-merge-validation-2026-10-17.json",
+  "historical_production_delivery": "UNVERIFIED; original full run must complete before full independent audit and publication",
+  "fresh_ordinary_and_learned_intraday_acceptance": "UNVERIFIED",
+  "models_original_run_account_history_orders": "Unchanged by this source integration",
+  "diagram_impact": "NONE — synchronized existing33 diagrams verified in controlled candidate"
+}
