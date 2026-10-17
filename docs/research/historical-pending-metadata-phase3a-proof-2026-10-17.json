@@ -1,0 +1,114 @@
+{
+  "status": "VERIFIED_PRIVATE_PENDING_METADATA_PRIMITIVES_AND_COMPLETE_BOUNDED_V10_ONLY",
+  "parent": "fbe74cc1e2f7d7154a03389d9a498ac9746feb65",
+  "scope": "pending_metadata_receipt_conservation_only",
+  "source_sha256": {
+    "backend/market/live_model_history_pending_audit.py": "276b964e663235d083f95e93b5448cdf66b7a0b4d06ca6df0984863e951d28ff",
+    "backend/tests/test_live_model_history_pending_audit.py": "dd93e06f1e650cc59069638e50bb35b817c53bd9806a79d2a596697ac8d53f17"
+  },
+  "implementation": {
+    "inputs": "Previously independently model-verified state, separately receipt-conserved regular-session attempts/accepted requests/outcomes, externally hash-pinned original gzip trace and exact original producer source bytes, independently authenticated original raw completed-quote prefix",
+    "evidence_boundary": "Immutable slotted evidence bytes/digest; compressed and expanded size bounds; duplicate JSON keys, nonfinite constants/overflow, boolean prices and noninteger/out-of-range raw coordinates rejected",
+    "metadata": "Reconstruct literal original sending/sent/send_error/execution fields and full final-fallback raw latch prefix without calling a probability model, policy planner, provider, sender, broker or replay",
+    "conservation": "Attempt identity/quantity/clock/reason and original due rows must match independently conserved evidence; all observations, timing trace rows and regular-session attempts must be consumed exactly once",
+    "nightly_partition": "New requests at exact original close plus one minute are counted outside this pending fold and must be independently verified by the nightly-model audit; no unknown nightly request supplies pending or inference inputs",
+    "unavailable_branch": "Compare the complete original first-account-unavailable snapshot without closing reconciliation: full pending and all prior controls/history/journal, exact reason, empty text/intents and no new entry or policy; explicitly model NOT_INVOKED",
+    "coverage_refusals": "Missing raw prefixes, unsupported forward references/adoption/no-quantity results or unrecorded venue refusal fail with scoped coverage errors; no fabricated sender fields or current saved pending are copied as input",
+    "timing_limit": "Authenticated original trace bytes and literal sender metadata do not establish economic correctness or current-live forward timing parity; the separately proven original-path contract remains FAILED"
+  },
+  "native_validation": {
+    "root": "/home/animallya96/scratch/historical-legacy-pending-phase3a-validation-20261017-v4",
+    "container_name": "historical-legacy-pending-tests-20261017-v4",
+    "container_id": "58e9d32be9ab871c99150d560507f547af09899e4449ac87f64372ad57f3a2f1",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "inspect_exit_code": 0,
+    "inspect_started_at": "2026-10-17T13:35:23.9024921Z",
+    "inspect_finished_at": "2026-10-17T13:35:29.027692445Z",
+    "network": "none",
+    "readonly": true,
+    "cpus": 1,
+    "memory_bytes": 2147483648,
+    "runner_only_path": "/home/animallya96/scratch/historical-native-pytest-deps-20261017-v2/modules",
+    "runner_archive_sha256": "fe4f80bca28fe84da5c64e3739f6188f6d7405785fcf428b15dd57e21e757af0",
+    "numeric_packages_shadowed": false,
+    "passed": 144,
+    "skipped": 0,
+    "seconds": 4.50,
+    "new_pending_cases": 33,
+    "retained_prior_phase_cases": 111,
+    "tests_sha256": "cc8e1d3daa7af520691800e52b15bb726b588040301dab56536b5168c5ada821",
+    "ruff": "PASS",
+    "ruff_log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "format": "2 files left unchanged",
+    "format_log_sha256": "43affe539ba0ae8b202b306a3294d04f3b7fc062316c1c825399076d966c8f2d",
+    "runner_warning": "One unknown asyncio_mode option because the read-only pytest-only runner excludes async plugins; all selected checks are synchronous"
+  },
+  "complete_private_v10_validation": {
+    "root": "/home/animallya96/scratch/historical-legacy-pending-bounded-20261017-v2",
+    "container_name": "historical-legacy-pending-bounded-20261017-v2",
+    "container_id": "9ad383a488831e855902c35359518b0234888938e83f4e05cf2ebced7e1b24f3",
+    "actual_image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "inspect_exit_code": 0,
+    "inspect_started_at": "2026-10-17T13:36:00.222602437Z",
+    "inspect_finished_at": "2026-10-17T13:36:04.163079595Z",
+    "network": "none",
+    "readonly": true,
+    "cpus": 1,
+    "memory_bytes": 2147483648,
+    "proof_sha256": "c3797117dabeb875a3c04bb32add45992d3b77676fae0f9910b74929590acf86",
+    "runner_sha256": "2893ec1d42bb1615903c9e3c7f88acdfadd266886268f2c16f8d47ef40c80858",
+    "prior_independent_model_proof_sha256": "08549b55334482cc8e50c4ae5cd3e0937c4eedd0469159b29564d1fede3eb062",
+    "original_bounded_completion_sha256": "dd50e9d2d5e1ab9c11e11cfaa9d29c15c077910337ff421ce431359941b57a5e",
+    "original_bounded_source_manifest_sha256": "1d1a8372ba0131b15e8e19e034e7201fbcf07cdc58d05dcc4f7b27dec465560f",
+    "session_archives_sha256": {
+      "2019-03-01": "c941af51a439151e1cb54ac9afddf1b8ddeb12a01ae62534f51e3d2f1a8b8804",
+      "2019-03-04": "b695e5e3690a59fb07d8e146caa98b99a27f10ef47a67769a54691a4e4c985ae"
+    },
+    "prior_state_boundary": "Saved prior checkpoints are allowed only after their complete state/intents canonical digests match the separately authenticated phase2 exact native recomputation proof; current-session saved state is solely a comparison target",
+    "sessions": 2,
+    "accepted_intraday_transitions": 7,
+    "original_legacy_trace_rows": 12,
+    "original_due_observations": 4,
+    "settled_journal_rows_exact": 7,
+    "new_nightly_requests_separately_conserved_after_model_verified_checkpoint": 1,
+    "raw_sip_files_authenticated": 146,
+    "raw_sip_bytes": 633884,
+    "private_quote_prefix_array_bytes": 20926464,
+    "raw_source_boundary": "Read only the two completed v10 session inputs, requiring exact original completion file hashes and authentic missing-file states; global date/symbol coordinates come from hash-pinned original close.npz, without reading frozen model arrays or calling inference",
+    "all_inputs_unchanged": true,
+    "model_policy_provider_sender_broker_calls": 0,
+    "active_full_output_access": false
+  },
+  "preserved_failed_evidence": {
+    "admission_red": {
+      "root": "/home/animallya96/scratch/historical-legacy-pending-admission-red-20261017-v1",
+      "container_id": "a0cd77d5aa4fb50109a64f5ac4d448e95b4517a5a4d6ffef09c0741fc2e2627b",
+      "result": "7 failed: retained previous helper admitted writable evidence identity, unbounded expansion, four nonfinite JSON forms and boolean price",
+      "tests_sha256": "bc063a8eebe9659b63d593d96bd88016f5a61b9034199b0f31c08f407c4f8f0b",
+      "chronology": "New regressions exercised retained prior helper bytes at their genuine later capture time; not claimed as a pre-edit run"
+    },
+    "bounded_v1": {
+      "root": "/home/animallya96/scratch/historical-legacy-pending-bounded-20261017-v1",
+      "container_id": "9a2d833bdb9a232030ef9fc8923b0b1bebfe6f003de79c6ff71fd1fd3a496605",
+      "error_sha256": "b8b2a391041b61e0865543b51544c316fe87f92c4a03e2a75df8cb4e5fa0c653",
+      "first_boundary": "ReceiptLedger correctly rejected a newly created 16:01 nightly request absent from the prior pending cohort; v2 explicitly partitions old regular-session metadata from separately verified new nightly requests"
+    },
+    "fixture_roots": "v1 first18 cases passed; hardened v2 passed143 with later lint findings; v3 stopped on three remaining long lines before native execution; all roots preserved and v4 alone records final144-case acceptance"
+  },
+  "preservation": {
+    "all31_approved_guarded_sources": "UNCHANGED",
+    "frozen_original_source": "27471b9c61b958f759e9f48b80acaf60cdf75f2e",
+    "frozen_original_config": "1a14980a66a1cb5994f0bb82667dd46fce40ec7eb0705728d93e36b18faf5901",
+    "original_full_account": "UNTOUCHED; output never mounted or read",
+    "models_runtime_config_orders_services": "UNCHANGED",
+    "publisher_producer_CLI": "UNCHANGED; publication barrier remains CLOSED"
+  },
+  "remaining": {
+    "unavailable_snapshot_acceptance": "VERIFIED controlled complete-state fixtures for all four independent reasons; no genuine unavailable night exists in the allowed two-session v10 cohort",
+    "streaming_adapter_integration": "UNVERIFIED; new pure helper has no production verifier caller",
+    "every_original_saved_night": "UNVERIFIED; active full output remains forbidden",
+    "full_current_live_timing_parity": "FAILED original-path contract remains separate and unchanged",
+    "all94_payload_publication_and_actual_browser_delivery": "UNVERIFIED"
+  },
+  "diagram_impact": "NONE: private audit helper/tests only; no runtime service, storage relationship, endpoint or agent architecture changed"
+}
