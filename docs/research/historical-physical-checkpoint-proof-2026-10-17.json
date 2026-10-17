@@ -1,0 +1,49 @@
+{
+  "schema": "historical-physical-checkpoint-proof/1",
+  "status": "VERIFIED_SYNTHETIC_LOCAL_PRIMITIVE_ONLY",
+  "scope": "Unused CURRENT-source-bound opaque native-byte checkpoint helper. No Store, schema, stages, Nightly, Cycle, codec, source pins, caps, live services or account changes.",
+  "source_sha256": {
+    "backend/market/historical_physical_checkpoint.py": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604",
+    "backend/tests/test_historical_physical_checkpoint.py": "4a6ee91da917de43664b2ec69a27e62a5b43889921f61d68b4e0da3db65322ac"
+  },
+  "source_history": "Written/reviewed at9eabe3c8; former branch preserved. Exact two file bytes were retained when moving to a new private branch from current main d530d18d. Runtime tests the explicitly pinned two-file closure and fixtures, not the complete checkout.",
+  "root": "/home/animallya96/scratch/physical-checkpoint-synthetic-20261017-v1",
+  "container": "6f4820cb06beb0c77d4c4b5850ce0e2a9c33dae42349dfa9947464950f27a7dd",
+  "started_at": "2026-10-17T22:07:04.716218449Z",
+  "finished_at": "2026-10-17T22:07:25.873711016Z",
+  "runtime": "Exactf612/UID1000:1000/networknone/readonly/1CPU/512MiB RAM=swap/tmp64MiB; only smallsourceRO/fixtureRO/freshoutRW. Empty backend packages; no native account/model/backend imports or genuine artifacts. Previously authenticated retained a8 writer and31 CURRENT public declaration; not a new live admission.",
+  "tests": {
+    "passed": 21,
+    "skipped": 0,
+    "failures": 0,
+    "errors": 0,
+    "elapsed_seconds": 20.823324071243405,
+    "rss_peak_kib": 30768,
+    "child_rss_peak_kib": 23784,
+    "ruff_format_and_check": "PASS on only the two new source files",
+    "coverage": "Opaque NaN/escaped bytes, empty/history row framing, long lines, immutable inode/subtree reuse, finite raw/span/row/slot exhaustion, ENOSPC/unsupported physical allocation, exact CURRENT31/writer/header arithmetic, finite metadata/duplicate/overflow rejection, fd/path substitutions, corruption/missing/reordered objects, symlink/exclusive restore refusal, actual child SIGKILL after CAS hardlink, interrupted capture/restore and no orphan adoption."
+  },
+  "independent_root_review": {
+    "terminal_proof_sha256": "194049d567324fb5cb5ed9524c5fe484ad1247068dcbb13753902c03a8e23d9a",
+    "actual_inspect_sha256": "0dae0df54f11d57fc6a5b2b6bd384c6efd07568d2411853bce70dc256829fffe",
+    "run_log_sha256": "618322e0de579ac441ac57852af11cbee4838e8734764bb6a79b853890ec8722",
+    "independent_terminal_proof_sha256": "88b3952833055b0766ad70881d06f5c9402a639d34077141f3b8c354114678fa",
+    "independent_verifier_sha256": "61b01835133fbc0ea53f279cb1a930707d89eb9d0ba53bd3224d7e1de30685c7",
+    "source_and_fixture_files_before_after_identical": 8,
+    "retained_allocated_file_bytes": 224333824,
+    "retained_unique_file_inodes": 5071,
+    "real_kill_evidence": "Durable CAPTURE marker; captures0/completed_capture null; exactly one published body retains actual reserved slot inode and2links. ROOT independently checked retained bytes and the completed opaque NaN roundtrip."
+  },
+  "reservation_scope": "Actual preallocated local body/page/control/restore inodes; no-copy hardlink publication. Directory metadata headroom is measured, not reserved. Test preflight3GiB free/30000inodes/2GiB MemAvailable is a bounded fixture gate, not a filesystem quota or full-account capacity proof.",
+  "remaining": [
+    "Changing whole prefix/suffix spans and full-horizon storage budget",
+    "Actual dual-host durable checkpoint/manifest/temp/restore/inode capacity before native effects",
+    "Native writer working-file reservation, full Nightly/sender/fold/save/capture/restore/model-context memory and crash acceptance",
+    "Source-authenticated coordinator/corporate events and explicit combined source-closure integration",
+    "Genuine ordinary weekday and following intraday/fill/UI acceptance"
+  ],
+  "original_timing_contract": "FAILED; original run remains immutable and publication CLOSED",
+  "corrected_genuine_v6": "PAUSED; no replay, adoption, new genuine run or cap changes",
+  "deployment": "NONE",
+  "diagram_impact": "NONE: unused private helper; no deployed relationship or subsystem changed"
+}

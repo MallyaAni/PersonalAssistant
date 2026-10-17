@@ -1,5 +1,35 @@
 # Next session
 
+## 2026-10-17 — Private raw checkpoint primitive verified; native integration still open
+
+Private branch codex/historical-physical-checkpoint-20261017 at
+3cc93ae65dd836c6d39ae4667f20b4dc7796b48e is pushed/clean, NOT merged/deployed.
+Reused settlement worktree; former9eabe branch preserved. Read
+research/historical-physical-checkpoint-proof-2026-10-17.json. Exact helper5d616928/
+test4a6ee91d passed21 synthetic/0skip20.823s on actual6f4820cb/f612, exited0/noOOM
+22:07:25.873711016Z. Peak30768KiB;8 source/fixture files unchanged. Root
+scratch/physical-checkpoint-synthetic-20261017-v1/execsession50676 is COMPLETE;
+do not restart. ROOT independently checked exact stopped isolation and retained
+real SIGKILL CAPTURE marker/same reserved inode and byte-identical opaque NaN
+restore. Terminal194049d5/inspect0dae0df5/ROOTproof88b39528. All cases retained;
+224333824 allocated bytes/5071unique inodes. Ruff static checks passed.
+
+This unused primitive changes no Store/schema/stages/Nightly/Cycle/codec/pins/
+caps. Strict finite metadata remains separate from opaque native bytes. Local
+preallocated body/page/control/restore inodes, shared ordered pages, corruption
+and fd/path/refusal guards are proven only on synthetic files. No full-state
+horizon, directory metadata/dual-host/native work reservation, native/model/CAS
+lifecycle or operation adoption claim. No account/model imports or genuine runs.
+
+Healthy trading_action_consistency now has one READONLY native working-file/
+dual-host integration design assignment on that branch, no edits or experiments.
+Inspect actual source call boundaries and every finite-JSON assumption first.
+No dummy reservation, cap raise, logical-spool raw seed, v6 replay or new genuine
+run. Exact current a8 native writer bytes/atomic-save semantics must remain bound.
+Original byte/state intake is COMPLETE as below; original timing FAILED/missing
+receipts unchanged/publication CLOSED. Productione237/f612 unchanged. Fresh real
+weekday ordinary and following intraday/fill/UI acceptance remain UNVERIFIED.
+
 ## 2026-10-17 — Complete original source/input byte authentication VERIFIED
 
 Read research/original-complete-input-auth-proof-2026-10-17.json. Actual4cb6103b
