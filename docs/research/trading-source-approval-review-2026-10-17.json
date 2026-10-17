@@ -1,0 +1,33 @@
+{
+  "status": "REVIEWED_EXACT_SERVING_SOURCE_APPROVAL_CANDIDATE",
+  "base_source": "a01542b7f4c3048f350ef8103345000f4b50ec32",
+  "backend_source": "ef7428baa1961d79ad1f5bd9dac0122b54ce0fea",
+  "scope": "Repair source approval independently of the running historical simulation; preserve policy, models, costs, timing, account history and research",
+  "changed_reviewed_file": "backend/api/v1/market.py",
+  "previous_approved_sha256": "0647fb9b2986451676b9ab9fcc730d9263b89b6eb4ab32e3c25c6edda1377882",
+  "reviewed_serving_sha256": "b73d11fc6931c95e1bc47ff12f4ecc564db5cd1b02628ee7681f87bf6bdb25d7",
+  "other_reviewed_sources_unchanged": 29,
+  "diff_review": [
+    "Adds _with_live_assessment to assemble freshness, grades, expiries and collected opportunities",
+    "GET /desk/live retains operator-only access and adds private no-store",
+    "Reads existing decision and display snapshots; fallback retains existing quote collection",
+    "The remaining diff reorders an import in _paper_plan",
+    "No funded planner, sender, model, cost, timing or paper-state code changes"
+  ],
+  "approval_candidate": {
+    "release_changes": ["source_sha256 for the one reviewed API file", "actual approved_at"],
+    "configuration_changes": ["release_receipt_sha256"],
+    "economic_evidence": "Original evidence.json bytes remain unchanged and referenced by their original digest",
+    "original_selectors": "Archive exact config.json, release.json and evidence.json before activation",
+    "guard": "Keep exact schema, all 30 source hashes, approval time, policy, receipt and economic-evidence checks"
+  },
+  "focused_validation": {"passed": 54, "skipped": 0, "seconds": 13.21, "source": "Actual serving checkout mounted into the complete application test image"},
+  "failed_prior_validation": {"host_only_passed": 25, "host_only_failed": 5, "reason": "Research-only host environment lacks FastAPI and SQLAlchemy; corrected complete application image passed without changing assertions"},
+  "private_stage": "/home/animallya96/scratch/trading-source-approval-repair-20261017-v2",
+  "failed_prior_stage": "/home/animallya96/scratch/trading-source-approval-repair-20261017-v1",
+  "prior_stage_failure": "Host cannot read protected archived research configuration; use existing application-container reader without permission changes",
+  "activation": "PENDING: canonical delivery of this exact review followed by locked approval activation and actual HOST/CONTAINER admission",
+  "fresh_ordinary_operational_acceptance": "UNVERIFIED",
+  "historical_quantity_delivery": "UNVERIFIED",
+  "diagram_impact": "NONE: existing source approval is renewed without changing architecture"
+}
