@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-10-17 — Harden independent historical account receipt and cohort checks
+
+Three bounded corrupted fixtures demonstrated that the prior verifier accepted
+an oversized attempted request, a lost durable intent, and a substituted stock
+cohort. The correction authenticates the exact frozen overlay/cohort and checks
+submitted shares, outcome clocks/statuses, conserved durable transitions and
+independent cash reservations. Same-clock sales cannot fund purchases. Original
+funded shares remain distinct from valid smaller timing submissions, including
+the real private ReplayBroker partial-fill/reconciliation path.
+
+The isolated immutable image passed94 focused checks/0skip in9.33s, Ruff and all
+33 diagram checks. Earlier red reproductions and lint failures are preserved in
+research/historical-audit-contract-hardening-proof-2026-10-17.json. All31 guarded
+runtime sources remain unchanged. No original full-run data was audited or
+modified. This is auditor hardening; full per-session model/timing acceptance
+and historical publication remain unverified and need a structural barrier.
+
 ## 2026-10-17 — Combine pending historical quantities with the numeric decision contract
 
 The isolated combined candidate preserves current saved numeric decisions and

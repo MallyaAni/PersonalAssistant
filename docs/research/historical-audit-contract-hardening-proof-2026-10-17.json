@@ -1,0 +1,39 @@
+{
+  "status": "VERIFIED_BOUNDED_AUDITOR_CORRECTION_NOT_FULL_ACCOUNT_ACCEPTANCE",
+  "baseline": "70553a9da358a4409445c6d9aab52f85c0ee9826",
+  "original_run": {"source": "27471b9c61b958f759e9f48b80acaf60cdf75f2e", "container_prefix": "1e8f440a", "modified_or_heavily_read": false},
+  "reproduction": {
+    "root": "/home/animallya96/scratch/historical-audit-contract-reproduction-20261017-v1",
+    "result": "3 corrupted fixture cases DID NOT RAISE on the original verifier",
+    "log_sha256": "c5d8ab4867db07a3990bcdafcad9cfa4f4a4c1ff09a017f07c057196247e5427",
+    "actual_account_violation_proven": false
+  },
+  "corrected_boundaries": [
+    "Authenticate the full grade overlay and exact frozen94-stock cohort; reject same-count substitution before publication writes",
+    "Keep original funded shares separate from authentic smaller submitted shares; bind attempt acceptance, requested quantities, terminal outcomes and clocks",
+    "Conserve every original pending/journal identity and original decision metadata, terminal immutability and valid delayed reconciliation",
+    "Independently conserve reservations and submission buying power; forbid same-clock sale proceeds funding buys while permitting prior-clock proceeds",
+    "Match observed attempts to raw completed-close evidence and terminal receipts to raw future opening evidence, including zero/missing-price cases"
+  ],
+  "validation": {
+    "root": "/home/animallya96/scratch/historical-audit-contract-validation-20261017-v4",
+    "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+    "sandbox": "network none; read-only;1CPU;2GiB; private source only; no original data/models/socket/secrets",
+    "tests": {"passed": 94, "skipped": 0, "seconds": 9.33, "log_sha256": "049ba067bf0356a7edaf204207c228f375cc4b062f7b532234c5efe2afee3a59"},
+    "ruff": {"result": "PASS", "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"},
+    "accepted_nine_file_archive_sha256": "c3a63afb0ed94b01bd78519d8e32cf7ec85c84f63a3785b0d6586616abd98bd6",
+    "local_files_match_accepted_archive": true,
+    "actual_private_replay_broker_partial_submission_fixture": "PASS: funded5/submitted3/fill2 with authentic durable paper reconciliation",
+    "diagrams": {"count": 33, "result": "PASS; existing private audit boundary, no architecture change", "log_sha256": "50a823426fd755d9cc0a1083f81a597b714dcca7bb3144d7ff321227cf00ba48"},
+    "guarded_runtime_sources": {"count": 31, "changed_vs_baseline": 0}
+  },
+  "preserved_previous_evidence": ["reproduction-v1", "validation-v1:82pass", "validation-v2:91pass and6E501 lint failures", "validation-v3:92pass and Ruff PASS", "validation-v4:94pass and Ruff PASS"],
+  "limits": {
+    "full_account_audit": "NOT RUN",
+    "every_saved_nightly_model_inference": "UNVERIFIED;96 holding scenarios and3 causal prefixes are insufficient",
+    "installed_live15m_timing_parity": "UNVERIFIED; source-only counterexample cf2897349fc29c740fd71113dbe7b3eeea3cee740ac381bfc4af5d93f9041704 remains open",
+    "publication_barrier": "REQUIRED NEXT: generic VERIFIED_CURRENT_MODEL_HISTORICAL_ACCOUNT is not full model/timing acceptance",
+    "publication_deployment_or_browser_delivery": "NOT PERFORMED",
+    "investment_quality": "NOT PROVEN"
+  }
+}

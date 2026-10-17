@@ -39,8 +39,10 @@ def publish(
 ):
     proof = evidence(proof_path, proof_sha)
     stocks = projection.project(account, proof)
-    if len(stocks) != 94:
-        raise ValueError("Complete installed historical stock cohort required")
+    if sorted(stocks) != projection.verified_tickers(proof):
+        raise ValueError(
+            "Exact independently verified historical stock cohort required"
+        )
     if any(
         stock["start"] != "2019-03-01" or stock["through"] != "2026-10-12"
         for stock in stocks.values()

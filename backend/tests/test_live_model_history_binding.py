@@ -129,7 +129,14 @@ def renewed(root):
 # Persist the exact independent proof identity used by the publication boundary.
 def proof(root, value):
     path = root / "proof.json"
-    path.write_bytes(encoded({"account_sha256": value["provenance"]["account_sha256"]}))
+    path.write_bytes(
+        encoded(
+            {
+                "account_sha256": value["provenance"]["account_sha256"],
+                "verified_tickers": sorted(f"TEST{index}" for index in range(94)),
+            }
+        )
+    )
     return path, sha256(path.read_bytes()).hexdigest()
 
 

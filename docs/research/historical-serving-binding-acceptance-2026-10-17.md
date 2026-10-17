@@ -44,14 +44,44 @@ Both catalog entries pin exact review bytes, not only their filenames. A later
 API-only transition must name the exact preceding API digest and retain every
 other source:29 when its predecessor has30 sources,30 when it has31. Counts
 must be integers, and source digests and final installed admission remain exact.
-The final historical API merge still requires a third committed review and
-catalog entry for its actual digest; this candidate contains no such approval.
-Tests exercise that future shape only with a temporary, explicitly controlled
-test receipt. See `historical-source-chain-candidate-proof-2026-10-17.json`.
+The integrated historical API is byte-identical to the reviewed numeric API;
+all31 guarded paths equal N2ad44. No third or no-op review is required. A future
+actual guarded API change would need its own exact committed review and catalog
+entry; tests of that future shape use only a temporary controlled receipt, which
+does not approve an unknown digest. See
+`historical-source-chain-candidate-proof-2026-10-17.json` and the integrated
+source comparison in `historical-numeric-merge-validation-2026-10-17.json`.
 The reader rechecks the unchanged holding functions, original archive/economics
 and final admitted source map. This does not authorize arbitrary future source
 changes or a new model. The no-binding reader retains its original strict
 source/config byte equality.
+
+## Source audit coverage and limits
+
+The following maps implementation boundaries, not proof that the original full
+account passed them. No heavy original data, full audit or publication was run
+while preparing this mapping or its bounded corruption tests.
+
+| Requirement | Implemented proof boundary | Remaining acceptance |
+| --- | --- | --- |
+| Exact frozen models, config, economics and input bytes | Producer `authenticate` rehashes every capture file and overlay history; `prepare` loads holding head/risk and timing residual receipts and the original close/economic receipt; verifier compares completion identity and every `input_sha256` path. Binding `validate`/`verify_artifacts` retain original config/release/evidence and exact31 serving admission. | Independently pin original2431-file source manifest, Docker/image/mount identity and before/after preservation manifests outside the CLI. Artifact hashes are authentication, not inference-quality proof. |
+| Exact94-stock cohort and original chart grades | Verifier `complete_cohort` compares the entire completion overlay with authenticated frozen overlay and exact model-bank symbols minus SPY/QQQ. Its verified ticker list and overlay content digest bind projection and publication before writes. | Read back and owner-scope all94 actual payloads after a permitted full acceptance/publication. Count94 alone is insufficient. |
+| Shared numerical holding behavior | `verify_installed_parity` compares the authentic latest observation arrays,96 scenario/probability distributions and latest live/private target/order results. | This latest-observation check does not independently reevaluate every saved historical nightly proposal, constrained target and funded action. That full saved-night model/action check remains UNVERIFIED. |
+| Causal daily features | Frozen reader exposes only the selected close prefix; independent holding parity rebuilds features/support from three truncated input prefixes. | Three measured prefixes are not an exhaustive independent check of every historical prefix or intraday timing feature. Retain the exact feature-builder source and explicit coverage limit. |
+| Installed15m timing inference, quote guards and transported execution advantage | Original producer uses `market_strategy_continue.timing_reader`/`live_probability_timing.build_reader`; installed live path uses `learned_live_timing.observe`/`forward_probability_timing.build_forecast_reader`. | UNVERIFIED full-path equivalence. The source-only shared-observation counterexample separates raw-close proxy behavior from qualified book/next-open-anchor transport.96 holding scenarios and3 daily prefixes do not close this boundary. No quote fields or clocks may be fabricated. |
+| Original funded quantity, smaller timing submissions, attempts and fills | `ReceiptLedger` independently binds attempted whole quantity to original funded intent, accepted broker clocks, original `sent` evidence when retained, requested/final quantities, statuses, fees and ordered clocks. It rejects duplicate attempt/outcome IDs and preserves valid submitted3-of-funded5 outcomes. | Run against every original session only after COMPLETE; do not infer guaranteed fills from this venue's saved outcomes. |
+| Cash, reservations and no sale-proceeds funding | Independent cash/reservation chronology validates available buying power, outstanding reservations/cancellation release and each execution batch's buy spend against cash before that batch's sales. Existing independent `fold_fills`/`fold_actions` reconcile cash, shares and cost basis separately. | Every original session must pass; same-clock sales cannot fund purchases, while an earlier settled clock may. |
+| Raw SIP prices and missing executions | `physical_fill` requires the exact raw bar opening for nonzero execution, fee arithmetic and an independently matching absent/present price reason for zero receipts. `physical_attempt` checks the original completed raw close seen at submission, separately from the later execution opening. | Preserve raw input hashes before/after; no adjusted daily proxy may substitute for an execution bar. |
+| Corporate actions, missing held marks and unknown claims | Independent reviewed source events and entitlement arithmetic are folded into every broker snapshot. `check_valuation` requires null NAV and exact missing-symbol/unpriced-claim lists when evidence is absent. | Full-session reconciliation plus original economic input proof/preservation remains required. Missing states must not be filled with fabricated prices. |
+| Durable pending/journal identity and transitions | `ReceiptLedger` requires every original intent in pending or journal, immutable original decision evidence, monotonic fills, valid terminal transitions and unchanged earlier terminal journal entries. A known terminal outcome may remain pending until the next saved reconciliation. | Preserve every original raw record; this is validation, never state repair, order submission or missing actual-day replay. |
+| All94 chart decisions and distinct simulated executions | Projection keeps raw model weights, funded quantities, zero reasons, decision clocks and later execution clocks separate; publisher reads every immutable payload before selecting its manifest. | Controlled projection/browser fixtures do not constitute full model/timing acceptance, actual publication or compiled public quantities. |
+| Original paper/model-only research preservation | This audit opens original account/capture inputs read-only and writes only a new exclusive proof/parity directory; publisher creates new immutable versions. | External original-file manifests, actual owner/foreign/anonymous checks and canonical/public-browser delivery evidence are still required. |
+
+The current generic account-verification status must not be interpreted as full
+model/timing acceptance. The atomic cohort/receipt correction explicitly reports
+per-session timing and all-saved-night model inference as UNVERIFIED. A separate
+fail-closed publication barrier is required before any publication command is
+authorized; no presently unimplemented timing schema is an approval mechanism.
 
 ## Full audit after the sole producer completes
 
@@ -85,6 +115,8 @@ source/config byte equality.
    state to reconcile. The verifier recomputes96 installed numerical scenarios
    and3 causal prefixes into a separate exclusive parity folder, comparing every
    result except its new actual verification clock with the original receipt.
+   These are holding parity and sampled daily-prefix checks, not per-session15m
+   live timing proof or an exhaustive nightly model/action re-evaluation.
 5. Check all94 projections preserve original decision/fill IDs, quantities,
    separate decision/execution clocks, BUY0 reasons, eligible adds/trims, grade
    source distinction, missing/blocked targets and retrospective training/model
@@ -92,6 +124,11 @@ source/config byte equality.
    Any failed assertion stops publication; preserve it as failure evidence.
 
 ## Publication and actual delivery
+
+BLOCKED: do not execute the publication command below while full saved-night
+model consistency and installed live timing acceptance are absent. The generic
+ledger/source status is insufficient. The separately scoped structural
+publication barrier must be completed before this procedure can be authorized.
 
 After full audit, freeze the exact canonical candidate source and approved live
 release. Obtain actual HOST and CONTAINER `read_configuration` admission for
