@@ -5,8 +5,8 @@ pilot inputs have a separate receipt and are never renamed as generic captures.
 Native forward arithmetic and sender are unchanged; no authentic-live inference
 receipt or historical publication/receive/fill proof is manufactured here.
 The decision snapshot is inside the last reader callback, before remaining native
-sender/latch work. Outcome snapshots retain sent/pending paper rows; settlement
-and journal reconciliation are deliberately not performed or claimed.
+sender/latch work. Default snapshots retain sent/pending paper rows. The optional
+CURRENT path retains native reconciliation only with the final complete snapshot.
 """
 
 import base64
@@ -25,8 +25,10 @@ from backend.market import calendar, entry_timing
 from backend.market import forward_probability_timing as forward
 from backend.market import historical_broker_checkpoint as codec
 from backend.market import historical_conditional_market as market
+from backend.market import historical_packet_checkpoint as checkpoint
 from backend.market import historical_packet_demand as demand
 from backend.market import historical_packet_parser as parser
+from backend.market import historical_packet_registry as entities
 from backend.market import historical_post_resolution_marks as marks
 from backend.market import historical_session_completion as completion
 from backend.market import historical_timing_packet as packet
@@ -38,11 +40,24 @@ from backend.market.historical_timing_resolver import PilotResolver
 WINDOW = packet.schedule("2019-03-01T14:45:00Z")
 DAY = date(2019, 3, 1)
 META_CAP = 256 * 1024
+CURRENT = "3b72cd4e0bc15acd24432d501918c721685a5333"
+SETTLEMENT_SHA256 = "81286e30aabef22eeb2d05e68fb74ffdf6a060dc1e1813eda80cae9cfd5c5a0b"
 
 
 # Hash original bytes independently of normalized declaration hashes.
 def sha(raw):
     return hashlib.sha256(raw).hexdigest()
+
+
+# Load only the exact reviewed optional fold, leaving the default dependency path alone.
+def _settlement_source():
+    from backend.market import historical_conditional_settlement
+
+    if sha(Path(historical_conditional_settlement.__file__).read_bytes()) != (
+        SETTLEMENT_SHA256
+    ):
+        raise ValueError("Exact reviewed current settlement source required")
+    return historical_conditional_settlement
 
 
 # Bound local component reads before allocating or interpreting their contents.
@@ -100,7 +115,17 @@ def _components(store, client, root, pins, session=DAY):
 
 
 # Persist one detached receipt containing all component references together.
-def _receipt(store, client, root, pins, detail, *, session=DAY, context=None):
+def _receipt(
+    store,
+    client,
+    root,
+    pins,
+    detail,
+    *,
+    session=DAY,
+    context=None,
+    settle_current=False,
+):
     value = {
         "schema": "private-conditional-cycle-receipt/1",
         "identity_sha256": pins["identity_sha256"],
@@ -114,6 +139,13 @@ def _receipt(store, client, root, pins, detail, *, session=DAY, context=None):
         "actual_historical_clocks_or_fills": False,
         "paper_journal_reconciliation": "NOT_RUN_NATIVE_SENT_PENDING_RETAINED",
     }
+    if settle_current:
+        _settlement_source()
+        value["current_settlement_sha256"] = SETTLEMENT_SHA256
+        if detail["stage"] == "OUTCOME_COMMITTED":
+            value["paper_journal_reconciliation"] = (
+                "CURRENT_NATIVE_RECONCILIATION_FINAL_COMPONENTS"
+            )
     return _put(store, demand.encoded(value))
 
 
@@ -175,8 +207,8 @@ def _anchor(parsed, manifest, original_open):
         raise ValueError("Original synthetic opening reference differs")
 
 
-# Restore exact component references without executing a decision or submission.
-def restore_receipt(store, receipt_sha256, root, *, pins):
+# Authenticate source-bound immutable receipt bytes without writing any components.
+def _read_receipt(store, receipt_sha256, pins):
     raw = store.read_blob(receipt_sha256, limit=META_CAP)
     receipt = packet._decode(raw)
     if (
@@ -188,6 +220,143 @@ def restore_receipt(store, receipt_sha256, root, *, pins):
         != sha(Path(completion.__file__).read_bytes())
     ):
         raise ValueError("Original source-bound operation receipt required")
+    if "current_settlement_sha256" in receipt:
+        if (
+            receipt["current_settlement_sha256"] != SETTLEMENT_SHA256
+            or pins["identity"]["source_revision"] != CURRENT
+        ):
+            raise ValueError("Exact CURRENT settlement receipt profile required")
+        _settlement_source()
+    return receipt
+
+
+# Read one bounded indexed checkpoint and reuse its original integrity validator.
+def _head_entry(store, expected_head):
+    entities.digest(expected_head)
+    row = store.connection.execute(
+        "SELECT length(raw),substr(raw,1,?) FROM entries WHERE sha=?",
+        (META_CAP + 1, expected_head),
+    ).fetchone()
+    if row is None or row[0] > META_CAP:
+        raise StorePause("Original bounded authoritative checkpoint required")
+    entry = packet._decode(row[1])
+    checkpoint._entry(entry, entry["sequence"], store.identity, entry["parent"])
+    if entry["sha256"] != expected_head:
+        raise ValueError("Authoritative checkpoint hash differs")
+    return entry
+
+
+# Require immutable continuation from the already committed native submission.
+def _current_submission(store, pins, submission_head, cycle):
+    operation = packet._digest({"cycle": cycle, "stage": "SUBMISSION_CAPTURED"})
+    entry = store.recover_operation(operation)
+    if (
+        entry["sha256"] != submission_head
+        or entry["cycle_sha256"] != cycle
+        or entry["stage"] != "SUBMISSION_CAPTURED"
+        or _head_entry(store, submission_head) != entry
+    ):
+        raise ValueError("Exact original committed submission required")
+    receipt = _read_receipt(store, entry["receipt_sha256"], pins)
+    descriptor = receipt["detail"].get("current_outcome")
+    if (
+        receipt.get("current_settlement_sha256") != SETTLEMENT_SHA256
+        or receipt["detail"]["stage"] != "SUBMISSION_CAPTURED"
+        or type(descriptor) is not dict
+        or set(descriptor)
+        != {
+            "schema",
+            "settlement_sha256",
+            "context_sha256",
+            "manifest",
+            "registry",
+            "registry_evidence",
+            "packet",
+            "verified_at",
+            "facts",
+        }
+        or descriptor["schema"] != "current-pure-outcome-continuation/1"
+        or descriptor["settlement_sha256"] != SETTLEMENT_SHA256
+        or descriptor["context_sha256"] != receipt["context"]["sha256"]
+        or descriptor["facts"]["submitted"] != receipt["detail"]["submitted"]
+        or descriptor["facts"]["factory_calls"] != receipt["detail"]["factory_calls"]
+        or descriptor["facts"]["submission_operation"] != operation
+        or descriptor["facts"]["decision_operation"]
+        != packet._digest({"cycle": cycle, "stage": "DECISION_FROZEN"})
+    ):
+        raise ValueError("Original opt-in submission continuation required")
+    return receipt, descriptor
+
+
+# Verify the pre-fold commitment and final paper/broker/latch graph before restoration.
+def _final_settlement(store, receipt, pins):
+    detail = receipt["detail"]
+    reference = detail["pre_settlement_receipt"]
+    pre = _read_receipt(store, reference, pins)
+    evidence = detail["native_reconciliation"]
+    parent, cycle = detail["settlement_submission_head"], detail["settlement_cycle"]
+    submission, descriptor = _current_submission(store, pins, parent, cycle)
+    resolved = {
+        key: value
+        for key, value in detail.items()
+        if key
+        not in {
+            "pre_settlement_receipt",
+            "native_reconciliation",
+            "settlement_submission_head",
+            "settlement_cycle",
+        }
+    }
+    prior_paper = packet._decode(
+        store.read_blob(pre["components"]["paper"], limit=META_CAP)
+    )
+    final_paper = packet._decode(
+        store.read_blob(receipt["components"]["paper"], limit=META_CAP)
+    )
+    if (
+        pre.get("current_settlement_sha256") != SETTLEMENT_SHA256
+        or pre["context"] != receipt["context"]
+        or receipt["context"] != submission["context"]
+        or pre["detail"]
+        != {
+            "stage": "PRE_SETTLEMENT_OUTCOME",
+            "submission_head": parent,
+            "cycle": cycle,
+            "manifest": descriptor["manifest"],
+            "registry": descriptor["registry"],
+            "packet": descriptor["packet"],
+            "resolved": resolved,
+        }
+        or any(
+            pre["components"][key] != receipt["components"][key]
+            for key in ("broker", "latch")
+        )
+        or any(
+            pre["components"][key] != submission["components"][key]
+            for key in ("paper", "latch")
+        )
+        or evidence["outcome_sha256"] != reference
+        or evidence["identity_sha256"] != pins["identity_sha256"]
+        or evidence["adapter_sha256"] != SETTLEMENT_SHA256
+        or evidence["broker_checkpoint_sha256"] != pre["components"]["broker"]
+        or evidence["prior_paper_sha256"] != packet._digest(prior_paper)
+        or evidence["reconciled_paper_sha256"] != packet._digest(final_paper)
+        or evidence["durable_state_committed"] is not False
+        or evidence["actual_execution_claim"] is not False
+        or receipt["paper_journal_reconciliation"]
+        != "CURRENT_NATIVE_RECONCILIATION_FINAL_COMPONENTS"
+    ):
+        raise ValueError("Original reconciled outcome component graph differs")
+
+
+# Restore exact component references without executing a decision or submission.
+def restore_receipt(store, receipt_sha256, root, *, pins):
+    receipt = _read_receipt(store, receipt_sha256, pins)
+    if (
+        "current_settlement_sha256" in receipt
+        and receipt["detail"]["stage"] == "OUTCOME_COMMITTED"
+    ):
+        _final_settlement(store, receipt, pins)
     session = date.fromisoformat(receipt["session"])
     if session.isoformat() != receipt["session"]:
         raise ValueError("Canonical original receipt session required")
@@ -243,13 +412,22 @@ def restore_operation(store, operation, root, *, pins):
     return restore_receipt(store, entry["receipt_sha256"], root, pins=pins)
 
 
-# Connect only an already private synthetic N2 account to retained Store operations.
+# Connect a private synthetic account to retained native operations.
 class Cycle:
     # Bind exact native objects and keep every sender write under the private Store.
-    def __init__(self, store, client, root, *, pins, context=None):
+    def __init__(
+        self, store, client, root, *, pins, context=None, settle_current=False
+    ):
         if type(store) is not Store or type(client) is not native.ReplayBroker:
             raise ValueError("Exact private Store and ReplayBroker required")
         self.store, self.client, self.root, self.pins = store, client, Path(root), pins
+        if type(settle_current) is not bool:
+            raise ValueError("Explicit optional settlement boolean required")
+        if settle_current:
+            if context is None or pins["identity"]["source_revision"] != CURRENT:
+                raise ValueError("CURRENT contextual settlement profile required")
+            _settlement_source()
+        self.settle_current = settle_current
         self.context = context
         data = None if context is None else market.read_context(context)
         self.window = WINDOW if data is None else data["window"]
@@ -293,6 +471,7 @@ class Cycle:
             detail,
             session=self.day,
             context=context,
+            settle_current=self.settle_current,
         )
 
     # Derive demand from original full state before examining any response or forecast.
@@ -341,6 +520,11 @@ class Cycle:
                 "window": self.window,
                 "identity": store.identity,
                 "context": None if self.context is None else self.context.sha256,
+                **(
+                    {"current_settlement_sha256": SETTLEMENT_SHA256}
+                    if self.settle_current
+                    else {}
+                ),
             }
         )
         receipt = self._retain(
@@ -441,6 +625,22 @@ class Cycle:
             self.store.snapshot()["head"],
         )
 
+    # Commit exact continuation inputs before resolver work, never live reader objects.
+    def _continuation(self, manifest, registry, captured, facts):
+        return {
+            "schema": "current-pure-outcome-continuation/1",
+            "settlement_sha256": SETTLEMENT_SHA256,
+            "context_sha256": self.context.sha256,
+            "manifest": _put(self.store, manifest.raw),
+            "registry": _put(self.store, registry.raw),
+            "registry_evidence": [
+                [digest, _put(self.store, raw)] for digest, raw in registry.evidence
+            ],
+            "packet": _put(self.store, captured.raw, parser.MAX_CAPTURE_BYTES),
+            "verified_at": captured.verified_at,
+            "facts": deepcopy(facts),
+        }
+
     # Run one native cycle with explicit synthetic inputs and atomic boundaries.
     def run(  # noqa: C901 -- Native and durable boundaries remain sequential.
         self,
@@ -471,6 +671,10 @@ class Cycle:
         prior = packet._decode(
             store.read_blob(declaration["prior"]["inputs"], limit=META_CAP)
         )
+        if prior.get("current_settlement_sha256") != (
+            SETTLEMENT_SHA256 if self.settle_current else None
+        ):
+            raise ValueError("Frozen optional settlement mode changed before decisions")
         if _components(store, client, root, pins, self.day) != prior["components"]:
             raise ValueError("Full broker/paper/latch state changed before decisions")
         decision_inputs = None
@@ -808,18 +1012,63 @@ class Cycle:
             for r in client._orders.values()
             if r["status"] == "accepted" and r["execution_phase"] == "market"
         ]
-        receipt = self._retain(
-            {
-                "stage": "SUBMISSION_CAPTURED",
-                "submitted": submitted,
-                "attempts": client.attempt_history,
-                "factory_calls": factory_calls,
-                "empty_submission": factory_calls == 0,
-                "native_logs": logs,
-                "conditional_window": self.window,
-            },
-        )
+        facts = {
+            "verdicts": verdicts,
+            "submitted": submitted,
+            "decision_operation": decision_op,
+            "submission_operation": submission_op,
+            "decision_inputs": decision_inputs,
+            "classification": "NOT_MODEL_TIMED" if final else "MODEL_TIMED_MARKET_ONLY",
+            "preflight": preflight,
+            "skipped_native_final": skipped_final,
+            "decision_guard": None
+            if decision_admitted
+            else "DECISION_OBSERVATION_UNAVAILABLE",
+            "factory_calls": factory_calls,
+        }
+        submission = {
+            "stage": "SUBMISSION_CAPTURED",
+            "submitted": submitted,
+            "attempts": client.attempt_history,
+            "factory_calls": factory_calls,
+            "empty_submission": factory_calls == 0,
+            "native_logs": logs,
+            "conditional_window": self.window,
+        }
+        if self.settle_current:
+            submission["current_outcome"] = self._continuation(
+                manifest, registry, captured, facts
+            )
+        receipt = self._retain(submission)
         store.complete_operation(submission_op, receipt)
+        return self._finish_outcome(manifest, registry, captured, facts, quote_source)
+
+    # Recompute only deterministic resolver/mark/fold work after committed submission.
+    def _finish_outcome(self, manifest, registry, captured, facts, quote_source=None):
+        store, client = self.store, self.client
+        state = store.snapshot()
+        submission_head, cycle = state["head"], state["cycle"]
+        if state["next_stage"] != "OUTCOME_COMMITTED":
+            raise StorePause("Exact committed submission required before outcome")
+        head = _head_entry(store, submission_head)
+        submitted_receipt = _read_receipt(store, head["receipt_sha256"], self.pins)
+        if submitted_receipt.get("current_settlement_sha256") != (
+            SETTLEMENT_SHA256 if self.settle_current else None
+        ):
+            raise ValueError("Frozen optional settlement mode changed after submission")
+        if self.settle_current:
+            submission, continuation = _current_submission(
+                store, self.pins, submission_head, cycle
+            )
+            if continuation != self._continuation(
+                manifest, registry, captured, facts
+            ) or submission["components"] != _components(
+                store, client, self.root, self.pins, self.day
+            ):
+                raise ValueError("Original immutable outcome continuation differs")
+        submitted, factory_calls = facts["submitted"], facts["factory_calls"]
+        decision_inputs = facts["decision_inputs"]
+        decision_admitted = facts["decision_guard"] is None
         venue = (
             market.Resolver(client).resolve(
                 ctx=self.context,
@@ -867,21 +1116,25 @@ class Cycle:
         detail = {
             "stage": "OUTCOME_COMMITTED",
             "origin": "SYNTHETIC_GENERIC_PACKET",
-            "verdicts": verdicts,
+            "verdicts": facts["verdicts"],
             "venue": venue,
             "marks": candidates,
             "nav": nav,
             "nav_reason": reason,
-            "decision_operation": decision_op,
-            "submission_operation": submission_op,
+            "decision_operation": facts["decision_operation"],
+            "submission_operation": facts["submission_operation"],
             "decision_inputs": decision_inputs,
-            "classification": "NOT_MODEL_TIMED" if final else "MODEL_TIMED_MARKET_ONLY",
-            "preflight": preflight,
-            "skipped_native_final": skipped_final,
+            "classification": facts["classification"],
+            "preflight": facts["preflight"],
+            "skipped_native_final": facts["skipped_native_final"],
             "decision_guard": None
             if decision_admitted
             else "DECISION_OBSERVATION_UNAVAILABLE",
         }
+        if self.settle_current:
+            self._fold_current(
+                detail, manifest, registry, captured, submission_head, cycle
+            )
         receipt = self._retain(detail)
         entry = store.append(
             expected_head=store.snapshot()["head"],
@@ -889,12 +1142,181 @@ class Cycle:
             stage="OUTCOME_COMMITTED",
             receipt_sha256=receipt,
         )
+        if self.settle_current:
+            store._point("current_outcome_committed")
         return {
             **detail,
             "entry": entry,
             "receipt_sha256": receipt,
             "factory_calls": factory_calls,
         }
+
+    # Authenticate an internally retained outcome before pure fold and native save/read.
+    def _fold_current(self, detail, manifest, registry, captured, parent, cycle):
+        pre_detail = {
+            "stage": "PRE_SETTLEMENT_OUTCOME",
+            "submission_head": parent,
+            "cycle": cycle,
+            "manifest": manifest.sha256,
+            "registry": registry.sha256,
+            "packet": captured.sha256,
+            "resolved": deepcopy(detail),
+        }
+        reference = self._retain(pre_detail)
+        retained = _read_receipt(self.store, reference, self.pins)
+        if (
+            retained["detail"] != pre_detail
+            or retained["components"]
+            != _components(self.store, self.client, self.root, self.pins, self.day)
+            or retained["context"]["sha256"] != self.context.sha256
+        ):
+            raise ValueError(
+                "Original internally bound pre-settlement receipt required"
+            )
+        self.store._point("current_outcome_resolved")
+        before = codec.encode(self.client, **self.pins)
+        updated, evidence = _settlement_source().reconcile(
+            self.client,
+            paper.load_state(self.root),
+            pins=self.pins,
+            outcome_sha256=reference,
+            observed_at=self.client._now.isoformat(),
+        )
+        paper.save_state(self.root, updated)
+        if (
+            demand.encoded(paper.load_state(self.root).__dict__)
+            != demand.encoded(updated.__dict__)
+            or codec.encode(self.client, **self.pins) != before
+            or _file(entry_timing.latch_path(self.root, self.day), absent=True)
+            != (
+                None
+                if retained["components"]["latch"] is None
+                else self.store.read_blob(
+                    retained["components"]["latch"], limit=META_CAP
+                )
+            )
+        ):
+            raise StorePause("Native reconciled save/read changed original components")
+        self.store._point("current_settlement_saved")
+        detail.update(
+            {
+                "pre_settlement_receipt": reference,
+                "native_reconciliation": evidence,
+                "settlement_submission_head": parent,
+                "settlement_cycle": cycle,
+            }
+        )
+
+
+# Restore externally pinned continuation inputs without evaluating a reader or sender.
+def _restore_continuation(store, descriptor, receipt):
+    context = market.Context(
+        receipt["context"]["raw"].encode(), descriptor["context_sha256"]
+    )
+    market.read_context(context)
+    registry = entities.Registry(
+        store.read_blob(descriptor["registry"], limit=META_CAP),
+        descriptor["registry"],
+        tuple(
+            (digest, store.read_blob(reference, limit=META_CAP))
+            for digest, reference in descriptor["registry_evidence"]
+        ),
+    )
+    manifest = demand.Demand(
+        store.read_blob(descriptor["manifest"], limit=META_CAP), descriptor["manifest"]
+    )
+    declaration = demand.read(manifest, registry)
+    if (
+        declaration["window"] != market.read_context(context)["window"]
+        or declaration["branch"] != market.read_context(context)["phase"]
+    ):
+        raise ValueError("Original continuation demand/context differs")
+    captured = parser.packets(
+        store.read_blob(descriptor["packet"], limit=parser.MAX_CAPTURE_BYTES),
+        descriptor["packet"],
+        manifest,
+        registry,
+        descriptor["verified_at"],
+    )
+    return context, manifest, registry, captured
+
+
+# Recover only the pure submission tail, or restore an already committed final snapshot.
+def resume_current_outcome(
+    store,
+    root,
+    *,
+    pins,
+    expected_head,
+    expected_cycle,
+    submission_head,
+    context_sha256,
+    demand_sha256,
+    registry_sha256,
+    packet_sha256,
+):
+    if type(store) is not Store or pins["identity"]["source_revision"] != CURRENT:
+        raise ValueError("Exact CURRENT private outcome recovery required")
+    for digest in (
+        expected_head,
+        expected_cycle,
+        submission_head,
+        context_sha256,
+        demand_sha256,
+        registry_sha256,
+        packet_sha256,
+    ):
+        entities.digest(digest)
+    state = store.snapshot()
+    if (
+        state["head"] != expected_head
+        or state["cycle"] != expected_cycle
+        or store.identity != pins["identity_sha256"]
+    ):
+        raise StorePause("External authoritative outcome head/cycle differs")
+    entry = _head_entry(store, expected_head)
+    submission, descriptor = _current_submission(
+        store, pins, submission_head, expected_cycle
+    )
+    if (
+        descriptor["context_sha256"] != context_sha256
+        or descriptor["manifest"] != demand_sha256
+        or descriptor["registry"] != registry_sha256
+        or descriptor["packet"] != packet_sha256
+    ):
+        raise ValueError("Externally pinned continuation inputs differ")
+    if entry["stage"] == "OUTCOME_COMMITTED":
+        if entry["parent"] != submission_head:
+            raise ValueError("Original immediate outcome descendant required")
+        final = _read_receipt(store, entry["receipt_sha256"], pins)
+        if (
+            final.get("current_settlement_sha256") != SETTLEMENT_SHA256
+            or final["detail"]["settlement_submission_head"] != submission_head
+            or final["detail"]["settlement_cycle"] != expected_cycle
+        ):
+            raise ValueError("Original committed reconciled outcome required")
+        client, final = restore_receipt(store, entry["receipt_sha256"], root, pins=pins)
+        return client, {
+            **final["detail"],
+            "entry": entry,
+            "receipt_sha256": entry["receipt_sha256"],
+            "factory_calls": descriptor["facts"]["factory_calls"],
+        }
+    if (
+        entry["stage"] != "SUBMISSION_CAPTURED"
+        or expected_head != submission_head
+        or state["next_stage"] != "OUTCOME_COMMITTED"
+    ):
+        raise StorePause("Uncommitted decision/submission never re-executed")
+    context, manifest, registry, captured = _restore_continuation(
+        store, descriptor, submission
+    )
+    client, _ = restore_receipt(store, entry["receipt_sha256"], root, pins=pins)
+    current = Cycle(
+        store, client, root, pins=pins, context=context, settle_current=True
+    )
+    result = current._finish_outcome(manifest, registry, captured, descriptor["facts"])
+    return client, result
 
 
 # Retain exact genuine pilot inputs separately without claiming generic query admission.
