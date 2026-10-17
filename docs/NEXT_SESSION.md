@@ -1,5 +1,46 @@
 # Next session
 
+## 2026-10-17 — Dead frontend cleanup delivered and independently browser-verified
+
+Read research/trading-dead-exports-delivery-proof-2026-10-17.json. Production
+frontend is now e237479c245ab78636913a4290c5e950d8fb143d, parent exact0655.
+Canonical scratch/trading-dashboard-dead-exports-release-20261017-v1 finished
+21:01:22.564160Z/exit0/cheap post green. This supersedes the prior IN PROGRESS
+note: execsession65496 finished; never restart it. Actual public
+index-D2HlhE-z.js SHA0468667cd88811f9b7058d83689019a76d2c39f2400a3486e5e2147cb04c27d4
+matches the tested build and actual gateway. Independent authenticated browser
+verified search/NTAP78held/Details/four action filters/ticker/history/disclosures;
+warning/error logs empty. Manual network/page-exception instrumentation is not
+claimed. Backend3e4edf/f612, models, native31/config/release/economics, completed
+original container and310 protected files remain unchanged; HOST+CONTAINER
+admission retained. No orders or account writes.
+
+Two additional unmounted components and private helpers removed:769 deletions,
+767 net lines. Active shared helpers/context are byte-identical. Together with
+the earlier three-view cleanup, five obsolete views are removed. Main38538
+type/build+15 compiled checks/0skip22.899s; productione237 type/build+9/0skip15.0215s.
+Different specification scopes; do not add counts as distinct24. Built assets
+changed; no byte-equivalence claim. Diagram impact NONE, active flows unchanged.
+This closes the trading frontend dead-declaration cleanup, not a whole-repository
+junk-free or full trading-reliability claim. Do not repeat passed gates/browser
+or deploy pending historical main for documentation.
+
+Current plan remains expired/Oct13; no chart-judgment fallback to funded numeric
+direction/quantity. Genuine ordinary weekday and following intraday/fill/UI
+acceptance remain OPEN. Original retrospective COMPLETE but timing FAILED and
+publication CLOSED. Corrected genuinev6 stays PAUSED after native save and before
+capture result:289484B exceeded256KiB observer cap. Preserve its source/output/
+reservation; no cap raised, state truncated or run replayed. Full native capture/
+CAS capacity and authenticated coordinator remain OPEN. Latest private helper103cc98a
+and test6c9d817e are integrated; source-pinned proof details remain below.
+
+Original-reader6f7 stays isolated with UNCOMMITTED external-SHA-map implementation/
+tests; validation was not returned before worker account usage limit. Preserve
+and inspect those edits/processes before further work. Do not repeatedly retry
+limited agents or switch accounts/models to bypass the limit. get_goal currently
+reports usageLimited; do not report goal complete or attempt a tool-driven resume.
+Heartbeat remains ACTIVE; its prompt must point here and preserve these boundaries.
+
 ## 2026-10-17 — Additional dead frontend removed; guarded release in progress
 
 Main38538a88 removes two more proven-unmounted value components and their

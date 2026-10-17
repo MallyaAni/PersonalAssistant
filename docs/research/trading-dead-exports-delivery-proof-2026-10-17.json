@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "scope": "TRADING_FRONTEND_DEAD_DECLARATIONS_DELIVERY",
+  "status": "VERIFIED_LIVE_FRONTEND_ONLY",
+  "production_source": "e237479c245ab78636913a4290c5e950d8fb143d",
+  "production_parent": "0655eea00ab4d42cda1041b510d36301c9aff715",
+  "main_source": "38538a8876ab0583a7e893900b92fd67c2cc6375",
+  "change": {
+    "files": 2,
+    "insertions": 2,
+    "deletions": 769,
+    "net_removed_lines": 767,
+    "removed_value_components": [
+      "StockBoard",
+      "PersonalDecisionHistory"
+    ],
+    "previous_delivery": "trading-dashboard-single-action-proof-2026-10-17.json",
+    "total_obsolete_views_removed_across_deliveries": 5,
+    "source_audit_sha256": "feb01bcbd81c44c19cecc5bbf09ed806e3093bc28a922666b339c9a761200b1a",
+    "source_files": {
+      "frontend/src/components/DeskPanel/StockBoard.tsx": "001b17f1424bc35a6ba4d35c0cbc04cb8ae0043d9dce4c306800ced1f4603d47",
+      "frontend/src/components/DeskPanel/PersonalDecisionHistory.tsx": "dc69bea17bc429ea3c567756b4f00a15408649057e226c2c97cceb2da231db65"
+    },
+    "retained": "All active quote/action/research helpers and PersonalHistoryContext are byte-identical; active personal tracker, API, backend, account and history unchanged.",
+    "audit_scope": "Frontend references, test references, scripts, package and config; no consumers or dynamic loaders of removed value components. This is not a whole-repository junk-free claim."
+  },
+  "production_controlled_validation": {
+    "root": "/home/animallya96/scratch/trading-dashboard-compiled-production-dead-exports-20261017-v1",
+    "container": "111dd1bb7c7ddddcf59b299b8f4a8ca6c3b24400adae8afe38e1d34fcbd7ba00",
+    "image": "7e11780237209f8747e8023d2ba777723d9aba451a548bbcc0563511e28a2c9a",
+    "type_check": "PASS",
+    "build": "PASS",
+    "tests": {
+      "passed": 9,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0,
+      "seconds": 15.0215
+    },
+    "source_files_before_after_identical": 106,
+    "proof_sha256": "edaba0ef1eecdb3bc750690ed9711c685144b180916d267a963e8650b45884a7",
+    "results_sha256": "1e45bab982433d83a0a0ff9b8546590e13d3ce92a23aad8fc6fe1dbe8e14989e",
+    "inspect_sha256": "fab636d954291ff42c6b38dbd309d3c70185e4a3011a7963ea8399c1367f0070",
+    "runtime": "Exit0/OOMfalse; UID1000/networknone/readonly/1CPU/2GiB RAM=swap; no account/provider/model calls."
+  },
+  "main_controlled_validation": {
+    "root": "/home/animallya96/scratch/trading-dashboard-main-compiled-dead-exports-20261017-v1",
+    "container": "35c73f87bfd640910ce79bc9132d5424875dfb44478e11b038978a1223e436cc",
+    "type_check": "PASS",
+    "build": "PASS",
+    "tests": {
+      "passed": 15,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0,
+      "seconds": 22.899
+    },
+    "proof_sha256": "4d1b59390b7e71d611928b9a08f5a4ff17469ef379cd471ce7954a44ce1b840e",
+    "results_sha256": "435357df42a3109123228ae54d7cb9ceeed39bef31f91e40432f33fd6dad007b",
+    "source_files_before_after_identical": 106,
+    "scope": "Main and production specifications differ; counts are not combined as distinct tests. Historical main remains undeployed.",
+    "asset_comparison": "Built assets changed; no byte-equivalence claim.",
+    "asset_comparison_sha256": "bc80e88f0e597f8320cf279ecf8956183bcaa7ae92df260e570c29a3baf1289c"
+  },
+  "canonical_release": {
+    "root": "/home/animallya96/scratch/trading-dashboard-dead-exports-release-20261017-v1",
+    "finished_at": "2026-10-17T21:01:22.564160+00:00",
+    "command": "bash scripts/deploy.sh --deploy-dir=/home/animallya96/deploy/anios --wait-post",
+    "path": "Guarded canonical frontend-only short path; no skip flags, clock override or source-approval renewal.",
+    "controller_sha256": "62afc004bc99bc2119de1e24bf505fb9c9b70b107ead459802162c81cfe32036",
+    "controller_review": "Only five release constants changed from successful prior controller; all17 functions identical.",
+    "exit_code": 0,
+    "cheap_post": "2026-10-17T21:01:16Z e237479c ok (cheap)",
+    "release_result_sha256": "a1cedc8f4478120f3150d7f7faad5b4ea2aa0b6610ae50e85fb4d873e1d48970",
+    "canonical_result_sha256": "24d36c609f3a55b4d45525b5e759bd411ce056346c765dc26d913104cac49887",
+    "producer_scope": "Original release-result correctly left independent browser/artifact acceptance UNVERIFIED. It is preserved; the separate checks below close only those frontend boundaries.",
+    "actual_bundle": "index-D2HlhE-z.js",
+    "actual_bundle_sha256": "0468667cd88811f9b7058d83689019a76d2c39f2400a3486e5e2147cb04c27d4",
+    "actual_css": "index-C5DBCRv7.css",
+    "actual_css_sha256": "31462699322defd0bbf7c3bcbedc6902123aec308798ef00d34bceebe77debf0",
+    "bundle_matches_tested_build": true,
+    "gateway_container": "af915c928e57547d1ff1596158c6d5b32fd5b2952f7adf9514fb9456c2291108",
+    "gateway_image": "sha256:3c8274f8bf52a1bdb8699033c490777e66baa462f728cf83afad3e32ff5e94e6"
+  },
+  "independent_authenticated_browser": {
+    "status": "VERIFIED_MANUAL_SESSION_AFTER_RELEASE",
+    "url": "https://deep-matter.com/?deskView=strategy#desk",
+    "surface": "Authenticated Codex in-app browser tab1; public reload observed index-D2HlhE-z.js. Screenshot emitted inline in this session.",
+    "checks": [
+      "NTAP search and78-held position render; Details retains separately dated saved18.9percent target and paper status.",
+      "Exactly four action filters BUY/SELL/TRIM/HOLD; no WAIT or No order action bucket.",
+      "Expired numeric plan shows unavailable action/size/timing without inventing chart-grade fallback; saved decision remainsOct13.",
+      "Ticker and full history load2000 sessions throughOct16; model plan precedes initially folded All the evidence.",
+      "Existing Current and Saved assessment disclosures expand and collapse; chart/research/paper modes remain separate."
+    ],
+    "console_warning_error_logs": [],
+    "limits": "Manual session did not independently instrument every required network request or page exception. Controlled browser acceptance is recorded separately. No account writes or orders."
+  },
+  "preservation": {
+    "original_files_unchanged": 310,
+    "manifest_before_and_after_sha256": "b059b8df785a1652c3c7194ea3aa77494c8951bdf3465c923d19bf6877fda460",
+    "host_and_container_read_configuration": "ADMITTED_BEFORE_AND_AFTER",
+    "admission_before_and_after_sha256": "60ad3da086978af86fe6c68151aba37ebbacc5487a47d8887a3ba09ee30008b4",
+    "native_sources": 31,
+    "native_map_sha256": "bfbcb6ece4ea500726e00abbb06fc2c84d63d386bb307958016915357aaef5b3",
+    "config_sha256": "f96a29777403f5f08623709b70f36b15300500065202acbd215cd43f3c99a588",
+    "release_sha256": "1c1c6e9bcc7e9fa8d095f6ce5e6bf973c99ed19531e88c38a9aba5ed8410cd3e",
+    "economic_evidence_sha256": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9",
+    "backend_container": "3e4edfca9185e0cfbc108e4ed1628ec18cbc4a795e8c559b19d874600ed84b59",
+    "backend_image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "model_and_original_completed_containers": "UNCHANGED",
+    "orders_submitted": 0,
+    "upstream": "Restored origin/main"
+  },
+  "diagram_impact": "NONE — only unreachable declarations removed; active functions and data flows unchanged.",
+  "remaining": {
+    "full_training_action_quantity_consistency": "UNVERIFIED_BY_THIS_FRONTEND_CHANGE",
+    "fresh_ordinary_intraday_fill_matching_ui": "UNVERIFIED; no Saturday acceptance or actual-day replay.",
+    "original_retrospective": "COMPLETE; original timing FAILED; publication CLOSED.",
+    "corrected_genuine_v6": "PAUSED after native state save when physical capture rejected289484B under256KiB; retain failed root/reservation without replay.",
+    "full_historical_delivery": "UNVERIFIED",
+    "whole_repository_junk_free": "NOT_CLAIMED",
+    "goal": "Still unfinished; tool currently reports usageLimited, not complete."
+  }
+}
