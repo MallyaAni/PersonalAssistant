@@ -1,4 +1,4 @@
-"""Project verified current-model account decisions without rewriting old research."""
+"""Pure controlled projection; output does not authorize historical publication."""
 
 import gzip
 import json
@@ -182,7 +182,7 @@ def fills(rows, stocks, decisions):
         )
 
 
-# Build new per-stock history only after an independent whole-account verification.
+# Exercise legacy projection fixtures without granting full model or timing acceptance.
 def project(root, verification):
     root = Path(root)
     raw = (root / "completion.json").read_bytes()

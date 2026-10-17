@@ -1,0 +1,35 @@
+{
+  "status": "VERIFIED_FAIL_CLOSED_PUBLICATION_BOUNDARY_ONLY",
+  "base_code": "7e88e83c",
+  "behavior": {
+    "verifier_status": "VERIFIED_HISTORICAL_LEDGER_SOURCE_AND_HOLDING_CHECKS_ONLY",
+    "full_model_and_live_timing_acceptance": "UNVERIFIED",
+    "historical_publication_authorized": false,
+    "verifier_projects_or_claims_all94_payload_acceptance": false,
+    "production_publish": "Authenticate exact proof digest, then unconditionally reject before account reads, projection or destination writes",
+    "legacy_full_verified_status": "REJECTED",
+    "forged_success_flags": "REJECTED",
+    "new_placeholder_acceptance_schema_or_bypass": false,
+    "controlled_staging": "Only backend/tests/live_history_publication_fixture.py; requires pytest context and explicit private-fixture marker; no production caller or CLI"
+  },
+  "validation": {
+    "root": "/home/animallya96/scratch/historical-publication-barrier-validation-20261017-v3",
+    "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+    "isolation": "networknone/read-only/private source; no original account/model/data mounts",
+    "tests": {"passed": 102, "skipped": 0, "seconds": 9.64, "sha256": "5154dbc9f36034fa61342a2aa35bb217e72ed4aa61b3c4fba3d6f659abde6371"},
+    "actual_cli": "Normal and Python -O reject forged legacy success and preserve existing manifest/files exactly",
+    "ruff": {"result": "PASS", "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"},
+    "format": {"result": "7files already formatted", "sha256": "0321fffcb91606a42c0a19d8c1121d5c544379d663821fce616c71a7bb62f6b5"},
+    "accepted_archive_sha256": "10f941d9800f75f01a892d345ab2c121634f16f81a4a1bdd058c54b6cca4e011",
+    "local_seven_candidate_files_match_archive": true,
+    "guarded_sources": {"count": 31, "changed": 0},
+    "diagram_impact": "NONE: same private audit path; no service, store, endpoint or trust-boundary addition; prior33 diagram check remains applicable"
+  },
+  "preserved_evidence": [
+    "v1:100pass9.57s; initial Ruff read-only cache failure, then8 lint/import findings",
+    "v2:102pass9.32s; Ruff PASS; one fixture formatting difference",
+    "v3:102pass9.64s; Ruff and format PASS"
+  ],
+  "not_performed": ["original full-run read/audit/modification", "new simulation or fitting", "publication", "runtime/model/config/account/order mutation", "deployment"],
+  "remaining_goal": "Actual all-session raw model and installed live-timing acceptance is open; no full historical delivery claim"
+}

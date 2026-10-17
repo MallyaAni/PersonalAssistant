@@ -9,11 +9,13 @@ from pathlib import Path
 
 import pytest
 
-from backend.cli.market_publish_live_history import publish
 from backend.market import learned_live_holding
 from backend.market import live_model_history_binding as binding
 from backend.market import live_model_history_projection as projection
 from backend.market.live_model_history_reader import read
+from backend.tests.live_history_publication_fixture import (
+    stage_private_fixture as publish,
+)
 from backend.tests.test_live_model_history_reader import publication
 
 
@@ -52,6 +54,7 @@ def archived_source_identity():
 # Preserve frozen source/config bytes while installing the reviewed serving renewal.
 def renewed(root):
     value, old_path = publication(root)
+    (root / "PRIVATE_CONTROLLED_FIXTURE").touch()
     frozen = root / "frozen"
     review_raw = (
         Path(binding.__file__).resolve().parents[2] / binding.REVIEWS[0]

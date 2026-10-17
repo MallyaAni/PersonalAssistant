@@ -21,8 +21,9 @@ new account, simulation restart or historical publication occurred in this task.
 
 ## Exact bridge contract
 
-The optional publisher `--frozen-market` mode stores `serving-binding.json` in a
-new immutable version. Its digest appears in the manifest and all94 payloads.
+The retained private staging fixture's `frozen_market` mode stores
+`serving-binding.json` in a new synthetic version. Its digest appears in the
+manifest and all94 fixture payloads. This is no longer a production publisher.
 The archive retains exact UTF-8 bytes (including original newlines) for capture,
 holding config, timing config, release and economic evidence. The reader checks
 their original capture/config/source identities before current live admission.
@@ -74,14 +75,15 @@ while preparing this mapping or its bounded corruption tests.
 | Raw SIP prices and missing executions | `physical_fill` requires the exact raw bar opening for nonzero execution, fee arithmetic and an independently matching absent/present price reason for zero receipts. `physical_attempt` checks the original completed raw close seen at submission, separately from the later execution opening. | Preserve raw input hashes before/after; no adjusted daily proxy may substitute for an execution bar. |
 | Corporate actions, missing held marks and unknown claims | Independent reviewed source events and entitlement arithmetic are folded into every broker snapshot. `check_valuation` requires null NAV and exact missing-symbol/unpriced-claim lists when evidence is absent. | Full-session reconciliation plus original economic input proof/preservation remains required. Missing states must not be filled with fabricated prices. |
 | Durable pending/journal identity and transitions | `ReceiptLedger` requires every original intent in pending or journal, immutable original decision evidence, monotonic fills, valid terminal transitions and unchanged earlier terminal journal entries. A known terminal outcome may remain pending until the next saved reconciliation. | Preserve every original raw record; this is validation, never state repair, order submission or missing actual-day replay. |
-| All94 chart decisions and distinct simulated executions | Projection keeps raw model weights, funded quantities, zero reasons, decision clocks and later execution clocks separate; publisher reads every immutable payload before selecting its manifest. | Controlled projection/browser fixtures do not constitute full model/timing acceptance, actual publication or compiled public quantities. |
-| Original paper/model-only research preservation | This audit opens original account/capture inputs read-only and writes only a new exclusive proof/parity directory; publisher creates new immutable versions. | External original-file manifests, actual owner/foreign/anonymous checks and canonical/public-browser delivery evidence are still required. |
+| All94 chart decisions and distinct simulated executions | Pure controlled projection keeps raw model weights, funded quantities, zero reasons, decision clocks and later execution clocks separate. The production publisher rejects current proofs before projection or writes. | Controlled projection/browser fixtures do not constitute full model/timing acceptance, actual publication or compiled public quantities. |
+| Original paper/model-only research preservation | This audit opens original account/capture inputs read-only and writes only a new exclusive proof/parity directory. Current production publication performs no writes. | External original-file manifests, actual owner/foreign/anonymous checks and canonical/public-browser delivery evidence are still required. |
 
-The current generic account-verification status must not be interpreted as full
-model/timing acceptance. The atomic cohort/receipt correction explicitly reports
-per-session timing and all-saved-night model inference as UNVERIFIED. A separate
-fail-closed publication barrier is required before any publication command is
-authorized; no presently unimplemented timing schema is an approval mechanism.
+The verifier emits only `VERIFIED_HISTORICAL_LEDGER_SOURCE_AND_HOLDING_CHECKS_ONLY`
+and reports per-session timing, all-saved-night model inference and all94
+projected payload acceptance as UNVERIFIED. It no longer calls the projection.
+The production publisher unconditionally rejects every current or legacy proof,
+including forged success flags, before account access or destination writes.
+No placeholder timing schema, configuration switch or CLI bypass exists.
 
 ## Full audit after the sole producer completes
 
@@ -125,28 +127,22 @@ authorized; no presently unimplemented timing schema is an approval mechanism.
 
 ## Publication and actual delivery
 
-BLOCKED: do not execute the publication command below while full saved-night
-model consistency and installed live timing acceptance are absent. The generic
-ledger/source status is insufficient. The separately scoped structural
-publication barrier must be completed before this procedure can be authorized.
+BLOCKED: no supported account proof can authorize historical publication.
+The production CLI authenticates the supplied proof bytes and then rejects
+publication before opening the account or destination. This also applies to
+legacy full-verified statuses and self-declared model/timing success flags.
 
-After full audit, freeze the exact canonical candidate source and approved live
+Before any future accepted publication path, freeze exact candidate source and
+implement a reviewed independent full model/timing acceptance mechanism. No
+placeholder acceptance schema is defined here. Then bind the approved live
 release. Obtain actual HOST and CONTAINER `read_configuration` admission for
 that source. Prepare a private complete publication stage containing the exact
 installed model/config/release/evidence tree, without changing permissions or
-original market data. Run:
-
-```text
-python -m backend.cli.market_publish_live_history
-  --account /account --proof /results/verification.json
-  --proof-sha256 <actual independent proof digest> --root /private-stage
-  --frozen-market /private
-  --source-review-sha256 <original API approval review digest>
-  --source-review-sha256 <later exact reviewed source-extension digest, if needed>
-```
-
-The publisher refuses a cohort/calendar/config/source/model mismatch before
-manifest activation and reads back all94 payloads first. No stage is production
+original market data. The retained staging implementation exists only under
+`backend/tests/live_history_publication_fixture.py`, requires pytest and an
+explicit private-fixture marker, and has no production caller or CLI. Its
+synthetic readback tests preserve cohort/calendar/config/source/model checks;
+they are not an alternative publishing route. No stage is production
 delivery. Canonical `scripts/deploy.sh` gates, authenticated actual API94-stock
 integrity/owner isolation and actual public compiled historical quantities,
 range changes/reload, original ORCL saved dates, blocked zero-size reasons,
