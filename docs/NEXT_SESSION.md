@@ -1,5 +1,58 @@
 # Next session
 
+## 2026-10-17 — Canonical live metadata release active; generic packet bounds integrated
+
+ONE canonical metadata release started at genuine13:53:48.967457Z, controller
+PID4045370, target3b72cd4e0bc15acd24432d501918c721685a5333. ROOT owns it; never
+duplicate/restart it or move the live checkout by hand. Isolated candidate:
+/home/animallya96/scratch/settlement-metadata-candidate-20261017-v1. Canonical
+root scratch/settlement-metadata-release-20261017-v1, helpers at
+scratch/settlement-metadata-helpers-20261017-v1, preparation sibling
+settlement-metadata-preparation-20261017-v1. Source/final native19 proof remains
+on the isolated candidate; historical main is deliberately NOT the deploy target.
+
+Exact private preflightc3055e58 passed13:53:20Z, target/review875976f6 and31map
+admitted in a selector shadow only. Authenticated ALL310 predecessor hashes from
+original N2 manifest5a8e228b, replacing ONLY known N2 selectors and known reconciled
+statee44; actual model/full-run/frontend identities match N2. No activation by
+preparation. Bundle d6588a21fdd25ef566e756901dc4d1b5b38757fad9b87d40beacdbcb6c1ed570;
+CANDIDATE configf96a2977/release1c1c6e9b are NOT claimed installed. Exact preflight:
+research/settlement-metadata-preflight-proof-2026-10-17.json.
+
+Canonical normal --wait-post path, full unit/routing gates, no skips, one routing
+worker; no forced unrelated search sweep or ANIOS_DEPLOY_* overrides. It was in
+the unit gate at13:55Z; no result/activation/deployment claim yet. Final controller
+72bf423c and contractc1d1b94a were reviewed; original upstream restores in finally.
+On canonical success use prepared verify4e3c9e71 with the SAME explicit CLI roots/
+target/review to prove actual HOST+CONTAINER admission, all actual backend bytes/
+new image tag, unique exact predecessor archive,308other preserved files and
+retained actual-new-image synthetic persistence (15checks, NO source overlay).
+Verification root must be NEW scratch/settlement-metadata-verification-20261017-v1.
+Do not rerun original live settlement/history wrappers. Original actual orders,
+records/missing days and full historical run remain untouched. User approval is
+already present; no confirmation question is pending.
+
+Unused generic packet layers f4b58d9d + resource correction7f147a28 integrated as
+47c522b4/cb931311. Native51checks/0skip plus5FOCUSED bounds checks/0skip pass;
+166retained AAPL rows equal original parser, zero GETs/model/broker calls. ROOT
+verified exact proof hashesba53b7ab/a765a02a and actual retained7d2e84ad/d38def0d:
+N2e0/networknone/read-only/1CPU512MiB/exit0/OOMfalse.8MiB envelope admission occurs
+BEFORE demand rebuild/hash/JSON/base64; oversize is operational PAUSE, never market
+absence. This is not a caller-read-allocation, object-expansion or full-horizon
+memory proof. Original51 proof/parser preserved; no old suite rerun for docs.
+
+Registry retains issuer review claims without treating byte hashes/CIK as issuer or
+share-class truth; unresolved/request-name-only entries fail admission. Existing
+188SEC metadata records provide dated94CIK candidates outside the original capture
+binding. Causal coverage is still declared, checkpoint storage not atomic, acquirer/
+rate coordinator not connected: no acquisition/full corrected launch authorized
+by these fixtures alone. actual_policy_review now implements a NEW pure post-venue
+candidate-mark selector/addendum (fixed33.101s assumed observation; raw source
+clocks stay separate). No033 edits, broker mutation, GET or runner caller yet.
+historical_chain_completion is finishing genuine bounded streaming composition;
+full original timing remains FAILED and publisher CLOSED. Heartbeat ACTIVE/quiet.
+Diagram impact NONE: unconnected pure layers and private release controller only.
+
 ## 2026-10-17 — Original pending metadata audit integrated; live quantity fix isolated
 
 Atomic33d2580f integrated as0c959486: ONLY new pending helper276b964e,
