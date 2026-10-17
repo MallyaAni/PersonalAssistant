@@ -1,0 +1,105 @@
+{
+  "children_maxrss_kib_linux": 37664,
+  "errors": 0,
+  "failures": 0,
+  "finished_at": "2026-10-17T15:05:15.820690+00:00",
+  "functions": 13,
+  "manifest_sha256": "80a3a9a82fbe42385eb9cebcec47b527867ca043dc1e81d0802820b75031ece0",
+  "no_mac_body_root": true,
+  "observations": [
+    {
+      "external_read_calls": 0,
+      "failed": "replica-a",
+      "kind": "SYNTHETIC_REPLICA_ENOSPC"
+    },
+    {
+      "external_read_calls": 0,
+      "failed": "replica-b",
+      "kind": "SYNTHETIC_REPLICA_ENOSPC"
+    },
+    {
+      "allocated_bytes": 278528,
+      "kind": "SYNTHETIC_LOCAL_ALLOCATION",
+      "logical_ceiling": 267008,
+      "physical_ceiling": 278528,
+      "root": "/out/synthetic-local-fixtures/c226bfa8e73d4312bac0e54e4cf5e4d0/replica-a/incoming/spool-0c84bcb0e18d468498cfc310b7f7b10b"
+    },
+    {
+      "attempt": "fd5cc319a3ad71251182528757ffef26bbbe9f3565d5d07854774a8b48cac141",
+      "cas_present": false,
+      "child_exitcode": -9,
+      "head": "abbca346d68c8a0e1b0e6b2a244768bddf71665dcde7f42e2b128c3885aec142",
+      "kind": "SYNTHETIC_SPOOL_SIGKILL",
+      "point": "spool_fsynced",
+      "read_confirmed": false,
+      "reservation": "d2beac7479da0a999a0dc2727bee42202f38a3c93c9d1dd1d47a5d2ba96bcab5",
+      "sha": "c2a05816920dbaf8ff402382ecdcd66ec036caf7cd44f177a718feb8ccd1f997",
+      "source": "/out/synthetic-local-fixtures/6d6803222108488f969535c841574f67/spool_fsynced/incoming/spool-4ca874c4074b4bae80457abc0bfcb3e7/0"
+    },
+    {
+      "attempt": "373190fb41357860cea93f7e58ae051e2c9ca521ccd24ceb9a6e2d7e849c9a11",
+      "cas_present": true,
+      "child_exitcode": -9,
+      "head": "3849abf1ab327d0cca145b8fa4642302520afe4167016204f25f58efdbbb5cbe",
+      "kind": "SYNTHETIC_SPOOL_SIGKILL",
+      "point": "spool_linked",
+      "read_confirmed": false,
+      "reservation": "62d9d9b5ea40837415fe90658c944da235dab0b906a0010604cabf2a2dd20a57",
+      "sha": "c2a05816920dbaf8ff402382ecdcd66ec036caf7cd44f177a718feb8ccd1f997",
+      "source": "/out/synthetic-local-fixtures/6d6803222108488f969535c841574f67/spool_linked/incoming/spool-22d36a39ba564fc6ae9fdc5a1d721f6e/0"
+    },
+    {
+      "body_inode": 60064476,
+      "kind": "SYNTHETIC_SAME_INODE",
+      "put_stream_calls": 0,
+      "root": "/out/synthetic-local-fixtures/4900fbc222d240d9bfc4b94971d27761/replica-a"
+    },
+    {
+      "body_inode": 60064482,
+      "kind": "SYNTHETIC_SAME_INODE",
+      "put_stream_calls": 0,
+      "root": "/out/synthetic-local-fixtures/4900fbc222d240d9bfc4b94971d27761/replica-b"
+    }
+  ],
+  "provider_model_account_calls": 0,
+  "real_two_host_acceptance": false,
+  "scope": "FINAL_AFFECTED_EXTENT_LAYER_ONLY_SYNTHETIC_LOCAL_REPLICAS",
+  "self_maxrss_kib_linux": 37520,
+  "skips": 0,
+  "source_after": {
+    "backend/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/market/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+    "backend/market/historical_packet_demand.py": "f4d91dd5804fe93b89201a209951230b0d1eb79e8ea2abdc4400b5f90fb13697",
+    "backend/market/historical_packet_parser.py": "d617eaceae212bf5dab16280727c5330867506b4b2b47e4b4dce787be01b4155",
+    "backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+    "backend/market/historical_packet_spool.py": "705300210493d46e1a65225c371a05dd9bc8e30dff2c5ae8da43b85041b3f6ac",
+    "backend/market/historical_packet_store.py": "be90098bf2c64e7e8da390f2b40db646b50c7d0be659e1a3c9391b8b5595fdbf",
+    "backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+    "backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/tests/test_historical_packet_rate.py": "e10c85ecb8148422ad4d1da74b48ac4bca67fd94427162a4b37932dacf40d627",
+    "backend/tests/test_historical_packet_spool.py": "ff5caf39f6065e4e9071399c6cd6cec24f90b243aad5ad83bcf66af97d1c1759",
+    "backend/tests/test_historical_packet_store.py": "3556d1b866a4b48d3cad9508eee85b5e799ba8e5d7255ca48e7635747a1926aa",
+    "run.py": "927d53afe1a7a63dcec68331573579ee558d976b5acd7883f5cc98db3a37f9b6"
+  },
+  "source_before": {
+    "backend/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/market/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+    "backend/market/historical_packet_demand.py": "f4d91dd5804fe93b89201a209951230b0d1eb79e8ea2abdc4400b5f90fb13697",
+    "backend/market/historical_packet_parser.py": "d617eaceae212bf5dab16280727c5330867506b4b2b47e4b4dce787be01b4155",
+    "backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+    "backend/market/historical_packet_spool.py": "705300210493d46e1a65225c371a05dd9bc8e30dff2c5ae8da43b85041b3f6ac",
+    "backend/market/historical_packet_store.py": "be90098bf2c64e7e8da390f2b40db646b50c7d0be659e1a3c9391b8b5595fdbf",
+    "backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+    "backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/tests/test_historical_packet_rate.py": "e10c85ecb8148422ad4d1da74b48ac4bca67fd94427162a4b37932dacf40d627",
+    "backend/tests/test_historical_packet_spool.py": "ff5caf39f6065e4e9071399c6cd6cec24f90b243aad5ad83bcf66af97d1c1759",
+    "backend/tests/test_historical_packet_store.py": "3556d1b866a4b48d3cad9508eee85b5e799ba8e5d7255ca48e7635747a1926aa",
+    "run.py": "927d53afe1a7a63dcec68331573579ee558d976b5acd7883f5cc98db3a37f9b6"
+  },
+  "source_overlay_explicit": true,
+  "sqlite_and_directory_headroom_reserved": false,
+  "started_at": "2026-10-17T15:05:11.691952+00:00",
+  "wall_seconds": 4.128736689686775
+}

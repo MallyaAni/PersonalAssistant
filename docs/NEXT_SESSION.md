@@ -1,5 +1,32 @@
 # Next session
 
+## 2026-10-17 — Physical packet spool integrated; acquisition remains closed
+
+Spool3b6c70d9 integrated asfc0aaa2b after ROOT full source/Store diff/test/runner
+review and independent actual v1/v2/v3 Docker isolation, mounts, pins and proof
+hash checks. Native47distinct cases =34unchanged Store/rate cases retained from
+v1 plus13final affected spool cases/0skip4.129s; no final47-run claim. Actual
+284f1094/e0/networknone/readonly/1CPU2GiB RAM/total swap4GiB/exit0/OOMfalse.
+Final Storebe90098b/spool70530021/testff5caf39. Exact native3433863a copied
+unchanged beside research/historical-packet-spool-proof-2026-10-17.json.
+
+Real finite extents precede fake reads; CAS hardlinks same original inodes;
+no put_stream body copy. Either local replica ENOSPC pauses before read, CAS/
+SQLite failure retains orphans/charges, actual SIGKILL boundaries tested.
+Preserve v1green46 and v2 actual assembled-body corruption red; final compares
+assembled bytes to original committed chunks. SQLite/directory headroom and
+real two-Spark replication remain UNVERIFIED, as does physical power loss.
+No provider/model/account/full-run action or new GET authorization. Diagram
+impact NONE: internal unused Store extent implementation only.
+
+Agent next inspects minimal fake-transport acquisition coordinator seam; explicit
+permit, dual allocation, durable pre-call rate/budget, strict query/pagination,
+bounded no-redirect/no-retry/no-decompression reads required. No real GET yet.
+Other agents continue original audit-input CLI and controlled forecast-mutation
+check on connected cyclea0f (not integrated). Original full compact next>=15:28;
+do not read its active outputs/inputs beyond original compact boundary. Pending
+historical main must not deploy; live3b72 metadata delivery remains complete.
+
 ## 2026-10-17 — Independent sender-context audit integrated; frozen review chain retained
 
 Contextd1bb986a integrated as623d7110 after ROOT full source/diff/test review and

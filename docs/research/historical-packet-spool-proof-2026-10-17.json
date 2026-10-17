@@ -1,0 +1,52 @@
+{
+  "scope": "PRIVATE_SYNTHETIC_LOCAL_EXTENTS_ONLY",
+  "feature_commit": "3b6c70d9f65c38046711d6fa11e4d7c740ee8585",
+  "integration_commit": "fc0aaa2b",
+  "source_sha256": {
+    "backend/market/historical_packet_spool.py": "705300210493d46e1a65225c371a05dd9bc8e30dff2c5ae8da43b85041b3f6ac",
+    "backend/market/historical_packet_store.py": "be90098bf2c64e7e8da390f2b40db646b50c7d0be659e1a3c9391b8b5595fdbf",
+    "backend/tests/test_historical_packet_spool.py": "ff5caf39f6065e4e9071399c6cd6cec24f90b243aad5ad83bcf66af97d1c1759"
+  },
+  "verified": {
+    "distinct_cases": 47,
+    "unchanged_original_store_rate_cases": 34,
+    "final_affected_spool_cases": 13,
+    "final_skips": 0,
+    "final_wall_seconds": 4.128736689686775,
+    "final_container": "284f10942b7c454a21e34f97c0b38730cec3affa2c4c6e37b10332ad3d833425",
+    "image": "e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "network": "none",
+    "readonly_root": true,
+    "cpu": 1,
+    "memory_bytes": 2147483648,
+    "total_memory_swap_bytes": 4294967296,
+    "exit_code": 0,
+    "oom_killed": false,
+    "native_proof_sha256": "3433863ae8a97312139365b46155c17f30b06cf8d615fcc2796503d18730d0ee",
+    "root_review": "Full source, Store diff, all tests and actual runner read; independent actual Docker state, mounts, source pins and retained proof hashes checked.",
+    "acceptance": [
+      "Actual posix_fallocate extents with finite filesystem-rounded limits; no sparse fallback",
+      "Either local replica allocation failure precedes fake external read",
+      "Chunk/body/receipt CAS adoption reuses original reserved inodes without put_stream copying",
+      "Original committed chunk digest must equal assembled body digest",
+      "Wrong owner, inode, allocation, hash, length and missing spool refuse",
+      "CAS and SQLite ENOSPC retain orphans and unresolved charges",
+      "Real child SIGKILL before/after CAS link retains exact publication boundary"
+    ]
+  },
+  "preserved_results": {
+    "v1_46_checks": "ea08dae3daafe88c716bb2a991cbbde956bed4d0ee75f3fd033eac2c8dbfe771",
+    "v2_assembled_body_corruption_red": "4a0b1355be2e4ef2a31f141465baf01cbbbf7064ab3a68dc81c3f629c8e2dbb9",
+    "v3_root": "/home/animallya96/scratch/historical-packet-spool-tests-20261017-v3",
+    "counting": "34 unchanged cases from retained v1 plus 13 final affected cases; no claim of one final 47-case run"
+  },
+  "unverified_or_out_of_scope": [
+    "Real dual-Spark replication or resource admission",
+    "SQLite journal and filesystem directory metadata headroom",
+    "Physical power-loss recovery",
+    "Provider acquisition, generic coordinator or corrected full simulation",
+    "Production, model, original-run or actual-account changes"
+  ],
+  "publication_barrier": "CLOSED",
+  "diagram_impact": "NONE: unused private Store extent implementation, no deployed component or cross-system flow change"
+}
