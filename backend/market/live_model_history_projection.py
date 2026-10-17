@@ -12,6 +12,28 @@ SCHEMA = "live-model-historical-sizing/1"
 DIRECTORY = "desk/live-model-history"
 
 
+# Bind the complete authenticated grade overlay independently of JSON formatting.
+def overlay_digest(overlay):
+    return sha256(
+        json.dumps(
+            overlay, allow_nan=False, sort_keys=True, separators=(",", ":")
+        ).encode()
+    ).hexdigest()
+
+
+# Require the exact independently authenticated stock cohort, including untraded names.
+def verified_tickers(verification):
+    names = verification.get("verified_tickers")
+    if (
+        not isinstance(names, list)
+        or len(names) != 94
+        or any(not isinstance(name, str) or not name for name in names)
+        or names != sorted(set(names))
+    ):
+        raise ValueError("Exact independently verified historical cohort required")
+    return names
+
+
 # Authenticate an immutable session archive before using any account amount.
 def session(root, record):
     name = record["session"]
@@ -174,7 +196,13 @@ def project(root, verification):
         or account["base_models_fitted"] != 0
     ):
         raise ValueError("Independent current-model historical account proof required")
-    capture = account["grade_overlay"]["histories"]
+    names = verified_tickers(verification)
+    if names != sorted(account["grade_overlay"]["histories"]) or verification.get(
+        "grade_overlay_content_sha256"
+    ) != overlay_digest(account["grade_overlay"]):
+        raise ValueError(
+            "Historical projection cohort or authenticated overlay differs"
+        )
     provenance = {
         key: account[key]
         for key in (
@@ -213,7 +241,7 @@ def project(root, verification):
             "trades": [],
             "targets": [],
         }
-        for name in sorted(capture)
+        for name in names
     }
     initial = json.loads(gzip.decompress((root / "initial.json.gz").read_bytes()))
     decisions = {}

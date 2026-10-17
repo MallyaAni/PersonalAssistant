@@ -13,7 +13,12 @@ from backend.agents.trading.desk import paper
 from backend.cli import verify_actual_policy_timing as ledger
 from backend.cli.market_live_model_history import prepare, save, verify_installed_parity
 from backend.market import calendar, intraday_sip
-from backend.market.live_model_history_projection import project, session
+from backend.market.live_model_history_projection import (
+    overlay_digest,
+    project,
+    session,
+)
+from backend.market.live_model_history_receipts import ReceiptLedger
 from backend.market.store import MarketStore
 
 
@@ -31,68 +36,95 @@ def independent_parity(market, panel, raw, reader, holding, original, folder):
     return sha256(path.read_bytes()).hexdigest()
 
 
+# Bind original chart-grade inputs and stocks to the authenticated model cohort.
+def complete_cohort(completion, overlay, panel):
+    ledger.same(
+        completion["grade_overlay"], overlay, "Authenticated historical grade overlay"
+    )
+    names = sorted(overlay["histories"])
+    ledger.require(
+        len(names) == 94 and set(names) == set(panel.tickers) - {"SPY", "QQQ"},
+        "Exact authenticated94-stock historical cohort required",
+    )
+    return names
+
+
 # Conserve original identities and cumulative quantities across attempts and fills.
-def order_receipts(value, intents, totals):
-    for row in value["attempts"] + value["fills"]:
-        intent = intents.get(row["client_order_id"])
-        ledger.require(
-            intent is not None
-            and row["symbol"] == intent["symbol"]
-            and row["side"] == intent["side"],
-            "Execution receipt differs from original durable intent",
-        )
-    for fill in value["fills"]:
-        identity = fill["client_order_id"]
-        totals[identity] = totals.get(identity, 0) + fill["filled_qty"]
-        ledger.require(
-            0 <= totals[identity] <= intents[identity]["qty"],
-            "Cumulative simulated fills exceed original funded shares",
-        )
-    for kind in ("pending", "journal"):
-        rows = value["paper_state"][kind]
-        ledger.require(
-            len({row["client_order_id"] for row in rows}) == len(rows),
-            "Duplicate durable " + kind + " identity",
-        )
-        for row in rows:
-            intent = intents.get(row["client_order_id"])
-            ledger.require(
-                intent is not None
-                and row["symbol"] == intent["symbol"]
-                and row["side"] == intent["side"]
-                and row["qty"] == intent["qty"],
-                "Durable " + kind + " differs from original funded intent",
-            )
+def order_receipts(value, intents, totals, audit=None):
+    audit = audit or ReceiptLedger()
+    audit.check(value, intents)
+    totals.clear()
+    totals.update(audit.filled)
+    return audit
 
 
 # Match each nonzero execution to an original raw SIP opening, without daily proxies.
 def physical_fill(market, fill, cost_bps):
     qty = fill["filled_qty"]
-    if not qty:
-        return False
     ledger.require(
-        type(qty) is int and qty > 0, "Positive whole filled shares required"
+        type(qty) is int and qty >= 0, "Nonnegative whole filled shares required"
     )
     at = ledger.aware(fill["at"]).astimezone(calendar.NEW_YORK)
     found = intraday_sip.read_session_full(
         MarketStore(market), fill["symbol"], at.date()
     )
-    ledger.require(
-        found is not None and found[2].get("complete") == "true",
-        "Original complete raw fill bars required",
-    )
-    regular, auction, _ = found
+    complete = found is not None and found[2].get("complete") == "true"
+    regular, auction = found[:2] if complete else ([], None)
     bar = (
         auction
         if at.time() == calendar.session_close(at.date())
         else next((row for row in regular if row.start == at), None)
     )
-    ledger.require(
-        bar is not None, "Original raw bar at exact simulated execution required"
-    )
+    priced = bar is not None and np.isfinite(bar.open) and bar.open > 0
+    if not qty:
+        ledger.require(fill["price"] is None, "Zero execution has an invented price")
+        ledger.same(fill["fee"], 0, "zero-execution fee")
+        ledger.require(
+            fill["reason"]
+            == ("partial_cash_or_coverage" if priced else "missing_execution_price"),
+            "Zero execution missing-price reason differs from original raw bars",
+        )
+        return False
+    ledger.require(priced, "Original raw bar at exact simulated execution required")
     ledger.same(fill["price"], float(bar.open), "raw SIP simulated execution price")
     ledger.same(
         fill["fee"], qty * fill["price"] * cost_bps / 10000, "per-side fill fee"
+    )
+    return True
+
+
+# Match a submitted request's observed price to its completed raw SIP prefix.
+def physical_attempt(market, attempt, panel, raw):
+    if attempt["reason"] == "terminated_security":
+        return False
+    at = ledger.aware(attempt["at"]).astimezone(calendar.NEW_YORK)
+    if at.time() > calendar.session_close(at.date()):
+        day = int(np.searchsorted(panel.dates, np.datetime64(at.date())))
+        ledger.require(
+            day < len(panel.dates) and panel.dates[day] == np.datetime64(at.date()),
+            "Observed attempt session is absent from original daily grid",
+        )
+        price = raw.daily_close[day, panel.tickers.index(attempt["symbol"])]
+    else:
+        found = intraday_sip.read_session_full(
+            MarketStore(market), attempt["symbol"], at.date()
+        )
+        ledger.require(
+            found is not None and found[2].get("complete") == "true",
+            "Original complete raw attempt bars required",
+        )
+        regular = found[0]
+        if at.time() == calendar.REGULAR_OPEN:
+            price = regular[0].open if regular and regular[0].start == at else None
+        else:
+            bar = next(
+                (row for row in regular if row.start + timedelta(minutes=15) == at),
+                None,
+            )
+            price = bar.close if bar else None
+        ledger.require(price is not None, "Attempt has no original completed raw bar")
+    ledger.same(
+        attempt["observed_price"], float(price), "observed raw SIP submission price"
     )
     return True
 
@@ -108,6 +140,8 @@ def verify(market, account_root, output):
     panel, raw, reader, holding, _, _, _, _, identity = prepare(
         market, date.fromisoformat(captured["through"])
     )
+    overlay = json.loads((market / "grade-overlay-proof.json").read_bytes())
+    tickers = complete_cohort(completion, overlay, panel)
     ledger.require(
         completion["status"] == "COMPLETED_UNVERIFIED_CURRENT_MODEL_ACCOUNT"
         and completion["policy"] == holding["policy"]
@@ -186,7 +220,11 @@ def verify(market, account_root, output):
         initial["broker"]["dividends"], dividends, "Initial zero-share entitlements"
     )
     intents = {row["client_order_id"]: row for row in initial["intents"]}
-    fill_count, all_fills, attempts = 0, 0, 0
+    ledger.require(len(intents) == len(initial["intents"]), "Duplicate initial intent")
+    receipt_audit = order_receipts(
+        {**initial, "attempts": [], "fills": []}, intents, {}
+    )
+    fill_count, all_fills, attempts, priced_attempts = 0, 0, 0, 0
     missing_marks, unknown_claims = 0, 0
     price_data = {
         "names": panel.tickers,
@@ -219,6 +257,9 @@ def verify(market, account_root, output):
                 "Simulated fill differs from original durable intent",
             )
             fill_count += physical_fill(market, fill, completion["cost_bps"])
+        priced_attempts += sum(
+            physical_attempt(market, row, panel, raw) for row in value["attempts"]
+        )
         all_fills += len(value["fills"])
         attempts += len(value["attempts"])
         cash = ledger.fold_fills(value["fills"], cash, held, basis)
@@ -252,7 +293,7 @@ def verify(market, account_root, output):
                 intent["client_order_id"] not in intents, "Duplicate new account intent"
             )
             intents[intent["client_order_id"]] = intent
-        order_receipts(value, intents, totals)
+        order_receipts(value, intents, totals, receipt_audit)
         if value["nightly"]["status"] == "planned":
             ledger.same(
                 value["nightly"]["persisted_policy"],
@@ -279,13 +320,24 @@ def verify(market, account_root, output):
     result = {
         "status": "VERIFIED_CURRENT_MODEL_HISTORICAL_ACCOUNT",
         "account_sha256": sha256(raw_completion).hexdigest(),
+        "verified_tickers": tickers,
+        "grade_overlay_content_sha256": overlay_digest(overlay),
         "sessions": len(completion["sessions"]),
         "filled_receipts": fill_count,
         "intents": len(intents),
         "execution_attempts": attempts,
+        "raw_observed_price_attempts": priced_attempts,
         "all_execution_receipts": all_fills,
         "zero_execution_receipts": all_fills - fill_count,
         "durable_pending_and_journal": True,
+        "independent_attempt_outcome_and_durable_transitions": True,
+        "independent_cash_reservations_and_batch_funding": True,
+        "learned_timing_inference_verified": False,
+        "learned_timing_acceptance": (
+            "UNVERIFIED; holding parity and conserved receipts do not prove "
+            "per-session installed15m timing inference"
+        ),
+        "every_saved_nightly_model_proposal_verified": False,
         "missing_held_mark_sessions": missing_marks,
         "unpriced_entitlement_sessions": unknown_claims,
         "independent_raw_valuation_and_missing_states": True,

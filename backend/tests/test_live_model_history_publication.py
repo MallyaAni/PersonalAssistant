@@ -23,7 +23,12 @@ def test_publication_readback_complete_cohort_and_bad_proof_no_write(
     }
     proof_path = tmp_path / "proof.json"
     proof_path.write_text(
-        json.dumps({"account_sha256": value["provenance"]["account_sha256"]})
+        json.dumps(
+            {
+                "account_sha256": value["provenance"]["account_sha256"],
+                "verified_tickers": sorted(stock_views),
+            }
+        )
     )
     proof_sha = sha256(proof_path.read_bytes()).hexdigest()
     monkeypatch.setattr(projection, "project", lambda *_: stock_views)
@@ -57,7 +62,12 @@ def test_publication_validates_contract_before_switching_manifest(
     }
     proof_path = tmp_path / "proof.json"
     proof_path.write_text(
-        json.dumps({"account_sha256": value["provenance"]["account_sha256"]})
+        json.dumps(
+            {
+                "account_sha256": value["provenance"]["account_sha256"],
+                "verified_tickers": sorted(stock_views),
+            }
+        )
     )
     proof_sha = sha256(proof_path.read_bytes()).hexdigest()
     monkeypatch.setattr(projection, "project", lambda *_: stock_views)
@@ -66,3 +76,32 @@ def test_publication_validates_contract_before_switching_manifest(
     with pytest.raises(ValueError, match="live trading source"):
         publish(tmp_path / "unused-account", proof_path, proof_sha, tmp_path)
     assert manifest.read_bytes() == before
+
+
+# An untraded substituted stock cannot displace a version even when count stays94.
+def test_publication_rejects_same_count_cohort_substitution_before_writes(
+    tmp_path, monkeypatch
+):
+    value, _ = publication(tmp_path)
+    names = sorted(f"TEST{index}" for index in range(94))
+    proof_path = tmp_path / "proof.json"
+    proof_path.write_text(
+        json.dumps(
+            {
+                "account_sha256": value["provenance"]["account_sha256"],
+                "verified_tickers": names,
+            }
+        )
+    )
+    proof_sha = sha256(proof_path.read_bytes()).hexdigest()
+    stocks = {name: {**deepcopy(value), "ticker": name} for name in names}
+    stocks["ROGUE"] = {**stocks.pop(names[-1]), "ticker": "ROGUE"}
+    monkeypatch.setattr(projection, "project", lambda *_: stocks)
+    before = {
+        str(path): path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()
+    }
+    with pytest.raises(ValueError, match="cohort"):
+        publish(tmp_path / "unused-account", proof_path, proof_sha, tmp_path)
+    assert {
+        str(path): path.read_bytes() for path in tmp_path.rglob("*") if path.is_file()
+    } == before

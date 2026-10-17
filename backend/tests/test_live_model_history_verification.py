@@ -16,31 +16,82 @@ def receipts():
         "symbol": "AAA",
         "side": "buy",
         "qty": 5,
+        "session": "2021-01-04",
+        "execution_timing": "intraday",
+        "execute_on": "2021-01-05",
+        "execution": {"decision_at": "2021-01-04T16:01:00-05:00"},
     }
+    submitted = "2021-01-05T14:45:00+00:00"
     value = {
-        "attempts": [deepcopy(intent)],
-        "fills": [{**intent, "filled_qty": 2}],
-        "paper_state": {"pending": [deepcopy(intent)], "journal": [deepcopy(intent)]},
+        "attempts": [
+            {
+                **intent,
+                "qty": 3,
+                "at": submitted,
+                "observed_price": 100,
+                "available_cash": 100000,
+                "accepted": True,
+                "reason": None,
+            }
+        ],
+        "fills": [
+            {
+                **intent,
+                "requested_qty": 3,
+                "filled_qty": 2,
+                "price": 100,
+                "fee": 0.2,
+                "at": submitted,
+                "status": "expired",
+                "reason": "partial_cash_or_coverage",
+            }
+        ],
+        "paper_state": {
+            "pending": [],
+            "journal": [
+                {
+                    **intent,
+                    "status": "partial",
+                    "filled_qty": 2,
+                    "filled_price": 100,
+                    "terminal": True,
+                    "execution": {
+                        **intent["execution"],
+                        "created_at": submitted,
+                        "submitted_at": submitted,
+                        "filled_at": submitted,
+                        "expired_at": submitted,
+                    },
+                }
+            ],
+        },
+        "broker": {"observed_at": "2021-01-05T21:01:00+00:00", "cash": 99799.8},
     }
     return value, {intent["client_order_id"]: intent}
 
 
-# Accumulate partial receipts against the same original funded quantity.
+# Retain funded shares separately from submitted partial quantities and terminal fills.
 def test_verifier_refuses_cumulative_overfill_and_changed_durable_receipts():
     value, intents = receipts()
     totals = {}
-    verifier.order_receipts(value, intents, totals)
-    verifier.order_receipts(value, intents, totals)
-    assert totals == {"original-id": 4}
-    with pytest.raises(ValueError, match="Cumulative"):
-        verifier.order_receipts(value, intents, totals)
+    audit = verifier.order_receipts(value, intents, totals)
+    assert totals == {"original-id": 2}
+    changed = deepcopy(value)
+    changed["fills"][0]["filled_qty"] = 4
+    with pytest.raises(ValueError, match="submitted|funded"):
+        verifier.order_receipts(changed, intents, {})
+    with pytest.raises(ValueError, match="observation clock"):
+        verifier.order_receipts(value, intents, totals, audit)
     for kind in ("pending", "journal"):
         changed = deepcopy(value)
+        changed["paper_state"][kind] = [deepcopy(value["paper_state"]["journal"][0])]
         changed["paper_state"][kind][0]["qty"] = 6
         with pytest.raises(ValueError, match="funded intent"):
             verifier.order_receipts(changed, intents, {})
         changed = deepcopy(value)
-        changed["paper_state"][kind].append(deepcopy(changed["paper_state"][kind][0]))
+        changed["paper_state"][kind] = [
+            deepcopy(value["paper_state"]["journal"][0])
+        ] * 2
         with pytest.raises(ValueError, match="Duplicate"):
             verifier.order_receipts(changed, intents, {})
 
