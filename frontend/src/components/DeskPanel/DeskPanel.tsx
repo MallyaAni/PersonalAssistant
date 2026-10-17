@@ -4,9 +4,9 @@ import { EconomicContext } from './EconomicContext'
 import { ForwardEvidence } from './ForwardEvidence'
 import { FomcGate } from './FomcGate'
 import { ExecutionQuality } from './ExecutionQuality'
-import { actionPresentation, BoardSimulation, executionClockMessage, MlComparison, PLAN_ACTIONS, StockBoard, timedBoard, type BoardEvent, type PlanAction } from './StockBoard'
+import { actionPresentation, BoardSimulation, executionClockMessage, MlComparison, PLAN_ACTIONS, timedBoard, type BoardEvent, type PlanAction } from './StockBoard'
 import { RecommendationTimeline } from './RecommendationTimeline'
-import { PersonalDecisionHistory, type PersonalHistoryContext } from './PersonalDecisionHistory'
+import type { PersonalHistoryContext } from './PersonalDecisionHistory'
 import { PaperAccountHistory } from './PaperAccountHistory'
 import {confirmedPaperFills} from './paperFills'
 import { TickerChart } from './TickerChart'
@@ -168,11 +168,6 @@ const priceMoney = (value: number) =>
 // figure reads as money rather than as a bare number.
 const signedMoney = (value: number) =>
   `${value >= 0 ? '+' : '−'}${money(Math.abs(value))}`
-const sizing = (r: DeskMineRow, quote: DeskQuote | undefined, equity: number) => {
-  const price = quote?.last ?? r.last ?? r.last_close ?? 0
-  const qty = price > 0 ? Math.round((Math.abs(r.delta_weight) * equity) / price) : 0
-  return { price, qty }
-}
 // Default a recorded fill to the exchange's calendar date, including after UTC midnight.
 const today = () => new Intl.DateTimeFormat('en-CA', {
   timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
@@ -1007,8 +1002,7 @@ const TrackRecord = ({ curve, latest }: { curve: DeskCurve | undefined; latest: 
   )
 }
 
-// The one-screen explanation for someone who has never seen the page, used
-// both as the help popover and the empty-state guide.
+// Explain the selected stock or paper-account view using its own recorded evidence.
 const HowToUse = ({ onClose, compact = false, plan, strategy = false }: { onClose?: () => void; compact?: boolean; plan?: DeskPaperPlan; strategy?: boolean }) => strategy ? (
   <section aria-label="Strategy guide" className="my-2 max-w-2xl rounded-xl border p-3 text-xs">
     <p>The stock list uses one admitted numeric plan for action, funded shares and timing. Missing or stale plans stay unavailable.</p>
@@ -1022,23 +1016,23 @@ const HowToUse = ({ onClose, compact = false, plan, strategy = false }: { onClos
   <div className={`rounded-xl border border-black/[0.08] bg-[#f5f5f7] p-4 text-sm text-[#1d1d1f] ${compact ? '' : 'my-2 max-w-2xl'}`}>
     <p className="font-medium">Reading this page</p>
     <p className="mt-1 text-[#6e6e73]">
-      Stock rankings is the paper account&apos;s book: what it holds, what it is buying or selling, how much, and when.
-      The paper account places exactly these orders. Nothing here touches your own brokerage account.
+      Paper account shows recorded positions, orders and fills. Stocks shows the admitted numeric model plan.
+      Nothing here touches your own brokerage account.
     </p>
     <dl className="mt-3 space-y-2">
       <div>
         <dt className="font-medium">Action</dt>
         <dd className="text-[#6e6e73]">
           BUY, SELL and TRIM are the paper account&apos;s recorded orders. SELL closes the position;
-          TRIM reduces it toward the selected policy&apos;s target, including when the grade remains strong. HOLD means no order: the position stays.
-          Open the row details for the recorded reason and timing observation.
+          TRIM reduces it toward the selected policy&apos;s target, including when the grade remains strong.
+          A held position without a paper order is not proof of a model HOLD decision. Open Details for the recorded reason and timing.
         </dd>
       </div>
       <div>
         <dt className="font-medium">Size</dt>
         <dd className="text-[#6e6e73]">
-          Shares, dollars and the share of the paper account. Enter your account size once and every order also shows
-          the shares for your account at the same share.
+          Shares, dollars and the share of the paper account. Account-size references apply only to unsubmitted plans;
+          submitted orders and confirmed fills keep their recorded quantities.
         </dd>
       </div>
       <div>
@@ -1058,8 +1052,8 @@ const HowToUse = ({ onClose, compact = false, plan, strategy = false }: { onClos
       <div>
         <dt className="font-medium">Prices</dt>
         <dd className="text-[#6e6e73]">
-          Fifteen-minute IEX bars while the market is open and the last completed bar once it closes: bar prices, not
-          bid and ask.
+          Each price shows its source and time. Regular-session quotes, extended-session prices and completed
+          fifteen-minute bars have separate clocks; a bar price is not an executable quote.
         </dd>
       </div>
     </dl>
@@ -1407,13 +1401,11 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const curve = payload.curve ?? latest?.curve
   // Each name's close on the decision session, for the day's move on the board.
   const closes: Record<string, number | null> = Object.fromEntries((latest?.actions ?? []).map(a => [a.ticker, a.last_close]))
-  const warnings = latest?.regime.flags ?? []
   // Whether the paper book's next session is a rebalance: only then are the
   // board's target-vs-held changes executable at the next open. Otherwise
   // they are targets for the next rebalance, and the page says so instead
   // of teaching a daily trading cadence the backtest does not use.
   const countdown = rows.find((r) => r.until_rebalance !== null)?.until_rebalance ?? latest?.paper?.until_rebalance ?? null
-  const rebalanceDue = rows.length > 0 ? rows[0].rebalance_due : countdown !== null && countdown <= 1
   const eventLive = payload.event_status
   const event = (!eventLive?.stale && eventLive?.policy) || latest?.event_risk
   // Planning is paused only on the live event state: an active cycle or a
@@ -1421,23 +1413,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // nightly record's frozen execution_pending flag never is.
   const eventPaused = eventLive?.planning_paused === true
   const exchange = exchangeState(live.market_status)
-  // The board keeps its sizes during a cycle, at the exposure the desk holds.
-  // The exposure is unknown when the calendar is missing or when an active
-  // cycle's current policy status has not been read.
-  // Count only decisions the backend marks executable while XNYS is open;
-  // blocked strategy intent remains visible in the board but never inflates
-  // the number described as actionable now.
-  const timed = timedBoard(decisions, latest)
-  const eligibleNow = decisions && decisions.session === latest?.session && decisions.written === latest?.written && !eventPaused && exchange.open
-    ? Object.values(decisions.rows).filter(row => {
-      // On the timed `/4` board only a timed Buy/Sell is a signal to act on.
-      const intent = timed ? row.action : row.strategy_action ?? row.action
-      const deadline = row.valid_until ? Date.parse(row.valid_until) : Number.NaN
-      return (intent === 'Buy' || intent === 'Sell')
-        && row.executable !== false
-        && Number.isFinite(deadline)
-        && deadline > now
-    }).length : 0
   const todayLine = latest ? <TodayLine exchange={exchange} event={event} boardEvent={eventPaused ? {
     exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
     decisionDate: event?.decision_date ?? null, calendarUnknown: event?.calendar_known === false,
@@ -1518,27 +1493,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           )}
 
   </div> : null
-  // The plan for a name on the board: the trade against the recorded position.
-  const tradeCell = (ticker: string) => {
-    const r = rows.find(row => row.ticker === ticker)
-    if (!r || !latest) return null
-    return <TradeCell r={r} quote={live.quotes[ticker]} equity={equity} marking={marking !== null}
-      scheduleLabel={eventPaused ? 'held for the FOMC cycle' : !r.rebalance_due ? 'at the weight reset' : 'at the next open'}
-      onDone={canWrite && holdingsReady && rebalanceDue && !eventPaused ? async (price, qty) => {
-        setMarking(r.ticker)
-        try { return await save(afterTrade(holdings, r, price, qty)) }
-        catch (err) { setSaveError(err instanceof Error ? err.message : 'The fill was not recorded.'); return false }
-        finally { setMarking(null) }
-      } : undefined}
-      eligibility={eventPaused
-        ? <span>{holdingsReady && holdings.some(h => h.ticker === ticker) ? 'Held through the FOMC cycle' : 'No new buys during the FOMC cycle'}</span>
-        : <DecisionCell compact ticker={ticker} decisions={decisions} latest={latest} now={now} />} />
-  }
-  const boardEvent: BoardEvent | null = eventPaused ? {
-    exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
-    decisionDate: event?.decision_date ?? null,
-    calendarUnknown: event?.calendar_known === false,
-  } : null
 
   return (
     <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 [&>section]:shrink-0 [&>details]:shrink-0">
@@ -1864,84 +1818,6 @@ const LivePositions = ({ paper, equity }: { paper: DeskPaperLive; equity: number
   )
 }
 
-// The trader's own recorded book at live prices: each position's value and
-// P/L against its entry, and the total, so the live view leads with the
-// person's money rather than the practice account's. Priced from the live
-// candle, then the plan's recorded price, then its last close.
-const YourPositions = ({ holdings, live, rows }: {
-  holdings: DeskHolding[]
-  live: DeskLive
-  rows: DeskMineRow[]
-}) => {
-  const priced = holdings.map((h) => {
-    const quote = live.quotes[h.ticker]?.last
-    const row = rows.find((r) => r.ticker === h.ticker)
-    const last = quote ?? row?.last ?? row?.last_close ?? null
-    const value = last !== null ? last * h.shares : null
-    const pl = last !== null ? (last - h.entry_price) * h.shares : null
-    const plPct = last !== null && h.entry_price > 0 ? (last / h.entry_price - 1) * 100 : null
-    return { ...h, last, value, pl, plPct }
-  })
-  const totalValue = priced.reduce((s, p) => s + (p.value ?? 0), 0)
-  const totalPl = priced.reduce((s, p) => s + (p.pl ?? 0), 0)
-  const cost = priced.reduce((s, p) => s + p.shares * p.entry_price, 0)
-  const totalPlPct = cost > 0 ? (totalPl / cost) * 100 : null
-  return (
-    <section aria-label="Your positions" className="rounded-2xl border border-black/[0.08] bg-white p-4">
-      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h3 className="text-sm font-semibold text-[#1d1d1f]">
-          Your positions
-          <span className="ml-2 text-xs font-normal text-[#6e6e73]">{priced.length} recorded {priced.length === 1 ? 'holding' : 'holdings'} · P/L against your recorded entry</span>
-        </h3>
-        <span className="text-xs text-[#6e6e73]">
-          Value {money(totalValue)} · P/L <TrendUsd value={totalPl} />
-          {totalPlPct !== null && <span className="ml-1">(<Trend value={totalPlPct} />)</span>}
-        </span>
-      </div>
-      <table className="w-full text-sm">
-        <thead className="text-left text-xs text-[#6e6e73]">
-          <tr>
-            <th className="py-1">position</th>
-            <th className="py-1 text-right">shares</th>
-            <th className="py-1 text-right">entry</th>
-            <th className="py-1 text-right">last</th>
-            <th className="py-1 text-right">value</th>
-            <th className="py-1 text-right">P/L</th>
-          </tr>
-        </thead>
-        <tbody>
-          {priced.map((p) => (
-            <tr key={p.ticker} className="border-t border-black/[0.05]">
-              <td className="py-1.5 font-medium text-[#1d1d1f]">{p.ticker}</td>
-              <td className="py-1.5 text-right text-[#6e6e73]">{p.shares.toLocaleString()}</td>
-              <td className="py-1.5 text-right text-[#6e6e73]">{priceMoney(p.entry_price)}</td>
-              <td className="py-1.5 text-right">{p.last !== null ? priceMoney(p.last) : <span className="text-[#9ca3af]">—</span>}</td>
-              <td className="py-1.5 text-right">{p.value !== null ? money(p.value) : '—'}</td>
-              <td className="whitespace-nowrap py-1.5 text-right">
-                {p.pl !== null ? (
-                  <>
-                    <TrendUsd value={p.pl} />
-                    {p.plPct !== null && <span className="ml-1 text-xs text-[#6e6e73]">(<Trend value={p.plPct} />)</span>}
-                  </>
-                ) : '—'}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr className="border-t border-black/[0.08]">
-            <td className="py-1.5 text-xs text-[#6e6e73]">{priced.length} open positions</td>
-            <td />
-            <td />
-            <td />
-            <td className="py-1.5 text-right text-xs text-[#6e6e73]">{money(totalValue)}</td>
-            <td className="py-1.5 text-right text-xs"><TrendUsd value={totalPl} /></td>
-          </tr>
-        </tfoot>
-      </table>
-    </section>
-  )
-}
 
 // The practice account: the broker's live money, positions and waiting
 // orders, refreshed with the candle; the evening record when the broker
@@ -2063,84 +1939,6 @@ const PracticeAccount = ({
   )
 }
 
-// The desk's plan for one name against the person's recorded position: the
-// move, the share count for this account, when it is due, the record-fill
-// control, the position held, the grade's caveats and whether it is
-// eligible to buy right now. This is the column that used to be a table.
-const TradeCell = ({ r, quote, equity, marking, scheduleLabel, onDone, eligibility }: {
-  r: DeskMineRow
-  quote?: DeskQuote
-  equity: number
-  marking: boolean
-  scheduleLabel: string
-  onDone?: (price: number, qty: number) => Promise<boolean>
-  eligibility: ReactNode
-}) => {
-  const [recording, setRecording] = useState(false)
-  const [filledShares, setFilledShares] = useState('')
-  const [fillPrice, setFillPrice] = useState('')
-  const { price, qty } = sizing(r, quote, equity)
-  const liveDrop = r.in_book && r.grade_live === 'C' && (r.action === 'buy' || r.action === 'add')
-  // A share count is an order or it is noise. Between resets the target-minus-
-  // current delta is neither: the reset is up to six months out and the number
-  // will be recomputed before it ever becomes a trade, so rendering it as
-  // "BUY 32 shares at the weight reset" put an instruction in front of the
-  // operator for an event he cannot act on. It shows only on the session the
-  // reset is due. What to do in between is the live signal, which is the
-  // eligibility line below.
-  // The live signal leads the cell. `r.action` is the rebalance delta from
-  // holdings.board - target minus current - and it answers the calendar, not
-  // the operator. It used to be the cell's headline, so a name the desk was
-  // buying on a breakout read "BUY 32 shares at the weight reset" while the
-  // signal sat underneath as grey text. Clamping the word to "hold" between
-  // resets made it worse, because the pill's colour still keyed off the
-  // ungated action: a buy delta rendered a green badge reading HOLD.
-  //
-  // So the badge is gone. `eligibility` carries Buy, Sell or Hold and the
-  // shares to trade at the live price, and what remains here is the position
-  // itself and the affordances for recording a fill.
-  const moving = r.rebalance_due && ['buy', 'add', 'trim', 'sell'].includes(r.action)
-  return (
-    <div className="text-xs">
-      <div>{eligibility}</div>
-      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[#6e6e73]">
-        {r.action === 'uncovered' && <span className="font-medium">uncovered</span>}
-        {r.action === 'uncovered' && <span>{r.shares.toLocaleString()} shares held</span>}
-        {r.action !== 'hold' && r.action !== 'uncovered' && r.action !== 'blocked' && onDone && (
-          <button type="button" onClick={() => setRecording(!recording)} disabled={marking} title="Record actual filled shares and average price confirmed by your broker" className="text-[#0071e3] hover:underline disabled:text-[#6e6e73]">
-            {recording ? 'cancel fill' : 'record fill'}
-          </button>
-        )}
-      </div>
-      {recording && onDone && (
-        <form aria-label={`Record ${r.ticker} fill`} className="mt-2 space-y-2" onSubmit={async (event) => {
-          event.preventDefault()
-          if (marking) return
-          if (await onDone(Number(fillPrice), Number(filledShares))) { setRecording(false); setFillPrice(''); setFilledShares('') }
-        }}>
-          <label className="block">Filled shares
-            <input aria-label="Filled shares" className="block w-28 rounded border p-1" type="number" min="0.000001" step="any" required value={filledShares} onChange={event => setFilledShares(event.target.value)} />
-          </label>
-          <label className="block">Average fill price ($)
-            <input aria-label="Average fill price" className="block w-28 rounded border p-1" type="number" min="0.000001" step="any" required value={fillPrice} onChange={event => setFillPrice(event.target.value)} />
-          </label>
-          <button type="submit" disabled={marking} className="text-[#0071e3] disabled:text-[#6e6e73]">{marking ? 'saving' : 'Save confirmed fill'}</button>
-        </form>
-      )}
-
-      {r.shares > 0 && r.entry_price !== null && (
-        <div className="text-[#6e6e73]">
-          recorded position: {r.shares} shares at {priceMoney(r.entry_price)}
-          {r.pl_pct !== null && r.last !== null && (
-            <span className={r.pl_pct >= 0 ? ' text-[#1e7a3a]' : ' text-[#b42318]'}>
-              {' '}<TrendUsd value={r.shares * (r.last - r.entry_price)} /><span className="ml-1">(<Trend value={r.pl_pct * 100} />)</span>
-            </span>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
 
 // Paste from a broker page: one position per line, ticker, shares, cost
 // and an optional date, in whatever separators came with it. Lines that
@@ -2479,7 +2277,8 @@ const DeskGuide = ({latest, open}: {latest: DeskRecord; open: boolean}) => {
           Intraday grades update technical and eligible price-sensitive value inputs; other votes and strategy target weights use the evening decision.
           Prices, available cash and execution conditions can change before an order fills.</p>
         <p className="mt-2">Intraday calculations are scheduled every 15 minutes on weekdays during market hours.
-          This page checks for updates every minute. A scheduled run may be late or missing; expired intraday grades revert to the evening decision.
+          This page checks prices and current assessments every twenty seconds, and reloads saved records every minute.
+          A scheduled run may be late or missing; expired intraday grades revert to the evening decision.
           Bar times identify the start of the 15-minute interval, not a current executable price.</p>
       </details>
       </details>
@@ -2973,7 +2772,7 @@ const TodayLine = ({exchange, event, boardEvent, orders, plan}: {
 // Repeat the board's admitted model plan while keeping each original paper execution separate.
 const PaperOrderCard = ({ticker, row, session}: {ticker: string; row: BoardRow; session: string}) => (
   <section aria-label={`${ticker} paper order`} className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
-    <h4 className="mb-1 font-medium text-[#6e6e73]">{row.modelPlan ? 'Model plan' : row.signal && !row.orders.length ? 'Grade signal · no paper order' : 'Paper account'}</h4>
+    <h4 className="mb-1 font-medium text-[#6e6e73]">{row.modelPlan ? 'Model plan' : 'Paper account'}</h4>
     <p className="text-base">
       <span className={`font-semibold ${row.done ? 'text-[#6e6e73]' : WORD_STYLE[row.word]}`}>{row.word}</span>
       {row.modelPlan ? row.modelDecision?.action && row.modelDecision.qty !== null && <span className="ml-2 text-[#1d1d1f]">{sharesText(row.modelDecision.qty)}{row.modelDecision.action === 'hold' ? ' change' : ' funded'} · {row.status}</span>
@@ -2981,7 +2780,6 @@ const PaperOrderCard = ({ticker, row, session}: {ticker: string; row: BoardRow; 
     </p>
     <p className="text-xs text-[#6e6e73]">{row.why}</p>
     {row.modelPlan && row.when && <p className="text-xs text-[#6e6e73]">{row.when}</p>}
-    {row.signal && <p aria-label={`${ticker} signal status`} className="text-xs text-[#6e6e73]">Grade signal {row.signal.toUpperCase()} · {session} · {row.signalReason}</p>}
     {row.orders.map(o => <div key={o.client_order_id} className="mt-2 text-xs">
       {(row.modelPlan || row.orders.length > 1) && <p className="font-medium text-[#1d1d1f]">{row.modelPlan ? 'Recorded paper: ' : ''}{orderWord(o)} {sharesText(o.qty)} {quantityLabel(o)} · {o.why}</p>}
       {o.planned_qty !== undefined && o.planned_qty !== o.qty && <p>Originally planned: {sharesText(o.planned_qty)}</p>}
@@ -3130,37 +2928,8 @@ const NameDetail = ({
           <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} paperRecordedFills={paperRecordedFills} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} strategy={strategy} simulation={simulation} simulationError={simulationError} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
-        {strategy && <section aria-label="Current assessment" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
-          <h4 className="font-medium">Current assessment</h4>
-          {currentAssessment ? <>
-            <section aria-label="Current chart judgment" className="mb-3 rounded-lg bg-[#f5f5f7] p-3">
-              <h4 className="font-semibold">{chartSetup ? chartSetup.entry === 'ready' ? 'Entry setup ready for review' : chartSetup.entry === 'wait' ? 'Wait for confirmation' : chartSetup.entry === 'avoid' ? 'Avoid a new entry' : 'Chart judgment unavailable' : 'Chart judgment updating'}</h4>
-              {chartSetup ? <>
-                <p className="mt-1 text-sm">Completed candle: {chartSetup.reason}</p>
-                <p aria-label={`${ticker} latest quote check`} className="mt-1 text-xs text-[#0071e3]">{quoteReferenceText(live, ticker, chartSetup, now)}</p>
-                {chartSetup.exit === 'review' && <p className="mt-1 text-xs font-medium">Existing holding: review downside risk before adding.</p>}
-                <p className="mt-1 text-xs">{confirmationText(chartSetup)}</p>
-                <p className="text-xs">{invalidationText(chartSetup)}</p>
-                <p className="mt-1 text-[11px] text-[#6e6e73]">Read at {priceMoney(chartSetup.price)} · candle {marketTime(chartSetup.bar)} · judgment generated {marketTime(chartSetup.generated_at)}. Funded quantities and execution timing require their separate plan.</p>
-              </> : <p className="text-xs">{live.opportunities?.unavailable?.[ticker] ?? 'The current grade is available; a fresh chart judgment has not arrived. No ready entry is inferred.'}</p>}
-            </section>
-            <p aria-label="Current assessment grade" className="font-semibold">{currentAssessment.grade_live} · {assessmentPermission(currentAssessment.grade_live)}</p>
-            <p className="text-xs text-[#6e6e73]">At {live.quotes[ticker]?.last != null ? priceMoney(live.quotes[ticker].last) : 'unavailable price'} · completed 15-minute candle starting {marketTime(live.quotes[ticker]?.bar)} · assessment {marketTime(live.as_of)}.</p>
-            <AnalystRatings ranks={currentAssessment.ranks_live} stances={currentAssessment.stances_live ?? {}} session={latest.session} />
-          </> : <p role="status" className="text-xs text-[#6e6e73]">Fresh assessment unavailable · saved grade from {latest.session}.</p>}
-          <details className="mt-2" aria-label="Technical evidence">
-            <summary className="cursor-pointer text-xs text-[#0071e3]">Technical evidence</summary>
-            {currentAssessment && <p className="my-2 text-xs text-[#6e6e73]">Technical and available valuation votes use the completed candle. Fundamentals and earnings use stored evidence from {latest.session}. An assessment does not create an order.</p>}
-            <LiveTechnical userId={userId} ticker={ticker} detail={live.technical_detail?.[ticker]} quote={live.quotes[ticker]} row={row} optionsEvidence={live.options_evidence?.[ticker]} />
-          </details>
-        </section>}
         {order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}
         {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}
-        {strategy && <section aria-label="Saved assessment" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
-          <h4 className="font-medium">Saved assessment · {latest.session} close</h4>
-          <p>Grade {latest.grades?.[ticker]?.grade ?? 'unavailable'}</p>
-          <p className="text-xs text-[#6e6e73]">This dated assessment supplies the saved allocation and orders.</p>
-        </section>}
         {!strategy && <section aria-label="Latest available grade" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
         <h4 className="mb-1 font-medium text-[#6e6e73]">Latest available grade</h4>
         {row && (
@@ -3197,6 +2966,35 @@ const NameDetail = ({
         </section>}
         <details aria-label="All the evidence" className="mb-3">
           <summary className="cursor-pointer text-xs text-[#0071e3]">All the evidence</summary>
+        {strategy && <section aria-label="Current assessment" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
+          <h4 className="font-medium">Current assessment</h4>
+          {currentAssessment ? <>
+            <section aria-label="Current chart judgment" className="mb-3 rounded-lg bg-[#f5f5f7] p-3">
+              <h4 className="font-semibold">{chartSetup ? chartSetup.entry === 'ready' ? 'Entry setup ready for review' : chartSetup.entry === 'wait' ? 'Wait for confirmation' : chartSetup.entry === 'avoid' ? 'Avoid a new entry' : 'Chart judgment unavailable' : 'Chart judgment updating'}</h4>
+              {chartSetup ? <>
+                <p className="mt-1 text-sm">Completed candle: {chartSetup.reason}</p>
+                <p aria-label={`${ticker} latest quote check`} className="mt-1 text-xs text-[#0071e3]">{quoteReferenceText(live, ticker, chartSetup, now)}</p>
+                {chartSetup.exit === 'review' && <p className="mt-1 text-xs font-medium">Existing holding: review downside risk before adding.</p>}
+                <p className="mt-1 text-xs">{confirmationText(chartSetup)}</p>
+                <p className="text-xs">{invalidationText(chartSetup)}</p>
+                <p className="mt-1 text-[11px] text-[#6e6e73]">Read at {priceMoney(chartSetup.price)} · candle {marketTime(chartSetup.bar)} · judgment generated {marketTime(chartSetup.generated_at)}. Funded quantities and execution timing require their separate plan.</p>
+              </> : <p className="text-xs">{live.opportunities?.unavailable?.[ticker] ?? 'The current grade is available; a fresh chart judgment has not arrived. No ready entry is inferred.'}</p>}
+            </section>
+            <p aria-label="Current assessment grade" className="font-semibold">{currentAssessment.grade_live} · {assessmentPermission(currentAssessment.grade_live)}</p>
+            <p className="text-xs text-[#6e6e73]">At {live.quotes[ticker]?.last != null ? priceMoney(live.quotes[ticker].last) : 'unavailable price'} · completed 15-minute candle starting {marketTime(live.quotes[ticker]?.bar)} · assessment {marketTime(live.as_of)}.</p>
+            <AnalystRatings ranks={currentAssessment.ranks_live} stances={currentAssessment.stances_live ?? {}} session={latest.session} />
+          </> : <p role="status" className="text-xs text-[#6e6e73]">Fresh assessment unavailable · saved grade from {latest.session}.</p>}
+          <details className="mt-2" aria-label="Technical evidence">
+            <summary className="cursor-pointer text-xs text-[#0071e3]">Technical evidence</summary>
+            {currentAssessment && <p className="my-2 text-xs text-[#6e6e73]">Technical and available valuation votes use the completed candle. Fundamentals and earnings use stored evidence from {latest.session}. An assessment does not create an order.</p>}
+            <LiveTechnical userId={userId} ticker={ticker} detail={live.technical_detail?.[ticker]} quote={live.quotes[ticker]} row={row} optionsEvidence={live.options_evidence?.[ticker]} />
+          </details>
+        </section>}
+        {strategy && <section aria-label="Saved assessment" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
+          <h4 className="font-medium">Saved assessment · {latest.session} close</h4>
+          <p>Grade {latest.grades?.[ticker]?.grade ?? 'unavailable'}</p>
+          <p className="text-xs text-[#6e6e73]">This dated assessment supplies the saved allocation and orders.</p>
+        </section>}
         {/* Recorded descriptive readings, not a causal breakdown of the persisted votes. */}
         {gradeReads && (
           <div className="mt-3 rounded-xl border border-black/[0.08] bg-white p-3">
