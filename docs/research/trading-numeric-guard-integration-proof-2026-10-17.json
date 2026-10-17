@@ -1,0 +1,42 @@
+{
+  "status": "VERIFIED_TEST_ONLY_CANDIDATE_INTEGRATION",
+  "candidate": "ad44d536a70d5c037cb931836a3c9f48b014d84a",
+  "parent": "6a1d77bc1d8bdeb080bdee26b8e1ef95507a9ea1",
+  "change": "Remove the new projection path from the test's predecessor source map so the fixture represents the original thirty-source release.",
+  "changed_paths": ["backend/tests/test_market_release_admission.py"],
+  "test_before_sha256": "bd7d78f4965544b513d94c879365c334cc86acae7d4cc8fa8d0e319e93c1cfd3",
+  "test_after_sha256": "09ef5dfd735c05c08c8a34c82d8e66d6b8748644c31d9d928fb940d2b526a460",
+  "original_failure": {
+    "result": "1 failed in 1.71s; invalid predecessor correctly rejected as Unreviewed trading source change",
+    "log": "/home/animallya96/scratch/historical-numeric-merged-validation-20261017-v1/urgent6a-original-fixture-failure.log"
+  },
+  "verification": {
+    "root": "/home/animallya96/scratch/urgent-numeric-guard-integration-20261017-v1",
+    "source": "Exact git archive of candidate ad44d536a70d5c037cb931836a3c9f48b014d84a",
+    "image": "sha256:4dbbbe066fd62eefa03fcbc92b37e4ab4a55f5429f826b532fafb5769cce8e17",
+    "isolation": "network none; read-only source/root; uid1000; one CPU; 2GiB; executable private tmpfs for shell fixtures",
+    "tests": [
+      "backend/tests/test_market_release_admission.py",
+      "backend/tests/test_deploy_trading_admission.py",
+      "backend/tests/test_deploy_gate_first.py",
+      "backend/tests/test_learned_live_holding.py"
+    ],
+    "passed": 76,
+    "skipped": 0,
+    "seconds": 24.64,
+    "log_sha256": "72ad5afeb123fcf1c524bd892775bbbcf4f64fd4885c0d567ef94ee0016a554c"
+  },
+  "runtime_preservation": {
+    "guarded_sources_compared": 31,
+    "changed": 0,
+    "source_map_sha256": "b1da7635299a0a87d0e9e80c3db54f3208499c05fd8e35e8a87817514f108d79",
+    "source_review_sha256": "2f048a8040532bfdaa49b1101e552457454b526b510b4ee9f2422f3a67a3e5f7",
+    "configuration_sha256": "338e2a490d13cc889667d577ec93ba68f775863a8c1db385fed3dd77fee26dcc",
+    "release_sha256": "bb6c24aabb33daff30bd7af5b6c505208cc996c38929a84b54573662bab1bd4c",
+    "economic_evidence_sha256": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9"
+  },
+  "deployment": "UNVERIFIED; old six-a-bound private preparation remains preserved and must not be launched. Prepare fresh exact-candidate roots before canonical deployment.",
+  "production_models_account_history_orders": "Unchanged by this test-only correction and private validation",
+  "active_parity_release": "Existing v3 remains active; do not interrupt, bypass or duplicate its backup/deployment",
+  "diagram_impact": "NONE — only a predecessor test fixture changed"
+}

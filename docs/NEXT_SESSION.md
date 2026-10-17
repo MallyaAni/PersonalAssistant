@@ -1,5 +1,22 @@
 # Next session
 
+## 2026-10-17 — Test-only urgent child N2 passed integration; re-pin new roots
+
+Exact candidate ad44d536a70d5c037cb931836a3c9f48b014d84a is pushed on the
+urgent feature branch. Its only change from6a is the predecessor test fixture;
+76 guard/deploy/holding checks pass/0skip24.64s in private network-none source
+mounted validation. All31 guarded runtime hashes and review2f048a80/selectors
+338e2a49/bb6c24aa/4d6 remain identical. Original6a failure and all v1 preparation
+are preserved. Proof:research/trading-numeric-guard-integration-proof-2026-10-17.json.
+
+Do NOT launch old6a-bound helpers. Independent reviewer is preparing fresh N2
+bundle/launcher/verifier/settlement roots, without activation or account writes.
+Actual delivery still follows the existing parity v3 completion and independent
+proof. That canonical job remains active in Mac WAL replication; never duplicate,
+interrupt or bypass it. Combined historical246-check backend passed; compiled
+frontend acceptance is still being completed before its separate merge commit.
+No production/model/account/history/order changes from this test correction.
+
 ## 2026-10-17 — HOLD prepared6a launch for a test-only integration correction
 
 Do NOT launch the prepared urgent6a numeric candidate yet. Integration review
