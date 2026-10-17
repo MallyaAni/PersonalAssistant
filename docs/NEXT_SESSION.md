@@ -1,5 +1,29 @@
 # Next session
 
+## 2026-10-17 — Original run complete; exact producer command now admitted
+
+Original1e8f440a/source27471/image136ebb exited0/OOMfalse at16:42:28.552275067Z.
+Actual16:48:49Z stopped-handle check:1915sessions throughOct12/2965fills/3912intents.
+Compact-only ACTIVE restriction is ended. Preserve original outputs/source and
+all previous timing failures; completion is NOT publication or numerical acceptance.
+Read research/original-history-completion-command-proof-2026-10-17.json.
+Fresh private capture7550e4c9 streaming-hashed complete373782589B completionb9ad0b6c,
+initial428d129b/manifestd930c0a1/executioneaa07107; actual filtered producerd656d927.
+No large JSON was decoded. Physical paper832110254B means current256MiB audit
+caps fail; do not silently increase caps or assume2GiB full parsing/recovery fits.
+Source-aware streaming/capacity work remains before full audit/corrected launch.
+
+Auditorcf05b8c7/test9c739dec now require actual Cmd and explicit null Entrypoint
+to match the exact original receipt invocation. Oldcf960 reproduced4missing
+refusals; new13affected checks/49deselected/0skip0.09s passed on actual73e487/e0,
+UID1000/none/RO/1CPU/2GiB=swap/tmp64MiB/soleoutRW.15sourcepins unchanged and
+Ruff/format pass. Actual retained original metadata separately passed this guard
+on19cac2ad/e0, proofb4e226a5, with no original output/model mounts or audit calls.
+Preserve red-v1 missing synthetic settings import failure and genuine red-v2.
+No native31/model/economics/history/production changes. Full original numerical
+audit and corrected account delivery remain UNVERIFIED; original timing FAILED.
+Diagram impact NONE: private offline producer metadata guard only.
+
 ## 2026-10-17 — Original auditor requires both executed verifier source pins
 
 Feature9020d8c2 integrated asaf4103d7 after ROOT complete66line source/test diff,

@@ -1,0 +1,69 @@
+{
+  "status": "VERIFIED_COMPLETED_PRODUCER_AND_COMMAND_ADMISSION_ONLY",
+  "source_sha256": {
+    "backend/cli/audit_original_live_model_history.py": "cf05b8c79a492f6784e545ed6a01e452f725ea63f7567e29d626a04324f2e2d8",
+    "backend/tests/test_original_live_model_history_entrypoint.py": "9c739dece51d20bfd8bfb686a7417b80ddcb00120a15bf2900f05e219409b709"
+  },
+  "completed_original": {
+    "container": "1e8f440a3b5b75dcabd299f5eaba58c7929fb6f96bc822fdb46b641ecf3e598d",
+    "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+    "source": "27471b9c61b958f759e9f48b80acaf60cdf75f2e",
+    "finished_at": "2026-10-17T16:42:28.552275067Z",
+    "exit": 0,
+    "oom": false,
+    "sessions": 1915,
+    "through": "2026-10-12",
+    "fills": 2965,
+    "intents": 3912,
+    "capture_root": "/home/animallya96/scratch/original-history-completion-capture-20261017-v1",
+    "capture_proof_sha256": "7550e4c9824fd1f6283cb36ffe4a145a885fc44033598b1c72f3e1c8cfabb44d",
+    "producer_runtime_sha256": "d656d927efc04ae72b1985730f6c4bb470b3e5af862ca37e4dca7c48e45ae8f6",
+    "completion_sha256": "b9ad0b6c86b287f3557c635a5fca17703adc48a30a75470256084af911c8a3dd",
+    "completion_bytes": 373782589,
+    "initial_sha256": "428d129ba753b833fff909d0a2bae23c7fbba2b2a1f0112fe235407445eeb7b3",
+    "manifest_sha256": "d930c0a12574c6b1611a2bc17cabb30c2fd12b8afd899ab0b97a28d583543ae0",
+    "execution_sha256": "eaa07107c2f88e31f6c3eaf1f5eee1bf579bc86fed60db7f578a502859960e96",
+    "capture_scope": "Streaming complete byte hashes with stable dev/inode/size/mtime/ctime, bounded progress and filtered stopped Docker identity. No completion JSON decode or numerical audit."
+  },
+  "command_gap": {
+    "finding": "Previous cf960 source bound image, resources, output and mounts but did not compare actual Config.Cmd/Entrypoint with the pinned original execution command.",
+    "fix": "Require the exact original seven-argument python module invocation in both receipt suffix and actual Config.Cmd, with an explicitly present null Entrypoint. No producer, original source, native model, numerical policy or output changed.",
+    "red": {
+      "root": "/home/animallya96/scratch/original-producer-command-red-20261017-v2",
+      "container": "7788333661dc6eb845d4819e6a51e70a0c2b0055ebe4f00283ee8781a26200c2",
+      "proof_sha256": "d9a151a9e3a16358876a9f599c04d089886a35ba2f91e86a918a778f42d5686a",
+      "pytest": "4 actual DID NOT RAISE failures, 58 deselected, 0.14s; expected-red harness exit0. Missing Cmd, wrong module, wrong output argument and nonnull Entrypoint."
+    },
+    "green": {
+      "root": "/home/animallya96/scratch/original-producer-command-green-20261017-v1",
+      "container": "73e48784f494c49caa5d63d95c7deec608a41ca14ca144fbdcd3adecb9ce4c85",
+      "proof_sha256": "3b29871fde84d981279c9c674943719367bcbbfb5b76c0f112d37fabe1394801",
+      "inspect_sha256": "056ea9963f4d15c7ce7ae117de204631422c482db79f29ee3d719efe8028d012",
+      "pytest": "13 passed, 49 deselected, zero skips, 0.09s",
+      "max_rss_kib": 185048,
+      "source_pins": 15,
+      "source_before_after_exact": true
+    },
+    "actual_retained_metadata": {
+      "root": "/home/animallya96/scratch/original-producer-actual-admission-20261017-v1",
+      "container": "19cac2ad6fb4ab2d1cda384c64785cb8430c17f9c7ce90082ec29f5708f1e07f",
+      "proof_sha256": "b4e226a523c9780362d0e82515cc0dbeff1ee91a8c482ba910f2063d84329d71",
+      "inspect_sha256": "4fe5533c9a96856d3f02fa080729a15ffe57c5ecb117314f42c7d215cf7c35a2",
+      "status": "PASS_COMPLETED_PRODUCER_COMMAND_AND_MOUNTS_ONLY",
+      "scope": "Only exact tiny copied producer-runtime and execution metadata; no original output, account or model mounts or audit calls."
+    },
+    "isolation": "Exact native e0 image, UID1000, networknone, readonly root/source, one CPU, 2GiB memory plus total swap, tmp64MiB, sole fresh output writable; no numerical/model/provider calls.",
+    "preserved_failure": "red-v1 failed at Settings import because the standalone runner omitted the required synthetic SECRET_KEY; no tests or numerical reads. Fresh red-v2 adds only the established synthetic test value. The failed root/container/log remain intact.",
+    "style": "Ruff and formatting pass. No repeated original 52-case or bounded numerical gates."
+  },
+  "remaining": {
+    "full_original_audit": "UNVERIFIED_NOT_RUN",
+    "capacity": "FAILED_CURRENT_CAPACITY_BOUNDARY: completion373782589 exceeds existing256MiB cap; physical native paper832110254B also exceeds it. Do not only raise caps or load entire JSON under2GiB without bounded memory proof. Source-backed streaming design pending.",
+    "timing_contract": "FAILED_ORIGINAL_UNCHANGED",
+    "corrected_account": "SEPARATE_PRIVATE_CHAIN_STILL_UNVERIFIED",
+    "publication": "CLOSED",
+    "fresh_ordinary_and_intraday_acceptance": "UNVERIFIED"
+  },
+  "diagram_impact": "NONE: private offline admission metadata only; no deployed flow changed.",
+  "production_changes": false
+}

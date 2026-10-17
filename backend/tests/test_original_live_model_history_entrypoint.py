@@ -413,7 +413,7 @@ def producer(tmp_path):
     mounts = [
         ("/app", "/original-source", "ro"),
         ("/private", "/original-inputs", "ro"),
-        ("/output", str(cli.Path(cli.FULL_ACCOUNT).parent), "rw"),
+        ("/results", str(cli.Path(cli.FULL_ACCOUNT).parent), "rw"),
     ]
     command = ["docker", "run"]
     for target, host, mode in mounts:
@@ -423,8 +423,10 @@ def producer(tmp_path):
         "python",
         "-m",
         "backend.cli.market_live_model_history",
+        "--market",
+        "/private",
         "--output",
-        "/output/account",
+        "/results/account",
     ]
     execution = tmp_path / "execution.json"
     runtime_path = tmp_path / "producer.json"
@@ -432,7 +434,11 @@ def producer(tmp_path):
         "Id": cli.FULL_CONTAINER,
         "Image": cli.PRODUCER_IMAGE,
         "State": {"Running": False, "ExitCode": 0, "OOMKilled": False},
-        "Config": {"User": "1000:1000"},
+        "Config": {
+            "User": "1000:1000",
+            "Cmd": command[-7:],
+            "Entrypoint": None,
+        },
         "HostConfig": {
             "NetworkMode": "none",
             "ReadonlyRootfs": True,
@@ -461,6 +467,23 @@ def producer(tmp_path):
 def test_original_producer_exact_identity(tmp_path):
     value, _ = producer(tmp_path)
     assert cli.producer_admission(value)["image"] == cli.PRODUCER_IMAGE
+
+
+# Exact image and mounts cannot authenticate a producer that executed another command.
+@pytest.mark.parametrize("route", ["missing", "module", "argument", "entrypoint"])
+def test_original_producer_command_corruptions_fail(tmp_path, route):
+    value, row = producer(tmp_path)
+    if route == "missing":
+        row["Config"].pop("Cmd")
+    elif route == "module":
+        row["Config"]["Cmd"][2] = "backend.cli.other"
+    elif route == "argument":
+        row["Config"]["Cmd"][-1] = "/results/another-account"
+    else:
+        row["Config"]["Entrypoint"] = ["sh", "-c"]
+    value["producer_runtime_sha256"] = write(cli.Path(value["producer_runtime"]), [row])
+    with pytest.raises(ValueError, match="ORIGINAL_PRODUCER_COMMAND"):
+        cli.producer_admission(value)
 
 
 # Wrong image, UID, resources, network, and output aliases fail before model loading.

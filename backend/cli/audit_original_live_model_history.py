@@ -252,6 +252,22 @@ def producer_admission(value):
         "GENUINE_SUCCESSFUL_ORIGINAL_PRODUCER_REQUIRED",
     )
     execution = strict_json(pinned(value["execution"], value["execution_sha256"]))
+    original_command = [
+        "python",
+        "-m",
+        "backend.cli.market_live_model_history",
+        "--market",
+        "/private",
+        "--output",
+        "/results/account",
+    ]
+    require(
+        execution["command"][-len(original_command) :] == original_command
+        and config.get("Cmd") == original_command
+        and "Entrypoint" in config
+        and config["Entrypoint"] is None,
+        "EXACT_ORIGINAL_PRODUCER_COMMAND_REQUIRED",
+    )
     expected = byte_auth.mounts_from_receipt(execution)
     actual = {
         item["Destination"]: (item["Source"], "rw" if item["RW"] else "ro")
