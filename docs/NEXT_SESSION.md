@@ -35,6 +35,17 @@ receipts unchanged; v6 OPEN/PAUSED/no replay/adoption/new genuine run. No model,
 account/history/config or production changes by this task. Actual weekday/
 intraday/fill/UI and corrected historical delivery remain UNVERIFIED.
 
+READONLY Docker29.2.1 source review now returned: CLI streams input; overlay2
+daemon untars into canonical daemon temp, registers layers and restores tags.
+No per-load daemon RAM cap/numeric peak established. Actual manifestSHA4cfbc9e0
+has RepoTags=null, so no tag replacement proposed. Bounded standalone metadata
+reader observed daemonPID2205; /proc environ permission DENIED, no bypass.
+Actual daemon temp path/storage and incremental memory remain unverified.
+First inline metadata harness exit1/remote stderr not exposed/cause unverified
+is retained separately; plain source-file reader succeeded. No Docker load.
+Source links and exact facts recorded in archive proof. ROOT may prepare an
+inert stdio harness; runtime/load requires concrete admission first.
+
 ## 2026-10-17 — Bounded peer stream/session protocol VERIFIED privately
 
 Read research/historical-checkpoint-peer-rpc-proof-2026-10-17.json.
