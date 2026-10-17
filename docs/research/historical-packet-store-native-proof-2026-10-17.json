@@ -1,0 +1,81 @@
+{
+  "base_source": "85d87a38e85516369cdc1c675fd047c1886e5a18",
+  "children_maxrss_kib_linux": 35188,
+  "errors": 0,
+  "failures": 0,
+  "final_source_indexed_resume": {
+    "append_sql_statement_count": 7,
+    "audit_after": {
+      "charged_used": {
+        "body_bytes": 0,
+        "get_attempts": 0
+      },
+      "checkpoint_used": {
+        "body_bytes": 0,
+        "get_attempts": 0
+      },
+      "entries": 10004,
+      "head": "ce1e5fa19fdc199ef6a0e363f9c2ce6b074034f7957fff0f2f90ea8293a05a70",
+      "next_stage": "DEMAND_FROZEN"
+    },
+    "audit_before": {
+      "charged_used": {
+        "body_bytes": 0,
+        "get_attempts": 0
+      },
+      "checkpoint_used": {
+        "body_bytes": 0,
+        "get_attempts": 0
+      },
+      "entries": 10003,
+      "head": "0f566e02fa9db9c5bd2f0bbcd00f83b579dc0897cf6eeba76306501aed172888",
+      "next_stage": "PRIOR_VERIFIED"
+    },
+    "indexed_membership_query_plan": [
+      [
+        3,
+        0,
+        0,
+        "SEARCH entries USING COVERING INDEX entry_cycle (cycle=?)"
+      ]
+    ],
+    "prior_store_mounted_read_only": true
+  },
+  "finished_at": "2026-10-17T14:22:15.544807+00:00",
+  "functions": 22,
+  "prior_synthetic_proof_sha256": "5ea5e4bbf0c56a763403aa6a27cf5dd9bfa6b2a7dba26d95179fcd902d057014",
+  "provider_model_account_original_output_calls": 0,
+  "pytest_path": "/testdeps/pytest/__init__.py",
+  "pytest_version": "9.1.1",
+  "scope": "ALL_INPUTS_SYNTHETIC_UNUSED_PRIVATE_STORE_NO_EXTERNAL_EXECUTION",
+  "self_maxrss_kib_linux": 42984,
+  "skips": 0,
+  "source_after": {
+    "backend/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/market/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+    "backend/market/historical_packet_demand.py": "f4d91dd5804fe93b89201a209951230b0d1eb79e8ea2abdc4400b5f90fb13697",
+    "backend/market/historical_packet_parser.py": "d617eaceae212bf5dab16280727c5330867506b4b2b47e4b4dce787be01b4155",
+    "backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+    "backend/market/historical_packet_store.py": "b96b752f82ff7f07510029a2d4800429bcf261fd203a56ff61561590d7110bb4",
+    "backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+    "backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/tests/test_historical_packet_store.py": "3556d1b866a4b48d3cad9508eee85b5e799ba8e5d7255ca48e7635747a1926aa",
+    "run.py": "8cad9692978b4bf207559597be4f9490f4c750f837d6ded156a7da73375f94ad"
+  },
+  "source_before": {
+    "backend/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/market/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+    "backend/market/historical_packet_demand.py": "f4d91dd5804fe93b89201a209951230b0d1eb79e8ea2abdc4400b5f90fb13697",
+    "backend/market/historical_packet_parser.py": "d617eaceae212bf5dab16280727c5330867506b4b2b47e4b4dce787be01b4155",
+    "backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+    "backend/market/historical_packet_store.py": "b96b752f82ff7f07510029a2d4800429bcf261fd203a56ff61561590d7110bb4",
+    "backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+    "backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "backend/tests/test_historical_packet_store.py": "3556d1b866a4b48d3cad9508eee85b5e799ba8e5d7255ca48e7635747a1926aa",
+    "run.py": "8cad9692978b4bf207559597be4f9490f4c750f837d6ded156a7da73375f94ad"
+  },
+  "started_at": "2026-10-17T14:22:12.003654+00:00",
+  "wall_seconds": 3.5411404510959983
+}

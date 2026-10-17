@@ -49,10 +49,27 @@ UI and full corrected historical delivery remain separate, not claimed complete.
 Compact original full-run14:28:34Z: exact1e8f440a/image136ebb46 running/OOMfalse,
 1898sessions through2026-09-17/2911fills/3855intents, updated14:25:44Z; completion
 absent, start/source27471 unchanged. No other active-output read or restart.
-Historical stream59e+hardening1364 (195native+genuine metadata compatibility) and
-Store28e (22native,10004indexed synthetic entries) await ROOT final proof review/
-integration. Agents now implement unused stdlib complete-input authenticator and
-full ReplayBroker checkpoint codec; coordinator is READ-ONLY design/no GET.
+Historical stream59e+1364 integrated asbb5da055/f10c364e, exact final cb0d3032/
+test7e7b1600. ROOT checked full source, original6eac genuine3night proof, actual
+7dd58bed/3ac6f3c3 e0/networknone/read-only/1CPU2GiB RAM/exit0/OOMfalse and actual
+mounted pins.195checks/0skip7.01s; final strict genuine metadata compatibility
+bd8d46be authenticates449consumed inputs and unchanged10 numeric/control ASTs,
+not a fresh numerical rerun. Read-before-cap, ambiguous JSON and nested identity
+mutation reds preserved. Full original input/nightly audit remains post-COMPLETE.
+
+Store28e integrated as1af8d028, exact b96b752f/test3556d1b8. ROOT reviewed all
+source/final integrity fixes and inspected actual5e45c0c1/e0/networknone/RO/1CPU/
+2GiB RAM (Docker total MemorySwap4GiB), exit0/OOMfalse, mounted byte pins and
+proof6e940cf6.22distinct checks/0skip, final indexed resume/audit10003->10004,
+7SQLappend/COVERING entry_cycle; priorv1 scaling and failures remain separate.
+Full Ruff and final byte checks passed on main; no redundant native/model/gate
+rerun. Exact research/historical-packet-store-proof-2026-10-17.json plus original
+native proof. This unused store does not authorize GETs or prove market evidence;
+SIGKILL tested, not power loss/arbitrary hostile DB rewriting. Agents now implement
+unused stdlib complete-input authenticator and full ReplayBroker checkpoint codec;
+coordinator is READ-ONLY design/no GET. Auth helperd57acebd (31checks/all bounded
+443inputs+2428sources) awaits ROOT review; codec first53-check source is undergoing
+new boolean/fractional claim admission corrections, preserve all first roots.
 Heartbeat ACTIVE/quiet. User has already approved the ongoing parallel work and
 ONE corrected simulation; no new permission question is pending. Diagram impact NONE.
 

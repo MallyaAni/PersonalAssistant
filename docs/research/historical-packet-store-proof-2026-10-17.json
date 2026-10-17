@@ -1,0 +1,66 @@
+{
+  "status": "VERIFIED_UNUSED_PRIVATE_DURABILITY_PRIMITIVE_ONLY",
+  "feature_commit": "28e00c5ba7f48f124775402646d03430f835804b",
+  "main_integration": "1af8d028",
+  "source_sha256": "b96b752f82ff7f07510029a2d4800429bcf261fd203a56ff61561590d7110bb4",
+  "test_sha256": "3556d1b866a4b48d3cad9508eee85b5e799ba8e5d7255ca48e7635747a1926aa",
+  "native_proof_file": "historical-packet-store-native-proof-2026-10-17.json",
+  "native_proof_sha256": "6e940cf6514de7f69d065e32ec9f589cb220dbda47f0fd57982d87906a7fb371",
+  "native_root": "/home/animallya96/scratch/historical-packet-store-tests-20261017-v2",
+  "container_id": "5e45c0c196c8a116e4eb0c6d1af305a482ac15084bb1a5959f27fa5eba44ff03",
+  "actual_image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+  "runtime": {
+    "network": "none",
+    "readonly": true,
+    "cpus": 1,
+    "ram_bytes": 2147483648,
+    "docker_total_memory_swap_limit_bytes": 4294967296,
+    "exit_code": 0,
+    "oom_killed": false,
+    "functions_passed": 22,
+    "skips": 0,
+    "failures": 0,
+    "errors": 0,
+    "whole_run_seconds": 3.5411404510959983,
+    "self_maxrss_kib": 42984,
+    "children_maxrss_kib": 35188,
+    "mounts": "Only frozen pure-module/test fixture, pytest-only dependencies, previous SYNTHETIC store readonly and new output; no real account/model/live/full-run paths"
+  },
+  "verified": [
+    "Real competing processes: exclusive writer and authoritative-head compare-and-swap reject conflicting descendants",
+    "SIGKILL before/after transaction commitment, blob publication and operation reservations retains old-or-new head; committed operation recovery never reruns it",
+    "Interrupted decision/submission/request/read remains explicitly uncertain and paused; no implicit retry/refund",
+    "Charged GET/read allowances persist before external work; confirmed bytes and unknown allowances remain distinct even after HTTP/body failure",
+    "Complete exact page-token chain required; incomplete/error/quota/cap states never become market missingness",
+    "0700 directory/0600 files, bounded reads, private immutable streamed objects and fixed SQLite cache; symlink and oversized-object rejection",
+    "Resume rejects missing original schema/index, valid-SQL demand-byte drift and attempted repeated cycle after membership-row deletion",
+    "Final source streamed-audits10003 retained synthetic entries, appends with7 SQL statements using COVERING entry_cycle index, then audits10004 entries"
+  ],
+  "prior_distinct_scaling_scope": {
+    "root": "/home/animallya96/scratch/historical-packet-store-tests-20261017-v1",
+    "proof_sha256": "5ea5e4bbf0c56a763403aa6a27cf5dd9bfa6b2a7dba26d95179fcd902d057014",
+    "functions_passed": 20,
+    "skips": 0,
+    "test_seconds": 2.180,
+    "scaling_and_audit_seconds": 206.774,
+    "entries": 10003,
+    "peak_rss_kib": 39116,
+    "sql_statements_per_full_cycle": 68,
+    "same_cycle_count_observed_at_entries": [105, 10003],
+    "scope": "Earlier source retained unchanged; final source has separate22-function validation and indexed10004-entry resume, not a claimed second full scaling run or42distinct tests"
+  },
+  "preserved_failures": {
+    "implicit_schema_repair": "Old0527390c recreated a dropped cycles table during resume; red7c4ba4c8 retained in /tmp/historical-packet-store-schema-red-20261017-v1; resume now never creates or repairs tables",
+    "demand_and_cycle_integrity": "Two actual DIDNOTRAISE failures on oldc90 source; rede6e3ff82411cc81d444ca5e63b91dad9db4a5678db15c2d44df64456989602fe retained in /tmp/historical-packet-store-integrity-red-20261017-v1. Final source authenticates persisted demand bytes and independently queries indexed original entries for cycle membership"
+  },
+  "root_review": "Full helper and final integrity diff reviewed; exact actual proof SHA, container/image/limits/mounts and mounted source/test hashes independently checked. Final main bytes match and Ruff passes. No old test/gate/model rerun for documentation",
+  "limits": [
+    "All inputs and histories synthetic; no acquisition, inference, sender, account, original-output or deployment calls",
+    "Durable reservations do not authorize external work or prove that an HTTP request occurred",
+    "Page manifests retain bytes; market evidence still requires the separate immutable parser and mapping admission",
+    "SIGKILL recovery is verified; power-loss durability and adversarial whole-database rewrite resistance are not claimed",
+    "Resource evidence is this isolated bounded scope, not proof of a full corrected horizon",
+    "No connected coordinator or historical delivery; original publisher remains CLOSED"
+  ],
+  "diagram_impact": "NONE: unused private store; no deployed service or connected execution flow"
+}
