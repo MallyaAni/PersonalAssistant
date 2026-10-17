@@ -1,5 +1,31 @@
 # Next session
 
+## 2026-10-17 — Phase1 nightly pre-plan audit primitive verified
+
+Code34a24f67 adds only a pure private before-plan control/receipt fold. It takes
+the previous verified state and original accepted/outcome/confirmed-cancellation
+evidence, never current saved model outputs or allocation controls. Cancellation
+requires exact original identity, quantity, accepted clocks and closing
+canceled_at; selecting a stale ID does not prove success. Event/calendar/wait,
+duplicate and independently proven missing-account branches are distinct from
+model-required paths. No broker, sender, state writes or production caller.
+
+VERIFIED70 focused checks/0skip2.07s, Ruff/format. Read-only COMPLETE private v10
+compatibility matched7 original settlements across2 sessions and unchanged input
+bytes. This compatibility starts from each original prior bounded snapshot;
+it does not verify its preceding model plan. Original draft cancellation false
+acceptance and current-calendar/historical-date failure are preserved in
+research/historical-nightly-preplan-proof-2026-10-17.json.
+
+Next authorized phase: independently reconstruct every saved nightly causal
+feature/frozen-model/scenario proposal, grade-constrained target and funded
+whole-share action using this pre-plan state and original conserved ledger,
+then hook the verifier. Never use saved targets as inference inputs or expected
+orders as ledger fills; event/missing-account nights cannot count as model
+evaluations. No active original output or heavy model/array reads until genuine
+COMPLETE. All31 guarded sources and publication barrier remain unchanged/closed;
+no run replay, runtime or production changes occurred.
+
 ## 2026-10-17 — Historical publication now structurally refuses current proofs
 
 Code checkpointb00b5160 closes only the false-acceptance boundary. The verifier
