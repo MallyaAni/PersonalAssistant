@@ -1,5 +1,40 @@
 # Next session
 
+## 2026-10-17 — Retained forecast and same-source opening bridge integrated
+
+Feature0c80a67f integrated asf728dd86 after ROOT full source/tests/runner/proof
+review, Ruff/format and independent actual Docker/source/mount/result checks.
+Bridge d8ff6af1/test02a102e6; read
+research/historical-retained-forecast-proof-2026-10-17.json. Native synthetic
+52pass/0skip0.49s onb457/f612/none/RO/1CPU/2GiB/tmp64MiB/exit0/OOMfalse,
+baked31 unchanged. Stable bounded exact external file pins, ZIP/header/shape/
+expansion/immutable arrays, original full96frame/21features, onlyAAPL available,
+actual2026 clocks and same original4430B parquet/unique completed prefix/opening
+are admitted. Legacy4field anchor rows stay unchanged; source-aware outer
+binding is separate. No model/artifact restore/head/provider/account call.
+
+Retained genuine reader diagnostic7bda/f612 remains FAILED11of13exactchecks,
+proof86af9202. Exact inputs/samples/opening/trade/quote/clocks/budget/quantity and
+WAIT/no-send reproduced using old6176 explicitly SYNTHETIC100k/BUY1 receipt,
+not a funded current account. Sole full-verdict difference is expected_log_utility:
+old1.0827470579132662e-6/new1.082747057913265e-6,6ULP/1.2705494208814505e-21.
+No tolerance or numerical tuning applied; cause UNVERIFIED. Saved-only analysis
+795670d9 separately verifies every other verdict field/type/value EXACT and both
+utilities strictly positive. Actualv2 trace list was not separately retained;
+its source-derived evidence view is explicitly NOT a saved original trace list.
+Preserve both failed whole-verdict/trace diagnostics. No reader/head rerun to
+make them green. Public NPY-header API replaces absent private API; original
+fixturev1 and missing diagnosticv1 failures remain. Runner import was corrected
+to the native desk module before first genuine launch.
+
+Next is genuine current nightly/funded-plan composition, not insertion of a
+favorableAAPL request. Cycle/account/all-history integration remains UNVERIFIED;
+publicationCLOSED. Original compact16:28:28Z:1913sessions throughOct8/2960fills/
+3907intents,updated16:24:23Z, running/OOMfalse/completionabsent. Next compact
+>=16:48; no other active original input/output was inspected. Full capacity
+design remains separate, no cap expansion or storage implementation authorized.
+Diagram impact NONE: unused private retained-input adapter, no deployed flow.
+
 ## 2026-10-17 — Current settlement and process-crash recovery verified
 
 Feature b9f5d7cd integrated as 0ce3da37 after ROOT full Cycle diff/test/runner/
