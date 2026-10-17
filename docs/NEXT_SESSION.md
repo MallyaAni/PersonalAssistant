@@ -1,5 +1,48 @@
 # Next session
 
+## 2026-10-17 — Input-byte authenticator and native checkpoint restoration integrated
+
+ROOT integrated d57acebd as f64fd5e0 and codec2487b5d5 as39550a3a after full
+source review and independent retained-runtime/mounted-byte checks. Authenticator
+a10e238b/test8998f113:31native checks/0skip2.65s; exact e0/a9dd08f4,
+networknone/readonly/1CPU2GiB RAM/total MemorySwap4GiB/exit0/OOMfalse. Genuine
+COMPLETE privatev10 proof90e9b3a9 authenticates ALL443inputs and2428source files,
+399420200bytes twice, including unused arrays. Original namespace symlinks resolve
+ONLY through externally pinned original Docker read-only mounts. This is byte
+identity only, not Git-object, model/economic/causal or original full-run acceptance.
+Original full output was not read. Exact research/historical-complete-input-
+authentication-proof-2026-10-17.json preserves all earlier diagnostic/test roots.
+
+Codec0c76756f/test0881628f:56native checks/0skip0.27s in actual retained
+e0abea00/e0/networknone/readonly/1CPU512MiB RAM+total swap/exit0/OOMfalse.
+ROOT independently hashed original9b8561d1 proof and actual mounted helper/tests,
+read all1051source lines and tests, checked FIFO/reservations/no same-batch sale
+funding, exact20fields/clock domains/corporate claims and fixed corruption reds.
+Private synthetic checkpoint restoration only; no production restoration or
+connected runner claim. Exact research/historical-broker-checkpoint-validation-
+2026-10-17.json retains v1 fixture failures and v3 actual claim-type failures.
+Final integration byte pins match; Ruff/format pass; all31guarded sources unchanged.
+No redundant native/model/gate/deployment rerun. Diagram impact NONE: unused helpers.
+
+Next atomic work is ACTIVE in separate owned branches: one network-none connected
+conditional cycle using Store/parser/reader/native sender/resolver/marks/account/
+codec; durable pre-request GET/rate-slot reservation in unused Store; independent
+per-observation execution context for original pending/stream quantity auditing.
+Source review found pending audit's <=funded check insufficient for exact submitted
+quantity: native buy must equal funded quantity, sell equals min(funded,floor(sender
+held)). Reproduce corruption before correction; this is an auditor gap, not evidence
+of a particular original-run violation. Timing-account held and sender held can
+differ on missing NAV/marks and must be derived separately. Original initial raw
+attempt receipts were NOT archived; do not fabricate or relabel reconstructed
+requests as saved original receipts. Nonempty initial immediates retain named
+missing-evidence failure. Original legacy timing remains FAILED/publisher CLOSED.
+
+No generic provider GET, corrected full launch, model/network change or actual-day
+replay authorized by these helper proofs. Live3b72 metadata delivery remains complete;
+pending historical main must not deploy. Original full1e8f440a remains untouched;
+only next due bounded compact inspection. Mac~405MiB free, bulk stays on Spark.
+Heartbeat ACTIVE/quiet; no new user confirmation pending.
+
 ## 2026-10-17 — Live quantity metadata DELIVERED; original history unchanged
 
 Canonical isolated3b72cd4e0bc15acd24432d501918c721685a5333 completed14:22:41Z,
