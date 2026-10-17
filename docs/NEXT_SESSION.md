@@ -1,5 +1,28 @@
 # Next session
 
+## 2026-10-17 — Exact current checkpoint admission integrated
+
+Feature7847efc2 integrated asd58fac1c after ROOT full diff/tests/runner/binding
+review and independent actual runtime/mount/image/source/proof checks. Codec
+703db068 accepts only exact reviewedN2 or CURRENT3b72/f612/f96/1c1 map tuples;
+serialization/state/caps/arithmetic unchanged. Same-count source substitution,
+mixed profiles and rehashed cross-profile headers reject before source reads.
+CURRENT6native checks/0skip; separate actuale0 N2roundtrip1/0skip. Bothnetworknone/
+RO/1CPU512MiB RAM+total swap/exit0/OOMfalse, no guarded31 overlays. Ruff/format
+pass. Source/test pins and preserved exact old-codec CURRENT red are in
+research/historical-broker-current-profile-proof-2026-10-17.json. Original
+v1 collection failure and unexecuted v3/v4 inputs remain explicitly separate.
+No old metadata15/codec57 gates or live deployments repeated.
+
+Compact15:48:07Z: original1e8/image136 running/OOMfalse/completion absent,
+1908sessions throughOct1/2942fills/3890intents, updated15:46:52Z. Untouched;
+next bounded compact>=16:08. Original timingFAILED and publicationCLOSED.
+Agents now own current numeric helper, final-native observer (with explicit
+final Demand branch), and separate conditional native settlement composition.
+ROOT settlement draft is untracked/unverified, transferred to third agent for
+review/tests; no Cycle integration or durable settlement claim yet. Production
+3b72 remains delivered. No provider GET/modelservice/fullrun/deploy action.
+
 ## 2026-10-17 — Generic cycle and synthetic acquisition integrated
 
 Generic7e92b44c integrated asda66c75a after ROOT full final source/diff/alltest/

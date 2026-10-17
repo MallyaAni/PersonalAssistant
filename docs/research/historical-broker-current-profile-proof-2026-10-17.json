@@ -1,0 +1,52 @@
+{
+  "status": "VERIFIED_PRIVATE_EXACT_CURRENT_PROFILE_ADMISSION",
+  "feature_commit": "7847efc2bda877ee7c9008e6012d485f4b5d8fff",
+  "integration_commit": "d58fac1c",
+  "source_sha256": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08",
+  "test_sha256": "a1e4fbe7df81af54f3ea3a901c501a8aa82b60aa9de9a3ff0a2c89ccf1b1c714",
+  "binding_sha256": "91372484e3d644a7d663959c06e3455ae6371ccd0408960893ce1a70dcfe0028",
+  "binding_path": "/home/animallya96/scratch/historical-broker-current-tests-20261017-v6/runtime-binding.json",
+  "current": {
+    "container": "b742611a229557fffd750af0a4169153095f55aa86d1fead03007c603b839747",
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "root": "/home/animallya96/scratch/historical-broker-current-tests-20261017-v5",
+    "proof_sha256": "e3df878865b8452dff3ca50bc68199d2caab11211b0a8038b900a7123b12a20c",
+    "passed": 6,
+    "skipped": 0,
+    "map_sha256": "bfbcb6ece4ea500726e00abbb06fc2c84d63d386bb307958016915357aaef5b3"
+  },
+  "separate_n2_compatibility": {
+    "container": "49f2c05a70ba8559475fa3108a8fd5bf699b8d1b30c8f939010c837c00098bf4",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "proof_sha256": "f9e23483a45dac6cabaa8c3be91d4f2a4d579b425411460d43891613aa94a8d7",
+    "passed": 1,
+    "skipped": 0
+  },
+  "preserved_red": {
+    "container": "fdb93f2d9a6a9fe6f501698f28a72c98eb369fb13b9e597f4ceaf2f1dc47ced0",
+    "codec_sha256": "0c76756f9bf79bddd0c0e2a18612882c48a82deabd7483c13730c58c98a111b6",
+    "proof_sha256": "d43fa883494a686933e7abe431c5281840fe971b23c20be9a5bd34b671a8ef4c",
+    "first_failure": "Exact CURRENT positive fixture rejected with Frozen N2 source/config identity differs"
+  },
+  "runtime": {
+    "network": "none",
+    "readonly": true,
+    "cpus": 1,
+    "memory_and_total_swap_bytes": 536870912,
+    "exit_code": 0,
+    "oom_killed": false,
+    "guarded31_overlays": false,
+    "pure_dependency_mounts": [
+      "registry6b17e1f9",
+      "timing_packet54763a69"
+    ]
+  },
+  "root_review": "Read complete source diff/new tests/runner/binding; independently checked both actual runtime images/mounts/exits, proof and runner hashes, before/after source equality; Ruff and format pass.",
+  "preservation": "Only exact identity admission changed; original serialization/state/caps/arithmetic remain unchanged. Added immutable exact profile map digests; mixed tuple/map and cross-profile snapshot headers rejected. Old error substring retained.",
+  "limits": [
+    "Synthetic accounts only; no model/provider/actual account or active original-run input read.",
+    "No live source/config/service changes, corrected launch, full audit or historical publication.",
+    "Prior N2 snapshots retain their own source-bound codec receipts; never retagged."
+  ],
+  "diagram_impact": "NONE — exact private checkpoint admission, no deployed flow change."
+}
