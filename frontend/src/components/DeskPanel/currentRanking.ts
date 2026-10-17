@@ -3,9 +3,6 @@ import type {BoardRow} from './TradeBoard'
 import {currentAssessments} from './liveAssessment'
 import {displayedBoardPrice} from './StockBoard'
 
-const gradeOrder: Record<string, number> = {'A+': 3, A: 2, B: 1, C: 0}
-const priorityOrder = {high: 3, medium: 2, low: 1}
-
 // Withhold a judgment as soon as its own evidence expires or the candle changes.
 export const currentSetup = (live: DeskLive, session: string, ticker: string, now: number): DeskCurrentSetup | null => {
   const row = live.opportunities?.rows?.[ticker]
@@ -58,32 +55,9 @@ export const quoteReferenceText = (live: DeskLive, ticker: string, setup: DeskCu
   return `Latest quote $${quote.price.toFixed(2)} is ${relation} the $${reference.price.toFixed(2)} confirmation reference; ${setup.entry === 'ready' ? 'setup remains ready for review' : `entry remains ${setup.entry.toUpperCase()} until reassessed`}.`
 }
 
-// Rank fresh opportunity judgments and actual holdings without borrowing saved targets.
-export const rankCurrent = (rows: BoardRow[], live: DeskLive, session: string, now: number, accountAvailable: boolean): BoardRow[] => {
+// Attach chart evidence without replacing the recorded action, quantity, timing or order ranking.
+export const rankCurrent = (rows: BoardRow[], live: DeskLive, session: string, now: number): BoardRow[] => {
   const assessments = currentAssessments(live, session, now)
-  const projected = rows.map(row => {
-    const grade = assessments[row.ticker]?.grade_live
-    const setup = currentSetup(live, session, row.ticker, now)
-    const eligible = grade === 'A' || grade === 'A+'
-    const exit = accountAvailable && row.held > 0 && (grade === 'B' || grade === 'C')
-    const review = accountAvailable && row.held > 0 && eligible && setup?.exit === 'review'
-    const ready = eligible && setup?.entry === 'ready'
-    const category = row.orders.length ? 0 : exit ? 1 : review ? 2 : ready ? 3 : eligible ? 4 : grade ? 5 : 6
-    const word: BoardRow['word'] = row.orders.length ? row.word : exit ? 'SELL' : review ? 'HOLD' : ready ? 'BUY'
-      : eligible ? 'WAIT' : row.held > 0 ? 'HOLD' : '—'
-    const signal = row.orders.length ? row.signal : exit ? 'sell' : review ? 'hold' : ready ? 'buy'
-      : eligible ? 'wait' : grade ? row.held > 0 ? 'hold' : 'avoid' : 'unavailable'
-    const why = row.orders.length ? row.why : exit ? 'Current grade below A; remaining holding requires an exit plan.'
-      : setup?.reason ?? live.opportunities?.unavailable?.[row.ticker] ?? (grade ? eligible ? 'Chart judgment updating; entry permission alone is not an entry decision.'
-        : 'Current grade does not permit a new entry.' : 'Fresh assessment unavailable; current opportunity is not ranked.')
-    return {...row, word, signal, why, status: row.orders.length ? row.status : why,
-      currentSetup: setup, opportunityBand: category, freshGrade: grade,
-      opportunityScore: assessments[row.ticker]?.score_live ?? -Infinity,
-      judgmentPriority: priorityOrder[(exit || review ? setup?.exit_priority : setup?.entry_priority) ?? 'low']}
-  })
-  return projected.sort((a, b) => a.opportunityBand - b.opportunityBand
-    || b.judgmentPriority - a.judgmentPriority
-    || (a.opportunityBand <= 2 ? 1 : -1) * ((gradeOrder[a.freshGrade ?? ''] ?? -1) - (gradeOrder[b.freshGrade ?? ''] ?? -1))
-    || (a.opportunityBand <= 2 ? a.opportunityScore - b.opportunityScore : b.opportunityScore - a.opportunityScore)
-    || a.ticker.localeCompare(b.ticker)) as BoardRow[]
+  return rows.map(row => ({...row, currentSetup: currentSetup(live, session, row.ticker, now),
+    freshGrade: assessments[row.ticker]?.grade_live}))
 }

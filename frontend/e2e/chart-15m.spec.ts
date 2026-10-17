@@ -194,8 +194,8 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       await expect.poll(() => drawn(page, '15m')).toEqual(expect.arrayContaining(['BUY signal 14% at the close']))
       expect(await drawn(page, '15m')).not.toEqual(expect.arrayContaining(['BUY signal 14% fills at the open']))
       // Grade changes are session readings and are not drawn on the bars.
-      await chart.getByRole('checkbox', {name: 'Grade changes'}).check()
-      expect(await drawn(page, '15m')).not.toEqual(expect.arrayContaining(['Saved grade A→B']))
+      await chart.getByRole('checkbox', {name: 'Grade signals'}).check()
+      expect((await drawn(page, '15m')).filter(text => /^Grade (BUY|SELL)/.test(text))).toEqual([])
       await expect(chart).toContainText('not marked on fifteen-minute bars')
       // The sessions selector re-reads the chart with the chosen count.
       const sessions = chart.getByRole('group', {name: 'Chart sessions'})

@@ -2048,6 +2048,7 @@ export interface DeskHistoryRow {
 }
 // One real fill of the paper account in this name, read from the nightly records.
 export interface DeskHistoryFill {
+  client_order_id?: string | null;
   date: string;
   side: 'buy' | 'sell';
   qty: number;
@@ -2965,7 +2966,9 @@ export const getDeskIntraday = async (userId: string): Promise<DeskIntraday | nu
 // lifetime move from the paper book's starting equity, `day_pl_pct` today's
 // move, so the page can read percentages beside the dollar figures.
 export interface DeskPaperLive {
-  activity?: { session?: string; complete?: boolean; reason?: string; fills?: { symbol: string; side: string; qty: number; price: number; filled_at?: string }[] };
+  model_decisions?: DeskModelDecisions;
+  recorded_fills?: DeskRecordedPaperFill[];
+  activity?: { session?: string; complete?: boolean; reason?: string; fills?: { client_order_id?: string | null; symbol: string; side: string; qty: number; price: number; filled_at?: string }[] };
   as_of?: string;
   reason?: string;
   equity?: number;
@@ -2978,6 +2981,50 @@ export interface DeskPaperLive {
   // The paper account's own orders as the board shows them, worded once by the
   // backend (`intraday_orders.board_orders`) so board, panel and chart agree.
   plan?: DeskPaperPlan;
+}
+
+// An actual positive terminal fill read from the saved journal after reconciliation.
+export interface DeskRecordedPaperFill {
+  client_order_id?: string | null;
+  symbol: string;
+  side: 'buy' | 'sell';
+  qty: number;
+  price: number;
+  filled_at: string;
+  session?: string | null;
+  created_at?: string | null;
+  reconciled_at?: string | null;
+}
+
+// One admitted numerical policy decision, independent of its actual paper executions.
+export interface DeskModelDecision {
+  grade?: string | null;
+  signal_session?: string | null;
+  action: 'buy' | 'trim' | 'sell' | 'hold' | null;
+  qty: number | null;
+  status: 'planned' | 'blocked' | 'no_new_order' | 'no_position' | 'complete' | 'unavailable';
+  reason: string;
+  decided?: string | null;
+  execute_on?: string | null;
+  when: string | null;
+  raw_model_target_weight?: number | null;
+  target_weight?: number | null;
+  current_qty?: number | null;
+  executions?: DeskPaperOrder[];
+}
+
+// The backend admits one recorded model and account basis before exposing these decisions.
+export interface DeskModelDecisions {
+  version: 'live-model-decisions/1';
+  status: 'available' | 'stale' | 'unavailable';
+  reason?: string;
+  session: string | null;
+  observed_at: string | null;
+  valid_until: string | null;
+  policy: string | null;
+  record_sha256?: string | null;
+  receipt_sha256?: string | null;
+  rows: Record<string, DeskModelDecision>;
 }
 
 // One paper-account order: what, how big, why, when and what has happened.

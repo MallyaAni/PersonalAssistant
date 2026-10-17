@@ -267,6 +267,7 @@ def test_reviewed_guard_extension_exact_sources_and_function_ast(tmp_path):
         "backend/api/v1/market.py": "0" * 64,
         "backend/market/learned_live_holding.py": "1" * 64,
     }
+    old.pop("backend/market/live_model_decision.py", None)
     new = {**source, "backend/market/live_model_decision.py": "2" * 64}
     tree = ast.parse(Path(runtime.__file__).read_bytes())
     functions = {

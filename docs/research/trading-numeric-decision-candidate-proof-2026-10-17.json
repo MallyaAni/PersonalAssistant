@@ -1,0 +1,48 @@
+{
+  "status": "VERIFIED_CANDIDATE_SAVED_NUMERIC_PROJECTION_NOT_DEPLOYED",
+  "base_source": "a2378e9565e6a557fbc3782ac1a5536bae961a75",
+  "guarded_source_sha256": {
+    "backend/api/v1/market.py": "fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88",
+    "backend/market/learned_live_holding.py": "25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1",
+    "backend/market/live_model_decision.py": "b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93"
+  },
+  "validation": {
+    "passed": 129,
+    "skipped": 0,
+    "seconds": 4.91,
+    "image": "sha256:4dbbbe066fd62eefa03fcbc92b37e4ab4a55f5429f826b532fafb5769cce8e17",
+    "source_mount": "Complete frozen candidate backend, network none and read-only",
+    "private_root": "scratch/live-decision-projection-tests-20261017-final",
+    "suites": ["test_live_model_decision", "test_live_model_decision_api", "test_grade_led_parity", "test_market_desk_api", "private authentic original Oct13 capture and full journal"],
+    "test_sha256": {
+      "backend/tests/test_live_model_decision.py": "cf7d43017b465a3340fc08241010d1f29d6b94d524df33e42ce1502d9a284c7d",
+      "backend/tests/test_live_model_decision_api.py": "48da36fa13292ba67b940ddb06d2c1d97d10b805ae42973871daf9669eaeae2c",
+      "private_authentic_harness": "536dae66f52556c71e848bf24a9d93c1f2083e833ad089bc916012f80b775685"
+    },
+    "ruff": "PASS",
+    "host_and_staged_hashes": "MATCH"
+  },
+  "verified": [
+    "Grade, original funded quantity, numeric direction and execution identity share one admitted saved receipt",
+    "BUY0, authenticated retained HOLD and strong-grade TRIM remain distinct",
+    "Unknown execution, oversized actual quantity, conflicting basis and stale records withhold instructions",
+    "Reduced submission and partial fill stay separate from the original funded plan",
+    "Held names with unavailable grades cannot be labelled no position",
+    "Terminal journal entries suppress old instructions after pending removal",
+    "Original STX135 qty12 and SWKS136 qty130 genuine fill clocks and prices survive read-only journal projection",
+    "129 original journal rows exercised; unverifiable legacy fill clocks or identities withheld without rewriting them",
+    "GET projection never predicts, restores a head, replans quantities, sends orders or writes history",
+    "Owner route private-no-store, foreign403 and anonymous401"
+  ],
+  "preserved_failed_results": [
+    "Draft omitted symbols from saved close array schema; authentic capture rejected it",
+    "Legacy journal identity/date inconsistencies caught by full saved journal acceptance",
+    "Oversized submitted quantity regression reproduced before its guard",
+    "Unavailable held grade reproduced incorrect no_position status before correction"
+  ],
+  "original_oct13_record_sha256": "37d7541f5ce12a080a4c0538939b95f99367fc9b5318e21eba03d96963927c32",
+  "original_failed_parity_preserved": true,
+  "authentic_admission_limit": "Private authentic test substitutes only exact-original read_configuration admission; it does not prove current installed approval or fresh inference",
+  "pending": ["Canonical guarded deployment", "Actual HOST and CONTAINER source admission", "Current-clock settlement persistence", "Actual authenticated compiled browser", "Fresh ordinary and learned intraday acceptance", "Full historical audit and delivery"],
+  "diagram_impact": "NONE: field-level read-only projection within existing owner API and market-data stores"
+}
