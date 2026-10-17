@@ -10,7 +10,7 @@
     "guarded_sources": 31,
     "changed_from_urgent": [],
     "additional_approval": false,
-    "independent_read_only_review": "All31 physical file digests, catalog pins and owner/operator-only immutable GET route inspected by separate actual_policy_review agent; final committed-tree recheck pending."
+    "independent_read_only_review": "Separate actual_policy_review agent verified exact a7c8e484de808142031a7ae281138b60ae643848 with a clean tree: all31 committed and physical guarded hashes equal approved N2, zero differences. Catalog pins and owner/operator-only immutable GET route were independently inspected earlier. This source-only review does not claim runtime or publication acceptance."
   },
   "controlled_backend": {
     "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
