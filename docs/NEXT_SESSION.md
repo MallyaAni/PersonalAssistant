@@ -2,6 +2,23 @@
 
 ## 2026-10-17 — One actual-image frozen timing observation independently checked
 
+Root additionally bound the bounded proof directly to22 actual current files in
+anios_backend: all5 timing config/model/residual bytes and17 unique source paths
+match the native proof, actual imagee0a54c1f and hostad44. No inference/account read
+or mutation. Binding proofdd2bc192d0a2037f365bb8d4441d1b574e1f0fc4fb0d92aac590e774e7cfa6fa
+is copied to research/historical-timing-native-live-binding-proof-2026-10-17.json.
+
+Human direction requested asynchronously: authorize ONE separately named corrected
+historical simulation with explicit latency/fill assumptions, preserving original,
+or preserve/audit original only. The original explicit ONE-run restriction makes
+this exception necessary; elapsed time is NOT approval. No replacement launch or
+dependent acquisition while the question is pending. Pure no-submit nightly audit
+implementation continues independently in the existing isolated historical tree:
+pre-plan controls derive from zero-share initial state and checked prior evidence,
+never current saved allocation/model outputs. First phase is small fixtures plus
+COMPLETE privatev10 only; no original full output until COMPLETE, no guarded or
+producer/model changes, no expected orders fed to ledger and no publication bypass.
+
 Native model arrays and residual bank were exercised once in the ACTUAL N2 image
 e0a54c1f, separately from a publication-runtime image.28 retained fields match
 exactly: native two-head outputs, independent tree arithmetic, residual hashes,
