@@ -1,0 +1,45 @@
+{
+  "status": "VERIFIED_PRIVATE_DURABLE_RATE_SLOT_ONLY",
+  "feature_commit": "ecf30f6e4127233cb1199bd285b8efb0d0c2842f",
+  "source_sha256": {
+    "backend/market/historical_packet_store.py": "5bfcc7855c66db877ef76e78c8138528c9bd4eb4f0bd357353eac7b08a02ccd5",
+    "backend/tests/test_historical_packet_rate.py": "e10c85ecb8148422ad4d1da74b48ac4bca67fd94427162a4b37932dacf40d627",
+    "backend/tests/test_historical_packet_store.py": "3556d1b866a4b48d3cad9508eee85b5e799ba8e5d7255ca48e7635747a1926aa"
+  },
+  "native": {
+    "root": "/home/animallya96/scratch/historical-packet-rate-tests-20261017-v1",
+    "original_receipt": "historical-packet-rate-native-proof-2026-10-17.json",
+    "proof_sha256": "32854d95b34ae39fcb14032878b463ca1cdff686f189958f80aaf990780b49d4",
+    "container": "3fa48edd03e2f5be7a195d7726bbc504c519f8663adcf2c5d62f32595bd52829",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "passed": 34,
+    "skipped": 0,
+    "seconds": 5.391853761859238,
+    "memory_bytes": 2147483648,
+    "total_memory_swap_bytes": 4294967296,
+    "cpu": 1,
+    "network": "none",
+    "readonly_root": true,
+    "exit": 0,
+    "oom": false,
+    "max_rss_kib_linux": 40068,
+    "source_overlay": "Only pure fixture dependencies/test sources, never model or original account mounts",
+    "root_independent_review": "Full source diff/tests/runner read; actual retained container/isolation/mounts and actual helper/test/original22 pins checked"
+  },
+  "checks": [
+    "Original22 Store acceptance cases retained unchanged;12 new rate cases",
+    "Real child sees durable GET charge and actual UTC/monotonic slot before fake external call",
+    "Actual SIGKILL before commit leaves0slots; after commit leaves1slot; neither performs fake external call",
+    "Exactly180 rolling starts/minute, failed/uncertain charges retained,181st refused until exact60second boundary",
+    "Reopen after prior GET enforces60second monotonic quiet period; forward wall-clock adjustment cannot reset current-owner monotonic quota",
+    "Clock reversal/invalid clock/schema corruption/recent-slot deletion rejected; old database schema never silently migrated"
+  ],
+  "preserved_failure": "Exact priorb96 source genuinely DID NOT RAISE StorePause on restart regression; initial local synthetic-cap assertion failure remains preserved by agent",
+  "limits": [
+    "GET reservation is not acquisition authorization or evidence HTTP occurred",
+    "Unused private Store only; no coordinator, disk allocation, provider, model, original account or production changes",
+    "Actual process crashes tested; power loss and arbitrary hostile database rewriting not claimed",
+    "Disk budget reservation is not physical extent allocation; two-host same-extents spool admission remains required before acquisition"
+  ],
+  "diagram_impact": "NONE: existing unused private Store reservation boundary only"
+}

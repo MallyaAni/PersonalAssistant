@@ -1,0 +1,128 @@
+{
+  "base_source": "df60d1c98386eb80edf845ccfa5dc62ed83a02b6",
+  "finished_at": "2026-10-17T14:48:56.950474+00:00",
+  "green": {
+    "children_maxrss_kib_linux": 40068,
+    "detached_actual_synthetic_process_observations": [
+      {
+        "kind": "SYNTHETIC_FAKE_EXTERNAL_AFTER_COMMIT",
+        "reservation": {
+          "acquisition_authorized": false,
+          "attempt": "cc855bd01d84da8ed792d707918687a27d7f75266c3acdd66b6bb0f77c21bfd7",
+          "charged_get_attempts": 1,
+          "reserved_monotonic_ns": 221000000000,
+          "reserved_utc_us": 1792260121000000
+        },
+        "row": [
+          1792260121000000,
+          221000000000
+        ]
+      },
+      {
+        "boundary": "before_commit",
+        "child_exitcode": -9,
+        "durable_get_slots": 0,
+        "fake_external_occurred": false,
+        "kind": "SYNTHETIC_SIGKILL"
+      },
+      {
+        "boundary": "rate_reserved",
+        "child_exitcode": -9,
+        "durable_get_slots": 1,
+        "fake_external_occurred": false,
+        "kind": "SYNTHETIC_SIGKILL"
+      }
+    ],
+    "errors": 0,
+    "external_calls": "FAKE_ONLY",
+    "failures": 0,
+    "functions": 34,
+    "provider_calls": 0,
+    "scope": "SYNTHETIC_FIXTURES_ONLY_NO_HTTP_MODEL_ACCOUNT_OR_ORIGINAL_OUTPUT",
+    "self_maxrss_kib_linux": 40068,
+    "skips": 0,
+    "wall_seconds": 5.391853761859238
+  },
+  "log_sha256": {
+    "green-stderr.log": "43c0d9ba1d923f8f203313889991dc2b866d677c15789c78dfef5c446f3e6246",
+    "green-stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "red-stderr.log": "898b637fa0e74214a043068a46da72a4f88ea828b009ff163c263960bab94ce4",
+    "red-stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "manifest_sha256": "5de474a58eeef31e9aa3955278e219008b0657a303bbb491da946b0e256b7e45",
+  "numerical_shims": false,
+  "results": {
+    "green": {
+      "command": [
+        "/usr/local/bin/python",
+        "/fixture/green.py"
+      ],
+      "exit_code": 0
+    },
+    "red": {
+      "command": [
+        "/usr/local/bin/python",
+        "-m",
+        "unittest",
+        "backend.tests.test_historical_packet_rate.PacketRateTests.test_restart_requires_quiet_period_without_resetting_charge",
+        "-v"
+      ],
+      "exit_code": 1
+    }
+  },
+  "scope": "UNUSED_PRIVATE_RATE_STORE_SYNTHETIC_FIXTURES_NO_ACQUISITION_AUTHORIZATION",
+  "source_after": {
+    "green.py": "43a0af7817745999953e09f7f9ed8f7da3af9e9ec5e3921454cebd37d8af15c1",
+    "green/backend/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "green/backend/market/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "green/backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+    "green/backend/market/historical_packet_demand.py": "f4d91dd5804fe93b89201a209951230b0d1eb79e8ea2abdc4400b5f90fb13697",
+    "green/backend/market/historical_packet_parser.py": "d617eaceae212bf5dab16280727c5330867506b4b2b47e4b4dce787be01b4155",
+    "green/backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+    "green/backend/market/historical_packet_store.py": "5bfcc7855c66db877ef76e78c8138528c9bd4eb4f0bd357353eac7b08a02ccd5",
+    "green/backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+    "green/backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "green/backend/tests/test_historical_packet_rate.py": "e10c85ecb8148422ad4d1da74b48ac4bca67fd94427162a4b37932dacf40d627",
+    "green/backend/tests/test_historical_packet_store.py": "3556d1b866a4b48d3cad9508eee85b5e799ba8e5d7255ca48e7635747a1926aa",
+    "red/backend/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "red/backend/market/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "red/backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+    "red/backend/market/historical_packet_demand.py": "f4d91dd5804fe93b89201a209951230b0d1eb79e8ea2abdc4400b5f90fb13697",
+    "red/backend/market/historical_packet_parser.py": "d617eaceae212bf5dab16280727c5330867506b4b2b47e4b4dce787be01b4155",
+    "red/backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+    "red/backend/market/historical_packet_store.py": "b96b752f82ff7f07510029a2d4800429bcf261fd203a56ff61561590d7110bb4",
+    "red/backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+    "red/backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "red/backend/tests/test_historical_packet_rate.py": "e10c85ecb8148422ad4d1da74b48ac4bca67fd94427162a4b37932dacf40d627",
+    "red/backend/tests/test_historical_packet_store.py": "3556d1b866a4b48d3cad9508eee85b5e799ba8e5d7255ca48e7635747a1926aa",
+    "run.py": "aee690ed24870ce25e59ece710e7bb4a0101f1e31b2ff9df6531359e1bf86784"
+  },
+  "source_before": {
+    "green.py": "43a0af7817745999953e09f7f9ed8f7da3af9e9ec5e3921454cebd37d8af15c1",
+    "green/backend/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "green/backend/market/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "green/backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+    "green/backend/market/historical_packet_demand.py": "f4d91dd5804fe93b89201a209951230b0d1eb79e8ea2abdc4400b5f90fb13697",
+    "green/backend/market/historical_packet_parser.py": "d617eaceae212bf5dab16280727c5330867506b4b2b47e4b4dce787be01b4155",
+    "green/backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+    "green/backend/market/historical_packet_store.py": "5bfcc7855c66db877ef76e78c8138528c9bd4eb4f0bd357353eac7b08a02ccd5",
+    "green/backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+    "green/backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "green/backend/tests/test_historical_packet_rate.py": "e10c85ecb8148422ad4d1da74b48ac4bca67fd94427162a4b37932dacf40d627",
+    "green/backend/tests/test_historical_packet_store.py": "3556d1b866a4b48d3cad9508eee85b5e799ba8e5d7255ca48e7635747a1926aa",
+    "red/backend/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "red/backend/market/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "red/backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+    "red/backend/market/historical_packet_demand.py": "f4d91dd5804fe93b89201a209951230b0d1eb79e8ea2abdc4400b5f90fb13697",
+    "red/backend/market/historical_packet_parser.py": "d617eaceae212bf5dab16280727c5330867506b4b2b47e4b4dce787be01b4155",
+    "red/backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+    "red/backend/market/historical_packet_store.py": "b96b752f82ff7f07510029a2d4800429bcf261fd203a56ff61561590d7110bb4",
+    "red/backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+    "red/backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "red/backend/tests/test_historical_packet_rate.py": "e10c85ecb8148422ad4d1da74b48ac4bca67fd94427162a4b37932dacf40d627",
+    "red/backend/tests/test_historical_packet_store.py": "3556d1b866a4b48d3cad9508eee85b5e799ba8e5d7255ca48e7635747a1926aa",
+    "run.py": "aee690ed24870ce25e59ece710e7bb4a0101f1e31b2ff9df6531359e1bf86784"
+  },
+  "source_overlay_explicit": true,
+  "started_at": "2026-10-17T14:48:50.817814+00:00"
+}

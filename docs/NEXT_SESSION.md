@@ -1,5 +1,26 @@
 # Next session
 
+## 2026-10-17 — Durable pre-request rate slot integrated
+
+Rateecf30f6e integrated after ROOT read full diff/tests/actual runner, inspected
+retained3fa48edd/e0/networknone/readonly/1CPU2GiB RAM/total MemorySwap4GiB/
+exit0/OOMfalse and actual mounted byte pins. Store5bfcc785/teste10c85ec,
+original22tests3556d1b8 unchanged; native34distinct checks/0skip5.392s including
+actual multiprocess/SIGKILL. Original proof32854d95 copied unchanged beside
+research/historical-packet-rate-proof-2026-10-17.json. ROOT Ruff/format pass,
+no redundant native run. Real child observes SQLite committed slot before fake
+external call; crash before commit0slots/after commit1slot, no fake call in either.
+
+GET charge and internally sampled actual aware UTC+monotonic slot commit atomically.
+180/min rolling bound includes failed/uncertain attempts; after any prior GET,
+reopen requires60s monotonic quiet. Backwards clocks fail; forward UTC alone cannot
+reset same-owner quota. Old schema pauses without migration; recent slot deletion
+fails closed. Reservation still acquisition_authorized:false. No real HTTP/model/
+account operation, coordinator or physical disk allocation. Same-extents two-Spark
+spool and launch admission still required before GET; Mac metadata-only. Diagram
+impact NONE: existing unused Store reservation boundary. Connected cycle agent
+must adopt this Store revision for final composition, no old-database migration.
+
 ## 2026-10-17 — Exact frozen N2 historical serving binding candidate verified
 
 ROOT reproduced actual len(original)!=30 rejection of frozen N2's31-source map
