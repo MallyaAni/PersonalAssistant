@@ -9,11 +9,60 @@ from pathlib import Path
 
 import numpy as np
 
+from backend.agents.trading.desk import paper
 from backend.cli import verify_actual_policy_timing as ledger
-from backend.cli.market_live_model_history import prepare, save
+from backend.cli.market_live_model_history import prepare, save, verify_installed_parity
 from backend.market import calendar, intraday_sip
 from backend.market.live_model_history_projection import project, session
 from backend.market.store import MarketStore
+
+
+# Recompute frozen numerical and causal parity without overwriting the producer receipt.
+def independent_parity(market, panel, raw, reader, holding, original, folder):
+    folder.mkdir(mode=0o700, parents=True, exist_ok=False)
+    verify_installed_parity(market, panel, raw, reader, holding, folder)
+    path = folder / "installed-parity.json"
+    fresh = json.loads(path.read_bytes())
+    ledger.same(
+        {key: value for key, value in fresh.items() if key != "actual_verified_at"},
+        {key: value for key, value in original.items() if key != "actual_verified_at"},
+        "Independent numerical and causal parity",
+    )
+    return sha256(path.read_bytes()).hexdigest()
+
+
+# Conserve original identities and cumulative quantities across attempts and fills.
+def order_receipts(value, intents, totals):
+    for row in value["attempts"] + value["fills"]:
+        intent = intents.get(row["client_order_id"])
+        ledger.require(
+            intent is not None
+            and row["symbol"] == intent["symbol"]
+            and row["side"] == intent["side"],
+            "Execution receipt differs from original durable intent",
+        )
+    for fill in value["fills"]:
+        identity = fill["client_order_id"]
+        totals[identity] = totals.get(identity, 0) + fill["filled_qty"]
+        ledger.require(
+            0 <= totals[identity] <= intents[identity]["qty"],
+            "Cumulative simulated fills exceed original funded shares",
+        )
+    for kind in ("pending", "journal"):
+        rows = value["paper_state"][kind]
+        ledger.require(
+            len({row["client_order_id"] for row in rows}) == len(rows),
+            "Duplicate durable " + kind + " identity",
+        )
+        for row in rows:
+            intent = intents.get(row["client_order_id"])
+            ledger.require(
+                intent is not None
+                and row["symbol"] == intent["symbol"]
+                and row["side"] == intent["side"]
+                and row["qty"] == intent["qty"],
+                "Durable " + kind + " differs from original funded intent",
+            )
 
 
 # Match each nonzero execution to an original raw SIP opening, without daily proxies.
@@ -56,11 +105,12 @@ def verify(market, account_root, output):
     raw_completion = (root / "completion.json").read_bytes()
     completion = json.loads(raw_completion)
     captured = json.loads((market / "capture.json").read_bytes())
-    panel, raw, _, holding, _, _, _, _, identity = prepare(
+    panel, raw, reader, holding, _, _, _, _, identity = prepare(
         market, date.fromisoformat(captured["through"])
     )
     ledger.require(
-        completion["policy"] == holding["policy"]
+        completion["status"] == "COMPLETED_UNVERIFIED_CURRENT_MODEL_ACCOUNT"
+        and completion["policy"] == holding["policy"]
         and completion["cost_bps"] == 10
         and completion["real_orders"] is False
         and completion["base_models_fitted"] == 0,
@@ -88,6 +138,15 @@ def verify(market, account_root, output):
         and len(parity["scenarios"]) == 96
         and len(parity["causal_prefixes"]) == 3,
         "Installed-model numerical and causal-prefix evidence required",
+    )
+    parity_sha = independent_parity(
+        market,
+        panel,
+        raw,
+        reader,
+        holding,
+        parity,
+        output.parent / (output.stem + "-independent-parity"),
     )
     initial = json.loads(gzip.decompress((root / "initial.json.gz").read_bytes()))
     ledger.same(initial["broker"]["cash"], 100000, "New independent capital")
@@ -127,7 +186,19 @@ def verify(market, account_root, output):
         initial["broker"]["dividends"], dividends, "Initial zero-share entitlements"
     )
     intents = {row["client_order_id"]: row for row in initial["intents"]}
-    fill_count = 0
+    fill_count, all_fills, attempts = 0, 0, 0
+    missing_marks, unknown_claims = 0, 0
+    price_data = {
+        "names": panel.tickers,
+        "close": raw.daily_close,
+        "passive": {
+            "names": raw.passive.tickers,
+            "close": raw.passive.daily_close,
+        }
+        if raw.passive
+        else None,
+    }
+    totals = {}
     for record in completion["sessions"]:
         value = session(root, record)
         day = date.fromisoformat(value["session"])
@@ -148,6 +219,8 @@ def verify(market, account_root, output):
                 "Simulated fill differs from original durable intent",
             )
             fill_count += physical_fill(market, fill, completion["cost_bps"])
+        all_fills += len(value["fills"])
+        attempts += len(value["attempts"])
         cash = ledger.fold_fills(value["fills"], cash, held, basis)
         ledger.fold_actions(
             events, closing, held, basis, dividends, records, seen, completion["broker"]
@@ -162,11 +235,24 @@ def verify(market, account_root, output):
         ledger.same(actual["dividends"], dividends, value["session"] + " dividends")
         for name, expected in records.items():
             ledger.same(actual.get(name, []), expected, "Economic entitlement " + name)
+        missing, unknown = ledger.check_valuation(
+            {"session": value["session"], **value["valuation"]},
+            price_data,
+            int(np.searchsorted(panel.dates, np.datetime64(day))),
+            ledger.aware(actual["observed_at"]),
+            cash,
+            held,
+            dividends,
+            records,
+        )
+        missing_marks += missing
+        unknown_claims += unknown
         for intent in value["new_intents"]:
             ledger.require(
                 intent["client_order_id"] not in intents, "Duplicate new account intent"
             )
             intents[intent["client_order_id"]] = intent
+        order_receipts(value, intents, totals)
         if value["nightly"]["status"] == "planned":
             ledger.same(
                 value["nightly"]["persisted_policy"],
@@ -179,13 +265,32 @@ def verify(market, account_root, output):
             "Historical completed close clock",
         )
     ledger.same(completion["broker"], value["broker"], "Ending account ledger")
+    ledger.same(
+        completion["paper_state"], value["paper_state"], "Ending durable account state"
+    )
+    state_path = paper.state_path(root / "state")
+    ledger.same(
+        json.loads(state_path.read_bytes()),
+        value["paper_state"],
+        "Physical final paper state",
+    )
     ledger.same(completion["intents"], len(intents), "Original intent count")
+    ledger.same(completion["fills"], all_fills, "Original complete fill receipt count")
     result = {
         "status": "VERIFIED_CURRENT_MODEL_HISTORICAL_ACCOUNT",
         "account_sha256": sha256(raw_completion).hexdigest(),
         "sessions": len(completion["sessions"]),
         "filled_receipts": fill_count,
         "intents": len(intents),
+        "execution_attempts": attempts,
+        "all_execution_receipts": all_fills,
+        "zero_execution_receipts": all_fills - fill_count,
+        "durable_pending_and_journal": True,
+        "missing_held_mark_sessions": missing_marks,
+        "unpriced_entitlement_sessions": unknown_claims,
+        "independent_raw_valuation_and_missing_states": True,
+        "independently_recomputed_parity_sha256": parity_sha,
+        "final_paper_state_sha256": sha256(state_path.read_bytes()).hexdigest(),
         "raw_prices_and_fees": True,
         "independent_cash_shares_basis_entitlements": True,
         "current_model_parity_sha256": sha256(

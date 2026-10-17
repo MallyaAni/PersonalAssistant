@@ -5,6 +5,7 @@ from hashlib import sha256
 from pathlib import Path
 
 from backend.market import learned_live_holding
+from backend.market import live_model_history_binding as binding
 from backend.market import live_model_history_projection as projection
 from backend.market.grade_led_policy import POLICY
 
@@ -33,16 +34,28 @@ def _read_version(root, ticker, manifest):
         raise ValueError("Current-model history projection bytes differ")
     value = json.loads(raw)
     provenance = value["provenance"]
-    if provenance["source_sha256"] != learned_live_holding.source_identity():
-        raise ValueError("Historical sizing no longer matches live trading source")
-    for path, key in (
-        ("desk/learned-holding/config.json", "holding_config_sha256"),
-        ("desk/learned-timing/config.json", "timing_config_sha256"),
-    ):
-        if sha256((root / path).read_bytes()).hexdigest() != digest(provenance[key]):
-            raise ValueError(
-                "Historical sizing no longer matches installed live configuration"
-            )
+    binding_sha = manifest.get("serving_binding_sha256")
+    if binding_sha is not None:
+        raw_binding = (folder / version / "serving-binding.json").read_bytes()
+        binding.require_hash(raw_binding, digest(binding_sha))
+        if provenance.get("serving_binding_sha256") != binding_sha:
+            raise ValueError("Historical payload serving binding differs")
+        binding.validate(root, json.loads(raw_binding), provenance)
+    else:
+        if "serving_binding_sha256" in provenance:
+            raise ValueError("Historical payload serving binding is missing")
+        if provenance["source_sha256"] != learned_live_holding.source_identity():
+            raise ValueError("Historical sizing no longer matches live trading source")
+        for path, key in (
+            ("desk/learned-holding/config.json", "holding_config_sha256"),
+            ("desk/learned-timing/config.json", "timing_config_sha256"),
+        ):
+            if sha256((root / path).read_bytes()).hexdigest() != digest(
+                provenance[key]
+            ):
+                raise ValueError(
+                    "Historical sizing no longer matches installed live configuration"
+                )
     if (
         manifest["schema"] != projection.SCHEMA
         or value["schema"] != projection.SCHEMA

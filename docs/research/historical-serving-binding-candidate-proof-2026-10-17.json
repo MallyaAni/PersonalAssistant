@@ -1,0 +1,58 @@
+{
+  "status": "VERIFIED_TARGETED_CANDIDATE_NOT_DEPLOYED",
+  "starting_source": "57bd010bb78b416ce00130789f038aacf5fc3bfd",
+  "branch": "codex/historical-provenance-20261017",
+  "scope": "Authenticate original retrospective provenance separately from exact reviewed serving source; strengthen completed-account audit and reject bounded publication",
+  "original_full_account": {
+    "source": "27471b9c61b958f759e9f48b80acaf60cdf75f2e",
+    "container": "1e8f440a3b5b75dcabd299f5eaba58c7929fb6f96bc822fdb46b641ecf3e598d",
+    "root": "/home/animallya96/scratch/live-model-history-full-20261013-v1/output/account",
+    "frozen_market": "/home/animallya96/scratch/live-model-history-20261013-v4/market",
+    "mutated": false,
+    "restarted": false,
+    "replayed": false,
+    "full_audit_performed": false
+  },
+  "validation": {
+    "passed": 30,
+    "skipped": 0,
+    "seconds": 9.78,
+    "runtime": "/home/animallya96/research-venv/bin/python",
+    "private_root": "/home/animallya96/scratch/historical-provenance-tests-20261017-v1",
+    "log": "validation-v5.log",
+    "log_sha256": "725b5909e605ca4d07ac7fabcb66eb2caf438d464e03bf0f6e6513fd0f652366",
+    "modules": [
+      "backend/tests/test_live_model_history.py",
+      "backend/tests/test_live_model_history_binding.py",
+      "backend/tests/test_live_model_history_reader.py",
+      "backend/tests/test_live_model_history_publication.py",
+      "backend/tests/test_live_model_history_projection.py",
+      "backend/tests/test_live_model_history_verification.py"
+    ],
+    "lint": "Ruff E,F,I passed for six changed Python files in existing complete application test image; Python compile and git diff --check passed",
+    "failed_prior_harnesses": [
+      "Initial test staging copied production backend, which lacks pending historical projection; corrected with exact isolated candidate backend",
+      "New verifier test import required repository prompts; initial collection failed missing prompts/trading/desk_brief.md; corrected matching prompts without changing assertions"
+    ]
+  },
+  "validated_files_sha256": {
+    "backend/market/live_model_history_binding.py": "49b446fc9b3fc7faf5d36fc9da1fcb8fe62fe69ca1e56c0a038238f9c7cdab73",
+    "backend/market/live_model_history_reader.py": "e29e90ae798823d76e1f251dfcec74101b4a269a6172e50657fcaf7f06601f2d",
+    "backend/cli/market_publish_live_history.py": "8aa8cefba144bf87f4cfca1705f2dcec01be99ef831f5ae9b786fd6ab7564ea6",
+    "backend/cli/verify_live_model_history.py": "8c7d699921a05c766156e66aecef275604d0762533c76c752ff2b3c7b5a75b67",
+    "backend/tests/test_live_model_history_binding.py": "a2ad6177b47105f8da3347651ab1343f0d969b8de528c986b0a5a094a38982d4",
+    "backend/tests/test_live_model_history_verification.py": "3ebd1f4aee1eaf9f78db5e5fd9a400199f3efc11d9598a3409b1a70cf7455d72"
+  },
+  "limits": [
+    "A later31-source serving release requires its own exact trusted review receipt and catalog entry; no wildcard source admission",
+    "Full completed account ledger/model/causal/raw-SIP/valuation/durable-state audit remains UNVERIFIED until original producer completes",
+    "No canonical deployment, production publication or actual compiled-browser historical quantity acceptance performed",
+    "Fresh ordinary nightly and learned intraday/fill/UI acceptance remain separate",
+    "New audit helpers have targeted corruption checks; new whole-account acceptance path has not yet run on completed full account"
+  ],
+  "production_changes": false,
+  "model_service_changes": false,
+  "real_orders": false,
+  "paid_data": false,
+  "new_fits_or_tuning": false
+}
