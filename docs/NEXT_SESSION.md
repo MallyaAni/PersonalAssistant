@@ -1,5 +1,39 @@
 # Next session
 
+## 2026-10-17 — Independent historical auditor hardening; timing acceptance open
+
+Code checkpoint7e88e83c hardens only the private historical verifier/projection/
+publisher cohort checks. Three corrupt-fixture reproductions FAILED to be
+rejected by the original verifier; none proves an actual original-run violation.
+The correction authenticates the full frozen overlay/exact94-stock cohort,
+conserves original funded versus actually submitted shares, request/outcome
+clocks and durable transitions, raw observed/fill price evidence, and independent
+reservation/batch cash. Actual private ReplayBroker partial submission and
+paper reconciliation are included. Original terminal outcomes may legitimately
+remain pending until later saved reconciliation; no history is fabricated.
+
+VERIFIED bounded candidate:94 tests/0skip9.33s in immutable image136ebb46,
+Ruff PASS and33 diagram synchronization checks PASS. Local nine source/test
+files match the accepted v4 archivec3a63afb. All31 guarded runtime sources are
+byte-identical to main705/N2. Exact logs, preserved red cases and limits:
+research/historical-audit-contract-hardening-proof-2026-10-17.json.
+
+No original full-account data was heavily read, audited, replayed or modified;
+no live state/config/models/orders/deployment/publication changed. Full saved
+nightly raw-model inference and installed15m timing parity remain UNVERIFIED.
+The source-only counterexamplecf289734 shows the historical completed-close
+adapter can differ from installed forward quote transport under a declared
+synthetic distribution; it does not establish actual-run divergence counts.
+The old generic VERIFIED account status remains insufficient for full-contract
+publication. A separate fail-closed status/publication barrier is proposed to
+root and must be reviewed before editing. Do not publish the bounded stage or
+claim these receipt checks prove full model/timing acceptance. The exact
+requirement-to-current-code mapping is in the serving-binding acceptance doc.
+
+Root owns active canonical N2 and the original ONE full retrospective. Never
+duplicate, alter or restart either. Future heavy full audit waits for genuine
+COMPLETE and may still fail the independent model/timing contract.
+
 ## 2026-10-17 — Isolated historical/numeric candidate passed controlled acceptance
 
 Candidate code checkpoint93794a46651c6a867aea92391584f7b88cac4e36 combines the
