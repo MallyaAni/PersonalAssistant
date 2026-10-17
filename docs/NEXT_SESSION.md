@@ -1,5 +1,35 @@
 # Next session
 
+## 2026-10-17 — Private current nightly lifecycle and memory commitments integrated
+
+Feature796a7d88 integrated as4e6bb4ff; targeted1498c830 integrated ase6971960.
+ROOT reviewed full1171line adapter/tests/runner, then complete integrity diff,
+actual red/green Docker mounts/resources/native31/sourcepins and exact proofs.
+Read research/historical-conditional-nightly-proof-2026-10-17.json and
+research/historical-nightly-context-integrity-proof-2026-10-17.json.
+Final adapter29938594/testac1f6a98. Original5064 native lifecycle proof is
+20unchanged passes plus1 corrected fixture pass, zero skips, NOT a repeated
+whole21 final run. Preserve v1 nonexistent seed_equity fixture failure.
+
+New memory boundary reproduced both real validation omissions on frozen5064:
+owned passive daily_close mutation changes native inherited mark12→13; separate
+reader._market copy mutation also escaped admission. Final299 binds that market
+copy, all4passive arrays and ticker/provenance/absence metadata. Actual1be04 red
+has2DIDNOTRAISE/pytest1/0skip0.27s; actualc968 green has10newpass/21old deselected/
+0skip0.27s. Both exactf612/UID1000/none/RO/1CPU/2GiB=swap/tmp64MiB/soleoutRW;
+1694 sourcepaths and native31beforeafter unchanged. Raising guards forbid
+genuine inputs/artifact restore/inference. No model or account mounts.
+
+Shared native paper_trade/grade policy/private broker are reused with exact
+raw native writes/acks/refusals and interrupted reservation PAUSE/no replay.
+Optional currentCycle predecessor is source-pinned but unexercised; no standalone
+packet coordinator/corporate-action/full-chain delivery claim. Genuine Feb28
+prior-close footprint is being prepared only; all2961/96head-cache memory must
+be included despite a single planned date. Full capacity remains separate.
+No full corrected launch, provider request, deployed source/model/config/account
+change or publication. All genuine model/funded quantity acceptance UNVERIFIED.
+Diagram impact NONE: private unused metadata/input adapter around existing paths.
+
 ## 2026-10-17 — Original run complete; exact producer command now admitted
 
 Original1e8f440a/source27471/image136ebb exited0/OOMfalse at16:42:28.552275067Z.
