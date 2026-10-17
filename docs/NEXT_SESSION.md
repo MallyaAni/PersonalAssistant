@@ -1,5 +1,50 @@
 # Next session
 
+## 2026-10-17 — Live approval fixed; independent parity release blocked by inference
+
+Human asked why work was waiting. Live recovery is now independent of the full
+historical run. Approval repair is VERIFIED and remains admitted on actual HOST
+AND CONTAINER; proof checkpoint0d69a4bc and source36c90f76 below. Do not repeat it.
+
+FAILED canonical parity release candidate a2378e9565e6a557fbc3782ac1a5536bae961a75,
+private scratch/trading-parity-release-20261017-v2, finished07:49:22Z. Exact
+existing checker755ae2ff from6a485914; only checker/test/changelog differ from
+production-based36c90f76.29focused checks passed/0skip2.90s. Canonical unit gate:
+10676pass/93skip/6xfail/439warnings489.86s. Routing gate FAILED20pass/26fail/
+54errors5.41s: real inference connection refused. No skip-gate, image publication,
+checkout move or application restart occurred. v1 launcher failed before deploy
+for wrong Python import context; preserve it and v2, including every failed gate.
+
+Independent07:52:01Z capture verifies host still36c90f76, backendef7428ba and
+gateway/bundle unchanged,310original files byte-identical and HOST/CONTAINER
+approval PASS. ds4-head changed concurrently and was initializing its two-node
+engine; this task made no model-service changes.127.0.0.1:8000/v1/models refused
+connections; second Spark172.16.8.5 SSH failed No route to host after an earlier
+timeout. Do not infer a power-off cause or change model services to force this
+release. Exact proof research/trading-parity-proof-2026-10-17.json; private proof
+88e123ffd27f129809d7abe40da0e57bc4acf599ec96a80ba124324fc42e1a7e.
+
+Next: when actual inference is available, run canonical scripts/deploy.sh on
+the isolated production-based parity candidate, preserving the failed v2 root
+and using a fresh private release root. Never deploy pending historical main.
+Do not duplicate an active release or bypass routing. Then independently verify
+the actual backend checker against original Oct13 saved inputs, corrupt-target
+and missing-receipt rejection, all source/config/model/history identities and
+HOST/CONTAINER admission. Prepared independent verifier and snapshot harness:
+scratch/verify_trading_parity_release_20261017.py and
+scratch/verify_grade_led_parity_snapshot_20261017.py; adjust only fresh root.
+Original Oct13 failed parity/record stay unchanged; no actual-day replay/orders.
+
+ONE full1e8f440a/source27471 remains RUNNING untouched:1835sessions through
+2026-06-17,2801fills/3747intents, observed progress updated07:50:59Z. Historical
+delivery and fresh ordinary/learned intraday/fill/UI acceptance remain UNVERIFIED.
+After COMPLETE, audit using its original frozen config/source capture. The
+strict historical reader binds source_identity and config bytes: approval-only
+live config is now9bb6764b, while original full-run config remains1a14980a.
+Future publication needs an explicit authenticated archived-source/config chain
+and current serving binding; never relabel/rewrite/replay the original run or
+weaken those checks. Keep heartbeat ACTIVE and quiet on unchanged blocked jobs.
+
 ## 2026-10-17 — Live exact-source approval repaired independently; parity release next
 
 Human challenged waiting for the historical run. Recover live acceptance

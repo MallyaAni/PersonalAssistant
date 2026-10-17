@@ -7,8 +7,12 @@ proposal and original account snapshot. It no longer compares unequal learned
 targets with the incumbent equal-weight rule. Missing or inconsistent receipts,
 corrupted targets and independent grade mismatches still fail. This checks saved
 receipt consistency; it does not run new numerical inference or rewrite original
-failed records. The exact correction from6a485914 is released independently of
-the pending full retrospective. Source approval was recovered separately first.
+failed records. The exact correction from6a485914 was prepared for release
+independently of the pending full retrospective. Source approval was recovered
+separately first. Canonical candidate a2378e95 passed10676unit checks, but the
+real routing gate failed because inference was unreachable; the parity checker
+is NOT deployed. Exact failure and preservation proof:
+research/trading-parity-proof-2026-10-17.json.
 
 ## 2026-10-14 — Current opportunity ranking and trader-like chart judgment
 

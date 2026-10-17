@@ -1,0 +1,33 @@
+{
+  "status": "FAILED_ROUTING_RUNTIME_UNAVAILABLE_PARITY_UNDEPLOYED",
+  "candidate_source": "a2378e9565e6a557fbc3782ac1a5536bae961a75",
+  "production_host_source": "36c90f760e3d01766d46219c8e1b3d03314459e6",
+  "production_backend_source": "ef7428baa1961d79ad1f5bd9dac0122b54ce0fea",
+  "checker_sha256": "755ae2ff29d832a75136a2e71d80b0676f5b79f7a9eb490a1178e2ce56652465",
+  "scope": "Release the existing saved-learned-target parity correction independently of the historical simulation",
+  "private_root": "/home/animallya96/scratch/trading-parity-release-20261017-v2",
+  "canonical": {"command": "bash scripts/deploy.sh", "gate_workers": 1, "exit_code": 1, "finished_at": "2026-10-17T07:49:22.210639+00:00", "checkout_moved": false, "images_published": false, "application_containers_restarted": false, "skip_gate": false},
+  "focused_checks": {"passed": 29, "skipped": 0, "seconds": 2.90},
+  "unit_gate": {"status": "PASS", "passed": 10676, "skipped": 93, "xfailed": 6, "warnings": 439, "seconds": 489.86},
+  "routing_gate": {"status": "FAILED", "passed": 20, "failed": 26, "errors": 54, "seconds": 5.41, "reason": "Connection refused to real inference runtime"},
+  "independent_observation": {"at": "2026-10-17T07:52:01.509697+00:00", "original_files_unchanged": 310, "source_admission_host": "PASS", "source_admission_container": "PASS", "backend_gateway_full_run_containers_unchanged": true, "concurrent_changed_container": "/ds4-head", "inference_endpoint": "127.0.0.1:8000/v1/models: connection refused", "second_spark": "172.16.8.5 SSH: No route to host; earlier attempt timed out", "power_state": "UNVERIFIED", "model_services_modified_by_this_task": false},
+  "preservation": {"original_oct13_failed_parity_unchanged": true, "original_oct13_record_sha256": "37d7541f5ce12a080a4c0538939b95f99367fc9b5318e21eba03d96963927c32", "paper_state_sha256": "28d3e8ed8c09b1611c57ee0133ae620e430b4b57973b9d28634030d8b80d16fd", "orders_submitted": 0, "ordinary_sessions_replayed": 0, "frozen_history_configuration_unchanged": true},
+  "full_history_observation": {"container": "1e8f440a3b5b75dcabd299f5eaba58c7929fb6f96bc822fdb46b641ecf3e598d", "source": "27471b9c61b958f759e9f48b80acaf60cdf75f2e", "status": "RUNNING_UNTOUCHED", "session": "2026-06-17", "through": "2026-10-12", "sessions_completed": 1835, "fills": 2801, "intents": 3747, "updated_at": "2026-10-17T07:50:59.456573+00:00"},
+  "evidence_sha256": {
+    "failure-verification.json": "88e123ffd27f129809d7abe40da0e57bc4acf599ec96a80ba124324fc42e1a7e",
+    "canonical-deploy.log": "dd6800539c8628ff9560261099bc2fc7178bdc5e7f0b96e710a2d57675362ae0",
+    "canonical-result.json": "48cac9467d341a8894b22414ddcb7575a6f450fa7a931a911f4177ad3a6afe08",
+    "claim.json": "21dae21a033dae8fdf337141970efb1a49a6318b7b0ff894a37fa206da62faf0",
+    "containers-before.json": "9136bbcc2612d98e0715aae979c5e2d9a57ccdfa61d749781637aa6a5fd57fc8",
+    "failure-containers-after.json": "edcab36f4fd0a462601e1527055fe8acfb11cdc4634b1ce7006eb66431114ae4",
+    "failure-history-progress.json": "7662e977153d3845cc127846c23772c45360a52200440111535224e50d31d68d",
+    "failure-inference-tail.log": "d5ca457c765966b579fe57a998442fdc5281bfedbf18047e995050edf06b968c",
+    "preserved-before.json": "5a8e228b15222a4c6208097edc789ee0911bc462d56d504f386b34cf5ef1cdb3",
+    "failure-preserved-after.json": "5a8e228b15222a4c6208097edc789ee0911bc462d56d504f386b34cf5ef1cdb3"
+  },
+  "failed_harnesses_preserved": ["Initial focused-test mountpoint absent beneath read-only backend; corrected mount under /tmp passed unchanged assertions", "v1 launcher used wrong Python/import context and failed before deployment"],
+  "semantic_limits": ["Checker consistency is not new model inference or investment-quality proof", "Parity correction is NOT deployed", "Source approval repair remains independently verified", "Fresh ordinary acceptance and learned intraday/fill/UI reconciliation remain UNVERIFIED", "Historical quantity delivery remains UNVERIFIED", "Missing actual days remain missing"],
+  "next": "After actual inference is reachable, retry canonical isolated parity release in a fresh root, then independently verify the actual image and preserved original snapshot; never bypass gates or alter models to force delivery",
+  "heartbeat": "ACTIVE",
+  "diagram_impact": "NONE: existing checker correction and operational failure observation"
+}
