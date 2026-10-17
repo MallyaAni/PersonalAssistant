@@ -1,0 +1,81 @@
+{
+  "container_id": "aa4ef14030585bdc5f312aa247b1e3e76ce92cfcb80ea30acc5f531fbaad93f2",
+  "context_proof_sha256": "8c712d0f376d09d19d39ff84b42bfe840d8daef7afb8618a823d85295e967217",
+  "exit_code": 0,
+  "funded_holding_allocation_verified": false,
+  "helper_sha256": "2108c2a111c7587558e18f0e608dc982a891d40c7f2cc72de3649f3a86c55240",
+  "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+  "inference_rerun": false,
+  "memory_bytes": 2147483648,
+  "mounts": [
+    {
+      "Destination": "/out",
+      "RW": true,
+      "Source": "/home/animallya96/scratch/historical-timing-genuine-feature-20261017-v1/out",
+      "Type": "bind"
+    },
+    {
+      "Destination": "/market",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/live-model-history-20261013-v4/market",
+      "Type": "bind"
+    },
+    {
+      "Destination": "/observation/close.json",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/learned-nightly-first-ordinary-failure-20261012/close.json",
+      "Type": "bind"
+    },
+    {
+      "Destination": "/observation/close.npz",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/learned-nightly-first-ordinary-failure-20261012/close.npz",
+      "Type": "bind"
+    },
+    {
+      "Destination": "/packet/verification.json",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/historical-timing-packet-pilot-20261017-v1/verification.json",
+      "Type": "bind"
+    },
+    {
+      "Destination": "/packet/historical_timing_packet.py",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/historical-timing-packet-pilot-20261017-v1/historical_timing_packet.py",
+      "Type": "bind"
+    },
+    {
+      "Destination": "/packet/observations.json",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/historical-timing-packet-pilot-20261017-v1/capture/observations.json",
+      "Type": "bind"
+    },
+    {
+      "Destination": "/old",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/history-timing-real-artifact-20261017-v1/packet",
+      "Type": "bind"
+    },
+    {
+      "Destination": "/prior-proof.json",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/history-timing-real-artifact-20261017-v3/out/proof.json",
+      "Type": "bind"
+    },
+    {
+      "Destination": "/infer.py",
+      "RW": false,
+      "Source": "/home/animallya96/scratch/historical-timing-genuine-feature-20261017-v1/infer.py",
+      "Type": "bind"
+    }
+  ],
+  "nano_cpus": 1000000000,
+  "native_proof_sha256": "6176e4e4b6a4f98fad7d0ad59f68bd88989d249cf61bd24a1437f612cc442378",
+  "network": "none",
+  "observed_at": "2026-10-17T12:56:17.773692+00:00",
+  "oom_killed": false,
+  "prior_source_binding_proof_sha256": "dd2bc192d0a2037f365bb8d4441d1b574e1f0fc4fb0d92aac590e774e7cfa6fa",
+  "readonly_root": true,
+  "sender_or_fill_verified": false,
+  "status": "VERIFIED_COMPLETED_NATIVE_PROOF_ACTUAL_CONTAINER_AND_FULL_PRIOR_DATE_BINDING"
+}

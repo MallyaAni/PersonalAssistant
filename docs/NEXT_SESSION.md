@@ -1,5 +1,45 @@
 # Next session
 
+## 2026-10-17 — Genuine historical feature and native timing boundary verified
+
+Separate private native proof6176e4e4 completed12:50:50Z in ACTUAL N2imagee0a54c1f,
+NumPy2.5.3/sklearn1.9.1, networknone/read-only/1CPU/2GiB. All96-symbol prior daily/
+grade context spans1046 sessions2015-01-02–2019-02-28; ONLY AAPL has a genuine
+completed first15-minute raw prefix. No forming OHLCV or same-day daily row entered
+features; both native poison checks rejected. Final archived inputs do not prove
+as-published historical causality, and assumed2019 availability remains distinct
+from actual2026 model publication/computation. Frozen contract033934aa unchanged.
+
+Native mean8.493257337249815e-05/second2.142757693945896e-05, residual16491 and
+scale0.004628213845258156 match independent64-tree/head arithmetic. Shared quote
+transport/utility match; verdict WAIT/send:null on the explicit synthetic100k/
+zero-held/BUY1 intent. This is NOT a holding-policy-funded allocation or a fill.
+One native call,0.03855s measured inference/4.60475s total/RSS258236KiB. No rerun
+for documentation; no sender, account replay, GET or production/model change.
+
+Metadata-only context proof8c712d0f authenticates original bank.json/bank.npz and
+expands ONLY the bounded dates ZIP member. Its entire1046-date prior prefix matches
+the original close archive and native feature identity, including2015-01-02 start.
+No holding forecast/predictor arrays loaded. ROOT actual-runtime proofd0cb78dd
+independently binds retained containeraa4ef140/imagee0, exit0/OOMfalse, resources
+and output-only writable mount, exact helper2108c2a1 and original native/context
+proof bytes. Earlier22-file source/artifact live bindingdd2bc192 remains original.
+Private root: scratch/historical-timing-genuine-feature-20261017-v1. Exact copies:
+research/historical-timing-genuine-feature-proof-2026-10-17.json,
+research/historical-timing-genuine-context-proof-2026-10-17.json,
+research/historical-timing-genuine-runtime-proof-2026-10-17.json.
+
+Next atomic phase continues in isolated correction tree: NEW composed resolver
+module/test, exact ReplayBroker and existing sealed AAPL-only pilot packets. Whole
+batch authentication precedes mutation; first conservative post-arrival touch,
+one cash budget excluding nondue reservations, no samebatch sale-funded buys,
+original native fee/basis/partial arithmetic, explicit expiry and fresh all-held
+marks before account reads. Pilot-only is not multi-symbol/full-run acceptance.
+Independent nightly numeric audit is separate; original1e8f440a/source27471 stays
+untouched, publisher closed, no corrected full launch or further provider GET yet.
+Fresh ordinary and learned intraday acceptance remain pending natural sessions.
+Heartbeat ACTIVE/quiet unchanged. Diagram impact NONE: evidence only.
+
 ## 2026-10-17 — Authorized correction's source-bound packet primitive integrated
 
 Atomic agente9c0c121 integrated ase76500f2: only four NEW files, all preexisting

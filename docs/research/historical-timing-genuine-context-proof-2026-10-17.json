@@ -1,0 +1,28 @@
+{
+  "bank_date_member": {
+    "compressed_bytes": 4592,
+    "expanded_bytes": 23752
+  },
+  "bank_first": "2015-01-02",
+  "close_date_member": {
+    "compressed_bytes": 4607,
+    "expanded_bytes": 23816
+  },
+  "close_first": "2015-01-02",
+  "dates_only": true,
+  "forecast_or_model_arrays_read": false,
+  "native_prior_first": "2015-01-02",
+  "native_proof_rerun": false,
+  "native_proof_sha256": "6176e4e4b6a4f98fad7d0ad59f68bd88989d249cf61bd24a1437f612cc442378",
+  "predictor_restore_or_inference": false,
+  "prior_dates_sha256": "08a64bca16d264eb2ecd73f630a2ea2b299c7d8f3ad471f8b69964ec4fc75df8",
+  "prior_last": "2019-02-28",
+  "prior_sessions": 1046,
+  "source_files_sha256": {
+    "/home/animallya96/scratch/learned-nightly-first-ordinary-failure-20261012/close.json": "97a3a9893da942211ccc584ea664b377d4826e1710ee0b36e3b0d0838862601c",
+    "/home/animallya96/scratch/learned-nightly-first-ordinary-failure-20261012/close.npz": "3598ab539d37c48c58bfe823d607377243731aa1db3d650a92cb7f1a9a525d79",
+    "/home/animallya96/scratch/live-model-history-20261013-v4/market/desk/learned-holding/risk/bank.json": "79b33d54253001ba0f907ae0b41f49c81ae436800e43e05b75cd5f58bb653cfe",
+    "/home/animallya96/scratch/live-model-history-20261013-v4/market/desk/learned-holding/risk/bank.npz": "fcb0f04c847a10a2842d26418b872bb1fc758a1d2752727eda72a25c8f122f7a"
+  },
+  "status": "VERIFIED_ORIGINAL_BANK_DATE_START_AND_FULL_PRIOR_PREFIX_BINDING_ONLY"
+}
