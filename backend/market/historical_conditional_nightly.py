@@ -151,7 +151,7 @@ def sources():
 def action_primitives(value):
     if isinstance(value, Mapping):
         admitted.require(
-            all(type(key) is str for key in value),
+            all(type(key) in (str, np.str_) for key in value),
             "Action metadata requires string keys",
         )
         return {key: action_primitives(item) for key, item in value.items()}

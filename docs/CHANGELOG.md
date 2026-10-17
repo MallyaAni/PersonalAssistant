@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-10-17 — Admit native NumPy string keys without changing their meaning
+
+The private nightly action-metadata guard now accepts exact `np.str_` keys as
+well as ordinary strings. Native risk-bank restoration preserves this string
+type through panel/action construction; it was incorrectly rejected by the
+earlier exact-string check. Keys retain their original objects and canonical
+hashes; bytes, numeric/boolean and arbitrary-object keys remain rejected.
+
+The genuine v4 first failure is preserved after two head calls and before any
+birth/close. Three native-action fixture failures reproduced it; the corrected
+helper passed95 retained/native synthetic checks,0skip,3.31s in exact f612 with
+networknone/read-only/UID1000/1CPU/2GiB resources. No genuine model/data inputs
+were mounted for these checks. A fresh genuine package remains preparation only;
+funded-plan, ordinary coordinator, timing parity and publication are not claimed.
+Read research/historical-conditional-nightly-native-string-proof-2026-10-17.json.
+
 ## 2026-10-17 — Preserve pre-inception events at the private prior close
 
 The private corrected-account adapter now records February28 declarations before

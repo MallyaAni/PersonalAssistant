@@ -1,0 +1,67 @@
+{
+  "schema": "conditional-nightly-native-string-proof/1",
+  "status": "VERIFIED_NATIVE_STRING_METADATA_AND_SYNTHETIC_FIXTURES_ONLY",
+  "starting_head": "1f41b31cb2c6d76837c39bcf057d3d168aa764f4",
+  "branch": "codex/conditional-nightly-action-metadata-20261017",
+  "source_sha256": {
+    "backend/market/historical_conditional_nightly.py": "4d2172d179068228f054ce1c4c5d8271288eeaaa45f0f7c501a3ab71768a30ee",
+    "backend/tests/test_historical_conditional_nightly.py": "8e73143fcf66f615346db2fe1d9ea6658fcc8607defc5f15bd5ba15fac064110"
+  },
+  "change": "Only key predicate now accepts exact str or np.str_; retains the original key object and canonical packet hash, without stringifying keys, accepting numeric scalars or changing financial logic.",
+  "source_lineage": "holding_risk_bank.load_bank uses tuple(arrays['symbols']); panel builder retains native dictionary keys; reviewed_economics and native _actions preserve np.str_ symbol keys. The prior exact-str predicate rejected this legitimate JSON-compatible native type.",
+  "preserved_genuine_v4_failure": {
+    "root": "/home/animallya96/scratch/conditional-nightly-genuine-20261017-v4",
+    "container_id": "1ef930ae892c39b91bd64c9cb00965d4a71bcf9fba20cabf9e3b425c8518d013",
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "helper_sha256": "1b7bdb8ca2314661127eb30a9acf35d62d11fbd611b3f48299df082917b5a5e0",
+    "failure_sha256": "9d2f297b3cbeba754dd383bacccb0a8e0de23a787cafc083d4847e5077de8f4f",
+    "runtime_proof_sha256": "cf7f3136ff63e4f8ea45093fc84a1d1f4ac8c43e8659aafaa86a780f4de6aa90",
+    "log_sha256": "faea69b884833138652d73014f150fdb8eedbe991a5e7a7413fa42ee160c9549",
+    "boundary": "Action metadata requires string keys during context restoration after exactly2 head calls; birth0/close0/no account/CAS",
+    "head_feature_shapes": [[1, 96, 13], [2961, 96, 13]],
+    "valid_opportunities": [93, 206595],
+    "peak_rss_kib": 399508,
+    "source1692_and_input326_before_after": "UNCHANGED",
+    "retry": "NOT_RETRIED; all earlier v1/v2 genuine failures and inert v3 retained",
+    "precreation_readiness_failure": "Separate initial wrapper rejection of Docker absent-object stdout[] preserved; exact []+exit1+named stderr subsequently admitted before the single genuine v4 start"
+  },
+  "validation": {
+    "root": "/home/animallya96/scratch/nightly-native-string-preparation-20261017-v1",
+    "controller_sha256": "44effdde981c863fb2489380d5d2dba5b56fd66e6be52189c85434c4fda20610",
+    "runner_sha256": "b4f65436f519a1796f7e8bdf917a4ee95a84190f90a86bfa2a55373c343f2784",
+    "preparation_sha256": "f81574a270a33df08f2f06a0d72c7a0045248939d26ab91a5d37c06996802900",
+    "red": {
+      "container_id": "be8b11af68edefc87e6c68236911b9303eda98e395c40d239a8adddaf045dad2",
+      "cases": 3,
+      "result": "All native _actions string-key frozen-context cases fail at original exact-str predicate; no setup/collection/skip",
+      "proof_sha256": "e0db507aed157582d179c355e9a686d1ec9049c45669df9ce0c840a4b61d99bc",
+      "runtime_proof_sha256": "205d4fd849131a99f74920b4a1282e2581d24e9449e841ce9e4f12d734d021c9",
+      "log_sha256": "e299d722d1cce0dc36e1c2bee6ab1aa9fd1d0a4c832b39c8859c33403fab652f"
+    },
+    "green": {
+      "container_id": "5704f98059da04a100a1d61e6f492b74adf40b45f0e302bde5124284280ef38f",
+      "passed": 95,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 3.31,
+      "proof_sha256": "b6901a11a5363de104320ce951f06bc62e14800ed1a446c37e222a50d0ef8ac4",
+      "runtime_proof_sha256": "5e18f109a90d6a87460ddd01d70e0c4acfaee145e4cb6a7d3170444aaa4cacc9",
+      "log_sha256": "1eb703c9952dc9e20e8a64d04579a8ddcecee5358c749d578b390fd9ee2635e1"
+    },
+    "new_cases": "3 native _actions frozen-context construction/validation cases,2 Unicode key canonical/object-retention cases,4 np.bytes_/np.int64/np.bool_/object key refusals; all86 earlier fixtures retained",
+    "actual_image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "resources": "UID1000/networknone/read-only/1CPU/2GiB RAM=total swap/tmp64MiB/fourthreadlimits1/soleoutRW",
+    "source_and_alias_pins_before_after": "1695 exact; native31 unchanged",
+    "native31_compact_sha256": "bfbcb6ece4ea500726e00abbb06fc2c84d63d386bb307958016915357aaef5b3",
+    "genuine_context_artifact_head_provider_calls": "FORBIDDEN; genuine models/data/account not mounted",
+    "ruff_check_format_diffcheck": "PASS"
+  },
+  "remaining_acceptance": {
+    "genuine_funded_prior_close": "UNVERIFIED; fresh v5 preparation only, no start authorized by this checkpoint",
+    "normal_event_coordinator": "OPEN; ordinary nightly/Cycle due-action guard remains strict",
+    "combined_new_audit_source_graph": "UNVERIFIED; original stream c64 pin deliberately unchanged",
+    "original_current_live_timing": "FAILED unchanged",
+    "publication": "CLOSED unchanged"
+  },
+  "diagram_impact": "NONE; a native string representation at an existing private metadata boundary"
+}

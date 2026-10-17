@@ -22,6 +22,7 @@ from backend.market.historical_packet_store import Store, StorePause
 from backend.market.live_execution_inputs import (
     PassiveMarks,
     RawExecutionInputs,
+    _actions,
     _freeze,
 )
 from backend.market.live_model_history import FrozenCurrentGradePolicy
@@ -918,3 +919,78 @@ def test_normal_prior_close_still_requires_event_coordinator(
     assert broker._actions == {}
     assert broker._dividends == []
     assert not broker.attempt_history
+
+
+# Use the actual native normalizer's NumPy symbol keys, not a reconstructed plain map.
+def native_string_actions(symbol):
+    day = np.datetime64("2019-02-28")
+    _, actions = _actions(
+        {symbol: [{"date": "2019-02-28", "kind": "dividend", "value": 0.54}]},
+        (symbol,),
+        np.array([day]),
+        {symbol: day},
+        {symbol: day},
+        "raw_ex_date_share_dollars",
+    )
+    return actions
+
+
+# Constructor hashes and real context validation accept native string-keyed actions.
+@pytest.mark.parametrize("field", ["actions", "inherited_actions", "both"])
+def test_native_string_actions_context(field):
+    context = integrity_context()
+    provenance = adapter.admitted.decoded(context.provenance)
+    changes = {}
+    for name, symbol in (("actions", "AAA"), ("inherited_actions", "CHILD")):
+        if field not in (name, "both"):
+            continue
+        compiled = native_string_actions(np.str_(symbol))
+        assert type(next(iter(compiled))) is np.str_
+        plain = {
+            symbol: [
+                {
+                    "date": "2019-02-28",
+                    "kind": "dividend",
+                    "value": 0.54,
+                    "source_value": 0.54,
+                }
+            ]
+        }
+        assert packet._digest(
+            {key: [dict(row) for row in rows] for key, rows in compiled.items()}
+        ) == packet._digest(plain)
+        assert adapter.action_digest(compiled) == packet._digest(plain)
+        provenance[name + "_sha256"] = packet._digest(plain)
+        changes[name] = compiled
+    object.__setattr__(context, "raw", replace(context.raw, **changes))
+    object.__setattr__(context, "provenance", adapter.admitted.encoded(provenance))
+    assert context.validate() == provenance
+
+
+# Retain Unicode content and the original NumPy key object at canonical admission.
+@pytest.mark.parametrize("symbol", ["ÅAA", "股票"])
+def test_native_string_actions_unicode_canonical(symbol):
+    compiled = native_string_actions(np.str_(symbol))
+    detached = adapter.action_primitives(compiled)
+    assert type(next(iter(detached))) is np.str_
+    assert adapter.action_digest(compiled) == packet._digest(
+        {
+            symbol: [
+                {
+                    "date": "2019-02-28",
+                    "kind": "dividend",
+                    "value": 0.54,
+                    "source_value": 0.54,
+                }
+            ]
+        }
+    )
+
+
+# NumPy bytes, numbers, booleans and arbitrary objects are not string keys.
+@pytest.mark.parametrize(
+    "key", [np.bytes_(b"AAA"), np.int64(1), np.bool_(True), object()]
+)
+def test_native_string_actions_reject_nonstring_keys(key):
+    with pytest.raises(ValueError, match="Action metadata requires string keys"):
+        adapter.action_digest(MappingProxyType({key: []}))
