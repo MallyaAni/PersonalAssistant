@@ -1,5 +1,45 @@
 # Next session
 
+## 2026-10-17 — Actual bounded original-audit CLI integrated; full invocation waits
+
+Feature4e866677 integrated ascec68cf1 after ROOT read both new production files,
+all52tests/proof and actual gate/runner; independently inspected actual focused
+and bounded runtimes/mounts/native source hashes/proof hash and test log. Loader
+fae5bfc7/CLI6f777ed0/testdc76c0fa exactly match native snapshots. Native52pass/
+0skip1.97s, Ruff/format pass. Exact research/original-history-audit-entrypoint-
+proof-2026-10-17.json includes source pins/interface/failed roots. Diagram impact
+NONE: read-only private audit entry point composes existing verification path.
+
+Actual fresh CLI boundedv3 proof7e93acc3,25d15104/e0/UID1000/networknone/RO/
+1CPU/RAM+total swap2GiB/tmp64MiB/sole newproofRW/exit0/OOMfalse. Two trading
+sessions(Mar1/Mar4)+prior-close initialization =3fresh model nights/7transitions/
+7fills; full2961calibration/2953riskrows. All2428sources+443inputs authenticated
+before/after,399420200bytes/pass times4; allsession archives and physicalfinal
+bytes preserved. Final2c293f93 exact; lineageeb53289d differs from old7c037
+because complete loader includes passive/inherited valuation-only mark keys.
+No prior output/lineage used as seeds. Sourcec64/e734/catalog3 uses original2
+renewals; all31N2 hashes unchanged. Original config1a149/economics retained.
+
+Preserve original boundedv2 failure before arrays: writer's physical PaperState
+contains literal NaNs, while completion uses original plain()->null. New wrapper
+ONLY for physical state uses duplicate/schema-strict parse and source-pinned
+original plain normalization, rejects exponent overflow; every other receipt
+stays strictfinite. Raw state bytes independently before/after pinned. Other
+validation/import/style/launcher failures retained. No original bytes rewritten.
+
+FULL profile requires actual COMPLETE C/I/M/E, exact completed1e8/image136
+producer/mount/output identities, external Gitc7abe164, all2431sources, complete
+reviewed exchange calendar and fresh externally admitted e0 audit runtime before
+arrays. TEST2428 remains explicitly no full Git/producer claim. No full invocation
+created or launched; original timing FAILED/publisher CLOSED. Separate corrected
+account is not blocked by trying to relabel this old timing path green.
+
+Compact15:28:17Z: original1e8/image136 running/OOMfalse/completion absent,
+1905sessions throughSep28/2931fills/3879intents, updated15:19:49Z. Untouched;
+next bounded compact>=15:48. Other two agents implement synthetic-only generic
+market context/resolution and fake-only acquisition coordinator; no real GET,
+new simulation, model/service/order/production change. Live3b72 stays delivered.
+
 ## 2026-10-17 — Bounded conditional cycle and forecast binding integrated
 
 Cyclea0f integrated as5d5e3afa; correction3f230c7d as55a01cff; final Store
