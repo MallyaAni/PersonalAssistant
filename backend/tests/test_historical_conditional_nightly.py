@@ -2,6 +2,7 @@
 
 import os
 from contextlib import closing
+from copy import deepcopy
 from dataclasses import asdict, replace
 from datetime import UTC, datetime
 from hashlib import sha256
@@ -27,6 +28,7 @@ from backend.market.live_execution_inputs import (
 )
 from backend.market.live_model_history import FrozenCurrentGradePolicy
 from backend.market.live_model_history_audit_inputs import readonly
+from backend.market.panel import Panel
 from backend.tests.test_joint_funded_policy import report
 
 COHORT = ("AAA", "BBB", "SPY", "QQQ", *("S" + str(i) for i in range(92)))
@@ -994,3 +996,192 @@ def test_native_string_actions_unicode_canonical(symbol):
 def test_native_string_actions_reject_nonstring_keys(key):
     with pytest.raises(ValueError, match="Action metadata requires string keys"):
         adapter.action_digest(MappingProxyType({key: []}))
+
+
+# Construct declared synthetic full96 inputs without a model, file, provider or fit.
+def prefix_context():
+    dates = np.array(["2019-02-28", "2019-03-01", "2019-03-04"], dtype="datetime64[D]")
+    prices = np.arange(3 * 96, dtype=float).reshape(3, 96) + 100
+    panel = Panel(
+        dates,
+        COHORT,
+        prices.copy(),
+        prices + 1,
+        prices - 1,
+        prices.copy(),
+        prices * 0.99,
+        np.ones((3, 96)),
+        {},
+        "SPY",
+    )
+    factors = np.ones((3, 96))
+    factors[:2, 0] = 2.0
+    full = {
+        name: adapter._hash(getattr(panel, name))
+        for name in ("dates", "open", "high", "low", "close", "adj_close")
+    }
+    grades = np.full((3, 96), 2, dtype=np.int16)
+    eligible = np.ones((3, 96), dtype=bool)
+    raw = readonly(
+        RawExecutionInputs(
+            dates,
+            COHORT,
+            grades,
+            eligible,
+            *(
+                getattr(panel, name) * factors
+                for name in ("open", "high", "low", "close")
+            ),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            factors,
+            {},
+            {
+                "daily_price_basis": adapter.live_policy_report.DAILY_BASIS,
+                "supplied": {"synthetic": "NOT_AUTHENTIC_MODEL_ADMISSION"},
+                "grade_sha256": adapter._hash(grades),
+                "eligible_sha256": adapter._hash(eligible),
+                "daily_source_arrays": full,
+            },
+            None,
+            {},
+        )
+    )
+    parent = SimpleNamespace(
+        _frozen_dates=dates.copy(),
+        _features=np.zeros((3, 96, 13)),
+        _forecasts=np.zeros((3, 96)),
+        _support=np.ones((3, 96), dtype=bool),
+        _prices=prices.copy(),
+        _history_prices=panel.adj_close.copy(),
+        _history_grades=grades.copy(),
+        _bank={"features": np.zeros((3, 96, 21))},
+    )
+
+    # Select existing declared prefix arrays, with no head or distribution computation.
+    def select(day):
+        parent.dates = dates[: day + 1]
+        parent.current = SimpleNamespace(
+            receipt={
+                "identity": {
+                    "prefix_sha256": {
+                        "dates": adapter._hash(parent.dates),
+                        "prices": adapter._hash(parent._history_prices[: day + 1]),
+                    }
+                }
+            },
+            history_prices=parent._history_prices[: day + 1],
+            history_grades=parent._history_grades[: day + 1],
+        )
+
+    parent.select = select
+    reader = object.__new__(adapter.FrozenCurrentMarketReader)
+    reader._parent, reader.symbols, reader._market = parent, COHORT, np.zeros((3, 4))
+    context = integrity_context()
+    object.__setattr__(context, "panel", panel)
+    object.__setattr__(context, "raw", raw)
+    object.__setattr__(context, "reader", reader)
+    provenance = adapter.admitted.decoded(context.provenance)
+    provenance.update(
+        symbols=list(COHORT), array_sha256=adapter.arrays(panel, raw, reader)
+    )
+    object.__setattr__(context, "provenance", adapter.admitted.encoded(provenance))
+    return context
+
+
+# The actual native guard admits the selected prefix while full archive hashes survive.
+def test_report_prefix_native_acceptance():
+    context = prefix_context()
+    report, _, index = context.select("2019-03-01")
+    context.reader.validate_report(report)
+    full = dict(context.raw.provenance["daily_source_arrays"])
+    assert report.provenance["full_source_arrays"] == full
+    prefix = report.provenance["raw_source_arrays"]
+    assert prefix == {
+        name: adapter._hash(getattr(context.panel, name)[: index + 1]) for name in full
+    }
+    assert prefix["adj_close"] != full["adj_close"]
+    assert report.provenance["source_prefix_identity"] == {
+        "first_session": "2019-02-28",
+        "session": "2019-03-01",
+        "rows": 2,
+        "cohort": list(COHORT),
+        "cohort_sha256": packet._digest(list(COHORT)),
+        "dates_sha256": prefix["dates"],
+    }
+    shared = adapter.live_policy_report.build(
+        context.panel, context.raw, context.raw.grades, context.raw.eligible, index
+    )
+    for name in ("dates", "open", "high", "low", "close", "adj_close", "volume"):
+        assert np.array_equal(getattr(report.panel, name), getattr(shared.panel, name))
+    assert np.array_equal(report.graded.grades, shared.graded.grades)
+    assert report.panel.tickers == shared.panel.tickers
+    assert report.provenance["split_factors"] == shared.provenance["split_factors"]
+
+
+# Native date, source, share conversion, covered names and grade checks remain strict.
+@pytest.mark.parametrize(
+    "change", ["raw_prefix", "grades", "factor", "date", "prices", "name"]
+)
+def test_report_prefix_native_rejects_corruption(change):
+    context = prefix_context()
+    report, _, _ = context.select("2019-03-01")
+    bad = replace(report, provenance=deepcopy(report.provenance))
+    if change == "raw_prefix":
+        bad.provenance["raw_source_arrays"]["adj_close"] = bad.provenance[
+            "full_source_arrays"
+        ]["adj_close"]
+    elif change == "factor":
+        bad.provenance["split_factors"]["AAA"] += 1
+    elif change == "grades":
+        grades = bad.graded.grades.copy()
+        grades[-1, bad.panel.index("AAA")] = 1
+        bad = replace(bad, graded=replace(bad.graded, grades=grades))
+    elif change == "name":
+        bad = replace(
+            bad, panel=replace(bad.panel, tickers=("UNKNOWN", *bad.panel.tickers[1:]))
+        )
+    else:
+        name = "dates" if change == "date" else "adj_close"
+        values = getattr(bad.panel, name).copy()
+        if change == "date":
+            values[-1] += np.timedelta64(1, "D")
+        else:
+            values[-1, bad.panel.index("AAA")] += 1
+        bad = replace(bad, panel=replace(bad.panel, **{name: values}))
+    with pytest.raises(ValueError, match="Funded report"):
+        context.reader.validate_report(bad)
+
+
+# Re-tagging future source bytes cannot replace the independently admitted full archive.
+@pytest.mark.parametrize("change", ["full_source", "future_input"])
+def test_report_prefix_rejects_source_retagging(change):
+    context = prefix_context()
+    admission = context.validate()
+    context.reader.select(1)
+    provenance = adapter.action_primitives(context.raw.provenance)
+    full = dict(provenance["daily_source_arrays"])
+    if change == "future_input":
+        context.panel.adj_close[-1, 0] += 1
+        full["adj_close"] = adapter._hash(context.panel.adj_close)
+    else:
+        full["adj_close"] = "0" * 64
+    provenance["daily_source_arrays"] = full
+    object.__setattr__(context, "raw", replace(context.raw, provenance=provenance))
+    with pytest.raises(ValueError, match="identity|identities"):
+        adapter.prefix_report(context, 1, admission)
+
+
+# Selected model-prefix identities cannot be rewritten to bless different raw inputs.
+@pytest.mark.parametrize("change", ["dates", "prices"])
+def test_report_prefix_rejects_model_identity_corruption(change):
+    context = prefix_context()
+    admission = context.validate()
+    context.reader.select(1)
+    context.reader.current.receipt["identity"]["prefix_sha256"][change] = "0" * 64
+    with pytest.raises(ValueError, match="selected frozen model"):
+        adapter.prefix_report(context, 1, admission)

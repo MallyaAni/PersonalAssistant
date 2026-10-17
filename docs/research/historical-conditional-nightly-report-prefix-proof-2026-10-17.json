@@ -1,0 +1,70 @@
+{
+  "schema": "conditional-nightly-report-prefix-proof/1",
+  "status": "VERIFIED_NATIVE_REPORT_GUARD_WITH_SYNTHETIC_INPUTS_ONLY",
+  "starting_head": "9fe90e85e02db4561bb2869ba1baf09cb823855d",
+  "branch": "codex/conditional-nightly-action-metadata-20261017",
+  "source_sha256": {
+    "backend/market/historical_conditional_nightly.py": "103cc98a12109640a3472240bd55174e5ca55792517af3b49fb9bc588853833d",
+    "backend/tests/test_historical_conditional_nightly.py": "6c9d817eb024446b96d00290fddd374b8006e55b4af119391d9f84c093cc4117"
+  },
+  "change": "Private wrapper first calls the unchanged native report builder, checks its full source identities against raw context and admitted panel hashes, retains those hashes in full_source_arrays and supplies the actual typed unscaled full96 causal source prefix in raw_source_arrays. Explicit prefix session/date/cohort references are added. Report numeric arrays, grades, names, split factors, native reader and native validator are unchanged.",
+  "preserved_genuine_v5_failure": {
+    "root": "/home/animallya96/scratch/conditional-nightly-genuine-20261017-v5",
+    "container_id": "c11e71a43bd98e798a4ca8cc042a90e0d52a49fe5a4de01c16dacef9a2b81254",
+    "helper_sha256": "4d2172d179068228f054ce1c4c5d8271288eeaaa45f0f7c501a3ab71768a30ee",
+    "failure_sha256": "a76a0e3dfbee4c56ac4efa2f654278f91f277c2d727f72b33801b81f6ae5c1fb",
+    "runtime_proof_sha256": "87b78d0c0e8605fc22f824ad25a0d0e68346e475178ca45f2e2995f43af366dc",
+    "context_receipt_sha256": "f111664de8759890dd3fa3b6c4f9deecdc2a06078d901471ad931ae46c399563",
+    "log_sha256": "31685f3f5689c1ff4d9c5aaae25e5b9c634ca3b897d6569add1fc30436fea82a",
+    "boundary": "Context completed2 heads; birth completed1; close attempted1, then unchanged native validate_report rejected source prices before _paper_trade/transaction/planning",
+    "peak_rss_kib": 396400,
+    "source1692_and_input326_before_after": "UNCHANGED",
+    "birth_receipt": "bbb45e9d3de8cc06605f69e8b9fe9e7ec16e53a1f55b1f938892482466382ef6",
+    "birth_broker": "5ab88572ac2e30364b65a655a73813cf85f4e867f55de101c826f563715fea83",
+    "physical_paper": "ba6e9a02290c9ed01b793551c6827d04278b2e44ca5a1785672d7cf3e8cd0374",
+    "preserved_effects": "BIRTH broker100k/zero/empty orders/actions/dividends/attempts/fills/claims; physical paper407B remains complete empty native state",
+    "close_reservation_sha256": "8a001e170417eee39483be87c8a2f4fe99abb67341a532759e1fd2560cb9a688",
+    "close_result": "ABSENT; operation PAUSED and must never replay",
+    "pre_inception_actions": "Computed locally but not committed to a final close receipt; do not invent persisted evidence or a post-observe broker snapshot",
+    "independent_small_inspection_root": "/home/animallya96/scratch/conditional-nightly-genuine-v5-inspection-20261017-v1",
+    "inspection_sha256": "ccc3b0463f5dfd2b42d7c531dae1b6df6e928c442ac1fab537b85d33a387c3b9"
+  },
+  "validation": {
+    "root": "/home/animallya96/scratch/nightly-report-prefix-preparation-20261017-v1",
+    "controller_sha256": "f6983f2f2153e4f8b8e7c4292ea13b23691c17e1c3b3ca0de428c98f65f23a17",
+    "runner_sha256": "1940feb81914a681662d272e1eefed504e1543f0bc03a50c794ecf1d7c79c677",
+    "preparation_sha256": "b54d446cff69797aa364047b51a6fd381ebb5511f84dbd9076e1d9404f4b3462",
+    "red": {
+      "container_id": "15ebcadec107ae770bab14304f332aab8173e9e85584946bfb61a0035bbfe882",
+      "result": "1 native source-prices guard rejection reproduced with synthetic genuine-shaped multi-date/full96 inputs and original helper4d2172; no setup/collection/skip",
+      "proof_sha256": "fb6b8db5dd2530a9fe830858d76145cbd4816caafd00375dc1f323c16bf62aeb",
+      "runtime_proof_sha256": "256cfb02ad4a8863b5028b8359efd685ebaf317379974e364dd8a8a847095562",
+      "log_sha256": "1de2c9564a316663297c707b5ee64c9427ba3bc0bf964d4aa4ade41b3969b9e7"
+    },
+    "green": {
+      "container_id": "84ee9118c1b03cc4a79c12da920918b5c81e7bdfd5166a633ba9357d98bc1afd",
+      "passed": 106,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 3.36,
+      "proof_sha256": "0dfa3224cd0f8cc873c130760535d2a7bbc954d4d515cdab840daa182fd357e4",
+      "runtime_proof_sha256": "f4f2ef2d1b0f79d839db012169b55b3a910d837f3245553028b8a888b9c0898a",
+      "log_sha256": "452878f22f791a596ee9137b04cc704d5ac1377650fe019e9e1a4a0f5fd332f2"
+    },
+    "new_cases": "Native build+validator positive prefix with all prices/grades/names/splits unchanged,6 native source/grade/factor/date/price/name corruption refusals,2 full/future source identity refusals,2 selected model prefix identity refusals;95 previous fixtures retained",
+    "actual_image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "resources": "UID1000/networknone/read-only/1CPU/2GiB RAM=total swap/tmp64MiB/fourthreadlimits1/soleoutRW",
+    "source_and_alias_pins_before_after": "1695 exact; native31 unchanged",
+    "native31_compact_sha256": "bfbcb6ece4ea500726e00abbb06fc2c84d63d386bb307958016915357aaef5b3",
+    "genuine_context_model_artifact_head_provider_calls": "BLOCKED; genuine input/model/account roots not mounted",
+    "ruff_check_format_diffcheck": "PASS"
+  },
+  "remaining_acceptance": {
+    "genuine_funded_close": "UNVERIFIED; failedv5 paused; no new genuine execution authorized by this checkpoint",
+    "normal_event_coordinator": "OPEN; ordinary/Cycle due-action guard remains strict",
+    "combined_new_audit_source_graph": "UNVERIFIED; original stream c64 pin deliberately unchanged",
+    "original_current_live_timing": "FAILED unchanged",
+    "publication": "CLOSED unchanged"
+  },
+  "diagram_impact": "NONE; private report metadata admission in the existing lifecycle"
+}

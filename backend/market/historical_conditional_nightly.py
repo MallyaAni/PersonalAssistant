@@ -12,7 +12,7 @@ import stat
 import time
 from collections.abc import Mapping
 from copy import deepcopy
-from dataclasses import asdict, dataclass, fields
+from dataclasses import asdict, dataclass, fields, replace
 from datetime import UTC, date, datetime, timedelta
 from hashlib import sha256
 from pathlib import Path
@@ -287,6 +287,45 @@ def arrays(panel, raw, reader):
     }
 
 
+# Preserve full archive admission while binding the native report to its causal prefix.
+def prefix_report(context, index, admission):
+    panel, raw, reader = context.panel, context.raw, context.reader
+    report = live_policy_report.build(panel, raw, raw.grades, raw.eligible, index)
+    names = ("dates", "open", "high", "low", "close", "adj_close")
+    full = dict(raw.provenance["daily_source_arrays"])
+    admitted.require(
+        report.provenance["raw_source_arrays"]
+        == full
+        == {name: admission["array_sha256"]["panel." + name] for name in names},
+        "Authenticated full report source identities differ",
+    )
+    prefix = {name: _hash(getattr(panel, name)[: index + 1]) for name in names}
+    model_prefix = reader.current.receipt["identity"]["prefix_sha256"]
+    admitted.require(
+        prefix["dates"] == model_prefix["dates"]
+        and prefix["adj_close"] == model_prefix["prices"],
+        "Report source prefix differs from selected frozen model",
+    )
+    report = replace(
+        report,
+        provenance={
+            **report.provenance,
+            "full_source_arrays": full,
+            "raw_source_arrays": prefix,
+            "source_prefix_identity": {
+                "first_session": str(panel.dates[0]),
+                "session": str(panel.dates[index]),
+                "rows": index + 1,
+                "cohort": list(panel.tickers),
+                "cohort_sha256": packet._digest(list(panel.tickers)),
+                "dates_sha256": prefix["dates"],
+            },
+        },
+    )
+    reader.validate_report(report)
+    return report
+
+
 # Keep actual model restoration separate from hypothetical historical close decisions.
 @dataclass(frozen=True, slots=True, init=False)
 class HoldingContext:
@@ -342,9 +381,7 @@ class HoldingContext:
         admitted.require(len(hits) == 1, "Exact reviewed historical session required")
         index = int(hits[0])
         self.reader.select(index)
-        report = live_policy_report.build(
-            self.panel, self.raw, self.raw.grades, self.raw.eligible, index
-        )
+        report = prefix_report(self, index, value)
         policy = FrozenCurrentGradePolicy(self.reader, 10)
         admitted.require(
             tuple(self.panel.tickers) == tuple(value["symbols"]),

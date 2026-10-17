@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-10-17 — Bind the private nightly report to its consumed price prefix
+
+The corrected-account wrapper preserves full archive hashes separately and
+passes true unscaled source-prefix hashes to the unchanged native report guard.
+The shared builder first validates the complete source; the wrapper also requires
+its admitted full identities and selected model prefix to match. Prices, grades,
+names, split factors, numeric models and the native guard are unchanged.
+
+The v5 genuine run completed its context and zero-account birth, then failed the
+native price-provenance guard before planning. That birth and incomplete close
+reservation remain paused, with the original407B empty paper state preserved.
+No final close/pre-inception receipt is invented. The original rejection was
+reproduced with a small native-shaped fixture; the correction passed106 native/
+synthetic checks,0skip,3.36s in exact f612 with no genuine model/data mounted.
+No successful genuine funded plan, account replay or publication is claimed.
+Read research/historical-conditional-nightly-report-prefix-proof-2026-10-17.json.
+
 ## 2026-10-17 — Admit native NumPy string keys without changing their meaning
 
 The private nightly action-metadata guard now accepts exact `np.str_` keys as
