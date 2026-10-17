@@ -1,5 +1,47 @@
 # Next session
 
+## 2026-10-17 — Original input-map reader verified privately; bounded original intake running
+
+Read research/original-external-input-map-proof-2026-10-17.json. ROOT reviewed
+the interrupted worker diff and finished validation without retrying limited
+agents. Feature6d4729c3 is committed/pushed on
+codex/original-audit-streamed-history-20261017; implementation is NOT merged into
+main or deployed. Branch clean after commit. Parserde29c101 retains all original
+input hashes in sealed pair/index files; explicit root opt-in only,16MiB controls
+unchanged,32MiB processed-map/200000-pair limits, strict duplicates/nonfinite/
+tamper checks and every canonical pair retained. Actual source58/native31 before
+and after exact, frozenN2/e0/map99e62, separate from servingf612/bfb.
+
+Old parser reproduced intended size failure, actual9903973d/proof1da0205b.
+Pure actualc6d2e4e0 passed72 and failed1 only because invalid numeric-key rejection
+correctly said Extra data outside the test's expected-message pattern. Original
+failure preserved. Only that exact parameter was corrected/re-run:1pass0skip
+actualc0a37b5d/proofff8592c0. Distinct parser coverage73, not a whole73-case green
+rerun. The complete164833-pair/21428308B SYNTHETIC manifest passed with full
+canonical/lookup/order checks; suite106.702s/38444KiB peak under512MiB; index131325952B
+and pairspool21428290B. All198 affected legacy tests passed0skip7.859s,
+actual2c92fd11/proof8ea0aed5,197788KiB peak; only declared synthetic arithmetic.
+No real account/model inference or numerical/economic admission.
+
+ROOT then approved the unchanged two-original-file acceptance path plus explicit
+map/count/seal checks after full source and test review. Fresh
+scratch/original-two-file-map-intake-20261017-v1 is RUNNING on exact
+30b7dd803198aaaf08901ca9f868436355a676e4d47d02abb7341e2df8a0f5f7,
+started21:25:13.255991233Z; ROOT execsession19106. Runner20bbc5d7/controller42e9dca4.
+Only completion373782589B/b9ad and physical832110254B/f334 mountedRO, smallsourceRO,
+soleoutRW, UID1000/noneRO/1CPU/512MiB RAM=swap/tmp64MiB;3GiB-free/test/source gates.
+No account directory, model/config mounts or backend imports. Inspect this actual
+handle/root before proceeding; NEVER duplicate, restart or adopt partial output.
+It compares complete1916-row ordering, schema, controls and full canonical state;
+result remains UNVERIFIED until terminal proof and independent inspection.
+Financial/model/timing audit is NOT run and publication stays CLOSED.
+
+Combined CURRENT nightly source graph still pins oldstreamc64. Explicit closure
+repinning/tests remain necessary before any future integration; do not cherry-pick
+this branch into main blindly. Corrected genuinev6 remains PAUSED; no replay,
+new model run, generic data GET, cap raise or publication. Productione237/f612 is
+unchanged. Fresh weekday ordinary/intraday/fill/UI acceptance remains OPEN.
+
 ## 2026-10-17 — Dead frontend cleanup delivered and independently browser-verified
 
 Read research/trading-dead-exports-delivery-proof-2026-10-17.json. Production
