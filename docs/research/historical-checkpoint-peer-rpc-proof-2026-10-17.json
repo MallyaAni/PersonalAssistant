@@ -1,0 +1,61 @@
+{
+  "status": "VERIFIED_PRIVATE_SYNTHETIC_PEER_STREAM_SESSION_ONLY",
+  "base_revision": "80c145226652cb4fd6d2cc235dd9c0cd49bc4b85",
+  "branch": "codex/historical-physical-checkpoint-20261017",
+  "source_sha256": {
+    "backend/market/historical_checkpoint_peer_rpc.py": "30f7b6f3b17ff6736d45a14ecf26bbc19ef5882b40591b4ddd1e1949beacb54e",
+    "backend/tests/test_historical_checkpoint_peer_rpc.py": "f05007eb740bfb7bade6636ccf9aaaad07cc9a6ab630a67d1e1faac817eda2c8",
+    "backend/market/historical_fixed_slot_checkpoint.py": "a15a3720fe368a75d9aaf4e59d767347b7cb863dd180c531ebfa3c41f0b1ab2b",
+    "backend/market/historical_physical_checkpoint.py": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+  },
+  "root": "/home/animallya96/scratch/checkpoint-peer-rpc-synthetic-20261017-v1",
+  "container": "415f42becf101fa19258eddd8b491ca7b2ddc836963bd0b26e4d4847742b79e0",
+  "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+  "finished_at": "2026-10-17T23:22:01.802805507Z",
+  "exit_code": 0,
+  "oom": false,
+  "tests": {"passed": 18, "skipped": 0, "errors": 0, "failures": 0, "elapsed_seconds": 11.605854995548725, "peak_rss_kib": 132056},
+  "cgroup_memory_before_terminal_proof": {"current_bytes": 253222912, "peak_bytes": 295587840, "limit_bytes": 536870912, "meaning": "Whole retained multi-case fixture including file cache;512MiB runtime passed. This does NOT qualify the proposed256MiB peer runtime."},
+  "isolation": {"uid": "1000:1000", "network": "none", "readonly": true, "cpus": 1, "ram_bytes": 536870912, "swap_total_bytes": 536870912, "tmp_bytes": 67108864, "pids": 64, "caps": "ALL dropped", "security": "no-new-privileges", "mounts": ["small source RO with empty backend packages", "public CURRENT identity and inert a8 writer fixture RO", "sole private out RW"]},
+  "static_validation": "Two new files passed source-only Ruff format/check; exact code reviewed by ROOT, no general full-backend gate claim",
+  "verified": [
+    "Explicit local peer/source/profile/root/owner/launch/host-binding permit and real preallocated initialized session/permit/control/lock extents; host binding is external data, NOT fresh host attestation",
+    "One immutable ordinary session consumed before first external read; continuous sidecar+Peer flock; old READY-control replay and consumed/process reopen cannot renew ingress permission",
+    "HELLO/STATUS,ARM,bounded binary PUT,VERIFY/PREPARED only; strict finite unique-key256KiB headers,64KiB fragments, full payload SHA/length/trailer/request/control-preimage/cumulative ingress guards including duplicate traffic",
+    "Unknown read/write/ARM ACK, EOF and partial-body interruptions retain consumed/charged state; reopened channel STATUS-only; no namespace creation after consumption",
+    "Terminal STATUS/PREPARED requires exactly one bounded EOF read before final source validation and response. Caller must close input write side before awaiting terminal response and owns deadlines; arbitrary input is not drained",
+    "Actual SIGKILL after session consumption leaves consumed/noARM/zero ingress; actual SIGKILL after PUT charge leaves9bytes charged/PeerOPEN0/body0. Independent retained receipts/control checks and ordinary regrant refusal",
+    "20MiB body ingress/readback actual reserved file independently streamed/hashed:20971520B,6adfa0775cbd16a3f50d1fda1d7bd7f375dd1f9af5e6dfb751a87d3dff68699c; no body was decoded as native financial state",
+    "Independent stopped runtime/source10 SHA and physical identities beforeafter exact;222232576 allocated file bytes and1071 unique file inodes retained. No NumPy/native/model/backend account imports"
+  ],
+  "evidence_sha256": {
+    "out/proof.json": "975ebecd27ec9786f8bc66dd9d49592a9995e92ad30f05ccd3079a9de93f5043",
+    "inspect-after.json": "b02b119e11fce3748de9f43f0bee80cee59b3a6011ef7734bd72aec5a6fb40d2",
+    "run.log": "c946f096b91b5eae7a997e959a88fa2d1aa4ed4c91d810bd5638a2bb10499198",
+    "source/plan.json": "a54c1ae11ea9c8032390cea137616cf7d75d87094fb2ca19fe7b504404325806",
+    "runner": "322e357e3186e54fd2666752ac764a887a84be1eeda1c5aa473e351643601cf4",
+    "controller": "ff5dfce28dbec4da393ce3507f00b3c52d47029b18ec99af1671cb990367ac99",
+    "independent-proof.json": "c27abc5635179379a1640b1a50098ad567dfda8abcad64e5134e69766fda4b20",
+    "independent-verifier": "90e8c40e755c5f59ca281e57e7cec72dd9eb5fac2cacb95c1b1abd52866a5f81"
+  },
+  "expected_red_preserved": {
+    "root": "/home/animallya96/scratch/checkpoint-peer-rpc-red-20261017-v1",
+    "container": "e96e9cb37b7e47546c6bc69f0cc82c8ab8e708528772f9e113d335a0c26b6374",
+    "old_source_sha256": "8d6117630018246ee46f6c059629e4de8c63a564055e7db37265278ed767d64f",
+    "test_sha256": "f05007eb740bfb7bade6636ccf9aaaad07cc9a6ab630a67d1e1faac817eda2c8",
+    "outcome": "Exactly3 new regressions FAILED/0errors/0skip1.134s: two Expected refusal terminal extra-frame failures and one stale availability assertion. Wrapper exited0 only because expected RED occurred, NOT old-source acceptance.",
+    "first_boundary": "Terminal PREPARED/STATUS returned while another frame remained; STATUS ordinary_available ignored a changed closed Peer control preimage even though _consume would refuse it.",
+    "targeted_change": "Require bounded terminal EOF before final source recheck/response and include exact pinned control digest in status availability; existing helpers/guards/caps unchanged, original15 cases retained.",
+    "proof_sha256": "914ffc0f6ccc6f8533382d69ae6e957743792ec2b8d42a6861cc627babd676c4",
+    "inspect_sha256": "d223d685be0daf348d594be6cb9ff884e2b5ee23c410fd2c47a92c3bc3479fa6",
+    "independent_proof_sha256": "55f0cce4bd3b638f5450fc7e9946aa59c4465c1b7074255a5a647d4e00fe449c",
+    "controller_sha256": "4b30836d16389c962ed0541d0f143f9b4eb478348588a56b957a06ecc3c6b2aa"
+  },
+  "not_proved": ["Actual SSH/network/stdio host placement", "Real two-host resource issuance/durability", "Peer owner-decision commit/ACK/FINISH or remote coordinator", "Native filesystem metadata capacity, restore/horizon and native/model lifecycle", "Simulator adoption or historical publication", "256MiB runtime capacity"],
+  "runtime_prerequisite": "Spark2 f612 absent at prior read-only probe. Spark1 immutable f612 image.Size1489670467B linux/arm64 observed for transfer planning only. No image transfer/install/service/model changes made.",
+  "next_boundary": "Read-only complete actual two-host fixture plan using existing exact RPC module and source-pinned standalone stdio harness, bounded image availability/resource admission; no new repository protocol stage authorized",
+  "unchanged": "Only two new unused private source/test files and this proof. Existing local-only checkpoint/native/Store/Nightly/Cycle/schema/stages/caps/pins and all false adoption/host/commit flags remain unchanged; no deployment or production changes by this task.",
+  "original_timing": "FAILED; publication CLOSED; missing original initial raw receipts unchanged",
+  "genuine_v6": "OPEN/PAUSED; no adoption/replay/further genuine run",
+  "fresh_weekday_intraday_fill_ui": "UNVERIFIED"
+}
