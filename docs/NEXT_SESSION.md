@@ -1,5 +1,50 @@
 # Next session
 
+## 2026-10-17 — Numeric decision candidate ready; parity backup still active
+
+Isolated production-based candidate6a1d77bc1d8bdeb080bdee26b8e1ef95507a9ea1
+is pushed on codex/live-decision-contract-20261017. Never deploy pending
+historical main. Stocks now uses one authenticated saved numerical plan for
+grade/action/original funded quantity/timing; stale or unavailable plans are
+withheld, with chart judgments confined to supporting details. Actual submitted,
+partial and settled fills remain distinct from the original funded proposal.
+This is a candidate, NOT production delivery or fresh numerical inference.
+
+VERIFIED candidate components:129 backend/API/authentic-snapshot checks,
+43 compiled browser workflows plus3 final partial-fill checks, type/build;
+61 deployment-admission/rollback checks. No repeated gates for documentation.
+The guard requires exact reviewed approval and matching actual HOST/CONTAINER
+admission before release success. Independent review confirmed explicit mismatch
+rejection under optimized Python and fail-closed recovery after unknown activation.
+All95 original research payloads passed against exact candidate source, using
+the actual app UID0 and original archived config;97 original hashes unchanged.
+The initial UID1000 permission failure is preserved, not relabelled passed.
+Exact candidate/proof identities:research/trading-numeric-release-preparation-2026-10-17.json.
+
+Canonical parity v3 remains ACTIVE on a2378e95:10676 unit pass/93skip/6xfail,
+100 real routing pass/0skip. Backup WAL replication is still transferring;
+do not interrupt, duplicate or bypass it. After completion run the prepared
+v3 independent actual-image/Oct13-snapshot verifier BEFORE any account mutation.
+Then use a fresh canonical numeric-release root and the NEW candidate deploy
+script with exact pinned approval bundle, preserving original selectors and
+economics. Approval activation occurs only immediately before service restart.
+
+Known-fill settlement is prepared and private-copy tested14/0skip, NOT applied.
+Prefer it after numeric UI delivery, so journal fills remain visible when old
+pending entries are removed. The old proposed wrapper is bound to a2378e95;
+prepare a fresh reviewed wrapper bound to the final numeric source/image/proof.
+Preserve original state28d3e8ed, record37d7541f, all dated records, original IDs,
+quantities and nanosecond created clocks; reconcile at the genuine current clock,
+submit no orders, verify the second invocation writes nothing. Then run actual
+authenticated compiled public-browser acceptance with the post-settlement state
+SHA. No current production UI or settlement acceptance claim yet.
+
+ONE full historical run remains running untouched: compact09:45Z observation
+1851 sessions through2026-07-13,2848 fills/3790 intents, updated09:38:27Z.
+Only compact monitoring until COMPLETE, then independent full audit. Historical
+quantities, fresh ordinary and learned intraday/fill acceptance remain UNVERIFIED.
+Keep heartbeat ACTIVE and quiet on unchanged active jobs.
+
 ## 2026-10-17 — Authorized worker recovery verified; parity v3 active
 
 VERIFIED real inference08:55:11Z: one human-approved restart of the existing

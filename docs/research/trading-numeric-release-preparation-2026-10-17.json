@@ -1,0 +1,51 @@
+{
+  "status": "CANDIDATE_VERIFIED_COMPONENTS_NOT_DEPLOYED",
+  "candidate_source": "6a1d77bc1d8bdeb080bdee26b8e1ef95507a9ea1",
+  "candidate_branch": "codex/live-decision-contract-20261017",
+  "production_base": "a2378e9565e6a557fbc3782ac1a5536bae961a75",
+  "scope": "Read-only authenticated numerical decision display, distinct recorded executions and mandatory deployment source admission",
+  "source_review": {
+    "path_in_candidate": "docs/research/trading-numeric-source-review-2026-10-17.json",
+    "sha256": "2f048a8040532bfdaa49b1101e552457454b526b510b4ee9f2422f3a67a3e5f7",
+    "api_sha256": "fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88",
+    "holding_sha256": "25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1",
+    "projection_sha256": "b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93",
+    "existing_holding_functions": "UNCHANGED; source_identity adds only the read-only projection path"
+  },
+  "component_acceptance": {
+    "backend_api_saved_snapshot": {"passed": 129, "skipped": 0, "seconds": 4.91, "image": "sha256:4dbbbe066fd62eefa03fcbc92b37e4ab4a55f5429f826b532fafb5769cce8e17"},
+    "compiled_browser_broad": {"passed": 43, "skipped": 0},
+    "compiled_browser_final_partial_fill": {"passed": 3, "skipped": 0, "seconds": 17.3},
+    "frontend_type_and_build": "PASS",
+    "deploy_admission_and_rollback": {"passed": 61, "skipped": 0, "seconds": 25.29},
+    "independent_guard_review": "Explicit SystemExit survives optimization; attempted activation with unknown outcome requires exact original selector verification before code rollback"
+  },
+  "original_research_preservation": {
+    "status": "VERIFIED_READ_ONLY_CANDIDATE_READER",
+    "private_root": "/home/animallya96/scratch/candidate31-original-research-preservation-20261017-v2/proof",
+    "payloads_passed": 95,
+    "original_files_matching_reference_and_unchanged": 97,
+    "actual_serving_uid": 0,
+    "network": "none",
+    "market_mount": "read-only",
+    "archived_config_sha256": "6713db802790ded44d1fc7e59688a448ae5b9fffb147aaa597ad489ade6b0fb9",
+    "current_live_configuration_read": false,
+    "proof_sha256": "833514b4a4617d0631607c5ab4d50f66d9995c223ecc2e3b63d3a2d3fbf90759",
+    "source_map_sha256": "d2ebaf87730be9d84dd608eb40caede1306febcec2c078d51f7ad380b8a37a3f",
+    "before_and_after_map_sha256": "61338cb4c5365826377bd84f585924af83c9492dc1d27cd3383d056d631357ca",
+    "preserved_uid1000_failure": {"reason": "Archived configuration directory root-owned mode0700; actual application runs as root", "proof_sha256": "a5f988cba6ced7be7368d1d44be1e4331da6aab007fad9ea81022fd09c240b51"}
+  },
+  "pending": [
+    "Finish existing canonical parity v3 and independent preservation before account mutation",
+    "Exact approval bundle preflight, canonical numeric release and actual HOST/CONTAINER admission",
+    "Fresh source-bound current-clock settlement of only original known filled orders, with idempotence",
+    "Actual authenticated compiled public-browser acceptance",
+    "Full historical audit/publication and fresh ordinary/learned intraday acceptance"
+  ],
+  "production_deployed": false,
+  "actual_state_mutated": false,
+  "orders_submitted": 0,
+  "ordinary_days_replayed": 0,
+  "fresh_model_inference": false,
+  "diagram_impact": "NONE: existing API/display and deployment admission boundaries; no new service or store"
+}
