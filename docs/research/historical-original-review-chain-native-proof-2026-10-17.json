@@ -1,0 +1,144 @@
+{
+  "full_active_output_access": false,
+  "numerical_inference_calls": 0,
+  "original_account_changes": 0,
+  "publication": "CLOSED",
+  "result": "ORIGINAL_FROZEN_N2_SOURCE_ADMISSION_PASS\n.                                                                        [100%]\n1 passed in 0.01s\n",
+  "result_sha256": "7d4017597b6c5519cef5f2ceedc0f9d8ca4710cf50bd9ef6f2c633d2c483ad25",
+  "runtimes": [
+    {
+      "id": "c14f2a5f15da01c2bf2be66885f5a78099886e8ad05bec044144962aa3308e61",
+      "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+      "limits": {
+        "Memory": 1073741824,
+        "MemorySwap": 1073741824,
+        "NanoCpus": 1000000000,
+        "NetworkMode": "none",
+        "ReadonlyRootfs": true
+      },
+      "mounts": [
+        {
+          "Destination": "/bounded-manifest.json",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/live-model-history-bounded-20261013-v10/source-manifest.json"
+        },
+        {
+          "Destination": "/testdeps",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/historical-native-pytest-deps-20261017-v2/modules"
+        },
+        {
+          "Destination": "/tests/test_chain.py",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/historical-original-review-chain-tests-20261017-v1/test_live_model_history_original_review_chain.py"
+        },
+        {
+          "Destination": "/app",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/historical-observation-context-validation-20261017-v5/source"
+        },
+        {
+          "Destination": "/app/backend/market/live_model_history_binding.py",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/historical-original-review-chain-tests-20261017-v1/live_model_history_binding.py"
+        },
+        {
+          "Destination": "/app/backend/market/live_model_history_stream_audit.py",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/historical-original-review-chain-tests-20261017-v1/live_model_history_stream_audit.py"
+        },
+        {
+          "Destination": "/app/docs/research",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/historical-original-review-chain-tests-20261017-v1/reviews"
+        },
+        {
+          "Destination": "/bounded",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/live-model-history-bounded-20261013-v10/account"
+        }
+      ],
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-17T15:08:25.513452248Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-17T15:08:22.410362458Z",
+        "Status": "exited"
+      }
+    },
+    {
+      "id": "ce901eb2cf916f799748509a43574e006e975c8dd1a87988267f08f6f954c526",
+      "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+      "limits": {
+        "Memory": 1073741824,
+        "MemorySwap": 1073741824,
+        "NanoCpus": 1000000000,
+        "NetworkMode": "none",
+        "ReadonlyRootfs": true
+      },
+      "mounts": [
+        {
+          "Destination": "/app",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/historical-observation-context-validation-20261017-v5/source"
+        },
+        {
+          "Destination": "/app/backend/market/live_model_history_binding.py",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/historical-original-review-chain-red-20261017-v2/live_model_history_binding.py"
+        },
+        {
+          "Destination": "/app/backend/market/live_model_history_stream_audit.py",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/historical-original-review-chain-red-20261017-v2/live_model_history_stream_audit.py"
+        },
+        {
+          "Destination": "/app/docs/research",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/historical-original-review-chain-red-20261017-v2/reviews"
+        },
+        {
+          "Destination": "/bounded",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/live-model-history-bounded-20261013-v10/account"
+        },
+        {
+          "Destination": "/bounded-manifest.json",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/live-model-history-bounded-20261013-v10/source-manifest.json"
+        }
+      ],
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 1,
+        "FinishedAt": "2026-10-17T15:06:29.009756885Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-17T15:06:26.865485618Z",
+        "Status": "exited"
+      }
+    }
+  ],
+  "source_sha256": {
+    "live_model_history_binding.py": "e734613fd6efe95f4de04b969e837d71be43d60abea3e2baf2d457aa6f2167c3",
+    "live_model_history_stream_audit.py": "c64eadd658b46f75dd605dddb79074bdba7177d83f0e6e3439fba630378c135b",
+    "test_live_model_history_original_review_chain.py": "809bb7aba20f44d60501bd922a60568d232093a7294ff2c3f60ba86b8c62fc53"
+  },
+  "status": "VERIFIED_ORIGINAL_N2_REVIEW_ADMISSION_ONLY",
+  "tests": {
+    "native_originalarchives_source_admission": "PASS",
+    "seconds": 0.01,
+    "unit_pass": 1,
+    "unit_skip": 0
+  }
+}

@@ -1,5 +1,40 @@
 # Next session
 
+## 2026-10-17 — Independent sender-context audit integrated; frozen review chain retained
+
+Contextd1bb986a integrated as623d7110 after ROOT full source/diff/test review and
+actual dee1878e/6f366d07 runtime/mount/source inspection. Native235checks/0skip5.42s,
+genuine COMPLETEv10 new1e7a8416 proof freshly recomputed3nights/7transitions/7fills,
+449consumed inputs pinned. Full2961calibration/2953riskrows retained; independently
+derived lineage7c037faa/finalstate2c293f93 match prior proofs, never used as seeds.
+Contextcd2fab76/pendingc511f4d6; source-bound proof records6genuine source files
+and7final unit files separately (last chronology test only). Exact all31 hashes
+unchanged in BOTH actual runtime source mounts. Original raw initial receipts remain
+unrecorded/fail-closed; original timing FAILED and publisher CLOSED. Preserve all
+old quantity/mapping/fixture failures; no original run or actual account change.
+
+ROOT caught integration seam: serving binding catalog now has metadata review3,
+but original audit runs frozen N2e0 and must use EXACT original two renewals.
+Native redv2 genuine OriginalArchives.authenticate_sources failed on blindly
+applying all3. Targeted original-only review tuple fixes it; no generic approval
+search. Fresh native historical-original-review-chain-tests-20261017-v1 exercises
+actual COMPLETEv10 source admission plus1regression/0skip0.01s with newest binding/
+catalog3. Numerical functions unchanged: only authenticate_sources AST differs from
+context feature stream. Exact independent receipt research/historical-original-
+review-chain-native-proof-2026-10-17.json. Preserve initial redv1 OCI missing new
+mountpoint failure and genuine redv2; no numerical/model/235-suite rerun for docs.
+Ruff/format pass; Diagram impact NONE: internal private audit admission only.
+
+Compact15:08:23Z original1e8f440a/image136ebb46 running/OOMfalse,1903sessions through
+2026-09-24/2925fills/3871intents, updated15:07:58Z; completion absent, untouched.
+Only bounded progress/identity read. Next compact no earlier15:28. Agent now builds
+NEW bounded frozen audit-input loader and original-only CLI; old verify_live_model_
+history CLI is NOT this stream and must not substitute. New loader must cover
+passive/inherited KD/VMW actions/marks and original ordering, not copy the bounded
+initializer's missing passive inputs. Full-profile receipt pins/calendar/physical
+final-state/all-session before+after preservation remain required post-COMPLETE.
+No actual full audit/launch/provider/model/account activity yet.
+
 ## 2026-10-17 — Frozen checkpoint tests no longer require private absolute fixture
 
 Test-only follow-up: declared N2 fixture falls back to committed exact source map

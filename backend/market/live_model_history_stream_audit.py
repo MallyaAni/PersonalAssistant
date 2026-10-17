@@ -34,7 +34,6 @@ from backend.market import live_model_history_pending_audit as pending
 from backend.market.live_model_history import FrozenCurrentGradePolicy
 from backend.market.live_model_history_binding import (
     REVIEW_SHA256,
-    REVIEWS,
     reviewed_sources,
 )
 from backend.market.live_model_history_observation_context import ObservationContext
@@ -51,6 +50,11 @@ SOURCE_PATHS = (
     "backend/market/replay_broker.py",
     "backend/market/direct_daily_arithmetic.py",
     "backend/market/learned_retention_models.py",
+)
+# Original audit executes in frozen N2, independently of later serving renewals.
+ORIGINAL_SOURCE_REVIEWS = (
+    "docs/research/trading-source-approval-review-2026-10-17.json",
+    "docs/research/trading-numeric-source-review-2026-10-17.json",
 )
 
 
@@ -285,7 +289,7 @@ class OriginalArchives:
         reviewed_sources(
             self.completion["source_sha256"],
             learned_live_holding.source_identity(),
-            [REVIEW_SHA256[name] for name in REVIEWS],
+            [REVIEW_SHA256[name] for name in ORIGINAL_SOURCE_REVIEWS],
         )
         for name in SOURCE_PATHS:
             authenticate_file(self.source_root / name, self.sources[name])
