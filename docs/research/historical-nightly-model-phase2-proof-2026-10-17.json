@@ -1,0 +1,96 @@
+{
+  "status": "VERIFIED_PRIVATE_NIGHTLY_RECOMPUTATION_PRIMITIVES_AND_COMPLETE_BOUNDED_V10_ONLY",
+  "parent": "8ee118ad",
+  "scope": "Pure causal-prefix/frozen-head/account/dispatch/whole-share-intent/full-state audit primitives; no broker, sender, producer, simulation or publication call",
+  "source_sha256": {
+    "backend/market/live_model_history_nightly_model.py": "f242be256c731712b3a1e87fcebf36a4c3e00f85a2187902adaf0969a78ca5dd",
+    "backend/tests/test_live_model_history_nightly_model.py": "54569010cb8554c977f47fef1b42843a9282930a8b6ef8968ab86dfeb9986499"
+  },
+  "implementation": {
+    "prefix": "Recompute completed_features on the entire independently selected causal prefix; exact cached features/support/prices and actual frozen-head prediction equality",
+    "fixed_calibration": "Never truncate the frozen current risk bank, its admitted outcomes or monthly calibration to the historical decision date",
+    "account": "Independent conserved cash/shares/basis/receivables plus authentic raw held marks; complete four-kind economic records, explicit null/zero basis and unavailable NAV; preserve integral-float/fractional economic holdings for the original planner guard",
+    "control_inputs": "Previously verified state from phase1 receipt fold; never current saved allocation, target, action or quantity as an inference input",
+    "dispatch": "Use pure nightly_plan and FrozenCurrentGradePolicy.plan; event and duplicate branches do not count as fresh model calls",
+    "attempt_boundary": "Conserved cumulative submissions/acknowledgments are filtered to the exact original close before validating the independently planned identities; later same-CID intraday receipts and earlier session attempts cannot contaminate that close",
+    "output": "Compare complete raw proposal/scenario/optimizer receipt, grade-constrained targets, displayed actions, funded intents and durable state/history using original written clock; exact integer type/value precheck preserves share/count/order-sequence boundaries before existing numeric arithmetic comparison",
+    "serialization": "Use actual JSON representation for expected persisted values; cash follows ReplayBroker float semantics while economic share quantities retain original numeric representation"
+  },
+  "native_validation": {
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "numpy": "2.5.3",
+    "sklearn": "1.9.1",
+    "network": "none",
+    "readonly": true,
+    "cpus": 1,
+    "memory_bytes": 2147483648,
+    "runner_only_path": "/home/animallya96/scratch/historical-native-pytest-deps-20261017-v2/modules",
+    "runner_archive_sha256": "fe4f80bca28fe84da5c64e3739f6188f6d7405785fcf428b15dd57e21e757af0",
+    "native_import_proof_sha256": "4d974724e61165f13d203f7e0962ed2d63c3263167394118434d871c859bdc89",
+    "numeric_packages_shadowed": false,
+    "root": "/home/animallya96/scratch/historical-nightly-model-phase2-validation-20261017-v8",
+    "passed": 111,
+    "skipped": 0,
+    "seconds": 4.27,
+    "runner_warnings": ["One unknown asyncio_mode option because the read-only pytest-only runner deliberately excludes async plugins; all selected checks are synchronous"],
+    "tests_sha256": "cbab18c91b6a1a8106040e0232ee3babfd9a81d0e7d69c126ac33628a4748447",
+    "ruff": "PASS",
+    "ruff_log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+  },
+  "real_frozen_bounded_validation": {
+    "root": "/home/animallya96/scratch/historical-nightly-native-bounded-20261017-v7",
+    "proof_sha256": "08549b55334482cc8e50c4ae5cd3e0937c4eedd0469159b29564d1fede3eb062",
+    "runner_sha256": "8ba6bd6cee7ebe6e1868e4b86288ecc0aa8963e1614b512f1dcd66b49f965281",
+    "original_account": "/home/animallya96/scratch/live-model-history-bounded-20261013-v10/account",
+    "completion_sha256": "dd50e9d2d5e1ab9c11e11cfaa9d29c15c077910337ff421ce431359941b57a5e",
+    "scope": "Prior close2019-02-28 and both completed private sessions2019-03-01/04; initial empty PaperState and100k ledger followed by recomputed prior plans, original7fill receipts and independent reviewed economic fold",
+    "nights_compared": 3,
+    "funded_intents_compared": 11,
+    "settlements_compared": 7,
+    "exact_complete_prefixes": 3,
+    "full_fixed_daily_dates": 2961,
+    "frozen_risk_bank_dates": 2953,
+    "model_fit_date": "2026-10-01",
+    "model_published_at": "2026-10-04T18:35:30.875637-04:00",
+    "model_availability": "Explicit later current-model retrospective assumption, not historically published forecasts",
+    "daily_loader": "Exact original inputs() AST body through daily loading only; unused intraday-grid allocation omitted and source hash recorded",
+    "reviewed_economics": "Original hash-pinned actions plus actual semantic review and original normalization; no heavy execution-input/cube loading",
+    "original_vs_native": "All9 entry/intents/full-state canonical sorted-key JSON byte comparisons are equal; no native2.5.3 versus saved2.5.4 drift observed in this bounded cohort and no tolerance substituted",
+    "immutable_inputs": "Hard-pinned original completion, initial/session archive bytes, capture, overlay, original close metadata/arrays, action export and semantic review; all unchanged after",
+    "warnings": ["Original band calculation reports mean-of-empty and degrees-of-freedom warnings for preserved missing early prices"],
+    "active_full_account_read": false,
+    "broker_sender_replay_calls": false,
+    "new_base_fits": 0
+  },
+  "preserved_failed_evidence": {
+    "retained_prior_helper_regressions": {
+      "root": "/home/animallya96/scratch/historical-nightly-model-review-red-20261017-v2",
+      "result": "6failures: prior helper wrongly refused20.0/2.5 economic holdings; four float/fractional share/count corruptions DID NOT RAISE through tolerant comparison",
+      "log_sha256": "1c59f1033a602127d9707039b123fafe08ac867847e5831b4409d25254318994",
+      "chronology": "New regressions were run against a retained prior private helper copy after review; this is not claimed as an earlier pre-edit run"
+    },
+    "bounded_roots": {
+      "v1": "Test-only SECRET_KEY absent; settings import refused before inputs",
+      "v2_v3_v4": "Strict ledger symbol comparison refused np.str_ versus persisted str; values/order were equal; v3 added authenticated original economics before diagnosing the actual scalar-type boundary",
+      "v5": "Expected initial cash was integer while original broker explicitly stores float; exact-integer check correctly exposed audit representation mismatch",
+      "v6": "Complete comparison passed; v7 additionally proved exact original/native JSON equality"
+    },
+    "fixture_roots": "All phase2 validationv1-v8 retained, including native missing-pytest/shim tooling failures, initial lint findings and v6 incomplete restoration fixture missing symbol; no failed root was restarted or overwritten"
+  },
+  "preservation": {
+    "all31_approved_guarded_sources": "UNCHANGED",
+    "frozen_original_source": "27471b9c61b958f759e9f48b80acaf60cdf75f2e",
+    "frozen_original_config": "1a14980a66a1cb5994f0bb82667dd46fce40ec7eb0705728d93e36b18faf5901",
+    "original_full_simulation": "UNTOUCHED; its output was not mounted or read",
+    "models_config_runtime_services_orders": "UNCHANGED",
+    "publication_barrier": "CLOSED and unchanged"
+  },
+  "remaining": {
+    "streaming_verifier_integration": "UNVERIFIED; primitive has no production verifier caller yet",
+    "all_original_full_saved_nights": "UNVERIFIED; forbidden until genuine COMPLETE",
+    "missing_account_full_snapshot_acceptance": "UNVERIFIED; explicit classification exists but compare_saved handles planned nights only",
+    "full_live_timing_equivalence": "Not established; separate exact-source timing-path counterexample remains preserved",
+    "all94_payload_publication_and_actual_browser_delivery": "UNVERIFIED"
+  },
+  "diagram_impact": "NONE: private audit helpers/tests only; no runtime service, storage relationship, endpoint or agent architecture changed"
+}
