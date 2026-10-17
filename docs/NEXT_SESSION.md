@@ -1,5 +1,38 @@
 # Next session
 
+## 2026-10-17 — Fixed-slot peer checkpoint SOURCE/TEST work approved independently
+
+Read research/historical-fixed-slot-checkpoint-contract-2026-10-17.json.
+ROOT reviewed the exact native BIRTH/replace/cleanup/link-count inventory:
+bounded name counts do not certify filesystem metadata capacity. Read-only
+Spark1 identification found kernel6.17.0-1031-nvidia/#31/Ubuntu6.17.0-1031.31,
+ext4root rw,relatime,errors=remount-ro/4096B blocks. Official Ubuntu package
+metadata matches, but matching ext4 implementation and target feature/layout
+certificate are not reviewed. Headers alone are insufficient; sysfs options
+file absent and candidate Launchpad source URLs inaccessible through web tool.
+No runtime experiment, mount, privilege attempt or native metadata claim made.
+
+Do not bundle all independent work behind that native boundary. Existing healthy
+trading_action_consistency now has SOURCE/TEST ONLY for exactly two NEW files:
+historical_fixed_slot_checkpoint.py and its test on private356f settlement tree.
+Separate unused version: precreated numeric bodies/pages/index/head banks/fixed
+ARM-PREPARED-DECISION-ACK records; actual finite file reservation; no checkpoint
+mkdir/O_CREAT/link/rename/unlink after ARM. Bind distinct peers/source/profile/
+prior head/owner/declaration; both durable ARMs before fixture effect, matching
+PREPARED bytes, exact mirrored owner COMMIT and durable peer ACK before return.
+Unknown ACK/crash pauses; no effect replay/election/failover/orphan adoption.
+Fake-only two-local-root transport/tests proposed; no network/default client.
+Existing raw/native/Store/schema/stages/Nightly/Cycle/codec/pins/caps unchanged.
+Native metadata reserved remains FALSE; no native pre-effect/two-Spark/full-RAM
+claim. No runtime/native imports/tests/commits/integration before ROOT final
+source/resource/invocation review. Source-only static checks allowed. ROOT owns
+the later inert runner; never create duplicate workers/jobs. No genuine run.
+
+All completed36 raw/native tests and original byte/state evidence remain
+proof-scoped, not rerun. Original timing FAILED/publication CLOSED, v6 PAUSED/
+OPEN/no replay; productione237/f612 unchanged. Real weekday/intraday/fill/UI
+acceptance and historical delivery remain UNVERIFIED; heartbeat stays ACTIVE.
+
 ## 2026-10-17 — Local native writer inode and crash tests VERIFIED privately
 
 Read research/historical-native-write-reservation-proof-2026-10-17.json.

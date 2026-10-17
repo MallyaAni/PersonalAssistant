@@ -1,0 +1,29 @@
+{
+  "schema": "historical-fixed-slot-checkpoint-contract/1",
+  "status": "APPROVED_SOURCE_TEST_ONLY_NOT_RUNTIME_ADMISSION",
+  "objective": "Prepare a separate unused checkpoint path whose content and metadata occupy actual precreated finite files, with explicit two-peer acknowledgements and no native effect replay.",
+  "owner": "Existing trading_action_consistency in settlement worktree at private356f282d; ROOT reviews final source and invocation before runtime",
+  "allowed_new_files": ["backend/market/historical_fixed_slot_checkpoint.py", "backend/tests/test_historical_fixed_slot_checkpoint.py"],
+  "verified_prior_boundaries": ["Raw primitive21 synthetic checks", "Local native writer15 synthetic/native byte and crash checks", "Original source/input byte and ordered state consistency"],
+  "failed_or_unverified": ["Original timing FAILED/publication CLOSED", "Genuinev6 OPEN/PAUSED, no further genuine run", "Native directory/extent/journal metadata capacity UNVERIFIED", "Actual two-Spark reservation, whole-horizon quota and full native/model lifecycle UNVERIFIED"],
+  "source_contract": [
+    "Separate version; exact CURRENT source/profile/writer/helper binding. Do not modify existing raw primitive, native writer, Store, schema, stages, Nightly, Cycle, codec, pins or caps.",
+    "Opaque source-bound physical framing and bounded persistent pages; fixed numeric body/page inodes, bounded hash index, head banks and fixed ARM/PREPARED/DECISION/ACK records. Explicit finite byte/inode/record arithmetic; real preallocation/readback before acknowledgement, no sparse fallback or dummy reservations.",
+    "After ARM the checkpoint path may not mkdir, create new files, link, rename or unlink. Existing actual body/page/control files retain their reserved size. Immutable content references bind slot, kind, length and full SHA; source drift, identity substitution, torn controls, duplicates, collisions, quota exhaustion and unsupported declarations refuse.",
+    "Require durable exact resource and ARM acknowledgements from both distinct peers, bound to operation, external owner, prior head, source/profile and declaration before any supplied fixture effect.",
+    "Verify identical complete opaque checkpoint content and root on both peers, fsync body then index/page/metadata, and retain matching PREPARED witnesses. An explicit owner COMMIT decision binds both witnesses; mirror that exact decision and retain peer durable ACK before returning.",
+    "Unknown acknowledgement or interruption pauses. Never elect the highest sequence, infer success from readable orphan slots, repeat a writer/model/sender or automatically fail over. Recovery is limited to idempotent metadata transfer under an exact authoritative durable owner decision and externally pinned prior head.",
+    "Prepare only synthetic two-local-root tests with fake-only injected transport. No network client/default transport/credentials/provider or genuine account/model inputs. Do not claim two-Spark proof or a native pre-effect gate.",
+    "Source-only Ruff is allowed. No runtime/imports of native or model code, tests, commits, genuine runs or integration before ROOT source/resource/invocation review. Return concrete staged boundary if the full unused primitive cannot be coherent in these two files."
+  ],
+  "proposed_acceptance_not_yet_authorized": ["Physical allocation/index/inode arithmetic and same-inode writes", "Source/profile/peer duplication and authoritative-prior refusals", "No post-ARM namespace allocation syscall in checkpoint path", "Append and replaced-last-row sharing", "Capacity refusal before fixture effect", "Torn index/head/content and acknowledgement corruption refusal", "Real SIGKILL at one-peer ARM, result-before-mirror, PREPARED, owner decision and ACK; recovery never repeats fixture effect or adopts orphans"],
+  "native_metadata_review": {
+    "source_fact": "BIRTH has absent genuine state.json, later saves replace a genuine bound preimage; name count is bounded but Python source does not certify ext4 allocation. No invented initial placeholder is proposed.",
+    "read_only_spark1_observation": "Linux6.17.0-1031-nvidia #31, Ubuntu6.17.0-1031.31-nvidia6.17.13; installed image/modules6.17.0-1031.31; root/dev/nvme0n1p2 ext4 rw,relatime,errors=remount-ro; block and fragment4096B",
+    "official_package_reference": "https://packages.ubuntu.com/source/noble-updates/linux-nvidia-6.17",
+    "limits": "Host has kernel headers, not reviewed matching ext4 implementation. sysfs options file absent; no filesystem superblock feature/layout certificate obtained. Candidate Launchpad source URLs were inaccessible through the browsing tool. No kernel source or metadata-capacity acceptance claim.",
+    "remaining_evidence": "Matching rename/add/delete-entry, extent conversion/truncate and journal source, actual private directory features/layout and a concrete finite capacity domain before any disposable filesystem experiment"
+  },
+  "excluded": "No native metadata guarantee, full lifecycle, model/network service changes, paid data, real-money orders, genuine-state parsing, actual-day replay, v6 adoption/replay, source guard weakening or deployment",
+  "diagram_impact": "NONE: unused private primitive only, no deployed relationships changed"
+}
