@@ -1,5 +1,31 @@
 # Next session
 
+## 2026-10-17 — Private opaque checkpoint primitive passes21 synthetic tests
+
+Read research/historical-physical-checkpoint-proof-2026-10-17.json. New unused
+helper5d616928/test4a6ee91d passed21/0skip20.823s in actual6f4820cb/f612,
+UID1000/noneRO/1CPU/512MiB=swap/tmp64MiB;8 source/fixture files unchanged.
+Peak30768KiB, retained224333824 allocated bytes/5071unique inodes. Ruff checks
+passed. ROOT independently reviewed terminal194049d5/inspect0dae0df5 and retained
+real SIGKILL CAPTURE marker/same reserved inode plus exact opaque NaN restore;
+independent proof88b39528. All synthetic cases remain under the private root.
+
+Only two new source files; existing Store/schema/stages/Nightly/Cycle/codec/
+source pins/caps and native models/account remain untouched. This is local raw
+byte capture/verification/restore, not JSON/numerical admission, native operation
+completion, simulator adoption, whole-horizon or dual-host/pre-effect reservation.
+Strict finite metadata, exact profile/writer, finite local slots, ordered shared
+pages and interruption guards remain explicit. It is NOT merged/deployed; generic
+unit gates/integration have not been claimed. Tests require the externally pinned
+private CURRENT fixture; do not treat an unavailable fixture as passing coverage.
+
+Former9eabe branch remains preserved. Exact source/test bytes carried onto a new
+private branch from main d530d18d after source review; actual acceptance is the
+pinned two-file closure, not a complete checkout acceptance. Main records original
+byte-auth completion separately. Original timing remains FAILED/publication CLOSED;
+genuinev6 stays PAUSED/no replay. Next review is native working-file and dual-host
+physical reservations before native effects, plus explicit integration and memory.
+
 ## 2026-10-17 — Complete original source/input byte authentication VERIFIED
 
 Read research/original-complete-input-auth-proof-2026-10-17.json. Actual4cb6103b
