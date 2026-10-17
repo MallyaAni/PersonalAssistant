@@ -6,9 +6,11 @@ must be composed by a later coordinator before any connected-account claim.
 """
 
 import io
+import math
 import os
 import stat
 import time
+from collections.abc import Mapping
 from copy import deepcopy
 from dataclasses import asdict, dataclass, fields
 from datetime import UTC, date, datetime, timedelta
@@ -145,6 +147,30 @@ def sources():
     }
 
 
+# Detach immutable action metadata without changing keys, numbers or missing values.
+def action_primitives(value):
+    if isinstance(value, Mapping):
+        admitted.require(
+            all(type(key) is str for key in value),
+            "Action metadata requires string keys",
+        )
+        return {key: action_primitives(item) for key, item in value.items()}
+    if type(value) in (tuple, list):
+        return [action_primitives(item) for item in value]
+    if value is None or type(value) in (str, int, bool):
+        return value
+    admitted.require(
+        type(value) is float and math.isfinite(value),
+        "Action metadata requires finite JSON primitives",
+    )
+    return value
+
+
+# Preserve the existing canonical hash for equivalent plain or frozen action metadata.
+def action_digest(value):
+    return packet._digest(action_primitives(value))
+
+
 # Bind consumed arrays and passive identities independently of the selected model row.
 def arrays(panel, raw, reader):
     values = {
@@ -236,8 +262,8 @@ class HoldingContext:
             "Nightly cohort/order changed",
         )
         admitted.require(
-            packet._digest(self.raw.actions) == value["actions_sha256"]
-            and packet._digest(self.raw.inherited_actions)
+            action_digest(self.raw.actions) == value["actions_sha256"]
+            and action_digest(self.raw.inherited_actions)
             == value["inherited_actions_sha256"],
             "Economic action declarations changed",
         )
@@ -429,8 +455,8 @@ def load_context(approval, observation_root, economic_receipt):
         "input_sha256": files,
         "symbols": list(panel.tickers),
         "array_sha256": arrays(panel, raw, reader),
-        "actions_sha256": packet._digest(actions),
-        "inherited_actions_sha256": packet._digest(inherited),
+        "actions_sha256": action_digest(actions),
+        "inherited_actions_sha256": action_digest(inherited),
         "model_fit_date": model["training"]["fit_date"],
         "model_receipt_sha256": holding["model_receipt_sha256"],
         "risk_receipt_sha256": holding["risk_receipt_sha256"],

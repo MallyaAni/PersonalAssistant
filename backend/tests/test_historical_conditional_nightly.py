@@ -5,7 +5,7 @@ from contextlib import closing
 from dataclasses import asdict, replace
 from datetime import UTC, datetime
 from hashlib import sha256
-from types import SimpleNamespace
+from types import MappingProxyType, SimpleNamespace
 
 import numpy as np
 import pytest
@@ -653,3 +653,105 @@ def test_context_integrity_rejects_added_passive_binding():
     object.__setattr__(context, "raw", replace(raw, passive=passive))
     with pytest.raises(ValueError, match="Nightly input/model arrays changed"):
         context.validate()
+
+
+# Commit plain expected actions before exposing the same native-shaped frozen metadata.
+def action_context(field):
+    context = integrity_context()
+    actions = {
+        "AAA": [
+            {
+                "kind": "split",
+                "date": "2019-02-28",
+                "value": 2.0,
+                "declaration": {"known": True, "missing": None, "count": 1},
+            }
+        ]
+    }
+    inherited = {"CHILD": [{"kind": "dividend", "date": "2019-02-28", "value": 0.25}]}
+    provenance = adapter.admitted.decoded(context.provenance)
+    provenance["actions_sha256"] = packet._digest(actions)
+    provenance["inherited_actions_sha256"] = packet._digest(inherited)
+    raw = replace(
+        context.raw,
+        actions=_freeze(actions) if field in ("actions", "both") else actions,
+        inherited_actions=(
+            _freeze(inherited) if field in ("inherited_actions", "both") else inherited
+        ),
+    )
+    object.__setattr__(context, "raw", raw)
+    object.__setattr__(context, "provenance", adapter.admitted.encoded(provenance))
+    return context, actions, inherited
+
+
+# Admit unchanged native frozen actions and inherited events through real validation.
+@pytest.mark.parametrize("field", ["actions", "inherited_actions", "both"])
+def test_action_metadata_context_accepts_frozen(field):
+    context, actions, inherited = action_context(field)
+    before = context.provenance
+    admitted = context.validate()
+    assert admitted["actions_sha256"] == packet._digest(actions)
+    assert admitted["inherited_actions_sha256"] == packet._digest(inherited)
+    assert context.provenance == before
+
+
+# Preserve the original canonical hash at construction and later validation.
+def test_action_metadata_digest_preserves_canonical_values_and_detaches():
+    plain = {"outer": [{"float": 1.0, "integer": 1, "boolean": True, "missing": None}]}
+    frozen = _freeze(plain)
+    detached = adapter.action_primitives(frozen)
+    assert detached == plain
+    assert packet._digest(detached) == adapter.action_digest(frozen)
+    assert adapter.action_digest(frozen) == packet._digest(plain)
+    assert type(detached["outer"][0]["float"]) is float
+    assert type(detached["outer"][0]["integer"]) is int
+    detached["outer"][0]["integer"] = 9
+    assert frozen["outer"][0]["integer"] == 1
+    assert plain["outer"][0]["integer"] == 1
+
+
+# Reject changed frozen actions against their previously admitted commitment.
+@pytest.mark.parametrize("field", ["actions", "inherited_actions"])
+def test_action_metadata_context_rejects_corruption(field):
+    context, actions, inherited = action_context("both")
+    context.validate()
+    changed = actions if field == "actions" else inherited
+    symbol = "AAA" if field == "actions" else "CHILD"
+    changed[symbol][0]["value"] += 1
+    object.__setattr__(
+        context, "raw", replace(context.raw, **{field: _freeze(changed)})
+    )
+    with pytest.raises(ValueError, match="Economic action declarations changed"):
+        context.validate()
+
+
+# Nonfinite action values must fail instead of being replaced with a missing value.
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), -float("inf")])
+@pytest.mark.parametrize("field", ["actions", "inherited_actions"])
+def test_action_metadata_context_rejects_nonfinite(field, value):
+    context, _, _ = action_context("both")
+    altered = MappingProxyType(
+        {"AAA": (MappingProxyType({"nested": MappingProxyType({"value": value})}),)}
+    )
+    object.__setattr__(context, "raw", replace(context.raw, **{field: altered}))
+    with pytest.raises(ValueError, match="finite JSON primitives"):
+        context.validate()
+
+
+# Shape conversion must not stringify keys or accept arbitrary Python objects.
+@pytest.mark.parametrize(
+    "value",
+    [
+        {1: "integer key"},
+        {True: "boolean key"},
+        {None: "missing key"},
+        {("key",): "tuple key"},
+        {"nested": object()},
+        {"nested": b"bytes"},
+        {"nested": {"set"}},
+        {"nested": np.float64(1.0)},
+    ],
+)
+def test_action_metadata_rejects_nonprimitive(value):
+    with pytest.raises(ValueError, match="Action metadata requires"):
+        adapter.action_digest(MappingProxyType(value))

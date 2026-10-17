@@ -1,0 +1,106 @@
+{
+  "schema": "conditional-nightly-action-metadata-proof/1",
+  "status": "VERIFIED_SYNTHETIC_METADATA_AND_RETAINED_NATIVE_FIXTURES_ONLY",
+  "starting_git": {
+    "branch": "codex/conditional-nightly-action-metadata-20261017",
+    "head": "48cf68fb1d3c1f0d0d73e2dbcf46dd5d5011e48c",
+    "working_tree": "CLEAN before these two task edits"
+  },
+  "source_sha256": {
+    "backend/market/historical_conditional_nightly.py": "ac3209672af0cb18dd3fcc6922114902eff4d08c079edc343393079eebbc8575",
+    "backend/tests/test_historical_conditional_nightly.py": "8d4d7852e784449fbbbf94d2684bd54e1c7331633f5ed19a00ca7c46ef4824fb"
+  },
+  "change": "Recursively detach Mapping/tuple/list action metadata into exact finite JSON primitives at construction and validation; retain the existing packet canonical hash and reject non-string keys, nonfinite numbers and arbitrary objects.",
+  "preserved_genuine_failure": {
+    "root": "/home/animallya96/scratch/conditional-nightly-genuine-20261017-v2",
+    "container_id": "7f79ff032f74d38096028c812728d5248005bdc2cc558e6fea0121cec6f6c810",
+    "helper_sha256": "299385947a709ecc301f8fabbd3394b26d8cf8e1e95739c481f1aaf0a014012b",
+    "failure_sha256": "920535b774bc6e83ac6d173e213ead23b3c261bb4ae1b9db06a83c1798e2ea18",
+    "runtime_proof_sha256": "fa3e148219cf0347e175531c115e38efcc9e62010f52eb94afaa5e33430c1048",
+    "actual_holding_head_calls_completed": [
+      {"feature_shape": [1, 96, 13], "opportunities": 93},
+      {"feature_shape": [2961, 96, 13], "opportunities": 206595}
+    ],
+    "birth_calls": 0,
+    "close_calls": 0,
+    "boundary": "Mappingproxy canonical-JSON TypeError after these two context head calls, before birth or native close; preserved unchanged, not retried."
+  },
+  "preserved_genuine_v1_failure": {
+    "root": "/home/animallya96/scratch/conditional-nightly-genuine-20261017-v1",
+    "container_id": "73c9f01e3150752722defed573c438f79fe9320b7bf0eb3c6d15239f148150a4",
+    "failure_sha256": "081f92a2fd100caf155d2bf3307a08df6effa6e2e90218eb948768c9d141ac20",
+    "runtime_proof_sha256": "6f1c63ba99dfc865f9cc0997639a04dc736ae3b7269d603000a7c788d94a05c5",
+    "boundary": "Runner admitted.packet namespace failed before context loading, head inference, birth or close; original evidence unchanged."
+  },
+  "validation_preparation": {
+    "root": "/home/animallya96/scratch/nightly-action-metadata-preparation-20261017-v1",
+    "controller_sha256": "15fabd87c5756a728b68b763aa8da06e58ee4a4333daa1e2885bfedad4beb153",
+    "runner_sha256": "6edff2a001de7ae2db1a34f95efbb0ec45a0619d15ca4b04904fa1e7f4dfcc56",
+    "preparation_sha256": "775f0372beef69b8eae57ff2770e773ae9045437865e91fde9dca6afcb714c17",
+    "source_files": 1693,
+    "native_files": 1655,
+    "added_files": 38,
+    "native_overrides": 0,
+    "source_and_alias_pins_checked_before_after": 1695
+  },
+  "red": {
+    "container_id": "4f4583aff9e968b61ccd44d0219430d51c07d2c6f266eb0c1821b59dd1add008",
+    "original_helper_sha256": "299385947a709ecc301f8fabbd3394b26d8cf8e1e95739c481f1aaf0a014012b",
+    "result": "3 selected frozen-context acceptance cases failed at the exact Mappingproxy JSON boundary; no collection/setup errors or skips",
+    "pytest_exit": 1,
+    "controller_exit": 0,
+    "proof_sha256": "43e97b9d060f7296cfbc3a287d922203dd4262b003fcb1e5d0d50d9b15f7f814",
+    "runtime_proof_sha256": "40beb6325d5865064740ba407336c3bdf5d85db741df71cd8107b7cbb8c3593f",
+    "log_sha256": "e4c31c27f3f2839675e5f1e7eac0a0c82c1b520ec4e8e93084d60a1f8a72158f"
+  },
+  "green": {
+    "container_id": "43037f137ba341a61ed2689c1a69445fdf7937f718e3c4c2cedd1191970f3522",
+    "passed": 51,
+    "failed": 0,
+    "skipped": 0,
+    "elapsed_seconds": 2.64,
+    "pytest_exit": 0,
+    "controller_exit": 0,
+    "proof_sha256": "644a68ea47e1d50375d735191a368e8973315e7a4d2da9136df1c884c1856a81",
+    "runtime_proof_sha256": "e14e11aa6e05c32b2fad35796e102100d8589cc892e31c0b31239a39136fa272",
+    "log_sha256": "8ba19f9d9421a80c03488066384eabfecb9a7351c58cd5c066474383f718d25d"
+  },
+  "actual_runtime": {
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "user": "1000:1000",
+    "network": "none",
+    "readonly_rootfs": true,
+    "cpus": 1,
+    "memory_bytes": 2147483648,
+    "total_memory_swap_bytes": 2147483648,
+    "tmpfs_mib": 64,
+    "writable_bind_mounts": ["/out"],
+    "numpy": "2.5.3",
+    "sklearn": "1.9.1",
+    "all_four_thread_environment_limits": 1,
+    "all_observed_threadpools_before_after": 1,
+    "native31_compact_map_sha256": "bfbcb6ece4ea500726e00abbb06fc2c84d63d386bb307958016915357aaef5b3",
+    "native31_before_after": "UNCHANGED",
+    "all_source_and_alias_pins_before_after": "UNCHANGED",
+    "model_restore_head_context_provider_calls": "BLOCKED; no genuine artifact/data/account mounts"
+  },
+  "acceptance": {
+    "strict_action_metadata_detach_and_canonical_equality": "VERIFIED",
+    "mutated_nonfinite_arbitrary_metadata_rejection": "VERIFIED",
+    "retained_native_synthetic_lifecycle_fixtures": "VERIFIED",
+    "ruff_check_and_format": "VERIFIED",
+    "genuine_corrected_context_birth_funded_close": "UNVERIFIED; fresh v3 remains inert",
+    "cycle_predecessor": "UNEXERCISED; byte-pinned unchanged",
+    "combined_new_original_audit_source_graph": "UNVERIFIED; original stream c64 pin intentionally unchanged",
+    "original_current_live_timing_parity": "FAILED and unchanged",
+    "historical_publication": "CLOSED and unchanged"
+  },
+  "independent_next_boundary": {
+    "metadata_preflight_root": "/home/animallya96/scratch/nightly-birth-economic-preflight-20261017-v1",
+    "proof_sha256": "ab6a093074e500683f2fb90d5c5fc4e27c6f9157dcdcd49d9f9578bac1c59938",
+    "finding": "Pinned original action metadata contains ADI and NVDA dividends effective 2019-02-28. The current close guard rejects nonempty due actions even for BIRTH; genuine v3 held for source-backed coordinator design, no model retry.",
+    "raw_original_dividend_values_not_normalized": {"ADI": 0.54, "NVDA": 0.004},
+    "arrays_models_accounts_read": false
+  },
+  "diagram_impact": "NONE; finite metadata admission at existing private helper boundaries, no new service or architectural relationship"
+}

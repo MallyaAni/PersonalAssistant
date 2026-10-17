@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-10-17 — Preserve frozen action metadata at private nightly admission
+
+The corrected-account helper now detaches immutable action mappings and tuples
+into exact finite JSON primitives before its existing canonical hash. It preserves
+keys, numeric types, dates and missing values; nonfinite values and unsupported
+objects fail admission. The native planner, source31, models and economics are
+unchanged. Three actual failure reproductions on the original helper are retained;
+the corrected helper passed all51 synthetic/native fixture cases,0skip,2.64s in
+the exact f612 image with networknone/read-only/UID1000/1CPU/2GiB RAM and swap.
+
+The genuine v1 namespace failure and v2 Mappingproxy failure remain unchanged.
+V2 completed two holding-head calls but no account birth or native close. Fresh
+genuine v3 remains inert: pinned metadata additionally shows ADI/NVDA dividends
+on the February28 prior-close date, requiring a separate source-backed birth
+boundary before any new model run. Raw values0.54/0.004 were not normalized or
+applied. This fixture checkpoint proves no genuine funded plan, Cycle acceptance,
+full historical parity or publication. Read
+research/historical-conditional-nightly-action-metadata-proof-2026-10-17.json.
+
 ## 2026-10-17 — Remove redundant trading views and show one strategy action
 
 The live Stocks table now shows one numeric strategy Action, separate Size and
