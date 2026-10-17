@@ -11,8 +11,8 @@ import {rankCurrent, confirmationText, invalidationText, quoteReferenceText} fro
 // separately, including when no order can be sized or funded. The paper account
 // sends only its recorded orders. Their wording (why, when, what happened) comes
 // from the backend in one place, so this board, the ticker panel and the
-// chart cannot tell different stories. A name with no order is HOLD when the
-// account holds it and a dash when it does not.
+// chart cannot tell different stories. On Stocks, no order is a missing action,
+// not a model HOLD decision. Chart judgments remain supporting evidence.
 //
 // Levels shows the account's unsubmitted price triggers. Technical references
 // belong in stock details; a reference indicator is never an order price.
@@ -26,7 +26,7 @@ const LEARNED_HOLDING_POLICY = 'joint-stock-risk-funded/6-retained-holdings-prob
 export const learnedAllocation = (latest: DeskRecord): boolean => [LEARNED_HOLDING_POLICY, 'grade-led-learned-sizing/1'].includes(latest.targets?.policy ?? '')
 
 // Explain the board's presentation of recorded decisions without inventing a stock score.
-export const rankingText = 'Current opportunities rank outstanding orders, exits of remaining below-A holdings, chart exit reviews, then ready entries and waits. Fresh chart judgment, grade and analyst conviction break ties; saved target sizes do not rank opportunities. Prices refresh separately; judgments use completed 15-minute candles. This is an evidence ranking, not a profit forecast.'
+export const rankingText = 'Recorded paper actions rank by readiness and size. Other stocks follow the saved allocation and holdings. Chart judgments and fresh grades are supporting evidence; they do not create an action, funded quantity or execution time.'
 
 // Prefer the executor's recorded rule rather than assigning legacy timing to a new policy.
 export const executionRuleText = (plan?: DeskPaperPlan): string => {
@@ -324,13 +324,6 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
       : allocation === 'modeled' ? `${gradeLed ? 'Grade-led allocation' : 'Model allocation'} · ${latest.session}; cash and costs included`
       : 'Model allocation unavailable · recorded target is not a fresh recommendation'
     const grade = latest.grades[ticker]?.grade ?? ''
-    const signalRow = latest.actions?.find(row => row.ticker === ticker)
-    const signal = currentOnly ? (
-      grade === 'A' || grade === 'A+' ? held > 0 ? 'hold' : 'buy'
-      : grade === 'B' || grade === 'C' ? held > 0 ? 'sell' : 'avoid' : 'unavailable'
-    ) : undefined
-    const signalReason = !currentOnly ? undefined : signalRow?.signal_reason ??
-      `Grade ${grade || 'unavailable'} · ${latest.session}; ${latest.targets?.policy === 'grade-led-learned-sizing/1' ? 'no executable order' : 'awaiting a fresh grade-led sizing plan'}`
     const lead = [...mine].sort((a, b) => (PROGRESS[a.state] ?? 9) - (PROGRESS[b.state] ?? 9))[0]
     const combined = new Set(mine.map(o => `${o.side}:${o.state}:${quantityLabel(o)}`)).size <= 1
     const status = !lead ? '' : mine.length < 2 ? lead.status
@@ -339,9 +332,12 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
       : `${lead.status} · ${mine.filter(o => o.state === 'filled').length} of ${mine.length} orders filled`
     const qty = mine.reduce((sum, o) => sum + o.qty, 0)
     const notional = combined && mine.length && mine.every(o => o.notional !== null) ? mine.reduce((sum, o) => sum + (o.notional ?? 0), 0) : null
-    const word: BoardWord = mine.length ? wordOf(mine) : signal === 'buy' ? 'BUY' : signal === 'sell' ? 'SELL' : held > 0 ? 'HOLD' : '—'
+    const word: BoardWord = mine.length ? wordOf(mine) : currentOnly ? '—' : held > 0 ? 'HOLD' : '—'
     const done = mine.length > 0 && mine.every(isDone)
-    const why = mine.length
+    const why = currentOnly && !mine.length
+      ? paper?.reason ? `Account unavailable: ${paper.reason}`
+        : 'A current numeric decision, funded quantity and execution time are not provided. A saved target, chart judgment or existing holding cannot supply a missing model plan.'
+      : mine.length
       ? [...new Set(mine.map(o => o.why))].join(' + ')
       : allocation === 'retained' ? allocationNote
       : allocation === 'event' ? `${allocationNote} · no recorded order`
@@ -359,8 +355,7 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
       avgCost: position?.avg_entry_price ?? null,
       unrealized: position ? position.unrealized_pl : null,
       target, allocation, allocationNote,
-      status: status || (signal === 'buy' || signal === 'sell' ? `Signal only · ${signalReason}` : ''),
-      signal, signalReason,
+      status: status || (currentOnly ? paper?.reason ? 'Account unavailable' : 'Awaiting model plan' : ''),
       state: lead?.state ?? '',
       when: lead?.when ?? '',
     }
@@ -550,7 +545,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
   const [draft, setDraft] = useState(() => (readMyAccount() ?? '').toString())
   useEffect(() => { setVisible(25) }, [chosen, query, shownActions])
   const rows = useMemo(() => currentOnly
-    ? rankCurrent(boardRows(latest, paper, true), live, latest.session, now, paper?.reason === undefined && paper?.equity !== undefined)
+    ? rankCurrent(ranked(boardRows(latest, paper, true)), live, latest.session, now)
     : ranked(boardRows(latest, paper, false)), [latest, paper, currentOnly, live, now])
   const assessments = currentOnly ? currentAssessments(live, latest.session, now) : {}
   const orders = (paper?.plan?.orders ?? []).filter(order => !currentOnly || !isDone(order))
@@ -591,7 +586,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
       {paused && <p role="status" aria-label="Trading restriction" className="text-xs text-[#b25e00]">FOMC cycle: the paper account follows the FOMC risk rule; its orders say when.</p>}
       <details aria-label="Order rules" className="text-xs text-[#6e6e73]">
         <summary className="cursor-pointer">About these signals & options</summary>
-        <p aria-label="Allocation record" title={`Saved policy: ${latest.targets?.policy ?? 'not recorded'}`} className="my-2 text-[11px]">{currentOnly ? `Assessments use completed 15-minute candles; expired evidence cannot produce a buy signal. Saved targets and order signals: ${latest.session}.` : `Saved allocation · ${latest.session}. These are the saved plan's targets, not new orders. Live holdings can differ.`}</p>
+        <p aria-label="Allocation record" title={`Saved policy: ${latest.targets?.policy ?? 'not recorded'}`} className="my-2 text-[11px]">{currentOnly ? `Actions, sizes and timing below belong to recorded paper orders. No order does not mean HOLD; a current numeric model plan is required for a new decision. Saved allocation: ${latest.session}. Chart judgments use completed 15-minute candles and stay in Details.` : `Saved allocation · ${latest.session}. These are the saved plan's targets, not new orders. Live holdings can differ.`}</p>
         <label className="flex items-center gap-1 text-xs text-[#6e6e73]" title="Scales unsent plans only. Does not check your holdings or available cash. Kept in this browser only.">
           Reference account $
           <input aria-label="Reference account size" inputMode="decimal" value={draft} placeholder="optional"
@@ -630,7 +625,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
             <Head label="Grade" column="grade" sort={sort} onSort={onSort} title="The recorded analyst grade; allocation and orders come from the selected policy. Click to sort by grade." />
             <Head label="Position" column="position" sort={sort} onSort={onSort} title="Live paper holdings and share of the account. Saved targets belong to the dated allocation record; they are not new orders." />
             <Head label="Levels" sort={sort} onSort={onSort} title="Outstanding paper order triggers, tested on completed 15-minute closes. Technical references are in stock details. Not guaranteed fill prices." />
-            <ActionHead open={actionMenu} onOpen={setActionMenu} shown={shownActions} onShown={setShownActions} rows={inView} title={currentOnly ? 'Current recorded paper-account actions. HOLD means no current order; No order means the account does not hold or trade the stock.' : undefined} />
+            <ActionHead open={actionMenu} onOpen={setActionMenu} shown={shownActions} onShown={setShownActions} rows={inView} title={currentOnly ? 'Recorded paper-account actions. A dash means no current action is recorded; it is not a model HOLD decision.' : undefined} />
             <Head label="Size" column="size" sort={sort} onSort={onSort} title={currentOnly ? 'Current planned or submitted shares. Dollars use the recorded price estimate; percentages use current paper equity.' : 'Planned or submitted sizes use a price estimate; filled sizes use execution prices. Percentages use current paper equity.'} />
             <Head label="When / status" sort={sort} onSort={onSort} title="The order's rule for its session and what has happened to it." />
           </tr>
@@ -675,7 +670,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
                 </> : '—'}
               </td>
               <td className="max-w-72 whitespace-normal py-2 text-xs" aria-label={`${row.ticker} order status`}>
-                {currentOnly && !row.orders.length ? <span className="text-[#6e6e73]">No order</span> : row.status ? <>
+                {row.status ? <>
                   <span className={`mr-1 inline-block h-2 w-2 rounded-full ${STATE_DOT[row.state] ?? 'bg-[#86868b]'}`} aria-hidden="true" />{row.status}
                   <div className="text-[10px] text-[#6e6e73]">{row.when}</div>
                 </> : <span className="text-[#86868b]">—</span>}
