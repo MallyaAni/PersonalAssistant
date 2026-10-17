@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-17 — Retain observed submission quantities after settlement
+
+Future paper settlement journals retain the broker's observed order quantity and
+the native sender's recorded quantity independently of the original desired and
+actual filled shares. Missing observations remain unknown; old terminal journals
+are not backfilled. Disagreement, adjusted quantities and malformed metadata are
+retained as non-diagnostic evidence without new quantity clamps or changes to
+settlement status, pending removal or rebalance controls. Fifteen native synthetic
+checks passed, zero skipped, after the retained original failure. Exact source,
+runtime and limits: research/settlement-quantity-retention-2026-10-17.md.
+Release admission and deployment remain pending. Diagram impact: NONE (metadata
+on the existing settlement boundary).
+
 ## 2026-10-17 — Keep Stocks actions, quantities and timing on one numeric plan
 
 Stocks now reads its grade, action, funded whole-share quantity and timing from

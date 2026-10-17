@@ -41,6 +41,7 @@ import tempfile
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field, fields, is_dataclass, replace
 from datetime import UTC, datetime
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 from backend.agents.trading.desk import execution_evidence, planner
@@ -328,6 +329,50 @@ class PaperOrder:
     # journal, the settled rows and the fills history so the board can tell
     # a redeploy from a rotation or an entry. None on every other order.
     kind: str | None = None
+
+
+# Read observed positive quantities without flooring fractional or adjusted shares.
+def _settlement_quantity(value: object) -> int | float | None:
+    if isinstance(value, bool) or not isinstance(value, (str, int, float)):
+        return None
+    try:
+        number = Decimal(str(value))
+    except InvalidOperation:
+        return None
+    if not number.is_finite() or number <= 0 or not math.isfinite(float(number)):
+        return None
+    if number == number.to_integral_value():
+        return int(number)
+    fraction = float(number)
+    return fraction if math.isfinite(fraction) and fraction > 0 else None
+
+
+# Label inconsistent observations without changing legacy execution/control decisions.
+def _settlement_quantity_evidence(row, order, wanted, filled):
+    broker_raw = order.get("qty") if order is not None else None
+    sent = row.get("sent")
+    sender_raw = sent.get("qty") if isinstance(sent, dict) else None
+    broker_qty = _settlement_quantity(broker_raw)
+    sender_qty = _settlement_quantity(sender_raw)
+    anomalies = []
+    if broker_raw is not None and broker_qty is None:
+        anomalies.append("invalid_broker_qty")
+    if sender_raw is not None and sender_qty is None:
+        anomalies.append("invalid_sender_qty")
+    if broker_qty is not None and sender_qty is not None and broker_qty != sender_qty:
+        anomalies.append("broker_sender_disagreement")
+    if broker_qty is not None and broker_qty > wanted:
+        anomalies.append("broker_exceeds_desired")
+    if sender_qty is not None and sender_qty > wanted:
+        anomalies.append("sender_exceeds_desired")
+    if broker_qty is not None and filled > broker_qty:
+        anomalies.append("fill_exceeds_broker")
+    evidence = (
+        {"broker_qty": broker_raw, "sender_qty": sender_raw, "anomalies": anomalies}
+        if anomalies
+        else {}
+    )
+    return broker_qty, sender_qty, evidence
 
 
 # Serialize paper writers across the nightly and intraday processes.
@@ -1187,6 +1232,10 @@ class Settled:
     # The plan leg the order came from (`PaperOrder.kind`), read off the
     # pending row so the settled rows and the fills history keep it.
     kind: str | None = None
+    # Independent observations, never inferred from desired or filled shares.
+    submitted_qty: int | float | None = None
+    sender_qty: int | float | None = None
+    quantity_evidence: dict = field(default_factory=dict)
 
 
 # Pure: match what was written down against what the broker reports.
@@ -1226,6 +1275,9 @@ def settle(pending: list[dict], broker_orders: list[dict]) -> list[Settled]:
                 status = "dead"
             else:
                 status = "open"
+        submitted_qty, sender_qty, quantity_evidence = _settlement_quantity_evidence(
+            row, order, wanted, filled
+        )
         out.append(
             Settled(
                 client_order_id=str(row.get("client_order_id") or ""),
@@ -1243,6 +1295,9 @@ def settle(pending: list[dict], broker_orders: list[dict]) -> list[Settled]:
                     **execution_evidence.broker_evidence(order),
                 },
                 kind=row.get("kind") or None,
+                submitted_qty=submitted_qty,
+                sender_qty=sender_qty,
+                quantity_evidence=quantity_evidence,
             )
         )
     return out
@@ -1280,6 +1335,7 @@ def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
     new = PaperState(**asdict(state))
     journal = {str(row.get("client_order_id") or ""): row for row in state.journal}
     for s in settled:
+        previous = journal.get(s.client_order_id, {})
         prior = next(
             (
                 row
@@ -1306,6 +1362,19 @@ def apply_settlements(state: PaperState, settled: list[Settled]) -> PaperState:
                 **s.execution,
             },
         }
+        # Keep known observations through later partial receipts that omit a field.
+        for key, value in (
+            ("submitted_qty", s.submitted_qty),
+            ("sender_qty", s.sender_qty),
+        ):
+            if value is not None:
+                journal[s.client_order_id][key] = value
+            elif key in previous:
+                journal[s.client_order_id][key] = previous[key]
+        if s.quantity_evidence:
+            journal[s.client_order_id]["quantity_evidence"] = s.quantity_evidence
+        elif "quantity_evidence" in previous:
+            journal[s.client_order_id]["quantity_evidence"] = previous["quantity_evidence"]
         if "execution_policy" in prior:
             journal[s.client_order_id].update(
                 {
