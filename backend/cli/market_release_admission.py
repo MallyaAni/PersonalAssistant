@@ -33,10 +33,16 @@ def installed(root):
     return {name: (parent / name).read_bytes() for name in NAMES}
 
 
+# Recognize partial installs and dangling selectors instead of skipping damage.
+def configured(root):
+    parent = (Path(root) / CONFIG).parent
+    return any(os.path.lexists(parent / name) for name in NAMES)
+
+
 # Admit the current source using the existing guard, without broker or model inference.
 def check(root):
     root = Path(root)
-    if not (root / CONFIG).exists():
+    if not configured(root):
         return {"status": "NOT_CONFIGURED"}
     from backend.market import learned_live_holding as runtime
 
@@ -219,7 +225,7 @@ def candidate(root, bundle_path, bundle_sha, revision):
 
 # Check candidate admission before the deploy checkout or any approval selector moves.
 def preflight(root, bundle_path=None, bundle_sha=None, revision=None):
-    if not (Path(root) / CONFIG).exists():
+    if not configured(root):
         if bundle_path or bundle_sha:
             raise ValueError("Cannot renew an absent trading configuration")
         return {"status": "NOT_CONFIGURED"}
@@ -306,11 +312,33 @@ def rollback(root, archive):
     return {"status": "RESTORED_ORIGINAL_APPROVAL"}
 
 
+# Prove exact original selectors after an activation whose outcome was not returned.
+def verify_original(root, bundle_path, bundle_sha):
+    from backend.agents.trading.desk import paper
+
+    raw = Path(bundle_path).read_bytes()
+    require_hash(raw, bundle_sha)
+    bundle = json.loads(raw)
+    if bundle["schema"] != SCHEMA or set(bundle["predecessor"]) != {
+        "config_sha256",
+        "release_sha256",
+        "evidence_sha256",
+    }:
+        raise ValueError("Original approval predecessor identities required")
+    with paper.transaction(Path(root)):
+        for name, current in installed(root).items():
+            require_hash(
+                current, bundle["predecessor"][name.removesuffix(".json") + "_sha256"]
+            )
+    return {"status": "ORIGINAL_APPROVAL_BYTES_VERIFIED"}
+
+
 # Require explicit commands and bundle digests; no command generates an approval.
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "command", choices=("check", "preflight", "activate", "rollback")
+        "command",
+        choices=("check", "preflight", "activate", "rollback", "verify-original"),
     )
     parser.add_argument("--root", required=True)
     parser.add_argument("--bundle")
@@ -331,10 +359,14 @@ def main():
         result = activate(
             args.root, args.bundle, args.bundle_sha256, args.revision, args.archive_dir
         )
-    else:
+    elif args.command == "rollback":
         if not args.archive:
             parser.error("Rollback requires the original exclusive archive")
         result = rollback(args.root, args.archive)
+    else:
+        if not all((args.bundle, args.bundle_sha256)):
+            parser.error("Original verification requires the exact bundle and digest")
+        result = verify_original(args.root, args.bundle, args.bundle_sha256)
     print(json.dumps(result, sort_keys=True))
 
 
