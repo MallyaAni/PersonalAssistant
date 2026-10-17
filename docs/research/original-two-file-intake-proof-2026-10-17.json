@@ -1,0 +1,236 @@
+{
+  "schema": "original-two-file-intake-independent-proof/1",
+  "status": "VERIFIED_ORIGINAL_FILE_AND_STATE_INTAKE_ONLY",
+  "feature_source": "6d4729c3df9b0ef2d62ab9b848c1499f2c3d954d",
+  "root": "/home/animallya96/scratch/original-two-file-map-intake-20261017-v1",
+  "container": "30b7dd803198aaaf08901ca9f868436355a676e4d47d02abb7341e2df8a0f5f7",
+  "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+  "finished_at": "2026-10-17T21:33:35.463961733Z",
+  "exit_code": 0,
+  "oom_killed": false,
+  "proof_sha256": "07efe3c8622667f82980cfa5f0bb6aa4eac4ff158f62f4535d7c4733f7970d46",
+  "inspect_sha256": "baef62df72727d49c31f02dbef3820ecf51bb602e35f000c2876dcd511a2a3e8",
+  "plan_sha256": "91217dd1a82e2d425b46f9f704afc9689de0fa4335ecdb6a80d1edd13a8d55d2",
+  "source_pins_sha256": "20c89e58b0ef28fa68f111fd370c6d0bf5426a9287dfafa101a6d6f8a72ca562",
+  "runtime_verified": "UID1000:1000, networknone, readonly root,1CPU,512MiB RAM=swap,tmp64MiB; only two exact original filesRO plus smallsourceRO/soleprivateoutRW. No backend/native/NumPy/sklearn imports or model/config/account directory mounts.",
+  "independent_review": "ROOT read complete terminal producer proof and actual stopped Docker identities/resources/mounts, checked exact known source/runner/original pins and before/after identity equality. Not a repeated model/financial audit.",
+  "producer_proof": {
+    "all_control_fields_exact": true,
+    "complete_external_input_sha_map": {
+      "canonical_sha256": "8f994033d60e1780cdb4226c47df590bc28f7bd18bbd43333c36875297b32e2b",
+      "index_sha256": "69d3f1e22ae6ea1baf167ba8a8ba4d1cda3ad3d6a7dc0e506703e06e29d288b3",
+      "pairs": 164833,
+      "spool_sha256": "594ac627dc3b032ce11b019b41292cba851700da981ec3817293eae4b3330545"
+    },
+    "completion_schema_from_source_ast": [
+      "policy",
+      "cost_bps",
+      "basis",
+      "actual_started_at",
+      "holding_config_sha256",
+      "timing_config_sha256",
+      "model_receipt_sha256",
+      "risk_receipt_sha256",
+      "timing_model_receipt_sha256",
+      "timing_residual_receipt_sha256",
+      "original_holding_publication",
+      "original_holding_fit_date",
+      "historical_grade_basis",
+      "source_sha256",
+      "capture_sha256",
+      "grade_overlay",
+      "current_model_inference",
+      "real_orders",
+      "base_models_fitted",
+      "first",
+      "through",
+      "sessions",
+      "broker",
+      "paper_state",
+      "input_sha256",
+      "fills",
+      "intents",
+      "status"
+    ],
+    "external_original_pins": {
+      "/completion.json": {
+        "bytes": 373782589,
+        "sha256": "b9ad0b6c86b287f3557c635a5fca17703adc48a30a75470256084af911c8a3dd"
+      },
+      "/physical.json": {
+        "bytes": 832110254,
+        "sha256": "f334e3a5c691fb4dbcc8ea4e7236f395eb5e26e34bae2f1fd4fac64fc5935130"
+      }
+    },
+    "financial_effects_model_timing_audit": "NOT_RUN",
+    "full_paper_state_canonical_sha256": "987a5b2b2933bc610d9133ff725d4e96ae30acbb7ee8091bddc930b7544e151d",
+    "history": {
+      "first": "2019-02-28",
+      "last": "2026-10-12",
+      "ordered_row_hash_fold_sha256": "10fde331740047981702edd5d9f92771f965ac1eac00ee9075cc7e262f6c72d4",
+      "rows": 1916
+    },
+    "identity_after": {
+      "/completion.json": [
+        66306,
+        59282213,
+        373782589,
+        1792255342376039200,
+        1792255342703419400
+      ],
+      "/physical.json": [
+        66306,
+        59282166,
+        832110254,
+        1792255170124950300,
+        1792255170130950400
+      ]
+    },
+    "identity_before": {
+      "/completion.json": [
+        66306,
+        59282213,
+        373782589,
+        1792255342376039200,
+        1792255342703419400
+      ],
+      "/physical.json": [
+        66306,
+        59282166,
+        832110254,
+        1792255170124950300,
+        1792255170130950400
+      ]
+    },
+    "max_rss_kib": 44676,
+    "native_modules_imported": false,
+    "numpy_imported": false,
+    "original_source_revision": "27471b9c61b958f759e9f48b80acaf60cdf75f2e",
+    "paper_state_schema_from_source_ast": [
+      "sessions_seen",
+      "last_rebalance",
+      "sessions_since_rebalance",
+      "policy_version",
+      "opened",
+      "start_equity",
+      "history",
+      "pending",
+      "journal",
+      "unconfirmed_rebalance",
+      "previous_rebalance",
+      "order_seq",
+      "event_cycle",
+      "event_outcomes",
+      "deferred_buys",
+      "rebalance_targets",
+      "allocation_state"
+    ],
+    "physical_nonfinite_mode": "EXPLICIT_SOURCE_PINNED_LOGICAL_NULL_PROJECTION_ORIGINAL_BYTES_UNCHANGED",
+    "publication": "CLOSED",
+    "schema": "original-two-file-streaming-intake/1",
+    "scope": "STRICT_TWO_FILE_PARSER_SCHEMA_ORDER_AND_CANONICAL_EQUALITY_ONLY",
+    "seconds": {
+      "all_ordered_rows_and_sessions": 4.0082983653992414,
+      "complete_controls_and_full_canonical_digest": 2.1331005040556192,
+      "completion_strict_parse_with_authentication": 167.5477661602199,
+      "physical_explicit_logical_projection_with_authentication": 300.57240314781666
+    },
+    "sklearn_imported": false,
+    "source_after": {
+      "/source/intake.py": {
+        "identity": [
+          66306,
+          60555648,
+          8692,
+          1792272311341273900,
+          1792272311341273900
+        ],
+        "sha256": "20bbc5d74a52781e2463ec8be9ea39685b12df20fc71f8c49e5fa467bca38881"
+      },
+      "/source/original_history_json.py": {
+        "identity": [
+          66306,
+          60555649,
+          27574,
+          1792272311362274000,
+          1792272311362274000
+        ],
+        "sha256": "de29c1017f4c9eadd874b2fbe0d85b4c80ced8e7a43fb6bd4f779c3d726cb2eb"
+      },
+      "/source/paper-source.py": {
+        "identity": [
+          66306,
+          60555651,
+          63498,
+          1792272311420274700,
+          1792272311420274700
+        ],
+        "sha256": "e2eef2f0270497d9a5944212d6581b7ebf503d2675687a172e76690fcc7bc3c3"
+      },
+      "/source/producer-source.py": {
+        "identity": [
+          66306,
+          60555652,
+          26484,
+          1792272311442274800,
+          1792272311442274800
+        ],
+        "sha256": "cb4d0d514b3af35b647534a08c3f0e450c50a085071d69d84eb2f3db94e52166"
+      }
+    },
+    "source_before": {
+      "/source/intake.py": {
+        "identity": [
+          66306,
+          60555648,
+          8692,
+          1792272311341273900,
+          1792272311341273900
+        ],
+        "sha256": "20bbc5d74a52781e2463ec8be9ea39685b12df20fc71f8c49e5fa467bca38881"
+      },
+      "/source/original_history_json.py": {
+        "identity": [
+          66306,
+          60555649,
+          27574,
+          1792272311362274000,
+          1792272311362274000
+        ],
+        "sha256": "de29c1017f4c9eadd874b2fbe0d85b4c80ced8e7a43fb6bd4f779c3d726cb2eb"
+      },
+      "/source/paper-source.py": {
+        "identity": [
+          66306,
+          60555651,
+          63498,
+          1792272311420274700,
+          1792272311420274700
+        ],
+        "sha256": "e2eef2f0270497d9a5944212d6581b7ebf503d2675687a172e76690fcc7bc3c3"
+      },
+      "/source/producer-source.py": {
+        "identity": [
+          66306,
+          60555652,
+          26484,
+          1792272311442274800,
+          1792272311442274800
+        ],
+        "sha256": "cb4d0d514b3af35b647534a08c3f0e450c50a085071d69d84eb2f3db94e52166"
+      }
+    },
+    "status": "VERIFIED_ORIGINAL_BYTES_LOGICAL_STATE_INTAKE_ONLY",
+    "total_seconds": 501.9868870135397
+  },
+  "remaining": {
+    "original_independent_financial_model_causal_timing_audit": "NOT_RUN",
+    "original_live_timing": "FAILED",
+    "publication": "CLOSED",
+    "corrected_account": "V6 PAUSED; no replay or new model run",
+    "production": "UNCHANGED e237 frontend/f612 backend",
+    "combined_source_integration": "OPEN; privateN2 source closure is not CURRENT source closure",
+    "original_full_authentication_memory": "Requested/records/_consumed_inputs and final large receipt serialization still unproven",
+    "original_initial_raw_receipts": "MISSING; never reconstructed"
+  }
+}

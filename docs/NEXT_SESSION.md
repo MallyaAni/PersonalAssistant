@@ -1,5 +1,48 @@
 # Next session
 
+## 2026-10-17 — Original two-file intake COMPLETE; source and state preservation verified
+
+Read research/original-two-file-intake-proof-2026-10-17.json. Actual
+30b7dd803198aaaf08901ca9f868436355a676e4d47d02abb7341e2df8a0f5f7
+exited0/noOOM21:33:35.463961733Z; ROOT execsession19106 finished. NEVER restart it.
+ROOT independently read terminal proof07efe3c8622667f82980cfa5f0bb6aa4eac4ff158f62f4535d7c4733f7970d46
+and stopped runtime inspectbaef62df72727d49c31f02dbef3820ecf51bb602e35f000c2876dcd511a2a3e8.
+Source4 and both original file SHA/inode/size/mtime/ctime beforeafter exact.
+Completion373782589B/b9ad and physical832110254B/f334 remain original.
+
+Complete1916-row history includes initial2019-02-28 through2026-10-12; source-AST
+schemas, all17 native controls, sessions and every canonical row agree. Full
+logical state SHA987a5b2b2933bc610d9133ff725d4e96ae30acbb7ee8091bddc930b7544e151d,
+ordered row fold10fde331740047981702edd5d9f92771f965ac1eac00ee9075cc7e262f6c72d4.
+All164833 input hashes retained; full canonical manifest SHA8f994033 matches
+the independently observed original field span. Private spools351142719B each;
+index108683264B/pairspool20031274B. No rows dropped or original NaNs rewritten.
+Physical comparison uses the existing separately source-pinned logical-null
+projection only; strict metadata semantics remain unchanged.
+
+Elapsed501.986887s/44676KiB peak under512MiB. Actual N2/e0/UID1000/networknone/
+readonly/1CPU/512MiB RAM=swap/tmp64MiB and exactly two original-fileRO mounts,
+smallsourceRO/soleprivateoutRW independently confirmed. No backend/native/NumPy/
+sklearn imports, model/config/account directory mounts, inference or account replay.
+
+This closes actual file reading/schema/order/logical-state consistency ONLY.
+It does not independently prove model forecasts, causal data, economics, ledger,
+timing or94payload publication. Original timing stays FAILED, missing original
+initial raw receipts stay MISSING, publication CLOSED. Full original authentication
+requested/records/_consumed_inputs memory and large proof serialization remain
+unproven. No full original numerical audit or full corrected launch was run.
+
+Private reader6d4729c3 is pushed but NOT integrated into main/current helper.
+Current streamc64 source graph remains unchanged; do not merge it blindly.
+Next corrected-chain boundary is native physical capture/CAS capacity, not file
+intake or model pricing. Genuinev6 remains PAUSED/no replay; raw bytes and all
+reservations preserved. Root is reviewing physical-row/content-defined storage,
+finite dual-host checkpoint/work/temp/restore/inode reservation and exact native
+lifecycle memory before any implementation/runtime. Existing completed
+trading_action_consistency asked for one read-only proposal; no limited agent
+retries, model/account changes or deployment. Productione237/f612 unchanged;
+fresh weekday ordinary/intraday/fill/UI acceptance remains OPEN.
+
 ## 2026-10-17 — Original input-map reader verified privately; bounded original intake running
 
 Read research/original-external-input-map-proof-2026-10-17.json. ROOT reviewed
