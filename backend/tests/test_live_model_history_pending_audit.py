@@ -16,6 +16,7 @@ from backend.cli import market_daily
 from backend.market import entry_timing
 from backend.market import live_model_history_pending_audit as audit
 from backend.market.live_model_history_nightly_model import serialized
+from backend.market.live_model_history_observation_context import ObservationContext
 
 
 # Encode one private fixture under an externally selected exact archive digest.
@@ -24,6 +25,37 @@ def evidence(value):
     return audit.OriginalProxyEvidence(
         raw, sha256(raw).hexdigest(), audit.ORIGINAL_SOURCES
     )
+
+
+# Seed only independent synthetic account facts, never the saved pending result.
+def context(raw):
+    clock = entry_timing.session_clock(raw.dates[0].astype(object))
+    return ObservationContext(
+        cash=10000,
+        held={},
+        basis={},
+        dividends=[],
+        records={
+            name: []
+            for name in (
+                "security_distributions",
+                "share_consolidations",
+                "security_exchanges",
+                "cash_mergers",
+            )
+        },
+        accepted={},
+        outcomes={},
+        cancellations={},
+        fills=[],
+        opening=clock["open"],
+    )
+
+
+# Exercise real pending admission with a separately initialized account fold.
+def fold(*args, **kwargs):
+    kwargs.setdefault("observation_context", context(args[4]))
+    return audit.fold_pending(*args, **kwargs)
 
 
 # Build independent funded rows and literal old sender receipts without executing them.
@@ -36,6 +68,7 @@ def fixture(*, crossing=False):
         session_open=np.full((1, 4), 100.0),
         observation_close=np.full((1, 25, 4), 100.0),
     )
+    raw.observation_close[0, 0, 1] = 10000.0
     if crossing:
         raw.observation_close[0, 3, 2] = 98.0
     state = paper.PaperState(
@@ -69,8 +102,16 @@ def fixture(*, crossing=False):
     }
     accepted, expected, latches = {}, deepcopy(state), {}
     clock = entry_timing.session_clock(raw.dates[0].astype(object))
+    independent = context(raw)
     for slot in range(25):
         now = clock["open"] + (slot + 1) * entry_timing.BAR
+        independent.advance(
+            now,
+            {
+                name: float(raw.observation_close[0, slot, col])
+                for col, name in enumerate(names)
+            },
+        )
         due = [row for row in expected.pending if not row.get("sent")]
         if not due:
             continue
@@ -91,7 +132,13 @@ def fixture(*, crossing=False):
             )
             early = name == "AAA" or name == "BBB"
             state_word = (
-                "execute" if early else "wait" if name == "CCC" else "unavailable"
+                "unavailable"
+                if slot > 22
+                else "execute"
+                if early
+                else "wait"
+                if name == "CCC"
+                else "unavailable"
             )
             if now < clock["final"]:
                 trace = {
@@ -106,6 +153,15 @@ def fixture(*, crossing=False):
                     "clock": slot,
                     "at": now.isoformat(),
                     "state": state_word,
+                    "reason": "unsupported learned clock" if slot > 22 else "",
+                    **independent.trace_fields(
+                        row,
+                        {
+                            symbol: {"last": float(raw.observation_close[0, slot, col])}
+                            for col, symbol in enumerate(names)
+                        },
+                        due,
+                    ),
                 }
                 value["forecast_decisions"].append(trace)
                 timed = {
@@ -135,10 +191,15 @@ def fixture(*, crossing=False):
                 "at": now.astimezone(UTC).isoformat(),
                 "accepted": not refused,
                 "reason": "insufficient_reserved_cash" if refused else None,
-                "observed_price": 100.0,
-                "available_cash": 10000.0,
+                "observed_price": close,
+                "available_cash": independent.available(),
             }
             value["attempts"].append(attempt)
+            independent.admit(row, attempt)
+            value["observations"][-1]["sender_logs"].append(
+                f"buy 5 {name} (market, {timed['state']})"
+                + (": REFUSED insufficient_reserved_cash" if refused else ": sent")
+            )
             row["sending"] = now.isoformat(timespec="seconds")
             if refused:
                 row["send_error"] = "insufficient_reserved_cash"
@@ -169,7 +230,7 @@ def test_mixed_original_pending_receipts_reconstruct_metadata_without_reconcilia
             "filled_qty": 5,
         }
     }
-    actual, scope = audit.fold_pending(
+    actual, scope = fold(
         previous,
         evidence(value),
         accepted,
@@ -241,7 +302,7 @@ def test_original_json_nonfinite_numbers_are_rejected(literal):
 def test_raw_day_identity_is_an_exact_in_range_integer(day):
     previous, _, value, accepted, raw = fixture()
     with pytest.raises(ValueError, match="integer original raw day"):
-        audit.fold_pending(
+        fold(
             previous,
             evidence(value),
             accepted,
@@ -304,7 +365,7 @@ def test_original_pending_corruptions_fail_closed(change):
         ValueError,
         match="differ|required|missing|quantity|identity|lacks|UNRECONSTRUCTIBLE",
     ):
-        audit.fold_pending(
+        fold(
             previous,
             evidence(value),
             accepted,
@@ -328,7 +389,7 @@ def test_terminal_facts_and_withdrawal_selection_do_not_settle_pending():
         }
         for name in accepted
     }
-    result, _ = audit.fold_pending(
+    result, _ = fold(
         previous,
         evidence(value),
         accepted,
@@ -356,7 +417,7 @@ def test_refused_attempt_cannot_enter_from_archival_bytes_alone():
     previous, _, value, accepted, raw = fixture()
     admitted = [row for row in value["attempts"] if row["accepted"]]
     with pytest.raises(ValueError, match="conserved original attempt"):
-        audit.fold_pending(
+        fold(
             previous,
             evidence(value),
             accepted,
@@ -378,7 +439,7 @@ def test_new_nightly_request_is_deferred_without_becoming_a_pending_input():
             "at": "2019-03-01T16:01:00-05:00",
         }
     )
-    derived, scope = audit.fold_pending(
+    derived, scope = fold(
         previous,
         evidence(value),
         accepted,
@@ -397,7 +458,7 @@ def test_missing_raw_prefix_fails_with_scoped_coverage_reason():
     previous, _, value, accepted, raw = fixture()
     raw.observation_close = None
     with pytest.raises(ValueError, match="UNRECONSTRUCTIBLE_RAW_PREFIX"):
-        audit.fold_pending(
+        fold(
             previous,
             evidence(value),
             accepted,
@@ -414,7 +475,7 @@ def test_final_fallback_refuses_a_changed_earlier_raw_prefix():
     previous, _, value, accepted, raw = fixture()
     raw.observation_close[0, 3, 2] = 98.0
     with pytest.raises(ValueError, match="raw prefix"):
-        audit.fold_pending(
+        fold(
             previous,
             evidence(value),
             accepted,
@@ -429,7 +490,7 @@ def test_final_fallback_refuses_a_changed_earlier_raw_prefix():
 # The final historical label comes from the complete original prefix, not a new rule.
 def test_final_fallback_retains_the_original_earliest_raw_crossing_metadata():
     previous, expected, value, accepted, raw = fixture(crossing=True)
-    actual, _ = audit.fold_pending(
+    actual, _ = fold(
         previous,
         evidence(value),
         accepted,
@@ -458,7 +519,7 @@ def test_final_fallback_retains_the_original_earliest_raw_crossing_metadata():
 )
 def test_unavailable_account_retains_full_original_pending_and_controls(problem):
     previous, _, source, accepted, raw = fixture()
-    derived, _ = audit.fold_pending(
+    derived, _ = fold(
         previous,
         evidence(source),
         accepted,

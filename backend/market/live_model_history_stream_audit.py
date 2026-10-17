@@ -37,6 +37,7 @@ from backend.market.live_model_history_binding import (
     REVIEWS,
     reviewed_sources,
 )
+from backend.market.live_model_history_observation_context import ObservationContext
 from backend.market.live_model_history_receipts import ReceiptLedger, instant, require
 from backend.market.store import MarketStore
 
@@ -766,25 +767,53 @@ class StreamAudit:
         closing = at - timedelta(minutes=1)
         regular = [row for row in value["attempts"] if instant(row["at"]) < closing]
         nightly = [row for row in value["attempts"] if instant(row["at"]) >= closing]
+        opening = live_policy_replay.instant(
+            self.panel.dates[day], calendar.REGULAR_OPEN
+        )
+        context = ObservationContext(
+            cash=self.cash,
+            held=self.held,
+            basis=self.basis,
+            dividends=self.dividends,
+            records=self.records,
+            accepted=self.receipts.accepted,
+            outcomes=self.receipts.outcomes,
+            cancellations=self.receipts.cancellations,
+            fills=value["fills"],
+            opening=opening,
+            events=self.events,
+            seen=self.seen,
+            entitlement_comparison=self.completion["broker"],
+        )
         for row in value["attempts"]:
-            require(
-                row["reason"] != "terminated_security",
-                "UNRECONSTRUCTIBLE_TERMINATED_ATTEMPT_CONTEXT",
-            )
+            if row["reason"] == "terminated_security":
+                require(
+                    any(
+                        record["symbol"] == row["symbol"]
+                        and instant(record["completed_before"]) <= instant(row["at"])
+                        for record in context.records["cash_mergers"]
+                    ),
+                    "Independent terminated-security context absent",
+                )
             physical_attempt(self.market, row, self.panel, self.raw)
         self.receipts.attempts(regular, self.intents, at)
         self.receipts.fills(value["fills"], self.intents, at)
         self.receipts.funding(regular, value["fills"])
         observed = self.economic_close(value, day, at)
+        quote_prefix = self.quote_prefix(day)
         intraday, conserved = pending.fold_pending(
             self.state,
             evidence,
             self.receipts.accepted,
             self.receipts.outcomes,
-            self.quote_prefix(day),
+            quote_prefix,
             day,
             session,
             conserved_attempts=regular,
+            observation_context=context,
+            mark_reader=lambda now, slot: live_policy_replay.account_marks(
+                self.raw, day, now, quote_prefix.observation_close[day, slot]
+            ),
         )
         self.counts["intraday_transitions"] += len(conserved["transitions"])
         target = {**value, "attempts": nightly}

@@ -18,7 +18,11 @@ from backend.market import live_model_history_nightly_model as numerical
 from backend.market import live_model_history_stream_audit as audit
 from backend.market.live_model_history_receipts import ReceiptLedger
 from backend.tests.test_live_model_history_nightly_model import analytic_policy, records
-from backend.tests.test_live_model_history_pending_audit import evidence, fixture
+from backend.tests.test_live_model_history_pending_audit import (
+    context,
+    evidence,
+    fixture,
+)
 
 
 # Build minimal externally pinned metadata without loading a model or an account.
@@ -534,6 +538,7 @@ def test_prior_unavailable_state_propagates_without_saved_controls_or_reconcilia
         0,
         value["session"],
         conserved_attempts=value["attempts"],
+        observation_context=context(raw),
     )
     stream = stream_boundary(previous)
 
