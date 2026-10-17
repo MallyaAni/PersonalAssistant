@@ -1,0 +1,82 @@
+{
+  "full_run_or_actual_session_acceptance": false,
+  "genuine_model_funded_allocation": false,
+  "independent_retained_case_checks": 9,
+  "joined_sender_resolver_tested": false,
+  "native_rerun": false,
+  "observed_at": "2026-10-17T13:11:17.854222+00:00",
+  "resolver_proof_sha256": "8df56e1bbb557ee434276254348fc92c6debcb1748398537286ac40afa2c78f8",
+  "resolver_runtime": {
+    "configured_user": "",
+    "container": "fc8443d3e4bfd935f014af90cc9def2dfcef965a3ed0aadc4f0f448ae93ecca9",
+    "exit": 0,
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "memory": 2147483648,
+    "mounts": [
+      {
+        "Destination": "/testdeps",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/historical-native-pytest-deps-20261017-v2/modules"
+      },
+      {
+        "Destination": "/app/backend/market/historical_timing_packet.py",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/historical-timing-resolver-tests-20261017-v2/historical_timing_packet.py"
+      },
+      {
+        "Destination": "/app/backend/market/historical_timing_resolver.py",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/historical-timing-resolver-tests-20261017-v2/historical_timing_resolver.py"
+      },
+      {
+        "Destination": "/tests/test_historical_timing_resolver.py",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/historical-timing-resolver-tests-20261017-v2/test_historical_timing_resolver.py"
+      },
+      {
+        "Destination": "/runner.py",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/historical-timing-resolver-tests-20261017-v2/run_historical_timing_resolver_tests_20261017.py"
+      },
+      {
+        "Destination": "/out",
+        "RW": true,
+        "Source": "/home/animallya96/scratch/historical-timing-resolver-tests-20261017-v2/out"
+      }
+    ],
+    "nano_cpus": 1000000000,
+    "network": "none",
+    "oom": false,
+    "readonly": true
+  },
+  "sender_proof_sha256": "4922a761912c007b25e143a5fb8a2906794b51ed3f2cada139f44013ff130b0b",
+  "sender_runtime": {
+    "configured_user": "",
+    "container": "e9d8f60668ab2771336ad844ad8c9e2c3e3a15b1a0d98150bae20328831334f8",
+    "exit": 0,
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "memory": 536870912,
+    "mounts": [
+      {
+        "Destination": "/fixture.py",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/private-sender-transport-20261017-v2/sender_transport_fixture.py"
+      },
+      {
+        "Destination": "/proof.json",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/private-sender-transport-20261017-v2/n2-proof.json"
+      },
+      {
+        "Destination": "/out",
+        "RW": true,
+        "Source": "/home/animallya96/scratch/private-sender-transport-20261017-v2/out"
+      }
+    ],
+    "nano_cpus": 1000000000,
+    "network": "none",
+    "oom": false,
+    "readonly": true
+  },
+  "status": "VERIFIED_SEPARATE_SYNTHETIC_SENDER_AND_PILOT_RESOLVER_BOUNDARIES"
+}

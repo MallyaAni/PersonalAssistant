@@ -1,5 +1,59 @@
 # Next session
 
+## 2026-10-17 — Separate native sender transport and conditional venue checks passed
+
+Atomic resolver282d0484 integrated as6e200178: ONLY two NEW files, existing tracked
+bytes/31 guarded sources unchanged. Modulea6d2fafb/teste9df829e. Exact native N2e0
+focused36pass/0skip0.04s; only pure pytest runner packages mounted, native NumPy2.5.3
+and ReplayBroker/calendar/Alpaca bodies unmounted/hash checked. Earlier33-greenv1
+remains original. Source review then found stale accepted market requests could
+hide among nondue reservations: three genuine DIDNOTRAISE redsv1 are preserved at
+scratch/historical-timing-resolver-stale-red-20261017-v1/proof.json (bcaf6e92).
+The correction binds every market execute_on to original native local submission
+date/regular clock and rejects stale accepted market orders before any mutation;
+legitimate nondue auction queues remain reserved. New green root:
+scratch/historical-timing-resolver-tests-20261017-v2/out/proof.json (8df56e1b).
+
+Resolver authenticates the complete due batch, derives first later side quotes
+from sealed AAPL-only pilot packets, freezes cash minus nondue reservations ONCE,
+never funds buys with samebatch sale proceeds, reuses native fee/basis/whole-fill
+arithmetic and commits a private exact-type broker preview only after all checks.
+Original requests/clocks stay intact; partial remainders expire, repeat is stable,
+fractional economic shares/zero or unknown bases/claims remain explicit. Future
+expiry, bad final bindings and late arithmetic failure leave original state intact.
+After resolution all-held fresh marks are required for NAV. This is pilot fixtures,
+not a multi-symbol venue, auction, genuine funded model or actual fill proof.
+
+ROOT independently ran private sender-transport helpera22e29d0 against unchanged
+nativee0:12 synthetic checks/0skip0.251s. Native reader evaluates once at31.100;
+the existing late client_factory observes SAME exact ReplayBroker at31.200 using
+explicitly cached decision marks, and native created/submitted receipts keep31.200.
+Original second-truncated sending/sent strings remain unchanged, with precision
+and precise conditional clock domains retained separately. WAIT never requests a
+client; stale/missing/future marks, clock reversal, changed economics and a payable
+mid-delay dividend refuse before acceptance. Native coverage clamp/reservations
+and no sale-funded buys pass; no inference/ObservedForecast/provider/fills involved.
+
+Private sender v1 failed BEFORE tests because proposedUID1000 could not read the
+image's root-owned source. Preserve its stderr/emptyout; no chmod or source change.
+Freshv2 used the image's normal default identity, read-only/networknone/1CPU512MiB,
+helper+proof read-only, new private output only. Completed13:09:42Z; proof4922a761
+and original helper/run/logs at scratch/private-sender-transport-20261017-v2.
+ROOT proofb521ce34 binds BOTH actual retained containers/images/exit0/resource/
+mount identities and independently checks retained sender quantities/clocks/cash/
+reservations/refusals. Neither tests rerun for documentation. Exact proof copies:
+research/historical-timing-resolver-proof-2026-10-17.json,
+research/historical-sender-transport-proof-2026-10-17.json,
+research/historical-execution-runtime-proof-2026-10-17.json.
+
+Sender and resolver have NOT yet been joined in one test. Genuine prefix proof6176
+remains WAIT, never relabel it an execute/funded order. Next is bounded joined
+conditional transport/resolution plus separately completed nightly numeric audit,
+then generalized authenticated demand packets/checkpoints before ONE corrected
+full launch. No new GET/full run/production/model/account changes. Original run
+immutable, publisher closed, heartbeat ACTIVE/quiet unchanged. Diagram impact NONE:
+new unused pure resolver/private fixtures, no connected runtime or serving flow.
+
 ## 2026-10-17 — Future ordinary capture helper corrected and preserved privately
 
 Private helper sourcec7be79c0 now accepts the ACTUAL N2 guard-map shape:29 Python

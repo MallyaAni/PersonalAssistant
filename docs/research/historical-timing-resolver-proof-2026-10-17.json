@@ -1,0 +1,208 @@
+{
+  "collected": 36,
+  "elapsed_seconds": 0.09762823581695557,
+  "exit_code": 0,
+  "max_rss_kib": 52440,
+  "model_inference_or_provider_get_or_live_broker_calls": false,
+  "native_source_sha256": {
+    "/app/backend/market/alpaca_trading.py": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2",
+    "/app/backend/market/calendar.py": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4",
+    "/app/backend/market/replay_broker.py": "c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616"
+  },
+  "numpy": "2.5.3",
+  "numpy_path": "/usr/local/lib/python3.12/site-packages/numpy/__init__.py",
+  "packaging_path": "/usr/local/lib/python3.12/site-packages/packaging/__init__.py",
+  "private_replay_account_arithmetic_tested": true,
+  "pytest_path": "/testdeps/pytest/__init__.py",
+  "reports": [
+    {
+      "nodeid": "::test_same_symbol_opposite_sides_cannot_reuse_sale_proceeds",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_nondue_reservation_survives_and_partial_basis_ignores_fees",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_native_weighted_acquisition_basis_is_preserved",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_fractional_native_holding_is_not_rounded_or_refused",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_unknown_basis_and_unrelated_corporate_claims_are_preserved",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_native_zero_basis_is_preserved_without_requiring_positive_cost",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_receivables_do_not_fund_conditional_buys",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_complete_missing_reference_expires_without_a_price_or_fabricated_fill",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_resolver_derives_first_reference_instead_of_choosing_a_later_price",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_current_conditional_deadline_is_required_before_any_mutation[2019-03-01T14:45:31Z]",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_current_conditional_deadline_is_required_before_any_mutation[2019-03-01T14:45:34Z]",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_second_resolution_is_idempotent_and_input_drift_is_rejected",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_second_resolution_rejects_changed_broker_state",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_native_submission_clock_must_already_match_declared_submission",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_stale_accepted_market_request_rejects_before_any_mutation",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_market_execute_on_must_match_original_local_submission_date[2019-02-28]",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_market_execute_on_must_match_original_local_submission_date[2019-03-04]",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_execution_marks_never_become_fresh_nav_observations",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_entire_due_set_and_original_binding_are_atomic[omit]",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_entire_due_set_and_original_binding_are_atomic[duplicate]",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_entire_due_set_and_original_binding_are_atomic[side]",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_entire_due_set_and_original_binding_are_atomic[qty]",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_entire_due_set_and_original_binding_are_atomic[phase]",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_entire_due_set_and_original_binding_are_atomic[clock]",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_entire_due_set_and_original_binding_are_atomic[unbound]",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_native_attempt_corruption_is_atomic[float]",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_native_attempt_corruption_is_atomic[bool]",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_native_attempt_corruption_is_atomic[reason]",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_native_attempt_corruption_is_atomic[accepted]",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_native_attempt_corruption_is_atomic[reservation]",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_detached_reference_and_unsupported_due_symbol_are_refused",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_nondue_share_reservation_is_not_sold_by_the_pilot",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_post_action_overreserved_shares_reject_entire_batch",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_unrelated_unknown_fractional_cash_claim_is_not_bypassed",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_native_failure_after_first_preview_fill_is_atomic",
+      "outcome": "passed",
+      "phase": "call"
+    },
+    {
+      "nodeid": "::test_exact_native_type_is_required",
+      "outcome": "passed",
+      "phase": "call"
+    }
+  ],
+  "scope": "Synthetic private ReplayBroker fixtures, no multi-symbol/sender/full-run proof",
+  "sklearn_metadata_version": "1.9.1",
+  "status": "VERIFIED_PILOT_RESOLVER_FIXTURES_ONLY",
+  "tested_files_sha256": {
+    "/app/backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+    "/app/backend/market/historical_timing_resolver.py": "a6d2fafbeefef92c2d94b96763d3fa726f9c748758726feaab3dcba4b1e05eba",
+    "/runner.py": "60a375e49072d6422cab59d04d30197cbf3d426c4e20f85630da52c0ffcc39c6",
+    "/tests/test_historical_timing_resolver.py": "e9df829ead181b9fb206434e597cab9308369b801ca4253f348a344ef5de1695"
+  }
+}
