@@ -1,5 +1,56 @@
 # Next session
 
+## 2026-10-17 — Bounded peer stream/session protocol VERIFIED privately
+
+Read research/historical-checkpoint-peer-rpc-proof-2026-10-17.json.
+Private79bd37c23af18ccaa8c908c8616d35890aecc4b6 contains unused RPC30f7b6f3/
+testf05007eb and proof, NOT main-integrated/deployed. Actual415f42be/f612 finished
+23:22:01.802805507Z exit0/noOOM:18pass/0skip11.606s/RSS132056KiB. Root
+scratch/checkpoint-peer-rpc-synthetic-20261017-v1/exec2012 is COMPLETE; never
+restart. Exact UID1000/noneRO/1CPU/512MiB=swap/tmp64MiB/three mounts/source10
+beforeafter independently checked; smallsource/inertCURRENT+a8fixtureRO/
+soleprivateoutRW, emptybackend packages/stdlonly/no native/model imports.
+Terminal975ebecd/inspectb02b119e/ROOTproofc27abc56/verifier90e8c40e. Retained
+222232576 allocated bytes/1071 unique file inodes and all failed/killed cases.
+
+Actual finite session/permit/control/lock extents, immutable session consumption
+before first read, continuous locks, strict finite frames/64KiB fragments/
+duplicate-aware ingress charge-before-read and unknownACK/EOF/regrant refusal
+passed. Only HELLO/STATUS/ARM/PUT/VERIFY-PREPARED, no effect callback, network,
+DECISION/ACK/FINISH/adoption API. Read-only STATUS after consumed process cannot
+renew ingress. Two SIGKILL cuts independently checked: consumed/noARM/zero
+ingress; PUTcharged9/PeerOPEN0/body0. Actual20MiB reserved body independently
+stream-hashed6adfa077; no native state JSON decode. All original false flags
+remain false. Terminal caller must half-close input before awaiting final
+STATUS/PREPARED response; one-byte EOF check precedes final source validation.
+Caller owns deadlines; no arbitrary drain/default network client introduced.
+
+ROOT review reproduced3 new regressions on old8d611 source: terminal PREPARED
+and STATUS ignored a following frame, and ordinary_available ignored changed
+closed control preimage. Exact e96e9cb3/REDroot
+scratch/checkpoint-peer-rpc-red-20261017-v1/exec74016 COMPLETE:3FAIL/0errors/0skip
+1.134s. Wrapper exit0 means expectedRED, NOT old-source acceptance. Preserve
+terminal914ffc0f/inspectd223d685/ROOTproof55f0cce4. Targeted EOF/preimage fixes
+retained original15 cases, existinghelpers/sourceguards/caps unchanged.
+
+Whole fixture cgroup peak295587840B (includes retained file cache), current
+253222912B before terminal proof; tested limit536870912B. Proposed256MiB is
+NOT admitted by this result. Keep512MiB for next peer proposal and require fresh
+headroom. Full model/native lifecycle memory and actual two-host remain OPEN.
+
+Existing healthy trading_action_consistency has ONE READONLY complete minimal
+actual-two-host plan using this exact module plus source-pinned standalone
+stdio harness, not another repository protocol/coordinator stage. Need startup
+permit/root ownership, explicit host-key-bound streams, half-close/deadlines/
+no unknownACK retry, matching common root versus distinct peer witnesses and
+bounded image/resource admission. No code/import/runtime/host probes/network/
+transfer/installation authorized to worker. Spark2 f612 absent; Spark1 immutable
+f612 Size1489670467B/linux/arm64 is planning metadata only. No image transfer or
+service/model change performed. ROOT reviews proposal before implementation.
+No genuine run: v6 stays OPEN/PAUSED/no replay/adoption; original timing FAILED/
+publication CLOSED/missing receipts unchanged. Productione237/f612 not changed
+by this task; actual weekday/intraday/fill/UI and historical delivery UNVERIFIED.
+
 ## 2026-10-17 — Peer process/stream boundary SOURCE/TEST work approved
 
 Read research/historical-checkpoint-peer-rpc-contract-2026-10-17.json.
