@@ -21,7 +21,7 @@ async function observeMarkerCanvas(page: Page) {
     CanvasRenderingContext2D.prototype.fillText = function (this: CanvasRenderingContext2D, ...args: Parameters<CanvasRenderingContext2D['fillText']>) {
       const [text, x, y] = args
       if (this.canvas.closest('[data-testid="ticker-chart-canvas"]')
-        && text.startsWith('Saved grade')) {
+        && (text.startsWith('Grade ') || text.includes('→'))) {
         const point = new DOMPoint(x + this.measureText(text).width / 2, y).matrixTransform(this.getTransform())
         const timeframe = this.canvas.closest('section')?.querySelector('[aria-label="Chart timeframe"] [aria-pressed="true"]')?.textContent ?? null
         state.__chartMarkerDraws.push({text, center: point.x * this.canvas.getBoundingClientRect().width / this.canvas.width, timeframe})
@@ -77,7 +77,8 @@ async function setup(page: Page, personal = true, gap?: CandleGap) {
   await page.goto('/?deskView=paper#desk')
   await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
   const chart = page.getByRole('region', {name: 'AAPL price chart'})
-  await chart.getByRole('checkbox', {name: 'Grade changes'}).check()
+  await chart.getByRole('checkbox', {name: 'Grade signals'}).check()
+  await chart.getByLabel('Chart indicators', {exact: true}).locator(':scope > summary').click()
   await expect(chart.getByLabel('Research publication groups')).toContainText(gap === 'absent' ? '2026-09-17: Not recorded · 1' : '2026-09-15: Dip→Wait · 2')
   return {chart, errors, writes, changeQuote: () => { last = 150 }}
 }
@@ -86,13 +87,14 @@ async function setup(page: Page, personal = true, gap?: CandleGap) {
 test('real canvas draws grade changes on their available candles', async ({page}) => {
   await observeMarkerCanvas(page)
   const {chart, errors, writes} = await setup(page)
-  await expect.poll(async () => (await markerDraws(page)).map(row => row.text)).toContain('Saved grade A→B')
+  await expect.poll(async () => (await markerDraws(page)).map(row => row.text)).toContain('Grade SELL · B')
+  await expect(chart.getByLabel('AAPL historical grade signals', {exact: true})).toContainText('2026-09-15 · SELL signal · Saved grade A→B')
   await clearMarkerDraws(page)
   await chart.getByRole('button', {name: 'W', exact: true}).click()
   await expect(chart).toContainText('3 weeks loaded')
-  await expect.poll(async () => (await markerDraws(page)).map(row => row.text)).toContain('Saved grade A→B')
+  await expect.poll(async () => (await markerDraws(page)).map(row => row.text)).toContain('Grade SELL · B')
   const weekly = await markerDraws(page)
-  const grade = weekly.findLast(row => row.text === 'Saved grade A→B')!
+  const grade = weekly.findLast(row => row.text === 'Grade SELL · B')!
   expect(grade).toBeDefined()
   expect(grade.timeframe).toBe('W')
   expect(errors).toEqual([])
@@ -106,7 +108,8 @@ for (const gap of ['all', 'open', 'high', 'low', 'close', 'absent'] as const) {
     const {chart, errors, writes} = await setup(page, true, gap)
     await expect(chart).toContainText('No grade change marked on these candles.')
     await page.clock.runFor(200)
-    expect((await markerDraws(page)).map(row => row.text)).not.toContain('Saved grade A→B')
+    expect((await markerDraws(page)).map(row => row.text)).not.toContain('Grade SELL · B')
+    await expect(chart.getByLabel('AAPL dated grade readings', {exact: true})).toContainText('2026-09-15 · Saved grade B')
     await expect(chart.getByLabel('Chart data quality')).toContainText('Chart data incomplete · 1 missing session')
     await expect(chart.getByLabel('Research publication groups')).toContainText(gap === 'absent' ? 'Not recorded · 1' : 'Dip→Wait · 2')
     await expect(chart).not.toContainText('could not be drawn')
@@ -160,7 +163,7 @@ test('recorded setups preserve original publication and all source readings', as
   await expect(table.locator('tbody tr').last()).toContainText('Not recorded')
   await expect(table.locator('tbody tr').first()).toContainText('original/1 · immutabl')
   await expect(table.locator('tbody tr').first().getByTitle('immutable-policy')).toHaveText('immutabl')
-  await expect(chart.getByRole('checkbox', {name: 'Grade changes'})).toBeChecked()
+  await expect(chart.getByRole('checkbox', {name: 'Grade signals'})).toBeChecked()
   await expect(chart).toContainText('Saved grade A→B')
   await expect(chart).toContainText('not a Buy instruction')
   await expect(chart).not.toContainText('The chart could not be drawn')
@@ -216,7 +219,7 @@ test('read-only chart does not request personal recommendation history', async (
   page.on('request', request => { if (request.url().includes('/personal-history')) requests.push(request.url()) })
   const {chart, errors, writes} = await setup(page, false)
   await expect(chart.getByRole('checkbox', {name: 'Saved recommendations'})).toHaveCount(0)
-  await expect(chart.getByRole('checkbox', {name: 'Grade changes'})).toBeChecked()
+  await expect(chart.getByRole('checkbox', {name: 'Grade signals'})).toBeChecked()
   expect(requests).toEqual([])
   expect(errors).toEqual([])
   expect(writes).toEqual([])

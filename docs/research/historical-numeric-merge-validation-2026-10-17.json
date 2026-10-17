@@ -1,0 +1,133 @@
+{
+  "status": "CONTROLLED_COMBINED_CANDIDATE_VERIFIED_NO_DELIVERY",
+  "parents": [
+    "a7d0d955c49e1c4f039f97aad2a97269456be979",
+    "6a1d77bc1d8bdeb080bdee26b8e1ef95507a9ea1"
+  ],
+  "source_review": {
+    "path": "docs/research/historical-numeric-merge-source-review-PROPOSED-2026-10-17.json",
+    "sha256": "72ad8ff85259495ca39141bf8fff8e9eb73b13565f672534c147802ba8cac1ac",
+    "guarded_sources": 31,
+    "changed_from_urgent": [],
+    "additional_approval": false,
+    "independent_read_only_review": "Separate actual_policy_review agent verified exact a7c8e484de808142031a7ae281138b60ae643848 with a clean tree: all31 committed and physical guarded hashes equal approved N2, zero differences. Catalog pins and owner/operator-only immutable GET route were independently inspected earlier. This source-only review does not claim runtime or publication acceptance."
+  },
+  "controlled_backend": {
+    "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+    "private_root": "/home/animallya96/scratch/historical-numeric-merged-validation-20261017-v1",
+    "constraints": "No network, read-only private source and root filesystem, 1CPU/4GiB, executable private tmpfs for throwaway shellRig stubs; no production data or Docker socket mounted.",
+    "passed": 246,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 26.45,
+    "log": "backend-validation-v3.log",
+    "log_sha256": "a862a4c95a43ceb1bed131c5b73d5fae37e2f2637a55a560ff0f148ef8fd155e",
+    "coverage": "Historical account/projection/verifier/publication/reader/binding/owner API; numeric projection and API; grade parity; current desk API; exact source admission, actual-shell gate ordering, admission, rollback and deploy contracts.",
+    "fixture_sha256": {
+      "backend/tests/test_live_model_history_binding.py": "6f91f6676eec6f74f65392159cf5f6f56bc4ba54e49d0cf5ce4e897e838378bc",
+      "backend/tests/test_market_release_admission.py": "09ef5dfd735c05c08c8a34c82d8e66d6b8748644c31d9d928fb940d2b526a460"
+    },
+    "changed_fixture_lint": "Ruff E/F/I passed with no cache."
+  },
+  "preserved_failed_evidence": [
+    {
+      "log": "backend-validation-v1.log",
+      "sha256": "1eda011456b8edf2dda2afc27e2d2e79b0d24da9841c8a84d98bcb6a6f5def84",
+      "result": "24failed/201passed/1skipped/10errors: private archive omitted scripts, masking built scripts under the /app mount. Corrected staging and repeated original path."
+    },
+    {
+      "log": "backend-validation-v2.log",
+      "sha256": "4bf68142913db5e2d02a64a59a1cc484a182d0526a261d290a53242edbb4920c",
+      "result": "18failed/228passed: private tmpfs was noexec, so throwaway Docker stubs could not run. Corrected only private tmpfs options and repeated original path."
+    },
+    {
+      "log": "urgent6a-original-fixture-failure.log",
+      "sha256": "9867e44a1da3bb70428ff14767862fa9ba1f3ed8a999bb931140317404a30d64",
+      "original_test_sha256": "bd7d78f4965544b513d94c879365c334cc86acae7d4cc8fa8d0e319e93c1cfd3",
+      "result": "Exact6a source-extension fixture failed1/0skip in1.71s: intended frozen30 predecessor accidentally retained the new projection source. One-line test-only removal restores the intended predecessor. No runtime or admission condition was weakened.",
+      "minimal_patch_sha256": "809f3a916361d9556687be9ab0b2d1df90c1a0319ed12e5747e34f87269a61a4"
+    }
+  ],
+  "controlled_frontend": {
+    "distinct_workflows_passed": 34,
+    "skipped": 0,
+    "initial_visual_acceptance": "FAILED: independent screenshot inspection confirmed the green simulated-fill circle near Oct7 was clipped at the bottom plot boundary. The candidate was held; initial content/source assertions did not prove marker visibility.",
+    "visual_failure_screenshot": "/tmp/trading-historical-merge-review-20261017-v5/browser-v1/strategy-simulation-histor-8e45d-oss-dates-ranges-and-reload/current-model-default-three-sources.png",
+    "visual_correction": "VERIFIED in the separate targeted layout follow-up below. The original clipped screenshot remains preserved.",
+    "v4": {
+      "root": "/tmp/trading-historical-merge-review-20261017-v4",
+      "type_and_build": "PASS",
+      "source_archive_sha256": "d4b899929d43d84ca79d832645a3f0d518c1a3af20dcab1368384fb65753fbee",
+      "build_log_sha256": "88e1320faef1a2c32f1a63011f91f7bbeeb8cb27a4efcf57ae2dc654f08e4d73",
+      "browser_log_sha256": "e003ddd59a93c57e20efa0c0325ec0979fc88b9eaf9e9ca8ffca12acde9e24f4",
+      "initial_result": "31passed/3failed: synthetic projection observed_at was ahead of the captured browser clock. This original failure is preserved.",
+      "retained_unaffected_workflows": 18
+    },
+    "v5": {
+      "root": "/tmp/trading-historical-merge-review-20261017-v5",
+      "source_archive_sha256": "f6694a2af92d2d8b3b5dfbbae0d6a76b75c941601aca7cfcaae71a3113ad9611",
+      "browser_log_sha256": "77c1bfae3001d52a200af40d43cbdaf11832e36d90cada68fcf101868251a2c6",
+      "result": "16passed/0skip45.2s, rerunning the entire affected strategy fixture scope and tightened15m assertion, replacing all3 initial clock failures.",
+      "correction": "Only the test fixture uses one fixed synthetic next-session clock with original record.written as observed_at. Backend and frontend product guards are unchanged."
+    },
+    "bundle": "index-ohaBCZUP.js",
+    "bundle_sha256": "90c308931e9e9bb5347362238534c474c4a893611b42560cb6749d6ad22487cd",
+    "production_source_comparison": "Separate frontend agent compared all src bytes between the compiled v4 snapshot and the pre-layout merged source; no differences. The later two rendering changes are separately compiled and verified in visual_layout_followup.",
+    "coverage": "Three mutually exclusive account histories; current-model default with separate decision arrows and simulated fill circles; folded historical details; optional dated Grade context; retained Saved/Recalculated provenance, missing candles, immutable rendering, numeric no-fallback, partial fills,15m clocks and current assessments.",
+    "earlier_locator_failure_preserved": {
+      "log": "/tmp/trading-historical-merge-review-20261017-v2/browser-v1.log",
+      "sha256": "6a2d3d68c08166096cf496d4f12b377229008dc759445b19a9d1f2d882ec512c"
+    }
+  },
+  "visual_layout_followup": {
+    "private_root": "/tmp/trading-marker-layout-20261017-v3",
+    "change": "Only sized decision arrows become size1 and strategy charts reserve20percent bottom price-scale margin. Source/date/quantity semantics and same-account fill circles remain distinct and unchanged.",
+    "type_and_build": "PASS",
+    "build_log_sha256": "20ac0744882201a4532047ae2f4866c565ce21fce5ae1ea00b38e57e967217c0",
+    "targeted_workflows_passed": 7,
+    "skipped": 0,
+    "seconds": 18.9,
+    "browser_log_sha256": "40474c19442dc8738a709e6c306106c83f8f6ad6e8e3ce684d1429cc922e9a65",
+    "bundle": "index-BVtJBFAB.js",
+    "bundle_sha256": "b83c9acc6e477a5ffd5ddf52fb84443b6b574e3dee6a366e9db36e7180846053",
+    "coverage": "Desktop and390px default marker bounds, both original research controls, actual paper, ORCL dated context and eligible TRIM. Existing246 backend and34 controlled content workflows are retained; only rendering and its regression assertions changed.",
+    "desktop": {
+      "circle_bottom": 300,
+      "fill_label_bottom": 316.313867,
+      "plot_height": 346,
+      "bounds_sha256": "3543f2f983644193269e91af75d3e01da797fc5fc8c96a054bf2ad4b8ae278ad"
+    },
+    "phone": {
+      "circle_bottom": 351.2,
+      "fill_label_bottom": 367.513867,
+      "plot_height": 410,
+      "bounds_sha256": "418f7cc1d3a96b493ea34557951befecc93b1e3a0bfed6cda79d36b8f2a1a524"
+    },
+    "visual_inspection": "Frontend agent, merge owner and root inspected corrected screenshots. Entire fill circle/text are inside both plots; all four decision-label bounds also pass. Narrow-screen adjacent decision labels remain dense; this does not claim all human clutter/source-mixing concerns solved.",
+    "preserved_failed_attempts": [
+      {
+        "root": "/tmp/trading-marker-layout-20261017-v1",
+        "browser_log_sha256": "25f9965ccf2995e4361f50dacf10e11bce48dc767d4458dd7c5254b04b2c97cd",
+        "result": "Original clipping reproduced: circle bottom362.6 exceeds plot346."
+      },
+      {
+        "root": "/tmp/trading-marker-layout-20261017-v2",
+        "browser_log_sha256": "132ec40e7c469d826fe7fabd3e9d9b07bfd81bf3c49060b7d28362db51460e55",
+        "result": "Size1-only correction still failed: label bottom350.91 exceeds plot346. The bottom-margin correction was then tested."
+      }
+    ]
+  },
+  "historical_producer": {
+    "source": "27471b9c61b958f759e9f48b80acaf60cdf75f2e",
+    "holding_config_sha256": "1a14980a66a1cb5994f0bb82667dd46fce40ec7eb0705728d93e36b18faf5901",
+    "mutated": false,
+    "full_audit_or_publication_run": false,
+    "original_source_count": 30,
+    "fixture_rule": "Frozen source/config and receipts remain original. Only the exact pinned8b API renewal and2f guarded-source extension link that archive to the current31 serving map."
+  },
+  "production_changes": false,
+  "deployment": "UNVERIFIED and not attempted",
+  "full_historical_audit": "UNVERIFIED; must wait for original producer completion",
+  "actual_authenticated_historical_quantities": "UNVERIFIED",
+  "diagram_impact": "NONE: preserves existing immutable history read and saved numeric projection boundaries. All33 registered diagrams and the published architecture page passed synchronization check."
+}

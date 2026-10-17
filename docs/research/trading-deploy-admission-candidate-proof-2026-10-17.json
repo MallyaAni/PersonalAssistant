@@ -1,0 +1,45 @@
+{
+  "status": "VERIFIED_CANDIDATE_NOT_DEPLOYED",
+  "starting_revision": "57bd010bb78b416ce00130789f038aacf5fc3bfd",
+  "branch": "codex/historical-provenance-20261017",
+  "objective": "Prevent a canonical release from reporting success while installed learned-source approval rejects its actual host or container source.",
+  "contract": "docs/research/trading-deploy-admission-contract-2026-10-17.md",
+  "validation": {
+    "private_root": "/home/animallya96/scratch/historical-provenance-tests-20261017-v1",
+    "test_log": "deploy-admission-validation-v8.log",
+    "test_log_sha256": "79aeaef89aeb93db606de83fa5faaa8c395d62d6bd4a59147d12484fdb181b11",
+    "passed": 61,
+    "skipped": 0,
+    "seconds": 25.29,
+    "command": "python -m pytest backend/tests/test_market_release_admission.py backend/tests/test_deploy_gate_first.py backend/tests/test_deploy_trading_admission.py backend/tests/test_deploy_scripts.py -q",
+    "scope": "Real canonical shell script in throwaway Git/deploy repositories with deterministic external command fixtures; real installed source-admission function against temporary selectors.",
+    "lint": "Full repository Ruff rules passed for the three new Python files, Ruff0.17.0 from the existing anios-functional-tests image.",
+    "lint_log": "deploy-admission-lint-v6.log",
+    "lint_log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "additional_checks": ["Three shell scripts bash -n", "Three new Python files py_compile", "git diff --check", "All seven local and private-tested code file hashes match", "33 architecture diagrams and published architecture page synchronized"],
+    "diagram_log": "/tmp/trading-deploy-diagram-check-20261017.log",
+    "diagram_log_sha256": "50a823426fd755d9cc0a1083f81a597b714dcca7bb3144d7ff321227cf00ba48",
+    "preserved_failed_evidence": [
+      "deploy-admission-validation-v1.log:41passed/1failed because the private staging root omitted unchanged scripts/gate.sh; copied exact unchanged gate.sh, reran the same acceptance path",
+      "deploy-admission-lint-v1.log,v2.log,v4.log:lint findings corrected without weakening tests"
+    ]
+  },
+  "code_sha256": {
+    "backend/cli/market_release_admission.py": "d6d25dc97a3c09e16fbed07bb61c96baa44cafc429c77c772b4a29880b163be9",
+    "backend/tests/test_market_release_admission.py": "bd7d78f4965544b513d94c879365c334cc86acae7d4cc8fa8d0e319e93c1cfd3",
+    "backend/tests/test_deploy_trading_admission.py": "d70c6b5511a148ad35f2306b1a1b4d6866022c2fcac5d2abc750d2bbe13f7555",
+    "backend/tests/test_deploy_gate_first.py": "40cdb110832821ce3be833a14c358271330528cfd12dfb014dcff3f2bd3324dd",
+    "scripts/deploy.sh": "a43d9786ae40fd8042facf939f751126e8840aa07a21011087846deb0d2ee9e1",
+    "scripts/post-deploy-checks.sh": "92e106538d74c101a33091bd3261150453dea19ffc3de9e3de093dc1a5118792",
+    "scripts/check-trading-admission.sh": "6dcaec4620a967c80991ddf6b3f70e727ea9fbbbf5cfd2b1b62a6e4b39e28476"
+  },
+  "independent_review_regressions": [
+    "Missing config with surviving release/evidence or dangling config must fail closed in CLI, preflight and both post modes.",
+    "Optimized Python must still reject differing successful host/container source maps; the production equality check is an explicit conditional, not assert.",
+    "Candidate config write plus original release restoration failure leaves a mixed installation; code rollback requires independent exact predecessor-byte verification if activation did not return its archive receipt."
+  ],
+  "diagram_impact": "NONE — internal deployment approval validation and archive within the existing filesystem; components, services, persistent stores and ownership boundaries remain unchanged.",
+  "production": "UNVERIFIED; this candidate has not been deployed. No production runtime/config/model/order/history changes were made by this task.",
+  "remaining_boundaries": ["Canonical integrated release with the final exact committed source review and hash-pinned explicit bundle", "Actual deployed host/container admission", "Fresh ordinary and intraday/fill/UI acceptance", "Independent completed historical-account audit/publication"],
+  "preservation": "Original failed dated records and the single running retrospective account were not changed or replayed. No model-service changes, fitting, tuning, orders, paid data or bounded historical publication."
+}

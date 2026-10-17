@@ -1,7 +1,7 @@
 import {expect, test} from '@playwright/test'
 
-// Exercise plain trading labels, current holdings and guarded chart judgments through the compiled app.
-test('current opportunities rerank and completed exits do not reappear', async ({page}) => {
+// Keep guarded chart judgments in details without manufacturing actions or repeating completed exits.
+test('chart judgments refresh independently of recorded actions and completed exits', async ({page}) => {
   const errors: string[] = [], writes: string[] = []
   let stage = 'initial'
   const now = new Date(), at = now.toISOString()
@@ -50,31 +50,31 @@ test('current opportunities rerank and completed exits do not reappear', async (
   await expect(table).not.toContainText('Now:')
   await expect(page.getByLabel('WAITING latest quote check', {exact: true})).toHaveCount(0)
   await expect(page.getByLabel('EXITED strategy intent', {exact: true})).toHaveText('—')
-  await expect(page.getByLabel('HELD strategy intent', {exact: true})).toHaveText('SELL')
-  await expect(page.getByLabel('READY strategy intent', {exact: true})).toHaveText('BUY')
-  await expect(page.getByLabel('WAITING strategy intent', {exact: true})).toHaveText('WAIT')
-  await expect(table.getByRole('row').nth(2)).toContainText('READY')
+  await expect(page.getByLabel('HELD strategy intent', {exact: true})).toHaveText('—')
+  await expect(page.getByLabel('READY strategy intent', {exact: true})).toHaveText('—')
+  await expect(page.getByLabel('WAITING strategy intent', {exact: true})).toHaveText('—')
+  await expect(page.getByLabel('READY order status', {exact: true})).toContainText('Awaiting model plan')
   await page.getByRole('button', {name: 'details for WAITING', exact: true}).click()
   await expect(page.getByLabel('WAITING latest quote check', {exact: true})).toContainText('above the $100.00 confirmation reference; entry remains WAIT')
   await expect(page.getByLabel('WAITING details', {exact: true})).toContainText('Saved target')
   await page.getByRole('button', {name: 'details for WAITING', exact: true}).click()
   stage = 'review-held'
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect(page.getByLabel('HELD strategy intent', {exact: true})).toHaveText('HOLD')
+  await expect(page.getByLabel('HELD strategy intent', {exact: true})).toHaveText('—')
   stage = 'buy-held'
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect(page.getByLabel('HELD strategy intent', {exact: true})).toHaveText('BUY')
+  await expect(page.getByLabel('HELD strategy intent', {exact: true})).toHaveText('—')
   await expect(page.getByLabel('HELD size', {exact: true})).toHaveText('—')
   await table.getByRole('button', {name: 'Action', exact: true}).click()
   await expect(page.getByRole('checkbox', {name: 'Show ADD rows', exact: true})).toHaveCount(0)
   await expect(page.getByRole('checkbox', {name: 'Show REVIEW rows', exact: true})).toHaveCount(0)
   await page.getByRole('checkbox', {name: 'Show HOLD rows', exact: true}).uncheck()
-  await expect(page.getByLabel('HELD strategy intent', {exact: true})).toHaveText('BUY')
+  await expect(page.getByLabel('HELD strategy intent', {exact: true})).toHaveText('—')
   await page.getByRole('checkbox', {name: 'Show HOLD rows', exact: true}).check()
   await table.getByRole('button', {name: 'Action', exact: true}).click()
   stage = 'review-held'
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect(page.getByLabel('HELD strategy intent', {exact: true})).toHaveText('HOLD')
+  await expect(page.getByLabel('HELD strategy intent', {exact: true})).toHaveText('—')
   await page.getByRole('button', {name: 'READY', exact: true}).click()
   const judgment = page.getByRole('region', {name: 'Current chart judgment', exact: true})
   await expect(judgment).toContainText('Buyers defended the pullback')
@@ -88,24 +88,24 @@ test('current opportunities rerank and completed exits do not reappear', async (
   await expect(judgment).toContainText('Existing holding: review downside risk')
   await page.getByRole('button', {name: 'Close', exact: true}).click()
   stage = 'swapped'
-  // An unattended price/assessment poll must update ranking without a refresh click.
-  await expect(table.getByRole('row').nth(2)).toContainText('WAITING', {timeout: 30000})
-  await expect(page.getByLabel('READY strategy intent', {exact: true})).toHaveText('WAIT')
+  // An unattended poll updates chart evidence without creating an executable action.
   await page.getByRole('button', {name: 'details for READY', exact: true}).click()
+  await expect(page.getByLabel('READY chart judgment', {exact: true})).toContainText('bounce failed', {timeout: 30000})
+  await expect(page.getByLabel('READY strategy intent', {exact: true})).toHaveText('—')
   stage = 'invalidated'
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect(page.getByLabel('READY strategy intent', {exact: true})).toHaveText('WAIT')
+  await expect(page.getByLabel('READY strategy intent', {exact: true})).toHaveText('—')
   await expect(page.getByLabel('READY chart judgment', {exact: true})).toContainText('latest quote lost')
   await expect(page.getByLabel('READY chart judgment', {exact: true})).toContainText('Reassessment reference:')
   await expect(page.getByLabel('READY latest quote check', {exact: true})).toContainText('below the $100.00 confirmation reference')
   stage = 'quote-expired'
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect(page.getByLabel('READY strategy intent', {exact: true})).toHaveText('WAIT')
+  await expect(page.getByLabel('READY strategy intent', {exact: true})).toHaveText('—')
   await expect(page.getByLabel('READY chart judgment', {exact: true})).toContainText('fresh regular-session quote')
   await page.getByRole('button', {name: 'details for READY', exact: true}).click()
   stage = 'closed'
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
-  await expect(page.getByLabel('READY strategy intent', {exact: true})).toHaveText('WAIT')
+  await expect(page.getByLabel('READY strategy intent', {exact: true})).toHaveText('—')
   await expect(page.getByLabel('Chart judgment coverage', {exact: true})).toContainText('awaiting regular-session evidence')
   await expect(page.getByLabel('Chart judgment coverage', {exact: true})).not.toContainText('updating')
   stage = 'sold'
@@ -114,7 +114,7 @@ test('current opportunities rerank and completed exits do not reappear', async (
   stage = 'expired'
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
   await expect(page.getByLabel('READY strategy intent', {exact: true})).not.toHaveText('BUY')
-  await expect(page.getByLabel('READY displayed grade', {exact: true})).toContainText('fresh assessment unavailable')
+  await expect(page.getByLabel('READY displayed grade', {exact: true})).toContainText('model plan unavailable')
   expect(writes).toEqual([])
   expect(errors).toEqual([])
 })

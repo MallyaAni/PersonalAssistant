@@ -8,6 +8,7 @@ import { actionPresentation, BoardSimulation, executionClockMessage, MlCompariso
 import { RecommendationTimeline } from './RecommendationTimeline'
 import { PersonalDecisionHistory, type PersonalHistoryContext } from './PersonalDecisionHistory'
 import { PaperAccountHistory } from './PaperAccountHistory'
+import {confirmedPaperFills} from './paperFills'
 import { TickerChart } from './TickerChart'
 import {currentAssessments, assessmentPermission} from './liveAssessment'
 import {currentSetup, confirmationText, invalidationText, quoteReferenceText} from './currentRanking'
@@ -1012,9 +1013,9 @@ const TrackRecord = ({ curve, latest }: { curve: DeskCurve | undefined; latest: 
 // both as the help popover and the empty-state guide.
 const HowToUse = ({ onClose, compact = false, plan, strategy = false }: { onClose?: () => void; compact?: boolean; plan?: DeskPaperPlan; strategy?: boolean }) => strategy ? (
   <section aria-label="Strategy guide" className="my-2 max-w-2xl rounded-xl border p-3 text-xs">
-    <p>The stock list shows current paper-account actions, sizes and order status.</p>
-    <p>A/A+ gives entry permission; below A exits an existing holding. The signal stays visible if sizing or funding blocks an order.</p>
-    <p>Order size and timing are separate. TRIM is a sizing reduction that keeps shares; SELL exits.</p>
+    <p>The stock list uses one admitted numeric plan for action, funded shares and timing. Missing or stale plans stay unavailable.</p>
+    <p>A/A+ gives entry permission, not a funded buy. An admitted BUY with zero shares keeps its blocking reason. No paper order does not imply HOLD.</p>
+    <p>TRIM reduces a holding; SELL exits. Chart judgments and actual paper executions are supporting details.</p>
     <p>Open a ticker for historical grade-led decisions with current live-model quantities and simulated executions. Confirmed paper executions and earlier model-only research are separate layers.</p>
     <p>Saved targets and grades retain their dates; prices and order status refresh live.</p>
     {onClose && <button type="button" className="mt-2 text-[#0071e3]" onClick={onClose}>Close guide</button>}
@@ -1354,14 +1355,14 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     setDecisions(undefined)
   }, [userId])
 
-  // Expire displayed quotes and signals even when no network refresh completes.
+  // Expire displayed quotes, signals and numeric plans even when no network refresh completes.
   useEffect(() => {
-    const deadlines = [...Object.values(gradeContext.until), ...Object.values(live.grade_valid_until ?? {}), payload?.intraday_research?.valid_until ?? '', ...Object.values(decisions?.rows ?? {}).map(row => row.valid_until ?? ''), ...Object.values(live.extended_hours?.quotes ?? {}).map(row => row.valid_until ?? '')].map(Date.parse).filter(value => value > now)
+    const deadlines = [...Object.values(gradeContext.until), ...Object.values(live.grade_valid_until ?? {}), payload?.intraday_research?.valid_until ?? '', paperLive?.model_decisions?.valid_until ?? '', ...Object.values(decisions?.rows ?? {}).map(row => row.valid_until ?? ''), ...Object.values(live.extended_hours?.quotes ?? {}).map(row => row.valid_until ?? '')].map(Date.parse).filter(value => value > now)
     deadlines.push(...[live.extended_hours?.as_of, ...Object.values(live.extended_hours?.quotes ?? {}).map(row => row.at)].map(value => Date.parse(value ?? '') + 60_000).filter(value => value > now))
     if (!deadlines.length) return
     const timer = window.setTimeout(() => setNow(Date.now()), Math.min(...deadlines) - now + 1)
     return () => window.clearTimeout(timer)
-  }, [gradeContext, now, payload?.intraday_research?.valid_until, decisions, live.extended_hours, live.grade_valid_until])
+  }, [gradeContext, now, payload?.intraday_research?.valid_until, paperLive?.model_decisions?.valid_until, decisions, live.extended_hours, live.grade_valid_until])
 
   // Re-read the paper account's orders every 20 seconds while the page is
   // visible, so a level reached on the candle, the order it sends and the fill
@@ -1444,6 +1445,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     decisionDate: event?.decision_date ?? null, calendarUnknown: event?.calendar_known === false,
   } : null} orders={paperLive?.orders?.length ?? eventLive?.pending_orders ?? 0}
     plan={paperLive?.plan?.orders ?? null} /> : null
+  const recordedExecutions = confirmedPaperFills(paperLive?.recorded_fills, paperLive?.activity, now)
   // Share dated analyst evidence with the full panel, revealing personal guidance only on request.
   const expandRow = (ticker: string) => {
     const g = latest?.grades?.[ticker]
@@ -1701,7 +1703,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               <p>{paperLive?.orders ? `${paperLive.orders.length} order${paperLive.orders.length === 1 ? '' : 's'} open at the broker` : 'Open orders unavailable'}</p>
               {paperLive?.orders?.map((order, i) => <p key={i}>{order.side.toUpperCase()} {order.qty} {order.symbol} · {order.status}</p>)}
               <p>{paperLive?.activity?.fills ? `${paperLive.activity.fills.length === 0 && paperLive.activity.complete ? 'No fills' : `${paperLive.activity.fills.length}${paperLive.activity.complete ? '' : '+'} fills`} · ${paperLive.activity.session}` : 'Today’s fill history unavailable'}</p>
-              {paperLive?.activity?.fills?.map((fill, i) => <p key={i}>{fill.side === 'buy' ? 'Bought' : 'Sold'} {fill.qty} {fill.symbol} @ {priceMoney(fill.price)} · {executionTime(fill.filled_at)}</p>)}
+              {[...recordedExecutions].reverse().map((fill, i) => <p key={`${fill.client_order_id ?? 'fill'}-${i}`} data-client-order-id={fill.client_order_id ?? undefined}>{fill.side === 'buy' ? 'Bought' : 'Sold'} {fill.qty} {fill.symbol} @ {priceMoney(fill.price)} · <time dateTime={fill.filled_at} title={fill.filled_at}>{executionTime(fill.filled_at)}</time></p>)}
             </section>
           </div>
         </details>
@@ -1759,10 +1761,11 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <NameDetail
           compact
           userId={userId}
-          order={latest ? boardRows(latest, paperLive, strategyView).find(r => r.ticker === openName) ?? null : null}
+          order={latest ? boardRows(latest, paperLive, strategyView, now).find(r => r.ticker === openName) ?? null : null}
           personalHistory={false}
           strategy={strategyView}
           paperActivity={paperLive?.activity}
+          paperRecordedFills={paperLive?.recorded_fills}
           historyGeneration={accountGen.current}
           personalReceiptId={historyContext?.userId === userId
             && historyContext.generation === accountGen.current
@@ -2969,20 +2972,20 @@ const TodayLine = ({exchange, event, boardEvent, orders, plan}: {
   </section>
 }
 
-// The paper account's order for one name, in the board's own words: the word,
-// the size, why, the rule for its session and what has happened, then the
-// position against its target. Every order on the name is listed.
+// Repeat the board's admitted model plan while keeping each original paper execution separate.
 const PaperOrderCard = ({ticker, row, session}: {ticker: string; row: BoardRow; session: string}) => (
   <section aria-label={`${ticker} paper order`} className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
-    <h4 className="mb-1 font-medium text-[#6e6e73]">{row.signal && !row.orders.length ? 'Grade signal · no paper order' : 'Paper account'}</h4>
+    <h4 className="mb-1 font-medium text-[#6e6e73]">{row.modelPlan ? 'Model plan' : row.signal && !row.orders.length ? 'Grade signal · no paper order' : 'Paper account'}</h4>
     <p className="text-base">
       <span className={`font-semibold ${row.done ? 'text-[#6e6e73]' : WORD_STYLE[row.word]}`}>{row.word}</span>
-      {row.orders.length > 0 && <span className="ml-2 text-[#1d1d1f]">{row.combined ? `${sharesText(row.qty)} ${row.sizeLabel}` : `${row.orders.length} orders · see below`}{row.notional !== null ? ` · ${dollars(row.notional)}` : ''}{row.weight !== null ? ` · ${percent(row.weight)} of current equity` : ''}</span>}
+      {row.modelPlan ? row.modelDecision?.action && row.modelDecision.qty !== null && <span className="ml-2 text-[#1d1d1f]">{sharesText(row.modelDecision.qty)}{row.modelDecision.action === 'hold' ? ' change' : ' funded'} · {row.status}</span>
+        : row.orders.length > 0 && <span className="ml-2 text-[#1d1d1f]">{row.combined ? `${sharesText(row.qty)} ${row.sizeLabel}` : `${row.orders.length} orders · see below`}{row.notional !== null ? ` · ${dollars(row.notional)}` : ''}{row.weight !== null ? ` · ${percent(row.weight)} of current equity` : ''}</span>}
     </p>
     <p className="text-xs text-[#6e6e73]">{row.why}</p>
+    {row.modelPlan && row.when && <p className="text-xs text-[#6e6e73]">{row.when}</p>}
     {row.signal && <p aria-label={`${ticker} signal status`} className="text-xs text-[#6e6e73]">Grade signal {row.signal.toUpperCase()} · {session} · {row.signalReason}</p>}
     {row.orders.map(o => <div key={o.client_order_id} className="mt-2 text-xs">
-      {row.orders.length > 1 && <p className="font-medium text-[#1d1d1f]">{orderWord(o)} {sharesText(o.qty)} {quantityLabel(o)} · {o.why}</p>}
+      {(row.modelPlan || row.orders.length > 1) && <p className="font-medium text-[#1d1d1f]">{row.modelPlan ? 'Recorded paper: ' : ''}{orderWord(o)} {sharesText(o.qty)} {quantityLabel(o)} · {o.why}</p>}
       {o.planned_qty !== undefined && o.planned_qty !== o.qty && <p>Originally planned: {sharesText(o.planned_qty)}</p>}
       <p className="text-[#1d1d1f]">{o.status}</p>
       <p className="text-[#6e6e73]">{o.when}</p>
@@ -3010,6 +3013,7 @@ const NameDetail = ({
   personalHistory = false,
   historyGeneration = 0,
   paperActivity,
+  paperRecordedFills,
   personalReceiptId,
   order = null,
   lastClose = null,
@@ -3038,6 +3042,7 @@ const NameDetail = ({
   personalHistory?: boolean
   historyGeneration?: number
   paperActivity?: DeskPaperLive['activity']
+  paperRecordedFills?: DeskPaperLive['recorded_fills']
   personalReceiptId?: string
   strategy?: boolean
 }) => {
@@ -3134,7 +3139,7 @@ const NameDetail = ({
             so it leads on a phone and holds the right two-fifths of a wide
             window, staying in place while the reasoning scrolls beside it. */}
         <div className="mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0">
-          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} strategy={strategy} simulation={simulation} simulationError={simulationError} sizedHistory={sizedHistory} sizedHistoryError={sizedHistoryError} />
+          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} paperRecordedFills={paperRecordedFills} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} strategy={strategy} simulation={simulation} simulationError={simulationError} sizedHistory={sizedHistory} sizedHistoryError={sizedHistoryError} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
         {strategy && <section aria-label="Current assessment" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">

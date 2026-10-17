@@ -30,18 +30,33 @@ def store(root, name, raw):
     return sha256(raw).hexdigest()
 
 
-# Reproduce the original source/config and its approval-only current renewal.
+# Reconstruct the frozen 30 sources by reversing only the exact reviewed extension.
+def archived_source_identity():
+    root = Path(binding.__file__).resolve().parents[2]
+    first = json.loads((root / binding.REVIEWS[0]).read_bytes())
+    numeric = json.loads((root / binding.REVIEWS[1]).read_bytes())
+    source = dict(learned_live_holding.source_identity())
+    if "backend/market/live_model_decision.py" in source:
+        assert len(source) == 31
+        for name, change in numeric["source_changes"].items():
+            assert source[name] == change["after_sha256"]
+            if change["before_sha256"] is None:
+                del source[name]
+            else:
+                source[name] = change["before_sha256"]
+    assert len(source) == 30
+    source[first["changed_reviewed_file"]] = first["previous_approved_sha256"]
+    return source
+
+
+# Preserve frozen source/config bytes while installing the reviewed serving renewal.
 def renewed(root):
     value, old_path = publication(root)
     frozen = root / "frozen"
     review_raw = (
         Path(binding.__file__).resolve().parents[2] / binding.REVIEWS[0]
     ).read_bytes()
-    review = json.loads(review_raw)
-    original_sources = learned_live_holding.source_identity()
-    original_sources[review["changed_reviewed_file"]] = review[
-        "previous_approved_sha256"
-    ]
+    original_sources = archived_source_identity()
     evidence_sha = store(frozen, "evidence", b'{"original_economics":true}\r\n')
     timing = {
         "model_receipt_sha256": "c" * 64,
@@ -102,7 +117,13 @@ def renewed(root):
         timing_model_receipt_sha256=timing["model_receipt_sha256"],
         timing_residual_receipt_sha256=timing["residual_receipt_sha256"],
     )
-    return value, old_path, frozen, [sha256(review_raw).hexdigest()]
+    receipts = [sha256(review_raw).hexdigest()]
+    if (
+        "backend/market/live_model_decision.py"
+        in learned_live_holding.source_identity()
+    ):
+        receipts.append(binding.REVIEW_SHA256[binding.REVIEWS[1]])
+    return value, old_path, frozen, receipts
 
 
 # Persist the exact independent proof identity used by the publication boundary.
@@ -118,6 +139,8 @@ def test_renewed_approval_publishes94_without_relabelling_or_writing_archive(
 ):
     value, old_path, frozen, reviews = renewed(tmp_path)
     original = deepcopy(value["provenance"])
+    assert len(original["source_sha256"]) == 30
+    assert "backend/market/live_model_decision.py" not in original["source_sha256"]
     archived = {
         str(path): path.read_bytes() for path in frozen.rglob("*") if path.is_file()
     }
@@ -224,7 +247,7 @@ def test_binding_rechecks_original_model_bytes(tmp_path):
 def test_guard_extension_checks_exact_paths_predecessors_and_function_bodies(
     tmp_path, monkeypatch
 ):
-    sources = learned_live_holding.source_identity()
+    sources = archived_source_identity()
     tree = ast.parse(Path(learned_live_holding.__file__).read_bytes())
     functions = {
         node.name: sha256(ast.dump(node, include_attributes=False).encode()).hexdigest()
@@ -311,7 +334,12 @@ def test_review_chain_admits_exact31_source_extension_only_in_order(
     tmp_path, monkeypatch
 ):
     value, _, _, reviews = renewed(tmp_path)
-    current = learned_live_holding.source_identity()
+    reviews = reviews[:1]
+    current = deepcopy(value["provenance"]["source_sha256"])
+    review_path = Path(binding.__file__).resolve().parents[2] / binding.REVIEWS[0]
+    current["backend/api/v1/market.py"] = json.loads(review_path.read_bytes())[
+        "reviewed_serving_sha256"
+    ]
     tree = ast.parse(Path(learned_live_holding.__file__).read_bytes())
     functions = {
         node.name: sha256(ast.dump(node, include_attributes=False).encode()).hexdigest()
@@ -359,8 +387,7 @@ def test_review_chain_admits_exact31_source_extension_only_in_order(
 def exact_numeric_chain():
     root = Path(binding.__file__).resolve().parents[2]
     rows = [json.loads((root / name).read_bytes()) for name in binding.REVIEWS]
-    original = learned_live_holding.source_identity()
-    original[rows[0]["changed_reviewed_file"]] = rows[0]["previous_approved_sha256"]
+    original = archived_source_identity()
     serving = dict(original)
     serving[rows[0]["changed_reviewed_file"]] = rows[0]["reviewed_serving_sha256"]
     for name, change in rows[1]["source_changes"].items():

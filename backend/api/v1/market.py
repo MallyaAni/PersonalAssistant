@@ -1121,12 +1121,15 @@ async def desk_funding_preview(user_id: UserId, inputs: dict) -> dict[str, objec
 # record left it: money, every position with its cost and price, and the
 # orders waiting for the open. Read-only, paper endpoint only.
 @router.get("/desk/paper")
-async def desk_paper(user_id: UserId) -> dict[str, object]:
+async def desk_paper(user_id: UserId, response: Response) -> dict[str, object]:
     """Return the paper account's live money, positions and open orders."""
     _operator_only(user_id)
+    response.headers["Cache-Control"] = "private, no-store"
 
+    # Read broker execution and the admitted saved decision in one response.
     def fetch() -> dict[str, object]:
         from backend.agents.trading.desk import paper
+        from backend.market import live_model_decision
 
         client = alpaca_trading.client_from_env()
         account = client.account()
@@ -1152,6 +1155,28 @@ async def desk_paper(user_id: UserId) -> dict[str, object]:
         ):
             activity = {"reason": "Today's fill history could not be loaded"}
         positions = client.positions()
+        plan = _paper_plan(
+            client,
+            state,
+            positions,
+            equity,
+            cash=account.cash,
+            buying_power=getattr(account, "buying_power", None),
+        )
+        try:
+            latest, _previous = deskrecord.latest_pair(_root())
+        except (OSError, ValueError, TypeError):
+            latest = {"reason": "Saved model record could not be read"}
+        observed = datetime.now(UTC)
+        model_decisions = live_model_decision.read(
+            _root(), latest, plan, observed, journal=state.journal
+        )
+        try:
+            recorded_fills = live_model_decision.recorded_fills(state.journal, observed)
+            recorded_fills_reason = None
+        except (OSError, ValueError, TypeError, KeyError):
+            recorded_fills = []
+            recorded_fills_reason = "Saved execution history could not be verified"
         return {
             "activity": activity,
             "equity": equity,
@@ -1169,14 +1194,10 @@ async def desk_paper(user_id: UserId) -> dict[str, object]:
                 }
                 for o in client.open_orders()
             ],
-            "plan": _paper_plan(
-                client,
-                state,
-                positions,
-                equity,
-                cash=account.cash,
-                buying_power=getattr(account, "buying_power", None),
-            ),
+            "plan": plan,
+            "model_decisions": model_decisions,
+            "recorded_fills": recorded_fills,
+            "recorded_fills_reason": recorded_fills_reason,
         }
 
     try:

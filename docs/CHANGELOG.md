@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-10-17 — Combine pending historical quantities with the numeric decision contract
+
+The isolated combined candidate preserves current saved numeric decisions and
+recorded paper fills alongside the separate current-model retrospective history.
+All 31 reviewed trading sources remain byte-identical to urgent candidate
+6a1d77bc; no additional source approval is introduced. Historical fixture
+provenance retains the original 30-source account and authenticates the two exact
+reviewed serving transitions rather than relabelling the frozen run.
+
+Controlled backend/API, history corruption and deploy rollback checks passed
+246/0skip in 26.45s. All 34 distinct compiled browser workflows passed after
+correcting only a synthetic fixture clock; type/build and all 33 diagrams passed.
+Independent screenshot inspection then found a simulated-fill circle clipped at
+the default chart's bottom boundary. The failed screenshot and size1-only
+attempt remain preserved. Compact decision arrows and a20percent bottom margin
+now keep the distinct fill circle and label inside desktop and phone plots:
+7 targeted compiled checks pass/0skip18.9s, with measured marker bounds and
+independent screenshot inspection. Narrow-screen labels remain dense; this does
+not claim every human clutter concern is solved.
+The historical chart retains three account choices, with current-model decisions
+and distinct simulated fills together by default; grade context and historical
+tables remain inside existing disclosures. The original urgent source-extension fixture failure is
+preserved separately; its correction removes the newly added source from the
+predecessor fixture only. The full retrospective audit, publication, canonical
+combined release and actual historical quantity workflows remain unverified.
+Diagram impact: NONE — the merge retains the existing historical read boundary
+and saved-decision projection; it adds no runtime component or trust boundary.
+
+## 2026-10-17 — Keep Stocks actions, quantities and timing on one numeric plan
+
+Stocks now reads its grade, action, funded whole-share quantity and timing from
+one admitted saved numeric decision. Prompted chart judgments remain supporting
+details. Missing, expired or unverifiable plans cannot borrow an action from a
+chart, a holding or an old broker order. Authenticated blocked BUY0 keeps its
+reason; retained HOLD requires the recorded grade policy. Completed orders are
+not repeated as new instructions. Actual submissions and fills remain separate
+from the original funded decision quantity. The private read-only projection
+checks saved receipt/account/source/configuration identities without prediction,
+new sizing, order submission or historical changes. Exact delivery evidence and
+the source-approval renewal are recorded in NEXT_SESSION.md after release.
+
 ## 2026-10-17 — Compare grade-led saved targets on their learned sizing basis
 
 The grade parity checker now reapplies grade constraints to the saved learned
