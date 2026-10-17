@@ -4,15 +4,11 @@ import { displayedBoardPrice, SessionPrice } from './StockBoard'
 import {rankCurrent, confirmationText, invalidationText, quoteReferenceText} from './currentRanking'
 import {modelDecisionFor} from './modelDecisions'
 
-// The Stock rankings board, rebuilt around one question a trader asks of it:
-// what is the paper account doing about each name, how big, and when.
-//
-// Orders come from `/desk/paper` (`plan.orders`). Grade signals are shown
-// separately, including when no order can be sized or funded. The paper account
-// sends only its recorded orders. Their wording (why, when, what happened) comes
-// from the backend in one place, so this board, the ticker panel and the
-// chart cannot tell different stories. On Stocks, no order is a missing action,
-// not a model HOLD decision. Chart judgments remain supporting evidence.
+// Stocks takes action, grade, funded shares and timing from one admitted
+// numeric plan. Its recorded paper executions stay separate in Details.
+// The account view continues to show those original paper orders and fills.
+// A missing numeric plan cannot be filled in by a grade, chart judgment or
+// existing holding; no paper order is not a model HOLD decision.
 //
 // Levels shows the account's unsubmitted price triggers. Technical references
 // belong in stock details; a reference indicator is never an order price.
@@ -295,7 +291,7 @@ export const holdReason = (weight: number | null, target: number | null): string
   return `${gap > 0 ? 'Above' : 'Below'} its saved ${percent(target)} target · no recorded order`
 }
 
-// Build recorded account rows, excluding settled orders when the caller needs current actions only.
+// Build admitted numeric rows on Stocks and recorded order rows in the paper account.
 // Names come from grades, saved targets, current holdings and the retained orders.
 export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | undefined, currentOnly = false, now = Date.now()): BoardRow[] => {
   const equity = paper?.equity && paper.equity > 0 ? paper.equity : null
@@ -389,7 +385,7 @@ const band = (row: BoardRow): number => {
   return row.orders.every(order => isDone(order) || order.state === 'held') ? 4 : 3
 }
 
-// Rank order readiness first, then visible grade signals without fabricating their size.
+// Rank numeric plans or recorded paper orders without inventing quantities from chart evidence.
 const ranked = (rows: BoardRow[]) => [...rows].sort((a, b) => {
   const stage = band(a), other = band(b)
   if (stage !== other) return stage - other

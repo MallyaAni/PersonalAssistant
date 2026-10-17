@@ -2967,9 +2967,7 @@ const TodayLine = ({exchange, event, boardEvent, orders, plan}: {
   </section>
 }
 
-// The paper account's order for one name, in the board's own words: the word,
-// the size, why, the rule for its session and what has happened, then the
-// position against its target. Every order on the name is listed.
+// Repeat the board's admitted model plan while keeping each original paper execution separate.
 const PaperOrderCard = ({ticker, row, session}: {ticker: string; row: BoardRow; session: string}) => (
   <section aria-label={`${ticker} paper order`} className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
     <h4 className="mb-1 font-medium text-[#6e6e73]">{row.modelPlan ? 'Model plan' : row.signal && !row.orders.length ? 'Grade signal · no paper order' : 'Paper account'}</h4>
