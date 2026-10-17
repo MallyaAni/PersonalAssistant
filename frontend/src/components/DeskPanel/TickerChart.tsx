@@ -370,7 +370,7 @@ const simulatedTradeMarkers = (simulation: DeskStrategyStock | null | undefined,
 // Display additional purchases as BUY while preserving the original action in stored evidence.
 const tradingAction = (action: string): string => action === 'ADD' ? 'BUY' : action
 
-// Keep each historical funded amount on its original decision day, including zero signals.
+// Keep each funded amount on its original day; compact arrows leave room for the same account's fills.
 const sizedDecisionMarkers = (history: DeskLiveModelHistory | null | undefined, bars: DeskChartBar[], timeframe: Timeframe): ChartMarker[] =>
   (history?.decisions ?? []).flatMap(row => {
     const candle = markerCandle(row.date, bars, timeframe)
@@ -378,7 +378,7 @@ const sizedDecisionMarkers = (history: DeskLiveModelHistory | null | undefined, 
     const up = row.action === 'BUY' || row.action === 'ADD'
     return [{time: stamp(candle.date), position: up ? 'belowBar' as const : 'aboveBar' as const,
       color: up ? TRADE_BUY : TRADE_SELL, shape: up ? 'arrowUp' as const : 'arrowDown' as const,
-      text: `${tradingAction(row.action)} ${shares(row.qty)}${row.grade ? ` · ${row.grade}` : ''}`, size: row.qty ? 2 : 1}]
+      text: `${tradingAction(row.action)} ${shares(row.qty)}${row.grade ? ` · ${row.grade}` : ''}`, size: 1}]
   })
 
 // Draw only genuine simulated execution receipts from the new grade-led account.
@@ -841,7 +841,8 @@ export const TickerChart = ({
           horzLines: { color: 'rgba(0,0,0,0.05)' },
           vertLines: { color: 'rgba(0,0,0,0.03)' },
         },
-        rightPriceScale: { borderColor: 'rgba(0,0,0,0.1)' },
+        // Reserve room for a decision arrow and its distinct same-account fill label on one candle.
+        rightPriceScale: { borderColor: 'rgba(0,0,0,0.1)', ...(strategy ? {scaleMargins: {top: .2, bottom: .2}} : {}) },
         // On 15m the axis shows the clock, in New York time: the library
         // would otherwise write the bar starts as UTC.
         timeScale: timeframe === '15m'

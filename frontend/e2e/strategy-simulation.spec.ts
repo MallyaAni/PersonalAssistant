@@ -1,5 +1,5 @@
 import {expect, test, type Page, type Locator} from '@playwright/test'
-import {readFileSync} from 'node:fs'
+import {readFileSync, writeFileSync} from 'node:fs'
 import {gunzipSync} from 'node:zlib'
 import {createHash} from 'node:crypto'
 
@@ -58,19 +58,34 @@ async function install(page: Page, stock: Stock, failure = false, current = {don
     ;(window as any).__strategyPaint = []
     ;(window as any).__gradePaint = []
     ;(window as any).__sizedPaint = []
+    ;(window as any).__fillCircleBounds = []
+    ;(window as any).__sizedLabelBounds = []
+    const arc = CanvasRenderingContext2D.prototype.arc
+    // Measure real account-fill circles against their plot canvas, including the marker radius.
+    CanvasRenderingContext2D.prototype.arc = function (...args: Parameters<CanvasRenderingContext2D['arc']>) {
+      if (this.canvas.closest('[data-testid="ticker-chart-canvas"]') && ['#248a3d', '#b42318'].includes(String(this.fillStyle))) {
+        const point = new DOMPoint(args[0], args[1]).matrixTransform(this.getTransform())
+        ;(window as any).__fillCircleBounds.push({x: point.x, y: point.y, radius: args[2] * this.getTransform().a, canvasWidth: this.canvas.width, canvasHeight: this.canvas.height})
+      }
+      return arc.apply(this, args)
+    }
     const original = CanvasRenderingContext2D.prototype.fillText
     // Retain the real marker text and canvas bounds, without replacing chart layout.
     CanvasRenderingContext2D.prototype.fillText = function (...args: Parameters<CanvasRenderingContext2D['fillText']>) {
       if (this.canvas.closest('[data-testid="ticker-chart-canvas"]') && /^(BUY|SELL|TRIM) .+ sh$/.test(args[0])) {
         const point = new DOMPoint(args[1], args[2]).matrixTransform(this.getTransform())
-        const width = this.measureText(args[0]).width * this.getTransform().a
-        ;(window as any).__strategyPaint.push({text: args[0], x: point.x, y: point.y, width, canvasWidth: this.canvas.width, canvasHeight: this.canvas.height})
+        const metrics = this.measureText(args[0]), scale = this.getTransform().a
+        const width = metrics.width * scale
+        ;(window as any).__strategyPaint.push({text: args[0], x: point.x, y: point.y, width, ascent: metrics.actualBoundingBoxAscent * scale, descent: metrics.actualBoundingBoxDescent * scale, canvasWidth: this.canvas.width, canvasHeight: this.canvas.height})
       }
       if (this.canvas.closest('[data-testid="ticker-chart-canvas"]') && /^Grade (BUY|SELL) · (A\+?|B|C)$/.test(args[0])) {
         ;(window as any).__gradePaint.push(args[0])
       }
       if (this.canvas.closest('[data-testid="ticker-chart-canvas"]') && /^(BUY|ADD|SELL|TRIM) .+ sh · (A\+?|B|C)$/.test(args[0])) {
         ;(window as any).__sizedPaint.push(args[0])
+        const point = new DOMPoint(args[1], args[2]).matrixTransform(this.getTransform())
+        const metrics = this.measureText(args[0]), scale = this.getTransform().a
+        ;(window as any).__sizedLabelBounds.push({text: args[0], y: point.y, ascent: metrics.actualBoundingBoxAscent * scale, descent: metrics.actualBoundingBoxDescent * scale, canvasHeight: this.canvas.height})
       }
       return original.apply(this, args)
     }
@@ -394,7 +409,8 @@ test('ORCL saved September grades remain dated supporting context on daily and f
 })
 
 // Default historical arrows carry current-model quantities, including adds and blocked zeros.
-test('historical live-model amounts stay primary across dates ranges and reload', async ({page}) => {
+for (const viewport of [{width: 1280, height: 720}, {width: 390, height: 844}]) test(`historical live-model amounts stay primary across dates ranges and reload at ${viewport.width}px`, async ({page}) => {
+  await page.setViewportSize(viewport)
   const errors = await install(page, stocks[0])
   let chart = page.getByRole('region', {name: `${stocks[0].ticker} price chart`})
   await expect(chart.getByRole('checkbox', {name: 'Current-model history'})).toBeChecked()
@@ -404,6 +420,23 @@ test('historical live-model amounts stay primary across dates ranges and reload'
   await expect(chart.getByLabel(`${stocks[0].ticker} historical details`, {exact: true})).not.toHaveAttribute('open')
   await expect(chart.getByRole('table', {name: `${stocks[0].ticker} sized decision history`, includeHidden: true})).not.toBeVisible()
   await chart.screenshot({path: test.info().outputPath('current-model-default-three-sources.png')})
+  const bounds = await page.evaluate(() => ({circles: (window as any).__fillCircleBounds, labels: (window as any).__strategyPaint, arrows: (window as any).__sizedLabelBounds}))
+  writeFileSync(test.info().outputPath('default-current-model-marker-bounds.json'), JSON.stringify(bounds, null, 2))
+  await test.info().attach('default-current-model-marker-bounds', {body: JSON.stringify(bounds, null, 2), contentType: 'application/json'})
+  expect(bounds.circles.length).toBeGreaterThan(0)
+  const circle = bounds.circles.at(-1)
+  expect(circle.y - circle.radius).toBeGreaterThanOrEqual(0)
+  expect(circle.y + circle.radius).toBeLessThanOrEqual(circle.canvasHeight)
+  await expect.poll(() => page.evaluate(() => (window as any).__strategyPaint.map((row: any) => row.text))).toContain('BUY 13 sh')
+  const label = await page.evaluate(() => (window as any).__strategyPaint.findLast((row: any) => row.text === 'BUY 13 sh'))
+  expect(label.y - label.ascent).toBeGreaterThanOrEqual(0)
+  expect(label.y + label.descent).toBeLessThanOrEqual(label.canvasHeight)
+  for (const text of ['BUY 13 sh · A+', 'BUY 2 sh · A', 'SELL 13 sh · B', 'BUY 0 sh · A+']) {
+    const arrow = bounds.arrows.findLast((row: any) => row.text === text)
+    expect(arrow, text).toBeDefined()
+    expect(arrow.y - arrow.ascent, text).toBeGreaterThanOrEqual(0)
+    expect(arrow.y + arrow.descent, text).toBeLessThanOrEqual(arrow.canvasHeight)
+  }
   await openHistoricalDetails(chart, stocks[0].ticker)
   await expect(chart.getByRole('table', {name: `${stocks[0].ticker} sized decision history`})).toContainText('BUY 13 sh')
   await expect(chart.getByRole('table', {name: `${stocks[0].ticker} sized decision history`})).toContainText('BUY 2 sh')

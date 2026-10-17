@@ -1,5 +1,5 @@
 {
-  "status": "CONTROLLED_CONTENT_VERIFIED_VISUAL_FAILED_CANDIDATE_HELD",
+  "status": "CONTROLLED_COMBINED_CANDIDATE_VERIFIED_NO_DELIVERY",
   "parents": [
     "a7d0d955c49e1c4f039f97aad2a97269456be979",
     "6a1d77bc1d8bdeb080bdee26b8e1ef95507a9ea1"
@@ -51,9 +51,9 @@
   "controlled_frontend": {
     "distinct_workflows_passed": 34,
     "skipped": 0,
-    "visual_acceptance": "FAILED: independent screenshot inspection confirms the green simulated-fill circle near Oct7 is clipped at the bottom plot boundary. Candidate is held; content and source assertions do not prove marker visibility.",
+    "initial_visual_acceptance": "FAILED: independent screenshot inspection confirmed the green simulated-fill circle near Oct7 was clipped at the bottom plot boundary. The candidate was held; initial content/source assertions did not prove marker visibility.",
     "visual_failure_screenshot": "/tmp/trading-historical-merge-review-20261017-v5/browser-v1/strategy-simulation-histor-8e45d-oss-dates-ranges-and-reload/current-model-default-three-sources.png",
-    "visual_correction": "Pending scoped marker-bounds fix, corrected screenshot and meaningful automated bounds validation.",
+    "visual_correction": "VERIFIED in the separate targeted layout follow-up below. The original clipped screenshot remains preserved.",
     "v4": {
       "root": "/tmp/trading-historical-merge-review-20261017-v4",
       "type_and_build": "PASS",
@@ -72,12 +72,50 @@
     },
     "bundle": "index-ohaBCZUP.js",
     "bundle_sha256": "90c308931e9e9bb5347362238534c474c4a893611b42560cb6749d6ad22487cd",
-    "production_source_comparison": "Separate frontend agent compared all src bytes between the compiled v4 snapshot and final shared tree; no differences.",
+    "production_source_comparison": "Separate frontend agent compared all src bytes between the compiled v4 snapshot and the pre-layout merged source; no differences. The later two rendering changes are separately compiled and verified in visual_layout_followup.",
     "coverage": "Three mutually exclusive account histories; current-model default with separate decision arrows and simulated fill circles; folded historical details; optional dated Grade context; retained Saved/Recalculated provenance, missing candles, immutable rendering, numeric no-fallback, partial fills,15m clocks and current assessments.",
     "earlier_locator_failure_preserved": {
       "log": "/tmp/trading-historical-merge-review-20261017-v2/browser-v1.log",
       "sha256": "6a2d3d68c08166096cf496d4f12b377229008dc759445b19a9d1f2d882ec512c"
     }
+  },
+  "visual_layout_followup": {
+    "private_root": "/tmp/trading-marker-layout-20261017-v3",
+    "change": "Only sized decision arrows become size1 and strategy charts reserve20percent bottom price-scale margin. Source/date/quantity semantics and same-account fill circles remain distinct and unchanged.",
+    "type_and_build": "PASS",
+    "build_log_sha256": "20ac0744882201a4532047ae2f4866c565ce21fce5ae1ea00b38e57e967217c0",
+    "targeted_workflows_passed": 7,
+    "skipped": 0,
+    "seconds": 18.9,
+    "browser_log_sha256": "40474c19442dc8738a709e6c306106c83f8f6ad6e8e3ce684d1429cc922e9a65",
+    "bundle": "index-BVtJBFAB.js",
+    "bundle_sha256": "b83c9acc6e477a5ffd5ddf52fb84443b6b574e3dee6a366e9db36e7180846053",
+    "coverage": "Desktop and390px default marker bounds, both original research controls, actual paper, ORCL dated context and eligible TRIM. Existing246 backend and34 controlled content workflows are retained; only rendering and its regression assertions changed.",
+    "desktop": {
+      "circle_bottom": 300,
+      "fill_label_bottom": 316.313867,
+      "plot_height": 346,
+      "bounds_sha256": "3543f2f983644193269e91af75d3e01da797fc5fc8c96a054bf2ad4b8ae278ad"
+    },
+    "phone": {
+      "circle_bottom": 351.2,
+      "fill_label_bottom": 367.513867,
+      "plot_height": 410,
+      "bounds_sha256": "418f7cc1d3a96b493ea34557951befecc93b1e3a0bfed6cda79d36b8f2a1a524"
+    },
+    "visual_inspection": "Frontend agent, merge owner and root inspected corrected screenshots. Entire fill circle/text are inside both plots; all four decision-label bounds also pass. Narrow-screen adjacent decision labels remain dense; this does not claim all human clutter/source-mixing concerns solved.",
+    "preserved_failed_attempts": [
+      {
+        "root": "/tmp/trading-marker-layout-20261017-v1",
+        "browser_log_sha256": "25f9965ccf2995e4361f50dacf10e11bce48dc767d4458dd7c5254b04b2c97cd",
+        "result": "Original clipping reproduced: circle bottom362.6 exceeds plot346."
+      },
+      {
+        "root": "/tmp/trading-marker-layout-20261017-v2",
+        "browser_log_sha256": "132ec40e7c469d826fe7fabd3e9d9b07bfd81bf3c49060b7d28362db51460e55",
+        "result": "Size1-only correction still failed: label bottom350.91 exceeds plot346. The bottom-margin correction was then tested."
+      }
+    ]
   },
   "historical_producer": {
     "source": "27471b9c61b958f759e9f48b80acaf60cdf75f2e",
