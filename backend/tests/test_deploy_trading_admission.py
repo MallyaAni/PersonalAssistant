@@ -41,6 +41,35 @@ def test_stale_approval_preflight_changes_nothing_even_with_skip_post(tmp_path):
     assert "deployed " + target not in result.stdout
 
 
+# Incomplete selector files still enter preflight and cannot silently skip admission.
+@pytest.mark.parametrize("dangling", [False, True])
+def test_partial_installation_cannot_bypass_deploy_preflight(tmp_path, dangling):
+    rig = Rig(tmp_path)
+    rig.push_backend_change()
+    parent = rig.deploy / "data/market/desk/learned-holding"
+    parent.mkdir(parents=True)
+    if dangling:
+        (parent / "config.json").symlink_to(parent / "missing-config.json")
+    else:
+        (parent / "release.json").write_text("{}")
+    result = rig.run(ADMISSION_PREFLIGHT_EXIT="1")
+    assert result.returncode != 0
+    assert rig.head() == rig.first
+    assert [row.split()[0] for row in rig.log("admission.log")] == ["preflight"]
+
+
+# Optimized Python cannot disable the host/container equality boundary.
+def test_optimized_python_still_rejects_container_source_mismatch(tmp_path):
+    rig = Rig(tmp_path)
+    installed(rig)
+    result = rig.run(
+        PYTHONOPTIMIZE="1", ADMISSION_CONTAINER_SOURCE="different-container-source"
+    )
+    assert result.returncode != 0
+    assert "HOST/CONTAINER trading admission differs" in result.stderr
+    assert (rig.deploy / "data/.deployed-commit").read_text().strip() == rig.first
+
+
 # Healthy gateway responses cannot hide failed host or container admission.
 @pytest.mark.parametrize(
     "failure",
@@ -120,6 +149,34 @@ def test_migration_failure_does_not_activate_reviewed_approval(tmp_path):
     assert [row.split()[0] for row in actions] == ["preflight"]
 
 
+# An unknown activation cannot roll old code back over unverified selector bytes.
+@pytest.mark.parametrize("original_restored", [False, True])
+def test_activation_failure_requires_original_bytes_before_code_rollback(
+    tmp_path, original_restored
+):
+    rig = Rig(tmp_path)
+    target = rig.push_backend_change()
+    installed(rig)
+    result = rig.run(
+        ANIOS_TRADING_APPROVAL_BUNDLE="reviewed.json",
+        ANIOS_TRADING_APPROVAL_BUNDLE_SHA256="a" * 64,
+        ADMISSION_ACTIVATE_EXIT="1",
+        ADMISSION_ORIGINAL_EXIT="0" if original_restored else "1",
+    )
+    assert result.returncode != 0
+    assert [row.split()[0] for row in rig.log("admission.log")] == [
+        "preflight",
+        "activate",
+        "verify-original",
+    ]
+    if original_restored:
+        assert rig.head() == rig.first
+    else:
+        assert rig.head() == target
+        assert "code was not rolled back" in result.stderr
+    assert (rig.deploy / "data/.deployed-commit").read_text().strip() == rig.first
+
+
 # The frontend short path retains the synchronous actual policy admission requirement.
 def test_frontend_only_cannot_bypass_stale_approval(tmp_path):
     rig = Rig(tmp_path)
@@ -194,9 +251,19 @@ def test_first_guarded_upgrade_uses_candidate_script_and_gate_tree_helper(tmp_pa
 
 # Neither post mode emits green or runs paid checks after failed admission.
 @pytest.mark.parametrize("cheap", [False, True])
-def test_post_marks_failed_when_actual_trading_admission_is_red(tmp_path, cheap):
+@pytest.mark.parametrize("artifact", ["config", "release", "dangling"])
+def test_post_marks_failed_when_actual_trading_admission_is_red(
+    tmp_path, cheap, artifact
+):
     rig = Rig(tmp_path)
     installed(rig)
+    parent = rig.deploy / "data/market/desk/learned-holding"
+    if artifact != "config":
+        (parent / "config.json").unlink()
+        if artifact == "release":
+            (parent / "release.json").write_text("{}")
+        else:
+            (parent / "config.json").symlink_to(parent / "missing-config.json")
     shutil.copy(
         SCRIPTS / "post-deploy-checks.sh", rig.deploy / "scripts/post-deploy-checks.sh"
     )

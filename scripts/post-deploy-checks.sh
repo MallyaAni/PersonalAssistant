@@ -35,7 +35,11 @@ root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 compose=(docker compose -f "$root/docker-compose.yml")
 after="${1:-unknown}"
 admission_ok=true
-if [[ -f "$root/data/market/desk/learned-holding/config.json" ]]; then
+configured=false
+for name in config release evidence; do
+    if [[ -e "$root/data/market/desk/learned-holding/$name.json" || -L "$root/data/market/desk/learned-holding/$name.json" ]]; then configured=true; fi
+done
+if $configured; then
     bash "$root/scripts/check-trading-admission.sh" "$root" || admission_ok=false
 fi
 

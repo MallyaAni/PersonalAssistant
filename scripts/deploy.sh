@@ -91,6 +91,7 @@ prev_head=""
 root=""
 declare -A old_image_ids=()
 trading_approval_archive=""
+trading_approval_attempted=false
 trading_python=""
 
 # Print a section heading the way every deploy log has shown them.
@@ -420,7 +421,7 @@ roll_back_unrestarted() {
 
 # Check candidate approval before checkout movement, using the new gated helper.
 trading_preflight() {
-    if [[ ! -f "$root/data/market/desk/learned-holding/config.json" && -z "${ANIOS_TRADING_APPROVAL_BUNDLE:-}${ANIOS_TRADING_APPROVAL_BUNDLE_SHA256:-}" ]]; then
+    if ! trading_configuration_present && [[ -z "${ANIOS_TRADING_APPROVAL_BUNDLE:-}${ANIOS_TRADING_APPROVAL_BUNDLE_SHA256:-}" ]]; then
         echo 'trading approval: NOT_CONFIGURED'
         return 0
     fi
@@ -433,19 +434,32 @@ trading_preflight() {
     (cd "$gate_tree" && PYTHONPATH="$gate_tree" "$trading_python" -m backend.cli.market_release_admission "${args[@]}")
 }
 
+# Treat partial or broken selector installations as configured and require admission.
+trading_configuration_present() {
+    local name
+    for name in config release evidence; do
+        if [[ -e "$root/data/market/desk/learned-holding/$name.json" || -L "$root/data/market/desk/learned-holding/$name.json" ]]; then return 0; fi
+    done
+    return 1
+}
+
 # Install only explicit reviewed bytes after gates/builds; never generate approval.
 activate_trading_approval() {
     [[ -n "${ANIOS_TRADING_APPROVAL_BUNDLE:-}" ]] || return 0
     local receipt
+    trading_approval_attempted=true
     receipt="$(cd "$root" && PYTHONPATH="$root" "$trading_python" -m backend.cli.market_release_admission activate --root "$root/data/market" --revision "$target" --bundle "$ANIOS_TRADING_APPROVAL_BUNDLE" --bundle-sha256 "$ANIOS_TRADING_APPROVAL_BUNDLE_SHA256" --archive-dir "${ANIOS_TRADING_APPROVAL_ARCHIVE_DIR:-$root/data/trading-approval-archives}")" || return 1
     trading_approval_archive="$("$trading_python" -c 'import json,sys; print(json.loads(sys.argv[1])["archive"])' "$receipt")"
     echo "$receipt"
 }
 
-# Restore archived selectors before an unrestarted code rollback restores old sources.
+# Restore archived selectors, or prove originals after an unknown activation outcome.
 rollback_trading_approval() {
-    [[ -n "$trading_approval_archive" ]] || return 0
-    (cd "$root" && PYTHONPATH="$root" "$trading_python" -m backend.cli.market_release_admission rollback --root "$root/data/market" --archive "$trading_approval_archive")
+    if [[ -n "$trading_approval_archive" ]]; then
+        (cd "$root" && PYTHONPATH="$root" "$trading_python" -m backend.cli.market_release_admission rollback --root "$root/data/market" --archive "$trading_approval_archive")
+    elif $trading_approval_attempted; then
+        (cd "$root" && PYTHONPATH="$root" "$trading_python" -m backend.cli.market_release_admission verify-original --root "$root/data/market" --bundle "$ANIOS_TRADING_APPROVAL_BUNDLE" --bundle-sha256 "$ANIOS_TRADING_APPROVAL_BUNDLE_SHA256")
+    fi
 }
 
 # On any exit: drop the gate tree, roll back a half-done deploy, and name the
@@ -701,7 +715,7 @@ main() {
 
     # A reachable API is insufficient: cron and actual container must admit the policy.
     step "Installed trading source admission"
-    if [[ -f "$root/data/market/desk/learned-holding/config.json" ]]; then
+    if trading_configuration_present; then
         bash "$root/scripts/check-trading-admission.sh" "$root"
     else
         echo 'trading approval: NOT_CONFIGURED'

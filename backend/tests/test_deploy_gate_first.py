@@ -111,9 +111,12 @@ if operation=='check':
     if int(os.environ.get('ADMISSION_HOST_EXIT','0')): sys.exit(1)
     print(json.dumps({'status':'ADMITTED','source_sha256':{'fixture':'exact'}}))
 elif operation=='activate':
+    if int(os.environ.get('ADMISSION_ACTIVATE_EXIT','0')): sys.exit(1)
     print(json.dumps({'status':'ADMITTED','archive':os.environ['STUB_DIR']+'/approval-archive'}))
 elif operation=='rollback':
     print(json.dumps({'status':'RESTORED_ORIGINAL_APPROVAL'}))
+elif operation=='verify-original':
+    sys.exit(int(os.environ.get('ADMISSION_ORIGINAL_EXIT','0')))
 else: raise AssertionError(operation)
 """
 

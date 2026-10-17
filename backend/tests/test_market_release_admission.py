@@ -107,6 +107,22 @@ def test_absent_configuration_and_stale_source_are_not_silent_approval(
     assert admission.installed(root) == before
 
 
+# Missing or dangling selectors cannot turn an installed approval into a no-op.
+@pytest.mark.parametrize("artifact", ["release.json", "evidence.json", "dangling"])
+def test_partial_installation_fails_closed(tmp_path, artifact):
+    parent = (tmp_path / admission.CONFIG).parent
+    parent.mkdir(parents=True)
+    if artifact == "dangling":
+        (parent / "config.json").symlink_to(parent / "missing-config.json")
+    else:
+        (parent / artifact).write_text("{}")
+    assert admission.configured(tmp_path)
+    with pytest.raises(FileNotFoundError):
+        admission.check(tmp_path)
+    with pytest.raises(FileNotFoundError):
+        admission.preflight(tmp_path)
+
+
 # Only the reviewed selectors change; exact old snapshots and rollback remain available.
 def test_reviewed_approval_preflight_activate_and_unrestarted_rollback(
     tmp_path, monkeypatch
@@ -210,6 +226,37 @@ def test_failed_activation_restores_old_selectors_and_keeps_archive(
         )
     assert admission.installed(root) == before
     assert len(list((tmp_path / "archives").glob("*/receipt.json"))) == 1
+
+
+# A failed restoration remains visibly mixed and fails the code-rollback prerequisite.
+def test_failed_activation_and_restore_requires_manual_recovery(tmp_path, monkeypatch):
+    root, before, bundle, path, _ = renewal(tmp_path, monkeypatch)
+    expected = persist(path, bundle)
+    assert admission.verify_original(root, path, expected)["status"] == (
+        "ORIGINAL_APPROVAL_BYTES_VERIFIED"
+    )
+    replace = admission.replace_file
+
+    # Reproduce candidate-config failure followed by original-release restore failure.
+    def fail_candidate_and_restore(destination, raw):
+        if destination.name == "config.json" and raw != before["config.json"]:
+            raise OSError("injected candidate config write failure")
+        if destination.name == "release.json" and raw == before["release.json"]:
+            raise OSError("injected original release restore failure")
+        replace(destination, raw)
+
+    monkeypatch.setattr(admission, "replace_file", fail_candidate_and_restore)
+    with pytest.raises(OSError, match="original release restore"):
+        admission.activate(
+            root, path, expected, bundle["target_revision"], tmp_path / "archives"
+        )
+    current = admission.installed(root)
+    assert current["config.json"] == before["config.json"]
+    assert current["release.json"] != before["release.json"]
+    assert len(list((tmp_path / "archives").glob("*/receipt.json"))) == 1
+    with pytest.raises(ValueError, match="artifact digest"):
+        admission.verify_original(root, path, expected)
+    assert admission.installed(root) == current
 
 
 # The guard-list extension cannot alter any original holding function body.
