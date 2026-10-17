@@ -12,7 +12,9 @@ import io
 import os
 import sqlite3
 import stat
+import time
 from contextlib import contextmanager
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
@@ -25,6 +27,30 @@ CHUNK = 64 * 1024
 MAX_META = 256 * 1024
 MAX_ENTRY = 4096
 OPERATIONS = {"DECISION_FROZEN", "SUBMISSION_CAPTURED"}
+RATE_NS = 60 * 1_000_000_000
+RATE_US = 60 * 1_000_000
+
+
+# Sample actual acquisition clocks internally, never a historical caller timestamp.
+def _clock():
+    return datetime.now(UTC), time.monotonic_ns()
+
+
+# Preserve exact UTC microseconds without floating-point timestamp rounding.
+def _clock_values(value):
+    utc, monotonic = value
+    _require(
+        type(utc) is datetime
+        and utc.tzinfo is not None
+        and utc.utcoffset() == timedelta(0)
+        and type(monotonic) is int
+        and 0 <= monotonic < 2**63,
+        "Actual aware UTC and bounded monotonic clock required",
+    )
+    delta = utc - datetime(1970, 1, 1, tzinfo=UTC)
+    microseconds = (delta.days * 86400 + delta.seconds) * 1_000_000 + delta.microseconds
+    _require(0 <= microseconds < 2**63, "Bounded actual UTC required")
+    return microseconds, monotonic
 
 
 # Distinguish a private resource/uncertainty pause from missing market evidence.
@@ -67,6 +93,8 @@ class Store:
         self.owner = uuid4().hex
         self.fault = None
         self.connection = None
+        self._last_clock = None
+        self._opened_clock = self._sample_clock()
         if create:
             self.root.mkdir(mode=0o700)
         _private(self.root, True)
@@ -113,7 +141,7 @@ class Store:
                 CREATE TABLE IF NOT EXISTS attempts (
                   id TEXT PRIMARY KEY, demand TEXT, query TEXT, page INTEGER,
                   owner TEXT, status TEXT, token TEXT, body TEXT, next_token TEXT,
-                  raw BLOB);
+                  raw BLOB, reserved_utc_us INTEGER, reserved_monotonic_ns INTEGER);
                 CREATE INDEX IF NOT EXISTS attempt_group
                   ON attempts(demand,query,page);
                 CREATE TABLE IF NOT EXISTS reads (
@@ -164,6 +192,27 @@ class Store:
                     == columns,
                     "Original bounded lookup indexes required",
                 )
+            _require(
+                [
+                    row[1]
+                    for row in self.connection.execute("PRAGMA table_info(attempts)")
+                ]
+                == [
+                    "id",
+                    "demand",
+                    "query",
+                    "page",
+                    "owner",
+                    "status",
+                    "token",
+                    "body",
+                    "next_token",
+                    "raw",
+                    "reserved_utc_us",
+                    "reserved_monotonic_ns",
+                ],
+                "Original rate-slot schema required; no implicit migration",
+            )
             if create:
                 with self._transaction():
                     self._write_state(
@@ -186,6 +235,12 @@ class Store:
                 "Identity or authoritative pinned head differs",
             )
             self._validate_head(state)
+            rows = self._rate_rows(state)
+            _require(
+                not rows or self._opened_clock[0] >= rows[0]["reserved_utc_us"],
+                "Actual UTC clock reversal on resume",
+            )
+            self._restart_quiet = not create and bool(rows)
         except BaseException:
             self.close()
             raise
@@ -198,6 +253,70 @@ class Store:
         if getattr(self, "lock", None) is not None:
             os.close(self.lock)
             self.lock = None
+
+    # Reject either clock moving backwards within this process before any charge.
+    def _sample_clock(self):
+        sampled = _clock_values(_clock())
+        _require(
+            self._last_clock is None
+            or all(
+                new >= old for new, old in zip(sampled, self._last_clock, strict=True)
+            ),
+            "Actual acquisition clock reversal",
+        )
+        self._last_clock = sampled
+        return sampled
+
+    # Read only the latest bounded indexed slots and reject missing recent charges.
+    def _rate_rows(self, state):
+        limit = demand.BUDGET["requests_per_minute"]
+        rows = self.connection.execute(
+            "SELECT rowid AS sequence, owner, reserved_utc_us, reserved_monotonic_ns "
+            "FROM attempts ORDER BY rowid DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        charged = state["used"]["get_attempts"]
+        _require(len(rows) == min(limit, charged), "Original rate slots missing")
+        for offset, row in enumerate(rows):
+            _require(
+                row["sequence"] == charged - offset
+                and type(row["reserved_utc_us"]) is int
+                and 0 <= row["reserved_utc_us"] < 2**63
+                and type(row["reserved_monotonic_ns"]) is int
+                and 0 <= row["reserved_monotonic_ns"] < 2**63
+                and type(row["owner"]) is str
+                and len(row["owner"]) == 32,
+                "Original bounded rate slot differs",
+            )
+            if offset:
+                _require(
+                    rows[offset - 1]["reserved_utc_us"] >= row["reserved_utc_us"],
+                    "Persisted UTC slot clock reversal",
+                )
+        return rows
+
+    # Reserve rolling actual-clock capacity without refunding failed or uncertain GETs.
+    def _rate_slot(self, state):
+        rows = self._rate_rows(state)
+        utc, monotonic = self._sample_clock()
+        _require(
+            not rows or utc >= rows[0]["reserved_utc_us"],
+            "Actual UTC clock reversal",
+        )
+        _require(
+            not self._restart_quiet or monotonic - self._opened_clock[1] >= RATE_NS,
+            "Restart acquisition quiet period has not elapsed",
+        )
+        recent = sum(
+            row["reserved_utc_us"] > utc - RATE_US
+            or (
+                row["owner"] == self.owner
+                and row["reserved_monotonic_ns"] > monotonic - RATE_NS
+            )
+            for row in rows
+        )
+        _require(recent < demand.BUDGET["requests_per_minute"], "Rolling GET rate cap")
+        return utc, monotonic
 
     # Expose deterministic test crash boundaries without performing external work.
     def _point(self, name):
@@ -539,14 +658,39 @@ class Store:
                 and (not prior or token is not None),
                 "Exact retained predecessor token required",
             )
+            _require(
+                state["used"]["get_attempts"] < demand.BUDGET["get_attempts"],
+                "Cumulative GET resource cap",
+            )
+            utc, monotonic = self._rate_slot(state)
             state["used"]["get_attempts"] += 1
             state["unresolved_gets"] += 1
             demand.usage(state["used"])
             self.connection.execute(
-                "INSERT INTO attempts VALUES (?,?,?,?,?,'OPEN',?,NULL,NULL,NULL)",
-                (attempt, demand_sha256, query_sha256, page, self.owner, token),
+                "INSERT INTO attempts(rowid,id,demand,query,page,owner,status,token,"
+                "body,next_token,raw,reserved_utc_us,reserved_monotonic_ns) "
+                "VALUES (?,?,?,?,?,?,'OPEN',?,NULL,NULL,NULL,?,?)",
+                (
+                    state["used"]["get_attempts"],
+                    attempt,
+                    demand_sha256,
+                    query_sha256,
+                    page,
+                    self.owner,
+                    token,
+                    utc,
+                    monotonic,
+                ),
             )
             self._write_state(state)
+        self._point("rate_reserved")
+        return {
+            "attempt": attempt,
+            "reserved_utc_us": utc,
+            "reserved_monotonic_ns": monotonic,
+            "charged_get_attempts": state["used"]["get_attempts"],
+            "acquisition_authorized": False,
+        }
 
     # Reserve a bounded read allowance before the caller receives external body bytes.
     def reserve_read(self, attempt, reservation, allowance):
@@ -670,6 +814,8 @@ class Store:
             "failure": failure,
             "requested_at": requested_at,
             "received_at": received_at,
+            "reserved_utc_us": row["reserved_utc_us"],
+            "reserved_monotonic_ns": row["reserved_monotonic_ns"],
             "body_sha256": sha,
             "body_bytes": size,
             "body_validation_failure": invalid,
@@ -743,6 +889,12 @@ class Store:
             _require(all(used[k] >= previous[k] for k in used), "Usage regressed")
             previous, prior, count = used, entry["sha256"], count + 1
         state = self._state()
+        self._rate_rows(state)
+        _require(
+            self.connection.execute("SELECT COUNT(*) FROM attempts").fetchone()[0]
+            == state["used"]["get_attempts"],
+            "Full audit GET/rate-slot count differs",
+        )
         _require(
             prior == expected_head == state["head"]
             and count == state["sequence"]
