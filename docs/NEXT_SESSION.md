@@ -1,5 +1,37 @@
 # Next session
 
+## 2026-10-17 — Spark2 reachable over direct cable; Wi-Fi and inference failures distinct
+
+Human challenged the unreachable-Spark diagnosis. VERIFIED08:02Z: Spark2 is
+online, uptime54days18hours, reachable by SSH via Spark1 to192.168.100.2.
+Its Wi-Fi interface wlP9s9 is disconnected, with no172.16.8.5 address; radio
+enabled/unblocked and saved profile autoconnect enabled. Both Mac and Spark1
+cannot reach172.16.8.5, but direct cable ping2/2 and SSH pass. Do not describe
+the whole host as unreachable or assume power-off. Wi-Fi disconnect cause is
+UNVERIFIED. Existing-profile reconnect attempted once and DENIED by NetworkManager:
+"Not authorized to control networking". No state change, privilege bypass,
+credential request, network reconfiguration or service restart was performed.
+Local administrator authorization is required to reconnect Wi-Fi.
+
+Inference is a separate FAILED boundary: head systemd Restart=always/NRestarts114,
+while worker service stays running sinceSep26 but logs broken TCPStore pipes.
+Head repeatedly times out after601s with1/2clients joined. Journal already shows
+the same restart loop Oct16at07:51EDT and1/2client failure08:01EDT, before today's
+approval/parity recovery. Container replacements are explained by existing
+systemd restart policy, not proved to be concurrent human edits. Initial crash
+cause remains UNVERIFIED. Actual model image3430d661 on both nodes; head15c1e180
+observed started07:59Z, worker23c2f8f7. Read docs/ML_SYSTEM_DESIGN.md section12:
+an active worker can be wedged. Direct cable is working, so Wi-Fi loss alone
+does not explain inference failure. Do not restart/change model services under
+the existing no-model-change instruction; recovery needs explicit authorization.
+
+Exact documented diagnostic: research/spark-connectivity-diagnosis-2026-10-17.json.
+My diagnostic error was stopping at the Wi-Fi address and not checking the
+direct link initially. Source approval remains verified; parity UNDEPLOYED and
+original full retrospective untouched. Keep heartbeat ACTIVE/quiet on unchanged
+failures; do not rerun gates until actual inference works. Prior07:52 observation
+and every failed release remain intact; this updates the interpretation only.
+
 ## 2026-10-17 — Live approval fixed; independent parity release blocked by inference
 
 Human asked why work was waiting. Live recovery is now independent of the full
