@@ -363,6 +363,122 @@ def test_available_rows_keep_original_grades_quantities_and_zero_blockers(monkey
     assert (record, plan) == before
 
 
+# Preserve an owned name with a missing grade without labelling it as unowned.
+def test_missing_grade_preserved_holding_is_unavailable_with_original_reason(
+    monkeypatch,
+):
+    record, plan, config, report = fixture()
+    report.graded.grades[-1, 0] = -1
+    receipt = record["paper"]["joint_funded"]["receipt"]
+    held = {row["symbol"]: row["qty"] for row in record["paper"]["positions"]}
+    signals = grade_led_policy.signals(report, held)
+    model = dict(receipt["sizing_model_targets"])
+    model["AAA"] = receipt["current_weights"]["AAA"]
+    targets, receipt = grade_led_policy.preserve_grade_holdings(
+        model,
+        receipt,
+        signals,
+        {
+            name: receipt["current_weights"][name] * receipt["observed_equity"] / qty
+            for name, qty in held.items()
+        },
+        receipt["observed_equity"],
+    )
+    receipt["sizing_model_targets"] = model
+    receipt["grades"]["AAA"] = -1
+    record["grades"]["AAA"]["grade"] = None
+    for selected in (record["targets"], record["paper"]["selected_targets"]):
+        selected["weights"] = dict(targets)
+    record["paper"]["joint_funded"]["targets"] = dict(targets)
+    action = next(row for row in record["actions"] if row["ticker"] == "AAA")
+    action.update(
+        grade=None,
+        grade_signal="unavailable",
+        model_target_weight=model["AAA"],
+        signal_reason=signals["AAA"]["reason"],
+    )
+    admitted(monkeypatch, (record, plan, config, report))
+    original = deepcopy((record, plan))
+    result = view.read("unused", record, plan, NOW)
+    assert result["status"] == "available"
+    row = result["rows"]["AAA"]
+    assert row["status"] == "unavailable"
+    assert row["grade"] is None
+    assert row["reason"] == signals["AAA"]["reason"]
+    assert row["current_qty"] == 10
+    assert row["target_weight"] == receipt["current_weights"]["AAA"]
+    assert row["action"] is row["qty"] is row["when"] is None
+    assert (record, plan) == original
+
+
+# Keep a reduced submission and partial fill distinct from the original model size.
+def test_reduced_submission_and_partial_fill_preserve_original_numeric_plan(
+    monkeypatch,
+):
+    record, plan, _, _ = admitted(monkeypatch)
+    record["paper"]["planned"][0]["qty"] = 5
+    next(row for row in record["actions"] if row["ticker"] == "BBB")[
+        "order_quantity"
+    ] = 5
+    execution = plan["orders"][0]
+    execution.update(
+        planned_qty=5,
+        submitted_qty=3,
+        filled_qty=2,
+        remaining_qty=1,
+        qty=3,
+        quantity_basis="submitted",
+        state="partial",
+    )
+    before = deepcopy((record, plan))
+    result = view.read("unused", record, plan, NOW)
+    assert result["status"] == "available"
+    row = result["rows"]["BBB"]
+    assert (row["action"], row["qty"]) == ("buy", 5)
+    actual = row["executions"][0]
+    assert (actual["submitted_qty"], actual["filled_qty"], actual["remaining_qty"]) == (
+        3,
+        2,
+        1,
+    )
+    assert (record, plan) == before
+
+
+# Reject oversized or inconsistent execution quantities for the same saved CID.
+@pytest.mark.parametrize(
+    "quantities",
+    [
+        {"submitted_qty": 3},
+        {"submitted_qty": -1},
+        {"submitted_qty": True},
+        {"submitted_qty": float("nan")},
+        {"submitted_qty": "2"},
+        {"filled_qty": 3},
+        {"filled_qty": -1},
+        {"filled_qty": True},
+        {"submitted_qty": 1, "filled_qty": 1.5},
+        {"remaining_qty": 3},
+        {"remaining_qty": -1},
+        {"remaining_qty": False},
+        {"submitted_qty": 1, "remaining_qty": 1.5},
+        {"submitted_qty": 2, "filled_qty": 1, "remaining_qty": 2},
+        {"qty": 3, "quantity_basis": "submitted", "submitted_qty": 2},
+        {"qty": 1, "quantity_basis": "submitted", "submitted_qty": 2},
+    ],
+)
+def test_execution_quantities_cannot_exceed_original_or_known_submitted_basis(
+    monkeypatch, quantities
+):
+    record, plan, _, _ = admitted(monkeypatch)
+    plan["orders"][0].update(quantities)
+    before = deepcopy((record, plan))
+    result = view.read("unused", record, plan, NOW)
+    assert result["status"] == "unavailable"
+    for row in result["rows"].values():
+        assert row["action"] is row["qty"] is row["when"] is None
+    assert (record, plan) == before
+
+
 # Concluded partials must not revive an original planned order as a fresh instruction.
 @pytest.mark.parametrize(
     ("state", "terminal"),

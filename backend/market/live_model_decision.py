@@ -597,6 +597,39 @@ def _reason(receipt, name, row):
     )
 
 
+# Bound actual execution quantities by the original funded leg and known submission.
+def _execution_quantities(execution, original_qty):
+    values = {
+        name: None if execution.get(name) is None else _number(execution[name])
+        for name in ("submitted_qty", "filled_qty", "remaining_qty")
+    }
+    submitted, filled, remaining = (
+        values["submitted_qty"],
+        values["filled_qty"],
+        values["remaining_qty"],
+    )
+    basis = original_qty if submitted is None else submitted
+    if (
+        basis > original_qty
+        or (filled is not None and filled > basis)
+        or (remaining is not None and remaining > basis - (filled or 0))
+    ):
+        raise ValueError(
+            "Execution quantities exceed original funded or submitted order"
+        )
+    if execution.get("qty") is not None:
+        shown = _number(execution["qty"])
+        expected = {
+            "planned": original_qty,
+            "submitted": submitted,
+            "filled": filled,
+        }.get(execution.get("quantity_basis"))
+        if expected is None or shown != expected or shown > original_qty:
+            raise ValueError(
+                "Displayed execution quantity differs from its actual basis"
+            )
+
+
 # Match execution status to the immutable original leg without importing current sizes.
 def _executions(plan, record, config, receipt):
     if plan.get("policy") != config["policy"] or plan.get("reason"):
@@ -632,6 +665,7 @@ def _executions(plan, record, config, receipt):
         terminal = execution.get("terminal")
         if terminal is not None and type(terminal) is not bool:
             raise ValueError("Explicit execution terminal status required")
+        _execution_quantities(execution, original["qty"])
         result[original["symbol"]] = deepcopy(execution)
     return result
 
@@ -681,6 +715,10 @@ def _row(name, saved, receipt, held, execution, session, concluded=False):
         action, state = "trim", "blocked"
     elif held.get(name, 0) and receipt["grade_signals"][name]["action"] == "hold":
         action, state = "hold", "no_new_order"
+    elif (
+        held.get(name, 0) and receipt["grade_signals"][name]["action"] == "unavailable"
+    ):
+        state, reason = "unavailable", receipt["grade_signals"][name]["reason"]
     return {
         "grade": receipt["grade_signals"][name]["grade"],
         "action": action,

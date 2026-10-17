@@ -42,7 +42,7 @@
       "before_sha256": "992d9efe47a73afe7077c9dd3d377035daa1b4df66792d8289a9de688cae022f"
     },
     "backend/market/live_model_decision.py": {
-      "after_sha256": "65530b112fed2a7422f0eeae1123a1e9a7d04df4c81a48f72ee467474c0f3204",
+      "after_sha256": "b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93",
       "before_sha256": null
     }
   },
