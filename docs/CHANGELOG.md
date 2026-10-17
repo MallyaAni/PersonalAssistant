@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-17 — Compare grade-led saved targets on their learned sizing basis
+
+The grade parity checker now reapplies grade constraints to the saved learned
+proposal and original account snapshot. It no longer compares unequal learned
+targets with the incumbent equal-weight rule. Missing or inconsistent receipts,
+corrupted targets and independent grade mismatches still fail. This checks saved
+receipt consistency; it does not run new numerical inference or rewrite original
+failed records. The exact correction from6a485914 is released independently of
+the pending full retrospective. Source approval was recovered separately first.
+
 ## 2026-10-14 — Current opportunity ranking and trader-like chart judgment
 
 Delivered backendef7428ba/frontenda64f9c14 through canonical deployment;
