@@ -1,5 +1,20 @@
 # Next session
 
+## 2026-10-17 — Pending historical source retains deployed settlement metadata
+
+ROOT copied ONLY exact3b72 paper.py and its exact quantity-test file onto pending
+main after comparing currentpaper blob to ad44. Paper hash nowa8c5083f exact;
+test86957468 exact. No arithmetic, control, receipt-renewal or selector change.
+Existing production acceptance remains settlement-metadata-delivery-proof:
+actualf61215native persistence checks/0skip, original proof4e9ae211. Those tests
+were not rerun for documentation; copied source is not proof of whole pending
+main admission. Ruff pass. Diagram impact NONE: existing optional metadata.
+The pending historical tree remains UNDEPLOYED; actual current composition with
+new helper/codec is a separate next acceptance. Original run/old audit still bind
+their physical frozen inputs, not this pending main tree. Source copy initially
+refused git-style numbered patch headers; corrected tool header applied exact
+bytes, with no partial file edit from the refused attempt.
+
 ## 2026-10-17 — Exact current checkpoint admission integrated
 
 Feature7847efc2 integrated asd58fac1c after ROOT full diff/tests/runner/binding
