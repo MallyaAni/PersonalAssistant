@@ -1,0 +1,113 @@
+{
+  "schema": "conditional-current-model-forecast-implementation-proof/1",
+  "status": "VERIFIED_ONE_CURRENT_SOURCE_CONDITIONAL_FORECAST_ONLY",
+  "scope": "New private loader/admission/native96x21 feature and frozen timing-distribution seam, tested with synthetic fixtures and one retained AAPL prefix. No account, sender, broker, provider, model fitting or publication.",
+  "source_sha256": {
+    "backend/market/historical_conditional_forecast.py": "68536cfef1d27e5a612cd4ddbd1b5e87f725e1c0f6e06bf5bc20cd051d0ea29c",
+    "backend/tests/test_historical_conditional_forecast.py": "dc9e2c0016952f0563ad5ba9a0e8d47d7bf7cfc8c2c6fc1d67a7e70b5468ed3a"
+  },
+  "existing_dependency": {
+    "path": "backend/market/historical_timing_packet.py",
+    "sha256": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+    "scope": "Unchanged previously committed packet.schedule; exact complete schedule equality, preserving every nanosecond string, fixed latency, window and uncertainty. Explicitly added read-only to the image-source overlay."
+  },
+  "current_native_identity": {
+    "source": "3b72cd4e0bc15acd24432d501918c721685a5333",
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "source31_map_sha256": "bfbcb6ece4ea500726e00abbb06fc2c84d63d386bb307958016915357aaef5b3",
+    "paper_sha256": "a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c",
+    "config_sha256": "f96a29777403f5f08623709b70f36b15300500065202acbd215cd43f3c99a588",
+    "release_sha256": "1c1c6e9bcc7e9fa8d095f6ce5e6bf973c99ed19531e88c38a9aba5ed8410cd3e",
+    "economic_evidence_sha256": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9",
+    "continuation_sha256": "ee27ebad9f9d6d90276ad7fb1b69a37bfa4e9f0c189fdc9d1bb4b08c46c64296",
+    "independent_delivery_sha256": "30b3e789890b33f5a107132b0c8c09e5394dc45a774a98f87c9f5ce7934834cc",
+    "predecessor_archive_receipt_sha256": "5db6204627583584c8a168b8a408d5412b04419655bbb27bf225bf625d31e63b",
+    "numpy": "2.5.3",
+    "sklearn": "1.9.1",
+    "guarded_sources_changed": 0,
+    "original27471_config1a_and_N2_selectors": "PRESERVED_SEPARATELY_AUTHENTICATED"
+  },
+  "readable_image_source": {
+    "root": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1",
+    "image_provenance_proof_sha256": "671e236f75ee6e420ae09c2f54029119b1c096c0703a0a55fb90298853ae3c2f",
+    "source_map_sha256": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5",
+    "source_map_files": 1655,
+    "source_map_filter": "All1652backend regular files and3required documentation files; native python json.dumps(sort_keys=True) default separators plus print newline",
+    "production_backend_map_equivalence": "NOT_CLAIMED_DIFFERENT_FILTER_OR_SERIALIZATION",
+    "extractor": "d5cd2020ca5f3382d2f7c6f79ad62539ea78d9349908e36facbf2633e0cdbd3c",
+    "extractor_state": "CREATED_NEVER_STARTED_ZERO_START_CLOCK_NO_MOUNTS_EXACT_F612",
+    "original_native_hash_container": "40dc93d25b87b40e0bc7444ff552e320e3018857e965827795f87ba12b28486c",
+    "native_hash_container": "EXACT_F612_READONLY_NETWORK_NONE_NO_MOUNTS_EXIT0",
+    "native_docker_stdout_equals_original_map_bytes": true,
+    "recorded_before_after_byte_equality_and_final_physical_recheck": true,
+    "private_copy_permission_changes": 145,
+    "permission_only_proof_sha256": "60edfa9cc6d9a40448a3edb0c6f3c4ec38c6cc5dfb249e7863b2fc66286003ea",
+    "extraction_helper_sha256": "b8c779dc116bc9a1971f6fcbd516ba0f899e4fd8a8ba2c226d872afbbf1da041",
+    "live_or_image_permission_changes": false,
+    "unoverlaid_image_acceptance_claim": false
+  },
+  "pure_validation": {
+    "root": "/home/animallya96/scratch/historical-conditional-forecast-validation-20261017-v6",
+    "container": "b1c371da08782c0fb681a15fae11599afc7f709a51d040a9294cf468ae7e575f",
+    "tests": "38passed/0skipped in1.79seconds",
+    "log_sha256": "38f3c8e00e80babb313f28046ed6e1675bf9ae390cd59ed865b1de30cf14b8bc",
+    "runtime_proof_sha256": "52de463f377d3af8bd6e92dcfdb87b987524d2ea9a56eb2a722d06dca500f165",
+    "scope": "Real native feature extraction on declared synthetic priors; numerical artifact calls mocked. No market/model/account data mounted. Source/model file mutation, prior source/array/cohort mutation, exact full schedule corruption, immutable outputs and separate clock domains covered.",
+    "ruff_check_and_format": "PASSED",
+    "runner_schema_regression": {
+      "root": "/home/animallya96/scratch/conditional-forecast-runner-schema-20261017-v1",
+      "container": "1a5b8e96ebcf7af4fb20d2d62456c222122fbf5cd7e2fe01aaa6a512a7036ef3",
+      "tests": "7passed/0skipped in1.61seconds",
+      "log_sha256": "66bb38573d11261d43e9fe4816067177e6fec185affeae143f1019dcfa018179",
+      "scope": "Exact retained native-reader sample schema and changed residual/weights/mean/scale/symbol/horizon rejection; no model inference."
+    }
+  },
+  "genuine_validation": {
+    "root": "/home/animallya96/scratch/historical-conditional-forecast-genuine-20261017-v2",
+    "container": "a80217323fe93f22165e1819b3c26261e7b54df0ccadb1d457606d05d9c2ea03",
+    "runner_sha256": "8cd6759b2c2a9164bd9eb189e711b8d61cc0125555c87ecd80567a2c3bd741df",
+    "proof_sha256": "56414456269865f2a72c7d05703e10d605358e3b1a3406c27a5abfe0b33a2bd0",
+    "runtime_proof_sha256": "74a0a879ed1bed9d08de87590c7b362b4a2fb9096ad1bd0625537c8935552d2d",
+    "runtime": "Exactf612/UID1000/networknone/readonly/1CPU/2147483648RAM=MemorySwap/tmp64MiB; all mounts read-only except exclusive newout; no original active account mount",
+    "exit_code": 0,
+    "OOMKilled": false,
+    "actual_compute_started_at": "2026-10-17T16:00:26.274522+00:00",
+    "actual_model_admission_at": "2026-10-17T16:00:26.401706+00:00",
+    "actual_compute_finished_at": "2026-10-17T16:00:26.606639+00:00",
+    "actual_elapsed_ns": 332117903,
+    "max_rss_kib": 315116,
+    "retained6176_comparison_after_independent_inference": "14exact checks passed: all96cohort order,1046prior sessions,all21AAPL features,full frame+valid hash,all96native reader identities,typed current identity,horizon,mean/scale,residual rows,raw priorclose,onlyAAPLvalid,benchmarks unavailable,no fabricated live inference receipt,publicationclosed",
+    "reference_sha256": "6176e4e4b6a4f98fad7d0ad59f68bd88989d249cf61bd24a1437f612cc442378",
+    "prior_provenance_sha256": "19f0465fde2550f9fdee650e7341f4b3d5436d9cab40c1ff7a25f9ec70cf880a",
+    "prior_first": "2015-01-02",
+    "prior_last": "2019-02-28",
+    "prior_sessions": 1046,
+    "symbols": 96,
+    "genuine_prefix_symbols": ["AAPL"],
+    "raw_parquet_sha256": "cce7a6d1482bc60f99d212a2bb73f56188771b4491fa8ff0ca862f0115a747de",
+    "distribution_mean": 0.00008493257337249815,
+    "distribution_scale": 0.004628213845258156,
+    "residual_rows": 16491,
+    "retained_result_scope": "ONE_AAPL_RETAINED_RESULT_NOT_GENERIC_SERIALIZER",
+    "derived_arrays": {"path": "out/derived-arrays.npz", "bytes": 127661, "sha256": "ab5c072e256fc31a76583d885fe458c0247d4158d9d02a317d1ba4114fbabc95"},
+    "exact_outer_receipt": {"path": "out/derived-receipt.bin", "bytes": 21896, "sha256": "285f438b241649e1060de7943e9e9eeb3193d49bc1fe1027e44441e68b855f7e"},
+    "historical_window": "Complete unchanged packet.schedule2019-03-01T14:45:00Z; hypothetical availability and uncertainty remain separate from actual2026 computation/publication",
+    "actual_historical_receive_publication_inference": null
+  },
+  "preserved_failures": [
+    {"root": "historical-conditional-forecast-validation-20261017-v1", "failure": "Actual image calendar.py0600 prevented UID1000 collection", "log_sha256": "2f3f300432eb12ae9fac299a9145f5a98f73916e67b1b63808d985c0b184720a"},
+    {"root": "historical-conditional-forecast-validation-20261017-v2", "failure": "Actual image pyproject unreadable; subsequent checks explicitly used -c/dev/null", "log_sha256": "2e6fad0fae3ce187402e3195d325ec5f610376b02df0e2045b72cc032912818b"},
+    {"root": "historical-conditional-forecast-validation-20261017-v3", "failure": "1failing/29deselected proved draft consumed future full-session complete flag; corrected only completed prefix admission", "log_sha256": "67670466812796927542ff9d9a0d0ab4b4f78f16d1323f003cf5ec466c688dba"},
+    {"root": "historical-conditional-forecast-genuine-20261017-v1", "container": "dda99fbb2c94d7789da960806c5edfa6f6f903c4e2e3fdf7d83e5d03d3af4674", "failure": "Fresh features/frame/mean/scale exact; verifier compared typed current identity(+horizon) with old reader plain-sample hashes(nohorizon). Source-only diagnosis rejected transport hypothesis. Runner-only exact schema adapter corrected after7pure corruption checks; no model/helper change.", "log_sha256": "28400d02b70353da1766709b1793998600d4a9303c3e0c2825ce034c807f8388"}
+  ],
+  "coverage_limits": [
+    "Only one retained AAPL prefix, with complete96symbol prior context; not an all-history or all-stock forecast proof",
+    "Archived final-vintage daily/chart grades and hypothetical availability are retrospective assumptions, not recovered as-published observations",
+    "Outer conditional receipt is not a live ObservedForecast or live inference receipt",
+    "GenericCycle forecast/anchor/account integration remains UNVERIFIED and requires a separate authenticated retained-result bridge",
+    "No holding proposal, funded basket, sender, broker order, cash/share ledger, quote anchor, venue or fill acceptance",
+    "Original full account/source27471/config1a remain untouched; its current-live timing equality remains FAILED",
+    "Publication barrier remains CLOSED; no simulation, production deployment, source approval or service/config mutation occurred"
+  ],
+  "diagram_impact": "NONE: private source-bound numerical input adapter, no service, endpoint, agent or deployed relationship changed"
+}
