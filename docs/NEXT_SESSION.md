@@ -1,5 +1,61 @@
 # Next session
 
+## 2026-10-17 — Live quantity metadata DELIVERED; original history unchanged
+
+Canonical isolated3b72cd4e0bc15acd24432d501918c721685a5333 completed14:22:41Z,
+cheap post green14:22:44Z.10820unit pass/93skip/6xfail/439warnings/25subtests,
+540.57s;100real routing pass/0skip477.18s. No gates/admission bypass and no repeated
+deployment. Production backend imagef6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272.
+Original N2 is its exact base, not pending historical main. Upstream restored to
+origin/main. Controller4045370 is finished; never restart this completed release.
+
+Independent verifier30b3e789 completed14:25:34Z: actual HOST+CONTAINER admitted,
+all31 approved sources and1652actual backend files match, unique exact original
+selector archive5db62046,308of310 other originals unchanged. New installed config
+f96a29777403f5f08623709b70f36b15300500065202acbd215cd43f3c99a588 and release
+1c1c6e9bcc7e9fa8d095f6ce5e6bf973c99ed19531e88c38a9aba5ed8410cd3e; economic
+evidence4d6af1bb unchanged. Exact actual image, no production source overlay:
+retained785d59b8/networknone/read-only/1CPU512MiB/exit0/OOMfalse runs15native
+persistence checks/0skip. Durable journal desired8/submitted5/sender5/fill5 remains
+terminal partial. All economic test inputs synthetic; no actual settlement/orders
+or past-day replay. Old untouched journal rows stay original. Frontend/gateway,
+models and original full-run identities unchanged before/after verification.
+
+Canonical root scratch/settlement-metadata-release-20261017-v1; final independent
+root scratch/settlement-metadata-verification-20261017-v2. Preserve failed verifier
+v1: it looked for an unmounted container archive directory; actual canonical
+archive is HOST data/trading-approval-archives. Fresh private helperb107a263 checks
+exact host root/unique target+bundle and predecessor bytes; original helper4e3c
+and failed root unchanged, no runtime correction or gate rerun. Exact concise proof
+research/settlement-metadata-delivery-proof-2026-10-17.json; original independent
+receipt research/settlement-metadata-native-delivery-proof-2026-10-17.json SHA30b3e789.
+
+Backup caveat: local47table dump/base/WAL and Spark2 dump/WAL mirrors completed.
+Optional Mac dump copied, but its WAL mirror was consuming the last disk space
+(446100KiB available and falling). ROOT14:22:06Z sent SIGTERM ONLY verified rsync
+4117224 to Mac, not the canonical parent. Existing nonfatal mirror-warning path
+continued. Interventionea1cf4c retained; no prior backups deleted and no required
+backup/gate/source guard bypass. Mac then~418MiB free: keep bulk artifacts on Spark.
+Do not claim a complete third WAL copy or retry it automatically; Mac needs space.
+
+Production remains the isolated3b72 feature tree. Pending historical main must NOT
+be deployed; its eventual exact reviewed release must carry the same delivered
+metadata patch, preserving all frozen original/N2 source+configuration chains.
+The corrected retrospective contract still freezes original N2e0/config338 with
+real2026 model publication, independently of this serving approval renewal. No
+relabelling/replay or weakened source checks. Fresh ordinary/learned intraday/fill/
+UI and full corrected historical delivery remain separate, not claimed complete.
+
+Compact original full-run14:28:34Z: exact1e8f440a/image136ebb46 running/OOMfalse,
+1898sessions through2026-09-17/2911fills/3855intents, updated14:25:44Z; completion
+absent, start/source27471 unchanged. No other active-output read or restart.
+Historical stream59e+hardening1364 (195native+genuine metadata compatibility) and
+Store28e (22native,10004indexed synthetic entries) await ROOT final proof review/
+integration. Agents now implement unused stdlib complete-input authenticator and
+full ReplayBroker checkpoint codec; coordinator is READ-ONLY design/no GET.
+Heartbeat ACTIVE/quiet. User has already approved the ongoing parallel work and
+ONE corrected simulation; no new permission question is pending. Diagram impact NONE.
+
 ## 2026-10-17 — Fresh-mark boundary integrated; release routing gate active
 
 Fresh-mark375bb69d integrated as07d4620a, exact selector8194ecbc/test7749c97a.
