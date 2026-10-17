@@ -1,0 +1,100 @@
+{
+  "schema": "trading-dead-frontend-audit/1",
+  "status": "SOURCE_PREPARED_RUNTIME_UNVERIFIED",
+  "actual_prepared_at": "2026-10-17T17:17:37.831560+00:00",
+  "base_source": "3b72cd4e0bc15acd24432d501918c721685a5333",
+  "desk_panel_before_sha256": "d8a35994624a7a1fde26f5da475cdaf60d15c31d6c8bb337b05e9ded78b66888",
+  "desk_panel_after_sha256": "13957c48e6cd502c750bfa6cb75215ac27b293702131933e8c713b8eab967348",
+  "removed_files_sha256": {
+    "frontend/src/components/DeskPanel/EntriesNow.tsx": "0366b0788cb36a4e7de1ac89c8fa91b29c1c548088d32db80165efa3192ef085",
+    "frontend/src/components/DeskPanel/FundingPreview.tsx": "207b741a9d45b6135656371f2ef9504a17293f5fcc78eb948c702a1aa38d9b41",
+    "frontend/src/components/DeskPanel/StrategySimulationBoard.tsx": "0b942c83b6f446a4ced1f97b81909b504010a740e09e0dd9aa3492c2d95a7b5d"
+  },
+  "preserved_function_blocks": {
+    "afterTrade": true,
+    "recordBuy": true,
+    "save": true,
+    "ConfirmedBuy": true
+  },
+  "diff_files": [
+    "frontend/src/components/DeskPanel/DeskPanel.tsx",
+    "frontend/src/components/DeskPanel/EntriesNow.tsx",
+    "frontend/src/components/DeskPanel/FundingPreview.tsx",
+    "frontend/src/components/DeskPanel/StrategySimulationBoard.tsx"
+  ],
+  "authorized_scope": "Production3b72 frontend-only dead-code removal and guide consistency; current assessment disclosures moved under existing closed All the evidence.",
+  "source_only_findings": [
+    {
+      "paths": [
+        "frontend/src/components/DeskPanel/EntriesNow.tsx",
+        "frontend/src/components/DeskPanel/FundingPreview.tsx",
+        "frontend/src/components/DeskPanel/StrategySimulationBoard.tsx"
+      ],
+      "basis": "No imports or component references outside declarations across frontend/src, frontend/e2e, frontend/scripts and package.json; no glob or lazy component loader. Their API call wrappers are used only by these unmounted components.",
+      "removed_lines": [
+        172,
+        152,
+        69
+      ]
+    },
+    {
+      "path": "frontend/src/components/DeskPanel/DeskPanel.tsx",
+      "base_lines": [
+        7,
+        9,
+        171,
+        1410,
+        1416,
+        1430,
+        1522,
+        1537,
+        1871,
+        2070
+      ],
+      "basis": "Unused component value imports; declaration-only tradeCell/TradeCell/YourPositions; sizing only used by unreachable TradeCell; rebalanceDue only used by unreachable tradeCell; warnings/eligibleNow/local boardEvent have no consumers. Shared types, active afterTrade/recordBuy/ConfirmedBuy/save/marking retained."
+    },
+    {
+      "path": "frontend/src/components/DeskPanel/DeskPanel.tsx",
+      "base_lines": [
+        2976,
+        2984
+      ],
+      "basis": "signal/signalReason were never assigned by boardRows or rankCurrent; remove only dead descriptive render branch."
+    }
+  ],
+  "presentation": {
+    "guide_corrections": [
+      "Paper account and admitted Stocks plan have distinct sources",
+      "No paper order is not proof of model HOLD",
+      "Account-size references apply only to unsubmitted plans",
+      "Price sources and clocks remain explicit",
+      "20-second price/assessment poll separate from minute record reload"
+    ],
+    "old_model_only_research_guide": "UNCHANGED",
+    "current_assessment": "UNCHANGED JSX MOVED under existing closed All the evidence",
+    "saved_assessment": "UNCHANGED JSX MOVED under existing closed All the evidence",
+    "numeric_model_plan": "LEADS ticker detail body; original content retained"
+  },
+  "preserved": [
+    "All backend/native31 sources and financial configuration",
+    "afterTrade/recordBuy/ConfirmedBuy/save exact source blocks",
+    "Recorded paper order/fill and personal holdings paths",
+    "Shared StockBoard price/action/research helpers",
+    "PersonalDecisionHistory module and exported type",
+    "API wrappers and backend routes",
+    "Research/history/backups/failed roots and original account"
+  ],
+  "validation": {
+    "static_git_diff_check": "PASS",
+    "source_function_block_comparison": "PASS",
+    "compile": "UNVERIFIED_ROOT_OWNS",
+    "browser": "UNVERIFIED_ROOT_OWNS",
+    "deployment": "NOT_RUN"
+  },
+  "diagram_impact": "NONE — removes unmounted frontend code and moves existing supporting details; no component/data/service/ownership relationship changes.",
+  "limitations": [
+    "No claim of UI behavior verified before root browser acceptance",
+    "No historical quantity publication or corrected-account acceptance",
+    "Genuine nightly runner frozen and not launched"
+  ]
+}
