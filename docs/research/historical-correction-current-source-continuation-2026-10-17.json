@@ -1,0 +1,50 @@
+{
+  "schema": "conditional-history-source-continuation/1",
+  "status": "REVIEWED_METADATA_ONLY_IDENTITY_CONTINUATION_NO_RUN_LAUNCH",
+  "purpose": "The single human-authorized corrected account must retain the now-delivered current paper quantity metadata. This records the exact later source/config chain without rewriting contract1 or relabelling original source27471/N2 artifacts.",
+  "original_contract": {
+    "path": "docs/research/historical-timing-correction-contract-2026-10-17.md",
+    "sha256": "033934aa845739fa818930cd890409100d7df37d57e4cde5bc07e801d2eca1e9",
+    "source": "ad44d536a70d5c037cb931836a3c9f48b014d84a",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "source31_map_sha256": "99e62ab9f8b02bc315ce59b81f8b461ae5c988e275cdf09cacf2d36b1025f8ab",
+    "config_sha256": "338e2a490d13cc889667d577ec93ba68f775863a8c1db385fed3dd77fee26dcc",
+    "release_sha256": "bb6c24aabb33daff30bd7af5b6c505208cc996c38929a84b54573662bab1bd4c"
+  },
+  "current_delivered_identity": {
+    "source": "3b72cd4e0bc15acd24432d501918c721685a5333",
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "source31_map_sha256": "bfbcb6ece4ea500726e00abbb06fc2c84d63d386bb307958016915357aaef5b3",
+    "full_source31_map": "docs/research/settlement-metadata-native-delivery-proof-2026-10-17.json:admission.source_sha256",
+    "native_delivery_sha256": "30b3e789890b33f5a107132b0c8c09e5394dc45a774a98f87c9f5ce7934834cc",
+    "config_sha256": "f96a29777403f5f08623709b70f36b15300500065202acbd215cd43f3c99a588",
+    "release_sha256": "1c1c6e9bcc7e9fa8d095f6ce5e6bf973c99ed19531e88c38a9aba5ed8410cd3e",
+    "economic_evidence_sha256": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9",
+    "review_sha256": "875976f63a530bc14898f3d3121e6177421f82e2275f7a8dabc5cf2b94266ac6",
+    "original_selector_archive_receipt_sha256": "5db6204627583584c8a168b8a408d5412b04419655bbb27bf225bf625d31e63b"
+  },
+  "independently_compared_source_delta": {
+    "backend/agents/trading/desk/paper.py": {
+      "before": "e2eef2f0270497d9a5944212d6581b7ebf503d2675687a172e76690fcc7bc3c3",
+      "after": "a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c",
+      "scope": "Future settlement evidence retains independent desired, submitted, sender and filled quantities; actual partial/control decisions and numerical execution arithmetic remain unchanged. Exact source diff and existing delivery proof reviewed."
+    }
+  },
+  "unchanged_contract": [
+    "Exactly one separately named corrected account; 100000 cash/zero shares from2019-03-01 through2026-10-12",
+    "All model/config/artifact/approval snapshots remain separately authenticated; never substitute current selectors for original frozen1a149 or relabel old source27471",
+    "Original holding/timing model arrays, calibration, grade constraints, funded planner, corporate actions and10bp costs; no fitting or tuning",
+    "Fixed contract1 hypothetical latency, timestamp uncertainty, first post-arrival touch, cash/coverage, missing-data and phase semantics",
+    "Original actual receive/computation/publication clocks remain separate from hypothetical historical availability and fill clocks",
+    "Original full run and all failed/completed evidence remain immutable; no seed borrowed from original or actual accounts",
+    "Existing acquisition restrictions remain: retained AAPL pilot only; no generic real GET granted by this continuation",
+    "Exact native source/image/model/input admission, independent ledger and all-stock/public-browser delivery remain required before publication"
+  ],
+  "future_private_execution": "A new candidate needs its own exact helper/source/runtime identity bound to this current31 map and current selectors. Existing N2-only fixtures remain N2 proofs. Neither f612 image reachability nor a source overlay alone proves a new corrected runner.",
+  "current_publication_barrier": "CLOSED",
+  "new_generic_get_authorization": false,
+  "new_simulation_launched": false,
+  "production_or_original_account_change": false,
+  "new_model_call_or_fit": false,
+  "diagram_impact": "NONE: provenance continuation for an unlaunched private account, no service or execution flow changed"
+}

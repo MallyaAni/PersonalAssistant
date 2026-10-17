@@ -1,5 +1,22 @@
 # Next session
 
+## 2026-10-17 — Corrected account identity must retain delivered metadata patch
+
+New research/historical-correction-current-source-continuation-2026-10-17.json
+records exact3b72/f612/currentconfigf96/release1c1/evidence4d6/review8759 and
+original selector archive5db62046. ROOT compared all31 maps: exactly paper
+e2eef->a8c508 changes;30other guarded files unchanged, canonical current map
+bfbcb6ec. Exact source diff is evidence-only quantity retention, no numeric/control
+change. Original conditional contract033934aa remains byte-identical with N2
+identity; continuation preserves all fixed timing/economic/acquisition limits.
+This is NOT another live repair/release/gate, model call, generic GET permission
+or corrected launch. Any new corrected runner needs its own actual identity and
+must carry a8 metadata; original-only audit remains frozenN2/original27471 chain.
+Third agent now designs minimal native feature/distribution receipt seam using
+historical observe versus actual computation clocks separately; no code/model
+call/active original read before review. Other agents own generic cycle and
+synthetic-only acquirer. Publication remains CLOSED; heartbeat ACTIVE.
+
 ## 2026-10-17 — Actual bounded original-audit CLI integrated; full invocation waits
 
 Feature4e866677 integrated ascec68cf1 after ROOT read both new production files,
