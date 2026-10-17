@@ -1,0 +1,107 @@
+{
+  "status": "VERIFIED_BOUNDED_SYNTHETIC_NATIVE_SESSION_COMPLETION_ONLY",
+  "source_base": "7e92b44cf462371da0d4a40a88d63d3b19b37541",
+  "native_source": "ad44d536a70d5c037cb931836a3c9f48b014d84a",
+  "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+  "guarded31_map_sha256": "99e62ab9f8b02bc315ce59b81f8b461ae5c988e275cdf09cacf2d36b1025f8ab",
+  "source_sha256": {
+    "backend/market/historical_conditional_cycle.py": "d8d09b1eea85d67b1feb8cec712c44ee342e913b68d787d199831ab890ec63bd",
+    "backend/market/historical_conditional_market.py": "b990e4f6c21dd8e9973257801211b23df4caee067ff2ef2d04023ef467dd9b28",
+    "backend/market/historical_packet_demand.py": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0",
+    "backend/market/historical_session_completion.py": "33348def42e95b361d39d074358c2182657f612a560231a381e5086ed6d79c3c",
+    "backend/tests/test_historical_session_completion.py": "5c7eba2c7da1fd9e459620bdbd8675ca7a433b002f7621880552fcb9269862ff"
+  },
+  "native_proof": {
+    "path": "/home/animallya96/scratch/historical-final-cycle-tests-20261017-v2/out/proof.json",
+    "sha256": "be34e2e8752deba1b600371b2f5a526a571cfa7f68ab277de327186dd76699b2",
+    "container_name": "historical-final-cycle-20261017-v2",
+    "container_id": "7890c1560a35387c1f7c8f928be1083e6f82cd985eabcf087941aceb85edf8b9",
+    "passed": 22,
+    "failed": 0,
+    "skipped": 0,
+    "deselected": 96,
+    "new_final_cases": 16,
+    "unchanged_compatibility_cases": 6,
+    "pytest_seconds": 10.01,
+    "helper_seconds": 10.142839320935309,
+    "max_rss_kib": 162124,
+    "command": "python /runner.py -> pytest /tests/test_historical_session_completion.py /tests/test_historical_conditional_market.py /tests/test_historical_conditional_cycle.py /tests/test_historical_packet_demand.py -q -c /dev/null -p no:cacheprovider --basetemp /out/fixtures -k 'test_historical_session_completion or test_two_symbol_sell_first_cash_basis_fee_and_restoration or test_recent_prior_account_cannot_bypass_missing_held_packet or connected_buy_and_complete_restoration or wait_unavailable_empty_submission_no_factory or test_complete_symbol_first_capture_and_explicit_empty'",
+    "network": "none",
+    "rootfs_readonly": true,
+    "cpu": 1,
+    "memory_bytes": 2147483648,
+    "total_memory_swap_bytes": 2147483648,
+    "exit_code": 0,
+    "oom_killed": false,
+    "numpy": "2.5.3 from /usr/local",
+    "pytest": "runner-only /testdeps",
+    "source_and_calendar_hashes_checked_before_after": true,
+    "provider_gets": 0,
+    "head_inference_calls": 0,
+    "actual_account_or_original_output_reads": 0
+  },
+  "helpers": {
+    "runner_path": "/home/animallya96/scratch/historical-final-cycle-tests-20261017-v2/runner.py",
+    "runner_sha256": "c54e2867311c41fd147f23c3a109f0efef5947a41b82eccd7285be8b08fdc04a",
+    "run_sh_sha256": "670a7a8e7336d334d86f7cc8abe2bb7bdbcd307e7d57625d4ca20f76ba726d48",
+    "staged_sha256": "940d59f0d15da25a7492e3994d5be66b68ca5efaa1520f0e9b76e9e3b2d5b0a3"
+  },
+  "verified": [
+    "Distinct SESSION_COMPLETION_MARKET context admits exactly the reviewed final boundary, including early closes, with fixed quote_end before close",
+    "Existing model context still refuses final/auction windows; Demand default model bytes unchanged, explicit branch allowlist and context/manifest mismatch rejection",
+    "Actual native _ready called once, native decide once per row, measured with original code-object profiling; original functions restored after success and exception",
+    "Native timing receives quotes:{} and the original latch/calendar; separately admitted midpoint marks are never passed as completed candle closes",
+    "Original verdict references are detached only after native _ready annotations; Session completion, level:null and level_fraction:null committed before factory",
+    "Final path never invokes forward capture_account, numeric forecast identity, build_reader, model heads or authentic-live observation persistence",
+    "All-held/submission mark failure produces outer SKIPPED_NATIVE_FINAL with native_verdict:null, zero dispatch and exact original account/clock evidence",
+    "Unknown native consolidation cash claim preserves actual native_error and no native final verdict; fractional held residues can use native final whole-share clipping",
+    "Empty original due sets commit an honest empty decision and submission without native per-row claims",
+    "Nested observer and non-owner policy calls refuse before original policy; crash before decision commit restores function identities and pauses without replay",
+    "Native SELL-first market batch preserves one cash budget excluding nondue reservations and same-batch sale proceeds; shared resolver/marks/codec restoration remains exact",
+    "Paper outcome retains native sent/pending rows and unchanged journal; settlement NOT_RUN"
+  ],
+  "synthetic_ledger_expectations": {
+    "regular_and_early_close_buy2": {
+      "cash_before": 1000, "submitted_qty": 2, "fill_qty": 2,
+      "ask": 200, "fee": 0.4, "cash_after": "599.6",
+      "basis": 200, "midpoint_nav": "999.59"
+    },
+    "sell_first_then_other_symbol_buy": {
+      "original_sell_qty": 8, "native_sell_qty": 5, "sell_fill_qty": 5,
+      "sell_bid": 199.99, "sell_fee": 0.99995,
+      "buy_submitted_qty": 5, "buy_fill_qty": 4, "buy_ask": 200, "buy_fee": 0.8,
+      "frozen_budget": 899.9, "nondue_reserved_cash": 100.1,
+      "cash_after": "1198.15005", "held": {"MSFT": 4, "NVDA": 2.5},
+      "basis": {"MSFT": 200, "NVDA": 100}
+    },
+    "native_fractional_sell": {
+      "held_before": 2.5, "original_qty": 8, "native_submitted_and_fill_qty": 2,
+      "held_after": 0.5, "cash_after": "1399.58002"
+    }
+  },
+  "preserved_failure": {
+    "path": "/home/animallya96/scratch/historical-final-cycle-tests-20261017-v1/out/proof.json",
+    "sha256": "57432cbcee9d5ab504b89f64190ee440b62b74962501d01e5a9f6a0e366e47e8",
+    "container_id": "eefc55f6d17a440fc8aa9a1b0f8f72968bb775a377426d1259c2de000355e45f",
+    "old_observer_sha256": "0b54b6621ac55b71471b2d94271f7abf4d1278677ddbaf84e25081e2f035654f",
+    "result": "One actual native stale-clock test failed1/1.68s: clock() escaped the preflight try block",
+    "reproduction": "Native observe20:44:00 then flush20:44:01, with missing held packet so no replacement observation",
+    "fix": "Require exact ReplayBroker, retain raw _now/_observed_at separately, initialize broker_clock:null and capture clock/account/positions errors in one block",
+    "green_original_error": "Fresh observed account clock required",
+    "green_native_now": "2019-03-01T20:44:01+00:00",
+    "green_native_observed_at": "2019-03-01T20:44:00+00:00",
+    "green_broker_clock": null,
+    "green_dispatch_calls": 0
+  },
+  "limits": [
+    "Private SYNTHETIC account/anchor/plural-packet evidence only; no actual historical final order/fill or full corrected-run acceptance",
+    "Native fixture is exact frozen N2/e0/338 identity, not current f612 metadata composition",
+    "Final verdicts are NOT_MODEL_TIMED; no forecast availability, model inference or learned-timing parity claim",
+    "Historical publication/receipt/arrival/fill clocks remain fixed conditional assumptions; no actual receive clocks, quote-size normalization or liquidity guarantee",
+    "Raw anchor/cohort/request-name evidence remains commitments only, not independent provider/model-artifact/issuer identity proof",
+    "Auctions, real forecast loader, paper settlement, full simulation, provider acquisition and production delivery remain separate",
+    "All31 guarded/native sources, pilot033/resolver and original genuine6176 evidence remain unchanged; old proof roots preserved",
+    "Only six unchanged compatibility cases selected; no repeated generic34 or genuine inference run",
+    "Diagram impact NONE: existing unused conditional cycle/private observation boundary only"
+  ]
+}

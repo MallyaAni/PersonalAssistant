@@ -28,6 +28,7 @@ from backend.market import historical_conditional_market as market
 from backend.market import historical_packet_demand as demand
 from backend.market import historical_packet_parser as parser
 from backend.market import historical_post_resolution_marks as marks
+from backend.market import historical_session_completion as completion
 from backend.market import historical_timing_packet as packet
 from backend.market import replay_broker as native
 from backend.market.alpaca_trading import AlpacaTradingError
@@ -107,6 +108,7 @@ def _receipt(store, client, root, pins, detail, *, session=DAY, context=None):
         "session": session.isoformat(),
         "context": context,
         "generic_adapter_sha256": sha(Path(market.__file__).read_bytes()),
+        "final_observer_sha256": sha(Path(completion.__file__).read_bytes()),
         "components": _components(store, client, root, pins, session),
         "detail": deepcopy(detail),
         "actual_historical_clocks_or_fills": False,
@@ -182,6 +184,8 @@ def restore_receipt(store, receipt_sha256, root, *, pins):
         or receipt["identity_sha256"] != pins["identity_sha256"]
         or receipt["adapter_sha256"] != sha(Path(__file__).read_bytes())
         or receipt["generic_adapter_sha256"] != sha(Path(market.__file__).read_bytes())
+        or receipt["final_observer_sha256"]
+        != sha(Path(completion.__file__).read_bytes())
     ):
         raise ValueError("Original source-bound operation receipt required")
     session = date.fromisoformat(receipt["session"])
@@ -267,6 +271,7 @@ class Cycle:
             - 1
         )
         self.cohort = None if data is None else tuple(data["cohort"])
+        self.phase = "MODEL_TIMED_MARKET_ONLY" if data is None else data["phase"]
         if not self.root.resolve().is_relative_to(store.root.resolve()):
             raise ValueError("Private Store descendant required")
         codec._identity(pins["identity"], pins["identity_sha256"])
@@ -314,6 +319,10 @@ class Cycle:
             or "execution_policy" in r
             or r.get("execution_phase", "market") != "market"
             or (self.cohort is not None and r["symbol"] not in self.cohort)
+            or (
+                self.phase == "SESSION_COMPLETION_MARKET"
+                and r.get("timing_policy") != completion.live_probability_timing.POLICY
+            )
             for r in rows
         ):
             raise ValueError("New unsent AAPL-only synthetic pilot legs required")
@@ -368,6 +377,7 @@ class Cycle:
                 for r in rows
             ],
             used=store.snapshot()["used"],
+            branch=self.phase,
         )
         store.declare(value, registry)
         store.append(
@@ -387,6 +397,8 @@ class Cycle:
     # Bind complete Store bodies to parser admission before freezing inputs.
     def admit(self, manifest, registry, captured):
         declaration = demand.read(manifest, registry)
+        if declaration["branch"] != self.phase or declaration["window"] != self.window:
+            raise ValueError("Original context/demand branch differs")
         parsed = parser.read(captured, manifest, registry)
         raw = packet._decode(captured.raw)
         for query in declaration["queries"]:
@@ -453,6 +465,9 @@ class Cycle:
         ):
             raise ValueError("Exact admitted packet/head required")
         declaration = demand.read(manifest, registry)
+        final = self.phase == "SESSION_COMPLETION_MARKET"
+        if declaration["branch"] != self.phase:
+            raise ValueError("Original context/demand branch differs")
         prior = packet._decode(
             store.read_blob(declaration["prior"]["inputs"], limit=META_CAP)
         )
@@ -463,8 +478,14 @@ class Cycle:
         if self.context is not None:
             if (
                 declaration["window"] != self.window
-                or tuple(distributions) != self.cohort
-                or any(distributions[n] is not None for n in ("SPY", "QQQ"))
+                or (
+                    not final
+                    and (
+                        tuple(distributions) != self.cohort
+                        or any(distributions[n] is not None for n in ("SPY", "QQQ"))
+                    )
+                )
+                or (final and distributions is not None)
             ):
                 raise ValueError(
                     "Exact context/cohort and excluded benchmarks required"
@@ -519,15 +540,17 @@ class Cycle:
         if decision_inputs is not None and decision_inputs["candidate_marks"] is None:
             # A recent old account is not permission to skip full held-mark admission.
             snapshot = {"quotes": {}}
-        distributions = deepcopy(distributions)
-        forecasts = forward._forecast_identity(distributions)
+        distributions = {} if final else deepcopy(distributions)
+        forecasts = None if final else forward._forecast_identity(distributions)
         frozen = _put(
             store,
             demand.encoded(
                 {
-                    "origin": "SYNTHETIC_NUMERIC_FIXTURE",
+                    "origin": "NOT_MODEL_TIMED"
+                    if final
+                    else "SYNTHETIC_NUMERIC_FIXTURE",
                     "forecast_identity": forecasts,
-                    "cohort": list(distributions),
+                    "cohort": list(self.cohort) if final else list(distributions),
                     "anchor_receipt": None if anchors is None else anchors.sha256,
                     "anchor_sources": None
                     if anchors is None
@@ -568,27 +591,43 @@ class Cycle:
                 decision_inputs["candidate_marks"],
                 native._session(decision)[1],
             )
-        observed = forward.capture_account(client, completed, clock=lambda: decision)
+        preflight = None
+        if final:
+            cached_marks = decision_inputs["candidate_marks"] or {}
+            preflight = completion.preflight(
+                client,
+                missing=decision_inputs["missing"],
+                missing_submission={r["symbol"] for r in rows} - set(cached_marks),
+            )
+        observed = (
+            None
+            if final
+            else forward.capture_account(client, completed, clock=lambda: decision)
+        )
         trace, verdicts = [], []
-        reader = forward.build_reader(
-            distributions,
-            tuple(distributions),
-            self.clock,
-            self.day,
-            decision,
-            snapshot,
-            rows,
-            observed,
-            10,
-            trace,
-            forecast_available_at=native._instant(
-                self.window["assumed_forecast_available_at"]
-            ),
-            source_identity={
-                "model_receipt": frozen,
-                "residual_receipt": frozen,
-                "observation": captured.sha256,
-            },
+        reader = (
+            None
+            if final
+            else forward.build_reader(
+                distributions,
+                tuple(distributions),
+                self.clock,
+                self.day,
+                decision,
+                snapshot,
+                rows,
+                observed,
+                10,
+                trace,
+                forecast_available_at=native._instant(
+                    self.window["assumed_forecast_available_at"]
+                ),
+                source_identity={
+                    "model_receipt": frozen,
+                    "residual_receipt": frozen,
+                    "observation": captured.sha256,
+                },
+            )
         )
         original_economics = _economics(client)
         decision_binding = marks.state_binding(client)
@@ -672,22 +711,86 @@ class Cycle:
             transport_complete = True
             return client
 
-        if not rows:
+        # Persist native final references only after _ready's original annotations.
+        def freeze_final(observation):
+            if marks.state_binding(client) != decision_binding:
+                raise StorePause("Native final observation changed account state")
+            verdicts.extend(observation["verdicts"])
             receipt = self._retain(
                 {
                     "stage": "DECISION_FROZEN",
-                    "origin": "SYNTHETIC_NUMERIC_FIXTURE",
+                    "origin": "NOT_MODEL_TIMED",
+                    "native_observation": observation,
+                    "verdicts": verdicts,
+                    "conditional_inputs": frozen,
+                    "forecast": None,
+                    "decision_inputs": decision_inputs,
+                    "preflight": preflight,
+                }
+            )
+            store.complete_operation(decision_op, receipt)
+
+        skipped_final = []
+        if final and rows and not preflight["allowed"]:
+            skipped_final = [
+                {
+                    "client_order_id": r["client_order_id"],
+                    "disposition": "SKIPPED_NATIVE_FINAL",
+                    "native_verdict": None,
+                }
+                for r in rows
+            ]
+            receipt = self._retain(
+                {
+                    "stage": "DECISION_FROZEN",
+                    "origin": "NOT_MODEL_TIMED",
+                    "verdicts": [],
+                    "skipped_native_final": skipped_final,
+                    "native_ready_calls": 0,
+                    "native_decide_calls": 0,
+                    "snapshot_boundary": "PREFLIGHT_SKIP_BEFORE_NATIVE_DISPATCH",
+                    "conditional_inputs": frozen,
+                    "forecast": None,
+                    "decision_inputs": decision_inputs,
+                    "preflight": preflight,
+                }
+            )
+            store.complete_operation(decision_op, receipt)
+        elif not rows:
+            receipt = self._retain(
+                {
+                    "stage": "DECISION_FROZEN",
+                    "origin": "NOT_MODEL_TIMED"
+                    if final
+                    else "SYNTHETIC_NUMERIC_FIXTURE",
                     "verdicts": [],
                     "trace": [],
-                    "forecast": frozen,
+                    "forecast": None if final else frozen,
+                    "conditional_inputs": frozen if final else None,
                     "snapshot_boundary": "NO_DUE_INTENTS_EXPLICIT_EMPTY_DECISION",
                 }
             )
             store.complete_operation(decision_op, receipt)
-        logs = intraday_orders.send_due(
-            root, snapshot, decision, factory, timing_reader=wrapped
+        logs = (
+            completion.dispatch(
+                root=root,
+                rows=rows,
+                now=decision,
+                context=self.context,
+                source_sha256=pins["identity"]["source_sha256"][
+                    "backend/agents/trading/desk/intraday_orders.py"
+                ],
+                factory=factory,
+                freeze=freeze_final,
+            )
+            if final and rows and preflight["allowed"]
+            else []
+            if final
+            else intraday_orders.send_due(
+                root, snapshot, decision, factory, timing_reader=wrapped
+            )
         )
-        if len(verdicts) != len(rows):
+        if not skipped_final and len(verdicts) != len(rows):
             raise StorePause("Incomplete native verdict set; no decision replay")
         if factory_calls and not transport_complete:
             raise StorePause("Native transport incomplete; OPEN operation stays paused")
@@ -772,6 +875,9 @@ class Cycle:
             "decision_operation": decision_op,
             "submission_operation": submission_op,
             "decision_inputs": decision_inputs,
+            "classification": "NOT_MODEL_TIMED" if final else "MODEL_TIMED_MARKET_ONLY",
+            "preflight": preflight,
+            "skipped_native_final": skipped_final,
             "decision_guard": None
             if decision_admitted
             else "DECISION_OBSERVATION_UNAVAILABLE",
