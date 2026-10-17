@@ -46,6 +46,14 @@ and compare the complete unavailable snapshot before declaring broad coverage.
 Phase3 design continues separately from joined sender/resolver fixtures; do not
 read active original full output until genuine COMPLETE. No producer, model,
 configuration, order, deployment or publisher changes; barrier remains CLOSED.
+For the LATER multi-symbol packet design, do not extend pilot asof=session blindly.
+The provider defines asof as the ENTITY naming date: META before its rename is
+not found and mapping is skipped, losing FB history. Current-cohort symbol/entity
+and frozen original bar-source basis must be authenticated explicitly before any
+general acquisition; same-ticker issuer changes must not be guessed. Primary API
+documentation read2026-10-17 (no data GET):
+https://docs.alpaca.markets/us/reference/stockquotes-1, asof parameter. This is a
+future design boundary; AAPL pilot/frozen contract033934aa remain unchanged.
 Heartbeat ACTIVE/quiet unchanged. Diagram impact NONE: unused pure audit primitive.
 
 ## 2026-10-17 — Separate native sender transport and conditional venue checks passed
