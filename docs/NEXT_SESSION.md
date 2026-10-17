@@ -1,5 +1,53 @@
 # Next session
 
+## 2026-10-17 — Independent nightly numeric primitive integrated and bounded outputs exact
+
+Atomic fbe74cc1 integrated asa07039c9: ONLY new helperf242be25, tests54569010 and
+phase2 proof; every existing source/31 guarded file unchanged. Pure code derives
+cash/shares/basis/receivables/raw-mark NAV from independent evidence, recomputes
+complete causal features and exact frozen-head predictions, then uses original
+pure dispatch/grade-constrained whole-share planner/actions and compares complete
+saved entry/intents/history/state. Current saved targets/actions/controls never
+feed inference. Integral-float/fractional economic shares and null/zero bases stay
+original; order quantities/counts require exact integer type/value. Cash uses the
+broker's actual float representation; persisted expected values use original JSON.
+
+111 focused native checks/0skip4.27s (70 preplan +41 phase2), RuffPASS. Actual
+NumPy2.5.3/sklearn1.9.1 and pure pytest-only tooling; no numerical dependency
+shadowing. Controlled six-red regression root preserves earlier wrong economic
+share rejection and tolerant float/fractional integer corruption acceptance.
+All earlier import/tooling/fixture and bounded harness failures remain recorded
+in research/historical-nightly-model-phase2-proof-2026-10-17.json.
+
+Real COMPLETE privatev10 proof08549b55 uses original priorclose2019-02-28 plus
+March1/4 only. Independent7fill/economic fold and derived prior state reproduce
+all11 funded intents (4+3+4), raw proposals/targets/actions and entire saved states.
+ALL9 canonical JSON comparisons (entry/intents/state ×3) are byte-identical; no
+observed native2.5.3 versus original2.5.4 output drift in this bounded cohort, no
+tolerance substituted. Exact3 causal prefix/head checks; full2961 daily dates and
+2953-row current frozen risk bank retained. Actual model fit2026-10-01/publication
+2026-10-04T18:35:30.875637-04:00 remain explicit retrospective provenance. Original
+hash-pinned raw action export is interpreted ONLY with its authenticated semantic
+review/normalization; no heavy SIP grid or original active output was accessed.
+
+ROOT separate metadata proofb2b48fa1 independently reads/authenticates original
+v10 completion/initial/two archives and verifies all9 reported saved JSON hashes
+and11 strict-whole intents; no inference rerun. Exact copies:
+research/historical-nightly-native-bounded-proof-2026-10-17.json and
+research/historical-nightly-original-binding-proof-2026-10-17.json.
+Native validation commands pinned imagee0, but used --rm without retained IDs;
+independent container inspect metadata is UNAVAILABLE. Do not invent IDs or rerun
+passed checks for documentation. Future private validation must retain names/IDs.
+
+Streaming/full-verifier hook is NOT implemented yet; full missing-account snapshots
+remain unverified. Account admission can fail BEFORE reconciliation, so phase3 must
+derive that exact branch without saved control substitution, count model NOT_INVOKED
+and compare the complete unavailable snapshot before declaring broad coverage.
+Phase3 design continues separately from joined sender/resolver fixtures; do not
+read active original full output until genuine COMPLETE. No producer, model,
+configuration, order, deployment or publisher changes; barrier remains CLOSED.
+Heartbeat ACTIVE/quiet unchanged. Diagram impact NONE: unused pure audit primitive.
+
 ## 2026-10-17 — Separate native sender transport and conditional venue checks passed
 
 Atomic resolver282d0484 integrated as6e200178: ONLY two NEW files, existing tracked

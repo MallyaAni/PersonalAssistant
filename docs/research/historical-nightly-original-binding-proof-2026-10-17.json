@@ -1,0 +1,28 @@
+{
+  "active_full_output_read": false,
+  "all_full_run_nights_verified": false,
+  "funded_intents": 11,
+  "inference_rerun": false,
+  "native_container_inspect": "UNAVAILABLE: original validation used --rm and retained no container ID; exact CLI image and native package/source evidence remain",
+  "native_proof_sha256": "08549b55334482cc8e50c4ae5cd3e0937c4eedd0469159b29564d1fede3eb062",
+  "nights": [
+    {
+      "all_three_original_json_hashes_verified": true,
+      "funded_intents": 4,
+      "session": "2019-02-28"
+    },
+    {
+      "all_three_original_json_hashes_verified": true,
+      "funded_intents": 3,
+      "session": "2019-03-01"
+    },
+    {
+      "all_three_original_json_hashes_verified": true,
+      "funded_intents": 4,
+      "session": "2019-03-04"
+    }
+  ],
+  "observed_at": "2026-10-17T13:15:32.004165+00:00",
+  "original_completion_sha256": "dd50e9d2d5e1ab9c11e11cfaa9d29c15c077910337ff421ce431359941b57a5e",
+  "status": "VERIFIED_ORIGINAL_BOUNDED_ARCHIVES_AND_NINE_REPORTED_OUTPUT_HASHES"
+}
