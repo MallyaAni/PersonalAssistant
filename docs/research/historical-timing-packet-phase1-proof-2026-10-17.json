@@ -1,0 +1,67 @@
+{
+  "status": "VERIFIED_PHASE1_SOURCE_BOUND_PACKET_ONLY",
+  "base_revision": "fa2a83a23810485ec5b8f260e4ae4fab6c92c276",
+  "source_files_sha256": {
+    "backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+    "backend/tests/test_historical_timing_packet.py": "e5889b4b76d76d01ae166016be1bc751a5fb25cd75a4c5d441f1773c9a03cd68",
+    "docs/research/historical-timing-correction-contract-2026-10-17.md": "033934aa845739fa818930cd890409100d7df37d57e4cde5bc07e801d2eca1e9"
+  },
+  "packet_test": {
+    "command": "ANIOS_TEST_MODE=1 SECRET_KEY=test-secret-key-only-for-testing CONTEXT_REPORT_PATH= PYTHONPATH=. /tmp/anios-execution-audit-20261017-venv/bin/python -m pytest backend/tests/test_historical_timing_packet.py -q -c /dev/null -p no:cacheprovider",
+    "passed": 34,
+    "skipped": 0,
+    "seconds": 0.51
+  },
+  "lint": "ruff check passed for both new Python repository files",
+  "private_acquirer": {
+    "path": "/tmp/acquire_historical_timing_packet_20261017.py",
+    "sha256": "d9a6f5a3317b7e4c9559229b53077eb526c78c539a636d50361c9b79b47f6096",
+    "test_path": "/tmp/test_acquire_historical_timing_packet_20261017.py",
+    "test_sha256": "6766759baa0f452730ddbad6378cd90e873130e54dd63c9aaf2625bf3f18e2a3",
+    "test_command": "ANIOS_TEST_MODE=1 SECRET_KEY=test-secret-key-only-for-testing CONTEXT_REPORT_PATH= PYTHONPATH=. /tmp/anios-execution-audit-20261017-venv/bin/python -m pytest /tmp/test_acquire_historical_timing_packet_20261017.py -q -c /dev/null -p no:cacheprovider",
+    "passed": 4,
+    "skipped": 0,
+    "seconds": 0.44,
+    "properties": ["bounded streamed prefix", "preserved body transport failure", "complete short-page pagination", "redirect retained without following"]
+  },
+  "authentic_packet": {
+    "private_root": "/home/animallya96/scratch/historical-timing-packet-pilot-20261017-v1",
+    "acquisition_image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "requests": 1,
+    "http_status": 200,
+    "retries": 0,
+    "redirects": 0,
+    "complete": true,
+    "original_body_bytes": 17746,
+    "quotes": 166,
+    "reused_original_trades": 69,
+    "observations_sha256": "f9529d3329ea7d0e051f1e67ed6210ad7c96e6580e6552ba3526c4b289fd85b5",
+    "verification_sha256": "0bb9c907487874eb1a43f4b4b37305231acaa1ca26732b46ad0c834eda0d3f65",
+    "selector_proof_sha256": "6369d56f42d8c2710722c8a1ca0911b9ef45a97a70d66bb72afc6f87d160bb5c",
+    "independent_root_proof": "/tmp/historical-packet-root-binding-20261017-v1/proof.json",
+    "independent_root_proof_sha256": "9b7b01a3ec12749491705cef0d127c1ae260b4e268b035831fe2579d7d380009",
+    "first_eligible_opening": 174.01,
+    "opening_print_at": "2019-03-01T14:45:00.007Z",
+    "decision_quote_at": "2019-03-01T14:45:30.57Z",
+    "decision_midpoint": 174.10500000000002,
+    "first_conservatively_postarrival_quote_at": "2019-03-01T14:45:31.332Z",
+    "conditional_buy_ask": 174.14,
+    "conditional_sell_bid": 174.12,
+    "quote_size_units": "unresolved_no_conversion_or_capacity_claim"
+  },
+  "preservation": {
+    "only_new_repository_files": true,
+    "all_preexisting_tracked_files_unchanged": true,
+    "all31_guarded_runtime_files_unchanged": true,
+    "original_proposed_document_unchanged": true,
+    "original_runs_and_failures_unchanged": true
+  },
+  "limits": [
+    "Pure unused packet primitive; no producer or live caller connected",
+    "Hypothetical final-archive availability and clock uncertainty, not recovered historical publication or receive clocks",
+    "No genuine feature or native model inference in this checkpoint",
+    "No sender, allocation, submitted quantity, account or ledger replay",
+    "Conditional bid/ask references are not broker fills or liquidity proof",
+    "No full historical timing acceptance, corrected full run, adoption claim or deployment"
+  ]
+}
