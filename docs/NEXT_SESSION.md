@@ -1,5 +1,22 @@
 # Next session
 
+## 2026-10-17 — Frozen checkpoint tests no longer require private absolute fixture
+
+Test-only follow-up: declared N2 fixture falls back to committed exact source map
+99e62ab9 when /proof.json is absent. No codec/_identity stub or source guard change.
+Actual31files plus broker/calendar checked independently before positives; explicit
+ANIOS_VERIFY_FROZEN_N2=1 turns any mismatch into FAIL, never skip. Outside frozen
+native source positives may explicitly skip, which is NOT acceptance. Additional
+always-running wrong-actual-source rejection test retains admission coverage there.
+
+Native scratch/historical-broker-checkpoint-portable-20261017-v1 intentionally has
+NO /proof.json mount, explicit native mode1:57checks/0skip0.65s, actuald75e388f/e0/
+networknone/readonly/1CPU512MiB RAM+total swap/exit0/OOMfalse. Original56 assertions
+remain; one new rejection case. Codec0c76756f and original9b8561d1 proof unchanged;
+new testb9663ecd. ROOT inspected actual runtime/mounts/source pins; Ruff/format pass.
+Exact research/historical-checkpoint-portability-proof-2026-10-17.json. No production,
+model/provider/account action. Diagram impact NONE: fixture portability only.
+
 ## 2026-10-17 — Durable pre-request rate slot integrated
 
 Rateecf30f6e integrated after ROOT read full diff/tests/actual runner, inspected

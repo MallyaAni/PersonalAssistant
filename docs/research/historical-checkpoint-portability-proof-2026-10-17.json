@@ -1,0 +1,117 @@
+{
+  "status": "VERIFIED_FROZEN_NATIVE_CHECKPOINT_TEST_PORTABILITY_ONLY",
+  "production_codec_sha256": "0c76756f9bf79bddd0c0e2a18612882c48a82deabd7483c13730c58c98a111b6",
+  "test_sha256": "b9663ecdbb360e34a1a4142c44e0fbcf61ae4ec8984e1e16de3d6397a5dd5797",
+  "scope": "Tests use exact committed N2 declaration if private /proof.json is absent; no source-admission stub and no codec change",
+  "native": {
+    "root": "/home/animallya96/scratch/historical-broker-checkpoint-portable-20261017-v1",
+    "container": "d75e388f87532857adf803617d749fe2ded1b7a96054fe5c2d65777c13f53574",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "limits": {
+      "NetworkMode": "none",
+      "ReadonlyRootfs": true,
+      "NanoCpus": 1000000000,
+      "Memory": 536870912,
+      "MemorySwap": 536870912
+    },
+    "exit": 0,
+    "oom": false,
+    "passed": 57,
+    "skipped": 0,
+    "seconds": 0.65,
+    "log_sha256": "6a4a53e521da007f059c3dccac043452c6a92d9cc9dbeb8579eebcb4fd635ad7",
+    "junit_sha256": "5c457cab4c0cc4465ac2db6cfe4de5f810df8e94da4633226ab904bddd077fbb",
+    "private_proof_mount": "ABSENT",
+    "explicit_ANIOS_VERIFY_FROZEN_N2": "1"
+  },
+  "assertions": [
+    "All56 original native assertions retained; one additional actual wrong-source rejection test runs independently of native-positive fixture",
+    "Declared31-source map digest remains99e62ab9 and all actual31 files plus broker/calendar are independently compared before positives",
+    "Explicit native mode FAILS on source mismatch; no _identity override or synthetic source-admission success",
+    "Outside the frozen native runtime, positive cases may explicitly skip; that skip is NOT acceptance and retained9b8561d1/this57-native proof remain separate"
+  ],
+  "preservation": {
+    "original_codec_and_56_check_proof": "UNCHANGED",
+    "runtime_or_model_or_account_or_provider_changes": "NONE",
+    "publication": "CLOSED",
+    "diagram_impact": "NONE: test fixture portability only"
+  },
+  "actual_inspection": {
+    "id": "d75e388f87532857adf803617d749fe2ded1b7a96054fe5c2d65777c13f53574",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "state": {
+      "Status": "exited",
+      "Running": false,
+      "Paused": false,
+      "Restarting": false,
+      "OOMKilled": false,
+      "Dead": false,
+      "Pid": 0,
+      "ExitCode": 0,
+      "Error": "",
+      "StartedAt": "2026-10-17T14:55:02.888239192Z",
+      "FinishedAt": "2026-10-17T14:55:04.875671244Z"
+    },
+    "limits": {
+      "NetworkMode": "none",
+      "ReadonlyRootfs": true,
+      "NanoCpus": 1000000000,
+      "Memory": 536870912,
+      "MemorySwap": 536870912
+    },
+    "mounts": [
+      {
+        "Source": "/home/animallya96/scratch/historical-broker-checkpoint-portable-20261017-v1/historical-numeric-merge-source-review-PROPOSED-2026-10-17.json",
+        "Destination": "/app/docs/research/historical-numeric-merge-source-review-PROPOSED-2026-10-17.json",
+        "RW": false
+      },
+      {
+        "Source": "/home/animallya96/scratch/historical-native-pytest-deps-20261017-v2/modules",
+        "Destination": "/testdeps",
+        "RW": false
+      },
+      {
+        "Source": "/home/animallya96/scratch/historical-broker-checkpoint-tests-20261017-v4/historical_broker_checkpoint.py",
+        "Destination": "/app/backend/market/historical_broker_checkpoint.py",
+        "RW": false
+      },
+      {
+        "Source": "/home/animallya96/scratch/historical-timing-resolver-tests-20261017-v2/historical_timing_packet.py",
+        "Destination": "/app/backend/market/historical_timing_packet.py",
+        "RW": false
+      },
+      {
+        "Source": "/home/animallya96/scratch/historical-generic-packet-tests-20261017-v1/historical_packet_registry.py",
+        "Destination": "/app/backend/market/historical_packet_registry.py",
+        "RW": false
+      },
+      {
+        "Source": "/home/animallya96/scratch/historical-broker-checkpoint-portable-20261017-v1/out",
+        "Destination": "/out",
+        "RW": true
+      },
+      {
+        "Source": "/home/animallya96/scratch/historical-broker-checkpoint-portable-20261017-v1/test_historical_broker_checkpoint.py",
+        "Destination": "/app/backend/tests/test_historical_broker_checkpoint.py",
+        "RW": false
+      }
+    ],
+    "files": {
+      "test_historical_broker_checkpoint.py": "b9663ecdbb360e34a1a4142c44e0fbcf61ae4ec8984e1e16de3d6397a5dd5797",
+      "historical-numeric-merge-source-review-PROPOSED-2026-10-17.json": "72ad8ff85259495ca39141bf8fff8e9eb73b13565f672534c147802ba8cac1ac"
+    },
+    "tests": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "57",
+      "time": "0.646",
+      "timestamp": "2026-10-17T14:55:04.125674+00:00",
+      "hostname": "d75e388f8753"
+    },
+    "log": ".........................................................                [100%]\n57 passed in 0.65s\n",
+    "log_sha": "6a4a53e521da007f059c3dccac043452c6a92d9cc9dbeb8579eebcb4fd635ad7",
+    "junit_sha": "5c457cab4c0cc4465ac2db6cfe4de5f810df8e94da4633226ab904bddd077fbb"
+  }
+}

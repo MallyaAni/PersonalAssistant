@@ -3,6 +3,7 @@
 import hashlib
 import io
 import json
+import os
 from copy import deepcopy
 from decimal import Decimal
 from pathlib import Path
@@ -20,10 +21,19 @@ LATER = "2019-03-04T14:45:31.200000+00:00"
 CASES = []
 
 
-# Bind tests to the separately retained original N2 proof, never current selectors.
-@pytest.fixture
-def pins():
-    proof = json.loads(Path("/proof.json").read_bytes())
+# Read the exact N2 declaration without requiring a private absolute mount.
+def declared_identity():
+    path = Path("/proof.json")
+    if not path.is_file():
+        path = (
+            Path(codec.__file__).resolve().parents[2]
+            / "docs/research"
+            / "historical-numeric-merge-source-review-PROPOSED-2026-10-17.json"
+        )
+    proof = json.loads(path.read_bytes())
+    assert codec._digest(proof["source_sha256"]) == (
+        "99e62ab9f8b02bc315ce59b81f8b461ae5c988e275cdf09cacf2d36b1025f8ab"
+    )
     identity = {
         "source_revision": codec.N2,
         "backend_image": codec.IMAGE,
@@ -32,7 +42,45 @@ def pins():
         "source_sha256": proof["source_sha256"],
         **codec.CONFIGS,
     }
+    return identity
+
+
+# Native positives require the actual frozen files; skips outside them are not proof.
+@pytest.fixture
+def pins():
+    identity = declared_identity()
+    root = Path(native.__file__).resolve().parents[2]
+    sources = {
+        **identity["source_sha256"],
+        "backend/market/replay_broker.py": codec.BROKER,
+        "backend/market/calendar.py": codec.CALENDAR,
+    }
+    different = [
+        name
+        for name, expected in sources.items()
+        if not (root / name).is_file()
+        or hashlib.sha256((root / name).read_bytes()).hexdigest() != expected
+    ]
+    if different and os.environ.get("ANIOS_VERIFY_FROZEN_N2") != "1":
+        pytest.skip(
+            "Frozen N2 native runtime absent; retained native9b8561d1 is separate"
+        )
+    assert not different, "Explicit native N2 fixture source differs"
     return {"identity": identity, "identity_sha256": codec._digest(identity)}
+
+
+# Always exercise rejection of changed actual files, including outside the frozen image.
+def test_nonmatching_actual_source_is_rejected(tmp_path, monkeypatch):
+    identity = declared_identity()
+    name = next(iter(identity["source_sha256"]))
+    path = tmp_path / name
+    path.parent.mkdir(parents=True)
+    path.write_bytes(b"SYNTHETIC_WRONG_SOURCE")
+    monkeypatch.setattr(
+        native, "__file__", str(tmp_path / "backend/market/replay_broker.py")
+    )
+    with pytest.raises(ValueError, match="Actual frozen source bytes differ"):
+        codec._identity(identity, codec._digest(identity))
 
 
 # Hash original immutable checkpoint bytes without normalizing their ordered contents.
