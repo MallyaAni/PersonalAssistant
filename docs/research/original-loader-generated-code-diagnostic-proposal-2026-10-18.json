@@ -1,0 +1,68 @@
+{
+  "schema": "original-loader-generated-code-diagnostic-proposal/1",
+  "status": "SOURCE_ONLY_UNEXECUTED_NOT_ADMITTED",
+  "objective": "Compare complete frozen and newly observed generated-code records at the first synthetic dataclass wrapper before choosing any correction for failed G08. Preserve the failed v2 suite; never replay it or infer its missing hash.",
+  "failure_checkpoint": "c507f77cd3158566f0a5d224e1cc9446d1e9803b",
+  "active_sources": {
+    "bootstrap.py": {"repository_path": "sources/original-loader-generated-code-diagnostic-v2-2026-10-18.py", "sha256": "324d437e7cc9ba365966e4513f270c2e04794c242c2f87bbfd3ae5e8ea8bf3ee", "bytes": 16120},
+    "diagnostic-owner.py": {"repository_path": "sources/original-loader-generated-code-diagnostic-owner-2026-10-18.py", "sha256": "743820b93735b750ef7da783c13242e29c17141304c4a8fb5c24997b85dead42", "bytes": 7042},
+    "diagnostic-verifier.py": {"repository_path": "sources/original-loader-generated-code-diagnostic-verifier-2026-10-18.py", "sha256": "b75869b6bc9174ad4603202bcde625fe2cb82372996ed4cdcd71c64984088158", "bytes": 8765}
+  },
+  "retained_initial_draft": {"repository_path": "sources/original-loader-generated-code-diagnostic-2026-10-18.py", "sha256": "393f5f551de66129dec36640e615ccc8861c9dfe7037c5cab3d5e9b425a50d4a", "bytes": 12330, "state": "UNEXECUTED_SUPERSEDED_DRAFT_OBSERVER_NOT_EQUIVALENT"},
+  "inputs": {
+    "tiny_dataclass": {"sha256": "1247f21782dae095b2028e24d8c8039cb47440ebe7470a4c9cb7c32758a776da", "bytes": 74, "scope": "A new Sample class with one int annotation; never instantiate it. Synthetic backend namespace names do not import financial modules."},
+    "frozen-calls.json": {"sha256": "c8f28b55394b0ef64442f95f021a965dd6ebf1c9b25080f4fcc055a18446fc1e", "bytes": 11817, "source": "/home/animallya96/scratch/n2-loader-guard-synthetic-20261018-v2/preparation/prepared/calls.json", "read": "Future bounded held-FD/path read of this retained tiny synthetic manifest only; no old test replay."},
+    "harness-source.txt": {"sha256": "737d4236345ebfbc90a0ecf33e3e9ce733e5f06afb2e53c3125e465e9b1a2eea", "bytes": 30408, "scope": "Pinned source compiled as a whole inert code object only in the future live child. Extract CallFence.profile from full compilation, never execute module/class import code or construct a real CallFence/SourceBook."},
+    "owner/controller.py": {"sha256": "2e505205cc8a3793d7b3313a5b5c3b670b00134575982d26c725787b6530df5a", "bytes": 16728, "scope": "Reuse unchanged bounded Owner mechanics, one phase only; no proposed_run or guard suite."},
+    "readonly_verifier_helper": {"sha256": "e0fa867a793c78b8260d935ed0c1518f60caa10ba3ab11e084a51ae249ec92f5", "bytes": 26520, "source": "/home/animallya96/scratch/n2-loader-guard-source-20261018-v2/owner/verifier.py", "scope": "Reuse only stdlib held-FD capture, strict metadata parsing and fresh exact-CID runtime inspection; no suite/fixture/harness imports or case execution."}
+  },
+  "probes": [
+    {"mode": "deferred", "state": "UNEXECUTED", "steps": "First compile/define only tiny backend.capacity_dataclass, retain its generated rows, then tiny backend.market.replay_broker; original capture/retention order before later record hashing. Structural CodeType metadata and frozen JSON parsing occur after all primary hashes.", "limit": "Deferred helper holds six preceding fields in a dict, rather than the original literal's evaluation stack. It must reproduce the complete frozen record before any inference; non-reproduction is retained, never silently treated as equivalent."},
+    {"mode": "live", "state": "UNEXECUTED", "steps": "Use unchanged CallFence.profile CodeType extracted from pinned full-source compilation, source-literal constants and explicitly INJECTED minimal fence/registered tiny code. Diagnostic trip reads the method's computed generated record from frame locals only after its unchanged inline hash, then stops import.", "limit": "Not a full CallFence constructor/audit hook/failure-slot/SourceBook acceptance path. A refusal before generated exists yields null; do not manufacture a record. Original failed v2 hash is not recovered."}
+  ],
+  "comparison": {
+    "identity": "All eight generated-record fields and every matching frozen row; preserve ordinal because multiple wrappers may share the other seven fields.",
+    "content": "Typed CodeType fields/constant structure, exact byte fields, tuple shape and float/complex bits. Metadata is observed only after primary hashing; never substitute it for original guard hashes.",
+    "marshal": "Deferred primary marshal bytes retained. Live raw marshal is explicitly post-observation control; it may differ from the already-computed primary record and is never relabelled as original bytes.",
+    "permitted_conclusion": "Diagnostic record/content comparison only, conditioned on complete deferred frozen reproduction. No assertion that the preparation/live seam caused the old failure without actual new evidence; no automatic source correction or guard relaxation."
+  },
+  "future_roots": {
+    "source": "/home/animallya96/scratch/n2-generated-code-diagnostic-source-20261018-v1",
+    "run": "/home/animallya96/scratch/n2-generated-code-diagnostic-20261018-v1",
+    "independent_review": "/home/animallya96/scratch/n2-generated-code-diagnostic-independent-review-20261018-v1",
+    "current_state": "NONE_CREATED_OR_PROBED_THIS_CHECKPOINT"
+  },
+  "source_book": "Externally pinned tiny-generated-code-source/1 has exactly audit/bootstrap.py, audit/frozen-calls.json, audit/harness-source.txt and owner/controller.py. Owner/verifier source self pins remain external. No source-book bytes or staging packet exists yet.",
+  "concrete_future_invocations": {
+    "owner": ["python3", "-I", "-S", "-B", "<SOURCE>/owner/diagnostic-owner.py", "--admitted-tiny-diagnostic", "<fresh-admission-raw-sha256>", "743820b93735b750ef7da783c13242e29c17141304c4a8fb5c24997b85dead42", "<source-book-raw-sha256>"],
+    "container": ["python", "-I", "-S", "-B", "/audit/bootstrap.py", "diagnose"],
+    "children": ["python -I -S -B /audit/bootstrap.py probe deferred /out/deferred", "python -I -S -B /audit/bootstrap.py probe live /out/live"],
+    "independent_readback": ["python3", "-I", "-S", "-B", "<SOURCE>/owner/diagnostic-verifier.py", "--readback-only", "b75869b6bc9174ad4603202bcde625fe2cb82372996ed4cdcd71c64984088158"],
+    "unresolved_placeholders_are_not_launch_authority": true
+  },
+  "runtime_proposal": {
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "guardrails": "One separately named phase through unchanged Owner: pullnever/UID1000/none network/RO root/1CPU/2GiB memory=swap/PIDs32/tmp64/noHC/lognone/capdropALL/no-new-privileges; two binds only small audit RO and new owned output RW. No backend/app/model/original/account/market/credentials/socket mount.",
+    "bounds": "Exactly two fresh children; each5sCPU/7swait/262KiB per-log-file; parent20swall/phase25swait/owner60sworkalarm. Existing finite owned CLI reaping/labelled stop path. Readback30salarm/one10s inspection; no probe bodies replayed. Fixed maximum output shapes, not a filesystem quota or daemon memory reservation.",
+    "admission": "ABSENT. Before any create, externally authenticate/preserve exact source packet/book/caller, actual cached image/host/source paths/UID/jobs and fresh5GiBmem/4GiBdisk/8192inode headroom. Review raw evidence and exact invocation; scoped admission must be younger than120s. Owner rechecks active labelled jobs and headroom, and exact actual container identity/resources. Old v2 admission cannot be reused.",
+    "failure_policy": "Any failure/non-reproduction/timeout/OOM is retained with no automatic retry or replay. Signal handlers do not establish SIGKILL/transport-loss cleanup; source-reviewed cleanup is not runtime acceptance."
+  },
+  "acceptance_state": {
+    "source_AST_and_purpose_comments": "PASS37 functions across four new files, including preserved draft",
+    "source_review": "READONLY findings corrected in distinct active draft; no tests or imports",
+    "helpers_imported_or_bytecode_compiled_or_execed": false,
+    "packets_fixtures_or_manifests_built": false,
+    "SSH_host_probe_or_Docker_operation": false,
+    "diagnostic_probes_run": 0,
+    "old_gates_repeated": 0,
+    "genuine_tests_run": 0,
+    "runtime_admission": null,
+    "execution_authorized": false
+  },
+  "next": "Prepare exact small packet/source-book and bounded staging/caller record with preservation/readback; then independently review fresh synthetic-only actual host/image/jobs/resources and exact invocation before ONE new diagnostic. Do not run the v2 suite or infer its missing hash. No genuine/model/full-history/actual-two-host owner execution.",
+  "original_timing": "FAILED_UNCHANGED",
+  "publication": "CLOSED",
+  "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+  "historical_weekday_intraday_fill_UI_and_combined_model_RAM": "UNVERIFIED",
+  "heartbeat": "ACTIVE"
+}
