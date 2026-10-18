@@ -1,5 +1,78 @@
 # Next session
 
+## 2026-10-18 — Evidence/archive adaptation SYNTHETIC80 parity VERIFIED; genuine still unadmitted
+
+Read research/original-loader-evidence-parity-proof-v1-2026-10-18.json.
+Sourcecd0b7f429c7ec6950a09255a7b9b473792077120 pins stage87edc9f5/4448B,
+verifier1b0d23cf/18460B/nativeprobeac6d0696/1566B/launchd1fb58ba/8998B/
+operations3cfdc1c7/7646B/preserver928c4af5/5353B/evidencetransport2771f7c6/
+3376B. Exact prior packetedac83ca/356825B/22records/book9cffe536/3764B retained,
+NOT regenerated. Bootstrapd9b1/owner3514/caller024a/evidence400d/adaptations39f2/
+parserde29/controller2e50 unchanged. No old23/65+4/tiny/diagnostic/v2 replay.
+
+Exclusive stagec13ebf24/11266B; independent actual prerequisite58a869e0/12559B
+checked24files/e0/linuxarm64/Spark1/UID1000/jobs empty/absent new roots/headroom.
+Healthy existing worker READONLY reviewed actual prerequisites/exact native call
+BEFORE admission. Separate fresh native admission7890afa1 at1792312082295864623ns,
+MemAvailable9746542592B consumed ONLY native metadata probe. Actual82ad8503/e0
+exit0/noOOM08:28:02.938432593Z. Independentb6cb9953/11280B fresh stopped inspect/
+one real source physical bookends: Python3.12.14/NumPy2.5.3/exact proposed native
+path/initSHA09295a80, six thread envs1/no backend modules. Native proof is NOT
+parity/model/archive acceptance. Source review closed native-source binding gap
+before execution; no failed test or replay.
+
+Worker independently reviewed actual native proof/exact parity invocation BEFORE
+separate fresh scoped admission4d3ccb48 at1792312150437145724ns/MemAvailable
+9697857536B, consumed ONLY here. Headroom NOT reservation/daemon/model RAM bound.
+ONE actual parity664a8691e146e39d762979d98010a7ed24a1a6c566b4937a5849a12c5f230e4b
+exited0/noOOM08:29:11.328002094Z; two actual children7/8exit0/empty logs/no owned
+stop/outercaller0. Native and parity: exact e0 UID1000/noneRO/1CPU/2GiB=swap/
+PIDs32/tmp64/noHC/lognone/capdropALL/no-new-privileges; auditRO+outRW only, no
+genuine model/original/account/data/credential/socket mounts. Real five-module
+candidate backend tree is separately versioned, not genuine/full original tree.
+
+All80 pass:53primitives+27adaptations =14positive/44shared reference refusals/
+22candidate-only domain refusals. Exact real new modules/unchanged parser/five
+origins/source pins, explicit isolated SYNTHETIC full-compilation original
+references; NO original effect module import/body. Real NumPy only original
+plain/scalar controls after candidate import trace. Three SYNTHETIC strict-reader
+Rows/spool released; reconstructed30 predecessor is SYNTHETIC. Three authentic
+catalog entries/two selected approval+numeric transitions to N2native31; actual
+third-entry CURRENT successor rejected. Domain-only refusals are NOT general
+original-domain parity. Small custom/injected-restored gzip UNIT bounds are NOT
+default16/64/256MiB/fullhistory/RAM capacity. Stable-file changes are NOT full
+pinned mid-read races. No generic native NaN normalization/model load/fit/inference.
+
+Independent terminalab25f26e/35378B checks all80named outcomes/status/reasons/
+scope/two actual children/complete source35+run40 SHA+physical bookends/exact
+caller/native/admission bindings/fresh stopped inspect. Created/stopped/fresh
+exact2uniqueDestination/full mount records equal byDestination/raworder retained;
+only allowed HostConfig representation difference false→nullOomKillDisable.
+Exclusive scratch/capacity-evidence-parity-evidence-20261018-v1 retains159files/
+640324B+manifestcd171a5a/102334B fsynced/readback. Distinct evidence-review-v1
+proofaf9bc822/74439B verifies160files/two full reads/exact original+copy physical.
+Every file<=262KiB/no exception/exact ns decimal strings; raw356825B packet stays
+outside those roots on Mac. Raw proofs/manifest/small results fetched/hashchecked.
+All source/run/native/prerequisite/review/transfer/evidence roots COMPLETE,
+never replay/adopt/overwrite; admissions consumed/never reuse. Worker final
+READONLY scope/preservation accepted; no new agent/limited retry/worker ops.
+AST/purpose38/JSON/fullSHA/hashlinks/diff pass; Ruff unavailable. Timeout/force-stop/
+transport-loss branches unexercised. No production/native/model/account change.
+
+NEXT ROOT: synthetic80 acceptance boundary CLOSED; never rerun80 or old23/65+4/
+tiny/diagnostic/v2 for docs. SOURCE ONLY new archive-context binding under NEW
+immutable executed-map contract; retain every invocation/source/config/producer/
+calendar/preservation admission plus authenticated strict-reader Rows/ShaMap
+provenance/order/hashes/readonly/aliasing/deepcopy/allocation lifetime. Synthetic
+reference is NOT genuine source-reader binding. Review exact dependency closure,
+new identities/types/receipt paths before capacity execution proposal; pure forward/
+calibration files stay at real paths. No fake original modules/runtime projection/
+preload/injection/guard/G08/cap relaxation/genuine launch. Model strategy NULL,
+fullsource/runtime/numerical/combinedRAM/horizon UNVERIFIED. Historical/weekday/
+intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/
+v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM
+unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Evidence parity packet/caller SOURCE prepared; all80 bodies UNRUN
 
 Read research/original-loader-evidence-parity-source-proof-v1-2026-10-18.json
@@ -53,6 +126,10 @@ combinedRAM/horizon remain UNVERIFIED. Historical/weekday/intraday/fill/UI still
 UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/
 no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM unchanged.
 Heartbeat ACTIVE. Diagram:NONE.
+
+The previously unrun80 bodies are now VERIFIED only in the synthetic scope of the
+new proof above. This packet/caller checkpoint remains preserved; its preparation
+and prior unrun status are historical, not instructions to stage or execute again.
 
 ## 2026-10-18 — Capacity evidence/archive adaptations SOURCE reviewed; all bodies UNRUN
 
