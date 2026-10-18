@@ -1,5 +1,56 @@
 # Next session
 
+## 2026-10-18 — N2 capacity harness SOURCE PREPARED; synthetic behavior UNVERIFIED
+
+Source checkpointacb314d68a6dcaee5715114fb0657dd97976b313 passed the
+local source-only AST/metadata acceptance below; no runtime acceptance.
+Read research/original-loader-capacity-harness-source-proof-2026-10-18.json.
+Private source737d4236/30408B and synthetic plan70b49f28/11666B are retained
+under research/sources and research. This is SOURCE ONLY: no harness import,
+compile/exec, test, fixture build, app/numerical import, SSH/Docker/host probe,
+model/account/provider call or actual run. Public execute unconditionally
+refuses; script main exits SOURCE_ONLY. No controller, invocation, call manifest,
+runtime admission or execution flag exists. Contractecc58ad7 is unchanged.
+
+Draft requires full source-book authentication, installed exact guard/first
+pinned finder and preimport runtime check before backend import; unchanged
+genuine invocation/runtime/source/producer/calendar/preservation checks follow.
+Held-FD exact source compile/code identities would guard aliases and phase
+calls. Effect functions/stateful classes/fit/distribution/select are denied
+independently of accidental allowlist entries. Proposed refusal writes a
+bounded preallocated failure FD then exits86; it does not trust a catchable
+profile exception. Runtime behavior of every guard remains UNVERIFIED.
+
+Existing worker READONLY review found daily-prefix dynamic-code and failure-FD
+gaps. Corrected O_RDWR/nonappend validation; exact generated records now bind
+dataclasses separately from original daily-prefix producerfae5. A follow-up
+caught the exec module wrapper before inputs: BOTH exact <module> and inputs
+fingerprints are required under exact filename/module/LOAD. Worker confirmed
+the final narrow correction in source. Initial bccf3aa8/19134B is preserved as
+research/sources/original-loader-capacity-harness-initial-2026-10-18.py.txt and
+its /tmp original; findings are source reviews, NOT failed runtime tests.
+
+Draft retains loaded context/both full byte receipts through JSON+UTF8 output,
+with phase receipts, cgroup/proc metrics and alias-aware array metadata. AST
+and28 purpose comments passed; plan JSON/hash links checked. Ruff unavailable;
+zero synthetic/genuine tests and zero previous completed gates repeated.
+G01-G18 are proposed only. Proposed tiny stdlib-only synthetic runtime uses
+exacte0/2GiB=swap/1CPU/PIDs32/noneRO/tmp64,60s work/120s controller/128 total
+children/32MiB output target, no genuine backend/models/original inputs. Targets
+are NOT reservations/admission. Injected tiny SourceBook/fake metadata prove
+no genuine source/runtime admission; no metric monkeypatch is proposed.
+
+NEXT: prepare/review tiny fixture builder, exact synthetic call/generated-code
+manifests, test runner and finite owned-child/controller cleanup SOURCE plus
+concrete invocation before executing any new synthetic suite. Preserve this
+source and all prior gates; no contract/header/115/byte/state/controller/LOCAL
+reruns for docs. No genuine loader/full audit/corrected/account launch or actual
+owner execution. Combined RAM/historical/weekday/intraday/fill/UI remain
+UNVERIFIED; timing FAILED/publication CLOSED/missing receipts unchanged;
+genuinev6 OPEN/PAUSED/no replay/adoption/new run; actualtwohost/image-load/
+daemon-temp/RAM gaps unchanged. Heartbeat ACTIVE/no permission question.
+Diagram impact: NONE — private source proposal; no implemented runtime change.
+
 ## 2026-10-18 — N2 loader capacity contract SOURCE REVIEWED; no execution admitted
 
 Source-only contract checkpoint1118eb00833302dc2262681a33aba59c719b5de6
