@@ -1,5 +1,67 @@
 # Next session
 
+## 2026-10-18 — Metadata helper/partial31 reader VERIFIED; genuine loader still unadmitted
+
+Read research/original-loader-metadata-tiny-proof-2026-10-18.json. Source
+d041ff2cc0d9fbd6b76db34e7479f376da1be710 pins stager106ae9cf/4483B,
+verifier9e3bcdae/12713B, launch7e1737a3/5587B, operations88bc7ade/7582B,
+preserver2935dcd1/5131B and evidence transport3f7d0d5d/3866B. Exact prior
+packet881af874/1411906B/40records and bookdc785f33/6471B/38records retained;
+bootstrap4fbc/helperd413/harness030c/ownerd1a/caller5b21/controller2e50 unchanged.
+
+ONE new bounded SYNTHETIC metadata attempt. Source stage4d0f18e9/19867B and
+independent prerequisites3b3e2248/21020B verified42 staged files/actual cached
+e0/linuxarm64/UID1000/Spark1/empty labelled jobs/absent run+review roots.
+Fresh admission8f132397 at1792308395342055889ns/MemAvailable10148966400B
+was scoped ONLY here/consumed/never reusable; headroom is NOT reservation or
+daemon/model/receipt RAM bound. Independently reviewed exact invocation.
+
+Actual eb9dddc46f890fae98bb1b4d6e9ef2c523dc8dcea1139566b6d1fc94aa93de3b
+exited0/noOOM07:26:36.177520499Z; fresh independent inspect confirms stopped.
+UID1000/noneRO/1CPU/2GiB=swap/PIDs32/tmp64/noHC/lognone/capdropALL; exactly
+auditRO+outRW only, no genuine backend/model/original/account/data/credentials/
+socket mounts. Actual children7/8 exited0/emptylogs/noownedstop; outer caller0.
+23outcomes pass:1positive actual partial31 reader twice/16helper refusals/
+6adapter binding refusals. Exact17fields and2paths match explicit isolated
+SYNTHETIC declaration/pure-path reference; no PaperState instance/full original
+module import/backend/numerics. Candidate actual unchanged SourceBook constructor/
+read validates full2446 MAP declaration but ONLY31 real files (29Python+2docs),
+2415 unread/authenticated=False; authenticate_all never called. Two injected
+negative callbacks UNIT refusals only. Changed/CURRENT paper fails wholeSHA
+first; no independently forced internal AST guard claim. No CallFence/body replay.
+
+Independent terminal232a49e1/40641B checks all23 named outcomes/actual2children/
+exact runtime/full source-run SHA+physical bookends. Created/stopped/fresh each
+exactly2 unique mount destinations and complete records equal by destination;
+source review caught duplicate-collapse/created omission before execution.
+Raw terminal proof and5small observations fetched/hashchecked. Exclusive
+scratch/n2-metadata-tiny-evidence-20261018-v1 retains137files1409835B plus
+manifestd28761ae/88949B; preserver fsynced/readback; distinct evidence-review-v1
+proofc085fef4/64658B verifies138files/twofullreads/exact original+copy physical
+fields. Every file <=262KiB/no cap exception; exact ns decimal strings.
+Source/run/prerequisite/review/transfer/evidence roots COMPLETE never replay/
+adopt/overwrite. Existing failed/completed roots/admissions preserved.
+
+Healthy existing worker READONLY reviewed source/fresh actual prerequisites/
+exact invocation/preservation/final scope; no new agent/limited-worker retry.
+AST/purpose30/JSON/fullSHA/hashlinks/diff pass; Ruff unavailable. Timeout,
+force-stop/transport-loss branches unexercised. No production/model/account/
+history/native source change, old65+4/tiny/diagnostic/v2 or completed gate rerun.
+
+NEXT ROOT: metadata helper/partial-reader acceptance boundary CLOSED; never
+rerun23 for docs. Continue SOURCE ONLY explicit separately versioned capacity
+modules: separate original archive admission/preservation from StreamAudit/
+nightly/account imports, loader dependencies from study/policy CLIs; preserve
+pure forward/calibration files at real paths. Review exact declarations,
+new identities/type/receipt paths and value/missingness/readonly/aliasing/
+deepcopy/allocation-lifetime parity under a NEW immutable executed-map contract.
+No runtime CodeType/AST projection masquerading as original, preload/injection,
+manifest/guard/G08/cap weakening or genuine launch. Model_import_strategy null;
+full2446 executable closure/runtime/resource admission and combinedRAM/horizon
+UNVERIFIED. Historical/weekday/intraday/fill/UI UNVERIFIED; original timingFAILED/
+publicationCLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/
+actualtwohost/Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Metadata tiny packet/caller prepared SOURCE ONLY; all23 UNRUN
 
 Read research/original-loader-metadata-tiny-source-proof-2026-10-18.json and

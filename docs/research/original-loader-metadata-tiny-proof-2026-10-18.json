@@ -1,0 +1,93 @@
+{
+  "schema": "original-loader-metadata-tiny-proof/1",
+  "status": "VERIFIED_METADATA_HELPER_PARTIAL31_ONLY",
+  "starting_revision": "1161adf67a1b533089d4f1b04fcbb5a101449e35",
+  "source_revision": "d041ff2cc0d9fbd6b76db34e7479f376da1be710",
+  "prior_source_proof": "original-loader-metadata-tiny-source-proof-2026-10-18.json",
+  "proposal": {"path": "original-loader-metadata-tiny-proposal-2026-10-18.json", "sha256": "f61ece6b752d20d61ce8b1815b315a9adcd34e321c038aceb2fee5bca4f73cd9", "bytes": 7900},
+  "packet": {"sha256": "881af8743066e336c4abf021b9c7a5ded1e8b0bb55d3f1df03aac7f0112d0a3e", "bytes": 1411906, "records": 40, "decoded_source_bytes": 1050161},
+  "source_book": {"sha256": "dc785f33272b61c4bb79c5c456cce8728aede1ac8ee69880e47817766221ef0f", "bytes": 6471, "records": 38},
+  "source_pins": {
+    "sources/original-loader-metadata-tiny-stage-2026-10-18.py": {"sha256": "106ae9cfed1c35993554b18ccaaaaed7f0f5c21091cf6a6325b3f4a83925b3fc", "bytes": 4483},
+    "sources/original-loader-metadata-tiny-verifier-2026-10-18.py": {"sha256": "9e3bcdaecc1ecba1901bb7a7bde55aea2903151a34a81bb6e3b40b8bdfd65441", "bytes": 12713},
+    "sources/original-loader-metadata-tiny-launch-2026-10-18.py": {"sha256": "7e1737a3d4d550c5c2694a7c001b9096d4f372e751773cbd3cacf459fbc7079c", "bytes": 5587},
+    "sources/original-loader-metadata-tiny-operations-2026-10-18.py": {"sha256": "88bc7ade68f92f3b591d69b23e82754e583e2a793b08859cb50fbc65c9265089", "bytes": 7582},
+    "sources/original-loader-metadata-tiny-preservation-2026-10-18.py": {"sha256": "2935dcd12302766f85236cb71de801e2e34df231461a84be829281dd04bff8fb", "bytes": 5131},
+    "sources/original-loader-metadata-tiny-evidence-transport-2026-10-18.py": {"sha256": "3f7d0d5db7c31d3f0e9620a370f84e52686da809b7c1e200063cc33db776eec7", "bytes": 3866}
+  },
+  "source_staging": {
+    "root": "/home/animallya96/scratch/n2-metadata-tiny-source-20261018-v1",
+    "stage_proof_sha256": "4d0f18e9b63d2d6e29a4170b5ad38525b2f85c4d2322b378da9cd9c81f6e6670",
+    "stage_proof_bytes": 19867,
+    "files": 41,
+    "stage_payload_execution": false,
+    "prerequisite_proof": {"root": "/home/animallya96/scratch/n2-metadata-tiny-prerequisites-20261018-v1", "sha256": "3b3e2248a10aae9592f4a14fa69bc7be4e3933555edf67cccaf8ef78d5fcc6d9", "bytes": 21020},
+    "prerequisite_scope": "42 staged files exact physical; actual cached e0/linuxarm64/UID1000/Spark1/empty labelled jobs/absent run and review roots; fresh 5GiB memory/4GiB disk/8192inode headroom, not reservations."
+  },
+  "admission": {
+    "sha256": "8f13239720ee7ef46c7f28b3fe64395c3867873f62eae7afb18553b761021ca4",
+    "bytes": 991,
+    "scope": "N2_METADATA_HELPER_PARTIAL31_ONLY",
+    "observed_at_ns": "1792308395342055889",
+    "MemAvailable_bytes": "10148966400",
+    "scratch_available_bytes": "2810904002560",
+    "scratch_inodes_available": "243503938",
+    "consumed_only_by_this_attempt": true,
+    "reservation_or_model_RAM_bound": false,
+    "genuine_execution_authorized": false
+  },
+  "runtime": {
+    "root": "/home/animallya96/scratch/n2-metadata-tiny-20261018-v1",
+    "cid": "eb9dddc46f890fae98bb1b4d6e9ef2c523dc8dcea1139566b6d1fc94aa93de3b",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "finished_at": "2026-10-18T07:26:36.177520499Z",
+    "exit": 0,
+    "OOMKilled": false,
+    "profile": "UID1000:1000/networknone/readOnly/1CPU/2147483648B RAM=swap/PIDs32/tmp64MiB/capDropALL/no-new-privileges/noHC/lognone; only auditRO and outRW binds",
+    "genuine_backend_model_account_original_data_credentials_socket_mounts": false,
+    "children": [{"pid": "7", "exit": 0, "owned_stop": null}, {"pid": "8", "exit": 0, "owned_stop": null}],
+    "child_stdout_stderr": "All empty",
+    "outer_caller_exit": 0,
+    "outer_caller_owned_stop": null,
+    "deadlines": "10s CPU/15s child wait/45s parent/75s phase/120s owner/150s launch/180s transport; perfile262KiB child logs, 2MiB transport logs. Timeout/force-stop/transport-loss branches unexercised."
+  },
+  "acceptance": {
+    "cases": 23,
+    "positive_partial31_reader_twice": 1,
+    "helper_expected_refusals": 16,
+    "adapter_expected_refusals": 6,
+    "unexpected_failures": 0,
+    "skip": 0,
+    "fields": 17,
+    "paths": ["/synthetic/no-account/paper/state.json", "relative-reference/paper/state.json"],
+    "reader": "Actual unchanged SourceBook constructor/read with full2446 MAP declaration,31 exact actual retained files (29Python+2docs),2415 unread/authenticated=False; authenticate_all not called. Exact class/bound read/root/pins/held-root-FD identity/unchanged attributes/31 source bookends checked.",
+    "reference": "Explicit isolated SYNTHETIC exact N2 PaperState declaration plus pure state_path CodeType from full compilation; no PaperState instance, full original module execution/import or backend/numerical/account imports. Field/path parity only.",
+    "negative_controls": "Changed/CURRENT paper refuse at wholeSHA first; separate descriptor schema/AST/field/path/31pin/bytes/type and adapter identity controls pass. Two injected negative callbacks are unit refusals only, never positive reader/genuine evidence.",
+    "unchanged": "Helperd413/bootstrap4fbc/harness030c/ownerd1a/caller5b21/controller2e50/old2446map/guard/G08/caps unchanged. No old65+4/tiny/diagnostic/v2 body replay."
+  },
+  "independent_terminal_proof": {
+    "root": "/home/animallya96/scratch/n2-metadata-tiny-independent-review-20261018-v1",
+    "sha256": "232a49e1b82416bd6565e94849bb795d773198bf10a7c2b3af2836626913de39",
+    "bytes": 40641,
+    "scope": "One fresh exactCID inspection; actual stopped runtime/isolation,23 named outcomes,2 distinct children,empty logs,17fields/path equality,31 source physical identities and all source/run beforeafter fullSHA/physical. Created/stopped/fresh each exactly2 unique mount destinations; complete records equal by destination, raw ordering retained."
+  },
+  "preservation": {
+    "root": "/home/animallya96/scratch/n2-metadata-tiny-evidence-20261018-v1",
+    "files": 137,
+    "bytes": 1409835,
+    "manifest_sha256": "d28761ae844893804852c9824a012486cee428b946f3954f9ff2f600b140d23f",
+    "manifest_bytes": 88949,
+    "independent_root": "/home/animallya96/scratch/n2-metadata-tiny-evidence-review-20261018-v1",
+    "independent_proof_sha256": "c085fef47c40c2bdde56682162fd335f6e3d5cca3caa1778df00478ef43ceef8",
+    "independent_proof_bytes": 64658,
+    "independent_files_including_manifest": 138,
+    "scope": "Exclusive/fsync/readback copies of source/run/prerequisite/terminal/transfer roots including launch/operations/transport receipts; two full reads match exact original and copied physical identities. Every file <=262KiB; no evidence-cap exception. Exact ns decimal strings.",
+    "local_root": "/tmp/n2-metadata-tiny-operations-20261018-v1",
+    "local_packet_root": "/tmp/n2-metadata-tiny-packet-20261018-v1",
+    "all_roots": "COMPLETE never replay/adopt/overwrite; old failed/completed roots and consumed admissions preserved."
+  },
+  "independent_review": "Existing healthy trading_action_consistency READONLY reviewed new stager/verifier, corrected complete mount uniqueness/equality before use, actual source/prerequisites and exact launch/caller before admission, then preservation source and retained final terminal/preservation proofs. No material overclaim found: partial31 only, genuine/model/RAM/history unverified. No new agent/limited-worker retry or worker operations.",
+  "validation": {"AST_purpose_functions": 30, "JSON_SHA_links": "PASS", "diff_check": "PASS", "Ruff": "UNAVAILABLE established environment; no lint claim", "production_change": false},
+  "next": "Metadata helper/partial-reader acceptance boundary closed; never rerun23 or old guard/tiny/diagnostic/v2 bodies for docs. Next SOURCE ONLY explicit separately versioned capacity modules: separate original archive admission/preservation from StreamAudit/nightly/account imports and loader dependencies from study/policy CLIs; retain pure forward/calibration files at real paths. Review exact declaration dependencies, new identities/types/receipt paths and value/missingness/readonly/aliasing/deepcopy/allocation-lifetime parity under a NEW immutable executed-map contract before proposing capacity execution. No runtime CodeType/AST projection masquerading as original, preload/injection or relaxed guard/G08/caps.",
+  "unchanged": {"model_import_strategy": null, "complete2446_source_runtime_admission": false, "genuine_loader_model_account_history_or_twohost_launch": false, "combined_model_receipt_RAM_full_horizon": "UNVERIFIED", "historical_weekday_intraday_fill_UI": "UNVERIFIED", "original_timing": "FAILED", "publication": "CLOSED", "missing_receipts": "STILL_MISSING", "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN", "Spark2_image_daemon_temp_RAM": "UNVERIFIED_NOT_ADMITTED", "heartbeat": "ACTIVE"}
+}
