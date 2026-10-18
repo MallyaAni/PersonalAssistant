@@ -1,0 +1,43 @@
+{
+  "embedded_bootstrap_AST": true,
+  "lint_claim": false,
+  "new_symbol_decoder_UNRUN_absent": true,
+  "purpose_comments": 17,
+  "requirements_sha256": "ca3503c0c58352297104f286ca8784422dc66612aa46ad27eb20f9bbfd51b40f",
+  "review_correction": "Explicit vn_file/vna_name string-table bases, vn_aux/vn_next current-Verneed bases and vna_next current-Vernaux base; prior drafts preserved, no decoder or remote replay.",
+  "schema": "callback-section-page-static/1",
+  "sources": [
+    {
+      "bytes": 4171,
+      "name": "observe-callback-section-page-v1-2026-10-18.py",
+      "purpose_comments": 4,
+      "sha256": "122a929d204ef3552346c098c9d3a29de69926f6f76092e782b41ff733b3dcf2"
+    },
+    {
+      "bytes": 4014,
+      "name": "prepare-callback-section-page-transport-v1-2026-10-18.py",
+      "purpose_comments": 3,
+      "sha256": "b98963e9a95ac0307b255019db733851ead85ada7e724259bebc2229e1f6d0a6"
+    },
+    {
+      "bytes": 7992,
+      "name": "callback-section-page-transport-v1-2026-10-18.py",
+      "purpose_comments": 3,
+      "sha256": "5820e07ec1ed9f9c37efc9b9e38b68ee6f899de03f35ef96eee6187825ef7598"
+    },
+    {
+      "bytes": 11706,
+      "name": "prepare-callback-symbol-contract-v1-2026-10-18.py",
+      "purpose_comments": 3,
+      "sha256": "0b0f67b2e233850e01aad1b42248edfaf0d3e0e4139c1370f4b721edb76b9b3d"
+    },
+    {
+      "bytes": 5028,
+      "name": "preserve-callback-section-page-v1-2026-10-18.py",
+      "purpose_comments": 4,
+      "sha256": "a837cf43e50d54075a931fe7faa92a5c0e23b069c5e9562a8f40aa617676ba2a"
+    }
+  ],
+  "unchanged_transport_function_ASTs": 3,
+  "warnings_as_errors_AST": true
+}

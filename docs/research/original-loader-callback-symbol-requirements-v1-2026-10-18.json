@@ -1,0 +1,250 @@
+{
+  "actual_loader_Python_build_authentication": null,
+  "binary": {
+    "bytes": 216280,
+    "physical": {
+      "st_blocks": "424",
+      "st_ctime_ns": "1792336168850649711",
+      "st_dev": "66306",
+      "st_ino": "60583191",
+      "st_mode": "33152",
+      "st_mtime_ns": "1792336168850649711",
+      "st_nlink": "1",
+      "st_size": "216280",
+      "st_uid": "1000"
+    },
+    "sha256": "9edf4136653a328edcc88dc97f6d828440ad96550c436cbe087951845c89903b"
+  },
+  "complete_header_type_absence_only": {
+    "SHT_GNU_verdef_1879048189": true,
+    "SHT_SYMTAB_SHNDX_18": true
+  },
+  "complete_selected_section_records": [
+    {
+      "fields": {
+        "addr": "704",
+        "addralign": "8",
+        "entsize": "24",
+        "flags": "2",
+        "info": "3",
+        "link": "4",
+        "name": "56",
+        "offset": "704",
+        "size": "3912",
+        "type": "11"
+      },
+      "file_payload": {
+        "bytes": "3912",
+        "offset": "704",
+        "sha256": "309a4e989e475865ca0a9dc58822ab7ca700b4986de76aa25ee30e1881af7900"
+      },
+      "header_offset": "214552",
+      "index": 3,
+      "name": {
+        "bytes": "7",
+        "hex": "2e64796e73796d",
+        "table_index": "56"
+      },
+      "raw_hex": "380000000b0000000200000000000000c002000000000000c002000000000000480f000000000000040000000300000008000000000000001800000000000000"
+    },
+    {
+      "fields": {
+        "addr": "4616",
+        "addralign": "1",
+        "entsize": "0",
+        "flags": "2",
+        "info": "0",
+        "link": "0",
+        "name": "64",
+        "offset": "4616",
+        "size": "2928",
+        "type": "3"
+      },
+      "file_payload": {
+        "bytes": "2928",
+        "offset": "4616",
+        "sha256": "3dc091bb5414bc6bb3b5125a7897552b4c1f88286db0f764c5bfa1c07ed93906"
+      },
+      "header_offset": "214616",
+      "index": 4,
+      "name": {
+        "bytes": "7",
+        "hex": "2e64796e737472",
+        "table_index": "64"
+      },
+      "raw_hex": "4000000003000000020000000000000008120000000000000812000000000000700b000000000000000000000000000001000000000000000000000000000000"
+    },
+    {
+      "fields": {
+        "addr": "7544",
+        "addralign": "2",
+        "entsize": "2",
+        "flags": "2",
+        "info": "0",
+        "link": "3",
+        "name": "72",
+        "offset": "7544",
+        "size": "326",
+        "type": "1879048191"
+      },
+      "file_payload": {
+        "bytes": "326",
+        "offset": "7544",
+        "sha256": "97a09d3e1605e2c90a3f910af87f9872e16f74cf875f7209c091849554ef1e77"
+      },
+      "header_offset": "214680",
+      "index": 5,
+      "name": {
+        "bytes": "12",
+        "hex": "2e676e752e76657273696f6e",
+        "table_index": "72"
+      },
+      "raw_hex": "48000000ffffff6f0200000000000000781d000000000000781d0000000000004601000000000000030000000000000002000000000000000200000000000000"
+    },
+    {
+      "fields": {
+        "addr": "7872",
+        "addralign": "8",
+        "entsize": "0",
+        "flags": "2",
+        "info": "2",
+        "link": "4",
+        "name": "85",
+        "offset": "7872",
+        "size": "64",
+        "type": "1879048190"
+      },
+      "file_payload": {
+        "bytes": "64",
+        "offset": "7872",
+        "sha256": "caf9292ad517765198a3397160436a71ad054259ce51627231214a69e5b67deb"
+      },
+      "header_offset": "214744",
+      "index": 6,
+      "name": {
+        "bytes": "14",
+        "hex": "2e676e752e76657273696f6e5f72",
+        "table_index": "85"
+      },
+      "raw_hex": "55000000feffff6f0200000000000000c01e000000000000c01e0000000000004000000000000000040000000200000008000000000000000000000000000000"
+    },
+    {
+      "fields": {
+        "addr": "0",
+        "addralign": "8",
+        "entsize": "24",
+        "flags": "0",
+        "info": "169",
+        "link": "28",
+        "name": "1",
+        "offset": "199776",
+        "size": "7896",
+        "type": "2"
+      },
+      "file_payload": {
+        "bytes": "7896",
+        "offset": "199776",
+        "sha256": "7a57ae75090eae63834cae88fd08fffa87c7c08a7fdba1ad5d9427bbb512fcac"
+      },
+      "header_offset": "216088",
+      "index": 27,
+      "name": {
+        "bytes": "7",
+        "hex": "2e73796d746162",
+        "table_index": "1"
+      },
+      "raw_hex": "010000000200000000000000000000000000000000000000600c030000000000d81e0000000000001c000000a900000008000000000000001800000000000000"
+    },
+    {
+      "fields": {
+        "addr": "0",
+        "addralign": "1",
+        "entsize": "0",
+        "flags": "0",
+        "info": "0",
+        "link": "0",
+        "name": "9",
+        "offset": "207672",
+        "size": "6405",
+        "type": "3"
+      },
+      "file_payload": {
+        "bytes": "6405",
+        "offset": "207672",
+        "sha256": "c0f6281a292da79a4fd245bd4ba5fe3632aac2a0864cb44e343ad1258279eff2"
+      },
+      "header_offset": "216152",
+      "index": 28,
+      "name": {
+        "bytes": "7",
+        "hex": "2e737472746162",
+        "table_index": "9"
+      },
+      "raw_hex": "090000000300000000000000000000000000000000000000382b0300000000000519000000000000000000000000000001000000000000000000000000000000"
+    }
+  ],
+  "dependency_origin_observer": null,
+  "dependency_origin_requirements": [
+    "Existing ordered DT_NEEDED libm.so.6 and libc.so.6 remain names only. No resolved directories, host substitutes or transitive providers may be guessed. Symbol rows and GNU version names also remain declarations.",
+    "Official CPython3.12.14 importdl.c uses module spec name/origin and derives the init lookup name; dynload_shlib.c obtains interpreter flags, calls dlopen then dlsym. Matching upstream tag is reference source, not authentication of this installed Python binary/build, actual flags, mapped providers or executed initialization.",
+    "Official glibc2.42 elf.h supplies GNU record layouts; dl-version.c walks required/version-provider records; dl-load.c contains loader search behavior. Actual N2 loader/libc build and configuration are still unauthenticated. No upstream version is adopted as an installed version.",
+    "Before any origin/compatibility claim bind actual interpreter and loader bytes/build, relevant environment/search state/cache/config/preloads/security mode/namespace and already-loaded/global symbols, complete provider bytes/aliases/physical identities/versions and transitive dependencies under separately reviewed bounded DATA observers. Existing package source/METADATA does not supply these proofs.",
+    "No package import, dlopen/dlsym, ldd/readelf, native execution, other19 native-body read, host-library substitution, cap relaxation, account/provider/model access or original/production mutation is authorized by this contract."
+  ],
+  "derived_table_row_counts_NOT_decoded_symbols": {
+    "section_27": 329,
+    "section_3": 163,
+    "section_5": 163
+  },
+  "execution_authorized": false,
+  "independent_and_resource_requirements": [
+    "Separate independent implementation must not import or call primary; independently reconstruct every field, raw span, string, relation, gap, page, order and complete canonical byte result from authenticated binary and source pins, not compare counts only.",
+    "Input/file262144, string4096, page<=65536 encoded bytes AND<=64 records, max256 pages, output/canonical16MiB; charge every whole-input/table/record/string/gap hash byte to one unchanged16MiB work ledger before hashing. Bound all loops before traversal. Refuse a single oversized record rather than split or truncate it.",
+    "Prepare independent positive and refusal fixtures with known values for both symbol arrays, duplicates/substring/nonUTF8/zero names, undefined/reserved/XINDEX, bad links/widths/bounds/local partition, versym mismatch/high bits, version chain cycles/overlaps/counts/revisions/gaps and hash/page/record budgets; do not rerun old37.",
+    "Exact source/invocation/resource review BEFORE any new decoder/fixture/binary use; finite owned children/CPU/AS/wall/file/log cleanup and fresh headroom. Headroom and helper limits are not a native/model/daemon memory reservation or combined peak bound."
+  ],
+  "native_runtime_admission": null,
+  "new_fixture_harness": null,
+  "new_independent_decoder": null,
+  "new_symbol_decoder": null,
+  "new_symbol_invocation": null,
+  "page_bytes": 15279,
+  "page_original_physical": {
+    "st_blocks": "32",
+    "st_ctime_ns": "1792339131787968529",
+    "st_dev": "66306",
+    "st_ino": "60583215",
+    "st_mode": "33152",
+    "st_mtime_ns": "1792339131787968529",
+    "st_nlink": "1",
+    "st_size": "15279",
+    "st_uid": "1000"
+  },
+  "page_sha256": "43ce64015bf67ad315821caa994123c7134d55e4dabb89c7bea9414607a5daa3",
+  "prior_independent_sha256": "20c33344ece0c69c550f23771dbea6d9ab8d1eb6c2344a6fac2366224d817889",
+  "proposed_domain": "Exact authenticated ELF64 little-endian callback; two 24-byte symbol arrays, linked string tables, 2-byte versym array and bounded GNU verneed chains. No relocations or runtime resolution.",
+  "references_read_only_NOT_actual_runtime_build_certificates": [
+    "https://gabi.xinuos.com/elf/05-symtab.html",
+    "https://raw.githubusercontent.com/bminor/glibc/glibc-2.42/elf/elf.h",
+    "https://raw.githubusercontent.com/bminor/glibc/glibc-2.42/elf/dl-version.c",
+    "https://raw.githubusercontent.com/bminor/glibc/glibc-2.42/elf/dl-load.c",
+    "https://raw.githubusercontent.com/python/cpython/v3.12.14/Python/importdl.c",
+    "https://raw.githubusercontent.com/python/cpython/v3.12.14/Python/dynload_shlib.c"
+  ],
+  "schema": "callback-selected-symbol-version-requirements/1",
+  "selection_basis": "Numeric section types, complete header records, links and exact spans; names retained as byte data only.",
+  "status": "SOURCE_DATA_REVIEWED_REQUIREMENTS_ONLY_NO_NEW_SYMBOL_OR_VERSION_DECODER",
+  "symbol_requirements": [
+    "Authenticate full binary and complete prior section page by SHA, size and decimal physical identity with two held/named reads and later full bookends. Reuse authenticated header declarations, never rerun closed decoders for documentation.",
+    "Before parsing verify each selected section header raw bytes at header_offset and each complete payload SHA/offset/size against retained records; verify exact numeric type/link/entsize and divisible sizes. Strings must use the numeric linked SHT_STRTAB, not a section-name lookup.",
+    "Preserve every symbol in both arrays in table/index order, including all-zero index zero and duplicates: st_name u32, st_info u8, st_other u8, st_shndx u16, st_value u64, st_size u64; full rawhex, file offsets and per-record span hashes. Keep full st_info/st_other and report bit projections separately under named reference conventions.",
+    "Preserve arbitrary byte names as hex with exact linked-table index, byte length and terminating-NUL span; permit zero/substring/duplicate names, no UTF8 assumption. Every name must terminate inside its linked table and fit the unchanged 4096-byte string bound.",
+    "Do not dereference st_value or allocate st_size. Preserve undefined/reserved indices as raw declarations; classify SHN_XINDEX as explicitly unsupported without a reviewed companion-table domain. Classify out-of-range ordinary section indices precisely. sh_info local partition is a validation obligation, not proof of exported/callable/loaded symbols."
+  ],
+  "version_requirements": [
+    "Preserve every raw u16 versym value by dynamic-symbol index; require exact count equality 163. Retain raw value, low15 index and high bit separately; do not map version 0/1 or reserved indices to invented dependency entries.",
+    "Decode each Verneed as u16 version,u16 count,u32 file,u32 aux,u32 next and each Vernaux as u32 hash,u16 flags,u16 other,u32 name,u32 next. vn_file and vna_name are offsets into the linked string table; vn_aux and vn_next are relative to the current Verneed, while vna_next is relative to the current Vernaux. Check bounds before each read, finite count, alignment, progress, cycles, overlaps, auxiliary count and terminating next zero. Preserve uncovered bytes as exact gap spans, never silently discard them.",
+    "Section6 sh_info declares 2 top-level records, not 2 already decoded dependencies. Require complete chain/count agreement and linked section4 strings. Preserve all raw fields, hashes, names, repeated names/indices and auxiliary order. Unknown structure revision must refuse as unsupported domain; malformed pointers/counts get distinct bounded refusals.",
+    "Retain version associations as explicit byte declarations with multiplicity. Report ambiguous or missing associations rather than inventing a unique provider. No version-definition section in the complete header type set does not certify provider availability or version compatibility."
+  ]
+}
