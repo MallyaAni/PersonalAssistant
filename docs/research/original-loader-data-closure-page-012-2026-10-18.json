@@ -1,0 +1,709 @@
+{
+  "records": [
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "456f9673fcf6b879c30fc55cb86321b2f824ce1e9673623149016a57ecebfceb",
+        "end_line": 88,
+        "line": 74,
+        "module": "backend.market.panel",
+        "path": "backend/market/panel.py",
+        "qualname": "Panel.theme_returns"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "c5a868dc1353e1c27b436070dd85ceea624bc771b7e1ffb927f638b03647de2d",
+        "end_line": 102,
+        "line": 94,
+        "module": "backend.market.panel",
+        "path": "backend/market/panel.py",
+        "qualname": "Panel.theme_return_matrix"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "e636fcd8e70aa05c8d6de1a6c7551817cc3865c2096c8dfce3e8f28f5c2fc08b",
+        "end_line": 113,
+        "line": 107,
+        "module": "backend.market.panel",
+        "path": "backend/market/panel.py",
+        "qualname": "Panel.rolling_beta"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "6011bcb22205e88e3065ee90495b8fb8c19101ba1e7d291c05d59c8472c5f9fd",
+        "end_line": 123,
+        "line": 119,
+        "module": "backend.market.panel",
+        "path": "backend/market/panel.py",
+        "qualname": "Panel.forward_residual"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "4faa954ad2fab5f233515e8a10e6ce825de412cf9255768c2f1e22f09e9a7116",
+        "end_line": 135,
+        "line": 127,
+        "module": "backend.market.panel",
+        "path": "backend/market/panel.py",
+        "qualname": "Panel.forward_log_returns"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "ee91185a024b205d47eac9a41885316b53ab1d31eb2ff9bdd312b5eedf4aa7bb",
+        "end_line": 149,
+        "line": 140,
+        "module": "backend.market.panel",
+        "path": "backend/market/panel.py",
+        "qualname": "_log_ratio"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "225f7403a6c0dae0d564f92bc66e422cf27d165c792640eed368f79bd9f4d6c2",
+        "end_line": 198,
+        "line": 157,
+        "module": "backend.market.panel",
+        "path": "backend/market/panel.py",
+        "qualname": "panel_from_histories"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "c79f8443604f09dfe2b60c6c81cc2879b64a09e755ed4b7234df65597f545f6b",
+        "end_line": 218,
+        "line": 204,
+        "module": "backend.market.panel",
+        "path": "backend/market/panel.py",
+        "qualname": "build_panel"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "eb98dc254aaf4a33f5783435af2d5ded9d7fe221b9bdf69f50d7293e690dfeee",
+        "end_line": 49,
+        "line": 48,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "_partition"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "9b263545f2888bcaa6a0c6bed56a33285dc1d7181076bb395692afd23a4b5840",
+        "end_line": 60,
+        "line": 54,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "_partition_date"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "e006ce5fb0ea06f30407274e1c39ba8154c04fb38e6d08137c57164f381e49e4",
+        "end_line": 68,
+        "line": 67,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "MarketStore.__init__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "0f71effcd77256477ee1e100bf55f6b9f1511004bd058cea57727d6ed038878f",
+        "end_line": 72,
+        "line": 71,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "MarketStore._path"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "2f5f983b3aa7e5d445542437a06340648c4cc77710c5cccf6172ab5b285c84aa",
+        "end_line": 77,
+        "line": 75,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "MarketStore.has"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "71ab11bb47947f1a0064d13fa73a53d07b3430e25298946dfa0862659780104e",
+        "end_line": 128,
+        "line": 81,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "MarketStore.write"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "f04328246e6018ce06060258750443a94a3f55096fef80b8a1d09a65b5adbd34",
+        "end_line": 156,
+        "line": 134,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "MarketStore.write_frame"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "9db4875133e37fb9343fbf51c738dc19adbcc28979def278760afad429a2be31",
+        "end_line": 161,
+        "line": 159,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "MarketStore.has_frame"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "06ac9fb2a2fbe9bac43dcc2947d229b8356785f80ab9613a1583d95c9db305c7",
+        "end_line": 178,
+        "line": 165,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "MarketStore.read_frame"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "def7424ac0213bd74d1360f976f096d4db050cbdaf1f24dbd437a7051b57278f",
+        "end_line": 193,
+        "line": 181,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "MarketStore._latest_of_kind"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "c6aa8187784dc9b002880336a82fce3b272c46575f559acbabe2b80ff5afc8cb",
+        "end_line": 206,
+        "line": 196,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "MarketStore.asofs"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "f0f92f54bc2be470e79d6de5752cc426751ab655192f0bd50066088b86b3eb0e",
+        "end_line": 214,
+        "line": 209,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "MarketStore.tickers"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "c7492ba569c8d10d5b7b4980d6e861df6ec4f0ef20f2404ad4b484721a3766d4",
+        "end_line": 224,
+        "line": 218,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "MarketStore.latest_asof"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "d56a7a549be8b372e8cadc63d0aec11c750edab82ea074416b3a1f2643e608a6",
+        "end_line": 244,
+        "line": 227,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "MarketStore.observed_sessions"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "0bc56ce5e4630b983d4e319d1d06897ce13ccbada0933492c0010465a249c29f",
+        "end_line": 289,
+        "line": 248,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "MarketStore.read"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "099836c84235b94db564c8edd53e7f1233ef39c990035856a6f700d88264ebe5",
+        "end_line": 327,
+        "line": 293,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "MarketStore.describe"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "13a74419b8f7f07c98d936b27972e23086950666efec934ac6fd9894fbf3df03",
+        "end_line": 334,
+        "line": 331,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "_write_atomically"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "d67e69c2f25a56e6dc751d3e5b730901e81d7c458f1773e74f60eae2bdffc94b",
+        "end_line": 341,
+        "line": 339,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "summarize"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "42ab6db3e7e7d5e75b89767707a33a2dad4aed7457fb9ee5f2e4e0e3081fc5f6",
+        "end_line": 62,
+        "line": 28,
+        "module": "backend.market.market_conditioned_holding",
+        "path": "backend/market/market_conditioned_holding.py",
+        "qualname": "_MarketCalibration._bind"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "43203cef2ce35142366fdc30ed86540b7399017900fc3e5aec5df20513511fc4",
+        "end_line": 99,
+        "line": 65,
+        "module": "backend.market.market_conditioned_holding",
+        "path": "backend/market/market_conditioned_holding.py",
+        "qualname": "_MarketCalibration._stock_fit"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "39279b91984de1bd6a3d67357fe57ffdb0849dc0745c335f3bb00e166b27e41c",
+        "end_line": 195,
+        "line": 102,
+        "module": "backend.market.market_conditioned_holding",
+        "path": "backend/market/market_conditioned_holding.py",
+        "qualname": "_MarketCalibration._distribution"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "1a0a03c4a435f5c1c5895db3bccda2cf19af931311219cb9b767af5a30f7582b",
+        "end_line": 204,
+        "line": 201,
+        "module": "backend.market.market_conditioned_holding",
+        "path": "backend/market/market_conditioned_holding.py",
+        "qualname": "MarketConditionedHoldingReader.__init__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "9b8aa25ef3edb6ec5f9b50026f22020ecf332c2102f9cffabe0ccfffe2d00762",
+        "end_line": 208,
+        "line": 207,
+        "module": "backend.market.market_conditioned_holding",
+        "path": "backend/market/market_conditioned_holding.py",
+        "qualname": "MarketConditionedHoldingReader.distribution"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "ebac2b0fc8c08a145bbefdf953813c381e18a4cb6fc61981eea319867383c90c",
+        "end_line": 219,
+        "line": 216,
+        "module": "backend.market.market_conditioned_holding",
+        "path": "backend/market/market_conditioned_holding.py",
+        "qualname": "ForwardMarketConditionedHoldingReader.__init__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "9b8aa25ef3edb6ec5f9b50026f22020ecf332c2102f9cffabe0ccfffe2d00762",
+        "end_line": 223,
+        "line": 222,
+        "module": "backend.market.market_conditioned_holding",
+        "path": "backend/market/market_conditioned_holding.py",
+        "qualname": "ForwardMarketConditionedHoldingReader.distribution"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "e028d5f0922557c098c2bf1a1ec6676add17458d68da48258ab83887efa1419e",
+        "end_line": 84,
+        "line": 72,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "Calibration.distribution"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "d46eb777c1e594f0eaa853b01717e257501517af71006e7aae3202ff2dc2cf7c",
+        "end_line": 100,
+        "line": 88,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "weighted_quantiles"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "c50e06dbef75265f8b5f8b58cb8cb88e41031a267724df1dc81f8a36d963c6d8",
+        "end_line": 125,
+        "line": 104,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "_sample"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "ab0445b54294b68e28aa55de9355adbfd988885d2094b3cf231bbe515fed5b81",
+        "end_line": 130,
+        "line": 129,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "_utc"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "400b3d2f0649b848f6aa1122d844578ce5f12c640c85c566cbfa85dfcc6deac8",
+        "end_line": 156,
+        "line": 134,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "_clocks"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "2c1f87f7d85cbf09bb01deaba373ecd6677881b9e08954b6abada02716c813fe",
+        "end_line": 207,
+        "line": 160,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "_validate"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "b09c96b3ed970d607162fd35615d3f046f92f171b1081c0a9fc286863a3839a3",
+        "end_line": 239,
+        "line": 211,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "_endpoints"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "758e7310d92d6ed10bc394af021ee2c39d0d24817fcc6e5dcd00176f4bc2ae5a",
+        "end_line": 289,
+        "line": 243,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "_identity"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "82fbab78227a69a5558d6f4fd7b3abb539b506aa1271790e2c5f531c6f168fa3",
+        "end_line": 481,
+        "line": 293,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "calibrate"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "6f3a6cfafda2d7467bdb53fa59427f67f98fa489eca12cfa6fdf3580a8820b30",
+        "end_line": 523,
+        "line": 485,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "decision"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "3a6b2e556c0e448508d8aafae0c74e7a7c2ee58ea05a38eb88c4c36722db27f0",
+        "end_line": 73,
+        "line": 61,
+        "module": "backend.market.allocation_controls",
+        "path": "backend/market/allocation_controls.py",
+        "qualname": "_validate_prices"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "5c4fb8aa96c0cd9943ca0e8a6bb9a95096ae62abd4d10ca275a2495e13fd3464",
+        "end_line": 94,
+        "line": 79,
+        "module": "backend.market.allocation_controls",
+        "path": "backend/market/allocation_controls.py",
+        "qualname": "adjusted_open"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "36b7cb3bfa9d2529325241201f9c14a05a8562f1d553d7b1062396644a07fda3",
+        "end_line": 196,
+        "line": 98,
+        "module": "backend.market.allocation_controls",
+        "path": "backend/market/allocation_controls.py",
+        "qualname": "constant_exposure"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "8f586bcc5fb3ef2af8d0c6b1b275af409f81cd38c922fd1d98c774507facff30",
+        "end_line": 217,
+        "line": 200,
+        "module": "backend.market.allocation_controls",
+        "path": "backend/market/allocation_controls.py",
+        "qualname": "_read_bar_partition"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "6aef50e43c5641369e1c95b0e1b0023e67c8881794b713d9e807d8e6cda8eacf",
+        "end_line": 239,
+        "line": 221,
+        "module": "backend.market.allocation_controls",
+        "path": "backend/market/allocation_controls.py",
+        "qualname": "_verify_bars_against_cache"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "e7e872dc3318366544f3998cc3f76c2e50e1e2851a73b7df79da460bc6586e38",
+        "end_line": 249,
+        "line": 243,
+        "module": "backend.market.allocation_controls",
+        "path": "backend/market/allocation_controls.py",
+        "qualname": "_sha256"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "2b01eff2da5c13827888fc24c7d2bde843838483419467ddf4ce8f1d95511538",
+        "end_line": 271,
+        "line": 253,
+        "module": "backend.market.allocation_controls",
+        "path": "backend/market/allocation_controls.py",
+        "qualname": "_load_benchmark_cache"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "d5336a7febb6622b2005b008b83c1df69d8eebbf30e705b661d6b13434cd1df1",
+        "end_line": 293,
+        "line": 275,
+        "module": "backend.market.allocation_controls",
+        "path": "backend/market/allocation_controls.py",
+        "qualname": "_ticker_adjusted_opens"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "6492c8ddc542c6a583b6f1d1a95dda99f8d3c00d71e3506219005d3753b7104d",
+        "end_line": 374,
+        "line": 297,
+        "module": "backend.market.allocation_controls",
+        "path": "backend/market/allocation_controls.py",
+        "qualname": "build_adjusted_opens"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "c8a14695f2ed72bb3ccb6ac9056a3802b57be78ae5448e348b9f5028f3bf5793",
+        "end_line": 99,
+        "line": 98,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "_session_date"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "795ca957edfc542be242bbfe318d4ee3b1a97437bfb25d374dff4cbc40e6ff17",
+        "end_line": 107,
+        "line": 103,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "_at"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "12b6dacd527d0b7a0dd2225f6a99fe3b9b2a28718e2795230856f423526df6b1",
+        "end_line": 125,
+        "line": 113,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "_last_bar_is_in_progress"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "abac12c10994c46a3a16d614f7323912cf627215ba25aa06ef6dc2980dd99bce",
+        "end_line": 153,
+        "line": 129,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "_parse_actions"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "56b9ba39bd2fa5b2984c436d397a734f6b2218fa361ad9e37178f6aca35a8a8c",
+        "end_line": 214,
+        "line": 161,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "parse_chart_payload"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "8d4a6f3746df6b3dc6765ab276127711b6f35dfe54f9c21321e94ffc8b0cd33b",
+        "end_line": 228,
+        "line": 219,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "impersonating_transport"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "303e1c2508548f08c7fb51e03a7fc32bf549bf054aff94be7faa652e41fc57d4",
+        "end_line": 245,
+        "line": 236,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "Pacer.__init__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "1df45d07a754c1f4f9d0cae4836e717431ecf9f66f82309808a641bb773ad7b8",
+        "end_line": 254,
+        "line": 248,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "Pacer.wait"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "734e3f17ef20075a57be05d90dcc7ab8172cf57a122e73fa6a7b60ba5f8ebdb4",
+        "end_line": 266,
+        "line": 259,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "_backoff_seconds"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "b9561472fb0d6408f7a833e5fa1168e0929cf8ab1726d103847e50f1d4473ba7",
+        "end_line": 281,
+        "line": 270,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "chart_url"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "2762c83615c45f6c34d4fa41fda98cbb7dc8801784b6d2f816ee8bbfe9aaf994",
+        "end_line": 342,
+        "line": 288,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "fetch_history"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "b455442800d5ecc823f1a62df517fe285f0aeba7dfaa542d3b1ad6267ab909d9",
+        "end_line": 37,
+        "line": 23,
+        "module": "backend.market.market_conditioned_calibration",
+        "path": "backend/market/market_conditioned_calibration.py",
+        "qualname": "_context"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

@@ -1,0 +1,773 @@
+{
+  "records": [
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 207,
+        "module": "backend.market.learned_retention_models",
+        "owner": "_fit_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "base._array_hash",
+        "terminal_name": "_array_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 208,
+        "module": "backend.market.learned_retention_models",
+        "owner": "_fit_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "base._array_hash",
+        "terminal_name": "_array_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 211,
+        "module": "backend.market.learned_retention_models",
+        "owner": "_fit_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 214,
+        "module": "backend.market.learned_retention_models",
+        "owner": "_fit_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.flatnonzero",
+        "terminal_name": "flatnonzero"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 214,
+        "module": "backend.market.learned_retention_models",
+        "owner": "_fit_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite(features).any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 214,
+        "module": "backend.market.learned_retention_models",
+        "owner": "_fit_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 215,
+        "module": "backend.market.learned_retention_models",
+        "owner": "_fit_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "columns.tolist",
+        "terminal_name": "tolist"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 216,
+        "module": "backend.market.learned_retention_models",
+        "owner": "_fit_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 219,
+        "module": "backend.market.learned_retention_models",
+        "owner": "_fit_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "base._estimator",
+        "terminal_name": "_estimator"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": true,
+        "line": 221,
+        "module": "backend.market.learned_retention_models",
+        "owner": "_fit_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "model.fit",
+        "terminal_name": "fit"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 223,
+        "module": "backend.market.learned_retention_models",
+        "owner": "_fit_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_ObservedHead",
+        "terminal_name": "_ObservedHead"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 228,
+        "module": "backend.market.learned_retention_models",
+        "owner": "predict",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 228,
+        "module": "backend.market.learned_retention_models",
+        "owner": "predict",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 231,
+        "module": "backend.market.learned_retention_models",
+        "owner": "predict",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 235,
+        "module": "backend.market.learned_retention_models",
+        "owner": "predict",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isinf(features).any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 235,
+        "module": "backend.market.learned_retention_models",
+        "owner": "predict",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isinf",
+        "terminal_name": "isinf"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 237,
+        "module": "backend.market.learned_retention_models",
+        "owner": "predict",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 238,
+        "module": "backend.market.learned_retention_models",
+        "owner": "predict",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.full",
+        "terminal_name": "full"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 239,
+        "module": "backend.market.learned_retention_models",
+        "owner": "predict",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "valid.any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 240,
+        "module": "backend.market.learned_retention_models",
+        "owner": "predict",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "model.predict",
+        "terminal_name": "predict"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 241,
+        "module": "backend.market.learned_retention_models",
+        "owner": "predict",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 250,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_validate",
+        "terminal_name": "_validate"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 251,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.full",
+        "terminal_name": "full"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 252,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.full",
+        "terminal_name": "full"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 252,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 259,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 260,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "list",
+        "terminal_name": "list"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 261,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "list",
+        "terminal_name": "list"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 264,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "platform.python_version",
+        "terminal_name": "python_version"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 270,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 270,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "path.relative_to",
+        "terminal_name": "relative_to"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 270,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path(__file__).resolve",
+        "terminal_name": "resolve"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 270,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 270,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "hashlib.sha256(path.read_bytes()).hexdigest",
+        "terminal_name": "hexdigest"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 270,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "hashlib.sha256",
+        "terminal_name": "sha256"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 271,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "path.read_bytes",
+        "terminal_name": "read_bytes"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 274,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path(__file__).resolve",
+        "terminal_name": "resolve"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 274,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 275,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path(base.__file__).resolve",
+        "terminal_name": "resolve"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 275,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 276,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path(learned_entry_data.__file__).resolve",
+        "terminal_name": "resolve"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 276,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 277,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path(allocation_controls.__file__).resolve",
+        "terminal_name": "resolve"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 277,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 278,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path(__file__).resolve",
+        "terminal_name": "resolve"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 278,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 283,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "base._array_hash",
+        "terminal_name": "_array_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 298,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "base._json_hash",
+        "terminal_name": "_json_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 302,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "dates.astype",
+        "terminal_name": "astype"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 304,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "threadpool_limits",
+        "terminal_name": "threadpool_limits"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 305,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.unique",
+        "terminal_name": "unique"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 306,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.flatnonzero",
+        "terminal_name": "flatnonzero"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 307,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 308,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "training_days",
+        "terminal_name": "training_days"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 309,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_fit_head",
+        "terminal_name": "_fit_head"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 312,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_fit_head",
+        "terminal_name": "_fit_head"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 314,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 315,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 318,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "predict",
+        "terminal_name": "predict"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 319,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "predict",
+        "terminal_name": "predict"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 322,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 324,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 325,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "manifest['months'].append",
+        "terminal_name": "append"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 327,
+        "module": "backend.market.learned_retention_models",
+        "owner": "walk_forward",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

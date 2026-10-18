@@ -1,0 +1,709 @@
+{
+  "records": [
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "ec590d825494cd683b3a4654bca9fd9db8a0b0f5330318850c9a4c54dfade238",
+        "end_line": 196,
+        "line": 178,
+        "module": "backend.market.capacity_original_archives_v2",
+        "path": "backend/market/capacity_original_archives_v2.py",
+        "qualname": "preserved_archives"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "0f4163611ce0bc40358ee49a9ef0fc10b5a6a2c2f0ec03bd30dfdc6b54a6af7f",
+        "end_line": 27,
+        "line": 25,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "require"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "29c444d8c95ce3c01373a3d20756f73aca96d87953724c69e29cddeadedd10c2",
+        "end_line": 37,
+        "line": 31,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "expected_digest"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "7c7dd279b4196fdec25c5b8c709afbc977e5a549b92e26c282845f5072142706",
+        "end_line": 49,
+        "line": 41,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "file_identity"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "7c02bbfc785e3fe4903f3325bb1b7166902b8b78cab43aba8adefed144cb24b0",
+        "end_line": 58,
+        "line": 53,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "stable_file"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "d370456e2703b2942ed3ca90026d1a33e31d8d63fab0e4e7c7c7c9a8b51be8e9",
+        "end_line": 78,
+        "line": 62,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "pinned"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "2247c6c32e6a12c102465fbf7e03f78a0699dc6aedf2d3118febed6bfb8d1290",
+        "end_line": 96,
+        "line": 82,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "authenticate_file"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "dd71d527cd1bb5630ed011fd78cea36cc1ce98a2665a76c59dc0303baf1448b7",
+        "end_line": 105,
+        "line": 100,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "unique"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "5a8b2216cf8217a524190cea04e55b430e26a18164b840ca755c06060486f3ce",
+        "end_line": 110,
+        "line": 109,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "reject_constant"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "d6897f3262f679933c3367acd2d0b24de0e48530d10703c4ea29be6a24fd7696",
+        "end_line": 117,
+        "line": 114,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "finite_float"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "ca0918cde84c778d115a355ed0e91991c100c21495d957e311e5f07fda88824f",
+        "end_line": 128,
+        "line": 121,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "strict_json"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "a0993e875d5edf2d116f72546299da7acb2249cbbe467f2bfa113dc7ecf29b7f",
+        "end_line": 133,
+        "line": 132,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "_immutable"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "24d0cd61122edf9f337d602b119362f3995a8a64c9f8380fb3098182389a3736",
+        "end_line": 144,
+        "line": 141,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "_ReadOnlyDict.__new__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "73c48ffae9e73df17e41e918cbaf3207f37df41603f60f2a86646893d0359e38",
+        "end_line": 148,
+        "line": 147,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "_ReadOnlyDict.__init__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "f74f4217862c08dc2e20d0fb71aeef7c47c2085717f7e01a601d940ddf0ae980",
+        "end_line": 152,
+        "line": 151,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "_ReadOnlyDict.__deepcopy__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "d7f12c4ac44d69527245b8c0cf1f60907b1fb9cf64fa2a14035e85c0b508ae5c",
+        "end_line": 166,
+        "line": 163,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "_ReadOnlyList.__new__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "73c48ffae9e73df17e41e918cbaf3207f37df41603f60f2a86646893d0359e38",
+        "end_line": 170,
+        "line": 169,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "_ReadOnlyList.__init__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "f74f4217862c08dc2e20d0fb71aeef7c47c2085717f7e01a601d940ddf0ae980",
+        "end_line": 174,
+        "line": 173,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "_ReadOnlyList.__deepcopy__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "4fdbaebe946360311fc826aa610f79b575f6c3968cda1ae95941a17f841967a9",
+        "end_line": 186,
+        "line": 181,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "_freeze"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "a6f93cc1ae1be32188db9ab3e4a0935ab53c3a0ec29b2020140c79eb78ce1351",
+        "end_line": 199,
+        "line": 190,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "archive_value"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "61326a9f2c20d277ff5d69624c891b91425305f22e4d5acd7fb8d3d9e4967cc7",
+        "end_line": 33,
+        "line": 31,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "require"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "db6e8905b367867f76927977cae49d094c3c2b0138bb0487b49dca5b644ca3f3",
+        "end_line": 44,
+        "line": 37,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "digest_value"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "69382a85ac63d3d47f8d2464128e67b6939bdf7ffe5a91f51f3963cf08d070a8",
+        "end_line": 53,
+        "line": 48,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "unique"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "5780265ae2977066fb83f5f10f8644a6c68a261760866cf6d9340bf217fefd03",
+        "end_line": 58,
+        "line": 57,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "constant"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "9dbcd3f2d9dc4c77e6d50786a0b64bac711534fcafc8ac32099bbd13e5cb9884",
+        "end_line": 65,
+        "line": 62,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "finite"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "6c6fe6171a2f6b532c59f7f76616c5610b8b80dcdf56a7724a78b1fcdabeadd2",
+        "end_line": 73,
+        "line": 69,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "decode"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "ae283306553f3944ab34cb1be911bc7c912cfb13de7dab529e02e313874e3a46",
+        "end_line": 88,
+        "line": 77,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "canonical"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "7976507cac308c6dee6646bfa5bb3a783e58ec336f75bcf32307c39780cbac4f",
+        "end_line": 101,
+        "line": 92,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "physical"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "5bdb93e55c3e3138b0a42bef7733191857128b220fd11cecc8c3350a79c92a8a",
+        "end_line": 113,
+        "line": 105,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "identity"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "2c4e99431505b6ab74b856c388e5f24dfdde457267de8228725b9906a984476f",
+        "end_line": 122,
+        "line": 117,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "unchanged"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "92f8b9757ff30fd4ae91c50946fc6985694b7fc9ea917620dd7556881df10781",
+        "end_line": 137,
+        "line": 126,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "stream_file"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "0666d2cf5fa467b50b2d147bb614f109fe399258039839adff4e83365a19239e",
+        "end_line": 152,
+        "line": 141,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "metadata"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "81f7d26b130e360c654c9bf7f86b34d9cd2e1e1c63651da22b890b5bd417b66d",
+        "end_line": 171,
+        "line": 164,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "Pins.__post_init__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "9b891cd79b43fdf82255d88971bc17a626e6400da4635b70d26e6dc3057b908a",
+        "end_line": 200,
+        "line": 175,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "mounts_from_receipt"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "6cc4fe74fb0eaebf7f1a3ff26fe1845c1281e2678d182075daa0a8218db34409",
+        "end_line": 213,
+        "line": 204,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "mapped_input"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "bc152bbb049d7fc9d29381b7349d8a48ab7837f144c2d32f1bffa8332edaa871",
+        "end_line": 266,
+        "line": 217,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "resolve_input"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "184e34521d93fc38f694562caacc4e1e3662babf7266ba4d4eff422ddb5113e2",
+        "end_line": 272,
+        "line": 270,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "verify_sha_map"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "5f7cd46c283923378fe456ed299390bf7db05c94a69af9904a04d33ae6a2fe62",
+        "end_line": 386,
+        "line": 276,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "authenticate"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "096c44e168a8dff16eb7f7f0d4192db3ed66f6442ba9caee6a8ef667b6ddb67d",
+        "end_line": 20,
+        "line": 10,
+        "module": "backend.market.capacity_original_durability_v1",
+        "path": "backend/market/capacity_original_durability_v1.py",
+        "qualname": "sync_directory"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "ad3cc25e9622d8fbaed67d25a5fc4992479ca63f5a12e15b398d27e1ea3461ef",
+        "end_line": 52,
+        "line": 51,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "path": "backend/market/capacity_original_loader_binding_v2.py",
+        "qualname": "map_digest"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "a549413d97a1e1437eb86f8761f71f63af7fbb109458f92c547305ce6944368a",
+        "end_line": 61,
+        "line": 56,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "path": "backend/market/capacity_original_loader_binding_v2.py",
+        "qualname": "file_map"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "d9abfded30da2776b490b0262b90537ca224dbecb7e99181b963861f9b6d342d",
+        "end_line": 109,
+        "line": 65,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "path": "backend/market/capacity_original_loader_binding_v2.py",
+        "qualname": "capacity_binding"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "b712767a87676e6ad5ad2b16d30d815949b5d31e4005043caf5ba817f380a070",
+        "end_line": 133,
+        "line": 113,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "path": "backend/market/capacity_original_loader_binding_v2.py",
+        "qualname": "root_admission"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "0aee7a98fa76213aa2178f3fe2403f7ae81c0432facbd2894297008ede030cf4",
+        "end_line": 141,
+        "line": 137,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "path": "backend/market/capacity_original_loader_binding_v2.py",
+        "qualname": "check_root"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "4cca002996e923abda7dc5dd5fa2a4c69adb3209f00ef3713d02e7885790d10d",
+        "end_line": 161,
+        "line": 145,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "path": "backend/market/capacity_original_loader_binding_v2.py",
+        "qualname": "module_admission"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "42e5b31cd9c091b0c41d295206ab30488254384a384ae50f426af5e1467e6a67",
+        "end_line": 172,
+        "line": 165,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "path": "backend/market/capacity_original_loader_binding_v2.py",
+        "qualname": "module_origin"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "af25c1aee84a5eea950c3f237097aaebe3c1dab1c352f6242cbad776a62b0ec0",
+        "end_line": 207,
+        "line": 176,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "path": "backend/market/capacity_original_loader_binding_v2.py",
+        "qualname": "source_admission"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "9b17627dda9b50f48ea58ae18bdad156705bfcb9ebd15b411f0bee5aee8c3372",
+        "end_line": 229,
+        "line": 211,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "path": "backend/market/capacity_original_loader_binding_v2.py",
+        "qualname": "calendar_admission"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "382980cf514e945f879d939a03a8a4c8a56b4d1e876c62e5ce26c987d2a52134",
+        "end_line": 234,
+        "line": 233,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "path": "backend/market/capacity_original_loader_binding_v2.py",
+        "qualname": "execute"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "eceb796322b4fe7488e097729589d255bd26280bcb1201d4a8093d854e51a8cd",
+        "end_line": 44,
+        "line": 43,
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "qualname": "ObservedHead.predict"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "6f5a229a4186c2f4f2b1eb008789c75f42e01078165cd54f2d154a44ed588ea4",
+        "end_line": 76,
+        "line": 55,
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "qualname": "NumericHead.predict"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "ddf679f2e71969b7a9176e4a481521bd07ddaee2c3b7121e6a3bbdedcd33f15d",
+        "end_line": 97,
+        "line": 80,
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "qualname": "numeric_identity"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "21690c49709f2a8803ebbaf37470e6df8368fae615ef5bbc433fb355b42a068a",
+        "end_line": 140,
+        "line": 101,
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "qualname": "_numeric_tree"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "0605b230639af528b40ffe58afaa214ee50b09061a631825bdca2f59cd69efc0",
+        "end_line": 185,
+        "line": 144,
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "qualname": "numeric_head"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "f60a69431cb3d2cee097ecf94fba34065e3e6cbbc1e71b5e9b7314c186fed3ed",
+        "end_line": 210,
+        "line": 189,
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "qualname": "model_identity"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "db4a673fce05099d3579ec75334052b29a1f2c4fe66113292317c4ef07d24e05",
+        "end_line": 235,
+        "line": 214,
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "qualname": "numeric_snapshot"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "50ac198451c15a1b04b553eab9ebc747d1386940472baf4a84a53799eb0c4c7c",
+        "end_line": 288,
+        "line": 239,
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "qualname": "_inputs"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "75c77c25227599318c0490297e0319ac0f021d3f42a194cbb029183513e15c30",
+        "end_line": 337,
+        "line": 292,
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "qualname": "_validate"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "1c574d118076d969a3900edf4fcc629253cf7f83affcc30b5180208badd6f03e",
+        "end_line": 379,
+        "line": 341,
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "qualname": "_training"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "f22cd8813370bb9ac77a8a4837df82cf61b3b4c405e4101d126d45d23fa43fe9",
+        "end_line": 389,
+        "line": 383,
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "qualname": "_fit"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "461749064dcb4106f0095698ba72f8ea905bd933900810bdc464def5c02926b8",
+        "end_line": 420,
+        "line": 393,
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "qualname": "predict"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "f9b61cb5872f365e7ab92208d39f3d1d1122674d21289c06edaca84d056cd16e",
+        "end_line": 514,
+        "line": 424,
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "qualname": "walk_forward"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "7d767811e859edbc647c81dd9acb667982dcba7e1668631461a3f93531134cc2",
+        "end_line": 53,
+        "line": 38,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "_month_session"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "eec7b1db654e3cf00ad8b633b9b49fa114bbbc6e043bc641d81f4df2f0404153",
+        "end_line": 190,
+        "line": 57,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "fit_month"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

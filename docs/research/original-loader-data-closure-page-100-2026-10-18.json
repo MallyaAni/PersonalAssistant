@@ -1,0 +1,773 @@
+{
+  "records": [
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 105,
+        "module": "backend.market.yahoo",
+        "owner": "_at",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 107,
+        "module": "backend.market.yahoo",
+        "owner": "_at",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "float",
+        "terminal_name": "float"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 116,
+        "module": "backend.market.yahoo",
+        "owner": "_last_bar_is_in_progress",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "meta.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 117,
+        "module": "backend.market.yahoo",
+        "owner": "_last_bar_is_in_progress",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "(meta.get('currentTradingPeriod') or {}).get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 117,
+        "module": "backend.market.yahoo",
+        "owner": "_last_bar_is_in_progress",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "meta.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 118,
+        "module": "backend.market.yahoo",
+        "owner": "_last_bar_is_in_progress",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "regular.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 122,
+        "module": "backend.market.yahoo",
+        "owner": "_last_bar_is_in_progress",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "datetime.now(tz=zone).date",
+        "terminal_name": "date"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 122,
+        "module": "backend.market.yahoo",
+        "owner": "_last_bar_is_in_progress",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "datetime.now",
+        "terminal_name": "now"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 123,
+        "module": "backend.market.yahoo",
+        "owner": "_last_bar_is_in_progress",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_session_date",
+        "terminal_name": "_session_date"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 123,
+        "module": "backend.market.yahoo",
+        "owner": "_last_bar_is_in_progress",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 125,
+        "module": "backend.market.yahoo",
+        "owner": "_last_bar_is_in_progress",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 125,
+        "module": "backend.market.yahoo",
+        "owner": "_last_bar_is_in_progress",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 133,
+        "module": "backend.market.yahoo",
+        "owner": "_parse_actions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "(events.get('dividends') or {}).values",
+        "terminal_name": "values"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 133,
+        "module": "backend.market.yahoo",
+        "owner": "_parse_actions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "events.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 135,
+        "module": "backend.market.yahoo",
+        "owner": "_parse_actions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "actions.append",
+        "terminal_name": "append"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 136,
+        "module": "backend.market.yahoo",
+        "owner": "_parse_actions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "CorporateAction",
+        "terminal_name": "CorporateAction"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 137,
+        "module": "backend.market.yahoo",
+        "owner": "_parse_actions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_session_date",
+        "terminal_name": "_session_date"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 137,
+        "module": "backend.market.yahoo",
+        "owner": "_parse_actions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 139,
+        "module": "backend.market.yahoo",
+        "owner": "_parse_actions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "float",
+        "terminal_name": "float"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 144,
+        "module": "backend.market.yahoo",
+        "owner": "_parse_actions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "(events.get('splits') or {}).values",
+        "terminal_name": "values"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 144,
+        "module": "backend.market.yahoo",
+        "owner": "_parse_actions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "events.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 146,
+        "module": "backend.market.yahoo",
+        "owner": "_parse_actions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "float",
+        "terminal_name": "float"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 146,
+        "module": "backend.market.yahoo",
+        "owner": "_parse_actions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "float",
+        "terminal_name": "float"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 147,
+        "module": "backend.market.yahoo",
+        "owner": "_parse_actions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "actions.append",
+        "terminal_name": "append"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 148,
+        "module": "backend.market.yahoo",
+        "owner": "_parse_actions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "CorporateAction",
+        "terminal_name": "CorporateAction"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 148,
+        "module": "backend.market.yahoo",
+        "owner": "_parse_actions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_session_date",
+        "terminal_name": "_session_date"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 148,
+        "module": "backend.market.yahoo",
+        "owner": "_parse_actions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 152,
+        "module": "backend.market.yahoo",
+        "owner": "_parse_actions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "actions.sort",
+        "terminal_name": "sort"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 153,
+        "module": "backend.market.yahoo",
+        "owner": "_parse_actions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "tuple",
+        "terminal_name": "tuple"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 170,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "MarketDataUnavailableError",
+        "terminal_name": "MarketDataUnavailableError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 173,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "result.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 174,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ZoneInfo",
+        "terminal_name": "ZoneInfo"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 174,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "meta.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 175,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "result.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 176,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "result.get('indicators', {}).get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 176,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "result.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 177,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "result.get('indicators', {}).get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 177,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "result.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 180,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "enumerate",
+        "terminal_name": "enumerate"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 182,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_session_date",
+        "terminal_name": "_session_date"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 182,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 185,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_at",
+        "terminal_name": "_at"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 188,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_at",
+        "terminal_name": "_at"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 189,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "bars.append",
+        "terminal_name": "append"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 190,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "DailyBar",
+        "terminal_name": "DailyBar"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 192,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_at",
+        "terminal_name": "_at"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 193,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_at",
+        "terminal_name": "_at"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 194,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_at",
+        "terminal_name": "_at"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 196,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_at",
+        "terminal_name": "_at"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 197,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 200,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_last_bar_is_in_progress",
+        "terminal_name": "_last_bar_is_in_progress"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 201,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "bars.pop",
+        "terminal_name": "pop"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 203,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "MarketDataUnavailableError",
+        "terminal_name": "MarketDataUnavailableError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 207,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "datetime.now",
+        "terminal_name": "now"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 208,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "TickerHistory",
+        "terminal_name": "TickerHistory"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 210,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "tuple",
+        "terminal_name": "tuple"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 211,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_parse_actions",
+        "terminal_name": "_parse_actions"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 211,
+        "module": "backend.market.yahoo",
+        "owner": "parse_chart_payload",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "result.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 223,
+        "module": "backend.market.yahoo",
+        "owner": "impersonating_transport",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "requests.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 226,
+        "module": "backend.market.yahoo",
+        "owner": "impersonating_transport",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "k.lower",
+        "terminal_name": "lower"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 226,
+        "module": "backend.market.yahoo",
+        "owner": "impersonating_transport",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "response.headers.items",
+        "terminal_name": "items"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 251,
+        "module": "backend.market.yahoo",
+        "owner": "Pacer.wait",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self._clock",
+        "terminal_name": "_clock"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 253,
+        "module": "backend.market.yahoo",
+        "owner": "Pacer.wait",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self._sleep",
+        "terminal_name": "_sleep"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 254,
+        "module": "backend.market.yahoo",
+        "owner": "Pacer.wait",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self._clock",
+        "terminal_name": "_clock"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

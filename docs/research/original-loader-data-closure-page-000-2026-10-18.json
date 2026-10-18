@@ -1,0 +1,820 @@
+{
+  "records": [
+    {
+      "section": "module",
+      "value": {
+        "bytes": 29,
+        "inert_copy": {
+          "bytes": 29,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-002.py.txt",
+          "sha256": "162e5eeb402108f20b1a976525f5bbf5a03a12ea619f64a19ce5c0fe9aec09af"
+        },
+        "module": "backend",
+        "path": "backend/__init__.py",
+        "sha256": "162e5eeb402108f20b1a976525f5bbf5a03a12ea619f64a19ce5c0fe9aec09af",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 605,
+        "inert_copy": {
+          "bytes": 605,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-003.py.txt",
+          "sha256": "5a886c13f35054c2238d9a661349a38ea242495972aae02a7aa2029dd1533910"
+        },
+        "module": "backend.market",
+        "path": "backend/market/__init__.py",
+        "sha256": "5a886c13f35054c2238d9a661349a38ea242495972aae02a7aa2029dd1533910",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 16447,
+        "inert_copy": {
+          "bytes": 16447,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-031.py.txt",
+          "sha256": "df9e8cddba62b345a03914b6304c21471d8ef7c39c14c62a5f26b550d7dedb86"
+        },
+        "module": "backend.market.allocation_controls",
+        "path": "backend/market/allocation_controls.py",
+        "sha256": "df9e8cddba62b345a03914b6304c21471d8ef7c39c14c62a5f26b550d7dedb86",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 13181,
+        "inert_copy": {
+          "bytes": 13181,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-021.py.txt",
+          "sha256": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4"
+        },
+        "module": "backend.market.calendar",
+        "path": "backend/market/calendar.py",
+        "sha256": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 13412,
+        "inert_copy": {
+          "bytes": 13412,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-004.py.txt",
+          "sha256": "92115c2a2e227cd16eb2cf0fab3e38f9cfb044b01efc9861b600e69493425fb9"
+        },
+        "module": "backend.market.capacity_original_admissions_v2",
+        "path": "backend/market/capacity_original_admissions_v2.py",
+        "sha256": "92115c2a2e227cd16eb2cf0fab3e38f9cfb044b01efc9861b600e69493425fb9",
+        "source_origin": "docs/research/sources/capacity-data-admissions-composition-v1-2026-10-18.py"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 6851,
+        "inert_copy": {
+          "bytes": 6851,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-018.py.txt",
+          "sha256": "87a5d8582e8b3aef54e93e0433452468a6bde416ee17bf462dca3bf1436e1173"
+        },
+        "module": "backend.market.capacity_original_archive_adaptations_v2",
+        "path": "backend/market/capacity_original_archive_adaptations_v2.py",
+        "sha256": "87a5d8582e8b3aef54e93e0433452468a6bde416ee17bf462dca3bf1436e1173",
+        "source_origin": "docs/research/sources/capacity-original-archive-adaptations-v2-2026-10-18.py"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 11077,
+        "inert_copy": {
+          "bytes": 11077,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-005.py.txt",
+          "sha256": "c6d7dfb305ae328bb8c31c3ed1058dfb8ecde7e4a1c27b31fda5438f4f737ac5"
+        },
+        "module": "backend.market.capacity_original_archives_v2",
+        "path": "backend/market/capacity_original_archives_v2.py",
+        "sha256": "c6d7dfb305ae328bb8c31c3ed1058dfb8ecde7e4a1c27b31fda5438f4f737ac5",
+        "source_origin": "docs/research/sources/capacity-original-archive-context-v2-2026-10-18.py"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 2758,
+        "inert_copy": {
+          "bytes": 2758,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-013.py.txt",
+          "sha256": "a77634e8c54575f3295179c48b4d6577940deff44d1daa691553d826ecc3f9cc"
+        },
+        "module": "backend.market.capacity_original_daily_inputs_v1",
+        "path": "backend/market/capacity_original_daily_inputs_v1.py",
+        "sha256": "a77634e8c54575f3295179c48b4d6577940deff44d1daa691553d826ecc3f9cc",
+        "source_origin": "docs/research/sources/original-loader-capacity-daily-inputs-v1-2026-10-18.py"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 1113,
+        "inert_copy": {
+          "bytes": 1113,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-008.py.txt",
+          "sha256": "3fbef0d64244652d583b5a751172e0b2ec54d3c196e7f5846b7f90b8b07aa284"
+        },
+        "module": "backend.market.capacity_original_durability_v1",
+        "path": "backend/market/capacity_original_durability_v1.py",
+        "sha256": "3fbef0d64244652d583b5a751172e0b2ec54d3c196e7f5846b7f90b8b07aa284",
+        "source_origin": "docs/research/sources/capacity-data-durability-composition-v1-2026-10-18.py"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 8862,
+        "inert_copy": {
+          "bytes": 8862,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-014.py.txt",
+          "sha256": "b66cebc1f24f6938a2a4e9dd17cfd6efd233d0ab44091b293c980f9e5a6eadcc"
+        },
+        "module": "backend.market.capacity_original_economics_v1",
+        "path": "backend/market/capacity_original_economics_v1.py",
+        "sha256": "b66cebc1f24f6938a2a4e9dd17cfd6efd233d0ab44091b293c980f9e5a6eadcc",
+        "source_origin": "docs/research/sources/original-loader-capacity-economics-v1-2026-10-18.py"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 6656,
+        "inert_copy": {
+          "bytes": 6656,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-006.py.txt",
+          "sha256": "400de9e73e2debb06c7267c925ca0914dc75a98c77f3044a49b88d26db26be25"
+        },
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "sha256": "400de9e73e2debb06c7267c925ca0914dc75a98c77f3044a49b88d26db26be25",
+        "source_origin": "docs/research/sources/original-loader-capacity-evidence-v1-2026-10-18.py"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 5839,
+        "inert_copy": {
+          "bytes": 5839,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-015.py.txt",
+          "sha256": "7a0352cb56ad74332c80f64c7b676d85d6e88fdf903f768c0b5f4a5de0536915"
+        },
+        "module": "backend.market.capacity_original_frozen_readers_v1",
+        "path": "backend/market/capacity_original_frozen_readers_v1.py",
+        "sha256": "7a0352cb56ad74332c80f64c7b676d85d6e88fdf903f768c0b5f4a5de0536915",
+        "source_origin": "docs/research/sources/original-loader-capacity-frozen-readers-v1-2026-10-18.py"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 27766,
+        "inert_copy": {
+          "bytes": 27766,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-020.py.txt",
+          "sha256": "b6f4b97f7804efa43f65cb4513d586cc5f092449a2660c126ed7306b53ff8c19"
+        },
+        "module": "backend.market.capacity_original_history_json_v1",
+        "path": "backend/market/capacity_original_history_json_v1.py",
+        "sha256": "b6f4b97f7804efa43f65cb4513d586cc5f092449a2660c126ed7306b53ff8c19",
+        "source_origin": "docs/research/sources/capacity-original-history-json-v1-2026-10-18.py"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 13593,
+        "inert_copy": {
+          "bytes": 13593,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-007.py.txt",
+          "sha256": "c152e2a47dab3c6cdd42903af54fed560857cea3ae7c47d0cdd26b454c2cc7de"
+        },
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "sha256": "c152e2a47dab3c6cdd42903af54fed560857cea3ae7c47d0cdd26b454c2cc7de",
+        "source_origin": "docs/research/sources/capacity-original-input-auth-v1-2026-10-18.py"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 7592,
+        "inert_copy": {
+          "bytes": 7592,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-001.py.txt",
+          "sha256": "e77195289c37d540269cdea2bfdf09ceed2b8c837f63af8e094f7bd4727bd1fe"
+        },
+        "module": "backend.market.capacity_original_inputs_v2",
+        "path": "backend/market/capacity_original_inputs_v2.py",
+        "sha256": "e77195289c37d540269cdea2bfdf09ceed2b8c837f63af8e094f7bd4727bd1fe",
+        "source_origin": "docs/research/sources/capacity-data-inputs-composition-v1-2026-10-18.py"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 18627,
+        "inert_copy": {
+          "bytes": 18627,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-009.py.txt",
+          "sha256": "8182adf55aa8780b1ae781167734427ef1879298ab3d4456932427773a8298b5"
+        },
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "path": "backend/market/capacity_original_loader_binding_v2.py",
+        "sha256": "8182adf55aa8780b1ae781167734427ef1879298ab3d4456932427773a8298b5",
+        "source_origin": "docs/research/sources/capacity-data-binding-composition-v1-2026-10-18.py"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 10511,
+        "inert_copy": {
+          "bytes": 10511,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-000.py.txt",
+          "sha256": "e001293c9b043005926fc4915649f06924eb6f4923b760cdc419692db2f43fa5"
+        },
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "path": "backend/market/capacity_original_loader_lifecycle_v2.py",
+        "sha256": "e001293c9b043005926fc4915649f06924eb6f4923b760cdc419692db2f43fa5",
+        "source_origin": "docs/research/sources/capacity-data-lifecycle-composition-v1-2026-10-18.py"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 5034,
+        "inert_copy": {
+          "bytes": 5034,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-019.py.txt",
+          "sha256": "d413e748bf2b1eb63f4d267371f22cf6431f6ae650368676c815b07779723135"
+        },
+        "module": "backend.market.capacity_original_metadata_v1",
+        "path": "backend/market/capacity_original_metadata_v1.py",
+        "sha256": "d413e748bf2b1eb63f4d267371f22cf6431f6ae650368676c815b07779723135",
+        "source_origin": "docs/research/sources/original-loader-capacity-metadata-boundary-2026-10-18.py"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 12662,
+        "inert_copy": {
+          "bytes": 12662,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-034.py.txt",
+          "sha256": "5b9a7f3036ba480a4b446ccfd5cd0f02a75e8059fa1de8fe0f7c93662342fe8f"
+        },
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "sha256": "5b9a7f3036ba480a4b446ccfd5cd0f02a75e8059fa1de8fe0f7c93662342fe8f",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 11285,
+        "inert_copy": {
+          "bytes": 11285,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-016.py.txt",
+          "sha256": "e55d955c5b39b004f2ca7d6f8a11b1c26d7dd459dedcf714d6c170994a5db8a0"
+        },
+        "module": "backend.market.daily_arithmetic_bridge",
+        "path": "backend/market/daily_arithmetic_bridge.py",
+        "sha256": "e55d955c5b39b004f2ca7d6f8a11b1c26d7dd459dedcf714d6c170994a5db8a0",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 20999,
+        "inert_copy": {
+          "bytes": 20999,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-010.py.txt",
+          "sha256": "03cb9e837c291b190c89bb8cce3fb960f16c5b118d41bd67c5f294b4664076b9"
+        },
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "sha256": "03cb9e837c291b190c89bb8cce3fb960f16c5b118d41bd67c5f294b4664076b9",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 31296,
+        "inert_copy": {
+          "bytes": 31296,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-024.py.txt",
+          "sha256": "4b72fbea142bf9a77d92897329ecc52a6c4c62e54efa105e2ba0320e8d11865d"
+        },
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "sha256": "4b72fbea142bf9a77d92897329ecc52a6c4c62e54efa105e2ba0320e8d11865d",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 38411,
+        "inert_copy": {
+          "bytes": 38411,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-025.py.txt",
+          "sha256": "3c10d505e0681f23144d319cc430cceba867dc80b3ef82d95a887507b07cf632"
+        },
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "sha256": "3c10d505e0681f23144d319cc430cceba867dc80b3ef82d95a887507b07cf632",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 33450,
+        "inert_copy": {
+          "bytes": 33450,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-011.py.txt",
+          "sha256": "9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882"
+        },
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "sha256": "9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 9592,
+        "inert_copy": {
+          "bytes": 9592,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-012.py.txt",
+          "sha256": "4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158"
+        },
+        "module": "backend.market.holding_risk_bank",
+        "path": "backend/market/holding_risk_bank.py",
+        "sha256": "4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 11470,
+        "inert_copy": {
+          "bytes": 11470,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-022.py.txt",
+          "sha256": "21adedb2a11ef8fe9802c4be6c2783b684bfd755db17032ae4bbaf0a2e2a693e"
+        },
+        "module": "backend.market.learned_entry_data",
+        "path": "backend/market/learned_entry_data.py",
+        "sha256": "21adedb2a11ef8fe9802c4be6c2783b684bfd755db17032ae4bbaf0a2e2a693e",
+        "source_origin": "docs/research/sources/capacity-learned-entry-data-import-cut-v1-2026-10-18.py"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 13741,
+        "inert_copy": {
+          "bytes": 13741,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-023.py.txt",
+          "sha256": "d6aac3546a60d7332c28198035d63422c12f3658677c2510abb27d130774d0ba"
+        },
+        "module": "backend.market.learned_entry_models",
+        "path": "backend/market/learned_entry_models.py",
+        "sha256": "d6aac3546a60d7332c28198035d63422c12f3658677c2510abb27d130774d0ba",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 13606,
+        "inert_copy": {
+          "bytes": 13606,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-026.py.txt",
+          "sha256": "dc0ac21c8078dc2eb9759820b530e4ce9f2a50f709211f20a608d301caef707f"
+        },
+        "module": "backend.market.learned_retention_models",
+        "path": "backend/market/learned_retention_models.py",
+        "sha256": "dc0ac21c8078dc2eb9759820b530e4ce9f2a50f709211f20a608d301caef707f",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 51423,
+        "inert_copy": {
+          "bytes": 51423,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-017.py.txt",
+          "sha256": "4756673840814a02d5d0a341d54cbbec9e3a855b8cd8a163cc5f0a9c31b44a86"
+        },
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "sha256": "4756673840814a02d5d0a341d54cbbec9e3a855b8cd8a163cc5f0a9c31b44a86",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 10275,
+        "inert_copy": {
+          "bytes": 10275,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-033.py.txt",
+          "sha256": "00c176719372f5b1bc373be32c0c3007c0e6c8aa7808969e177710056c819145"
+        },
+        "module": "backend.market.market_conditioned_calibration",
+        "path": "backend/market/market_conditioned_calibration.py",
+        "sha256": "00c176719372f5b1bc373be32c0c3007c0e6c8aa7808969e177710056c819145",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 10413,
+        "inert_copy": {
+          "bytes": 10413,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-029.py.txt",
+          "sha256": "e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4"
+        },
+        "module": "backend.market.market_conditioned_holding",
+        "path": "backend/market/market_conditioned_holding.py",
+        "sha256": "e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 9202,
+        "inert_copy": {
+          "bytes": 9202,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-027.py.txt",
+          "sha256": "dee6b591080f18ba0b35c1241d96cb0e906957b3007f25be941957d2ee7252a2"
+        },
+        "module": "backend.market.panel",
+        "path": "backend/market/panel.py",
+        "sha256": "dee6b591080f18ba0b35c1241d96cb0e906957b3007f25be941957d2ee7252a2",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 19641,
+        "inert_copy": {
+          "bytes": 19641,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-030.py.txt",
+          "sha256": "cfd586859920f06d385447b1aa171f17e515d8e34bc07a8752164ef2b3705af2"
+        },
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "sha256": "cfd586859920f06d385447b1aa171f17e515d8e34bc07a8752164ef2b3705af2",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 13705,
+        "inert_copy": {
+          "bytes": 13705,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-028.py.txt",
+          "sha256": "a299516ab68710d56355e036770d3c9695ed332641e9fa6ee4d64c9f6ede9aff"
+        },
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "sha256": "a299516ab68710d56355e036770d3c9695ed332641e9fa6ee4d64c9f6ede9aff",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "module",
+      "value": {
+        "bytes": 13065,
+        "inert_copy": {
+          "bytes": 13065,
+          "path": "/tmp/capacity-data-closure-source-20261018-v1/source-032.py.txt",
+          "sha256": "311323b71355858a1ea1fca9d7b03861df71f35466a789d90a872bbbdc93e82d"
+        },
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "sha256": "311323b71355858a1ea1fca9d7b03861df71f35466a789d90a872bbbdc93e82d",
+        "source_origin": "matching checkout bytes"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_lifecycle_v2",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_lifecycle_v2",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_lifecycle_v2",
+        "kind": "lexical_import",
+        "line": 17,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_lifecycle_v2",
+        "kind": "lexical_import",
+        "line": 17,
+        "to": "backend.market.capacity_original_admissions_v2"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_lifecycle_v2",
+        "kind": "lexical_import",
+        "line": 18,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_lifecycle_v2",
+        "kind": "lexical_import",
+        "line": 18,
+        "to": "backend.market.capacity_original_archives_v2"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_lifecycle_v2",
+        "kind": "lexical_import",
+        "line": 19,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_lifecycle_v2",
+        "kind": "lexical_import",
+        "line": 19,
+        "to": "backend.market.capacity_original_evidence_v1"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_lifecycle_v2",
+        "kind": "lexical_import",
+        "line": 20,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_lifecycle_v2",
+        "kind": "lexical_import",
+        "line": 20,
+        "to": "backend.market.capacity_original_input_auth_v1"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_lifecycle_v2",
+        "kind": "lexical_import",
+        "line": 21,
+        "to": "backend.market.capacity_original_durability_v1"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_lifecycle_v2",
+        "kind": "lexical_import",
+        "line": 22,
+        "to": "backend.market.capacity_original_loader_binding_v2"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_inputs_v2",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_inputs_v2",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_inputs_v2",
+        "kind": "lexical_import",
+        "line": 16,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_inputs_v2",
+        "kind": "lexical_import",
+        "line": 16,
+        "to": "backend.market.direct_daily_arithmetic"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_inputs_v2",
+        "kind": "lexical_import",
+        "line": 16,
+        "to": "backend.market.forward_arithmetic"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_inputs_v2",
+        "kind": "lexical_import",
+        "line": 16,
+        "to": "backend.market.holding_risk_bank"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_inputs_v2",
+        "kind": "lexical_import",
+        "line": 17,
+        "to": "backend.market.capacity_original_archives_v2"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_inputs_v2",
+        "kind": "lexical_import",
+        "line": 18,
+        "to": "backend.market.capacity_original_daily_inputs_v1"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_inputs_v2",
+        "kind": "lexical_import",
+        "line": 19,
+        "to": "backend.market.capacity_original_economics_v1"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_inputs_v2",
+        "kind": "lexical_import",
+        "line": 20,
+        "to": "backend.market.capacity_original_evidence_v1"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_inputs_v2",
+        "kind": "lexical_import",
+        "line": 21,
+        "to": "backend.market.capacity_original_frozen_readers_v1"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_inputs_v2",
+        "kind": "lexical_import",
+        "line": 22,
+        "to": "backend.market.daily_arithmetic_bridge"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_inputs_v2",
+        "kind": "lexical_import",
+        "line": 23,
+        "to": "backend.market.live_execution_inputs"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_admissions_v2",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_admissions_v2",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_admissions_v2",
+        "kind": "lexical_import",
+        "line": 11,
+        "to": "backend.market"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

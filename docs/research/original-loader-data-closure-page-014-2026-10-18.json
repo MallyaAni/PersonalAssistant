@@ -1,0 +1,782 @@
+{
+  "records": [
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "88cd96e807388ccec69ee13160c4ebde1378222e9bc116e83e81764a821be96c",
+        "bases": [],
+        "decorators": [],
+        "end_line": 278,
+        "line": 146,
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "qualname": "_Calibration"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "62f5fe3ef8a80d05c704074139aeeb0963853238e08110b1beae7d02f3af03e0",
+        "bases": [
+          "_Calibration",
+          "VolatilityHoldingReader"
+        ],
+        "decorators": [],
+        "end_line": 291,
+        "line": 282,
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "qualname": "CalibratedHoldingReader"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "6ff2fa4d54e25cf7f78d6ed6c4b2cd1c08663310bbe2f64e0a053ac841c4526b",
+        "bases": [
+          "_Calibration",
+          "ForwardVolatilityHoldingReader"
+        ],
+        "decorators": [],
+        "end_line": 304,
+        "line": 295,
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "qualname": "ForwardCalibratedHoldingReader"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 32,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "capacity_binding",
+        "terminal_name": "capacity_binding"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 33,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "admissions.runtime_admission",
+        "terminal_name": "runtime_admission"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 34,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "root_admission",
+        "terminal_name": "root_admission"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 35,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "module_admission",
+        "terminal_name": "module_admission"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 36,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "dict",
+        "terminal_name": "dict"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 36,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "dict",
+        "terminal_name": "dict"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 37,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "admissions.native_packages",
+        "terminal_name": "native_packages"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 38,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "byte_auth.physical",
+        "terminal_name": "physical"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 39,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "evidence.require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 39,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "parent.is_dir",
+        "terminal_name": "is_dir"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 39,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "parent.stat",
+        "terminal_name": "stat"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 39,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "parent.iterdir",
+        "terminal_name": "iterdir"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 41,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "tuple",
+        "terminal_name": "tuple"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 41,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "getattr",
+        "terminal_name": "getattr"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 41,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "parent.stat",
+        "terminal_name": "stat"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 42,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "evidence.require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 42,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "type",
+        "terminal_name": "type"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 43,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "os.fstat",
+        "terminal_name": "fstat"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 43,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "(parent / 'guard-failure.bin').stat",
+        "terminal_name": "stat"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 45,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "evidence.require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 45,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "stat.S_ISREG",
+        "terminal_name": "S_ISREG"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 45,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 45,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "getattr",
+        "terminal_name": "getattr"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 45,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "getattr",
+        "terminal_name": "getattr"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 47,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self.destination.mkdir",
+        "terminal_name": "mkdir"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 48,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "tuple",
+        "terminal_name": "tuple"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 48,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "getattr",
+        "terminal_name": "getattr"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 48,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self.destination.stat",
+        "terminal_name": "stat"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 49,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "evidence.require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 49,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "(Path(self.value['account']) / 'completion.json').stat",
+        "terminal_name": "stat"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 49,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 50,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "archives_module.CapacitySourceReaderV2",
+        "terminal_name": "CapacitySourceReaderV2"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 51,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "archives_module.CapacityOriginalArchivesV2",
+        "terminal_name": "CapacityOriginalArchivesV2"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 52,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "source_admission",
+        "terminal_name": "source_admission"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 53,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "admissions.producer_admission",
+        "terminal_name": "producer_admission"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 54,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "calendar_admission",
+        "terminal_name": "calendar_admission"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 55,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "archives_module.preserved_archives",
+        "terminal_name": "preserved_archives"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 56,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "byte_auth.Pins",
+        "terminal_name": "Pins"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 57,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self._bytes",
+        "terminal_name": "_bytes"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 63,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2._bytes",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "byte_auth.authenticate",
+        "terminal_name": "authenticate"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 63,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2._bytes",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 67,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2._load_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "evidence.require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 74,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2._load_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "origins.append",
+        "terminal_name": "append"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 74,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2._load_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "module_origin",
+        "terminal_name": "module_origin"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 74,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2._load_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "sys.modules.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 75,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2._load_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "datetime.now",
+        "terminal_name": "now"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 76,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2._load_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "inputs_module._load_capacity_inputs",
+        "terminal_name": "_load_capacity_inputs"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 77,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2._load_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "evidence.require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 77,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2._load_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "type",
+        "terminal_name": "type"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 77,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2._load_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "type",
+        "terminal_name": "type"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 77,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2._load_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "type",
+        "terminal_name": "type"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 77,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2._load_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "type",
+        "terminal_name": "type"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 77,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2._load_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "type",
+        "terminal_name": "type"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 77,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2._load_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "isinstance",
+        "terminal_name": "isinstance"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 83,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.verify_after",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "evidence.require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 84,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.verify_after",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self._bytes",
+        "terminal_name": "_bytes"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 85,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.verify_after",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "evidence.require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 86,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.verify_after",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "evidence.require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 86,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.verify_after",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "archives_module.preserved_archives",
+        "terminal_name": "preserved_archives"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 87,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.verify_after",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self.archives.unchanged",
+        "terminal_name": "unchanged"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 88,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "owner": "CapacityLoaderLeaseV2.verify_after",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "module_admission",
+        "terminal_name": "module_admission"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

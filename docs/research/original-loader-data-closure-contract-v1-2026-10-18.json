@@ -1,0 +1,48 @@
+{
+  "schema": "capacity-data-source-guard-phase-contract/1",
+  "status": "IMMUTABLE_SOURCE_REQUIREMENTS_ONLY_NO_IMPLEMENTED_EXECUTOR_OR_RUNTIME_ADMISSION",
+  "executor_map": {"files": 2468, "sha256": "544fe1859ec11e62f2bf506eff70e9111a6a930d53dff59450d9d4816abaa202", "assembled": false},
+  "reference_map": {"files": 2446, "sha256": "9a0bfbeb59e0a63072453a6ac0e930e65a89684efd90bc705febf9b1bdbe6224", "role": "Inert audit reference tree; not an import search root."},
+  "original_producer": {"revision": "27471b9c61b958f759e9f48b80acaf60cdf75f2e", "files": 2431, "role": "Original source/config/archive/input byte receipts; distinct from reference and executor."},
+  "guard_source_sha256": "030cb5bb25f89c2785e6acbd55aceff5c99b632a5eb538079ee027362ae6178a",
+  "evidence": {
+    "inventory": {"path": "original-loader-data-closure-inventory-v1-2026-10-18.json", "sha256": "a90f578d09edf0c54193156595d8d859e27488b49fac0964caf08558cc128cf1"},
+    "independent": {"path": "original-loader-data-closure-independent-proof-v1-2026-10-18.json", "sha256": "968624338d8e81370054d8e44353d18ded53721b5233bf059c64870eb98a5803"},
+    "lambda_supplement": {"path": "original-loader-data-closure-lambda-supplement-v1-2026-10-18.json", "sha256": "a5de151b6ca90bfe71c5c4bcb367af77574be1519bc5209bf6b3378b86e85b90"}
+  },
+  "source_book_and_finder_requirements": [
+    "DISTINCT standalone source identities; do not mutate or extend the old2446 SourceBook constructor, old receipts or tested guard source.",
+    "Bind exactly the2468 executor map and externally authenticated root identity to a held no-follow directory FD before backend import. Retain original1MiB Python/16MiB metadata/file identity/SHA/read bounds and full recipe authentication; no ambient bytecode fallback.",
+    "Resolve backend imports only through exact declared executor paths; reject absent/ambiguous/shadowed paths and any already loaded backend. Compile only authenticated bytes at their real executor filenames and register exact nested CodeTypes before module body entry.",
+    "Reference2446 remains separately RO with exact host/root identities and no descendant overrides/import search overlap. Original producer source aliases and all full byte receipts stay separate. Existing reference per-file evidence opens remain path based; no stronger hostile-code isolation claim.",
+    "Preserve unchanged profile/register/trip/audit/install phase ordering and all forbidden names/classes/FIVE effect prefixes/slot/resource caps. No verify exception. Guard constructor/source-map/schema bindings require new identities and independent source review."
+  ],
+  "phase_plan_kind": "SOURCE_OWNERSHIP_DECLARATION_NOT_EXECUTABLE_CALL_MANIFEST",
+  "phases": [
+    {"phase": "BOOTSTRAP", "source_requirement": "Exact source/runtime/metadata/root/native prerequisites and reserved failure slot; install finder/profile/audit before any backend import. Source/native/generated closure and actual invocation still absent."},
+    {"phase": "ADMISSION", "source_requirement": "Import exact new lifecycle and construct CapacityLoaderLeaseV2 once. Constructor performs source/runtime/package/archive/preservation/calendar/producer admissions AND complete first byte-auth graph before returning. All those calls occur under the caller ADMISSION guard phase; lease self.phase labels do not advance the external guard."},
+    {"phase": "BEFORE", "source_requirement": "Completed constructor/first-byte-graph boundary, with full retained context/graph. Record actual observation and guard health without pretending byte-auth ran under this phase. No loader call here."},
+    {"phase": "LOAD", "source_requirement": "One exact _load_inputs call, deferred exact inputsV2 import,16 module origins, real UTC observation immediately before one private factory. Stop at loader return, before strategy selection/distribution/calibration fitting/account/replay."},
+    {"phase": "FROZEN", "source_requirement": "Retain exact new loaded result/context/archives/first byte graph; bounded full object/array observations require actual runtime proof, not this source declaration."},
+    {"phase": "AFTER", "source_requirement": "Exact verify_after: full second byte-auth graph, equality/preservation/source bookends while loaded result and first graph remain live."},
+    {"phase": "SERIALIZE", "source_requirement": "Full result JSON string and UTF8 alongside loaded/archive/both receipt roots, exclusive file fsync/readback, destination then proof-parent directory fsync; capture actual late peak before own RAM reference release.256MiB result bound unchanged."},
+    {"phase": "DONE", "source_requirement": "Only after durable candidate and explicit release boundary. Independent owner/terminal/runtime/preservation review required; candidate is not model/RAM/historical/live acceptance."}
+  ],
+  "selected_source_boundaries_NOT_complete_callable_closure": [
+    "holding_risk_bank.load_bank -> direct_error_band.VolatilityHoldingReader.__init__ -> direct_feature_arithmetic.HoldingScenarioReader.__init__ -> lineage/risk-feature/calibration-grid/publication validators; no selected distribution/fit call.",
+    "forward_arithmetic.load_publication -> _admit -> direct_daily_arithmetic.numeric_head -> _numeric_tree; exact NumericHead/None factory and original publication/config guards required, never a supplied predictor.",
+    "capacity_original_daily_inputs_v1.daily_prefix -> panel.build_panel -> store.MarketStore.read -> deferred pyarrow.parquet.read_table plus Yahoo data-class construction; no selected fetch/network path.",
+    "capacity_original_frozen_readers_v1 constructor frames preserve both complete feature/prediction/copy lifetimes, then market _MarketCalibration._bind -> _Calibration._bind -> deepcopy; no selected _stock_fit/fit_market_log call."
+  ],
+  "call_manifest_requirements": [
+    "Exact selected source/function/CodeType/global/bound-type/phase bindings and conditionals only. Do not admit all362 inventoried functions or all5889 AST calls.",
+    "Keep walk_forward/_fit/fit/distribution/select/_stock_fit/fit_log/fit_market_log and all broker/account/effect functions excluded. Lexical terminal names alone do not establish actual callable identity or a guard failure.",
+    "Source AST lines and lambda/comprehension declarations are not compiled co_qualname/co_firstlineno/code fingerprints. Exact runtime source compilation/code registration and complete expected call roots must be separately reviewed before any capacity execution."
+  ],
+  "generated_requirements": {"algorithm": "cpython-code-marshal-format-2-sha256/1", "marshal_version": 2, "dynamic_kind": "Exact dataclass records only, bound to actual pinned CPython/dataclasses source, module and phase. Reject obsolete runtime daily-prefix transformation records.", "normal_registered_source": "Lambda/comprehension source expressions are inventoried separately. Register only compiler-emitted nested CodeTypes; an inlined expression receives no manufactured nested record. Do not relabel ordinary source code as dataclass or wildcard dynamic code.", "actual_records": null},
+  "native_requirements": {"state": "UNRESOLVED", "scope": "Exact installed Python/NumPy/SciPy/sklearn/threadpool/PyArrow and transitive native/import/codegen/thread behavior selected by source.190 lexical external declarations and38 deferred declarations are not actual package closure.", "package_origins_sources_versions_extensions": null, "fresh_runtime_observation": null, "thread_and_resource_admission": null},
+  "source_only_next": "Prepare a bounded read-only source/metadata census for exact retained stopped N2 image/container package paths, especially deferred PyArrow and actual dataclasses sources, with exact source/invocation/resource review before use. It must not start a container, import a package/model, compile payload CodeTypes or read account/market data. In parallel implement distinct inert source-book/finder/guard source against this contract; keep all runtime/manifests/entrypoint/admission null until exact source closure and independent review. Never rerun closed gates or regenerate packets for documentation.",
+  "unadmitted": {"new_guard_source": null, "source_book": null, "finder": null, "selected_callable_closure": null, "call_manifest": null, "generated_manifest": null, "phase_manifest": null, "native_package_closure": null, "entrypoint": null, "model_import_strategy": null, "owner": null, "caller": null, "stager": null, "bootstrap": null, "packet": null, "runtime": null, "launch": null, "admission": null},
+  "execution_authorized": false,
+  "unchanged": {"guard_G08_caps": true, "old_sources_roots_packets_admissions": true, "original_timing": "FAILED", "publication": "CLOSED", "missing_original_raw_receipts": "MISSING", "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN", "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED", "heartbeat": "ACTIVE"}
+}

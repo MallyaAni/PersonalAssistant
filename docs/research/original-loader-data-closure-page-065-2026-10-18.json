@@ -1,0 +1,773 @@
+{
+  "records": [
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 176,
+        "module": "backend.market.calendar",
+        "owner": "exchange_status",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "day.isoformat",
+        "terminal_name": "isoformat"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 186,
+        "module": "backend.market.calendar",
+        "owner": "exchange_status",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "bool",
+        "terminal_name": "bool"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 186,
+        "module": "backend.market.calendar",
+        "owner": "exchange_status",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.is_busday",
+        "terminal_name": "is_busday"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 186,
+        "module": "backend.market.calendar",
+        "owner": "exchange_status",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.datetime64",
+        "terminal_name": "datetime64"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 190,
+        "module": "backend.market.calendar",
+        "owner": "exchange_status",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "datetime.combine",
+        "terminal_name": "combine"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 191,
+        "module": "backend.market.calendar",
+        "owner": "exchange_status",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "datetime.combine",
+        "terminal_name": "combine"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 191,
+        "module": "backend.market.calendar",
+        "owner": "exchange_status",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "session_close",
+        "terminal_name": "session_close"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 198,
+        "module": "backend.market.calendar",
+        "owner": "exchange_status",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "status.update",
+        "terminal_name": "update"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 202,
+        "module": "backend.market.calendar",
+        "owner": "exchange_status",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "opens.isoformat",
+        "terminal_name": "isoformat"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 203,
+        "module": "backend.market.calendar",
+        "owner": "exchange_status",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "closes.isoformat",
+        "terminal_name": "isoformat"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 211,
+        "module": "backend.market.calendar",
+        "owner": "_future_session_offset",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reviewed_sessions",
+        "terminal_name": "reviewed_sessions"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 212,
+        "module": "backend.market.calendar",
+        "owner": "_future_session_offset",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "last.astype",
+        "terminal_name": "astype"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 213,
+        "module": "backend.market.calendar",
+        "owner": "_future_session_offset",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "decision.astype",
+        "terminal_name": "astype"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 214,
+        "module": "backend.market.calendar",
+        "owner": "_future_session_offset",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "set(range(start_year, end_year + 1)).issubset",
+        "terminal_name": "issubset"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 214,
+        "module": "backend.market.calendar",
+        "owner": "_future_session_offset",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "set",
+        "terminal_name": "set"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 214,
+        "module": "backend.market.calendar",
+        "owner": "_future_session_offset",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "range",
+        "terminal_name": "range"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 215,
+        "module": "backend.market.calendar",
+        "owner": "_future_session_offset",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "float",
+        "terminal_name": "float"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 216,
+        "module": "backend.market.calendar",
+        "owner": "_future_session_offset",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.busday_offset",
+        "terminal_name": "busday_offset"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 217,
+        "module": "backend.market.calendar",
+        "owner": "_future_session_offset",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reaction.astype",
+        "terminal_name": "astype"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 218,
+        "module": "backend.market.calendar",
+        "owner": "_future_session_offset",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "float",
+        "terminal_name": "float"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 219,
+        "module": "backend.market.calendar",
+        "owner": "_future_session_offset",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "float",
+        "terminal_name": "float"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 219,
+        "module": "backend.market.calendar",
+        "owner": "_future_session_offset",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.busday_count",
+        "terminal_name": "busday_count"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 226,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 226,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "sorted",
+        "terminal_name": "sorted"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 227,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 228,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.empty",
+        "terminal_name": "empty"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 228,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.empty",
+        "terminal_name": "empty"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 231,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.searchsorted(dates, marks[(marks >= dates[0]) & (marks <= dates[-1])]).astype",
+        "terminal_name": "astype"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 231,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.searchsorted",
+        "terminal_name": "searchsorted"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 235,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 235,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_future_session_offset",
+        "terminal_name": "_future_session_offset"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 238,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.sort",
+        "terminal_name": "sort"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 238,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.concatenate",
+        "terminal_name": "concatenate"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 238,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 239,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.full",
+        "terminal_name": "full"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 239,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 240,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.full",
+        "terminal_name": "full"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 240,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 240,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 241,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "range",
+        "terminal_name": "range"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 241,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 244,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 245,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "min",
+        "terminal_name": "min"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 245,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "float",
+        "terminal_name": "float"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 246,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 246,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isnan",
+        "terminal_name": "isnan"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 248,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 249,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "min",
+        "terminal_name": "min"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 249,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "float",
+        "terminal_name": "float"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 256,
+        "module": "backend.market.calendar",
+        "owner": "_opex_sessions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.zeros",
+        "terminal_name": "zeros"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 256,
+        "module": "backend.market.calendar",
+        "owner": "_opex_sessions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 258,
+        "module": "backend.market.calendar",
+        "owner": "_opex_sessions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "enumerate",
+        "terminal_name": "enumerate"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 259,
+        "module": "backend.market.calendar",
+        "owner": "_opex_sessions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "by_month.setdefault((d.year, d.month), []).append",
+        "terminal_name": "append"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 259,
+        "module": "backend.market.calendar",
+        "owner": "_opex_sessions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "by_month.setdefault",
+        "terminal_name": "setdefault"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 260,
+        "module": "backend.market.calendar",
+        "owner": "_opex_sessions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "by_month.items",
+        "terminal_name": "items"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 261,
+        "module": "backend.market.calendar",
+        "owner": "_opex_sessions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "nth_friday",
+        "terminal_name": "nth_friday"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 266,
+        "module": "backend.market.calendar",
+        "owner": "_opex_sessions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "max",
+        "terminal_name": "max"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 275,
+        "module": "backend.market.calendar",
+        "owner": "calendar_by_session",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "fomc_decisions",
+        "terminal_name": "fomc_decisions"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 276,
+        "module": "backend.market.calendar",
+        "owner": "calendar_by_session",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "panel.dates.astype",
+        "terminal_name": "astype"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 277,
+        "module": "backend.market.calendar",
+        "owner": "calendar_by_session",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "dates.astype",
+        "terminal_name": "astype"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 278,
+        "module": "backend.market.calendar",
+        "owner": "calendar_by_session",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_fomc_distances",
+        "terminal_name": "_fomc_distances"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 279,
+        "module": "backend.market.calendar",
+        "owner": "calendar_by_session",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_opex_sessions",
+        "terminal_name": "_opex_sessions"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 280,
+        "module": "backend.market.calendar",
+        "owner": "calendar_by_session",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.zeros",
+        "terminal_name": "zeros"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 280,
+        "module": "backend.market.calendar",
+        "owner": "calendar_by_session",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

@@ -1,0 +1,773 @@
+{
+  "records": [
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 120,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "economic_paths",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "pinned",
+        "terminal_name": "pinned"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 121,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "economic_paths",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 122,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "economic_paths",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "type",
+        "terminal_name": "type"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 122,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "economic_paths",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 122,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "economic_paths",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "type",
+        "terminal_name": "type"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 133,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "economic_paths",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "name.replace",
+        "terminal_name": "replace"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 134,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "economic_paths",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 134,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "economic_paths",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "command.count",
+        "terminal_name": "count"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 135,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "economic_paths",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "command.index",
+        "terminal_name": "index"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 136,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "economic_paths",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 136,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "economic_paths",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 137,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "economic_paths",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 138,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "economic_paths",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 139,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "economic_paths",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "path.is_absolute",
+        "terminal_name": "is_absolute"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 143,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "economic_paths",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "SimpleNamespace",
+        "terminal_name": "SimpleNamespace"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 148,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "align_passive",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.searchsorted",
+        "terminal_name": "searchsorted"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 149,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "align_passive",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 150,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "align_passive",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 150,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "align_passive",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 151,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "align_passive",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.array_equal",
+        "terminal_name": "array_equal"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 154,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "align_passive",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 154,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "align_passive",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 155,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "align_passive",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.full",
+        "terminal_name": "full"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 155,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "align_passive",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.full",
+        "terminal_name": "full"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 156,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "align_passive",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.full",
+        "terminal_name": "full"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 156,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "align_passive",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 156,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "align_passive",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 162,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "align_passive",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "PassiveMarks",
+        "terminal_name": "PassiveMarks"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 168,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "align_passive",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "dict",
+        "terminal_name": "dict"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 174,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "strict_json",
+        "terminal_name": "strict_json"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 175,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "pinned",
+        "terminal_name": "pinned"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 177,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 181,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "pinned",
+        "terminal_name": "pinned"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 182,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "pinned",
+        "terminal_name": "pinned"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 184,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "strict_json",
+        "terminal_name": "strict_json"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 185,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "review_action_export",
+        "terminal_name": "review_action_export"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 187,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 189,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "dict",
+        "terminal_name": "dict"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 194,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "authenticate_file",
+        "terminal_name": "authenticate_file"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 195,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "pinned",
+        "terminal_name": "pinned"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 196,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.load",
+        "terminal_name": "load"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 198,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "load_passive_inputs",
+        "terminal_name": "load_passive_inputs"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 201,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 202,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.array_equal",
+        "terminal_name": "array_equal"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 205,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_actions",
+        "terminal_name": "_actions"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 209,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_dates_by_name",
+        "terminal_name": "_dates_by_name"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 212,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_dates_by_name",
+        "terminal_name": "_dates_by_name"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 218,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 219,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.allclose",
+        "terminal_name": "allclose"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 223,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "dict",
+        "terminal_name": "dict"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 224,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 227,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_inherited_actions",
+        "terminal_name": "_inherited_actions"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 227,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "compiled.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 228,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "align_passive",
+        "terminal_name": "align_passive"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 24,
+        "module": "backend.market.capacity_original_frozen_readers_v1",
+        "owner": "CapacityCounterfactualRiskBaseV1.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "learned_retention_models.completed_features",
+        "terminal_name": "completed_features"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 30,
+        "module": "backend.market.capacity_original_frozen_readers_v1",
+        "owner": "CapacityCounterfactualRiskBaseV1.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "actual_observed_at.isoformat",
+        "terminal_name": "isoformat"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 34,
+        "module": "backend.market.capacity_original_frozen_readers_v1",
+        "owner": "CapacityCounterfactualRiskBaseV1.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "tuple",
+        "terminal_name": "tuple"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 34,
+        "module": "backend.market.capacity_original_frozen_readers_v1",
+        "owner": "CapacityCounterfactualRiskBaseV1.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "tuple",
+        "terminal_name": "tuple"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 35,
+        "module": "backend.market.capacity_original_frozen_readers_v1",
+        "owner": "CapacityCounterfactualRiskBaseV1.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 38,
+        "module": "backend.market.capacity_original_frozen_readers_v1",
+        "owner": "CapacityCounterfactualRiskBaseV1.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "min",
+        "terminal_name": "min"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 38,
+        "module": "backend.market.capacity_original_frozen_readers_v1",
+        "owner": "CapacityCounterfactualRiskBaseV1.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 38,
+        "module": "backend.market.capacity_original_frozen_readers_v1",
+        "owner": "CapacityCounterfactualRiskBaseV1.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 39,
+        "module": "backend.market.capacity_original_frozen_readers_v1",
+        "owner": "CapacityCounterfactualRiskBaseV1.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.array_equal",
+        "terminal_name": "array_equal"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 40,
+        "module": "backend.market.capacity_original_frozen_readers_v1",
+        "owner": "CapacityCounterfactualRiskBaseV1.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

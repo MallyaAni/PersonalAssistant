@@ -1,0 +1,745 @@
+{
+  "records": [
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "af902c2296ee77f968154ef7a398708fbc5d04fbaea5d3a483ef9a8333a7d717",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 99,
+        "module": "backend.market.store",
+        "owner": "MarketStore.write"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "19228c038d5f0cca7a46540937ded7e89b1bfad08d1ab45e23698adaf25f7a5b",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 100,
+        "module": "backend.market.store",
+        "owner": "MarketStore.write"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "85d46040a1589e74edac8efcf176d10d61fc8d32dca580b471b0da899d62ff06",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 102,
+        "module": "backend.market.store",
+        "owner": "MarketStore.write"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "187a49aeef6185b8afdcecac5ba72906fcefb1d1f42d8843dfd9e29ab2496d37",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 104,
+        "module": "backend.market.store",
+        "owner": "MarketStore.write"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "ad6f0baad1bed9b86a878ee46738fa1fecd9860737dcaf674b72927a7a072185",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 118,
+        "module": "backend.market.store",
+        "owner": "MarketStore.write"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "58d34201a71cc40e1274a9573cb4ccd300cfa9a4e740c6dc547423fc21f34665",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 120,
+        "module": "backend.market.store",
+        "owner": "MarketStore.write"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "35dd39250a32a6d7a8ea4104e9eaf964888d485bb458dfd52cd8d8f1cee46421",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 121,
+        "module": "backend.market.store",
+        "owner": "MarketStore.write"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "f70404663342e1b96c4465a37266e424f8eb842af17234ccaaf93860cd68c08f",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 150,
+        "module": "backend.market.store",
+        "owner": "MarketStore.write_frame"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "fed764a668a6d47c11931f2ac41cf167051d16ed4a65ed4b8f3faa851ca84926",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 153,
+        "module": "backend.market.store",
+        "owner": "MarketStore.write_frame"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "b665a789f5281f55380e4cc136fe32663b655e18ee203fc137ccdae07b36d01b",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 175,
+        "module": "backend.market.store",
+        "owner": "MarketStore.read_frame"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "60dff1445ba004563cd7aab026184b95391e35ae60ccb8542024b84f8e991e9a",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 185,
+        "module": "backend.market.store",
+        "owner": "MarketStore._latest_of_kind"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "f70c9a8d92d8d14655316f776227fd9fa7173efe3de5aa5796b837720ae317dd",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 187,
+        "module": "backend.market.store",
+        "owner": "MarketStore._latest_of_kind"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "3273b448f6b909dea0f303eaa6ec05887dc247195bb7280233cfaf68f7a549f5",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 201,
+        "module": "backend.market.store",
+        "owner": "MarketStore.asofs"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "f70c9a8d92d8d14655316f776227fd9fa7173efe3de5aa5796b837720ae317dd",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 203,
+        "module": "backend.market.store",
+        "owner": "MarketStore.asofs"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "e6846bc608136bfe6fe3795fc7c8ce3d8345b56b4393ba7137b30d381ac95381",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 214,
+        "module": "backend.market.store",
+        "owner": "MarketStore.tickers"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "2f50d465369d11cfd9e539a1919bcd7b0e4b81d4b542aa655d7e6d0ba70955a4",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 220,
+        "module": "backend.market.store",
+        "owner": "MarketStore.latest_asof"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "fe461ea7cb6d59319eb64413e4d425e7b4a115f94a9692ad34e7b93a2dc6fbb9",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 241,
+        "module": "backend.market.store",
+        "owner": "MarketStore.observed_sessions"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "07b00b6b81ac7f7a7245d3af0e1afe1a54d7e3a315f547fda619b66c4b5851c2",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 258,
+        "module": "backend.market.store",
+        "owner": "MarketStore.read"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "c7455e097689ad4173521f945ee1b3c6966bcc77af26f1f3bf0cb933e25ec1fc",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 274,
+        "module": "backend.market.store",
+        "owner": "MarketStore.read"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "4207bb196e5e86656224c231c5399da9cbfe4fca41497242c6332bc2362a01ca",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 341,
+        "module": "backend.market.store",
+        "owner": "summarize"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "2d64cf69591245c1e26af275ee295d37283fd4d45ab93481488565247a0051a7",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 33,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "211060e0e747b06d2648fab87eb0fe0705561d35ea126b156dcee153167ce10a",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 124,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._distribution"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "d96ed796f1c31ca41ef149396a9a6b14259a8ae034c953421536a940b31cb159",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 132,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._distribution"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "c4a8976c873ab590b08bbb84d9b9e69987f64dd040c3443cf3607383e1bc1c27",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 186,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._distribution"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "066f6bab8e7b844545c4743f9e9f71ba47e42ea05280149ba7d81ed33042bab0",
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 36,
+        "kind": "dataclass_producer_declaration_NOT_generated_CodeType",
+        "line": 32,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "ResidualSample"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "5f7f9145ba9efb37d8cb9bba944600afe08c07d9f23220b8accf31b6afa9584f",
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 46,
+        "kind": "dataclass_producer_declaration_NOT_generated_CodeType",
+        "line": 41,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "Distribution"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "f740ed038045ef57ea44816877ef2985ceafbd32d21d9bc7377d94bd677cdb28",
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 54,
+        "kind": "dataclass_producer_declaration_NOT_generated_CodeType",
+        "line": 51,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "Decision"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "5a7dcf9910e32cc337b2e893c9ae19536d5e99d062f4d695f5bb2806a7877da8",
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 84,
+        "kind": "dataclass_producer_declaration_NOT_generated_CodeType",
+        "line": 59,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "Calibration"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "2723c62db61cc490e98ab7b14629d52d5d7883425e14b3360fd420e7bdad8d7f",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 136,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "_clocks"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "bbb643957897beebf04b90cee2acd5339edad740d99f532d52bd338bc55b4a5d",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 171,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "_validate"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "8ec4ccd12a873779eb15fd671866ba7603e5200285f9ea0e92deaba005344ee8",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 174,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "_validate"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "31ba490139b41842fdce66bbc65a16767cee8b5267634b13bbb063afe04ef29b",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 183,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "_validate"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "a4a4a0cee9c2d00a05effe90ac08ab5657bebae5045e7c6c14240fca6d0a6081",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 199,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "_validate"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "e9fe72a938fcd651233b103e4a49227d42fe1a1043f128dc83d4eed220e25119",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 268,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "_identity"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "f4394f9a572f2cac4fe551bb3c653bc0f8ece3808fbfbea5396180277b339f8a",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 284,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "_identity"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "c2f71096e2fe5040d99066fd835c29275284ca417f1a1b29cd3970a46524bc7f",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 396,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "2b7e9337ca8e2098f54d7100d10fd2a437561dcab224b75804281595868239fc",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 459,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "645edf40ff9fc8c2cff52975e0e3234c3a3d8518a99e1ca17bf3c7ca608eae72",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 493,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "f1def26bb84e56f8d71ba5fb79b9bf0e0a72af917ae734532e8530fcaedb7bd8",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 258,
+        "module": "backend.market.allocation_controls",
+        "owner": "_load_benchmark_cache"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "3b6fe41e76bd0970a9acb9bc3c49a68aa41428b0074294de6e6eeea10c2be648",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 262,
+        "module": "backend.market.allocation_controls",
+        "owner": "_load_benchmark_cache"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "8f5162a213d52e29e4e008501dc281cdc86903783570dc868e05ac3fd7bec331",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 320,
+        "module": "backend.market.allocation_controls",
+        "owner": "build_adjusted_opens"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "b0d6fc30ba1a30c55b4a91a6e295067da2a9ada8686572b2b0ee65b9dfe8ab8a",
+        "compiled_CodeType_identity": null,
+        "kind": "SetComp",
+        "line": 324,
+        "module": "backend.market.allocation_controls",
+        "owner": "build_adjusted_opens"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "753580bdc9bc635d604d0870429581db4d54d54cc0bc281b91ad18837e1c5521",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 326,
+        "module": "backend.market.allocation_controls",
+        "owner": "build_adjusted_opens"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "2f20f92e3928dfa3c5c268101b334a510b83a8c68b41cfdb3fdf7711fb150758",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 356,
+        "module": "backend.market.allocation_controls",
+        "owner": "build_adjusted_opens"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "9c4ab9996966041aef8730fd1d1582016414aed0aa04f3a95eed0fef253f5d01",
+        "decorators": [
+          "dataclass(frozen=True, slots=True)"
+        ],
+        "end_line": 64,
+        "kind": "dataclass_producer_declaration_NOT_generated_CodeType",
+        "line": 55,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "DailyBar"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "6c16b43bec250b5c945d2ea854f1b07a0b618cb6d205890e0c47c3ca6c5948c6",
+        "decorators": [
+          "dataclass(frozen=True, slots=True)"
+        ],
+        "end_line": 73,
+        "kind": "dataclass_producer_declaration_NOT_generated_CodeType",
+        "line": 68,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "CorporateAction"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "de4fe61f771b158ce2bb55cee2f1159632c958b78ab6ef0d42b0376aab5c1ca4",
+        "decorators": [
+          "dataclass(frozen=True, slots=True)"
+        ],
+        "end_line": 85,
+        "kind": "dataclass_producer_declaration_NOT_generated_CodeType",
+        "line": 77,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "TickerHistory"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "17bd41dcb42733769d5026f1d9f6a08e61d56884568bd023115eb29420153b6a",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 226,
+        "module": "backend.market.yahoo",
+        "owner": "impersonating_transport"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "6e4eae0f32f7bf76ef2fcdf805fb57043f0f0964adc0df149be6d700593bf50f",
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 129,
+        "kind": "dataclass_producer_declaration_NOT_generated_CodeType",
+        "line": 42,
+        "module": "backend.market.market_conditioned_calibration",
+        "path": "backend/market/market_conditioned_calibration.py",
+        "qualname": "MarketLogFit"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "f5690fda7d88fda496570f7bc29157b48da07967e2762e0af9a3e64a75c39d7e",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 85,
+        "module": "backend.market.market_conditioned_calibration",
+        "owner": "MarketLogFit.predict"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "656d2cba8425b11e75d649d65dcf554e55e6f93ef276c2d77692e511488e0c6e",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 118,
+        "module": "backend.market.market_conditioned_calibration",
+        "owner": "MarketLogFit.receipt"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "c5060250ff57b0657605da7b73921a8409ef24e27483e7a8de12f96bf03d57bf",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 149,
+        "module": "backend.market.market_conditioned_calibration",
+        "owner": "fit_market_log"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "c4caedbd3f51250aac3bfc042b2bd95bc37630f5a32f5ddcc33740d87230fb0c",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 161,
+        "module": "backend.market.market_conditioned_calibration",
+        "owner": "fit_market_log"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "2ffb6e8bb72b8d6a8bd81dfed330f131db1538743cfc5ab591ea88c3c96a3193",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 197,
+        "module": "backend.market.market_conditioned_calibration",
+        "owner": "fit_market_log"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "dece71fb0627785267990bbef9d1e20b5c7a1ce3373aefa6eeb1e3bf0718525f",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 241,
+        "module": "backend.market.market_conditioned_calibration",
+        "owner": "_regression"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "f4ab97f36aa558cd4203a55a9d999f205ae8d0065e7b5482fc16559c890b943e",
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 55,
+        "kind": "dataclass_producer_declaration_NOT_generated_CodeType",
+        "line": 26,
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "qualname": "LogFit"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "a862ad51cd951a8cf0e183780dafd439540a4d3d09e92053457c98cfcb76be4d",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 98,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "13f67678f4329351307e0ba713729df0903c6aba5ede346863fa5b63bc05e499",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 103,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "2a66a1d2ef43bc6fe5387ffd263346928d65550c94d31e62c3734a18c9c83e31",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 113,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "189e3c3a0d335987b72440b31ea7260afe68630a77f741eb70ee6ebb1820eed3",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 156,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "_Calibration._bind"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "211060e0e747b06d2648fab87eb0fe0705561d35ea126b156dcee153167ce10a",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 239,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "_Calibration._distribution"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "d96ed796f1c31ca41ef149396a9a6b14259a8ae034c953421536a940b31cb159",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 253,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "_Calibration._distribution"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "a529417664c8ada4295d51231666616df3b53c56670d79e6ea62d73809f34635",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 260,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "_Calibration._distribution"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "c4a8976c873ab590b08bbb84d9b9e69987f64dd040c3443cf3607383e1bc1c27",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 271,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "_Calibration._distribution"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

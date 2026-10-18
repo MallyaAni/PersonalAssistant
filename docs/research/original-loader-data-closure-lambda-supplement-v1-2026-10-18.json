@@ -1,0 +1,91 @@
+{
+  "additional_call_sites": [
+    {
+      "actual_callable_phase_and_CodeType": null,
+      "line": 247,
+      "module": "backend.market.allocation_controls",
+      "owner": "<lambda source scope>",
+      "target_expression": "handle.read"
+    },
+    {
+      "actual_callable_phase_and_CodeType": null,
+      "line": 175,
+      "module": "backend.market.capacity_original_admissions_v2",
+      "owner": "<lambda source scope>",
+      "target_expression": "len"
+    },
+    {
+      "actual_callable_phase_and_CodeType": null,
+      "line": 175,
+      "module": "backend.market.capacity_original_admissions_v2",
+      "owner": "<lambda source scope>",
+      "target_expression": "Path"
+    }
+  ],
+  "compiled_generated_call_phase_native_runtime_acceptance": null,
+  "complete_AST_call_site_count_after_supplement": 5889,
+  "gap": "Original local scope walk omitted five lambda expressions and three contained calls. Original inventory/pages/source retained, not rewritten or replayed.",
+  "inventory_sha256": "a90f578d09edf0c54193156595d8d859e27488b49fac0964caf08558cc128cf1",
+  "lambda_source_declarations": [
+    {
+      "AST_sha256": "aa5f7df4e67d93eafd9cd2c0492206db9706fe0c8c632b153c780f6d41ab75fc",
+      "column": 26,
+      "compiled_CodeType_identity": null,
+      "end_line": 247,
+      "line": 247,
+      "module": "backend.market.allocation_controls",
+      "source_expression": "lambda: handle.read(1 << 20)"
+    },
+    {
+      "AST_sha256": "ec6a91c889485dbb10b07576a1ec36bea61b448e2bbf817bcf0af01a84e1941e",
+      "column": 37,
+      "compiled_CodeType_identity": null,
+      "end_line": 175,
+      "line": 175,
+      "module": "backend.market.capacity_original_admissions_v2",
+      "source_expression": "lambda item: len(Path(item['Destination']).parts)"
+    },
+    {
+      "AST_sha256": "4680352b3cdb61e5a5c05ad08e116bbe591ae7278520d8d5e826cafc15338461",
+      "column": 22,
+      "compiled_CodeType_identity": null,
+      "end_line": 1062,
+      "line": 1062,
+      "module": "backend.market.live_execution_inputs",
+      "source_expression": "lambda row: (row['date'], row['kind'] != 'split')"
+    },
+    {
+      "AST_sha256": "6192c83e48f635f3c2a2d2785acb1411661cc267791267b10d45124db0d8a5f0",
+      "column": 32,
+      "compiled_CodeType_identity": null,
+      "end_line": 495,
+      "line": 495,
+      "module": "backend.market.live_execution_inputs",
+      "source_expression": "lambda row: (row['date'], row['symbol'])"
+    },
+    {
+      "AST_sha256": "b58718ffa17babec0ebb787e34607879e93e694f6ac015768d7651ee29a35c96",
+      "column": 21,
+      "compiled_CodeType_identity": null,
+      "end_line": 152,
+      "line": 152,
+      "module": "backend.market.yahoo",
+      "source_expression": "lambda action: (action.action_date, action.kind)"
+    }
+  ],
+  "original_counts_unchanged": {
+    "call_sites": 5886,
+    "class_declarations": 53,
+    "deferred_import_declarations": 38,
+    "edges": 221,
+    "external_import_declarations": 190,
+    "forbidden_name_declarations_not_selected_execution": 16,
+    "function_declarations": 362,
+    "generated_declarations": 319,
+    "modules": 35,
+    "records": 7120,
+    "source_bytes": 494189
+  },
+  "payload_bodies_run": false,
+  "schema": "capacity-data-closure-lambda-source-supplement/1"
+}

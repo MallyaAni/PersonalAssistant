@@ -1,0 +1,773 @@
+{
+  "records": [
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 258,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "base._json_hash",
+        "terminal_name": "_json_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 259,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 260,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_registered_identity",
+        "terminal_name": "_registered_identity"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 261,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "base._json_hash",
+        "terminal_name": "_json_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 262,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 263,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_calibration_grids",
+        "terminal_name": "_calibration_grids"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 268,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_holding_mode",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "identity.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 269,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_holding_mode",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "identity.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 270,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_holding_mode",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "hashlib.sha256((Path(__file__).resolve().parents[2] / HELD_PROTOCOL).read_bytes()).hexdigest",
+        "terminal_name": "hexdigest"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 270,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_holding_mode",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "hashlib.sha256",
+        "terminal_name": "sha256"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 271,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_holding_mode",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "(Path(__file__).resolve().parents[2] / HELD_PROTOCOL).read_bytes",
+        "terminal_name": "read_bytes"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 271,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_holding_mode",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path(__file__).resolve",
+        "terminal_name": "resolve"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 271,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_holding_mode",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 274,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_holding_mode",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "identity.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 275,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_holding_mode",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "type",
+        "terminal_name": "type"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 275,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_holding_mode",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "identity.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 276,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_holding_mode",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "identity.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 277,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_holding_mode",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "source.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 280,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_holding_mode",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 282,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_holding_mode",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "identity.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 287,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_holding_mode",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 293,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_registered_identity",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_holding_mode",
+        "terminal_name": "_holding_mode"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 295,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_registered_identity",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "dict",
+        "terminal_name": "dict"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 299,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_registered_identity",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 301,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_registered_identity",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "list",
+        "terminal_name": "list"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 303,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_registered_identity",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 303,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_registered_identity",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "identity.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 303,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_registered_identity",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "expected.items",
+        "terminal_name": "items"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 304,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_registered_identity",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 311,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "list",
+        "terminal_name": "list"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 312,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 313,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 314,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "list",
+        "terminal_name": "list"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 316,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 318,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 318,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 320,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.dtype",
+        "terminal_name": "dtype"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 322,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isinf(result.forecasts).any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 322,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isinf",
+        "terminal_name": "isinf"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 323,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 324,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 328,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 334,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "identity['input_sha256'].get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 334,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 335,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 336,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 337,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 339,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 340,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_calibration_grids",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_monthly_predictions",
+        "terminal_name": "_monthly_predictions"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 347,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_monthly_predictions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "dates.astype",
+        "terminal_name": "astype"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 349,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_monthly_predictions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 349,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_monthly_predictions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.unique",
+        "terminal_name": "unique"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 351,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_monthly_predictions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 352,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_monthly_predictions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "zip",
+        "terminal_name": "zip"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 352,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_monthly_predictions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.unique",
+        "terminal_name": "unique"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 353,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_monthly_predictions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.flatnonzero",
+        "terminal_name": "flatnonzero"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 355,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_monthly_predictions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 356,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_monthly_predictions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 357,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_monthly_predictions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 357,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_monthly_predictions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "min",
+        "terminal_name": "min"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 358,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_monthly_predictions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 361,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_monthly_predictions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite(result.forecasts[scored]).any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 361,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_monthly_predictions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 364,
+        "module": "backend.market.direct_feature_arithmetic",
+        "owner": "_monthly_predictions",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

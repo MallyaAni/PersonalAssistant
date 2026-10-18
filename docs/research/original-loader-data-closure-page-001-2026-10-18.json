@@ -1,0 +1,645 @@
+{
+  "records": [
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_admissions_v2",
+        "kind": "lexical_import",
+        "line": 11,
+        "to": "backend.market.capacity_original_input_auth_v1"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_admissions_v2",
+        "kind": "lexical_import",
+        "line": 12,
+        "to": "backend.market.capacity_original_evidence_v1"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_admissions_v2",
+        "kind": "lexical_import",
+        "line": 13,
+        "to": "backend.market.capacity_original_archive_adaptations_v2"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_archives_v2",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_archives_v2",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_archives_v2",
+        "kind": "lexical_import",
+        "line": 16,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_archives_v2",
+        "kind": "lexical_import",
+        "line": 16,
+        "to": "backend.market.capacity_original_archive_adaptations_v2"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_archives_v2",
+        "kind": "lexical_import",
+        "line": 17,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_archives_v2",
+        "kind": "lexical_import",
+        "line": 17,
+        "to": "backend.market.capacity_original_evidence_v1"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_archives_v2",
+        "kind": "lexical_import",
+        "line": 18,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_archives_v2",
+        "kind": "lexical_import",
+        "line": 18,
+        "to": "backend.market.capacity_original_metadata_v1"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_archives_v2",
+        "kind": "lexical_import",
+        "line": 19,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_archives_v2",
+        "kind": "lexical_import",
+        "line": 19,
+        "to": "backend.market.capacity_original_input_auth_v1"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_archives_v2",
+        "kind": "lexical_import",
+        "line": 20,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_archives_v2",
+        "kind": "lexical_import",
+        "line": 20,
+        "to": "backend.market.capacity_original_history_json_v1"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_evidence_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_evidence_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_input_auth_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_input_auth_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_input_auth_v1",
+        "kind": "lexical_import",
+        "line": 13,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_input_auth_v1",
+        "kind": "lexical_import",
+        "line": 13,
+        "to": "backend.market.capacity_original_history_json_v1"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_durability_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_durability_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_durability_v1",
+        "kind": "lexical_import",
+        "line": 5,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_durability_v1",
+        "kind": "lexical_import",
+        "line": 5,
+        "to": "backend.market.capacity_original_evidence_v1"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_binding_v2",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_binding_v2",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_binding_v2",
+        "kind": "lexical_import",
+        "line": 17,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_binding_v2",
+        "kind": "lexical_import",
+        "line": 17,
+        "to": "backend.market.capacity_original_admissions_v2"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_binding_v2",
+        "kind": "lexical_import",
+        "line": 18,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_binding_v2",
+        "kind": "lexical_import",
+        "line": 18,
+        "to": "backend.market.capacity_original_evidence_v1"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_binding_v2",
+        "kind": "lexical_import",
+        "line": 19,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_binding_v2",
+        "kind": "lexical_import",
+        "line": 19,
+        "to": "backend.market.capacity_original_input_auth_v1"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_binding_v2",
+        "kind": "lexical_import",
+        "line": 20,
+        "to": "backend.market.capacity_original_admissions_v2"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_binding_v2",
+        "kind": "lexical_import",
+        "line": 21,
+        "to": "backend.market.capacity_original_archive_adaptations_v2"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.capacity_original_loader_binding_v2",
+        "kind": "lexical_import",
+        "line": 22,
+        "to": "backend.market.capacity_original_evidence_v1"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "lexical_import",
+        "line": 18,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "lexical_import",
+        "line": 18,
+        "to": "backend.market.calendar"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "lexical_import",
+        "line": 19,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "lexical_import",
+        "line": 19,
+        "to": "backend.market.daily_arithmetic_bridge"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "lexical_import",
+        "line": 20,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "lexical_import",
+        "line": 20,
+        "to": "backend.market.learned_entry_data"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "lexical_import",
+        "line": 21,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "lexical_import",
+        "line": 21,
+        "to": "backend.market.learned_entry_models"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.forward_arithmetic",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.forward_arithmetic",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.forward_arithmetic",
+        "kind": "lexical_import",
+        "line": 18,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.forward_arithmetic",
+        "kind": "lexical_import",
+        "line": 18,
+        "to": "backend.market.calendar"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.forward_arithmetic",
+        "kind": "lexical_import",
+        "line": 19,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.forward_arithmetic",
+        "kind": "lexical_import",
+        "line": 19,
+        "to": "backend.market.daily_arithmetic_bridge"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.forward_arithmetic",
+        "kind": "lexical_import",
+        "line": 20,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.forward_arithmetic",
+        "kind": "lexical_import",
+        "line": 20,
+        "to": "backend.market.direct_daily_arithmetic"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.forward_arithmetic",
+        "kind": "lexical_import",
+        "line": 21,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.forward_arithmetic",
+        "kind": "lexical_import",
+        "line": 21,
+        "to": "backend.market.direct_error_band"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.forward_arithmetic",
+        "kind": "lexical_import",
+        "line": 22,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.forward_arithmetic",
+        "kind": "lexical_import",
+        "line": 22,
+        "to": "backend.market.direct_feature_arithmetic"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.forward_arithmetic",
+        "kind": "lexical_import",
+        "line": 23,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.forward_arithmetic",
+        "kind": "lexical_import",
+        "line": 23,
+        "to": "backend.market.learned_entry_models"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.forward_arithmetic",
+        "kind": "lexical_import",
+        "line": 24,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.forward_arithmetic",
+        "kind": "lexical_import",
+        "line": 24,
+        "to": "backend.market.learned_retention_models"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.holding_risk_bank",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.holding_risk_bank",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

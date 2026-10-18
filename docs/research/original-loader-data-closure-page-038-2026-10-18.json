@@ -1,0 +1,773 @@
+{
+  "records": [
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 733,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "tuple",
+        "terminal_name": "tuple"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 735,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "deepcopy",
+        "terminal_name": "deepcopy"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 736,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 737,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "list",
+        "terminal_name": "list"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 740,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 742,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "feature.HoldingScenarios",
+        "terminal_name": "HoldingScenarios"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 743,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 743,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self.symbols.index",
+        "terminal_name": "index"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 744,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_month_session",
+        "terminal_name": "_month_session"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 747,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 747,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.searchsorted",
+        "terminal_name": "searchsorted"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 748,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "min",
+        "terminal_name": "min"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 749,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "max",
+        "terminal_name": "max"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 751,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.searchsorted",
+        "terminal_name": "searchsorted"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 752,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 756,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isnat",
+        "terminal_name": "isnat"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 760,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.ix_",
+        "terminal_name": "ix_"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 761,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 761,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.ix_",
+        "terminal_name": "ix_"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 762,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 762,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.ix_",
+        "terminal_name": "ix_"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 764,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "mask.all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 765,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "receipt.update",
+        "terminal_name": "update"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 766,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 767,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 768,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 769,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 769,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "(~matched).sum",
+        "terminal_name": "sum"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 770,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 771,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 772,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 772,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 773,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "chosen.tolist",
+        "terminal_name": "tolist"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 775,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 774,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 774,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "bank['endpoints'][chosen].max",
+        "terminal_name": "max"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 779,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self.current.support[indices].all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 780,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite(self.current.forecasts[indices]).all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 780,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 783,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 787,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.ix_",
+        "terminal_name": "ix_"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 791,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "errors.scale_holding_volatility",
+        "terminal_name": "scale_holding_volatility"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 799,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "receipt.update",
+        "terminal_name": "update"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 801,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 804,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.full",
+        "terminal_name": "full"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 804,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 804,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 806,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "receipt.update",
+        "terminal_name": "update"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 808,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 809,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 810,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 811,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 812,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 814,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "feature.HoldingScenarios",
+        "terminal_name": "HoldingScenarios"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 817,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "feature.HoldingScenarios",
+        "terminal_name": "HoldingScenarios"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 31,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "_sources",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path(__file__).resolve",
+        "terminal_name": "resolve"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 31,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "_sources",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 33,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "_sources",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 34,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "_sources",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 35,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "_sources",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 36,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "_sources",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 37,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "_sources",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 38,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "_sources",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 39,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "_sources",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

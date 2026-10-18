@@ -1,0 +1,709 @@
+{
+  "records": [
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "adb328c905f44355f509bbe36f275c35295ad22625cfad55384ec83c30d2beda",
+        "end_line": 216,
+        "line": 194,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "write_publication"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "66441aedc2777ec799a5621bfb39d1b8e62cecf7e6f2948bccb58964ac338b05",
+        "end_line": 273,
+        "line": 220,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "_admit"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "06cef193267a5c111ef5e8130b701dcaff9d88a491d68c64397ee17eed0d94ee",
+        "end_line": 295,
+        "line": 277,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "load_publication"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "1a21ef68460a90a895478444109898299f63437ccc1aa2e53d943c0e88ffdfdd",
+        "end_line": 332,
+        "line": 314,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "_close_window"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "5fa57a6ff727b52ee6e9fa9b00b1870678cd7e0bbc92bd56d99ce926270e06b0",
+        "end_line": 438,
+        "line": 336,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "observe_close"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "2e1b2eab72725f93aa9e0c7afe83992a0a9629617014faeef432a695c657791e",
+        "end_line": 504,
+        "line": 442,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "_admit_close"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "6a37574b143d10c25737eb8ec8e65a4f27e2b8d5cfa8ead9c62817ba4b1124a1",
+        "end_line": 551,
+        "line": 508,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "write_close"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "b6d55a26c65a872ab9ab75d4149dfa40e52212b11a9f20d7c35532a33fe0bab0",
+        "end_line": 600,
+        "line": 555,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "load_close"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "4eee040af0e5e1956f02ad547ac03758c23f13085b0d924ab8485b150fe7da82",
+        "end_line": 668,
+        "line": 606,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "ForwardVolatilityHoldingReader.__init__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "a7f438168e83dd105a9164d17a1cef2142bafa0d511f70e63fcd6a1b607d380c",
+        "end_line": 672,
+        "line": 671,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "ForwardVolatilityHoldingReader.validate_clock"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "3ae6caecb7afcd5eff6a072c21b1fdc2eecd477f132cf0c317819e9fb1d26ce3",
+        "end_line": 719,
+        "line": 675,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "ForwardVolatilityHoldingReader.validate_report"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "d18ce0c0663660f133b29ae95789d8704388c258afa9bac57b5bd2fba0954869",
+        "end_line": 817,
+        "line": 722,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "ForwardVolatilityHoldingReader.distribution"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "3d0c7704c7075013a34d2f1253a31fcf5758fb98c21ca6566d702197155e2007",
+        "end_line": 47,
+        "line": 30,
+        "module": "backend.market.holding_risk_bank",
+        "path": "backend/market/holding_risk_bank.py",
+        "qualname": "_sources"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "22aac94c3e8dc88075fb8e88fb98440665f0659bf22288206a8292306795a4b4",
+        "end_line": 72,
+        "line": 51,
+        "module": "backend.market.holding_risk_bank",
+        "path": "backend/market/holding_risk_bank.py",
+        "qualname": "_copy"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "bedc65611b7a485c358824c50de5c31796f4610b3c1be7d5a6ed89978ff39690",
+        "end_line": 86,
+        "line": 76,
+        "module": "backend.market.holding_risk_bank",
+        "path": "backend/market/holding_risk_bank.py",
+        "qualname": "_arrays"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "b49d33403797f0c96ffc58f43eb8dff4babd49ee6e83d5b84a6b639da080e9c1",
+        "end_line": 169,
+        "line": 90,
+        "module": "backend.market.holding_risk_bank",
+        "path": "backend/market/holding_risk_bank.py",
+        "qualname": "write_bank"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "78ef144f9ad9df14fb1f192e1c6e4bbdc313f81d044f3d13611a34d219b8d46a",
+        "end_line": 264,
+        "line": 173,
+        "module": "backend.market.holding_risk_bank",
+        "path": "backend/market/holding_risk_bank.py",
+        "qualname": "load_bank"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "145c9b3d309862047d8e329c3f5ca2b360d97d35b7b38b438a9a03ba2548c659",
+        "end_line": 69,
+        "line": 15,
+        "module": "backend.market.capacity_original_daily_inputs_v1",
+        "path": "backend/market/capacity_original_daily_inputs_v1.py",
+        "qualname": "daily_prefix"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "0043926f471efd488008d680f2472f1b183ac4b7af7715f0e419e2a8f716f361",
+        "end_line": 47,
+        "line": 42,
+        "module": "backend.market.capacity_original_economics_v1",
+        "path": "backend/market/capacity_original_economics_v1.py",
+        "qualname": "_file_sha256"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "f5309e100f3434dd0d2024f93fc3d866ae200b2cf9b136235c0207fc62c22d41",
+        "end_line": 55,
+        "line": 51,
+        "module": "backend.market.capacity_original_economics_v1",
+        "path": "backend/market/capacity_original_economics_v1.py",
+        "qualname": "_passive_evidence"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "4a80f62c95b4edcc04011d1e84176fe0a1d54e157e6f6f81732a388a42988aee",
+        "end_line": 71,
+        "line": 59,
+        "module": "backend.market.capacity_original_economics_v1",
+        "path": "backend/market/capacity_original_economics_v1.py",
+        "qualname": "_passive_provenance_plain"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "4a61269447a71206570a563e9ba11a73d718d401d9fe28e071098787c0d751a1",
+        "end_line": 115,
+        "line": 75,
+        "module": "backend.market.capacity_original_economics_v1",
+        "path": "backend/market/capacity_original_economics_v1.py",
+        "qualname": "load_passive_inputs"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "9ac675c34fb794b2ded1bd5a6bd4829ddba049ee4b66f84a55c21b32d7e71551",
+        "end_line": 143,
+        "line": 119,
+        "module": "backend.market.capacity_original_economics_v1",
+        "path": "backend/market/capacity_original_economics_v1.py",
+        "qualname": "economic_paths"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "5bb59af936f46d3d796fb68a4d9d6c159938d42a5107b5fa9e7720bd9a2bbf98",
+        "end_line": 169,
+        "line": 147,
+        "module": "backend.market.capacity_original_economics_v1",
+        "path": "backend/market/capacity_original_economics_v1.py",
+        "qualname": "align_passive"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "33866ecfb9869cf5f788bd1b5807f116b8b02024138202666c09124525448b17",
+        "end_line": 228,
+        "line": 173,
+        "module": "backend.market.capacity_original_economics_v1",
+        "path": "backend/market/capacity_original_economics_v1.py",
+        "qualname": "reviewed_economics"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "0669d8d49b1f476798884eea0d390fce9ca045aa467bc671083ccee0115466d8",
+        "end_line": 86,
+        "line": 21,
+        "module": "backend.market.capacity_original_frozen_readers_v1",
+        "path": "backend/market/capacity_original_frozen_readers_v1.py",
+        "qualname": "CapacityCounterfactualRiskBaseV1.__init__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "35d3a095d632d71d58574d78eb36f19bc8e2623cf1f32ce0323164b743cb0485",
+        "end_line": 132,
+        "line": 92,
+        "module": "backend.market.capacity_original_frozen_readers_v1",
+        "path": "backend/market/capacity_original_frozen_readers_v1.py",
+        "qualname": "CapacityFrozenRiskReaderV1.__init__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "98d687128ea72acb3e6c8167778568ea6c81a3d36441af899f6bdc432c2e178a",
+        "end_line": 141,
+        "line": 138,
+        "module": "backend.market.capacity_original_frozen_readers_v1",
+        "path": "backend/market/capacity_original_frozen_readers_v1.py",
+        "qualname": "CapacityFrozenMarketReaderV1.__init__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "73dd62a6deab76f83f43bc2066de1bd5480f354b687cb207491c179056635988",
+        "end_line": 44,
+        "line": 38,
+        "module": "backend.market.daily_arithmetic_bridge",
+        "path": "backend/market/daily_arithmetic_bridge.py",
+        "qualname": "_hash"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "e5e3ec0a19a119270443f0f4b5b258b6393dcef5081b24333620bc043b8acddf",
+        "end_line": 56,
+        "line": 48,
+        "module": "backend.market.daily_arithmetic_bridge",
+        "path": "backend/market/daily_arithmetic_bridge.py",
+        "qualname": "_as_of"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "0d5c6afc4f803d51c52dc4505daaf3b3542cdead2555fe6cf3578e5f63f7198d",
+        "end_line": 104,
+        "line": 60,
+        "module": "backend.market.daily_arithmetic_bridge",
+        "path": "backend/market/daily_arithmetic_bridge.py",
+        "qualname": "_validate"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "5ab0291533b4611613a5f822c65cb16cb8ea5c186edad222490e22321273e28a",
+        "end_line": 126,
+        "line": 108,
+        "module": "backend.market.daily_arithmetic_bridge",
+        "path": "backend/market/daily_arithmetic_bridge.py",
+        "qualname": "_targets"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "034f0082ab71abf4e2de38bdf3545c5a95bfffaed678c3d4b89b8e24d317f8e4",
+        "end_line": 164,
+        "line": 130,
+        "module": "backend.market.daily_arithmetic_bridge",
+        "path": "backend/market/daily_arithmetic_bridge.py",
+        "qualname": "fit_affine"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "a294077abb6a9cdb54799d5c2a86e53d1fed2c819081359de1b8ed6d2641dfc3",
+        "end_line": 192,
+        "line": 168,
+        "module": "backend.market.daily_arithmetic_bridge",
+        "path": "backend/market/daily_arithmetic_bridge.py",
+        "qualname": "_rows"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "a94315533ddec3d8beb834c2e0a2cbb45872c7b1eead92a644b36159bf7f46fe",
+        "end_line": 308,
+        "line": 196,
+        "module": "backend.market.daily_arithmetic_bridge",
+        "path": "backend/market/daily_arithmetic_bridge.py",
+        "qualname": "walk_forward"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "1e62c0a9b1a226fcca4eaa3736d002ab0b6d2bab6c4d8444c234d75efc046143",
+        "end_line": 64,
+        "line": 62,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_require"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "41a145631efaacae5436e50338f4deac5903b8251480240a4d3433b43f9041f8",
+        "end_line": 79,
+        "line": 68,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_day"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "ad710a9c15bbf9b73c7df5994f15c68fba66180d2e96ed34cac9010f7de1e9e4",
+        "end_line": 87,
+        "line": 83,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_dates_by_name"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "94e4bbee178b9ac3dd51c68fcacb3b6c3f10b99573aa33347fbcea36c83751a7",
+        "end_line": 103,
+        "line": 91,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_prices"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "884a7dd80d8cbd5588b57bc8a1b399fbd741cd7b9d8eb2cd1545be829386688d",
+        "end_line": 117,
+        "line": 107,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_ohlc"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "2c27f28ac12bb229258fdff232cb491b8e3dff3d0771b905e3f02c561d5ef4e6",
+        "end_line": 134,
+        "line": 121,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_freeze"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "4709d9d2b3463ca0c9c30de4f10f5d43bc080ded7b19f7ca5d96ea47f829d256",
+        "end_line": 237,
+        "line": 138,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "prepare_passive"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "a1419248bfab3a340b415680c1b6e09c1d6b4bf48588d9fc42c6aae17ed29cc8",
+        "end_line": 264,
+        "line": 241,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "validate_passive"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "e01be5c5c1b9f02b975ed7343c520cd1d109e14e63c5729b96b59e5f527837b7",
+        "end_line": 326,
+        "line": 268,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_cash_merger"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "7c91c3fe81f647386f35cbaf4748ce69ec0d2cb1bf6893a2f819060e373b6d94",
+        "end_line": 355,
+        "line": 330,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_inherited_actions"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "6ebab3a7c98534cc1ed8534c1aa9d24d1948e48ceca3ded746eca5b57fdc5939",
+        "end_line": 366,
+        "line": 359,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "validate_inherited"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "6f898d95443ae91b7f466c33a67047a96b917aeb77c0f241214d77cb2abd5a40",
+        "end_line": 375,
+        "line": 370,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_unique_object"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "eab603fe1f015cc1e90e95a133f641c6f22a5d6e49576cf1ee72ed8aaa405a84",
+        "end_line": 510,
+        "line": 379,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "review_action_export"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "30ed784188c40e9ace28b6b7e7879f5b804a3dc58ada225ef21e9360be30b5de",
+        "end_line": 539,
+        "line": 514,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_reviewed_inherited_events"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "901ae50287440401b90aea1f69e31d76e76d51beebc6fa4ad9a185b350354878",
+        "end_line": 621,
+        "line": 543,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_reviewed_grant"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "cb79690f7e67aacc508bf9e5dd9892385008ef4854ea1f7699cc3861af5a9a47",
+        "end_line": 654,
+        "line": 625,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_action_first_opening"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "d88736b7ea8b499de3daef80751103a419a827e4c1fb5b15f8a2bf2cafa5002e",
+        "end_line": 687,
+        "line": 658,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_consolidation"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "192e3b2fe92a46c38efd724314c81a28789088956b307bb890af06777cb338b4",
+        "end_line": 763,
+        "line": 691,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_default_share_terms"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "508ae9711e76da49312e2ab61fe81469e7bbc1c2f728746f83848855046fb2dd",
+        "end_line": 809,
+        "line": 767,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_exchange"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "dd738f9a2fa8872b3f9e371422ffab7b436a2bfaba096c1e39cd4e872776d67d",
+        "end_line": 819,
+        "line": 813,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_economic_action"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "9430621a8c43706bf25b6545e8f32a169197bb840f4465ae74129ba1ec1a25db",
+        "end_line": 905,
+        "line": 823,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_distribution"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "16035cc47592e2efe3a06149b86d731f13d7dbb0aebd4a2c9e64a96ba464aac3",
+        "end_line": 946,
+        "line": 909,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_validate_distribution_dependencies"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "b81b1e8feb976fb2995e8aee0c5c45e3afbe44c3eca6e4f3a667b5b7c4a49d97",
+        "end_line": 984,
+        "line": 950,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_validate_exchange_dependencies"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "47046463345d001b68b6398ee6115ed5b2cb8f0d8b23eb59e15f62e6ab8798b0",
+        "end_line": 1092,
+        "line": 988,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_actions"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "5e2f628e619262af65077e6f3fae8c11e8e11c56709a7b0ccc45436e14f31ff5",
+        "end_line": 1179,
+        "line": 1096,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "_cubes"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "d30ba080409b9a58add6bb0b283e1fda5a55d92f506ddafe9a156170110426e0",
+        "end_line": 1351,
+        "line": 1183,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "prepare"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "a922b74c7853f3870cb67bc9ff0fb102e3827fe13e048f14a7951f4a455dfcad",
+        "end_line": 40,
+        "line": 29,
+        "module": "backend.market.capacity_original_archive_adaptations_v2",
+        "path": "backend/market/capacity_original_archive_adaptations_v2.py",
+        "qualname": "finite_controls"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "c64efad2340446cce9f062d45c2307cffd01c1cdb773d40a02cb7b229c6b7529",
+        "end_line": 52,
+        "line": 44,
+        "module": "backend.market.capacity_original_archive_adaptations_v2",
+        "path": "backend/market/capacity_original_archive_adaptations_v2.py",
+        "qualname": "logical_digest"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "454383bedc7b85082701437bbb7b7946eba99c06e18e9fa7763506490c8edecf",
+        "end_line": 60,
+        "line": 56,
+        "module": "backend.market.capacity_original_archive_adaptations_v2",
+        "path": "backend/market/capacity_original_archive_adaptations_v2.py",
+        "qualname": "source_digests"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

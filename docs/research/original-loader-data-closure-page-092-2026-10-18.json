@@ -1,0 +1,773 @@
+{
+  "records": [
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 288,
+        "module": "backend.market.store",
+        "owner": "MarketStore.read",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "meta.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 301,
+        "module": "backend.market.store",
+        "owner": "MarketStore.describe",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self.latest_asof",
+        "terminal_name": "latest_asof"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 303,
+        "module": "backend.market.store",
+        "owner": "MarketStore.describe",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "out.append",
+        "terminal_name": "append"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 305,
+        "module": "backend.market.store",
+        "owner": "MarketStore.describe",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "pq.ParquetFile",
+        "terminal_name": "ParquetFile"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 305,
+        "module": "backend.market.store",
+        "owner": "MarketStore.describe",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self._path",
+        "terminal_name": "_path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 311,
+        "module": "backend.market.store",
+        "owner": "MarketStore.describe",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "parquet.read_row_group(0, columns=['session_date']).column(0)[0].as_py",
+        "terminal_name": "as_py"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 311,
+        "module": "backend.market.store",
+        "owner": "MarketStore.describe",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "parquet.read_row_group(0, columns=['session_date']).column",
+        "terminal_name": "column"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 311,
+        "module": "backend.market.store",
+        "owner": "MarketStore.describe",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "parquet.read_row_group",
+        "terminal_name": "read_row_group"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 315,
+        "module": "backend.market.store",
+        "owner": "MarketStore.describe",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "meta.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 316,
+        "module": "backend.market.store",
+        "owner": "MarketStore.describe",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "out.append",
+        "terminal_name": "append"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 317,
+        "module": "backend.market.store",
+        "owner": "MarketStore.describe",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "StoredTicker",
+        "terminal_name": "StoredTicker"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 323,
+        "module": "backend.market.store",
+        "owner": "MarketStore.describe",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "date.fromisoformat",
+        "terminal_name": "fromisoformat"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 323,
+        "module": "backend.market.store",
+        "owner": "MarketStore.describe",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "complete.decode",
+        "terminal_name": "decode"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 332,
+        "module": "backend.market.store",
+        "owner": "_write_atomically",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "path.with_suffix",
+        "terminal_name": "with_suffix"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 333,
+        "module": "backend.market.store",
+        "owner": "_write_atomically",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "pq.write_table",
+        "terminal_name": "write_table"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 334,
+        "module": "backend.market.store",
+        "owner": "_write_atomically",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "os.replace",
+        "terminal_name": "replace"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 341,
+        "module": "backend.market.store",
+        "owner": "summarize",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "json.dumps",
+        "terminal_name": "dumps"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 341,
+        "module": "backend.market.store",
+        "owner": "summarize",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "d.isoformat",
+        "terminal_name": "isoformat"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 341,
+        "module": "backend.market.store",
+        "owner": "summarize",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 341,
+        "module": "backend.market.store",
+        "owner": "summarize",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "store.tickers",
+        "terminal_name": "tickers"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 341,
+        "module": "backend.market.store",
+        "owner": "summarize",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "store.asofs",
+        "terminal_name": "asofs"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 29,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "isinstance",
+        "terminal_name": "isinstance"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 30,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 31,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 33,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 34,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 34,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "getattr",
+        "terminal_name": "getattr"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 35,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 35,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "getattr",
+        "terminal_name": "getattr"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 39,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 40,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "super()._bind",
+        "terminal_name": "_bind"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 40,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "super",
+        "terminal_name": "super"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 42,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 46,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self._frozen_bank['features'][:, self.symbols.index('SPY')][:, CONTEXT_COLUMNS].copy",
+        "terminal_name": "copy"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 46,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self.symbols.index",
+        "terminal_name": "index"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 50,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self.identity.update",
+        "terminal_name": "update"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 52,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "hashlib.sha256(Path(__file__).read_bytes()).hexdigest",
+        "terminal_name": "hexdigest"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 52,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "hashlib.sha256",
+        "terminal_name": "sha256"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 52,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path(__file__).read_bytes",
+        "terminal_name": "read_bytes"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 52,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 53,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "hashlib.sha256(Path(numerical.__file__).read_bytes()).hexdigest",
+        "terminal_name": "hexdigest"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 53,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "hashlib.sha256",
+        "terminal_name": "sha256"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 54,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path(numerical.__file__).read_bytes",
+        "terminal_name": "read_bytes"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 54,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 56,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "hashlib.sha256((Path(__file__).resolve().parents[2] / numerical.PROTOCOL).read_bytes()).hexdigest",
+        "terminal_name": "hexdigest"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 56,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "hashlib.sha256",
+        "terminal_name": "sha256"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 57,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "(Path(__file__).resolve().parents[2] / numerical.PROTOCOL).read_bytes",
+        "terminal_name": "read_bytes"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 57,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path(__file__).resolve",
+        "terminal_name": "resolve"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 57,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 59,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "list",
+        "terminal_name": "list"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 60,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 61,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": true,
+        "line": 66,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._stock_fit",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self._parent.distribution",
+        "terminal_name": "distribution"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 68,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._stock_fit",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 72,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._stock_fit",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 74,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._stock_fit",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 74,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._stock_fit",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 76,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._stock_fit",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 76,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._stock_fit",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self.symbols.index",
+        "terminal_name": "index"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 77,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._stock_fit",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.zeros",
+        "terminal_name": "zeros"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 79,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._stock_fit",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.full",
+        "terminal_name": "full"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 79,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._stock_fit",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.datetime64",
+        "terminal_name": "datetime64"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 80,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._stock_fit",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.full",
+        "terminal_name": "full"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 81,
+        "module": "backend.market.market_conditioned_holding",
+        "owner": "_MarketCalibration._stock_fit",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.full",
+        "terminal_name": "full"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

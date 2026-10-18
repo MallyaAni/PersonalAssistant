@@ -1,0 +1,773 @@
+{
+  "records": [
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 60,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 60,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 66,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite(raw).all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 66,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 67,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite(observed).all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 67,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 68,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 69,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 71,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 73,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.log1p",
+        "terminal_name": "log1p"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 73,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.log1p",
+        "terminal_name": "log1p"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 74,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 75,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 76,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "float",
+        "terminal_name": "float"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 76,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "x.mean",
+        "terminal_name": "mean"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 76,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "float",
+        "terminal_name": "float"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 76,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "y.mean",
+        "terminal_name": "mean"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 77,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 77,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "float",
+        "terminal_name": "float"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 77,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.max",
+        "terminal_name": "max"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 77,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.abs",
+        "terminal_name": "abs"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 78,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.zeros_like",
+        "terminal_name": "zeros_like"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 79,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "float",
+        "terminal_name": "float"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 80,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "float",
+        "terminal_name": "float"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 81,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "LogFit",
+        "terminal_name": "LogFit"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 87,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 88,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 88,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "default.sum",
+        "terminal_name": "sum"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 91,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite([center, mean, scale, squared, slope]).all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 91,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 92,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "fit_log",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 98,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "tuple",
+        "terminal_name": "tuple"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 99,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 103,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 103,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite(v).all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 103,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 105,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 109,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 112,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 112,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 113,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 113,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "isinstance",
+        "terminal_name": "isinstance"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 114,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 115,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 116,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 117,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 118,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 120,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 121,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.empty",
+        "terminal_name": "empty"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 123,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "enumerate",
+        "terminal_name": "enumerate"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 124,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "fit.predict",
+        "terminal_name": "predict"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 126,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.log1p",
+        "terminal_name": "log1p"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 127,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.zeros_like",
+        "terminal_name": "zeros_like"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 128,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.log1p",
+        "terminal_name": "log1p"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 129,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.errstate",
+        "terminal_name": "errstate"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 134,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.expm1",
+        "terminal_name": "expm1"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 135,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite(values).all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 135,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 135,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 136,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 138,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "calibrated_scenarios",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "predictions.append",
+        "terminal_name": "append"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 149,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "_Calibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "deepcopy",
+        "terminal_name": "deepcopy"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 151,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "_Calibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "isinstance",
+        "terminal_name": "isinstance"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 157,
+        "module": "backend.market.conditional_holding_calibration",
+        "owner": "_Calibration._bind",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "getattr",
+        "terminal_name": "getattr"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

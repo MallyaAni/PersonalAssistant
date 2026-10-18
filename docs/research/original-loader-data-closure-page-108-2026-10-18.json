@@ -1,0 +1,725 @@
+{
+  "records": [
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "87d06eadb46191a3700a6eaf3e824c04df4271b8de9c6d0bdae4989f61c7e740",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 772,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_exchange"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "a966a2dfe21263e06472a9cf484781a11a6d0c24e2ec8007ef47d9f7352ff7e2",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 828,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_distribution"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "77edda5199bdbd7e78ba7866d9bf24e2bc80e78b8401931bd6690bdd0b342694",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 845,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_distribution"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "ed6d988b3099d6409f43a9ec81be747c36af8edef8f5b03c3d182e718989d5e5",
+        "compiled_CodeType_identity": null,
+        "kind": "SetComp",
+        "line": 912,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_validate_distribution_dependencies"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "a0af98f8a652bba34fae82dc3f23a63eedf7550feb13c5a7c9f4e2a6da2bc5a9",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 914,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_validate_distribution_dependencies"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "d0cab9d9365c5c63ed992339cabee1f32bc1ae5a25848fb5425b45c20f731d3d",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 924,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_validate_distribution_dependencies"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "cbfd619f988759cadebffabcc0d5814462e5989c876911d68087ec310647666b",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 933,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_validate_distribution_dependencies"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "5987dfe763f5834718b425694396e2ba0bce1b59ece0d818c49a4e8fd8c42c07",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 934,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_validate_distribution_dependencies"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "f3d1f3a3ff2acfd62c97dc0911e48c06db7a0703ef834e1ddd54543d7988dac5",
+        "compiled_CodeType_identity": null,
+        "kind": "SetComp",
+        "line": 951,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_validate_exchange_dependencies"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "050eb87dcebca4dd9180033a7369fa7bd9cef0b075434afd58fe8ad160247583",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 958,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_validate_exchange_dependencies"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "187b637df7d14bd105cfd03c4db1e04ac11c5831d066a4c1d2b904e895ea6554",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 959,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_validate_exchange_dependencies"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "00fc01fdae94787bdd60e8b60335370a761cfa9dbbeb521d3009b91419bdc6ea",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 970,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_validate_exchange_dependencies"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "cd2f0417f30540d32182bc060fc20b76d728a551701631967e7ab6b51282b31b",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 976,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_validate_exchange_dependencies"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "7e080470a739862f18b040b29d04639ce854add167e80c4e22816b81992c0db7",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 1056,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_actions"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "a29930b913eba7a5d0d662745a1b2d9841006076af3ef122d680adfa8a683859",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 1085,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_actions"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "d86901d2ee06b6820bbed2cdf08743fad5d7637d1afec2ddf006bb214668d0de",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 1124,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_cubes"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "55cf7f4bdf2d1725d9c5cdc5d5c31a46891455cfaea137b780d57a4443f02032",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 1129,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_cubes"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "980b87deaead05f8170b3e851f107cb811fd592423a08ee1f74c6a49eae6deaf",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 1155,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_cubes"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "a35e206b411c95ef958ad26682dfe6ce5a63dd2d8825a9643e759e1c7e42ab4d",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 1164,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_cubes"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "1bc60c5ec808e3271ba3cd94967709c79ddd462374160c8a4664e72a66e57db5",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 1216,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "prepare"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "7a9dc92072b77251d137ebe6bf16d12ef2ae4f7d7fcf8c0ecae841af0ad7a7eb",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 1221,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "prepare"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "197e323a80a08930add3748145209f184a5d811f07ff3fa0d3650aa91f1f8819",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 1236,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "prepare"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "b70ad63d8525c555ecbbfd2926d416aa04cce62ddc8708fd04be4ede9b093ed0",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 1254,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "prepare"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "67d9a076828c7dd560d66a09992692b37e87b4e6d3739627967861d905778727",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 1256,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "prepare"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "232510a53eaffc01bef8e3831eaf6866dbe10be9a19dfce6fc41267d00e76efe",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 1263,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "prepare"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "9ea38d6817807cef205ee71724f0691256b5193538ba871900fb7c63a82ec0d5",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 1302,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "prepare"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "6e3e48a7e2cbd73a3b1d7fa7158bc444a2adefc2da3963a1788bf2e541bbaadb",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 1303,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "prepare"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "c20a36e895ba311ae9fa42b8aa414171dca4de4ab864fc9dec582d8747c178fe",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 1306,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "prepare"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "a243ef0a42ae57235ff14c7a746ebe7d35538490e115d8f8bd7dd459594106d7",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 32,
+        "module": "backend.market.capacity_original_archive_adaptations_v2",
+        "owner": "finite_controls"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "e53b4ca2ad828c4236de2fcbca69477431800a764b3218ca3916a2f502d06450",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 33,
+        "module": "backend.market.capacity_original_archive_adaptations_v2",
+        "owner": "finite_controls"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "8df12c5821349508de86abd5b817a4d279c5d35f2d827cb2fa475a7ee1c0d429",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 35,
+        "module": "backend.market.capacity_original_archive_adaptations_v2",
+        "owner": "finite_controls"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "61d5a5e5edf86bbde9a36078f762b4199fee62044e9368950fa32f09aaa1f6d5",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 47,
+        "module": "backend.market.capacity_original_archive_adaptations_v2",
+        "owner": "logical_digest"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "ea5c5a6fb8951970ccdcf08aeb3ccb400f3610943a00424fd00573545a4e4c23",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 92,
+        "module": "backend.market.capacity_original_archive_adaptations_v2",
+        "owner": "guard_extension"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "5d5dedbbda91212d4456cec2f686178b225a86932699094b8fbbb4dceb11ca54",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 38,
+        "module": "backend.market.capacity_original_metadata_v1",
+        "owner": "paper_descriptor"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "faa31246f263ed884a7ff833542bd7f57752223d0463bfaf768dc79b8b84a80a",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 39,
+        "module": "backend.market.capacity_original_metadata_v1",
+        "owner": "paper_descriptor"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "67e35db15ceb242d5177614010ec990b4ff347cf54bf7f0cc8060f23a04e9d04",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 40,
+        "module": "backend.market.capacity_original_metadata_v1",
+        "owner": "paper_descriptor"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "2007ebad44e69651ae49a0216182a586fea27d0eec809d465a8fa444a697f460",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 40,
+        "module": "backend.market.capacity_original_metadata_v1",
+        "owner": "paper_descriptor"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "3a663bc595cda89d4e8bcd0938f6005f538a77ce292f9f29a30c75191b1c2914",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 44,
+        "module": "backend.market.capacity_original_metadata_v1",
+        "owner": "paper_descriptor"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "1ef343d693129e52cb006c75ae2114cb637ac5f2020673ed9c433869ff051a2b",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 70,
+        "module": "backend.market.capacity_original_metadata_v1",
+        "owner": "native_source_identity"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "830b162a44ff4f0ea7eb6c506f79b5a0ca28e4032057081c331e6e6ac7052981",
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 38,
+        "kind": "dataclass_producer_declaration_NOT_generated_CodeType",
+        "line": 36,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "path": "backend/market/capacity_original_history_json_v1.py",
+        "qualname": "ArchiveRef"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "ba48c4fbdbf55e318a54f5a14be5e60660879b783cb551d30f527f5311ad671e",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 128,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "owner": "authenticate"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "abbfa479eba26680aad9a63c5f73def99167e6bde2e06fa5da0ba7ae5efef7ca",
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 166,
+        "kind": "dataclass_producer_declaration_NOT_generated_CodeType",
+        "line": 144,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "path": "backend/market/capacity_original_history_json_v1.py",
+        "qualname": "Row"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "678d287d504407b69a552a9855ded77845574a38e3e7be78cbf9cf69d1a727d5",
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 190,
+        "kind": "dataclass_producer_declaration_NOT_generated_CodeType",
+        "line": 171,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "path": "backend/market/capacity_original_history_json_v1.py",
+        "qualname": "Rows"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "a213acb0beabeb6f189efb076d410451c122e005838cce44442d7ee20252159d",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 197,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "owner": "canonical_items"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "1f84e5156df523c51d19d092a35391814f56963b1b1239d4edf69a34ed1a62be",
+        "decorators": [
+          "dataclass(frozen=True, eq=False)"
+        ],
+        "end_line": 399,
+        "kind": "dataclass_producer_declaration_NOT_generated_CodeType",
+        "line": 239,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "path": "backend/market/capacity_original_history_json_v1.py",
+        "qualname": "ShaMap"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "66d155e7051de2e5cea6e60d7f3e65faed3301ac8a9202108b647f5dacde415e",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 291,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "owner": "ShaMap._row"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "44207b0bd3d2ffc5ef57c673f1d0f4bc9fea628f825986e80c6cb1baf505018e",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 373,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "owner": "ShaMap.__eq__"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "364a4b32bcb4e36a9d6477a0c17f4199fbd9c1121606b619aa1fc51f81d8527e",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 380,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "owner": "ShaMap.__eq__"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "2dda4ac70a3404cbd93542a0b6d12be144228bde0d0cbe2eb0eaeb62e253dc3e",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 476,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "owner": "Cursor.sha_map"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "19d231f06b378b03e1a66abcc02848a241ae994133c1572b90b026c42296e51c",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 638,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "owner": "Cursor.history"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "646c01ee7a78c29c498759d0817dacf39d3a1dc48d9df61d796d9afa02b9ab7e",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 731,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "owner": "History.record"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "d95da3b445721eab50d715059919e89e0f4653071430f0bd3937d622335d43dd",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 744,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "owner": "History.record"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "4694143e95e18e7e7aaa672a06bf9f3ebb2ae523889f17020b87b1db0e6d3315",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 745,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "owner": "History.record"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "8081f3af52d228ed45642afd2ac4dea7a6ac7c3e701cb6a818dd4f5361a51673",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 93,
+        "module": "backend.market.calendar",
+        "owner": "_published_sessions"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "93a19d8dd41dce95ac039ab771b9d6996c275721db6f5707374268a4afabb4a7",
+        "compiled_CodeType_identity": null,
+        "kind": "SetComp",
+        "line": 94,
+        "module": "backend.market.calendar",
+        "owner": "_published_sessions"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "c7e59d645ab4b40c5963d4fac605b3b0fadfcde7aabff561beb1e39d645802d0",
+        "compiled_CodeType_identity": null,
+        "kind": "SetComp",
+        "line": 104,
+        "module": "backend.market.calendar",
+        "owner": "reviewed_sessions"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "b101e60bb0eab65083cc67049902e63b3d621b4f32c7f50c9de1e8cfd1074194",
+        "compiled_CodeType_identity": null,
+        "kind": "SetComp",
+        "line": 104,
+        "module": "backend.market.calendar",
+        "owner": "reviewed_sessions"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "927446ce5fa55ce5b5b0f8a83f80c00c2ae9bb48354b4191e66c76d5a8c8b203",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 105,
+        "module": "backend.market.calendar",
+        "owner": "reviewed_sessions"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "e7352a615f66b4f23b63b04fc1a91d8695ca8f28444fd05bed17fe1e8c2e7a34",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 108,
+        "module": "backend.market.calendar",
+        "owner": "reviewed_sessions"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "1f15cedb1f48be84e0c3842a29cbfc939ba92de37560cd4350c1d48826988015",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 118,
+        "module": "backend.market.calendar",
+        "owner": "_published_early_closes"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "5d8495c32f44c3fcbacf0ef9d1ae0c38f2672bdbd778785e09a127c444128c98",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 234,
+        "module": "backend.market.calendar",
+        "owner": "_fomc_distances"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "c4ab83f263d3a4f40d5ef6a5c266f6b013b0e15f5079eb9c594fd5e6bd0cf8aa",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 262,
+        "module": "backend.market.calendar",
+        "owner": "_opex_sessions"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "86d38553fdb50f94afee41bfb041c91e257ea3abd846c57f44fba2c5038e1c0c",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 277,
+        "module": "backend.market.calendar",
+        "owner": "calendar_by_session"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "cd6af3b9ac999f8d1dc4989fe66d151139eb98ab87dd7b2f57ebf845e9db15ad",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 140,
+        "module": "backend.market.learned_entry_data",
+        "owner": "prepare"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

@@ -1,0 +1,591 @@
+{
+  "records": [
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 10,
+        "module": "backend.market.direct_error_band",
+        "target": "copy"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 11,
+        "module": "backend.market.direct_error_band",
+        "target": "dataclasses"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 12,
+        "module": "backend.market.direct_error_band",
+        "target": "datetime"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 13,
+        "module": "backend.market.direct_error_band",
+        "target": "pathlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 15,
+        "module": "backend.market.direct_error_band",
+        "target": "numpy"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 3,
+        "module": "backend.market.direct_feature_arithmetic",
+        "target": "__future__"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 5,
+        "module": "backend.market.direct_feature_arithmetic",
+        "target": "hashlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 6,
+        "module": "backend.market.direct_feature_arithmetic",
+        "target": "copy"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 7,
+        "module": "backend.market.direct_feature_arithmetic",
+        "target": "dataclasses"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 8,
+        "module": "backend.market.direct_feature_arithmetic",
+        "target": "datetime"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 9,
+        "module": "backend.market.direct_feature_arithmetic",
+        "target": "pathlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 11,
+        "module": "backend.market.direct_feature_arithmetic",
+        "target": "numpy"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 12,
+        "module": "backend.market.direct_feature_arithmetic",
+        "target": "threadpoolctl"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 8,
+        "module": "backend.market.learned_retention_models",
+        "target": "__future__"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 10,
+        "module": "backend.market.learned_retention_models",
+        "target": "hashlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 11,
+        "module": "backend.market.learned_retention_models",
+        "target": "platform"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 12,
+        "module": "backend.market.learned_retention_models",
+        "target": "dataclasses"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 13,
+        "module": "backend.market.learned_retention_models",
+        "target": "pathlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 15,
+        "module": "backend.market.learned_retention_models",
+        "target": "numpy"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 16,
+        "module": "backend.market.learned_retention_models",
+        "target": "threadpoolctl"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 20,
+        "module": "backend.market.panel",
+        "target": "collections.abc"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 21,
+        "module": "backend.market.panel",
+        "target": "dataclasses"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 22,
+        "module": "backend.market.panel",
+        "target": "datetime"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 24,
+        "module": "backend.market.panel",
+        "target": "numpy"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 22,
+        "module": "backend.market.store",
+        "target": "json"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 23,
+        "module": "backend.market.store",
+        "target": "os"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 24,
+        "module": "backend.market.store",
+        "target": "collections.abc"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 25,
+        "module": "backend.market.store",
+        "target": "dataclasses"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 26,
+        "module": "backend.market.store",
+        "target": "datetime"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 27,
+        "module": "backend.market.store",
+        "target": "pathlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 7,
+        "module": "backend.market.market_conditioned_holding",
+        "target": "hashlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 8,
+        "module": "backend.market.market_conditioned_holding",
+        "target": "copy"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 9,
+        "module": "backend.market.market_conditioned_holding",
+        "target": "pathlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 11,
+        "module": "backend.market.market_conditioned_holding",
+        "target": "numpy"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 10,
+        "module": "backend.market.probabilistic_execution",
+        "target": "__future__"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 12,
+        "module": "backend.market.probabilistic_execution",
+        "target": "hashlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 13,
+        "module": "backend.market.probabilistic_execution",
+        "target": "dataclasses"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 14,
+        "module": "backend.market.probabilistic_execution",
+        "target": "datetime"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 15,
+        "module": "backend.market.probabilistic_execution",
+        "target": "pathlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 17,
+        "module": "backend.market.probabilistic_execution",
+        "target": "numpy"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 44,
+        "module": "backend.market.allocation_controls",
+        "target": "__future__"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 46,
+        "module": "backend.market.allocation_controls",
+        "target": "hashlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 47,
+        "module": "backend.market.allocation_controls",
+        "target": "json"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 48,
+        "module": "backend.market.allocation_controls",
+        "target": "pathlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 50,
+        "module": "backend.market.allocation_controls",
+        "target": "numpy"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 30,
+        "module": "backend.market.yahoo",
+        "target": "json"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 31,
+        "module": "backend.market.yahoo",
+        "target": "logging"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 32,
+        "module": "backend.market.yahoo",
+        "target": "time"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 33,
+        "module": "backend.market.yahoo",
+        "target": "collections.abc"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 34,
+        "module": "backend.market.yahoo",
+        "target": "dataclasses"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 35,
+        "module": "backend.market.yahoo",
+        "target": "datetime"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 36,
+        "module": "backend.market.yahoo",
+        "target": "typing"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 37,
+        "module": "backend.market.yahoo",
+        "target": "zoneinfo"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 8,
+        "module": "backend.market.market_conditioned_calibration",
+        "target": "hashlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 9,
+        "module": "backend.market.market_conditioned_calibration",
+        "target": "dataclasses"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 10,
+        "module": "backend.market.market_conditioned_calibration",
+        "target": "pathlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 12,
+        "module": "backend.market.market_conditioned_calibration",
+        "target": "numpy"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 7,
+        "module": "backend.market.conditional_holding_calibration",
+        "target": "hashlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 8,
+        "module": "backend.market.conditional_holding_calibration",
+        "target": "copy"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 9,
+        "module": "backend.market.conditional_holding_calibration",
+        "target": "dataclasses"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 10,
+        "module": "backend.market.conditional_holding_calibration",
+        "target": "pathlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 12,
+        "module": "backend.market.conditional_holding_calibration",
+        "target": "numpy"
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [
+          "backend.market",
+          "backend.market.capacity_original_inputs_v2"
+        ],
+        "external_targets_not_followed": [],
+        "line": 69,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "statement": "from backend.market import capacity_original_inputs_v2 as inputs_module",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [
+          "backend.market",
+          "backend.market.forward_arithmetic"
+        ],
+        "external_targets_not_followed": [],
+        "line": 70,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "statement": "from backend.market import forward_arithmetic",
+        "unresolved_backend": []
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

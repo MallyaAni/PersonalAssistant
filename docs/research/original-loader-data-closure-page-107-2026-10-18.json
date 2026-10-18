@@ -1,0 +1,725 @@
+{
+  "records": [
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "5db14a5ffe8e3645f67208174e4fdfa21ac538b912c3480fd738edf3e9dbfe7b",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 81,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "fit_month"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "2723c62db61cc490e98ab7b14629d52d5d7883425e14b3360fd420e7bdad8d7f",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 106,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "fit_month"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "977c64d52863e29a20dbbcb45bededf9397d210a7d01d6ceb91aa7d520a495a6",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 155,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "fit_month"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "d163ac34b7a4587ec65591ba300afbfeebaccb99fcb80c4eb25479be721dcbcc",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 167,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "fit_month"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "b4675a7337e07a4f284a279d2249bfd97bb08a56f411b406487165901228b535",
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 310,
+        "kind": "dataclass_producer_declaration_NOT_generated_CodeType",
+        "line": 300,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "CloseObservation"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "2723c62db61cc490e98ab7b14629d52d5d7883425e14b3360fd420e7bdad8d7f",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 369,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "observe_close"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "aa53626a294dab956cb2f58437b9ddef86dbdd1bceb199e658776dc9f1b0e22b",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 389,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "observe_close"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "c1c062e244e12da00fdc5f424f9f0d11791d34680021956cb90866940c48c0a5",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 398,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "observe_close"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "ef828fa33c4517d54e880e62d5adc035aafb9a527ab955ec28e6152b90bdde31",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 404,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "observe_close"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "74a18110689b04109c4202e7ef4bac9e55e425d7b7e4ad4d8e2160a7ae8a2901",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 516,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "write_close"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "83236ae398c3d8c548537b8067ddc3015bc401092e0835be921919195da4018b",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 576,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "load_close"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "4492a0f45afdc69e898a6212d5d22a872a6b52f0914b0211638721763a8e4c81",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 615,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "47e2dfe0f7556797db5c50eba74465c616929c7cf5305f7ed88ed63e995dadaf",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 643,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "6d17241c3f3204c638dd6d0c3cfb48983b2f452047171585f4b192b7b5657a28",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 729,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "a0b37769db62d462e11e78b6eb6af0276b1a429eaad29e5701709e76b46abc2d",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 740,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "15dcf69ec10e27a6f9353503aaff322595249054ad2ee08ac4cf4b41c4a6dc2c",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 743,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "cb62722081315747f8696d2cc1d8c771656eedc3bdf009aa956510a582c0c9fa",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 786,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "0b385491aded49fad22a9138c68cd2834d2a89b9fc9a3808b8e7b226350366ce",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 44,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "_sources"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "a6789efa69fc9ebc185fa5e55fdaebfd35dcc36245cc712eb8d32f10261e039f",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 69,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "_copy"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "aae706298605da5b9e496ae94dc1e6d3ace599fb9c6c6c7828a6d639b97faa31",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 83,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "_arrays"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "c73e106a7c0a5a51eddd134d580a48d1eb883b3bde0cd4a35c980c1a3192dddb",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 84,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "_arrays"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "9f9eae4b70ea8a6cae684cc5c448b30fa6972ecaba039b02aa9e925607071a9b",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 111,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "write_bank"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "b65762a29459e55a0a553fde25b1686a790ee5eb8aafc824800733468c910fdd",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 114,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "write_bank"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "5db14a5ffe8e3645f67208174e4fdfa21ac538b912c3480fd738edf3e9dbfe7b",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 119,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "write_bank"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "c23f1395274ee270ea2e3753dd76b5acb1efde71517100cb033938745aca88b3",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 150,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "write_bank"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "4e3b699de6da593fbc111c8812bbcbec840f7b06f8325bfd3903b76278024e16",
+        "compiled_CodeType_identity": null,
+        "kind": "SetComp",
+        "line": 210,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "load_bank"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "46ce36295eae5631073d240616a9c960e113c6fa6d6c397868e488e7aeda0e84",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 221,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "load_bank"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "5b4bf9db251aaa9fefd341291d4c6f2497b2269705e0edb6b018a26dd0bdc20c",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 222,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "load_bank"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "4459248aa0dd193f8015c048fa53b89620bd01990eb710af9c464e0ebe84b1b1",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 247,
+        "module": "backend.market.holding_risk_bank",
+        "owner": "load_bank"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "abbcbb9aae7bf30fafc026ae072df26eafce7947d06fbeff008b4c368508dd6d",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 61,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "_passive_provenance_plain"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "1180a506b098edfdc2274dcc892c7df49986a5786fa22bc11588119c5a8cce75",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 63,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "_passive_provenance_plain"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "72a0c9c0b997473f77c99201d5bba03d4acdab1ddfba4ad0ef4d06d6288eb1d3",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 122,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "economic_paths"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "f454c803a160b873907aebae22aed9ed104a4c3ba5225e0412d5f9931267015b",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 222,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "bed24d20c8777e08f6a5f630cce0a78b117dc00fdf6cc16f428430af94c2ad74",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 223,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "9bb2e1461952e821bf9ba3581d3755f90316d244e0bd1e97aba0ea0254bf9a98",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 224,
+        "module": "backend.market.capacity_original_economics_v1",
+        "owner": "reviewed_economics"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "e68b2d8a31bca4f91076adac27ebcbccb811def3eb1afa86a72b9135a3cace49",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 67,
+        "module": "backend.market.capacity_original_frozen_readers_v1",
+        "owner": "CapacityCounterfactualRiskBaseV1.__init__"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "6f7680daf3bddcccb2ad939e8ca72ff7694054f389ffc8a0eef1ffb8b5da971a",
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 34,
+        "kind": "dataclass_producer_declaration_NOT_generated_CodeType",
+        "line": 28,
+        "module": "backend.market.daily_arithmetic_bridge",
+        "path": "backend/market/daily_arithmetic_bridge.py",
+        "qualname": "BridgeForecasts"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "0bcbd63072989388e2ac9f7b4a9dd84a1a0c93ad40dc2f1d4b60726e8983b455",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 75,
+        "module": "backend.market.daily_arithmetic_bridge",
+        "owner": "_validate"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "96b270ce6e2ffa99960e14ed81acb7432dbbc0c8f0042f225d4ecef510108d06",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 114,
+        "module": "backend.market.daily_arithmetic_bridge",
+        "owner": "_targets"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "fa276ab761101ef8771c176068ac91c782634f7b030191d933d12999728a99ee",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 131,
+        "module": "backend.market.daily_arithmetic_bridge",
+        "owner": "fit_affine"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "f9be9375cfb7b96ddc7ae503f0e5cf1ae855ff0245c431064bed140b97aafc7c",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 137,
+        "module": "backend.market.daily_arithmetic_bridge",
+        "owner": "fit_affine"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "1fc58690505d58cb898fc897efd5fb4c348cef183d6042a039fca9e039ffdb41",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 227,
+        "module": "backend.market.daily_arithmetic_bridge",
+        "owner": "walk_forward"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "95bab20c06f563f4993d7df7af732165f387e18214b121858dd887c925845c07",
+        "compiled_CodeType_identity": null,
+        "kind": "ListComp",
+        "line": 237,
+        "module": "backend.market.daily_arithmetic_bridge",
+        "owner": "walk_forward"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "b66bbad81edf04b0ab6378468a6f5ab207943f3423bb142d1691920c1d6e1276",
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 34,
+        "kind": "dataclass_producer_declaration_NOT_generated_CodeType",
+        "line": 28,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "PassiveMarks"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "61a2f97020d374bab5e27f138315dfbe20e530e82c75160e8341cbc6b2f51db3",
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 58,
+        "kind": "dataclass_producer_declaration_NOT_generated_CodeType",
+        "line": 39,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "RawExecutionInputs"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "6aa18efdfb66fe5554a078915be0d2e6890bdbab36e9c5c06f717e9a6a1281bd",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 87,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_dates_by_name"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "9b18c2e13a6da32f1ba320e7300dc568ef193ce761947c80a4ae372931151c4f",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 123,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_freeze"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "73e4844cb20b4bad36d1eeb13eb5bf153b5221faf2c3ec18a46ed78fd6ee4d9f",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 125,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_freeze"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "1bc60c5ec808e3271ba3cd94967709c79ddd462374160c8a4664e72a66e57db5",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 161,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "prepare_passive"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "7a9dc92072b77251d137ebe6bf16d12ef2ae4f7d7fcf8c0ecae841af0ad7a7eb",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 167,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "prepare_passive"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "312bf1998487395fb60650330a8681edfb587f25e90b3814177fbd0b9db6fc55",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 186,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "prepare_passive"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "7ca990fbbd3fa7e3361c565227bbb4380d30cf058a4a20fcecf67e282b1e3a86",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 223,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "prepare_passive"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "6e3e48a7e2cbd73a3b1d7fa7158bc444a2adefc2da3963a1788bf2e541bbaadb",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 224,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "prepare_passive"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "6de1d32a15bc5e518cc760db5b7710d456913e27560ca8eed48043395623db1d",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 252,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "validate_passive"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "aec737176191d06a2497ec5265ad4db36aa5c077fdd58320087353470849ef7b",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 318,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_cash_merger"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "91b61ca427523ead2f6d5fb629704dad997cf3cac8f2d12854578f51b46f86b9",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 418,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "review_action_export"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "82a26cbd32fb172a30665da36935616da6c46b8c2d61e121c9c7b97245fb66ad",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 483,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "review_action_export"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "87b346d6736263d783b69135947d0587f8909cbfc3b929d60b72be909424b001",
+        "compiled_CodeType_identity": null,
+        "kind": "SetComp",
+        "line": 518,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_reviewed_inherited_events"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "109245cc3cb2a46f80e9f8ee84b177d2abf3dea3b7575c49f0613804cdd93895",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 537,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_reviewed_inherited_events"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "91b61ca427523ead2f6d5fb629704dad997cf3cac8f2d12854578f51b46f86b9",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 661,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "648079dd592cf2a3d546ce5412caea7f1c2511be3ada6cbde7c5ec3b9dcbd008",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 703,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "4e76216fe8790d2ecf5b71a69f22b95577f76d5075115aaa6d1e8deead1ac4a1",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 757,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "324f5920ad6875ca0b789eac976fb7cad35ca782a1344f85105d4875b29c0939",
+        "compiled_CodeType_identity": null,
+        "kind": "DictComp",
+        "line": 763,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms"
+      }
+    },
+    {
+      "section": "generated_declaration",
+      "value": {
+        "AST_sha256": "91b61ca427523ead2f6d5fb629704dad997cf3cac8f2d12854578f51b46f86b9",
+        "compiled_CodeType_identity": null,
+        "kind": "GeneratorExp",
+        "line": 771,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_exchange"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

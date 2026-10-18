@@ -1,0 +1,895 @@
+{
+  "records": [
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "c1bea6db9a6a02e4676d7aec84a9d57ce0c65dce704dbe8f572bc19655873c41",
+        "end_line": 99,
+        "line": 62,
+        "module": "backend.market.market_conditioned_calibration",
+        "path": "backend/market/market_conditioned_calibration.py",
+        "qualname": "MarketLogFit.predict"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "cfb75a97d918302ff35efaa8f9dceb3c3f19c45f704ddcfc273a6305c987da17",
+        "end_line": 129,
+        "line": 102,
+        "module": "backend.market.market_conditioned_calibration",
+        "path": "backend/market/market_conditioned_calibration.py",
+        "qualname": "MarketLogFit.receipt"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "bc33aa86de30d04af124438ede6c5f5e448c0e56867e0bf4886eda44efc4160e",
+        "end_line": 208,
+        "line": 133,
+        "module": "backend.market.market_conditioned_calibration",
+        "path": "backend/market/market_conditioned_calibration.py",
+        "qualname": "fit_market_log"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "88c03e23c1d1b87568f1221c5bef57addcb25aa993b9dc505ad88f580524eb18",
+        "end_line": 249,
+        "line": 212,
+        "module": "backend.market.market_conditioned_calibration",
+        "path": "backend/market/market_conditioned_calibration.py",
+        "qualname": "_regression"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "c96159f8f401f92751be914c5652087c0f0c9c1abf399ebe600b16483adbc0fe",
+        "end_line": 55,
+        "line": 37,
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "qualname": "LogFit.predict"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "abe597d67ff78aec156bcf5e05aec2c3c83231e7cf9936b8a20f9575b568cde2",
+        "end_line": 93,
+        "line": 59,
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "qualname": "fit_log"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "626734f3733d670a32e39f95e902e2a8202a634bef83acab6a3b40f46db59416",
+        "end_line": 142,
+        "line": 97,
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "qualname": "calibrated_scenarios"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "c3f6771d2b3d5bf89f60f716d16b259906706efe3bc641ab8b69b852b23c96f9",
+        "end_line": 182,
+        "line": 148,
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "qualname": "_Calibration._bind"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "3efff868a84ef039df5479d68597efc93ae5b017a2a6eb52aa9cea6d115c12a1",
+        "end_line": 216,
+        "line": 185,
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "qualname": "_Calibration._stock_fit"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "e181a574798792e439d4ff5a5893c0eecd3b7cee5acba178b9c9a8d307ca0fb5",
+        "end_line": 278,
+        "line": 219,
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "qualname": "_Calibration._distribution"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "1a0a03c4a435f5c1c5895db3bccda2cf19af931311219cb9b767af5a30f7582b",
+        "end_line": 287,
+        "line": 284,
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "qualname": "CalibratedHoldingReader.__init__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "9b8aa25ef3edb6ec5f9b50026f22020ecf332c2102f9cffabe0ccfffe2d00762",
+        "end_line": 291,
+        "line": 290,
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "qualname": "CalibratedHoldingReader.distribution"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "ebac2b0fc8c08a145bbefdf953813c381e18a4cb6fc61981eea319867383c90c",
+        "end_line": 300,
+        "line": 297,
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "qualname": "ForwardCalibratedHoldingReader.__init__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "9b8aa25ef3edb6ec5f9b50026f22020ecf332c2102f9cffabe0ccfffe2d00762",
+        "end_line": 304,
+        "line": 303,
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "qualname": "ForwardCalibratedHoldingReader.distribution"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "60d0afdd8d4d9fefabd337898a9a826a3bea3849e6df79a010d6b7580203492b",
+        "bases": [],
+        "decorators": [],
+        "end_line": 120,
+        "line": 28,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "path": "backend/market/capacity_original_loader_lifecycle_v2.py",
+        "qualname": "CapacityLoaderLeaseV2"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "6b8c3347673581b2ec59945d3146c408b862a779aac57bd11e5f63874307c809",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True, slots=True)"
+        ],
+        "end_line": 62,
+        "line": 56,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "path": "backend/market/capacity_original_inputs_v2.py",
+        "qualname": "CapacityAuditInputsV2"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "2d1849c92ae0236d6b1fc92f85aa3c2465a9909935a611d3270ecee86abcb513",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True, slots=True)"
+        ],
+        "end_line": 76,
+        "line": 47,
+        "module": "backend.market.capacity_original_archives_v2",
+        "path": "backend/market/capacity_original_archives_v2.py",
+        "qualname": "CapacitySourceReaderV2"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "f4c4b8653dad0f4c603572eab73c4c69ea94fbff8aedeb624b9b48077b8001cd",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True, slots=True)"
+        ],
+        "end_line": 174,
+        "line": 81,
+        "module": "backend.market.capacity_original_archives_v2",
+        "path": "backend/market/capacity_original_archives_v2.py",
+        "qualname": "CapacityOriginalArchivesV2"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "240c9ac1c7664a4039db803bfa18506ee3de245320995678670b6d220dec9552",
+        "bases": [
+          "dict"
+        ],
+        "decorators": [],
+        "end_line": 155,
+        "line": 137,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "_ReadOnlyDict"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "61de730998ead27f9989d1ca6c71bea114a138962fdae4737ce5acac51b80af4",
+        "bases": [
+          "list"
+        ],
+        "decorators": [],
+        "end_line": 177,
+        "line": 159,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "qualname": "_ReadOnlyList"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "89ae31e48b34dacb2fc507c80d759f0e7c0969b9e9ae151775d2d579b04cac94",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True, slots=True)"
+        ],
+        "end_line": 171,
+        "line": 157,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "path": "backend/market/capacity_original_input_auth_v1.py",
+        "qualname": "Pins"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "8419720c958b7507cdd7bc3037cee2aa14611f36227442581b7662e256b31a79",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 33,
+        "line": 30,
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "qualname": "DirectForecasts"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "a730e59b63c07cdba0e7ffece84c78351c8a63151acf6c1053ae937904925e41",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 44,
+        "line": 38,
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "qualname": "ObservedHead"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "88311a2423209c75f204da2a7c5c756cfa4509b6cd50674553ea14af2e69209b",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 76,
+        "line": 49,
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "qualname": "NumericHead"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "451db916e9584e08af1e5d0056a8fa7027cc7cc5c59b549a8f8f6ecf1066eadb",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 34,
+        "line": 32,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "MonthlyPublication"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "b4675a7337e07a4f284a279d2249bfd97bb08a56f411b406487165901228b535",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 310,
+        "line": 300,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "CloseObservation"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "ecbfdd7c5923afa3f877b7594e0ffd9c3469387648d8a74a494e32015bb280e5",
+        "bases": [],
+        "decorators": [],
+        "end_line": 817,
+        "line": 604,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "ForwardVolatilityHoldingReader"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "809a72d64206861ba982fb4d3cb570de3afcb5ddd58e9b2833943e6232311878",
+        "bases": [
+          "forward_arithmetic.ForwardVolatilityHoldingReader"
+        ],
+        "decorators": [],
+        "end_line": 86,
+        "line": 19,
+        "module": "backend.market.capacity_original_frozen_readers_v1",
+        "path": "backend/market/capacity_original_frozen_readers_v1.py",
+        "qualname": "CapacityCounterfactualRiskBaseV1"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "f960953bc488888a36c0c799ed8dca71b2c1e146994d5737468660ed51d02235",
+        "bases": [
+          "CapacityCounterfactualRiskBaseV1"
+        ],
+        "decorators": [],
+        "end_line": 132,
+        "line": 90,
+        "module": "backend.market.capacity_original_frozen_readers_v1",
+        "path": "backend/market/capacity_original_frozen_readers_v1.py",
+        "qualname": "CapacityFrozenRiskReaderV1"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "dca5d1c82d5d28cb3b6c59c98d2340f710bc23a011366f40949472c088f387dd",
+        "bases": [
+          "ForwardMarketConditionedHoldingReader"
+        ],
+        "decorators": [],
+        "end_line": 141,
+        "line": 136,
+        "module": "backend.market.capacity_original_frozen_readers_v1",
+        "path": "backend/market/capacity_original_frozen_readers_v1.py",
+        "qualname": "CapacityFrozenMarketReaderV1"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "6f7680daf3bddcccb2ad939e8ca72ff7694054f389ffc8a0eef1ffb8b5da971a",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 34,
+        "line": 28,
+        "module": "backend.market.daily_arithmetic_bridge",
+        "path": "backend/market/daily_arithmetic_bridge.py",
+        "qualname": "BridgeForecasts"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "b66bbad81edf04b0ab6378468a6f5ab207943f3423bb142d1691920c1d6e1276",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 34,
+        "line": 28,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "PassiveMarks"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "61a2f97020d374bab5e27f138315dfbe20e530e82c75160e8341cbc6b2f51db3",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 58,
+        "line": 39,
+        "module": "backend.market.live_execution_inputs",
+        "path": "backend/market/live_execution_inputs.py",
+        "qualname": "RawExecutionInputs"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "830b162a44ff4f0ea7eb6c506f79b5a0ca28e4032057081c331e6e6ac7052981",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 38,
+        "line": 36,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "path": "backend/market/capacity_original_history_json_v1.py",
+        "qualname": "ArchiveRef"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "abbfa479eba26680aad9a63c5f73def99167e6bde2e06fa5da0ba7ae5efef7ca",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 166,
+        "line": 144,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "path": "backend/market/capacity_original_history_json_v1.py",
+        "qualname": "Row"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "678d287d504407b69a552a9855ded77845574a38e3e7be78cbf9cf69d1a727d5",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 190,
+        "line": 171,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "path": "backend/market/capacity_original_history_json_v1.py",
+        "qualname": "Rows"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "1f84e5156df523c51d19d092a35391814f56963b1b1239d4edf69a34ed1a62be",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True, eq=False)"
+        ],
+        "end_line": 399,
+        "line": 239,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "path": "backend/market/capacity_original_history_json_v1.py",
+        "qualname": "ShaMap"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "f4f4b00047e52981c140a66ebdc0a22f5d2b9f11ac45934973f491e828995f1c",
+        "bases": [],
+        "decorators": [],
+        "end_line": 669,
+        "line": 412,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "path": "backend/market/capacity_original_history_json_v1.py",
+        "qualname": "Cursor"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "5e103c74e106d7b688d7896f117ccd501a24b9e7e82f3495fab59b9f104bc5bd",
+        "bases": [],
+        "decorators": [],
+        "end_line": 747,
+        "line": 715,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "path": "backend/market/capacity_original_history_json_v1.py",
+        "qualname": "History"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "4161fdeafb12c8e0a704a71df54a0826d40bd8a7b1617dc4dc1f4343b7c40770",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 32,
+        "line": 30,
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "qualname": "ErrorBands"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "b327eeb6c98e4772aeee8484e7fabaf2e57467dc680a0cd984771dcd75cc1552",
+        "bases": [],
+        "decorators": [],
+        "end_line": 735,
+        "line": 631,
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "qualname": "VolatilityHoldingReader"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "1029708070d5f83dc8bf5382a1c524bd263a5db30b73a2388db56a6540394bd3",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 46,
+        "line": 40,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "FeatureForecasts"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "448c603c3be642d8ce42b37221a55f3b8653040353d6c0c7429c797681134135",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 60,
+        "line": 51,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "HoldingRiskForecasts"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "c875b392f50610a8d41bf71ff40cbfa3f111e2d6bdf0f38908527328a219e8f8",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 709,
+        "line": 705,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "HoldingScenarios"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "5339a50ab8cf0bdce3ef917bf95eff64b751bd932c0cbda98876ba7803ff59b9",
+        "bases": [],
+        "decorators": [],
+        "end_line": 928,
+        "line": 713,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "HoldingScenarioReader"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "9bbaed178f237f692f9744cd2f4c081095dbb2159dce3b649d62ef2488132fc0",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 32,
+        "line": 28,
+        "module": "backend.market.learned_retention_models",
+        "path": "backend/market/learned_retention_models.py",
+        "qualname": "DailyForecasts"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "8cc40e83ca40b40583118b378aedf2a336fd030be93c69e39b035f1e30c3c01e",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 43,
+        "line": 37,
+        "module": "backend.market.learned_retention_models",
+        "path": "backend/market/learned_retention_models.py",
+        "qualname": "_ObservedHead"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "87fa1b693d662b001661431ecb961b12fc02696358085de1eba2ba1bf592f876",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True, slots=True)"
+        ],
+        "end_line": 135,
+        "line": 33,
+        "module": "backend.market.panel",
+        "path": "backend/market/panel.py",
+        "qualname": "Panel"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "3669aed6220200b2f62a448244fb6d054ada8fe35e4e8f9ebc0bff9c084c63ce",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True, slots=True)"
+        ],
+        "end_line": 44,
+        "line": 37,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "StoredTicker"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "9b8893b948f025d8a5f19347ebd48a6590048e2effca384fd9db02bf333dead8",
+        "bases": [],
+        "decorators": [],
+        "end_line": 327,
+        "line": 63,
+        "module": "backend.market.store",
+        "path": "backend/market/store.py",
+        "qualname": "MarketStore"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "2cf8603b9eef394a767b54911ca701ee62565dc391027cac0a8cdc86d8e64263",
+        "bases": [
+          "_Calibration"
+        ],
+        "decorators": [],
+        "end_line": 195,
+        "line": 26,
+        "module": "backend.market.market_conditioned_holding",
+        "path": "backend/market/market_conditioned_holding.py",
+        "qualname": "_MarketCalibration"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "c6fb6f8233f8b8a3e7aa447246adefba69bcdc4a25503fe868790581c87626d0",
+        "bases": [
+          "_MarketCalibration",
+          "VolatilityHoldingReader"
+        ],
+        "decorators": [],
+        "end_line": 208,
+        "line": 199,
+        "module": "backend.market.market_conditioned_holding",
+        "path": "backend/market/market_conditioned_holding.py",
+        "qualname": "MarketConditionedHoldingReader"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "3eb98c7f9dba0ffef635df50986d6de61727ba57ebbce861082250d386af95e3",
+        "bases": [
+          "_MarketCalibration",
+          "ForwardVolatilityHoldingReader"
+        ],
+        "decorators": [],
+        "end_line": 223,
+        "line": 212,
+        "module": "backend.market.market_conditioned_holding",
+        "path": "backend/market/market_conditioned_holding.py",
+        "qualname": "ForwardMarketConditionedHoldingReader"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "066f6bab8e7b844545c4743f9e9f71ba47e42ea05280149ba7d81ed33042bab0",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 36,
+        "line": 32,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "ResidualSample"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "5f7f9145ba9efb37d8cb9bba944600afe08c07d9f23220b8accf31b6afa9584f",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 46,
+        "line": 41,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "Distribution"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "f740ed038045ef57ea44816877ef2985ceafbd32d21d9bc7377d94bd677cdb28",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 54,
+        "line": 51,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "Decision"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "5a7dcf9910e32cc337b2e893c9ae19536d5e99d062f4d695f5bb2806a7877da8",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 84,
+        "line": 59,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "Calibration"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "3075f5fd086bf9aee4df905b6042b6badd6843f0a091a2049a81ba39f9c1d0e6",
+        "bases": [
+          "RuntimeError"
+        ],
+        "decorators": [],
+        "end_line": 51,
+        "line": 50,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "MarketDataUnavailableError"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "9c4ab9996966041aef8730fd1d1582016414aed0aa04f3a95eed0fef253f5d01",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True, slots=True)"
+        ],
+        "end_line": 64,
+        "line": 55,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "DailyBar"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "6c16b43bec250b5c945d2ea854f1b07a0b618cb6d205890e0c47c3ca6c5948c6",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True, slots=True)"
+        ],
+        "end_line": 73,
+        "line": 68,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "CorporateAction"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "de4fe61f771b158ce2bb55cee2f1159632c958b78ab6ef0d42b0376aab5c1ca4",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True, slots=True)"
+        ],
+        "end_line": 85,
+        "line": 77,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "TickerHistory"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "82e3eedd4456015a2036ac1687db9b6a8df3a7935834646e2662d49aa8eae0c6",
+        "bases": [],
+        "decorators": [],
+        "end_line": 254,
+        "line": 231,
+        "module": "backend.market.yahoo",
+        "path": "backend/market/yahoo.py",
+        "qualname": "Pacer"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "6e4eae0f32f7bf76ef2fcdf805fb57043f0f0964adc0df149be6d700593bf50f",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 129,
+        "line": 42,
+        "module": "backend.market.market_conditioned_calibration",
+        "path": "backend/market/market_conditioned_calibration.py",
+        "qualname": "MarketLogFit"
+      }
+    },
+    {
+      "section": "class",
+      "value": {
+        "AST_sha256": "f4ab97f36aa558cd4203a55a9d999f205ae8d0065e7b5482fc16559c890b943e",
+        "bases": [],
+        "decorators": [
+          "dataclass(frozen=True)"
+        ],
+        "end_line": 55,
+        "line": 26,
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "qualname": "LogFit"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

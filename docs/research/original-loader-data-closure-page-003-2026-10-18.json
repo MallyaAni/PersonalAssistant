@@ -1,0 +1,645 @@
+{
+  "records": [
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "lexical_import",
+        "line": 14,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "lexical_import",
+        "line": 14,
+        "to": "backend.market.calendar"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "lexical_import",
+        "line": 15,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "lexical_import",
+        "line": 15,
+        "to": "backend.market.daily_arithmetic_bridge"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "lexical_import",
+        "line": 16,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "lexical_import",
+        "line": 16,
+        "to": "backend.market.direct_daily_arithmetic"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "lexical_import",
+        "line": 17,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "lexical_import",
+        "line": 17,
+        "to": "backend.market.direct_error_band"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "lexical_import",
+        "line": 18,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "lexical_import",
+        "line": 18,
+        "to": "backend.market.learned_entry_models"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_retention_models",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_retention_models",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_retention_models",
+        "kind": "lexical_import",
+        "line": 18,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_retention_models",
+        "kind": "lexical_import",
+        "line": 18,
+        "to": "backend.market.allocation_controls"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_retention_models",
+        "kind": "lexical_import",
+        "line": 18,
+        "to": "backend.market.learned_entry_data"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_retention_models",
+        "kind": "lexical_import",
+        "line": 19,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_retention_models",
+        "kind": "lexical_import",
+        "line": 19,
+        "to": "backend.market.learned_entry_models"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.panel",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.panel",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.panel",
+        "kind": "lexical_import",
+        "line": 26,
+        "to": "backend.market.store"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.panel",
+        "kind": "lexical_import",
+        "line": 27,
+        "to": "backend.market.yahoo"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.store",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.store",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.store",
+        "kind": "lexical_import",
+        "line": 29,
+        "to": "backend.market.yahoo"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "lexical_import",
+        "line": 13,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "lexical_import",
+        "line": 13,
+        "to": "backend.market.daily_arithmetic_bridge"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "lexical_import",
+        "line": 14,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "lexical_import",
+        "line": 14,
+        "to": "backend.market.direct_feature_arithmetic"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "lexical_import",
+        "line": 15,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "lexical_import",
+        "line": 15,
+        "to": "backend.market.learned_entry_models"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "lexical_import",
+        "line": 16,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "lexical_import",
+        "line": 16,
+        "to": "backend.market.market_conditioned_calibration"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "lexical_import",
+        "line": 17,
+        "to": "backend.market.conditional_holding_calibration"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "lexical_import",
+        "line": 18,
+        "to": "backend.market.direct_error_band"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "lexical_import",
+        "line": 19,
+        "to": "backend.market.forward_arithmetic"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.probabilistic_execution",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.probabilistic_execution",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.probabilistic_execution",
+        "kind": "lexical_import",
+        "line": 19,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.probabilistic_execution",
+        "kind": "lexical_import",
+        "line": 19,
+        "to": "backend.market.calendar"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.probabilistic_execution",
+        "kind": "lexical_import",
+        "line": 20,
+        "to": "backend.market.daily_arithmetic_bridge"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.allocation_controls",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.allocation_controls",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.yahoo",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.yahoo",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_calibration",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_calibration",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_calibration",
+        "kind": "lexical_import",
+        "line": 14,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_calibration",
+        "kind": "lexical_import",
+        "line": 14,
+        "to": "backend.market.calendar"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_calibration",
+        "kind": "lexical_import",
+        "line": 15,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.market_conditioned_calibration",
+        "kind": "lexical_import",
+        "line": 15,
+        "to": "backend.market.daily_arithmetic_bridge"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "lexical_import",
+        "line": 14,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "lexical_import",
+        "line": 14,
+        "to": "backend.market.daily_arithmetic_bridge"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "lexical_import",
+        "line": 15,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "lexical_import",
+        "line": 15,
+        "to": "backend.market.direct_feature_arithmetic"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "lexical_import",
+        "line": 16,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "lexical_import",
+        "line": 16,
+        "to": "backend.market.learned_entry_models"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "lexical_import",
+        "line": 17,
+        "to": "backend.market.direct_error_band"
+      }
+    },
+    {
+      "section": "edge",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "lexical_import",
+        "line": 18,
+        "to": "backend.market.forward_arithmetic"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

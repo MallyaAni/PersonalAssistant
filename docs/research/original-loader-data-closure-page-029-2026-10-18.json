@@ -1,0 +1,773 @@
+{
+  "records": [
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 176,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "range",
+        "terminal_name": "range"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 179,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_numeric_tree",
+        "terminal_name": "_numeric_tree"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 179,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 180,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "NumericHead",
+        "terminal_name": "NumericHead"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 181,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "numeric_identity",
+        "terminal_name": "numeric_identity"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 182,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 183,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "copied.values",
+        "terminal_name": "values"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 184,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_head",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "array.setflags",
+        "terminal_name": "setflags"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 192,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "model_identity",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "dict",
+        "terminal_name": "dict"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 193,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "model_identity",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 194,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "model_identity",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 195,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "model_identity",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 196,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "model_identity",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 199,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "model_identity",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 200,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "model_identity",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 201,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "model_identity",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 209,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "model_identity",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "base._json_hash",
+        "terminal_name": "_json_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 216,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_snapshot",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 217,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_snapshot",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 219,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_snapshot",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray(head.columns).copy",
+        "terminal_name": "copy"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 219,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_snapshot",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 220,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_snapshot",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray(estimator._baseline_prediction).copy",
+        "terminal_name": "copy"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 220,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_snapshot",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 221,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_snapshot",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 222,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_snapshot",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 224,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_snapshot",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "enumerate",
+        "terminal_name": "enumerate"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 225,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_snapshot",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 226,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_snapshot",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 233,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_snapshot",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 233,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_snapshot",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "values.copy",
+        "terminal_name": "copy"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 234,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_snapshot",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "numeric_head",
+        "terminal_name": "numeric_head"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 234,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "numeric_snapshot",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "model_identity",
+        "terminal_name": "model_identity"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 240,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "isinstance",
+        "terminal_name": "isinstance"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 241,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 242,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 243,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "tuple",
+        "terminal_name": "tuple"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 244,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 244,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 245,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 248,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 249,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.dtype",
+        "terminal_name": "dtype"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 250,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isnat(dates).any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 250,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isnat",
+        "terminal_name": "isnat"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 251,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 253,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 254,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 254,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 258,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isinf(x).any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 258,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isinf",
+        "terminal_name": "isinf"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 259,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "tuple",
+        "terminal_name": "tuple"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 261,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 263,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 267,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isinf(absolute).any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 267,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isinf",
+        "terminal_name": "isinf"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 269,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 272,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "manifest.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 273,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "manifest.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 273,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "list",
+        "terminal_name": "list"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 274,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "manifest.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 275,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "manifest.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 276,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "manifest.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 276,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 277,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "manifest.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 278,
+        "module": "backend.market.direct_daily_arithmetic",
+        "owner": "_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "manifest.get",
+        "terminal_name": "get"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

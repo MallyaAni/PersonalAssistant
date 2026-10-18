@@ -1,0 +1,773 @@
+{
+  "records": [
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 610,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 612,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 613,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 615,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 616,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 616,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "getattr",
+        "terminal_name": "getattr"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 617,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 617,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "getattr",
+        "terminal_name": "getattr"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 620,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 621,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "deepcopy",
+        "terminal_name": "deepcopy"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 622,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_admit_close",
+        "terminal_name": "_admit_close"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 624,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "tuple",
+        "terminal_name": "tuple"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 627,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 628,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "min",
+        "terminal_name": "min"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 628,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 628,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 629,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.array_equal",
+        "terminal_name": "array_equal"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 630,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 642,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "getattr",
+        "terminal_name": "getattr"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 644,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "getattr(original, name).copy",
+        "terminal_name": "copy"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 644,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "getattr",
+        "terminal_name": "getattr"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 655,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self._bank.values",
+        "terminal_name": "values"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 660,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "base._json_hash",
+        "terminal_name": "_json_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 661,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "base._json_hash",
+        "terminal_name": "_json_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 664,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "hashlib.sha256(Path(__file__).read_bytes()).hexdigest",
+        "terminal_name": "hexdigest"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 664,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "hashlib.sha256",
+        "terminal_name": "sha256"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 664,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path(__file__).read_bytes",
+        "terminal_name": "read_bytes"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 664,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 665,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "hashlib.sha256(Path(errors.__file__).read_bytes()).hexdigest",
+        "terminal_name": "hexdigest"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 665,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "hashlib.sha256",
+        "terminal_name": "sha256"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 666,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path(errors.__file__).read_bytes",
+        "terminal_name": "read_bytes"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 666,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.__init__",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 672,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_clock",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_admit_close",
+        "terminal_name": "_admit_close"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 677,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reference._hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 677,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 678,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 681,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "getattr",
+        "terminal_name": "getattr"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 683,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "metadata.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 688,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "metadata.get('raw_source_arrays', {}).get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 688,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "metadata.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 691,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 694,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "enumerate",
+        "terminal_name": "enumerate"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 696,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 697,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "self.symbols.index",
+        "terminal_name": "index"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 698,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "metadata.get('split_factors', {}).get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 698,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "metadata.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 700,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "isinstance",
+        "terminal_name": "isinstance"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 701,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "isinstance",
+        "terminal_name": "isinstance"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 702,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 705,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 706,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.array_equal",
+        "terminal_name": "array_equal"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 711,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 714,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.array_equal",
+        "terminal_name": "array_equal"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 717,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.validate_report",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 724,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "isinstance",
+        "terminal_name": "isinstance"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 725,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "isinstance",
+        "terminal_name": "isinstance"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 726,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 727,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "isinstance",
+        "terminal_name": "isinstance"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 729,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 729,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "isinstance",
+        "terminal_name": "isinstance"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 730,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 730,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "set",
+        "terminal_name": "set"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 730,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 732,
+        "module": "backend.market.forward_arithmetic",
+        "owner": "ForwardVolatilityHoldingReader.distribution",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

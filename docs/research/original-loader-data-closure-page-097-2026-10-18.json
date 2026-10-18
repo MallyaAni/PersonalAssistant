@@ -1,0 +1,773 @@
+{
+  "records": [
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 428,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.errstate",
+        "terminal_name": "errstate"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 434,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite(predicted_quantiles).all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 434,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 441,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 441,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "(~finite_quantiles).sum",
+        "terminal_name": "sum"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 442,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "receipts.append",
+        "terminal_name": "append"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 445,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 446,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 451,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 451,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite(quantiles).all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 451,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 455,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 455,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "causal_support.sum",
+        "terminal_name": "sum"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 456,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 456,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "available.sum",
+        "terminal_name": "sum"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 457,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 457,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "(causal_support & ~available).sum",
+        "terminal_name": "sum"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 458,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 458,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "(causal_support & ~moment_valid).sum",
+        "terminal_name": "sum"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 460,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 470,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "calibrate",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Calibration",
+        "terminal_name": "Calibration"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 487,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 489,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Decision",
+        "terminal_name": "Decision"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 490,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "isinstance",
+        "terminal_name": "isinstance"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 491,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 493,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 493,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "isinstance",
+        "terminal_name": "isinstance"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 494,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Decision",
+        "terminal_name": "Decision"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 496,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "map",
+        "terminal_name": "map"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 497,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_sample",
+        "terminal_name": "_sample"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 499,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Decision",
+        "terminal_name": "Decision"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 501,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite([mean, scale, weight, cost]).all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 501,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 506,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Decision",
+        "terminal_name": "Decision"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 508,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Decision",
+        "terminal_name": "Decision"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 509,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.errstate",
+        "terminal_name": "errstate"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 512,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.expm1",
+        "terminal_name": "expm1"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 513,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.log1p",
+        "terminal_name": "log1p"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 515,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite(values).all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 515,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 516,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite(utility).all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 516,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 517,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.any",
+        "terminal_name": "any"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 519,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Decision",
+        "terminal_name": "Decision"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 520,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "float",
+        "terminal_name": "float"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 520,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.dot",
+        "terminal_name": "dot"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 520,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "weights.sum",
+        "terminal_name": "sum"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 521,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 522,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Decision",
+        "terminal_name": "Decision"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 523,
+        "module": "backend.market.probabilistic_execution",
+        "owner": "decision",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Decision",
+        "terminal_name": "Decision"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 63,
+        "module": "backend.market.allocation_controls",
+        "owner": "_validate_prices",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 65,
+        "module": "backend.market.allocation_controls",
+        "owner": "_validate_prices",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 66,
+        "module": "backend.market.allocation_controls",
+        "owner": "_validate_prices",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 67,
+        "module": "backend.market.allocation_controls",
+        "owner": "_validate_prices",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 68,
+        "module": "backend.market.allocation_controls",
+        "owner": "_validate_prices",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite(arr).all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 68,
+        "module": "backend.market.allocation_controls",
+        "owner": "_validate_prices",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.isfinite",
+        "terminal_name": "isfinite"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 68,
+        "module": "backend.market.allocation_controls",
+        "owner": "_validate_prices",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "(arr > 0).all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 69,
+        "module": "backend.market.allocation_controls",
+        "owner": "_validate_prices",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 87,
+        "module": "backend.market.allocation_controls",
+        "owner": "adjusted_open",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 88,
+        "module": "backend.market.allocation_controls",
+        "owner": "adjusted_open",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 89,
+        "module": "backend.market.allocation_controls",
+        "owner": "adjusted_open",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.asarray",
+        "terminal_name": "asarray"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 91,
+        "module": "backend.market.allocation_controls",
+        "owner": "adjusted_open",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "ValueError",
+        "terminal_name": "ValueError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 92,
+        "module": "backend.market.allocation_controls",
+        "owner": "adjusted_open",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.errstate",
+        "terminal_name": "errstate"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 93,
+        "module": "backend.market.allocation_controls",
+        "owner": "adjusted_open",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.where",
+        "terminal_name": "where"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

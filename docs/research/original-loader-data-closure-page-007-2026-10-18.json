@@ -1,0 +1,785 @@
+{
+  "records": [
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [
+          "backend.market.capacity_original_frozen_readers_v1"
+        ],
+        "external_targets_not_followed": [],
+        "line": 71,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "statement": "from backend.market.capacity_original_frozen_readers_v1 import CapacityFrozenMarketReaderV1, CapacityFrozenRiskReaderV1",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "numpy"
+        ],
+        "line": 319,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "statement": "import numpy as np",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [
+          "backend.market",
+          "backend.market.capacity_original_calendar_v1"
+        ],
+        "external_targets_not_followed": [],
+        "line": 320,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "statement": "from backend.market import capacity_original_calendar_v1 as calendar",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "numpy"
+        ],
+        "line": 362,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "statement": "import numpy as np",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "sklearn"
+        ],
+        "line": 363,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "statement": "import sklearn",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "numpy"
+        ],
+        "line": 212,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "statement": "import numpy as np",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [
+          "backend.market",
+          "backend.market.calendar"
+        ],
+        "external_targets_not_followed": [],
+        "line": 213,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "statement": "from backend.market import calendar",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "scipy"
+        ],
+        "line": 425,
+        "module": "backend.market.direct_daily_arithmetic",
+        "statement": "import scipy",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "sklearn"
+        ],
+        "line": 426,
+        "module": "backend.market.direct_daily_arithmetic",
+        "statement": "import sklearn",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "tempfile"
+        ],
+        "line": 601,
+        "module": "backend.market.capacity_original_history_json_v1",
+        "statement": "import tempfile",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [
+          "backend.market.fill_timing"
+        ],
+        "external_targets_not_followed": [],
+        "line": 118,
+        "module": "backend.market.learned_entry_data",
+        "statement": "from backend.market.fill_timing import session_scale",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "sklearn.impute"
+        ],
+        "line": 129,
+        "module": "backend.market.learned_entry_models",
+        "statement": "from sklearn.impute import SimpleImputer",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "sklearn.linear_model"
+        ],
+        "line": 130,
+        "module": "backend.market.learned_entry_models",
+        "statement": "from sklearn.linear_model import Ridge",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "sklearn.pipeline"
+        ],
+        "line": 131,
+        "module": "backend.market.learned_entry_models",
+        "statement": "from sklearn.pipeline import make_pipeline",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "sklearn.preprocessing"
+        ],
+        "line": 132,
+        "module": "backend.market.learned_entry_models",
+        "statement": "from sklearn.preprocessing import StandardScaler",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "scipy"
+        ],
+        "line": 143,
+        "module": "backend.market.learned_entry_models",
+        "statement": "import scipy",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "sklearn"
+        ],
+        "line": 144,
+        "module": "backend.market.learned_entry_models",
+        "statement": "import sklearn",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "joblib"
+        ],
+        "line": 227,
+        "module": "backend.market.learned_entry_models",
+        "statement": "import joblib",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "threadpoolctl"
+        ],
+        "line": 244,
+        "module": "backend.market.learned_entry_models",
+        "statement": "from threadpoolctl import threadpool_limits",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "sklearn.ensemble"
+        ],
+        "line": 126,
+        "module": "backend.market.learned_entry_models",
+        "statement": "from sklearn.ensemble import HistGradientBoostingRegressor",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [
+          "backend.market.direct_feature_arithmetic"
+        ],
+        "external_targets_not_followed": [],
+        "line": 494,
+        "module": "backend.market.direct_error_band",
+        "statement": "from backend.market.direct_feature_arithmetic import HoldingScenarioReader",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [
+          "backend.market",
+          "backend.market.direct_feature_arithmetic"
+        ],
+        "external_targets_not_followed": [],
+        "line": 634,
+        "module": "backend.market.direct_error_band",
+        "statement": "from backend.market import direct_feature_arithmetic as feature",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [
+          "backend.market",
+          "backend.market.direct_feature_arithmetic"
+        ],
+        "external_targets_not_followed": [],
+        "line": 685,
+        "module": "backend.market.direct_error_band",
+        "statement": "from backend.market import direct_feature_arithmetic as feature",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "scipy"
+        ],
+        "line": 247,
+        "module": "backend.market.learned_retention_models",
+        "statement": "import scipy",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "sklearn"
+        ],
+        "line": 248,
+        "module": "backend.market.learned_retention_models",
+        "statement": "import sklearn",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [
+          "backend.market.alpha"
+        ],
+        "external_targets_not_followed": [],
+        "line": 109,
+        "module": "backend.market.panel",
+        "statement": "from backend.market.alpha import _rolling_beta",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "pyarrow"
+        ],
+        "line": 83,
+        "module": "backend.market.store",
+        "statement": "import pyarrow as pa",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "pyarrow.parquet"
+        ],
+        "line": 84,
+        "module": "backend.market.store",
+        "statement": "import pyarrow.parquet as pq",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "pyarrow"
+        ],
+        "line": 143,
+        "module": "backend.market.store",
+        "statement": "import pyarrow as pa",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "pyarrow.parquet"
+        ],
+        "line": 144,
+        "module": "backend.market.store",
+        "statement": "import pyarrow.parquet as pq",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "pyarrow.parquet"
+        ],
+        "line": 169,
+        "module": "backend.market.store",
+        "statement": "import pyarrow.parquet as pq",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "pyarrow.parquet"
+        ],
+        "line": 231,
+        "module": "backend.market.store",
+        "statement": "import pyarrow.parquet as pq",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "pyarrow.parquet"
+        ],
+        "line": 250,
+        "module": "backend.market.store",
+        "statement": "import pyarrow.parquet as pq",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "pyarrow.parquet"
+        ],
+        "line": 297,
+        "module": "backend.market.store",
+        "statement": "import pyarrow.parquet as pq",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "pyarrow.parquet"
+        ],
+        "line": 205,
+        "module": "backend.market.allocation_controls",
+        "statement": "import pyarrow.parquet as pq",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "deferred",
+      "value": {
+        "backend_targets_not_followed": [],
+        "external_targets_not_followed": [
+          "curl_cffi"
+        ],
+        "line": 221,
+        "module": "backend.market.yahoo",
+        "statement": "from curl_cffi import requests",
+        "unresolved_backend": []
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "59e84797f6d8e9aa0789859bf78b43b2f530ba7321668e190178863f98d32160",
+        "end_line": 59,
+        "line": 30,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "path": "backend/market/capacity_original_loader_lifecycle_v2.py",
+        "qualname": "CapacityLoaderLeaseV2.__init__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "2ab1e1ed96c4c62b7cd9a8e7ce8fbf3a88631e94f637f8e9b29a5b6b7fde66e6",
+        "end_line": 63,
+        "line": 62,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "path": "backend/market/capacity_original_loader_lifecycle_v2.py",
+        "qualname": "CapacityLoaderLeaseV2._bytes"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "e15e376514729c599168cb5b2dbb32cbfebbbd42cd0065e1e73025c582ba837c",
+        "end_line": 79,
+        "line": 66,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "path": "backend/market/capacity_original_loader_lifecycle_v2.py",
+        "qualname": "CapacityLoaderLeaseV2._load_inputs"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "a9835da5eba15e27f37ec5b864eb1cde15f003b7ef458fb7abcc75feec8c1649",
+        "end_line": 89,
+        "line": 82,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "path": "backend/market/capacity_original_loader_lifecycle_v2.py",
+        "qualname": "CapacityLoaderLeaseV2.verify_after"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "e0460f1b38a414c8fe7f2b5d91353123447faac24bf39ff06a50fa1ba57efabd",
+        "end_line": 99,
+        "line": 92,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "path": "backend/market/capacity_original_loader_lifecycle_v2.py",
+        "qualname": "CapacityLoaderLeaseV2.serialize"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "e49cf9d217afefb6b63928d711c378d48fc924bfd76af8af71b6688e0be8b5ed",
+        "end_line": 114,
+        "line": 102,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "path": "backend/market/capacity_original_loader_lifecycle_v2.py",
+        "qualname": "CapacityLoaderLeaseV2.persist"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "127b20d2dcf8f71ef5678062a1df255c802c6677f86634f15695fad815594870",
+        "end_line": 120,
+        "line": 117,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "path": "backend/market/capacity_original_loader_lifecycle_v2.py",
+        "qualname": "CapacityLoaderLeaseV2.release"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "2d46a6ab244a55fdf334d5d4001888d754816560d37c6c5ff0e66c7b0654a32a",
+        "end_line": 125,
+        "line": 124,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "path": "backend/market/capacity_original_loader_lifecycle_v2.py",
+        "qualname": "execute"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "c9b363ff87c0b6d6893c608d0249edad124aa99ec45cd6d81f04f3063d12e252",
+        "end_line": 68,
+        "line": 66,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "path": "backend/market/capacity_original_inputs_v2.py",
+        "qualname": "require_factory_head"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "f329b831ba64bd0f2d11423dc156b387d5348a1ac86d5365d2f33e5f82394be2",
+        "end_line": 80,
+        "line": 72,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "path": "backend/market/capacity_original_inputs_v2.py",
+        "qualname": "readonly"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "e5c28c40b17dcb0b2857cb2279f40402e16e1853ff98bbd8b8029ee7adb3d7fd",
+        "end_line": 185,
+        "line": 84,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "path": "backend/market/capacity_original_inputs_v2.py",
+        "qualname": "_load_capacity_inputs"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "dc643cc9a263e8c505fd6a9ffc6d29bb0d0ddd01aacd1fdc382c0632d6bb9d05",
+        "end_line": 190,
+        "line": 189,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "path": "backend/market/capacity_original_inputs_v2.py",
+        "qualname": "execute"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "62c785991c57459cc01af045b053a974a771dd04f5709b24ac30dd120151a09f",
+        "end_line": 110,
+        "line": 45,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "path": "backend/market/capacity_original_admissions_v2.py",
+        "qualname": "invocation"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "fe9d73d91fdafb00853c961f0a892a26d8469c14ceb56ad43cd100c1afb43e10",
+        "end_line": 192,
+        "line": 113,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "path": "backend/market/capacity_original_admissions_v2.py",
+        "qualname": "runtime_admission"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "7c18cbe25b38fa7dab1282d57be92a144b797f01a852d2bcd361d5609bfea82f",
+        "end_line": 238,
+        "line": 195,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "path": "backend/market/capacity_original_admissions_v2.py",
+        "qualname": "source_admission"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "d06d4d0e002ab72001cbda3fd73ddc12d4d69cbc8fe63e23ba328da8082dad20",
+        "end_line": 315,
+        "line": 241,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "path": "backend/market/capacity_original_admissions_v2.py",
+        "qualname": "producer_admission"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "2beece26cadd9975bb9d46a95487d65fa39dce54d979838d38ea5e577359da2a",
+        "end_line": 358,
+        "line": 318,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "path": "backend/market/capacity_original_admissions_v2.py",
+        "qualname": "calendar_admission"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "ff3dded6bfbd23a0b99255593c6e27979d080898f1a9f83b35c2257eef52d429",
+        "end_line": 365,
+        "line": 361,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "path": "backend/market/capacity_original_admissions_v2.py",
+        "qualname": "native_packages"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "59b80a8d146f301a75be2271538ffd9cd0fd7cda208cc96293499c86e4c641b8",
+        "end_line": 59,
+        "line": 52,
+        "module": "backend.market.capacity_original_archives_v2",
+        "path": "backend/market/capacity_original_archives_v2.py",
+        "qualname": "CapacitySourceReaderV2.__init__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "94fa690828afe7fc564cf74e5b93a3ccf254c77d396fdcc72219c1c80b1eb370",
+        "end_line": 67,
+        "line": 62,
+        "module": "backend.market.capacity_original_archives_v2",
+        "path": "backend/market/capacity_original_archives_v2.py",
+        "qualname": "CapacitySourceReaderV2.read"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "e4f4f7bbfccb6ab3da59a80248992e99b3b880a0067a590fa229fe4a2dfb4a75",
+        "end_line": 72,
+        "line": 70,
+        "module": "backend.market.capacity_original_archives_v2",
+        "path": "backend/market/capacity_original_archives_v2.py",
+        "qualname": "CapacitySourceReaderV2.authenticate_native"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "ea7904e669c3cfa55c92fb17e2ac34240bd18cad87d3d6b4bd1006cc36668678",
+        "end_line": 76,
+        "line": 75,
+        "module": "backend.market.capacity_original_archives_v2",
+        "path": "backend/market/capacity_original_archives_v2.py",
+        "qualname": "CapacitySourceReaderV2.paper_descriptor"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "fcc0c946410b101ea3ae97c973f2c167c90a0d5c8faf9eba5135f108021994bb",
+        "end_line": 125,
+        "line": 98,
+        "module": "backend.market.capacity_original_archives_v2",
+        "path": "backend/market/capacity_original_archives_v2.py",
+        "qualname": "CapacityOriginalArchivesV2.__init__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "16366d5cf3ad1309b92739ff3a01b174d0b933546aa808390a2ed4bfe0a2ebfb",
+        "end_line": 130,
+        "line": 129,
+        "module": "backend.market.capacity_original_archives_v2",
+        "path": "backend/market/capacity_original_archives_v2.py",
+        "qualname": "CapacityOriginalArchivesV2.consumed_inputs"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "461458d063355e1236c649977d161985eef6c831532bbccbce4efb3c5afde743",
+        "end_line": 139,
+        "line": 133,
+        "module": "backend.market.capacity_original_archives_v2",
+        "path": "backend/market/capacity_original_archives_v2.py",
+        "qualname": "CapacityOriginalArchivesV2.authenticate_sources"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "56d5e8e4945724612a3febea93ed70c742ab181081a27bf32522998a562b2974",
+        "end_line": 158,
+        "line": 142,
+        "module": "backend.market.capacity_original_archives_v2",
+        "path": "backend/market/capacity_original_archives_v2.py",
+        "qualname": "CapacityOriginalArchivesV2.authenticate_inputs"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "12ebee881940f187b88c448737303debed5a97284eaa9c33b4372e20fc14e8d7",
+        "end_line": 162,
+        "line": 161,
+        "module": "backend.market.capacity_original_archives_v2",
+        "path": "backend/market/capacity_original_archives_v2.py",
+        "qualname": "CapacityOriginalArchivesV2.initial"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "3166e599951d29df7263f6a955f2d64c1d45b363b008fde0e9908696f34fa5b8",
+        "end_line": 174,
+        "line": 165,
+        "module": "backend.market.capacity_original_archives_v2",
+        "path": "backend/market/capacity_original_archives_v2.py",
+        "qualname": "CapacityOriginalArchivesV2.unchanged"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

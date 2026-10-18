@@ -1,0 +1,709 @@
+{
+  "records": [
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "c3fd0420381a18efb2eddaaa0681714b259ef5b93388b5d22b6417fce04f3b8a",
+        "end_line": 77,
+        "line": 40,
+        "module": "backend.market.learned_entry_data",
+        "path": "backend/market/learned_entry_data.py",
+        "qualname": "_daily_context"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "0bf7186f9903d356d1ec33a27c88a259a9bec2cd7d8e2dd11fa712928861144e",
+        "end_line": 90,
+        "line": 81,
+        "module": "backend.market.learned_entry_data",
+        "path": "backend/market/learned_entry_data.py",
+        "qualname": "_validate_cube"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "d12d1f4a3f7e3f17c9bdd571e75370ab563e08864a1683a98ed17eac33aec898",
+        "end_line": 113,
+        "line": 94,
+        "module": "backend.market.learned_entry_data",
+        "path": "backend/market/learned_entry_data.py",
+        "qualname": "_validate_panel"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "cfff9e9926cab0597c50dc0be17591eebf729857951406f07c50db193b1a8f14",
+        "end_line": 263,
+        "line": 117,
+        "module": "backend.market.learned_entry_data",
+        "path": "backend/market/learned_entry_data.py",
+        "qualname": "prepare"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "aca4c049373665f83de56d7b4ea072160f3564677d9d130360041353c4f9dcec",
+        "end_line": 38,
+        "line": 31,
+        "module": "backend.market.learned_entry_models",
+        "path": "backend/market/learned_entry_models.py",
+        "qualname": "_array_hash"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "ff32a09c82b1ab01ac957ad6701f70cc1d3d3822a796bd90918c4adebf26c4e7",
+        "end_line": 45,
+        "line": 42,
+        "module": "backend.market.learned_entry_models",
+        "path": "backend/market/learned_entry_models.py",
+        "qualname": "_json_hash"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "74c7684508dc61402ae62a4a031b65bcfd0157baed2b13e58cc16e6db728e6cf",
+        "end_line": 54,
+        "line": 49,
+        "module": "backend.market.learned_entry_models",
+        "path": "backend/market/learned_entry_models.py",
+        "qualname": "_write_json"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "4cf665b470a52bfa8b8bb881e4e7f189fff18fc1005d80f875082acc20706361",
+        "end_line": 93,
+        "line": 58,
+        "module": "backend.market.learned_entry_models",
+        "path": "backend/market/learned_entry_models.py",
+        "qualname": "_validate"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "33a964df87d70d37b2dcd980a6c28d8c27a2631f3b35e88d5022665b92e9255c",
+        "end_line": 101,
+        "line": 97,
+        "module": "backend.market.learned_entry_models",
+        "path": "backend/market/learned_entry_models.py",
+        "qualname": "_training_symbols"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "4623ac3b62099e42a2a7a0e319adc9ba1801cf4553dc47202bc7a95eaaf550ec",
+        "end_line": 120,
+        "line": 105,
+        "module": "backend.market.learned_entry_models",
+        "path": "backend/market/learned_entry_models.py",
+        "qualname": "training_rows"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "e332f1c68534e0c8cf80719f220989c2fcd5d3ec7e5fc0fd40c18412bdb9ce40",
+        "end_line": 138,
+        "line": 124,
+        "module": "backend.market.learned_entry_models",
+        "path": "backend/market/learned_entry_models.py",
+        "qualname": "_estimator"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "7c68fa8060a03f723dd015cb8a3ca010db30093d7981389afb30f49a3e4a2116",
+        "end_line": 175,
+        "line": 142,
+        "module": "backend.market.learned_entry_models",
+        "path": "backend/market/learned_entry_models.py",
+        "qualname": "_identity"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "80a8424d36295051fa19c754787ec9395ce4e24e08d5a7ee0484f275f05e4082",
+        "end_line": 193,
+        "line": 179,
+        "module": "backend.market.learned_entry_models",
+        "path": "backend/market/learned_entry_models.py",
+        "qualname": "_output_directory"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "b54986a0ae239000b6eadbe0a371dd8396d8644391221cd47b123bab76d3d82f",
+        "end_line": 222,
+        "line": 197,
+        "module": "backend.market.learned_entry_models",
+        "path": "backend/market/learned_entry_models.py",
+        "qualname": "_resume_month"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "7d101e877060f4df71bd2c3231bb008906ab1db632d014afabf2e3b7d9fa5c8c",
+        "end_line": 237,
+        "line": 226,
+        "module": "backend.market.learned_entry_models",
+        "path": "backend/market/learned_entry_models.py",
+        "qualname": "_save_model"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "671674b5bd1a7c8c866060e87f9e522db7b440d77af1cf01c09f5c67a701567b",
+        "end_line": 263,
+        "line": 241,
+        "module": "backend.market.learned_entry_models",
+        "path": "backend/market/learned_entry_models.py",
+        "qualname": "_fit_month"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "217097f3ac0c91342cd8f812c66f1d171761c5c1faef2ecdc8ebd5a711b7b116",
+        "end_line": 278,
+        "line": 267,
+        "module": "backend.market.learned_entry_models",
+        "path": "backend/market/learned_entry_models.py",
+        "qualname": "_save_predictions"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "85b77e2b121630bcffce0a85a4c223f349ad5e3c2e1b12d37998edf5d3e10008",
+        "end_line": 355,
+        "line": 282,
+        "module": "backend.market.learned_entry_models",
+        "path": "backend/market/learned_entry_models.py",
+        "qualname": "walk_forward"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "cab44242498550c968c6da62e45c9d5b43a9abc637fab81083aee6e9b80568ef",
+        "end_line": 61,
+        "line": 36,
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "qualname": "_inputs"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "97296532ecbb62b53bdfb72e2b6b599218446b4f66f5c4d38187716c3547712e",
+        "end_line": 109,
+        "line": 65,
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "qualname": "_bridge"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "f1a5182e0905ee8c463857c4076e279d9cb55a93ef27a0ba5c72a437b4c33562",
+        "end_line": 154,
+        "line": 113,
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "qualname": "_direct"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "5b2663ff4b7aa5c0c951336c84e310fb1feb57f8ea42440c776c03b4c0dc6e93",
+        "end_line": 181,
+        "line": 158,
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "qualname": "_months"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "96eaa8a05a9163bc3d290e68ca662f6113b53a4a94c704bbaa188019b6887432",
+        "end_line": 217,
+        "line": 185,
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "qualname": "_publication"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "cb3fcae29be265238e4ee39ecdf7119d6ebe979b0a541e3de9e3aa905f76edc6",
+        "end_line": 226,
+        "line": 221,
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "qualname": "_validate"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "9ab7bf7819b027b203cce8f8c2df533a18e8a109c761c8037c90627062049cb4",
+        "end_line": 276,
+        "line": 230,
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "qualname": "_statistics"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "0875c6e9591059c2b106f437968d8c1a88e331be2b5430ae214aac313fa9e523",
+        "end_line": 327,
+        "line": 280,
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "qualname": "calibrate"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "ecfbe619a1a1c2282861ab5f0112c393d5be6366013315e85b4d6feec769312c",
+        "end_line": 408,
+        "line": 331,
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "qualname": "freeze_rows"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "7d2a3d12637c39febedf5f375870ac593c28b1dc02242e780a7fc254a9c016a9",
+        "end_line": 461,
+        "line": 412,
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "qualname": "score_holding_distribution"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "8c5a899d521b5965d61a80bb1893377664d4d86b3951ed3dd08625ba40432df9",
+        "end_line": 489,
+        "line": 465,
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "qualname": "_holding_outcome"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "1704c93f4281a66c824511fe720618508eff3f1a72e6ca54f10182328ee59af4",
+        "end_line": 557,
+        "line": 493,
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "qualname": "holding_diagnostic_rows"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "93011ee811421a8cd6237951fd670318959d479eb1a4f6d10eeedfc6d89ee3d4",
+        "end_line": 627,
+        "line": 561,
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "qualname": "scale_holding_volatility"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "7f10b25ec50e5ec94819799f0d9326b86e9a8f56801fa3871a1b7c02b6eb216a",
+        "end_line": 681,
+        "line": 633,
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "qualname": "VolatilityHoldingReader.__init__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "91296297214a4f9300171175fc6501b649864b3a780ad526bc8ddcb087688b35",
+        "end_line": 735,
+        "line": 684,
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "qualname": "VolatilityHoldingReader.distribution"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "fe3e6e003951aea83d186fcb64356feb330da1e452c927f3cad13585a2a6553b",
+        "end_line": 114,
+        "line": 64,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "support"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "c56797eda791ba57e8483459cc8a6ed5e249f074fda1a27b2bde7625c9800c6f",
+        "end_line": 151,
+        "line": 118,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "training"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "fcd03a63eee72ae6f66a0ade0c630c33b60e3787627fcc4a792e8de281a9e2e3",
+        "end_line": 250,
+        "line": 155,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "walk_forward"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "4b645ad3e8685e9fa8ce4cf3452f48b80c243d695393a1267ff54b37f5e51c09",
+        "end_line": 263,
+        "line": 254,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "_calibration_inputs"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "ce62ed1198358f3fbb3a5c97dcea53afd7c483106564462ff35144afa03c041c",
+        "end_line": 288,
+        "line": 267,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "_holding_mode"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "290557ec28f3af4344a0b03d6f87316dee48e0e4dfb8708178c003461d52d238",
+        "end_line": 304,
+        "line": 292,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "_registered_identity"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "3dc2c92bb74a0d0bbf47b3cffd2172e0161bf9a82ed2323480ff3b76abb1d920",
+        "end_line": 341,
+        "line": 308,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "_calibration_grids"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "bdf707ba81ffdc0bf79f721b7f75c76a1f3dae202ef95c4c1b68011763111400",
+        "end_line": 365,
+        "line": 345,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "_monthly_predictions"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "e01ce476ed7d1b7b4be16e4f5d8f0a944229a1fdbd122bef6a9d6bdfd1c0abb5",
+        "end_line": 407,
+        "line": 369,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "_mature_receipt"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "5d3fb16d9ea2ea4339473efc4ef5783839e049bac62a8c59f1e91921c6461fd4",
+        "end_line": 463,
+        "line": 411,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "calibrate"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "f0611226331ddc0f95237f5c1d7396eb5d14ed8fc6a05522c4552e2dc84c26e6",
+        "end_line": 477,
+        "line": 467,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "_copy_feature"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "b7daa365063c3f9f8fd23e8c94fd3a10172f2f5857f65a2c9783ce7c0aaddefa",
+        "end_line": 522,
+        "line": 481,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "_risk_features"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "48532a3712d3e4584c72b5e93cb81e0fd01ebd6f32f1499fe5ba98bb71a3715a",
+        "end_line": 538,
+        "line": 526,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "_price_risk_support"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "f7212786753d1624020ac031ea3c48fb2a79318f21fa5b7f9674abaaf8573638",
+        "end_line": 568,
+        "line": 542,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "_risk_identity"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "6821e4f54c910e746ce89bf8fdf526a0b05dd83c288442e7c8bc7da9018c114f",
+        "end_line": 640,
+        "line": 572,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "holding_risk_forecasts"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "a044821d4e428fd39ab550cfef99589ceda3fca0633eceb2349f5838c6c133df",
+        "end_line": 700,
+        "line": 644,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "_risk_lineage"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "34713b599b80fffcdf4d6f84367a6e0408c60361c4e88df9eacc54b9ee2982c8",
+        "end_line": 822,
+        "line": 715,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "HoldingScenarioReader.__init__"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "7200f16430f3602a1d5517dc6b04af7ff36330a02a4fa804829ce688dfbd3bf3",
+        "end_line": 872,
+        "line": 825,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "HoldingScenarioReader._bank"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "ed7728804e656455fc5193f06930f43621aa85fc70007ef69228bbc7999f9fdc",
+        "end_line": 928,
+        "line": 875,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "HoldingScenarioReader.distribution"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "b497cf4e2578020f582c9ab17be5ea15ba4cc248e951da7dec7ba888fe47c4aa",
+        "end_line": 43,
+        "line": 42,
+        "module": "backend.market.learned_retention_models",
+        "path": "backend/market/learned_retention_models.py",
+        "qualname": "_ObservedHead.predict"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "9b35a71625a5c0937551544ef23d42c53f03f4b1e3c7697516915bf8e072af36",
+        "end_line": 94,
+        "line": 47,
+        "module": "backend.market.learned_retention_models",
+        "path": "backend/market/learned_retention_models.py",
+        "qualname": "completed_features"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "45ff856acf8be1411463facc03b9880e5085a668f0cb56a26a0a39ab59aa27dc",
+        "end_line": 128,
+        "line": 98,
+        "module": "backend.market.learned_retention_models",
+        "path": "backend/market/learned_retention_models.py",
+        "qualname": "prepare"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "711ddab8d7e91d1be8b23ad331f5282f41f67a83110152edf816d6f70db512df",
+        "end_line": 182,
+        "line": 132,
+        "module": "backend.market.learned_retention_models",
+        "path": "backend/market/learned_retention_models.py",
+        "qualname": "_validate"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "9332d7fead89026d383ab33894d1eb4be27f32be8dd41d60ef3e2c37282f5299",
+        "end_line": 195,
+        "line": 186,
+        "module": "backend.market.learned_retention_models",
+        "path": "backend/market/learned_retention_models.py",
+        "qualname": "training_days"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "2ca3c99b4465752f09837c2050ae4eeb85f3f4f920108d5534a602c9d1e74f2f",
+        "end_line": 223,
+        "line": 199,
+        "module": "backend.market.learned_retention_models",
+        "path": "backend/market/learned_retention_models.py",
+        "qualname": "_fit_head"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "61ceba4280e3039989c26f104149997f63eee6661fb1a641dea8d42c14d144a7",
+        "end_line": 242,
+        "line": 227,
+        "module": "backend.market.learned_retention_models",
+        "path": "backend/market/learned_retention_models.py",
+        "qualname": "predict"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "8a9eaadc0c61fcef47b3d22819edcee1b6a72d033bcaff0a640d44791f7559f8",
+        "end_line": 340,
+        "line": 246,
+        "module": "backend.market.learned_retention_models",
+        "path": "backend/market/learned_retention_models.py",
+        "qualname": "walk_forward"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "2505c51d35a4e7e7504435d8817c0a02a71ff4f17dc5fbe5be5954cbdf8c3aa4",
+        "end_line": 53,
+        "line": 48,
+        "module": "backend.market.panel",
+        "path": "backend/market/panel.py",
+        "qualname": "Panel.index"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "73d0e268ae1217f118ce1523cd3b8fe38eb05239b36948486208035f3f8f421c",
+        "end_line": 59,
+        "line": 57,
+        "module": "backend.market.panel",
+        "path": "backend/market/panel.py",
+        "qualname": "Panel.log_returns"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "72daf9145bef3fe8c32ff22601969a60b453d699cff87b0d7d02958f24d82ead",
+        "end_line": 64,
+        "line": 62,
+        "module": "backend.market.panel",
+        "path": "backend/market/panel.py",
+        "qualname": "Panel.benchmark_returns"
+      }
+    },
+    {
+      "section": "function",
+      "value": {
+        "AST_sha256": "fec33108d859c78aab514872e50b5cf4120cb821903dcc6002c4fe0976f51bbd",
+        "end_line": 70,
+        "line": 67,
+        "module": "backend.market.panel",
+        "path": "backend/market/panel.py",
+        "qualname": "Panel.primary_theme"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

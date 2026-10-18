@@ -1,0 +1,773 @@
+{
+  "records": [
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 136,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "owner": "_load_capacity_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 137,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "owner": "_load_capacity_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 141,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "owner": "_load_capacity_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "panel.tickers.index",
+        "terminal_name": "index"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 144,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "owner": "_load_capacity_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "reviewed_economics",
+        "terminal_name": "reviewed_economics"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 145,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "owner": "_load_capacity_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "economic_paths",
+        "terminal_name": "economic_paths"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 147,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "owner": "_load_capacity_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "readonly",
+        "terminal_name": "readonly"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 148,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "owner": "_load_capacity_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "RawExecutionInputs",
+        "terminal_name": "RawExecutionInputs"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 168,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "owner": "_load_capacity_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 169,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "owner": "_load_capacity_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 171,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "owner": "_load_capacity_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_hash",
+        "terminal_name": "_hash"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 171,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "owner": "_load_capacity_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "getattr",
+        "terminal_name": "getattr"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 180,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "owner": "_load_capacity_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "CapacityFrozenMarketReaderV1",
+        "terminal_name": "CapacityFrozenMarketReaderV1"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 181,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "owner": "_load_capacity_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "CapacityFrozenRiskReaderV1",
+        "terminal_name": "CapacityFrozenRiskReaderV1"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 185,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "owner": "_load_capacity_inputs",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "CapacityAuditInputsV2",
+        "terminal_name": "CapacityAuditInputsV2"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 190,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "owner": "execute",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "RuntimeError",
+        "terminal_name": "RuntimeError"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 46,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "invocation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "strict_json",
+        "terminal_name": "strict_json"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 46,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "invocation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "pinned",
+        "terminal_name": "pinned"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 71,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "invocation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 72,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "invocation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "type",
+        "terminal_name": "type"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 72,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "invocation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "set",
+        "terminal_name": "set"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 75,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "invocation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "byte_auth.Pins",
+        "terminal_name": "Pins"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 81,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "invocation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "byte_auth.digest_value",
+        "terminal_name": "digest_value"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 82,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "invocation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 83,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "invocation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "type",
+        "terminal_name": "type"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 87,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "invocation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 92,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "invocation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 104,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "invocation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "byte_auth.canonical",
+        "terminal_name": "canonical"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 105,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "invocation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 106,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "invocation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "type",
+        "terminal_name": "type"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 107,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "invocation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "bool",
+        "terminal_name": "bool"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 114,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "strict_json",
+        "terminal_name": "strict_json"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 114,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "pinned",
+        "terminal_name": "pinned"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 115,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 116,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "type",
+        "terminal_name": "type"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 116,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 120,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 123,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "socket.gethostname",
+        "terminal_name": "gethostname"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 124,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "row['Id'].startswith",
+        "terminal_name": "startswith"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 126,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "os.getuid",
+        "terminal_name": "getuid"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 132,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "host.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 135,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 136,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "host.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 140,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 140,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "type",
+        "terminal_name": "type"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 140,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "bool",
+        "terminal_name": "bool"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 142,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 143,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "len",
+        "terminal_name": "len"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 148,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 152,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 153,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 154,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "proof_source.is_relative_to",
+        "terminal_name": "is_relative_to"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 155,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "source.is_relative_to",
+        "terminal_name": "is_relative_to"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 158,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 159,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "host.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 159,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "host.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 163,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 164,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 165,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path(__file__).resolve",
+        "terminal_name": "resolve"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 165,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 171,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 172,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "Path",
+        "terminal_name": "Path"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 174,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "require",
+        "terminal_name": "require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 174,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "bool",
+        "terminal_name": "bool"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 175,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "owner": "runtime_admission",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "max",
+        "terminal_name": "max"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

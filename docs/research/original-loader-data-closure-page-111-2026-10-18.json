@@ -1,0 +1,197 @@
+{
+  "records": [
+    {
+      "section": "forbidden_declaration_NOT_execution",
+      "value": {
+        "AST_sha256": "f22cd8813370bb9ac77a8a4837df82cf61b3b4c405e4101d126d45d23fa43fe9",
+        "end_line": 389,
+        "line": 383,
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "qualname": "_fit",
+        "reason": "forbidden_co_name_declaration_NOT_selected_call_proof"
+      }
+    },
+    {
+      "section": "forbidden_declaration_NOT_execution",
+      "value": {
+        "AST_sha256": "f9b61cb5872f365e7ab92208d39f3d1d1122674d21289c06edaca84d056cd16e",
+        "end_line": 514,
+        "line": 424,
+        "module": "backend.market.direct_daily_arithmetic",
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "qualname": "walk_forward",
+        "reason": "forbidden_co_name_declaration_NOT_selected_call_proof"
+      }
+    },
+    {
+      "section": "forbidden_declaration_NOT_execution",
+      "value": {
+        "AST_sha256": "d18ce0c0663660f133b29ae95789d8704388c258afa9bac57b5bd2fba0954869",
+        "end_line": 817,
+        "line": 722,
+        "module": "backend.market.forward_arithmetic",
+        "path": "backend/market/forward_arithmetic.py",
+        "qualname": "ForwardVolatilityHoldingReader.distribution",
+        "reason": "forbidden_co_name_declaration_NOT_selected_call_proof"
+      }
+    },
+    {
+      "section": "forbidden_declaration_NOT_execution",
+      "value": {
+        "AST_sha256": "a94315533ddec3d8beb834c2e0a2cbb45872c7b1eead92a644b36159bf7f46fe",
+        "end_line": 308,
+        "line": 196,
+        "module": "backend.market.daily_arithmetic_bridge",
+        "path": "backend/market/daily_arithmetic_bridge.py",
+        "qualname": "walk_forward",
+        "reason": "forbidden_co_name_declaration_NOT_selected_call_proof"
+      }
+    },
+    {
+      "section": "forbidden_declaration_NOT_execution",
+      "value": {
+        "AST_sha256": "85b77e2b121630bcffce0a85a4c223f349ad5e3c2e1b12d37998edf5d3e10008",
+        "end_line": 355,
+        "line": 282,
+        "module": "backend.market.learned_entry_models",
+        "path": "backend/market/learned_entry_models.py",
+        "qualname": "walk_forward",
+        "reason": "forbidden_co_name_declaration_NOT_selected_call_proof"
+      }
+    },
+    {
+      "section": "forbidden_declaration_NOT_execution",
+      "value": {
+        "AST_sha256": "91296297214a4f9300171175fc6501b649864b3a780ad526bc8ddcb087688b35",
+        "end_line": 735,
+        "line": 684,
+        "module": "backend.market.direct_error_band",
+        "path": "backend/market/direct_error_band.py",
+        "qualname": "VolatilityHoldingReader.distribution",
+        "reason": "forbidden_co_name_declaration_NOT_selected_call_proof"
+      }
+    },
+    {
+      "section": "forbidden_declaration_NOT_execution",
+      "value": {
+        "AST_sha256": "fcd03a63eee72ae6f66a0ade0c630c33b60e3787627fcc4a792e8de281a9e2e3",
+        "end_line": 250,
+        "line": 155,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "walk_forward",
+        "reason": "forbidden_co_name_declaration_NOT_selected_call_proof"
+      }
+    },
+    {
+      "section": "forbidden_declaration_NOT_execution",
+      "value": {
+        "AST_sha256": "ed7728804e656455fc5193f06930f43621aa85fc70007ef69228bbc7999f9fdc",
+        "end_line": 928,
+        "line": 875,
+        "module": "backend.market.direct_feature_arithmetic",
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "qualname": "HoldingScenarioReader.distribution",
+        "reason": "forbidden_co_name_declaration_NOT_selected_call_proof"
+      }
+    },
+    {
+      "section": "forbidden_declaration_NOT_execution",
+      "value": {
+        "AST_sha256": "8a9eaadc0c61fcef47b3d22819edcee1b6a72d033bcaff0a640d44791f7559f8",
+        "end_line": 340,
+        "line": 246,
+        "module": "backend.market.learned_retention_models",
+        "path": "backend/market/learned_retention_models.py",
+        "qualname": "walk_forward",
+        "reason": "forbidden_co_name_declaration_NOT_selected_call_proof"
+      }
+    },
+    {
+      "section": "forbidden_declaration_NOT_execution",
+      "value": {
+        "AST_sha256": "9b8aa25ef3edb6ec5f9b50026f22020ecf332c2102f9cffabe0ccfffe2d00762",
+        "end_line": 208,
+        "line": 207,
+        "module": "backend.market.market_conditioned_holding",
+        "path": "backend/market/market_conditioned_holding.py",
+        "qualname": "MarketConditionedHoldingReader.distribution",
+        "reason": "forbidden_co_name_declaration_NOT_selected_call_proof"
+      }
+    },
+    {
+      "section": "forbidden_declaration_NOT_execution",
+      "value": {
+        "AST_sha256": "9b8aa25ef3edb6ec5f9b50026f22020ecf332c2102f9cffabe0ccfffe2d00762",
+        "end_line": 223,
+        "line": 222,
+        "module": "backend.market.market_conditioned_holding",
+        "path": "backend/market/market_conditioned_holding.py",
+        "qualname": "ForwardMarketConditionedHoldingReader.distribution",
+        "reason": "forbidden_co_name_declaration_NOT_selected_call_proof"
+      }
+    },
+    {
+      "section": "forbidden_declaration_NOT_execution",
+      "value": {
+        "AST_sha256": "e028d5f0922557c098c2bf1a1ec6676add17458d68da48258ab83887efa1419e",
+        "end_line": 84,
+        "line": 72,
+        "module": "backend.market.probabilistic_execution",
+        "path": "backend/market/probabilistic_execution.py",
+        "qualname": "Calibration.distribution",
+        "reason": "forbidden_co_name_declaration_NOT_selected_call_proof"
+      }
+    },
+    {
+      "section": "forbidden_declaration_NOT_execution",
+      "value": {
+        "AST_sha256": "bc33aa86de30d04af124438ede6c5f5e448c0e56867e0bf4886eda44efc4160e",
+        "end_line": 208,
+        "line": 133,
+        "module": "backend.market.market_conditioned_calibration",
+        "path": "backend/market/market_conditioned_calibration.py",
+        "qualname": "fit_market_log",
+        "reason": "forbidden_co_name_declaration_NOT_selected_call_proof"
+      }
+    },
+    {
+      "section": "forbidden_declaration_NOT_execution",
+      "value": {
+        "AST_sha256": "abe597d67ff78aec156bcf5e05aec2c3c83231e7cf9936b8a20f9575b568cde2",
+        "end_line": 93,
+        "line": 59,
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "qualname": "fit_log",
+        "reason": "forbidden_co_name_declaration_NOT_selected_call_proof"
+      }
+    },
+    {
+      "section": "forbidden_declaration_NOT_execution",
+      "value": {
+        "AST_sha256": "9b8aa25ef3edb6ec5f9b50026f22020ecf332c2102f9cffabe0ccfffe2d00762",
+        "end_line": 291,
+        "line": 290,
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "qualname": "CalibratedHoldingReader.distribution",
+        "reason": "forbidden_co_name_declaration_NOT_selected_call_proof"
+      }
+    },
+    {
+      "section": "forbidden_declaration_NOT_execution",
+      "value": {
+        "AST_sha256": "9b8aa25ef3edb6ec5f9b50026f22020ecf332c2102f9cffabe0ccfffe2d00762",
+        "end_line": 304,
+        "line": 303,
+        "module": "backend.market.conditional_holding_calibration",
+        "path": "backend/market/conditional_holding_calibration.py",
+        "qualname": "ForwardCalibratedHoldingReader.distribution",
+        "reason": "forbidden_co_name_declaration_NOT_selected_call_proof"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

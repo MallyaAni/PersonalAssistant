@@ -1,0 +1,773 @@
+{
+  "records": [
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 636,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_action_first_opening",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "day.astype",
+        "terminal_name": "astype"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 639,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_action_first_opening",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "bool",
+        "terminal_name": "bool"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 639,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_action_first_opening",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.is_busday",
+        "terminal_name": "is_busday"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 639,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_action_first_opening",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.datetime64",
+        "terminal_name": "datetime64"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 639,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_action_first_opening",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "local.date",
+        "terminal_name": "date"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 640,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_action_first_opening",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_require",
+        "terminal_name": "_require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 643,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_action_first_opening",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "local.time",
+        "terminal_name": "time"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 643,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_action_first_opening",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "calendar.session_close",
+        "terminal_name": "session_close"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 643,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_action_first_opening",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "local.date",
+        "terminal_name": "date"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 647,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_action_first_opening",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "int",
+        "terminal_name": "int"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 647,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_action_first_opening",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "local.time",
+        "terminal_name": "time"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 648,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_action_first_opening",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.busday_offset",
+        "terminal_name": "busday_offset"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 649,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_action_first_opening",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.datetime64",
+        "terminal_name": "datetime64"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 649,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_action_first_opening",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "local.date",
+        "terminal_name": "date"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 651,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_action_first_opening",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_require",
+        "terminal_name": "_require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 652,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_action_first_opening",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "label.capitalize",
+        "terminal_name": "capitalize"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 659,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "row.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 659,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "row.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 660,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_require",
+        "terminal_name": "_require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 661,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 661,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "type",
+        "terminal_name": "type"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 663,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "row.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 666,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_action_first_opening",
+        "terminal_name": "_action_first_opening"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 667,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "row.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 668,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_require",
+        "terminal_name": "_require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 669,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "isinstance",
+        "terminal_name": "isinstance"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 670,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "bool",
+        "terminal_name": "bool"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 671,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "isinstance",
+        "terminal_name": "isinstance"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 671,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "row.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 672,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "row['effective_source'].startswith",
+        "terminal_name": "startswith"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 673,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "isinstance",
+        "terminal_name": "isinstance"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 673,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "row.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 674,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "row['fractional_source'].startswith",
+        "terminal_name": "startswith"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 678,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "str",
+        "terminal_name": "str"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 683,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "effective.isoformat",
+        "terminal_name": "isoformat"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 686,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_consolidation",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_freeze",
+        "terminal_name": "_freeze"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 702,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_require",
+        "terminal_name": "_require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 703,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 704,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "set",
+        "terminal_name": "set"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 729,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_require",
+        "terminal_name": "_require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 730,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "isinstance",
+        "terminal_name": "isinstance"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 732,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "datetime.fromisoformat",
+        "terminal_name": "fromisoformat"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 733,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_require",
+        "terminal_name": "_require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 734,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "clock.utcoffset",
+        "terminal_name": "utcoffset"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 737,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "clocks.append",
+        "terminal_name": "append"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 739,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "calendar.reviewed_sessions",
+        "terminal_name": "reviewed_sessions"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 740,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_require",
+        "terminal_name": "_require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 741,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "day.astype",
+        "terminal_name": "astype"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 741,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "np.is_busday",
+        "terminal_name": "is_busday"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 744,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "datetime.combine",
+        "terminal_name": "combine"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 745,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "day.astype",
+        "terminal_name": "astype"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 747,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_require",
+        "terminal_name": "_require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 751,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_require",
+        "terminal_name": "_require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 752,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_day",
+        "terminal_name": "_day"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 752,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "terms.astimezone(calendar.NEW_YORK).date",
+        "terminal_name": "date"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 752,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "terms.astimezone",
+        "terminal_name": "astimezone"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 753,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_day",
+        "terminal_name": "_day"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 756,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "_require",
+        "terminal_name": "_require"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 757,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "all",
+        "terminal_name": "all"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 758,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "isinstance",
+        "terminal_name": "isinstance"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 758,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_default_share_terms",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "row[field].startswith",
+        "terminal_name": "startswith"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 768,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_exchange",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "row.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 768,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_exchange",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "row.get",
+        "terminal_name": "get"
+      }
+    },
+    {
+      "section": "call",
+      "value": {
+        "guard_name_collision_lexical_only": false,
+        "line": 769,
+        "module": "backend.market.live_execution_inputs",
+        "owner": "_exchange",
+        "resolved_actual_callable_or_phase": null,
+        "target_expression": "row.get",
+        "terminal_name": "get"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}

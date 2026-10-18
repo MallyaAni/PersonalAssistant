@@ -1,0 +1,581 @@
+{
+  "records": [
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 9,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "target": "hashlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 10,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "target": "json"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 11,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "target": "os"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 12,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "target": "pathlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 13,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "target": "stat"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 14,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "target": "sys"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 15,
+        "module": "backend.market.capacity_original_loader_lifecycle_v2",
+        "target": "datetime"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 10,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "target": "dataclasses"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 11,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "target": "datetime"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 12,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "target": "pathlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 14,
+        "module": "backend.market.capacity_original_inputs_v2",
+        "target": "numpy"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 7,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "target": "os"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 8,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "target": "socket"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 9,
+        "module": "backend.market.capacity_original_admissions_v2",
+        "target": "pathlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 11,
+        "module": "backend.market.capacity_original_archives_v2",
+        "target": "tempfile"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 12,
+        "module": "backend.market.capacity_original_archives_v2",
+        "target": "dataclasses"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 13,
+        "module": "backend.market.capacity_original_archives_v2",
+        "target": "pathlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 14,
+        "module": "backend.market.capacity_original_archives_v2",
+        "target": "types"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 8,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "target": "gzip"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 9,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "target": "io"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 10,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "target": "json"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 11,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "target": "math"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 12,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "target": "os"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 13,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "target": "stat"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 14,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "target": "hashlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 15,
+        "module": "backend.market.capacity_original_evidence_v1",
+        "target": "pathlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 5,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "target": "json"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 6,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "target": "math"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 7,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "target": "os"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 8,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "target": "stat"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 9,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "target": "dataclasses"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 10,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "target": "hashlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 11,
+        "module": "backend.market.capacity_original_input_auth_v1",
+        "target": "pathlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 3,
+        "module": "backend.market.capacity_original_durability_v1",
+        "target": "os"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 4,
+        "module": "backend.market.capacity_original_durability_v1",
+        "target": "stat"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 9,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "target": "hashlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 10,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "target": "json"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 11,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "target": "os"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 12,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "target": "pathlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 13,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "target": "stat"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 14,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "target": "sys"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 15,
+        "module": "backend.market.capacity_original_loader_binding_v2",
+        "target": "types"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 7,
+        "module": "backend.market.direct_daily_arithmetic",
+        "target": "__future__"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 9,
+        "module": "backend.market.direct_daily_arithmetic",
+        "target": "hashlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 10,
+        "module": "backend.market.direct_daily_arithmetic",
+        "target": "platform"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 11,
+        "module": "backend.market.direct_daily_arithmetic",
+        "target": "dataclasses"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 12,
+        "module": "backend.market.direct_daily_arithmetic",
+        "target": "datetime"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 13,
+        "module": "backend.market.direct_daily_arithmetic",
+        "target": "pathlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 15,
+        "module": "backend.market.direct_daily_arithmetic",
+        "target": "numpy"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 16,
+        "module": "backend.market.direct_daily_arithmetic",
+        "target": "threadpoolctl"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 8,
+        "module": "backend.market.forward_arithmetic",
+        "target": "hashlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 9,
+        "module": "backend.market.forward_arithmetic",
+        "target": "json"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 10,
+        "module": "backend.market.forward_arithmetic",
+        "target": "copy"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 11,
+        "module": "backend.market.forward_arithmetic",
+        "target": "dataclasses"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 12,
+        "module": "backend.market.forward_arithmetic",
+        "target": "datetime"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 13,
+        "module": "backend.market.forward_arithmetic",
+        "target": "pathlib"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 15,
+        "module": "backend.market.forward_arithmetic",
+        "target": "numpy"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 16,
+        "module": "backend.market.forward_arithmetic",
+        "target": "threadpoolctl"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 7,
+        "module": "backend.market.holding_risk_bank",
+        "target": "io"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 8,
+        "module": "backend.market.holding_risk_bank",
+        "target": "json"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 9,
+        "module": "backend.market.holding_risk_bank",
+        "target": "os"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 10,
+        "module": "backend.market.holding_risk_bank",
+        "target": "copy"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 11,
+        "module": "backend.market.holding_risk_bank",
+        "target": "datetime"
+      }
+    },
+    {
+      "section": "external",
+      "value": {
+        "conditional": false,
+        "line": 12,
+        "module": "backend.market.holding_risk_bank",
+        "target": "hashlib"
+      }
+    }
+  ],
+  "schema": "capacity-data-closure-source-page/1"
+}
