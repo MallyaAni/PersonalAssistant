@@ -16,7 +16,7 @@ from backend.agents.trading.desk import paper
 from backend.market import historical_physical_checkpoint as physical
 from backend.market import historical_synthetic_native_write as writer_module
 
-SCHEMA = 'synthetic-reserved-native-io/1'
+SCHEMA = 'synthetic-reserved-native-io/2'
 
 
 # Bind the exact synthetic executor source/code and all original global identities.
@@ -56,8 +56,10 @@ class SyntheticNativeIO:
             'Source-bound synthetic executor differs')
 
     # Reserve the starting native cursor and optional exact CAS phase before native work.
-    def begin(self, nightly, directory, legacy):
+    def begin(self, nightly, directory, legacy, *, effect_binding=None):
         self.guard()
+        if effect_binding is not None:
+            physical._digest(effect_binding)
         physical._require(not self.failed and nightly.root == self.writer.root / 'work'
             and nightly.store.identity == self.writer.header['identity_sha256'],
             'Synthetic account must originate inside its reserved workspace')
@@ -72,13 +74,16 @@ class SyntheticNativeIO:
             'account': str(nightly.root), 'writer_root': str(self.writer.root),
             'sources': sources(), 'trade_sha256': self.trade_sha256, 'trade_path': str(self.trade_path),
             'header_sha256': sha256((self.writer.root / 'header').read_bytes()).hexdigest(),
-            'before': before, 'native_operation_adopted': False}
+            'before': before, 'native_operation_adopted': False, 'effect_binding': effect_binding}
         pool = nightly.store.blob_reservation
         value['reserved_cas'] = None if pool is None else pool.arm(
-            operation=sha256(str(directory).encode()).hexdigest(), head=nightly.expected_head)
+            operation=sha256(str(directory).encode()).hexdigest() if effect_binding is None else
+                sha256(physical._encoded({'directory': str(directory), 'effect_binding': effect_binding})).hexdigest(),
+            head=nightly.expected_head)
         legacy.write_once(directory / 'reserved-native-save.json', legacy.admitted.encoded(value))
         self.directory, self.saved, self.cursor = directory, [], deepcopy(before)
         self.reserved_cas = value['reserved_cas']
+        self.effect_binding = effect_binding
         self.cas_pool, self.cas_store = pool, nightly.store
 
     # Save only to the original workspace using the next preallocated native inode.
@@ -121,7 +126,7 @@ class SyntheticNativeIO:
         return {'schema': SCHEMA, 'reservation_sha256': sha256(
             (self.directory / 'reserved-native-save.json').read_bytes()).hexdigest(),
             'saves': deepcopy(self.saved), 'native_operation_adopted': False,
-            'reserved_cas': self.reserved_cas}
+            'reserved_cas': self.reserved_cas, 'effect_binding': self.effect_binding}
 
     # Observe explicit saves and policy calls without replacing paper.save_state.
     @contextmanager
@@ -205,8 +210,8 @@ def validate(nightly, directory, evidence, native_contents, legacy, expected):
     value = legacy.admitted.decoded(raw)
     physical._require(type(value) is dict and set(value) == {'schema', 'identity', 'account',
         'writer_root', 'sources', 'trade_sha256', 'trade_path', 'header_sha256', 'before',
-        'native_operation_adopted', 'reserved_cas'} and type(evidence) is dict and set(evidence) ==
-        {'schema', 'reservation_sha256', 'saves', 'native_operation_adopted', 'reserved_cas'}
+        'native_operation_adopted', 'reserved_cas', 'effect_binding'} and type(evidence) is dict and set(evidence) ==
+        {'schema', 'reservation_sha256', 'saves', 'native_operation_adopted', 'reserved_cas', 'effect_binding'}
         and evidence['schema'] == value['schema'] == SCHEMA
         and expected == {**evidence, 'saves': []}
         and evidence['reservation_sha256'] == sha256(raw).hexdigest()
@@ -216,6 +221,7 @@ def validate(nightly, directory, evidence, native_contents, legacy, expected):
         and Path(value['writer_root']) / 'work' == nightly.root,
         'Original synthetic reserved native evidence required')
     physical._require(evidence['reserved_cas'] == value['reserved_cas'], 'Original CAS lease differs')
+    physical._require(evidence['effect_binding'] == value['effect_binding'], 'Original effect inputs differ')
     if value['reserved_cas'] is None:
         physical._require(nightly.store.blob_reservation is None, 'Reserved CAS mode cannot downgrade')
     else:
