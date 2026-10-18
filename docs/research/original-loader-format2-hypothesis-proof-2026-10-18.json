@@ -1,0 +1,208 @@
+{
+  "schema": "tiny-format2-hypothesis-proof/1",
+  "status": "VERIFIED_TINY_SYNTHETIC_HYPOTHESIS_ONLY",
+  "source_revision": "425552c1",
+  "starting_revision": "c1edca784bba8f57470427e3d2534170ac3741d1",
+  "source_branch": "codex/learned-live-release-20261006",
+  "objective": "Test explicit marshal format 2 in both preparation and live candidate fingerprinting before changing the guard.",
+  "proposal": {
+    "path": "original-loader-format2-hypothesis-proposal-2026-10-18.json",
+    "sha256": "c08192121eacdf5cd7518c50036b481256bf4884376404f4f6a1896b43175d43"
+  },
+  "sources": {
+    "bootstrap": {
+      "sha256": "1c1cc6f2d2633b9f46a2aa4e05aa005ecdc3fa907ceaf012fe3fdc1aa4e7557b",
+      "bytes": 15656
+    },
+    "owner": {
+      "sha256": "3424bb22298c577f93c07ce88308db5ee6f49add004469a5ffed77b9a5076f6c",
+      "bytes": 6836
+    },
+    "verifier": {
+      "sha256": "80db67b0cb6360e410c790cb2e798a5bcafb9d272bd0cab8e6598d0e7b5df00b",
+      "bytes": 9983
+    },
+    "unchanged_harness": "737d4236345ebfbc90a0ecf33e3e9ce733e5f06afb2e53c3125e465e9b1a2eea",
+    "unchanged_controller": "2e505205cc8a3793d7b3313a5b5c3b670b00134575982d26c725787b6530df5a"
+  },
+  "roots": {
+    "source": "/home/animallya96/scratch/n2-format2-hypothesis-source-20261018-v1",
+    "run": "/home/animallya96/scratch/n2-format2-hypothesis-20261018-v1",
+    "source_review": "/home/animallya96/scratch/n2-format2-hypothesis-source-review-20261018-v1",
+    "terminal_review": "/home/animallya96/scratch/n2-format2-hypothesis-independent-review-20261018-v1",
+    "evidence": "/home/animallya96/scratch/n2-format2-hypothesis-evidence-20261018-v1",
+    "evidence_review": "/home/animallya96/scratch/n2-format2-hypothesis-evidence-review-20261018-v1",
+    "local_small_evidence": "/tmp/n2-format2-hypothesis-20261018-v1"
+  },
+  "source_preservation": {
+    "packet_sha256": "ba32b8a39d6c05ea26f611aa7fd5be2c4cf98ba89c0aea4558f093637c76e4eb",
+    "packet_bytes": 128721,
+    "packet_records": 7,
+    "decoded_bytes": 95775,
+    "stager_sha256": "c05ef12944fd2d3f145af9ea8a7a2c982b8b1b5a43deb1c0623624e21677d48d",
+    "source_book_sha256": "e3e895059731865ba72e81040ea5ce140ca864d1be1d3fe4026c727c7edc015a",
+    "stage_proof_sha256": "8606941e5b8d2143d9ae31f482e72119a6264377404b1e8ecc40e4afdc8cb135",
+    "stage_files": 10,
+    "stage_bytes": 231460,
+    "source_independent_sha256": "d5f61558a068ea0da7c00fe4e298eeb28d472d204fd0d28a64b8d1c0487bd2b0",
+    "source_review_proof_sha256": "39feaee7191e3b8526f58808272b54a4c53f2b0a33ef478c99481ea1d6acd99f",
+    "source_review_bytes": 6463,
+    "source_review_files": 12,
+    "physical_ns": "exact decimal strings; mutable atime excluded"
+  },
+  "admission": {
+    "sha256": "f69ca9d508680484e49ad4227c4550533971b6f7ddee93d37d1e1bf7901f127e",
+    "scope": "TINY_SYNTHETIC_FORMAT2_HYPOTHESIS_ONLY",
+    "schema": "tiny-format2-admission/1",
+    "observed_at_ns": "1792301190648631943",
+    "MemAvailable_bytes": "10131898368",
+    "scratch_available_bytes": "2811325849600",
+    "scratch_inodes_available": "243505607",
+    "host": "animallya-spark1",
+    "uid": 1000,
+    "actual_cached_image_raw_sha256": "c705c23b6839359fb0382e3d4b21638c02344956aecb732d4dfbbfe587db0fe5",
+    "active_labelled_jobs": [],
+    "fresh_run_absent": true,
+    "consumed": true,
+    "reusable": false,
+    "reservation": false,
+    "genuine_execution_authorized": false,
+    "review": "Existing healthy trading_action_consistency independently read exact proposal/launcher/source/prerequisite proof before create; no blocker found. No limited-agent retry."
+  },
+  "invocation": {
+    "launcher_sha256": "543bac79bcc2cddf48d1f14bd5668eb62a29e17e04a9c5ac1cbda1f8d72cad8b",
+    "argv": [
+      "--admitted-format2-hypothesis",
+      "f69ca9d508680484e49ad4227c4550533971b6f7ddee93d37d1e1bf7901f127e",
+      "3424bb22298c577f93c07ce88308db5ee6f49add004469a5ffed77b9a5076f6c",
+      "e3e895059731865ba72e81040ea5ce140ca864d1be1d3fe4026c727c7edc015a"
+    ],
+    "launcher_exit": 0,
+    "owned_stop": null
+  },
+  "actual_runtime": {
+    "cid": "733b37381937748c76291092ded1c0aa26d75b27cf17229e3ffb3d1c884c15cd",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "started_at": "2026-10-18T05:26:31.272392721Z",
+    "finished_at": "2026-10-18T05:26:31.863655256Z",
+    "exit": 0,
+    "oom": false,
+    "stopped": true,
+    "uid": 1000,
+    "network": "none",
+    "read_only": true,
+    "cpu": 1,
+    "memory_bytes": 2147483648,
+    "memory_swap_bytes": 2147483648,
+    "pids": 32,
+    "tmpfs_bytes": 67108864,
+    "healthcheck": false,
+    "logging": "none",
+    "binds": [
+      "tiny source audit RO",
+      "new output RW"
+    ],
+    "app_model_account_original_market_credentials_socket_mounts": false,
+    "child_pids": [
+      "7",
+      "8"
+    ],
+    "child_exits": [
+      0,
+      0
+    ],
+    "child_logs_empty": true,
+    "python": "3.12.14 (main, Aug 31 2026, 23:47:53) [GCC 14.2.0]",
+    "dataclasses_source_sha256": "d242aea5fcf6408b1c1f622442f88f68b9526ce1f8bd2890d74a144677c427d9"
+  },
+  "results": {
+    "candidate_schema": "tiny-generated-code-format2-candidate/1",
+    "algorithm": "cpython-code-marshal-format-2-sha256/1",
+    "marshal_version": 2,
+    "prepared_rows": 7,
+    "actual_live_wrapper_equal": true,
+    "wrapper_bytes": 649,
+    "wrapper_sha256": "846dd6fe7c83626d3fcd045c94d1e86664dfc275aa82fbf9904360ba0a770ebe",
+    "profile_cases_passed": 11,
+    "profile_cases_failed": 0,
+    "version_controls_passed": 4,
+    "positive": "All eight first wrapper fields match; unchanged profile passes wrapper and refuses next __create_fn__ call as BROKER_OR_ACCOUNT_FUNCTION.",
+    "negative": "Eight individual wrong binding fields and changed outer bytecode/nested constant all refuse UNREVIEWED_GENERATED_CODE at wrapper before body.",
+    "version_refusals": [
+      "old schema n2-capacity-call-manifest/1",
+      "implicit-default fingerprint algorithm",
+      "marshal_version=4",
+      "marshal_version=true"
+    ],
+    "adapter_injected": true,
+    "unchanged_full_compilation_profile_CodeType": true,
+    "old_manifest_reinterpreted": false,
+    "original_failed_guard_hash_recovered": false,
+    "Sample_instances": 0,
+    "remaining_six_live_generated_records_not_exercised": true
+  },
+  "independent_terminal": {
+    "verifier_sha256": "80db67b0cb6360e410c790cb2e798a5bcafb9d272bd0cab8e6598d0e7b5df00b",
+    "proof_sha256": "d930eb0701c3a7bfffdf7c12368333db961b44ed674497c8e875b46ef115b6e0",
+    "proof_bytes": 32638,
+    "fresh_inspect_sha256": "a6fe7757847f3c324e50905d1a3dbd53be8eed071a699b16d77f14bbd3a219a4",
+    "run_files": 33,
+    "source_files_at_review": 20,
+    "source_book_three_files_full_sha_bytes_physical_before_after_equal": true,
+    "created_to_stopped_HostConfig_only_difference": {
+      "OomKillDisable": [
+        false,
+        null
+      ]
+    },
+    "complete_mounts_by_destination_equal": true,
+    "probe_bodies_reexecuted": 0,
+    "raw_proof_and_five_observations_fetched_hash_checked": true,
+    "healthy_worker_interpretation": "Narrow hypothesis supported; separately pinned new guard schema/algorithm must cover dataclass and daily-prefix seams before constructor/profile/failure-slot validation without injected adapter."
+  },
+  "evidence": {
+    "files": 34,
+    "bytes": 336199,
+    "manifest_sha256": "51ccf0f0ac1dfe34d1e1619a4ec36328b14ee16968a19c8149d0b95d023dfd9b",
+    "preserver_sha256": "0aaf1736132bf80aa38a7d18497fa10a8a366b84a1c8fe0656d77227462e5722",
+    "fsync_readback": true,
+    "independent_verifier_sha256": "3343a2e8c617b734d9d90de08749d6740087602c72c00e8be3516349de970680",
+    "independent_proof_sha256": "1eb441cae193f5e36d6de029fd6fa1a779cf4b7c3beac404d9126738dc887de8",
+    "independent_proof_bytes": 16246,
+    "two_full_reads_and_exact_physical_fields": true
+  },
+  "validation": {
+    "ast_and_purpose_comments_pass": 42,
+    "ruff": "UNAVAILABLE from prior established environment, no lint claim",
+    "json_hash_links": "PASS",
+    "final_diff_check": "PASS",
+    "source_failure_before_execution": "READONLY review caught absent top-level string in constants control; exact retained nested shape used instead.",
+    "initial_whitespace_warning": "Initial source commit32489dec had trailing blank lines flagged by diff check;425552c1 removes those lines and repins exact hashes before staging/execution; initial commit retained.",
+    "old_gates_repeated": 0
+  },
+  "unchanged": {
+    "guard_harness_737d": true,
+    "fixture_and_manifest_v2": true,
+    "contract_ecc": true,
+    "guard_caps": true,
+    "native_Store_Nightly_Cycle": true,
+    "failed_v2_root_and_admission": true,
+    "completed_diagnostic_roots": true,
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "missing_original_receipts": "UNCHANGED",
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "heartbeat": "ACTIVE"
+  },
+  "unverified": [
+    "actual new guard constructor/profile without injected adapter",
+    "actual failure-slot persistence with versioned manifests",
+    "all generated dataclass rows/live daily-prefix seam under new algorithm",
+    "full guard suite including unrun41+4controls from preserved failedv2",
+    "combined numerical/model+receipt RAM and horizon",
+    "historical/ordinary weekday/intraday/fill/UI acceptance",
+    "actual twohost/Spark2 image/daemon-temp/incremental RAM",
+    "force-stop/alarm/SIGKILL/transport loss branches"
+  ],
+  "next": "Prepare a distinct versioned guard candidate/source-bound fixtures/manifests with explicit format2 semantics for BOTH dataclass and daily-prefix records. Preserve old737d and schema1 bytes. Reject old/implicit schemas; retain eight-field binding, source/phase/effect guards. Independently review and freshly admit tiny actual constructor/profile/failure-slot cases without injected adapter before any new full suite or genuine loader. No automatic replay or admission reuse."
+}

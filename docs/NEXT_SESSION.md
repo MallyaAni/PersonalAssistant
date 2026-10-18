@@ -1,5 +1,63 @@
 # Next session
 
+## 2026-10-18 — Explicit format-2 tiny hypothesis VERIFIED; guard still unchanged
+
+Read research/original-loader-format2-hypothesis-proof-2026-10-18.json and the
+exact proposal. Source425552c1 pins bootstrap1c1cc6f2/owner3424bb22/verifier80db67b0.
+ONE new scoped experiment, not old v2/diagnostic replay. Packetba32b8a3/128721B/
+7records/95775decodedB, source-booke3e89505/stage8606941e retained exclusively
+under scratch/n2-format2-hypothesis-{source,...}-20261018-v1. Independent
+source/prerequisite proof39feaee7/6463B checked12files/actual cached e0/host/UID/
+jobs/resources/absent targets. Fresh admissionf69ca9d5 at1792301190648631943ns,
+MemAvailable10131898368B, applies only here and is consumed, never reusable.
+These headroom observations are NOT reservations or daemon/model RAM bounds.
+
+Actual733b3738/e0 exited0/noOOM05:26:31.863655256Z; fresh independent inspection
+a6fe7757 confirms stopped. UID1000/noneRO/1CPU/2GiB=swap/PIDs32/tmp64/noHC/
+lognone/two tiny auditRO+outRW binds. No app/backend/model/original/account/
+market/credentials/socket mounts. Actual childrenPID7/8 exited0/empty logs/no
+owned stop. Python3.12.14/dataclassesd242aea5. Original737d full-compilation
+profile CodeType executed with an explicitly INJECTED marshal-format2 adapter;
+this is not actual guard constructor/audit/failure-slot/SourceBook acceptance.
+
+Explicit candidate schema tiny-generated-code-format2-candidate/1 and algorithm
+cpython-code-marshal-format-2-sha256/1 bind marshal_version=2. Prepared and live
+first-wrapper bytes agree:649B/SHA846dd6fe. Positive passes all eight bindings,
+then unchanged profile refuses __create_fn__ as BROKER_OR_ACCOUNT_FUNCTION.
+All eight individual wrong bindings plus changed outer bytecode and exact
+nested constant refuse UNREVIEWED_GENERATED_CODE before wrapper body. Four
+old-schema/implicit-algorithm/version4/bool-version controls reject before live.
+11profilecases+4versioncontrols pass; remaining six live generated rows are not
+exercised. No old schema reinterpreted, G08 reason relabelled, guard/fixture/
+manifest/cap change or original failed-v2 hash recovery.
+
+READONLY preflight caught constants-control top-level string absent; retained
+typed metadata proved nested __create_fn__ 'value' constant, now shape-checked
+before replacement. Initial32489dec trailing-blank diff warning corrected and
+hashes repinned in425552c1 before staging; both source commits preserved. Healthy
+existing worker reviewed source, actual prerequisites/exact invocation and final
+interpretation; no limited-agent retry/new worker. AST/purpose42/JSON/hash links/
+final diff pass; Ruff unavailable. No completed old gates/test bodies rerun.
+
+Independent terminal proofd930eb07/32638B checks33run/20source-at-review files,
+actual CID/children/all15 outcomes/source3 fullSHA+bytes+physical beforeafter.
+Raw proof and five small observations fetched/hashchecked on Mac. Exclusive
+evidence34files336199B/manifest51ccf0f0/preserver0aaf1736 fsynced/readback;
+independent3343a2e8/proof1eb441ca/16246B verifies two full reads/physical fields.
+Force-stop/alarm/SIGKILL/transport-loss branches remain unexercised.
+
+NEXT ROOT: prepare a DISTINCT versioned guard candidate and source-bound tiny
+fixtures/manifests using explicit format2 for BOTH dataclass and daily-prefix
+generated records. Preserve old737d/schema1; reject old/implicit semantics and
+retain eight-field/source/phase/effect guards. Independently review and freshly
+admit tiny actual constructor/profile/failure-slot validation WITHOUT injected
+adapter before any new full suite/genuine loader. Never rerun this completed
+experiment or old failed v2, reuse admissions, adopt roots or weaken guards.
+Fullfence/combinedmodel+receiptRAM/horizon/historical/weekday/intraday/fill/UI
+UNVERIFIED. OriginaltimingFAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/
+no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM unchanged.
+Heartbeat ACTIVE. Diagram: NONE.
+
 ## 2026-10-18 — Tiny generated-code diagnostic VERIFIED; guard remains uncorrected
 
 Read research/original-loader-generated-code-diagnostic-proof-2026-10-18.json.
