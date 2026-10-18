@@ -1,0 +1,146 @@
+{
+  "schema": "capacity-original-loader-composition-source-checkpoint-proof/1",
+  "status": "SOURCE_REVIEWED_UNEXECUTED_COMPOSITION_NO_RUNTIME_ADMISSION",
+  "source_revision": "e5c2620621dc428ce8d5dcd3c8016044ef1ecdad",
+  "starting_revision": "1b8d1f692ca367e3c75f4d6fb3e96f629b3be6c5",
+  "branch": "codex/learned-live-release-20261006",
+  "starting_owned_worktree": "CLEAN before this atomic source-only task",
+  "objective": "Implement a distinct explicit source-map transition binding and constructor-only loader lifecycle, keeping original producer and reference receipts separate from the new executor identity.",
+  "files": {
+    "sources/original-loader-capacity-loader-binding-v1-2026-10-18.py": {
+      "sha256": "d41e2bf0f408fa77dc2d69160ce2452abde3803998e760b5d6113f9bd0d4bc6b",
+      "bytes": 15840
+    },
+    "sources/original-loader-capacity-loader-lifecycle-v1-2026-10-18.py": {
+      "sha256": "ba888e95f5925d7ffb084ce3d15688299f9987284e8a9e38fd1d54a1c772ebc4",
+      "bytes": 10027
+    },
+    "sources/prepare-capacity-loader-composition-source-v1-2026-10-18.py": {
+      "sha256": "37727d8dbd810b7c09a272d6ed72faaecff2a2af22c02ea2473c45bf2131e7eb",
+      "bytes": 14776
+    },
+    "sources/review-capacity-loader-composition-source-v1-2026-10-18.py": {
+      "sha256": "9cc2a52a569a732576db409b9ce2562c59600c180c6834b1363555828873cf77",
+      "bytes": 13140
+    },
+    "original-loader-composition-source-contract-v1-2026-10-18.json": {
+      "sha256": "a69aa1b659dfe9a33053d798592ea8e41856e70f87431c69f5d2b414ffeca2d3",
+      "bytes": 5114
+    },
+    "original-loader-composition-source-map-v1-2026-10-18.json": {
+      "sha256": "5a605c1018f3274ad6ccd6e6363e20587e7769b5d46b0cfa2ece3ebcdb85e248",
+      "bytes": 286385
+    },
+    "original-loader-composition-independent-source-review-v1-2026-10-18.json": {
+      "sha256": "a457898d05305516f0c9e1031c54ce53463fcb4e9e76dd22a165d618630b60e6",
+      "bytes": 11666
+    }
+  },
+  "new_payload": {
+    "modules": 2,
+    "functions_including_methods": 18,
+    "all_payload_imports_CodeTypes_and_bodies": "UNRUN",
+    "public_execute": "Both unconditional refusals; no admitted executor, wrapper or launch.",
+    "source_map": "Exact2459 declaration = prior2457 plus these two modules. The prior sole original4b0555->variant21adedb2 learned_entry_data transition and four entry additions are explicitly authenticated, not an old map override. Old2453 binding still refuses LEGACY_SOURCE_OVERRIDE_FORBIDDEN.",
+    "three_namespace_roles": "New executor2459 and reference2446 get distinct exact RO root mounts, host roots and externally supplied decimal-string root identities. Original2431 producer/account/market/source aliases and complete byte receipts remain separate and unchanged.",
+    "root_controls": "Exact source root equals actual binding module path; executor/reference container roots and host roots are nonoverlapping. Reject descendant mount overrides, proof root overlap and direct or ancestor sys.path reference overlap. Root descriptors held during each map hash pass with named/FD identity bookends; individual file opens remain path based. No full meta_path/finder or hostile-code isolation claim.",
+    "original_admissions": "New source_admission preserves the complete original audit source and Git2431 body except explicit reference_root argument/root binding and exact archives.source_root guard. New calendar_admission uses the real original executor calendar, preserves full original dates/profile/session checks, and authenticates calendar source plus all three data files in executor and reference. Tiny capacity calendar is not substituted into numeric globals.",
+    "lifecycle": "New independent CapacityLoaderLeaseV1 preserves old constructor admissions, full completion/physical preservation, producer/config/calendar checks and BEFORE byte graph with four declared root/admission/metadata edits. _bytes, verify_after and persist have complete AST equality with old methods under explicitly different binding globals. serialize adds only loader_type_binding; release additionally clears that reference after durable candidate order.",
+    "private_load": "No arbitrary supplied loaded object API. _load_inputs permits phase BEFORE once, changes phase to LOAD before deferred imports, checks twelve declared module-file/spec/source origins, obtains actual datetime.now(UTC) immediately before exactly one private _load_capacity_inputs call, retains the result and checks exact new result/raw/market/parent/observation class identities plus original-base isinstance. No caller-supplied historical clock.",
+    "factory_limit": "Exact class and module-file origin metadata is not executable CodeType/global/factory provenance. Unchanged real load_publication->_admit->numeric_head and complete original publication/configuration guards remain required under a future exact call/phase contract; no supplied predictor or forged type acceptance is established.",
+    "lifetimes": "Source retains loaded context, archive/ShaMap spools, complete BEFORE and AFTER receipt graphs, full JSON string and UTF8 bytes through exclusive candidate fsync/hash readback, destination directory then proof-parent sync and release. Two original constructor frames/features/predictions/copies/readonly transitions and market parent deepcopy remain required. No actual coexistence, late peak or memory bound measured.",
+    "result_bound_bytes": 268435456,
+    "result_bound_unchanged": true,
+    "full_source_assembly_SourceBook_finder_native_generated_call_phase_runtime": "ABSENT_UNADMITTED"
+  },
+  "independent_source_review": {
+    "new_checker_actual_exit": 0,
+    "AST_checks": 13,
+    "payload_functions_described": 18,
+    "module_origin_members": 12,
+    "scope": "Exact map chain/one transition/four prior plus two new additions/seven digest constants; full old source/calendar/constructor and lifecycle AST deltas; real clock adjacent to one private factory; module membership and unconditional public refusal. AST is not behavior or runtime closure proof.",
+    "existing_worker": "Healthy trading_action_consistency READONLY local source review only; no new agent, limited-worker retry, edits, imports, tests or host/runtime operations. Source review found and corrected only a contract wording error before final freeze: archives.root must read archives.source_root.",
+    "final_worker_review": "No deterministic source blocker found; final contract/report hashes match. All12 module origins are reachable through direct/transitive inputs imports before the factory, conditional on successful import. Map membership is not runtime import acceptance. Separate roots/map/calendar/private call/retention match declared design; finder/callable/global/numerical/RAM/runtime remain unverified."
+  },
+  "actual_operations": {
+    "ran": [
+      "new local stdlib source copy/text generation/AST/JSON/SHA and readback",
+      "one new source-only builder invocation, no regeneration",
+      "one new independent static checker invocation, exit0",
+      "source draft preservation and exact final pointer writes",
+      "Git staged validation and source checkpoint"
+    ],
+    "payload_import_CodeType_compile_body_or_test": false,
+    "numerical_model_load_fit_predict": false,
+    "original_account_market_data_read": false,
+    "SSH_hostprobe_Docker_job": false,
+    "completed_gate_or_packet_replay": false,
+    "production_original_source_guard_G08_cap_change": false
+  },
+  "checks": {
+    "new_four_sources_AST_warnings_as_errors": "PASS",
+    "purpose_comments": "PASS32 functions across4 source files",
+    "JSON_fullSHA_source_map_links": "PASS",
+    "independent13_AST_map_lifecycle_checks": "PASS",
+    "source_staged_diff": "PASS",
+    "Ruff": "UNAVAILABLE",
+    "runtime_type_alias_readonly_deepcopy_numerical_model_RAM_crash": "UNRUN_UNVERIFIED"
+  },
+  "metadata_bounds": {
+    "map_bytes": 286385,
+    "typed_metadata_bound_bytes": 16777216,
+    "map_outside_ordinary_source_log_packet_roots": true,
+    "ordinary_source_log_packet_bound_bytes": 262144,
+    "cap_increase_or_ordinary_file_exception": false
+  },
+  "preservation": {
+    "exclusive_local_root": "/tmp/capacity-loader-composition-source-20261018-v1",
+    "original_contents": "Both new inert payload sources and initial contract-pointer.json unchanged.",
+    "wording_drafts": {
+      "initial-contract.json": {
+        "sha256": "c087e542ca6004a89ecc3252298ec211ceda8a8986dd912f4af4eeb3a435a336",
+        "bytes": 5107
+      },
+      "initial-builder.py": {
+        "sha256": "86c1b2fced60a9a60df808374286dceeb6a37dd7bb292d416ccc4905ff98b993",
+        "bytes": 14769
+      },
+      "change": "Only contract wording archives.root -> archives.source_root and corresponding builder string; payload source/map unchanged. Initial source-only artifacts retained; no failed runtime or test/body replay."
+    },
+    "final_contents": "Distinct final-contract.json, final-builder.py, independent-review.json and final-contract-pointer.json; file fsync/readback and directory fsync completed. Initial pointer was not overwritten.",
+    "final_pointer_sha256": "b5a344ae70c405e16f60195ed147f9e08e63006a3bee2aa3d7faa9b5b91a8c5d",
+    "final_pointer_bytes": 618,
+    "old_failed_completed_roots_packets_admissions": "UNCHANGED; never replay/adopt/overwrite/reuse."
+  },
+  "unadmitted": {
+    "executed_map": null,
+    "finder": null,
+    "native_package_closure": null,
+    "call_manifest": null,
+    "generated_manifest": null,
+    "phase_manifest": null,
+    "entrypoint": null,
+    "model_import_strategy": null,
+    "wrapper": null,
+    "owner": null,
+    "caller": null,
+    "stager": null,
+    "bootstrap": null,
+    "packet": null,
+    "runtime": null,
+    "launch": null,
+    "admission": null,
+    "execution_authorized": false
+  },
+  "next": "SOURCE ONLY inspect the complete new binding/lifecycle/context/byte-auth and constructor import/call closure against the unchanged guard. Implement a distinct immutable source/finder/guard contract and exact phase/call/generated/native-package declarations, retaining separate executor/reference/original producer namespaces, original whole-source/receipt admissions, unchanged pure numerical/calendar origins, real numeric factory provenance and all allocation lifetimes. No synthetic or genuine runtime proposal until these contracts and independent source review are complete. Do not assemble or launch a genuine loader/model/account/history/twohost job, relax guard/G08/caps, regenerate packets or replay old73/80/23/65+4/tiny/diagnostic/v2.",
+  "unchanged": {
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "original_missing_raw_receipts": "MISSING",
+    "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "actual_two_host": false,
+    "Spark2_image_daemon_temp_incremental_RAM": "UNADMITTED",
+    "genuine_loader_model_combined_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+    "heartbeat": "ACTIVE"
+  }
+}

@@ -1,5 +1,72 @@
 # Next session
 
+## 2026-10-18 — Capacity map/lifecycle composition SOURCE reviewed; all bodies UNRUN
+
+Read research/original-loader-composition-source-proof-v1-2026-10-18.json.
+Sourcee5c2620621dc428ce8d5dcd3c8016044ef1ecdad pins bindingd41e2bf0/15840B,
+lifecycleba888e95/10027B/builder37727d8d/14776B/reviewer9cc2a52a/13140B/
+contracta69aa1b6/5114B/independenta457898d/11666B. Only new local stdlib
+source-copy/AST/JSON/SHA/builder/static checker/source preservation and Git ran.
+No payload import/CodeType/body/test/numerical/model/load/fit/predict/account/
+market-data read/SSH/hostprobe/Docker/job. Both new modules/eighteen functions
+remain UNRUN; both public execute bodies unconditionally refuse.
+
+Distinct new2459 declaration5a605c10/286385B authenticates old2446/2453/entry2457,
+sole original4b0555->variant21adedb2 learned_entry_data transition, four prior
+entry additions and two new composition additions. Old2453 binding still refuses
+LEGACY_SOURCE_OVERRIDE_FORBIDDEN. Typed16MiB metadata outside ordinary262KiB
+source/log/packet roots; no capincrease/exception. No assembled tree/SourceBook/
+finder/executed-map/import/runtime admission.
+
+Three explicit roles: new executor2459 imports; separate reference2446 archive
+source; unchanged original2431 producer/account/market/source aliases and byte
+receipts. Exact distinct RO root binds/hostpaths/external decimalstring root
+identities; reject descendant mount overrides/proof overlap/direct-or-ancestor
+sys.path reference overlap. Both rootFDs held/bookended only during map hashing;
+per-file opens PATH BASED, not FD-relative hostile-code isolation/full finder proof.
+Old source/Git2431 admission body differs only explicit reference root/guard.
+Real original executor calendar retains full dates/profile/session checks and
+source plus all three data files hashed in BOTH executor and reference. No tiny
+capacity-calendar substitution into real numeric globals/source receipts.
+
+New independent lease retains all original constructor admissions, full archive
+preservation, producer/config/economics, BEFORE graph, one private factory result,
+AFTER graph, full JSON string+UTF8 through exclusive file fsync/hashreadback,
+destination THEN proof-parent sync/release. Exact old _bytes/verify_after/persist
+ASTs use explicitly changed binding globals. No arbitrary supplied result API.
+Private load changes phase before imports, checks12declared module origins, takes
+actual datetime.now(UTC) immediately before ONE exact private factory call, retains
+new result/raw/market/parent/observation types. No caller-supplied historical clock.
+Class/file/spec checks are NOT live CodeType/global/numeric factory provenance.
+Unchanged publication->_admit->numeric_head/config guards and both constructor
+frames/features/predictions/copies/readonly/parent-deepcopy remain mandatory.
+Full256MiB result bound unchanged; no combined late peak/RAM/crash acceptance.
+
+Independent13AST/map/root/lifetime checks PASS/18payload functions described.
+Existing healthy worker READONLY final review found no deterministic blocker;
+all12origins statically reachable before factory conditional on successful imports,
+not runtime import acceptance. No newagent/limitedretry/workerops. AST warnings-
+as-errors/purpose32 across4sources/JSON/fullSHA/hashlinks/staged diff PASS; Ruff
+unavailable. Exclusive /tmp/capacity-loader-composition-source-20261018-v1 retains
+inert copies/initial pointer, initialcontractc087e542+builder86c1b2fc and distinct
+final contract/builder/review/pointerb5a344ae. Only contract wording archives.root
+-> archives.source_root corrected before freeze; payload/map unchanged, no runtime
+failure/body rerun. Source files fsynced/readback and root directory fsynced.
+
+NEXT ROOT: SOURCE ONLY inspect complete binding/lifecycle/context/byte-auth and
+constructor import/call closure against unchanged guard. Implement DISTINCT
+immutable source/finder/guard contract and exact phase/call/generated/native-package
+declarations retaining all three namespaces/original receipts/real numeric factory
+provenance/unchanged pure numerical-calendar paths/allocation lifetimes. No new
+synthetic or genuine runtime proposal until contracts and independent source review
+complete. Entrypoint/executed-map/finder/modelstrategy/manifest/wrapper/owner/caller/
+stager/bootstrap/packet/runtime/launch/admission NULL/execution_authorizedFALSE.
+No old73/80/23/65+4/tiny/diagnostic/v2 replay, packet regeneration, genuine loader/
+model/account/history/twohost launch or guard/G08/cap relaxation. RAM/horizon/
+historical/ordinary/intraday/fill/UI UNVERIFIED; originaltimingFAILED/publication
+CLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/
+Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Explicit capacity input/reader SOURCE prepared; all bodies UNRUN
 
 Read research/original-loader-entry-source-proof-v1-2026-10-18.json.
