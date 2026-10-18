@@ -15,6 +15,7 @@ from backend.market import historical_conditional_nightly as legacy
 from backend.market import historical_packet_store as storage
 from backend.market import historical_raw_cycle as bridge
 from backend.market import historical_raw_nightly as raw_nightly
+from backend.market import historical_reserved_native_io as reserved_io
 from backend.market import historical_timing_packet as packet
 from backend.market import replay_broker as native
 from backend.market.historical_packet_registry import digest
@@ -24,7 +25,7 @@ SCHEMA = 'standalone-current-raw-cycle-final/1'
 SAVE_STATE = paper.save_state
 RESERVATION_KEYS = {'schema', 'identity', 'operation', 'sources', 'submission',
                     'decision', 'cycle', 'session', 'context', 'lineage',
-                    'resolved', 'before', 'actual_reserved_at'}
+                    'resolved', 'before', 'actual_reserved_at', 'native_io'}
 LINK_KEYS = {'schema', 'operation', 'reservation_sha256', 'sources',
              'native_operation_committed', 'durable_simulator_adoption'}
 
@@ -205,11 +206,21 @@ def result(nightly, submission_head, resolved, checkpoint, expected_head):
         prepared, _ = read(directory / 'prepared.json')
     except FileNotFoundError as error:
         raise StorePause('Interrupted raw final lacks prepared result; never re-execute') from error
-    if (type(prepared) is not dict or set(prepared) != {'schema', 'reservation_sha256', 'receipt_sha256'}
+    reserved = value['native_io'] is not None
+    if not reserved and (directory / 'reserved-native-save.json').exists():
+        raise ValueError('Raw final native IO reservation mode differs')
+    prepared_keys = {'schema', 'reservation_sha256', 'receipt_sha256'}
+    if reserved:
+        prepared_keys.add('reserved_native_io')
+    if (type(prepared) is not dict or set(prepared) != prepared_keys
             or prepared['schema'] != SCHEMA or prepared['reservation_sha256'] != reservation_sha):
         raise ValueError('Original raw final prepared marker differs')
     reference = digest(prepared['receipt_sha256'])
-    prepared_receipt(nightly, value, reservation_sha, reference, checkpoint)
+    receipt = prepared_receipt(nightly, value, reservation_sha, reference, checkpoint)
+    if reserved:
+        reserved_io.validate(nightly, directory, prepared['reserved_native_io'],
+            [bridge.paper_content(receipt['components']['paper'], checkpoint, nightly.store.identity)],
+            legacy, value['native_io'])
     committed = bridge.read_final(nightly.store, reference, nightly.pins(),
                                  expected_head=expected_head, raw_checkpoint=checkpoint)
     if committed['entry']['parent'] != submission_head or committed['lineage'] != value['lineage']:
@@ -241,7 +252,7 @@ def _recover(nightly, *, submission_head, resolved, raw_checkpoint):
 
 
 # Reserve once, reconcile/save once and commit the prepared raw receipt without replay.
-def _finalize(nightly, client, *, submission_head, resolved, raw_checkpoint):
+def _finalize(nightly, client, *, submission_head, resolved, raw_checkpoint, native_io=None):
     guard(nightly, raw_checkpoint)
     token, directory = operation(nightly, submission_head)
     if directory.exists():
@@ -258,13 +269,19 @@ def _finalize(nightly, client, *, submission_head, resolved, raw_checkpoint):
         declared = legacy.admitted.decoded(legacy.admitted.encoded(resolved))
         anchor = anchors(nightly, submission_head, raw_checkpoint)
         state, broker, before = current(nightly, client, raw_checkpoint, anchor)
+        directory.mkdir(mode=0o700)
+        legacy.sync_directory(directory.parent)
+        if native_io is not None:
+            legacy.admitted.require(type(native_io) is reserved_io.SyntheticNativeIO,
+                                    'Exact synthetic native IO required')
+            native_io.begin(nightly, directory, legacy)
         value = {'schema': SCHEMA, 'identity': store.identity, 'operation': token,
             'sources': sources(), **{key: anchor[key] for key in
                 ('submission', 'decision', 'cycle', 'session', 'context', 'lineage')},
-            'resolved': declared, 'before': before, 'actual_reserved_at': datetime.now(UTC).isoformat()}
+            'resolved': declared, 'before': before,
+            'native_io': None if native_io is None else native_io.evidence(),
+            'actual_reserved_at': datetime.now(UTC).isoformat()}
         raw = legacy.admitted.encoded(value)
-        directory.mkdir(mode=0o700)
-        legacy.sync_directory(directory.parent)
         legacy.write_once(directory / 'reservation.json', raw)
         reservation_sha = sha256(raw).hexdigest()
         store._point('raw_final_reserved')
@@ -279,7 +296,10 @@ def _finalize(nightly, client, *, submission_head, resolved, raw_checkpoint):
         store._point('raw_final_reconciled')
         if paper.save_state is not SAVE_STATE:
             raise ValueError('Original raw final native writer changed')
-        paper.save_state(nightly.root, updated)
+        if native_io is None:
+            paper.save_state(nightly.root, updated)
+        else:
+            native_io.save(nightly.root, updated)
         store._point('raw_final_native_saved')
         if (codec.encode(client, **pins) != broker
                 or cycle._settlement_source()._native_serialization(paper.load_state(nightly.root),
@@ -296,10 +316,21 @@ def _finalize(nightly, client, *, submission_head, resolved, raw_checkpoint):
         reference = cycle._put(store, legacy.admitted.encoded(receipt))
         reservation(nightly, submission_head, declared, raw_checkpoint)
         prepared_receipt(nightly, value, reservation_sha, reference, raw_checkpoint)
-        legacy.write_once(directory / 'prepared.json', legacy.admitted.encoded(
-            {'schema': SCHEMA, 'reservation_sha256': reservation_sha, 'receipt_sha256': reference}))
+        prepared = {'schema': SCHEMA, 'reservation_sha256': reservation_sha, 'receipt_sha256': reference}
+        if native_io is not None:
+            prepared['reserved_native_io'] = native_io.evidence()
+            reserved_io.validate(nightly, directory, prepared['reserved_native_io'],
+                [bridge.paper_content(receipt['components']['paper'], raw_checkpoint, store.identity)],
+                legacy, value['native_io'])
+        legacy.write_once(directory / 'prepared.json', legacy.admitted.encoded(prepared))
         store._point('raw_final_prepared')
         reservation(nightly, submission_head, declared, raw_checkpoint)
+        if native_io is not None:
+            if native_io.evidence() != prepared['reserved_native_io']:
+                raise StorePause('Prepared reserved native cursor changed before commit')
+            reserved_io.validate(nightly, directory, prepared['reserved_native_io'],
+                [bridge.paper_content(receipt['components']['paper'], raw_checkpoint, store.identity)],
+                legacy, value['native_io'])
         if (paper.save_state is not SAVE_STATE or codec.encode(client, **pins) != broker
                 or cycle._settlement_source()._native_serialization(paper.load_state(nightly.root),
                     raw_checkpoint.limits['raw_bytes']) != evidence['reconciled_native_serialization']):

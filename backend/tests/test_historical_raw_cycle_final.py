@@ -19,6 +19,7 @@ from backend.agents.trading.desk import paper
 from backend.market import historical_broker_checkpoint as codec
 from backend.market import historical_packet_store as storage
 from backend.market import historical_physical_checkpoint as physical
+from backend.market import historical_reserved_native_io as reserved_io
 from backend.market import historical_timing_packet as packet
 from backend.market import replay_broker as native
 from backend.market.historical_packet_store import Store, StorePause
@@ -59,7 +60,8 @@ class RawCycleFinalTests(unittest.TestCase):
              'raw_nightly': SimpleNamespace(__file__=self.case.fixture.ns['__file__'],
                 RawNightly=self.case.fixture.ns['RawNightly'], sources=self.case.fixture.ns['sources']),
              'packet': packet, 'native': native, 'digest': codec.digest,
-             'Store': Store, 'StorePause': StorePause, 'SAVE_STATE': paper.save_state, **constants})
+             'Store': Store, 'StorePause': StorePause, 'SAVE_STATE': paper.save_state,
+             'reserved_io': reserved_io, **constants})
         self.points = []
 
     # Keep all evidence and ensure any actual writer lock is released at test completion.

@@ -22,6 +22,7 @@ from backend.market import historical_broker_checkpoint as codec
 from backend.market import historical_native_metadata as metadata
 from backend.market import historical_paper_component as component
 from backend.market import historical_physical_checkpoint as physical
+from backend.market import historical_reserved_native_io as reserved_io
 from backend.market import historical_timing_packet as packet
 from backend.market import replay_broker as native
 from backend.market.alpaca_trading import AlpacaTradingError
@@ -113,7 +114,7 @@ def raw_namespace(legacy):
     result = {'__name__': 'SYNTHETIC_RAW_LIFECYCLE', '__file__': str(path),
         '__builtins__': builtins.__dict__, 'legacy': legacy, 'paper': paper, 'native': native,
         'codec': codec, 'metadata': metadata, 'component': component, 'physical': physical,
-        'packet': packet, 'digest': digest, 'StorePause': StorePause,
+        'packet': packet, 'digest': digest, 'StorePause': StorePause, 'reserved_io': reserved_io,
         'Path': Path, 'sha256': hashlib.sha256, 'datetime': datetime, 'UTC': UTC,
         'date': date, 'timedelta': timedelta, 'time': time, 'io': io, 'json': json,
         'deepcopy': deepcopy, **constants}
