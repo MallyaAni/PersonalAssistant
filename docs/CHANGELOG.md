@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-10-18 — Compose private raw saves with physically reserved native inodes
+
+Distinct synthetic-current-native-write/1 narrows old8MiB slots to1MiB under the
+unchanged native file limit; all old writer function/class guards remain identical.
+New SyntheticNativeIO uses an exact source-bound synthetic executor and explicit
+save/capture; native paper globals stay original. Main Nightly/final reservations
+bind reserved mode, auxiliary metadata and original cursor before effects.
+Intervening saves and caught recording uncertainty refuse further writes; recovery
+authenticates original slot anchors without replay or downgrade.
+
+Verified sourcecd9c7b3e/treec602cf42:8NEWpass/0fail/0error/0skip,11.793368149s/
+58684KiB on one isolated f612 runtime. Actual new synthetic account birth→close→
+partial Cycle final→same-session close used preallocated slots and exact native
+NaN/Unicode bytes. Three actual SIGKILL children at reservation/native-return/
+Store-commit exited-9/reaped; OPEN stays paused, committed recovery writes only
+its missing original result marker. Cursor, capture-failure, mode-downgrade,
+executor and existing-account guards passed. Full proof7a1e6215/57627B:
+research/reserved-native-composition-proof-2026-10-18.json.
+
+Native market_daily/model/context/calendar/stage producer remain synthetic or
+unexecuted; genuine constructors/adoption/metadata/Store/latch/twohost/horizon/RAM/
+power-loss admission remain UNVERIFIED. Public genuine entry and production remain
+unchanged. Next: pre-effect native metadata and Store/CAS reservation; no old gate
+replay or cap weakening. Original timingFAILED/publicationCLOSED/v6OPEN-PAUSED.
+
+
 ## 2026-10-18 — Reserve and recover the private raw Cycle final tail
 
 New historical_raw_cycle_final private bodies bind committed submission/decision,

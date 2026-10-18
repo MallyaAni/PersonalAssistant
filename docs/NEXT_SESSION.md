@@ -1,5 +1,95 @@
 # Next session
 
+## 2026-10-18 — Synthetic reserved native-save composition VERIFIED
+
+Product acceptance remains the priority. This NEW eight-test seam is CLOSED;
+never rerun its preflight/stage/copy/test/getter, the prior final-producer8,
+committed-read8, Nightly7 or earlier closed gates for documentation. Verified
+source checkpointcd9c7b3ef7ef182469a8795112ba104763c9a795, exact tested
+treec602cf424a993253c6101dafac3ac51bdbf0dfef, is pushed to origin/main.
+
+Distinct synthetic-current-native-write/1 uses1MiB preallocated slots under the
+UNCHANGED1MiB native FSIZE. Old a0588MiB helper remains unchanged in the settlement
+worktree; every copied writer function/class AST, including _guard, is identical.
+Only docstring/version/8MiB→1MiB differ. A NEW explicitly SYNTHETIC account starts
+absent/None inside writer.root/work from birth. No genuine account is relocated
+or adopted; existing native preimages refuse. Genuine constructors are bypassed,
+so this nested workspace does not establish constructor compatibility.
+
+New SyntheticNativeIO binds the original writer and exact synthetic executor
+function/code/name/global-dictionary/defaults/closure/source. Module identities
+are not a sandbox or deep immutability. Explicit save/capture leaves native
+paper.save_state globals unchanged. Main Nightly/final reservations bind NONE
+versus reserved mode and exact auxiliary source/header/pre-cursor SHA BEFORE
+native work. Each save requires the reserved or last-successful full cursor;
+intervening completions refuse before another effect. Save/capture uncertainty
+poisons subsequent save/evidence even if the executor catches the exception.
+Original slot receipts/anchored bytes are retained in lifecycle/final evidence.
+Read/recovery validates original anchors without replay, capture or head changes.
+
+VERIFIED: ONE a75108d588add9811f02b406dc4cd4b3e2875b78f9ae3b0b2845021f0c5193fd/f612
+exited0/noOOM22:13:07.543023157Z. Eight NEW tests passed0fail/0error/0skip,
+11.793368149s/58684KiB. Actual preallocated inode slots0birth/1close/
+2synthetic-submission-fixture/3partial-final/4same-session-close and exact native
+NaN/Unicode byte parity/readback passed. Actual desired8/submitted5/filled5 native
+partial journal, Store OUTCOME commit/reopen/repeated original recovery and
+same-session private Nightly passed; policy count2 and Store head unchanged.
+
+Three ACTUAL owned children were SIGKILLed/reaped: PID7 after Store commit,
+PID8 after native replace but BEFORE local writer completion, PID9 after final
+reservation; all exit-9. OPEN writer remains operation3/next_slot4 and never replays.
+Reservation cut leaves native bytes/slot cursor unchanged. Post-commit recovery
+creates ONLY the original missing result marker. Caught capture failure, cursor
+drift, missing auxiliary downgrade, executor substitution and existing-account
+refusals passed. These are process cuts at protocol boundaries, NOT power loss or
+interruption inside a native syscall/SQLite commit. No unexpected operational or
+test failure/replay occurred.
+
+Read research/reserved-native-composition-proof-2026-10-18.json. Raw proof7a1e6215/
+57627B and seven fixed results remain /tmp/reserved-native-composition-20261018-v1
+and matching Spark1scratch. All5phases0/empty stderr.24product/test pins,
+29payloads520307B<524288;30physical source files including pins/map.47native and
+allsource SHA/physical bookends/writer globals unchanged/forbidden[]. Four FULL
+mounts ANDraw order equal; HostConfig ONLY OomKillDisablefalse→null. UID1000/
+noneRO/1CPU/512MiB=swap/PIDs32/tmp64. Synthetic512KiBspan/1MiBraw/32body32page
+checkpoint plus retained fixture pools; source/control/log256KiB and production
+caps unchanged.33local control/transport fullSHA physical double-read bookends.
+ROOT and reused healthy READONLY reviewer independently reconstructed all6
+canonical cut/exit byte strings:1137B/allSHA+length match. Raw witness files stay
+Spark; complete parsed records/rawSHA/physical are in proof. Sources/exact calls/
+actual fresh prerequisite/getter/full results independently accepted.107purpose
+comments/AST warnings-as-errors/zero-backspaces/runner-byte/diff PASS; Ruff
+unavailable, no full unit/build/deploy claim. Diagram impact: NONE.
+
+UNVERIFIED: native market_daily planning, full Cycle resolver/sender/stage producer,
+constructors, actual contexts/calendar/economics/models/providers, native operation
+or simulator adoption, directory metadata/Store/CAS/SQLite journals/temp/latch/
+entry-decision metadata/two-host/full-horizon/model RAM and power-loss durability.
+The private synthetic executor, stage producer, finite resolver declaration,
+context parser, policy/calendar/source-manifest globals remain SYNTHETIC.
+1MiB slot acceptance is NOT full832MB native horizon admission. Native load-save,
+deepcopy and serialization/model coexistence retain full-horizon RAM limitations.
+Public genuine entry remains closed; production is unchanged.
+
+NEXT CONCRETE PRODUCT TASK: implement pre-effect finite native entry/decision
+metadata and Store/CAS reservation for this same private synthetic composition.
+First inspect historical_native_metadata.capture and Store.put_blob allocation.
+Use separately versioned typed/source-bound references and NEW bounded assertions
+for actual metadata bytes, physical reservation and interruption/original recovery.
+Preserve existing helper/guards/caps/public refusal; do not claim native byte slots
+reserve metadata/Store/latch/twohost/model RAM. No genuine effects until complete
+admission. No recursive provenance audits or closed-gate replay.
+
+Remaining chain: metadata/Store/native filesystem/latch/entry-decision/fullhorizon/
+twohost/model-RAM lifecycle → genuine proposals/ordinary/intraday/fills →
+independent publication → API/UI. Original timingFAILED/publicationCLOSED/missing
+receipts/immutable roots unchanged. Genuinev6 OPEN/PAUSED; no replay/adoption/new
+genuine run from its failed reservation. No Spark2 load, guard/G08/cap weakening,
+fakeclock/actual-day replay/history rewrite/model-provider-account-service change/
+denied-read bypass/paid data/tuning/real-money orders. Never deploy historical main
+wholesale. Heartbeat ACTIVE and quiet on unchanged state; no permission question.
+
+
 ## 2026-10-18 — Private raw Cycle final producer/recovery VERIFIED
 
 Product acceptance remains the priority. This NEW eight-test final-tail seam is
