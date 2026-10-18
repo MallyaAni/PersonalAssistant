@@ -1,0 +1,137 @@
+{
+  "status": "REVIEWED_OWNER_SOURCE_AND_DEFAULT_PLAN_ONLY",
+  "source_sha256": "266d293847aef772b1392cc54e7280f61007f5dee2c71881adfb0938dff11a6e",
+  "source_bytes": 37334,
+  "initial_draft_sha256": "fd03dbbe95a8fa583a33f23fef8bf8708439d826b17b5767ff2abf38720b3bed",
+  "scope": "Standalone ROOT owner of one future actual two-host PREPARED-only infrastructure fixture. No repository protocol/coordinator integration, image load, native/model/account/provider/order call, adoption, replay or production deployment.",
+  "plan_invocation_executed": [
+    "python3",
+    "/tmp/checkpoint_two_host_owner_20261018.py"
+  ],
+  "plan_only_behavior": "Read/hash/AST-parse exact local endpoint/collector/caller/infrastructure/route sources; print deterministic inert declaration; return before caller/endpoint/collector imports, route calls, directory creation or fixture execution. Default plan returned0; this is not endpoint/runtime acceptance.",
+  "execute_gate_not_satisfied": "Execution requires an independent externally SHA-pinned exact ROOT_REVIEWED_TWO_HOST_PREPARED/1 admission bound to planSHA, source-review and image/runtime admission true, explicit a=Spark1/b=Spark2. No admission document exists; Spark2 exact-image Docker load/resource admission remains NOT DONE/NOT ADMITTED. Do not call execute or repeat known failed availability probes.",
+  "reviewed_flow": [
+    "Exact existing host-key routes: local known-host bytes, plus no-follow fd/path SHA validation of Spark1 REMOTE_KEYS before any inner Spark2 SSH. No key changes or default client/failover.",
+    "Fresh bounded exact f612 linuxarm64 image and host headroom checks on both hosts before staging. No Docker load, substitute image, service or model operation.",
+    "Exclusive source/fixture/out/expected/owner roots; source staging envelope separately bounded1MiB; protocol/collector metadata262144 cap unchanged.",
+    "Explicit Python-I-S-B bootstrap adds only /audit; exact image/argv/Attach3/OpenStdin/StdinOnce/healthcheck/network/user/CPU/memory/PIDs/caps/logdriver/mounts checked against actual created/stopped container observations.",
+    "Both source-bound reservations, one common launch, then exact host-specific session permits. Actual fixed6365184B/39files is separate from parent/launch/logs and not full-horizon capacity.",
+    "Capture actual output-root/five-harness inode baseline, persist/readback/fsync externally on both hosts and local owner, then durable BOTH_PREARM marker before ordinary process creation/ARM.",
+    "One ordinary HELLO/ARM/three body PUT/two page PUT/VERIFY conversation per host. Each decoded actual reply retained before semantic validation; validated request/response retained separately; no expected-value reconstruction of a wire transcript.",
+    "Exact common launch/roles/binding/profile/prior/pins before ingress; inherited framing/deadlines/half-close/EOF+exit0; stderr guards before and after replies, terminal and STATUS.",
+    "Wait for ordinary process exits; one STATUS-only reopen and exact consumed-session refusal; then entirely read-only collector with externally pinned expectation and actual observed terminal/STATUS.",
+    "On failures retain bounded/fsynced logs and actual inspect before expected-success assertions. Timeout/nonzero exit recorded before raise. Freeze/pause without any ordinary retry; stop only owned exact fixture CIDs using separate15s stop-only cleanup deadlines, never extending the ordinary stream.",
+    "Cross-compare roots/rawSHA/length/reference identity; require peer-specific prepared witness hashes differ. No DECISION/ACK/commit/adoption/restore or complete native/model-horizon proof."
+  ],
+  "source_review_findings_corrected": [
+    "Initial generic262144 metadata serializer deterministically rejected hex-encoded source bundle; separate oneMiB upload boundary now matches already declared remote receive bound. No protocol cap raised.",
+    "Initial failed/timeout command path could omit poststate; actual observations/logs now preserved before rethrow and expected-exit assertions.",
+    "Initial cleanup inherited expired600s normal-phase guard; independent finite stop-only allowance now preserves pause semantics.",
+    "Initial framed stderr acceptance was deferred; gates now run before ingress and immediately after observed responses/finish.",
+    "Inner known-host file was used without current-byte verification; explicit source-pinned preflight now checks it before first inner SSH.",
+    "16MiB artifact declaration was not a cumulative quota; now explicitly labeled target, cumulative quota FALSE. Kernel per-file262144 log bound and64MiB local free-space check remain distinct headroom, not reservations."
+  ],
+  "limitations": [
+    "Entire executor, stream observer, startup/container checks, fault cleanup, paired conversations and collector integration remain UNVERIFIED at runtime.",
+    "No new synthetic unit, fault or endpoint acceptance test ran. Previously completed EOF/11caller/18RPC/17fixed/15native/21raw gates were not repeated.",
+    "Near-limit valid-but-wrong response plus receipt wrapper may exceed262144; recording then refuses and pauses. Malformed/partial wire bytes are not retained by this observer. Do not claim complete failed raw-wire capture.",
+    "Selected actual runtime/host observations still require independent verification after any future run. External launch declarations and file receipts alone are not actual host or durability proof.",
+    "Local16MiB is a target, not enforced cumulative quota; no filesystem/native metadata or full account/model capacity guarantee.",
+    "Original timing remains FAILED/publication CLOSED; genuinev6 remains OPEN/PAUSED/no replay/adoption/new genuine run."
+  ],
+  "validation": "AST syntax and purpose-comment checks; independent existing worker READONLY full-source/delta review. No remaining deterministic blocker found for default plan generation ONLY. Actual default plan generation passed. No Ruff or executor/endpoint/runtime proof.",
+  "diagram_impact": "NONE — unused standalone owner/controller preparation, no deployed architecture change",
+  "preserved_root_each_spark": "/home/animallya96/scratch/checkpoint-two-host-owner-source-20261018-v1",
+  "preserved_contract_sha256": "243e88d26ddebfe531cd22e4a60521ca7c7d59f26a57d46f51350197c757fdcb",
+  "inert_plan_sha256": "1fb49e28dd439ffa3ff26feafb19c3154c6522bf52b1412f87e51e2c12361180",
+  "source_preservation": [
+    {
+      "files": {
+        "contract.json": {
+          "bytes": "6107",
+          "ctime_ns": "1792285551464838286",
+          "device": "66306",
+          "inode": "46828920",
+          "mtime_ns": "1792285551464838286",
+          "sha256": "243e88d26ddebfe531cd22e4a60521ca7c7d59f26a57d46f51350197c757fdcb"
+        },
+        "inert-plan.json": {
+          "bytes": "1972",
+          "ctime_ns": "1792285551461058329",
+          "device": "66306",
+          "inode": "46828919",
+          "mtime_ns": "1792285551461058329",
+          "sha256": "1fb49e28dd439ffa3ff26feafb19c3154c6522bf52b1412f87e51e2c12361180"
+        },
+        "initial-fd03.py": {
+          "bytes": "32166",
+          "ctime_ns": "1792285551457596131",
+          "device": "66306",
+          "inode": "46828918",
+          "mtime_ns": "1792285551457596131",
+          "sha256": "fd03dbbe95a8fa583a33f23fef8bf8708439d826b17b5767ff2abf38720b3bed"
+        },
+        "owner.py": {
+          "bytes": "37334",
+          "ctime_ns": "1792285551453403661",
+          "device": "66306",
+          "inode": "46828917",
+          "mtime_ns": "1792285551453403661",
+          "sha256": "266d293847aef772b1392cc54e7280f61007f5dee2c71881adfb0938dff11a6e"
+        }
+      },
+      "host": "spark1",
+      "owner_executor_run": false,
+      "root": "/home/animallya96/scratch/checkpoint-two-host-owner-source-20261018-v1"
+    },
+    {
+      "files": {
+        "contract.json": {
+          "bytes": "6107",
+          "ctime_ns": "1792285552799304458",
+          "device": "66306",
+          "inode": "5265565",
+          "mtime_ns": "1792285552799304458",
+          "sha256": "243e88d26ddebfe531cd22e4a60521ca7c7d59f26a57d46f51350197c757fdcb"
+        },
+        "inert-plan.json": {
+          "bytes": "1972",
+          "ctime_ns": "1792285552795536831",
+          "device": "66306",
+          "inode": "5265564",
+          "mtime_ns": "1792285552795536831",
+          "sha256": "1fb49e28dd439ffa3ff26feafb19c3154c6522bf52b1412f87e51e2c12361180"
+        },
+        "initial-fd03.py": {
+          "bytes": "32166",
+          "ctime_ns": "1792285552792265704",
+          "device": "66306",
+          "inode": "5265563",
+          "mtime_ns": "1792285552792265704",
+          "sha256": "fd03dbbe95a8fa583a33f23fef8bf8708439d826b17b5767ff2abf38720b3bed"
+        },
+        "owner.py": {
+          "bytes": "37334",
+          "ctime_ns": "1792285552788180714",
+          "device": "66306",
+          "inode": "5265562",
+          "mtime_ns": "1792285552788180714",
+          "sha256": "266d293847aef772b1392cc54e7280f61007f5dee2c71881adfb0938dff11a6e"
+        }
+      },
+      "host": "spark2",
+      "owner_executor_run": false,
+      "root": "/home/animallya96/scratch/checkpoint-two-host-owner-source-20261018-v1"
+    }
+  ],
+  "preservation_scope": "Exclusive private source-only roots and mode0600 files, fsynced/readbackSHA equal on both Sparks over existing pinned routes. Inner-hop key-file SHA checked before source transfer. Owner/initial draft/inert plan/contract retained. This staging helper did not import/execute the owner or create any endpoint/runtime/root/Peer; only default local plan generation above executed.",
+  "source_envelope_arithmetic": {
+    "files": 10,
+    "input_bytes": 215600,
+    "hex_envelope_bytes": 431590,
+    "hex_envelope_sha256": "de0446aa4ba6c9f8d0019fcf8a7e5fd14ede6aafde02762cd9724d59c0ef4a52",
+    "old_metadata_cap_bytes": 262144,
+    "source_upload_bound_bytes": 1048576,
+    "scope": "Exact local pinned source/public writer/identity bytes only; no owner or endpoint import, protocol run, or runtime RED/GREEN claim."
+  }
+}

@@ -1,5 +1,54 @@
 # Next session
 
+## 2026-10-18 — Complete tiny two-host owner SOURCE and inert plan prepared
+
+Read research/historical-checkpoint-two-host-owner-source-2026-10-18.json.
+ROOT prepared standalone owner266d2938/37334B. Existing healthy worker reviewed
+full source/deltas read-only. Default local invocation generated inert plan
+1fb49e28/exit0; reads/hashes/ASTs local exact sources, returns before caller/
+endpoint/collector imports, route calls or runtime/root creation. No executor,
+fixture, protocol or new fault tests ran. Source behavior remains UNVERIFIED.
+Both Sparks retain exclusive scratch/checkpoint-two-host-owner-source-20261018-v1
+with owner+initialfd03+plan+contract243e88d2; fsynced/readbackSHA equal. Source
+transfer only; existing inner known-host file checked before inner SSH. No
+endpoint process, Docker image/load/container, model/account/provider or
+production change by this task. Existing completed gates not repeated.
+
+Owner now covers exact host-key routes, actual image/runtime preflight, exclusive
+source+fixture roots, explicit /audit import bootstrap under Python-I-S-B,
+reserve/commonlaunch/prepare, external five-harness inode capture on both hosts
+and durable BOTH_PREARM marker before ordinary process/ARM. One finite paired
+eight-response transcript, half-close/EOF+exit0, decoded reply retained before
+semantic validation, validated replies separately retained; STATUS/refusal and
+read-only collector follow exited processes. Failed/timeout command evidence
+and actual inspect precede success assertions; stderr checked before ingress
+and after each reply/terminal. Unknown outcomes pause/no retry/adoption; stop
+only exact owned fixture CIDs under a separate finite stop-only allowance.
+
+READONLY review found initialfd03 source-upload mismatch: ten exact files total
+215600B, hex envelope431590B/SHAde0446aa exceeds generic262144 metadata cap.
+Corrected only source-upload envelope to already declared1MiB receive bound;
+protocol/collector caps unchanged. Static byte arithmetic only, not runtime
+RED/GREEN. Earlier cleanup deadline, stderr deferral, failed-poststate and
+inner-key recheck gaps corrected in reviewed source; no runtime fix claim.
+Initialfd03 exact draft preserved. Local16MiB is explicitly a TARGET, cumulative
+quota FALSE; per-file kernel log bound262144 and64MiB headroom are not actual
+physical metadata reservations. Near-limit wrapped wrong replies can refuse;
+malformed/partial raw wire bytes are not retained. No complete failed-wire
+capture guarantee or native/model/fullhorizon capacity implied.
+
+DO NOT EXECUTE CURRENT OWNER: no independently pinned admission document exists;
+Spark2 exactf612 Docker load/resources remain NOT DONE/NOT ADMITTED. Do not
+repeat the known missing-image probe or create/adopt a partial job. Next ROOT
+boundary is targeted isolated owner safety tests with fake/injected transport
+and actual owned child/filesystem effects, independent of Spark2 availability;
+review concrete source/resource/invocation first. Existing healthy worker has
+one READONLY narrow test-matrix proposal; no code/runtime/host work delegated.
+Actual two-host PREPARED/STATUS/refusal+independent runtime proof still UNVERIFIED.
+Original timing FAILED/publication CLOSED; genuinev6 OPEN/PAUSED/no replay or
+new genuine run. Corrected historical and ordinary/intraday/fill/UI acceptance
+remain UNVERIFIED. Heartbeat stays ACTIVE; no permission question pending.
+
 ## 2026-10-18 — Read-only persisted collector SOURCE reviewed, not run
 
 Read research/historical-checkpoint-persisted-collector-source-2026-10-18.json.
