@@ -1,0 +1,86 @@
+{
+  "status": "VERIFIED_PRIVATE_OWNER_SAFETY_FIXTURES_ONLY",
+  "objective": "Exercise six targeted safety boundaries of the reviewed standalone owner with injected local transport and actual owned Python children/filesystem effects, independently of Spark2 image availability.",
+  "source_sha256": {
+    "owner.py": "266d293847aef772b1392cc54e7280f61007f5dee2c71881adfb0938dff11a6e",
+    "old.py": "fd03dbbe95a8fa583a33f23fef8bf8708439d826b17b5767ff2abf38720b3bed",
+    "caller.py": "66ffdbad6b0edac14efd01532da3f9df3c7445f07051fa740cef0c29e7b61114",
+    "tests.py": "3d845b5af7c05e61479ce97019cefc17a0ed0efbe3c9ab3a230abce467a0cf84",
+    "run.py": "3274a1223a40d7434c57f4c4e414938ea2d5357e33154ff15df35bef6df2608d",
+    "controller.py": "1efc9259cc63ea3536bfd84e6764477b1e9bb1711f6510ee1d62e2d1bfa23e3c",
+    "independent-verifier.py": "ebff1b1b710440a6a144d8c547db95b1098b3dacaa93ffba525bc0fd93262cdf",
+    "review-controller.py": "18ae207347fa5996b4f5b31b27454947dbe2bc2277ca40db48477dc90b63f1e0"
+  },
+  "manifest_sha256": "db73d583c6a51d75672b1180c8be30c65157f096ad42b8226851060b349ed468",
+  "scope": "Standalone private tooling, not repository protocol/coordinator integration or deployed application change. Only owner/caller definitions loaded. LocalOwner maps explicit generated Python and owned-stop tokens to isolated local Python children; unexpected commands refuse. Synthetic startup/admission/route metadata is not actual host admission. Endpoint/collector/pure infrastructure sources and public CURRENT writer/identity are staged only as inert bytes, never imported.",
+  "green": {
+    "root": "/home/animallya96/scratch/checkpoint-owner-safety-green-20261018-v1",
+    "container": "988c877f2107df9769535d34400dd9293ead34f67b29340b58c53b49a0e353f6",
+    "started_at": "2026-10-18T01:26:05.054068086Z",
+    "finished_at": "2026-10-18T01:26:09.330297325Z",
+    "tests": 6,
+    "passed": 6,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 4.050339495763183,
+    "peak_rss_kib": 25012,
+    "peak_child_rss_kib": 18764,
+    "exit_code": 0,
+    "oom_killed": false,
+    "evidence_sha256": {
+      "out/proof.json": "93b565b657bd1572264b614c8fef743b89ed5a64ddb5f17b321854a85ab344c2",
+      "run.log": "d5868485c9216117f1ae8bb17cf3ecc9bb38d6b91925b13937f37350fb323331",
+      "inspect-before.json": "a32c4531e767f760e1b416e461052a5e3f6c00f4814b329843a66a185d9347ff",
+      "inspect-after.json": "9f3c5c15f773ff0fe3e2e4614a4c053023b53d643c48e0019a717115033041b2",
+      "plan.json": "e8cc3578ef6827a40cdfa3a7884b6663785a97152d3f87d811f23bccde4cb958",
+      "independent-proof.json": "0442d4c42ecf48bc10ed644917081942a5fe4bf7b9da9e510dcc637031b6aed6"
+    },
+    "independent_inventory": "105 unique regular file inodes/1187840 allocated bytes before adding independent-proof.json; includes retained sources/controller/verifier. Allocation observation only, not reservation or cumulative quota."
+  },
+  "expected_red": {
+    "root": "/home/animallya96/scratch/checkpoint-owner-safety-red-20261018-v1",
+    "container": "08e19d2f5d44dff92a8a88f46f5702e9128ed463c8f706b49f5b4560cd96fa39",
+    "started_at": "2026-10-18T01:24:25.640302176Z",
+    "finished_at": "2026-10-18T01:24:28.958641662Z",
+    "tests": 3,
+    "failures": 3,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 3.038492802530527,
+    "peak_rss_kib": 24728,
+    "exit_code": 0,
+    "oom_killed": false,
+    "meaning": "Wrapper exit0 means EXPECTED_RED, not old-source acceptance. The preserved fd03 draft refuses the legitimate large staging envelope before creating files, omits a timed-out command exit receipt, and blocks owned-stop cleanup under an expired ordinary deadline. Three exact assertion messages and missing physical effects independently checked; no old suite rerun.",
+    "evidence_sha256": {
+      "out/proof.json": "49b6d89f230f78ea97006d06790dee7c407e6db8088ec02ad14e7b9e89a7a5c7",
+      "run.log": "dfb98943fb8e573884b53b637eb9c40fb98f29f3d091708725cf2eb900d8ea41",
+      "inspect-before.json": "e1bf793490afd083f8b89d12ea4b98283092c41ba199882c7e5b643786305e9a",
+      "inspect-after.json": "44a93c8b7e9c432e8de75c51ae48c83c6c0fefd0ad968494e1a20fe5148920a1",
+      "plan.json": "45d10a011be835089e2f760b0c30688da4d4a8bffafb4abead9fbe5764ec1a72",
+      "independent-proof.json": "4def6fda86c90ab7db2ce8acb29c13dab5c22118e62fb06c5cddd135da560786"
+    },
+    "independent_inventory": "34 unique regular file inodes/462848 allocated bytes before independent-proof.json; failed artifacts and logs retained."
+  },
+  "verified_boundaries": [
+    "Actual generated staging child accepts the large pinned source/public fixture envelope, creates exactly the expected files, and preserves exact bytes and 0700 root/0600 file modes. No endpoint import or execution.",
+    "Actual nonzero exit7, three-second timeout after durable READY, and kernel per-file log limit retain stdout/stderr and hash-bound exit receipts; owned children are reaped. Retained capped stderr is exactly262144B; no SIGXFSZ-specific acceptance claim.",
+    "Expired ordinary deadline remains zero while a separate bounded cleanup maps exactly two owned stop tokens to Python children writing durable OWNED_STOP_ONLY markers. No Docker stop occurs inside fixture and no ordinary restart is permitted.",
+    "Actual framed children emitting stderr before ingress or after valid HELLO cause specific stderr refusal before either peer's next request/ARM. Physical ingress/extra markers prove the boundary; both expectations and streams fail closed.",
+    "Actual execute prologue checks synthetic inner known-host bytes before any preflight. Corrupt bytes refuse; exact bytes reach only the deliberate first-preflight sentinel. No image/runtime/staging or actual owner executor follows.",
+    "Decoded small wrong ACK is retained with semantic_acceptance_not_implied=true before rejection; validated observation is absent. Only first peer receives HELLO, neither receives another byte, and both streams/expectations fail closed."
+  ],
+  "runtime": "Both stopped exact f612 containers: UID1000:1000/networknone/readonly/1CPU/512MiB RAM=total swap/PIDs32/capdropALL/no-new-privileges/healthcheckNONE/logdriverNONE/Python-I-S-B. Exactly sourceRO/public inert fixtureRO/soleoutRW binds.128MiB tmpfs permits the real owner prologue64MiB free-space guard without mocking it; tmpfs is inside the512MiB memory cgroup, not an increased protocol/native/account cap. At most three Python children concurrently. Fresh Spark1 resource/image gates preceded each exclusive fixture; no Spark2 operations.",
+  "independent_review": "Existing healthy worker supplied the narrow matrix and reviewed source/runner/invocation read-only. ROOT separate verifier checked actual stopped Docker state/profile/mounts, all16 source SHA/inode/size/decimal-string nanosecond bookends, full retained file inventory/hashes and concrete logs/markers/staged bytes. Launcher/verifier/review controller retained exclusively in both completed roots, fsynced/readbackSHA equal. No test replay during verification. Local AST checks only; Ruff unavailable.",
+  "preexecution_test_review_corrections": "SystemExit alarm would be swallowed by unittest; changed runner to KeyboardInterrupt before any run. Increased synthetic child timeout from0.75s to3s to establish real readiness.128MiB fixture tmpfs admits the unchanged owner64MiB prologue guard. Added exact staged namespace and specific stderr-error assertions. These are source-review corrections, not separate runtime RED/GREEN findings.",
+  "limitations": [
+    "Six targeted isolated safety functions are not a complete positive eight-response endpoint transcript, full owner execution or actual two-host PREPARED/STATUS/refusal/persisted-collector acceptance.",
+    "Actual remote Docker timeout/stop, launcher outer timeout and90s suite alarm branches were not exercised. Local injected owned-stop mechanics do not prove remote Docker cleanup.",
+    "Per-file logs are bounded;32MiB fixture output and16MiB owner artifacts remain targets, not preallocated cumulative physical quotas. RSS is process measurement, not a native/model/horizon resource admission.",
+    "Small decoded wrong response retention does not prove complete malformed/partial raw-wire capture or near-limit wrapped response retention.",
+    "Spark2 exact f612 image load is still NOT DONE/NOT ADMITTED; actual daemon temp/storage/incremental memory remain unresolved. No unchanged missing-image probe repeated.",
+    "No native/model/account/provider/order, DECISION/ACK/commit/adoption/restore, historical launch, failedv6 replay or production change. Original timing FAILED/publication CLOSED; ordinary/intraday/fill/UI acceptance UNVERIFIED."
+  ],
+  "next_boundary": "A source/resource/invocation-reviewed bounded positive endpoint+collector fixture independent of Spark2 may close local integration before actual two-host runtime admission. Full actual two-host owner execution still requires a genuine externally pinned admission, exact-image availability/resources and host evidence; never adopt a partial job or substitute a profile. Preserve all completed red/green roots; do not repeat completed gates for documentation.",
+  "diagram_impact": "NONE — standalone private fixtures and evidence; deployed architecture unchanged"
+}

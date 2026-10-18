@@ -1,5 +1,50 @@
 # Next session
 
+## 2026-10-18 — Private owner safety fixtures VERIFIED; real executor still gated
+
+Read research/historical-checkpoint-owner-safety-proof-2026-10-18.json.
+Exact owner266d/caller66ff/test3d845b5a/runner3274a122/controller1efc9259
+passed6 functions/0fail0error0skip4.050s/RSS25012KiB. Actual stopped f612
+988c877f finished01:26:09.330297325Z/exit0/noOOM. Root
+scratch/checkpoint-owner-safety-green-20261018-v1 COMPLETE, never restart.
+ExpectedRED on preservedfd03 ran3cases/3FAIL0error0skip3.038s on08e19d2f,
+finished01:24:28.958641662Z/exit0/noOOM. Wrapper0 means expectedfailure,
+not old-source acceptance. Red root checkpoint-owner-safety-red-20261018-v1
+COMPLETE; failures/logs/source retained, no old/completed suite rerun.
+
+Actual owned stdlib children plus injected local transport prove: large-source
+staging exact bytes/modes/file namespace; nonzero/timeout/kernel log-limit
+exit receipts and reaping; expired ordinary deadline still allows two exact
+owned-stop-only markers; stderr before ingress/after HELLO blocks next peer/
+ARM; synthetic inner key bytes checked before first fake preflight; small wrong
+ACK retained before semantic rejection, no validated receipt/second-peer byte.
+Both expectations/streams fail closed. Stop tokens map to Python children;
+no actual SSH/Docker/endpoint operation inside fixture. Actual execute prologue
+stops at deliberate first-preflight sentinel, not full executor acceptance.
+
+Independent verifierebff1b1b checked actual stopped runtime/three mounts,
+all16 source SHA+physical beforeafter, retained logs/markers/exact staged bytes.
+ROOT independent green0442d4c4/red4def6fda. Tooling retained in both roots.
+Exact UID1000/noneRO/1CPU/512MiB=swap/PIDs32/HCdisabled/lognone; tmpfs128MiB
+permits unchanged owner64MiB free-space guard, remains within512MiB cgroup.
+No protocol/native caps changed. Public CURRENT writer/identity and endpoint/
+collector/pure infrastructure files are inert staged bytes, not imports.
+Green105unique file inodes/1187840allocatedB; red34/462848B before independent
+proof append. Targets/log caps are not cumulative physical reservations.
+Outer Docker stop/suite alarm/actual remote cleanup remain UNVERIFIED. Existing
+healthy worker reviewed source only. AST passes; Ruff unavailable.
+
+NEXT: reviewed bounded positive local endpoint+collector integration could
+close actual eight-response/persisted-record path independently of missing
+Spark2 image. Prepare concrete source/resource/invocation first, preserve
+false twohost/native/adoption flags. Real owner executor still NOT ADMITTED:
+no independent admission document, Spark2 exactf612 DockerLOAD/resources
+NOTDONE/NOTADMITTED. No repeat missing-image probe, full corrected launch or
+failedv6 replay/adoption. Native metadata/model/horizon/coordinator/corporate
+actions remain open. Original timing FAILED/publication CLOSED; genuine
+ordinary/intraday/fill/UI UNVERIFIED. Heartbeat stays ACTIVE; no permission
+question pending. Diagram impact: NONE — standalone tests/evidence only.
+
 ## 2026-10-18 — Complete tiny two-host owner SOURCE and inert plan prepared
 
 Read research/historical-checkpoint-two-host-owner-source-2026-10-18.json.
