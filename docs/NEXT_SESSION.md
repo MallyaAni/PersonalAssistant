@@ -1,5 +1,92 @@
 # Next session
 
+## 2026-10-18 — Retained native.json readers SOURCE reviewed; all25 functions UNRUN
+
+Read research/original-loader-native-json-observer-source-proof-v1-2026-10-18.json.
+Sourceacb881d11a4a1770c2bbe5babfcc14fe8b8ceaf9 pins primaryb7f6ffb0/14395B,
+independent094561ab/16701B and localpreserver257322a2/9289B. New localreview
+d17875ad/5582B, preservationec8ed3e5/14106B and ROOTreadbackb2d01c29/14208B retained.
+Only NEW local stdlib source/AST/JSON/SHA/preservation and Git ran. ALL13primary+
+12independent functions remain UNRUN; no reader import/CodeType/body/test/SSH/
+hostprobe/Docker/container/remote pages/target/native.json/executable/provider/
+package/backend/model/account/marketdata/credentials/oldgate-packet replay/
+guard-G08-cap-map/production change. No runtime/native/model/RAM acceptance.
+
+Exact4a6ef7b7/24905B contract and topd2378ddf/10845B unchanged. SOURCE proposes
+top ->all21fixed pages1289452B/fullSHA+size+originaldecimalphysical ->complete1339
+METADATA records ->ONE exact native/output/native.json row BEFORE target opens.
+Strict duplicate/schema/canonicalrelativepath/count/physical checks, complete
+declared24575979B total and unique selection; other1338payload bodies never opened.
+Only original scratch/capacity-context-native-probe-20261018-v1/output/native.json
+and evidencecopy capacity-context-parity-evidence-20261018-v1/native/output/native.json
+then twofullheldnamedreads/laterfullSHAphysical/fullcrosscopyequality. All21pages/
+selectedrow/native.json remain UNREAD, targetSHA/bytes/physical/python_executable NULL.
+
+Contract/prior1355771f/46814B/rawinspectd5265be8/9755B require separately staged
+fixedpath content-pinned copies; new staged physical identities are not original
+payload authority. Historical CID803718a6/e0/stopped terminal/source6a9e82a3/
+Python3.12.14/NumPy/threads/UID/time fields bound; absolute NUL-free<=4096UTF8B
+sys.executable string is HISTORICAL ONLY and MUST NOT be opened. No retroactive
+extension1355771f/current path/link/build/ELF/loader/provider authority.
+
+Primary SOURCE retains COMPLETE raw bytes in32768B fragments, one offset/size/
+base64/fullSHA record per<=65536encodedB page. Separate independent SOURCE never
+imports/calls primary; independently reconstructs complete catalog/selection/raw/
+everyfield+page+canonicalsummary+fullinputphysical inventory/accounting. Exact output
+names before ANDafter laterfullinputbookends. SUMMARY_SHA UNOBSERVED_PRIMARY_RESULT/
+SUMMARY_BYTES0 deliberately refuse BEFORE any data access; no dispatchable verifier.
+
+One4MiB hashledger PERinvocation precharges EVERY digest including allsource/prior/
+top/pages/native/fragments/output/readback/laterbookends. Primary before_summary =
+2*sum(all28inputbytes)+rawbytes+3*encodedpagebytes; final adds2*summarybytes.
+1024authenticatedread-function calls (twoheldpasses; independent16KiBchunk loops,
+not a per-os.read counter), unchanged262KiBfile/pages65536B AND64records/max256/
+16MiBtotal. May refuse, no completion guarantee. ProposedLinux512MiBASsoft=hard/
+20CPU/30alarm/70SSH/TERM1KILL1; actualfresh2GiBmem/32MiBscratch512inodes review
+still REQUIRED, headroom NOTreservation/native/model/daemon bound. Allbranches UNRUN.
+
+Reused healthy worker READONLY completepair/preserver/exactlocalinvocation BEFORE
+use, then actualreportmetadata/scope review; no newagent/limitedretry/workerops.
+Reviewer found preserver generated-output bound applied only AFTERwrite; added
+262KiB assertion BEFOREhash/open BEFORE firstbodyuse. Initial UNRUNff974a21/8855B+
+reason1a328b4b/325B retained exclusive /tmp/capacity-native-origin-observer-source-
+drafts-20261018-v1 and included in finalpreservation. Pair unchanged; no runtime
+failure/body replay. ASTwarnings-as-errors/31purposefunctions across3sources /
+primarypin+UNOBSERVEDgate+21pointer checks/JSON/fullSHA/stageddiff PASS; Ruff
+previously unavailable/no lintclaim. IO/signal/timeout/crash behavior UNVERIFIED.
+
+Reviewed localpreserver exited0 ONCE. Exclusive /tmp/capacity-native-origin-observer-
+source-evidence-20261018-v1 retains11inputs154931B +source-review5582B+
+manifestec8ed3e56a9b60a62871c61a0b865d412af6292e8d654b464bb4992baab56d1f/14106B.
+Twofullheldnamedreads/fullSHA/exactdecimalphysical/exclusivecopies/fsync/readbacks/
+lateralloriginal+copySHAphysical/manifestlast/rootresolvedparent sync. Separate ROOT
+11original+11copy+report+manifest=24files fullSHAphysical/twoheldreads/laterbookends
+PASS. Exact reports retained research/original-loader-native-json-observer-source-
+{review,preservation,readback}-v1-2026-10-18.json. Localsoftware262KiBfile/1MiBinput/
+4MiBhash/30alarm, noMacAS/kernelFSIZE/crashdurability claim. Alloldroots preserved.
+
+NEXT ROOT: reader SOURCE step CLOSED; do not regenerate for documentation.
+SOURCE ONLY prepare distinct bounded staging/transport and readonly freshprerequisite
+controls; current stager/transport/invocations/actualprerequisites/admissions NULL.
+Source+stagedmetadata exceed one old65536B envelope: design bounded staging,
+NOcapraise. Independently review exactsources/invocation and actualfreshprerequisite
+evidence BEFORE ONE later separatelyscoped new observation. Then observe actual
+primarysummary fullSHA+size, preserve currentUNRUN independentdraft, separatelyrepin/
+review exactsource+invocation+freshproof BEFORE ONE independentfold. No dispatch now.
+Never replay old1339contentfold/nativeprobe/actualsymbols/ELFfold/copy/HEAD/metadata/
+censuses/ASTinventories/63/37/73/80/23/65+4/tiny/diagnostic/v2/oldpackets. No native/
+package execution/other19reads/guessedpaths/hostsubstitutes/ldd/readelf/dlopen/capchange.
+
+Selected callable/global/type/dataclass liveproducer/classflags/native/phase/Arrow
+pools+wrapper/sklearnactualmetadata open. Guard3b8be00b's separate25payloadfunctions
+UNRUN; old2446/030c/G08/caps/maps unchanged. Producer2431/reference2446/executor2468/
+originalreceipts/fullcontext+graphs+JSON+UTF8 lifetimes separate. Genuineassembledtree/
+strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/
+launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/
+intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/
+v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM
+unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Native-origin requirements SOURCE reviewed; observers NULL
 
 Read research/original-loader-native-origin-contract-proof-v1-2026-10-18.json.

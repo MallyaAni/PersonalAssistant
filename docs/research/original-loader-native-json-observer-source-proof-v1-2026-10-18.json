@@ -1,0 +1,169 @@
+{
+  "schema": "retained-native-json-observer-source-proof/1",
+  "status": "SOURCE_REVIEWED_ALL_25_READER_FUNCTIONS_UNRUN",
+  "source_checkpoint": {
+    "branch": "codex/learned-live-release-20261006",
+    "starting_HEAD": "454bbe64221c794f2aaea07be4acd7deaae61e7a",
+    "starting_worktree": "CLEAN",
+    "starting_pull": "git pull --rebase origin main: already up to date",
+    "commit": "acb881d11a4a1770c2bbe5babfcc14fe8b8ceaf9",
+    "tree": "4054972f857065a46dcd0e05fc5eb6783f33e4a5",
+    "meaning": "Exact source and local proof checkpoint; no runtime or trading acceptance."
+  },
+  "sources": {
+    "observe-retained-native-json-v1-2026-10-18.py": {
+      "sha256": "b7f6ffb0b968c08caa0b6133c0d2aa20d75c54f87b0abc80326c28c9096a6e5b",
+      "bytes": 14395,
+      "purpose_functions": 13,
+      "all_bodies": "UNRUN"
+    },
+    "verify-retained-native-json-v1-2026-10-18.py": {
+      "sha256": "094561ab917e774ae04af52dc81cdbc5865db23ae5898f1ae25fd00496867a76",
+      "bytes": 16701,
+      "purpose_functions": 12,
+      "all_bodies": "UNRUN",
+      "SUMMARY_SHA": "UNOBSERVED_PRIMARY_RESULT",
+      "SUMMARY_BYTES": 0,
+      "dispatchable": false
+    },
+    "preserve-native-json-observer-source-v1-2026-10-18.py": {
+      "sha256": "257322a224360b7b0177842dccfa850dad4da5405436024fb181b63ef45e9947",
+      "bytes": 9289,
+      "purpose_functions": 6,
+      "invocation": "python3 -W error docs/research/sources/preserve-native-json-observer-source-v1-2026-10-18.py",
+      "cwd": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant",
+      "exit": 0,
+      "scope": "NEW_LOCAL_STDLIB_OPERATIONAL_SOURCE_AST_JSON_SHA_PRESERVATION_ONLY",
+      "hash_work_final": 974391
+    }
+  },
+  "independent_review": {
+    "reviewer": "/root/trading_action_consistency",
+    "reused_existing_healthy_worker": true,
+    "new_agent_or_limited_agent_retry": false,
+    "scope": "READONLY complete source pair, local preserver, exact local invocation, then actual report metadata and scope",
+    "result": "No remaining deterministic SOURCE-only blocker or material report mismatch found; no runtime acceptance.",
+    "before_use_finding": "Generated preserver outputs lacked a pre-write 262KiB assertion. Added it before digest/open BEFORE first preserver body use.",
+    "initial_UNRUN_draft": {
+      "root": "/tmp/capacity-native-origin-observer-source-drafts-20261018-v1",
+      "source_sha256": "ff974a21903f1b9815c46513f8b121a7a2e8f71d8a8bd185f9afd6b7400b9d3a",
+      "source_bytes": 8855,
+      "reason_sha256": "1a328b4b04ac398cae0da1a34a48bddf44f8a0cfc230b31d0176bccaff4e2522",
+      "reason_bytes": 325,
+      "preserved": "Exclusive exact bytes, fsync/readback; included as two inputs in final preservation.",
+      "runtime_failure_or_body_replay": false
+    }
+  },
+  "contract": {
+    "path": "original-loader-native-origin-contract-v1-2026-10-18.json",
+    "sha256": "4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5",
+    "bytes": 24905,
+    "top_manifest_sha256": "d2378ddf7f0e5cf9eac724ff1f7c8f3f5d3cff70c0ba39f45cd2ca18546fd9f9",
+    "top_manifest_bytes": 10845,
+    "prior_native_proof_sha256": "1355771ff667f81e02dbe07885914dd5be8bf5cf395a3e74ef3bfdfd4988c6f7",
+    "prior_native_proof_bytes": 46814,
+    "prior_inspect_sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2",
+    "prior_inspect_bytes": 9755,
+    "unchanged": true
+  },
+  "planned_observation_SOURCE_only": {
+    "historical_cid": "803718a62e3cbd1f6070abab25a58e1fbc0ee5d04b5444f57c817d7e47b8bf57",
+    "historical_image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "staged_metadata_content_copies": "Contract, prior native proof and raw inspect must be separately staged at fixed paths with exact SHA/size; their new physical identities are not original remote payload authority.",
+    "complete_metadata_before_target_open": "Authenticate top and all 21 fixed manifest pages/full SHA/size/original decimal physical rows; independently validate all 1339 records, uniqueness, canonical relative paths, duplicate keys, schema, physical fields, counts and total declared bytes before exactly one target row.",
+    "catalog_pages_required": 21,
+    "catalog_page_bytes_required": 1289452,
+    "catalog_records_required": 1339,
+    "catalog_payload_bytes_declared_only_required": 24575979,
+    "target_manifest_key": "native/output/native.json",
+    "target_original": "/home/animallya96/scratch/capacity-context-native-probe-20261018-v1/output/native.json",
+    "target_copy": "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/native/output/native.json",
+    "target_SHA_bytes_physical": null,
+    "python_executable_value": null,
+    "target_authentication": "Only exact original and copy bodies; two full held/named reads plus full SHA/physical later bookends and complete cross-copy byte equality. No other 1338 payload bodies.",
+    "raw_retention": "Complete raw JSON fragmented in order into 32768-byte pieces; each output page contains exactly one offset/size/base64/full-SHA record under 65536 encoded bytes.",
+    "native_fields": "Exact nine probe fields, historical UID/Python/NumPy/threads/backend/time and stopped CID/image/inspect/source relations. Reject duplicate JSON keys, nonfinite constants and exponent overflow. sys.executable is only a bounded absolute historical string; never open it.",
+    "independent_fold": "Separate implementation never imports/calls primary. Independently reread complete catalog and pair; reconstruct every fragment/byte/page/canonical summary/input inventory/physical field, complete selection and hash arithmetic. Exact output names before and after later complete input bookends.",
+    "summary_pin_policy": "Current UNOBSERVED pin refuses BEFORE any input access. Future actual summary full SHA/size must be observed, draft preserved, separately repinned and exact source/invocation/fresh prerequisites reviewed before one independent attempt.",
+    "no_authority_extension": "Does not retroactively extend proof1355771f or establish current executable path, links, build, ELF, loader, provider, native/runtime/model/RAM authority."
+  },
+  "proposed_bounds_not_exercised": {
+    "one_hash_work_budget_per_driver_invocation": 4194304,
+    "hash_policy": "Precharge EVERY digest, including source/prior/top/pages/native bodies/fragments/output/readback/later bookends. Never reset per file. May refuse; no completion guarantee.",
+    "primary_before_summary_formula": "2*sum(all28_authenticated_input_bytes)+native_raw_bytes+3*sum(encoded_raw_page_bytes)",
+    "primary_final_formula": "before_summary+2*summary_bytes",
+    "input_file": 262144,
+    "bounded_authenticated_read_calls": 1024,
+    "read_counter_scope": "Counts bounded authentication function calls; each authenticates two full held reads. Independent implementation uses bounded 16KiB chunk loops; no per-os.read counter claim.",
+    "output_page_encoded_bytes": 65536,
+    "output_records_per_page_actual_source": 1,
+    "contract_records_per_page_maximum": 64,
+    "output_page_limit": 256,
+    "output_total": 16777216,
+    "Linux_AS_soft_and_hard": 536870912,
+    "CPU_seconds": 20,
+    "alarm_seconds": 30,
+    "future_transport_seconds": 70,
+    "future_owned_TERM_KILL_seconds": [1, 1],
+    "fresh_headroom_required_not_observed": "2GiB MemAvailable, 32MiB scratch and 512 free inodes; not reservation or native/model/daemon bound.",
+    "staging": "No transport/stager exists. Proposed source plus staged metadata exceed one old 65536-byte source envelope; require distinct bounded staging design, never raise the cap."
+  },
+  "local_proofs": {
+    "source_review": {
+      "path": "original-loader-native-json-observer-source-review-v1-2026-10-18.json",
+      "sha256": "d17875adb538cb830939484ef33b49d0f2a16c030999b49e559bcd8f523b8956",
+      "bytes": 5582,
+      "warnings_as_errors_AST_purpose_functions": 31,
+      "reader_functions_UNRUN": 25,
+      "payload_compile_import_exec_eval": false,
+      "Ruff": "Previously unavailable; no lint claim."
+    },
+    "preservation": {
+      "path": "original-loader-native-json-observer-source-preservation-v1-2026-10-18.json",
+      "sha256": "ec8ed3e56a9b60a62871c61a0b865d412af6292e8d654b464bb4992baab56d1f",
+      "bytes": 14106,
+      "root": "/tmp/capacity-native-origin-observer-source-evidence-20261018-v1",
+      "input_files": 11,
+      "input_bytes": 154931,
+      "protocol": "Two full held/named reads, fullSHA/exact decimal physical, exclusive copies/fsync/readbacks, later all original+copy fullSHA/physical, manifest last/root then resolved parent fsync.",
+      "local_software_input_bound": 1048576,
+      "local_file_bound": 262144,
+      "local_alarm_seconds": 30,
+      "Mac_AS_kernel_FSIZE_crash_durability_claim": false
+    },
+    "separate_ROOT_readback": {
+      "path": "original-loader-native-json-observer-source-readback-v1-2026-10-18.json",
+      "sha256": "b2d01c290ada35897a85d12301da2d0eff053ff68a0ebf902acb96d89e45a9b3",
+      "bytes": 14208,
+      "originals": 11,
+      "copies": 11,
+      "plus_source_review_and_manifest": 2,
+      "later_full_SHA_physical_bookended_files": 24,
+      "result": "PASS_LOCAL_ONLY"
+    }
+  },
+  "admission_and_acceptance": {
+    "source_static_and_local_preservation": "VERIFIED within stated local SOURCE-only scope",
+    "new_reader_bodies": "ALL_UNRUN",
+    "remote_manifest_pages_target_row_native_json": "UNREAD_THIS_BOUNDARY",
+    "stager": null,
+    "transport": null,
+    "observer_invocation": null,
+    "independent_invocation": null,
+    "actual_fresh_prerequisites": null,
+    "observation_admission": null,
+    "native_runtime_model_RAM_admission": null,
+    "IO_signal_timeout_cleanup_crash_behavior": "UNVERIFIED",
+    "original_timing": "FAILED_PRESERVED",
+    "publication": "CLOSED",
+    "missing_original_receipts": "MISSING",
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_OR_NEW_RUN",
+    "historical_delivery_ordinary_intraday_fill_UI": "UNVERIFIED",
+    "production_change": false,
+    "genuine_execution_authorized": false
+  },
+  "next_boundary": "SOURCE ONLY prepare distinct bounded staging, transport and readonly fresh-prerequisite controls. Independently review exact sources/invocation and actual fresh prerequisite evidence BEFORE one separately scoped new observation. No dispatch now. After an observed pinned primary summary, preserve current UNRUN independent draft, repin separately, review exact source/invocation/fresh evidence BEFORE one independent fold. Never replay closed gates, old packets or full1339-file preservation/native probe.",
+  "preserved_constraints": "All old failed/completed roots/admissions, guard3b8be00b's25UNRUN functions, old2446/030c/G08/caps/maps and producer2431/reference2446/executor2468 namespaces remain separate/unchanged. Selected callable/global/type/dataclass live producer/class flags/native/phase/Arrow pools+wrapper/sklearn actual metadata remain open. Interpreter/loader/provider/build/search/alias/version/transitive/native closure and genuine model/RAM remain unadmitted. No guessed paths, host substitutes, ldd/readelf/dlopen/package execution/other19 native-body reads/cap relaxation.",
+  "heartbeat": "ACTIVE",
+  "diagram": "NONE"
+}
