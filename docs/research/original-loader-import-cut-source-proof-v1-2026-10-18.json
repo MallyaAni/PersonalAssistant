@@ -1,0 +1,183 @@
+{
+  "schema": "capacity-loader-import-cut-checkpoint-proof/1",
+  "status": "SOURCE_REVIEWED_ONLY_ALL_APPLICATION_AND_MODEL_BODIES_UNRUN",
+  "source_revision": "93031154bd3cde74037a896cf27d292268268e0a",
+  "starting_revision": "6be26f34dc383b381b6f50dc48c793ef1dcb3e50",
+  "objective": "Resolve the newly identified static numerical import edge and bind the remaining genuine capacity loader entry obligations without executing any payload.",
+  "files": {
+    "sources/prepare-capacity-loader-import-cut-v1-2026-10-18.py": {
+      "sha256": "f19646085ff3318cc8dffb6968563cb2ca32405c943c8f95ee19a2ba41e6f2b8",
+      "bytes": 19512
+    },
+    "sources/verify-capacity-loader-import-cut-v1-2026-10-18.py": {
+      "sha256": "ec4ca0214ac90f1863bf0b77ec63132c4255c31b1f2aa99210b9c764dad89e18",
+      "bytes": 9792
+    },
+    "sources/capacity-learned-entry-data-import-cut-v1-2026-10-18.py": {
+      "sha256": "21adedb2a11ef8fe9802c4be6c2783b684bfd755db17032ae4bbaf0a2e2a693e",
+      "bytes": 11470
+    },
+    "original-loader-import-cut-source-review-v1-2026-10-18.json": {
+      "sha256": "3f408ce008e38066a9f54f7aa4b6ebef9e343d2184d52e6079c03384ee53de1d",
+      "bytes": 40837
+    },
+    "original-loader-import-cut-independent-source-proof-v1-2026-10-18.json": {
+      "sha256": "98328f088f0cc719f46c7f4eed56453e75d13653401e638a96b0e6354f36b2f7",
+      "bytes": 1463
+    }
+  },
+  "actual_source_only_work": {
+    "exact_source_files": 166,
+    "source_bytes": 2917937,
+    "selected_complete_AST_declarations": 33,
+    "graph_pages": 58,
+    "ordinary_JSON_files": 60,
+    "ordinary_JSON_bytes": 907956,
+    "source_function_purpose_comments": 28,
+    "all_ordinary_files_at_most_262144_bytes": true,
+    "operations": [
+      "local stdlib exact SHA/AST/JSON source analysis",
+      "read-only exact original27471 Git blob retrieval when current bytes differ",
+      "new exclusive inert variant, graph, report and independent proof writes",
+      "Git checks and commits"
+    ],
+    "application_or_numpy_or_model_import": false,
+    "CodeType_compile_or_application_body": false,
+    "tests_or_old_completed_bodies": false,
+    "SSH_hostprobe_Docker_jobs_account_or_market_data_read": false
+  },
+  "first_remaining_numerical_barrier": {
+    "witness": [
+      "backend.market.forward_arithmetic",
+      "backend.market.direct_daily_arithmetic",
+      "backend.market.learned_entry_data",
+      "backend.market.fill_timing",
+      "backend.agents.trading.desk.paper"
+    ],
+    "unconditional_source_edges": true,
+    "observed_runtime_failure": false
+  },
+  "variant": {
+    "original_source_sha256": "4b0555a6fd929c8a73a9063ef933fde22ce581fa85f37badb37fe611a9123365",
+    "variant_sha256": "21adedb2a11ef8fe9802c4be6c2783b684bfd755db17032ae4bbaf0a2e2a693e",
+    "bytes": 11470,
+    "proposed_real_origin": "/app/backend/market/learned_entry_data.py",
+    "delta": "Remove the exact module-scope fill_timing.session_scale import and insert the same import first in intraday prepare. Every other AST node is identical.",
+    "global_alias_removed": true,
+    "prepare_CodeType_and_import_order_differ": true,
+    "original_repository_source_changed": false,
+    "existing_2446_and_2453_maps_changed": false,
+    "old_capacity_binding": "REFUSES LEGACY_SOURCE_OVERRIDE_FORBIDDEN",
+    "required": "Distinct reviewed executed-map transition explicitly pins both original and variant SHAs. Never relabel variant as original or weaken old binding.",
+    "imports_bodies_and_numeric_parity": "UNRUN"
+  },
+  "static_graphs": {
+    "original_numerical": {
+      "modules": 65,
+      "edges": 397,
+      "deferred_callable_import_declarations": 78
+    },
+    "candidate_numerical": {
+      "modules": 20,
+      "edges": 126,
+      "deferred_callable_import_declarations": 28,
+      "unchanged_real_numerical_calibration_calendar_modules": true
+    },
+    "original_loader": {
+      "modules": 166,
+      "edges": 1153,
+      "deferred_callable_import_declarations": 204,
+      "changed": false,
+      "still_unadmitted": true
+    },
+    "scope": "Explicit lexical module/class import declarations including conditional branches plus implicit packages. No branch evaluation, actual import order, dynamic/deferred import/native-extension closure or runtime proof.",
+    "candidate_full5_effect_prefixes_absent": true,
+    "full5_query_proof": "original-loader-import-cut-independent-source-proof-v1-2026-10-18.json",
+    "builder_query_scope": "Builder effect helper checks desk/replay/alpaca only; independent verifier separately reads all five exact unchanged harness prefixes, additionally joint_funded_policy/adaptive_growth_policy. Neither numerical graph contains those extra two; no inferred five-prefix check from the helper alone."
+  },
+  "model_source_observation": {
+    "factory_chain": [
+      "forward_arithmetic.load_publication",
+      "forward_arithmetic._admit",
+      "direct_daily_arithmetic.numeric_head",
+      "direct_daily_arithmetic.NumericHead.predict"
+    ],
+    "nonexecutable_NPZ_allow_pickle_false": true,
+    "numeric_head_or_None_factory_provenance_required": true,
+    "predict_accepts_arbitrary_objects_with_predict": true,
+    "arbitrary_predict_objects_admitted": false,
+    "actual_model_load_inference_or_parity": false,
+    "model_import_strategy": null
+  },
+  "entry_obligations": [
+    "Separate versioned capacity entry/result dataclass, real exact CapacityOriginalArchivesV1, full authenticated original metadata and new source map. No old load entry reroute or public execute change.",
+    "Explicit daily loader using original prefix statement order with exact panel/store/yahoo source and pyarrow origin. No continuation CLI import or runtime CodeType/AST masquerading. Original inspect.getsource hash remains original-only evidence; new source needs its own binding.",
+    "Explicit economic helper using exact constants, strict pinned evidence, original action/passive functions and full calendar.session_close/REGULAR_OPEN/NEW_YORK. Tiny reviewed_sessions-only capacity calendar cannot supply that interface.",
+    "Readonly execution inputs may retain original real module after fresh full-map/fence review; its original calendar import follows panel/store/yahoo. Do not alias the small capacity calendar into original globals.",
+    "Explicit capacity risk constructor preserves both completed_features calls, both prediction calls, all original copies and readonly transitions with a declared new reader identity. Inherit unchanged ForwardVolatilityHoldingReader if retaining _Calibration isinstance semantics; exact new-parent check replaces only old FrozenCurrentRiskReader identity.",
+    "Retain unchanged original _Calibration._bind and _MarketCalibration._bind at real paths to preserve deepcopy, isinstance ForwardVolatilityHoldingReader, original file/protocol hashes and original market-context selection. No select/distribution/_stock_fit/fit_market_log calls.",
+    "Keep holding_risk_bank._sources original self/dependency/calendar file hashes and three actual frozen calendar data files. Authenticate original producer root separately from new executor root; no alias or relabel of changed executor bytes."
+  ],
+  "lifetime_obligations": [
+    "First completed_features graph lives through first prediction and CloseObservation/bank copies; it may release when CounterfactualRiskReader constructor returns before second completed_features call.",
+    "Second completed_features graph and full predictions coexist with all frozen copies until FrozenCurrentRiskReader constructor returns.",
+    "Market binding deepcopies the complete parent before freezes/context copy; original parent, its copy, panel/raw arrays, bank/head/receipts and overlay remain live during this binding.",
+    "After loader return retain real loaded object, archives/ShaMap/Rows and both complete byte-auth receipt graphs plus full JSON and UTF8 through durable result and actual late peak observation. Source array sizes and synthetic peaks are not combined RAM bounds."
+  ],
+  "mandatory_genuine_admissions": [
+    "complete original invocation/runtime/Git2431/fullsource/producer profile",
+    "original config and full real calendar/economic controls",
+    "actual original completion373782589B and physical832110254B preservation",
+    "full before and after original source/input byte authentication, both receipt graphs retained",
+    "new executed-source map with explicit import-cut transition",
+    "new finder/runtime/native-package/generated/call/phase closure",
+    "exact entry/type/result/head factory bindings and numerical/alias/readonly/deepcopy parity",
+    "actual loaded context/archive/receipts/JSON/UTF8 coexistence and late RAM measurement"
+  ],
+  "independent_review": {
+    "worker": "existing trading_action_consistency",
+    "mode": "READONLY local source/Git/AST only, no edits or runtime",
+    "findings": "Exact single import relocation supported for this source edge. Full5 candidate-prefix absence verified separately. Keep original pure forward/calibration/calendar real paths, actual head/None factory chain, new source identities, unchanged old-map refusal and all entry/lifetime obligations explicit.",
+    "new_agent_or_limited_agent_retry": false
+  },
+  "checks": {
+    "AST_warning_as_error": "PASS",
+    "purpose_comments": "PASS28",
+    "JSON_fullSHA_graph_hashlinks": "PASS",
+    "independent_166_source_58_page_20_node_126_edge_check": "PASS",
+    "source_staged_diff": "PASS",
+    "Ruff": "UNAVAILABLE",
+    "application_numerical_type_model_parity_tests": "UNRUN",
+    "full_runtime_and_G08_fence_acceptance": "UNVERIFIED"
+  },
+  "preserved_roots": {
+    "new_local_source": "/tmp/capacity-loader-import-cut-source-20261018-v1",
+    "status": "Source variant and source metadata only; retain, never regenerate for docs.",
+    "all_old_failed_completed_packets_and_admissions": "UNCHANGED_CLOSED_NEVER_REPLAY"
+  },
+  "unadmitted": {
+    "executed_map": null,
+    "finder": null,
+    "native_package_closure": null,
+    "call_manifest": null,
+    "generated_manifest": null,
+    "entrypoint": null,
+    "model_import_strategy": null,
+    "launch": null,
+    "runtime": null,
+    "admission": null,
+    "execution_authorized": false
+  },
+  "next": "SOURCE ONLY implement explicit capacity daily/economic preparation and new frozen-reader/result wrappers from exact source-bound declarations. Preserve original pure forward/calibration/calendar bytes and real paths. New map must explicitly admit the separately reviewed learned_entry_data substitution; old lifecycle remains unchanged/refusing. Bind original-prefix source vs new code identity, actual original parent/data/pyarrow dependencies, full economic/calendar interface, NPZ-head factory chain and both feature constructions/deepcopy/copies. No synthetic or genuine runtime proposal until new complete immutable contract and source review; no completed73/80/23/65+4/tiny/diagnostic/v2 rerun.",
+  "unchanged": {
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "missing_original_raw_receipts": "MISSING",
+    "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "actual_two_host": false,
+    "Spark2_image_daemon_temp_incremental_RAM": "UNADMITTED",
+    "genuine_loader_model_combined_RAM_historical_ordinary_intraday_fill_UI": "UNVERIFIED",
+    "production_and_original_files": "UNCHANGED",
+    "heartbeat": "ACTIVE"
+  }
+}

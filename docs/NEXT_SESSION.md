@@ -1,5 +1,73 @@
 # Next session
 
+## 2026-10-18 — Capacity numerical import cut SOURCE reviewed; all model bodies UNRUN
+
+Read research/original-loader-import-cut-source-proof-v1-2026-10-18.json.
+Source93031154bd3cde74037a896cf27d292268268e0a pins builderf1964608/19512B,
+verifierec4ca021/9792B/new source variant21adedb2/11470B/report3f408ce0/40837B/
+independent98328f08/1463B. Only local stdlib source/SHA/AST/JSON/read-only original
+Git/new inert source+metadata writes and Git ran. No payload import/CodeType/body/
+test/numerical/model/account/market-data read/SSH/hostprobe/Docker/job. All new
+application/numerical/model bodies UNRUN. Synthetic73 and all older gates CLOSED.
+
+New exact static witness: unchanged forward_arithmetic -> direct_daily_arithmetic
+-> learned_entry_data -> fill_timing -> desk.paper. Thus removing loader's direct
+continuation/economics/frozen-reader imports alone is insufficient. This is SOURCE
+reachability, not an observed genuine runtime failure. New separately retained
+learned_entry_data variant removes only its module-scope session_scale import and
+inserts that exact import FIRST in intraday prepare. Every other AST node equal;
+module global alias/prepare CodeType/import order DO differ. Original repository
+source and old2446/2453 maps untouched. Old capacity_binding deliberately refuses
+LEGACY_SOURCE_OVERRIDE_FORBIDDEN; a NEW explicit original/variant map transition
+is mandatory. No source alias/sys.modules/global patch or old receipt relabel.
+
+166 exact original source files/2917937B/33 declarations analyzed;58 bounded graph
+pages retained. Original numerical graph65modules397edges -> candidate20/126;
+full original loader166/1153 remains unchanged/unadmitted. Independent verifier
+hashchecked all166source/58pages, recomputed exact20nodes/126unique edges, checked
+all FIVE actual unchanged harness effect prefixes absent from candidate graph.
+Builder's narrower desk/replay/alpaca query alone is NOT the five-prefix proof.
+Graph covers explicit lexical module/class imports incl conditional declarations
+and implicit packages;28candidate callable-import declarations remain external to
+that graph. No evaluated branch/decorator/annotation/import-order/dynamic/native/
+package-origin/full executable closure claim. All60JSON files907956B individually
+<=262KiB; no cap exception. Local exclusive /tmp/capacity-loader-import-cut-source-
+20261018-v1 retained original+variant+report pointer; never regenerate for docs.
+
+Original NPZ allow_pickleFalse -> _admit -> numeric_head -> NumericHead.predict
+source shows no executable estimator restoration needed in that chain. This is
+NOT model acceptance or selected admitted strategy: direct.predict accepts any
+supplied .predict object, so future entry must retain exact factory-produced
+NumericHead/None provenance and full original publication/config guards. Original
+calendar.__file__+three data files are hashed by holding_risk_bank._sources;
+tiny reviewed_sessions-only capacity calendar cannot replace its full interface.
+Keep pure forward/calibration/calendar at real paths and original receipts. Both
+completed_features constructions, both predictions/copies, readonly transitions,
+market parent deepcopy and complete receipt/JSON/UTF8 lifetimes remain mandatory.
+
+Healthy existing worker READONLY reviewed source/cut/graphs/entry/lifetime scope;
+no newagent/limitedretry/workerops. AST warning-as-error/purpose28/JSON/fullSHA/
+hashlinks/independent static fold/staged diff pass; Ruff unavailable. No numerical/
+type/readonly/alias/deepcopy/parity/RAM/crash acceptance. Every new executed-map/
+finder/phase-call/generated/native-package closure/entrypoint/model strategy/
+runtime/launch/admission remains NULL, execution_authorizedFALSE. Guard/G08/caps/
+original source/production unchanged. No old73/80/23/65+4/tiny/diagnostic/v2 replay.
+
+NEXT ROOT: SOURCE ONLY implement exact explicit capacity daily/economic preparation
+and new frozen-reader/result wrappers against these declarations; first retain
+original prefix source hash vs new identity, full economic/calendar/pyarrow/data
+interfaces, real numeric factory/type lineage and original allocation lifetimes.
+Preserve pure forward/calibration/calendar sources and actual paths. New immutable
+executed-map contract must declare this sole learned_entry_data substitution;
+old binding stays refusing. Complete every original invocation/runtime/fullsource/
+producer/calendar/config/economic/preservation/full byte-before+after receipt and
+new exact finder/generated/native/call/phase/type/model contract BEFORE proposing
+synthetic or genuine execution. No genuine loader/model/account/history/twohost
+launch, guard/G08/cap relaxation or completed gate reruns. Full RAM/horizon/
+historical/ordinary/intraday/fill/UI UNVERIFIED; originaltimingFAILED/publication
+CLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/
+Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Synthetic73 context acceptance VERIFIED; genuine still unadmitted
 
 Read research/original-loader-context-parity-proof-v1-2026-10-18.json.
