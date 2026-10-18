@@ -1,5 +1,66 @@
 # Next session
 
+## 2026-10-18 — N2 guard v2 actual attempt FAILED; evidence retained, no replay
+
+Read research/original-loader-guard-synthetic-failure-proof-2026-10-18.json.
+Exact source526604e6/unchanged harness737d/contractecc ran ONE separately admitted
+SYNTHETIC-only attempt. Packet125a3792/224579B/ten sources was authenticated
+locally and independently on Spark1; capsule/source/run roots are retained under
+scratch/n2-loader-guard-{transfer,source,synthetic}-20261018-v2. Fresh actual
+host/image/jobs/resources and exact eight-argument caller invocation were
+READONLY reviewed before create. Admission5d0ec155 applied only to this attempt;
+it is not reusable. Fresh10.2GB available memory was headroom, not a reservation.
+
+Actual exact e0 prepare1f775b00 exited0/noOOM04:24:55.979913047Z; suite796c2294
+exited1/noOOM04:25:00.685582231Z. Both independently inspected stopped. Limits:
+UID1000/noneRO/1CPU/2GiB=swap/PIDs32/tmp64/noHC/lognone/capdropALL; prepare2binds,
+suite4binds; small audit/prepared fake source/owned output only. No genuine
+backend/model/original/account/market/credentials/socket mounts. Tiny injected
+SourceBook/inspect/audit metadata do not prove genuine2446/N2 admission.
+
+Independent retained-evidence review verified23 expected observations among24
+actual children; G08-effect-generated FAILED expected observation. Child PID30
+exited86 with UNREVIEWED_GENERATED_CODE at backend.market.replay_broker.<module>
+in BOOTSTRAP/publicationCLOSED, before expected BROKER_OR_ACCOUNT_FUNCTION at
+__create_fn__. Safe refusal is not passing acceptance or expected RED.41 cases
+and all4G18 cleanup controls remain UNRUN; no suite aggregate/candidate/normal
+green review exists. Launcher propagated exit1; no timeout/owned stop. Never
+automatically retry/replay/adopt this failed root or reuse its admission.
+
+READONLY review located exact generated-record membership as first boundary.
+The wrapper lacks CO_NEWLOCALS; preparation retains then re-marshals code objects
+while runtime hashes live frames. The exact differing fingerprint field remains
+UNPROVED because the retained slot lacks the observed full record/hash. Do not
+weaken fingerprints, replace expected reason, or assert the cause from this seam.
+NEXT: prepare a bounded tiny source-pinned diagnostic comparing complete declared
+and observed generated records/code metadata before one targeted correction.
+Any future execution needs distinct source/root/admission/concrete review.
+
+Independent auditor23918919/proof91414688/187104B verifies333run/13source/
+28capsule-at-review files, all15prepared files unchanged, all24 terminal/slot/
+marker outcomes, and fresh actual two stopped CIDs. No test body reexecuted.
+First report-only auditor01f40 stopped on created/stopped representation:
+OomKillDisable false→null and prepare mount-list order. Original source/log/root
+retained; separate reporter permits only that explicit host difference and checks
+complete mount records by unique Destination; raw inspections remain unchanged.
+Earlier inline log reader262KiB refusal at deliberate G05-grow also retained;
+metadata-only follow-up did not rerun tests. Initial commentary misread preparation
+failure; actual logs corrected it to prepare0/suite1 before this checkpoint.
+
+Exclusive failure-evidence root52files600814B/manifest4817f80c preserves operational
+sources/local logs including failures. Preserverbde99586 fsynced/readback;
+independent72c25886/proof5de6f4d2/24575B verifies two full reads/physical identities.
+Full actual failure proof91414688 fetched/hash-checked on Mac. All ns fields are
+exact decimal strings. AST checked; Ruff unavailable. No completed old gate
+repeated; no source/native/Store/Nightly/Cycle/cap/production edit. No genuine
+loader/model/account run, actual two-host owner execution or model memory acceptance.
+
+Full suite FAILED; workflow/stress/G18/genuine/model/RAM/horizon/historical/
+weekday/intraday/fill/UI remain UNVERIFIED. Original timing FAILED/publication
+CLOSED/missing receipts unchanged; genuinev6 OPEN/PAUSED/no replay/adoption/new
+run; actualtwohost/Spark2 image/daemon-temp/RAM gaps unchanged. Heartbeat ACTIVE.
+Diagram impact: NONE — isolated synthetic failure, no production flow change.
+
 ## 2026-10-18 — Distinct N2 guard v2 source closure; no runtime acceptance
 
 Source526604e6b3549a84372c0deaf84e515c38b894f0 passed source-only AST/metadata

@@ -1,0 +1,136 @@
+{
+  "schema": "original-loader-guard-synthetic-failure/1",
+  "status": "FAILED_SYNTHETIC_ACCEPTANCE_PRESERVED_NO_REPLAY",
+  "starting_head": "1b7a493a025defc2f72e9bdb71fafc34b2441108",
+  "source_checkpoint": "526604e6b3549a84372c0deaf84e515c38b894f0",
+  "scope": "One fresh externally admitted synthetic-only attempt of the unchanged v2 source package. Preparation completed; suite stopped at its first failed expected observation. No genuine loader, model, account or historical run.",
+  "packet": {
+    "sha256": "125a379257702e2ddfb410f32ddf8f14db0f79d783189ff1353dee7ebd1e522b",
+    "bytes": 224579,
+    "files": 10,
+    "decoded_source_bytes": 167143,
+    "local_root": "/tmp/n2-guard-packet-20261018-v2",
+    "capsule_root": "/home/animallya96/scratch/n2-loader-guard-transfer-20261018-v2",
+    "source_root": "/home/animallya96/scratch/n2-loader-guard-source-20261018-v2",
+    "authentication": "Full local packet decoding/SHA and independent Spark1 capsule held-FD/path SHA/physical readback. Exclusive staging; old roots and source bytes preserved."
+  },
+  "admission": {
+    "scope": "SYNTHETIC_ONLY_NOT_GENUINE_LOADER",
+    "sha256": "5d0ec15552dde1a6b8f3faff5b2a7367abb42b1fcfda9f6de13e06e6aea1a8ff",
+    "path": "/home/animallya96/scratch/n2-loader-guard-transfer-20261018-v2/admission-v1/admission.json",
+    "host": "animallya-spark1",
+    "uid": 1000,
+    "observed_at_ns": "1792297494990184061",
+    "MemAvailable_bytes": "10175311872",
+    "scratch_available_bytes": "2811536367616",
+    "scratch_inodes_available": "243506440",
+    "prerequisites": "Exact cached e0/linux-arm64 image observed; no active labelled guard jobs; source/run/normal-review target lexists false. Fresh jobs/resource observations and actual source/caller/invocation independently READONLY reviewed before create. Explicit pinned Spark1 SSH key/local Docker Unix socket; no Spark2 operation.",
+    "runtime_image_raw_sha256": "c705c23b6839359fb0382e3d4b21638c02344956aecb732d4dfbbfe587db0fe5",
+    "headroom_is_reservation_or_daemon_memory_bound": false,
+    "reusable_admission_or_retry_authorization": false
+  },
+  "invocation": {
+    "launcher_sha256": "7a75b628f1fcd6e8bdf6e49f95b49f4f0948a333b58d4b115853f0b808988681",
+    "caller_sha256": "9bb579fe0cc839823c8a0558e4da994ea94deb8865a28a243c9da49effaa0503",
+    "argv_record": "capsule_root/invocation.json retains the exact eight-argument --admitted-synthetic-v2 route, packet/admission/self SHA pins and distinct roots.",
+    "local_terminal": "/tmp/n2-guard-packet-20261018-v2/invoke.exit.json",
+    "exit": 1,
+    "owned_timeout_or_stop": null,
+    "result": "Launcher propagates actual caller failure. Owner attempted cleanup inspection for both exact owned names; stopped containers/evidence retained. Python-finally-on-SIGKILL or transport-loss cleanup is not proved."
+  },
+  "runtime": {
+    "root": "/home/animallya96/scratch/n2-loader-guard-synthetic-20261018-v2",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "owner_label": "00d2e15f45ad859d159f951d378dc8b4818afaa9d44aae11d32290be33643461",
+    "limits": "UID1000:1000/none network/read-only root/1CPU/2GiB memory=swap/PIDs32/tmp64MiB/noHC/lognone/capdropALL/no-new-privileges. Prepare2binds; suite4binds. Small audit/prepared fake source/owned output only; no genuine backend/model/original/account/market/credentials/socket mounts.",
+    "prepare": {
+      "cid": "1f775b0006edd0b0aba1bc228439efa98ce0c1b592433ef3528cf49ea849cf5c",
+      "exit": 0,
+      "OOMKilled": false,
+      "finished_at": "2026-10-18T04:24:55.979913047Z",
+      "fresh_independent_inspect_sha256": "35a19be8c430860ed48ffe41e43ddba4df2f8416995747349997fa1bbb945aec"
+    },
+    "suite": {
+      "cid": "796c2294660055ceae2db9659f320998fce421f2747df371bea0355fe63ccfc5",
+      "exit": 1,
+      "OOMKilled": false,
+      "finished_at": "2026-10-18T04:25:00.685582231Z",
+      "fresh_independent_inspect_sha256": "3921ad6a10af3af901e747d369305dc49ee2e90607c689ee8ccd701d78c2bbd0"
+    },
+    "both_independently_stopped": true,
+    "prepared15_source_files_preserved": true,
+    "injected_metadata": "Tiny SourceBook/inspect/audit declarations remain explicitly synthetic; actual kernel metrics were not patched. This is not genuine2446/N2/runtime or model-memory admission."
+  },
+  "outcomes": {
+    "attempted_children": 24,
+    "independently_verified_expected_observations": 23,
+    "failed_expected_observations": 1,
+    "unrun_G01_G17_cases": 41,
+    "G18_cleanup_children_run": 0,
+    "suite_aggregate_candidate_or_normal_green_review": "ABSENT",
+    "first_failure": {
+      "case": "G08-effect-generated",
+      "child_pid": "30",
+      "child_exit": 86,
+      "owned_stop": null,
+      "actual_reason": "UNREVIEWED_GENERATED_CODE",
+      "actual_identity": "backend.market.replay_broker.<module>",
+      "phase": "BOOTSTRAP",
+      "actual_status": "FAILED_CLOSED",
+      "publication": "CLOSED",
+      "expected_reason": "BROKER_OR_ACCOUNT_FUNCTION",
+      "expected_identity_boundary": "__create_fn__ factory",
+      "meaning": "The exact generated-record membership guard refused the module wrapper before the intended optimized-function effect guard. A safe refusal is not a passing expected observation. No forbidden/caught/returned/error marker was accepted."
+    },
+    "diagnosis": "READONLY source review: wrapper code lacks CO_NEWLOCALS, so the effect-function check does not apply yet. Preparation retains code objects and later re-marshals them; runtime hashes live call frames. This is a concrete comparison seam, not a proved differing fingerprint field: the retained slot contains reason/identity, not the complete observed generated record/hash. No allowlist, guard, harness, fixture or cap changed.",
+    "next_atomic_boundary": "Prepare a bounded source-pinned tiny diagnostic comparing complete declared and observed generated records/code metadata before choosing a targeted correction. Preserve failed v2 roots; do not relabel this as expected RED or replay the suite. A distinct source/root/admission and concrete reviewed invocation are required before any new execution."
+  },
+  "independent_failure_review": {
+    "root": "/home/animallya96/scratch/n2-loader-guard-failure-review-20261018-v2-report-v2",
+    "auditor_sha256": "2391891996e89bda69d575ccbf5b7009f1bd52d2240924f3dabee8cc7c83045a",
+    "helper_verifier_sha256": "e0fa867a793c78b8260d935ed0c1518f60caa10ba3ab11e084a51ae249ec92f5",
+    "proof_sha256": "9141468816e56cc6c5a320c011b23b6b92e01644e83b0c665f9dff538405f3e6",
+    "proof_bytes": 187104,
+    "physical_files": {"run": 333, "source": 13, "capsule_at_review": 28},
+    "checks": "Complete held-FD/path full SHA/decimal physical bookends; exact source, all24 actual terminal/slot/marker outcomes,15 prepared files preserved; two fresh exact-CID stopped-runtime inspections. Raw proof fetched and SHA checked on Mac without numerical/model imports. No tests replayed.",
+    "report_only_comparison": "Complete Config exact. Complete HostConfig exact except explicitly recorded observed OomKillDisable false-to-null; no OOM-disable acceptance inferred. Complete mount records equal by unique Destination; prepare mount list order changed. Both original raw inspect records retained without rewriting or numeric normalization.",
+    "test_bodies_reexecuted": 0
+  },
+  "preservation": {
+    "root": "/home/animallya96/scratch/n2-loader-guard-failure-evidence-20261018-v2",
+    "files": 52,
+    "bytes": 600814,
+    "manifest_sha256": "4817f80c4583f2dc3a2892a63f17b893901d65939184202d6f7e2a10dd5a747a",
+    "preserver_sha256": "bde995862d6a8cb0be7f072290039776dfa74c41c2e4c1cd2e2ce243f6cf33f3",
+    "independent_review_root": "/home/animallya96/scratch/n2-loader-guard-failure-evidence-review-20261018-v2",
+    "independent_verifier_sha256": "72c2588634d5effa1678aeb58347a15bf4218817f293433ecdd7790dc6bff3ca",
+    "independent_proof_sha256": "5de6f4d2f2621ada6cbab8ad250f50c56f47718ed52a62b042345955f114bb19",
+    "independent_proof_bytes": 24575,
+    "checks": "Exclusive bounded source/log upload, full readback/fsync/manifest last; independent two full reads of all52 files and exact physical identities. Original runtime/source/capsule/failed-review roots retained, no cleanup/prune/replay. New independent verifier source remains in capsule."
+  },
+  "failed_reporting_attempts_preserved": [
+    "First bounded inline log reader applied262KiB to deliberate oversized G05 fixture and exited1. No test/runtime replay; metadata-only reader retained actual failure details.",
+    "First independent failure auditor01f40ddb stopped at direct created-versus-stopped HostConfig/Mounts equality. Exact retained difference was OomKillDisable false-to-null and prepare bind-list order. Original root/source/log preserved; separate23918919 reporter corrected only comparison, no raw record or test changed."
+  ],
+  "readonly_review": "Reused healthy trading_action_consistency for actual admission/invocation and first failing boundary/report-comparison source reviews. Limited workers not retried; no additional agent/duplicate run.",
+  "checks": {
+    "source_packet_admission_and_partial_actual_observations": "VERIFIED_WITH_SCOPE_ABOVE",
+    "full_synthetic_suite": "FAILED",
+    "memory_stress_workflow_or_G18_cleanup_acceptance": "UNVERIFIED_NOT_REACHED",
+    "new_operational_source_AST_and_purpose_comments": "PASS:42 functions; no harness or old suite replay for this check",
+    "ruff": "UNAVAILABLE_NOT_CLAIMED",
+    "old_completed_gates_repeated": 0,
+    "genuine_tests_run": 0
+  },
+  "original_or_production_changed": false,
+  "harness_contract_native_store_nightly_cycle_caps_changed": false,
+  "genuine_execution_authorized": false,
+  "full_model_combined_receipt_RAM_horizon": "UNVERIFIED",
+  "original_timing": "FAILED_UNCHANGED",
+  "publication": "CLOSED",
+  "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+  "actual_two_host": false,
+  "historical_weekday_intraday_fill_UI": "UNVERIFIED",
+  "heartbeat": "ACTIVE",
+  "diagram_impact": "NONE: isolated synthetic failure evidence, no production flow change."
+}
