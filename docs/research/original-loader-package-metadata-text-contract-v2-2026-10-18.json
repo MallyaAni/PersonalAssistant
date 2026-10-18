@@ -1,0 +1,54 @@
+{
+  "schema": "stopped-n2-package-metadata-text-copy-contract/2",
+  "status": "SOURCE_BOUND_PROTOCOL_ACTUAL_COPY_RESULTS_RECORDED_SEPARATELY",
+  "basis": {
+    "HEAD_independent_sha256": "4a30076a7e6b530b7e24ffa1990abeb6d7a817974d96ef3d6f8100b1e7e111ab",
+    "retained_inspect_baseline_sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2",
+    "failed_v1_inspect_sha256": "b04d931483a4c70b3b3640ba23d76afbd1c9db43258c225181bc5133763c1021",
+    "retained_diagnostic_sha256": "7ec16ed395d9b1d75f542a7001e43aede48462accb066e9ae3005561a91cd85f",
+    "diagnostic_scope": "Five failed-root files plus old baseline and exact failed helper authenticated; six positional Mounts differences only, all nonMounts fields and complete uniqueDestination records equal. V1 FAILED before any cp; never replayed or adopted."
+  },
+  "content_targets": {
+    "prefix": "/usr/local/lib/python3.12/site-packages/",
+    "relative_paths_and_exact_bytes": {
+      "pyarrow-25.0.1.dist-info/METADATA": 3031,
+      "pyarrow-25.0.1.dist-info/RECORD": 78313,
+      "numpy-2.5.3.dist-info/METADATA": 6635,
+      "numpy-2.5.3.dist-info/RECORD": 111517,
+      "scipy-1.18.1.dist-info/METADATA": 62353,
+      "scipy-1.18.1.dist-info/RECORD": 201096
+    },
+    "ordinary_content_and_tar_wire_caps_each_bytes": 262144,
+    "archive": "Exactly one plain regular basename member, exact size, no links/sparse/extra member/nonzero trailing bytes; no filesystem extraction; strict UTF8 decoding only, retain exact bytes."
+  },
+  "execution_protocol": {
+    "container": "803718a62e3cbd1f6070abab25a58e1fbc0ee5d04b5444f57c817d7e47b8bf57",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "primary": "One separately reviewed v2 fixed-key SSH; two inspect and twelve fixed-path paired cp calls only, plus bounded original prior-proof reads. New v2 roots only.",
+    "inspection": "Every nonMounts field exact versus original d526 baseline; exactly two unique Destination entries and every field in both complete mount records equal. Retain actual raw SHA and raw order booleans. Full baseline/diagnostic/prior HEAD bytes SHA and physical bindings held/bookended separately.",
+    "independent": "One separately reviewed fixed-key SSH; authenticate53 new files, actual candidate pin, 14CLI receipts, 12 tar/source pairs and three original prior inputs with two full reads/SHA/held+named decimal physical checks and later bookends. One fresh inspect only; no cp or HEAD replay.",
+    "actual_reordered_v2_positive_branch": "UNTESTED: successful v2 before/after/fresh raw inspections again all equal d526. Retained v1 diagnostic proves actual list-order variance only."
+  },
+  "resources": {
+    "helper_soft_AS_bytes": 536870912, "helper_hard_AS_bytes": 4294967296,
+    "owned_Go_CLI_AS_bytes": 4294967296,
+    "CPU_primary_independent_seconds": [30, 20],
+    "primary_work_alarm_SSH_seconds": [90, 95, 120],
+    "independent_outer_alarm_CLI_SSH_seconds": [30, 5, 70],
+    "diagnostic_AS_CPU_alarm_SSH": [268435456, 10, 20, 50],
+    "fresh_primary_minimum_availableRAM_scratch_inodes": [2147483648, 1073741824, 512],
+    "headroom_is_reservation_or_native_model_daemon_RAM_bound": false,
+    "timeout_signal_overflow_owned_stop_crash_branches": "UNTESTED"
+  },
+  "acceptance_scope": "Exact six copied UTF8 metadata byte contents, not METADATA field interpretation, RECORD declaration verification, installed distribution/runtime/native versions, every-file baked-image attestation or container held-FD source physical identity.",
+  "next_source_data_only": "Prepare bounded stdlib data-only METADATA header and full CSV RECORD parsers with exact source-copy SHA/physical inputs. Preserve full declarations in bounded pages with independent exact row/hash folds; derive actual native path declarations from RECORD rather than guessed binary suffixes. A RECORD declaration is not actual native file authentication, transitive closure, callable/type/global/generated/phase provenance or thread/RAM bounds. Independent exact-source/invocation/resource review BEFORE use. Never repeat closed content-copy/HEAD/source census/AST/gates/packets for documentation.",
+  "package_CodeType_import_body_start_create_exec_load_account_marketdata_credentials": false,
+  "guard3b8be00b_25_payload_functions": "UNRUN_UNCHANGED",
+  "old2446_030c_G08_caps_source_maps": "UNCHANGED",
+  "producer2431_reference2446_executor2468_original_receipts_lifetimes": "SEPARATE_MANDATORY",
+  "runtime_capacity_execution_authorized": false,
+  "assembled_tree_manifests_native_closure_strategy_entrypoint_bootstrap_owner_caller_stager_packet_runtime_launch_admission": null,
+  "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+  "original_timing": "FAILED", "publication": "CLOSED", "missing_receipts": "MISSING",
+  "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN", "heartbeat": "ACTIVE", "diagram": "NONE"
+}

@@ -1,0 +1,180 @@
+{
+  "Docker_HEAD_cp_probe_or_package_body_execution": false,
+  "all_JSON_differences": [
+    {
+      "new": "/out",
+      "old": "/audit",
+      "path": [
+        0,
+        "Mounts",
+        0,
+        "Destination"
+      ]
+    },
+    {
+      "new": true,
+      "old": false,
+      "path": [
+        0,
+        "Mounts",
+        0,
+        "RW"
+      ]
+    },
+    {
+      "new": "/home/animallya96/scratch/capacity-context-native-probe-20261018-v1/output",
+      "old": "/home/animallya96/scratch/capacity-context-parity-tools-source-20261018-v1/native-audit",
+      "path": [
+        0,
+        "Mounts",
+        0,
+        "Source"
+      ]
+    },
+    {
+      "new": "/audit",
+      "old": "/out",
+      "path": [
+        0,
+        "Mounts",
+        1,
+        "Destination"
+      ]
+    },
+    {
+      "new": false,
+      "old": true,
+      "path": [
+        0,
+        "Mounts",
+        1,
+        "RW"
+      ]
+    },
+    {
+      "new": "/home/animallya96/scratch/capacity-context-parity-tools-source-20261018-v1/native-audit",
+      "old": "/home/animallya96/scratch/capacity-context-native-probe-20261018-v1/output",
+      "path": [
+        0,
+        "Mounts",
+        1,
+        "Source"
+      ]
+    }
+  ],
+  "all_nonMounts_fields_equal": true,
+  "complete_uniqueDestination_mount_records_equal": true,
+  "content_copy_terminals_in_failed_root": 0,
+  "decoded_equal": false,
+  "failed_helper": {
+    "bytes": 14943,
+    "physical": {
+      "st_blocks": "32",
+      "st_ctime_ns": "1792332486362718458",
+      "st_dev": "66306",
+      "st_ino": "60582882",
+      "st_mode": "33152",
+      "st_mtime_ns": "1792332486362718458",
+      "st_nlink": "1",
+      "st_size": "14943",
+      "st_uid": "1000"
+    },
+    "sha256": "a9af8e55fb60b2b950aeada945b7e0ac354fe853a3efeeb6ba4809ba8c226a60"
+  },
+  "failed_root_inventory": {
+    "inspect-before.exit.json": {
+      "bytes": 749,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792332486424047093",
+        "st_dev": "66306",
+        "st_ino": "60582888",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792332486424047093",
+        "st_nlink": "1",
+        "st_size": "749",
+        "st_uid": "1000"
+      },
+      "sha256": "78c512ac013e885b1e2a180d3b9d97f364a91f92ecc9f97f83305e2dcdf61dcf"
+    },
+    "inspect-before.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792332486417364666",
+        "st_dev": "66306",
+        "st_ino": "60582887",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792332486417364666",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "inspect-before.stdout": {
+      "bytes": 9755,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792332486411909351",
+        "st_dev": "66306",
+        "st_ino": "60582886",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792332486411909351",
+        "st_nlink": "1",
+        "st_size": "9755",
+        "st_uid": "1000"
+      },
+      "sha256": "b04d931483a4c70b3b3640ba23d76afbd1c9db43258c225181bc5133763c1021"
+    },
+    "prerequisites.json": {
+      "bytes": 835,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792332486384540854",
+        "st_dev": "66306",
+        "st_ino": "60582884",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792332486384540854",
+        "st_nlink": "1",
+        "st_size": "835",
+        "st_uid": "1000"
+      },
+      "sha256": "7c14584f572624c91c8220e9a7e7605cb803ea0465768f3e33c60901df8e95ab"
+    },
+    "prior-head-proof.json": {
+      "bytes": 23927,
+      "physical": {
+        "st_blocks": "48",
+        "st_ctime_ns": "1792332486392249576",
+        "st_dev": "66306",
+        "st_ino": "60582885",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792332486392249576",
+        "st_nlink": "1",
+        "st_size": "23927",
+        "st_uid": "1000"
+      },
+      "sha256": "4a30076a7e6b530b7e24ffa1990abeb6d7a817974d96ef3d6f8100b1e7e111ab"
+    }
+  },
+  "new_inspect_sha256": "b04d931483a4c70b3b3640ba23d76afbd1c9db43258c225181bc5133763c1021",
+  "old_inspect": {
+    "bytes": 9755,
+    "physical": {
+      "st_blocks": "24",
+      "st_ctime_ns": "1792331758403396378",
+      "st_dev": "66306",
+      "st_ino": "60582831",
+      "st_mode": "33152",
+      "st_mtime_ns": "1792331758403396378",
+      "st_nlink": "1",
+      "st_size": "9755",
+      "st_uid": "1000"
+    },
+    "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+  },
+  "raw_Mounts_list_order_equal": false,
+  "schema": "retained-metadata-text-inspect-diagnostic/1",
+  "status": "READONLY_COMPARISON_ONLY_ORIGINAL_COPY_ATTEMPT_FAILED_NOT_REPLAYED"
+}
