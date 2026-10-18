@@ -1,0 +1,109 @@
+{
+  "AST_warnings_as_errors": "PASS",
+  "ELF_parse_native_import_or_execution": false,
+  "Ruff": "PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM",
+  "actual_binary_hash_and_wire_bounds_checked": true,
+  "exact_function_AST_comparisons": [
+    "primary:digest",
+    "primary:save",
+    "primary:save_json",
+    "primary:alarm",
+    "primary:client_limits",
+    "primary:command",
+    "primary:physical",
+    "primary:read",
+    "primary:inspection",
+    "primary:inspect_source",
+    "independent:digest",
+    "independent:save",
+    "independent:save_json",
+    "independent:alarm",
+    "independent:client_limits",
+    "independent:command",
+    "independent:physical",
+    "independent:read",
+    "independent:inspection"
+  ],
+  "four_outputs_byte_exact_reproduction": true,
+  "missing_hash_size_type_sparse_timeout_overflow_signal_crash_branches": "UNTESTED",
+  "old_gates_or_model_tests": "NOT_RUN",
+  "pins": {
+    "callback-binary-independent-transport-v1-2026-10-18.py": {
+      "bytes": 6020,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792336186325149421",
+        "st_dev": "16777223",
+        "st_ino": "183770079",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792336186325149421",
+        "st_nlink": "1",
+        "st_size": "6020",
+        "st_uid": "501"
+      },
+      "sha256": "91b9b37cf125151029780a275931fb124c12aeae70260c83df446af7851e131a"
+    },
+    "callback-binary-primary-transport-v1-2026-10-18.py": {
+      "bytes": 6016,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792336093723569248",
+        "st_dev": "16777223",
+        "st_ino": "183744833",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792336093723569248",
+        "st_nlink": "1",
+        "st_size": "6016",
+        "st_uid": "501"
+      },
+      "sha256": "975e2ca84e462a3ba0add2039c0d84b85cf54798ff62a7ef79b3bcb21a88f580"
+    },
+    "capacity-callback-binary-copy-v1-2026-10-18.py": {
+      "bytes": 16057,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792336093720997854",
+        "st_dev": "16777223",
+        "st_ino": "183744832",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792336093720997854",
+        "st_nlink": "1",
+        "st_size": "16057",
+        "st_uid": "501"
+      },
+      "sha256": "ed0411890473c979b7219af30530529817388c0897abf4637d77ff91c120bdac"
+    },
+    "prepare-callback-binary-copy-v1-2026-10-18.py": {
+      "bytes": 19211,
+      "physical": {
+        "st_blocks": "40",
+        "st_ctime_ns": "1792336093549678455",
+        "st_dev": "16777223",
+        "st_ino": "183737779",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792336093549678455",
+        "st_nlink": "1",
+        "st_size": "19211",
+        "st_uid": "501"
+      },
+      "sha256": "3caf6124e1be90c13ae61d7f47d3162ba4a562d64f1fde5ef3f98787a539aee6"
+    },
+    "verify-callback-binary-copy-v1-2026-10-18.py": {
+      "bytes": 17473,
+      "physical": {
+        "st_blocks": "40",
+        "st_ctime_ns": "1792336186321978145",
+        "st_dev": "16777223",
+        "st_ino": "183770078",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792336186321978145",
+        "st_nlink": "1",
+        "st_size": "17473",
+        "st_uid": "501"
+      },
+      "sha256": "44f5fd350e71bf0d2e0e987eceb3153e0b156127da657464a9688bddb286acd0"
+    }
+  },
+  "purpose_comments_five_controls": 34,
+  "schema": "callback-binary-copy-controls-static/1"
+}

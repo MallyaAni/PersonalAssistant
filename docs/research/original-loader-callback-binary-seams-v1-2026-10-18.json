@@ -1,0 +1,61 @@
+{
+  "schema": "authenticated-callback-binary-ELF-data-requirements/1",
+  "status": "ONE_BINARY_BYTES_VERIFIED_ELF_PARSER_REQUIREMENTS_ONLY",
+  "basis": {
+    "prior_HEAD_source_commit": "f2e46340456ab236b086f7e7bbeaa799b970530c",
+    "prior_HEAD_sha256": "6f3696b006cb335a06656501446d2976723ec4649117dd33a31cd03c825adaaa",
+    "independent_binary_proof_sha256": "779a1f86987f55065061ca81d6891a61072d06a2f1514ec5bb64bbeb74dd4d9e",
+    "independent_bytes": 11338,
+    "candidate_sha256": "10590bccad71e60b7589a2ef75ff03ed9ea435e26ef6311f57578cc2697506d2",
+    "candidate_bytes": 4046
+  },
+  "binary": {
+    "container_path": "/usr/local/lib/python3.12/site-packages/scipy/_lib/_ccallback_c.cpython-312-aarch64-linux-gnu.so",
+    "copied_path": "/home/animallya96/scratch/capacity-callback-binary-copy-20261018-v1/callback.bin",
+    "bytes": 216280,
+    "sha256": "9edf4136653a328edcc88dc97f6d828440ad96550c436cbe087951845c89903b",
+    "RECORD_source_sha256": "b4b210e29143fee78ff3abd82e2d308554642129deacfcfec4e7e626c2d4fd68",
+    "record_index": 219,
+    "CSV_end_line": 220,
+    "paired_wire_bytes": [
+      218112,
+      218112
+    ],
+    "type": "INERT_AUTHENTICATED_BYTES_ELF_UNINTERPRETED",
+    "physical_authority": "Copied local inode SHA/physical bookends only; archive metadata is not held-FD container-source identity/every-file image attestation."
+  },
+  "inspection": {
+    "before_after_sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2",
+    "fresh_sha256": "b04d931483a4c70b3b3640ba23d76afbd1c9db43258c225181bc5133763c1021",
+    "fresh_raw_order_equal": false,
+    "full_nonMounts_and_complete_uniqueDestination_mount_records_equal": true,
+    "reordered_positive_branch": "ACTUALLY_EXERCISED_IN_NEW_INDEPENDENT_CHECKER_ONLY",
+    "meaning": "Mount-list order variance retained explicitly. No old failed attempt replay/adoption or field omission."
+  },
+  "requirements_before_ELF_data_interpretation": [
+    "Prepare a NEW stdlib-only binary data parser and separately implemented independent fold, with exact source/invocation/resource review BEFORE use. Bind callback.bin and the independent proof by complete SHA/size and held/named decimal physical identities, two full reads and later bookend pass.",
+    "Read the official ELF data layout specification before implementation. Derive magic/class/encoding/version/type/machine and numeric header fields from exact bytes; never infer architecture or ELF validity from the filename.",
+    "Bound every offset/count/entry-width/addition/multiplication and file-backed span against exact216280B. Handle or explicitly refuse extended numbering and non-file-backed sections; no silent table truncation. Preserve raw field bytes and exact numeric representations.",
+    "Retain complete bounded program/section/dynamic string declarations in pages <=262144B as needed; bind full ordered tables and full relevant raw-span hashes for independent reconstruction. Treat all strings as data, not file paths to open or shell arguments.",
+    "If dynamic dependency strings are parsed, validate terminated strings and virtual-address-to-file mapping against exact appropriate file-backed segment spans. Report declarations only; no library search/resolution/origin/runtime binding inferred.",
+    "Keep ordinary262144B input/output/file/wire bounds. No ctypes/dlopen, native calls, package import, code compilation of native bytes, ldd/readelf execution or container launch.",
+    "A valid small ELF or DT_NEEDED list alone does not establish native callable/global/type provenance, actual dependency origins, package/runtime versions, callback allocation, Arrow defaults/pools, model/RAM or full import closure."
+  ],
+  "other_nineteen_native_bodies": "UNREAD_ABOVE_ORDINARY_CAP_NO_TEXT_COPY_REUSE_OR_CAP_RELAXATION",
+  "selected_callable_global_type_dataclass_liveproducer_classflags_native_phase_contracts": "UNRESOLVED_MANDATORY",
+  "ELF_parser_independent_stager_invocation_runtime_admission": null,
+  "execution_authorized": false,
+  "guard3b8be00b_all25_payload_functions": "UNRUN_UNCHANGED",
+  "old2446_030c_G08_caps": "UNCHANGED",
+  "producer2431_reference2446_executor2468_original_receipts_context_graphs_JSON_UTF8_lifetimes": "SEPARATE_MANDATORY",
+  "assembledtree_strategy_entrypoint_manifests_bootstrap_wrapper_owner_caller_stager_packet_runtime_launch_admission": null,
+  "sklearn_actual_metadata_version": "UNRESOLVED_1.9.1_PREDICATE_NOT_ATTESTATION",
+  "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+  "original_timing": "FAILED",
+  "publication": "CLOSED",
+  "missing_original_receipts": "STILL_MISSING",
+  "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEWRUN",
+  "actual_twohost_Spark2_image_daemon_temp_RAM": "UNADMITTED_UNCHANGED",
+  "heartbeat": "ACTIVE",
+  "diagram": "NONE"
+}

@@ -1,0 +1,12 @@
+{
+  "crash_or_second_full_remote_archive_guarantee": false,
+  "data_bytes": 104661,
+  "files": 14,
+  "files_readbacks_root_resolved_parent_fsync": true,
+  "manifest_bytes": 15965,
+  "manifest_sha256": "94de8715701ed157cd701d5f248626589d5d3a1ccedefdf5091f7775d29ebbeb",
+  "native_binary_and_wires_stay_Spark": true,
+  "reproduction_root": "/tmp/capacity-callback-binary-reproduction-20261018-v1",
+  "root": "/tmp/capacity-callback-binary-evidence-20261018-v1",
+  "schema": "callback-binary-copy-local-preservation/1"
+}

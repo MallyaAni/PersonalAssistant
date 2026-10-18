@@ -1,0 +1,363 @@
+{
+  "ELF_parse_import_native_load_or_body_execution": false,
+  "archive_wire_bytes": [
+    218112,
+    218112
+  ],
+  "binary_hash_matches_RECORD": true,
+  "candidate_sha256": "10590bccad71e60b7589a2ef75ff03ed9ea435e26ef6311f57578cc2697506d2",
+  "container_source_held_FD_or_every_file_image_attestation": false,
+  "declaration": {
+    "CSV_end_line": 220,
+    "RECORD_source_sha256": "b4b210e29143fee78ff3abd82e2d308554642129deacfcfec4e7e626c2d4fd68",
+    "actual_path_file_hash_ELF_or_load_observed": false,
+    "declared_hash": {
+      "algorithm": "sha256",
+      "digest_hex": "9edf4136653a328edcc88dc97f6d828440ad96550c436cbe087951845c89903b"
+    },
+    "declared_size_decimal": "216280",
+    "lexical_absolute_path": "/usr/local/lib/python3.12/site-packages/scipy/_lib/_ccallback_c.cpython-312-aarch64-linux-gnu.so",
+    "package": "scipy",
+    "record_index": 219,
+    "relative_path": "scipy/_lib/_ccallback_c.cpython-312-aarch64-linux-gnu.so"
+  },
+  "fresh_inspection_binding": {
+    "all_nonMounts_and_complete_uniqueDestination_mount_records_equal": true,
+    "bytes": 9755,
+    "full_decoded_equal": false,
+    "raw_Mounts_list_order_equal": false,
+    "raw_bytes_equal": false,
+    "sha256": "b04d931483a4c70b3b3640ba23d76afbd1c9db43258c225181bc5133763c1021"
+  },
+  "full_readback_files": 17,
+  "inspection_binding": {
+    "after": {
+      "all_nonMounts_and_complete_uniqueDestination_mount_records_equal": true,
+      "bytes": 9755,
+      "full_decoded_equal": true,
+      "raw_Mounts_list_order_equal": true,
+      "raw_bytes_equal": true,
+      "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+    },
+    "baseline": {
+      "bytes": 9755,
+      "file": "baseline-inspect.json",
+      "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+    },
+    "baseline_physical": {
+      "bytes": 9755,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792331758403396378",
+        "st_dev": "66306",
+        "st_ino": "60582831",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792331758403396378",
+        "st_nlink": "1",
+        "st_size": "9755",
+        "st_uid": "1000"
+      },
+      "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+    },
+    "before": {
+      "all_nonMounts_and_complete_uniqueDestination_mount_records_equal": true,
+      "bytes": 9755,
+      "full_decoded_equal": true,
+      "raw_Mounts_list_order_equal": true,
+      "raw_bytes_equal": true,
+      "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+    },
+    "raw_before_after_equal": true
+  },
+  "native_model_RAM_admission": null,
+  "original_baseline_physical": {
+    "bytes": 9755,
+    "physical": {
+      "st_blocks": "24",
+      "st_ctime_ns": "1792331758403396378",
+      "st_dev": "66306",
+      "st_ino": "60582831",
+      "st_mode": "33152",
+      "st_mtime_ns": "1792331758403396378",
+      "st_nlink": "1",
+      "st_size": "9755",
+      "st_uid": "1000"
+    },
+    "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+  },
+  "prior_head_physical": {
+    "bytes": 86271,
+    "physical": {
+      "st_blocks": "176",
+      "st_ctime_ns": "1792335140351164851",
+      "st_dev": "66306",
+      "st_ino": "60583175",
+      "st_mode": "33152",
+      "st_mtime_ns": "1792335140351164851",
+      "st_nlink": "1",
+      "st_size": "86271",
+      "st_uid": "1000"
+    },
+    "sha256": "6f3696b006cb335a06656501446d2976723ec4649117dd33a31cd03c825adaaa"
+  },
+  "schema": "stopped-n2-callback-binary-independent/1",
+  "source_bytes": 216280,
+  "source_inventory": {
+    "baseline-inspect.json": {
+      "bytes": 9755,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792336168731081845",
+        "st_dev": "66306",
+        "st_ino": "60583181",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792336168731081845",
+        "st_nlink": "1",
+        "st_size": "9755",
+        "st_uid": "1000"
+      },
+      "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+    },
+    "binary-read-0.exit.json": {
+      "bytes": 850,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792336168805279120",
+        "st_dev": "66306",
+        "st_ino": "60583187",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792336168805279120",
+        "st_nlink": "1",
+        "st_size": "850",
+        "st_uid": "1000"
+      },
+      "sha256": "f233ecba9d580e8dd260f96eb95501ab399705c340909f4f946015ba43aed8c5"
+    },
+    "binary-read-0.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792336168797731379",
+        "st_dev": "66306",
+        "st_ino": "60583186",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792336168797731379",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "binary-read-0.stdout": {
+      "bytes": 218112,
+      "physical": {
+        "st_blocks": "432",
+        "st_ctime_ns": "1792336168791596750",
+        "st_dev": "66306",
+        "st_ino": "60583185",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792336168791596750",
+        "st_nlink": "1",
+        "st_size": "218112",
+        "st_uid": "1000"
+      },
+      "sha256": "380883a27b5f3948216456b84c0bde3cea7cc3faafd5da42030a7c391dcaeaab"
+    },
+    "binary-read-1.exit.json": {
+      "bytes": 850,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792336168844332601",
+        "st_dev": "66306",
+        "st_ino": "60583190",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792336168844332601",
+        "st_nlink": "1",
+        "st_size": "850",
+        "st_uid": "1000"
+      },
+      "sha256": "3072a891e856ff716c1cd302c0a129830064b31125ea82239f8b7a20442519b9"
+    },
+    "binary-read-1.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792336168837731617",
+        "st_dev": "66306",
+        "st_ino": "60583189",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792336168837731617",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "binary-read-1.stdout": {
+      "bytes": 218112,
+      "physical": {
+        "st_blocks": "432",
+        "st_ctime_ns": "1792336168832599315",
+        "st_dev": "66306",
+        "st_ino": "60583188",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792336168832599315",
+        "st_nlink": "1",
+        "st_size": "218112",
+        "st_uid": "1000"
+      },
+      "sha256": "380883a27b5f3948216456b84c0bde3cea7cc3faafd5da42030a7c391dcaeaab"
+    },
+    "callback.bin": {
+      "bytes": 216280,
+      "physical": {
+        "st_blocks": "424",
+        "st_ctime_ns": "1792336168850649711",
+        "st_dev": "66306",
+        "st_ino": "60583191",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792336168850649711",
+        "st_nlink": "1",
+        "st_size": "216280",
+        "st_uid": "1000"
+      },
+      "sha256": "9edf4136653a328edcc88dc97f6d828440ad96550c436cbe087951845c89903b"
+    },
+    "candidate.json": {
+      "bytes": 4046,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792336168891506514",
+        "st_dev": "66306",
+        "st_ino": "60583195",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792336168891506514",
+        "st_nlink": "1",
+        "st_size": "4046",
+        "st_uid": "1000"
+      },
+      "sha256": "10590bccad71e60b7589a2ef75ff03ed9ea435e26ef6311f57578cc2697506d2"
+    },
+    "inspect-after.exit.json": {
+      "bytes": 747,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792336168883401042",
+        "st_dev": "66306",
+        "st_ino": "60583194",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792336168883401042",
+        "st_nlink": "1",
+        "st_size": "747",
+        "st_uid": "1000"
+      },
+      "sha256": "e3fdef2eaa185a87bd7a5c9e4976c746eb8d2debcd3b718d801fa18db94ba8f0"
+    },
+    "inspect-after.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792336168875731844",
+        "st_dev": "66306",
+        "st_ino": "60583193",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792336168875731844",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "inspect-after.stdout": {
+      "bytes": 9755,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792336168870427877",
+        "st_dev": "66306",
+        "st_ino": "60583192",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792336168870427877",
+        "st_nlink": "1",
+        "st_size": "9755",
+        "st_uid": "1000"
+      },
+      "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+    },
+    "inspect-before.exit.json": {
+      "bytes": 749,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792336168763620823",
+        "st_dev": "66306",
+        "st_ino": "60583184",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792336168763620823",
+        "st_nlink": "1",
+        "st_size": "749",
+        "st_uid": "1000"
+      },
+      "sha256": "512fa09915c010e7889894a4caab9bdd17b3d6e14e1934450f8a023780aff4f0"
+    },
+    "inspect-before.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792336168756731134",
+        "st_dev": "66306",
+        "st_ino": "60583183",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792336168756731134",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "inspect-before.stdout": {
+      "bytes": 9755,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792336168751074780",
+        "st_dev": "66306",
+        "st_ino": "60583182",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792336168751074780",
+        "st_nlink": "1",
+        "st_size": "9755",
+        "st_uid": "1000"
+      },
+      "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+    },
+    "prerequisites.json": {
+      "bytes": 203,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792336168714493138",
+        "st_dev": "66306",
+        "st_ino": "60583179",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792336168714493138",
+        "st_nlink": "1",
+        "st_size": "203",
+        "st_uid": "1000"
+      },
+      "sha256": "80a2d46e2e364badea0ee23575157c129f031d12fad8c873c9fc7fa4e4a6fc67"
+    },
+    "prior-head-proof.json": {
+      "bytes": 86271,
+      "physical": {
+        "st_blocks": "176",
+        "st_ctime_ns": "1792336168723511543",
+        "st_dev": "66306",
+        "st_ino": "60583180",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792336168723511543",
+        "st_nlink": "1",
+        "st_size": "86271",
+        "st_uid": "1000"
+      },
+      "sha256": "6f3696b006cb335a06656501446d2976723ec4649117dd33a31cd03c825adaaa"
+    }
+  },
+  "status": "VERIFIED_ONE_BINARY_BYTE_COPY_RECORD_SHA_ONLY_NOT_ELF_OR_RUNTIME"
+}
