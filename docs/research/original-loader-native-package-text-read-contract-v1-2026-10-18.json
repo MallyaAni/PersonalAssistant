@@ -1,0 +1,74 @@
+{
+  "schema": "stopped-n2-fifteen-native-package-text-read-contract/1",
+  "status": "SOURCE_INVOCATIONS_REVIEWED_AND_EXECUTED_SOURCE_COPY_SCOPE_ONLY",
+  "requirements_sha256": "ada07c95284817b7d918b01b8024c1d828c65fc6f129de1a6c69edcdb178398e",
+  "container": "803718a62e3cbd1f6070abab25a58e1fbc0ee5d04b5444f57c817d7e47b8bf57",
+  "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+  "stopped_inspect_sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2",
+  "source_root": "/home/animallya96/scratch/capacity-native-package-text-census-20261018-v1",
+  "review_root": "/home/animallya96/scratch/capacity-native-package-text-census-review-20261018-v1",
+  "site_packages_prefix": "/usr/local/lib/python3.12/site-packages/",
+  "fixed_new_relative_paths": [
+    "pyarrow/_generated_version.py", "pyarrow/ipc.py", "pyarrow/types.py",
+    "pyarrow/util.py", "pyarrow/compute.py", "numpy/version.py",
+    "numpy/_distributor_init.py", "numpy/_core/__init__.py", "scipy/version.py",
+    "scipy/_distributor_init.py", "scipy/_lib/_ccallback.py", "sklearn/_config.py",
+    "sklearn/_distributor_init.py", "sklearn/base.py", "sklearn/utils/_show_versions.py"
+  ],
+  "primary": {
+    "helper_sha256": "296d0e8dd4d58883388a5c8f5b2d5c0b6d09ccfdbf82cb44c060333637bb1428",
+    "transport_sha256": "518ded7394ae1b04db85f32b89e15693086f8e184c231ac2b891391d2f749b08",
+    "invocation": "python3 -W error docs/research/sources/capacity-native-package-text-transport-v1-2026-10-18.py",
+    "allowed_Docker_commands": "Two exact stopped-CID inspect calls and two fixed-path container cp reads per each15 path, stdout tar decoded only in bounded RAM; no filesystem extraction.",
+    "candidate_sha256": "288d593318086a0399137f4734f3a9b9930cb5b793c217203cf569a49788d6e8",
+    "candidate_bytes": 19522,
+    "work_seconds": 90, "alarm_seconds": 95, "CLI_seconds": 5, "SSH_seconds": 120
+  },
+  "independent": {
+    "helper_sha256": "3b41d5ae9449b724cd8cb31333d1c8479475c580ab63d21370056bd0628c22ee",
+    "transport_sha256": "fc7219944113913b46b9b2c996d3fb045b3e7f1475abd4ce6326650d29e0b426",
+    "invocation": "python3 -W error docs/research/sources/capacity-native-package-text-independent-transport-v1-2026-10-18.py",
+    "readback": "113 exact retained files each two full reads/SHA/held and named physical checks;32 full CLI receipts,30 tar-source comparisons and full archive metadata; candidate first read agrees inventory; one fresh stopped inspect equals complete before/after content and original retained inspection.",
+    "proof_sha256": "f26f8539c52247f03e7e7c92daaa57a28bb06ccf3b5dfeb6024d1ff2ae6b1aa1",
+    "proof_bytes": 51904,
+    "source_files": 15, "source_bytes": 137785,
+    "CLI_seconds": 5, "fresh_inspect_alarm_seconds": 10, "SSH_seconds": 70
+  },
+  "resource_scope": {
+    "ordinary_file_and_wire_bytes": 262144,
+    "helper_AS_soft_bytes": 536870912,
+    "helper_AS_hard_and_owned_Go_CLI_AS_bytes": 4294967296,
+    "primary_CPU_seconds": 30, "independent_CPU_seconds": 20,
+    "primary_fresh_minimum_MemAvailable_bytes": 2147483648,
+    "primary_fresh_minimum_scratch_bytes": 1073741824,
+    "primary_fresh_minimum_scratch_inodes": 512,
+    "headroom_is_reservation_or_daemon_native_model_RAM_bound": false,
+    "timeout_signal_overflow_owned_stop_crash_branches_exercised": false
+  },
+  "independent_review": {
+    "worker": "existing /root/trading_action_consistency",
+    "sequence": "READONLY exact primary source/invocation/resources BEFORE primary use; READONLY exact independent source/invocation/resources/candidate pin BEFORE independent use; READONLY actual proof after completion.",
+    "final": "No material scope gap found. VERIFIED only source copying/readback; package AST interpretation, versions, native/thread closure and model/RAM acceptance remain unverified.",
+    "worker_operations_or_new_agent_or_limited_agent_retry": false
+  },
+  "local_preparation_failure": {
+    "status": "PRESERVED_INITIAL_BUILDER_EXIT1_TRANSPORT_PIN_ASSERTION_NO_SSH",
+    "cause": "ROOT wrote an incorrect full transportSHA literal. Existing reviewed transport bytes unchanged; corrected from prior exact proof0c84e4b1f89815a7ca085c07695386824802b9c742c20f6df7152d4312b4e6d2.",
+    "boundary": "Initial builder had emitted the correct unexecuted collector only; transport preparation assertion failed before transport generation/SSH. Corrected builder verifies that same helper bytes already exist and creates transport exclusively.",
+    "draft_root": "/tmp/native-package-text-preparation-drafts-20261018-v1",
+    "remote_or_package_runtime_failure": false
+  },
+  "preserved_limits": [
+    "No old ten-source census, package AST analysis job, gate or packet replay. All15 paths are disjoint from prior ten package source paths.",
+    "Missing/oversized/linked/sparse/extra archive member/trailing nonzero cases must refuse; no fallback imports, recursive directory copy or cap raise. These failure branches were source reviewed, not newly exercised.",
+    "Package texts were never imported, compiled into CodeTypes or executed; their AST bodies and versions have not yet been interpreted. New stdlib operational helper/control sources alone ran.",
+    "No container start/create/exec/load, package/model/account/market-data/credential operation, guard/G08/source-map/production change or admission reuse.",
+    "Tar member metadata is not held-FD container-source physical authority or every-file baked-image attestation. Native extension/RECORD/distribution/thread behavior remains unbound."
+  ],
+  "next_source_only": "Inspect exact retained15 texts with source SHA/physical bindings, especially three version texts and newly exposed import/native seams. Resolve literal version declarations before preparing exact RECORD/METADATA/native-path reads; no guessed suffix or recursive copies. Complete selected-call/global/type/dataclass-generated/native/phase closure before any capacity execution proposal.",
+  "execution_authorized": false,
+  "assembled_tree_call_generated_phase_native_manifests_strategy_entrypoint_bootstrap_owner_caller_stager_packet_runtime_launch_admission": null,
+  "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+  "original_timing": "FAILED", "publication": "CLOSED",
+  "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN", "heartbeat": "ACTIVE"
+}

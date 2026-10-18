@@ -1,0 +1,41 @@
+{
+  "AST_warnings_as_errors": "PASS",
+  "JSON_and_proof_hashlinks": "PASS",
+  "files": {
+    "capacity-native-package-text-census-v1-2026-10-18.py": {
+      "bytes": 13080,
+      "purpose_functions": 9,
+      "sha256": "296d0e8dd4d58883388a5c8f5b2d5c0b6d09ccfdbf82cb44c060333637bb1428"
+    },
+    "capacity-native-package-text-independent-transport-v1-2026-10-18.py": {
+      "bytes": 6009,
+      "purpose_functions": 3,
+      "sha256": "fc7219944113913b46b9b2c996d3fb045b3e7f1475abd4ce6326650d29e0b426"
+    },
+    "capacity-native-package-text-transport-v1-2026-10-18.py": {
+      "bytes": 6026,
+      "purpose_functions": 3,
+      "sha256": "518ded7394ae1b04db85f32b89e15693086f8e184c231ac2b891391d2f749b08"
+    },
+    "prepare-native-package-text-census-v1-2026-10-18.py": {
+      "bytes": 3858,
+      "purpose_functions": 3,
+      "sha256": "ed757fda64890572525b4f0cfefbeb78afeecc9cfd3842eae6fe581a58aba832"
+    },
+    "prepare-native-package-text-independent-v1-2026-10-18.py": {
+      "bytes": 4419,
+      "purpose_functions": 2,
+      "sha256": "3805155fcbeac254cac20cede5bc37864ec5bcd1b81490b380f7f2f114d7a0e6"
+    },
+    "verify-native-package-text-census-v1-2026-10-18.py": {
+      "bytes": 15769,
+      "purpose_functions": 9,
+      "sha256": "3b41d5ae9449b724cd8cb31333d1c8479475c580ab63d21370056bd0628c22ee"
+    }
+  },
+  "limitations": "Control source checks and read-copy proof only; no package interpretation/version/native/thread/RAM acceptance.",
+  "package_text_AST_CodeType_import_body": false,
+  "purpose_functions": 29,
+  "reused_complete_helper_ASTs_exact": 16,
+  "schema": "native-package-text-control-static-review/1"
+}
