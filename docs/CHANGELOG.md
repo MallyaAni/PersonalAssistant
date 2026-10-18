@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-10-18 — Reserve private synthetic Cycle stages and reject changed effect inputs
+
+New private stage producer owns the real Store prior/demand/wait/packet/decision/
+submission chain under source/head/input-bound CAS phases. Explicit synthetic
+terminal pages use actual charged Store ingress; market-packet validation and
+provider acquisition remain unperformed. Native-io/2 binds each stage declaration.
+Actual native accepted orders and complete paper saves use the original reserved
+writer; recovery returns only original committed metadata/seals, never replays.
+
+At b62afed3/tree16d87389, one isolated f612 run passed9NEWtests/0fail/error/skip,
+57.527826763s/58144KiB. Two actual SIGKILL children after effects/after commit were
+reaped; OPEN stays paused, committed recovery returns its original result.
+All4644 original CAS inodes retained exact allocation. Three earlier source-specific
+runs failed on missing usage counters, real pagination admission, and an isolated
+spool dependency; all failed evidence remains preserved, no guard/cap weakening.
+
+A separate RED1 then reproduced callback order mutation qty5→6 before submission.
+Current source2a577584/tree03df43d4 checks exact persisted declaration/lease before
+EACH effect;2NEWtests passed0fail/error/skip12.219465272s/53720KiB. Mutation after
+observation now creates no order/save/latch; valid qty5 traverses actual stages and
+reopens/recovers without further effects. All1032 original inodes remain unchanged.
+V4nine and current2 are distinct-source evidence; no aggregate11/same-tree or new
+current-source crash claim. Proof835fede8/228641B retains all6attempt reports and
+42local source/control physical bookends:
+research/reserved-cycle-stage-proof-2026-10-18.json.
+
+This boundary is CLOSED; never rerun its tests/preflights/stages/copies/getters for
+docs. Whole resolver/final/same-session Nightly CAS composition is next and remains
+UNVERIFIED, as do filesystem/SQLite/latch/horizon/twohost/model-RAM/genuine/UI.
+Bound-CAS final and public genuine entry still refuse. Production unchanged;
+no deployment/fullunit/build/model claim, Ruff unavailable. Diagram NONE.
+Original timingFAILED/publicationCLOSED/v6OPEN-PAUSED unchanged.
+
 ## 2026-10-18 — Reserve native metadata and private synthetic Store/CAS
 
 New separately versioned CAS/phase2 fully initializes fixed body/catalog/control

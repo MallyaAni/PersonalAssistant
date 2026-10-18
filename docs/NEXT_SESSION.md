@@ -1,5 +1,118 @@
 # Next session
 
+## 2026-10-18 — Private reserved Cycle stage producer and input-drift refusal VERIFIED
+
+Product acceptance remains the priority. The PREPARE/DECISION/SUBMISSION boundary
+is now implemented privately; final resolution/persistence and its same-session
+Nightly composition remain CLOSED pending the next boundary. Current source
+2a577584b212d62de0fc0d129ecb7af6751be147, tree
+03df43d4b5176cdd5957f15d24a0d9261e7329ec, is pushed to origin/main. Read
+research/reserved-cycle-stage-proof-2026-10-18.json (835fede8bc57f99cf421d96061116ae90868c89f839237a90efd37ffd7ab6202,
+228641B). All six attempts and their exact sources/results remain preserved.
+Never repeat these tests/preflights/stages/copies/getters or earlier closed gates
+for documentation; never adopt an OPEN/failed/completed pool for new work.
+
+PRODUCT: historical_reserved_cycle_stages._Stages owns actual Store
+PRIOR_VERIFIED→DEMAND_FROZEN→WAIT_PACKETS→PACKETS_FINALIZED→DECISION_FROZEN→
+SUBMISSION_CAPTURED. Finite source/head/context/holding-lineage/input declarations
+and CAS phases precede selected effects. Real begin/reserve/confirm/finish page
+ingress retains explicitly SYNTHETIC terminal quote/trade pages; provider
+acquisition and market-packet validation are NOT performed. Separately versioned
+native-io/2 binds the exact effect declaration in auxiliary/evidence/CAS identity.
+Decision preserves native paper/broker/latch. Submission uses bounded explicit
+observe/submit/load/save/latch capabilities, actual native accepted order and
+reserved native save, prepared evidence before authoritative Store commitment,
+then original result and phase seal. Source/global identity is NOT a sandbox.
+
+V4 VERIFIED at source b62afed34d9f7560c8df0ec3f0f9834c208575b6/tree
+16d8738916a482e41dd64b797b5e148f359799b1: ONE CID
+2901b0f030a8d254411f079f4846211aa01906f4736c2437b140fda7f5d2f288/f612
+exit0/noOOM23:25:54.055894475Z;9pass/0fail/0error/0skip57.527826763s/58144KiB.
+Actual desired8/submitted5 remains ACCEPTED, not filled/final. Real Store stages,
+head/reopen/original recovery, source/input/prepared/latch/due/capacity/uncertainty
+refusals passed. Actual owned PID7 SIGKILL after SUBMISSION commit and PID8 after
+effect return BEFORE prepared both exited-9/reaped. Committed recovery creates
+only original missing result/seal; OPEN retains native effects with no replay.
+These are protocol-boundary process kills, not power loss/inside syscall or
+SQLite-commit interruption. Complete9inventories/4644distinct original inodes/
+all4fields stayed equal; each34344960 allocated ANDlogical bytes. Raw426900B
+inventories are retained as27168B gzip; all4canonical cut/exit strings906B match.
+Proof7986f7ef67e9076c9d7ef2035cf6eec2189c37536711a37eaebb19d934920a51/92782B
+and7fixedresults remain /tmp/reserved-cycle-stages-20261018-v4 +matchingSpark1.
+
+FAILED/PRESERVED: source70916731/v1 CID6fcc95df...9tests/9errors52.065666769s/
+59276KiB (demand.build missing actual used counters); sourceb52f49ce/v2
+CIDbdc09004...9tests/8errors52.440063257s/59548KiB (unperformed real terminal
+pagination refused); source72b5c98a/v3 CID3dec34d1...9tests/8errors51.756805827s/
+59288KiB (actual Store's deferred spool import missing in isolated source pack).
+All have0assertion failures/skips, exit1/noOOM, no child cuts reached; exact
+sources/logs/proofs and27 complete unchanged pool inventories retained. Fixes used
+actual counters and charged page ingress, then included/preloaded the unchanged
+spool module. No Store guard/assertion/cap was weakened. These remain FAILED.
+
+Follow-on RED at source79251b987aeec6b9624d5aceb5bbfab02466b4e8 proved a real
+copied-input gap: after valid observation, a callback mutated qty5 to6, and the
+actual broker accepted6 before a later latch refusal. One new test failed at
+Lists differ: ['6'] != [],0error/skip6.462146133s/52852KiB; CID16ba14f3.../f612
+exit0/noOOM23:35:10.073878799Z is an EXPECTED_RED wrapper, NOT product acceptance.
+Proof16f0653d.../full inventory and results remain in
+/tmp/reserved-cycle-capability-red-20261018-v1 +matchingSpark1. No save/adoption.
+
+Targeted fix: EACH capability reads the original reservation before count/effect,
+checks exact encoded declaration bytes (including representation), source,
+directory, original CAS lease and effect digest, and retains poison on refusal.
+Current-source GREEN CID4321600f83504aa6665ada10f939a81a70d1bc4c44a1df95bb5e93b21dd2227b/f612
+exit0/noOOM23:39:45.972638052Z;2NEWpass/0fail/0error/0skip12.219465272s/53720KiB.
+Mutation BETWEEN observe and submit now pauses with no order/save/latch/cursor
+advance, DECISION head unchanged, later save/evidence/replay refused. Unchanged
+inputs traverse the full private stage path, submit/save5, reopen and recover
+original results without effects. Two complete inventories/1032 original inodes
+stay equal;34344960 allocated ANDlogicalB each. Raw94771B→5873B gzip retained.
+Proof7ed06588f6accc4c70b7203c5ed13bdd51f2bed72e4171f046d443c6ba1ad195/62046B
+and7fixedresults remain /tmp/reserved-cycle-capability-green-20261018-v1 +Spark1.
+Old9 bodies were NOT rerun. V4's two cuts remain evidence ONLY for original b62;
+GREEN2 has no new kill claim. Do not describe this as11tests at one source.
+
+ROOT and the healthy READONLY reviewer independently reconstructed all original
+V4 and focused RED/GREEN inventories and canonical witnesses, exact source/native
+bookends, full create/CID/mount/runtime/terminal links. V4/RED/GREEN each have
+five phases0/emptyerr; v1-v3 execute failures remain recorded as1. V4 has24pins/
+29payloads514305B, GREEN25pins/30payloads520035B<524288;47native modules match
+the full1655-row source map, writer globals unchanged, forbidden imports[].
+Four FULL mounts ANDraworder equal; only HostConfig OomKillDisablefalse→null.
+UID1000/noneRO/1CPU/512MiB=swap/PIDs32/tmp64/dropALL/no-new-privileges/CPU30;
+native1MiB FSIZE/source-controls-log256KiB/production caps unchanged.
+A new local data-only collection authenticated42inputs547144B with two held reads
+and later two held reads/physical bookends,2417216B total hashwork<4MiB; no old
+runtime/test/getter replay.36source files/274purpose functions/AST warnings-as-errors/
+zero-backspace/diff/runner-byte checks pass.
+Ruff unavailable; no fullunit/build/deploy/UI/model claim. Diagram NONE.
+
+UNVERIFIED: complete reserved-CAS resolver/final/same-session Nightly seam; native
+whole constructors/market_daily/sender/planning/model/provider/context/calendar/
+economics; SQLite database/journal/temp/directory/operation/result/latch physical
+reservation, whole832MB horizon/load-save/deepcopy/serialization/model-RAM
+coexistence, actual twohost/powerloss/native adoption/independent publication/API/UI.
+Context/policy/program/calendar/source-manifest surroundings remain SYNTHETIC.
+Public genuine entry and bound-CAS final refusal remain unchanged. Original
+timingFAILED/publicationCLOSED/missingreceipts/immutable roots unchanged; genuinev6
+OPEN/PAUSED/no replay/adoption/new genuine run from failed reservation.
+
+NEXT CONCRETE PRODUCT TASK: inspect all raw Cycle resolver effects, final
+preparation/components/receipts/operation commit/recovery and RawNightly
+raw_predecessor links against the NEW producer's actual stage graph. Reserve exact
+source/head/input-bound allowances BEFORE broker resolution or final native work.
+Compose reserved native save and CAS through final persistence/original recovery,
+then same-session private Nightly with NEW bounded process-cut/original-result
+assertions. Preserve bound-CAS final refusal until the ENTIRE new seam passes.
+Never reopen a COMPLETE/OPEN phase for later writes, use a manually staged fixture
+as whole Cycle admission, rerun closed gates, or recurse into ELF/provenance work.
+Complete full filesystem/SQLite/latch/horizon/twohost/model-RAM admission BEFORE
+genuine effects. Advance one coherent product boundary; no Spark2 load/cap or
+guard weakening/fakeclock/history rewrite/model-provider-account-service change/
+denied-read bypass/paiddata/tuning/realmoney orders. Never deploy historical main.
+Heartbeat ACTIVE; only meaningful changes warrant notification; no ETA.
+
 ## 2026-10-18 — Reserved synthetic native metadata and Store/CAS VERIFIED
 
 Product acceptance remains the priority. This NEW eight-test boundary is CLOSED;
