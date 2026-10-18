@@ -690,13 +690,22 @@ def components(store, client, root, pins):
 
 # Observe native writes, model decisions and raw submissions without rewriting them.
 class NativeCapture:
-    # Keep recording scoped to one exact policy, broker and private root.
-    def __init__(self, store, root, client, policy):
+    # Bind one policy/broker/root, with an optional separately receipted raw-only sink.
+    def __init__(self, store, root, client, policy, *, raw_checkpoint=None):
         admitted.require(
             type(client) is native.ReplayBroker
             and type(policy) is FrozenCurrentGradePolicy,
             "Exact native lifecycle capture required",
         )
+        if raw_checkpoint is not None:
+            from backend.market.historical_physical_checkpoint import PhysicalCheckpoint
+
+            admitted.require(
+                type(raw_checkpoint) is PhysicalCheckpoint
+                and raw_checkpoint.header["identity_sha256"] == store.identity,
+                "Exact same-account raw checkpoint required",
+            )
+        self.raw_checkpoint, self.raw_writes = raw_checkpoint, []
         self.store, self.root, self.client, self.policy = (
             store,
             Path(root),
@@ -748,20 +757,40 @@ class NativeCapture:
         )
         original_decide = self.policy.decide
 
-        # Preserve each persisted pending state before native submission continues.
+        # Capture each persisted state; raw-only mode cannot continue into submission.
         def save(root, state):
             self.owned()
             admitted.require(
                 Path(root) == self.root, "Unexpected paper writer in observer"
             )
             result = SAVE_STATE(root, state)
-            raw = physical(result)
-            self.writes.append(put(self.store, raw))
+            if self.raw_checkpoint is None:
+                raw = physical(result)
+                self.writes.append(put(self.store, raw))
+            else:
+                reference = self.raw_checkpoint.capture(result)
+                completion = self.raw_checkpoint.completed(reference)
+                self.raw_writes.append(
+                    {
+                        "schema": "native-observer-raw-write/1",
+                        "checkpoint": reference,
+                        "raw_sha256": completion["root"]["raw_sha256"],
+                        "raw_bytes": completion["root"]["raw_bytes"],
+                        "identity_sha256": completion["root"]["identity_sha256"],
+                        "local_capture_committed": True,
+                        "native_operation_committed": False,
+                        "durable_simulator_adoption": False,
+                    }
+                )
             return result
 
         # Persist original request/outcome evidence before the caller can overwrite it.
         def submit(client, *args, **kwargs):
             self.owned()
+            admitted.require(
+                self.raw_checkpoint is None,
+                "Raw write observer has no submission receipt; PAUSED before submit",
+            )
             admitted.require(
                 client is self.client, "Unexpected native broker in observer"
             )
