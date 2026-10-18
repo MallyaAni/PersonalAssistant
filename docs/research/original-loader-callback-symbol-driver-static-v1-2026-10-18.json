@@ -1,0 +1,79 @@
+{
+  "schema": "callback-symbol-retained-driver-static-review/1",
+  "status": "SOURCE_ONLY_ALL13_DRIVER_FUNCTIONS_UNRUN",
+  "sources": [
+    {
+      "path": "docs/research/sources/analyze-callback-symbol-retained-v1-2026-10-18.py",
+      "bytes": 8546,
+      "sha256": "b7eadb0166ed9aa21749c5230f19ce466b2430ca95fca0cc6f61948bac5d65c4",
+      "purpose_functions": 7
+    },
+    {
+      "path": "docs/research/sources/verify-callback-symbol-retained-v1-2026-10-18.py",
+      "bytes": 11913,
+      "sha256": "7ff8b1b445337f6770c9fa572c3e0db5b83368e228419fb55cecc32bcfde46bd",
+      "purpose_functions": 6
+    },
+    {
+      "path": "docs/research/sources/derive-callback-symbol-data-transports-v1-2026-10-18.py",
+      "bytes": 1887,
+      "sha256": "9a48ad468b082894a5ae5b67828c82e6a3b672aa3f76dc6a5c95b5fd1933a937",
+      "purpose_functions": 1
+    },
+    {
+      "path": "docs/research/sources/prepare-callback-symbol-data-transports-v1-2026-10-18.py",
+      "bytes": 7193,
+      "sha256": "6403194576cc40521fda1664cb8ba89a7876faabd0b87ef2e9f75e65571bad6b",
+      "purpose_functions": 4
+    },
+    {
+      "path": "docs/research/sources/callback-symbol-data-primary-transport-v1-2026-10-18.py",
+      "bytes": 8385,
+      "sha256": "78253bcf66db3e449b4247749b1912c640ea809e941fb820d975e739bed19617",
+      "purpose_functions": 3
+    },
+    {
+      "path": "docs/research/sources/callback-symbol-data-independent-transport-v1-2026-10-18.py",
+      "bytes": 8395,
+      "sha256": "8ba05b849beec55b827b42151b63c8dc08cea365b8776209f1833e1e87214c8b",
+      "purpose_functions": 3
+    },
+    {
+      "path": "docs/research/sources/preserve-callback-symbol-drivers-v1-2026-10-18.py",
+      "bytes": 4137,
+      "sha256": "6d56ed8cdf78e38f9e78b397581a4b6f6bbc2e88701c50ac74d62b43a84e407f",
+      "purpose_functions": 4
+    }
+  ],
+  "total_purpose_functions": 28,
+  "wire": {
+    "callback-symbol-data-primary-transport-v1-2026-10-18.py": {
+      "bytes": 29500,
+      "sha256": "6ac31fc847534cd456b6e6dc79f2bfb69336fe75aaa41c479ce1b1522e379347",
+      "bootstrap_sha256": "0c37320e35db51ec01ce1f90b361695be557948fc3f6b2972cb56214e89a7e91",
+      "function_ASTs_equal": 3
+    },
+    "callback-symbol-data-independent-transport-v1-2026-10-18.py": {
+      "bytes": 35042,
+      "sha256": "b6cfe2ccf0012a87733240dfaf62491a3e74b8e405f9f0776b02b0ff451c99b6",
+      "bootstrap_sha256": "e043e7e86db7044d5e73545a54bfd0c6ac0d225bbc038c080b1f199da34f0948",
+      "function_ASTs_equal": 3
+    }
+  },
+  "operational_utilities_equal_AST": 4,
+  "driver_functions_UNRUN": 13,
+  "SSH": 0,
+  "decoder_body_runs": 0,
+  "checks": [
+    "Each new function has an immediately preceding purpose comment; AST parsed with warnings as errors.",
+    "Both proposed transport PINS exactly match source bytes and embedded expected dictionaries; complete base64 JSON envelope measured below65536.",
+    "Both proposed transport limits/interrupt/main function ASTs identical to authenticated old777950f1 SOURCE; no old executable replay.",
+    "Primary/independent physical,digest,read,encoded utility ASTs exactly equal, independent reconstructs using only a526e85d decoder.",
+    "Independent SUMMARY_SHA placeholder and SUMMARY_BYTES0 prevent dispatch/use; primary source pin exactb7eadb01.",
+    "DATA_used seeded from decoder count before output hashes; output save/readback/bookend/proof hashing precharged to same counter; separate cumulative AUTH4MiB explicitly reports extra binary/page authentication.",
+    "Source inventory exact original binary/page decimal physical from pinned prior20c33344; later full file read/SHA/physical bookends declared in both.",
+    "Complete independently greedy page equality/canonical equality and exact output directory names before/afterbookends; neither new driver has run."
+  ],
+  "behavior": "UNVERIFIED_UNRUN",
+  "Ruff": "PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM"
+}
