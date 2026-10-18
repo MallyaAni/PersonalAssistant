@@ -96,6 +96,7 @@ def main():
     before = sources()
     from backend.agents.trading.desk import paper
     module = importlib.import_module('backend.tests.test_historical_reserved_cycle_stages')
+    from backend.market import historical_packet_spool
     from backend.agents.trading.desk import intraday_orders
     native_before = native_sources()
     bindings = dict(vars(paper))
