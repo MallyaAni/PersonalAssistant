@@ -1,0 +1,128 @@
+{
+  "behavioral_parity": "UNVERIFIED; AST equality is not value/type/missingness/alias/deepcopy/readonly/lifetime/RAM proof.",
+  "comparisons": {
+    "authenticate_inputs": {
+      "candidate_AST": "56d5e8e4945724612a3febea93ed70c742ab181081a27bf32522998a562b2974",
+      "equal_after_declared_primitive_rebindings": true,
+      "original_AST": "59a9b0e32c6fc4996df09a69d99374173c3f30daeb0f823ba99fc786bfbf9b32"
+    },
+    "consumed_inputs": {
+      "candidate_AST": "16366d5cf3ad1309b92739ff3a01b174d0b933546aa808390a2ed4bfe0a2ebfb",
+      "equal_after_declared_primitive_rebindings": true,
+      "original_AST": "16366d5cf3ad1309b92739ff3a01b174d0b933546aa808390a2ed4bfe0a2ebfb"
+    },
+    "initial": {
+      "candidate_AST": "12ebee881940f187b88c448737303debed5a97284eaa9c33b4372e20fc14e8d7",
+      "equal_after_declared_primitive_rebindings": true,
+      "original_AST": "3627ce983275d784cb36c6d870dbf327481861852275548dc034f57609790299"
+    },
+    "unchanged": {
+      "candidate_AST": "e479a56366d858b899f1c3f601860bb677545ccab922e256898b54413bb33bd3",
+      "equal_after_declared_primitive_rebindings": true,
+      "original_AST": "d529a291f48070f32fc05d21c90bec36d87982419a6a76bafc0a375636761c3a"
+    }
+  },
+  "context_declaration_AST_sha256": {
+    "127:consumed_inputs": "16366d5cf3ad1309b92739ff3a01b174d0b933546aa808390a2ed4bfe0a2ebfb",
+    "131:authenticate_sources": "461458d063355e1236c649977d161985eef6c831532bbccbce4efb3c5afde743",
+    "140:authenticate_inputs": "56d5e8e4945724612a3febea93ed70c742ab181081a27bf32522998a562b2974",
+    "159:initial": "12ebee881940f187b88c448737303debed5a97284eaa9c33b4372e20fc14e8d7",
+    "163:unchanged": "e479a56366d858b899f1c3f601860bb677545ccab922e256898b54413bb33bd3",
+    "176:preserved_archives": "36a06e6f973b76490ba11a0570daedb29fec3bc49a5c5555b253d9bdeb6f11c3",
+    "45:CapacitySourceReaderV1": "71c9953d06dcea1f14df4b6a14c99ea4567a40a52d51996278fe0ffecee76b5e",
+    "50:__init__": "59b80a8d146f301a75be2271538ffd9cd0fd7cda208cc96293499c86e4c641b8",
+    "60:read": "94fa690828afe7fc564cf74e5b93a3ccf254c77d396fdcc72219c1c80b1eb370",
+    "68:authenticate_native": "2cfab84036e36233ba548f273776ccba1ceffb641240af7f747724b2df2e457c",
+    "73:paper_descriptor": "ea7904e669c3cfa55c92fb17e2ac34240bd18cad87d3d6b4bd1006cc36668678",
+    "79:CapacityOriginalArchivesV1": "7a1755920f956c113f12e68f97db3bac426329521ab27c9331e5b393746e3b6c",
+    "96:__init__": "13aece5525375f0d4199e88f7600051ff4befb4237d893206d31a5faf59331fe"
+  },
+  "declared_changes": [
+    "Explicit fresh scratch/source_reader/external_inputs parameters; no implicit mkdtemp path. Source root comes from concrete new reader, not an imported original module __file__.",
+    "New frozen dataclass and concrete bound real-file31 reader; byte checks follow existing stat/open semantics, not hostile-code/fd-root isolation. Outer source/import/mount admission still required.",
+    "Constructor logical_digest/freeze rebindings; finally releases ending Rows on digest failure. Full genuine completion/schema/ShaMap provenance and large allocation behavior remain UNRUN.",
+    "Parse/status/missing-field failures before ending extraction retain scratch; only entered digest/preservation paths have explicit Rows release. Outer failure-root/lifecycle ownership is still required.",
+    "Source chain uses actual31 bytes plus all three pinned catalog bytes/two selected transitions and actual holding source. Adaptation receipt still says source_reader_authenticatedFalse; it is not relabelled as old genuine admission.",
+    "Preservation uses authenticated inert paper AST metadata for exact17fields/path instead of importing account module; new exact archive type check/finally release. Schema/path metadata parity alone is not preservation parity.",
+    "sessions/InitialReceipts/StreamAudit interface intentionally absent. Existing StreamAudit exact OriginalArchives type guard rejects this new class. No account/model entry point or original module spoofing."
+  ],
+  "exact_literal_checks": [
+    "SOURCE_PATHS6",
+    "ORIGINAL_SOURCES5"
+  ],
+  "loader_archive_attributes": [
+    "authenticate_inputs",
+    "authenticate_sources",
+    "completion",
+    "source_root",
+    "sources"
+  ],
+  "mandatory_unimplemented_composition": {
+    "calendar": "Retain original profile first/through/full reviewed exchange sequence/coverage and three source-bound calendar files BEFORE any session archive path is read. New context alone does not validate calendar or authorize arbitrary session paths.",
+    "configuration_and_loader": "Retain original config1a149/capture/overlay/observations/economic-review/action/passive paths and all loader DEPENDENCIES. Loader/reader/numerical import strategy unimplemented; unchanged pure forward/calibration files stay at real paths.",
+    "invocation": "Retain exact externally pinned original schema2/profile/Pins/canonical paths/physical+completion SHA and size; add a distinct capacity schema/map wrapper, never reinterpret old invocation/audit_source_sha256 as this executed map.",
+    "lifetime": "Fresh explicit owned scratch retained through loaded context, before+after complete detached receipt graphs, final JSON and optional UTF8. Ending Rows released after digest in finally; completion ShaMap object/index/spool retained unchanged until all consumers finish; no cleanup by deepcopy or freeze. Outer owner must then release owned scratch, preserving failed roots. No lifecycle owner implemented here.",
+    "preservation": "Externally admit original profile/full completion373782589B+SHA b9ad and physical832110254B+SHA f334, initial+manifest+all session SHA; use only source-bound paper descriptor and original physical=True logical comparison. Every before/after byte receipt, archives.unchanged and complete source authentication must pass before serialization.",
+    "producer": "Retain exact completed producer CID/image/exit/noOOM/command/entrypoint/mount receipt equality/sole output host mapping. No synthetic receipt substitutes.",
+    "runtime": "Fresh exact image/native packages/source/import/finite-call-phase manifests/mount inventory/UID/resources/absent root/exact invocation review before admission. Existing v3 genuine bootstrap remains incompatible; no guard/G08/cap relaxation.",
+    "source": "Retain full2431 original manifest+Git revision27471 equality and full byte authentication through original execution aliases, separately from real N2native31 reads and this new8-module declaration. Six SOURCE_PATHS and five ORIGINAL_SOURCES remain manifest-bound, not31-reader membership assumptions. External admission must bind root authority/full physical source bookends; identical31-file copies are not distinguished by content hashing alone."
+  },
+  "new_identity": [
+    "CapacitySourceReaderV1",
+    "CapacityOriginalArchivesV1",
+    "preserved_archives in capacity_original_archives_v1"
+  ],
+  "operations": "Only this local stdlib AST/JSON/source builder ran. No payload import/CodeType/body/test/SSH/hostprobe/Docker/job/data read.",
+  "original_admission_declaration_AST_sha256": {
+    "calendar_admission": "8e8ba5489233b5df9a90bdd0698800b3f85073dafea7f2fa4d9387d24b3e27ff",
+    "invocation": "62c785991c57459cc01af045b053a974a771dd04f5709b24ac30dd120151a09f",
+    "preserved_archives": "07a25651e62db24c049eabf77ee930856d8bf6f1d5c6e84e123bbceb65b76ee0",
+    "producer_admission": "d06d4d0e002ab72001cbda3fd73ddc12d4d69cbc8fe63e23ba328da8082dad20",
+    "runtime_admission": "fe9d73d91fdafb00853c961f0a892a26d8469c14ceb56ad43cd100c1afb43e10",
+    "source_admission": "7c18cbe25b38fa7dab1282d57be92a144b797f01a852d2bcd361d5609bfea82f"
+  },
+  "schema": "capacity-original-archive-context-static-review/1",
+  "source_files": {
+    "backend/cli/audit_original_live_model_history.py": {
+      "bytes": 21981,
+      "sha256": "22d374f166b77d4b0346120aa55b3f9e652496503b88d3fae0681be04b9ab5d5"
+    },
+    "backend/market/live_model_history_audit_inputs.py": {
+      "bytes": 12316,
+      "sha256": "fae5bfc7d7438071094f31f42e884cb48e3709c55f364954e51c28302d3c3e30"
+    },
+    "backend/market/live_model_history_input_auth.py": {
+      "bytes": 13404,
+      "sha256": "35ad5f5f96fa7951b6163512ab733a9168869eef17038e030b7dad4dcbb1b111"
+    },
+    "backend/market/live_model_history_pending_audit.py": {
+      "bytes": 22885,
+      "sha256": "74e7d9800bf1bdeb51655f09ae2846bfb0dbbcc67afdcad705405a849eb0cf02"
+    },
+    "backend/market/live_model_history_stream_audit.py": {
+      "bytes": 34983,
+      "sha256": "f404e15be6e97caf856a4ba6db22eedef51ff5a4e3304dcbed90cf8e0abac2ff"
+    },
+    "backend/market/original_history_json.py": {
+      "bytes": 27574,
+      "sha256": "de29c1017f4c9eadd874b2fbe0d85b4c80ced8e7a43fb6bd4f779c3d726cb2eb"
+    },
+    "docs/research/sources/original-loader-capacity-archive-adaptations-v1-2026-10-18.py": {
+      "bytes": 6677,
+      "sha256": "39f2884741036bbe3a33f451909a59b46924c43ea699e39670c1c13fbcde5134"
+    },
+    "docs/research/sources/original-loader-capacity-archive-context-v1-2026-10-18.py": {
+      "bytes": 10886,
+      "sha256": "0212bc8dedd0fb44502547fe974670ef84c21db608ab633e2a818c9e718e692b"
+    },
+    "docs/research/sources/original-loader-capacity-evidence-v1-2026-10-18.py": {
+      "bytes": 6656,
+      "sha256": "400de9e73e2debb06c7267c925ca0914dc75a98c77f3044a49b88d26db26be25"
+    },
+    "docs/research/sources/original-loader-capacity-metadata-boundary-2026-10-18.py": {
+      "bytes": 5034,
+      "sha256": "d413e748bf2b1eb63f4d267371f22cf6431f6ae650368676c815b07779723135"
+    }
+  },
+  "status": "SOURCE_ONLY_ALL_CONTEXT_BODIES_UNRUN"
+}

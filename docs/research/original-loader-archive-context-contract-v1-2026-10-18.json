@@ -1,0 +1,61 @@
+{
+  "admission": null,
+  "all_context_bodies": "UNRUN",
+  "complete_executor_source_map": null,
+  "context_source": {
+    "bytes": 10886,
+    "path": "sources/original-loader-capacity-archive-context-v1-2026-10-18.py",
+    "sha256": "0212bc8dedd0fb44502547fe974670ef84c21db608ab633e2a818c9e718e692b"
+  },
+  "entrypoint": null,
+  "execution_authorized": false,
+  "generated_call_manifest": null,
+  "genuine_archive_context_ready": false,
+  "launch": null,
+  "mandatory_unimplemented_composition": {
+    "calendar": "Retain original profile first/through/full reviewed exchange sequence/coverage and three source-bound calendar files BEFORE any session archive path is read. New context alone does not validate calendar or authorize arbitrary session paths.",
+    "configuration_and_loader": "Retain original config1a149/capture/overlay/observations/economic-review/action/passive paths and all loader DEPENDENCIES. Loader/reader/numerical import strategy unimplemented; unchanged pure forward/calibration files stay at real paths.",
+    "invocation": "Retain exact externally pinned original schema2/profile/Pins/canonical paths/physical+completion SHA and size; add a distinct capacity schema/map wrapper, never reinterpret old invocation/audit_source_sha256 as this executed map.",
+    "lifetime": "Fresh explicit owned scratch retained through loaded context, before+after complete detached receipt graphs, final JSON and optional UTF8. Ending Rows released after digest in finally; completion ShaMap object/index/spool retained unchanged until all consumers finish; no cleanup by deepcopy or freeze. Outer owner must then release owned scratch, preserving failed roots. No lifecycle owner implemented here.",
+    "preservation": "Externally admit original profile/full completion373782589B+SHA b9ad and physical832110254B+SHA f334, initial+manifest+all session SHA; use only source-bound paper descriptor and original physical=True logical comparison. Every before/after byte receipt, archives.unchanged and complete source authentication must pass before serialization.",
+    "producer": "Retain exact completed producer CID/image/exit/noOOM/command/entrypoint/mount receipt equality/sole output host mapping. No synthetic receipt substitutes.",
+    "runtime": "Fresh exact image/native packages/source/import/finite-call-phase manifests/mount inventory/UID/resources/absent root/exact invocation review before admission. Existing v3 genuine bootstrap remains incompatible; no guard/G08/cap relaxation.",
+    "source": "Retain full2431 original manifest+Git revision27471 equality and full byte authentication through original execution aliases, separately from real N2native31 reads and this new8-module declaration. Six SOURCE_PATHS and five ORIGINAL_SOURCES remain manifest-bound, not31-reader membership assumptions. External admission must bind root authority/full physical source bookends; identical31-file copies are not distinguished by content hashing alone."
+  },
+  "map_scope": "Immutable declaration for eight explicit files only; not a full2446/executor/import closure, not an assembled tree, runtime finder, phase/call manifest or genuine source admission. Original2431/N2native31/producer27471 maps stay distinct.",
+  "model_import_strategy": null,
+  "proposed_module_map": {
+    "/app/backend/__init__.py": "162e5eeb402108f20b1a976525f5bbf5a03a12ea619f64a19ce5c0fe9aec09af",
+    "/app/backend/market/__init__.py": "5a886c13f35054c2238d9a661349a38ea242495972aae02a7aa2029dd1533910",
+    "/app/backend/market/capacity_original_archive_adaptations_v1.py": "39f2884741036bbe3a33f451909a59b46924c43ea699e39670c1c13fbcde5134",
+    "/app/backend/market/capacity_original_archives_v1.py": "0212bc8dedd0fb44502547fe974670ef84c21db608ab633e2a818c9e718e692b",
+    "/app/backend/market/capacity_original_evidence_v1.py": "400de9e73e2debb06c7267c925ca0914dc75a98c77f3044a49b88d26db26be25",
+    "/app/backend/market/capacity_original_metadata_v1.py": "d413e748bf2b1eb63f4d267371f22cf6431f6ae650368676c815b07779723135",
+    "/app/backend/market/live_model_history_input_auth.py": "35ad5f5f96fa7951b6163512ab733a9168869eef17038e030b7dad4dcbb1b111",
+    "/app/backend/market/original_history_json.py": "de29c1017f4c9eadd874b2fbe0d85b4c80ced8e7a43fb6bd4f779c3d726cb2eb"
+  },
+  "proposed_module_map_compact_sha256": "841f99e58b429223c8422b60fea003273fdfaa57193c4a624ba1a5ab718efd17",
+  "required_new_acceptance": [
+    "Prepare distinct bounded synthetic proposal/caller/packet and source/native/runtime/resource/invocation review before any body execution. No old80/23/65+4/tiny/diagnostic/v2 replay or admission/root reuse.",
+    "Actual new concrete reader must bind all31 exact real N2 sources, reject changed maps/bytes/types/path traversal and show whole-source physical bookends. Root authority is a separate external-admission requirement; identical31-file copies are content-equivalent, not inherently wrong roots. Native31 is not full original2431 admission.",
+    "Compare complete original strict-reader completion/ending Rows/schema/hash/order/ShaMap provenance+count+spool/index identities and deepcopy/no-alias/lifetime through construction/input auth/unchanged/release, including failure cleanup/retention.",
+    "Separate explicit synthetic originals from genuine provenance; test exact field/path/schema/full session+physical bytes preservation and missing/extra/wrong/nonfinite/corrupt/spool/changed-source refusals without general normalization.",
+    "Review every admission seam in the new capacity composition, separate original source root aliases/new import source map/receipt paths and actual whole-memory coexistence before a genuine capacity proposal. Full parser/default-cap/model/RAM/history acceptance remains unverified."
+  ],
+  "schema": "capacity-original-archive-context-contract/1",
+  "starting_revision": "7bb0448614a5876cce41ae753bf0c19b81e33044",
+  "static_review": {
+    "bytes": 9580,
+    "path": "original-loader-archive-context-static-review-v1-2026-10-18.json",
+    "sha256": "7f2fdb93cbedb9942cb6da01c8f8f3c020682c342b05527156c903d9da6d9703"
+  },
+  "status": "SOURCE_PREPARED_CONTEXT_UNEXECUTED_NOT_GENUINE_BINDING",
+  "unchanged": {
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "guard_caps_source_checks": true,
+    "heartbeat": "ACTIVE",
+    "historical_weekday_intraday_fill_UI_RAM_horizon": "UNVERIFIED",
+    "original_timing": "FAILED",
+    "publication": "CLOSED"
+  }
+}
