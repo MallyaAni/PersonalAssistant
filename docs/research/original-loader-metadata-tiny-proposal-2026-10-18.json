@@ -1,0 +1,191 @@
+{
+  "schema": "original-loader-metadata-tiny-proposal/1",
+  "status": "SOURCE_PREPARED_UNEXECUTED_NOT_STAGED_NOT_ADMITTED",
+  "starting_revision": "aa898b4d05e8ef2ef7a3036d13f3e93b80adbbd5",
+  "objective": "One fresh bounded synthetic metadata-helper acceptance; not genuine source, model, account or original-state acceptance.",
+  "artifacts": {
+    "sources/original-loader-metadata-tiny-2026-10-18.py": {
+      "sha256": "4fbcf5167d5d00a3a5f29d0b84484550e91548a9b466f38fd9433d80d5c81ceb",
+      "bytes": 14660
+    },
+    "sources/original-loader-metadata-tiny-owner-2026-10-18.py": {
+      "sha256": "d1a73446f79c26e627ac74c5face0ad480e5f62fd9a360bfccf37442a4b5c434",
+      "bytes": 7617
+    },
+    "sources/original-loader-metadata-tiny-caller-2026-10-18.py": {
+      "sha256": "5b2151c4ea45512f1a4bf08ad7299c03f5647d43dba5bddfbfde34c59821f272",
+      "bytes": 2439
+    },
+    "sources/prepare-original-loader-metadata-tiny-packet-2026-10-18.py": {
+      "sha256": "fc1abc449d85bce6b55c21ce5db633c5037e341e670d6184cbea96c97e31ab36",
+      "bytes": 4686
+    }
+  },
+  "unchanged_inputs": {
+    "helper": {
+      "sha256": "d413e748bf2b1eb63f4d267371f22cf6431f6ae650368676c815b07779723135",
+      "bytes": 5034
+    },
+    "harness": {
+      "sha256": "030cb5bb25f89c2785e6acbd55aceff5c99b632a5eb538079ee027362ae6178a",
+      "bytes": 31002
+    },
+    "owner_library": {
+      "sha256": "2e505205cc8a3793d7b3313a5b5c3b670b00134575982d26c725787b6530df5a",
+      "bytes": 16728
+    }
+  },
+  "packet": {
+    "bytes": 1411906,
+    "decoded_source_bytes": 1050161,
+    "records": 40,
+    "sha256": "881af8743066e336c4abf021b9c7a5ded1e8b0bb55d3f1df03aac7f0112d0a3e"
+  },
+  "source_book": {
+    "bytes": 6471,
+    "records": 38,
+    "sha256": "dc785f33272b61c4bb79c5c456cce8728aede1ac8ee69880e47817766221ef0f"
+  },
+  "local_root": "/tmp/n2-metadata-tiny-packet-20261018-v1",
+  "packet_envelope_bound_bytes": 2097152,
+  "individual_staged_source_bound_bytes": 262144,
+  "metadata_raw_map_bound_bytes": 279395,
+  "metadata_raw_map_sentinel_read_bytes": 279396,
+  "roots_proposed_not_created_or_observed": {
+    "source": "/home/animallya96/scratch/n2-metadata-tiny-source-20261018-v1",
+    "run": "/home/animallya96/scratch/n2-metadata-tiny-20261018-v1",
+    "prerequisites": null,
+    "terminal_review": null,
+    "evidence": null
+  },
+  "scope": {
+    "map_declaration_entries": 2446,
+    "actual_source_files": 31,
+    "Python_source_files": 29,
+    "guarded_documents": 2,
+    "unread_recipe_files": 2415,
+    "book_authenticated": false,
+    "real_SourceBook_constructor_and_read_planned": true,
+    "CallFence_constructor_or_profile_or_old_cases": false,
+    "complete_source_admission": false
+  },
+  "planned_outcomes": {
+    "count": 23,
+    "positive_partial31_reader": 1,
+    "helper_expected_refusals": 16,
+    "adapter_expected_refusals": 6,
+    "case_ids": [
+      "real-partial31-reader-twice",
+      "paper-byte",
+      "CURRENT-paper",
+      "paper-type",
+      "paper-bound",
+      "descriptor-schema",
+      "descriptor-source_sha256",
+      "descriptor-PaperState_ast_sha256",
+      "descriptor-state_path_ast_sha256",
+      "descriptor-physical_state_fields",
+      "descriptor-relative_state_components",
+      "descriptor-type",
+      "wrong31-pin",
+      "missing31",
+      "reader-type",
+      "adapter-fake-book",
+      "adapter-lambda",
+      "adapter-wrong-root",
+      "adapter-wrong-pins",
+      "adapter-wrong-root-fd",
+      "adapter-instance-read",
+      "unit-wrong-bytes",
+      "unit-wrong-byte-type"
+    ],
+    "first_boundary_rule": "Changed or CURRENT paper bytes refuse the whole-source SHA first. No helper constants are patched to claim isolated AST-hash refusal.",
+    "injected_negative_callbacks": "Only unit-wrong-bytes and unit-wrong-byte-type are injected helper unit-refusal callbacks; never positive real reader acceptance.",
+    "reference": "Separate fresh synthetic child evaluates exact N2 PaperState declaration (no instance) and pure state_path CodeType from full compilation, without executing the original module. Fields17 and paths2 parity only."
+  },
+  "reader_binding": {
+    "requires": [
+      "exact SourceBook class",
+      "actual bound read __self__/__func__",
+      "exact fixture root and full pins",
+      "held root fd device/inode/mode equals named root",
+      "unchanged reader root/fd/pins/authenticated attributes",
+      "no instance read override",
+      "31 exact held-FD bookends before/after"
+    ],
+    "complete2446_authentication": false
+  },
+  "proposed_runtime": {
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "host": "Spark1",
+    "uid": "1000:1000",
+    "network": "none",
+    "read_only": true,
+    "cpu": 1,
+    "memory_bytes": 2147483648,
+    "memory_swap_bytes": 2147483648,
+    "pids": 32,
+    "tmpfs": {
+      "/tmp": "rw,size=64m"
+    },
+    "healthcheck": false,
+    "logging": "none",
+    "binds": [
+      {
+        "source": "NEW_SOURCE/audit",
+        "target": "/audit",
+        "mode": "ro"
+      },
+      {
+        "source": "NEW_RUN/output",
+        "target": "/out",
+        "mode": "rw"
+      }
+    ],
+    "children": 2,
+    "child_CPU_seconds": 10,
+    "child_wait_seconds": 15,
+    "parent_seconds": 45,
+    "phase_seconds": 75,
+    "owner_seconds": 120,
+    "child_per_file_bytes": 262144,
+    "genuine_artifacts_or_model_account_data_socket_mounts": false,
+    "actual_runtime_admission": null
+  },
+  "caller": {
+    "route": "--call-admitted-metadata-tiny",
+    "argument_recipe": [
+      "--call-admitted-metadata-tiny",
+      "d1a73446f79c26e627ac74c5face0ad480e5f62fd9a360bfccf37442a4b5c434",
+      "dc785f33272b61c4bb79c5c456cce8728aede1ac8ee69880e47817766221ef0f",
+      "FRESH_SCOPED_ADMISSION_SHA256_REQUIRED"
+    ],
+    "actual_final_invocation": null,
+    "admission": null,
+    "unconditional_default_refusal": true
+  },
+  "independent_review": "Existing healthy trading_action_consistency READONLY found no deterministic blocker for source-only checkpoint. Remaining stager/verifier must enforce regular immutable sources, exact38 book/40 packet, all23 outcomes, actual runtime isolation and physical/source bookends. No tests/imports/operations/edits.",
+  "before_any_execution": [
+    "Prepare separately pinned exclusive stager and independent source/prerequisite/terminal/evidence verifier; retain packet outside per-source262KiB files or use declared envelope bound.",
+    "Independently verify exact source closure and actual cached e0/UID/jobs/absent roots/resources and exact final caller invocation.",
+    "Fresh scope-limited synthetic admission must be consumed exactly once; no prior admission or root adoption.",
+    "Independently inspect exact stopped CID, all23 named outcomes, two child exits/logs, reference/candidate parity,31 actual hash/bookend records, source full physical beforeafter and preserved evidence."
+  ],
+  "current_execution": {
+    "source_packet_builder": "Only new stdlib local byte/Git/source-packet builder ran; no payload imports/compilation or execution.",
+    "helper_bootstrap_owner_caller_import_or_exec": false,
+    "remote_stage_or_probe": false,
+    "Docker_or_new_job": false,
+    "new_tests": 0,
+    "old_gate_bodies": 0
+  },
+  "next": "Finish stager and independent source/prerequisite/terminal verifier with exact packet pins, source review, bounded preservation/readback. Then independently review fresh actual prerequisites and exact invocation before ONE new metadata test. Do not regenerate this packet merely for docs, modify helper/old guards/caps, replay old bodies, or infer genuine import/RAM acceptance.",
+  "unchanged": {
+    "model_import_strategy": null,
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "historical_weekday_intraday_fill_UI_RAM_horizon": "UNVERIFIED",
+    "heartbeat": "ACTIVE"
+  }
+}
