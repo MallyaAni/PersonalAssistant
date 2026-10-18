@@ -1,0 +1,64 @@
+{
+  "check_count": 33,
+  "checks": [
+    "unchanged_utility_require",
+    "unchanged_utility_unique_fields",
+    "unchanged_utility_nonfinite_token",
+    "unchanged_utility_metadata",
+    "unchanged_utility_physical",
+    "unchanged_utility_directory_fd",
+    "unchanged_constant_PHASES",
+    "unchanged_constant_FAILURE_BYTES",
+    "unchanged_constant_MAX_PYTHON_BYTES",
+    "unchanged_constant_MAX_METADATA_BYTES",
+    "unchanged_constant_MAX_CODES_PER_MODULE",
+    "unchanged_constant_GENERATED_FINGERPRINT_ALGORITHM",
+    "unchanged_constant_FORBIDDEN_NAMES",
+    "unchanged_constant_EFFECT_MODULES",
+    "unchanged_constant_FORBIDDEN_CLASSES",
+    "unchanged_constant_DENIED_AUDIT_EVENTS",
+    "unchanged_constant_IMAGE",
+    "unchanged_guard_trip",
+    "unchanged_guard_audit",
+    "unchanged_guard_install",
+    "unchanged_guard_advance",
+    "unchanged_profile_all_refusals_before_dynamic_seam",
+    "unchanged_profile_exact_generated_record_membership",
+    "unchanged_register_after_added_source_identity_predicate",
+    "obsolete_daily_prefix_absent",
+    "source_compile_then_register_then_body_order",
+    "explicit_authenticated_package_search_path",
+    "public_execute_unconditional_refusal",
+    "no_top_level_payload_dispatch",
+    "exact_raw2468_and_compact_executor_map",
+    "exact_requirements_contract_binding",
+    "exact_dataclasses_source_and_prior_proof",
+    "all_new_function_purpose_comments"
+  ],
+  "files": {
+    "sources/capacity-executor-source-guard-v1-2026-10-18.py": {
+      "bytes": 23426,
+      "sha256": "3b8be00b26cbf02f375bca5207e207dc8505dcfb997e281ab7c80cee3c187594"
+    },
+    "sources/prepare-capacity-executor-guard-v1-2026-10-18.py": {
+      "bytes": 14435,
+      "sha256": "83f3ab892eb01e32c1097824f0fa8307fce0ff70d8501c41b109dafe4f0d0694"
+    },
+    "sources/review-capacity-executor-guard-v1-2026-10-18.py": {
+      "bytes": 8359,
+      "sha256": "971bd591467f04064a4914b690b809e731d41246fe6e077ab0613de26d00cab2"
+    }
+  },
+  "limits": "AST comparisons are source evidence, not behavior, CodeType/global/type/generated producer, finder/runtime or native/RAM acceptance.",
+  "payload_CodeType_compilation": false,
+  "payload_bodies": "UNRUN",
+  "payload_functions": 25,
+  "purpose_functions": {
+    "capacity-executor-source-guard-v1-2026-10-18.py": 25,
+    "prepare-capacity-executor-guard-v1-2026-10-18.py": 2,
+    "review-capacity-executor-guard-v1-2026-10-18.py": 4
+  },
+  "runtime_admission": null,
+  "schema": "capacity-executor-guard-static-review/1",
+  "status": "VERIFIED_STATIC_SOURCE_ONLY"
+}

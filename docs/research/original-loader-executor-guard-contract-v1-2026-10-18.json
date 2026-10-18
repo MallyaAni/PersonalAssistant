@@ -1,0 +1,72 @@
+{
+  "schema": "capacity-executor-guard-source-proposal/1",
+  "status": "SOURCE_PREPARED_ALL_25_PAYLOAD_FUNCTIONS_UNRUN",
+  "requirements_sha256": "c2a720543b3f2dda0d824e61b6d15f5ee7f7fa47669dad8891d33ff584971b63",
+  "source": {"path": "sources/capacity-executor-source-guard-v1-2026-10-18.py", "sha256": "3b8be00b26cbf02f375bca5207e207dc8505dcfb997e281ab7c80cee3c187594", "bytes": 23426},
+  "original_guard_unchanged_sha256": "030cb5bb25f89c2785e6acbd55aceff5c99b632a5eb538079ee027362ae6178a",
+  "executor": {"declared_files": 2468, "raw_map_sha256": "544fe1859ec11e62f2bf506eff70e9111a6a930d53dff59450d9d4816abaa202", "compact_files_sha256": "b7043211743bad04da3cc894faa6d2d85977d93ff10f4345178fdbad0ff1d3bd", "assembled_tree": null},
+  "source_book": {
+    "class": "CapacitySourceBookV1",
+    "source_requirements": [
+      "Exactly2468 canonical relative path/SHA entries and compact map pin; externally authenticated canonical root and eight decimal-string physical fields checked against held no-follow root FD before backend imports.",
+      "No-follow component-relative bounded reads retain exact file SHA, held/named physical identity and repeated-read bookends. Root held/named/external identities checked before and after each successful file read.",
+      "Whole-map authentication required before guard construction; Python files1MiB, other metadata16MiB. Original bounds unchanged. No actual root/map/files have been admitted by these new bodies.",
+      "These are trusted-code guards, not hostile-code or native-extension isolation; book fields and Python instrumentation remain mutable. A completed read is not a crash/durability proof."
+    ]
+  },
+  "finder": {
+    "class": "CapacityBackendFinderV1",
+    "source_requirements": [
+      "Install first only with exact distinct book/guard identities, full source authentication, active healthy guard and no preloaded backend.",
+      "Resolve one declared .py or package __init__.py only; refuse ambiguous/absent modules, reload/pending overlap and wrong parent search paths. Explicit package search locations are exact executor directories.",
+      "Check loader/spec/origin/file/package path, read authenticated Python bytes, compile at real executor filename with dont_inherit=True/optimize0, register compiler-emitted nested CodeTypes, recheck root, then execute module body.",
+      "No ambient bytecode fallback for backend. Other installed meta finders, sys.path and native packages are not comprehensively authenticated by this source. No finder body or import was exercised."
+    ]
+  },
+  "guard": {
+    "class": "CapacityCallFenceV1",
+    "manifest_schema": "capacity-executor-call-manifest/1",
+    "manifest": null,
+    "source_requirements": [
+      "Distinct map/contract/root/dataclasses manifest bindings; old n2-capacity-call-manifest/2 is incompatible and not reinterpreted.",
+      "Original profile checks preceding dynamic-code handling, forbidden names/classes/FIVE effect prefixes, register traversal after new identity predicate, trip/audit/install/advance bodies and65536B slot remain source-identical. No verify exception or guard/G08 relaxation.",
+      "Only dataclass dynamic-kind/<string> records may be declared; original daily-prefix transformation kind/filename path removed. Exact format2 algorithm and int2 version retained.",
+      "Require externally reviewed CPython3.12.14/cache-tag/path/source binding; bounded no-follow dataclasses text SHA/physical read. This is not binary build certification or proof that live dataclasses functions/globals/class flags emitted selected code.",
+      "Three-field source call rows and exact generated record membership remain the old narrow mechanism. They do not establish complete selected-call/global/bound-type/class-flag/native/phase provenance. No manifest is supplied or accepted here."
+    ]
+  },
+  "namespace_and_lifecycle": [
+    "New standalone guard/control source is outside the unchanged2468 executor declaration. It is not added as a backend payload path and does not change old2446 SourceBook.",
+    "Reference2446 remains a separate RO source root for archive/source authority, not an import root. Original producer2431/revision27471/source-config-input byte receipts and host aliases stay distinct.",
+    "Existing bindingV2/lifecycleV2 and complete invocation/runtime/producer/calendar/config/economics/preservation/full BEFORE+AFTER byte authentication remain mandatory external composition. This source supplies no lifecycle owner or runtime-resource guard.",
+    "Caller ADMISSION includes the constructor's full first byte graph. Internal lease labels never advance this guard. Both feature/prediction constructor frames, readonly copies/deepcopy and full archive/spool/graphs/JSON+UTF8 lifetimes remain mandatory under original256MiB result bound.",
+    "All old source/guard/G08/resource caps and failed/completed evidence roots remain unchanged. Do not rerun closed gates to validate this distinct unexecuted proposal."
+  ],
+  "source_review_corrections": [
+    "Initial source omitted explicit package spec.submodule_search_locations. Corrected before any payload import/body; initial payloadc7c7a7c4 and builder20a99595 retained under /tmp/capacity-executor-guard-source-drafts-20261018-v1. No runtime failure claimed.",
+    "Independent review found builder prior-proof input missing fullSHA assertion. Final builder pins6860a76c before deriving correct unchanged dataclasses digest. Prior builder/static report/checker retained; final static report has33 checks. No payload rerun."
+  ],
+  "unresolved_before_any_synthetic_or_genuine_capacity_proposal": {
+    "selected_callable_global_type_provenance": null,
+    "dataclass_live_producer_class_flags_and_actual_records": null,
+    "complete_native_package_source_versions_extensions_pools_threads": null,
+    "phase_call_generated_manifests": null,
+    "model_import_strategy": null,
+    "entrypoint": null,
+    "bootstrap": null,
+    "owner": null,
+    "caller": null,
+    "stager": null,
+    "packet": null,
+    "runtime": null,
+    "launch": null,
+    "admission": null
+  },
+  "public_execute": "UNCONDITIONAL_CAPACITY_EXECUTOR_RUNTIME_UNADMITTED",
+  "execution_authorized": false,
+  "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+  "original_timing": "FAILED",
+  "publication": "CLOSED",
+  "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+  "heartbeat": "ACTIVE"
+}

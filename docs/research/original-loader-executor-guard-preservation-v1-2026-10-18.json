@@ -1,0 +1,12 @@
+{
+  "builder_reproduction_files": 1,
+  "crash_durability_guarantee": false,
+  "data_bytes": 86195,
+  "files_readback_root_resolved_parent_fsynced": true,
+  "manifest_bytes": 6631,
+  "manifest_sha256": "23684938221ba4407061acf39f7c55d724d3f3b338359b89d47c7019581adf3b",
+  "payload_import_CodeType_body": false,
+  "root": "/tmp/capacity-executor-guard-source-20261018-v1",
+  "schema": "capacity-executor-guard-source-preservation-proof/1",
+  "source_review_copies": 8
+}
