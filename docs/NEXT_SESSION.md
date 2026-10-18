@@ -1,5 +1,53 @@
 # Next session
 
+## 2026-10-18 — N2 loader capacity contract SOURCE REVIEWED; no execution admitted
+
+Source-only contract checkpoint1118eb00833302dc2262681a33aba59c719b5de6
+passed the local metadata/source acceptance recorded below; no runtime proof.
+Read research/original-loader-capacity-contract-proof-2026-10-18.json and
+original-loader-capacity-contract-2026-10-18.json (ecc58ad7/32286B). This is an
+INERT contract with null entrypoint/launch/runtime admission, not an executor.
+Source recipe binds original2431 Git map, frozen N2 baseline46, six original
+audit overlays and three binding reviews:2446 composed paths/map503e8d50.
+Native31 remains99e62; original config1a149 and producer27471 remain distinct
+from N2/CURRENT serving configs.59 matching local source files rechecked;
+CURRENT papera8 differs and is NOT substituted for N2 e2. Actual assembled
+source tree/import closure remains UNVERIFIED. No Spark/SSH/Docker/host probe.
+
+Source-reviewa1bb3b4a records ten exact function ASTs. Generator1cecaa59 is
+retained under research/sources, stdlib-only/six purpose-commented functions.
+Two feature constructions, seven bank copies/frozen buffers and parent deepcopy
+are included with actual phase lifetimes; first feature temporaries need not
+coexist with the second after constructor return. Constructor numeric prediction
+is in scope; distribution/calibration fits/StreamAudit/planner/broker/account
+work is forbidden. Genuine OriginalArchives/source/config/producer/calendar/
+physical preservation admissions must remain unchanged. Original target input
+namespaces and absolute host aliases are separate from composed N2 /app.
+
+Proposed capacity must retain real archives/spools, loaded AuditInputs, full
+bytes_before+bytes_after authentication graphs and final JSON string/optional
+UTF8 bytes. Prior29.6MB array storage and947364KiB receipt-only peak are NOT a
+combined peak bound. Keep unchanged2GiB RAM=swap/1CPU/UID1000/noneRO/tmp64 exact
+guard. New5GiB host-memory/4GiB disk/8192inode thresholds are proposed headroom,
+NOT admission or reservations. Exact mounts/runtime/host/controller still absent.
+
+Existing healthy worker reviewed v2 READONLY: no blocker as an inert contract;
+no edits/imports/runtime. Local JSON/copy/hash/AST/purpose checks passed; no
+functional/model claim, Ruff unavailable. v1 and its exact generator preserved;
+v2 adds only explicit namespace separation. No completed header13/RED3,
+115/RED1/byte/state/controller/LOCAL/native gate repeated. No numerical imports,
+models/fits/account/provider calls, source assembly or production changes.
+
+NEXT: prepare SOURCE ONLY a capacity harness with pre-import structural
+forbidden-call guards and concrete bounded synthetic validation plan against
+this contract; preserve2GiB and all genuine selectors/admissions. No genuine
+loader/corrected/full-original/account launch or actual owner execution yet.
+Combined memory remains UNVERIFIED; original timing FAILED/publication CLOSED/
+missing receipts unchanged; genuinev6 OPEN/PAUSED/no replay/adoption/new run.
+Actualtwohost/image-load/daemon-temp/RAM gaps unchanged. Weekday/intraday/fill/UI
+UNVERIFIED; heartbeat ACTIVE/no permission question.
+Diagram impact: NONE — inert contract, no implemented runtime/component change.
+
 ## 2026-10-18 — Original numeric archive headers VERIFIED; model RAM UNVERIFIED
 
 Read research/original-model-array-header-proof-2026-10-18.json.
