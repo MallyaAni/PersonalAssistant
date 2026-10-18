@@ -1,5 +1,103 @@
 # Next session
 
+## 2026-10-18 — Native-origin staging controls SOURCE reviewed; all remote bodies UNRUN
+
+Read research/original-loader-native-origin-control-source-proof-v1-2026-10-18.json.
+Source696971c8df0019506dbfd51b655703b9784d5f84 pins bootstrap70fb388a/15611B,
+transportce66a5d5/26208B/preludec6802e3f/2834B/builder92c5e7e3/15062B/
+localchecker2272deab/8647B. Only NEW local stdlib source/AST/JSON/gzip/base64/SHA/
+packet preparation/preservation/checking and Git ran. ALL15bootstrap+5transport
+functions and unchanged13primary+12independent reader functions remain UNRUN.
+No SSH/hostprobe/Docker/container/remote pages/target/native.json/executable/provider/
+package/backend/model CodeType/import/body/test/account/marketdata/credentials/
+oldgate-packet replay/guard-G08-cap-map/production change. No runtime admission.
+
+New immutable /tmp/native-origin-control-preparation-20261018-v1/packet.json
+3581a65f6bed8c5e5eaee081712502e7835820f6dbad71352b84c3ff17346151/30745B
+binds4fixed compressed records22240B ->95869B: primaryb7f6ffb0/14395B,
+contract4a6ef7b7/24905B/prior1355771f/46814B/inspectd5265be8/9755B. Exact raw+
+compressed SHA/size/single bounded gzip EOF/no trailing-or-second-member checks.
+Fixed before-* wholewire41049B fits65536. Actual proof-bearing wire UNOBSERVED;
+transport MUST check wholewire<=65536 at use; may refuse/no capraise/guarantee.
+Packet/localcompletedroots immutable; never regenerate for documentation.
+
+Four explicit SOURCE routes: before-stage READONLY fresh host/resources/absent
+tools+output; stage only newfixedTOOLS/fourfiles+stage.json, never primarycompile;
+before-observe READONLY freshresources/exact4stagedfiles+stage+dirphysical/names/
+fullSHA/twoheldnamedreads/laterbookends/absentOUT, never oldpages/target; observe
+only exact stagedprimary handoff after actualfresh before-observe proof.
+Stage/observe require independently reviewed ACTUAL prerequisite raw/fullSHA in
+argv, exact phase/control/basepacket/source/host/UID/Python/root/stage/file links,
+canonical timestamp neither future nor over300s old; resources rechecked immediately
+before mkdir/handoff. Headroom2GiBmem/32MiBscratch/512inodes NOTreservation/native/
+model/daemon bound. All actualprerequisites/stages/invocations/receipts NULL.
+
+Bootstrap SOURCE Linux512MiBASsoft=hard/CPU20 cumulative sameprocess/30alarm;
+cancel bootstrapalarm immediately BEFORE unchangedprimary exact __name__/__file__/
+argv starts its own30alarm; outer70SSH/TERM1KILL1/262KiBfilelogs. Separate4MiB
+control hashledger ANDunchanged4MiBreader ledger, not wholeprocess4MiB. Same65536
+wire;1024authenticatedcontrolreads/bounded16stagednames; no caprelaxation.
+Pinned existing ed25519 keys/Spark1/Python-I-S-B-c exactembeddedsource/phase/SHA
+arguments; exclusive phase-localroots retain wire before launch, exitreceipt binds
+wire/source/inputphysical/command, ownedSSHcleanup never infersremotequiescence.
+Two old78253 SOURCEutilityASTs identical; complete ownedtryAST equal except FOUR
+added receiptfields. Old transport/job never executed. Actualbranches UNVERIFIED.
+
+Reused healthy worker READONLY design/fullbootstrap+prelude+builder/exactlocalcall
+BEFORE use, actualgeneratedtransport/embeddedsource before any futureuse, local
+checker/exactcall BEFOREuse, then actualreportmetadata/scope. No newagent/limited
+retry/workerops. Reviewer caught reopened stageplaceholder inode unbound and three
+stagefields unchecked; fixed BEFOREbuilder/remoteuse: same exclusiveFD held across
+firstbodywrite/pre+postheldnamedphysical/fullpinnedreadback; strict priorSHA/resource/
+timestamp schema. Initial UNRUN2fe7eada/14858B+reason0ac157d2/508B preserved exclusive
+/tmp/native-origin-control-bootstrap-drafts-20261018-v1 and in final13inputs.
+One localapply_patch inputvalidation refusal BEFOREbuilderfilecreation retained
+exacterror+targetabsence in native-origin-control-preparation-patch-refusal-
+20261018-v1.json (full rejectedpatch NOTarchived); corrected rawtoolstrings+
+separateprelude before firstbuilderbody. No runtimefailure/bodyreplay.
+
+Reviewed builder/checker each exited0 ONCE. Local source-reviewfef8d968/1279B;
+manifest0b1fc7f967c36f8546776c700f80a144db120fdb774d0f72777c36b18276f539/16302B
+retains13inputs210865B in exclusive preparationroot. Twofullheldnamedreads/fullSHA/
+exactdecimalphysical/exclusivecopies/fsync/readbacks/lateralloriginal+copybookends/
+manifestlast/rootresolvedparent+sourceDirsync. Separate localindependent proof
+b115d34fdadc22738333d98df8b053c3d162cdc47eedbe0b6b0baa21af0c65dc/17944B:
+13original+13copy+manifest+report+checkerSOURCE+copy=30laterSHAphysicalbookended
+files; complete4gzip/rawbyte-equality/embeddedbootstrap/sourcepins/packet/wire PASS.
+Reports research/original-loader-native-origin-control-{source-review,preservation,
+local-independent}-v1-2026-10-18.json. Checkerroot /tmp/native-origin-control-local-
+independent-20261018-v1 COMPLETE. ASTwarnings-as-errors/33purposefunctions across5
+sources/fullSHA/JSON/hashlinks/zero literalbackspaces/stageddiff PASS; Ruff previously
+unavailable/no lint. Localsoftware262KiBfile/1MiBinput/4MiBhash/30alarm, noMacAS/
+kernelFSIZE/crashdurability claim. All old failed/completedroots/admissions preserved.
+
+NEXT ROOT: this control SOURCE step CLOSED; never regenerate or replay for docs.
+Review exact first before-stage source/invocation/key/wholewire/sourcepins BEFORE
+ONE new READONLY prerequisite SSH. Then independently review ACTUAL freshproof
+before ONE separate source-only stage with its fullSHA/within300s/unchangedcaps.
+Verify actualstage/source/root/terminal bindings; then ONE fresh before-observe
+prerequisite and exactobserve invocation reviewed BEFORE ONE later separatelyscoped
+retained historical DATA observation. No dispatch has happened. After actualprimary
+summaryfullSHA+size, preserve currentUNRUN independent094561ab draft and separately
+repin/regenerate/review exactsource+invocation+freshproof BEFORE ONE independentfold.
+Current independent SUMMARY_SHA UNOBSERVED/SUMMARY_BYTES0 refuses BEFOREanydata.
+All21catalogpages/selectedrow/native.json UNREAD; targetSHA/bytes/physical/sys.executable
+value NULL. Historical string only, MUSTNOTopen declared executable; other1338bodies
+and other19nativebodies UNREAD. No old1339contentfold/nativeprobe/actualsymbols/
+ELFfold/copy/HEAD/metadata/censuses/ASTinventories/63/37/73/80/23/65+4/tiny/diagnostic/
+v2/oldpacket replay, guessedpaths/hostsubstitutes/ldd/readelf/dlopen/packageexecution/
+capchange. Actualinterpreter/loader/provider/build/search/alias/version/transitive
+closure and selectedcallable/global/type/dataclassliveproducer/classflags/native/
+phase/Arrowpools+wrapper/sklearnactualmetadata remain open/unadmitted.
+
+Guard3b8be00b's separate25payloadfunctions UNRUN; old2446/030c/G08/caps/maps unchanged.
+Producer2431/reference2446/executor2468/originalreceipts/fullcontext+graphs+JSON+
+UTF8 lifetimes separate. Genuineassembledtree/strategy/entrypoint/manifests/bootstrap/
+wrapper/owner/caller/stager/packet/runtime/launch/admission NULL/execution_authorized
+FALSE. Model/RAM/horizon/history/ordinary/intraday/fill/UI UNVERIFIED; originaltiming
+FAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/
+actualtwohost/Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Retained native.json readers SOURCE reviewed; all25 functions UNRUN
 
 Read research/original-loader-native-json-observer-source-proof-v1-2026-10-18.json.

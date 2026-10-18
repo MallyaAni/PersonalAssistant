@@ -1,0 +1,196 @@
+{
+  "schema": "native-origin-control-source-proof/1",
+  "status": "SOURCE_REVIEWED_REMOTE_CONTROLS_AND_READERS_UNRUN",
+  "source_checkpoint": {
+    "branch": "codex/learned-live-release-20261006",
+    "starting_HEAD": "0fdb2275451e6462380fd5de86798b177e25f333",
+    "starting_worktree": "CLEAN",
+    "starting_pull": "git pull --rebase origin main: already up to date",
+    "commit": "696971c8df0019506dbfd51b655703b9784d5f84",
+    "tree": "d3fcd7f4674ccfb428acec3769823a30c50f85f7",
+    "scope": "Exact SOURCE and local packet/preservation checkpoint, not remote execution or trading acceptance."
+  },
+  "sources": {
+    "native-origin-control-bootstrap-v1-2026-10-18.py": {
+      "bytes": 15611,
+      "sha256": "70fb388a8cf1271a4eb0957a9071594490ef26318dc52ab9392b4572a6eacb67",
+      "purpose_functions": 15,
+      "all_bodies": "UNRUN"
+    },
+    "native-origin-control-transport-v1-2026-10-18.py": {
+      "bytes": 26208,
+      "sha256": "ce66a5d53a789bcb63f31633b222653f62af1cf59419ce3cfe30154952deb087",
+      "purpose_functions": 5,
+      "all_bodies": "UNRUN"
+    },
+    "native-origin-transport-prelude-v1-2026-10-18.py": {
+      "bytes": 2834,
+      "sha256": "c6802e3fb9e8dd28736263698f3af2191a777023635f6742774c3823a86e2ddf",
+      "purpose_functions": 2,
+      "scope": "UNRUN source fragment duplicated in the proposed transport, not independently executed."
+    },
+    "prepare-native-origin-controls-v1-2026-10-18.py": {
+      "bytes": 15062,
+      "sha256": "92c5e7e3d2d5818f54f684b9c7aa20c7281a305a89d1fbfbfeecc8dfa0970d1e",
+      "purpose_functions": 7,
+      "invocation": "python3 -W error docs/research/sources/prepare-native-origin-controls-v1-2026-10-18.py",
+      "exit": 0,
+      "scope": "ONCE_NEW_LOCAL_STDLIB_SOURCE_AST_JSON_GZIP_BASE64_SHA_PREPARATION_PRESERVATION",
+      "hash_work_final": 1317372
+    },
+    "verify-native-origin-control-packet-v1-2026-10-18.py": {
+      "bytes": 8647,
+      "sha256": "2272deab6c754734eb2e6886670d784f56e9aa8929265eacd35e69ea54b2ba9b",
+      "purpose_functions": 4,
+      "invocation": "python3 -W error docs/research/sources/verify-native-origin-control-packet-v1-2026-10-18.py",
+      "exit": 0,
+      "scope": "ONCE_NEW_LOCAL_INDEPENDENT_SOURCE_PACKET_PHYSICAL_READBACK_ONLY",
+      "hash_work_final": 1259636
+    }
+  },
+  "unchanged_readers_and_contract": {
+    "primary_sha256": "b7f6ffb0b968c08caa0b6133c0d2aa20d75c54f87b0abc80326c28c9096a6e5b",
+    "primary_bytes": 14395,
+    "independent_sha256": "094561ab917e774ae04af52dc81cdbc5865db23ae5898f1ae25fd00496867a76",
+    "independent_bytes": 16701,
+    "independent_summary_sha256": "UNOBSERVED_PRIMARY_RESULT",
+    "independent_summary_bytes": 0,
+    "independent_dispatchable": false,
+    "reader_functions_UNRUN": 25,
+    "contract_sha256": "4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5",
+    "top_manifest_sha256": "d2378ddf7f0e5cf9eac724ff1f7c8f3f5d3cff70c0ba39f45cd2ca18546fd9f9",
+    "remote_catalog_pages_target_native_json": "UNREAD",
+    "target_SHA_bytes_physical": null,
+    "python_executable_value": null
+  },
+  "prepared_packet": {
+    "root": "/tmp/native-origin-control-preparation-20261018-v1",
+    "path": "/tmp/native-origin-control-preparation-20261018-v1/packet.json",
+    "sha256": "3581a65f6bed8c5e5eaee081712502e7835820f6dbad71352b84c3ff17346151",
+    "bytes": 30745,
+    "compressed_records": 4,
+    "compressed_bytes": 22240,
+    "decoded_bytes": 95869,
+    "decoded_names": [
+      "observe-retained-native-json-v1-2026-10-18.py",
+      "origin-contract.json",
+      "native-proof.json",
+      "native-inspect.json"
+    ],
+    "record_binding": "Each fixed record binds complete raw SHA/size and compressed SHA/size; bounded single-member gzip expansion requires exact size, EOF and no unused or unconsumed data before any remote mkdir/write.",
+    "fixed_before_phase_wire_bytes": 41049,
+    "whole_wire_bound": 65536,
+    "proof_bearing_wire": "UNOBSERVED; fixed packet plus future actual prerequisite base64 must pass the same whole-wire bound before SSH. May refuse; no completion guarantee or cap raise.",
+    "immutable": true
+  },
+  "proposed_remote_control_SOURCE_only": {
+    "phases": ["before-stage", "stage", "before-observe", "observe"],
+    "before_stage": "Read-only fresh host/UID/Python/resources and absent fixed tools/output roots. No historical page or target-body read, no remote write.",
+    "stage": "Only new fixed TOOLS root. Authenticate all four records before writes; each file exclusive/fsynced/full readback. Stage receipt keeps original O_CREAT|EXCL fd through body construction, bounded write, fsync, held/named physical checks and full physical-pinned readback. Stage never compiles primary.",
+    "before_observe": "Read-only fresh resources, absent output, exact new four staged files plus stage receipt. Full SHA/size/decimal physical/two held-named reads/later bookends/exact bounded names/directory identity and strict stage fields; never read old manifest pages/native target.",
+    "stage_schema": "Exact keys plus full source/control/base-packet, four-file physical rows, reserved directory identity, canonical nonfuture timestamp, valid prerequisite SHA and bounded historical resource declarations.",
+    "prerequisite_policy": "Stage and observe require actual prerequisite raw bytes with externally reviewed full SHA supplied in argv, exact phase/control/base-packet/source/host/UID/Python/root/stage/file identity links, canonical timestamp neither future nor over300s old. Remote checks fresh resource predicates again immediately before mutation or observation handoff.",
+    "headroom": "2GiB MemAvailable, 32MiB scratch and 512 free inodes; not reservation, native/model/daemon bound or guarantee.",
+    "observe": "Only after fresh before-observe proof and full staged authentication. Read exact primary source/full SHA, recheck resources, cancel bootstrap alarm immediately before exact __name__/__file__/argv handoff to unchanged primary. All historical data access remains in that reviewed primary, not a second selector here.",
+    "proposed_remote_limits": {
+      "Linux_AS_soft_and_hard": 536870912,
+      "CPU_seconds_cumulative_same_process": 20,
+      "bootstrap_alarm_seconds": 30,
+      "reader_own_alarm_seconds_after_handoff": 30,
+      "ordinary_file_and_log_bound": 262144,
+      "control_hash_work_budget": 4194304,
+      "reader_hash_work_budget": 4194304,
+      "hash_scope": "Separate finite control and reader ledgers; not one whole-process4MiB claim.",
+      "wire_bound": 65536,
+      "authenticated_control_read_call_bound": 1024,
+      "direct_staged_name_limit": 16,
+      "SSH_wait_seconds": 70,
+      "owned_TERM_wait_seconds": 1,
+      "owned_KILL_wait_seconds": 1
+    },
+    "transport": "Exact pinned existing ed25519 keys and Spark1 SSH route; python3 -I -S -B -c exact embedded bootstrap plus explicit phase/basepacket/prerequisite SHA arguments. Exclusive per-phase local roots, wire fsync/readback before launch, bounded stdout/stderr, durable exit receipt with wire/local-input/source/command bindings, bounded owned SSH process-group cleanup. SSH exit never claims remote quiescence.",
+    "source_reuse": "Read old78253bcf/8385B SOURCE only. Two utility function ASTs identical. Complete owned transport try AST equal after removal of exactly four added receipt fields. No old transport body/job replay.",
+    "future_invocation_shapes_not_executed": [
+      "python3 docs/research/sources/native-origin-control-transport-v1-2026-10-18.py before-stage",
+      "python3 docs/research/sources/native-origin-control-transport-v1-2026-10-18.py stage <actual-before-stage-stdout-SHA>",
+      "python3 docs/research/sources/native-origin-control-transport-v1-2026-10-18.py before-observe",
+      "python3 docs/research/sources/native-origin-control-transport-v1-2026-10-18.py observe <actual-before-observe-stdout-SHA>"
+    ],
+    "actual_prerequisite_stage_observe_invocations": null,
+    "actual_prerequisite_stage_observe_receipts": null,
+    "runtime_admission": null
+  },
+  "independent_review_and_corrections": {
+    "reviewer": "/root/trading_action_consistency",
+    "reused_healthy_worker": true,
+    "new_agent_or_limited_agent_retry": false,
+    "before_use": "Complete bootstrap/prelude/builder and exact local builder invocation; actual generated transport including embedded source; checker/exact local invocation; final actual report metadata and scope.",
+    "findings_corrected_before_any_remote_or_builder_use": [
+      "Hold the initially reserved stage receipt fd through its complete first write and verify held/named physical identity before and after, then pin readback to final held identity.",
+      "Strictly validate retained stage prerequisite SHA, resource fields and observed_at_ns values before accepting/re-emitting a fresh prerequisite."
+    ],
+    "initial_UNRUN_bootstrap": {
+      "root": "/tmp/native-origin-control-bootstrap-drafts-20261018-v1",
+      "sha256": "2fe7eada6ad9447762f01101702a29c2fbc7bd98c5a158dbd4a24b93fa037407",
+      "bytes": 14858,
+      "reason_sha256": "0ac157d24f9121ed004ef934a272d4eef2062c69e005461e81bbacff68c728e0",
+      "reason_bytes": 508,
+      "preserved_in_final_13_inputs": true
+    },
+    "local_patch_refusal": {
+      "path": "/tmp/native-origin-control-preparation-patch-refusal-20261018-v1.json",
+      "scope": "apply_patch input-validation refusal BEFORE builder file creation or any body/SSH. Exact tool error and observed target absence retained. Full rejected patch not archived.",
+      "correction": "Raw tool strings and separate saved source fragment before first builder use.",
+      "runtime_failure_or_body_replay": false
+    },
+    "final_result": "No remaining deterministic blocker or material metadata/scope mismatch found within SOURCE-only preparation."
+  },
+  "local_proofs": {
+    "source_review": {
+      "path": "original-loader-native-origin-control-source-review-v1-2026-10-18.json",
+      "sha256": "fef8d9681adddae39aee8a2b917cf086a00c48cdaacd4361f9c283555bd89e25",
+      "bytes": 1279
+    },
+    "preservation": {
+      "path": "original-loader-native-origin-control-preservation-v1-2026-10-18.json",
+      "sha256": "0b1fc7f967c36f8546776c700f80a144db120fdb774d0f72777c36b18276f539",
+      "bytes": 16302,
+      "inputs": 13,
+      "input_bytes": 210865,
+      "protocol": "Two full held/named reads/full SHA/exact decimal physical, exclusive copies/fsync/full readbacks, later all original+copy fullSHA/physical, manifest last/root then resolved parent and source directory fsync."
+    },
+    "independent": {
+      "path": "original-loader-native-origin-control-local-independent-v1-2026-10-18.json",
+      "sha256": "b115d34fdadc22738333d98df8b053c3d162cdc47eedbe0b6b0baa21af0c65dc",
+      "bytes": 17944,
+      "root": "/tmp/native-origin-control-local-independent-20261018-v1",
+      "originals": 13,
+      "copies": 13,
+      "plus_manifest_report_checker_source_and_copy": 4,
+      "later_full_SHA_physical_bookended_files_before_proof": 30,
+      "packet_fold": "Complete four-record bounded decompression/raw byte equality, packet/pins/embedded-bootstrap/full source equality and fixed41049B wire; no regeneration or control import/call."
+    },
+    "static": "Warnings-as-errors AST parse,33purposefunctions across5sources, fullSHA/JSON/source links, zero literal backspace bytes, staged diff checks. Ruff previously unavailable/no lint claim.",
+    "local_limits": "Software262KiBfile/1MiBinput/4MiBhash/30alarm. No MacAS/kernelFSIZE/crashdurability claim."
+  },
+  "acceptance": {
+    "local_source_and_packet_preparation_preservation": "VERIFIED within stated local scope",
+    "all20_remote_control_functions": "UNRUN",
+    "all25_retained_reader_functions": "UNRUN",
+    "remote_pages_selected_row_native_json": "UNREAD",
+    "actual_host_resources_source_stage_invocation_or_observation": "UNVERIFIED",
+    "timeout_signal_cleanup_IO_crash_branches": "UNVERIFIED",
+    "native_runtime_model_RAM": "UNADMITTED",
+    "historical_delivery_ordinary_intraday_fill_UI": "UNVERIFIED",
+    "original_timing": "FAILED_PRESERVED",
+    "publication": "CLOSED",
+    "missing_original_receipts": "MISSING",
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "production_change": false,
+    "genuine_execution_authorized": false
+  },
+  "next_boundary": "Controls SOURCE preparation CLOSED; never regenerate/replay for documentation. Independently review exact first before-stage source/invocation/whole wire/key/source pins before ONE new read-only prerequisite SSH. Review actual fresh proof before ONE separate source-only stage with its fullSHA, within300s and unchanged caps. Verify actual stage/source/root/terminal bindings, then review ONE fresh before-observe prerequisite and exact observe invocation BEFORE ONE later separately scoped retained historical DATA observation. No dispatch was performed in this checkpoint. After actual primary summary, preserve current UNRUN independent draft, separately repin/regenerate/review source/invocation/fresh evidence BEFORE one independent fold. No old gate/nativeprobe/full1339-contentfold/packet replay.",
+  "preserved_constraints": "All old failed/completed roots and admissions immutable; other1338 payload bodies and other19 native bodies UNREAD. No guessed executable/library paths, host substitutes, ldd/readelf/dlopen/package execution/cap relaxation. Historical executable string is not current executable/link/build/loader/provider authority and is never opened here. Native/provider/transitive/build/search-state and selected callable/global/type/dataclass liveproducer/classflags/native/phase/Arrow pools+wrapper/sklearn actual metadata remain open. Guard3b8be00b's separate25UNRUN payload functions/old2446/030c/G08/caps/maps unchanged; producer2431/reference2446/executor2468 and complete original receipts/lifetimes separate. Genuine assembledtree/strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/launch/admission remain NULL; execution_authorizedFALSE. No actualtwohost/Spark2image-daemon-temp-RAM change.",
+  "heartbeat": "ACTIVE",
+  "diagram": "NONE"
+}
