@@ -1,0 +1,1098 @@
+{
+  "Mac_AS_or_kernel_FSIZE_claim": false,
+  "crash_durability_guarantee": false,
+  "files": [
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/000-prepare-callback-symbol-observation-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 7878,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792345473044275826",
+          "st_dev": "16777223",
+          "st_ino": "186219861",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473044275826",
+          "st_nlink": "1",
+          "st_size": "7878",
+          "st_uid": "501"
+        },
+        "sha256": "c0b5112f8236926d693fc2c011cc3af21f5b581744ff5705b7c65606989e5801"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/prepare-callback-symbol-observation-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 7878,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792344837366737768",
+          "st_dev": "16777223",
+          "st_ino": "186035910",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792344837366737768",
+          "st_nlink": "1",
+          "st_size": "7878",
+          "st_uid": "501"
+        },
+        "sha256": "c0b5112f8236926d693fc2c011cc3af21f5b581744ff5705b7c65606989e5801"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/001-callback-symbol-primary-prerequisite-transport-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 9693,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792345473045433946",
+          "st_dev": "16777223",
+          "st_ino": "186219862",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473045433946",
+          "st_nlink": "1",
+          "st_size": "9693",
+          "st_uid": "501"
+        },
+        "sha256": "e7b339def3a14c91ad84ae8488b92b38427fec18886d4157f7dfe6d1a4650d68"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/callback-symbol-primary-prerequisite-transport-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 9693,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792344846233581360",
+          "st_dev": "16777223",
+          "st_ino": "186049073",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792344846233581360",
+          "st_nlink": "1",
+          "st_size": "9693",
+          "st_uid": "501"
+        },
+        "sha256": "e7b339def3a14c91ad84ae8488b92b38427fec18886d4157f7dfe6d1a4650d68"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/002-callback-symbol-primary-receipts-transport-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 9685,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792345473046352061",
+          "st_dev": "16777223",
+          "st_ino": "186219863",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473046352061",
+          "st_nlink": "1",
+          "st_size": "9685",
+          "st_uid": "501"
+        },
+        "sha256": "41256418dce017c4bbef354c479dbbc60916e7a5511cc5718088094079eb53b6"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/callback-symbol-primary-receipts-transport-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 9685,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792344846238595054",
+          "st_dev": "16777223",
+          "st_ino": "186049074",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792344846238595054",
+          "st_nlink": "1",
+          "st_size": "9685",
+          "st_uid": "501"
+        },
+        "sha256": "41256418dce017c4bbef354c479dbbc60916e7a5511cc5718088094079eb53b6"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/003-callback-symbol-independent-prerequisite-transport-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 9697,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792345473047544435",
+          "st_dev": "16777223",
+          "st_ino": "186219864",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473047544435",
+          "st_nlink": "1",
+          "st_size": "9697",
+          "st_uid": "501"
+        },
+        "sha256": "6833ebfb6158cf0662e0897172e81eddcd335fa271845c1e4ab968024b5a96bb"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/callback-symbol-independent-prerequisite-transport-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 9697,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792345031645584761",
+          "st_dev": "16777223",
+          "st_ino": "186096622",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345031645584761",
+          "st_nlink": "1",
+          "st_size": "9697",
+          "st_uid": "501"
+        },
+        "sha256": "6833ebfb6158cf0662e0897172e81eddcd335fa271845c1e4ab968024b5a96bb"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/004-callback-symbol-independent-receipts-transport-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 9689,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792345473048795757",
+          "st_dev": "16777223",
+          "st_ino": "186219865",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473048795757",
+          "st_nlink": "1",
+          "st_size": "9689",
+          "st_uid": "501"
+        },
+        "sha256": "d0abb048ff0805fc34af8d1d813d6371613fa22eca6055b3eb2f3d90a534042d"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/callback-symbol-independent-receipts-transport-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 9689,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792345031650622382",
+          "st_dev": "16777223",
+          "st_ino": "186096623",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345031650622382",
+          "st_nlink": "1",
+          "st_size": "9689",
+          "st_uid": "501"
+        },
+        "sha256": "d0abb048ff0805fc34af8d1d813d6371613fa22eca6055b3eb2f3d90a534042d"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/005-verify-callback-symbol-retained-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 11955,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792345473049753562",
+          "st_dev": "16777223",
+          "st_ino": "186219866",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473049753562",
+          "st_nlink": "1",
+          "st_size": "11955",
+          "st_uid": "501"
+        },
+        "sha256": "7fc2e4d9e79c26293738ebb7fb86bb9906c9c2b82d92338899a2fe40e98175f8"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/verify-callback-symbol-retained-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 11955,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792345013170158229",
+          "st_dev": "16777223",
+          "st_ino": "185723953",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345013170158229",
+          "st_nlink": "1",
+          "st_size": "11955",
+          "st_uid": "501"
+        },
+        "sha256": "7fc2e4d9e79c26293738ebb7fb86bb9906c9c2b82d92338899a2fe40e98175f8"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/006-callback-symbol-data-independent-transport-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 8395,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792345473050568307",
+          "st_dev": "16777223",
+          "st_ino": "186219867",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473050568307",
+          "st_nlink": "1",
+          "st_size": "8395",
+          "st_uid": "501"
+        },
+        "sha256": "4cc7e39c5c54dbb45605f528700e649d70d895de9d3bbb1b912bd967e9c55cfa"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/callback-symbol-data-independent-transport-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 8395,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792345013519154306",
+          "st_dev": "16777223",
+          "st_ino": "185779799",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345013519154306",
+          "st_nlink": "1",
+          "st_size": "8395",
+          "st_uid": "501"
+        },
+        "sha256": "4cc7e39c5c54dbb45605f528700e649d70d895de9d3bbb1b912bd967e9c55cfa"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/007-preserve-callback-symbol-DATA-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 5882,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792345473051373577",
+          "st_dev": "16777223",
+          "st_ino": "186219868",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473051373577",
+          "st_nlink": "1",
+          "st_size": "5882",
+          "st_uid": "501"
+        },
+        "sha256": "ada6282614a65cb7cc8338f80b1b5169ba02e042af8d40fe63aeea95ab8421fb"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/preserve-callback-symbol-DATA-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 5882,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792345069211448661",
+          "st_dev": "16777223",
+          "st_ino": "186109227",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345069211448661",
+          "st_nlink": "1",
+          "st_size": "5882",
+          "st_uid": "501"
+        },
+        "sha256": "ada6282614a65cb7cc8338f80b1b5169ba02e042af8d40fe63aeea95ab8421fb"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/008-analyze-callback-symbol-retained-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 8546,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792345473052131842",
+          "st_dev": "16777223",
+          "st_ino": "186219869",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473052131842",
+          "st_nlink": "1",
+          "st_size": "8546",
+          "st_uid": "501"
+        },
+        "sha256": "b7eadb0166ed9aa21749c5230f19ce466b2430ca95fca0cc6f61948bac5d65c4"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/analyze-callback-symbol-retained-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 8546,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792343672502233816",
+          "st_dev": "16777223",
+          "st_ino": "185700562",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343672502233816",
+          "st_nlink": "1",
+          "st_size": "8546",
+          "st_uid": "501"
+        },
+        "sha256": "b7eadb0166ed9aa21749c5230f19ce466b2430ca95fca0cc6f61948bac5d65c4"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/009-callback-symbol-data-primary-transport-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 8385,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792345473052887550",
+          "st_dev": "16777223",
+          "st_ino": "186219870",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473052887550",
+          "st_nlink": "1",
+          "st_size": "8385",
+          "st_uid": "501"
+        },
+        "sha256": "78253bcf66db3e449b4247749b1912c640ea809e941fb820d975e739bed19617"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/callback-symbol-data-primary-transport-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 8385,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792343936150202881",
+          "st_dev": "16777223",
+          "st_ino": "185779798",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343936150202881",
+          "st_nlink": "1",
+          "st_size": "8385",
+          "st_uid": "501"
+        },
+        "sha256": "78253bcf66db3e449b4247749b1912c640ea809e941fb820d975e739bed19617"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/010-parse-callback-symbol-data-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 13496,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792345473053738311",
+          "st_dev": "16777223",
+          "st_ino": "186219871",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473053738311",
+          "st_nlink": "1",
+          "st_size": "13496",
+          "st_uid": "501"
+        },
+        "sha256": "6fe24522e57910ed2f9136762ea4f910f46fd6a6a91afe4f55c80b5e8462bd11"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/parse-callback-symbol-data-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 13496,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792341611412605342",
+          "st_dev": "16777223",
+          "st_ino": "185173044",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792341611412605342",
+          "st_nlink": "1",
+          "st_size": "13496",
+          "st_uid": "501"
+        },
+        "sha256": "6fe24522e57910ed2f9136762ea4f910f46fd6a6a91afe4f55c80b5e8462bd11"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/011-fold-callback-symbol-data-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 14287,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792345473054614830",
+          "st_dev": "16777223",
+          "st_ino": "186219872",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473054614830",
+          "st_nlink": "1",
+          "st_size": "14287",
+          "st_uid": "501"
+        },
+        "sha256": "a526e85d63313fac8a4de11eb31dc34964ad9eaeed6d93a4a78d25cb5b469127"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/fold-callback-symbol-data-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 14287,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792341611414107200",
+          "st_dev": "16777223",
+          "st_ino": "185198364",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792341611414107200",
+          "st_nlink": "1",
+          "st_size": "14287",
+          "st_uid": "501"
+        },
+        "sha256": "a526e85d63313fac8a4de11eb31dc34964ad9eaeed6d93a4a78d25cb5b469127"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/012-original-loader-callback-symbol-data-primary-v1-2026-10-18.json",
+      "copy_identity": {
+        "bytes": 5712,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792345473055429304",
+          "st_dev": "16777223",
+          "st_ino": "186219873",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473055429304",
+          "st_nlink": "1",
+          "st_size": "5712",
+          "st_uid": "501"
+        },
+        "sha256": "3e70063876485948154d9d4118140a0a94aa5695ef80be1b1bc8dc886cd1bb39"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/original-loader-callback-symbol-data-primary-v1-2026-10-18.json",
+      "original_identity": {
+        "bytes": 5712,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792345404370459173",
+          "st_dev": "16777223",
+          "st_ino": "186202695",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345404370459173",
+          "st_nlink": "1",
+          "st_size": "5712",
+          "st_uid": "501"
+        },
+        "sha256": "3e70063876485948154d9d4118140a0a94aa5695ef80be1b1bc8dc886cd1bb39"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/013-original-loader-callback-symbol-data-independent-v1-2026-10-18.json",
+      "copy_identity": {
+        "bytes": 12826,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792345473056187659",
+          "st_dev": "16777223",
+          "st_ino": "186219874",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473056187659",
+          "st_nlink": "1",
+          "st_size": "12826",
+          "st_uid": "501"
+        },
+        "sha256": "bca4d7f616050feddb3aabfa5427e3c67434efbd93141c63ef600b1bee02ca0c"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/original-loader-callback-symbol-data-independent-v1-2026-10-18.json",
+      "original_identity": {
+        "bytes": 12826,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792345404371248021",
+          "st_dev": "16777223",
+          "st_ino": "186202697",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345404371248021",
+          "st_nlink": "1",
+          "st_size": "12826",
+          "st_uid": "501"
+        },
+        "sha256": "bca4d7f616050feddb3aabfa5427e3c67434efbd93141c63ef600b1bee02ca0c"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/014-stdout",
+      "copy_identity": {
+        "bytes": 865,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792345473056998893",
+          "st_dev": "16777223",
+          "st_ino": "186219875",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473056998893",
+          "st_nlink": "1",
+          "st_size": "865",
+          "st_uid": "501"
+        },
+        "sha256": "f26231d80ee666fdb09456e315d23e90e6424720223b7191cbd0ad597b04ba7c"
+      },
+      "original": "/tmp/callback-symbol-primary-prerequisite-transport-20261018-v1/stdout",
+      "original_identity": {
+        "bytes": 865,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792344927592525810",
+          "st_dev": "16777223",
+          "st_ino": "186075028",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792344927592525810",
+          "st_nlink": "1",
+          "st_size": "865",
+          "st_uid": "501"
+        },
+        "sha256": "f26231d80ee666fdb09456e315d23e90e6424720223b7191cbd0ad597b04ba7c"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/015-stderr",
+      "copy_identity": {
+        "bytes": 0,
+        "physical": {
+          "st_blocks": "0",
+          "st_ctime_ns": "1792345473057665106",
+          "st_dev": "16777223",
+          "st_ino": "186219876",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473057622947",
+          "st_nlink": "1",
+          "st_size": "0",
+          "st_uid": "501"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "original": "/tmp/callback-symbol-primary-prerequisite-transport-20261018-v1/stderr",
+      "original_identity": {
+        "bytes": 0,
+        "physical": {
+          "st_blocks": "0",
+          "st_ctime_ns": "1792344926843055633",
+          "st_dev": "16777223",
+          "st_ino": "186075029",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792344926843010945",
+          "st_nlink": "1",
+          "st_size": "0",
+          "st_uid": "501"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/016-exit.json",
+      "copy_identity": {
+        "bytes": 5648,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792345473058136304",
+          "st_dev": "16777223",
+          "st_ino": "186219877",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473058136304",
+          "st_nlink": "1",
+          "st_size": "5648",
+          "st_uid": "501"
+        },
+        "sha256": "b46fcbfef6002a7ceabb96b040781ecad3adc9d91d913dccfb68b44035e2f422"
+      },
+      "original": "/tmp/callback-symbol-primary-prerequisite-transport-20261018-v1/exit.json",
+      "original_identity": {
+        "bytes": 5648,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792344927607695677",
+          "st_dev": "16777223",
+          "st_ino": "186075333",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792344927607695677",
+          "st_nlink": "1",
+          "st_size": "5648",
+          "st_uid": "501"
+        },
+        "sha256": "b46fcbfef6002a7ceabb96b040781ecad3adc9d91d913dccfb68b44035e2f422"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/017-stdout",
+      "copy_identity": {
+        "bytes": 950,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792345473058853794",
+          "st_dev": "16777223",
+          "st_ino": "186219878",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473058853794",
+          "st_nlink": "1",
+          "st_size": "950",
+          "st_uid": "501"
+        },
+        "sha256": "fed88cf50cb08efe5167790b8881ba4f546dadc45013f484d31b471d256db06a"
+      },
+      "original": "/tmp/callback-symbol-data-primary-transport-20261018-v1/stdout",
+      "original_identity": {
+        "bytes": 950,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792344973340131894",
+          "st_dev": "16777223",
+          "st_ino": "186085851",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792344973340131894",
+          "st_nlink": "1",
+          "st_size": "950",
+          "st_uid": "501"
+        },
+        "sha256": "fed88cf50cb08efe5167790b8881ba4f546dadc45013f484d31b471d256db06a"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/018-stderr",
+      "copy_identity": {
+        "bytes": 0,
+        "physical": {
+          "st_blocks": "0",
+          "st_ctime_ns": "1792345473059480007",
+          "st_dev": "16777223",
+          "st_ino": "186219879",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473059440464",
+          "st_nlink": "1",
+          "st_size": "0",
+          "st_uid": "501"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "original": "/tmp/callback-symbol-data-primary-transport-20261018-v1/stderr",
+      "original_identity": {
+        "bytes": 0,
+        "physical": {
+          "st_blocks": "0",
+          "st_ctime_ns": "1792344972537063593",
+          "st_dev": "16777223",
+          "st_ino": "186085852",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792344972537013521",
+          "st_nlink": "1",
+          "st_size": "0",
+          "st_uid": "501"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/019-exit.json",
+      "copy_identity": {
+        "bytes": 4081,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792345473059913982",
+          "st_dev": "16777223",
+          "st_ino": "186219880",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473059913982",
+          "st_nlink": "1",
+          "st_size": "4081",
+          "st_uid": "501"
+        },
+        "sha256": "d7377e2f3d4a10905b198c276945e904b82ed0f03396ef260567da8204426701"
+      },
+      "original": "/tmp/callback-symbol-data-primary-transport-20261018-v1/exit.json",
+      "original_identity": {
+        "bytes": 4081,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792344973359978863",
+          "st_dev": "16777223",
+          "st_ino": "186086170",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792344973359978863",
+          "st_nlink": "1",
+          "st_size": "4081",
+          "st_uid": "501"
+        },
+        "sha256": "d7377e2f3d4a10905b198c276945e904b82ed0f03396ef260567da8204426701"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/020-stdout",
+      "copy_identity": {
+        "bytes": 11682,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792345473060588553",
+          "st_dev": "16777223",
+          "st_ino": "186219881",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473060588553",
+          "st_nlink": "1",
+          "st_size": "11682",
+          "st_uid": "501"
+        },
+        "sha256": "81898efe4e52562d8dee4e8b43df9f4f92a9b62ee00cc61796fd2b7b6dae8d01"
+      },
+      "original": "/tmp/callback-symbol-primary-receipts-transport-20261018-v1/stdout",
+      "original_identity": {
+        "bytes": 11682,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792344990945774151",
+          "st_dev": "16777223",
+          "st_ino": "186087509",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792344990945774151",
+          "st_nlink": "1",
+          "st_size": "11682",
+          "st_uid": "501"
+        },
+        "sha256": "81898efe4e52562d8dee4e8b43df9f4f92a9b62ee00cc61796fd2b7b6dae8d01"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/021-stderr",
+      "copy_identity": {
+        "bytes": 0,
+        "physical": {
+          "st_blocks": "0",
+          "st_ctime_ns": "1792345473061306739",
+          "st_dev": "16777223",
+          "st_ino": "186219882",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473061270399",
+          "st_nlink": "1",
+          "st_size": "0",
+          "st_uid": "501"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "original": "/tmp/callback-symbol-primary-receipts-transport-20261018-v1/stderr",
+      "original_identity": {
+        "bytes": 0,
+        "physical": {
+          "st_blocks": "0",
+          "st_ctime_ns": "1792344990324718853",
+          "st_dev": "16777223",
+          "st_ino": "186087510",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792344990324687352",
+          "st_nlink": "1",
+          "st_size": "0",
+          "st_uid": "501"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/022-exit.json",
+      "copy_identity": {
+        "bytes": 5644,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792345473061747269",
+          "st_dev": "16777223",
+          "st_ino": "186219883",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473061747269",
+          "st_nlink": "1",
+          "st_size": "5644",
+          "st_uid": "501"
+        },
+        "sha256": "91a1b2f676a3b9d1f6165ec0318d8d76cc968c75c11be2d7af3aa66687c93e33"
+      },
+      "original": "/tmp/callback-symbol-primary-receipts-transport-20261018-v1/exit.json",
+      "original_identity": {
+        "bytes": 5644,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792344990961007965",
+          "st_dev": "16777223",
+          "st_ino": "186087511",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792344990961007965",
+          "st_nlink": "1",
+          "st_size": "5644",
+          "st_uid": "501"
+        },
+        "sha256": "91a1b2f676a3b9d1f6165ec0318d8d76cc968c75c11be2d7af3aa66687c93e33"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/023-stdout",
+      "copy_identity": {
+        "bytes": 867,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792345473062574371",
+          "st_dev": "16777223",
+          "st_ino": "186219884",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473062574371",
+          "st_nlink": "1",
+          "st_size": "867",
+          "st_uid": "501"
+        },
+        "sha256": "35185452700dae4eada54a9b5e79b9e7dfe8163c9ae694588677903cb801278a"
+      },
+      "original": "/tmp/callback-symbol-independent-prerequisite-transport-20261018-v1/stdout",
+      "original_identity": {
+        "bytes": 867,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792345111081131701",
+          "st_dev": "16777223",
+          "st_ino": "186117823",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345111081131701",
+          "st_nlink": "1",
+          "st_size": "867",
+          "st_uid": "501"
+        },
+        "sha256": "35185452700dae4eada54a9b5e79b9e7dfe8163c9ae694588677903cb801278a"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/024-stderr",
+      "copy_identity": {
+        "bytes": 0,
+        "physical": {
+          "st_blocks": "0",
+          "st_ctime_ns": "1792345473063181022",
+          "st_dev": "16777223",
+          "st_ino": "186219885",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473063140364",
+          "st_nlink": "1",
+          "st_size": "0",
+          "st_uid": "501"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "original": "/tmp/callback-symbol-independent-prerequisite-transport-20261018-v1/stderr",
+      "original_identity": {
+        "bytes": 0,
+        "physical": {
+          "st_blocks": "0",
+          "st_ctime_ns": "1792345110410402041",
+          "st_dev": "16777223",
+          "st_ino": "186117824",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345110410353221",
+          "st_nlink": "1",
+          "st_size": "0",
+          "st_uid": "501"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/025-exit.json",
+      "copy_identity": {
+        "bytes": 5648,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792345473063613547",
+          "st_dev": "16777223",
+          "st_ino": "186219886",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473063613547",
+          "st_nlink": "1",
+          "st_size": "5648",
+          "st_uid": "501"
+        },
+        "sha256": "7a4cc166fdde5791da40fc47bf3c8fe12a2b104155c553019652cf77d78f6431"
+      },
+      "original": "/tmp/callback-symbol-independent-prerequisite-transport-20261018-v1/exit.json",
+      "original_identity": {
+        "bytes": 5648,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792345111118559221",
+          "st_dev": "16777223",
+          "st_ino": "186118087",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345111118559221",
+          "st_nlink": "1",
+          "st_size": "5648",
+          "st_uid": "501"
+        },
+        "sha256": "7a4cc166fdde5791da40fc47bf3c8fe12a2b104155c553019652cf77d78f6431"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/026-stdout",
+      "copy_identity": {
+        "bytes": 885,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792345473064828381",
+          "st_dev": "16777223",
+          "st_ino": "186219887",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473064828381",
+          "st_nlink": "1",
+          "st_size": "885",
+          "st_uid": "501"
+        },
+        "sha256": "b311b931418c2fe755f3c4ad9a0852a01826beea6bc1206bc04e1b3477ad95a9"
+      },
+      "original": "/tmp/callback-symbol-data-independent-transport-20261018-v1/stdout",
+      "original_identity": {
+        "bytes": 885,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792345153688819311",
+          "st_dev": "16777223",
+          "st_ino": "186132935",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345153688819311",
+          "st_nlink": "1",
+          "st_size": "885",
+          "st_uid": "501"
+        },
+        "sha256": "b311b931418c2fe755f3c4ad9a0852a01826beea6bc1206bc04e1b3477ad95a9"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/027-stderr",
+      "copy_identity": {
+        "bytes": 0,
+        "physical": {
+          "st_blocks": "0",
+          "st_ctime_ns": "1792345473065754095",
+          "st_dev": "16777223",
+          "st_ino": "186219888",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473065691503",
+          "st_nlink": "1",
+          "st_size": "0",
+          "st_uid": "501"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "original": "/tmp/callback-symbol-data-independent-transport-20261018-v1/stderr",
+      "original_identity": {
+        "bytes": 0,
+        "physical": {
+          "st_blocks": "0",
+          "st_ctime_ns": "1792345153115835616",
+          "st_dev": "16777223",
+          "st_ino": "186132936",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345153115803790",
+          "st_nlink": "1",
+          "st_size": "0",
+          "st_uid": "501"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/028-exit.json",
+      "copy_identity": {
+        "bytes": 4087,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792345473066590212",
+          "st_dev": "16777223",
+          "st_ino": "186219889",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473066590212",
+          "st_nlink": "1",
+          "st_size": "4087",
+          "st_uid": "501"
+        },
+        "sha256": "bee2182851b49cf2e4d249177aabf3793c6f8d50588a7b0e53d53cc8717c0c22"
+      },
+      "original": "/tmp/callback-symbol-data-independent-transport-20261018-v1/exit.json",
+      "original_identity": {
+        "bytes": 4087,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792345153724816743",
+          "st_dev": "16777223",
+          "st_ino": "186132943",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345153724816743",
+          "st_nlink": "1",
+          "st_size": "4087",
+          "st_uid": "501"
+        },
+        "sha256": "bee2182851b49cf2e4d249177aabf3793c6f8d50588a7b0e53d53cc8717c0c22"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/029-stdout",
+      "copy_identity": {
+        "bytes": 21198,
+        "physical": {
+          "st_blocks": "48",
+          "st_ctime_ns": "1792345473067494656",
+          "st_dev": "16777223",
+          "st_ino": "186219890",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473067494656",
+          "st_nlink": "1",
+          "st_size": "21198",
+          "st_uid": "501"
+        },
+        "sha256": "760fb2e41e2e7748159388b8fe0efd744dc0818c8386a0fe83e7839319e7d588"
+      },
+      "original": "/tmp/callback-symbol-independent-receipts-transport-20261018-v1/stdout",
+      "original_identity": {
+        "bytes": 21198,
+        "physical": {
+          "st_blocks": "48",
+          "st_ctime_ns": "1792345329177436799",
+          "st_dev": "16777223",
+          "st_ino": "186180438",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345329177436799",
+          "st_nlink": "1",
+          "st_size": "21198",
+          "st_uid": "501"
+        },
+        "sha256": "760fb2e41e2e7748159388b8fe0efd744dc0818c8386a0fe83e7839319e7d588"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/030-stderr",
+      "copy_identity": {
+        "bytes": 0,
+        "physical": {
+          "st_blocks": "0",
+          "st_ctime_ns": "1792345473068298336",
+          "st_dev": "16777223",
+          "st_ino": "186219891",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473068251026",
+          "st_nlink": "1",
+          "st_size": "0",
+          "st_uid": "501"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "original": "/tmp/callback-symbol-independent-receipts-transport-20261018-v1/stderr",
+      "original_identity": {
+        "bytes": 0,
+        "physical": {
+          "st_blocks": "0",
+          "st_ctime_ns": "1792345328597711895",
+          "st_dev": "16777223",
+          "st_ino": "186180439",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345328597654056",
+          "st_nlink": "1",
+          "st_size": "0",
+          "st_uid": "501"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-DATA-evidence-20261018-v1/031-exit.json",
+      "copy_identity": {
+        "bytes": 5644,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792345473068721279",
+          "st_dev": "16777223",
+          "st_ino": "186219892",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345473068721279",
+          "st_nlink": "1",
+          "st_size": "5644",
+          "st_uid": "501"
+        },
+        "sha256": "b0775bafee14ab9f8205246d7e1edee92a900cdcfb688c4204669a278b7c2fb7"
+      },
+      "original": "/tmp/callback-symbol-independent-receipts-transport-20261018-v1/exit.json",
+      "original_identity": {
+        "bytes": 5644,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792345329185066210",
+          "st_dev": "16777223",
+          "st_ino": "186180644",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345329185066210",
+          "st_nlink": "1",
+          "st_size": "5644",
+          "st_uid": "501"
+        },
+        "sha256": "b0775bafee14ab9f8205246d7e1edee92a900cdcfb688c4204669a278b7c2fb7"
+      }
+    }
+  ],
+  "scope": "RETAINED_SYMBOL_DATA_CONTROLS_RECEIPTS_NO_NATIVE_ADMISSION",
+  "software_file_bound": 262144,
+  "software_total_bound": 1048576,
+  "total_input_bytes": 203325
+}

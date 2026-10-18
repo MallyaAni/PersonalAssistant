@@ -1,0 +1,327 @@
+{
+  "schema": "original-loader-callback-symbol-data-proof/1",
+  "date": "2026-10-18",
+  "status": "VERIFIED_COMPLETE_RETAINED_SYMBOL_VERSION_DATA_NOT_NATIVE_RUNTIME",
+  "source_commit": "2a2e3164af5fe3db928fc3f33216a2ae0d178733",
+  "starting_commit": "e8c7ba9550fcdacb93e76e5277720376a8f7f1fe",
+  "starting_branch": "codex/learned-live-release-20261006",
+  "starting_state": "CLEAN_PULL_REBASE_ORIGIN_MAIN_UP_TO_DATE",
+  "objective": "Authenticate fresh host/resource/source prerequisites, run ONE exact retained callback symbol/version DATA primary and ONE separately pinned independent complete fold, then authenticate terminals and preserve complete small receipts without native/package/model execution.",
+  "acceptance": {
+    "fresh_actual_prerequisite_and_exact_invocation_review": "VERIFIED_BEFORE_EACH_DATA_ATTEMPT",
+    "primary_actual_retained_DATA": "VERIFIED_ONE_EXIT0",
+    "independent_every_field_rawspan_name_multiplicity_order_page_canonical_fold": "VERIFIED_ONE_EXIT0",
+    "six_SSH_terminals_source_and_full_receipt_bindings": "VERIFIED_ALL6_EXIT0_EMPTY_STDERR_NO_STOP_FAILURE",
+    "local32_original_and32_copy_SHA_physical_preservation": "VERIFIED",
+    "native_loading_compatibility_provider_resolution": "UNVERIFIED_UNADMITTED",
+    "model_combined_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED"
+  },
+  "source_pins": [
+    {
+      "bytes": 7878,
+      "file": "prepare-callback-symbol-observation-v1-2026-10-18.py",
+      "functions": 4,
+      "sha256": "c0b5112f8236926d693fc2c011cc3af21f5b581744ff5705b7c65606989e5801"
+    },
+    {
+      "bytes": 9693,
+      "file": "callback-symbol-primary-prerequisite-transport-v1-2026-10-18.py",
+      "functions": 3,
+      "sha256": "e7b339def3a14c91ad84ae8488b92b38427fec18886d4157f7dfe6d1a4650d68"
+    },
+    {
+      "bytes": 9685,
+      "file": "callback-symbol-primary-receipts-transport-v1-2026-10-18.py",
+      "functions": 3,
+      "sha256": "41256418dce017c4bbef354c479dbbc60916e7a5511cc5718088094079eb53b6"
+    },
+    {
+      "bytes": 9697,
+      "file": "callback-symbol-independent-prerequisite-transport-v1-2026-10-18.py",
+      "functions": 3,
+      "sha256": "6833ebfb6158cf0662e0897172e81eddcd335fa271845c1e4ab968024b5a96bb"
+    },
+    {
+      "bytes": 9689,
+      "file": "callback-symbol-independent-receipts-transport-v1-2026-10-18.py",
+      "functions": 3,
+      "sha256": "d0abb048ff0805fc34af8d1d813d6371613fa22eca6055b3eb2f3d90a534042d"
+    },
+    {
+      "bytes": 5882,
+      "file": "preserve-callback-symbol-DATA-v1-2026-10-18.py",
+      "functions": 4,
+      "sha256": "ada6282614a65cb7cc8338f80b1b5169ba02e042af8d40fe63aeea95ab8421fb"
+    },
+    {
+      "bytes": 11955,
+      "file": "verify-callback-symbol-retained-v1-2026-10-18.py",
+      "functions": 6,
+      "sha256": "7fc2e4d9e79c26293738ebb7fb86bb9906c9c2b82d92338899a2fe40e98175f8"
+    },
+    {
+      "bytes": 8395,
+      "file": "callback-symbol-data-independent-transport-v1-2026-10-18.py",
+      "functions": 3,
+      "sha256": "4cc7e39c5c54dbb45605f528700e649d70d895de9d3bbb1b912bd967e9c55cfa"
+    }
+  ],
+  "unchanged_decoder_pins": {
+    "primary": "6fe24522e57910ed2f9136762ea4f910f46fd6a6a91afe4f55c80b5e8462bd11/13496B",
+    "independent": "a526e85d63313fac8a4de11eb31dc34964ad9eaeed6d93a4a78d25cb5b469127/14287B"
+  },
+  "actual_operations": {
+    "SSH": 6,
+    "prerequisite_readonly_observations": 2,
+    "actual_primary_DATA_attempts": 1,
+    "independent_complete_DATA_attempts": 1,
+    "readonly_stage_and_small_result_receipt_getters": 2,
+    "Docker_or_container_operations": 0,
+    "package_backend_model_import_or_body_tests": 0,
+    "other19_native_body_reads": 0,
+    "old_gates_or_packets_replayed": 0,
+    "production_changes": 0
+  },
+  "retained_authority": {
+    "prior": "20c33344ece0c69c550f23771dbea6d9ab8d1eb6c2344a6fac2366224d817889/6569B",
+    "inputs": {
+      "/home/animallya96/scratch/capacity-callback-binary-copy-20261018-v1/callback.bin": {
+        "bytes": 216280,
+        "physical": {
+          "st_blocks": "424",
+          "st_ctime_ns": "1792336168850649711",
+          "st_dev": "66306",
+          "st_ino": "60583191",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792336168850649711",
+          "st_nlink": "1",
+          "st_size": "216280",
+          "st_uid": "1000"
+        },
+        "sha256": "9edf4136653a328edcc88dc97f6d828440ad96550c436cbe087951845c89903b"
+      },
+      "/home/animallya96/scratch/capacity-callback-elf-data-analysis-20261018-v1/page-0001.json": {
+        "bytes": 15279,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792339131787968529",
+          "st_dev": "66306",
+          "st_ino": "60583215",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792339131787968529",
+          "st_nlink": "1",
+          "st_size": "15279",
+          "st_uid": "1000"
+        },
+        "sha256": "43ce64015bf67ad315821caa994123c7134d55e4dabb89c7bea9414607a5daa3"
+      },
+      "/home/animallya96/scratch/capacity-callback-elf-data-independent-20261018-v1/proof.json": {
+        "bytes": 6569,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792339263157593643",
+          "st_dev": "66306",
+          "st_ino": "60583224",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792339263157593643",
+          "st_nlink": "1",
+          "st_size": "6569",
+          "st_uid": "1000"
+        },
+        "sha256": "20c33344ece0c69c550f23771dbea6d9ab8d1eb6c2344a6fac2366224d817889"
+      },
+      "/home/animallya96/scratch/capacity-callback-symbol-primary-tools-20261018-v1/analyze-callback-symbol-retained-v1-2026-10-18.py": {
+        "bytes": 8546,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792344973198801428",
+          "st_dev": "66306",
+          "st_ino": "60583246",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792344973198801428",
+          "st_nlink": "1",
+          "st_size": "8546",
+          "st_uid": "1000"
+        },
+        "sha256": "b7eadb0166ed9aa21749c5230f19ce466b2430ca95fca0cc6f61948bac5d65c4"
+      },
+      "/home/animallya96/scratch/capacity-callback-symbol-primary-tools-20261018-v1/parse-callback-symbol-data-v1-2026-10-18.py": {
+        "bytes": 13496,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792344973203000480",
+          "st_dev": "66306",
+          "st_ino": "60583247",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792344973203000480",
+          "st_nlink": "1",
+          "st_size": "13496",
+          "st_uid": "1000"
+        },
+        "sha256": "6fe24522e57910ed2f9136762ea4f910f46fd6a6a91afe4f55c80b5e8462bd11"
+      }
+    },
+    "limit": "Exact retained binary/page content and original copied-file decimal physical identities, two full held/named reads then later fullSHA/physical bookends. NOT original container-source heldFD/every-file image/build/native loader attestation."
+  },
+  "results": {
+    "counts": {
+      "associations": 163,
+      "gaps": 0,
+      "needs": 2,
+      "selected_sections": 6,
+      "symbols": 492,
+      "versions": 163
+    },
+    "symbol_table_sizes": "163 dynamic plus329 regular symbol records; not export or runtime-resolution counts",
+    "canonical_bytes": 368917,
+    "canonical_sha256": "bcda53af82ee74c98dc490bbd81a67af1fb27fba82cad5ec35a563f0d2796fb4",
+    "pages": 16,
+    "output_bytes_including_summary": 376730,
+    "summary": {
+      "bytes": 5712,
+      "sha256": "3e70063876485948154d9d4118140a0a94aa5695ef80be1b1bc8dc886cd1bb39"
+    },
+    "independent_proof": {
+      "bytes": 12826,
+      "sha256": "bca4d7f616050feddb3aabfa5427e3c67434efbd93141c63ef600b1bee02ca0c"
+    },
+    "independent_input_files": 24,
+    "complete_equality": true,
+    "version_need_declarations": [
+      {
+        "file": "libm.so.6",
+        "version": "GLIBC_2.17",
+        "version_index_vna_other": 3
+      },
+      {
+        "file": "libc.so.6",
+        "version": "GLIBC_2.17",
+        "version_index_vna_other": 2
+      }
+    ],
+    "declaration_scope": "Raw ordered required-version names and indices ONLY. No resolved provider path/bytes/alias/exports/initialization/compatibility/build/runtime/version attestation.",
+    "full_needs_and_gaps": "See exact independent proof; full16 pages remain Spark."
+  },
+  "hash_accounting": {
+    "decoder_DATA_before_output": 277074,
+    "primary_DATA_before_summary": 1388027,
+    "primary_DATA_final": 1399451,
+    "independent_DATA_before_proof": 1399451,
+    "independent_DATA_final": 1425103,
+    "primary_operational_AUTH": 520340,
+    "independent_operational_AUTH": 572824,
+    "scope": "DATA is one16MiB residual decoder/output ledger; every canonical/page/output/readback/later output bookend/proof+readback digest precharged. Separate finite4MiB operational AUTH includes extra binary/page/source/prior hashes.16MiB is NOT whole-process hashing total. ROOT verified exact arithmetic."
+  },
+  "terminals": {
+    "independent_data": {
+      "exit": 0,
+      "source_sha256": "4cc7e39c5c54dbb45605f528700e649d70d895de9d3bbb1b912bd967e9c55cfa",
+      "stderr_bytes": 0,
+      "stdout_bytes": 885,
+      "stdout_sha256": "b311b931418c2fe755f3c4ad9a0852a01826beea6bc1206bc04e1b3477ad95a9",
+      "terminal_bytes": 4087,
+      "terminal_sha256": "bee2182851b49cf2e4d249177aabf3793c6f8d50588a7b0e53d53cc8717c0c22"
+    },
+    "independent_prerequisite": {
+      "exit": 0,
+      "source_sha256": "6833ebfb6158cf0662e0897172e81eddcd335fa271845c1e4ab968024b5a96bb",
+      "stderr_bytes": 0,
+      "stdout_bytes": 867,
+      "stdout_sha256": "35185452700dae4eada54a9b5e79b9e7dfe8163c9ae694588677903cb801278a",
+      "terminal_bytes": 5648,
+      "terminal_sha256": "7a4cc166fdde5791da40fc47bf3c8fe12a2b104155c553019652cf77d78f6431"
+    },
+    "independent_receipts": {
+      "exit": 0,
+      "source_sha256": "d0abb048ff0805fc34af8d1d813d6371613fa22eca6055b3eb2f3d90a534042d",
+      "stderr_bytes": 0,
+      "stdout_bytes": 21198,
+      "stdout_sha256": "760fb2e41e2e7748159388b8fe0efd744dc0818c8386a0fe83e7839319e7d588",
+      "terminal_bytes": 5644,
+      "terminal_sha256": "b0775bafee14ab9f8205246d7e1edee92a900cdcfb688c4204669a278b7c2fb7"
+    },
+    "primary_data": {
+      "exit": 0,
+      "source_sha256": "78253bcf66db3e449b4247749b1912c640ea809e941fb820d975e739bed19617",
+      "stderr_bytes": 0,
+      "stdout_bytes": 950,
+      "stdout_sha256": "fed88cf50cb08efe5167790b8881ba4f546dadc45013f484d31b471d256db06a",
+      "terminal_bytes": 4081,
+      "terminal_sha256": "d7377e2f3d4a10905b198c276945e904b82ed0f03396ef260567da8204426701"
+    },
+    "primary_prerequisite": {
+      "exit": 0,
+      "source_sha256": "e7b339def3a14c91ad84ae8488b92b38427fec18886d4157f7dfe6d1a4650d68",
+      "stderr_bytes": 0,
+      "stdout_bytes": 865,
+      "stdout_sha256": "f26231d80ee666fdb09456e315d23e90e6424720223b7191cbd0ad597b04ba7c",
+      "terminal_bytes": 5648,
+      "terminal_sha256": "b46fcbfef6002a7ceabb96b040781ecad3adc9d91d913dccfb68b44035e2f422"
+    },
+    "primary_receipts": {
+      "exit": 0,
+      "source_sha256": "41256418dce017c4bbef354c479dbbc60916e7a5511cc5718088094079eb53b6",
+      "stderr_bytes": 0,
+      "stdout_bytes": 11682,
+      "stdout_sha256": "81898efe4e52562d8dee4e8b43df9f4f92a9b62ee00cc61796fd2b7b6dae8d01",
+      "terminal_bytes": 5644,
+      "terminal_sha256": "91a1b2f676a3b9d1f6165ec0318d8d76cc968c75c11be2d7af3aa66687c93e33"
+    }
+  },
+  "runtime": {
+    "host": "Spark1 animallya-spark1 UID1000 hostPython3.12.3, NOT N2/e0 runtime",
+    "primary_prerequisite_MemAvailable_bytes": "9986056192",
+    "primary_stage_MemAvailable_bytes": "9993334784",
+    "independent_prerequisite_MemAvailable_bytes": "9875476480",
+    "independent_stage_MemAvailable_bytes": "9998528512",
+    "resource_limits": "Linux512MiBASsoft=hard/20CPU/30helperalarm;30stagealarm canceled BEFOREhelper;70SSH/ownedTERM1KILL1/262KiBfile-log;65536Bsource envelope",
+    "source_envelopes": {
+      "primary_bytes": 29500,
+      "primary_sha256": "6ac31fc847534cd456b6e6dc79f2bfb69336fe75aaa41c479ce1b1522e379347",
+      "independent_bytes": 35098,
+      "independent_sha256": "21665bdc9fa88bcb56f97a0d094ce08df840b140bdd7451a88b5b67a6b6b2726"
+    },
+    "primary_reported_Linux_RSS_KiB": 18892,
+    "independent_reported_Linux_RSS_KiB": 19528,
+    "limits_scope": "Fresh2GiBMemAvailable/32MiBscratch512inode predicates are headroom, not reservations/native/model/daemon RAM bound. RSS is DATA helper usage, NOT native/model combined peak.",
+    "unchanged_parser_bounds": "262KiBfile,4096strings,8192rows+candidate references, canonical/output16MiB, pages<=65536encodedB AND64records/max256; no cap relaxation",
+    "untested": "Signal/timeout/overflow/owned-stop/cleanup failure/invalid-input/crash branches UNEXERCISED in actual DATA attempts; no crash-durability guarantee."
+  },
+  "review": {
+    "final_correction": "READONLY final review corrected handoff auxiliaryindex3/2 to required-version index3/2 (vna_other); each Vernaux auxiliary array index is0. Underlying raw proof unchanged. Manifest metadata and remaining DATA-only scope accepted.",
+    "worker": "Reused existing healthy trading_action_consistency READONLY exact source/invocation/actual prerequisite BEFORE each attempt; actual summary, independent two-pin correction, complete proof and local preserver reviewed before use; no newagent/limited-agent retry/worker operations.",
+    "source_validation": "AST warnings-as-errors/29 outer purpose functions across8 controls; all3 outer transport functionASTs each exact unchanged primary78253; embedded bootstrap AST/pins, source SHA, independent EXACT TWO summary-pin changes, JSON, staged diff PASS. Ruff previously unavailable/no lint claim.",
+    "local_ROOT_receipt_validation": "All6 exact fixed SSH option prefix/remotePython-I-S-B-c/embeddedbootstrap/PINS/exit+stderr; retained fullstage/result pointer bytes/SHA/physical/source rows;24inputs/16page pointers/fullcanonical/count/ledger arithmetic checked.",
+    "local_review_record": {
+      "path": "/tmp/callback-symbol-DATA-local-review-20261018-v1/review.json",
+      "bytes": 27049,
+      "sha256": "9b5cbf9a7cd33cda2fd6b772bbb9da91c0d92676a8fb71335aabe1d1e647f2d3"
+    }
+  },
+  "preserved_failures_and_drafts": {
+    "observation_generator": "Initial738e6a98/7877B interpreted embedded newline inside nonraw outer string. Two local generation commands exited1 at ast.parse BEFORE transport/root generation/SSH. Exact builder+failure.json retained /tmp/callback-symbol-observation-preparation-drafts-20261018-v1. Corrected only return r triplequote, finalc0b5112f/7878B. No remote/DATA body failure or replay.",
+    "independent_pending_pin_drafts": "Original UNRUN7ff8b1b4/11913B and8ba05b84/8395B preserved in exclusive /tmp/callback-symbol-independent-result-pin-drafts-20261018-v1 before exact two observed summary pins, then source-only new transport generation and review; placeholders never dispatched.",
+    "ROOT_local_checks": "One initial static-check shell quoting exit2 before Python; one inline receipt checker KeyError summary_bytes before writes. Corrected only report key access to actual nested primary summary pointer; retained failed/corrected code/results in local review record. No remote/test/decoder replay."
+  },
+  "preservation": {
+    "root": "/tmp/callback-symbol-DATA-evidence-20261018-v1",
+    "input_files": 32,
+    "input_bytes": 203325,
+    "manifest_bytes": 38496,
+    "manifest_sha256": "d963b1da54e5c16f0db0f179308f13b5dedbc6af36774a5b23c7a6cae22109de",
+    "checks": "Two full held/named reads/exact decimal physical/SHA, exclusive copies/fsync/readbacks/later original+copy fullSHAphysical, manifestlast/root+resolvedparent sync; separate ROOT32original+32copy readback PASS.",
+    "local_limits": "Software262KiBfile/1MiBaggregate/30alarm; no MacAS/kernelFSIZE/crashdurability claim.",
+    "remote_roots": [
+      "capacity-callback-symbol-primary-tools-20261018-v1",
+      "capacity-callback-symbol-data-analysis-20261018-v1",
+      "capacity-callback-symbol-independent-tools-20261018-v1",
+      "capacity-callback-symbol-data-independent-20261018-v1"
+    ],
+    "remote_scope": "COMPLETE immutable. Drivers sync file/readbacks/outputdir THEN parent. Getters authenticate fixed4files each; not a second full remote archive or complete stage+allpages inventory. All16pages remain Spark, all old failed/completed roots/admissions unchanged."
+  },
+  "next": "This actual retained symbol/version DATA boundary is CLOSED; never replay primary/independent/getters/63/37/sectionpage/old ELFfold/copy/HEAD/metadata/censuses/AST inventories/73/80/23/65+4/tiny/diagnostic/v2/packets for docs. SOURCE ONLY prepare dependency-origin and actual-interpreter/loader/build/search-state contracts from authenticated exact retained sources/runtime metadata. No guessed library paths/host substitutes/ldd/readelf/dlopen/package execution/other19reads/caprelaxation. Any new bounded stopped-runtime metadata observation needs independently reviewed exact source/invocation/fresh resources BEFORE use. Resolve providers+aliases+versions/transitive native closure separately; current required-version names do not admit them.",
+  "dependency_origin_observer": null,
+  "native_runtime_admission": null,
+  "genuine_execution_authorized": false,
+  "unchanged": "Selected callable/global/type/dataclass liveproducer/classflags/native/phase/Arrow pools+wrapper/sklearnactualmetadata open. Guard3b8be00b/all25payloadfunctions UNRUN, old2446/030c/G08/caps/maps unchanged; producer2431/reference2446/executor2468/original receipts/fullcontext+graphs+JSON+UTF8 lifetimes separate. Genuineassembledtree/strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram NONE."
+}

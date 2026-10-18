@@ -1,5 +1,104 @@
 # Next session
 
+## 2026-10-18 — Actual retained symbol/version DATA independently VERIFIED
+
+Read research/original-loader-callback-symbol-data-proof-v1-2026-10-18.json.
+Source2a2e3164af5fe3db928fc3f33216a2ae0d178733 pins new observationbuilderc0b5112f/
+7878B, primaryprerequisitee7b339de/9693B/receipts41256418/9685B, independent
+prerequisite6833ebfb/9697B/receiptsd0abb048/9689B, repinned driver7fc2e4d9/11955B/
+transport4cc7e39c/8395B and preserverada62826/5882B. Exact primaryb7eadb01/
+transport78253bcf/decoders6fe24522+a526e85d unchanged. NEW stdlib controls and actual
+retained binary DATA only ran. No Docker/container/package/backend/model import/
+body/test/account/marketdata/credentials/other19native reads/oldgate-packet replay/
+guard-G08-cap-map/production change. Actual selected symbols/version DATA now decoded.
+
+Six independently reviewed SSHs: two fresh readonly prerequisites, ONE primary,
+ONE separately pinned independent fold, two separate retained stage/result getters.
+All exit0/empty stderr/noownedstop/failure/cleanupfailure. Exact fixed SSHoptions/
+Python-I-S-B-c/embeddedbootstrap/PINS/stage/resultpointer/physical bindings checked.
+Fresh prerequisite host Spark1 UID1000 Python3.12.3, NOT N2/e0 runtime; primary
+9986056192B/independent9875476480B available, both roots absent before each dispatch.
+2GiBmem/32MiBscratch512inodes predicates passed; headroom NOT reservation/native/
+model/daemon bound. Exact source/invocation+actualresources reviewed BEFORE each use.
+
+Primary summary3e70063876485948154d9d4118140a0a94aa5695ef80be1b1bc8dc886cd1bb39/
+5712B; independent proofbca4d7f616050feddb3aabfa5427e3c67434efbd93141c63ef600b1bee02ca0c/
+12826B retained exact. Complete6selectedsections/492symbols(163dynamic+329regular)/
+163versym/2verneed/0gaps/163associations; sixteen greedy pages+summary376730B.
+Full canonical368917B/SHA bcda53af82ee74c98dc490bbd81a67af1fb27fba82cad5ec35a563f0d2796fb4.
+Independent24input fold checks EVERY field/rawspan/byte-name/multiplicity/order/
+pagebytes/start/count/noextras/fullreconstructedcanonical equality. Every input two
+full held/named reads/SHA/decimalphysical then later fullSHAphysical bookends;
+original prior20c33344/6569B binds binary216280B/9edf4136 andpage15279B/43ce6401.
+Retained-copy authority is NOT container-source heldFD/every-file image/build proof.
+
+Exact ordered verneed DATA: libm.so.6 -> GLIBC_2.17 required-versionindex3, libc.so.6 ->
+GLIBC_2.17 required-versionindex2 (vna_other). Each has one auxiliary at arrayindex0.
+These are required-version declarations ONLY, not
+resolved paths/providerbytes/aliases/exports/init/compatibility/runtime versions.
+No native loading or actual interpreter/loader/build/search/cache/env/preload/
+security/namespace/globals/transitive closure admitted. Other19nativebodies UNREAD.
+
+One residual16MiBDATA ledger: decoder277074B; primarybefore_summary1388027B/
+final1399451B; independentbefore_proof1399451B/final1425103B. Every canonical/page/
+output/readback/lateroutputbookend/proof+readback hash precharged. OperationalAUTH
+SEPARATE4MiB ledger: primary520340B/independent572824B includes extra full binary/
+page/source/prior auth hashes.16MiB NOT wholeprocess hashing total. ROOT arithmetic
+checks pass. Unchanged262KiBfile/4096strings/8192rows+fanout/canonical+output16MiB/
+pages65536B AND64rows/max256. Reported LinuxRSS18892/19528KiB only DATA helpers,
+NOT native/model combined peak/RAM acceptance.512MiBASsoft=hard/20CPU/30helperalarm/
+stage30 canceledBEFOREhelper/70SSH/TERM1KILL1 unchanged. Timeout/signal/overflow/
+ownedstop/cleanupfailure/invalidinput/crash branches UNEXERCISED here.
+
+Initial observationbuilder738e6a98/7877B local generation twice exited1 on embedded
+newline AST parse BEFORE transport/root/SSH. Exact source+failure retained exclusive
+/tmp/callback-symbol-observation-preparation-drafts-20261018-v1; corrected only raw
+outer string BEFORE use. Original UNRUN7ff8b1b4/8ba05b84 preserved exclusive
+/tmp/callback-symbol-independent-result-pin-drafts-20261018-v1 before TWO observed
+summary pins; no placeholder dispatch. One ROOT static shellquote exit2 beforePython
+and inline receiptchecker KeyError on nested summary pointer beforewrites preserved
+with corrected reports in /tmp/callback-symbol-DATA-local-review-20261018-v1/
+review.json27049B/9b5cbf9a. No remote/DATA/test failure/replay or cap relaxation.
+
+Reused healthy worker READONLY source/invocation/resources BEFORE both attempts/
+getters, then full actualproof/preservation review; no newagent/limitedretry/worker
+ops. ASTwarnings-as-errors/29outerpurposefunctions across8controls/all3transport
+functionASTs each exactprimary78253/embeddedbootstrap+PINS/exacttwoindependentpin
+changes/JSON/fullSHA/stageddiff PASS. Ruff previously unavailable/no lint claim.
+ROOT all6 exactterminals/stage/result/source/physical/24inventory/16pagepointers/
+fullcanonical+counts+ledgers pass. Fullpages staySpark; no closedgate reruns.
+
+Exclusive /tmp/callback-symbol-DATA-evidence-20261018-v1 retains32inputs203325B+
+manifestd963b1da54e5c16f0db0f179308f13b5dedbc6af36774a5b23c7a6cae22109de/38496B.
+Twofullheldnamedreads/exactdecimalphysical/exclusivecopies/fsync/readbacks/later
+alloriginal+copySHAphysical/manifestlast/rootresolvedparent sync. Separate ROOT
+32original+32copy SHAphysical readback PASS. Exact manifest retained research/
+original-loader-callback-symbol-data-preservation-v1-2026-10-18.json. Remote new
+primary+independent tools/output roots COMPLETE immutable, file/readback/outputdir
+THENparent sync. Getters authenticate fixed4files each, not a second full remote
+archive/stage+allpages inventory. Localsoftware262KiBfile/1MiBtotal/30alarm,
+noMacAS/kernelFSIZE/crashdurability claim. All old roots/admissions preserved.
+
+NEXT ROOT: actual retained symbol/version DATA boundary CLOSED; never replay these
+primary/independent/getters/63/37/sectionpage/ELFfold/copy/HEAD/metadata/censuses/
+ASTinventories/73/80/23/65+4/tiny/diagnostic/v2/packets for docs. SOURCE ONLY prepare
+dependency-origin and actual interpreter/loader/build/search-state contracts from
+authenticated exact retained sources/runtime metadata. No guessed librarypaths/
+hostsubstitutes/ldd/readelf/dlopen/package execution/other19reads/caprelaxation.
+Any new bounded stopped-runtime metadata observation requires independent exact
+source/invocation/freshresources review BEFORE use. Provider+alias+version/transitive
+native closure remains separate and unadmitted; current names do not supply it.
+
+Selected callable/global/type/dataclass liveproducer/classflags/native/phase/Arrow
+pools+wrapper/sklearnactualmetadata open. Guard3b8be00b/all25payloadfunctions UNRUN;
+old2446/030c/G08/caps/maps unchanged. Producer2431/reference2446/executor2468/original
+receipts/fullcontext+graphs+JSON+UTF8 lifetimes separate. Genuineassembledtree/
+strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/
+launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/
+intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/
+v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM
+unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Retained symbol DATA drivers SOURCE reviewed; actual decoding UNRUN
 
 Read research/original-loader-callback-symbol-driver-source-proof-v1-2026-10-18.json.
