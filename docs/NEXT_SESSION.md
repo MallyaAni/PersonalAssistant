@@ -1,5 +1,80 @@
 # Next session
 
+## 2026-10-18 — Explicit capacity input/reader SOURCE prepared; all bodies UNRUN
+
+Read research/original-loader-entry-source-proof-v1-2026-10-18.json.
+Source1f0134b38353ef4a71995e32f2b01b7b7602d800 pins builder9198514d/23312B,
+reviewer2b7bc6c3/18021B/dailya77634e8/2758B/economicsb66cebc1/8862B/
+readers7a0352cb/5839B/inputs8470e2b5/7523B/contract8ee53eaf/11765B/
+independent84a26617/72416B. Only new local stdlib source-copy/AST/JSON/SHA/Git
+builders+independent static fold ran. No payload import/CodeType/body/test/
+numerical/model/load/fit/predict/account/market-data read/SSH/hostprobe/Docker/job.
+All four modules/fifteen functions/application bodies remain UNRUN.
+
+Explicit daily prefix copies every original inputs statement before its unique
+shape/grid assignment, returning exact six values under NEW function/module
+identity. No continuation CLI/inspect/runtime AST projection. Economic source
+retains seven receipt/economic constants, original passive/action/calendar APIs,
+Path-hash helper and original evidence leaf-link/Path-versus-JSON/two-read behavior.
+Private passive-provenance projection differs ONLY by REFUSING nonfinite floats
+instead of converting to None; prepare_passive._freeze already requires finite
+provenance. Narrower-domain parity still UNRUN, no native/account normalization.
+
+Two NEW risk classes preserve complete original parent/frozen constructor bodies
+in TWO returning frames: first features/prediction/observation/bank copies release
+their locals BEFORE second completed_features RHS allocation. Same original super
+call, second prediction/frozen copies/readonly transitions. New market wrapper
+uses actual original ForwardMarketConditionedHoldingReader base and exact new
+parent identity before unchanged _bind/deepcopy/self-file/protocol/calendar paths.
+Six-field CapacityAuditInputsV1 is a NEW result identity. Old select/clock wrapper
+methods are not copied; inherited distribution/clock/calibration/fit methods may
+remain but are UNADMITTED, never a drop-in original policy interface.
+
+Private _load prototype retains original load statement order/nine original source
+checks/archive/config/observation/economic/raw construction, with exact new archive
+type and immediate post-publication NumericHead/None type+fitted/non-null guards.
+That helper ALONE does not verify status enum/lineage/factory provenance or forged
+exact-type objects; unchanged load_publication->_admit->numeric_head plus future
+exact source/fence/call/global bindings remain mandatory. Public execute ALWAYS
+refuses CAPACITY_MODEL_ENTRY_UNADMITTED. No admitted model strategy or executor.
+
+New2457map aaa1ad06/286816B/compactfiles pin retained in
+research/original-loader-entry-source-map-v1-2026-10-18.json: old2453 +four NEW
+modules +sole explicit original4b0555a6->variant21adedb2 learned_entry_data path
+transition. Original2446/old2453 maps/lifecycle unchanged; old binding deliberately
+refuses LEGACY_SOURCE_OVERRIDE_FORBIDDEN. Typed metadata16MiB outside ordinary
+262KiB source/log/packet roots, no capincrease/ordinary exception. This is NOT an
+assembled source tree/SourceBook/finder/executed-map/import/runtime admission.
+
+Independent18AST checks cover16 original declarations/nine source files/twelve
+constant assignments, all explicit body/type/namespace/finite-refusal changes and
+public refusal. New lexical module graph31origins/188edges/29deferred imports has
+none of ALL FIVE guarded effect prefixes or CLI/oldhistory/replay/streamaudit
+imports. This31 is NOT N2native31. No evaluated branch/default/decorator/annotation/
+import-order/dynamic/native/generated/callable-body closure or behavior proof.
+Healthy existing worker READONLY accepted code/source/graph/scope; no newagent/
+limitedretry/workerops. AST warning-as-error/purpose36 across6newsourcefiles/JSON/
+fullSHA/hashlinks/static fold/staged diff pass; Ruff unavailable. Exclusive local
+/tmp/capacity-loader-entry-source-20261018-v1 retains four inert copies+contract
+pointer, never regenerate for docs. All old failed/completed roots preserved.
+
+NEXT ROOT: SOURCE ONLY implement DISTINCT explicit map-transition binding and
+lifecycle composition for these constructor-only identities. Authenticate exactly
+one declared original->variant path and four additions, original/new namespaces,
+root/type/module/source-receipt bindings and unchanged pure numerical/calibration/
+calendar actual origins. Old2453 admission stays refusing. Complete all original
+invocation/runtime/Git2431/fullsource/producer/calendar/config/economic/preservation/
+full before-after byte receipts, exact private-load/factory/constructor-frame and
+full context/archive/receipts/JSON/UTF8 lifetime bindings under NEW immutable finder/
+generated/native/call/phase contract BEFORE synthetic or genuine runtime proposal.
+Entrypoint/executed-map/finder/modelstrategy/manifest/owner/caller/stager/bootstrap/
+packet/runtime/launch/admission NULL/execution_authorizedFALSE. No old73/80/23/
+65+4/tiny/diagnostic/v2 replay, genuine model/account/history/twohost launch or
+guard/G08/cap relaxation. RAM/horizon/historical/ordinary/intraday/fill/UI remain
+UNVERIFIED. OriginaltimingFAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/
+no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM unchanged.
+Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Capacity numerical import cut SOURCE reviewed; all model bodies UNRUN
 
 Read research/original-loader-import-cut-source-proof-v1-2026-10-18.json.

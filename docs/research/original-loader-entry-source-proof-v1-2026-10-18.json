@@ -1,0 +1,162 @@
+{
+  "schema": "capacity-original-entry-source-checkpoint-proof/1",
+  "status": "SOURCE_REVIEWED_UNEXECUTED_ENTRY_PROTOTYPE_NO_GENUINE_ADMISSION",
+  "source_revision": "1f0134b38353ef4a71995e32f2b01b7b7602d800",
+  "starting_revision": "3da195b911899934238d3e8d189f7358a116af4e",
+  "objective": "Implement separately versioned explicit daily/economic preparation and two-frame frozen reader/result source prototypes while preserving original numerical/calibration/calendar origins and all prior refusals.",
+  "files": {
+    "sources/prepare-capacity-loader-entry-source-v1-2026-10-18.py": {
+      "sha256": "9198514db0f7ba7b1f463721026cba4d51bff18fa9285554c10117621c3f4a4d",
+      "bytes": 23312
+    },
+    "sources/review-capacity-loader-entry-source-v1-2026-10-18.py": {
+      "sha256": "2b7bc6c367cf95e809e30c7603d262b06a240adccd0c1db273b5bcc8ad04a3d1",
+      "bytes": 18021
+    },
+    "original-loader-entry-source-contract-v1-2026-10-18.json": {
+      "sha256": "8ee53eaf913e5ad5639ce874ad3b205e91ba1425634047c63c6b62d0b6cfaaf0",
+      "bytes": 11765
+    },
+    "original-loader-entry-source-map-v1-2026-10-18.json": {
+      "sha256": "aaa1ad0622f18f35e8f639d4a7a9e78e21d8681e19860c7a7284b0876b043f9c",
+      "bytes": 286816
+    },
+    "original-loader-entry-independent-source-review-v1-2026-10-18.json": {
+      "sha256": "84a26617aa2b87cd1c6f71b7bde608c58e8b9e553a72236a2be37d62f6d65111",
+      "bytes": 72416
+    },
+    "sources/original-loader-capacity-daily-inputs-v1-2026-10-18.py": {
+      "sha256": "a77634e8c54575f3295179c48b4d6577940deff44d1daa691553d826ecc3f9cc",
+      "bytes": 2758
+    },
+    "sources/original-loader-capacity-economics-v1-2026-10-18.py": {
+      "sha256": "b66cebc1f24f6938a2a4e9dd17cfd6efd233d0ab44091b293c980f9e5a6eadcc",
+      "bytes": 8862
+    },
+    "sources/original-loader-capacity-frozen-readers-v1-2026-10-18.py": {
+      "sha256": "7a0352cb56ad74332c80f64c7b676d85d6e88fdf903f768c0b5f4a5de0536915",
+      "bytes": 5839
+    },
+    "sources/original-loader-capacity-inputs-v1-2026-10-18.py": {
+      "sha256": "8470e2b579cc39b32113e2fcb88e8e918eac283e900f7d62341059761c524661",
+      "bytes": 7523
+    }
+  },
+  "implementation": {
+    "new_module_count": 4,
+    "new_module_function_count": 15,
+    "all_new_application_module_and_function_bodies": "UNRUN",
+    "daily": "Exact original inputs statements before the single shape grid assignment; explicit six-value return, distinct function/module/source identity. No continuation import, inspect.getsource, runtime AST/CodeType projection or cube allocation.",
+    "economics": "Six original economic constants plus original receipt constant, full original passive/action/calendar functions via actual live_execution_inputs; copied Path-hash/evidence helpers with exact leaf symlink and Path-versus-JSON/two-read semantics; no study CLI/replay/account import.",
+    "passive_projection": "Only finite derived passive provenance: original Mapping/tuple/NumPy scalar projection retained except nonfinite float now REFUSES instead of returning None. prepare_passive._freeze already requires finite supplied provenance; this narrower domain still requires actual positive/refusal parity. No native/account NaN normalization.",
+    "readers": "Original complete parent and frozen constructor bodies occupy two separate new class frames. Same super initialization, both completed_features calls/predictions/copies/readonly flags and exact original market-reader base with _bind deepcopy/source/protocol hashes. Original policy reader classes are never imported.",
+    "result": "All six original fields/decorators retained under CapacityAuditInputsV1, with new reader type annotation. This is not an original AuditInputs or installed-policy type.",
+    "private_load": "Original load statement order and exact nine original source dependency checks, archive inputs/config/publication/observation/economic/raw construction retained; exact new archive type guard and immediate post-factory exact NumericHead/None type plus fitted/non-null consistency checks inserted. Only explicit new daily/economic/reader/result identities rebound.",
+    "public_execute": "UNCONDITIONAL CAPACITY_MODEL_ENTRY_UNADMITTED REFUSAL",
+    "constructor_only_interface": "Old FrozenCurrentRiskReader/FrozenCurrentMarketReader select/clock wrapper methods are not copied. Inherited distribution/clock/calibration/fit methods may remain and are UNADMITTED; no drop-in strategy/policy interface claim."
+  },
+  "independent_static": {
+    "original_sources_selected": 9,
+    "original_complete_declarations": 16,
+    "full_AST_checks": 18,
+    "original_constant_assignments": 12,
+    "candidate_modules": 31,
+    "candidate_edges": 188,
+    "candidate_deferred_callable_import_declarations": 29,
+    "scope": "Lexical explicit module/class imports and implicit packages; conditional declarations included without evaluating branches. No actual import order, default/annotation/decorator execution, dynamic/native-package/generated/call/phase closure.",
+    "all5_exact_unchanged_guard_prefixes_absent": true,
+    "CLI_old_history_replay_stream_audit_imports_absent": true,
+    "native31_scope": "The 31 candidate module origins are distinct from the original N2 native31 map and confer no native31/full2457 source/runtime admission.",
+    "worker": "Existing healthy trading_action_consistency READONLY local source and AST review; no new agent, limited-worker retry, edits or runtime operations.",
+    "source_review_outcome": "No deterministic source blocker or material scope overclaim found; all payload behavior remains UNRUN."
+  },
+  "map_declaration": {
+    "files": 2457,
+    "bytes": 286816,
+    "sha256": "aaa1ad0622f18f35e8f639d4a7a9e78e21d8681e19860c7a7284b0876b043f9c",
+    "compact_files_sha256": "67faa3bfdb679ddf7722a801446a84a916b2bfc922e309f8d63ce7a26c20e2d6",
+    "base2453_unchanged": true,
+    "adds_new_modules": 4,
+    "sole_explicit_legacy_path_transition": "backend/market/learned_entry_data.py original4b0555a6 -> separate21adedb2 import-cut variant; source and transition bytes already reviewed in93031154.",
+    "typed_metadata_bound_bytes": 16777216,
+    "ordinary_source_log_packet_bound_bytes": 262144,
+    "map_outside_ordinary_source_log_packet_roots": true,
+    "cap_increase_or_ordinary_file_exception": false,
+    "old_lifecycle_binding": "UNCHANGED; LEGACY_SOURCE_OVERRIDE_FORBIDDEN still refuses this transition.",
+    "state": "UNASSEMBLED_UNEXECUTED_DECLARATION_ONLY, not actual full SourceBook/finder/import/native/physical/executed closure or admission"
+  },
+  "factory_limitations": {
+    "actual_source_path": "Unchanged load_publication->_admit->numeric_head yields NumericHead/None immediately before new check.",
+    "new_guard_alone": "Only exact head class/None and fitted/non-null consistency. It is NOT publication/status-enum/lineage/factory-provenance verification; arbitrary forged exact-type objects are not independently authenticated by it.",
+    "required": "Exact unchanged publication/configuration/numeric-tree receipt factory plus real module origins, function/call/phase/global bindings. No supplied arbitrary predictor or injection may replace the chain.",
+    "actual_model_load_inference_numeric_parity": "UNRUN",
+    "model_import_strategy": null
+  },
+  "lifetimes": {
+    "separate_constructor_frames_required": true,
+    "first_feature_graph_release_before_second_RHS_allocation": "Retained in source only, not observed runtime.",
+    "second_features_predictions_frozen_copies_and_original_bank_retained": true,
+    "market_parent_deepcopy_and_real_base_isinstance_semantics_required": true,
+    "full_loaded_context_archives_ShaMap_before_after_receipts_JSON_UTF8": "Mandatory retained coexistence through actual durable result and late peak observation; no new RAM bound established."
+  },
+  "actual_operations": {
+    "ran": [
+      "local stdlib source copy/text generation/AST/JSON/SHA",
+      "read-only exact original Git source retrieval",
+      "new exclusive source+metadata writes and exact readback",
+      "new independent AST/graph/source-map review",
+      "Git validation/checkpoint"
+    ],
+    "payload_import_CodeType_compile_or_body": false,
+    "numpy_application_model_load_fit_predict": false,
+    "tests_old_completed_gate_replay": false,
+    "SSH_hostprobe_Docker_job": false,
+    "original_account_market_data_read": false,
+    "production_original_or_guard_cap_change": false
+  },
+  "checks": {
+    "source_AST_warnings_as_errors": "PASS",
+    "function_purpose_comments": "PASS36 across6newsourcefiles",
+    "JSON_fullSHA_map_and_source_links": "PASS",
+    "new18_AST_and31_module_graph_static_review": "PASS",
+    "source_staged_diff": "PASS",
+    "Ruff": "UNAVAILABLE",
+    "functional_numeric_type_alias_readonly_deepcopy_lifetime_RAM": "UNRUN",
+    "generated_native_runtime_fence_G08_acceptance": "UNVERIFIED"
+  },
+  "preservation": {
+    "new_exclusive_root": "/tmp/capacity-loader-entry-source-20261018-v1",
+    "contents": "Four inert source copies and exact contract pointer; preserve/no regeneration for docs.",
+    "all_old_closed_failed_completed_roots_packets_and_admissions": "UNCHANGED; never replay or reuse."
+  },
+  "unadmitted": {
+    "executed_map": null,
+    "finder": null,
+    "native_package_closure": null,
+    "call_manifest": null,
+    "generated_manifest": null,
+    "phase_manifest": null,
+    "entrypoint": null,
+    "model_import_strategy": null,
+    "owner": null,
+    "caller": null,
+    "stager": null,
+    "bootstrap": null,
+    "packet": null,
+    "runtime": null,
+    "launch": null,
+    "admission": null,
+    "execution_authorized": false
+  },
+  "next": "SOURCE ONLY implement a distinct explicit map-transition binding and lifecycle composition for these new constructor-only source identities. Authenticate the one declared learned_entry_data original->variant transition and four additions, complete original and new namespace/root/type/module receipt bindings, preserve old2453 binding refusal and all original invocation/runtime/Git2431/producer/calendar/config/economic/preservation/full before-after byte receipts. Bind the private load/factory path, real pure numerical/calibration/calendar origins, both constructor frames and full serialization lifecycle under a NEW immutable source/finder/generated/native/call/phase contract. No synthetic or genuine execution proposal before that complete contract and independent source review; no old73/80/23/65+4/tiny/diagnostic/v2 rerun.",
+  "unchanged": {
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "original_missing_raw_receipts": "MISSING",
+    "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "actual_two_host": false,
+    "Spark2_image_daemon_temp_incremental_RAM": "UNADMITTED",
+    "genuine_loader_model_combined_RAM_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+    "heartbeat": "ACTIVE"
+  }
+}
