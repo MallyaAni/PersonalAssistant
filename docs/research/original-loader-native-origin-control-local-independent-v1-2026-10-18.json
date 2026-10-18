@@ -1,0 +1,513 @@
+{
+  "actual_prerequisites": null,
+  "complete_source_body_and_physical_bookends_equal": true,
+  "compressed_bytes": 22240,
+  "copies": 13,
+  "decoded_bytes": 95869,
+  "decoded_files": 4,
+  "fixed_before_wire_bytes": 41049,
+  "hash_work_before_proof": 1223748,
+  "inputs": {
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/original-loader-native-origin-contract-v1-2026-10-18.json": {
+      "bytes": 24905,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792346385737619285",
+        "st_dev": "16777223",
+        "st_ino": "186436380",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792346385737619285",
+        "st_nlink": "1",
+        "st_size": "24905",
+        "st_uid": "501"
+      },
+      "sha256": "4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/callback-symbol-data-primary-transport-v1-2026-10-18.py": {
+      "bytes": 8385,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792343936150202881",
+        "st_dev": "16777223",
+        "st_ino": "185779798",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792343936150202881",
+        "st_nlink": "1",
+        "st_size": "8385",
+        "st_uid": "501"
+      },
+      "sha256": "78253bcf66db3e449b4247749b1912c640ea809e941fb820d975e739bed19617"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/native-origin-control-bootstrap-v1-2026-10-18.py": {
+      "bytes": 15611,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792348705960456846",
+        "st_dev": "16777223",
+        "st_ino": "186997790",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792348705960456846",
+        "st_nlink": "1",
+        "st_size": "15611",
+        "st_uid": "501"
+      },
+      "sha256": "70fb388a8cf1271a4eb0957a9071594490ef26318dc52ab9392b4572a6eacb67"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/native-origin-control-transport-v1-2026-10-18.py": {
+      "bytes": 26208,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792349001905724239",
+        "st_dev": "16777223",
+        "st_ino": "187149031",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001905724239",
+        "st_nlink": "1",
+        "st_size": "26208",
+        "st_uid": "501"
+      },
+      "sha256": "ce66a5d53a789bcb63f31633b222653f62af1cf59419ce3cfe30154952deb087"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/native-origin-transport-prelude-v1-2026-10-18.py": {
+      "bytes": 2834,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792348865717999356",
+        "st_dev": "16777223",
+        "st_ino": "187111051",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792348865717999356",
+        "st_nlink": "1",
+        "st_size": "2834",
+        "st_uid": "501"
+      },
+      "sha256": "c6802e3fb9e8dd28736263698f3af2191a777023635f6742774c3823a86e2ddf"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/observe-retained-native-json-v1-2026-10-18.py": {
+      "bytes": 14395,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792347500907995254",
+        "st_dev": "16777223",
+        "st_ino": "186711279",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792347500907995254",
+        "st_nlink": "1",
+        "st_size": "14395",
+        "st_uid": "501"
+      },
+      "sha256": "b7f6ffb0b968c08caa0b6133c0d2aa20d75c54f87b0abc80326c28c9096a6e5b"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/prepare-native-origin-controls-v1-2026-10-18.py": {
+      "bytes": 15062,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792348945048525552",
+        "st_dev": "16777223",
+        "st_ino": "187134879",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792348945048525552",
+        "st_nlink": "1",
+        "st_size": "15062",
+        "st_uid": "501"
+      },
+      "sha256": "92c5e7e3d2d5818f54f684b9c7aa20c7281a305a89d1fbfbfeecc8dfa0970d1e"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/verify-native-origin-control-packet-v1-2026-10-18.py": {
+      "bytes": 8647,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792349105953932199",
+        "st_dev": "16777223",
+        "st_ino": "187177159",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349105953932199",
+        "st_nlink": "1",
+        "st_size": "8647",
+        "st_uid": "501"
+      },
+      "sha256": "2272deab6c754734eb2e6886670d784f56e9aa8929265eacd35e69ea54b2ba9b"
+    },
+    "/tmp/capacity-context-parity-operations-20261018-v1/fetch-native-inspect.stdout": {
+      "bytes": 9755,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792317264562997733",
+        "st_dev": "16777223",
+        "st_ino": "178190217",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792317264562997733",
+        "st_nlink": "1",
+        "st_size": "9755",
+        "st_uid": "501"
+      },
+      "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+    },
+    "/tmp/capacity-context-parity-operations-20261018-v1/fetch-native-proof.stdout": {
+      "bytes": 46814,
+      "physical": {
+        "st_blocks": "96",
+        "st_ctime_ns": "1792317247225903378",
+        "st_dev": "16777223",
+        "st_ino": "178188977",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792317247225903378",
+        "st_nlink": "1",
+        "st_size": "46814",
+        "st_uid": "501"
+      },
+      "sha256": "1355771ff667f81e02dbe07885914dd5be8bf5cf395a3e74ef3bfdfd4988c6f7"
+    },
+    "/tmp/native-origin-control-bootstrap-drafts-20261018-v1/bootstrap-unrun.py": {
+      "bytes": 14858,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792348705908237257",
+        "st_dev": "16777223",
+        "st_ino": "187051691",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792348705908237257",
+        "st_nlink": "1",
+        "st_size": "14858",
+        "st_uid": "501"
+      },
+      "sha256": "2fe7eada6ad9447762f01101702a29c2fbc7bd98c5a158dbd4a24b93fa037407"
+    },
+    "/tmp/native-origin-control-bootstrap-drafts-20261018-v1/reason.json": {
+      "bytes": 508,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792348705908800119",
+        "st_dev": "16777223",
+        "st_ino": "187051692",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792348705908800119",
+        "st_nlink": "1",
+        "st_size": "508",
+        "st_uid": "501"
+      },
+      "sha256": "0ac157d24f9121ed004ef934a272d4eef2062c69e005461e81bbacff68c728e0"
+    },
+    "/tmp/native-origin-control-local-independent-20261018-v1/source.py": {
+      "bytes": 8647,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792349150765158349",
+        "st_dev": "16777223",
+        "st_ino": "187191710",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349150765158349",
+        "st_nlink": "1",
+        "st_size": "8647",
+        "st_uid": "501"
+      },
+      "sha256": "2272deab6c754734eb2e6886670d784f56e9aa8929265eacd35e69ea54b2ba9b"
+    },
+    "/tmp/native-origin-control-preparation-20261018-v1/input-00-observe-retained-native-json-v1-2026-10-18.py": {
+      "bytes": 14395,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792349001906980554",
+        "st_dev": "16777223",
+        "st_ino": "187149032",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001906980554",
+        "st_nlink": "1",
+        "st_size": "14395",
+        "st_uid": "501"
+      },
+      "sha256": "b7f6ffb0b968c08caa0b6133c0d2aa20d75c54f87b0abc80326c28c9096a6e5b"
+    },
+    "/tmp/native-origin-control-preparation-20261018-v1/input-01-original-loader-native-origin-contract-v1-2026-10-18.json": {
+      "bytes": 24905,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792349001907746157",
+        "st_dev": "16777223",
+        "st_ino": "187149033",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001907746157",
+        "st_nlink": "1",
+        "st_size": "24905",
+        "st_uid": "501"
+      },
+      "sha256": "4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5"
+    },
+    "/tmp/native-origin-control-preparation-20261018-v1/input-02-fetch-native-proof.stdout": {
+      "bytes": 46814,
+      "physical": {
+        "st_blocks": "96",
+        "st_ctime_ns": "1792349001908646306",
+        "st_dev": "16777223",
+        "st_ino": "187149034",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001908646306",
+        "st_nlink": "1",
+        "st_size": "46814",
+        "st_uid": "501"
+      },
+      "sha256": "1355771ff667f81e02dbe07885914dd5be8bf5cf395a3e74ef3bfdfd4988c6f7"
+    },
+    "/tmp/native-origin-control-preparation-20261018-v1/input-03-fetch-native-inspect.stdout": {
+      "bytes": 9755,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792349001909767576",
+        "st_dev": "16777223",
+        "st_ino": "187149035",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001909767576",
+        "st_nlink": "1",
+        "st_size": "9755",
+        "st_uid": "501"
+      },
+      "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+    },
+    "/tmp/native-origin-control-preparation-20261018-v1/input-04-callback-symbol-data-primary-transport-v1-2026-10-18.py": {
+      "bytes": 8385,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792349001911601949",
+        "st_dev": "16777223",
+        "st_ino": "187149036",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001911601949",
+        "st_nlink": "1",
+        "st_size": "8385",
+        "st_uid": "501"
+      },
+      "sha256": "78253bcf66db3e449b4247749b1912c640ea809e941fb820d975e739bed19617"
+    },
+    "/tmp/native-origin-control-preparation-20261018-v1/input-05-native-origin-control-bootstrap-v1-2026-10-18.py": {
+      "bytes": 15611,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792349001913461097",
+        "st_dev": "16777223",
+        "st_ino": "187149037",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001913461097",
+        "st_nlink": "1",
+        "st_size": "15611",
+        "st_uid": "501"
+      },
+      "sha256": "70fb388a8cf1271a4eb0957a9071594490ef26318dc52ab9392b4572a6eacb67"
+    },
+    "/tmp/native-origin-control-preparation-20261018-v1/input-06-native-origin-transport-prelude-v1-2026-10-18.py": {
+      "bytes": 2834,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792349001914396342",
+        "st_dev": "16777223",
+        "st_ino": "187149038",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001914396342",
+        "st_nlink": "1",
+        "st_size": "2834",
+        "st_uid": "501"
+      },
+      "sha256": "c6802e3fb9e8dd28736263698f3af2191a777023635f6742774c3823a86e2ddf"
+    },
+    "/tmp/native-origin-control-preparation-20261018-v1/input-07-prepare-native-origin-controls-v1-2026-10-18.py": {
+      "bytes": 15062,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792349001915313453",
+        "st_dev": "16777223",
+        "st_ino": "187149039",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001915313453",
+        "st_nlink": "1",
+        "st_size": "15062",
+        "st_uid": "501"
+      },
+      "sha256": "92c5e7e3d2d5818f54f684b9c7aa20c7281a305a89d1fbfbfeecc8dfa0970d1e"
+    },
+    "/tmp/native-origin-control-preparation-20261018-v1/input-08-bootstrap-unrun.py": {
+      "bytes": 14858,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792349001916199650",
+        "st_dev": "16777223",
+        "st_ino": "187149040",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001916199650",
+        "st_nlink": "1",
+        "st_size": "14858",
+        "st_uid": "501"
+      },
+      "sha256": "2fe7eada6ad9447762f01101702a29c2fbc7bd98c5a158dbd4a24b93fa037407"
+    },
+    "/tmp/native-origin-control-preparation-20261018-v1/input-09-reason.json": {
+      "bytes": 508,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792349001917092160",
+        "st_dev": "16777223",
+        "st_ino": "187149041",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001917092160",
+        "st_nlink": "1",
+        "st_size": "508",
+        "st_uid": "501"
+      },
+      "sha256": "0ac157d24f9121ed004ef934a272d4eef2062c69e005461e81bbacff68c728e0"
+    },
+    "/tmp/native-origin-control-preparation-20261018-v1/input-10-native-origin-control-preparation-patch-refusal-20261018-v1.json": {
+      "bytes": 785,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792349001917909957",
+        "st_dev": "16777223",
+        "st_ino": "187149042",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001917909957",
+        "st_nlink": "1",
+        "st_size": "785",
+        "st_uid": "501"
+      },
+      "sha256": "2386e139544e042dedc59d6c781a9b0680a2fd2747c09d431b8009e80c94c1c8"
+    },
+    "/tmp/native-origin-control-preparation-20261018-v1/input-11-packet.json": {
+      "bytes": 30745,
+      "physical": {
+        "st_blocks": "64",
+        "st_ctime_ns": "1792349001918883238",
+        "st_dev": "16777223",
+        "st_ino": "187149043",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001918883238",
+        "st_nlink": "1",
+        "st_size": "30745",
+        "st_uid": "501"
+      },
+      "sha256": "3581a65f6bed8c5e5eaee081712502e7835820f6dbad71352b84c3ff17346151"
+    },
+    "/tmp/native-origin-control-preparation-20261018-v1/input-12-native-origin-control-transport-v1-2026-10-18.py": {
+      "bytes": 26208,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792349001920032754",
+        "st_dev": "16777223",
+        "st_ino": "187149044",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001920032754",
+        "st_nlink": "1",
+        "st_size": "26208",
+        "st_uid": "501"
+      },
+      "sha256": "ce66a5d53a789bcb63f31633b222653f62af1cf59419ce3cfe30154952deb087"
+    },
+    "/tmp/native-origin-control-preparation-20261018-v1/manifest.json": {
+      "bytes": 16302,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792349001927656806",
+        "st_dev": "16777223",
+        "st_ino": "187149046",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001927656806",
+        "st_nlink": "1",
+        "st_size": "16302",
+        "st_uid": "501"
+      },
+      "sha256": "0b1fc7f967c36f8546776c700f80a144db120fdb774d0f72777c36b18276f539"
+    },
+    "/tmp/native-origin-control-preparation-20261018-v1/packet.json": {
+      "bytes": 30745,
+      "physical": {
+        "st_blocks": "64",
+        "st_ctime_ns": "1792349001904725426",
+        "st_dev": "16777223",
+        "st_ino": "187149030",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001904725426",
+        "st_nlink": "1",
+        "st_size": "30745",
+        "st_uid": "501"
+      },
+      "sha256": "3581a65f6bed8c5e5eaee081712502e7835820f6dbad71352b84c3ff17346151"
+    },
+    "/tmp/native-origin-control-preparation-20261018-v1/source-review.json": {
+      "bytes": 1279,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792349001920871090",
+        "st_dev": "16777223",
+        "st_ino": "187149045",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001920871090",
+        "st_nlink": "1",
+        "st_size": "1279",
+        "st_uid": "501"
+      },
+      "sha256": "fef8d9681adddae39aee8a2b917cf086a00c48cdaacd4361f9c283555bd89e25"
+    },
+    "/tmp/native-origin-control-preparation-patch-refusal-20261018-v1.json": {
+      "bytes": 785,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792348945047856898",
+        "st_dev": "16777223",
+        "st_ino": "187134878",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792348945047856898",
+        "st_nlink": "1",
+        "st_size": "785",
+        "st_uid": "501"
+      },
+      "sha256": "2386e139544e042dedc59d6c781a9b0680a2fd2747c09d431b8009e80c94c1c8"
+    }
+  },
+  "manifest": {
+    "bytes": 16302,
+    "physical": {
+      "st_blocks": "32",
+      "st_ctime_ns": "1792349001927656806",
+      "st_dev": "16777223",
+      "st_ino": "187149046",
+      "st_mode": "33188",
+      "st_mtime_ns": "1792349001927656806",
+      "st_nlink": "1",
+      "st_size": "16302",
+      "st_uid": "501"
+    },
+    "sha256": "0b1fc7f967c36f8546776c700f80a144db120fdb774d0f72777c36b18276f539"
+  },
+  "originals": 13,
+  "packet": {
+    "bytes": 30745,
+    "physical": {
+      "st_blocks": "64",
+      "st_ctime_ns": "1792349001904725426",
+      "st_dev": "16777223",
+      "st_ino": "187149030",
+      "st_mode": "33188",
+      "st_mtime_ns": "1792349001904725426",
+      "st_nlink": "1",
+      "st_size": "30745",
+      "st_uid": "501"
+    },
+    "sha256": "3581a65f6bed8c5e5eaee081712502e7835820f6dbad71352b84c3ff17346151"
+  },
+  "remote_controls_and_reader_bodies_UNRUN": true,
+  "remote_pages_target_native_json_UNREAD": true,
+  "runtime_admission": null,
+  "schema": "native-origin-control-local-independent/1",
+  "scope": "LOCAL_SOURCE_AND_PACKET_ONLY",
+  "source_review": {
+    "bytes": 1279,
+    "physical": {
+      "st_blocks": "8",
+      "st_ctime_ns": "1792349001920871090",
+      "st_dev": "16777223",
+      "st_ino": "187149045",
+      "st_mode": "33188",
+      "st_mtime_ns": "1792349001920871090",
+      "st_nlink": "1",
+      "st_size": "1279",
+      "st_uid": "501"
+    },
+    "sha256": "fef8d9681adddae39aee8a2b917cf086a00c48cdaacd4361f9c283555bd89e25"
+  }
+}

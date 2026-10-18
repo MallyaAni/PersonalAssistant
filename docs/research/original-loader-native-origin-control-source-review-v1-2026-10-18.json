@@ -1,0 +1,41 @@
+{
+  "actual_prerequisites": null,
+  "admission": null,
+  "all_remote_controls_and_reader_bodies_UNRUN": true,
+  "base_packet": {
+    "bytes": 30745,
+    "sha256": "3581a65f6bed8c5e5eaee081712502e7835820f6dbad71352b84c3ff17346151"
+  },
+  "compressed_bytes": 22240,
+  "decoded_bytes": 95869,
+  "decoded_files": 4,
+  "fixed_before_wire_bytes": 41049,
+  "native_runtime_admission": null,
+  "observation_runtime": null,
+  "old_limits_and_interrupt_AST_equal": true,
+  "owned_transport_try_AST_equal_except_four_receipt_fields": true,
+  "schema": "native-origin-controls-SOURCE-review/1",
+  "source_inventory": {
+    "bootstrap": {
+      "bytes": 15611,
+      "purpose_functions": 15,
+      "sha256": "70fb388a8cf1271a4eb0957a9071594490ef26318dc52ab9392b4572a6eacb67"
+    },
+    "builder": {
+      "bytes": 15062,
+      "purpose_functions": 7,
+      "sha256": "92c5e7e3d2d5818f54f684b9c7aa20c7281a305a89d1fbfbfeecc8dfa0970d1e"
+    },
+    "prelude": {
+      "bytes": 2834,
+      "purpose_functions": 2,
+      "sha256": "c6802e3fb9e8dd28736263698f3af2191a777023635f6742774c3823a86e2ddf"
+    },
+    "transport": {
+      "bytes": 26208,
+      "purpose_functions": 5,
+      "sha256": "ce66a5d53a789bcb63f31633b222653f62af1cf59419ce3cfe30154952deb087"
+    }
+  },
+  "staging_runtime": null
+}
