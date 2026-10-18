@@ -1,5 +1,57 @@
 # Next session
 
+## 2026-10-18 — Original numeric archive headers VERIFIED; model RAM UNVERIFIED
+
+Read research/original-model-array-header-proof-2026-10-18.json.
+New standalone stdlib readeraf5f259e inspected original config1a149 and its
+authenticated bank/head receipts; no NumPy/sklearn/backend imports, arrays,
+model inference, fits, policy/broker/account calls or Docker/model-server work.
+Fresh exclusive Spark1 original-model-array-headers-20261018-v2 COMPLETE:
+primary4c964fc9/159726B, RSS40780KiB under128MiB virtualAS/30sCPU/60swall/nice10.
+Bank14 arrays29531920B, head196 arrays104064B, total29635984B declared array
+storage. Bank risk features float32[2953,96,13]/14741376B. This is storage,
+NOT full model/cache/reader/receipt coexistence or peak RAM admission. Native
+N2/e0 and CURRENTf612 profiles were NOT numerically exercised or mixed.
+
+Held FDs/full raw SHA once per archive/bounded headers/physical bookends exact:
+bank11168202B/fcb0f04c, head98939B/e0c42cc2. Config and bank79b33d54/model858163d5
+receipt selectors unchanged. Source-backed copy graph includes repeated full
+feature construction, frozen bank/feature buffers and market-parent deepcopy.
+Distribution later calls fit_market_log; a no-fit capacity boundary must stop
+before distribution/calibration/planning/account work. No new run admitted.
+
+New parser RED3 reproduced missing newline/alignment/invalid scalar widths on
+initial5777 reader. Corrected thirteen synthetic tests passed0fail0error0skip
+0.010570s; scalar/Unicode/date/structured/subarray arithmetic, framing/object/
+shape/duplicate/body-length/bounds refusals. Initial9/12 results retained,
+not added to13. Actual first inspector03426606/rootv1 stopped exit1 at its
+1MiB receipt bound before NPZ/header access. Readonly stat proved original
+bank.json4777209B; v2 requires exactly that size within existing original16MiB
+metadata contract and releases its graph before headers. No native/Store/
+Nightly/Cycle cap change, blanket increase, substitution or old-root replay.
+
+Separate verifier4e30963d/8d749ca4/1699B checks all210 raw header hashes/parsed
+metadata/header+payload arithmetic, held physical bookends, four metadata SHA,
+seven staged sources and retained RED/green/failure reports. Independent root
+original-model-array-header-independent-20261018-v2 COMPLETE. First verifier
+failed on dtype tuple-versus-JSON-list representation; exact source/log retained,
+corrected only metadata comparison, raw hashes unchanged. NPZ complete hashes
+are primary-only; independent check is not a second full archive/model audit.
+Source-root-v2 manifest73487c61 fsynced/readback; failed/completed roots retained.
+AST/purpose comments pass/Ruff unavailable; timeout branch unexercised.
+
+NEXT: prepare an INERT exact N2 loader-only capacity contract with authenticated
+original selectors/source/config and complete RAM/receipt coexistence accounting.
+Do not bypass OriginalArchives admission, load a substitute profile, call fits,
+or launch a full original/corrected/genuine account. Original byte/state gates,
+115/RED1/controller/LOCAL/native gates were NOT rerun and remain closed for docs.
+Full numerical/model/causal/economic/native checkpoint/restore/horizon acceptance
+UNVERIFIED; original timing FAILED/publication CLOSED/missing receipts unchanged;
+genuinev6 OPEN/PAUSED/no replay/adoption/new run. Actualtwohost/Spark2 load/
+daemon-temp/RAM gaps unchanged, no repetitive unavailable probes or denial bypass.
+Weekday/intraday/fill/UI UNVERIFIED; heartbeat ACTIVE/no permission question.
+Diagram impact: NONE — standalone readonly metadata inspection only.
+
 ## 2026-10-18 — Original reader integrated with CURRENT nightly source closure VERIFIED
 
 Verified source checkpoint867d3a7edafc10218ce7113c5bd856f4d47cb567 is pushed

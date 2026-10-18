@@ -1,0 +1,386 @@
+{
+  "schema": "original-model-array-header-proof/1",
+  "status": "VERIFIED_AUTHENTICATED_ORIGINAL_ARCHIVE_HEADERS_ONLY",
+  "starting_head": "4cf0655e064347456d19fe1674e4d92b4a4f7e56",
+  "objective": "Measure original bank/head array storage from authenticated headers before preparing any full-context capacity run.",
+  "source_sha256": {
+    "/tmp/inspect_original_model_array_headers_20261018.py": {
+      "sha256": "af5f259e09223e7a8075fe49378e94a84fe04558c3975b02505de726d700302f",
+      "bytes": 11140
+    },
+    "/tmp/test_original_model_array_headers_20261018.py": {
+      "sha256": "6bfba7d8cb96a3eeef94da1d163df2b81e984cc81cbd8b17080a7c9b5f0b9091",
+      "bytes": 5270
+    },
+    "/tmp/run_original_header_synthetic_20261018.py": {
+      "sha256": "e0cce42d5a4db1d41f435d80ad4274a237f1b5a05350770ecd921cb06b9cff66",
+      "bytes": 3010
+    },
+    "/tmp/launch_original_model_headers_20261018.py": {
+      "sha256": "dcc2ed9e2f1b0d891c8ae9702aec08804e740dd058e456d994a04f7f77bd9220",
+      "bytes": 4845
+    },
+    "/tmp/verify_original_model_headers_20261018.py": {
+      "sha256": "4e30963da89c046928cd1ea53152648bc483d09ec47a777ee885b3db8340c75e",
+      "bytes": 5816
+    }
+  },
+  "primary": {
+    "root": "/home/animallya96/scratch/original-model-array-headers-20261018-v2",
+    "proof_sha256": "4c964fc9d322621a156fd5d457b7384bac66afe0c5298d5e01576c369994142f",
+    "proof_bytes": 159726,
+    "reader_sha256": "af5f259e09223e7a8075fe49378e94a84fe04558c3975b02505de726d700302f",
+    "peak_rss_kib": 40780,
+    "runtime": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+    "scope": "Host stdlib only,128MiB virtual AS/30s CPU/60s wall/nice10; fresh3GiB MemAvailable+1GiB scratch gates. <=128MiB per archive/256MiB aggregate input-byte caps. No Docker/model-server operations, NumPy/sklearn/backend imports, arrays materialized, model/policy/broker/fits/prediction or account replay.",
+    "reads": "Externally SHA-pinned original config1a149 and execution receipt bind original risk/model receipt paths and original read-only namespaces. Stable held-FD full SHA once per bank/head archive, bounded NPY headers, physical bookends before/after. ZIP decompression may buffer body bytes; no complete array or model reconstruction.",
+    "profile": "Original archived config/data only. No N2/e0 numerical runtime or CURRENT/f612 runtime was exercised; metadata inventory does not substitute either profile.",
+    "bank": {
+      "array_data_bytes": 29531920,
+      "arrays": [
+        {
+          "data_bytes": 23624,
+          "descr": "<M8[D]",
+          "fortran_order": false,
+          "header_bytes": 128,
+          "header_sha256": "5fc003b1729f8758414bcbc7acee9a84d33f4f08b12e1abf51aa153ffca3a5d2",
+          "itemsize": 8,
+          "member": "dates.npy",
+          "shape": [
+            2953
+          ],
+          "zip_compressed_bytes": 4592,
+          "zip_uncompressed_bytes": 23752
+        },
+        {
+          "data_bytes": 1920,
+          "descr": "<U5",
+          "fortran_order": false,
+          "header_bytes": 128,
+          "header_sha256": "ea62c43a0ad244be52a6eafbdd7a215103365af3c080a5cfd3a26d185a8d4329",
+          "itemsize": 20,
+          "member": "symbols.npy",
+          "shape": [
+            96
+          ],
+          "zip_compressed_bytes": 512,
+          "zip_uncompressed_bytes": 2048
+        },
+        {
+          "data_bytes": 2267904,
+          "descr": "<f8",
+          "fortran_order": false,
+          "header_bytes": 128,
+          "header_sha256": "a5e8c5d62de49fb6cfba186d75596b6d47d946dda1eff99924da4d83e3ee8eae",
+          "itemsize": 8,
+          "member": "risk__forecasts.npy",
+          "shape": [
+            2953,
+            96
+          ],
+          "zip_compressed_bytes": 1032566,
+          "zip_uncompressed_bytes": 2268032
+        },
+        {
+          "data_bytes": 283488,
+          "descr": "|b1",
+          "fortran_order": false,
+          "header_bytes": 128,
+          "header_sha256": "53bbabe00aae7af61cf86ae50f5e3698552b4f3a2cd1fa6112b6a801bf7d392f",
+          "itemsize": 1,
+          "member": "risk__score_mask.npy",
+          "shape": [
+            2953,
+            96
+          ],
+          "zip_compressed_bytes": 1160,
+          "zip_uncompressed_bytes": 283616
+        },
+        {
+          "data_bytes": 14741376,
+          "descr": "<f4",
+          "fortran_order": false,
+          "header_bytes": 128,
+          "header_sha256": "e5958fb67d7ab8896b13a2b4522cbad2e8d1fb82c5aef4401171030e2d3b42dc",
+          "itemsize": 4,
+          "member": "risk__features.npy",
+          "shape": [
+            2953,
+            96,
+            13
+          ],
+          "zip_compressed_bytes": 7030938,
+          "zip_uncompressed_bytes": 14741504
+        },
+        {
+          "data_bytes": 283488,
+          "descr": "|b1",
+          "fortran_order": false,
+          "header_bytes": 128,
+          "header_sha256": "53bbabe00aae7af61cf86ae50f5e3698552b4f3a2cd1fa6112b6a801bf7d392f",
+          "itemsize": 1,
+          "member": "risk__valid.npy",
+          "shape": [
+            2953,
+            96
+          ],
+          "zip_compressed_bytes": 1138,
+          "zip_uncompressed_bytes": 283616
+        },
+        {
+          "data_bytes": 2267904,
+          "descr": "<f8",
+          "fortran_order": false,
+          "header_bytes": 128,
+          "header_sha256": "a5e8c5d62de49fb6cfba186d75596b6d47d946dda1eff99924da4d83e3ee8eae",
+          "itemsize": 8,
+          "member": "risk__prices.npy",
+          "shape": [
+            2953,
+            96
+          ],
+          "zip_compressed_bytes": 969225,
+          "zip_uncompressed_bytes": 2268032
+        },
+        {
+          "data_bytes": 2267904,
+          "descr": "<f8",
+          "fortran_order": false,
+          "header_bytes": 128,
+          "header_sha256": "a5e8c5d62de49fb6cfba186d75596b6d47d946dda1eff99924da4d83e3ee8eae",
+          "itemsize": 8,
+          "member": "parent__forecasts.npy",
+          "shape": [
+            2953,
+            96
+          ],
+          "zip_compressed_bytes": 224292,
+          "zip_uncompressed_bytes": 2268032
+        },
+        {
+          "data_bytes": 283488,
+          "descr": "|b1",
+          "fortran_order": false,
+          "header_bytes": 128,
+          "header_sha256": "53bbabe00aae7af61cf86ae50f5e3698552b4f3a2cd1fa6112b6a801bf7d392f",
+          "itemsize": 1,
+          "member": "parent__score_mask.npy",
+          "shape": [
+            2953,
+            96
+          ],
+          "zip_compressed_bytes": 6362,
+          "zip_uncompressed_bytes": 283616
+        },
+        {
+          "data_bytes": 2267904,
+          "descr": "<f8",
+          "fortran_order": false,
+          "header_bytes": 128,
+          "header_sha256": "a5e8c5d62de49fb6cfba186d75596b6d47d946dda1eff99924da4d83e3ee8eae",
+          "itemsize": 8,
+          "member": "bridge__calibrated.npy",
+          "shape": [
+            2953,
+            96
+          ],
+          "zip_compressed_bytes": 87309,
+          "zip_uncompressed_bytes": 2268032
+        },
+        {
+          "data_bytes": 2267904,
+          "descr": "<f8",
+          "fortran_order": false,
+          "header_bytes": 128,
+          "header_sha256": "a5e8c5d62de49fb6cfba186d75596b6d47d946dda1eff99924da4d83e3ee8eae",
+          "itemsize": 8,
+          "member": "bridge__past_mean.npy",
+          "shape": [
+            2953,
+            96
+          ],
+          "zip_compressed_bytes": 15003,
+          "zip_uncompressed_bytes": 2268032
+        },
+        {
+          "data_bytes": 2267904,
+          "descr": "<f8",
+          "fortran_order": false,
+          "header_bytes": 128,
+          "header_sha256": "a5e8c5d62de49fb6cfba186d75596b6d47d946dda1eff99924da4d83e3ee8eae",
+          "itemsize": 8,
+          "member": "bridge__labels.npy",
+          "shape": [
+            2953,
+            96
+          ],
+          "zip_compressed_bytes": 1785029,
+          "zip_uncompressed_bytes": 2268032
+        },
+        {
+          "data_bytes": 23624,
+          "descr": "<M8[D]",
+          "fortran_order": false,
+          "header_bytes": 128,
+          "header_sha256": "5fc003b1729f8758414bcbc7acee9a84d33f4f08b12e1abf51aa153ffca3a5d2",
+          "itemsize": 8,
+          "member": "bridge__label_end_dates.npy",
+          "shape": [
+            2953
+          ],
+          "zip_compressed_bytes": 4594,
+          "zip_uncompressed_bytes": 23752
+        },
+        {
+          "data_bytes": 283488,
+          "descr": "|b1",
+          "fortran_order": false,
+          "header_bytes": 128,
+          "header_sha256": "53bbabe00aae7af61cf86ae50f5e3698552b4f3a2cd1fa6112b6a801bf7d392f",
+          "itemsize": 1,
+          "member": "bridge__score_mask.npy",
+          "shape": [
+            2953,
+            96
+          ],
+          "zip_compressed_bytes": 3594,
+          "zip_uncompressed_bytes": 283616
+        }
+      ],
+      "header_bytes": 1792,
+      "physical_before_after": {
+        "st_ctime_ns": "1791928704275727852",
+        "st_dev": "66306",
+        "st_ino": "59131286",
+        "st_mtime_ns": "0",
+        "st_size": "11168202"
+      },
+      "physical_path": "/home/animallya96/scratch/live-model-history-20261013-v4/market/desk/learned-holding/risk/bank.npz",
+      "requested_path": "/home/animallya96/scratch/live-model-history-20261013-v4/market/desk/learned-holding/risk/bank.npz",
+      "sha256": "fcb0f04c847a10a2842d26418b872bb1fc758a1d2752727eda72a25c8f122f7a"
+    },
+    "head": {
+      "array_data_bytes": 104064,
+      "header_bytes": 41472,
+      "physical_before_after": {
+        "st_ctime_ns": "1791928704264522421",
+        "st_dev": "66306",
+        "st_ino": "59131283",
+        "st_mtime_ns": "0",
+        "st_size": "98939"
+      },
+      "physical_path": "/home/animallya96/scratch/live-model-history-20261013-v4/market/desk/learned-holding/model/model.npz",
+      "requested_path": "/home/animallya96/scratch/live-model-history-20261013-v4/market/desk/learned-holding/model/model.npz",
+      "sha256": "e0c42cc2c636db332058424ebe52e153cc364b65eba6b45720e38d900c86cccb"
+    },
+    "config": {
+      "path": "/home/animallya96/scratch/live-model-history-20261013-v4/market/desk/learned-holding/config.json",
+      "physical": {
+        "st_ctime_ns": "1791928704264716999",
+        "st_dev": "66306",
+        "st_ino": "59131284",
+        "st_mtime_ns": "0",
+        "st_size": "497"
+      },
+      "sha256": "1a14980a66a1cb5994f0bb82667dd46fce40ec7eb0705728d93e36b18faf5901"
+    },
+    "bank_receipt": {
+      "path": "/home/animallya96/scratch/live-model-history-20261013-v4/market/desk/learned-holding/risk/bank.json",
+      "physical": {
+        "st_ctime_ns": "1791928704280727897",
+        "st_dev": "66306",
+        "st_ino": "59131287",
+        "st_mtime_ns": "0",
+        "st_size": "4777209"
+      },
+      "sha256": "79b33d54253001ba0f907ae0b41f49c81ae436800e43e05b75cd5f58bb653cfe"
+    },
+    "model_receipt": {
+      "path": "/home/animallya96/scratch/live-model-history-20261013-v4/market/desk/learned-holding/model/publication.json",
+      "physical": {
+        "st_ctime_ns": "1791928704264220771",
+        "st_dev": "66306",
+        "st_ino": "59131282",
+        "st_mtime_ns": "0",
+        "st_size": "47641"
+      },
+      "sha256": "858163d5e414ee658f28a10532a934528c72fe98fd1cb685e655d6d3a2c75825"
+    },
+    "total_declared_array_data_bytes": 29635984,
+    "storage_is_not_peak_model_ram": true
+  },
+  "parser_acceptance": {
+    "red": {
+      "root": "/tmp/original-model-header-synthetic-red-20261018-v1",
+      "tests": 3,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 0,
+      "elapsed_seconds": 0.011259860009886324,
+      "proof_sha256": "c50b0800da3fbf7e0c504eb90dde67db0ab9b48b31430f57b2417d63192bf8b9",
+      "meaning": "EXPECTED_RED on initial5777 reader: missing newline, missing alignment, invalid numeric scalar width all wrongly accepted; wrapper0 is not old acceptance."
+    },
+    "green": {
+      "root": "/tmp/original-model-header-synthetic-green-20261018-v2",
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "elapsed_seconds": 0.010569644975475967,
+      "proof_sha256": "1a16d25949bdbbb163bf710b53debd773fe8d43c5f9aad554690a165e725e1fb",
+      "scope": "Scalar/Unicode/date/structured padding+subarray byte arithmetic, object/payload/boolean dimension/duplicate/header-bound refusals, framing/scalar-width regressions and explicit receipt-size bound. Tiny synthetic data only; no NumPy/model/artifact reads."
+    },
+    "earlier": "Initial9 synthetic cases and first12 green retained; not added to final13 count. Final metadata-limit change added the13th case and used a fresh synthetic root."
+  },
+  "preserved_failures": [
+    {
+      "root": "/home/animallya96/scratch/original-model-array-headers-20261018-v1",
+      "source_root": "/home/animallya96/scratch/original-model-array-header-source-20261018-v1",
+      "reader_sha256": "03426606ecf4cbb7ae5298c7864972e4a42074763782762c573098384cb14f2c",
+      "result": "Actual exit1 at1MiB metadata bound before opening either NPZ. Original bank.json independently statted4777209B; publication47641B/bankNPZ11168202B/headNPZ98939B. No header/model acceptance or replay.",
+      "correction": "Only this new inspector's bank-receipt call now requires exact observed4777209B and passes that exact explicit bound, within the original audit's existing16MiB metadata contract. Receipt graph is released before archive inspection. Native/Store/Nightly/Cycle/original caps remain unchanged; no generic cap increase or model/source/config substitution."
+    },
+    {
+      "source": "/home/animallya96/scratch/verify_original_model_headers_20261018_v1.py",
+      "log": "/tmp/original-model-header-independent-20261018-v1.log",
+      "result": "Initial independent check failed because structured dtype tuples decode as JSON lists in the preserved report. Corrected comparison projects only dtype metadata tuples to JSON lists while retaining exact raw header SHA/shape/data-size checks; no raw bytes or numerical values changed. No model/test replay."
+    }
+  ],
+  "independent": {
+    "root": "/home/animallya96/scratch/original-model-array-header-independent-20261018-v2",
+    "proof_sha256": "8d749ca4816a8cb4ef3e8c830f36a5dec70220cd105a5a6ad61d0ecd98c673c0",
+    "proof_bytes": 1699,
+    "verifier_sha256": "4e30963da89c046928cd1ea53152648bc483d09ec47a777ee885b3db8340c75e",
+    "scope": "Separately read all210 raw NPY headers, exact raw-header SHA/parsed shape/dtype/header+body length arithmetic, archive physical identities before/after, four receipt/config/execution hashes/physical fields, staged7 source files and red3/green13 reports. Full NPZ hashes come from authenticated primary; no second full archive pass or numerical/model acceptance."
+  },
+  "preservation": {
+    "source_root": "/home/animallya96/scratch/original-model-array-header-source-20261018-v2",
+    "files": 7,
+    "manifest_sha256": "73487c61022a38963522686f90640bad80c5c0bf861b271d0ebd53d814190569",
+    "policy": "Exclusive roots and per-file fsync/readback+manifest-last directory fsync. Original reader/controller/test/RED/GREEN source versions remain in old source roots and local synthetic roots; actual failure root/logs preserved. No original account, source, config, NPZ or production mutation."
+  },
+  "source_review_findings": [
+    "Current source loader restores risk bank/head, constructs full completed features in CounterfactualRiskReader and again in FrozenCurrentRiskReader, copies retained feature/forecast/support/price/history buffers, and market _Calibration._bind deep-copies the parent.",
+    "Market _stock_fit calls fit_market_log only during distribution; any future no-fit loader-capacity boundary must stop before distribution/calibration/policy/account calls. Source inspection is not a runtime call-graph or memory proof.",
+    "210 stored arrays total29635984B; bank risk__features is float32[2953,96,13]/14741376B. These storage bytes exclude reader copies, daily features, JSON receipt graphs, hash/array temporaries and allocator overhead.",
+    "Existing exact original byte/state intake and115/RED1/controller/LOCAL/native gates were not rerun. No full-model capacity, numerical/model-cache, causal/economic, native checkpoint lifecycle or original/corrected account acceptance follows from this inventory."
+  ],
+  "checks": {
+    "ast": "PASS",
+    "purpose_comments": "PASS",
+    "regex_backspace_bytes": 0,
+    "ruff": "UNAVAILABLE_NOT_CLAIMED",
+    "timeout_branch": "UNEXERCISED"
+  },
+  "next_boundary": "Prepare an INERT exact N2 original-loader capacity contract: authenticate existing original selectors/source/config without bypass; load only original bank/head/daily/model context and, if separately admitted, bounded causal-prefix arithmetic. Stop before distribution/calibration fit/planner/broker/account/replay. Need explicit complete RAM/receipt coexistence and fresh host/runtime admission before execution. This checkpoint authorizes no full original/corrected/genuine run, real owner execution or publication.",
+  "remaining": {
+    "full_original_numerical_model_cache": "UNVERIFIED",
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_OR_ADOPTION",
+    "actual_two_host": "NOT_ADMITTED_UNCHANGED",
+    "weekday_intraday_fill_ui": "UNVERIFIED",
+    "heartbeat": "ACTIVE"
+  },
+  "diagram_impact": "NONE — standalone readonly metadata inspection, deployed architecture unchanged."
+}
