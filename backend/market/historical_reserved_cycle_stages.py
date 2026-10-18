@@ -6,7 +6,7 @@ or native send_due replacement. SQLite/directory/latch capacity is unadmitted.
 """
 from copy import deepcopy
 from contextlib import contextmanager
-from datetime import date
+from datetime import UTC, date, datetime
 from hashlib import sha256
 from pathlib import Path
 
@@ -240,6 +240,12 @@ class _Stages:
                 'Original retained registry/packet bytes differ')
             manifest = demand.read(demand.Demand(store.read_blob(detail['manifest'], limit=physical.META),
                                                 detail['manifest']), entity_registry)
+            pages = {query['sha256']: store.page_manifest(detail['manifest'], query['sha256'])
+                     for query in manifest['queries']}
+            physical._require(detail['pages'] == pages and all(len(pages[query['sha256']]) == 1
+                and store.read_blob(pages[query['sha256']][0]['receipt']['body_sha256'], limit=65536)
+                    == legacy.admitted.encoded(inputs['packet']['pages'][query['kind']])
+                for query in manifest['queries']), 'Original synthetic query pages required')
             wait = cycle._head_entry(store, entry['parent'])
             frozen = cycle._head_entry(store, wait['parent'])
             prior = cycle._head_entry(store, frozen['parent'])
@@ -352,6 +358,9 @@ class _Stages:
         physical._require(legacy.LOCK.acquire(blocking=False), 'Concurrent reserved Cycle preparation')
         try:
             return self._prepare_once(entity_registry, packet_declaration)
+        except BaseException:
+            self.io.failed = True
+            raise
         finally:
             legacy.LOCK.release()
 
@@ -386,6 +395,9 @@ class _Stages:
         physical._require(legacy.LOCK.acquire(blocking=False), 'Concurrent reserved Cycle stage')
         try:
             return self._run_once(phase, inputs)
+        except BaseException:
+            self.io.failed = True
+            raise
         finally:
             legacy.LOCK.release()
 
@@ -489,8 +501,38 @@ class _Stages:
         packet_ref = bridge.cycle._put(store, legacy.admitted.encoded(packet_declaration))
         store.append(expected_head=store.snapshot()['head'], cycle_sha256=self.cycle,
                      stage='WAIT_PACKETS', receipt_sha256=packet_ref)
+        pages = self._pages(value, entity_registry, packet_declaration)
         reference = self._receipt('PREPARE', {'manifest': value.sha256, 'packet': packet_ref,
-            'registry': bridge.cycle._put(store, entity_registry.raw), 'evidence': retained_evidence}, reservation_sha)
+            'registry': bridge.cycle._put(store, entity_registry.raw), 'evidence': retained_evidence,
+            'pages': pages}, reservation_sha)
         self._prepared('PREPARE', directory, reservation_sha, reference)
         self._before_commit('PREPARE', declaration, directory, reference)
         return reference
+
+    # Retain explicitly synthetic terminal pages through real charged Store ingress, never HTTP.
+    def _pages(self, manifest, entity_registry, declaration):
+        parsed = demand.read(manifest, entity_registry)
+        pages, result = declaration['pages'], {}
+        physical._require(type(pages) is dict and set(pages) <= {'quotes', 'trades'}
+            and len(parsed['queries']) <= 2
+            and len({query['kind'] for query in parsed['queries']}) == len(parsed['queries']),
+            'Finite one-page-per-kind synthetic ingress required')
+        store = self.nightly.store
+        for query in parsed['queries']:
+            self.io._lease()
+            raw = legacy.admitted.encoded(pages[query['kind']])
+            physical._require(0 < len(raw) <= 65536 and pages[query['kind']].get('next_page_token') is None,
+                              'Bounded synthetic terminal page required')
+            attempt = packet._digest({'cycle': self.cycle, 'query': query['sha256'], 'page': 0})
+            read = packet._digest({'attempt': attempt, 'read': 0})
+            store.begin_attempt(attempt=attempt, demand_sha256=manifest.sha256,
+                                query_sha256=query['sha256'], page=0, token=None)
+            requested = datetime.now(UTC).isoformat()
+            store.reserve_read(attempt, read, len(raw))
+            store.confirm_read(read, raw)
+            receipt = store.finish_attempt(attempt, status=200, complete=True, failure=None,
+                requested_at=requested, received_at=datetime.now(UTC).isoformat())
+            physical._require(receipt['market_packet_validation'] == 'NOT_PERFORMED',
+                              'Synthetic pages must not claim market validation')
+            result[query['sha256']] = store.page_manifest(manifest.sha256, query['sha256'])
+        return result

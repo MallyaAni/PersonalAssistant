@@ -7,7 +7,7 @@ import ast
 import builtins
 from contextlib import contextmanager
 from copy import deepcopy
-from datetime import date
+from datetime import UTC, date, datetime
 import hashlib
 import json
 import multiprocessing
@@ -167,7 +167,8 @@ class ReservedCycleStagesTests(unittest.TestCase):
         self.io = reserved_io.SyntheticNativeIO(self.writer, program,
             trade_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
         self.ns = source_namespace(Path('/audit/backend/market/historical_reserved_cycle_stages.py'),
-            {'deepcopy': deepcopy, 'contextmanager': contextmanager, 'date': date, 'sha256': hashlib.sha256,
+            {'deepcopy': deepcopy, 'contextmanager': contextmanager, 'date': date, 'datetime': datetime,
+             'UTC': UTC, 'sha256': hashlib.sha256,
              'Path': Path, 'paper': paper, 'codec': codec, 'legacy': self.legacy, 'demand': demand,
              'registry': registry, 'physical': physical, 'bridge': self.bridge,
              'raw_nightly': SimpleNamespace(__file__=self.case.ns['__file__'],
@@ -204,7 +205,8 @@ class ReservedCycleStagesTests(unittest.TestCase):
             lineage={'schema': 'raw-nightly-cycle-lineage/1', 'birth': birth, 'previous_nightly': previous,
                      'context': prior['context'], 'context_identity': prior['context_identity']})
         self.registry = entities.mapping()
-        self.packet = {'origin': 'SYNTHETIC_RESERVED_CYCLE_INPUTS', 'declaration': 'NO_PROVIDER_ACQUISITION'}
+        self.packet = {'origin': 'SYNTHETIC_RESERVED_CYCLE_INPUTS', 'declaration': 'NO_PROVIDER_ACQUISITION',
+            'pages': {kind: {kind: {'AAPL': []}, 'next_page_token': None} for kind in ('quotes', 'trades')}}
         self.order = {'symbol': 'AAPL', 'side': 'buy', 'qty': 5, 'client_order_id': 'SYNTHETIC-reserved-cycle'}
         self.decision = {'candidate': self.order}
         self.submission = {'order': self.order, 'observe': {'at': '2019-03-01T14:45:31.200000+00:00',
@@ -231,6 +233,12 @@ class ReservedCycleStagesTests(unittest.TestCase):
         self.prepare_decision()
         result = self.stage._run('SUBMISSION_CAPTURED', self.submission)
         self.assertEqual(self.store.snapshot()['next_stage'], 'OUTCOME_COMMITTED')
+        self.assertEqual(self.store.snapshot()['used']['get_attempts'], 2)
+        self.assertEqual(self.store.snapshot()['unresolved'], {'get_attempts': 0, 'body_bytes': 0})
+        for query, rows in self.prepared['value']['detail']['pages'].items():
+            self.assertEqual(len(rows), 1)
+            self.assertIsNone(rows[0]['next_token'])
+            self.assertEqual(rows[0]['receipt']['market_packet_validation'], 'NOT_PERFORMED')
         self.assertEqual([row[0] for row in self.store.connection.execute('SELECT stage FROM entries ORDER BY sequence')],
             ['PRIOR_VERIFIED', 'DEMAND_FROZEN', 'WAIT_PACKETS', 'PACKETS_FINALIZED',
              'DECISION_FROZEN', 'SUBMISSION_CAPTURED'])
