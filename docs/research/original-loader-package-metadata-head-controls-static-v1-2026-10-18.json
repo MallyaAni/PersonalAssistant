@@ -1,0 +1,134 @@
+{
+  "AST_warnings_as_errors": "PASS",
+  "Ruff": "PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM",
+  "controls": {
+    "capacity-package-metadata-head-transport-v1-2026-10-18.py": {
+      "bytes": 6012,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792331553142148946",
+        "st_dev": "16777223",
+        "st_ino": "182347702",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792331553142148946",
+        "st_nlink": "1",
+        "st_size": "6012",
+        "st_uid": "501"
+      },
+      "sha256": "e563f027aa601f6860d372e8f875a0e4c9cfbf7db0de92af9e99313b2508eb5b"
+    },
+    "capacity-package-metadata-head-v1-2026-10-18.py": {
+      "bytes": 15006,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792331553135041910",
+        "st_dev": "16777223",
+        "st_ino": "182347701",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792331553135041910",
+        "st_nlink": "1",
+        "st_size": "15006",
+        "st_uid": "501"
+      },
+      "sha256": "17617e37bb685c7fb40767c750ceb79c0ff2745a8adf9095fade5ac5f850d0bb"
+    },
+    "package-metadata-head-independent-transport-v1-2026-10-18.py": {
+      "bytes": 6035,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792331769886792772",
+        "st_dev": "16777223",
+        "st_ino": "182394169",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792331769886792772",
+        "st_nlink": "1",
+        "st_size": "6035",
+        "st_uid": "501"
+      },
+      "sha256": "ab334e55fe905bd268bacb5228b27f8922468318ad5bdcfb350202a1eacc508c"
+    },
+    "prepare-package-metadata-head-independent-v1-2026-10-18.py": {
+      "bytes": 12857,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792331580329732641",
+        "st_dev": "16777223",
+        "st_ino": "182347661",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792331580329732641",
+        "st_nlink": "1",
+        "st_size": "12857",
+        "st_uid": "501"
+      },
+      "sha256": "b9c456cf8fac0cdea336dee43cc585dee5f5a9c35e501794cc298d5c4dbae18b"
+    },
+    "prepare-package-metadata-head-v1-2026-10-18.py": {
+      "bytes": 11413,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792331552991524438",
+        "st_dev": "16777223",
+        "st_ino": "182346035",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792331552991524438",
+        "st_nlink": "1",
+        "st_size": "11413",
+        "st_uid": "501"
+      },
+      "sha256": "8e9bc16a102cb689dc4184c94af53af9f28791f7ae35ebea0b71a03d4de9e65b"
+    },
+    "verify-package-metadata-head-v1-2026-10-18.py": {
+      "bytes": 16449,
+      "physical": {
+        "st_blocks": "40",
+        "st_ctime_ns": "1792331769884703291",
+        "st_dev": "16777223",
+        "st_ino": "182394166",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792331769884703291",
+        "st_nlink": "1",
+        "st_size": "16449",
+        "st_uid": "501"
+      },
+      "sha256": "6c17116d9bb1334b7a1e33ebc0ed64867916b56428c24941f077427567ea04ee"
+    }
+  },
+  "four_generated_controls_byte_exact_reproduction": true,
+  "independent_raw_proof": {
+    "bytes": 23927,
+    "physical": {
+      "st_blocks": "48",
+      "st_ctime_ns": "1792331825509433046",
+      "st_dev": "16777223",
+      "st_ino": "182403440",
+      "st_mode": "33188",
+      "st_mtime_ns": "1792331825509406991",
+      "st_nlink": "1",
+      "st_size": "23927",
+      "st_uid": "501"
+    },
+    "sha256": "4a30076a7e6b530b7e24ffa1990abeb6d7a817974d96ef3d6f8100b1e7e111ab"
+  },
+  "package_payload_CodeType_import_body_or_old_gate_replay": false,
+  "purpose_comments_across_six_dispatch_build_controls": 34,
+  "schema": "package-metadata-head-controls-static/1",
+  "timeout_signal_overflow_owned_stop_crash_branches": "UNTESTED",
+  "transports": [
+    {
+      "cleanup_failure": null,
+      "exit": 0,
+      "label": "primary",
+      "owned_stop": null,
+      "stderr_bytes": 0
+    },
+    {
+      "cleanup_failure": null,
+      "exit": 0,
+      "label": "independent",
+      "owned_stop": null,
+      "stderr_bytes": 0
+    }
+  ],
+  "two_command_functions_only_allowlist_assertion_changed": true,
+  "unchanged_reused_function_ASTs": 13
+}

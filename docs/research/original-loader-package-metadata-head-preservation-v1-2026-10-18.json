@@ -1,0 +1,9 @@
+{
+  "data_bytes": 138251,
+  "file_readback_root_resolved_parent_fsync": true,
+  "files": 16,
+  "manifest_bytes": 18502,
+  "manifest_sha256": "143280167c40029ed616122177b55ea9304ad4c47352544d28df4e7abe39eaa9",
+  "root": "/tmp/capacity-package-metadata-head-evidence-20261018-v1",
+  "schema": "package-metadata-head-local-preservation/1"
+}

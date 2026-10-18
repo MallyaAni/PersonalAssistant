@@ -1,0 +1,60 @@
+{
+  "schema": "stopped-n2-package-metadata-head-contract/1",
+  "status": "SOURCE_PROPOSAL_ONLY_REQUIRES_INDEPENDENT_SOURCE_INVOCATION_RESOURCE_REVIEW_BEFORE_USE",
+  "basis": {
+    "literal_source_seams_sha256": "a2bd485c7e1744c549750a5d95fcd8edd5248162432b7fa15f22adbbdd4778e2",
+    "versions": {"pyarrow": "25.0.1", "numpy": "2.5.3", "scipy": "1.18.1"},
+    "version_scope": "Literal retained source assignments only, not installed distribution or runtime versions.",
+    "official_API": "https://docs.docker.com/reference/api/engine/version/v1.51/",
+    "official_API_description": "HEAD /containers/{id}/archive returns filesystem information in the base64 JSON X-Docker-Container-Path-Stat response header. No archive body is requested.",
+    "API_documentation_is_not_actual_daemon_observation": true
+  },
+  "target": {
+    "host": "animallya-spark1", "uid": 1000,
+    "container": "803718a62e3cbd1f6070abab25a58e1fbc0ee5d04b5444f57c817d7e47b8bf57",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "full_inspect_sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2",
+    "required_state": "exited0/noOOM/Pid0/notpaused/notrestarting/finish2026-10-18T09:53:55.975021651Z/ROroot/user1000:1000/two unique audit+out mounts/no target overlap",
+    "paths_inferred_unobserved_until_actual_response": [
+      "/usr/local/lib/python3.12/site-packages/pyarrow-25.0.1.dist-info/METADATA",
+      "/usr/local/lib/python3.12/site-packages/pyarrow-25.0.1.dist-info/RECORD",
+      "/usr/local/lib/python3.12/site-packages/numpy-2.5.3.dist-info/METADATA",
+      "/usr/local/lib/python3.12/site-packages/numpy-2.5.3.dist-info/RECORD",
+      "/usr/local/lib/python3.12/site-packages/scipy-1.18.1.dist-info/METADATA",
+      "/usr/local/lib/python3.12/site-packages/scipy-1.18.1.dist-info/RECORD"
+    ]
+  },
+  "proposed_operations": {
+    "one_primary_pinned_key_SSH": true,
+    "Docker_CLI": "Only two exact container inspect calls; complete raw SHA must equal retained stopped baseline before and after.",
+    "Docker_socket": "Only twelve fixed unversioned /containers/{id}/archive HEAD requests, two per exact path, local AF_UNIX /var/run/docker.sock; no GET or filesystem content copies. Documentation v1.51 is descriptive, not an exercised API version pin.",
+    "response": "Header-only HTTP/1.1 200 or404, strict unique ASCII headers, no transfer encoding/body, canonical base64 and exact five-field JSON path-stat shape. Positive name/plain regular mode/empty linkTarget/positive integer size required. Paired decoded path metadata equal.",
+    "missing_path": "Retain404 refusal; no fallback, guessed spelling or package import.",
+    "oversized_path": "Observe reported size only; content read remains unauthorized. Never raise ordinary cap.",
+    "new_root": "/home/animallya96/scratch/capacity-package-metadata-head-20261018-v1",
+    "tools_root": "/home/animallya96/scratch/capacity-package-metadata-head-tools-20261018-v1",
+    "Mac_transport_root": "/tmp/capacity-package-metadata-head-transport-20261018-v1",
+    "independent_readback": "Separately source/invocation/resource-reviewed checker must pin actual candidate SHA, two-read every retained file with held/named physical bookends, independently reconstruct request/response/stat pairs and CLI terminals, perform one fresh exact stopped inspect. It must not repeat HEAD requests."
+  },
+  "resources": {
+    "ordinary_file_and_wire_cap_bytes": 262144,
+    "helper_AS_soft_bytes": 536870912, "helper_AS_hard_bytes": 4294967296,
+    "owned_Go_CLI_AS_bytes": 4294967296,
+    "primary_CPU_seconds": 30, "primary_work_seconds": 90, "primary_alarm_seconds": 95,
+    "per_socket_or_CLI_seconds": 5, "SSH_seconds": 120,
+    "fresh_minimum_MemAvailable_bytes": 2147483648,
+    "fresh_scratch_available_bytes": 1073741824, "fresh_scratch_available_inodes": 512,
+    "headroom_is_reservation_or_native_model_daemon_RAM_bound": false,
+    "owned_cleanup": "Each socket closes in its with context; owned CLI/SSH process groups have TERM/wait/KILL/reap and retained bounded output/exit receipts. No container stop or daemon cancellation inferred.",
+    "timeout_signal_overflow_owned_stop_crash_branches": "UNTESTED"
+  },
+  "acceptance_scope": "Actual daemon-reported existence and sizes only after primary plus independent evidence; no held-FD container-source physical identity or every-file baked-image attestation. No package content, METADATA version, RECORD contents, native suffixes, installed/runtime versions, callable/global/type/dataclass/native/thread/model/RAM acceptance.",
+  "package_import_CodeType_body_start_create_exec_load_account_data_credential_read": false,
+  "guard3b8be00b_25_payload_functions": "UNRUN_UNCHANGED",
+  "old2446_030c_G08_caps_source_maps_original_receipts": "UNCHANGED_SEPARATE",
+  "runtime_capacity_execution_authorized": false,
+  "assembled_tree_manifests_strategy_entrypoint_bootstrap_owner_caller_stager_packet_runtime_launch_admission": null,
+  "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+  "original_timing": "FAILED", "publication": "CLOSED", "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+  "heartbeat": "ACTIVE", "diagram": "NONE"
+}
