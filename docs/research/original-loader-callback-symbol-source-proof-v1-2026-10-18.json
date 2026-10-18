@@ -1,0 +1,149 @@
+{
+  "schema": "original-loader-callback-symbol-source-proof/1",
+  "date": "2026-10-18",
+  "status": "SOURCE_REVIEWED_UNEXECUTED_DECODERS_AND_SYNTHETIC63_PROPOSAL",
+  "source_commit": "36f2a0d78c775685d823069395542680f1072858",
+  "starting_commit": "fb7530af3287f21e1dd76b42d29394ca59b8199c",
+  "starting_branch": "codex/learned-live-release-20261006",
+  "starting_state": "CLEAN_PULL_REBASE_ORIGIN_MAIN_UP_TO_DATE",
+  "objective": "Implement separately versioned pure selected-symbol/version DATA decoders, an independently implemented complete fold and bounded known-value synthetic fixtures against ca3503c0 requirements, without executing these new bodies or replaying completed gates.",
+  "source_and_evidence_pins": [
+    {
+      "path": "docs/research/original-loader-callback-symbol-source-contract-v1-2026-10-18.json",
+      "bytes": 8591,
+      "sha256": "3daf592beda2df426ea4160e4711859c24610bab08d12ae616f35176735fe7e4"
+    },
+    {
+      "path": "docs/research/original-loader-callback-symbol-source-static-v1-2026-10-18.json",
+      "bytes": 9696,
+      "sha256": "89e3be24e547b1f8ec5c0beba511df5d71fd5041aaf7ab407aaeb49545ac2175"
+    },
+    {
+      "path": "docs/research/sources/check-callback-symbol-data-v1-2026-10-18.py",
+      "bytes": 17574,
+      "sha256": "847127b3a70b7522645e8901c881cb135ca2da5850400c9a282647096a9cd76d"
+    },
+    {
+      "path": "docs/research/sources/fold-callback-symbol-data-v1-2026-10-18.py",
+      "bytes": 14287,
+      "sha256": "a526e85d63313fac8a4de11eb31dc34964ad9eaeed6d93a4a78d25cb5b469127"
+    },
+    {
+      "path": "docs/research/sources/parse-callback-symbol-data-v1-2026-10-18.py",
+      "bytes": 13496,
+      "sha256": "6fe24522e57910ed2f9136762ea4f910f46fd6a6a91afe4f55c80b5e8462bd11"
+    },
+    {
+      "path": "docs/research/sources/prepare-callback-symbol-preserver-v1-2026-10-18.py",
+      "bytes": 3491,
+      "sha256": "8aaf0af5879576123811f76150e87f01401295871f451e1122cd44c8e6e6cc54"
+    },
+    {
+      "path": "docs/research/sources/preserve-callback-symbol-sources-v1-2026-10-18.py",
+      "bytes": 4956,
+      "sha256": "5c595bb8f6b52bc69025d6c9672c14663bd8724fe217cc748667cb8fcafe0d06"
+    }
+  ],
+  "actual_operations": {
+    "local_stdlib_source_AST_JSON_SHA_preservation_Git_only": true,
+    "new_decoder_functions": 17,
+    "new_fixture_functions": 5,
+    "all22_decoder_fixture_functions_UNRUN": true,
+    "SSH": 0,
+    "Docker_container_operations": 0,
+    "actual_callback_binary_reads": 0,
+    "old_ELF_decoder_or_fold_replays": 0,
+    "closed37_replays": 0,
+    "other19_native_body_reads": 0,
+    "package_backend_model_CodeType_import_body_tests": 0,
+    "production_changes": 0
+  },
+  "source_review": {
+    "primary": "6fe24522/13496B: struct.unpack_from, complete supplied section-page/header/selected-payload binding, full symbol arrays/string bytes/versym/GNU need+aux/gap records and declaration associations; no IO/native loading.",
+    "independent": "a526e85d/14287B: explicit little-endian widths/int.from_bytes cursor, bytewise strings and byte-set version coverage; imports or calls no primary function. Reconstructs the same complete result/canonical/pages, not counts only.",
+    "scope": "New source implementation, not observed behavior or actual symbol/version contents. Supplied page and binary are DATA; future driver must independently bind prior content/physical authority. Full-ELF validity, exported symbols, provider resolution, initialization and native ABI/runtime certification are not established.",
+    "visibility": "Preserve complete st_other and report both low2 glibc2.42 and low3 ELF4.3 DRAFT projections under explicit names; no architecture-ABI certification.",
+    "offsets": "vn_file/vna_name linked strtab; vn_aux/vn_next current Verneed; vna_next current Vernaux. All record/string/gap spans retained and hashed under finite traversal, overlap and termination checks.",
+    "bounds": {
+      "input_file_bytes": 262144,
+      "complete_page_bytes": 65536,
+      "string_bytes": 4096,
+      "one_hash_work_bytes": 16777216,
+      "rows_and_candidate_references": 8192,
+      "canonical_bytes": 16777216,
+      "page_bytes": 65536,
+      "page_rows": 64,
+      "max_pages": 256,
+      "total_page_bytes": 16777216
+    },
+    "residual_hash_budget": "Result reports pre-output hash work; future driver MUST carry remaining budget into all canonical/page/output hashes, no fresh per-file ledgers. Final-size checks do not prove exact peak memory."
+  },
+  "review_corrections": [
+    {
+      "issue": "ROOT identified combined row traversal needed an upfront charge.",
+      "change": "Precharge symbols/versym/associations/top-level needs before traversal and auxiliaries before looping.",
+      "preserved": "/tmp/callback-symbol-source-preparation-drafts-20261018-v1 retains initial0187982f/12947B +4642ccd4/13628B and manifest; no body execution."
+    },
+    {
+      "issue": "READONLY reviewer found repeated association-candidate lists could expand canonical serialization before the late16MiB size check.",
+      "change": "Primary charges fanout incrementally before each association; independent precomputes complete candidate references before association construction. Same8192 row/reference budget; explicit SYM_ASSOCIATION_FANOUT_BOUND. Focused synthetic refusal added.",
+      "preserved": "/tmp/callback-symbol-fanout-preparation-drafts-20261018-v1 retains pre-correction4b5019a9/13210B/ad9e6f34/13865B/harness9c62b81c/15370B and manifest; all unrun."
+    },
+    {
+      "issue": "Future fixture runner catches Exception to preserve unexpected outcomes.",
+      "change": "Contract explicitly requires future hard deadline escape through KeyboardInterrupt/BaseException, plus bounded parent wait and owned TERM/KILL/reap; no owner exists yet."
+    }
+  ],
+  "synthetic_proposal": {
+    "total": 63,
+    "parser_cases": 60,
+    "positive": 9,
+    "expected_parser_refusals": 51,
+    "injected_JSON_paging_units": 3,
+    "all_outcomes_UNRUN": true,
+    "scope": "Synthetic ELF-shaped binary+matching supplied section records. Known assertions for arbitrary/duplicate/substrings/nonUTF8 names, zero/local/undefined/reserved/MAX64 fields, raw version bits, exact chain/string offset bases and gaps. Full canonical/page equality plus independent page flattening and complete record coverage.",
+    "fanout_case": "100dynamic100regular/500same-indexaux =>907retained rows and49500candidate references; source-consistent intended refusal before serialization, not observed acceptance.",
+    "hash_case": "262144B SYNTHETIC input with3998 repeated4096-byte names; every4097-byte terminated span charged plus full inputs/headers/tables/records. Source-consistent intended hash-work refusal, not measured acceptance.",
+    "paging_units": "Single-record/page-count/canonical-size checks use explicitly injected arbitrary JSON, not binary/native proof.",
+    "owner": null,
+    "caller": null,
+    "stager": null,
+    "packet": null,
+    "invocation": null,
+    "admission": null,
+    "resource_scope": "Concrete finite Linux owner/transport/children/exact source envelope and invocation remain unprepared. Original helper512MiBAS/20CPU/262KiBfile-log/65536source-envelope requirements unchanged; fresh headroom and independent review mandatory before any new use."
+  },
+  "validation": {
+    "worker": "Reused healthy /root/trading_action_consistency READONLY exact source/correction/fixtures/contract/preservation review; no newagent/limitedagent retry/workerops.",
+    "AST_warnings_as_errors": "PASS",
+    "new_controls": 5,
+    "purpose_functions": 28,
+    "imports_and_forbidden_IO_or_eval_compile_exec_calls_static": "PASS_THREE_PURE_DATA_SOURCES",
+    "independent_primary_separation_source_review": "PASS_SOURCE_ONLY",
+    "static_case_manifest": "60unique parser cases +3unique injectedpaging units; expected9positive51parserrefusal3unitrefusal, ALLUNRUN.",
+    "five_source_SHA_size_JSON_contract_static_equality": "PASS",
+    "full_actual_source_semantics_or_fixture_behavior": "UNVERIFIED_UNRUN",
+    "staged_diff": "PASS",
+    "Ruff": "PREVIOUSLY_UNAVAILABLE_NOT_RUN_NO_LINT_CLAIM"
+  },
+  "preservation": {
+    "root": "/tmp/capacity-callback-symbol-source-evidence-20261018-v1",
+    "files": 17,
+    "input_bytes": 180683,
+    "manifest_bytes": 20281,
+    "manifest_sha256": "73fa019f8d079c1b34aa12ab56cd0ca7eaa2d559ff72e0251dc0cd6a35609cb6",
+    "checks": "Two held/named full reads, exact decimal physical fields, exclusive copies/fsync/readbacks, later original+copy full SHA/physical bookends, manifest last/root+resolvedparent fsync. Separate ROOT readback checks every17original+copy SHA/physical row. Worker final metadata review separate; no crash/durability guarantee.",
+    "software_file_bytes": 262144,
+    "software_total_bytes": 1048576,
+    "alarm_seconds": 30,
+    "Mac_AS_or_kernel_FSIZE_claim": false,
+    "old_failed_completed_roots_preserved": true
+  },
+  "next": "Prepare and independently review finite Linux synthetic63 owner/caller/transport/staging with pinned three DATA sources and exact invocation; hard child deadline must escape Exception retention and own child cleanup. Keep unchanged source envelope/file/hash/row/page bounds; source packet size must be checked, no cap relaxation. Only then ONE separately scoped new SYNTHETIC63 attempt with independent terminal/full outcome/source/preservation verification. Do not rerun completed old37, page observation or prior gates. Actual callback symbol interpretation requires separate later authenticated driver/fold and review; origin/native/runtime/model/RAM admission remains NULL.",
+  "execution_authorized": false,
+  "new_actual_symbol_driver": null,
+  "new_actual_independent_driver": null,
+  "dependency_origin_observer": null,
+  "native_runtime_admission": null,
+  "unchanged": "Actual callback symbol/version contents UNINTERPRETED. libm.so.6/libc.so.6 remain unresolved declarations. Other19 oversized native bodies UNREAD, actual loader/Python/provider authentication absent. Selected callable/global/type/dataclass liveproducer/classflags/native/phase/Arrow pools+wrapper/sklearnactualmetadata open. Guard3b8be00b/all25guardpayloadfunctions UNRUN; old2446/030c/G08/caps/maps unchanged. Producer2431/reference2446/executor2468/originalreceipts/context+graphs+JSON+UTF8lifetimes separate. Assembledtree/strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram NONE."
+}

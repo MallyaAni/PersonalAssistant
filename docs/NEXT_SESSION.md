@@ -1,5 +1,95 @@
 # Next session
 
+## 2026-10-18 — Symbol/version DATA decoders SOURCE reviewed; synthetic63 ALL UNRUN
+
+Read research/original-loader-callback-symbol-source-proof-v1-2026-10-18.json.
+Source36f2a0d78c775685d823069395542680f1072858 pins primary6fe24522/13496B/
+independenta526e85d/14287B/harness847127b3/17574B/builder8aaf0af5/3491B/
+preserver5c595bb8/4956B. Contract3daf592b/8591B/static89e3be24/9696B retained.
+Only NEW local stdlib source/AST/JSON/SHA/preservation/Git ran; ALL17newdecoder+
+5fixture functions UNRUN. No SSH/Docker/actualcallbackbinary read/native loading/
+package/backend/model CodeType/import/body/test/account/marketdata/credentials/
+other19read/oldELFparser-fold/37/pageobservation/gate/census/packet replay or
+guard/G08/cap/map/production change. Actual symbol/version contents UNINTERPRETED.
+
+Primary struct.unpack_from and independent explicitwidth/int.from_bytes cursor/
+bytewise strings/byte-set version coverage share no implementation import/call.
+Both propose complete supplied page/header/selected-payload binding and both full
+symbol arrays/byte names/NULspans/versym/GNUverneed+aux/gaps/associationmultiplicity,
+complete canonical bytes and greedy pages. Not generic fullELF/export/provider/
+initialization/ABI/runtime proof. Full st_other retained, low2glibc2.42 and low3
+ELF4.3DRAFT visibility projections named separately. Existing ca3503c0 requirements
+and exact43ce6401sectionpage remain unchanged; future actualdriver MUST authenticate
+binary/page/originaldecimalphysical/twofullheldnamedreads/laterbookends.
+
+Unchanged inputfile262KiB/pageinput65536/string4096/one16MiBhashworkledger charges
+EVERY hashed input/header/table/record/terminatedstring/gap byte BEFOREhashing.
+Result reports pre-output hashwork: future driver MUSTcarry residual budget into
+allcanonical/page/output hashes, never freshperfileledgers. New8192retainedrow/
+candidate-reference domain includes nestedauxiliaries with upfront table/phase
+rows+aux precharge. Complete canonical16MiB/pages<=65536B AND64records/max256/
+16MiBtotal; singleoversizedrecord refuses, no truncation/dedup. Post-encoding
+checks are not exact peak-RAM certification.
+
+ROOT tightened upfrontcombinedrowcharge BEFORE use; initialUNRUN0187982f/12947B+
+4642ccd4/13628B/manifest retained /tmp/callback-symbol-source-preparation-drafts-
+20261018-v1. READONLY reviewer caught candidate-reference multiplicity could expand
+JSON before latecanonicalbound. Corrected PRIMARY incremental and INDEPENDENT
+precomputed fanout charge BEFOREassociationserialization; same8192row/reference
+budget, explicit SYM_ASSOCIATION_FANOUT_BOUND. Pre-correction4b5019a9/ad9e6f34/
+harness9c62b81c+manifest retained /tmp/callback-symbol-fanout-preparation-drafts-
+20261018-v1. No decoder/fixture runtime failure/body replay.
+
+New63proposal=60parsercases(9positive/51expectedrefusal)+3INJECTEDJSONpagingUNITs,
+ALL63UNRUN. Known arbitrary/duplicate/substrings/nonUTF8/zero/local/reserved/MAX64
+fields, exact relativechain/stringoffset/gap/rawversion/missing+ambiguous evidence;
+full canonical/page parity plus independentknownassertions/complete per-kind page
+flattening/start/hash/record equality. Fanoutfixture100dynamic100regular/500aux
+has907retainedrows but49500references; source-reviewed intendedrefusal, not observed.
+Hashfixture262144B/3998repeated4096Bnames charges4097Bterminatedspans plus allother
+work; source-reviewed intendedhashbound, not measuredacceptance. Three pagingUNITs
+are arbitrary injectedJSON, not binary/native proof. Owner/caller/stager/packet/
+invocation/admission NULL. Future hardchilddeadline MUSTescape fixture Exception
+retention (KeyboardInterrupt/BaseException), boundedparentwait/ownedTERM-KILL-reap.
+Keep helper512MiBAS/20CPU/262KiBsource-file-logs/65536source-envelope; wholeencoded
+packet must fit or use separatelyreviewed boundedstaging, never caprelaxation.
+
+Existing healthy worker READONLY exactsource/correction/fixtures/contract/preserver
+review, no newagent/limitedretry/workerops. ASTwarnings-as-errors/28purposefunctions
+across5controls/import+forbiddenIO/evalcompileexec staticchecks/sourceindependence/
+63uniqueplannedcases/JSON/fullSHA/5sourcepins/stageddiff PASS; no behavior claim.
+Ruff previously unavailable/no lint. Sourcebuilder only derived newpreserver from
+authenticated oldpreserver SOURCE; no oldjob replay. Exclusive /tmp/capacity-callback-
+symbol-source-evidence-20261018-v1 retains17files180683B+manifest73fa019f/20281B:
+twoheldnamedfullreads/exactdecimalphysical/exclusivecopies/fsync/readbacks/later
+original+copySHAphysical/manifestlast/rootresolvedparent sync. Separate ROOTreadback
+checks all17original+copySHAphysical; worker final metadata review separate.
+Localsoftware262KiBfile/1MiBtotal/30alarm/noMacAS/kernelFSIZE/crashdurability claim.
+All failed/completed roots/receipts/admissions preserved.
+
+NEXT ROOT: prepare SOURCE/review finite Linux synthetic63 owner/caller/transport/
+staging/exact invocation with pinned three DATA sources. Harddeadline escape and
+ownedboundedchildren/cleanup mandatory; no capraise/oldjob replay. Independently
+review exact freshhost/resources/source/invocation BEFORE ONE separatelyscoped NEW
+SYNTHETIC63 attempt, then full namedoutcomes/knownvalues/everyfield-page-canonical/
+source/terminal/preservation verification. All63 remain UNRUN now; do not invent
+passing acceptance. Actual retained-callback symbol driver/fold/invocation stays
+NULL until separately prepared/reviewed AFTERnewsynthetic acceptance. No old37/
+pageobservation/ELFparserfold/bytecopy/20HEAD/metadata/censuses/ASTinventories/73/80/
+23/65+4/tiny/diagnostic/v2/packets replay for docs. Actual-loader/Python/provider
+authentication remains separate; unresolvedlibm/libc names/no guessedpaths/host
+substitutes/ldd/readelf/dlopen/native/package execution/other19reads/caprelaxation.
+
+Selected callable/global/type/dataclass liveproducer/classflags/native/phase/Arrow
+pools+wrapper/sklearnactualmetadata remain open. Guard3b8be00b/all25guardpayload
+functions UNRUN; old2446/030c/G08/caps/maps unchanged. Producer2431/reference2446/
+executor2468/originalreceipts/context+graphs+JSON+UTF8lifetimes separate. Assembled
+tree/strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/
+runtime/launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/history/
+ordinary/intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/missing
+receipts/v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-daemon-
+temp-RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Callback section DATA reviewed; symbol/version requirements SOURCE ONLY
 
 Read research/original-loader-callback-section-page-proof-v1-2026-10-18.json.
