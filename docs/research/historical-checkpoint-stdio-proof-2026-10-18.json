@@ -1,0 +1,51 @@
+{
+  "status": "VERIFIED_DOCKER_STDIN_HALF_CLOSE_ONLY",
+  "objective": "Check that the declared Docker attach configuration delivers input EOF before a final stdio reply.",
+  "root": "/home/animallya96/scratch/checkpoint-stdio-eof-20261018-v1",
+  "container": "9757c33252c216454b14cb5ff4405a441c2aefc97d650bdad782420f9787975d",
+  "source_sha256": "da51f13e40b5a827364e850a8f622baecdd0dbf16adc068de83369dffac9d6c7",
+  "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+  "started_at": "2026-10-18T00:20:11.346678092Z",
+  "finished_at": "2026-10-18T00:20:11.478290124Z",
+  "elapsed_seconds": 0.21857617516070604,
+  "exit_code": 0,
+  "oom_killed": false,
+  "runtime": {
+    "user": "1000:1000",
+    "network": "none",
+    "readonly": true,
+    "cpus": 1,
+    "memory_bytes": 536870912,
+    "total_memory_swap_bytes": 536870912,
+    "pids": 32,
+    "cap_drop": ["ALL"],
+    "security_opt": ["no-new-privileges"],
+    "mounts": [],
+    "healthcheck": ["NONE"],
+    "python_flags": ["-I", "-S", "-B"],
+    "OpenStdin": true,
+    "StdinOnce": true,
+    "AttachStdin": true,
+    "AttachStdout": true,
+    "AttachStderr": true,
+    "Tty": false
+  },
+  "acceptance": "docker create --interactive --attach stdin --attach stdout --attach stderr; docker start --attach --interactive. Child read(65) received exact17 bytes only after the caller closed input, then emitted one expected JSON line. Stderr empty; CLI/container exit0; stopped/noOOM. ROOT independently checked retained actual command/config/result/source and stopped inspect.",
+  "input_bytes": 17,
+  "input_sha256": "654195dcfa8d46e80ef9946752f3aeb03f0f1a1ef40b0fab17b0e446277a590e",
+  "evidence_sha256": {
+    "before.json": "e52ba2e0fbf7ce4f57533869a08f1803a33b9cb418ceca9e63fca32b9e80bbf1",
+    "after.json": "5e05bc94caab38ccbd131cc376173cccfcd6de8648c6e56b7adef68022a76149",
+    "result.json": "2a954197035449cac3c2391a3f2299a94192baf31867d4ab56654f2b6b3f21f3",
+    "accepted.json": "4518a34585f9934b0a2c3b176da286675b2f1155a814473d2fba005256adf131",
+    "independent-review.json": "717e0cdd1f89adbe66e45e39069ce16d8095f056f5c04f8ea850e6674777d42c"
+  },
+  "preservation": "Completed stopped container/root retained. Exact probe source and small independent review copied exclusively into root, fsynced and read back equal. Independent verification was read-only inline Python; no saved verifier-source hash claimed. No gate repeated for documentation.",
+  "limitations": [
+    "No checkpoint endpoint, peer, backend, native, model or account execution.",
+    "No SSH half-close or actual two-host checkpoint acceptance.",
+    "No timeout occurred; the probe timeout-stop branch is not runtime verified.",
+    "No production, original history, corrected account, configuration or order changes."
+  ],
+  "diagram_impact": "NONE — standalone transport probe, no deployed architecture change"
+}

@@ -1,5 +1,50 @@
 # Next session
 
+## 2026-10-18 — Docker input EOF and private caller guards VERIFIED
+
+Read research/historical-checkpoint-stdio-proof-2026-10-18.json and
+research/historical-checkpoint-caller-proof-2026-10-18.json. Exact f612
+Docker9757c332 finished00:20:11.478290124Z exit0/noOOM: read(65) received exact
+17 bytes only after input closed; one exact JSON line/stderr empty. Explicit
+interactive stdin/stdout/stderr attach and docker start --attach --interactive
+preserve EOF. No mounts, UID1000/noneRO/1CPU/512MiB=swap/PIDs32/HCdisabled/
+Python-I-S-B. Independent stopped-runtime/source/result review passed. Probe
+source da51f13e and review717e0cdd preserved in completed
+scratch/checkpoint-stdio-eof-20261018-v1. No endpoint/SSH/two-host proof;
+timeout-stop branch not exercised. Never restart/repeat this completed probe.
+
+ROOT standalone caller66ffdbad/testbdb440bb/runner8aaecb97/controller388d53a4
+now has11 guard/pipe tests passing0skip3.365s/RSS24428KiB on actual stopped
+da7d0846/f612, finished00:29:03.805623345Z exit0/noOOM. Root
+scratch/checkpoint-caller-green-20261018-v1 is COMPLETE. Scope: fake metadata
+and actual stdlib child pipes, not endpoint/native/model/account. Strict finite
+frames/exact types/deadlines/half-close/terminalEOF+exit0; detached startup/full
+permit; map-role/common-launch bindings before first byte; any pair failure
+pauses both streams and expectations. No default network/process/SSH client.
+
+ExpectedRED on exact earlier draftb9b91821 reproduced3FAIL/0errors/0skip0.310s
+on6173453f, finished00:28:47.661106255Z. Root
+scratch/checkpoint-caller-red-20261018-v1 is COMPLETE; wrapperexit0 is expected
+failure, not acceptance. Red differing-launch/wrong-role cases sent a byte to
+first child; green physical ingress markers absent on both. UnknownACK test
+first child receives one byte/second none and green both callers fail closed.
+Independent verifierf8ca8637 checked exact stopped runtime/two binds/source3
+SHA+physical identity beforeafter/marker files/counts. ROOT independent proof
+green e342e0b2/red7d7924cd; controller/verifier retained in both roots. Decimal
+strings preserve ns timestamps. No endpoint or model artifacts mounted. Local
+Ruff unavailable/AST only. No old18/17/15/21 gate reruns for documentation.
+
+INCOMPLETE: full positive eight-response actual endpoint transcript, startup/
+complete owner-controller, independent persisted receipts and host placement.
+Endpointf4e4e262 still INERT. Spark2 f612 Docker load still NOT DONE/NOT ADMITTED;
+daemon-temp/incremental RAM unresolved. Next ROOT boundary is complete reviewed
+controller/collector and actual resource/runtime admission, then PREPARED only,
+STATUS and exact consumed-session refusal. No ownerDECISION/commit/adoption.
+No source guards/caps/private protocol modules changed. Production unchanged
+by this task. Original timing FAILED/publication CLOSED; failed genuinev6 stays
+OPEN/PAUSED/no replay/adoption/new genuine run. Corrected historical delivery
+and genuine weekday/intraday/fill/UI acceptance remain UNVERIFIED.
+
 ## 2026-10-17 — Inert two-host endpoint source reviewed; exact timestamp copy repaired
 
 Read research/historical-checkpoint-two-host-endpoint-source-2026-10-17.json.

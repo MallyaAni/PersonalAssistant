@@ -1,0 +1,87 @@
+{
+  "status": "VERIFIED_PRIVATE_CALLER_GUARDS_AND_PIPES_ONLY",
+  "objective": "Prepare a bounded caller for the inert PREPARED-only endpoint; verify rejection, shared-launch identity and failure handling before actual peer orchestration.",
+  "source_sha256": {
+    "caller.py": "66ffdbad6b0edac14efd01532da3f9df3c7445f07051fa740cef0c29e7b61114",
+    "old_caller.py": "b9b9182104268859b8ad520700ad529d90b19b8e3756294f9d4c75312cb17853",
+    "tests.py": "bdb440bb41573abf647fc7f83c73a39099acda25b5314f6757f7165e6b0941cc",
+    "run.py": "8aaecb979da21f093b4d8ae2032d1ab5677522cd21401bc46cc33b4fe429fcbd",
+    "controller.py": "388d53a4ba6b96e80922a17653a9068caf51a5be22799b67cfe94780f01023ef",
+    "independent-verifier.py": "f8ca8637b350c8b232961610236305ed983ee4532de3a2b1f251b129783ae033"
+  },
+  "source_scope": "Standalone ROOT tooling retained in Spark scratch; not repository application code, integrated checkpoint coordinator or deployment. Caller itself starts no processes, network clients or SSH. It accepts explicitly owned Popen pipes and exact expected argv.",
+  "reviewed_guards": [
+    "Bounded unique-key finite frames; exact integer types; response length, stderr, per-frame and session deadlines; half-close input before terminal response; reject extra output; require EOF and exit0.",
+    "Detached startup declarations and exact full permit schema/quota/profile/owner/root/typed terminal validation.",
+    "Bind map roles a/b and common launch/profile/owner/binding/prior/source pins before either stream receives a byte.",
+    "Any pair mismatch or unknown acknowledgement marks both expectations and both streams failed; no caller retry.",
+    "Returned scope flags do not claim persisted receipts, host placement, commit or adoption."
+  ],
+  "green": {
+    "root": "/home/animallya96/scratch/checkpoint-caller-green-20261018-v1",
+    "container": "da7d0846c09f946cdf39f6806145a2d5f8fa79b0d4524b1c33c87da8142d4350",
+    "started_at": "2026-10-18T00:29:00.207559782Z",
+    "finished_at": "2026-10-18T00:29:03.805623345Z",
+    "tests": 11,
+    "passed": 11,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 3.365378424525261,
+    "peak_rss_kib": 24428,
+    "peak_child_rss_kib": 24428,
+    "exit_code": 0,
+    "oom_killed": false,
+    "evidence_sha256": {
+      "out/proof.json": "9ab59f36b1ea90bc440f3fd40952c6f767807e7bef271d6ff2e45f4953112966",
+      "inspect-before.json": "61252ac34769f0b8d80fa9dba6cefad33cff851e65f71b483957205cdf83e8ae",
+      "inspect-after.json": "6dc7e3ac93a91f53f7b5830221187a45ab1d7f8fdd66d08883b82c4b1cc13506",
+      "run.log": "b00a0b9bb7dc3f6309430ecca76cce60c8fe3b97c50246bee9eab1ca7be841e2",
+      "plan.json": "464cce8091d88d5f8ed6689108d93c8b77a0f506392024808b4d1621b14b50a9",
+      "independent-proof.json": "e342e0b25e22c4691af97cd2b64c986d65ae682a2d1b8b735353415385f13f19"
+    }
+  },
+  "expected_red": {
+    "root": "/home/animallya96/scratch/checkpoint-caller-red-20261018-v1",
+    "container": "6173453fef6472bafd975d510160c1f4cedea7155246dd1898b987b988061953",
+    "started_at": "2026-10-18T00:28:47.07587619Z",
+    "finished_at": "2026-10-18T00:28:47.661106255Z",
+    "tests": 3,
+    "failures": 3,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 0.3101186156272888,
+    "peak_rss_kib": 24348,
+    "exit_code": 0,
+    "oom_killed": false,
+    "meaning": "Wrapper exit0 denotes EXPECTED_RED only. Earlier caller allowed differing launches and wrong map role to send a byte, and did not fail both peers after an unknown acknowledgement. Exact reconstructed earlier draft SHA matched b9b91821; no old-source acceptance claim.",
+    "evidence_sha256": {
+      "out/proof.json": "399f6259b32a92b5c6b9ad612b9ec9d569f385fc4c8a88856d0ead2988160e6e",
+      "inspect-before.json": "3a1402c96a84ee0b675f49454363e36b09060dad71981d28eb283b75d1e26813",
+      "inspect-after.json": "78ca81d5cd9af1f302e5e805093f736c4b639315147d1770db0ab48d453f65b6",
+      "run.log": "971eda33537622e3c9ba74588f2000d9956de8c12b29caeb51d8dde7a9d8d6ba",
+      "plan.json": "a230acc46759b9fa2057bfb0cad1ec362f258c4b019c171b9a6622042707c2d7",
+      "independent-proof.json": "7d7924cd4235e6dcade65c2bc7130b61d61417461e7e84319d50e2a5b32abab6"
+    }
+  },
+  "test_coverage": [
+    "Duplicate keys, nonfinite numbers including overflowing exponent, and bool/int confusion refuse.",
+    "Actual stdlib child pipes exercise terminal EOF, trailing output, oversized response and silent-child deadline without retry.",
+    "Startup objects are detached from later mutation.",
+    "Differing launch and wrong role refuse before ingress; physical child marker files absent on both sides in green, present on first side in red.",
+    "Unknown acknowledgement fails both peers; only first side receives a byte. Marker content independently checked as one zero byte."
+  ],
+  "runtime": "Both exact stopped f612 image containers: UID1000:1000/networknone/readonly/1CPU/512MiB RAM=total swap/PIDs32/capdropALL/no-new-privileges/healthcheckNONE/tmp64MiB/Python-I-S-B. Exactly smallsourceRO+soleoutRW binds. Empty backend packages; stdlib caller, fake metadata and Python pipe children only. Source3 identity/SHA/inode/size/decimal-string mtime/ctime exact before/after; forbidden modules empty.",
+  "independent_review": "ROOT source-reviewed caller/tests/controller and existing worker performed READONLY source review. Separate verifier f8ca8637 checked actual stopped runtime, source identities, evidence hashes and physical marker files. Controller/verifier copied exclusively into each completed root and fsynced/read back; raw independent proof hashes above are remote original bytes, not a parsed JSON reserialization.",
+  "limitations": [
+    "No complete positive eight-response peer transcript exercised.",
+    "Inert endpoint f4e4e262 remains unexecuted; no actual peer, native/model/account or two-host checkpoint workflow.",
+    "Persisted endpoint receipt collection, actual host/runtime/root/resource binding and full owner/controller invocation remain open.",
+    "Spark2 exact image Docker load remains not done/not admitted; authenticated archive is not runtime image availability.",
+    "No owner DECISION/commit/adoption/restore or full-horizon/native-model resource proof.",
+    "Local Ruff unavailable; AST syntax check only. Completed gates were not repeated for documentation.",
+    "No production, historical inputs, original outputs, failed genuinev6 reservation, configurations or orders changed. Original timing FAILED/publication CLOSED; genuine operational acceptance UNVERIFIED."
+  ],
+  "next_boundary": "ROOT-reviewed complete startup/controller and independent persisted-record collector, then source/runtime/resource-admitted endpoint PREPARED + read-only STATUS + consumed-session refusal. No replay/adoption of v6 or full historical launch.",
+  "diagram_impact": "NONE — private standalone caller/tests and evidence only; deployed architecture unchanged"
+}
