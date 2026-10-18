@@ -1,5 +1,79 @@
 # Next session
 
+## 2026-10-18 — Metadata headers/full RECORD declarations VERIFIED; native files UNREAD
+
+Read research/original-loader-package-metadata-record-proof-v1-2026-10-18.json.
+Source085ab94f74341b71d305b9900265de81f3101f1e pins analyzer3cec8db1/10576B/
+transport26330657/6038B/independent8d50d3e1/12497B/transport54d3640b/6044B,
+builder4e39b46a/2238B/preservereb01fd5f/9826B. Summary18035944/228692B/
+rawindependenta5565ba5/158768B/seams15f82498/18911B/static1551cf64/4019B retained.
+Only NEW stdlib operational controls and copied metadata DATA parsing ran.
+No package/backend/model AST/CodeType/import/body, Docker/HEAD/cp/hostprobe/
+account/marketdata/credential/declared-native-file read, old census/AST-job/gate/
+packet replay or guard/G08/cap/source-map/production change.
+
+ONE independently source/invocation/resource-reviewed primary SSH and ONE separate
+independent SSH each exit0/empty stderr/noownedstop/cleanupfailure. Exact6 immutable
+copied metadata inputs462945B bound prior2b2ca95a SHA/decimalphysical; two full
+reads/held+named checks and later bookends. Complete4615 ordered CSV rows =
+PyArrow860/NumPy1336/SciPy2419;73 NEW DATA pages2633114B/max40523B/64rows each.
+These73pages are NOT the old synthetic73-case gate. Ordinary262KiB bounds unchanged.
+All full rows stay Spark; summary/rawproof retained Mac unchanged.
+
+Independent81inputs=73pages+6sources+summary+prior, each two full reads/SHA/
+held+named decimalphysical and laterbookends. Complete exact ordered original
+threefields/endline/index/hashdecode/decimalsize/lexicalpath/filename-shape/header
+pairs/mandatoryfields/pagecontiguity/coverage and selfMETADATA checks match.
+Copied METADATA declares PyArrow25.0.1/NumPy2.5.3/SciPy1.18.1, matching prior
+literal SOURCE versions. Metadata-Version2.4/2.4/2.1; these are declarations,
+NOT installed/native/runtime version attestation or complete packaging-spec proof.
+All3 METADATA own RECORD SHA256+sizes match exact copied METADATA; all3 RECORD
+self hash+size EMPTY retained. Other empty hash/size allowed. NumPy2 outside-site
+script rows are lexical ../../../bin/f2py and numpy-config only, never opened/run.
+
+167 native-filename-shape declarations =37Arrow/21NumPy/109SciPy, declared bytes
+sum264733848 is NOT RAM/unique physical allocation/file authentication. New
+REQUIREMENTS-only seam pins20 exact selected RECORD rows/path/hash/size; no ELF/
+architecture/SONAME/DT_NEEDED/aliases/inodes/actual loads/threads/fullclosure.
+No executable native reader/invocation/admission. Equal declared hashes do NOT
+prove same inode. sklearn actualmetadata unresolved;1.9.1predicate not attestation.
+Selected callable/global/type/dataclass liveproducer/classflags/native/phase remain
+open; Arrow default threads/prebuffer/extensions and ordinary compute wrapper
+registry provenance unbound; sixBLASenvs are not Arrow pool/RAM acceptance.
+
+Helpers512MiB AS soft=hard/20CPU/30alarm/262KiBfile+CSVfield/32768rows-per-RECORD;
+70sSSH/262KiBoutput/ownedTERM-KILL-reap retained. Limits NOT native/model/daemon
+RAM reservation. Timeout/signal/invalid-input/overflow/crash branches UNTESTED.
+Existing healthy worker READONLY reviewed exactsource/invocation/resources BEFORE
+each use then actualproof/seams; no newagent/limitedretry/workerops. AST warnings-
+as-errors/24purposecomments across6controls/sixutilityAST comparisons/JSON/fullSHA/
+staged diff PASS; Ruff previously unavailable/no lintclaim. Verifier's failclosed
+UNOBSERVED pins replaced with actual summary SHA+size BEFORE review/only dispatch;
+no failed runtime/body replay. Tool display truncation did not alter saved stdout.
+
+New remote analysis/tools/independent/tools roots COMPLETE immutable/file+outputdir
+fsync/readback. Exclusive /tmp/capacity-package-metadata-record-evidence-20261018-v1
+retains16small files848531B+manifest5da70b4a/18721B, files/readbacks/root/resolved
+parent fsynced. Source462945B/pages staySpark; no secondfullremotearchive/crash/
+durability guarantee. Old failed/completed roots/receipts/admissions preserved.
+
+NEXT ROOT: SOURCE ONLY design bounded exact-native-path observation/authentication
+from20 selected actual RECORD references; independent exactsource/invocation/
+resource review BEFORE use. No native reader/invocation/admission exists. Establish
+actual path/type/link/size then authenticatedbytes/origins/dependencies; many declared
+files exceed262KiB text-copy bound, so do NOT reuse text-copy tools or relax caps.
+No guessed suffix/recursivecopy/packageimport. Finish selected callable/global/type/
+dataclass liveproducer/classflags/native/phase contracts before any capacity proposal.
+Do NOT repeat closed metadata parsing/copy/HEAD/15/10 censuses/AST inventories/
+73/80/23/65+4/tiny/diagnostic/v2 gates/packets for docs. Guard3b8be00b/all25payload
+bodies UNRUN; old2446/030c/G08/caps unchanged. Producer2431/reference2446/executor2468/
+original receipts/fullcontext+graphs+JSON+UTF8 lifetimes separate. Assembledtree/
+strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/
+launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/
+intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/
+v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM
+unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Six package METADATA/RECORD byte copies VERIFIED; interpretation open
 
 Read research/original-loader-package-metadata-text-proof-v2-2026-10-18.json.

@@ -1,0 +1,220 @@
+{
+  "schema": "original-loader-package-metadata-record-data-proof/1",
+  "date": "2026-10-18",
+  "status": "VERIFIED_COPIED_METADATA_AND_COMPLETE_ORDERED_RECORD_DECLARATIONS_ONLY",
+  "source_commit": "085ab94f74341b71d305b9900265de81f3101f1e",
+  "starting_commit": "ac28a8beb0f3a4a8b29300acf38ae2ca00e89b6f",
+  "starting_branch": "codex/learned-live-release-20261006",
+  "starting_worktree": "CLEAN_PULL_REBASE_ORIGIN_MAIN_UP_TO_DATE",
+  "objective": "Parse exact six previously copied METADATA/RECORD files as data, preserve every ordered CSV row and independently reconstruct the complete fold without importing packages or opening declared files.",
+  "source_and_data_pins": [
+    {
+      "path": "docs/research/original-loader-package-metadata-record-analysis-v1-2026-10-18.json",
+      "sha256": "180359449b7d1a3085ad2a50a63f027da28b199f6ecb0559861f098920c7f976",
+      "bytes": 228692,
+      "functions": null
+    },
+    {
+      "path": "docs/research/original-loader-package-metadata-record-controls-static-v1-2026-10-18.json",
+      "sha256": "1551cf640d864b1ac9fa60b57d7d7b828363ad9ef1c9996c296c71ca9439279f",
+      "bytes": 4019,
+      "functions": null
+    },
+    {
+      "path": "docs/research/original-loader-package-metadata-record-independent-v1-2026-10-18.json",
+      "sha256": "a5565ba52c801a79dd45cce0d5cb75564d2fe01da0cd85f87aaba7a8e0300362",
+      "bytes": 158768,
+      "functions": null
+    },
+    {
+      "path": "docs/research/original-loader-package-metadata-record-preservation-v1-2026-10-18.json",
+      "sha256": "d89349157c533b6398f363b6d06f9185f73893f171fb8e75638e4e95901f6c26",
+      "bytes": 343,
+      "functions": null
+    },
+    {
+      "path": "docs/research/original-loader-package-metadata-record-seams-v1-2026-10-18.json",
+      "sha256": "15f8249875d0aef99b9f48d0e3eb9c1971cf85d23fefc09d27d9ed7538325128",
+      "bytes": 18911,
+      "functions": null
+    },
+    {
+      "path": "docs/research/sources/analyze-package-metadata-records-v1-2026-10-18.py",
+      "sha256": "3cec8db1f812ae6d44af397ace2cf3637d96e284cdd91f700ded89d8665cc029",
+      "bytes": 10576,
+      "functions": 9
+    },
+    {
+      "path": "docs/research/sources/package-metadata-record-analysis-transport-v1-2026-10-18.py",
+      "sha256": "26330657173e61a1fba507a43865c0e54f637655d0d3418364f3ed7d3933d366",
+      "bytes": 6038,
+      "functions": 3
+    },
+    {
+      "path": "docs/research/sources/package-metadata-record-independent-transport-v1-2026-10-18.py",
+      "sha256": "54d3640b3f350bad9a370d5285bc09161ab1385554f855893e07710a32944262",
+      "bytes": 6044,
+      "functions": 3
+    },
+    {
+      "path": "docs/research/sources/prepare-metadata-record-transports-v1-2026-10-18.py",
+      "sha256": "4e39b46aee43f261279a72fc0dbb410fb5c480ab43320d82ecc41a423260ff74",
+      "bytes": 2238,
+      "functions": 1
+    },
+    {
+      "path": "docs/research/sources/preserve-package-metadata-record-controls-v1-2026-10-18.py",
+      "sha256": "eb01fd5f18b28313bc4f8ee30c3bba4a63878bd88761449d1caf905df90a4f06",
+      "bytes": 9826,
+      "functions": 3
+    },
+    {
+      "path": "docs/research/sources/verify-package-metadata-records-v1-2026-10-18.py",
+      "sha256": "8d50d3e16e60fdf28c22239a3fce48d52cfedf695a4778de2737a3b8369e2e06",
+      "bytes": 12497,
+      "functions": 5
+    }
+  ],
+  "prior": {
+    "source_commit": "fa947a9fad49b444d42f2cb872d32763982a8097",
+    "proof": "docs/research/original-loader-package-metadata-text-proof-v2-2026-10-18.json",
+    "independent_sha256": "2b2ca95aaefdf78103e93b2393faa497419270ad0cc4d009f89684314cd046ba",
+    "scope": "Six byte copies previously VERIFIED; v1 pre-copy failure and retained-only Mounts-order diagnostic remain preserved, never replayed."
+  },
+  "actual_operations": {
+    "primary_SSH_count": 1,
+    "independent_SSH_count": 1,
+    "both_exit": 0,
+    "both_stderr_bytes": 0,
+    "both_owned_stop": null,
+    "both_cleanup_failure": null,
+    "source_invocation_resource_review_before_each_use": true,
+    "reviewer": "Existing healthy /root/trading_action_consistency; READONLY exact source/invocation/resources then actual proof and requirements-only seams. No new agent, limited-worker retry or worker operations.",
+    "only_new_operational_stdlib_controls_executed": true,
+    "no_package_AST_CodeType_import_or_body": true,
+    "no_Docker_HEAD_cp_container_start_create_exec_load_or_hostprobe": true,
+    "no_account_marketdata_credentials_or_declared_native_file_read": true,
+    "no_old_census_AST_job_gate_packet_or_failed_root_replay": true
+  },
+  "data_acceptance": {
+    "copied_inputs": 6,
+    "copied_bytes": 462945,
+    "complete_ordered_CSV_rows": 4615,
+    "rows_by_package": {
+      "pyarrow": 860,
+      "numpy": 1336,
+      "scipy": 2419
+    },
+    "new_DATA_pages": 73,
+    "page_rows_max": 64,
+    "page_bytes_total": 2633114,
+    "page_bytes_max": 40523,
+    "ordinary_per_file_bound": 262144,
+    "independent_inputs": 81,
+    "independent_inputs_composition": "73 NEW DATA pages + 6 copied sources + primary summary + prior proof; unrelated to the closed synthetic73-case gate.",
+    "each_input": "Two full reads/SHA/held-FD and named physical checks using decimal strings, then later bookend pass.",
+    "independent_fold": "Independent reconstruction of every ordered row/CSV end-line/index, original three fields, hash decoding, decimal size, lexical path, filename-shape classification, full metadata header pairs and mandatory fields, contiguous page coverage, and copied METADATA self-entry SHA256/size.",
+    "full_packaging_specification_compliance_claim": false,
+    "metadata_declarations": {
+      "pyarrow": {
+        "Metadata-Version": "2.4",
+        "Name": "pyarrow",
+        "Version": "25.0.1"
+      },
+      "numpy": {
+        "Metadata-Version": "2.4",
+        "Name": "numpy",
+        "Version": "2.5.3"
+      },
+      "scipy": {
+        "Metadata-Version": "2.1",
+        "Name": "scipy",
+        "Version": "1.18.1"
+      }
+    },
+    "metadata_meaning": "Copied metadata declarations match prior literal source versions, not installed/native/runtime version attestation. All header pairs retained using stdlib compat32 semantics.",
+    "copied_METADATA_hash_and_size_matches": 3,
+    "RECORD_self_entries_with_empty_hash_and_size": 3,
+    "other_empty_hash_or_size": "Permitted and retained, no wheel-only rule imposed.",
+    "numpy_outside_site_packages_rows": 2,
+    "outside_paths": "Lexical ../../../bin/f2py and ../../../bin/numpy-config only; no resolution/open/invocation.",
+    "ordered_fields_sha256": {
+      "pyarrow": "762b03b027c122ad39e29ccc947b2313cf45316373a011b54c84a2d8ca2a8888",
+      "numpy": "70bd007f0bb09930e33614bbdafc78ee0ef10d729301cee1d692fbeb2c381467",
+      "scipy": "75dc2e43b15455ad45d0935e142d80a9f3163e7c932a36d63095736d69ad4334"
+    }
+  },
+  "native_seams": {
+    "filename_shape_declarations": 167,
+    "by_package": {
+      "pyarrow": 37,
+      "numpy": 21,
+      "scipy": 109
+    },
+    "declared_bytes_sum": "264733848",
+    "meaning": "RECORD declarations only; not actual file bytes, unique physical allocation, aliases/inodes, ELF, architecture, SONAME/DT_NEEDED, dynamic loading, threads, model or RAM proof.",
+    "selected_exact_row_references": 20,
+    "selection": "Requirements-only source-derived paths/hash/size references in 15f82498 seam, not full native closure or callable allowlist.",
+    "sklearn_metadata": "UNRESOLVED; 1.9.1 admission predicate is not attestation.",
+    "reader_invocation_or_admission": null
+  },
+  "resource_controls": {
+    "primary_and_independent_helper_AS_bytes": 536870912,
+    "AS_soft_equals_hard": true,
+    "CPU_seconds": 20,
+    "alarm_seconds": 30,
+    "per_file_and_CSV_field_bytes": 262144,
+    "max_rows_per_RECORD": 32768,
+    "transport_wait_seconds": 70,
+    "transport_output_per_file_bytes": 262144,
+    "transport": "Fixed host keys/host/UID and exact source SHA+size; owned SSH TERM/KILL/reap controls retained. No remote-quiescence inference from SSH exit.",
+    "meaning": "Operational control limits only; no native/model/daemon RAM reservation or acceptance.",
+    "timeout_signal_invalid_input_overflow_crash_branches": "UNTESTED"
+  },
+  "validation": {
+    "AST_warnings_as_errors": "PASS",
+    "purpose_comments": 24,
+    "new_control_sources": 6,
+    "exact_utility_AST_comparisons": 6,
+    "JSON_full_SHA_hashlinks": "PASS",
+    "staged_diff_check": "PASS",
+    "Ruff": "PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM",
+    "automated_old_or_payload_tests_run": 0,
+    "unrun_source_preparation": "Verifier initially contained failclosed UNOBSERVED summary pins; exact observed SHA/size set and source-reviewed before its only dispatch. No failed runtime or payload replay."
+  },
+  "preservation": {
+    "remote_roots": [
+      "/home/animallya96/scratch/capacity-package-metadata-record-analysis-20261018-v1",
+      "/home/animallya96/scratch/capacity-package-metadata-record-analysis-tools-20261018-v1",
+      "/home/animallya96/scratch/capacity-package-metadata-record-independent-20261018-v1",
+      "/home/animallya96/scratch/capacity-package-metadata-record-independent-tools-20261018-v1"
+    ],
+    "remote": "New exclusive roots COMPLETE; file/readback and output-directory fsync. Six source copies and 73 DATA pages stay Spark.",
+    "local_root": "/tmp/capacity-package-metadata-record-evidence-20261018-v1",
+    "local_files": 16,
+    "local_data_bytes": 848531,
+    "manifest_bytes": 18721,
+    "manifest_sha256": "5da70b4abdcbb1d3f8340e2647915833457a196ffd57cd8d67fc76188fd93ac8",
+    "local_files_readback_root_resolved_parent_fsync": true,
+    "transport_stdout": "Exact raw summaries retained unchanged; tool display truncation is not file/wire truncation. Both stdout hashes equal saved raw proofs.",
+    "crash_durability_or_second_full_remote_archive_guarantee": false
+  },
+  "unchanged_and_unadmitted": {
+    "distinct_guard_sha256": "3b8be00b26cbf02f375bca5207e207dc8505dcfb997e281ab7c80cee3c187594",
+    "distinct_guard_payload_functions": 25,
+    "all_payload_functions": "UNRUN",
+    "original_guard_sha256": "030cb5bb25f89c2785e6acbd55aceff5c99b632a5eb538079ee027362ae6178a",
+    "old_2446_G08_caps_source_maps_production": "UNCHANGED",
+    "producer_reference_executor": "Original2431, reference2446 and executor2468 namespaces/receipts and full context/graphs/JSON+UTF8 lifetimes remain separate.",
+    "execution_authorized": false,
+    "assembled_tree_strategy_entrypoint_manifests_bootstrap_wrapper_owner_caller_stager_packet_runtime_launch_admission": null,
+    "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "missing_original_receipts": "STILL_MISSING",
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_OR_NEWRUN",
+    "actual_twohost_Spark2_image_daemon_temp_RAM": "UNADMITTED_UNCHANGED",
+    "heartbeat": "ACTIVE"
+  },
+  "next": "SOURCE ONLY design bounded exact-native-path observation and authentication from the 20 selected actual RECORD references, with independent exact source/invocation/resource review BEFORE use. No native reader/invocation/admission exists. Establish actual path/type/link/size and authenticated bytes/origins/dependencies without guessed suffixes, recursive copy, package import or cap relaxation; many declarations exceed the 262KiB text-copy bound, so do not reuse text-copy tools. Finish selected callable/global/type/dataclass live-producer/class-flags/native/phase contracts before any synthetic or genuine capacity proposal. Never rerun closed gates/censuses/packets for documentation."
+}
