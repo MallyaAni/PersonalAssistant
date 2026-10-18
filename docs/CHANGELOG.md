@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-10-18 — Read committed raw Cycle finals in the private Nightly path
+
+New historical_raw_cycle.read_final authenticates authoritative OUTCOME head,
+reserved decision/submission ancestry, exact source-bound raw settlement and
+distinct preceding Nightly/birth/holding-context lineage. RawNightly now checks the
+final current latch/broker/paper and closes the SAME session. Recovery returns the
+original result without another policy call or Store head transition. Legacy
+Cycle/_final_settlement and public genuine refusal remain unchanged.
+
+Sourcea02731f4/tree1fb3ab78 passed eight NEW isolated tests,0fail/0error/0skip,
+11.375614285s/57988KiB. Actual native desired8/filled5 partial journal, >256KiB/NaN
+paper, committed Store stage/head persistence/reopen, same-session close/recovery
+and stale/uncommitted/lineage/parent/clock/latch/paper/session refusals passed.
+Proofd43aa36c: research/raw-cycle-nightly-bridge-proof-2026-10-18.json.
+
+Cycle production/context parser and Nightly policy/trade/calendar/source-manifest
+globals are synthetic; full raw Cycle producer, native adoption, complete physical
+reservation/interruption/two-host/model/RAM/genuine acceptance remain UNVERIFIED.
+Next: separately reserved private raw Cycle final producer/recovery. No closed gate
+rerun, deploy or production change. Original timingFAILED/publicationCLOSED/pausedv6
+unchanged. Diagram impact: NONE — existing private adapter boundaries.
+
 ## 2026-10-18 — Compose the private raw Nightly birth and close lifecycle
 
 New RawNightly private bodies retain source/context/birth/previous/pre-close

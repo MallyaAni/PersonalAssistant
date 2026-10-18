@@ -1,5 +1,78 @@
 # Next session
 
+## 2026-10-18 — Committed raw Cycle → private Nightly read bridge VERIFIED
+
+Product acceptance remains the priority. This NEW eight-test committed-read seam
+is CLOSED; never rerun its preflight/stage/copy/test/getter or prior7/8/10/11/5 gates
+for documentation. Production and public genuine execution remain unchanged.
+
+Verified source checkpoint a02731f49471b4d4592fae0dc14db296dd41daa9, exact tested tree
+1fb3ab78a5487b219dde6921a00c6b08f308df59, adds historical_raw_cycle.read_final and
+the RawNightly.raw_predecessor branch. Legacy Cycle, _final_settlement and all
+other pre-existing files remain unchanged except historical_raw_nightly.py.
+The new reader requires the externally pinned authoritative OUTCOME_COMMITTED
+head/receipt, indexed immediate submission/decision ancestry and exact reserved
+operation recovery. Store stage commitment alone is insufficient: final receipt
+must also pass the original source-bound raw reconciliation graph, actual broker
+observation clock and pre-fold/submission paper/latch checks.
+
+Distinct raw-nightly-cycle-lineage/1 binds birth, preceding reserved Nightly,
+frozen holding-context bytes and identity through decision/submission/pre/final
+receipts. Intraday Cycle context remains a separate object. Earlier Nightly paper
+matches DECISION paper; sender updates may legitimately change submission paper.
+Nightly checks current final latch, broker bytes and paper SHA/length before a
+same-session close. Its physical reservation retains the Cycle reference and head
+before broker observation; recovery returns the original receipt without replay.
+Public raw entry still refuses before effects. Native adoption remains FALSE.
+
+VERIFIED: ONE new675666bbcc301859def6a5a7c737ecb7cd64bb9649811b5829870ef2ee0a19c3/f612
+exited0/noOOM at21:24:27.801113145Z. Eight NEW tests passed0fail/0error/0skip in
+11.375614285s/57988KiB. Actual native100000cash zero-share birth/prior Nightly
+produced an unsent intent; actual ReplayBroker filled5 of desired8, native raw
+reconciliation removed resolved pending and saved a partial journal. Native
+>256KiB/NaN paper is retained. Real Store registry/demand, reserved decision and
+submission, final OUTCOME head/receipt and reopen were exercised. Same-session
+private close/recovery preserved the Store head and synthetic policy count2.
+Uncommitted/stale final, wrong holding lineage/resolved graph/submission parent/
+broker clock, changed current latch/paper, wrong session, legacy raw settlement
+and public entry refusals all passed before a new policy call/effect.
+
+Read research/raw-cycle-nightly-bridge-proof-2026-10-18.json. Actual proofd43aa36c/
+50475B and seven fixed results remain /tmp/raw-cycle-nightly-bridge-20261018-v1
+and matching Spark1scratch. All five phases0/empty stderr. Twenty product/test
+pins;26pinned payloads+pins=27physical source files;47native SHA/physical bindings
+and writer globals unchanged/forbidden imports empty. Complete four mounts equal
+by unique destination, raw order differs; HostConfig ONLY OomKillDisablefalse→null.
+UID1000/noneRO/1CPU/512MiB=swap/PIDs32/tmp64. Explicit synthetic512KiB spans/1MiB
+raw/32body32page checkpoint plus retained fixture reservations; native1MiBFSIZE,
+source/control/log256KiB and production caps unchanged. Twenty-nine local control/
+transport double-read SHA/physical bookends preserve exact decimal ns strings.
+Existing healthy worker reviewed sources/exact calls/actual fresh proof/getter/
+actual results READONLY. No operational/test failure/replay. Two fixture findings
+were corrected before the first runtime. Purpose/AST/pins/runner-byte/zero-backspace/
+diff checks pass; Ruff unavailable, no full unit/build/deploy claim. Diagram: NONE.
+
+UNVERIFIED: this is the committed raw-final READ boundary and private Nightly
+continuation, NOT the full raw Cycle PRODUCER. Test orchestration constructs Cycle
+stage receipts explicitly; the context parser, policy, trade orchestration,
+calendar and source-manifest globals are SYNTHETIC. Exact complete-source CodeTypes
+execute with real native broker/paper/storage. Native market_daily planning,
+whole constructors/model/context/calendar/economics, native operation adoption,
+complete physical reservation/interruption/two-host/model/RAM/crash and genuine
+acceptance remain UNVERIFIED. No provenance-audit prerequisite is being introduced.
+
+NEXT CONCRETE PRODUCT TASK: implement a separately reserved PRIVATE raw Cycle
+final producer/recovery path that emits this exact lineage and composes native
+raw settlement/save/receipt/Store OUTCOME commit. Preserve legacy _fold_current,
+_final_settlement and public genuine refusal. Prove NEW source-isolated synthetic
+interruption/original-result recovery assertions; never rerun this closed8 or
+prior gates. Then complete pre-effect/native metadata/two-host/model/RAM admission
+before genuine proposals/ordinary/intraday/fills, independent publication and API/UI.
+Original timingFAILED/publicationCLOSED/missing receipts/immutable roots unchanged;
+genuinev6OPEN-PAUSED/no replay/adoption/new genuine run. No Spark2 load, guard/cap
+weakening, model/provider/account/service change or historical-main deployment.
+Heartbeat ACTIVE; quiet on unchanged state; no ETA.
+
 ## 2026-10-18 — Private raw Nightly birth/two-close lifecycle VERIFIED
 
 Product acceptance remains the priority. This seven-test private lifecycle boundary
