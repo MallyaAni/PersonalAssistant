@@ -1,0 +1,84 @@
+{
+  "schema": "original-loader-guard-source-closure/2",
+  "status": "SOURCE_PREPARED_REVIEWED_ONLY_NO_RUNTIME_ACCEPTANCE",
+  "starting_head": "a5ddf6407ff3c777e8c53e5bf43b6c9b132c4098",
+  "source_checkpoint": "526604e6b3549a84372c0deaf84e515c38b894f0",
+  "scope": "Distinct v2 source completes proposed missing workflow cases and adds independent verifier/source-packet/staging/caller source and concrete startup arguments. No execution is admitted or claimed.",
+  "artifacts": {
+    "sources/original-loader-guard-fixtures-v2-2026-10-18.py": {"sha256": "9ec2e1e335d7f905a26751099f5a75f4ac47a34fc97ff58f9a6b3497153ec1cc", "bytes": 15657, "functions": 11, "embedded_functions": 16},
+    "sources/original-loader-guard-suite-v2-2026-10-18.py": {"sha256": "364307c95d7ee0544f746ac36a2771293f26f3a1e1c96b52f13e32ae7484144e", "bytes": 28793, "functions": 22},
+    "sources/original-loader-guard-bootstrap-v2-2026-10-18.py": {"sha256": "d0e888e703626cf98a9b3f12dd625cec4789f951bea9a8f583aa8dbcf46d8db5", "bytes": 3706, "functions": 4},
+    "sources/original-loader-guard-controller-v2-2026-10-18.py": {"sha256": "2e505205cc8a3793d7b3313a5b5c3b670b00134575982d26c725787b6530df5a", "bytes": 16728, "functions": 14},
+    "sources/original-loader-guard-verifier-v2-2026-10-18.py": {"sha256": "e0fa867a793c78b8260d935ed0c1518f60caa10ba3ab11e084a51ae249ec92f5", "bytes": 26520, "functions": 17},
+    "sources/original-loader-guard-stage-v2-2026-10-18.py": {"sha256": "a7c03b87ede45671c7ae7c9e08172b4f4b9ea8e95a0d2eeaa1b3b815fb08afb2", "bytes": 6012, "functions": 8},
+    "sources/original-loader-guard-caller-v2-2026-10-18.py": {"sha256": "9bb579fe0cc839823c8a0558e4da994ea94deb8865a28a243c9da49effaa0503", "bytes": 6863, "functions": 8},
+    "original-loader-guard-concrete-proposal-v2-2026-10-18.json": {"sha256": "3fbd69c76a18a1a5582dbcf3a424801325c82445c5aef1ff4674ad9b5aafe38d", "bytes": 9960}
+  },
+  "source_coverage_added_not_executed": [
+    "G13 full-workflow failure-FD/path mismatch, preserving both separate actual allocated inode bodies; no reserved-path placeholder normalization.",
+    "G15 duplicate/nonfinite runtime, duplicate invocation and exact external raw-hash mismatches before backend import; version case remains deliberately later.",
+    "G17 second-auth changes only private source copy; exact SourceBook FD/root injection remains explicitly synthetic. Full workflow source-byte refusal precedes fourth phase.",
+    "G17 inventory stack bound uses100001 None references, no numerical buffer. Output-bound case retains explicitly shared256MiB ASCII fixture value through full JSON+UTF8 and must reach actual unchanged256MiB check before candidate creation.",
+    "G05 oversized replacement is parent-built before capped child then renamed after authentication. This tests source-size refusal, NOT in-place or concurrent growth acceptance.",
+    "G18 retains physical READY, exact waiting PID, real SIGALRM signum/message/monotonic interval. Separate owned sentinel survival is not an unrelated production-process claim."
+  ],
+  "independent_source": {
+    "imports_suite_fixture_harness_backend_or_numpy": false,
+    "case_declarations": "Independent static G01-G17 table equals all65 ordered proposed cases; four G18 children bring proposed total69, all UNEXECUTED.",
+    "actual_future_observations": "Two exact stopped Docker CIDs independently read over explicit local Unix socket; bounded file logs, waits, reaping and exit receipts. Actual rows must equal retained after records and exact e0/resources/mounts/commands.",
+    "physical": "Held-FD/path full SHA and decimal physical counters before/after full fold, exact failure-slot bytes/markers/sparse/links/orphan candidate/source changes, actual phase metrics/coexistence and all15 prepared files preserved.",
+    "bounds": "30s verifier alarm/10s inspect waits/4096files/64MiB cumulative read/262KiB ordinary file. Only exact G05-grow source path has narrowly bounded1MiB+4096 read exception with exact content/SHA/inode assertions.",
+    "output": "Exclusive separate review root; proof written only after immutable run/stage fold. Source packet remains small/external pinned; no actual packet or root exists yet."
+  },
+  "staging_caller_source": {
+    "packet": "Ten exact named bounded source records, maximum1MiB decoded/2MiB serialized; full held-FD/path readback and directory fsync. Packet is source authentication, not runtime admission.",
+    "caller": "Default refuses. Sole --admitted-synthetic-v2 route checks self SHA then fresh external synthetic-only admission before staging/controller. Exact eight arguments and external host evidence are described in concrete proposal.",
+    "fresh_admission": "No admission exists. Requires externally reviewed actual host/UID/image/source roots, exact decimal observed_at_ns within120seconds, pinned runtime-image.json and host-resources.json; booleans/hashes alone are not proof. Fresh headroom still checked before each create.",
+    "runtime": "Unchanged e0/UID1000/noneRO/1CPU/2GiB=swap/PIDs32/tmp64/noHC/lognone/capdropALL; no genuine backend/model/original/account/market/credentials/socket binds. Fake inspect path is JSON declaration only.",
+    "force_kill_transport_loss": "UNEXERCISED; no claim SIGKILL executes Python finally, no new remote-stop guarantee."
+  },
+  "readonly_review": {
+    "worker": "Reused healthy trading_action_consistency, READONLY source and narrow follow-ups; limited workers not retried.",
+    "findings_corrected_in_source": [
+      "Complete stat_result equality incorrectly included atime. Staging now compares explicit stable non-atime fields; ns values are exact strings.",
+      "Verifier ordinary262KiB read cap rejected the deliberate oversized fixture. Added only exact G05-grow path exception with full exact bytes/SHA/inode checks.",
+      "ROOT found deliberate child write exceeded unchanged262KiB FSIZE before source-size guard. Parent now prepares bounded oversized replacement before spawn; no cap raised, no in-place growth claim.",
+      "Added actual independent inspection cleanup/receipts, prepared15 full beforeafter identities, exact ordinary failure-slot bytes and physical real-alarm evidence."
+    ],
+    "final_scope": "Worker found no blocker in final narrow rereads of G13/G15/G17, staging identity, growth exception, fresh inspection cleanup and concrete eight-argument route. Runtime/stress completion/genuine admission remain UNVERIFIED.",
+    "runtime_red_green": "NONE: source findings only, no fixture/module imported or executed."
+  },
+  "checks": {
+    "seven_source_AST_and_embedded_AST": "PASS",
+    "purpose_comments": "PASS:84 helper functions+16 embedded fixture functions",
+    "independent_ordered_case_tables": "PASS65 equal rows, proposed69 totalchildren",
+    "proposal_JSON_inert_execution_fields": "PASS",
+    "v1_artifact_full_SHA_preservation": "PASS:all prior proof artifact bytes unchanged",
+    "staged_diff_check": "PASS after removing one new EOF blank line; no runtime failure",
+    "ruff": "UNAVAILABLE_NOT_CLAIMED",
+    "helpers_imported_or_bytecode_compiled_or_execed": false,
+    "packet_or_fixture_generated": false,
+    "SSH_Docker_host_probe_container_created": false,
+    "synthetic_tests_run": 0,
+    "genuine_tests_run": 0,
+    "completed_old_gates_repeated": 0
+  },
+  "unverified_before_any_runtime": [
+    "Actual source packet/caller transfer and exclusive staging readback; none has been created. Preserve exact sources and external pins before create.",
+    "Fresh independently reviewed SYNTHETIC-only actual host/image/resources/source/admission. No profile substitute or repeated unavailable-image/denied-read probe.",
+    "Every actual test outcome including source/generated-code guards, metrics, persistence, source preservation, independent verifier and cleanup.",
+    "256MiB stress completion under unchanged3s CPU/wait and2GiB cgroup. Any timeout/OOM/FSIZE refusal is FAILED intended case, never the desired size-bound result; preserve without automatic replay.",
+    "Genuine full2446 source/call manifest/loader/context+two full receipts/model memory/coordinator/horizon/restore and all historical/live acceptance remain separate and unproved."
+  ],
+  "harness_contract_native_caps_store_nightly_cycle_changed": false,
+  "original_files_or_production_changed": false,
+  "runtime_admission": null,
+  "execution_authorized": false,
+  "original_timing": "FAILED_UNCHANGED",
+  "publication": "CLOSED",
+  "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+  "actual_two_host": false,
+  "historical_weekday_intraday_fill_UI": "UNVERIFIED",
+  "heartbeat": "ACTIVE",
+  "diagram_impact": "NONE: private source-only proposal, no production flow changed."
+}

@@ -1,5 +1,58 @@
 # Next session
 
+## 2026-10-18 — Distinct N2 guard v2 source closure; no runtime acceptance
+
+Source526604e6b3549a84372c0deaf84e515c38b894f0 passed source-only AST/metadata
+review; NOT runtime. Read research/original-loader-guard-source-closure-v2-proof-2026-10-18.json
+and research/original-loader-guard-concrete-proposal-v2-2026-10-18.json
+(3fbd69c7/9960B). Distinct v2 fixture9ec2e1e3, suite364307c9, bootstrapd0e888e7,
+controller2e505205, verifiere0fa867a, stagea7c03b87, caller9bb579fe remain
+UNEXECUTED under research/sources. V1/831/a5dd source and proof bytes unchanged.
+Harness737d/contractecc/native/Store/Nightly/Cycle/caps unchanged. No helper
+import, bytecode compile/exec, packet/fixture build, test, SSH/Docker/host probe,
+model/account/provider call, original or production change. No roots created.
+
+V2 adds G13 workflow FD/path mismatch; G15 duplicate/nonfinite/runtime+invocation
+hash refusals; G17 private source-copy/100001-reference inventory/actual256MiB
+output-bound stress.65 G01-G17 cases plus four G18 children proposed, ALL
+UNEXECUTED. Explicitly injected source FD/root/fake audit/inspection remain
+synthetic, never genuine2446/N2/runtime admission. Output case retains shared
+256MiB ASCII value through unchanged JSON+UTF8;3s CPU/wait/2GiB limits unchanged.
+Timeout/OOM/FSIZE failure cannot count as size-bound acceptance. Preserve any
+failure without automatic replay; no guaranteed stress completion claimed.
+
+Source review found atime comparisons and verifier oversized-file cap gaps;
+corrected stable fields/exact decimal ns plus only exact G05-grow path read
+exception. ROOT found child write hit262KiB FSIZE first: parent now constructs
+bounded BASE+1048577zero replacement, child renames after authentication.
+Verifier checks exact bytes/SHA/inode; this is NOT in-place/concurrent growth.
+Worker final narrow READONLY rereads found no remaining blocker in these source
+paths or concrete caller route; no imports/tests/probes/limited-agent retries.
+
+Independent verifier imports no suite/fixture/harness/backend/numerical module.
+Proposed fresh read-only inspections of two stopped exact CIDs, bounded CLI
+logs/waits/reaping/receipts and30s alarm; full physical SHA/file/slot/marker,
+case/phase/metric/coexistence checks and15 prepared-file beforeafter proof.
+Packet/stage source preserves ten named files <=1MiBdecoded/2MiBpacket with
+readback/fsync. Caller default refuses; sole eight-argument synthetic route
+requires self SHA and fresh external synthetic-only admission before staging.
+Actual host evidence/packet/admission are ABSENT. Force-kill/transport-loss
+cleanup remains UNEXERCISED, no Python-finally-on-SIGKILL claim.
+ASTs/JSON/hash preservation/case table65/purpose84+16/diff passed; Ruff unavailable.
+Zero synthetic/genuine tests; zero old completed gates repeated.
+
+NEXT: this source closure is prepared, do not regenerate/re-review it merely
+for documentation. Prepare exact small source packet/caller pins and preserve
+readback; independently review fresh SYNTHETIC-only host/image/resources/source
+admission before any create. Then review the concrete invocation for ONE new
+bounded synthetic suite in distinct v2 roots with independent terminal proof.
+No suite/genuine loader/full original/corrected/account or actual-owner launch
+is admitted yet. Combined model/RAM/historical/weekday/intraday/fill/UI remain
+UNVERIFIED; original timing FAILED/publication CLOSED/missing receipts unchanged;
+genuinev6 OPEN/PAUSED/no replay/adoption/new run; actualtwohost/Spark2 image/
+daemon-temp/RAM gaps unchanged. Keep heartbeat ACTIVE/no permission question.
+Diagram impact: NONE — private source-only proposal, no production flow change.
+
 ## 2026-10-18 — Tiny N2 guard source package prepared; all runtime UNVERIFIED
 
 Source checkpoint831004358842b2cc95014c8df59bbd03e56de04a passed local
