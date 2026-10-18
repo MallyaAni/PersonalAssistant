@@ -1,0 +1,144 @@
+{
+  "schema": "original-loader-callback-symbol-driver-source-proof/1",
+  "date": "2026-10-18",
+  "status": "SOURCE_REVIEWED_UNEXECUTED_RETAINED_SYMBOL_DATA_DRIVERS",
+  "source_commit": "d4a7929558f5d37bcf048279e069a809f8ccbe23",
+  "starting_commit": "5e459c34de3eb13f7078a3f3655ffe258bcdeaf6",
+  "starting_branch": "codex/learned-live-release-20261006",
+  "starting_state": "CLEAN_PULL_REBASE_ORIGIN_MAIN_UP_TO_DATE",
+  "objective": "Prepare separate bounded actual retained-callback symbol/version DATA primary and independent drivers around unchanged verified decoder sources; review authority, complete records/canonical/page fold and residual hash accounting without invoking either driver.",
+  "source_and_evidence_pins": [
+    {
+      "path": "docs/research/sources/analyze-callback-symbol-retained-v1-2026-10-18.py",
+      "bytes": 8546,
+      "sha256": "b7eadb0166ed9aa21749c5230f19ce466b2430ca95fca0cc6f61948bac5d65c4",
+      "purpose_functions": 7
+    },
+    {
+      "path": "docs/research/sources/verify-callback-symbol-retained-v1-2026-10-18.py",
+      "bytes": 11913,
+      "sha256": "7ff8b1b445337f6770c9fa572c3e0db5b83368e228419fb55cecc32bcfde46bd",
+      "purpose_functions": 6
+    },
+    {
+      "path": "docs/research/sources/derive-callback-symbol-data-transports-v1-2026-10-18.py",
+      "bytes": 1887,
+      "sha256": "9a48ad468b082894a5ae5b67828c82e6a3b672aa3f76dc6a5c95b5fd1933a937",
+      "purpose_functions": 1
+    },
+    {
+      "path": "docs/research/sources/prepare-callback-symbol-data-transports-v1-2026-10-18.py",
+      "bytes": 7193,
+      "sha256": "6403194576cc40521fda1664cb8ba89a7876faabd0b87ef2e9f75e65571bad6b",
+      "purpose_functions": 4
+    },
+    {
+      "path": "docs/research/sources/callback-symbol-data-primary-transport-v1-2026-10-18.py",
+      "bytes": 8385,
+      "sha256": "78253bcf66db3e449b4247749b1912c640ea809e941fb820d975e739bed19617",
+      "purpose_functions": 3
+    },
+    {
+      "path": "docs/research/sources/callback-symbol-data-independent-transport-v1-2026-10-18.py",
+      "bytes": 8395,
+      "sha256": "8ba05b849beec55b827b42151b63c8dc08cea365b8776209f1833e1e87214c8b",
+      "purpose_functions": 3
+    },
+    {
+      "path": "docs/research/sources/preserve-callback-symbol-drivers-v1-2026-10-18.py",
+      "bytes": 4137,
+      "sha256": "6d56ed8cdf78e38f9e78b397581a4b6f6bbc2e88701c50ac74d62b43a84e407f",
+      "purpose_functions": 4
+    },
+    {
+      "path": "docs/research/original-loader-callback-symbol-driver-contract-v1-2026-10-18.json",
+      "bytes": 12472,
+      "sha256": "393ec583272509f344e4b5de17983542cccbd780d80a85ab05a6aaba5aec2dfa"
+    },
+    {
+      "path": "docs/research/original-loader-callback-symbol-driver-static-v1-2026-10-18.json",
+      "bytes": 3873,
+      "sha256": "1f81d8a42fdba888098fc98306de0a11cf4c36f6dc059904a43efbf6e8427d9f"
+    },
+    {
+      "path": "docs/research/original-loader-callback-symbol-driver-preservation-v1-2026-10-18.json",
+      "bytes": 11815,
+      "sha256": "55a1bc225b6201c3965302805c2ed0f1d34678ad418f57cf31d8a83fbd43ee73"
+    }
+  ],
+  "actual_operations": {
+    "local_new_stdlib_source_AST_JSON_SHA_preservation_Git_only": true,
+    "new_driver_functions": 13,
+    "all13_driver_functions_UNRUN": true,
+    "primary_independent_transports_UNRUN": true,
+    "SSH": 0,
+    "host_resource_probes": 0,
+    "Docker_operations": 0,
+    "actual_callback_binary_reads": 0,
+    "actual_symbol_version_decodes": 0,
+    "package_backend_model_CodeType_import_body_tests": 0,
+    "old63_37_or_gate_packet_replays": 0,
+    "other19_native_body_reads": 0,
+    "production_changes": 0
+  },
+  "source_review": {
+    "primary": "b7eadb01/8546B: exact prior20c33344 binds retained216280B/9edf4136 binary and15279B/43ce6401 full page plus original decimal physical rows, two full held/named reads and later fullSHA/physical bookends; unchanged6fe24522 decoder result/canonical/pages, complete six-kind page flattening, new exclusive output/source inventories/summary.",
+    "independent": "7ff8b1b4/11913B: no primary import/call; unchanged a526e85d separate decoder reconstruction. Proposed complete primary source/summary/input identity, all fields/base/counts/every greedy page byte/record/order/noextras/full reconstructed canonical equality. Rechecks complete output-directory names AFTER final file bookends.",
+    "authority_limits": "Retained-copy content and physical identity only; no original container source heldFD/every-file image/build/native/loader attestation.",
+    "pending_summary_pins": "SUMMARY_SHA='UNOBSERVED_PRIMARY_RESULT', SUMMARY_BYTES=0. Source deliberately refuses before data operations; independent draft transport is NOT dispatchable. Known primary source pin b7eadb01 is filled; actual result pins must be separately observed/preserved/reviewed before future independent use."
+  },
+  "hash_accounting": {
+    "DATA": "One unchanged16MiB decoder/output ledger per driver. Seed exact hash_work_bytes_before_output_hashes; every canonical/page/output digest, readback, later output bookend and independent proof/readback hash is precharged against SAME residual counter. Neither decoder source/global binding changed; no fresh per-file output ledger.",
+    "operational_AUTH": "Separate finite cumulative4MiB source/prior/binary/page authentication ledger,262KiBfile/1024readcalls. Extra full binary/page authentication hashes explicitly reported in AUTH; decoder-internal hashes remain in DATA.16MiB is NOT claimed as whole-process hashing total.",
+    "source_arithmetic": "Primary DATA before summary =decoder_used+canonical_bytes+2*sum(page_bytes); final adds2*summary_bytes. Independent source checks exact arithmetic. This is SOURCE review, not observed byte/accounting acceptance.",
+    "unchanged_bounds": "262KiBfile;4096string;8192rows+candidate refs;complete canonical/output16MiB;page65536encodedB AND64records/max256pages. No truncation/dedup/caprelaxation; post-encoding checks do not certify peakRAM."
+  },
+  "transport_preparation": {
+    "deriver": "9a48ad46/1887B reads pinned old195a8567 SOURCE, writes NEW builder64031945/7193B; old builder/job never run.",
+    "proposed_primary": "78253bcf/8385B exact b7eadb01+6fe24522 source pins/new roots only.",
+    "proposed_independent": "8ba05b84/8395B exact7ff8b1b4+a526e85d source pins/new roots only; unobserved summary remains hard refusal.",
+    "envelopes": {
+      "callback-symbol-data-primary-transport-v1-2026-10-18.py": {
+        "bytes": 29500,
+        "sha256": "6ac31fc847534cd456b6e6dc79f2bfb69336fe75aaa41c479ce1b1522e379347",
+        "bootstrap_sha256": "0c37320e35db51ec01ce1f90b361695be557948fc3f6b2972cb56214e89a7e91",
+        "function_ASTs_equal": 3
+      },
+      "callback-symbol-data-independent-transport-v1-2026-10-18.py": {
+        "bytes": 35042,
+        "sha256": "b6cfe2ccf0012a87733240dfaf62491a3e74b8e405f9f0776b02b0ff451c99b6",
+        "bootstrap_sha256": "e043e7e86db7044d5e73545a54bfd0c6ac0d225bbc038c080b1f199da34f0948",
+        "function_ASTs_equal": 3
+      }
+    },
+    "three_transport_function_ASTs_each": "EXACT_OLD777950f1_SOURCE",
+    "resource_proposal": "Linux Spark1 UID1000;512MiBASsoft=hard/20CPU/30helperalarm;30stagealarm canceledBEFOREhelper;70SSH/TERM1KILL1/262KiBfiles+logs/65536envelope.2GiBMemAvailable/32MiBscratch512inodes are predicates/headroom, not reservation/native/model/daemon bound.",
+    "fresh_actual_host_resources": null,
+    "actual_primary_invocation": null,
+    "actual_independent_invocation": null
+  },
+  "review": {
+    "worker": "Reused existing healthy trading_action_consistency READONLY source/ledger/driver/builder/transport/contract/static/preserver review BEFORE new preservation. No newagent/limited-agent retry/worker operations.",
+    "correction": "Reviewer found output name set checked only before page reads. Added exact final name-set check after full file bookends before any body use. Initial unrun primaryb7eadb01/independent5a9ad61b remain in exclusive /tmp/callback-symbol-driver-preparation-drafts-20261018-v1. No runtime failure/body replay.",
+    "validation": "AST warnings-as-errors,28purposefunctions across7controls, four shared operational utility ASTs, two complete embedded-bootstrap AST/source pin dictionaries, both full envelope byte/SHA checks, nine source/payload pins/JSON, staged diff PASS.",
+    "Ruff": "PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM",
+    "actual_behavior_branch_acceptance": "UNVERIFIED_ALL13_DRIVER_FUNCTIONS_UNRUN"
+  },
+  "preservation": {
+    "root": "/tmp/callback-symbol-driver-source-evidence-20261018-v1",
+    "input_files": 9,
+    "input_bytes": 66801,
+    "manifest_bytes": 11815,
+    "manifest_sha256": "55a1bc225b6201c3965302805c2ed0f1d34678ad418f57cf31d8a83fbd43ee73",
+    "checks": "Two full held/named reads/SHA/exact decimal physical fields, exclusive copies/fsync/readback, later everyoriginal+copyfullSHAphysical, manifestlast/root+resolvedparent sync. Separate ROOT readback all9original+9copy SHAphysical PASS. Sources+reviews only; local262KiBfile/1MiBtotal/30alarm/noMacAS/kernelFSIZE/crashdurability claim.",
+    "preparation_roots": "Exclusive original unrun driver drafts plus separate primary/independent transport preparation roots, generated source copies/fsync/readback. All failed/completed roots/admissions unchanged."
+  },
+  "next": "Do NOT recreate this source preparation or rerun63/37/sectionpage/ELFfold/copy/HEAD/metadata/censuses/ASTinventories/73/80/23/65+4/tiny/diagnostic/v2/packets for documentation. Prepare/review NEW bounded read-only prerequisite evidence for actual host/resources/absent new roots/source pins; independently review actual proof and exact primary78253bcf invocation BEFORE ONE separately scoped retained-symbol DATA attempt. Keep full pages on Spark. After authenticating primary summary fullSHA+size, preserve unrun independent7ff8b1b4/8ba05b84, repin summary in distinct source, regenerate/review exact independent invocation/fresh resources, then ONE separate full fold and bounded output/preservation verification. No old source/result/root/admission reuse or cap relaxation.",
+  "actual_primary_invocation": null,
+  "actual_independent_invocation": null,
+  "actual_callback_symbols": "UNINTERPRETED_UNRUN",
+  "dependency_origin_observer": null,
+  "native_runtime_admission": null,
+  "genuine_execution_authorized": false,
+  "unchanged": "libm.so.6/libc.so.6 remain unresolved declarations; actual interpreter/loader/build/search/env/cache/preload/security/namespace/globals/provider bytes+aliases+versions/transitive closure unadmitted. No ldd/readelf/dlopen/guessed library paths/host substitutes/package execution/other19oversizedreads. Selected callable/global/type/dataclass liveproducer/classflags/native/phase/Arrow pools+wrapper/sklearnactualmetadata open. Guard3b8be00b/all25payloadfunctions UNRUN, old2446/030c/G08/caps/maps unchanged; producer2431/reference2446/executor2468/originalreceipts/fullcontext+graphs+JSON+UTF8 lifetimes separate. Genuine assembledtree/strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram NONE."
+}

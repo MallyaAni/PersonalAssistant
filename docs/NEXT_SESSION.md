@@ -1,5 +1,98 @@
 # Next session
 
+## 2026-10-18 — Retained symbol DATA drivers SOURCE reviewed; actual decoding UNRUN
+
+Read research/original-loader-callback-symbol-driver-source-proof-v1-2026-10-18.json.
+Sourced4a7929558f5d37bcf048279e069a809f8ccbe23 pins primaryb7eadb01/8546B/
+independent7ff8b1b4/11913B/deriver9a48ad46/1887B/builder64031945/7193B/
+primarytransport78253bcf/8385B/independentdrafttransport8ba05b84/8395B/
+preserver6d56ed8c/4137B. Contract393ec583/12472B/static1f81d8a4/3873B retained.
+Only NEW local stdlib source/AST/JSON/SHA/source-preservation/Git ran. ALL13 new
+driver functions and BOTH transports UNRUN. NoSSH/hostresourceprobe/Docker/actual
+callbackbinary/other19body read/decoderbody/package/backend/model CodeType/import/
+body/test/account/marketdata/credentials/oldgate/packet replay/guard/G08/cap/map/
+production change. Actual callback symbols/version contents UNINTERPRETED.
+
+Primary proposes exact prior20c33344/6569B ->216280B/9edf4136 binary +15279B/43ce6401
+fullsectionpage ORIGINAL decimalphysical identities, two fullheldnamedreads/SHA/
+physical then laterfullSHAphysical bookends. Compiles ONLY unchanged6fe24522 pure
+decoder; complete result/canonical and greedy pages, complete six-kind flattening/
+everyrecord/start/schema checks, exclusive bounded outputs/summary/source inventory/
+fsync+readbacks/outputdirectoryTHENparent sync. Retained-copy authority is NOT
+original container-source heldFD/every-file image/build/loader/native attestation.
+
+Independent uses unchangeda526e85d separate decoder, neverimports/callsprimary.
+Proposes fullprimarysource/summary/inputs/physical bindings, complete everyfield/
+rawspan/name/multiplicity/order/greedypage bytes/fullreconstructed canonical equality.
+Exact no-extra outputname set checked BEFOREpages and AFTERfinalfullfilebookends.
+Reviewer caught missing finalnamescheck; corrected BEFOREanybody use. InitialUNRUN
+b7eadb01/5a9ad61b retained exclusive /tmp/callback-symbol-driver-preparation-drafts-
+20261018-v1; no runtimefailure/bodyreplay. Known primarysourceSHA pinnedb7eadb01.
+SUMMARY_SHA=UNOBSERVED_PRIMARY_RESULT/SUMMARY_BYTES0 deliberately refuse beforedata.
+Independent7ff8b1b4/8ba05b84 draft is NOT dispatchable; must preserve/repin/review
+after actual primarysummary observation. No observed symbol/count/provider claim.
+
+DATA ledger seeds exact decoder hash_work_bytes_before_output_hashes; EVERY
+canonical/page/output/readback/lateroutputbookend/independentproof+readback digest
+precharged to SAME residual16MiB. No freshperfileledger or decoderglobal/source
+patch. Primary before_summary=decoder_used+canonical_bytes+2*allpagebytes; final
+adds2*summarybytes; independent SOURCE checks that exact arithmetic.
+OperationalAUTH is SEPARATE finite4MiB cumulative source/prior/binary/page
+authentication ledger/1024readcalls/262KiBfile. Additional fullbinary/page auth
+hashes EXPLICITLY counted AUTH; decoderinternal input hashes counted DATA.16MiB is
+NOT wholeprocess hashing total. Unchanged4096strings/8192rows+candidatereferences/
+canonical+output16MiB/pages65536B AND64records/max256; not peakRAM certification.
+
+New deriver reads authenticated old195a8567 SOURCE only; newbuilder produces2
+proposedsource transports, no oldjob/builder execution. Allthree outertransport
+functionASTs exact old777950f1; complete embeddedbootstrap AST/pin dictionaries
+match. Two plainbase64 JSONenvelopes29500B/6ac31fc8 and35042B/b6cfe2cc fit65536B.
+ProposedLinux Spark1UID1000/helper512MiBASsoft=hard/20CPU/30alarm/stage30 canceled
+BEFOREhelper/70SSH/TERM1KILL1/262KiBfile-log. Headroom2GiBMemAvailable/32MiBscratch/
+512inodes is only a SOURCEpredicate, NOT freshactual review/reservation/native/
+model/daemon bound. Actualfreshhost/resources/primary+independentinvocations NULL.
+
+Existing healthy worker READONLY reviewed ledger categories, complete driver/
+builder/transport/contract/static/preserver sources BEFOREpreservation; no newagent/
+limitedretry/workerops. ASTwarnings-as-errors/28purposefunctions across7controls/
+foursharedutilityASTs/exact3transportASTseach/all9source+payloadSHA/JSON/diff PASS.
+Ruff previously unavailable/no lintclaim. ALL13driver/transport/data/timeout/signal/
+IO/crash branches remain UNRUN/UNVERIFIED, not synthetic/runtime/native acceptance.
+
+Exclusive /tmp/callback-symbol-driver-source-evidence-20261018-v1 retains9inputs/
+66801B+manifest55a1bc225b6201c3965302805c2ed0f1d34678ad418f57cf31d8a83fbd43ee73/
+11815B. Twofullheldnamedreads/SHA/decimalphysical/exclusivecopies/fsync/readbacks/
+lateralloriginal+copyfullSHAphysical/manifestlast/rootresolvedparent sync.
+Separate ROOTreadback all9original+9copySHAphysical PASS. Manifest exactcopy retained
+research/original-loader-callback-symbol-driver-preservation-v1-2026-10-18.json.
+Separate primary/independent transport-preparation roots+initialdrafts preserved.
+Localsoftware262KiBfile/1MiBtotal/30alarm; noMacAS/kernelFSIZE/crashdurability claim.
+All failed/completed roots/admissions/sources/receipts preserved unchanged.
+
+NEXT ROOT: this SOURCE step CLOSED, do not recreate drivers/transports for docs.
+Prepare/review NEW bounded readonly prerequisite evidence for actualhost/resources/
+sourcepins/absentnewroots. Independently review actualproof +exactprimary78253bcf
+invocation BEFORE ONE separatelyscoped retained-symbol DATA attempt; currentstage
+predicates alone are NOT external freshactual-resource review. Keep fullpagesSpark.
+Then authenticate actual primarysummary FULLSHA+size, preserve UNRUN7ff8b1b4/
+8ba05b84 draft, repin summary in distinct independent source/regenerate its
+transport/review exactsource+invocation+freshresources BEFORE ONE separate complete
+independentfold and bounded output/terminal/preservation verification.
+Never replay63/37/sectionpage/ELFfold/copy/HEAD/metadata/censuses/ASTinventories/73/
+80/23/65+4/tiny/diagnostic/v2/packets for docs. No native/package execution/ldd/
+readelf/dlopen/guessedpaths/hostsubstitutes/other19reads/caprelaxation. libm/libc names
+stillunresolved; actualloader/Pythonbuild/provider+alias+version closure unadmitted.
+
+Selected callable/global/type/dataclass liveproducer/classflags/native/phase/Arrow
+pools+wrapper/sklearnactualmetadata open. Guard3b8be00b/all25payloadfunctions UNRUN;
+old2446/030c/G08/caps/maps unchanged. Producer2431/reference2446/executor2468/original
+receipts/fullcontext+graphs+JSON+UTF8 lifetimes separate. Genuineassembledtree/
+strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/
+launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/
+intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/
+v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM
+unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Symbol/version SYNTHETIC63 VERIFIED; actual callback DATA still UNRUN
 
 Read research/original-loader-callback-symbol-synthetic-proof-v1-2026-10-18.json.
