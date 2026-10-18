@@ -1,0 +1,253 @@
+{
+  "actual_resources": null,
+  "admission": null,
+  "builder_sha256": "eabe4141043617bafcdf5f27488f832a2ff70c2a2ba685ba33c9e39fa7a22b3d",
+  "candidate_import_recipe": "Real app files under /audit/app/backend, exact child pins before sys.path insertion; only 5 real backend modules allowed. No fake modules/sys.modules injection. Candidate module import trace must be backend-pure/no numpy. No old2446 SourceBook/guard public route invoked.",
+  "case_ids": {
+    "adaptations": [
+      "digest-finite-values",
+      "digest-readonly",
+      "digest-authenticated-synthetic-Rows",
+      "digest-refuse-nonfinite",
+      "digest-refuse-nonstr-key",
+      "digest-refuse-tuple",
+      "digest-refuse-custom-map",
+      "digest-refuse-numpy-float",
+      "digest-refuse-numpy-int",
+      "digest-refuse-numpy-bool",
+      "digest-refuse-nested-Rows",
+      "chain-original-to-N2",
+      "chain-map-wrong",
+      "chain-map-type",
+      "chain-digest-wrong",
+      "chain-profile-wrong",
+      "catalog-wrong-count",
+      "catalog-wrong-container",
+      "catalog-wrong-first",
+      "catalog-wrong-second",
+      "catalog-wrong-third",
+      "catalog-reordered",
+      "catalog-duplicate",
+      "holding-byte",
+      "holding-type",
+      "chain-predecessor",
+      "chain-CURRENT-renewal"
+    ],
+    "primitives": [
+      "json-values",
+      "json-duplicate",
+      "json-nested-duplicate",
+      "json-NaN",
+      "json-Infinity",
+      "json-negative-Infinity",
+      "json-overflow",
+      "json-malformed",
+      "json-trailing",
+      "json-bytearray",
+      "file-empty",
+      "file-custom-exact-bound",
+      "file-hash",
+      "file-wrong-hash",
+      "file-over-bound",
+      "file-bool-bound",
+      "file-negative-bound",
+      "file-directory",
+      "digest-bool",
+      "digest-upper",
+      "digest-short",
+      "digest-nonhex",
+      "stable-growth",
+      "stable-replace",
+      "freeze-values-alias-copy",
+      "freeze-dict-set",
+      "freeze-dict-delete",
+      "freeze-dict-update",
+      "freeze-dict-clear",
+      "freeze-dict-pop",
+      "freeze-dict-setdefault",
+      "freeze-dict-ior",
+      "freeze-list-set",
+      "freeze-list-delete",
+      "freeze-list-append",
+      "freeze-list-extend",
+      "freeze-list-insert",
+      "freeze-list-pop",
+      "freeze-list-remove",
+      "freeze-list-clear",
+      "freeze-list-reverse",
+      "freeze-list-sort",
+      "freeze-list-iadd",
+      "freeze-list-imul",
+      "freeze-reinitialization-noop",
+      "freeze-custom-unchanged",
+      "freeze-base-mutator-limit",
+      "gzip-small",
+      "gzip-concatenated",
+      "gzip-malformed",
+      "gzip-truncated",
+      "gzip-unit-compressed-bound",
+      "gzip-unit-expanded-bound"
+    ]
+  },
+  "contract": {
+    "path": "original-loader-capacity-evidence-contract-v1-2026-10-18.json",
+    "sha256": "c9b7cd09d7ee08cfba79e7e6673707fa44aab492d8a2db98d82b9af7050142e5"
+  },
+  "coverage_limits": [
+    "53primitive+27adaptation named outcomes; every body UNRUN.",
+    "Stable-file growth/replacement uses actual synthetic output files at stable_file boundary, not a full pinned mid-read race.",
+    "Custom file bounds and injected smaller gzip UNIT bounds only; no actual16MiB/64MiB/256MiB boundary or peakRAM acceptance.",
+    "Three synthetic rows from real strict reader, not whole1916 history or genuine archive/spool capacity.",
+    "Reconstructed30 predecessor is explicitly SYNTHETIC from exact N2/review data; not genuine original completion provenance.",
+    "Positive import paths/value/digest/reference parity only in the declared domain; narrower-domain controls are explicitly separate from original behavior parity."
+  ],
+  "deadlines": "15s child CPU/20s wait/55s parent/85s phase/130s owner; each child file262KiB. New transport/outer deadline and exact invocation not prepared/admitted.",
+  "file_origins": {
+    "audit/app/backend/__init__.py": "backend/__init__.py",
+    "audit/app/backend/market/__init__.py": "backend/market/__init__.py",
+    "audit/app/backend/market/capacity_original_archive_adaptations_v1.py": "docs/research/sources/original-loader-capacity-archive-adaptations-v1-2026-10-18.py",
+    "audit/app/backend/market/capacity_original_evidence_v1.py": "docs/research/sources/original-loader-capacity-evidence-v1-2026-10-18.py",
+    "audit/app/backend/market/original_history_json.py": "backend/market/original_history_json.py",
+    "audit/bootstrap.py": "docs/research/sources/original-loader-evidence-parity-bootstrap-v1-2026-10-18.py",
+    "audit/reference/backend/market/learned_live_holding.py": "backend/market/learned_live_holding.py",
+    "audit/reference/backend/market/live_model_history_binding.py": "backend/market/live_model_history_binding.py",
+    "audit/reference/backend/market/live_model_history_nightly_model.py": "backend/market/live_model_history_nightly_model.py",
+    "audit/reference/backend/market/live_model_history_pending_audit.py": "backend/market/live_model_history_pending_audit.py",
+    "audit/reference/backend/market/live_model_history_receipts.py": "backend/market/live_model_history_receipts.py",
+    "audit/reference/backend/market/live_model_history_stream_audit.py": "backend/market/live_model_history_stream_audit.py",
+    "audit/reference/backend/market/live_policy_replay.py": "backend/market/live_policy_replay.py",
+    "audit/reference/docs/research/settlement-metadata-source-review-2026-10-17.json": "docs/research/settlement-metadata-source-review-2026-10-17.json",
+    "audit/reference/docs/research/trading-numeric-source-review-2026-10-17.json": "docs/research/trading-numeric-source-review-2026-10-17.json",
+    "audit/reference/docs/research/trading-source-approval-review-2026-10-17.json": "docs/research/trading-source-approval-review-2026-10-17.json",
+    "owner/caller.py": "docs/research/sources/original-loader-evidence-parity-caller-v1-2026-10-18.py",
+    "owner/controller.py": "docs/research/sources/original-loader-guard-controller-v2-2026-10-18.py",
+    "owner/parity-owner.py": "docs/research/sources/original-loader-evidence-parity-owner-v1-2026-10-18.py"
+  },
+  "file_pins": {
+    "audit/app/backend/__init__.py": {
+      "bytes": 29,
+      "sha256": "162e5eeb402108f20b1a976525f5bbf5a03a12ea619f64a19ce5c0fe9aec09af"
+    },
+    "audit/app/backend/market/__init__.py": {
+      "bytes": 605,
+      "sha256": "5a886c13f35054c2238d9a661349a38ea242495972aae02a7aa2029dd1533910"
+    },
+    "audit/app/backend/market/capacity_original_archive_adaptations_v1.py": {
+      "bytes": 6677,
+      "sha256": "39f2884741036bbe3a33f451909a59b46924c43ea699e39670c1c13fbcde5134"
+    },
+    "audit/app/backend/market/capacity_original_evidence_v1.py": {
+      "bytes": 6656,
+      "sha256": "400de9e73e2debb06c7267c925ca0914dc75a98c77f3044a49b88d26db26be25"
+    },
+    "audit/app/backend/market/original_history_json.py": {
+      "bytes": 27574,
+      "sha256": "de29c1017f4c9eadd874b2fbe0d85b4c80ced8e7a43fb6bd4f779c3d726cb2eb"
+    },
+    "audit/bootstrap.py": {
+      "bytes": 25893,
+      "sha256": "d9b1ebc626317285e05a5294e8af7ee323120fd9f2928d760a980c67aeb22305"
+    },
+    "audit/native31.json": {
+      "bytes": 3510,
+      "sha256": "8e78a9cb3e447fe42601a634dfd39e9cbbc8d1fa998e30678b1be8e322070996"
+    },
+    "audit/pins.json": {
+      "bytes": 2765,
+      "sha256": "5207e8fb4fdccdb266c9ad56f2643db8569ccd7c643fa59081590f4699b35d76"
+    },
+    "audit/reference-config.json": {
+      "bytes": 763,
+      "sha256": "9504fa237f6113013c5aadd6e0e2cacbab8b9c01cacd87ea3f490dec2069c2f5"
+    },
+    "audit/reference/backend/market/learned_live_holding.py": {
+      "bytes": 16861,
+      "sha256": "25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1"
+    },
+    "audit/reference/backend/market/live_model_history_binding.py": {
+      "bytes": 12180,
+      "sha256": "e734613fd6efe95f4de04b969e837d71be43d60abea3e2baf2d457aa6f2167c3"
+    },
+    "audit/reference/backend/market/live_model_history_nightly_model.py": {
+      "bytes": 17746,
+      "sha256": "ae35feda683debb13e83bbcd9d5c75a35b71b10b1417d571cc7c3fcdd3f3cde9"
+    },
+    "audit/reference/backend/market/live_model_history_pending_audit.py": {
+      "bytes": 22885,
+      "sha256": "74e7d9800bf1bdeb51655f09ae2846bfb0dbbcc67afdcad705405a849eb0cf02"
+    },
+    "audit/reference/backend/market/live_model_history_receipts.py": {
+      "bytes": 20722,
+      "sha256": "1e9d72e817caa5470842aa50936b3f004f48fbfde77deb0fa5617b72972fea9f"
+    },
+    "audit/reference/backend/market/live_model_history_stream_audit.py": {
+      "bytes": 34983,
+      "sha256": "f404e15be6e97caf856a4ba6db22eedef51ff5a4e3304dcbed90cf8e0abac2ff"
+    },
+    "audit/reference/backend/market/live_policy_replay.py": {
+      "bytes": 28355,
+      "sha256": "b6ef95f0c5eaa53bd732f0ee5baa55f21ef875d07c69e5abbbb236aafd0586e9"
+    },
+    "audit/reference/docs/research/settlement-metadata-source-review-2026-10-17.json": {
+      "bytes": 2427,
+      "sha256": "875976f63a530bc14898f3d3121e6177421f82e2275f7a8dabc5cf2b94266ac6"
+    },
+    "audit/reference/docs/research/trading-numeric-source-review-2026-10-17.json": {
+      "bytes": 2902,
+      "sha256": "2f048a8040532bfdaa49b1101e552457454b526b510b4ee9f2422f3a67a3e5f7"
+    },
+    "audit/reference/docs/research/trading-source-approval-review-2026-10-17.json": {
+      "bytes": 2669,
+      "sha256": "8b628c76066f62ee724a36d3d07219848786d49d51bb243d73e3e056d7c72bd4"
+    },
+    "owner/caller.py": {
+      "bytes": 2247,
+      "sha256": "024a4e1e12891c902206e5597d8bcb8a1bb03ba56e7f395fd68b0b90151bc354"
+    },
+    "owner/controller.py": {
+      "bytes": 16728,
+      "sha256": "2e505205cc8a3793d7b3313a5b5c3b670b00134575982d26c725787b6530df5a"
+    },
+    "owner/parity-owner.py": {
+      "bytes": 6258,
+      "sha256": "3514a6f4d9bfd6be699d0eab6d1b33f6c4e6974b59b94f3734f9f47fa16e36ff"
+    }
+  },
+  "genuine_execution_authorized": false,
+  "launch": null,
+  "local_packet_root": "/tmp/capacity-evidence-parity-packet-20261018-v1",
+  "numpy_reference": "Real NumPy solely in adaptations reference for original plain and numpy-scalar narrow-domain controls; explicit proposed /usr/local/lib/python3.12/site-packages added after candidate import trace. Child OPENBLAS/OMP/MKL/NUMEXPR/VECLIB/BLIS thread envs pinned1 before import. Actual path/version/native origin/source-image facts UNVERIFIED and must be freshly independently checked BEFORE admission. No model loading/feature arrays/inference.",
+  "packet": {
+    "bytes": 356825,
+    "decoded_source_bytes": 261435,
+    "records": 22,
+    "sha256": "edac83ca50254771cec2d79bb7e2d562b43bc1578e8fbeaa81730b2b21ad3fd2"
+  },
+  "proposed_runtime": "ONE new e0 UID1000:1000/none/readOnly/1CPU/2GiB RAM=swap/PIDs32/tmp64MiB/noHC/lognone/capdropALL/no-new-privileges; auditRO+outRW only. No genuine original/model/account/credentials/socket mounts.",
+  "reference": "Full-source compilation CodeType functions/class bodies in explicit ISOLATED_SYNTHETIC_ORIGINAL_REFERENCE globals; original modules never imported/executed. SimpleNamespace binds original callback namespaces only in reference; real unchanged parser imported normally. This is NOT genuine original runtime/identity acceptance.",
+  "required_before_execution": [
+    "Independent exact source/case/packet review",
+    "Separately pinned exclusive stager and source/prerequisite/terminal/preservation verifier",
+    "Fresh actual cached e0/Python/NumPy path-origin/UID/jobs/absent roots/resources/exact caller review",
+    "ONE new scoped synthetic admission; never reuse old roots/admissions"
+  ],
+  "run_root": "/home/animallya96/scratch/capacity-evidence-parity-20261018-v1",
+  "schema": "capacity-evidence-parity-proposal/1",
+  "source_book": {
+    "bytes": 3764,
+    "records": 22,
+    "sha256": "9cffe5361488307afd63123a4a79ef8b92ec2da53f629c1521734c2d3217b502"
+  },
+  "source_root": "/home/animallya96/scratch/capacity-evidence-parity-source-20261018-v1",
+  "starting_revision": "444cc1dd9e7a9b51c96271ec1a957b158b8d4b45",
+  "status": "SOURCE_PREPARED_ALL80_BODIES_UNRUN",
+  "test_acceptance": null,
+  "unchanged": {
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "heartbeat": "ACTIVE",
+    "historical_weekday_intraday_fill_UI_RAM_horizon": "UNVERIFIED",
+    "model_import_strategy": null,
+    "original_timing": "FAILED",
+    "publication": "CLOSED"
+  }
+}
