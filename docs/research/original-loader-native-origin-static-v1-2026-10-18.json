@@ -1,0 +1,64 @@
+{
+  "all_input_full_SHA_physical_bookends_equal": true,
+  "contract": {
+    "bytes": 24905,
+    "physical": {
+      "st_blocks": "56",
+      "st_ctime_ns": "1792346248188566483",
+      "st_dev": "16777223",
+      "st_ino": "186432385",
+      "st_mode": "33188",
+      "st_mtime_ns": "1792346248188566483",
+      "st_nlink": "1",
+      "st_size": "24905",
+      "st_uid": "501"
+    },
+    "sha256": "4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5"
+  },
+  "input_files": 10,
+  "proposed_target_row_observed": false,
+  "remote_observations_or_payload_execution": 0,
+  "schema": "capacity-native-origin-source-derivation/1",
+  "source_omission": {
+    "emitted_expression": "sys.executable",
+    "emitted_field": "python_executable",
+    "fold_function_AST_sha256": "60de0b03a4fd794fb7252b1c74e913a6eb8d1e1d218bfdfd0c99a6457267d7a4",
+    "fold_proof_fields": [
+      "schema",
+      "status",
+      "cid",
+      "image",
+      "uid",
+      "stopped",
+      "exit",
+      "OOMKilled",
+      "observed_at_ns",
+      "probe_observed_at_ns",
+      "finished",
+      "python",
+      "numpy",
+      "threads",
+      "backend_modules",
+      "inspect_sha256",
+      "source_physical",
+      "native_source",
+      "admission_sha256",
+      "genuine_or_parity_acceptance"
+    ],
+    "interpretation": "Prior NumPy-only summary intentionally omits this field; its version string and Entrypoint python cannot establish executable path or build authority.",
+    "probe_function_AST_sha256": "d71000c1babd56c2f5c9b239fe1379844cb2dbf152fe24bf86a93ca5a9f263bf",
+    "probe_result_fields": [
+      "schema",
+      "uid",
+      "observed_at_ns",
+      "python",
+      "python_executable",
+      "numpy",
+      "threads",
+      "backend_modules",
+      "parity_or_genuine_acceptance"
+    ],
+    "raw_native_json_observed_here": false,
+    "summary_field_absent": true
+  }
+}

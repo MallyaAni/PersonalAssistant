@@ -1,0 +1,641 @@
+{
+  "callback_required_version_declarations": [
+    {
+      "file_hex": "6c69626d2e736f2e36",
+      "requirements": [
+        {
+          "auxiliary_array_index": 0,
+          "name_hex": "474c4942435f322e3137",
+          "vna_other_decimal": "3"
+        }
+      ]
+    },
+    {
+      "file_hex": "6c6962632e736f2e36",
+      "requirements": [
+        {
+          "auxiliary_array_index": 0,
+          "name_hex": "474c4942435f322e3137",
+          "vna_other_decimal": "2"
+        }
+      ]
+    }
+  ],
+  "closed_jobs": "Actual symbols/ELFfold/copies/HEAD/metadata/censuses/synthetic63/37/73/80/23/65+4/tiny/diagnostic/v2 and all old packets stay CLOSED, no replay for docs.",
+  "existing_runtime": {
+    "Args": [
+      "-I",
+      "-S",
+      "-B",
+      "/audit/bootstrap.py",
+      "diagnose"
+    ],
+    "Cmd": [
+      "-I",
+      "-S",
+      "-B",
+      "/audit/bootstrap.py",
+      "diagnose"
+    ],
+    "Entrypoint": [
+      "python"
+    ],
+    "Path": "python",
+    "WorkingDir": "/app",
+    "cid": "803718a62e3cbd1f6070abab25a58e1fbc0ee5d04b5444f57c817d7e47b8bf57",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "python_version_metadata": "3.12.14",
+    "scope": "HISTORICAL_STOPPED_NUMPY_METADATA_ONLY_NOT_FUTURE_GENUINE_PROCESS"
+  },
+  "genuine_execution_authorized": false,
+  "input_inventory": {
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/original-loader-callback-symbol-data-independent-v1-2026-10-18.json": {
+      "bytes": 12826,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792345404371248021",
+        "st_dev": "16777223",
+        "st_ino": "186202697",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792345404371248021",
+        "st_nlink": "1",
+        "st_size": "12826",
+        "st_uid": "501"
+      },
+      "sha256": "bca4d7f616050feddb3aabfa5427e3c67434efbd93141c63ef600b1bee02ca0c"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/original-loader-callback-symbol-data-proof-v1-2026-10-18.json": {
+      "bytes": 18006,
+      "physical": {
+        "st_blocks": "40",
+        "st_ctime_ns": "1792345621040735918",
+        "st_dev": "16777223",
+        "st_ino": "186227673",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792345621040735918",
+        "st_nlink": "1",
+        "st_size": "18006",
+        "st_uid": "501"
+      },
+      "sha256": "b449bed28bc6bc339269f097f6b2dbacbd447a9b1ef93044846e78b87e7a2476"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/original-loader-callback-symbol-requirements-v1-2026-10-18.json": {
+      "bytes": 12746,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792340329819791329",
+        "st_dev": "16777223",
+        "st_ino": "184873161",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792340329819791329",
+        "st_nlink": "1",
+        "st_size": "12746",
+        "st_uid": "501"
+      },
+      "sha256": "ca3503c0c58352297104f286ca8784422dc66612aa46ad27eb20f9bbfd51b40f"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/original-loader-context-parity-proof-v1-2026-10-18.json": {
+      "bytes": 38967,
+      "physical": {
+        "st_blocks": "80",
+        "st_ctime_ns": "1792317758206512504",
+        "st_dev": "16777223",
+        "st_ino": "178306665",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792317758206512504",
+        "st_nlink": "1",
+        "st_size": "38967",
+        "st_uid": "501"
+      },
+      "sha256": "b6327bcfd28c6c5448683a4beddbbc20897f18a1dcc7c251e609c4b1810e57e9"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/original-loader-context-native-probe-v1-2026-10-18.py": {
+      "bytes": 1878,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792316675409652272",
+        "st_dev": "16777223",
+        "st_ino": "178023885",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792316675409652272",
+        "st_nlink": "1",
+        "st_size": "1878",
+        "st_uid": "501"
+      },
+      "sha256": "6a9e82a33291466c7ef7abc57554c90b26f56c9253bbc1ff4969c49515f0105f"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/original-loader-context-parity-preflight-v1-2026-10-18.py": {
+      "bytes": 13589,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792316894061471094",
+        "st_dev": "16777223",
+        "st_ino": "178023886",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792316894061471094",
+        "st_nlink": "1",
+        "st_size": "13589",
+        "st_uid": "501"
+      },
+      "sha256": "e064dc5e1739a1e7e8e20b8af178a3420a6d58476233a2bbaad2943446ead243"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/original-loader-context-parity-preserver-v2-2026-10-18.py": {
+      "bytes": 9562,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792316975606699042",
+        "st_dev": "16777223",
+        "st_ino": "178117033",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792316975606699042",
+        "st_nlink": "1",
+        "st_size": "9562",
+        "st_uid": "501"
+      },
+      "sha256": "cf772f8dc17b4f7e325f50d463e2ea79abeb1e25561e8929aae8f5b992f56329"
+    },
+    "/tmp/capacity-context-parity-operations-20261018-v1/fetch-evidence-manifest.stdout": {
+      "bytes": 10845,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792317398863489141",
+        "st_dev": "16777223",
+        "st_ino": "178229098",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792317398863489141",
+        "st_nlink": "1",
+        "st_size": "10845",
+        "st_uid": "501"
+      },
+      "sha256": "d2378ddf7f0e5cf9eac724ff1f7c8f3f5d3cff70c0ba39f45cd2ca18546fd9f9"
+    },
+    "/tmp/capacity-context-parity-operations-20261018-v1/fetch-native-inspect.stdout": {
+      "bytes": 9755,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792317264562997733",
+        "st_dev": "16777223",
+        "st_ino": "178190217",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792317264562997733",
+        "st_nlink": "1",
+        "st_size": "9755",
+        "st_uid": "501"
+      },
+      "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+    },
+    "/tmp/capacity-context-parity-operations-20261018-v1/fetch-native-proof.stdout": {
+      "bytes": 46814,
+      "physical": {
+        "st_blocks": "96",
+        "st_ctime_ns": "1792317247225903378",
+        "st_dev": "16777223",
+        "st_ino": "178188977",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792317247225903378",
+        "st_nlink": "1",
+        "st_size": "46814",
+        "st_uid": "501"
+      },
+      "sha256": "1355771ff667f81e02dbe07885914dd5be8bf5cf395a3e74ef3bfdfd4988c6f7"
+    }
+  },
+  "later_gates_NOT_implemented": [
+    {
+      "gate": "INTERPRETER_FILE_ORIGIN",
+      "observer": null,
+      "requirements": "Bind complete namespace/image/container/mount and command/PATH resolution to actual declared executable; retain each link/alias and canonical target from exact observed metadata. Distinguish path string, copied file identity and original container-source authority. No guessed path or host substitute."
+    },
+    {
+      "gate": "ELF_AND_BUILD",
+      "observer": null,
+      "requirements": "Authenticate complete interpreter/provider bytes and exact build evidence before claims. Parse executable ELF/PT_INTERP and needed libraries as DATA under a separately reviewed domain. Version strings/upstream source tags/build IDs alone are not binary-to-build certificates. Missing or oversized artifact refuses current whole-file route; prepare distinct bounded authentication before any read, never reuse text-copy tools or increase their caps."
+    },
+    {
+      "gate": "LOADER_SEARCH_STATE",
+      "observer": null,
+      "requirements": "Bind actual matching loader implementation/build with exact invocation, namespace, security mode, already-loaded/global symbols, environment, cache/config/preloads, token/hardware search rules and dependency request origin/order. Minimize to required named state; never broad-export credentials or bypass denied reads. Historical stopped metadata alone cannot certify future process state."
+    },
+    {
+      "gate": "PROVIDER_ALIAS_VERSION_TRANSITIVE",
+      "observer": null,
+      "requirements": "Bind each resolved provider bytes/namespace/physical aliases, full needed/definition/version/symbol/multiplicity/order chain and transitive closure to the actual matching loader state. libm.so.6/libc.so.6 and GLIBC_2.17 are declarations only; static candidate search is not observed runtime resolution or compatibility."
+    },
+    {
+      "gate": "PYTHON_EXTENSION_BINDING",
+      "observer": null,
+      "requirements": "Bind actual matching interpreter import flags, spec name/origin/loader and init symbol, generated/native callable/global/type/class/phase provenance and the complete import/native/thread/pool lifetimes. No dlopen/dlsym/ldd/readelf/package execution or all-functions allowance is granted."
+    },
+    {
+      "gate": "GENUINE_MODEL_RAM",
+      "observer": null,
+      "requirements": "Keep producer2431/reference2446/executor2468 separate and unchanged guard3b8be00b/old030c/G08/caps. Full context/spools/both receipt graphs/JSON+UTF8/model/Arrow pools and actual horizon allocation remain mandatory and unverified."
+    }
+  ],
+  "native_runtime_admission": null,
+  "observation_executor": null,
+  "observer_invocation": null,
+  "reference_scope": "Existing ca3503c0 CPython3.12.14/glibc2.42/ELF4.3 DRAFT references remain reference only, NOT installed interpreter/loader/build attestation. No new external source or binary read here.",
+  "retained_metadata_selection": {
+    "evidence_root": "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1",
+    "future_requirements": [
+      "Prepare distinct readonly observer and independent selector; no old preserver/fold/probe invocation, recursive inventory, Docker or runtime execution.",
+      "Authenticate full top manifest SHA/size and all21 fixed page SHA/size/original decimal physical rows before selecting. Reject duplicate JSON keys, malformed page paths, extra/missing pages, duplicate record names, wrong complete1339-record count or any changed bookend.",
+      "Require exactly ONE target_manifest_key over complete page metadata, retaining complete selected row plus page identity and top identity. No last-match, substring, guessed page or basename fallback.",
+      "Read ONLY exact target_original and target_copy bodies after row authentication, each two full held/named reads and later fullSHA/physical bookends against respective original/copy rows; require equal complete bodies/SHA/size across original and copy. No other1338 payload body reads and no old full preservation acceptance claim.",
+      "Retain complete raw native.json, exact schema/field types, historical Python/NumPy/UID/time/source/terminal relations, and unmodified python_executable string. Reject embedded NUL/nonabsolute/over4096-byte path values; shape validity is NOT executable path/build authority.",
+      "Report a string recovered from the preserved historical artifact, without retroactively extending proof1355771f. A historical sys.executable string is not current path resolution, symlink/hardlink authority, ELF/PT_INTERP, actual loader or future process state. Do NOT open that declared path in this stage.",
+      "Keep a single cumulative4MiB hash-work counter including source/prior/top/page/target/output/readback/later bookend hashes, charge BEFORE each digest;1024reads/262KiBfile, complete output pages<=65536encodedB AND64records/max256/16MiBtotal. Refuse before exceeding any bound; no completion guarantee from caps.",
+      "New exact source/invocation/actual fresh host resources/absent roots reviewed independently BEFORE any observation.512MiBLinuxASsoft=hard/20CPU/30alarm/70SSH/TERM1KILL1 are proposed controls only;2GiBmem/32MiBscratch512inode headroom is not reservation/native/model/daemon RAM admission."
+    ],
+    "page_inventory": [
+      {
+        "bytes": 60262,
+        "path": "manifest-page-000.json",
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317359010444893",
+          "st_dev": "66306",
+          "st_ino": "60580564",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317359010444893",
+          "st_nlink": "1",
+          "st_size": "60262",
+          "st_uid": "1000"
+        },
+        "sha256": "0eb5ad450fbccf7e174360f093d8d38ee201c0eae6647fca30aa4af95dce0093"
+      },
+      {
+        "bytes": 59182,
+        "path": "manifest-page-001.json",
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317359517098695",
+          "st_dev": "66306",
+          "st_ino": "60580653",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317359517098695",
+          "st_nlink": "1",
+          "st_size": "59182",
+          "st_uid": "1000"
+        },
+        "sha256": "04e46542998e303c0880fa3c29056b3bc12d750baf228bdc165de32bc4c647f1"
+      },
+      {
+        "bytes": 61385,
+        "path": "manifest-page-002.json",
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317360026630551",
+          "st_dev": "66306",
+          "st_ino": "60580740",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317360026630551",
+          "st_nlink": "1",
+          "st_size": "61385",
+          "st_uid": "1000"
+        },
+        "sha256": "9dfef1bd6824ebab72ec8cca05688b87913eea0d9ee2ed791a8e007609644598"
+      },
+      {
+        "bytes": 62683,
+        "path": "manifest-page-003.json",
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317360505683853",
+          "st_dev": "66306",
+          "st_ino": "60580823",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317360505683853",
+          "st_nlink": "1",
+          "st_size": "62683",
+          "st_uid": "1000"
+        },
+        "sha256": "a1c6b92ccb96d0f98b490ebc2522f1143ed7980aeeb0b4b226d8087d4f5f71b7"
+      },
+      {
+        "bytes": 63864,
+        "path": "manifest-page-004.json",
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317360918998714",
+          "st_dev": "66306",
+          "st_ino": "60580909",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317360918998714",
+          "st_nlink": "1",
+          "st_size": "63864",
+          "st_uid": "1000"
+        },
+        "sha256": "a1a10e81e2836b0de11d5341a55a05cd05b2f20fe66841cd7c3306b9ec3c69de"
+      },
+      {
+        "bytes": 63367,
+        "path": "manifest-page-005.json",
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317361358241038",
+          "st_dev": "66306",
+          "st_ino": "60581005",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317361358241038",
+          "st_nlink": "1",
+          "st_size": "63367",
+          "st_uid": "1000"
+        },
+        "sha256": "997bb703a19160462c78b088ce56e3ab1ef8ad084ddd44ac620b83319b3b09e2"
+      },
+      {
+        "bytes": 62685,
+        "path": "manifest-page-006.json",
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317361789009551",
+          "st_dev": "66306",
+          "st_ino": "60581088",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317361789009551",
+          "st_nlink": "1",
+          "st_size": "62685",
+          "st_uid": "1000"
+        },
+        "sha256": "e8deca7de9262da682010cd48a9ddfa67e86de74572421ad3b272664a6f0e7e3"
+      },
+      {
+        "bytes": 61589,
+        "path": "manifest-page-007.json",
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317362214928861",
+          "st_dev": "66306",
+          "st_ino": "60581172",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317362214928861",
+          "st_nlink": "1",
+          "st_size": "61589",
+          "st_uid": "1000"
+        },
+        "sha256": "a0d7012e9d2ddc8f923e2dc37f84b7090164e30d3c2dbd347506ffb2ca6c4dac"
+      },
+      {
+        "bytes": 61163,
+        "path": "manifest-page-008.json",
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317362615461416",
+          "st_dev": "66306",
+          "st_ino": "60581265",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317362615461416",
+          "st_nlink": "1",
+          "st_size": "61163",
+          "st_uid": "1000"
+        },
+        "sha256": "517f611ac67e984a764ecb5d5a8e8bfc30e23081529a39b51ad58b96bd9c7561"
+      },
+      {
+        "bytes": 61338,
+        "path": "manifest-page-009.json",
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317363030734340",
+          "st_dev": "66306",
+          "st_ino": "60581348",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317363030734340",
+          "st_nlink": "1",
+          "st_size": "61338",
+          "st_uid": "1000"
+        },
+        "sha256": "a3072f876c1aadc70925ae3e842ccd1b58c41c8894caa581d386db3e50d0b7cf"
+      },
+      {
+        "bytes": 61800,
+        "path": "manifest-page-010.json",
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317363434057684",
+          "st_dev": "66306",
+          "st_ino": "60581433",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317363434057684",
+          "st_nlink": "1",
+          "st_size": "61800",
+          "st_uid": "1000"
+        },
+        "sha256": "f5a00d25844605f665f00874f9289aad94945588d42bc12247ca7d8039eb632e"
+      },
+      {
+        "bytes": 61321,
+        "path": "manifest-page-011.json",
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317363866848022",
+          "st_dev": "66306",
+          "st_ino": "60581528",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317363866848022",
+          "st_nlink": "1",
+          "st_size": "61321",
+          "st_uid": "1000"
+        },
+        "sha256": "460a494e8e9d566e93c9d105f88826dd86ee4a6715dcd7db6b2ca6c08680809e"
+      },
+      {
+        "bytes": 61325,
+        "path": "manifest-page-012.json",
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317364272520361",
+          "st_dev": "66306",
+          "st_ino": "60581613",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317364272520361",
+          "st_nlink": "1",
+          "st_size": "61325",
+          "st_uid": "1000"
+        },
+        "sha256": "54c93aecaff679c649fffbe48cbaf4488cf016c1e66ad4083e998bc0d6d2dfc6"
+      },
+      {
+        "bytes": 61237,
+        "path": "manifest-page-013.json",
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317364675690328",
+          "st_dev": "66306",
+          "st_ino": "60581692",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317364675690328",
+          "st_nlink": "1",
+          "st_size": "61237",
+          "st_uid": "1000"
+        },
+        "sha256": "252c05ae1d7ac6683cdffeea4683df581c5f8a1740c4909dfa71792964cb9c74"
+      },
+      {
+        "bytes": 61432,
+        "path": "manifest-page-014.json",
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317365135949582",
+          "st_dev": "66306",
+          "st_ino": "60581786",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317365135949582",
+          "st_nlink": "1",
+          "st_size": "61432",
+          "st_uid": "1000"
+        },
+        "sha256": "35fe9807a8924ec92d7f17a06145f7ac6a548706ddb6796dc17d0e70efff04e0"
+      },
+      {
+        "bytes": 61504,
+        "path": "manifest-page-015.json",
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317365598541640",
+          "st_dev": "66306",
+          "st_ino": "60581874",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317365598541640",
+          "st_nlink": "1",
+          "st_size": "61504",
+          "st_uid": "1000"
+        },
+        "sha256": "de6e95b7c00d2009560b02bf1113d2d23aa32825bf1959c076dbffdb6c5c0a3d"
+      },
+      {
+        "bytes": 61970,
+        "path": "manifest-page-016.json",
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317365997906666",
+          "st_dev": "66306",
+          "st_ino": "60581957",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317365997906666",
+          "st_nlink": "1",
+          "st_size": "61970",
+          "st_uid": "1000"
+        },
+        "sha256": "822439549bed7e5e71e6c7d631d604bd449109d88cb7a8441ef8ccc02e77cf6d"
+      },
+      {
+        "bytes": 63090,
+        "path": "manifest-page-017.json",
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317366454023553",
+          "st_dev": "66306",
+          "st_ino": "60582048",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317366454023553",
+          "st_nlink": "1",
+          "st_size": "63090",
+          "st_uid": "1000"
+        },
+        "sha256": "40dd3243c3376fc978cd0a199bfb450bb588efd0bdae23956b8bfa35a682e066"
+      },
+      {
+        "bytes": 63725,
+        "path": "manifest-page-018.json",
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317366888206512",
+          "st_dev": "66306",
+          "st_ino": "60582141",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317366888206512",
+          "st_nlink": "1",
+          "st_size": "63725",
+          "st_uid": "1000"
+        },
+        "sha256": "f81d2f6752aff38b8352435ee9c184fdb44a3aa9fad5539c7548f50e40d519aa"
+      },
+      {
+        "bytes": 61009,
+        "path": "manifest-page-019.json",
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317367312870084",
+          "st_dev": "66306",
+          "st_ino": "60582219",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317367312870084",
+          "st_nlink": "1",
+          "st_size": "61009",
+          "st_uid": "1000"
+        },
+        "sha256": "765063c8f2ac803889a3b7c3937cd73df1795087d30ab7fc381e0f52bd49e483"
+      },
+      {
+        "bytes": 53521,
+        "path": "manifest-page-020.json",
+        "physical": {
+          "st_blocks": "112",
+          "st_ctime_ns": "1792317367712705403",
+          "st_dev": "66306",
+          "st_ino": "60582287",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317367712705403",
+          "st_nlink": "1",
+          "st_size": "53521",
+          "st_uid": "1000"
+        },
+        "sha256": "bf88824c7ab9c0174821e9f836bedb07f1ff221512ad32bf09c51024caef1ddb"
+      }
+    ],
+    "selection_authority": "Exact ROOTS native and NATIVE/output/native.json declarations in authenticated preserver/preflight source; target row not yet read.",
+    "target_SHA_bytes_physical": null,
+    "target_copy": "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/native/output/native.json",
+    "target_manifest_key": "native/output/native.json",
+    "target_original": "/home/animallya96/scratch/capacity-context-native-probe-20261018-v1/output/native.json",
+    "top_manifest_bytes": 10845,
+    "top_manifest_sha256": "d2378ddf7f0e5cf9eac724ff1f7c8f3f5d3cff70c0ba39f45cd2ca18546fd9f9"
+  },
+  "schema": "capacity-native-origin-requirements/1",
+  "source_omission": {
+    "emitted_expression": "sys.executable",
+    "emitted_field": "python_executable",
+    "fold_function_AST_sha256": "60de0b03a4fd794fb7252b1c74e913a6eb8d1e1d218bfdfd0c99a6457267d7a4",
+    "fold_proof_fields": [
+      "schema",
+      "status",
+      "cid",
+      "image",
+      "uid",
+      "stopped",
+      "exit",
+      "OOMKilled",
+      "observed_at_ns",
+      "probe_observed_at_ns",
+      "finished",
+      "python",
+      "numpy",
+      "threads",
+      "backend_modules",
+      "inspect_sha256",
+      "source_physical",
+      "native_source",
+      "admission_sha256",
+      "genuine_or_parity_acceptance"
+    ],
+    "interpretation": "Prior NumPy-only summary intentionally omits this field; its version string and Entrypoint python cannot establish executable path or build authority.",
+    "probe_function_AST_sha256": "d71000c1babd56c2f5c9b239fe1379844cb2dbf152fe24bf86a93ca5a9f263bf",
+    "probe_result_fields": [
+      "schema",
+      "uid",
+      "observed_at_ns",
+      "python",
+      "python_executable",
+      "numpy",
+      "threads",
+      "backend_modules",
+      "parity_or_genuine_acceptance"
+    ],
+    "raw_native_json_observed_here": false,
+    "summary_field_absent": true
+  },
+  "status": "SOURCE_REVIEW_REQUIRED_NO_OBSERVER_OR_RUNTIME_ADMISSION"
+}

@@ -1,5 +1,98 @@
 # Next session
 
+## 2026-10-18 — Native-origin requirements SOURCE reviewed; observers NULL
+
+Read research/original-loader-native-origin-contract-proof-v1-2026-10-18.json.
+Sourcea4677c205de45cbf8cab33a30f12be7abe138d85 pins builder27dfc52f/15299B/
+reviewer075ee4ef/9207B/preserver3b29382a/4679B. New contract4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5/
+24905B, static594e4538/1871B, independenta2c32889/7051B retained exact.
+Only NEW local stdlib source/AST/JSON/SHA/build/check/preservation/Git ran.
+No SSH/hostprobe/Docker/container/remote pages/native.json/executable/provider/
+package/backend/model CodeType/import/body/test/account/marketdata/credentials/
+oldgate-packet replay/guard-G08-cap-map/production change. No observer implemented.
+
+NEW exact source finding: probe6a9e82a3 main result writes python_executable =
+sys.executable; preflighte064dc5e native_fold proof omits it. Raw1355771f/46814B
+likewise lacks field. This preserves prior NumPy-only scope; summary version3.12.14
+and retained d5265be8/9755B Entrypoint python/WorkingDir /app are NOT executable
+path/build authority. Probe-source AST reviewed, raw native.json UNREAD here.
+Historical CID803718a6/e0 remains separate from future genuine process state.
+
+Contract binds10actual localinputs174988B/fullSHA/twoheldnamedreads/decimalphysical/
+laterbookends. Independently reconstructed source field/AST omission, full21pointer
+inventory/historicalcommand/root/CID/image/required-version declarations/NULL gates;
+no builder import/call or payload compile. Both new local controls exit0.
+Reviewer found initial checker authenticated overview without parsing its root/CID/
+image links; added exact3links BEFORE first checker use. Original UNRUN33ad8f83/
+8982B+reason retained /tmp/capacity-native-origin-contract-review-drafts-20261018-v1.
+Builder/contract unchanged; no runtime failure/body replay.
+
+First proposed boundary ONLY: authenticated topd2378ddf/10845B ->21fixed manifest
+pages1289452B ->complete1339record METADATA catalog ->ONE exact native/output/native.json
+row. Pages/row remain UNREAD, targetSHA/bytes/physical NULL. Exact source-derived
+original scratch/capacity-context-native-probe-20261018-v1/output/native.json and
+evidencecopy capacity-context-parity-evidence-20261018-v1/native/output/native.json.
+Future new observer must bind all21fullSHA/size/decimalphysical, strict duplicate/
+schema/path/count checks, exactunique row then ONLY original+copy twofullheldnamed
+reads/laterbookends/fullcrosscopyequality. Other1338payload bodies UNREAD; never
+rerun old1339file contentfold/nativeprobe. Historical raw/string recovery ONLY,
+no retroactive extension1355771f/current executable/path-link/build authority;
+declared executable path MUST NOT be opened in this first metadata stage.
+
+Proposed single4MiB aggregate hash-work counter includes source/prior/top/pages/
+target/output/readbacks/laterhashes, prechargeBEFOREdigest;1024reads/262KiBfile/
+pages65536encodedB AND64records/max256/16MiBtotal. May refuse, no completion guarantee.
+ProposedLinux512MiBASsoft=hard/20CPU/30alarm/70SSH/TERM1KILL1, fresh2GiBmem/
+32MiBscratch512inodes headroom NOT reservation/native/model/daemon bound.
+Exactsource/invocation/actualfreshresources independent review BEFORE any new use.
+Observer/independentselector/transport/invocation/actualprerequisites/admission NULL.
+
+Later gates REQUIREMENTS ONLY: actual interpreter command/PATH/namespace/image/
+mount/link/alias authority; complete interpreter+loader+provider bytes/build/ELF
+PT_INTERP; matching loader search/security/globals/env/cache/config/preload state;
+provider+alias+symbol/version/transitive closure; Python spec/import/init/callable/
+global/type/class/phase/native/thread/pool provenance; complete genuine model/RAM.
+No guessedpaths/hostsubstitutes/ldd/readelf/dlopen/package execution/other19reads/
+caprelaxation. Existing libm/libc+GLIBC_2.17 remain required-version names only.
+Upstream CPython/glibc/ELF references NOT installed build certificates. Oversized
+artifacts refuse oldwholefile/textcopy route; distinct bounded auth design BEFORE
+reads, no cap raise. Minimize named state, no credentials export/deniedread bypass.
+
+Reused healthy worker READONLY sources/invocations BEFORE builder/checker/preserver
+then actualcontract/proof/manifestmetadata/scope review; no newagent/limitedretry/
+workerops. ASTwarnings-as-errors/13purposefunctions across3sources/threepreserver
+utilityASTs equaloldada SOURCE/JSON/fullSHA/hashlinks/stageddiff PASS; Ruff previously
+unavailable/no lint claim. New observer/IO/timeout/crash branches UNIMPLEMENTED/
+UNVERIFIED; no runtime/native/model/RAM acceptance or oldgate rerun.
+
+Exclusive /tmp/capacity-native-origin-contract-evidence-20261018-v1 retains16inputs/
+238000B +manifestf50a05047e824377acb3c54e5034a4b74463bbdc811306f8943f1fdef431e3eb/
+20545B. Twofullheldnamedreads/fullSHA/exactdecimalphysical/exclusivecopies/fsync/
+readbacks/lateralloriginal+copybookends/manifestlast/rootresolvedparent sync.
+Separate ROOT16original+16copy fullSHAphysical readback PASS. Exact manifest retained
+research/original-loader-native-origin-preservation-v1-2026-10-18.json. Builder+
+checker exclusive roots immutable. Localsoftware262KiBfile/1MiBaggregate/30alarm,
+noMacAS/kernelFSIZE/crashdurability claim. All old roots/admissions preserved.
+
+NEXT ROOT: this requirements derivation CLOSED; do not regenerate for docs.
+SOURCE ONLY implement distinct bounded retained native.json observer and separate
+independent METADATA selector against exact4a6ef7b7 contract/topd2378ddf. Keep new
+bodies UNRUN until full source/invocation/independent review and actual fresh
+prerequisite proof BEFORE ONE separately scoped new observation. No observer is
+implemented/admitted now; pages/target/native.json remain UNREAD. Never replay
+actualsymbols/ELFfold/copy/HEAD/metadata/censuses/ASTinventories/63/37/73/80/23/65+4/
+tiny/diagnostic/v2/oldpackets. No native/package execution or other19reads/capchange.
+
+Selected callable/global/type/dataclass liveproducer/classflags/native/phase/Arrow
+pools+wrapper/sklearnactualmetadata open. Guard3b8be00b/all25payloadfunctions UNRUN;
+old2446/030c/G08/caps/maps unchanged. Producer2431/reference2446/executor2468/original
+receipts/fullcontext+graphs+JSON+UTF8 lifetimes separate. Genuineassembledtree/
+strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/
+launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/
+intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/
+v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM
+unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Actual retained symbol/version DATA independently VERIFIED
 
 Read research/original-loader-callback-symbol-data-proof-v1-2026-10-18.json.

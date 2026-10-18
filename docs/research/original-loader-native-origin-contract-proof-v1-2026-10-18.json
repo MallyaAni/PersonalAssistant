@@ -1,0 +1,131 @@
+{
+  "schema": "original-loader-native-origin-contract-proof/1",
+  "date": "2026-10-18",
+  "status": "SOURCE_REVIEWED_REQUIREMENTS_ONLY_NO_OBSERVER_RUNTIME_ADMISSION",
+  "starting_commit": "cd69b1bc2590aecf3f09697f1d410c8a4a34223a",
+  "starting_branch": "codex/learned-live-release-20261006",
+  "starting_state": "CLEAN_PULL_REBASE_ORIGIN_MAIN_UP_TO_DATE",
+  "source_commit": "a4677c205de45cbf8cab33a30f12be7abe138d85",
+  "objective": "Prepare exact source-bound dependency-origin/interpreter/build/search-state requirements after completed retained symbol/version DATA acceptance; derive the first historical metadata-selection boundary without new observations or payload execution.",
+  "acceptance": {
+    "source_gap_and_requirements_derivation": "VERIFIED_LOCAL_SOURCE_AST_METADATA_ONLY",
+    "independent_local_external_bindings": "VERIFIED",
+    "source_preservation": "VERIFIED16_ORIGINAL16_COPY_FULL_SHA_PHYSICAL",
+    "retained_native_json_or_manifest_page_bodies": "UNREAD_THIS_STEP",
+    "target_row_authority": "UNVERIFIED_NULL",
+    "observer_or_native_runtime_admission": "UNVERIFIED_NULL"
+  },
+  "artifacts": [
+    {
+      "path": "sources/prepare-native-origin-contract-v1-2026-10-18.py",
+      "sha256": "27dfc52faaa2f9121d451a698ec6e8661e47194623804f03f7f75228413f86fd",
+      "bytes": 15299,
+      "purpose_functions": 5
+    },
+    {
+      "path": "sources/review-native-origin-contract-v1-2026-10-18.py",
+      "sha256": "075ee4ef94eab0391db081b9235af5ab0204f3e92c6e5b78839e907c49c9f0cd",
+      "bytes": 9207,
+      "purpose_functions": 4
+    },
+    {
+      "path": "sources/preserve-native-origin-contract-v1-2026-10-18.py",
+      "sha256": "3b29382aa357c0aa68684b4248f53b30ad342e247705bb1aabe1b6d45a013af4",
+      "bytes": 4679,
+      "purpose_functions": 4
+    },
+    {
+      "path": "original-loader-native-origin-contract-v1-2026-10-18.json",
+      "sha256": "4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5",
+      "bytes": 24905
+    },
+    {
+      "path": "original-loader-native-origin-static-v1-2026-10-18.json",
+      "sha256": "594e453880ad27da5545abf34a3896a2bb64c295879835afeb14b3728dda42b0",
+      "bytes": 1871
+    },
+    {
+      "path": "original-loader-native-origin-independent-v1-2026-10-18.json",
+      "sha256": "a2c32889b229e4fd526ebe847ed7a565690cca8ff7aa82f8de4dfbd860a37bb8",
+      "bytes": 7051
+    },
+    {
+      "path": "original-loader-native-origin-preservation-v1-2026-10-18.json",
+      "sha256": "f50a05047e824377acb3c54e5034a4b74463bbdc811306f8943f1fdef431e3eb",
+      "bytes": 20545
+    }
+  ],
+  "actual_operations": {
+    "new_local_stdlib_source_AST_JSON_SHA_builder_and_independent_checker_preserver_Git_only": true,
+    "original_input_files": 10,
+    "original_input_bytes": 174988,
+    "builder_exit": 0,
+    "independent_checker_exit": 0,
+    "preserver_exit": 0,
+    "SSH_or_host_probes": 0,
+    "Docker_or_container_operations": 0,
+    "remote_manifest_page_reads": 0,
+    "retained_native_json_reads": 0,
+    "executable_or_provider_body_reads": 0,
+    "application_package_backend_model_CodeType_import_body_tests": 0,
+    "old_job_or_gate_or_packet_replays": 0,
+    "production_changes": 0
+  },
+  "new_source_finding": {
+    "probe_source": "6a9e82a3/1878B main result dictionary includes python_executable = sys.executable.",
+    "summary_source": "e064dc5e/13589B native_fold proof dictionary omits python_executable; retained1355771f/46814B confirms field absent. Its scope remains NumPy-only metadata, not an interpreter-path certificate.",
+    "source_ASTs": {
+      "probe_main": "d71000c1babd56c2f5c9b239fe1379844cb2dbf152fe24bf86a93ca5a9f263bf",
+      "native_fold": "60de0b03a4fd794fb7252b1c74e913a6eb8d1e1d218bfdfd0c99a6457267d7a4"
+    },
+    "historical_metadata": "CID803718a62e3cbd1f6070abab25a58e1fbc0ee5d04b5444f57c817d7e47b8bf57/imagee0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237/Python3.12.14/Entrypoint python/WorkingDir /app; full rawinspect9755B/d5265be8 bound. This is prior stopped-runtime metadata, not a future genuine process.",
+    "raw_native_field_value": null
+  },
+  "proposed_first_boundary": {
+    "status": "REQUIREMENTS_ONLY_OBSERVER_AND_INVOCATION_NULL",
+    "root": "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1",
+    "top_manifest": "d2378ddf7f0e5cf9eac724ff1f7c8f3f5d3cff70c0ba39f45cd2ca18546fd9f9/10845B",
+    "complete_pointer_inventory": "21full SHA/size/decimalphysical pointers, declared1289452B of pages; local pointer equality verified ONLY. Remote pages remain UNREAD this step.",
+    "target_key": "native/output/native.json",
+    "target_original": "/home/animallya96/scratch/capacity-context-native-probe-20261018-v1/output/native.json",
+    "target_copy": "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/native/output/native.json",
+    "target_row_SHA_size_physical": null,
+    "requirements": "Authenticate top and all21 page bodies with original fullSHA/size/physical; strict duplicate-key/name/count/schema/page-path checks across complete1339-record metadata catalog, select exactly ONE exact target row. Then read ONLY target original+copy against respective recorded identities, two held/named full reads and later bookends plus full cross-copy equality. Other1338 payload bodies remain unread. Do not rerun old1339-file content fold or native probe.",
+    "authority": "Recover historical raw artifact/string only, no retroactive extension of1355771f, executable path resolution/symlink/build/native compatibility claim or opening of declared executable path.",
+    "proposed_bounds": "One cumulative4MiB hash-work counter including all source/input/page/output/readback/later hashes, precharge before digest/1024reads/262KiBfile; output pages65536encodedB AND64records/max256/16MiBtotal.512MiBLinuxASsoft=hard/20CPU/30alarm/70SSH/TERM1KILL1 proposed only; exact source/invocation/fresh actual host/resources review BEFORE any new use. Headroom2GiBmem/32MiBscratch512inodes not reservation/native/model/daemon bound. Caps may refuse; no completion guarantee."
+  },
+  "later_gates": {
+    "all_observers": null,
+    "requirements_only": [
+      "INTERPRETER_FILE_ORIGIN: actual command/PATH/namespace/image/mount path/link/alias authority, no guessed paths or host substitutes.",
+      "ELF_AND_BUILD: complete authenticated executable/loader/provider bytes/build provenance, DATA PT_INTERP/dependency parsing; upstream tags/version/build IDs alone insufficient. Oversized artifacts refuse current route; distinct bounded authentication before reads, no text-copy reuse/cap relaxation.",
+      "LOADER_SEARCH_STATE: actual matching loader implementation/build/invocation/security/namespace/already-loaded globals/env/cache/config/preloads/token/hardware rules/order. Minimize named state, no credentials export or denied-read bypass; historical stopped metadata not future process state.",
+      "PROVIDER_ALIAS_VERSION_TRANSITIVE: complete actual provider bytes/aliases/symbol/version/needed chain bound to matching loader state, no static-search-as-runtime claim. libm/libc GLIBC_2.17 remain declarations.",
+      "PYTHON_EXTENSION_BINDING: actual interpreter import flags/spec/origin/init/callable/global/type/class/phase/native/thread/pool provenance. No native/package execution authorized.",
+      "GENUINE_MODEL_RAM: producer2431/reference2446/executor2468 separate; unchanged guards/caps and complete context/spools/both receipt graphs/JSON+UTF8/model/Arrow/horizon lifetimes remain unverified."
+    ]
+  },
+  "review": {
+    "existing_healthy_worker": "trading_action_consistency READONLY source/invocation BEFORE builder/checker/preserver use and final actualartifact/scope/manifest metadata review. No newagent/limited-worker retry/worker operations.",
+    "corrected_before_use": "Initial UNRUN reviewer33ad8f83/8982B authenticated overview but did not parse/crosscheck evidence root/CID/image. Added exactly those already-pinned overview links before first checker use; final075ee4ef/9207B. Builder/contract unchanged. No runtime failure or body replay.",
+    "draft_preservation": "Exclusive /tmp/capacity-native-origin-contract-review-drafts-20261018-v1 retains exact initial unrun reviewer+reason, fsync/readback/root+resolvedparent sync.",
+    "checks": "AST warnings-as-errors/13purposefunctions across3sources/three preserved operational utility ASTs equal oldada SOURCE/JSON/fullSHA/hashlinks/source stageddiff PASS. Exact independent local10input/source omission/full21pointerlist/command/root/CID/image/required-version declarations/NULL gates checked. This is source+metadata derivation, not observer/native acceptance.",
+    "Ruff": "PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM",
+    "untested": "New observer/selector/transport/data/IO/timeout/crash behavior UNIMPLEMENTED/UNVERIFIED; local software bounds do not provide MacAS/kernelFSIZE/crashdurability guarantees."
+  },
+  "preservation": {
+    "root": "/tmp/capacity-native-origin-contract-evidence-20261018-v1",
+    "input_files": 16,
+    "input_bytes": 238000,
+    "manifest_bytes": 20545,
+    "manifest_sha256": "f50a05047e824377acb3c54e5034a4b74463bbdc811306f8943f1fdef431e3eb",
+    "method": "Two complete held/named reads/fullSHA/exactdecimalphysical, exclusive copies/fsync/readbacks/later original+copy bookends, manifestlast/root+resolvedparent sync. Separate ROOT16original+16copy fullSHAphysical readback PASS. Local262KiBfile/1MiBaggregate/30alarm; noMacAS/kernelFSIZE/crashdurability claim. Builder and checker exclusive roots retained immutable; no old root changed."
+  },
+  "next": "This requirements derivation is CLOSED, do not regenerate for docs. SOURCE ONLY implement distinct bounded retained native.json observer and separate independent metadata selector against exact4a6ef7b7 contract/topd2378ddf, without running them. Full source/invocation/independent review and actual fresh prerequisite proof are required BEFORE any separately scoped new observation. Target row/raw native.json remain UNREAD; no executable path/provider/build/native admission. Never replay actual symbols/ELFfold/copies/HEAD/metadata/censuses/63/37/73/80/23/65+4/tiny/diagnostic/v2/oldpackets.",
+  "observer": null,
+  "observer_invocation": null,
+  "native_runtime_admission": null,
+  "genuine_execution_authorized": false,
+  "unchanged": "Guard3b8be00b/all25payloadfunctions UNRUN; old2446/030c/G08/caps/maps unchanged. Selected callable/global/type/dataclass liveproducer/classflags/native/phase/Arrow pools+wrapper/sklearnactualmetadata open. Producer2431/reference2446/executor2468/originalreceipts/fullcontext+graphs+JSON+UTF8 lifetimes separate. Genuineassembledtree/strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE.",
+  "diagram_impact": "NONE — inert research requirements and local metadata controls; no application component, ownership or runtime boundary changed."
+}

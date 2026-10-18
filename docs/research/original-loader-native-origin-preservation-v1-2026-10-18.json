@@ -1,0 +1,554 @@
+{
+  "Mac_AS_or_kernel_FSIZE_claim": false,
+  "crash_durability_guarantee": false,
+  "files": [
+    {
+      "copy": "/tmp/capacity-native-origin-contract-evidence-20261018-v1/000-prepare-native-origin-contract-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 15299,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792346385901471799",
+          "st_dev": "16777223",
+          "st_ino": "186436384",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385901471799",
+          "st_nlink": "1",
+          "st_size": "15299",
+          "st_uid": "501"
+        },
+        "sha256": "27dfc52faaa2f9121d451a698ec6e8661e47194623804f03f7f75228413f86fd"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/prepare-native-origin-contract-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 15299,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792346143996810825",
+          "st_dev": "16777223",
+          "st_ino": "186402206",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346143996810825",
+          "st_nlink": "1",
+          "st_size": "15299",
+          "st_uid": "501"
+        },
+        "sha256": "27dfc52faaa2f9121d451a698ec6e8661e47194623804f03f7f75228413f86fd"
+      }
+    },
+    {
+      "copy": "/tmp/capacity-native-origin-contract-evidence-20261018-v1/001-review-native-origin-contract-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 9207,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792346385902471587",
+          "st_dev": "16777223",
+          "st_ino": "186436385",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385902471587",
+          "st_nlink": "1",
+          "st_size": "9207",
+          "st_uid": "501"
+        },
+        "sha256": "075ee4ef94eab0391db081b9235af5ab0204f3e92c6e5b78839e907c49c9f0cd"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/review-native-origin-contract-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 9207,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792346336224345562",
+          "st_dev": "16777223",
+          "st_ino": "186424104",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346336224345562",
+          "st_nlink": "1",
+          "st_size": "9207",
+          "st_uid": "501"
+        },
+        "sha256": "075ee4ef94eab0391db081b9235af5ab0204f3e92c6e5b78839e907c49c9f0cd"
+      }
+    },
+    {
+      "copy": "/tmp/capacity-native-origin-contract-evidence-20261018-v1/002-preserve-native-origin-contract-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 4679,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792346385903565410",
+          "st_dev": "16777223",
+          "st_ino": "186436386",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385903565410",
+          "st_nlink": "1",
+          "st_size": "4679",
+          "st_uid": "501"
+        },
+        "sha256": "3b29382aa357c0aa68684b4248f53b30ad342e247705bb1aabe1b6d45a013af4"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/preserve-native-origin-contract-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 4679,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792346243176390570",
+          "st_dev": "16777223",
+          "st_ino": "186431065",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346243176390570",
+          "st_nlink": "1",
+          "st_size": "4679",
+          "st_uid": "501"
+        },
+        "sha256": "3b29382aa357c0aa68684b4248f53b30ad342e247705bb1aabe1b6d45a013af4"
+      }
+    },
+    {
+      "copy": "/tmp/capacity-native-origin-contract-evidence-20261018-v1/003-original-loader-native-origin-contract-v1-2026-10-18.json",
+      "copy_identity": {
+        "bytes": 24905,
+        "physical": {
+          "st_blocks": "56",
+          "st_ctime_ns": "1792346385904346253",
+          "st_dev": "16777223",
+          "st_ino": "186436387",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385904346253",
+          "st_nlink": "1",
+          "st_size": "24905",
+          "st_uid": "501"
+        },
+        "sha256": "4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/original-loader-native-origin-contract-v1-2026-10-18.json",
+      "original_identity": {
+        "bytes": 24905,
+        "physical": {
+          "st_blocks": "56",
+          "st_ctime_ns": "1792346385737619285",
+          "st_dev": "16777223",
+          "st_ino": "186436380",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385737619285",
+          "st_nlink": "1",
+          "st_size": "24905",
+          "st_uid": "501"
+        },
+        "sha256": "4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5"
+      }
+    },
+    {
+      "copy": "/tmp/capacity-native-origin-contract-evidence-20261018-v1/004-original-loader-native-origin-static-v1-2026-10-18.json",
+      "copy_identity": {
+        "bytes": 1871,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792346385905517487",
+          "st_dev": "16777223",
+          "st_ino": "186436388",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385905517487",
+          "st_nlink": "1",
+          "st_size": "1871",
+          "st_uid": "501"
+        },
+        "sha256": "594e453880ad27da5545abf34a3896a2bb64c295879835afeb14b3728dda42b0"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/original-loader-native-origin-static-v1-2026-10-18.json",
+      "original_identity": {
+        "bytes": 1871,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792346385739717916",
+          "st_dev": "16777223",
+          "st_ino": "186436381",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385739717916",
+          "st_nlink": "1",
+          "st_size": "1871",
+          "st_uid": "501"
+        },
+        "sha256": "594e453880ad27da5545abf34a3896a2bb64c295879835afeb14b3728dda42b0"
+      }
+    },
+    {
+      "copy": "/tmp/capacity-native-origin-contract-evidence-20261018-v1/005-original-loader-native-origin-independent-v1-2026-10-18.json",
+      "copy_identity": {
+        "bytes": 7051,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792346385906588645",
+          "st_dev": "16777223",
+          "st_ino": "186436389",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385906588645",
+          "st_nlink": "1",
+          "st_size": "7051",
+          "st_uid": "501"
+        },
+        "sha256": "a2c32889b229e4fd526ebe847ed7a565690cca8ff7aa82f8de4dfbd860a37bb8"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/original-loader-native-origin-independent-v1-2026-10-18.json",
+      "original_identity": {
+        "bytes": 7051,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792346385740371522",
+          "st_dev": "16777223",
+          "st_ino": "186436382",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385740371522",
+          "st_nlink": "1",
+          "st_size": "7051",
+          "st_uid": "501"
+        },
+        "sha256": "a2c32889b229e4fd526ebe847ed7a565690cca8ff7aa82f8de4dfbd860a37bb8"
+      }
+    },
+    {
+      "copy": "/tmp/capacity-native-origin-contract-evidence-20261018-v1/006-original-loader-callback-symbol-data-proof-v1-2026-10-18.json",
+      "copy_identity": {
+        "bytes": 18006,
+        "physical": {
+          "st_blocks": "40",
+          "st_ctime_ns": "1792346385907937059",
+          "st_dev": "16777223",
+          "st_ino": "186436390",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385907937059",
+          "st_nlink": "1",
+          "st_size": "18006",
+          "st_uid": "501"
+        },
+        "sha256": "b449bed28bc6bc339269f097f6b2dbacbd447a9b1ef93044846e78b87e7a2476"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/original-loader-callback-symbol-data-proof-v1-2026-10-18.json",
+      "original_identity": {
+        "bytes": 18006,
+        "physical": {
+          "st_blocks": "40",
+          "st_ctime_ns": "1792345621040735918",
+          "st_dev": "16777223",
+          "st_ino": "186227673",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345621040735918",
+          "st_nlink": "1",
+          "st_size": "18006",
+          "st_uid": "501"
+        },
+        "sha256": "b449bed28bc6bc339269f097f6b2dbacbd447a9b1ef93044846e78b87e7a2476"
+      }
+    },
+    {
+      "copy": "/tmp/capacity-native-origin-contract-evidence-20261018-v1/007-original-loader-callback-symbol-data-independent-v1-2026-10-18.json",
+      "copy_identity": {
+        "bytes": 12826,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792346385909526652",
+          "st_dev": "16777223",
+          "st_ino": "186436391",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385909526652",
+          "st_nlink": "1",
+          "st_size": "12826",
+          "st_uid": "501"
+        },
+        "sha256": "bca4d7f616050feddb3aabfa5427e3c67434efbd93141c63ef600b1bee02ca0c"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/original-loader-callback-symbol-data-independent-v1-2026-10-18.json",
+      "original_identity": {
+        "bytes": 12826,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792345404371248021",
+          "st_dev": "16777223",
+          "st_ino": "186202697",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792345404371248021",
+          "st_nlink": "1",
+          "st_size": "12826",
+          "st_uid": "501"
+        },
+        "sha256": "bca4d7f616050feddb3aabfa5427e3c67434efbd93141c63ef600b1bee02ca0c"
+      }
+    },
+    {
+      "copy": "/tmp/capacity-native-origin-contract-evidence-20261018-v1/008-original-loader-context-parity-proof-v1-2026-10-18.json",
+      "copy_identity": {
+        "bytes": 38967,
+        "physical": {
+          "st_blocks": "80",
+          "st_ctime_ns": "1792346385910286969",
+          "st_dev": "16777223",
+          "st_ino": "186436392",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385910286969",
+          "st_nlink": "1",
+          "st_size": "38967",
+          "st_uid": "501"
+        },
+        "sha256": "b6327bcfd28c6c5448683a4beddbbc20897f18a1dcc7c251e609c4b1810e57e9"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/original-loader-context-parity-proof-v1-2026-10-18.json",
+      "original_identity": {
+        "bytes": 38967,
+        "physical": {
+          "st_blocks": "80",
+          "st_ctime_ns": "1792317758206512504",
+          "st_dev": "16777223",
+          "st_ino": "178306665",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792317758206512504",
+          "st_nlink": "1",
+          "st_size": "38967",
+          "st_uid": "501"
+        },
+        "sha256": "b6327bcfd28c6c5448683a4beddbbc20897f18a1dcc7c251e609c4b1810e57e9"
+      }
+    },
+    {
+      "copy": "/tmp/capacity-native-origin-contract-evidence-20261018-v1/009-original-loader-callback-symbol-requirements-v1-2026-10-18.json",
+      "copy_identity": {
+        "bytes": 12746,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792346385911612107",
+          "st_dev": "16777223",
+          "st_ino": "186436393",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385911612107",
+          "st_nlink": "1",
+          "st_size": "12746",
+          "st_uid": "501"
+        },
+        "sha256": "ca3503c0c58352297104f286ca8784422dc66612aa46ad27eb20f9bbfd51b40f"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/original-loader-callback-symbol-requirements-v1-2026-10-18.json",
+      "original_identity": {
+        "bytes": 12746,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792340329819791329",
+          "st_dev": "16777223",
+          "st_ino": "184873161",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792340329819791329",
+          "st_nlink": "1",
+          "st_size": "12746",
+          "st_uid": "501"
+        },
+        "sha256": "ca3503c0c58352297104f286ca8784422dc66612aa46ad27eb20f9bbfd51b40f"
+      }
+    },
+    {
+      "copy": "/tmp/capacity-native-origin-contract-evidence-20261018-v1/010-original-loader-context-native-probe-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 1878,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792346385914050887",
+          "st_dev": "16777223",
+          "st_ino": "186436394",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385914050887",
+          "st_nlink": "1",
+          "st_size": "1878",
+          "st_uid": "501"
+        },
+        "sha256": "6a9e82a33291466c7ef7abc57554c90b26f56c9253bbc1ff4969c49515f0105f"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/original-loader-context-native-probe-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 1878,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792316675409652272",
+          "st_dev": "16777223",
+          "st_ino": "178023885",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792316675409652272",
+          "st_nlink": "1",
+          "st_size": "1878",
+          "st_uid": "501"
+        },
+        "sha256": "6a9e82a33291466c7ef7abc57554c90b26f56c9253bbc1ff4969c49515f0105f"
+      }
+    },
+    {
+      "copy": "/tmp/capacity-native-origin-contract-evidence-20261018-v1/011-original-loader-context-parity-preflight-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 13589,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792346385915199503",
+          "st_dev": "16777223",
+          "st_ino": "186436395",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385915199503",
+          "st_nlink": "1",
+          "st_size": "13589",
+          "st_uid": "501"
+        },
+        "sha256": "e064dc5e1739a1e7e8e20b8af178a3420a6d58476233a2bbaad2943446ead243"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/original-loader-context-parity-preflight-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 13589,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792316894061471094",
+          "st_dev": "16777223",
+          "st_ino": "178023886",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792316894061471094",
+          "st_nlink": "1",
+          "st_size": "13589",
+          "st_uid": "501"
+        },
+        "sha256": "e064dc5e1739a1e7e8e20b8af178a3420a6d58476233a2bbaad2943446ead243"
+      }
+    },
+    {
+      "copy": "/tmp/capacity-native-origin-contract-evidence-20261018-v1/012-original-loader-context-parity-preserver-v2-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 9562,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792346385916375346",
+          "st_dev": "16777223",
+          "st_ino": "186436396",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385916375346",
+          "st_nlink": "1",
+          "st_size": "9562",
+          "st_uid": "501"
+        },
+        "sha256": "cf772f8dc17b4f7e325f50d463e2ea79abeb1e25561e8929aae8f5b992f56329"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/original-loader-context-parity-preserver-v2-2026-10-18.py",
+      "original_identity": {
+        "bytes": 9562,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792316975606699042",
+          "st_dev": "16777223",
+          "st_ino": "178117033",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792316975606699042",
+          "st_nlink": "1",
+          "st_size": "9562",
+          "st_uid": "501"
+        },
+        "sha256": "cf772f8dc17b4f7e325f50d463e2ea79abeb1e25561e8929aae8f5b992f56329"
+      }
+    },
+    {
+      "copy": "/tmp/capacity-native-origin-contract-evidence-20261018-v1/013-fetch-native-proof.stdout",
+      "copy_identity": {
+        "bytes": 46814,
+        "physical": {
+          "st_blocks": "96",
+          "st_ctime_ns": "1792346385919001589",
+          "st_dev": "16777223",
+          "st_ino": "186436397",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385919001589",
+          "st_nlink": "1",
+          "st_size": "46814",
+          "st_uid": "501"
+        },
+        "sha256": "1355771ff667f81e02dbe07885914dd5be8bf5cf395a3e74ef3bfdfd4988c6f7"
+      },
+      "original": "/tmp/capacity-context-parity-operations-20261018-v1/fetch-native-proof.stdout",
+      "original_identity": {
+        "bytes": 46814,
+        "physical": {
+          "st_blocks": "96",
+          "st_ctime_ns": "1792317247225903378",
+          "st_dev": "16777223",
+          "st_ino": "178188977",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792317247225903378",
+          "st_nlink": "1",
+          "st_size": "46814",
+          "st_uid": "501"
+        },
+        "sha256": "1355771ff667f81e02dbe07885914dd5be8bf5cf395a3e74ef3bfdfd4988c6f7"
+      }
+    },
+    {
+      "copy": "/tmp/capacity-native-origin-contract-evidence-20261018-v1/014-fetch-native-inspect.stdout",
+      "copy_identity": {
+        "bytes": 9755,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792346385920880486",
+          "st_dev": "16777223",
+          "st_ino": "186436398",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385920880486",
+          "st_nlink": "1",
+          "st_size": "9755",
+          "st_uid": "501"
+        },
+        "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+      },
+      "original": "/tmp/capacity-context-parity-operations-20261018-v1/fetch-native-inspect.stdout",
+      "original_identity": {
+        "bytes": 9755,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792317264562997733",
+          "st_dev": "16777223",
+          "st_ino": "178190217",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792317264562997733",
+          "st_nlink": "1",
+          "st_size": "9755",
+          "st_uid": "501"
+        },
+        "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+      }
+    },
+    {
+      "copy": "/tmp/capacity-native-origin-contract-evidence-20261018-v1/015-fetch-evidence-manifest.stdout",
+      "copy_identity": {
+        "bytes": 10845,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792346385922371647",
+          "st_dev": "16777223",
+          "st_ino": "186436399",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385922371647",
+          "st_nlink": "1",
+          "st_size": "10845",
+          "st_uid": "501"
+        },
+        "sha256": "d2378ddf7f0e5cf9eac724ff1f7c8f3f5d3cff70c0ba39f45cd2ca18546fd9f9"
+      },
+      "original": "/tmp/capacity-context-parity-operations-20261018-v1/fetch-evidence-manifest.stdout",
+      "original_identity": {
+        "bytes": 10845,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792317398863489141",
+          "st_dev": "16777223",
+          "st_ino": "178229098",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792317398863489141",
+          "st_nlink": "1",
+          "st_size": "10845",
+          "st_uid": "501"
+        },
+        "sha256": "d2378ddf7f0e5cf9eac724ff1f7c8f3f5d3cff70c0ba39f45cd2ca18546fd9f9"
+      }
+    }
+  ],
+  "scope": "NATIVE_ORIGIN_SOURCE_REQUIREMENTS_AND_PRIOR_METADATA_ONLY_NO_OBSERVER_ADMISSION",
+  "software_file_bound": 262144,
+  "software_total_bound": 1048576,
+  "total_input_bytes": 238000
+}
