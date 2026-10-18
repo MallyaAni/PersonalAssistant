@@ -1,5 +1,65 @@
 # Next session
 
+## 2026-10-18 — Capacity evidence/archive adaptations SOURCE reviewed; all bodies UNRUN
+
+Read research/original-loader-capacity-evidence-source-proof-2026-10-18.json.
+Source4a09cbfdea7556aa9e25f92cc3da3ce995fb8658 pins contractc9b7cd09/10376B,
+static reviewcf899d89/9703B, evidence400de9e7/6656B, archive adaptations39f28847/
+6677B and analyzer09f9f67d/17713B. Only new stdlib local AST/JSON/static-artifact
+construction executed. NO payload import/CodeType compile/body/test, application/
+numerical/model/account/data read, SSH/host probe/Docker/job or old gate replay.
+
+Evidence primitive module:19functions including methods/2new readonly classes;
+15declaration comparisons=13exactAST+2declared pending→local callback/gzip-bound
+rebindings. Stdlib imports only. Original16MiBmetadata/1MiBhashchunk/64MiBcompressed/
+256MiBexpanded expressions unchanged; no native/model/log cap change or RAM bound.
+Original stat/open link behavior retained; no stronger no-follow/hardlink claim.
+Readonly ordinary mutators refuse; explicit reinitialization is NO-OP, not exception.
+No-alias criterion limited to parsed plain JSON dict/list; custom objects/subclasses
+unchanged/base mutators bypass ordinary API. New class/module identities explicit.
+
+Six separately named archive adaptations are UNEXECUTED hypotheses. Finite-control
+digest retains JSON roundtrip+real unchanged streamed.digest, exact decoded JSON/
+new readonly containers/string keys and optional exact real Rows at top-level
+history only. No numpy/tuple/custom-map/nonfinite coercion or generic native NaN
+normalizer. Rows TYPE is NOT content/finite/provenance admission: future context
+MUST bind authenticated strict-reader/sealed-spool rows/order/hashes/lifetime.
+Review-chain source authenticates ALL THREE original catalog byte hashes8b628/
+2f048/875976; selects ONLY first TWO approval/numeric transitions toward exact31
+N2map99e62. Holding wholeSHA25fee + holding-function AST check preserved. No CURRENT
+settlement transition; source_reader_authenticated=False; callback bytes alone
+never genuine source binding. No archive context or admission function composed.
+
+Proposed real backend.market paths for capacity_original_{evidence,archive_adaptations}
+_v1 plus unchanged original_history_json and docstring-only package initializers
+are statically pinned. Actual finder/executed map/CPython/runtime closure NOT
+admitted; no sys.modules substitute or old2446 SourceBook/harness extension.
+Original2431/N2native31/producer27471 maps remain separate. Existing genuine
+bootstrap remains incompatible; model_import_strategy still null.
+
+Healthy existing worker READONLY reviewed primitive/adaptation/contract design,
+caught reinit/noalias/import/Rows/catalog obligations and confirmed corrections;
+no new agent/limited-worker retry/worker operations. Initial/intermediate drafts
+retained /tmp/capacity-evidence-source-drafts-20261018-v1. AST/purpose30/JSON/SHA/
+hashlinks/diff pass; Ruff unavailable. AST equality is NOT behavior/numerical/
+identity/type/aliasing/deepcopy/lifetime or RAM parity. ALL proposed tests UNRUN.
+
+NEXT ROOT: prepare DISTINCT bounded synthetic parity proposal/bootstrap/caller/
+packet for new primitives and finite-control/three-catalog-two-transition source
+adaptations. Bind real separately named modules/unchanged parser/source/runtime/
+all named outcomes; original reference isolated explicitly SYNTHETIC. Independently
+review source and fresh actual image/UID/jobs/absent roots/resources/exact invocation
+BEFORE any new scoped admission/test. No old23/65+4/tiny/diagnostic/v2 replay or
+root/admission reuse. No generic native NaN normalization/fake original modules/
+guard/G08/cap weakening/genuine loader/model/account/history/twohost launch. After
+parity/fullsource binding, compose NEW archive context retaining every invocation/
+source/config/producer/calendar/preservation admission and Rows/ShaMap lifetime.
+Full loader/reader/numerical/source/runtime/combinedRAM/horizon still UNVERIFIED.
+Historical/weekday/intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/
+missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-
+daemon-temp-RAM unchanged. Prior metadata23/partial31 VERIFIED never rerun for docs.
+Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Metadata helper/partial31 reader VERIFIED; genuine loader still unadmitted
 
 Read research/original-loader-metadata-tiny-proof-2026-10-18.json. Source
