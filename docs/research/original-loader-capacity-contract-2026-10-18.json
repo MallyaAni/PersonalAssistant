@@ -1,0 +1,414 @@
+{
+  "actual_two_host": false,
+  "allocation_ledger": {
+    "allocations_to_account_by_actual_lifetime_not_all_simultaneously": [
+      "OriginalArchives immutable metadata, canonical ending-state identity, external164833-pair spool/index and bookkeeping",
+      "bytes_before complete authentication graph and temporary second-pass identity/path records",
+      "bank JSON bytes/decoded receipt/NPZ bytes/14arrays and load-bank copy/lineage validation temporaries",
+      "head receipt/NPZ bytes/196arrays and numeric publication reconstruction copies",
+      "daily panel, price arrays, grades, factors, action declarations, passive/observation arrays and reviewed economics",
+      "first completed_features full tensor plus parent last-row prediction temporaries",
+      "second completed_features full tensor plus full-history prediction temporaries and frozen copies",
+      "seven bank field copies, current observation copies, then market-parent deepcopy and market context copy",
+      "all loaded AuditInputs and both full authentication receipt graphs; second authentication scratch and file-cache charges",
+      "final capacity result references, json.dumps Unicode output, optional UTF8 bytes, write buffers and retained file cache",
+      "interpreter/import/native-library/BLAS allocator overhead, tmpfs, filesystem page cache and cgroup kernel charges"
+    ],
+    "deduplicate_views_by_base_allocation": true,
+    "full_distribution_cache_or_horizon_memory": "NOT_IN_SCOPE_NOT_PROVED",
+    "measured_archive_array_storage_bytes": {
+      "bank": 29531920,
+      "head": 104064,
+      "total": 29635984
+    },
+    "measured_receipt_bytes": 137832798,
+    "measured_receipt_only_peak_kib": 947364,
+    "numeric_whole_graph_peak_bound_bytes": null,
+    "phase_lifetimes": [
+      {
+        "live_roots": [
+          "archives and spools",
+          "authentication current-pass scratch"
+        ],
+        "phase": "OriginalArchives admission and first byte authentication",
+        "release": "Internal parser/decoder lifetimes unchanged; keep archives and returned bytes_before alive."
+      },
+      {
+        "live_roots": [
+          "archives",
+          "bytes_before",
+          "loader locals constructed so far",
+          "native loader transient bytes/arrays"
+        ],
+        "phase": "bank/head/daily/economic load",
+        "release": "Native loader locals and first feature-construction temporaries leave scope normally; do not artificially retain or delete them."
+      },
+      {
+        "live_roots": [
+          "archives",
+          "bytes_before",
+          "loader original bank/head/panel/raw locals",
+          "constructed parent reader",
+          "second feature construction and full prediction temporaries",
+          "deepcopy destination during _bind"
+        ],
+        "phase": "frozen risk constructor and market binding",
+        "release": "First completed_features full tensor is not required to coexist with the second once its constructor returns. Preserve unchanged source allocation lifetimes."
+      },
+      {
+        "live_roots": [
+          "archives",
+          "bytes_before",
+          "returned AuditInputs including detached market parent",
+          "authentication scratch and growing bytes_after"
+        ],
+        "phase": "second byte authentication",
+        "release": "Loader locals not reachable from returned context are no longer deliberately retained."
+      },
+      {
+        "live_roots": [
+          "archives",
+          "bytes_before",
+          "bytes_after",
+          "loaded AuditInputs",
+          "result and full JSON Unicode string",
+          "optional encoded UTF8 bytes and write buffers"
+        ],
+        "phase": "final capacity-only serialization",
+        "release": "Release only after durable complete capacity receipt and final metrics."
+      }
+    ],
+    "required_phase_measurements": [
+      "monotonic time",
+      "Linux ru_maxrss KiB",
+      "VmRSS/VmHWM",
+      "cgroup memory.current/peak/events and swap.current",
+      "retained array shapes/dtypes/nbytes with alias-aware inventory",
+      "proof spool/index/receipt physical allocations"
+    ],
+    "storage_or_prior_peak_is_not_new_peak_bound": true
+  },
+  "current_failed": [
+    "original timing contract"
+  ],
+  "current_unverified": [
+    "combined loader/receipt peak memory",
+    "assembled exact N2 source tree",
+    "capacity harness and forbidden-call guard",
+    "fresh runtime/host/resources/mount admission",
+    "full original audit/corrected history/weekday/intraday/fill/UI acceptance"
+  ],
+  "current_verified": [
+    "original header byte/storage inventory",
+    "original full-byte and two-file consistency checkpoints",
+    "local AST/source graph observations only in this contract"
+  ],
+  "diagram_impact": "NONE: inert capacity contract; no implemented component or runtime flow changed",
+  "entrypoint": null,
+  "execution_authorized_by_this_contract": false,
+  "future_acceptance": {
+    "failure_rule": "Preserve root/logs/spools/actual terminal state; no automatic retry, cap increase, source substitution, state adoption or fabricated result.",
+    "possible_claim": "Loader plus receipt coexistence under one exact bounded N2 invocation only; not numerical/causal/economic correctness, distribution caches, account lifecycle or full horizon.",
+    "required": [
+      "known exact image/source/import origins",
+      "all authentic admissions complete",
+      "one loader return",
+      "zero forbidden calls with independently reviewed pre-import structural guard",
+      "both complete byte receipts and loaded context coexist through serialization",
+      "exit0/noOOM/no memory.events OOM or unexplained source/input changes",
+      "exact original NaN bytes preserved",
+      "independent terminal/runtime/receipt/preservation check"
+    ]
+  },
+  "future_resource_contract_NOT_admission": {
+    "cap_add": [],
+    "devices": [],
+    "docker_socket": "unix:///var/run/docker.sock; explicit local daemon, independently observed actual container",
+    "exact_mount_inventory": null,
+    "fresh_host_headroom_proposed": {
+      "MemAvailable_bytes": 5368709120,
+      "available_inodes": 8192,
+      "proof_filesystem_available_bytes": 4294967296
+    },
+    "fresh_runtime_and_host_evidence": null,
+    "headroom_is_not_reservation": true,
+    "healthcheck": "disabled",
+    "host": "Spark1 only; Spark2 and serving model processes excluded",
+    "log_driver": "none",
+    "memory_bytes": 2147483648,
+    "memory_swap_total_bytes": 2147483648,
+    "nano_cpus": 1000000000,
+    "network": "none",
+    "pids_limit_proposed": 64,
+    "privileged": false,
+    "proof_disk_reserved": false,
+    "pull_policy": "never",
+    "readonly_rootfs": true,
+    "required_controller": "Source-reviewed finite stdout/stderr/progress limits, monotonic deadlines, owned-CID-only stop/kill/reap and durable nonzero/timeout/OOM receipts. No service stop, blind retry or cleanup of failed evidence. These branches need synthetic validation before any genuine loader admission.",
+    "sole_writable_bind": "NEW exclusive UID1000 proof root outside all original input/source namespaces; original account and original11 input/source namespaces read-only; never original /results writable",
+    "tmpfs_exact_existing_guard": {
+      "/tmp": "rw,size=64m"
+    },
+    "uid": "1000:1000",
+    "wall_deadline_seconds_proposed": 1800
+  },
+  "future_sequence_required": [
+    "Fresh exclusive proof root, independently pinned exact source tree, complete invocation and current host/runtime admission; no source/model/account import beforehand.",
+    "Call unchanged runtime_admission, enforce exact numerical versions, construct real OriginalArchives(external_inputs=True) with original completion/initial/manifest and fresh spool; no stub archives or synthetic market.",
+    "Call unchanged source_admission, producer_admission, calendar_admission and preserved_archives. Full original Git-map2431 equality remains separate from the composed N2 auditor map.",
+    "Call unchanged byte_auth.authenticate once for bytes_before (two physical passes); retain its full returned graph and real archives/control/spool objects.",
+    "Call exact loader.load once with real archives, original market and real UTC observed_at. Retain returned AuditInputs. Constructor prediction is allowed and reported; it is not a base-model fit.",
+    "STOP all model computation at loader return. No select, distribution, calibration fit, StreamAudit construction/verify, initial attempt evaluation, planner, policy, broker, account save/replay or publication.",
+    "With loaded context and bytes_before still alive, call unchanged byte_auth.authenticate for bytes_after (two physical passes), compare complete graphs; recheck original physical/source/config selectors and immutable original state.",
+    "Retain loaded context, archives and both full receipt graphs through exact final finite JSON serialization of a capacity-only result embedding bytes_before. Exercise Unicode string and encoded UTF8 coexistence if the future writer uses encode. Keep originals unchanged; do not remove fields, lazy-load, truncate or normalize NaNs to fit.",
+    "Independently inspect stopped exact owned container, actual mounts/resources/exit/noOOM and full output/source/original physical bookends. No reuse of an old CID/root or inferred success from a live PID."
+  ],
+  "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_OR_NEW_RUN",
+  "launch_command": null,
+  "original_selectors": {
+    "account_host_path": "/home/animallya96/scratch/live-model-history-full-20261013-v1/output/account",
+    "bank_arrays": {
+      "bytes": 11168202,
+      "relative_path": "desk/learned-holding/risk/bank.npz",
+      "sha256": "fcb0f04c847a10a2842d26418b872bb1fc758a1d2752727eda72a25c8f122f7a"
+    },
+    "bank_receipt": {
+      "bytes": 4777209,
+      "relative_path": "desk/learned-holding/risk/bank.json",
+      "sha256": "79b33d54253001ba0f907ae0b41f49c81ae436800e43e05b75cd5f58bb653cfe"
+    },
+    "capture_observation_overlay_economics": "Derive only through OriginalArchives and exact loader constants/receipt selectors. Authenticate full original manifest2431 and all declared164833 input bytes; never use serving selectors or unreviewed path rewrites.",
+    "completion": {
+      "bytes": 373782589,
+      "sha256": "b9ad0b6c86b287f3557c635a5fca17703adc48a30a75470256084af911c8a3dd"
+    },
+    "execution_sha256": "eaa07107c2f88e31f6c3eaf1f5eee1bf579bc86fed60db7f578a502859960e96",
+    "git_map_sha256": "c7abe1641a5510902c9f4ada1bd26faa23681232bdcace74b55a698740080eb0",
+    "head_arrays": {
+      "bytes": 98939,
+      "relative_path": "desk/learned-holding/model/model.npz",
+      "sha256": "e0c42cc2c636db332058424ebe52e153cc364b65eba6b45720e38d900c86cccb"
+    },
+    "head_receipt": {
+      "bytes": 47641,
+      "relative_path": "desk/learned-holding/model/publication.json",
+      "sha256": "858163d5e414ee658f28a10532a934528c72fe98fd1cb685e655d6d3a2c75825"
+    },
+    "initial_sha256": "428d129ba753b833fff909d0a2bae23c7fbba2b2a1f0112fe235407445eeb7b3",
+    "initial_venue_receipts": null,
+    "market_host_path": "/home/animallya96/scratch/live-model-history-20261013-v4/market",
+    "namespace_policy": "Host paths are provenance, not loader argv. Preserve original execution RO target namespaces for OriginalArchives reads, plus original11 RO host namespaces mounted at their own absolute host paths for byte_auth.resolve_input. Mount the composed N2 tree separately at /app; never substitute it into the original producer source host namespace. Derive and pin the full target/host mapping from execution eaa07107 before admission; reject overlaps with the sole proof RW root.",
+    "physical_state": {
+      "bytes": 832110254,
+      "sha256": "f334e3a5c691fb4dbcc8ea4e7236f395eb5e26e34bae2f1fd4fac64fc5935130"
+    },
+    "producer_container": "1e8f440a3b5b75dcabd299f5eaba58c7929fb6f96bc822fdb46b641ecf3e598d",
+    "producer_image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+    "producer_inspect_sha256": "d656d927efc04ae72b1985730f6c4bb470b3e5af862ca37e4dca7c48e45ae8f6",
+    "producer_revision": "27471b9c61b958f759e9f48b80acaf60cdf75f2e",
+    "source_manifest_sha256": "d930c0a12574c6b1611a2bc17cabb30c2fd12b8afd899ab0b97a28d583543ae0"
+  },
+  "profile": {
+    "auditor_image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "n2_serving_config_338e_and_current_config_f96a_forbidden_as_original_selectors": true,
+    "name": "original-full-27471",
+    "native31_compact_map_sha256": "99e62ab9f8b02bc315ce59b81f8b461ae5c988e275cdf09cacf2d36b1025f8ab",
+    "numpy": "2.5.3",
+    "original_config_not_n2_or_current_serving_config": "1a14980a66a1cb5994f0bb82667dd46fce40ec7eb0705728d93e36b18faf5901",
+    "sklearn": "1.9.1"
+  },
+  "publication": "CLOSED",
+  "runtime_admission_document": null,
+  "schema": "original-n2-loader-capacity-contract/1",
+  "scope": "Future one-shot original loader plus full authentication-receipt coexistence; no full audit, distribution or account work.",
+  "source_recipe": {
+    "assembled_tree_exists_or_verified": false,
+    "composed_compact_map_sha256": "503e8d508ebe5fdc82a17c11974ccce5366c60ce8e78fc549c129fc6c6d81e03",
+    "composed_file_count": 2446,
+    "frozen_n2_baseline": {
+      "backend/agents/trading/desk/event_execution.py": "76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f",
+      "backend/agents/trading/desk/event_risk.py": "34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973",
+      "backend/agents/trading/desk/funded_execution.py": "6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c",
+      "backend/agents/trading/desk/intraday_orders.py": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c",
+      "backend/agents/trading/desk/nightly_plan.py": "9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca",
+      "backend/agents/trading/desk/paper.py": "e2eef2f0270497d9a5944212d6581b7ebf503d2675687a172e76690fcc7bc3c3",
+      "backend/api/v1/market.py": "fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88",
+      "backend/cli/audit_original_live_model_history.py": "6f777ed0084f2ee5e0bbabe4a0dfc81df5907cdb1dbb687819cbfea139af14d6",
+      "backend/cli/market_daily.py": "0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819",
+      "backend/cli/verify_actual_policy_timing.py": "bb38ed77c6a91123404586d72d080682e36e19e92970d09280b3e0f35e335aa3",
+      "backend/cli/verify_live_model_history.py": "fc1d14cea382c7f7d66f67ed14d2db7b71f20258e0447aa9033a96faa7ce7cd9",
+      "backend/market/adaptive_growth_policy.py": "35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34",
+      "backend/market/alpaca_trading.py": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2",
+      "backend/market/calendar.py": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4",
+      "backend/market/decision_view.py": "8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca",
+      "backend/market/entry_timing.py": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88",
+      "backend/market/forward_arithmetic.py": "9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882",
+      "backend/market/forward_execution.py": "62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295",
+      "backend/market/forward_market_evidence.py": "737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2",
+      "backend/market/forward_probability_timing.py": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92",
+      "backend/market/grade_led_policy.py": "4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66",
+      "backend/market/holding_risk_bank.py": "4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158",
+      "backend/market/joint_funded_policy.py": "5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339",
+      "backend/market/learned_holding_transition.py": "c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55",
+      "backend/market/learned_live_holding.py": "25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1",
+      "backend/market/learned_live_timing.py": "80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f",
+      "backend/market/learned_order_observation.py": "e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff",
+      "backend/market/learned_personal_guidance.py": "37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721",
+      "backend/market/live_model_decision.py": "b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93",
+      "backend/market/live_model_history_audit_inputs.py": "fae5bfc7d7438071094f31f42e884cb48e3709c55f364954e51c28302d3c3e30",
+      "backend/market/live_model_history_binding.py": "e734613fd6efe95f4de04b969e837d71be43d60abea3e2baf2d457aa6f2167c3",
+      "backend/market/live_model_history_input_auth.py": "a10e238bced4685f493f69f6d380126e3415b037334f8fe3aa6fb80458887c6a",
+      "backend/market/live_model_history_nightly_audit.py": "4289bc4f44e0f622681457e81317d00429c735d89801012493605ffd34ed3581",
+      "backend/market/live_model_history_nightly_model.py": "f242be256c731712b3a1e87fcebf36a4c3e00f85a2187902adaf0969a78ca5dd",
+      "backend/market/live_model_history_observation_context.py": "cd2fab769ef75ab719b3c4e9162ce6a44a9e980b9f5ecd72283a44f6ddfd205c",
+      "backend/market/live_model_history_pending_audit.py": "c511f4d62bd0f6a584c2687c471ef7d682664d88f0bd2baa82a14d6b91bde065",
+      "backend/market/live_model_history_receipts.py": "1e9d72e817caa5470842aa50936b3f004f48fbfde77deb0fa5617b72972fea9f",
+      "backend/market/live_model_history_stream_audit.py": "c64eadd658b46f75dd605dddb79074bdba7177d83f0e6e3439fba630378c135b",
+      "backend/market/live_policy_replay.py": "b6ef95f0c5eaa53bd732f0ee5baa55f21ef875d07c69e5abbbb236aafd0586e9",
+      "backend/market/live_probability_timing.py": "3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721",
+      "backend/market/market_conditioned_holding.py": "e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4",
+      "backend/market/personal_history.py": "8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a",
+      "backend/market/replay_broker.py": "c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616",
+      "backend/market/sequential_shadow_context.py": "5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92",
+      "docs/research/grade-led-sizing-contract-2026-10-13.md": "51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6",
+      "docs/research/learned-held-transition-2026-10-07.md": "f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a"
+    },
+    "local_graph_sources_matching_recipe": {
+      "backend/agents/trading/desk/event_execution.py": "76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f",
+      "backend/agents/trading/desk/event_risk.py": "34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973",
+      "backend/agents/trading/desk/funded_execution.py": "6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c",
+      "backend/agents/trading/desk/intraday_orders.py": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c",
+      "backend/agents/trading/desk/nightly_plan.py": "9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca",
+      "backend/api/v1/market.py": "fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88",
+      "backend/cli/audit_original_live_model_history.py": "22d374f166b77d4b0346120aa55b3f9e652496503b88d3fae0681be04b9ab5d5",
+      "backend/cli/market_actual_policy_timing.py": "58d481f6fa4b0ec5d997c612c701a8706ee167cc1e4fe19856caf04e02342d7e",
+      "backend/cli/market_daily.py": "0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819",
+      "backend/cli/market_strategy_continue.py": "14357ed7b87618ee514dd3cd4e4a71e2c27290875c3df257e692773e524cfaaf",
+      "backend/cli/verify_actual_policy_timing.py": "bb38ed77c6a91123404586d72d080682e36e19e92970d09280b3e0f35e335aa3",
+      "backend/cli/verify_live_model_history.py": "fc1d14cea382c7f7d66f67ed14d2db7b71f20258e0447aa9033a96faa7ce7cd9",
+      "backend/market/adaptive_growth_policy.py": "35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34",
+      "backend/market/alpaca_trading.py": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2",
+      "backend/market/calendar.py": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4",
+      "backend/market/conditional_holding_calibration.py": "5b9a7f3036ba480a4b446ccfd5cd0f02a75e8059fa1de8fe0f7c93662342fe8f",
+      "backend/market/counterfactual_holding.py": "af8b06a13f9ffeb6f8635cf35852051ed10fb267e3d2d861dd87d9ee984e2fad",
+      "backend/market/decision_view.py": "8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca",
+      "backend/market/direct_daily_arithmetic.py": "03cb9e837c291b190c89bb8cce3fb960f16c5b118d41bd67c5f294b4664076b9",
+      "backend/market/entry_timing.py": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88",
+      "backend/market/forward_arithmetic.py": "9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882",
+      "backend/market/forward_execution.py": "62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295",
+      "backend/market/forward_market_evidence.py": "737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2",
+      "backend/market/forward_probability_timing.py": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92",
+      "backend/market/grade_led_policy.py": "4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66",
+      "backend/market/holding_risk_bank.py": "4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158",
+      "backend/market/joint_funded_policy.py": "5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339",
+      "backend/market/learned_holding_transition.py": "c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55",
+      "backend/market/learned_live_holding.py": "25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1",
+      "backend/market/learned_live_timing.py": "80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f",
+      "backend/market/learned_order_observation.py": "e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff",
+      "backend/market/learned_personal_guidance.py": "37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721",
+      "backend/market/learned_retention_models.py": "dc0ac21c8078dc2eb9759820b530e4ce9f2a50f709211f20a608d301caef707f",
+      "backend/market/live_execution_inputs.py": "4756673840814a02d5d0a341d54cbbec9e3a855b8cd8a163cc5f0a9c31b44a86",
+      "backend/market/live_model_decision.py": "b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93",
+      "backend/market/live_model_history.py": "fa8ecdb9c0c32d2f034ece8c7da57fec9f198d8d8427a0273d5b59dc4ca6b37b",
+      "backend/market/live_model_history_audit_inputs.py": "fae5bfc7d7438071094f31f42e884cb48e3709c55f364954e51c28302d3c3e30",
+      "backend/market/live_model_history_binding.py": "e734613fd6efe95f4de04b969e837d71be43d60abea3e2baf2d457aa6f2167c3",
+      "backend/market/live_model_history_input_auth.py": "35ad5f5f96fa7951b6163512ab733a9168869eef17038e030b7dad4dcbb1b111",
+      "backend/market/live_model_history_nightly_audit.py": "4289bc4f44e0f622681457e81317d00429c735d89801012493605ffd34ed3581",
+      "backend/market/live_model_history_nightly_model.py": "ae35feda683debb13e83bbcd9d5c75a35b71b10b1417d571cc7c3fcdd3f3cde9",
+      "backend/market/live_model_history_observation_context.py": "cd2fab769ef75ab719b3c4e9162ce6a44a9e980b9f5ecd72283a44f6ddfd205c",
+      "backend/market/live_model_history_pending_audit.py": "74e7d9800bf1bdeb51655f09ae2846bfb0dbbcc67afdcad705405a849eb0cf02",
+      "backend/market/live_model_history_receipts.py": "1e9d72e817caa5470842aa50936b3f004f48fbfde77deb0fa5617b72972fea9f",
+      "backend/market/live_model_history_stream_audit.py": "f404e15be6e97caf856a4ba6db22eedef51ff5a4e3304dcbed90cf8e0abac2ff",
+      "backend/market/live_policy_replay.py": "b6ef95f0c5eaa53bd732f0ee5baa55f21ef875d07c69e5abbbb236aafd0586e9",
+      "backend/market/live_probability_timing.py": "3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721",
+      "backend/market/market_conditioned_holding.py": "e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4",
+      "backend/market/original_history_json.py": "de29c1017f4c9eadd874b2fbe0d85b4c80ced8e7a43fb6bd4f779c3d726cb2eb",
+      "backend/market/panel.py": "dee6b591080f18ba0b35c1241d96cb0e906957b3007f25be941957d2ee7252a2",
+      "backend/market/personal_history.py": "8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a",
+      "backend/market/replay_broker.py": "c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616",
+      "backend/market/sequential_shadow_context.py": "5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92",
+      "backend/market/store.py": "a299516ab68710d56355e036770d3c9695ed332641e9fa6ee4d64c9f6ede9aff",
+      "docs/research/grade-led-sizing-contract-2026-10-13.md": "51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6",
+      "docs/research/learned-held-transition-2026-10-07.md": "f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a",
+      "docs/research/settlement-metadata-source-review-2026-10-17.json": "875976f63a530bc14898f3d3121e6177421f82e2275f7a8dabc5cf2b94266ac6",
+      "docs/research/trading-numeric-source-review-2026-10-17.json": "2f048a8040532bfdaa49b1101e552457454b526b510b4ee9f2422f3a67a3e5f7",
+      "docs/research/trading-source-approval-review-2026-10-17.json": "8b628c76066f62ee724a36d3d07219848786d49d51bb243d73e3e056d7c72bd4"
+    },
+    "local_mismatches_not_substituted": [
+      "backend/agents/trading/desk/paper.py"
+    ],
+    "map_inputs": {
+      "baseline": {
+        "path": "/tmp/original_streamed_history_baseline_pins_20261017.json",
+        "sha256": "c097f38038e3122d692be442b880492d89b8aff3735174105153ff817c57dc8c"
+      },
+      "git": {
+        "path": "/tmp/original-history-git-27471b9c-20261017-v1.json",
+        "sha256": "c7abe1641a5510902c9f4ada1bd26faa23681232bdcace74b55a698740080eb0"
+      },
+      "identities": {
+        "path": "/tmp/historical-current-settlement-cycle-native-20261017-v1/input/identities.json",
+        "sha256": "ea375ba067399da3366bbba4c62e2011244c0f8dfc667e31f3a94b94435022fc"
+      },
+      "overlays": {
+        "path": "/tmp/original_sha_map_source_pins_20261017.json",
+        "sha256": "5958b411d4d96b195292ffba9aa47de4e537bdc7a6dc3ea59a5a50206faf4c48"
+      }
+    },
+    "native31": {
+      "backend/agents/trading/desk/event_execution.py": "76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f",
+      "backend/agents/trading/desk/event_risk.py": "34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973",
+      "backend/agents/trading/desk/funded_execution.py": "6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c",
+      "backend/agents/trading/desk/intraday_orders.py": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c",
+      "backend/agents/trading/desk/nightly_plan.py": "9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca",
+      "backend/agents/trading/desk/paper.py": "e2eef2f0270497d9a5944212d6581b7ebf503d2675687a172e76690fcc7bc3c3",
+      "backend/api/v1/market.py": "fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88",
+      "backend/cli/market_daily.py": "0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819",
+      "backend/market/adaptive_growth_policy.py": "35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34",
+      "backend/market/alpaca_trading.py": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2",
+      "backend/market/decision_view.py": "8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca",
+      "backend/market/entry_timing.py": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88",
+      "backend/market/forward_arithmetic.py": "9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882",
+      "backend/market/forward_execution.py": "62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295",
+      "backend/market/forward_market_evidence.py": "737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2",
+      "backend/market/forward_probability_timing.py": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92",
+      "backend/market/grade_led_policy.py": "4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66",
+      "backend/market/holding_risk_bank.py": "4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158",
+      "backend/market/joint_funded_policy.py": "5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339",
+      "backend/market/learned_holding_transition.py": "c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55",
+      "backend/market/learned_live_holding.py": "25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1",
+      "backend/market/learned_live_timing.py": "80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f",
+      "backend/market/learned_order_observation.py": "e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff",
+      "backend/market/learned_personal_guidance.py": "37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721",
+      "backend/market/live_model_decision.py": "b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93",
+      "backend/market/live_probability_timing.py": "3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721",
+      "backend/market/market_conditioned_holding.py": "e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4",
+      "backend/market/personal_history.py": "8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a",
+      "backend/market/sequential_shadow_context.py": "5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92",
+      "docs/research/grade-led-sizing-contract-2026-10-13.md": "51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6",
+      "docs/research/learned-held-transition-2026-10-07.md": "f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a"
+    },
+    "original_git_files": 2431,
+    "precedence": [
+      "original_git_map",
+      "frozen_n2_baseline",
+      "six_original_audit_overlays",
+      "three_binding_reviews"
+    ],
+    "required_before_execution": "Materialize a NEW immutable exact source tree; authenticate complete composed map and actual import origins before importing numerical modules, with post-run source bookends. No undeclared backend module or ambient host site-packages. Retain original Git-map equality separately; the N2 auditor is not the producer tree.",
+    "six_original_audit_overlays": {
+      "backend/cli/audit_original_live_model_history.py": "22d374f166b77d4b0346120aa55b3f9e652496503b88d3fae0681be04b9ab5d5",
+      "backend/market/live_model_history_input_auth.py": "35ad5f5f96fa7951b6163512ab733a9168869eef17038e030b7dad4dcbb1b111",
+      "backend/market/live_model_history_nightly_model.py": "ae35feda683debb13e83bbcd9d5c75a35b71b10b1417d571cc7c3fcdd3f3cde9",
+      "backend/market/live_model_history_pending_audit.py": "74e7d9800bf1bdeb51655f09ae2846bfb0dbbcc67afdcad705405a849eb0cf02",
+      "backend/market/live_model_history_stream_audit.py": "f404e15be6e97caf856a4ba6db22eedef51ff5a4e3304dcbed90cf8e0abac2ff",
+      "backend/market/original_history_json.py": "de29c1017f4c9eadd874b2fbe0d85b4c80ced8e7a43fb6bd4f779c3d726cb2eb"
+    },
+    "three_binding_reviews": {
+      "docs/research/settlement-metadata-source-review-2026-10-17.json": "875976f63a530bc14898f3d3121e6177421f82e2275f7a8dabc5cf2b94266ac6",
+      "docs/research/trading-numeric-source-review-2026-10-17.json": "2f048a8040532bfdaa49b1101e552457454b526b510b4ee9f2422f3a67a3e5f7",
+      "docs/research/trading-source-approval-review-2026-10-17.json": "8b628c76066f62ee724a36d3d07219848786d49d51bb243d73e3e056d7c72bd4"
+    }
+  },
+  "status": "INERT_SOURCE_REVIEW_ONLY_NOT_EXECUTABLE_NOT_ADMITTED"
+}

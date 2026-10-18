@@ -1,0 +1,90 @@
+{
+  "schema": "original-n2-loader-capacity-contract-proof/1",
+  "status": "SOURCE_REVIEWED_INERT_CONTRACT_ONLY",
+  "starting_head": "2759ff9e8b79a0de036b346569a3ee37402ba547",
+  "reviewed_at_utc": "2026-10-18T03:03:25Z",
+  "objective": "Prepare the exact N2 original-loader capacity boundary without providing an executor or admitting a genuine run.",
+  "artifacts": {
+    "original-loader-capacity-contract-2026-10-18.json": {
+      "sha256": "ecc58ad7f6ec65bb42a28ef0c2bea8d116b0e9be5ea59e490388fa0e74dfddc8",
+      "bytes": 32286
+    },
+    "original-loader-capacity-source-review-2026-10-18.json": {
+      "sha256": "a1bb3b4aebdea39ba2a3c8b07666c262c039c4751af0b094bbc392d46403dd40",
+      "bytes": 9651
+    },
+    "sources/prepare-original-loader-capacity-contract-2026-10-18.py": {
+      "sha256": "1cecaa590bd239897e26806d267720b8ff0ef47dd02b01d5fa9a8a6436df325e",
+      "bytes": 21104
+    }
+  },
+  "source_scope": {
+    "original_git_manifest_files": 2431,
+    "frozen_n2_baseline_files": 46,
+    "private_original_audit_overlays": 6,
+    "binding_reviews": 3,
+    "composed_recipe_files": 2446,
+    "composed_compact_map_sha256": "503e8d508ebe5fdc82a17c11974ccce5366c60ce8e78fc549c129fc6c6d81e03",
+    "native31_compact_map_sha256": "99e62ab9f8b02bc315ce59b81f8b461ae5c988e275cdf09cacf2d36b1025f8ab",
+    "local_files_matching_recipe_rechecked": 59,
+    "excluded_local_mismatch": "CURRENT paper.py a8c5083f differs from N2 e2eef2f0; the recipe retains N2 and never substitutes CURRENT.",
+    "actual_source_tree_assembled": false,
+    "source_authentication_runtime_claim": false
+  },
+  "static_findings": [
+    "Two distinct constructor calls build complete feature context; first-call transient full features need not coexist with second-call features after their constructor returns.",
+    "Seven bank fields and observation/frozen buffers are copied; market binding deepcopies the parent and starts an empty fit cache.",
+    "Constructor numeric prediction is within the proposed loader boundary. Distribution and _MarketCalibration._stock_fit -> fit_market_log are outside it.",
+    "Original target namespaces for OriginalArchives and absolute host namespaces for byte_auth.resolve_input remain separate from the composed N2 /app tree.",
+    "The existing unchanged exact runtime_admission guard requires e0, UID1000, networknone, readonly, 1CPU, 2GiB RAM=swap and exact tmpfs /tmp rw,size=64m.",
+    "All loaded context, both complete authentication receipt graphs and final JSON serialization must coexist in their actual source lifetimes. Prior 29635984B array storage and 947364KiB receipt-only peak do not establish a new peak bound."
+  ],
+  "checks": {
+    "local_json_parse_and_exact_copy_readback": "PASS",
+    "source_matching_files_after_review": 59,
+    "exact_function_ast_records": 10,
+    "generator_functions_with_purpose_comments": 6,
+    "generator_imports": [
+      "ast",
+      "hashlib",
+      "json",
+      "os",
+      "pathlib"
+    ],
+    "generator_source_AST": "PASS; no application, numerical, transport or Docker imports",
+    "isolated_metadata_generator": "Two new exclusive local draft roots, no host or application execution; v1 preserved when namespace clarification produced v2.",
+    "independent_existing_worker_review": "No blocker found in v2 as an inert contract; no edits, application imports or execution performed.",
+    "functional_tests": "NOT_APPLICABLE_TO_INERT_METADATA; no model or runtime behavior claimed",
+    "lint": "Ruff unavailable; AST and purpose-comment checks only",
+    "prior_completed_gates_repeated": 0
+  },
+  "preserved_local_roots": [
+    "/tmp/original-loader-capacity-contract-20261018-v1",
+    "/tmp/original-loader-capacity-contract-20261018-v2"
+  ],
+  "unresolved_before_any_execution": [
+    "NEW exact assembled source tree and import-origin closure; existing source/runtime admissions must not be weakened.",
+    "Source-reviewed capacity-only harness with structural forbidden-call guards installed before numerical/application loading and synthetic guard/refusal validation.",
+    "Concrete pinned invocation/mount inventory, original producer metadata/source/config selectors, fresh independent host/runtime/resource evidence and proof-root capacity.",
+    "Bounded controller with durable timeout/OOM/failure records and owned-CID-only cleanup; no blind retry.",
+    "Actual combined peak RAM, real loader return, complete receipt serialization and independent stopped-runtime/preservation acceptance."
+  ],
+  "current_execution": {
+    "entrypoint": null,
+    "launch_command": null,
+    "runtime_admission": null,
+    "capacity_harness_run": false,
+    "numerical_modules_imported": false,
+    "models_loaded": false,
+    "fits": false,
+    "account_or_provider_calls": false,
+    "ssh_docker_or_host_probes": false,
+    "original_files_changed": false,
+    "production_changed": false
+  },
+  "original_timing": "FAILED_UNCHANGED",
+  "publication": "CLOSED",
+  "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_OR_NEW_RUN",
+  "historical_weekday_intraday_fill_UI": "UNVERIFIED",
+  "diagram_impact": "NONE: source-only inert capacity contract; no implemented runtime or component changed."
+}
