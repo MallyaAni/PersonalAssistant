@@ -1,0 +1,158 @@
+{
+  "schema": "n2-guard-v3-tiny-proposal/1",
+  "status": "SOURCE_ONLY_UNEXECUTED",
+  "starting_revision": "0c666839b2323b26116a4b05a7e97b931a1dbfef",
+  "objective": "Validate a distinct versioned guard through actual constructor/profile/audit/failure-slot methods on narrow tiny cases without a marshal adapter.",
+  "active_sources": {
+    "bootstrap.py": {
+      "repository_path": "sources/original-loader-guard-v3-tiny-2026-10-18.py",
+      "sha256": "bde38c29de0db4ed9389f5854eade3ca5467ccd23834fb743007823f402f6fd8",
+      "bytes": 21295
+    },
+    "diagnostic-owner.py": {
+      "repository_path": "sources/original-loader-guard-v3-tiny-owner-2026-10-18.py",
+      "sha256": "97acb166944cf57709ce8f26526425942acd8ad146e81b9efa3844e1f43a8fda",
+      "bytes": 7196
+    },
+    "diagnostic-verifier.py": {
+      "repository_path": "sources/original-loader-guard-v3-tiny-verifier-2026-10-18.py",
+      "sha256": "aaabadff42e33cb95de21a4bfb5be425f48fc179ae52a3d38c64ab28355687c1",
+      "bytes": 11815
+    }
+  },
+  "inputs": {
+    "harness-source.txt": {
+      "repository_path": "sources/original-loader-capacity-harness-v3-2026-10-18.py",
+      "sha256": "030cb5bb25f89c2785e6acbd55aceff5c99b632a5eb538079ee027362ae6178a",
+      "bytes": 31002
+    },
+    "owner/controller.py": {
+      "repository_path": "sources/original-loader-guard-controller-v2-2026-10-18.py",
+      "sha256": "2e505205cc8a3793d7b3313a5b5c3b670b00134575982d26c725787b6530df5a",
+      "bytes": 16728
+    },
+    "producer-source.txt": {
+      "repository_path": "backend/market/live_model_history_audit_inputs.py",
+      "sha256": "fae5bfc7d7438071094f31f42e884cb48e3709c55f364954e51c28302d3c3e30",
+      "bytes": 12316
+    },
+    "continuation-source.txt": {
+      "repository_path": "backend/cli/market_strategy_continue.py",
+      "sha256": "14357ed7b87618ee514dd3cd4e4a71e2c27290875c3df257e692773e524cfaaf",
+      "bytes": 20140
+    }
+  },
+  "candidate": {
+    "manifest_schema": "n2-capacity-call-manifest/2",
+    "fingerprint": {
+      "algorithm": "cpython-code-marshal-format-2-sha256/1",
+      "marshal_version": 2
+    },
+    "changes": [
+      "Exact new top-level fingerprint metadata and schema/2 required by constructor",
+      "Exact algorithm + integer2, including bool refusal",
+      "Shared inline generated-code hashing explicitly marshal.dumps(code,2), dataclass and daily-prefix"
+    ],
+    "changed_functions": [
+      "CallFence.__init__",
+      "CallFence.profile"
+    ],
+    "unchanged_functions_ast": 26,
+    "old_harness_737d_preserved": true,
+    "old_schema1_not_reinterpreted": true,
+    "public_execute_still_unconditionally_refuses": true
+  },
+  "preparation": {
+    "fresh_child": 1,
+    "source_files": 6,
+    "prepared_files": 8,
+    "generated_records": 16,
+    "dataclass_records": 14,
+    "daily_prefix_records": 2,
+    "producer_inert_never_compiled_or_imported": true,
+    "continuation": "Only exact source-hashed inputs function AST prefix compiled; original whole module never executed.",
+    "calls": "Static exact compiler code identities, eight unchanged phase lists",
+    "original_recipe_constructor": "INJECTED tiny SourceBook via object.__new__; real authenticate_all/read/finder methods. No genuine2446 recipe admission claimed."
+  },
+  "cases": {
+    "count": 22,
+    "fresh_children_including_preparation": 23,
+    "scope": "NARROW_CANDIDATE_VALIDATION_NOT_FAILED_V2_REPLAY",
+    "paths": [
+      "ordinary dataclass import and Sample(3)",
+      "broker dataclass wrapper accepted then __create_fn__ refused",
+      "eight binding field mismatches: kind/filename constructor refusals; six profile refusals",
+      "changed wrapper bytecode and shape-checked nested constant",
+      "exact daily-prefix wrapper+inputs accepted, first dependency sentinel before data",
+      "missing daily wrapper/inputs records; wrong producer record; wrong phase",
+      "old schema, missing fingerprint, wrong algorithm, version4 and boolean version"
+    ],
+    "failure_slot": "Actual fixed preallocated65536B inode, O_RDWR/nonappend, guard.trip pwrite+fsync+exit86. Parent and independent verifier require exact reason/identity/phase/publication/padding and unchanged inode/allocation. Constructor refusal must leave slot zero and backend imports absent.",
+    "preservation": "All8 prepared files and five staged sources fullSHA/physical beforeafter; logs empty; actual distinct childPIDs/exit receipts, positive-only markers; no accepted timeout/OOM/FSIZE substitutes."
+  },
+  "execution": {
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "source_root": "/home/animallya96/scratch/n2-guard-v3-tiny-source-20261018-v1",
+    "run_root": "/home/animallya96/scratch/n2-guard-v3-tiny-20261018-v1",
+    "review_root": "/home/animallya96/scratch/n2-guard-v3-tiny-independent-review-20261018-v1",
+    "argv": [
+      "--admitted-v3-tiny-fence",
+      "<fresh scoped admission SHA>",
+      "97acb166944cf57709ce8f26526425942acd8ad146e81b9efa3844e1f43a8fda",
+      "<exact source-book SHA>"
+    ],
+    "runtime": {
+      "uid": 1000,
+      "network": "none",
+      "read_only": true,
+      "cpu": 1,
+      "memory_bytes": 2147483648,
+      "memory_swap_bytes": 2147483648,
+      "pids": 32,
+      "tmpfs_bytes": 67108864,
+      "healthcheck": false,
+      "logging": "none",
+      "binds": [
+        "tiny audit RO",
+        "new out RW"
+      ],
+      "child_cpu_seconds": 5,
+      "child_wait_seconds": 7,
+      "parent_alarm_seconds": 60,
+      "phase_wait_seconds": 75,
+      "owner_alarm_seconds": 120,
+      "per_file_bytes": 262144
+    },
+    "headroom_not_reservation": {
+      "memory_bytes": 5368709120,
+      "disk_bytes": 4294967296,
+      "inodes": 8192
+    },
+    "prerequisites": [
+      "pin/stage <=262144 decoded source packet and exact source book with independent full physical readback",
+      "independent exact source+invocation review",
+      "fresh actual cached image/host/UID/jobs/resources/absent target proof",
+      "one fresh 120s scoped synthetic admission; no prior admission reused"
+    ],
+    "runtime_admission": null
+  },
+  "unverified": [
+    "All runtime outcomes",
+    "genuine2446 SourceBook constructor/runtime/full loader admission",
+    "full guard suite/G18/full workflow/stress acceptance",
+    "combined model+receipt RAM/horizon/historical/ordinary/intraday/fill/UI",
+    "forced stop/alarm/SIGKILL/transport loss cleanup"
+  ],
+  "preserved": {
+    "failed_v2_no_replay": true,
+    "completed_diagnostics_no_replay": true,
+    "old_sources_manifests_admissions_roots_immutable": true,
+    "guard_source_caps_and_other_methods_unchanged": true,
+    "no_native_Store_Nightly_Cycle_edits": true,
+    "no_genuine_model_account_provider_history_order_operations": true,
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "heartbeat": "ACTIVE"
+  }
+}
