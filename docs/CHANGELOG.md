@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-10-18 — Preserve raw Nightly metadata and commit its Store decision stage
+
+Versioned native-json-metadata/1 retains exact standalone native-format entry and
+decision bytes, including NaN, in ordered64KiB chunks with finite source-bound
+descriptors. Raw observer recording uses a remaining allowance; entry plus decisions
+have one existing20MiB local bound. New standalone Nightly receipt2 completion,
+readback and recovery authenticate original reservations/results without recapture.
+Legacy execution routes remain separate and full raw continuation stays unwired.
+
+Exact source fdb1a711/tree369730bc passed eight new isolated tests,0fail/0error/0skip,
+4.583260973s/84444KiB. Actual native snapshot/save and metadata/opaque paper restore,
+tamper/bound/uncertainty/mode/recovery refusals passed. A real declared Store cycle
+reserved DECISION_FROZEN before its synthetic scenario, committed the raw receipt,
+reopened with the changed head and recovered the exact entry. Proof1033b520 and
+runtime/source limits: research/raw-nightly-metadata-store-proof-2026-10-18.json.
+
+Nightly/observer CodeTypes use synthetic policy/broker/source-manifest globals;
+whole constructors/init/close, complete pre-effect/native/two-host/model/RAM
+lifecycle and genuine operation adoption remain unverified. No deployment or
+production change. Original timingFAILED/publicationCLOSED/pausedv6 unchanged.
+Diagram impact: NONE — existing private historical metadata/receipt boundaries.
+
 ## 2026-10-18 — Bind raw native reconciliation to its saved component receipt
 
 The optional raw settlement path now binds actual native input and saved output

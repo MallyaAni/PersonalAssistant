@@ -1,5 +1,77 @@
 # Next session
 
+## 2026-10-18 — Raw Nightly metadata and reserved Store commitment VERIFIED
+
+Task control: product acceptance first. This eight-test synthetic boundary is
+closed; never rerun it, its preflight/stage/copy/getter or old5/11/10 gates for
+documentation. Further interpreter/ELF/native-origin observers are not prerequisites
+for synthetic product integration. Production is unchanged.
+
+Source checkpoint fdb1a7117cdb195ec2372f82c0d3d4b4f6e3b537, exact tested tree
+369730bc5f42e6b9e52d189073c5dc90f4cb82b3, adds native-json-metadata/1: ordered
+64KiB chunks, finite source/identity/kind/encoder-bound descriptors, exact standalone
+native indent2/default encoder/NaN/no-newline bytes. Entry plus decisions have one
+20MiB local receipt bound; it is not shared pre-effect physical reservation.
+NativeCapture raw finish uses the remaining allowance, bounds decision count,
+refuses prior uncertainty before new writes and stops on its first recording
+failure. Orphan chunks remain evidence. Legacy finite recording stays separate.
+
+New Nightly complete_raw/read_raw/recover_raw use the distinct16key standalone
+receipt2 and original exclusive reservation/result lineage. Paper remains a typed
+opaque rope component. Recovery returns the original receipt without recapture;
+missing results pause. Native operation/adoption and packet integration remain
+false. Full initialize/close/predecessor/submission routes are not wired to these
+methods yet; this is standalone metadata storage/recovery, not full continuation.
+
+VERIFIED: ONE source-isolated488b16fd54b1986d90048e59f1cb9c67e67e89dd841375beae5ae56f082eaead
+on exactf612 exited0/noOOM at20:48:33.15084628Z. Eight new tests passed0fail/0error/
+0skip in4.583260973s/84444KiB peak. Actual native snapshot return and a synthetic
+holding decision each exceed256KiB/containNaN; standalone metadata bytes match the
+native encoder exactly. Actual native-saved paper bytes survive checkpoint reopen
+and opaque restore. Finite raw result, repeated recovery, source/kind/identity/
+order/hash/length/marker/reservation tampering, aggregate/remaining bounds, prior
+recording uncertainty and legacy-mode/interrupted-result refusals passed.
+
+The real Store test walks declared registry/demand through PRIOR_VERIFIED,
+DEMAND_FROZEN, WAIT_PACKETS and PACKETS_FINALIZED; reserves DECISION_FROZEN before
+the synthetic scenario; commits the raw receipt; then reopens with the changed
+head and recovers the exact committed entry. This proves a Store stage/head
+transition, not native operation adoption or complete physical lifecycle admission.
+
+Read research/raw-nightly-metadata-store-proof-2026-10-18.json. Proof1033b520/17978B
+and seven fixed results remain /tmp/raw-nightly-metadata-20261018-v1 and matching
+Spark1scratch. All five phases exited0/empty stderr. Nineteen pinned payloads plus
+pins.json make20 physical source files; all source and six native SHA/physical
+bookends plus writer globals matched. Complete four mounts AND raw order match;
+HostConfig ONLY OomKillDisable false→null. UID1000/noneRO/1CPU/512MiB=swap/PIDs32/
+tmp64; explicit synthetic checkpoint512KiB span/1MiB raw and native artifact1MiB
+FSIZE; source/control/log256KiB and production caps unchanged. Headroom is not
+reservation. Twenty-nine local control/transport readbacks retain exact ns strings.
+
+Exact full-source Nightly/observer CodeTypes run with isolated startup and synthetic
+policy/broker/source-manifest globals. Nightly constructor is bypassed; real paper,
+metadata helper, SQLite/CAS and checkpoint run. Four exact pure Store fixture
+CodeTypes avoid pytest startup; no closed test bodies run. No model/provider call,
+whole constructor/init/close/native adoption/full lifecycle/RAM/crash claim. Native
+decision deepcopy and long JSON fragments remain RAM limitations. Thirty-four old
+declarations checked: only NativeCapture.finish changes; all other old bodies stay
+equal. AST/purpose comments/runner byte equality/zero backspaces/diff checks pass;
+Ruff unavailable, no full unit/build/deploy claim. Existing healthy worker reviewed
+sources/exact calls, actual preflight/getter and actual results READONLY. All found
+issues were fixed before first runtime; no operational/test failure or replay.
+Diagram impact: NONE — private metadata/receipt paths in existing historical adapters.
+
+NEXT: inspect and implement full raw Nightly initialize/close/predecessor continuation
+and native entry/write/decision lineage with these typed metadata references, using
+new source-isolated synthetic lifecycle assertions. Keep native submission/genuine
+execution closed until complete pre-effect reservation/interruption/native metadata/
+two-host/model/RAM admission. Then genuine proposals/ordinary/intraday/fills,
+independent publication and API/UI. Those remain UNVERIFIED. Original timingFAILED/
+publicationCLOSED/missing receipts/immutable roots unchanged; genuinev6 OPEN/PAUSED,
+no replay/adoption/new genuine run. No Spark2 load, model/provider/account/service
+change, guard/cap weakening or historical-main deployment. Heartbeat ACTIVE; quiet
+on unchanged/non-actionable state; no ETA.
+
 ## 2026-10-18 — Native raw reconciliation/save/receipt/restore VERIFIED
 
 Task control: product acceptance first. This isolated settlement slice is closed;
