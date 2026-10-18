@@ -1,5 +1,82 @@
 # Next session
 
+## 2026-10-18 — New package syntax/literal versions VERIFIED; registry/native closure open
+
+Read research/original-loader-native-package-syntax-source-proof-v1-2026-10-18.json.
+Source48ae45eb49e2b74b43bb82abbcd03b0ee8ab22c1 pins analyzercc111e8d/9742B/
+transport97af3e24/5995B/independentd1ac4899/8812B/transportba02d696/6021B/
+builder8f3ef656/8131B. Summary5b36cad5/70746B/independentf54d3c05/44134B/
+newseama2bd485c/7511B retained. Only new stdlib operational AST/JSON/SHA controls
+ran on exact15newcopies137785B. No copied package/backend/model CodeType/import/
+body, Docker/hostprobe/account/data/credential read, old census/AST-job/gate/
+packet replay or guard/G08/cap/source-map/production change.
+
+ONE source-AST SSH and ONE separately reviewed independent SSH each exited0/
+empty stderr/no owned stop/cleanupfailure. New15 syntax96imports/570calls/
+189declarations/17source expressions;855records/22pages351502B/max41957B/
+64records each. New top-level assignment syntax and6smallversion/distributor
+fulltexts retained; labels NOT execution trace/CodeTypes/phase/callable closure.
+Independent39inputs=22pages+15sources+summary+priorf26 each two full reads/SHA/
+held+named physical checks then laterbookendpass. Full AST hashes/exact import/
+call/declaration multisets/17expressions/assignments/sixfulltexts match. Does NOT
+independently reconstruct every ancestor/qualified-name/display projection.
+
+VERIFIED LITERAL SOURCE ONLY: PyArrow_generated_version21 declares25.0.1,
+NumPyversion5 declares2.5.3, SciPyversion5 declares1.18.1. Three line/value/SHA
+checks PASS. These are NOT installed distribution/native/runtime attestations.
+Independent proof also retains exactcompute24952B/a6ae9e92 source text, never
+compiled/executed. compute343 ->_make_global_functions314 source gets native
+registry/list/functions/kind/arity, globals options classes/native docs/signatures,
+then ordinary nested wrapper SOURCE via_make_generic_wrapper244. No actual
+registry/closure/callable/type/phase binding. Never label these dataclass<string>
+records; register only actual later compiler-emitted CodeTypes. Separate namedtuple/
+docstrings/docscrape/_compute/native seams unresolved. No wrapper body ran.
+
+NumPy/SciPy distributor imports optionally name_distributor_init_local; absent
+branch NOT proved. NumPy core further imports/types/env/exception-only scanning;
+SciPy_ccallback native/ctypes.CFUNCTYPE/deferredcffi syntax not actual callback
+allocation. sklearn config threading.local is NOT thread-start proof; base adds
+metadata-routing/validation/tags/repr/output dependencies. Original mandatory
+native package/version admission unchanged; no estimator/model strategy admitted.
+
+New seam declares six source-derived METADATA/RECORD directory candidates for
+PyArrow25.0.1/NumPy2.5.3/SciPy1.18.1. Explicitly INFERRED/UNREAD/existence/bounds/
+metadata-version/native paths unobserved; NO executable reader/invocation yet.
+sklearn actualmetadata version/path unresolved;1.9.1predicate not attestation.
+Helper512MiBvirtualAS/20sCPU/30salarm/262KiBfile/70sSSH unchanged; no native/thread/
+model/daemon RAM bound/reservation. Timeout/signal/crash branches UNTESTED.
+
+Healthy existing worker READONLY reviewed source/invocation BEFORE each use and
+actualproof/newseam after; no material overclaim, no newagent/limitedretry/workerops.
+AST warnings-as-errors/23purpose comments across5controls/six unchanged analyzer
+utility ASTs/three literal checks/fourtools byte-exact reproduction/JSON/SHA/diff
+PASS; Ruff previously unavailable/no lint claim. One local read-only pin-count
+inspection expected3literals versusactual2, exited1 before writes/SSH; corrected
+inspection/pins/reproduction pass, no remote/payload failure or body replay.
+
+New remote analysis/independent/tools roots COMPLETE immutable/file+outputdir fsync/
+readback.22pages staySpark, summary/rawproof inclsmalltexts+compute retainedMac.
+Exclusive /tmp/capacity-native-package-syntax-evidence-20261018-v1 retains15files/
+255863B+manifest9d1062cf/6919B, file/readbacks/root/resolvedparent fsync done.
+Separate -syntax-reproduction-20261018-v1 retains4oldcontrolinputs+4newoutputs,
+allnewbytes match. No crash/durability/secondfullremotearchive guarantee.
+
+NEXT ROOT: SOURCE ONLY prepare concrete bounded stopped-N2 metadata path
+observation/read tools from six inferred candidates, independent exactsource/
+invocation/resource review BEFORE use. Establish actual paths/existence/bounds/
+version/RECORD before installed/native claims; missing/oversized targets refuse,
+no guessedbinarysuffix/recursivecopy/packageimport/cap relaxation. Finish selected
+callable/global/type/dataclass liveproducer/classflags/native/phase contracts.
+Do NOT repeat closed15/10 censuses/AST inventories/73/80/23/65+4/tiny/diagnostic/
+v2 gates/packets. Guard3b8be00b/all25payload functions UNRUN; old2446/030c/G08/
+caps unchanged. Producer2431/reference2446/executor2468/original receipts/full
+context+graphs+JSON+UTF8 lifetimes separate. Assembledtree/strategy/entrypoint/
+manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/launch/admission
+NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/intraday/fill/UI
+UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/
+no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM unchanged.
+Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Fifteen new stopped package texts VERIFIED; native closure unadmitted
 
 Read research/original-loader-native-package-text-source-proof-v1-2026-10-18.json.

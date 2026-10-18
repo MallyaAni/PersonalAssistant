@@ -1,0 +1,93 @@
+{
+  "schema": "capacity-native-package-syntax-source-checkpoint/1",
+  "status": "VERIFIED_STATIC_NEW_FIFTEEN_SOURCE_SYNTAX_AND_LITERAL_VERSIONS_ONLY",
+  "starting_git": {"branch": "codex/learned-live-release-20261006", "HEAD": "2d980e1a2959da2ea97b05cf0699213ab7df4a23", "working_tree": "CLEAN", "pull_rebase_origin_main": "EXIT0_UP_TO_DATE"},
+  "source_commit": "48ae45eb49e2b74b43bb82abbcd03b0ee8ab22c1",
+  "files": {
+    "sources/prepare-native-package-syntax-v1-2026-10-18.py": {"sha256": "8f3ef656d49225cd7bf626daf9fcebde2df78a76bba9080941f68def4b3ffe8a", "bytes": 8131},
+    "sources/analyze-native-package-texts-v1-2026-10-18.py": {"sha256": "cc111e8d0437088f56aaba837bd5367309a74834c76efa707a46c8a96fecd21a", "bytes": 9742},
+    "sources/native-package-text-analysis-transport-v1-2026-10-18.py": {"sha256": "97af3e247ec221d0858f9aa23c69210aea4e2b6d0a15e76b8063b9d13ce3dff4", "bytes": 5995},
+    "sources/verify-native-package-text-analysis-v1-2026-10-18.py": {"sha256": "d1ac48993d71bc7aef891f38d77d83597529e48766d6c76491ea3531fcd84fd0", "bytes": 8812},
+    "sources/native-package-text-analysis-independent-transport-v1-2026-10-18.py": {"sha256": "ba02d69609acc316a3ff364bb4f060e622674eccec019e2aa86bc0930954e78e", "bytes": 6021},
+    "original-loader-native-package-syntax-analysis-v1-2026-10-18.json": {"sha256": "5b36cad5f5c293e6e3a2236b77e2475dfb84c0328315ebc37747b174e80847b6", "bytes": 70746},
+    "original-loader-native-package-syntax-independent-v1-2026-10-18.json": {"sha256": "f54d3c054e8ac7068eab1dca05c7d70d3fa8d9e7b999f78c8ae389356752d1a6", "bytes": 44134},
+    "original-loader-native-package-syntax-seams-v1-2026-10-18.json": {"sha256": "a2bd485c7e1744c549750a5d95fcd8edd5248162432b7fa15f22adbbdd4778e2", "bytes": 7511},
+    "original-loader-native-package-syntax-control-static-v1-2026-10-18.json": {"sha256": "5c87a7676df0d36c3f66b9a6f6759b73968685b8b80ba43e27030d1adfc2a272", "bytes": 1435},
+    "original-loader-native-package-syntax-preservation-v1-2026-10-18.json": {"sha256": "fd6aa83728f6277725d0465493baa32b4ca850102eea4befffe84c2b0aa57f57", "bytes": 307}
+  },
+  "actual_execution": {
+    "primary_source_AST_SSH": {"count": 1, "exit": 0, "stderr_bytes": 0, "owned_stop": null, "cleanup_failure": null},
+    "separate_independent_source_AST_SSH": {"count": 1, "exit": 0, "stderr_bytes": 0, "owned_stop": null, "cleanup_failure": null},
+    "operational_code_only": "New stdlib source/AST/JSON/SHA control helpers and local source builders/reproduction/preservation/Git; no copied payload CodeType compilation, package/backend/model imports or bodies.",
+    "Docker_hostprobe_account_marketdata_credentials_old_census_ASTjob_gate_packet": false,
+    "source_inputs": "Only new15 immutable copies137785B bound to prior f26f8539 fullSHA/physical source inventory; old ten-source analysis/censuses and all completed gates untouched."
+  },
+  "syntax_inventory": {
+    "modules": 15, "imports": 96, "calls": 570, "function_class_declarations": 189,
+    "lambda_comprehension_generator_source_expressions": 17,
+    "records": 855, "pages": 22, "page_bytes": 351502, "max_page_bytes": 41957,
+    "records_per_page_bound": 64, "ordinary_file_wire_cap": 262144,
+    "top_level_assignment_syntax_recorded_not_evaluated": true,
+    "six_version_distributor_source_texts_retained": true,
+    "scope": "Lexical ancestor/definition-call labels are syntax, not an evaluated branch/import order/call trace, generated CodeTypes or callable/global/type/native closure."
+  },
+  "independent_fold": {
+    "inputs": 39, "components": {"pages": 22, "source_copies": 15, "summary": 1, "prior": 1},
+    "two_full_reads_SHA_held_named_physical_then_later_bookend_pass": true,
+    "full_AST_SHA_and_import_call_declaration_multisets_exact": true,
+    "assignment_syntax_and_six_full_source_texts_exact": true,
+    "all17_source_expressions_counted": true,
+    "pageless_modules_explicitly_supported": true,
+    "selected_compute_raw_source_bytes": 24952,
+    "selected_compute_raw_source_sha256": "a6ae9e92943d79be56725f097fc8b5c16bf47965d362f8cd0653029b07de7df6",
+    "limits": "Not every ancestor/qualified-name/display projection is independently reconstructed. No package runtime or generated CodeTypes observed."
+  },
+  "literal_source_version_findings": {
+    "pyarrow._generated_version": "25.0.1", "numpy.version": "2.5.3", "scipy.version": "1.18.1",
+    "meaning": "Three exact assignment literals in retained source verified by line/value/sourceSHA. No actual installed distribution/metadata/native/runtime attestation or version-expression evaluation."
+  },
+  "new_source_findings": [
+    "pyarrow.compute343 names _make_global_functions: source body obtains native registry/functions/kind/arity, resolves native doc options/classes from globals, constructs ordinary nested wrapper SOURCE and inspects signatures. Actual registry values/closures/callables/options/types/phase unbound.",
+    "Ordinary nested wrappers must not be relabelled dataclass-generated <string> code. Only actual compiler-emitted CodeTypes could later be registered. Separate namedtuple/_compute_docstrings/vendored docscrape/native _compute seams remain unresolved.",
+    "NumPy/SciPy distributor imports optionally name _distributor_init_local; absence/branch unobserved. NumPy core exposes further native/Python/type/env/exception-only scanning syntax; SciPy ccallback includes native/ctypes CFUNCTYPE/deferred cffi source, not observed callback allocation.",
+    "sklearn config's threading.local/environment source is not a thread-start proof. Base has further validation/metadata-routing/tags/repr/output dependencies. Mandatory original package/version admission unchanged; source declarations do not admit estimator/model calls.",
+    "Six METADATA/RECORD path candidates derived from three literal versions are explicitly inferred and UNREAD, not actual observed directories/versions/digests/native paths. No executable metadata reader or invocation supplied; sklearn actual metadata version/path remains unresolved."
+  ],
+  "review_and_validation": {
+    "worker": "existing /root/trading_action_consistency",
+    "READONLY_exact_source_invocation_resource_review_before_each_SSH": true,
+    "READONLY_actual_proof_and_seam_review": "No material overclaim found; package/native/thread/model acceptance remains unadmitted.",
+    "new_agent_limited_retry_worker_operations": false,
+    "helper_AS_bytes": 536870912, "CPU_seconds": 20, "alarm_seconds": 30, "SSH_seconds": 70,
+    "resource_or_RAM_reservation_or_native_bound": false,
+    "timeout_signal_owned_stop_crash_branches": "UNTESTED",
+    "six_reused_analyzer_utilities_AST_exact": true,
+    "five_control_source_AST_warnings_as_errors_and23_purpose_comments": "PASS",
+    "three_literal_assignment_checks_JSON_SHA_staged_diff": "PASS",
+    "four_generated_control_sources_reproduced_byte_exact": true,
+    "Ruff": "PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM",
+    "local_nonmutating_pin_count_inspection": "An inspection assertion expected3 hash literals but actual2; exited1 before writes or SSH. Corrected count/readback then exact pins/reproduction passed. No remote or payload failure."
+  },
+  "preservation": {
+    "remote_analysis_and_independent_and_tools_roots": "NEW_COMPLETE_IMMUTABLE_FILES_READBACK_OUTPUT_DIRECTORY_FSYNC",
+    "pages_retained_on_Spark": 22,
+    "Mac_source_content": "Exact summary/six small texts and independent proof including one authenticated compute text. Full15 copied source files retained on Spark; no bulk account/native artifacts moved.",
+    "local_root": "/tmp/capacity-native-package-syntax-evidence-20261018-v1", "files": 15, "data_bytes": 255863,
+    "manifest_sha256": "9d1062cfc5912d4757377291e41f0aa93d8f5e7bc54343c450009ceb3ef1be6a", "manifest_bytes": 6919,
+    "files_readback_root_resolved_parent_fsync": true,
+    "separate_control_reproduction_root": "/tmp/capacity-native-package-syntax-reproduction-20261018-v1",
+    "crash_durability_or_second_full_remote_evidence_archive": false,
+    "old_failed_completed_roots_sources_packets_admissions": "UNCHANGED"
+  },
+  "next_source_only": "Prepare concrete bounded stopped-N2 metadata path observation/read tools for independently reviewed source-derived METADATA/RECORD candidates; establish actual path/existence/bounds/version before claiming installed distribution/native authority. Missing/oversized targets refuse; no guessed binary suffixes/recursive copies/package import/cap relaxation. Resolve full selected-call/global/type/dataclass live-producer/classflags/native/phase contracts before any synthetic/genuine capacity proposal. Never replay closed15/10 censuses/AST inventories or old gates/packets for documentation.",
+  "execution_authorized": false,
+  "assembled_tree_manifests_native_closure_strategy_entrypoint_bootstrap_owner_caller_stager_packet_runtime_launch_admission": null,
+  "guard3b8be00b_25_payload_functions": "UNRUN_UNCHANGED",
+  "old_SourceBook2446_guard030cb5bb_G08_caps": "UNCHANGED",
+  "producer2431_reference2446_executor2468_original_receipts_lifetimes": "SEPARATE_MANDATORY",
+  "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+  "original_timing": "FAILED", "publication": "CLOSED", "missing_original_raw_receipts": "MISSING",
+  "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+  "actual_twohost_Spark2_image_daemon_temp_RAM": "UNADMITTED_UNCHANGED",
+  "heartbeat": "ACTIVE", "diagram": "NONE"
+}
