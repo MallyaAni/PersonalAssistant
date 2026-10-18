@@ -1,5 +1,63 @@
 # Next session
 
+## 2026-10-18 — Original reader integrated with CURRENT nightly source closure VERIFIED
+
+Verified source checkpoint867d3a7edafc10218ce7113c5bd856f4d47cb567 is pushed
+to main. Read research/historical-nightly-original-audit-source-integration-proof-2026-10-18.json.
+Eleven source/test paths are byte-identical to private6d4729c3; original branch
+and all earlier failed/completed roots remain preserved. Original N2/e0/map99e62
+selectors are unchanged and distinct from CURRENT f612/mapbfbcb6. Implementation
+is now integrated into main, NOT deployed. Never deploy pending main wholesale.
+
+CURRENT nightly85ceffcc changes ONLY its SOURCES assignment versus103cc98a,
+confirmed by AST equality for every other node. Streamf404/parserde29/numerical
+ae35/pending74e7/controls4289/observationcd2f are explicitly pinned. Native31,
+action/BIRTH/native-string/report-prefix logic, caps, Store/Cycle and production
+remain unchanged. Existing nightly test6c9d817e is unchanged. New test2072bda2
+checks actual combined imports, six physical dependency-corruption refusals,
+complete ordered synthetic history comparison and exact pending ArchiveRef bytes.
+
+Fresh exclusive Spark1 root nightly-audit-source-closure-20261018-green-v2
+COMPLETE: actual630ed9f8/f612 exited0/noOOM02:25:19.351325565Z;115pass/0skip/
+0fail/0errors3.743659s/RSS192176KiB, comprising9new+106existing CURRENT cases.
+All1702 source files beforeafter exact. Prior103cc manifest against newf404
+reproduced1real source-byte refusal on370ba2ec/rootred-v2,0.258536s/RSS179444KiB;
+wrapper0 means EXPECTED_RED, not old acceptance. Both roots immutable, never
+rerun for docs. N2 legacy198/parser73 and original byte/state gates were NOT
+rerun; their exact-source evidence remains separately scoped.
+
+Actual runtime explicitly local unix Docker socket/create--pullnever, UID1000/
+noneRO/1CPU/2GiB RAM=swap/PIDs64/nohealthcheck/lognone/tmp64MiB, five exact
+backend/docs/testdeps/auditRO+soleoutRW binds. Genuine loaders/artifacts/inference
+raise; no genuine model/data/account mounts or calls. Fresh3GiBmem/1GiBscratch/
+4096inodes are headroom, NOT reservations/fullnative/model/horizon proof. Suite
+60s KeyboardInterrupt/host240s/client caps+ownedCID cleanup source-reviewed;
+timeout/stop branches unexercised. Existing worker READONLY review only.
+
+Preserve firstred-v1/2eddc383 exit1/noOOM: full/app bind hid image desk_brief
+prompt, before pytest/proof; NOT expectedRED. Narrowed mounts only in newv2.
+Initial independent verifier239e3b93 assumed filenames in pytest node IDs;
+wrapper lost remote stderr, so no original traceback claim. Actual retained IDs
+omit filenames. Corrected6046bff4 matches exact first9 IDs+all115unique outcomes,
+without rerunning tests. Independent8d2349b2/1247470B freshly inspects all3stopped
+containers and checks isolation/full source SHA+exact decimal physical fields/
+native31/receipts/failure preservation. Root independent-20261018-v2 COMPLETE.
+Nine controller/original-source files66885B preserved exclusively on Spark1 at
+nightly-audit-source-closure-controller-source-20261018-v1/manifest84fcc7e5,
+fsynced/readbackSHA; initial and final sources/failed roots retained.
+
+NEXT: source-composition boundary is CLOSED; do not repeat115/RED1 or previous
+completed gates for docs. Independently review a bounded original numerical/
+model-cache capacity or native-checkpoint integration step within its profile.
+No full original/corrected/genuine run or real-owner execution authorized here.
+Ownerad25/actualtwohost still NOT ADMITTED, Spark2 image/load/daemon-temp/RAM/
+resource/host gaps unchanged, no repetitive probes or denied-read bypass.
+Fullnative/CAS/NaNmetadata/restore/horizon/coordinator/corporate actions open.
+Original timing FAILED/publication CLOSED/missing raw receipts unchanged;
+genuinev6 OPEN/PAUSED/no replay/adoption/new run; weekday/intraday/fill/UI
+UNVERIFIED. Heartbeat ACTIVE/no permission question. Diagram impact: NONE —
+existing private offline helpers/source declarations; deployed system unchanged.
+
 ## 2026-10-18 — Private actual-owner barrier source and isolated ordering VERIFIED
 
 Read research/historical-checkpoint-owner-barrier-proof-2026-10-18.json.

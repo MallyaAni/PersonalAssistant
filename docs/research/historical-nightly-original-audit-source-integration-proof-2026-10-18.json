@@ -1,0 +1,158 @@
+{
+  "schema": "nightly-original-audit-source-integration-proof/1",
+  "status": "VERIFIED_PRIVATE_SOURCE_COMPOSITION_AND_SYNTHETIC_CURRENT_LIFECYCLE_ONLY",
+  "starting_head": "c0f9458e11436917393c97f2f3ab7483f7dc2108",
+  "verified_source_commit": "867d3a7edafc10218ce7113c5bd856f4d47cb567",
+  "branch": "codex/learned-live-release-20261006",
+  "objective": "Integrate the already verified original streamed reader and explicitly repin the CURRENT nightly audit-helper closure without changing native behavior, profile identity or genuine reservations.",
+  "implementation": [
+    "Eleven source/test paths are byte-identical to private6d4729c3. Original CLI remains separately pinned to its original N2/e0 profile; no serving/native profile substitution.",
+    "CURRENT nightly changed only its SOURCES assignment: stream f404 plus parser de29, numerical ae35, pending74e7, controls4289 and observationcd2f. AST equality holds for all other nodes versus prior103cc98a.",
+    "Existing106-case CURRENT nightly test file remains exactly6c9d817e. New9 cases bind actual imports, refuse changed physical copies of all6 helpers, compare every ordered synthetic history row and preserve exact pending archive-reference bytes."
+  ],
+  "source_sha256": {
+    "backend/cli/audit_original_live_model_history.py": "22d374f166b77d4b0346120aa55b3f9e652496503b88d3fae0681be04b9ab5d5",
+    "backend/market/live_model_history_input_auth.py": "35ad5f5f96fa7951b6163512ab733a9168869eef17038e030b7dad4dcbb1b111",
+    "backend/market/live_model_history_nightly_model.py": "ae35feda683debb13e83bbcd9d5c75a35b71b10b1417d571cc7c3fcdd3f3cde9",
+    "backend/market/live_model_history_pending_audit.py": "74e7d9800bf1bdeb51655f09ae2846bfb0dbbcc67afdcad705405a849eb0cf02",
+    "backend/market/live_model_history_stream_audit.py": "f404e15be6e97caf856a4ba6db22eedef51ff5a4e3304dcbed90cf8e0abac2ff",
+    "backend/market/original_history_json.py": "de29c1017f4c9eadd874b2fbe0d85b4c80ced8e7a43fb6bd4f779c3d726cb2eb",
+    "backend/market/historical_conditional_nightly.py": "85ceffcc1ade74f01bb55f7754d289a2edb78ef0d1538f0cf8786662840a52fd",
+    "backend/tests/test_live_model_history_input_auth.py": "a4a23439c45020cd669b2991719de2534b9d799341385b1df6a55e3cccb39c18",
+    "backend/tests/test_live_model_history_stream_audit.py": "3ca309bf7ec7a541dd5b44beedacac923431e3c576e68c3406e8115f0c243d61",
+    "backend/tests/test_original_history_json.py": "5ed6e00d11145347337f93f856e8cd8e0aa78a2c180b0ce8653b0c3b61497af6",
+    "backend/tests/test_original_history_sha_map.py": "fde4c0c27d9d5b9044dc723f77dcd32e158b32271e3b48619dd215376ae8879a",
+    "backend/tests/test_original_live_model_history_entrypoint.py": "9c1a500fa58bef058a065e0e2e7a6489a60c156733d2cc69cf603711ecd28c85",
+    "backend/tests/test_historical_conditional_nightly.py": "6c9d817eb024446b96d00290fddd374b8006e55b4af119391d9f84c093cc4117",
+    "backend/tests/test_historical_nightly_audit_source_closure.py": "2072bda267ebbd7d957369325af26743b83b0387b4d5688a4bb731ebcdb37280"
+  },
+  "controller_sources": {
+    "/tmp/validate_nightly_audit_closure_20261018.py": {
+      "sha256": "b7ba40b09af7d6fda8a00d1d307858d13e928555ce08f68c00ff4d28610ee127",
+      "bytes": 5510
+    },
+    "/tmp/checkpoint_nightly_audit_closure_host_20261018.py": {
+      "sha256": "4dd2ca1839d8247409d2d9efae67e0899521c672d50437276e87d12a472e66e0",
+      "bytes": 10908
+    },
+    "/tmp/launch_nightly_audit_closure_20261018.py": {
+      "sha256": "9f5309b1ccf602732016eae0128f59d01cb36cb7c5103ecb578fc8cbe9cb6144",
+      "bytes": 6250
+    },
+    "/tmp/verify_nightly_audit_closure_20261018.py": {
+      "sha256": "6046bff4cba2e0384cab8398aca2f85f7b608468757a02859ea2669e0eab1bdf",
+      "bytes": 11394
+    },
+    "/tmp/verify_nightly_audit_closure_initial_20261018.py": {
+      "sha256": "239e3b93ab5e0bb242ac6977d3bac9dd2e1eb2fa7b5f669cfc47c4ada828da6d",
+      "bytes": 10666
+    },
+    "/tmp/review_nightly_audit_closure_20261018.py": {
+      "sha256": "4612e8c6281d18ce69f71502f9a9e1f3a6ce1c52598820a735198191e00a1747",
+      "bytes": 2272
+    },
+    "/tmp/checkpoint_nightly_audit_closure_host_20261018_v1_preserved.py": {
+      "sha256": "2ba96c0effca6ae399847dce9406e9cc9fb6cb93dce9e8e798d1618aa0325a08",
+      "bytes": 10741
+    },
+    "/tmp/launch_nightly_audit_closure_20261018_v1_preserved.py": {
+      "sha256": "8ba0ad1052ea1cf7e4ae8d250ff734c9d137f6dd82fcc045a730e4bedc03e3ff",
+      "bytes": 6250
+    }
+  },
+  "inherited_original_reader_evidence": {
+    "private_commit": "6d4729c3df9b0ef2d62ab9b848c1499f2c3d954d",
+    "proof": "original-external-input-map-proof-2026-10-17.json",
+    "scope": "Previously verified N2/e0 parser and198 affected legacy cases, complete two-file consistency and complete2431-source/164833-input byte authentication remain separate exact-source evidence. None was rerun in this checkpoint. No new original model/account/economic acceptance.",
+    "profiles": "Original N2/e0/map99e62 remains distinct from CURRENT f612/mapbfbcb6. Native31 and all native functions remain unchanged."
+  },
+  "validation": {
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "native31_map_sha256": "bfbcb6ece4ea500726e00abbb06fc2c84d63d386bb307958016915357aaef5b3",
+    "runtime": "Spark1 explicitly local unix:///var/run/docker.sock; create --pull never; UID1000:1000/networknone/readonly/1CPU/2GiB RAM=swap/PIDs64/nohealthcheck/lognone/capdropALL/no-new-privileges/tmp64MiB. Five exact mounts: backend/docs/testdeps/audit readonly, sole out writable.",
+    "resources": "Fresh3GiB MemAvailable/1GiB scratch/4096inodes before create. Headroom is not reservation. Suite60s KeyboardInterrupt alarm, host240s work deadline, bounded clients/1MiB per stdout/stderr file, separate owned-CID-only cleanup. Timeout/stop branches not exercised. No full-native/model/horizon resource claim.",
+    "guards": "Genuine context/admission/inference/head/bank/publication/current-distribution/predict calls structurally raise. No genuine data/model/account/provider mounts or calls. Existing synthetic native planner/broker calls only.",
+    "red": {
+      "root": "/home/animallya96/scratch/nightly-audit-source-closure-20261018-red-v2",
+      "container": "370ba2ec4025e4f4eb8230bc1cfe36006ac4266f32e878c4e41175a38a3eaa83",
+      "source": "Prior103cc98a against the integratedf404 stream; actual source verifier refuses Conditional source bytes differ before manifest acceptance.",
+      "tests": 1,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "pytest_exit": 1,
+      "wrapper_exit": 0,
+      "meaning": "EXPECTED_RED only; wrapper0 is not old-manifest acceptance.",
+      "elapsed_seconds": 0.25853634160012007,
+      "peak_rss_kib": 179444,
+      "finished_at": "2026-10-18T02:25:05.568239789Z",
+      "oom_killed": false,
+      "proof_sha256": "ebc09816d8941eaf4468492fb3e23b57683e4c956fd5fd72a9827917c619ce91",
+      "complete_sha256": "34c03946408156d3ab5efcb7b10c221978763e99088eb3da9df9f9f205228081"
+    },
+    "green": {
+      "root": "/home/animallya96/scratch/nightly-audit-source-closure-20261018-green-v2",
+      "container": "630ed9f8171795d959bb6a2d205561f9cb7c1ef9d9ff5ac63d4251a293d9436d",
+      "passed": 115,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "new_closure_cases": 9,
+      "retained_current_nightly_cases": 106,
+      "elapsed_seconds": 3.743658502586186,
+      "peak_rss_kib": 192176,
+      "finished_at": "2026-10-18T02:25:19.351325565Z",
+      "exit_code": 0,
+      "oom_killed": false,
+      "source_files_before_after_exact": 1702,
+      "proof_sha256": "9ade3abd0435f39572941bdf328e313142c06e93dc7261206be47df1c4048983",
+      "complete_sha256": "aaa45937272dc5bdd48e6959facbe1201d94ed6cf916fc64f38ea62f43cd1adf"
+    }
+  },
+  "preserved_failures": [
+    {
+      "root": "/home/animallya96/scratch/nightly-audit-source-closure-20261018-red-v1",
+      "container": "2eddc383ef58ee2425cd831141b79a9fb7fbade8f3d5ccb9da8a44bb2595b5c8",
+      "result": "Exit1/noOOM before pytest or proof: full/app bind hid image prompt /app/prompts/trading/desk_brief.md. No expected-RED or test acceptance claim. Narrowed backend/docs mounts only in separately namedv2 roots; initial runtime/root/helper/controller/logs preserved."
+    },
+    {
+      "result": "First independent wrapper exited1 without exposing captured remote stderr; original verifier239e3b93 preserved. Read-only source/report inspection found its invalid filename-in-nodeid assumption: actual IDs start ::test_. Corrected verifier matches exact first9 IDs and all115 unique outcomes, preserving count/strict results. No test rerun. Do not claim an independently captured original traceback."
+    },
+    {
+      "result": "Local Python -c verifier-launch attempt had literal escaped-newline SyntaxError before any command executed; replaced with a saved structured controller that retains stdout/stderr/exit. No fixture or verifier root was created by that local syntax error."
+    }
+  ],
+  "independent_review": {
+    "root": "/home/animallya96/scratch/nightly-audit-source-closure-independent-20261018-v2",
+    "proof_sha256": "8d2349b267c83bd1f6f3944a97532abb2af1bdda221c37899a55608c68a40308",
+    "proof_bytes": 1247470,
+    "verifier_sha256": "6046bff4cba2e0384cab8398aca2f85f7b608468757a02859ea2669e0eab1bdf",
+    "scope": "Fresh explicitly local Docker inspections of all3 stopped containers, exact isolation/mounts/exit/noOOM, complete/proof/payload/runner/helper hashes,1702-source physical SHA/decimal-string metadata per accepted root, native31 baseline equality, exact9 new IDs/115 unique outcomes and retained first import failure. No fixture replay.",
+    "worker_review": "Existing trading_action_consistency reviewed sources/invocation READONLY, no edits/imports/runtime. Corrected suite alarm exception and explicit local-daemon/no-pull guards. No additional model/agent substituted for limited original-audit workers."
+  },
+  "source_preservation": {
+    "root": "/home/animallya96/scratch/nightly-audit-source-closure-controller-source-20261018-v1",
+    "files": 9,
+    "source_bytes": 66885,
+    "manifest_sha256": "84fcc7e545e0d495f66b62d3d14928fac5b0170b5743dc352eec78c2b928b948",
+    "policy": "Exclusive small source root; full original/final controller/host/verifier bytes and preservation helper, per-file fsync/readbackSHA, manifest last, directory fsync. Existing failed/completed roots untouched."
+  },
+  "checks": {
+    "ast": "PASS",
+    "new_function_purpose_comments": "PASS",
+    "diff_check": "PASS",
+    "ruff": "UNAVAILABLE_LOCALLY_NOT_CLAIMED",
+    "nightly_only_SOURCE_AST_change": true,
+    "eleven_private_paths_byte_equal": true,
+    "production_deployment": false
+  },
+  "remaining": [
+    "Code source integration is merged to main but not deployed; never deploy pending historical main wholesale.",
+    "Original full numerical/model-cache/causal/ledger/economics/calendar/all94payload acceptance remains incomplete; original timing FAILED/publication CLOSED/missing initial raw receipts unchanged.",
+    "Genuine correctedv6 remains OPEN/PAUSED, no replay/adoption/new genuine run. Native NaN-bearing physical/entry/decision metadata, Store/Cycle/restore/native filesystem reservation/full RAM/horizon/coordinator/corporate-actions integration remains open.",
+    "Actual ownerad25 and actual two-host execution remain NOT ADMITTED/NOT RUN. Spark2 exactf612 image load/daemon-temp/incremental-memory/resource/host evidence remains unavailable; no repeated missing-image probe or denial bypass.",
+    "Fresh ordinary weekday and subsequent intraday/fill/UI acceptance remain UNVERIFIED."
+  ],
+  "next_boundary": "Continue a separately reviewed bounded original numerical/model-cache capacity or native checkpoint integration step within its existing profile/contract. This source checkpoint authorizes no full original/corrected/genuine run or real owner execution. Never repeat115/RED1 or prior completed byte/state/LOCAL/controller gates for documentation.",
+  "diagram_impact": "NONE — existing private offline audit helpers and manifest composition; deployed architecture unchanged."
+}

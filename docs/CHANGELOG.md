@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-18 — Compose original streamed audit with the CURRENT nightly helper
+
+Integrated the reviewed original-reader source and tests from private6d4729c3,
+then explicitly pinned its parser, stream, numerical, pending, controls and
+observation dependencies in the CURRENT nightly manifest. All other nightly
+AST nodes and native31 remain unchanged. Original N2 and CURRENT profiles remain
+distinct; this is a source integration, with no deployment or genuine run.
+
+Exact f612 composition passed115 synthetic/native cases,0skip,3.743659s;
+nine new cases cover source corruption, ordered complete history and raw archive
+identity. The old manifest reproduced one source-byte refusal. A separate checker
+validated stopped runtime, mounts, all1702 source hashes, native31 and retained
+failures. Original byte/state intake and N2 legacy gates were not repeated.
+Source checkpoint867d3a7e; read
+research/historical-nightly-original-audit-source-integration-proof-2026-10-18.json.
+Original timing remains FAILED/publication CLOSED; full historical/model and
+weekday/intraday/fill/UI acceptance remain UNVERIFIED.
+
 ## 2026-10-17 — Bind the private nightly report to its consumed price prefix
 
 The corrected-account wrapper preserves full archive hashes separately and
