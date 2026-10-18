@@ -1,5 +1,56 @@
 # Next session
 
+## 2026-10-18 — Tiny generated-code diagnostic source prepared; UNEXECUTED
+
+Source66c10b36c60a322bac2785203bc4d4e5e33dae8f is SOURCE ONLY. Read
+research/original-loader-generated-code-diagnostic-source-proof-2026-10-18.json
+and original-loader-generated-code-diagnostic-proposal-2026-10-18.json
+(2eb805ac/8968B). Active diagnostic324d437e/16120B, owner743820b9/7042B,
+verifierb75869b6/8765B are UNEXECUTED. Initial393f5f55/12330B draft preserved.
+No helper import/bytecode compile/exec, packet/source-book/fixture build, SSH,
+host probe/Docker operation or new diagnostic/test occurred this checkpoint.
+Actual source/runtime roots and fresh scoped admission are not prepared.
+
+Two proposed fresh children compare only frozen74B Sample definitions: deferred
+preserves capacity_dataclass-before-replay_broker preparation order and retained
+rows; live uses unchanged CallFence.profile CodeType extracted from full pinned
+737d harness compilation, never executing its module/class import code. A tiny
+trip adapter observes the computed generated record after the original inline
+hash/refusal, then stops import. Minimal fence/code registry are INJECTED; no
+complete CallFence constructor/audit hook/failure-slot/SourceBook acceptance.
+No financial module import, Sample instance, model/account data or fit.
+
+READONLY review found initial live helper changed observer frame/dict evaluation;
+distinct active draft removes that helper around the actual inline profile hash.
+Deferred helper still requires full frozen-record reproduction before inference.
+Retain all8fields/every matching wrapper/ordinal; typed CodeType metadata follows
+primary hashes. Live raw marshal is POST-observation control, never original
+bytes. Null generated record is preserved if refusal occurs earlier. The old
+failed G08 hash remains unavailable; no cause or source correction claimed.
+
+Reuse exact2e505205 Owner mechanics for one new two-bind e0 phase; no proposed_run
+or guard-suite rerun. Proposed UID1000/noneRO/1CPU/2GiB=swap/PIDs32/tmp64/noHC/
+lognone, tiny source RO/output RW only; two children5sCPU/7swait,20s parent/25s
+phase/60s owner. Source-only cleanup is not SIGKILL/transport-loss acceptance.
+Independent verifier imports no diagnostic/fixture/suite/harness/backend; one
+future fresh exact-CID inspection via exacte0fa helper and full retained files.
+Review found same-byte source-inode gap; verifier now binds current full SHA/
+bytes/physical records to owner before/after as well. Narrow review confirmed
+fix in source, no runtime. AST/JSON/hash links/tiny74SHA/purpose37/diff pass;
+Ruff unavailable. Prior source/harness hashes unchanged, zero old gates repeated.
+
+NEXT ROOT: prepare exact small packet/source-book and bounded staging/caller
+record with independent preservation/readback. Then review fresh SYNTHETIC-only
+actual host/image/source/jobs/resources and exact final invocation before ONE
+new tiny diagnostic. No fresh admission exists; never reuse old v2 admission.
+Do not regenerate this source for docs, replay v2 or invent the missing old hash.
+Failed c507 v2 remains preserved:23 expected/1failed/41cases+4cleanup UNRUN.
+No genuine loader/full original/corrected/account or actual two-host owner run.
+Combined model/RAM/horizon/historical/weekday/intraday/fill/UI UNVERIFIED;
+original timing FAILED/publication CLOSED/missing receipts unchanged; genuinev6
+OPEN/PAUSED/no replay/adoption/new run; Spark2 image/daemon-temp/RAM gaps unchanged.
+Heartbeat ACTIVE/no permission question. Diagram impact: NONE — source only.
+
 ## 2026-10-18 — N2 guard v2 actual attempt FAILED; evidence retained, no replay
 
 Read research/original-loader-guard-synthetic-failure-proof-2026-10-18.json.

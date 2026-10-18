@@ -1,0 +1,66 @@
+{
+  "schema": "original-loader-generated-code-diagnostic-source-proof/1",
+  "status": "SOURCE_PREPARED_REVIEWED_ONLY_UNEXECUTED",
+  "starting_head": "c507f77cd3158566f0a5d224e1cc9446d1e9803b",
+  "source_checkpoint": "66c10b36c60a322bac2785203bc4d4e5e33dae8f",
+  "scope": "Prepare the next bounded two-child synthetic diagnostic for the first failed G08 boundary. No source packet, admission, diagnostic execution, old gate replay or genuine loader/model/account operation.",
+  "proposal": {"path": "original-loader-generated-code-diagnostic-proposal-2026-10-18.json", "sha256": "2eb805acfee88825c08891db23742c5e453e0795e358f1e9ce5f3f1374abf668", "bytes": 8968},
+  "artifacts": {
+    "sources/original-loader-generated-code-diagnostic-v2-2026-10-18.py": {"sha256": "324d437e7cc9ba365966e4513f270c2e04794c242c2f87bbfd3ae5e8ea8bf3ee", "bytes": 16120, "functions": 15, "state": "ACTIVE_PROPOSAL_UNEXECUTED"},
+    "sources/original-loader-generated-code-diagnostic-owner-2026-10-18.py": {"sha256": "743820b93735b750ef7da783c13242e29c17141304c4a8fb5c24997b85dead42", "bytes": 7042, "functions": 5, "state": "UNEXECUTED"},
+    "sources/original-loader-generated-code-diagnostic-verifier-2026-10-18.py": {"sha256": "b75869b6bc9174ad4603202bcde625fe2cb82372996ed4cdcd71c64984088158", "bytes": 8765, "functions": 2, "state": "UNEXECUTED"},
+    "sources/original-loader-generated-code-diagnostic-2026-10-18.py": {"sha256": "393f5f551de66129dec36640e615ccc8861c9dfe7037c5cab3d5e9b425a50d4a", "bytes": 12330, "functions": 15, "state": "SUPERSEDED_UNEXECUTED_DRAFT_RETAINED"}
+  },
+  "source_findings": [
+    "Minimum deferred comparison must retain original preparation order: tiny capacity_dataclass namespace first, then replay_broker. No Sample instance or financial code. Frozen JSON is parsed after deferred primary hashes to avoid adding its strings before preparation sampling.",
+    "Initial live helper adds a frame reference and creates a six-field dict before hashing, while the original guard evaluates its complete literal inline. Preserved initial393f5f55; distinct active324d437e extracts unchanged CallFence.profile CodeType from full pinned harness compilation, without executing module/class import code. No helper wraps its inline hash.",
+    "Diagnostic trip adapter reads the profile frame's computed generated record only after the method hashes and refuses. Minimal fence/code registration are explicitly injected; no complete constructor/audit-hook/failure-slot/SourceBook acceptance claimed. Refusal before generated exists yields null.",
+    "Live marshal bytes are explicitly post-observation control, never original bytes. Original failed G08 hash remains missing. Deferred helper is still conditioned on complete frozen-record reproduction before any inference; multiple wrappers may share seven fields, so all eight fields and every candidate row/ordinal are retained.",
+    "Readback initially checked owner before/after source equality plus current SHA/size only. It now compares every current full physical record against retained owner source-before/source-after as well, closing the identified same-byte inode-replacement gap in source."
+  ],
+  "review": {
+    "worker": "Reused existing healthy trading_action_consistency READONLY; no new agent, limited-worker retry, edits, imports, probes or runtime by reviewer.",
+    "final_diagnostic": "No remaining source blocker found in full-compilation profile extraction/post-hash observation/null handling and explicit fidelity limits. This is not runtime admission.",
+    "final_owner_and_verifier": "Startup/phase arguments and bounded cleanup appeared coherent. Narrow final reread confirmed retained-source keyset, before/after equality and full current SHA/bytes/physical comparison close the reported gap. No executed cleanup/probe acceptance."
+  },
+  "concrete_scope": {
+    "frozen_manifest": "c8f28b55/11817B from failed v2's tiny prepared calls.json only, future held-FD/SHA copy; no old case rerun.",
+    "harness": "737d4236/30408B remains unchanged inert text; future full compilation extracts one profile function, never imports the harness/backend as an application.",
+    "runtime_owner": "Reuse exact2e505205 Owner mechanisms for one newly named phase with two binds; no proposed_run/guard suite.",
+    "readback": "Exacte0fa867a helper for retained-file capture and one fresh exact-CID stopped inspection only. New source/child/file/outcome comparisons, no probes replayed.",
+    "runtime": "Proposed cached e0 UID1000/noneRO/1CPU/2GiB=swap/PIDs32/tmp64/noHC/lognone. Two tiny children5sCPU/7swait/262KiB per-file;20s parent/25s phase/60s owner; independent30s readback. Source-only limits are not observed headroom, reservations or daemon memory bounds.",
+    "genuine_backend_model_original_account_market_credentials_socket_mounts": false
+  },
+  "checks": {
+    "four_source_AST": "PASS",
+    "purpose_comments": "PASS37 functions including retained draft",
+    "tiny_source_bytes": "PASS74B/fullSHA1247f217",
+    "proposal_JSON_and_exact_artifact_hash_links": "PASS",
+    "prior_v2_source_proposal_and_harness_full_SHA_preservation": "PASS_NO_OLD_TEST_REPLAY",
+    "staged_diff_check": "PASS",
+    "ruff": "UNAVAILABLE_NOT_CLAIMED",
+    "helper_import_bytecode_compile_or_exec": false,
+    "packet_fixture_or_source_book_built": false,
+    "SSH_host_probe_Docker_operation": false,
+    "synthetic_diagnostic_probes": 0,
+    "old_completed_gates_repeated": 0,
+    "genuine_tests_run": 0
+  },
+  "remaining_before_execution": [
+    "Prepare and pin the actual small source packet/book and bounded staging/caller record; independently verify exclusive readback/preservation. No such packet/book or remote root was created by this work, and remote absence has not been probed.",
+    "Fresh independently reviewed SYNTHETIC-only actual host/image/UID/source/jobs/resources and exact final invocation. Placeholder hashes are not authority. Fresh scoped admission does not exist; old v2 admission is consumed and may not be reused.",
+    "One newly named tiny diagnostic, then independent terminal proof; retain any failure/non-reproduction without automatic retry. No old suite replay, original failed hash recovery, full-fence acceptance or source correction inferred from this source checkpoint."
+  ],
+  "execution_authorized": false,
+  "runtime_admission": null,
+  "old_v2_suite": "FAILED_PRESERVED_NO_REPLAY_23_EXPECTED_1_FAILED_41_PLUS_4_UNRUN",
+  "original_or_production_changed": false,
+  "harness_contract_native_store_nightly_cycle_caps_changed": false,
+  "original_timing": "FAILED_UNCHANGED",
+  "publication": "CLOSED",
+  "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+  "actual_two_host": false,
+  "full_model_RAM_horizon_historical_weekday_intraday_fill_UI": "UNVERIFIED",
+  "heartbeat": "ACTIVE",
+  "diagram_impact": "NONE: private unexecuted diagnostic source, no production flow changed."
+}
