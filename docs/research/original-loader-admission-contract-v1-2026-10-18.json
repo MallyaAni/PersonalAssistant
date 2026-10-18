@@ -1,0 +1,92 @@
+{
+  "admission": null,
+  "calendar": "Actual new real file identity with unchanged reviewed_sessions AST/same real parent data paths. New import root explicitly equals archive root; three original calendar data hashes and original calendar bytes remain authenticated. Function/body equality is not calendar/native/parity acceptance.",
+  "entrypoint": null,
+  "execution_authorized": false,
+  "full_source_map": {
+    "base_files": 2446,
+    "bytes": 570874,
+    "compact_union_sha256": "40f990c7622b264c5e4b7ffc4bfbe843f0268818e2d4cbbd08f732603549b96e",
+    "local_path": "/tmp/capacity-admission-source-map-20261018-v2/source-map.json",
+    "module_files": 11,
+    "sha256": "b81649d3a4b2413e2f95fe3b3bc050077989d238b902f80bfbbda5ee87fdfa67",
+    "tree_assembled_or_runtime_admitted": false,
+    "union_files": 2453
+  },
+  "launch": null,
+  "lifetime": [
+    "distinct wrapper + unchanged original schema2",
+    "actual original runtime",
+    "new root host mapping",
+    "new2453 byte map separately from old audit_source map",
+    "exact native versions",
+    "fresh proof root/owned reserved failure FD",
+    "full completion size/native31/new archives",
+    "legacy source/Git",
+    "producer",
+    "new calendar and original data hashes",
+    "full session/raw physical preservation",
+    "complete BEFORE byte receipt",
+    "retain separately admitted loader result; no loader call",
+    "complete AFTER byte receipt/equality/preservation/unchanged/new source",
+    "complete JSON+UTF8 with all graphs retained",
+    "256MiB result bound unchanged",
+    "exclusive file fsync/hash readback plus held/path-identity directory and proof-parent fsync",
+    "drop only own RAM refs; retain files"
+  ],
+  "model_import_strategy": null,
+  "new_module_map": {
+    "backend/__init__.py": "162e5eeb402108f20b1a976525f5bbf5a03a12ea619f64a19ce5c0fe9aec09af",
+    "backend/market/__init__.py": "5a886c13f35054c2238d9a661349a38ea242495972aae02a7aa2029dd1533910",
+    "backend/market/capacity_original_admission_lifecycle_v1.py": "3acd8b296b3d14234d7c769e2ce4c5a63c8e381d87d7677476964ea1a5f84b1b",
+    "backend/market/capacity_original_admissions_v1.py": "b53adaab7c3bb03e12062521ceb8f1400ad63c5b26454bab25af909769d6d247",
+    "backend/market/capacity_original_archive_adaptations_v1.py": "39f2884741036bbe3a33f451909a59b46924c43ea699e39670c1c13fbcde5134",
+    "backend/market/capacity_original_archives_v1.py": "0212bc8dedd0fb44502547fe974670ef84c21db608ab633e2a818c9e718e692b",
+    "backend/market/capacity_original_calendar_v1.py": "37140d9ff8ae5a59d10aa56923f1ce2008b6e603ddb38933a517437d1137fc05",
+    "backend/market/capacity_original_evidence_v1.py": "400de9e73e2debb06c7267c925ca0914dc75a98c77f3044a49b88d26db26be25",
+    "backend/market/capacity_original_metadata_v1.py": "d413e748bf2b1eb63f4d267371f22cf6431f6ae650368676c815b07779723135",
+    "backend/market/live_model_history_input_auth.py": "35ad5f5f96fa7951b6163512ab733a9168869eef17038e030b7dad4dcbb1b111",
+    "backend/market/original_history_json.py": "de29c1017f4c9eadd874b2fbe0d85b4c80ced8e7a43fb6bd4f779c3d726cb2eb"
+  },
+  "next": "Prepare distinct bounded SYNTHETIC context/admission/lifecycle parity proposal/bootstrap/caller/packet; original references isolated explicitly SYNTHETIC. Include map/root/calendar/source/lifetime/serialization/failure-phase controls and actual module origins. No genuine loader/context/source/runtime admission. Fresh independent source/native/runtime/resources/exact invocation review before ONE new scoped test; no old80/23/65+4/tiny/diagnostic/v2 body replay/root-admission reuse.",
+  "old_invocation_and_source_map": "Original schema2/value.audit_source_sha256 receipt retained unchanged; new external capacity binding/map/root receipt separate. No old map reinterpretation or legacy file override.",
+  "schema": "capacity-original-admission-contract/1",
+  "sources": {
+    "original-loader-capacity-admission-lifecycle-v1-2026-10-18.py": {
+      "bytes": 13575,
+      "sha256": "3acd8b296b3d14234d7c769e2ce4c5a63c8e381d87d7677476964ea1a5f84b1b"
+    },
+    "original-loader-capacity-admissions-v1-2026-10-18.py": {
+      "bytes": 13342,
+      "sha256": "b53adaab7c3bb03e12062521ceb8f1400ad63c5b26454bab25af909769d6d247"
+    },
+    "original-loader-capacity-calendar-v1-2026-10-18.py": {
+      "bytes": 1094,
+      "sha256": "37140d9ff8ae5a59d10aa56923f1ce2008b6e603ddb38933a517437d1137fc05"
+    },
+    "prepare-original-loader-admission-source-v1-2026-10-18.py": {
+      "bytes": 12582,
+      "sha256": "479b6bf04d440fca7dbfdf0e399a10da3aad8a45f6d1cabc3fc6dbcbd97dcd25"
+    }
+  },
+  "starting_revision": "0c1f6109d3019b9f9223558d757182ac8835ab2a",
+  "static_review": {
+    "bytes": 4466,
+    "path": "original-loader-admission-static-review-v1-2026-10-18.json",
+    "sha256": "a4749f9de6aa4410bf386b91115eefd0d3f35919d00d32570b698d740eccee97"
+  },
+  "status": "SOURCE_PREPARED_UNEXECUTED_WRAPPER_LIFECYCLE",
+  "unchanged": {
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "heartbeat": "ACTIVE",
+    "historical_weekday_intraday_fill_UI_RAM_horizon": "UNVERIFIED",
+    "original_timing": "FAILED",
+    "publication": "CLOSED"
+  },
+  "unimplemented": [
+    "actual pre-import fence/finder/generated+phase call manifests/native extension closure/exact host/runtime/resource admission",
+    "genuine loader/type/model strategy",
+    "timing/RAM/aliasing/deepcopy/readonly/lifetime/preservation behavioral acceptance",
+    "completion/failed root archival cleanup and bounded cumulative disk metadata reservation"
+  ]
+}

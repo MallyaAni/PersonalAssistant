@@ -1,0 +1,93 @@
+{
+  "calendar": {
+    "imports": "json/lru_cache/Path/NumPy only; no original calendar/Panel/MarketStore/Yahoo import. New calendar source/package/native/data parity UNRUN.",
+    "new": {
+      "bytes": 1094,
+      "sha256": "37140d9ff8ae5a59d10aa56923f1ce2008b6e603ddb38933a517437d1137fc05"
+    },
+    "new_identity": true,
+    "original": {
+      "bytes": 13181,
+      "sha256": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4"
+    },
+    "reviewed_sessions_AST_exact": true
+  },
+  "copied_admissions": {
+    "calendar_admission": {
+      "exact_after_declared_calendar_prefix_only": true,
+      "new_AST": "2beece26cadd9975bb9d46a95487d65fa39dce54d979838d38ea5e577359da2a",
+      "original_AST": "8e8ba5489233b5df9a90bdd0698800b3f85073dafea7f2fa4d9387d24b3e27ff"
+    },
+    "invocation": {
+      "exact_after_declared_calendar_prefix_only": true,
+      "new_AST": "62c785991c57459cc01af045b053a974a771dd04f5709b24ac30dd120151a09f",
+      "original_AST": "62c785991c57459cc01af045b053a974a771dd04f5709b24ac30dd120151a09f"
+    },
+    "producer_admission": {
+      "exact_after_declared_calendar_prefix_only": true,
+      "new_AST": "d06d4d0e002ab72001cbda3fd73ddc12d4d69cbc8fe63e23ba328da8082dad20",
+      "original_AST": "d06d4d0e002ab72001cbda3fd73ddc12d4d69cbc8fe63e23ba328da8082dad20"
+    },
+    "runtime_admission": {
+      "exact_after_declared_calendar_prefix_only": true,
+      "new_AST": "fe9d73d91fdafb00853c961f0a892a26d8469c14ceb56ad43cd100c1afb43e10",
+      "original_AST": "fe9d73d91fdafb00853c961f0a892a26d8469c14ceb56ad43cd100c1afb43e10"
+    },
+    "source_admission": {
+      "exact_after_declared_calendar_prefix_only": true,
+      "new_AST": "7c18cbe25b38fa7dab1282d57be92a144b797f01a852d2bcd361d5609bfea82f",
+      "original_AST": "7c18cbe25b38fa7dab1282d57be92a144b797f01a852d2bcd361d5609bfea82f"
+    }
+  },
+  "lifecycle": {
+    "bytes": 13575,
+    "sha256": "3acd8b296b3d14234d7c769e2ce4c5a63c8e381d87d7677476964ea1a5f84b1b"
+  },
+  "lifecycle_order": [
+    "distinct wrapper + unchanged original schema2",
+    "actual original runtime",
+    "new root host mapping",
+    "new2453 byte map separately from old audit_source map",
+    "exact native versions",
+    "fresh proof root/owned reserved failure FD",
+    "full completion size/native31/new archives",
+    "legacy source/Git",
+    "producer",
+    "new calendar and original data hashes",
+    "full session/raw physical preservation",
+    "complete BEFORE byte receipt",
+    "retain separately admitted loader result; no loader call",
+    "complete AFTER byte receipt/equality/preservation/unchanged/new source",
+    "complete JSON+UTF8 with all graphs retained",
+    "256MiB result bound unchanged",
+    "exclusive file fsync/hash readback plus held/path-identity directory and proof-parent fsync",
+    "drop only own RAM refs; retain files"
+  ],
+  "new_admissions": {
+    "bytes": 13342,
+    "sha256": "b53adaab7c3bb03e12062521ceb8f1400ad63c5b26454bab25af909769d6d247"
+  },
+  "original_CLI": {
+    "bytes": 21981,
+    "sha256": "22d374f166b77d4b0346120aa55b3f9e652496503b88d3fae0681be04b9ab5d5"
+  },
+  "schema": "capacity-original-admission-static-review/1",
+  "scope": "Public execute unconditionally refuses. Direct call bodies are UNRUN source proposals, not independently admitted operations. A guard slot is not proof a fence is installed, and map union is not an import/call closure. Loaded arbitrary non-None object is retained only, never model/type acceptance. Root mapping is not held-root-FD isolation. Failures retain newly created evidence/scratch; no retry, root adoption or native account change.",
+  "source_map": {
+    "base_files": 2446,
+    "bytes": 570874,
+    "compact_union_sha256": "40f990c7622b264c5e4b7ffc4bfbe843f0268818e2d4cbbd08f732603549b96e",
+    "local_path": "/tmp/capacity-admission-source-map-20261018-v2/source-map.json",
+    "module_files": 11,
+    "sha256": "b81649d3a4b2413e2f95fe3b3bc050077989d238b902f80bfbbda5ee87fdfa67",
+    "tree_assembled_or_runtime_admitted": false,
+    "union_files": 2453
+  },
+  "status": "SOURCE_ONLY_ALL_BODIES_UNRUN",
+  "unimplemented": [
+    "actual pre-import fence/finder/generated+phase call manifests/native extension closure/exact host/runtime/resource admission",
+    "genuine loader/type/model strategy",
+    "timing/RAM/aliasing/deepcopy/readonly/lifetime/preservation behavioral acceptance",
+    "completion/failed root archival cleanup and bounded cumulative disk metadata reservation"
+  ]
+}

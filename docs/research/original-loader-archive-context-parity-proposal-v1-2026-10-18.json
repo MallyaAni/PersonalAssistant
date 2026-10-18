@@ -1,0 +1,76 @@
+{
+  "schema": "capacity-archive-context-parity-proposal/1",
+  "status": "SOURCE_ONLY_ALL_PROPOSED_OUTCOMES_UNRUN_BOOTSTRAP_CALLER_PACKET_ABSENT",
+  "scope": "Distinct bounded SYNTHETIC acceptance for new context/reader/calendar declarations plus explicitly injected lifecycle units. Never genuine full archive/admission/loader/model/RAM acceptance. No old80/23/65+4/tiny/diagnostic/v2 body replay or root/admission reuse.",
+  "proposed_runtime": {
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "profile": "UID1000:1000/networknone/readOnly/1CPU/2147483648B RAM=swap/PIDs32/tmp64MiB/noHC/lognone/capdropALL/no-new-privileges; small auditRO+soleoutRW only",
+    "genuine_model_original_account_data_credentials_socket_mounts": false,
+    "fresh_children": 4,
+    "six_native_thread_envs": "OPENBLAS_NUM_THREADS/OMP_NUM_THREADS/MKL_NUM_THREADS/NUMEXPR_NUM_THREADS/VECLIB_MAXIMUM_THREADS/BLIS_NUM_THREADS all exactly1",
+    "child_CPU_seconds": 15,
+    "child_wait_seconds": 20,
+    "parent_seconds": 100,
+    "phase_seconds": 130,
+    "owner_seconds": 180,
+    "transport_seconds": 240,
+    "ordinary_source_log_bytes_perfile": 262144,
+    "packet_envelope_bytes": 2097152,
+    "headroom_not_reservation": "Fresh actual exact image/native packages/UID/jobs/absent-root/5GiB memory/4GiB scratch/8192inode headroom and exact invocation must be independently reviewed before a NEW scoped admission. No probes or admission yet."
+  },
+  "source_binding": {
+    "candidate": "Actual separately named modules at real /audit/app/backend paths with exact module origins/hashes; original strict parser/input-auth/evidence/metadata/adaptations unchanged. No sys.modules stand-ins, original module __file__ remapping or runtime projection masquerading as original.",
+    "native31": "All31 actual inert N2 source files/29Python+2docs under separate test root; source reader authenticates their bytes without executing account/provider/policy code. Original legacy6+producer5 files and all three catalog bytes remain distinct source inputs. These file copies are not original source-root authority or full2431 genuine admission.",
+    "original_reference": "Full-source-compilation function/class declarations in isolated explicitly SYNTHETIC globals only; no original effect-module import or execution. Reference __file__ must identify its retained real inert reference path. Do not instantiate PaperState or call account/broker/model functions. Paper layout reference is declaration metadata/pure path only.",
+    "calendar": "New real calendar module with exact public frozen reviewed calendar data at its actual real parent/data paths. Separate isolated original reviewed_sessions reference; actual NumPy only for bounded date/calendar arithmetic. Root/data-hash admission cases use the actual new module root and explicitly SYNTHETIC complete-private-v10 calendar metadata for2019-03-01/2019-03-04, not full-profile claims from tiny archive rows. No original calendar/Panel/MarketStore/Yahoo import. No model loading/feature arrays/fits/inference. Real native package origins/versions/threads must be verified before admission.",
+    "context_fixture": "Two or three explicitly SYNTHETIC finite history rows/session archives/full17-field physical layout and a small real external-input ShaMap. Real strict reader/spool/index/raw hashes/order/release used. Reconstructed original30 source predecessor explicitly SYNTHETIC. No genuine completion373MB/physical832MB/source2431/input164833 substituted or certified.",
+    "phase_holder": "Lifecycle constructor/full genuine admissions NOT executed. Create only an explicitly injected UNIT phase holder with synthetic receipts and retained sentinel object. Any injected byte-auth/source/preservation functions are negative/unit scaffolding, never genuine bindings or original-reference parity. Actual serialize/persist/fsync/refusal/release methods and filesystem effects may execute under this label.",
+    "caps": "Default parser/source/model/guard/G08/result limits unchanged. Tiny fixtures prove their own domain only; lifecycle256MiB result bound source expression preserved but no near-limit/default-cap/RAM claim. Any small injected bound is UNIT-only and restored."
+  },
+  "groups": {
+    "reader": {
+      "scope": "ACTUAL_NEW_READER_INERT31_ONLY_NOT_SOURCE_ROOT_AUTHORITY",
+      "cases": ["reader-exact31-and-paper-descriptor", "reader-identical-copy-content-equivalent", "reader-map-type-refusal", "reader-map-count-refusal", "reader-map-hash-refusal", "reader-missing-source-refusal", "reader-changed-source-refusal", "reader-absolute-path-refusal", "reader-traversal-path-refusal", "reader-noncanonical-path-refusal", "reader-nonmember-refusal", "reader-subclass-refusal", "reader-recheck-changed-bytes-refusal"]
+    },
+    "context": {
+      "scope": "SYNTHETIC_CONTEXT_AND_ISOLATED_REFERENCE_PARITY_WITH_DECLARED_IDENTITY_DIFFERENCES",
+      "cases": ["constructor-external-ShaMap-retained", "constructor-plain-input-map-mode", "constructor-ending-Rows-digest-and-release", "constructor-readonly-and-deepcopy", "constructor-explicit-root-scratch-identity", "constructor-scratch-collision-refusal", "constructor-reader-type-refusal", "constructor-bool-mode-refusal", "constructor-status-refusal-retains-scratch", "constructor-missing-ending-retains-scratch", "constructor-malformed-completion-refusal", "inputs-capture-selection-and-unused-count", "inputs-relative-capture-path-refusal", "inputs-changed-consumed-file-refusal", "unchanged-ShaMap-index-tamper-refusal", "unchanged-ShaMap-spool-tamper-refusal", "unchanged-original-selector-tamper-refusal", "source-chain-three-catalog-two-transition", "source-chain-changed-third-catalog-refusal", "source-chain-legacy6-and-producer5-refusal"]
+    },
+    "preservation": {
+      "scope": "SYNTHETIC_TINY_ARCHIVES_PHYSICAL_LAYOUT_LOGICAL_COMPARISON_ONLY",
+      "cases": ["preservation-all-session-and-physical-hashes", "preservation-source-bound17fields-and-path", "preservation-original-physical-nonfinite-logical-domain", "preservation-physical-size-refusal", "preservation-physical-SHA-refusal", "preservation-session-SHA-refusal", "preservation-missing-field-refusal", "preservation-extra-field-refusal", "preservation-logical-ending-mismatch-refusal", "preservation-CURRENT-paper-source-refusal", "preservation-archive-type-refusal"]
+    },
+    "calendar": {
+      "scope": "NEW_CALENDAR_AND_ISOLATED_REVIEWED_SESSIONS_REFERENCE_ONLY",
+      "cases": ["calendar-source-and-parent-data-origins", "calendar-reviewed-years-and-closures-parity", "calendar-boundary-session-sequence-parity", "calendar-root-mismatch-refusal", "calendar-data-hash-refusal"]
+    },
+    "binding_units": {
+      "scope": "INJECTED_METADATA_UNIT_REFUSALS_ONLY_NOT_POSITIVE_MAP_ROOT_RUNTIME_ADMISSION",
+      "cases": ["binding-unit-schema-refusal", "binding-unit-profile-refusal", "binding-unit-import-root-refusal", "binding-unit-base2446-hash-refusal", "binding-unit-module-set-refusal", "binding-unit-legacy-override-refusal", "binding-unit-map-union-refusal", "binding-unit-duplicate-mount-destination-refusal", "binding-unit-writable-root-refusal", "binding-unit-host-root-mapping-refusal"]
+    },
+    "lifecycle_units": {
+      "scope": "INJECTED_PHASE_HOLDER_UNIT_ONLY_CONSTRUCTOR_AND_GENUINE_ADMISSIONS_UNRUN",
+      "cases": ["phase-attach-before-after-order", "phase-duplicate-attach-refusal", "phase-after-before-attach-refusal", "phase-serialize-before-after-refusal", "phase-complete-JSON-UTF8-retains-both-graphs", "phase-small-injected-result-bound-refusal", "phase-persist-before-encode-refusal", "phase-exclusive-result-collision-refusal", "phase-real-file-directory-parent-sync-order", "phase-parent-path-FD-mismatch-refusal", "phase-directory-sync-failure-no-durable-phase", "phase-release-before-durability-refusal", "phase-release-only-own-RAM-refs-files-retained", "phase-public-execute-unconditional-refusal"]
+    }
+  },
+  "excluded_acceptance": [
+    "Positive whole CapacityArchiveLeaseV1 constructor/genuine original profile/runtime/source/producer/calendar/preservation/before+after receipt execution. Do not weaken hard full-account selectors or reinterpret a synthetic inspection as actual runtime admission for a tiny fixture.",
+    "Binding-unit injected pinned metadata and synthetic mount records are unit-only negative controls; they do not authenticate the full map, root authority, or actual runtime. Raw570874B metadata cannot be written under a262KiB child perfile limit; do not silently raise that limit for a positive wrapper fixture.",
+    "Full2453 source import/call/native-extension closure. The source-map declaration is570874B metadata outside ordinary262KiB source/log roots; a future packet needs an explicitly bounded authenticated compressed representation or separate source-binding design, not a blanket cap increase.",
+    "Actual full default parser/history/input-map/model+receipt RAM/horizon/timing/causal/economic correctness, genuine history/new funded run/twohost/intraday/fill/UI acceptance or publication.",
+    "Crash durability or remote cleanup from source review or injected units alone; real process interruption/crash controls require a separate concrete reviewed bounded proposal."
+  ],
+  "before_execution": [
+    "Implement and independently review exact bootstrap/reference boundaries/fixtures/named expected observations, owner/caller/packet/stager/independent verifier/preservation. None exists for this proposal yet.",
+    "Use separate candidate/reference copies and owned scratch per control; release/tamper in one cannot contaminate another. authenticate_inputs changed-file controls concern consumed capture/input bytes; native code mutation belongs authenticate_sources/unchanged, never mislabel one as the other.",
+    "Build one exclusive source-only packet with perfile/envelope/source-map compression arithmetic and fullSHA/base64/readback pins. Never regenerate completed80 packet or replay its bodies.",
+    "Independently review fresh actual sources/e0/native paths+versions/UID/jobs/absent roots/resources and exact invocation BEFORE a new scoped synthetic admission. Keep all failures/completed roots/admissions immutable and consumed once.",
+    "Only after actual new-context parity and complete mandatory source/admission/loader/lifetime closure may a genuine capacity proposal be considered; model strategy and genuine entry remain absent."
+  ],
+  "bootstrap": null,
+  "caller": null,
+  "packet": null,
+  "admission": null,
+  "execution_authorized": false,
+  "unchanged": {"original_timing": "FAILED", "publication": "CLOSED", "historical_weekday_intraday_fill_UI_RAM_horizon": "UNVERIFIED", "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN", "heartbeat": "ACTIVE"}
+}
