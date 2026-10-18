@@ -1,5 +1,69 @@
 # Next session
 
+## 2026-10-18 — Synthetic73 context packet SOURCE prepared; all payload bodies UNRUN
+
+Read research/original-loader-context-parity-source-proof-v1-2026-10-18.json.
+Sourcec31987c6fb114d682fe526f94eaa479e79438479 pins bootstrap292327b8/7429B,
+fixtures884b64f4/12317B/cases2103c08f/15696B/units3a8911c8/15741B/
+owner3baa6ecd/7948B/callerd3e0d8eb/2476B/stager7cfef0eb/4638B/
+verifiere4a35fcb/20595B/preserverf22c556d/7980B/packetbuilder258bbb57/9339B.
+Only new local stdlib source/Git/AST/JSON/gzip/base64 packet/proof builders and
+independent packet readback ran. No payload import/CodeType compile/body/test,
+application/numerical/model/account/market-data read, SSH/hostprobe/Docker/job or
+old body replay. All73 outcomes/four children/stager/verifier/preserver UNRUN.
+
+Exclusive /tmp/capacity-context-parity-packet-20261018-v1 retains packetdfd903f3/
+903267B/83records/1643772decodedB/book371af1df/14446B. FullSHA/base64/bounded
+gzip/JSON/AST/byte readback pass. Per-record compressed+decoded SHA/size pins;
+2MiB envelope/262KiB decoded-source bounds unchanged. Raw570874B mapa68ebbef
+stays240215B authenticated gzip on disk; expansion only bounded RAM in explicit
+negative metadata UNITs. No full-map positive admission/cap increase. Existing
+metadata23/evidence80 packets supplied authenticated inert source bytes only;
+neither regenerated or dispatched. New packet/root now immutable, never replay
+or regenerate for docs. Seven candidate context/admission modules unchanged.
+
+Four proposed fresh children: reader+context33/preservation11/calendar5/units24.
+Expected19positive/54refusal, ALL UNRUN. Actual real eleven-module candidate origins
+and three original public frozen calendar files; all31 inert N2 bytes plus separate
+legacy6/producer5/three catalogs. Tiny SYNTHETIC history/session/17field physical
+state/input map; proposed actual strict Rows/ShaMap provenance/order/hashes/release,
+readonly/deepcopy. Source copies are content-equivalent, not original root authority.
+Only two constructor projections and two calendar comparisons use isolated original
+references; NOT73 general original-parity comparisons. No original effect-module
+import/body or PaperState instance. Calendar tiny private-v10 metadata explicit.
+Ten binding and fourteen lifecycle cases are injected UNIT scaffolding; real IO
+methods may be tested but constructor/genuine admissions/loader remain UNRUN.
+
+New independent verifier/preserver separately source-reviewed OUTSIDE immutable83
+packet; exact tools-source staging still absent. Worker caught independent fold's
+initial status/nonempty-scope-only gap BEFORE execution. Final source checks exact
+54exception types/51fixed reasons/3OS-path-dependent classes/all scopes/11origins/
+native metadata, four actual child exits, created/stopped/fresh runtime/full unique
+two-mount records, full source physical bookends and two-read paged run inventory.
+64record manifest pages avoid file-cap exceptions; preserver proposes exclusive
+source/run/review/tools copies plus distinct two-read physical copy verification.
+These are UNEXECUTED proposals, not runtime/preservation/crash acceptance.
+
+Proposed unchanged e0 UID1000/noneRO/1CPU/2GiB=swap/PIDs32/tmp64/noHC/lognone/
+capdropALL/no-new-privileges/auditRO+outRW/sixthreads1. Four children15sCPU/20swait,
+100sparent/130sphase/180sowner/240stransport are unmeasured proposals. Actual stage,
+native metadata/prerequisites/outer transport/launch/admission/runtime NULL. Fresh
+headroom is not reservation/model/daemon RAM bound. Healthy existing worker READONLY
+reviewed all source/independent-fold correction; no newagent/limitedretry/workerops.
+AST/purpose76/19+54 exact static coverage/JSON/fullSHA/hashlinks/source staged diff
+pass; Ruff unavailable. All old failed/completed roots/admissions preserved.
+
+NEXT ROOT: retain exact packet, implement/review bounded outer transport, actual
+source+separate tools staging/independent prerequisites and fresh native metadata
+observation closure. Independently review exact fresh e0/Python/NumPy origins/UID/
+jobs/absent new roots/resources/exact invocation BEFORE ONE new scoped synthetic73
+admission/test. Then independent terminal/paged preservation review; no old80/23/
+65+4/tiny/diagnostic/v2 replay/root/admission reuse. No genuine loader/model/account/
+history/twohost launch/guard/G08/cap relaxation. Fullsource/fence/runtime/loader/
+combinedRAM/horizon/historical/weekday/intraday/fill/UI UNVERIFIED. Originaltiming
+FAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/
+actualtwohost/Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Capacity admission/lifecycle SOURCE reviewed;73case proposal ALL UNRUN
 
 Read research/original-loader-admission-source-proof-v1-2026-10-18.json.

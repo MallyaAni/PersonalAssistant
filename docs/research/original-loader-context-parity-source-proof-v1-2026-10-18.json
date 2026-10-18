@@ -1,0 +1,170 @@
+{
+  "actual_outer_transport": null,
+  "actual_stage": null,
+  "admission": null,
+  "checks": {
+    "AST": "PASS",
+    "JSON_fullSHA_hashlinks": "PASS",
+    "Ruff": "UNAVAILABLE_NOT_CLAIMED",
+    "SSH_hostprobe_Docker_job": "NONE",
+    "diff": "SOURCE_COMMIT_PASS_FINAL_DOCUMENT_STAGED_CHECK_STILL_REQUIRED",
+    "packet_independent_readback": "PASS",
+    "payload_import_CodeType_compile_body_test": "NONE",
+    "purpose_comments": 76
+  },
+  "execution_authorized": false,
+  "expected_observations": {
+    "OS_path_dependent_class_only": 3,
+    "all_status": "UNRUN",
+    "fixed_refusal_reasons": 51,
+    "original_reference_comparisons": "ONLY_TWO_CONSTRUCTOR_PROJECTIONS_AND_TWO_CALENDAR_COMPARISONS_NOT_73_ORIGINAL_PARITY_CASES",
+    "positive": 19,
+    "refusals": 54,
+    "total": 73
+  },
+  "groups": {
+    "binding_units": 10,
+    "calendar": 5,
+    "context": 20,
+    "lifecycle_units": 14,
+    "preservation": 11,
+    "reader": 13
+  },
+  "native_prerequisite": null,
+  "packet": {
+    "bytes": 903267,
+    "decoded_aggregate_source_bound": 8388608,
+    "decoded_bytes": 1643772,
+    "decoded_file_bound": 262144,
+    "encoding": "PER_RECORD_GZIP_WITH_FULL_COMPRESSED_AND_DECODED_SHA_SIZE",
+    "envelope_bound": 2097152,
+    "native31_all_source_bytes_matched": true,
+    "path": "/tmp/capacity-context-parity-packet-20261018-v1/packet.json",
+    "raw_source_map_bytes": 570874,
+    "readback": "FULL_SHA_BASE64_BOUNDED_GZIP_JSON_AST_PASS_NO_PAYLOAD_EXECUTION",
+    "records": 83,
+    "sha256": "dfd903f31677b5945ae8fceafb25990b237d8780a5060f9469acc064d133f772",
+    "source_book": {
+      "bytes": 14446,
+      "sha256": "371af1dfa4fb82fea78888044cb7165c266bf50f16fc17752c52ebf363224f33"
+    },
+    "source_map_gzip_bytes": 240215
+  },
+  "proposal": {
+    "bytes": 10788,
+    "path": "docs/research/original-loader-archive-context-parity-proposal-v1-2026-10-18.json",
+    "sha256": "4e60ca45855d43f24b94b4ee7f7faccc1427ec993501cb33395b0b1c1fb2433e"
+  },
+  "remaining_before_execution": [
+    "Prepare and independently review exact source/tool staging and bounded outer transport/native metadata/prerequisite observation/launch contracts.",
+    "Fresh actual e0/native package origins/Python/UID/jobs/absent new roots/resource headroom and exact invocation independent review BEFORE ONE new scoped synthetic admission/test.",
+    "Do not regenerate this packet or reuse old80/23/65+4/tiny/diagnostic/v2 roots/bodies/admissions. Preserve all roots and failures.",
+    "Genuine fullsource/fence/runtime/model strategy/loader entrypoint/admission remain absent; no genuine loader/model/account/history/twohost launch or cap/guard relaxation."
+  ],
+  "review": {
+    "finding_fixed_before_execution": "Independent verifier initially checked status/nonempty scope only; now exact54 types/51reasons/3OSclasses/allscopes/11origins/native metadata. Initial draft was not packeted or run.",
+    "new_agent_or_limited_worker_retry": false,
+    "operations": "SOURCE_READ_ONLY_NO_IMPORT_COMPILATION_TEST_EDIT_NETWORK_HOST_OPS",
+    "worker": "EXISTING_HEALTHY_trading_action_consistency_READONLY"
+  },
+  "runtime": null,
+  "schema": "capacity-context-parity-source-proof/1",
+  "scope": [
+    "Real separately named eleven-module candidate closure plus three actual public frozen calendar files proposed at real /audit/app paths; source packet only, no staged tree/import runtime acceptance.",
+    "All31 inert N2 source bytes retained without account/provider/policy execution; distinct actual legacy6/producer5 source reads and three authenticated catalogs. Identical copies are content-equivalent, not original source-root authority.",
+    "Tiny SYNTHETIC completion/state/session/input fixtures; actual strict Rows/ShaMap planned for provenance/order/hash/release/read-only/deepcopy checks. No genuine373MB/832MB/164833-input account fixture.",
+    "Only isolated SYNTHETIC full-compilation constructor/primitive/digest/calendar references proposed; no original effect module execution/import or PaperState instance. Reference source paths remain actual inert reference paths.",
+    "Ten binding refusals and fourteen phase-holder cases are explicitly injected UNIT scaffolding. Genuine lifecycle constructor/native_packages/full2453 module admission/model loader remain UNRUN.",
+    "Default source/parser/history/result/guard/G08 caps unchanged. Full570874B source map remains240215B authenticated gzip on disk and expands only bounded RAM in negative metadata UNITs. No full-map positive admission.",
+    "Separate source-reviewed independent verifier/preserver are outside immutable83-record packet and require a distinct exact tools-source staging closure. Their bodies/inspects/copies are UNRUN.",
+    "Paged64-record manifests proposed for complete source/run/review/tool preservation without file-cap exceptions; exact nanoseconds are decimal strings. No crash/timeout/force-stop/transport-loss acceptance."
+  ],
+  "source_commit": "c31987c6fb114d682fe526f94eaa479e79438479",
+  "sources": {
+    "docs/research/sources/original-loader-context-parity-bootstrap-v1-2026-10-18.py": {
+      "bytes": 7429,
+      "sha256": "292327b8e317cf6e046942db67a41b16bcfb826243f309ea5c4c98ea115252d5"
+    },
+    "docs/research/sources/original-loader-context-parity-caller-v1-2026-10-18.py": {
+      "bytes": 2476,
+      "sha256": "d3e0d8eb4857a0ebbcff38c5b8c72cf087860f56bced8f14bc298f68a2293a5f"
+    },
+    "docs/research/sources/original-loader-context-parity-cases-v1-2026-10-18.py": {
+      "bytes": 15696,
+      "sha256": "2103c08f7fd0e376881c7a02b4bc5bf171a07ba87b10eca5ce0263e01e672958"
+    },
+    "docs/research/sources/original-loader-context-parity-fixtures-v1-2026-10-18.py": {
+      "bytes": 12317,
+      "sha256": "884b64f4b28088bda3abfd6fa5228cae99a954aa5579f91f6a199ceeb9837946"
+    },
+    "docs/research/sources/original-loader-context-parity-owner-v1-2026-10-18.py": {
+      "bytes": 7948,
+      "sha256": "3baa6ecd4a5ed0228bfc921b0089d9d65ab60be753588b2a1d548d5eb7a0bb69"
+    },
+    "docs/research/sources/original-loader-context-parity-preserver-v1-2026-10-18.py": {
+      "bytes": 7980,
+      "sha256": "f22c556de82f4e90b700aa04904a9ac0dac3807b68ce0785d84820cc04bdc43d"
+    },
+    "docs/research/sources/original-loader-context-parity-stager-v1-2026-10-18.py": {
+      "bytes": 4638,
+      "sha256": "7cfef0ebd7b2b53cf7032b9e063c2d03d5d866385577539ac66e942700aad4b5"
+    },
+    "docs/research/sources/original-loader-context-parity-units-v1-2026-10-18.py": {
+      "bytes": 15741,
+      "sha256": "3a8911c8d46a79941f833a02d825b80985ca15892729ba3bde31266b1c91718d"
+    },
+    "docs/research/sources/original-loader-context-parity-verifier-v1-2026-10-18.py": {
+      "bytes": 20595,
+      "sha256": "e4a35fcb8a523961e3b8714b9ecd8827c501abf8777ecd09c55b51ac07704792"
+    },
+    "docs/research/sources/prepare-original-loader-context-parity-packet-v1-2026-10-18.py": {
+      "bytes": 9339,
+      "sha256": "258bbb570eddf1d39351bd1a085c5a07e84058ba80c9f382eb3b4f546275dd55"
+    },
+    "docs/research/sources/prepare-original-loader-context-parity-source-proof-v1-2026-10-18.py": {
+      "bytes": 10591,
+      "sha256": "b38350a8e025443cd0c4b892537c421acf8412f43168f43aeb912090ccb0c52c"
+    }
+  },
+  "status": "SOURCE_REVIEWED_PACKET_PREPARED_ALL73_BODIES_UNRUN",
+  "unchanged": {
+    "actual_twohost_Spark2_image_daemon_temp_incremental_RAM": "UNVERIFIED",
+    "diagram": "NONE",
+    "fullsource_runtime_model_RAM_horizon_history_weekday_intraday_fill_UI": "UNVERIFIED",
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "heartbeat": "ACTIVE",
+    "missing_original_receipts": "STILL_MISSING",
+    "original_timing": "FAILED",
+    "publication": "CLOSED"
+  },
+  "unchanged_candidate_sources": {
+    "docs/research/sources/original-loader-capacity-admission-lifecycle-v1-2026-10-18.py": {
+      "bytes": 13575,
+      "sha256": "3acd8b296b3d14234d7c769e2ce4c5a63c8e381d87d7677476964ea1a5f84b1b"
+    },
+    "docs/research/sources/original-loader-capacity-admissions-v1-2026-10-18.py": {
+      "bytes": 13341,
+      "sha256": "f7a226b3d90472ac3ebe161e4c46beb2c49245d489ac1de4a78f90ee2af6d0a9"
+    },
+    "docs/research/sources/original-loader-capacity-archive-adaptations-v1-2026-10-18.py": {
+      "bytes": 6677,
+      "sha256": "39f2884741036bbe3a33f451909a59b46924c43ea699e39670c1c13fbcde5134"
+    },
+    "docs/research/sources/original-loader-capacity-archive-context-v1-2026-10-18.py": {
+      "bytes": 10886,
+      "sha256": "0212bc8dedd0fb44502547fe974670ef84c21db608ab633e2a818c9e718e692b"
+    },
+    "docs/research/sources/original-loader-capacity-calendar-v1-2026-10-18.py": {
+      "bytes": 1094,
+      "sha256": "37140d9ff8ae5a59d10aa56923f1ce2008b6e603ddb38933a517437d1137fc05"
+    },
+    "docs/research/sources/original-loader-capacity-evidence-v1-2026-10-18.py": {
+      "bytes": 6656,
+      "sha256": "400de9e73e2debb06c7267c925ca0914dc75a98c77f3044a49b88d26db26be25"
+    },
+    "docs/research/sources/original-loader-capacity-metadata-boundary-2026-10-18.py": {
+      "bytes": 5034,
+      "sha256": "d413e748bf2b1eb63f4d267371f22cf6431f6ae650368676c815b07779723135"
+    }
+  }
+}
