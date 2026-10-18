@@ -1,5 +1,66 @@
 # Next session
 
+## 2026-10-18 — Capacity archive context SOURCE reviewed; all bodies UNRUN
+
+Read research/original-loader-archive-context-source-proof-v1-2026-10-18.json.
+Sourcea665e2d13a00314db211204fd34f5a975ed399cf pins context0212bc8d/10886B,
+builder9b4e65c5/15438B/contracta9c40085/6441B/staticreview7f2fdb93/9580B.
+Only new local stdlib AST/JSON/source builder/Git checks ran. NO payload import/
+CodeTypecompile/body/test/application/numerical/model/account/data read/SSH/
+hostprobe/Docker/job/oldbody replay. No runtime or admission created.
+
+Separately versioned CapacitySourceReaderV1/CapacityOriginalArchivesV1/new
+preserved_archives:13declarations/11functions inclmethods/2classes, all UNRUN.
+Concrete reader proposes real exact31 N2 byte binding to unchanged metadata helper,
+not arbitrary positive callback/old SourceBook extension/fake original modules.
+Root authority/whole physical source bookends remain external; same31-byte copies
+are content-equivalent. Original stat/open symlink+hardlink behavior retained,
+not held-root-FD/nonfollow/hostile-code isolation. New eight-file map841f99e5 is
+immutable declaration ONLY, not assembled tree/full2446/executor/finder/import/
+phase manifest/runtime admission. Original2431/N2native31/producer27471 separate.
+
+Constructor proposes explicit fresh owned scratch/source reader/bool input mode,
+real strict-reader completion/ShaMap retained through freeze, ending Rows digest
+then finally release. Parse/status/missing-field failures before ending extraction
+retain scratch; only entered digest/preservation paths have explicit release.
+Outer lifecycle owner unimplemented; no array/receipt/context/RAM coexistence proof.
+Three pinned catalogs/two original approval+numeric transitions; original
+adaptation source_reader_authenticatedFalse receipt unchanged. Separate six legacy
+SOURCE_PATHS/five ORIGINAL_SOURCES manifest reads retained, not31 membership.
+Preservation proposes exact17field/path metadata from actual inert paper source,
+raw SHA+size/original physical=True logical comparison/session hashes; no generic
+NaN normalization. New exact type cannot enter existing StreamAudit. No sessions/
+InitialReceipts/model loader interface or entry point.
+
+Static review reads10sources, records13contextASTs,4exact methods AFTER declared
+primitive/constant namespace rebindings, exact6+5constants, loader's5archive attrs
+and6original CLI admission ASTs. AST equality is NOT behavioral/type/missingness/
+readonly/alias/deepcopy/lifetime/RAM parity. Every invocation/runtime/fullsource/
+producer/calendar/config/economic/preservation/before-after-byte receipt admission
+remains MANDATORY UNIMPLEMENTED composition seam; calendar/profile before genuine
+session paths. Original373782589Bcompletion/b9ad and832110254Bphysical/f334 remain
+required, not replaced by constructor status. Complete executor/generated manifest/
+entrypoint/launch/admission NULL/execution_authorizedFALSE/modelstrategyNULL.
+
+Healthy existing worker READONLY reviewed final sources/scope, no blocker as
+UNEXECUTED source proposal. Root authority and pre-extraction retention clarified;
+initial4drafts retained /tmp/capacity-archive-context-source-drafts-20261018-v1.
+AST/purpose18/JSON/fullSHA/hashlinks/diff pass; Ruff unavailable. No newagent/
+limitedretry/workerops/production/native/model/account change. Synthetic80/23 and
+old guard/tiny/diagnostic/v2 remain CLOSED, never rerun for docs.
+
+NEXT ROOT: finish SOURCE ONLY distinct capacity admission-wrapper/lifecycle design
+and bounded SYNTHETIC archive-context parity proposal/packet/caller, binding actual
+new eight-module origins/exact inert31 source bytes/strict-reader Rows+ShaMap
+provenance/order/hashes/readonly/deepcopy/lifetime/preservation. Isolated original
+references explicitly SYNTHETIC. Independently review source/fresh actual image/
+UID/jobs/absent roots/resources/exact invocation before NEW scoped admission/test.
+No old body/root/admission reuse/genuine loader/model/account/history/twohost launch/
+guard/G08/cap relaxation. Fullsource/import/runtime/context/combinedRAM/horizon/
+historical/weekday/intraday/fill/UI UNVERIFIED. OriginaltimingFAILED/publication
+CLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/
+Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Evidence/archive adaptation SYNTHETIC80 parity VERIFIED; genuine still unadmitted
 
 Read research/original-loader-evidence-parity-proof-v1-2026-10-18.json.
