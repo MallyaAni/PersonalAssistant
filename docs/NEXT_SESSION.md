@@ -1,5 +1,90 @@
 # Next session
 
+## 2026-10-18 — Exact retained callback ELF DATA VERIFIED; native/runtime UNVERIFIED
+
+Read research/original-loader-callback-elf-data-proof-v1-2026-10-18.json.
+Sourceb2f8cccb7bc954c970cdc24f8ba2aca7d477daef pins primarydd28a751/7056B/
+transport6c85dd69/8347B/independent8d38a2d9/9452B/transport7f267f08/8357B/
+builder195a8567/7155B/preserver759f7457/4902B. Rawproof20c33344/6569B/
+primaryobservation51e6b784/1769B/static7483b827/2401B/newseam29580d6c/4672B retained.
+Unchanged puredecoderse5c80403/f3021960 ran on authenticated binary DATA only;
+no package/backend/model AST/CodeType/import/body/test, native loading/execution,
+Docker/container/service changes/account/marketdata/credentials, other19 reads,
+closed37 or oldgate/census/packet replay, guard/G08/cap/source-map/production change.
+
+ONE independently exact-source/invocation/resource-reviewed primary SSH and ONE
+separate independent SSH each exit0/empty stderr/noownedstop/cleanupfailure.
+Host Spark1 UID1000 Python3.12.3, NOT N2/e0 runtime. Exact retained callback216280B/
+9edf4136653a328edcc88dc97f6d828440ad96550c436cbe087951845c89903b bound prior779a1f86
+and original copied-file decimalphysical identity. Eleven inputs:7nonpage+4pages,
+each two full held/named reads/SHA/physical then later fullSHAphysical bookends.
+Original container-source heldFD/every-file image authority NOT established.
+
+Complete10PH+30SH+31dynamic slots+2string declarations=73 NEW ELF DATA records,
+NOT the old synthetic73-case gate. Four complete pages4263/15279/4585/378B plus
+summary3704B/d0c98e42 =>28209B. Independent reconstructs EVERY field/root/page/rawhex/
+spanSHA/order/coverage/noextras. Full canonical compact sorted ASCII JSON+newline
+25232B SHA2ad9100f4bf1f7bbc82906002f420ae9e5c947d8d9fd5ec1558729a95691cad2.
+Observed ELF64 little-endian CURRENT ET_DYN/machine183 numeric header, standard
+widths; no complete architectureABI/ELFconformance/loadability certification.
+All dynamic slots including inactive tail preserved; semantics stop firstNULL.
+Two ordered active DT_NEEDED declarations ONLY: slot0/dynstr2897 libm.so.6 then
+slot1/dynstr2907 libc.so.6. No active SONAME/RPATH/RUNPATH in exact parsed set.
+Names/absence are DATA, NOT resolved paths/dependencybytes/versions/origins/aliases/
+actual loads/transitive closure. Symbols/version tables remain uninterpreted.
+
+Helpers512MiBAS soft=hard/20CPU/30alarm; staging30alarm canceled BEFORE helper30,
+70SSH/ownedTERM1KILL1. Ordinary262KiBfile/input unchanged; pages<=65536B AND64rows,
+max256pages/16MiBtotal including summary, full canonical intermediate<=16MiB;
+unchanged decoder16MiB aggregate hashwork/string4096 bounds. Actual independent
+reported LinuxRSS15968KiB is NOT native/model combined peak/RAM acceptance.
+Freshprimary9996353536B/independent9986113536B available;2GiBmem/32MiBscratch/
+512inodes gates, headroom NOT reservation/native/model/daemon bound.
+Timeout/signal/overflow/invalidinput/ownedstop/crash branches UNTESTED here.
+Existing healthy worker READONLY source/invocation/resources BEFORE each use,
+then actualproof/seam/preservation review; no newagent/limitedretry/workerops.
+Independent three UNOBSERVED pins replaced exact observed values BEFORE dispatch;
+oldb2e2286c/9341B unrun draft retained exclusive independent-preparation-drafts root.
+No failed remote attempt or body replay. Prior Mac AS failure remains preserved.
+
+AST warnings-as-errors/25purposefunctions across6newcontrols/14utility+canonical
+AST comparisons/embeddedbootstrap AST/JSON/fullSHA/stageddiff PASS. Six retained
+preparation files byte-exact with final sources; no builder/body replay for docs.
+Ruff previously unavailable/no lintclaim. New remote analysis/independent/tools
+roots COMPLETE exclusive/file+outputdir+parent fsync/readback. Four full pages stay
+Spark. Eleven-input fold does NOT include stage files or its own newly writtenproof;
+no second complete remote archive/crash/durability guarantee. Local transport raw
+stdout retained exact; display truncation did not change saved bytes.
+Exclusive /tmp/capacity-callback-elf-data-evidence-20261018-v1 retains21smallfiles
+107659B plusmanifestcdb5803e/22492B: two held/named fullreads/decimalphysical,
+exclusive copies/fsync/readbacks/later originalSHAphysical, manifestlast/root+
+resolvedparent fsync. Local262KiBfile/1MiBtotal/30alarm/noMacASclaim. Both exclusive
+preparation roots + UNRUN pin draft retained; all old failed/completed roots preserved.
+
+NEXT ROOT: SOURCE ONLY review the authenticated complete30section records at
+/home/animallya96/scratch/capacity-callback-elf-data-analysis-20261018-v1/page-0001.json
+15279B/SHA43ce64015bf67ad315821caa994123c7134d55e4dabb89c7bea9414607a5daa3.
+Use a NEW bounded exact-file DATA observation/fullSHA+prior20c33344 physical binding
+if needed; do NOT rerun completed ELF parser/fold or closed37 for documentation.
+Then prepare selected symbol/version-table DATA and dependency-origin contracts
+from actual records and authenticated loader/Python source; exact-source/invocation/
+resource review BEFORE any new use. Do not infer exports/sectioncontents from names,
+guess resolved library directories, use host-library substitutes or ldd/readelf/
+dlopen/native/package execution. New symbol/version and dependency observers NULL/
+native runtime admission NULL. Other19 above262KiB bodies UNREAD; design conforming
+bounded authentication separately, no textcopyreuse/recursivecopy/caprelaxation.
+Finish selected callable/global/type/dataclass liveproducer/classflags/native/phase,
+Arrow default pools+ordinarywrapper registry and sklearnactualmetadata contracts.
+Do NOT repeat old bytecopy/20HEAD/metadata/censuses/AST inventories/73/80/23/65+4/
+tiny/diagnostic/v2 gates/packets. Guard3b8be00b/all25payloadbodies UNRUN; old2446/
+030c/G08/caps unchanged. Producer2431/reference2446/executor2468/originalreceipts/
+fullcontext+graphs+JSON+UTF8 lifetimes separate. Assembledtree/strategy/entrypoint/
+manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/launch/admission NULL/
+execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/intraday/fill/UI
+UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/
+no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM unchanged.
+Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — ELF DATA decoders SYNTHETIC37 VERIFIED; actual callback ELF UNRUN
 
 Read research/original-loader-callback-elf-source-proof-v1-2026-10-18.json.

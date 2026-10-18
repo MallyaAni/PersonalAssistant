@@ -1,0 +1,225 @@
+{
+  "schema": "original-loader-retained-callback-ELF-DATA-proof/1",
+  "date": "2026-10-18",
+  "status": "VERIFIED_EXACT_RETAINED_ELF_METADATA_DATA_ONLY_NATIVE_RUNTIME_UNADMITTED",
+  "source_commit": "b2f8cccb7bc954c970cdc24f8ba2aca7d477daef",
+  "starting_commit": "f11362d702285bd1326e01213bc6aabca0c7ff2a",
+  "starting_branch": "codex/learned-live-release-20261006",
+  "starting_worktree": "CLEAN_PULL_REBASE_ORIGIN_MAIN_UP_TO_DATE",
+  "objective": "Authenticate the exact retained callback to its original byte-proof physical identity, decode complete ELF DATA, and independently reconstruct every field and ordered paged record without native execution.",
+  "source_and_evidence_pins": [
+    {
+      "path": "docs/research/original-loader-callback-elf-data-contract-v1-2026-10-18.json",
+      "bytes": 7281,
+      "sha256": "6fa1d99e7082fda8514b670f1b82b1199ed4d4247a64c7977a68bec04e252451"
+    },
+    {
+      "path": "docs/research/original-loader-callback-elf-data-independent-stage-v1-2026-10-18.json",
+      "bytes": 579,
+      "sha256": "3fccacd2790177391b1cb619af0ef2e79c303d1dc918105a8983c3ad35b6d199"
+    },
+    {
+      "path": "docs/research/original-loader-callback-elf-data-independent-v1-2026-10-18.json",
+      "bytes": 6569,
+      "sha256": "20c33344ece0c69c550f23771dbea6d9ab8d1eb6c2344a6fac2366224d817889"
+    },
+    {
+      "path": "docs/research/original-loader-callback-elf-data-next-requirements-v1-2026-10-18.json",
+      "bytes": 4672,
+      "sha256": "29580d6cc8a68f79a4ca81ad1475f800b737d06ef1b5bf735e3fc0200addbaee"
+    },
+    {
+      "path": "docs/research/original-loader-callback-elf-data-primary-observation-v1-2026-10-18.json",
+      "bytes": 1769,
+      "sha256": "51e6b784b15c1845cd8e87a39afc94510d056f9d362cf95a24dbff145072791c"
+    },
+    {
+      "path": "docs/research/original-loader-callback-elf-data-primary-stage-v1-2026-10-18.json",
+      "bytes": 577,
+      "sha256": "cd41de9aa59631bcdfd6359a850bbbde5117faec5c3af97da05c8c4a647705b6"
+    },
+    {
+      "path": "docs/research/original-loader-callback-elf-data-static-v1-2026-10-18.json",
+      "bytes": 2401,
+      "sha256": "7483b8270993ef94f4abc4c6a8a5e6a9c1ed6085b61579b4453501dca5bef88b"
+    },
+    {
+      "path": "docs/research/sources/analyze-callback-elf-retained-v1-2026-10-18.py",
+      "bytes": 7056,
+      "sha256": "dd28a751b8f8219239b014978406430b2a5a2cfa2b0a4625cded6bd8074f6cdf"
+    },
+    {
+      "path": "docs/research/sources/verify-callback-elf-retained-v1-2026-10-18.py",
+      "bytes": 9452,
+      "sha256": "8d38a2d9cbbe50694afab4b94587e04c80b04d4fe95c8ca671a378b11f169868"
+    },
+    {
+      "path": "docs/research/sources/callback-elf-data-primary-transport-v1-2026-10-18.py",
+      "bytes": 8347,
+      "sha256": "6c85dd69fa8054a6b2b27d20798e2ea509c441e589c6faea4e14bfca521da7ab"
+    },
+    {
+      "path": "docs/research/sources/callback-elf-data-independent-transport-v1-2026-10-18.py",
+      "bytes": 8357,
+      "sha256": "7f267f08d12b00d4c57cea9819b205875a442e72ac6f0fe7e883bd001c5ec659"
+    },
+    {
+      "path": "docs/research/sources/prepare-callback-elf-data-transports-v1-2026-10-18.py",
+      "bytes": 7155,
+      "sha256": "195a85672e13e3e2c06d2c5707c3fafdf73622153f382848d938547a50f58cff"
+    },
+    {
+      "path": "docs/research/sources/preserve-callback-elf-retained-v1-2026-10-18.py",
+      "bytes": 4902,
+      "sha256": "759f74571dbef0baacf94a449efa3c581f7d4d0ccea80095d5568dcc6aea73c0"
+    },
+    {
+      "path": "docs/research/sources/parse-callback-elf-data-v1-2026-10-18.py",
+      "bytes": 9013,
+      "sha256": "e5c8040315f3b471a4d35d2c90a82778a78954659d4b66e494d5b18abdf9edaf"
+    },
+    {
+      "path": "docs/research/sources/fold-callback-elf-data-v1-2026-10-18.py",
+      "bytes": 9855,
+      "sha256": "f302196006bc47e3dd7c1a31aa9477d5119e6c18ac0cad015aa5efb302a34dc1"
+    }
+  ],
+  "actual_operations": {
+    "primary_SSH": 1,
+    "independent_SSH": 1,
+    "both_exit": 0,
+    "both_stderr_bytes": 0,
+    "both_owned_SSH_stop": null,
+    "both_cleanup_failure": null,
+    "host": "animallya-spark1",
+    "uid": 1000,
+    "Python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+    "is_N2_runtime": false,
+    "only_new_stdlib_operational_controls_and_authenticated_binary_DATA": true,
+    "no_package_backend_model_AST_CodeType_import_body_or_test": true,
+    "no_Docker_container_start_create_exec_load_or_host_service_changes": true,
+    "no_account_marketdata_credentials_other19_bodies_or_old_gate_census_packet_replay": true,
+    "closed37_checks_replayed": 0
+  },
+  "authentication": {
+    "prior_independent_proof_sha256": "779a1f86987f55065061ca81d6891a61072d06a2f1514ec5bb64bbeb74dd4d9e",
+    "retained_binary": "/home/animallya96/scratch/capacity-callback-binary-copy-20261018-v1/callback.bin",
+    "binary_bytes": 216280,
+    "binary_sha256": "9edf4136653a328edcc88dc97f6d828440ad96550c436cbe087951845c89903b",
+    "original_copied_file_physical_bound": true,
+    "physical_fields": "Exact decimal strings for dev/inode/mode/uid/nlink/size/blocks/mtime_ns/ctime_ns; two full held descriptor reads and named checks, followed by later full SHA/physical bookends.",
+    "meaning": "Copied-file authority only; no container-source held-FD identity, every-file image attestation or hostile-code/root-FD isolation claim."
+  },
+  "complete_data_acceptance": {
+    "program_headers": 10,
+    "section_headers": 30,
+    "dynamic_slots_including_inactive_tail": 31,
+    "dynamic_string_declarations": 2,
+    "total_records_in_paged_collections": 73,
+    "record_count_is_ELF_DATA_not_old_synthetic73_gate": true,
+    "pages": 4,
+    "page_bytes": [
+      4263,
+      15279,
+      4585,
+      378
+    ],
+    "summary_bytes": 3704,
+    "summary_sha256": "d0c98e420b2fc5787d4eb0aa8331d340fe44ba2a1a09c1ad10c56538eeaa155f",
+    "output_bytes_including_summary": 28209,
+    "independently_authenticated_input_files": 11,
+    "complete_canonical_result_bytes": 25232,
+    "complete_canonical_result_sha256": "2ad9100f4bf1f7bbc82906002f420ae9e5c947d8d9fd5ec1558729a95691cad2",
+    "full_fields_records_raw_spans_order_coverage_equal": true,
+    "mechanism": "Unchanged primary struct decoder and separately implemented int.from_bytes decoder on authenticated DATA; canonical sorted compact ASCII JSON+newline; every root/page field, ordered record, raw hex and span hash checked; exact collection coverage and no extra files. Positive source/pin/identity bookends retained.",
+    "header": "ELF64 little-endian CURRENT ET_DYN, machine field183; standard64/56/64-byte header widths, PH10/SH30. Complete/architecture-specific ABI conformance and loadability not established.",
+    "ordered_DT_NEEDED": [
+      {
+        "slot": 0,
+        "dynstr_index_decimal": "2897",
+        "bytes": 9,
+        "hex": "6c69626d2e736f2e36",
+        "ASCII_DATA_display": "libm.so.6"
+      },
+      {
+        "slot": 1,
+        "dynstr_index_decimal": "2907",
+        "bytes": 9,
+        "hex": "6c6962632e736f2e36",
+        "ASCII_DATA_display": "libc.so.6"
+      }
+    ],
+    "active_SONAME_RPATH_RUNPATH_declarations": [],
+    "declaration_scope": "Literal names/absence in this exact active declaration set, not resolved filesystem paths, library authentication, versions, aliases, origin, transitive closure or actual loads.",
+    "independent_raw_proof_sha256": "20c33344ece0c69c550f23771dbea6d9ab8d1eb6c2344a6fac2366224d817889",
+    "independent_raw_proof_bytes": 6569,
+    "reported_independent_Linux_ru_maxrss_KiB": 15968,
+    "RSS_is_combined_native_model_RAM_acceptance": false
+  },
+  "resource_controls": {
+    "Linux_helper_AS_soft_and_hard_bytes": 536870912,
+    "helper_CPU_seconds": 20,
+    "helper_alarm_seconds": 30,
+    "staging_alarm_seconds": 30,
+    "staging_alarm_canceled_before_helper": true,
+    "SSH_timeout_seconds": 70,
+    "owned_SSH_cleanup": "TERM wait1s then KILL wait1s, bounded log files, source-reviewed ordinary signal handling.",
+    "ordinary_file_bound_bytes": 262144,
+    "page_bound_bytes": 65536,
+    "page_max_records": 64,
+    "max_pages": 256,
+    "total_analysis_output_bound_bytes": 16777216,
+    "complete_canonical_RAM_serialization_bound_bytes": 16777216,
+    "unchanged_decoder_hash_work_bound_bytes": 16777216,
+    "source_envelope_bound_bytes": 65536,
+    "primary_MemAvailable_bytes": "9996353536",
+    "independent_MemAvailable_bytes": "9986113536",
+    "fresh_minimum_MemAvailable_bytes": 2147483648,
+    "fresh_minimum_scratch_bytes": 33554432,
+    "fresh_minimum_inodes": 512,
+    "headroom_or_per_process_limits_are_native_model_daemon_RAM_reservation": false,
+    "timeout_signal_overflow_invalid_input_owned_stop_crash_branches": "UNTESTED_IN_THESE_NEW_DRIVERS; no old37 repetition."
+  },
+  "review_and_validation": {
+    "worker": "Existing healthy /root/trading_action_consistency",
+    "scope": "READONLY exact sources/invocations/resources BEFORE primary and separate independent use; actual proof/seam/preservation source scope after. No newagent/limited-agent retry/worker operations.",
+    "unobserved_independent_pin_draft": "Preserved UNRUN b2e2286c/9341B in /tmp/callback-elf-data-independent-preparation-drafts-20261018-v1; only three observed pin constants replaced before verifier dispatch.",
+    "AST_warnings_as_errors": "PASS",
+    "purpose_comments": 25,
+    "new_controls": 6,
+    "operational_utility_and_canonical_AST_comparisons": 14,
+    "embedded_bootstrap_AST_and_JSON": "PASS",
+    "six_retained_preparation_sources_byte_exact": true,
+    "Ruff": "NOT_RUN_PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM",
+    "staged_diff": "PASS"
+  },
+  "preservation": {
+    "analysis_root": "/home/animallya96/scratch/capacity-callback-elf-data-analysis-20261018-v1",
+    "independent_root": "/home/animallya96/scratch/capacity-callback-elf-data-independent-20261018-v1",
+    "tools_roots": [
+      "/home/animallya96/scratch/capacity-callback-elf-primary-tools-20261018-v1",
+      "/home/animallya96/scratch/capacity-callback-elf-independent-tools-20261018-v1"
+    ],
+    "remote_scope": "New exclusive roots, files/readback and output/tool root+parent fsync; four complete DATA pages remain Spark. Eleven required input files folded, including seven nonpage inputs and four pages. Stage observation files and newly written proof are not themselves in their own input fold; no second complete remote archive/crash guarantee.",
+    "local_transport_roots": [
+      "/tmp/callback-elf-data-primary-transport-20261018-v1",
+      "/tmp/callback-elf-data-independent-transport-20261018-v1"
+    ],
+    "local_evidence_root": "/tmp/capacity-callback-elf-data-evidence-20261018-v1",
+    "local_files": 21,
+    "local_bytes": 107659,
+    "manifest_sha256": "cdb5803eb273f05b23f4c67d755c6ac346961559a10db9076c08f06a5e608cac",
+    "manifest_bytes": 22492,
+    "checks": "Two full local held/named reads with exact decimal physical fields, exclusive copies/fsync/two readbacks, later original SHA/physical bookends; manifest last/root+resolvedparent fsync. Local262KiBfile/1MiBtotal/30alarm, no Mac AS claim.",
+    "preparation_roots": [
+      "/tmp/callback-elf-data-primary-preparation-20261018-v1",
+      "/tmp/callback-elf-data-independent-preparation-20261018-v1"
+    ],
+    "old_failed_and_completed_roots_preserved": true,
+    "tool_display_truncation_changed_saved_stdout": false
+  },
+  "next": "SOURCE ONLY expose/review exact authenticated section-record page0001/43ce6401/15279B using a new bounded exact-file DATA observation if needed, then prepare selected symbol/version DATA or dependency-origin contracts from actual declarations. No parser/fold/37/old gate replay for documentation; do not guess library paths, use host libraries or execute ldd/readelf/dlopen. Other19 native bodies remain unread/above262KiB with no cap relaxation.",
+  "native_loading_runtime_versions_threads_model_RAM_fullclosure_admission": null,
+  "genuine_execution_authorized": false,
+  "unchanged": "All25 guard payload bodies UNRUN; old2446/030c/G08/caps/maps unchanged. Selected callable/global/type/dataclass live-producer/classflags/native/phase/Arrow pools+wrapper/sklearn actualmetadata unresolved. Producer2431/reference2446/executor2468/original receipts/fullcontext+graphs+JSON+UTF8 lifetimes separate. Assembledtree/strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/launch/admission NULL. Model/RAM/horizon/history/ordinary/intraday/fill/UI UNVERIFIED; original timing FAILED/publication CLOSED/missing receipts/v6 OPEN-PAUSED/no replay/adoption/newrun; actualtwohost/Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE."
+}
