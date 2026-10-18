@@ -1,0 +1,194 @@
+{
+  "schema": "stopped-n2-package-metadata-head-checkpoint/1",
+  "status": "VERIFIED_SIX_DAEMON_REPORTED_PATHS_AND_SIZES_ONLY",
+  "starting_git": {
+    "branch": "codex/learned-live-release-20261006",
+    "HEAD": "93b16a2dc755bb981f613e510dbf8bd82875897b",
+    "working_tree": "CLEAN",
+    "pull_rebase_origin_main": "EXIT0_UP_TO_DATE"
+  },
+  "source_commit": "96cb0c3215fee46c8e322d48dbb76c8483c05403",
+  "files": {
+    "original-loader-package-metadata-head-contract-v1-2026-10-18.json": {
+      "sha256": "c5588d4f9fe9335f8def6fb38eb8eaeee45a3d9a330a22a4890c82c7d19d075e",
+      "bytes": 5216
+    },
+    "original-loader-package-metadata-head-controls-static-v1-2026-10-18.json": {
+      "sha256": "297bbe1335811980b400d1c45ea4111b7d1d8316489b3e6f59bb875524a83691",
+      "bytes": 4177
+    },
+    "original-loader-package-metadata-head-independent-v1-2026-10-18.json": {
+      "sha256": "4a30076a7e6b530b7e24ffa1990abeb6d7a817974d96ef3d6f8100b1e7e111ab",
+      "bytes": 23927
+    },
+    "original-loader-package-metadata-head-preservation-v1-2026-10-18.json": {
+      "sha256": "b1a436e7ac6ab961249e6eea29171a19c7b3007c95e6f169b67dfa7ae928b085",
+      "bytes": 338
+    },
+    "sources/capacity-package-metadata-head-transport-v1-2026-10-18.py": {
+      "sha256": "e563f027aa601f6860d372e8f875a0e4c9cfbf7db0de92af9e99313b2508eb5b",
+      "bytes": 6012
+    },
+    "sources/capacity-package-metadata-head-v1-2026-10-18.py": {
+      "sha256": "17617e37bb685c7fb40767c750ceb79c0ff2745a8adf9095fade5ac5f850d0bb",
+      "bytes": 15006
+    },
+    "sources/package-metadata-head-independent-transport-v1-2026-10-18.py": {
+      "sha256": "ab334e55fe905bd268bacb5228b27f8922468318ad5bdcfb350202a1eacc508c",
+      "bytes": 6035
+    },
+    "sources/prepare-package-metadata-head-independent-v1-2026-10-18.py": {
+      "sha256": "b9c456cf8fac0cdea336dee43cc585dee5f5a9c35e501794cc298d5c4dbae18b",
+      "bytes": 12857
+    },
+    "sources/prepare-package-metadata-head-v1-2026-10-18.py": {
+      "sha256": "8e9bc16a102cb689dc4184c94af53af9f28791f7ae35ebea0b71a03d4de9e65b",
+      "bytes": 11413
+    },
+    "sources/preserve-package-metadata-head-controls-v1-2026-10-18.py": {
+      "sha256": "6ea191c142672248e4feeef6320731d1f89cb49fa708959ddb8459b6bdbaa424",
+      "bytes": 9667
+    },
+    "sources/verify-package-metadata-head-v1-2026-10-18.py": {
+      "sha256": "6c17116d9bb1334b7a1e33ebc0ed64867916b56428c24941f077427567ea04ee",
+      "bytes": 16449
+    }
+  },
+  "actual_operations": {
+    "primary_pinned_key_SSH": {
+      "count": 1,
+      "exit": 0,
+      "stderr_bytes": 0,
+      "owned_stop": null,
+      "cleanup_failure": null
+    },
+    "independent_pinned_key_SSH": {
+      "count": 1,
+      "exit": 0,
+      "stderr_bytes": 0,
+      "owned_stop": null,
+      "cleanup_failure": null
+    },
+    "primary_HEAD_requests": 12,
+    "primary_CLI_inspects": 2,
+    "independent_fresh_CLI_inspects": 1,
+    "HEAD_request_API": "Unversioned /containers/{id}/archive on local AF_UNIX /var/run/docker.sock. Docker API v1.51 documentation describes the endpoint; no v1.51 runtime version pin is claimed.",
+    "candidate_sha256": "42d6171789b08b0b2b9c305a6fe564829982befd752b1779813de4edc4ac64af",
+    "candidate_bytes": 12810,
+    "operational_code_only": "New stdlib operational source builders, bounded socket/CLI controls, SHA/JSON/physical readback and local preservation/Git. No package/backend/model CodeType/import/body or package content read.",
+    "container_start_create_exec_load_account_marketdata_credential_old_census_ASTjob_gate_packet_replay": false
+  },
+  "observed_paths": [
+    {
+      "distribution_directory": "pyarrow-25.0.1.dist-info",
+      "METADATA_bytes": 3031,
+      "RECORD_bytes": 78313
+    },
+    {
+      "distribution_directory": "numpy-2.5.3.dist-info",
+      "METADATA_bytes": 6635,
+      "RECORD_bytes": 111517
+    },
+    {
+      "distribution_directory": "scipy-1.18.1.dist-info",
+      "METADATA_bytes": 62353,
+      "RECORD_bytes": 201096
+    }
+  ],
+  "path_scope": {
+    "prefix": "/usr/local/lib/python3.12/site-packages/",
+    "all_six_paired_HTTP_status": 200,
+    "all_six_reported_mode": 420,
+    "all_six_linkTarget": "",
+    "all_six_positive_sizes_below_ordinary_262144_bytes": true,
+    "meaning": "Daemon-reported exact candidate path existence/plain-regular metadata and size only. ISO mtime strings preserved as reported, not container held-FD or exact physical ns authority.",
+    "METADATA_and_RECORD_contents": "UNREAD",
+    "installed_distribution_versions_native_paths_and_runtime_versions": "UNVERIFIED",
+    "content_read_authorized": false
+  },
+  "independent_fold": {
+    "files": 44,
+    "two_full_reads_SHA_held_named_decimal_physical_then_later_bookends": true,
+    "all12_request_response_receipt_bindings_and_three_CLI_terminals_checked": true,
+    "primary_candidate_first_read_matches_inventory": true,
+    "independent_header_base64_JSON_path_stat_reconstruction": true,
+    "full_before_after_fresh_inspect_sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2",
+    "no_HEAD_replay": true,
+    "container": "803718a62e3cbd1f6070abab25a58e1fbc0ee5d04b5444f57c817d7e47b8bf57",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "state": "exited0/noOOM/Pid0/notpaused/notrestarting/finish2026-10-18T09:53:55.975021651Z/ROroot/user1000:1000/two unique audit+out mounts/no source overlap"
+  },
+  "review_validation": {
+    "existing_worker": "/root/trading_action_consistency",
+    "READONLY_exact_source_invocation_resource_review_before_each_SSH": true,
+    "READONLY_actual_proof_review": "No material overclaim or blocker found; supports retained daemon-reported metadata only.",
+    "new_agent_limited_retry_worker_operations": false,
+    "AST_warnings_as_errors_seven_controls_37_purpose_comments": "PASS",
+    "reused_operational_function_ASTs": 13,
+    "two_command_functions_only_allowlist_assertion_changed": true,
+    "four_generated_controls_byte_exact_reproduction": true,
+    "JSON_SHA_staged_diff": "PASS",
+    "Ruff": "PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM",
+    "pre_dispatch_correction": "Reviewer requested watched-signal masking across HEAD response/receipt persistence; corrected before use. Initial observer323c6ba8/transport036142ae/builder3671debd preserved in exclusive preparation-drafts root. Contract explicitly records unversioned API requests. No runtime failure or old body replay."
+  },
+  "resources": {
+    "ordinary_file_wire_bytes": 262144,
+    "helper_AS_soft_bytes": 536870912,
+    "helper_AS_hard_bytes": 4294967296,
+    "owned_Go_CLI_AS_bytes": 4294967296,
+    "primary_CPU_seconds": 30,
+    "independent_CPU_seconds": 20,
+    "primary_work_alarm_SSH_seconds": [
+      90,
+      95,
+      120
+    ],
+    "independent_outer_inner_freshCLI_SSH_seconds": [
+      30,
+      10,
+      5,
+      70
+    ],
+    "socket_or_CLI_seconds": 5,
+    "primary_fresh_minimum_MemAvailable_scratch_inodes": [
+      2147483648,
+      1073741824,
+      512
+    ],
+    "headroom_is_reservation_native_model_or_daemon_RAM_bound": false,
+    "missing_overflow_timeout_signal_owned_stop_crash_branches": "UNTESTED"
+  },
+  "preservation": {
+    "remote_roots": [
+      "capacity-package-metadata-head-20261018-v1",
+      "capacity-package-metadata-head-tools-20261018-v1",
+      "capacity-package-metadata-head-independent-20261018-v1",
+      "capacity-package-metadata-head-independent-tools-20261018-v1"
+    ],
+    "remote_scope": "COMPLETE immutable observations/tools/proof with file readback/output-directory fsync; raw44 files remain Spark.",
+    "local_root": "/tmp/capacity-package-metadata-head-evidence-20261018-v1",
+    "files": 16,
+    "data_bytes": 138251,
+    "manifest_sha256": "143280167c40029ed616122177b55ea9304ad4c47352544d28df4e7abe39eaa9",
+    "manifest_bytes": 18502,
+    "files_readback_root_resolved_parent_fsync": true,
+    "reproduction_root": "/tmp/capacity-package-metadata-head-control-reproduction-20261018-v1",
+    "initial_drafts_root": "/tmp/capacity-package-metadata-head-preparation-drafts-20261018-v1",
+    "crash_durability_or_second_full_remote_archive": false,
+    "old_failed_completed_roots_admissions_sources_packets": "UNCHANGED"
+  },
+  "next_source_only": "Prepare NEW fixed-path bounded paired Docker cp content-copy tools for these six actual paths and exact reported sizes; retain ordinary262KiB content AND tar-wire caps, single regular member, UTF8/raw bytes, paired/full inspect bookends and separate independent readback. Independent exact-source/invocation/resource review BEFORE use. Then SOURCE/DATA-only parse METADATA Name/Version and full RECORD entries/hash fields to establish actual native path declarations; no guessed suffixes/recursive copies/package import/cap relaxation. Finish selected callable/global/type/dataclass live-producer/classflags/native/phase contracts before any capacity proposal. Do not replay this closed HEAD observation or old source censuses/AST jobs/gates/packets for documentation.",
+  "runtime_capacity_execution_authorized": false,
+  "assembled_tree_manifests_native_closure_strategy_entrypoint_bootstrap_owner_caller_stager_packet_runtime_launch_admission": null,
+  "guard3b8be00b_25_payload_functions": "UNRUN_UNCHANGED",
+  "old2446_030c_G08_caps_source_maps": "UNCHANGED",
+  "producer2431_reference2446_executor2468_original_receipts_lifetimes": "SEPARATE_MANDATORY",
+  "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+  "original_timing": "FAILED",
+  "publication": "CLOSED",
+  "missing_original_receipts": "MISSING",
+  "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+  "actual_twohost_Spark2_image_daemon_temp_RAM": "UNADMITTED_UNCHANGED",
+  "heartbeat": "ACTIVE",
+  "diagram": "NONE"
+}

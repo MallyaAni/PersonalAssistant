@@ -1,5 +1,75 @@
 # Next session
 
+## 2026-10-18 — Six stopped package metadata paths/sizes VERIFIED; contents UNREAD
+
+Read research/original-loader-package-metadata-head-proof-v1-2026-10-18.json.
+Source96cb0c3215fee46c8e322d48dbb76c8483c05403 pins observer17617e37/15006B/
+transporte563f027/6012B/independent6c17116d/16449B/transportab334e55/6035B.
+Builders8e9bc16a/11413B+b9c456cf/12857B, preserver6ea191c1/9667B,
+contractc5588d4f/5216B/static297bbe13/4177B/rawproof4a30076a/23927B retained.
+Only new stdlib operational controls ran; no package content/CodeType/import/body,
+container start/create/exec/load/account/data/credential read, old census/AST-job/
+gate/packet replay or guard/G08/cap/source-map/production change.
+
+ONE independently source/invocation/resource-reviewed fixed-key primary SSH exited0/
+empty stderr/no owned stop/cleanupfailure. Exact STOPPED803718a6/e0 only: two
+CLI inspections plus12 paired fixed HEAD archive requests on local Docker socket.
+API request unversioned; official v1.51 docs are descriptive, NOT a runtime pin.
+Six observed /usr/local/lib/python3.12/site-packages/ files all HTTP200/plain
+regular mode420/empty linkTarget: pyarrow-25.0.1.dist-info METADATA3031B/RECORD
+78313B; numpy-2.5.3.dist-info METADATA6635B/RECORD111517B; scipy-1.18.1.dist-info
+METADATA62353B/RECORD201096B. All content sizes below262KiB, but contents UNREAD/
+not authorized by this observation. Candidate42d61717/12810B remains Spark.
+Reported path names/sizes/ISO mtime are NOT container held-FD physical authority,
+every-file baked-image attestation or installed/native/runtime version proof.
+
+ONE separately source/invocation/resource-reviewed independent SSH exited0/empty
+stderr/no owned stop/cleanupfailure.44 files each two full reads/SHA/held+named
+decimal physical bookends then later bookend pass; all12 exact requests/headers/
+base64/stat pairs/receipts and CLI terminals checked. One fresh stoppedinspect
+d5265be8 matches full before/after/original baseline. Same exit0/noOOM/Pid0/finish
+09:53:55.975021651Z/notpaused/notrestarting/RO/user1000:1000/two unique audit+out
+mounts/no source overlap. No HEAD replay or content reads by independent checker.
+Healthy existing worker final READONLY actual-proof review accepts metadata-only
+scope; no newagent/limitedretry/workerops.
+
+Helpers soft512MiB/hard4GiB AS/ownedGoCLI4GiB; CPU30sprimary/20sindependent;
+262KiB file/wire cap unchanged. Fresh primary2GiB availableRAM/1GiB scratch/
+512inodes passed; headroom NOT reservation/native/model/daemon RAM bound.
+Primary90swork/95alarm/5srequest-or-CLI/120sSSH; independent30souter/10sinner/
+5sfreshCLI/70sSSH. Missing/overflow/timeout/signal/ownedstop/crash branches UNTESTED.
+AST warnings-as-errors/37 purpose comments across7controls/13 reused functionASTs/
+two command allowlists only narrowed/fourtools byte-exact reproduction/JSON/SHA/
+staged diff PASS. Ruff previously unavailable/no lint claim.
+
+Reviewer caught interruptible HEAD receipt persistence BEFORE dispatch; masked four
+watched signals across response+receipt+fsync, restore mask afterward. Initial
+observer323c6ba8/transport036142ae/builder3671debd retained in exclusive
+/tmp/capacity-package-metadata-head-preparation-drafts-20261018-v1. No runtime
+failure/body replay. New remote observation/tools/independent/tools roots COMPLETE
+immutable/files+outputdir fsync/readback;44raw files stay Spark. Exclusive
+/tmp/capacity-package-metadata-head-evidence-20261018-v1 retains16small files138251B
+plusmanifest14328016/18502B; files/readbacks/root/resolvedparent fsync done.
+Separate -control-reproduction-20261018-v1 retains3oldcontrols+4new reproduced
+outputs, synced. No crash/durability/second full remote archive guarantee.
+
+NEXT ROOT: SOURCE ONLY prepare NEW bounded paired content-copy tools for the six
+observed paths/exact sizes, independent exactsource/invocation/resource review
+BEFORE use. Keep original262KiB content AND tar-wire bounds/single regular member/
+rawUTF8/full stopped inspect/paired reads/separate independent fold. Then parse
+METADATA Name/Version/full RECORD declarations as data to identify actual native
+paths; no guessed suffix/recursive copy/package import/cap relaxation. Do NOT
+repeat closed HEAD/15/10 censuses/AST inventories/73/80/23/65+4/tiny/diagnostic/v2
+gates/packets. Finish selected callable/global/type/dataclass liveproducer/classflags/
+native/phase contracts. Guard3b8be00b/all25 payload functions UNRUN; old2446/030c/
+G08/caps unchanged. Producer2431/reference2446/executor2468/original receipts/full
+context+graphs+JSON+UTF8 lifetimes separate. Assembledtree/strategy/entrypoint/
+manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/launch/admission
+NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/intraday/fill/UI
+UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/
+no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM unchanged.
+Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — New package syntax/literal versions VERIFIED; registry/native closure open
 
 Read research/original-loader-native-package-syntax-source-proof-v1-2026-10-18.json.
