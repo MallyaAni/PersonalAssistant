@@ -1,0 +1,99 @@
+{
+  "schema": "capacity-native-package-text-source-checkpoint/1",
+  "status": "VERIFIED_FIFTEEN_NEW_STOPPED_SOURCE_COPIES_ONLY_PACKAGE_RUNTIME_UNADMITTED",
+  "starting_git": {"branch": "codex/learned-live-release-20261006", "HEAD": "c96f33b264a7a16cacba4e17409b9b5ef956e326", "working_tree": "CLEAN", "pull_rebase_origin_main": "EXIT0_UP_TO_DATE"},
+  "source_commit": "cb07ebcd3a4b58d47da70e1586a6b0361b2636bb",
+  "files": {
+    "sources/prepare-native-package-text-census-v1-2026-10-18.py": {"sha256": "ed757fda64890572525b4f0cfefbeb78afeecc9cfd3842eae6fe581a58aba832", "bytes": 3858},
+    "sources/capacity-native-package-text-census-v1-2026-10-18.py": {"sha256": "296d0e8dd4d58883388a5c8f5b2d5c0b6d09ccfdbf82cb44c060333637bb1428", "bytes": 13080},
+    "sources/capacity-native-package-text-transport-v1-2026-10-18.py": {"sha256": "518ded7394ae1b04db85f32b89e15693086f8e184c231ac2b891391d2f749b08", "bytes": 6026},
+    "sources/prepare-native-package-text-independent-v1-2026-10-18.py": {"sha256": "3805155fcbeac254cac20cede5bc37864ec5bcd1b81490b380f7f2f114d7a0e6", "bytes": 4419},
+    "sources/verify-native-package-text-census-v1-2026-10-18.py": {"sha256": "3b41d5ae9449b724cd8cb31333d1c8479475c580ab63d21370056bd0628c22ee", "bytes": 15769},
+    "sources/capacity-native-package-text-independent-transport-v1-2026-10-18.py": {"sha256": "fc7219944113913b46b9b2c996d3fb045b3e7f1475abd4ce6326650d29e0b426", "bytes": 6009},
+    "original-loader-native-package-text-independent-v1-2026-10-18.json": {"sha256": "f26f8539c52247f03e7e7c92daaa57a28bb06ccf3b5dfeb6024d1ff2ae6b1aa1", "bytes": 51904},
+    "original-loader-native-package-text-read-contract-v1-2026-10-18.json": {"sha256": "1577394f717804b41eea6d0cdf4ba215f4a2e4320d15942583a8fc84b5d05d39", "bytes": 6341},
+    "original-loader-native-package-text-control-static-v1-2026-10-18.json": {"sha256": "7c0f6a755432e11c11ef3ec9f75527f08058dc62acc0f0f6b0e93c4f8f3c1018", "bytes": 1644},
+    "original-loader-native-package-text-local-preservation-v1-2026-10-18.json": {"sha256": "f944b25813956bd4eeaa611e1db7a07addcdb668c1b8a2291f8ba38151626c7a", "bytes": 306}
+  },
+  "actual_primary": {
+    "one_reviewed_exact_pinned_key_SSH": true, "exit": 0, "stderr_bytes": 0,
+    "owned_SSH_group_stop": null, "cleanup_failure": null,
+    "Docker_commands": {"stopped_inspect": 2, "paired_fixed_path_container_cp": 30},
+    "candidate_sha256": "288d593318086a0399137f4734f3a9b9930cb5b793c217203cf569a49788d6e8", "candidate_bytes": 19522,
+    "source_files": 15, "source_bytes": 137785,
+    "scope": "New15 paths named in ada07c95 only, all disjoint from closed ten-source census. One regular UTF8 tar member per read, strict links/sparse/extra member/trailing nonzero rejection and no filesystem extraction. Retained source copy is byte content, not container held-FD physical authority."
+  },
+  "actual_independent": {
+    "one_separately_reviewed_exact_pinned_key_SSH": true, "exit": 0, "stderr_bytes": 0,
+    "owned_SSH_group_stop": null, "cleanup_failure": null,
+    "retained_files_each_two_full_reads_SHA_and_held_named_physical_checks": 113,
+    "exact_CLI_terminal_receipts": 32, "tar_source_pairs": 30,
+    "candidate_first_read_equals_inventory": true,
+    "source_rows_and_full_archive_metadata_checked": true,
+    "one_fresh_stopped_inspect_sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2",
+    "fresh_before_after_original_inspections_equal": true,
+    "raw_proof_preserved_unchanged_on_Mac": true
+  },
+  "retained_container": {
+    "CID": "803718a62e3cbd1f6070abab25a58e1fbc0ee5d04b5444f57c817d7e47b8bf57",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "state": "EXITED0_NO_OOM_PID0_NOT_PAUSED_NOT_RESTARTING",
+    "finished_at": "2026-10-18T09:53:55.975021651Z",
+    "root_readonly_user": "RO_ROOT_USER1000:1000",
+    "mounts": "Two unique audit+out destinations, no package-source overlap; full inspections equal."
+  },
+  "source_read_scope": "PyArrow_generated_version/ipc/types/util/compute; NumPyversion/distributor_init/coreinit; SciPyversion/distributor_init/ccallback; sklearn_config/distributor_init/base/show_versions. Exact absolute paths and per-source fullSHA/size/physical fields are retained in contract, helper and independent proof.",
+  "operational_resources": {
+    "helper_AS_soft_bytes": 536870912, "helper_AS_hard_and_owned_Go_CLI_AS_bytes": 4294967296,
+    "ordinary_file_and_wire_cap": 262144,
+    "primary_CPU_seconds": 30, "independent_CPU_seconds": 20,
+    "primary_work_alarm_CLI_SSH_seconds": [90, 95, 5, 120],
+    "independent_CLI_fresh_alarm_SSH_seconds": [5, 10, 70],
+    "primary_fresh_minimum_memory_scratch_inodes_passed": [2147483648, 1073741824, 512],
+    "headroom_is_reservation_or_daemon_native_model_RAM_bound": false,
+    "timeout_signal_overflow_owned_stop_crash_branches": "UNTESTED"
+  },
+  "review_and_validation": {
+    "worker": "existing /root/trading_action_consistency",
+    "primary_exact_source_invocation_resource_review_before_use": true,
+    "independent_exact_source_invocation_resource_candidate_review_before_use": true,
+    "actual_proof_readonly_review": "No material scope gap found; verified source copying/readback only.",
+    "new_agent_limited_retry_worker_operations": false,
+    "complete_reused_helper_AST_comparisons": 16,
+    "purpose_comments_across_six_new_control_sources": 29,
+    "AST_warnings_as_errors_JSON_hashlinks_staged_diff": "PASS",
+    "Ruff": "PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM",
+    "copied_package_AST_CodeType_import_body_execution": false
+  },
+  "preserved_local_preparation_failure": {
+    "initial_builder_exit": 1,
+    "boundary": "Incorrect full old-transportSHA literal assertion after correct collector text generated, before transport generation or SSH.",
+    "correction": "Used exact prior proof to pin actual unchanged0c84e4b1f89815a7ca085c07695386824802b9c742c20f6df7152d4312b4e6d2; final builder verified existing collector identical and generated new transport exclusively.",
+    "draft_root": "/tmp/native-package-text-preparation-drafts-20261018-v1",
+    "remote_or_payload_failure": false,
+    "old_roots_or_evidence_modified": false
+  },
+  "preservation": {
+    "remote_census_tools_review_verifier_tools_roots": "NEW_COMPLETE_IMMUTABLE",
+    "remote_files_and_output_directories_fsynced_readback": true,
+    "full_second_remote_evidence_archive_or_crash_guarantee": false,
+    "local_root": "/tmp/capacity-native-package-text-local-evidence-20261018-v1",
+    "local_control_proof_contract_and_transport_files": 15, "local_data_bytes": 164489,
+    "manifest_sha256": "81bff79c21bd3cab685c754e7a0474cdc8b1ec9ab4da6dab5adea0e27dfba91d", "manifest_bytes": 6918,
+    "local_files_readbacks_root_resolved_parent_fsync": true,
+    "all_old_failed_completed_sources_roots_packets_admissions": "UNCHANGED"
+  },
+  "not_executed_or_admitted": [
+    "No copied package/backend/model CodeType/import/body or package AST interpretation; no package version/RECORD/native extension/thread declaration acceptance yet.",
+    "No container start/create/exec/load, account/market-data/credential read, old census/AST job/gate/packet replay, admission reuse, guard/G08/cap/source-map/production change.",
+    "Distinct guard3b8be00b and all25 payload functions remain unrun. Old2446 SourceBook/030cb5bb guard unchanged. Producer2431/reference2446/executor2468 and original full receipts/lifetimes remain separate."
+  ],
+  "next_source_only": "Inspect exact retained15 texts with fresh source SHA/physical bindings to identify literal version declarations and transitive/native seams, preserving source declarations versus actual installed runtime distinction. Then prepare exact RECORD/METADATA/native path metadata reads for independent source/invocation/resource review before use; no guessed suffix/recursive copy/package import/cap relaxation. Complete selected callable/global/type/dataclass live-producer/class flags/native/phase contracts before any capacity proposal. Never repeat closed15/10 source censuses or old AST/gate/packet jobs for documentation.",
+  "execution_authorized": false,
+  "assembled_tree_strategy_entrypoint_manifests_bootstrap_owner_caller_stager_packet_runtime_launch_admission": null,
+  "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+  "original_timing": "FAILED", "publication": "CLOSED", "missing_original_raw_receipts": "MISSING",
+  "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+  "actual_twohost_Spark2_image_daemon_temp_RAM": "UNADMITTED_UNCHANGED",
+  "heartbeat": "ACTIVE", "diagram": "NONE"
+}

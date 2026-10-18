@@ -1,5 +1,71 @@
 # Next session
 
+## 2026-10-18 — Fifteen new stopped package texts VERIFIED; native closure unadmitted
+
+Read research/original-loader-native-package-text-source-proof-v1-2026-10-18.json.
+Sourcecb07ebcd3a4b58d47da70e1586a6b0361b2636bb pins collector296d0e8d/13080B/
+transport518ded73/6026B/independent3b41d5ae/15769B/transportfc721994/6009B.
+Buildersed757fda/3858B+3805155f/4419B, readcontract1577394f/6341B and raw
+independentf26f8539/51904B retained. Only new stdlib operational controls ran.
+No copied package/backend/model AST interpretation/CodeType/import/body/test,
+account/data/credential read, container start/create/exec/load, old gate/census/
+AST-job/packet replay or guard/G08/cap/source-map/production change.
+
+ONE independently source/invocation/resource-reviewed fixed-key primary SSH exited0/
+empty stderr/no owned stop/cleanupfailure. Exact retained STOPPED803718a6/e0 only:
+two inspect+30paired fixed-path Docker cp reads. Fifteen UTF8 Python files137785B:
+PyArrow_generated_version/ipc/types/util/compute; NumPyversion/distributor/coreinit;
+SciPyversion/distributor/ccallback; sklearn_config/distributor/base/show_versions.
+All disjoint from closed ten-source census. One regular tar member per read;
+links/sparse/extra members/trailing nonzero refuse/no filesystem extraction.
+Candidate288d5933/19522B and113files remain Spark. Tar metadata is NOT held-FD
+container-source physical authority or every-file baked-image attestation.
+
+ONE separately source/invocation/resource-reviewed independent SSH exited0/empty
+stderr/no owned stop/cleanupfailure.113files each two full reads/SHA/held+named
+physical decimalstrings;32exact CLI terminals/30tar-source pairs/full archive
+fields/candidate firstread-vs-inventory checked. ONE fresh stoppedinspect raw
+d5265be8 matches full before/after/original native inspection. Same exit0/noOOM/
+finish09:53:55.975021651Z/Pid0/notpaused/notrestarting/RO/user1000:1000/two
+unique audit+out mounts/no source overlap. Worker final READONLY actual-proof
+review accepts VERIFIED source-copy scope only; no newagent/limitedretry/workerops.
+
+Helper soft512MiB/hard4GiB virtualAS/ownedGoCLI4GiB, CPU30sprimary/20sindependent,
+ordinary file/wire262KiB unchanged. Fresh primary2GiB availableRAM/1GiB scratch/
+512inodes passed; headroom NOT reservation/native/model/daemon RAM bound. Primary
+90swork/95salarm/5sCLI/120sSSH; independent5sCLI/10sfreshalarm/70sSSH. Timeout/
+signal/overflow/ownedstop/crash branches UNTESTED.16 reused helper ASTs exact,
+AST warnings-as-errors/29purpose comments across6controls/JSON/SHA/diff PASS;
+Ruff previously unavailable/no lint claim. New15 package texts not AST-reviewed yet.
+
+Preserved local builder EXIT1: incorrect full old-transportSHA literal assertion
+after correct collector text generated, BEFORE transport generation/SSH. Corrected
+only pin from exact prior proof0c84e4b1, verified same collector bytes, finalbuilder0.
+Initial builder+collector retained /tmp/native-package-text-preparation-drafts-
+20261018-v1; no remote/payload runtime failure. Both actual transports succeeded.
+New remote census/census-tools/census-review/census-verifier-tools roots COMPLETE
+immutable/files+output-directory fsync/readback; no second full remote evidence
+archive/crash guarantee. Exclusive /tmp/capacity-native-package-text-local-evidence-
+20261018-v1 retains15smallcontrol/proof/contract/transportfiles164489B plus
+manifest81bff79c/6918B; files/readbacks/root/resolvedparent fsync done. No old roots
+or admissions changed/replayed. Source137785B remains Spark; rawproof retained Mac.
+
+NEXT ROOT: SOURCE ONLY inspect these exact15 retained texts with SHA/physical
+bindings, especially version declarations and newly exposed transitive/native
+seams. Distinguish literal source versions from installed distribution/runtime
+attestation. Then prepare exact RECORD/METADATA/native paths for independent
+source/invocation/resource review BEFORE use; no guessed suffix/recursivecopy/
+packageimport/cap relaxation. Complete selected callable/global/type/dataclass
+liveproducer/classflags/native/phase contracts against distinct guard3b8be00b.
+Do NOT repeat closed15/10 censuses/oldAST jobs/73/80/23/65+4/tiny/diagnostic/v2
+gates/packets. Producer2431/reference2446/executor2468/original receipts/context/
+graphs/JSON+UTF8 lifetimes remain separate. All25 newguard payload bodies UNRUN;
+assembledtree/strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/
+packet/runtime/launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/
+history/ordinary/intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/
+missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-
+daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Distinct2468 guard source prepared; all25 payload functions UNRUN
 
 Read research/original-loader-executor-guard-source-proof-v1-2026-10-18.json.
