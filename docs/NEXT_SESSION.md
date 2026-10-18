@@ -1,5 +1,71 @@
 # Next session
 
+## 2026-10-18 — Full v3 synthetic guard VERIFIED: 65 cases + four cleanup controls
+
+Read research/original-loader-guard-full-synthetic-proof-2026-10-18.json.
+Source441bb4c31e7da5f714b29439f62a48e187a75e76/source-only checkpointbb02c8e3
+pins full v3 closure: fixtures59441acb/suite6fee6ff1/bootstrap0eeb8459/
+controller544e3c96/verifiered3af3c9/caller14933f17/stage81bb71d8, unchanged
+candidate harness030cb5bb. Every producer/consumer binds schema2 and explicit
+marshal-format2 at BOTH generated seams. Old737d/schema1/v2/tiny bytes retained.
+All65case bodies and four G18 controls retained; guards/caps unchanged.
+
+ONE separately named synthetic attempt, not a replay. Packet e10cff43/230815B/
+10sources; capsule proof8b01cbdc/11274B independently checked18files. Separate
+scratch/n2-loader-guard-{transfer,source,synthetic}-20261018-v3 roots COMPLETE.
+Fresh admissione6e3db70 at1792303642739575193ns/MemAvailable10243850240B consumed
+ONLY here, never reusable. Healthy existing worker reviewed actual source,
+cached e0/host/jobs/resources/absent roots and exact invocation before create.
+Headroom is NOT a reservation or daemon/model RAM guarantee.
+
+Actual preparece60c9e6 finished06:07:23.75195886Z; suiteba04b6f8 finished
+06:07:38.905699143Z, BOTH exit0/noOOM. Exact e0 UID1000/noneRO/1CPU/2GiB=swap/
+PIDs32/tmp64/noHC/lognone; prepare2binds/suite4binds. Only audit/fixture/tiny app
+sourceRO and outRW; no genuine backend/model/original/account/market/credentials/
+socket mounts. SourceBook/fake audit/inspection explicitly INJECTED synthetic,
+not genuine2446 source/runtime admission. No metric patch or model invocation.
+
+All65 expected case observations +four G18 cleanup children pass,69children:
+4positive exit0/39expected metadata refusals exit1/22guard refusals exit86.
+G08 wrapper passes then intended BROKER_OR_ACCOUNT_FUNCTION at __create_fn__
+in BOOTSTRAP/publicationCLOSED; old failure is not relabelled. Actual G18 READY,
+timeout/SIGALRM wait interruption/exit7 and surviving separate sentinel checked.
+G17 stress raises CAPACITY_RESULT_BOUND_EXCEEDED via complete JSON/UTF8 bound
+path. AFTER peak312631296B precedes serialization; no late SERIALIZED metric,
+so full late peak/combined genuine model+receipt RAM remain UNVERIFIED.
+
+Original caller exited1 AFTER completed suite because strict fresh==after
+inspection compared Mounts list order. Failed independent-review-v3 preserved;
+prepare identical, suite ONLY order differs, complete mount records unchanged.
+DISTINCT report-only verifierv3-report-v2 cd8286fe/28334B retains raw ordering,
+requires every non-Mounts field exact and full unique-Destination mount records
+exact. Independently reviewed before read-only fold, with two fresh exactCID
+inspections; no test body rerun. New review root -independent-review-v3-report-v2
+proof4e826559/328421B checks663run/13stage files, prepared15/source6 fullSHA and
+physical beforeafter, all65+4 outcomes. Raw proof fetched/hashchecked onMac.
+
+Exclusive scratch/n2-loader-guard-full-evidence-20261018-v3 retains46files/
+678266B/manifestf7ef50e6/preserver06cb5a7e, fsynced/readback. Independent
+761d31e4/proof17ebe02f/21766B verifies two full reads/exact physical fields.
+Only exact raw proof328421B has SHA-bound evidence exception; ordinary262KiB
+bound and every guard/native/model cap unchanged. Exact ns decimal strings.
+AST/purpose112+16embedded/JSON/hash links/diff pass; Ruff unavailable. Overall
+owner/suite alarm, forcekill and transport-loss branches remain unexercised.
+
+NEXT ROOT: full synthetic guard boundary CLOSED; never rerun65+4 or prior tiny/
+diagnostic/failedv2 bodies for docs. Prepare INERT exact genuine2446 source/
+runtime/mount recipe and phase call manifest composition with v3 fingerprints,
+no-fit stop-at-loader-return/publicationCLOSED/missingreceipt restrictions.
+Independently review exact composition and fresh genuine runtime/resources
+before any capacity execution. No genuine loader/account/history/model or
+actualtwohost owner launch authorized here. Historical/weekday/intraday/fill/UI/
+full horizon/combined RAM UNVERIFIED; originaltimingFAILED/publicationCLOSED/
+missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/Spark2 image-load-daemon-
+temp-RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
+The tiny checkpoint below is preserved history. Its proposed full-source/full-
+suite next step is now completed only for the synthetic scope recorded above.
+
 ## 2026-10-18 — Versioned v3 actual tiny fence VERIFIED; full suite still open
 
 Read research/original-loader-guard-v3-tiny-proof-2026-10-18.json and exact

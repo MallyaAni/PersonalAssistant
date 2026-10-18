@@ -1,0 +1,211 @@
+{
+  "schema": "original-loader-guard-full-synthetic-proof/3",
+  "status": "VERIFIED_FULL_SYNTHETIC_GUARD_WITH_DISTINCT_REPORTER",
+  "source_revision": "441bb4c31e7da5f714b29439f62a48e187a75e76",
+  "source_only_checkpoint": "bb02c8e3",
+  "starting_revision": "5267f7685964bc841b4af86b3ad3a66661bc2df1",
+  "branch": "codex/learned-live-release-20261006",
+  "source_closure_proof": "original-loader-guard-source-closure-v3-proof-2026-10-18.json",
+  "proposal": "original-loader-guard-concrete-proposal-v3-2026-10-18.json",
+  "guard_harness_sha256": "030cb5bb25f89c2785e6acbd55aceff5c99b632a5eb538079ee027362ae6178a",
+  "packet": {
+    "sha256": "e10cff43b166269d1ebebd0dacdac47c79f7bf8a51fb44d1db757588820e3127",
+    "bytes": 230815,
+    "records": 10,
+    "owner_sha256": "f8e6fcb47bff6c2f190295ddd2bd63308b7384a10734b422daed5e07c300c4db",
+    "caller_sha256": "14933f1735352a313bdff6de627c7180c73ebb816ea46c214eb8273773b0f7ec",
+    "prerequisite_reader_sha256": "8d3f17d41e5b13b98e697138facadb3f00fe68e5822130fc9d4ad2b5929acc38",
+    "capsule_reader_sha256": "45b6d1003335be583aab051cf169952c41f0b5a685a82cc9085434e26eb6881d",
+    "capsule_proof_sha256": "8b01cbdcf1b5dee9ca988ddbc7e47162f714190bc8a879ef1b915be0fec925f7",
+    "capsule_proof_bytes": 11274,
+    "capsule_files_at_review": 18,
+    "full_physical_readback": true
+  },
+  "roots": {
+    "capsule": "/home/animallya96/scratch/n2-loader-guard-transfer-20261018-v3",
+    "stage": "/home/animallya96/scratch/n2-loader-guard-source-20261018-v3",
+    "run": "/home/animallya96/scratch/n2-loader-guard-synthetic-20261018-v3",
+    "failed_first_review": "/home/animallya96/scratch/n2-loader-guard-synthetic-20261018-v3-independent-review-v3",
+    "accepted_distinct_review": "/home/animallya96/scratch/n2-loader-guard-synthetic-20261018-v3-independent-review-v3-report-v2",
+    "capsule_review": "/home/animallya96/scratch/n2-loader-guard-capsule-review-20261018-v3",
+    "evidence": "/home/animallya96/scratch/n2-loader-guard-full-evidence-20261018-v3",
+    "evidence_review": "/home/animallya96/scratch/n2-loader-guard-full-evidence-review-20261018-v3",
+    "local": "/tmp/n2-guard-packet-20261018-v3",
+    "all_roots_complete_never_replay_adopt_overwrite": true
+  },
+  "admission": {
+    "sha256": "e6e3db7019020a49892c50cc592c8e095a545ada87557bd52fb249aef1372d2f",
+    "schema": "n2-guard-synthetic-admission/3",
+    "scope": "SYNTHETIC_ONLY_NOT_GENUINE_LOADER",
+    "guard_manifest_schema": "n2-capacity-call-manifest/2",
+    "fingerprint": {
+      "algorithm": "cpython-code-marshal-format-2-sha256/1",
+      "marshal_version": 2
+    },
+    "observed_at_ns": "1792303642739575193",
+    "MemAvailable_bytes": "10243850240",
+    "scratch_available_bytes": "2811171168256",
+    "scratch_inodes_available": "243505105",
+    "fresh_targets_absent": true,
+    "active_labelled_jobs": [],
+    "actual_cached_image_raw_sha256": "c705c23b6839359fb0382e3d4b21638c02344956aecb732d4dfbbfe587db0fe5",
+    "independently_reviewed_exact_packet_host_invocation": true,
+    "consumed": true,
+    "reusable": false,
+    "reservation": false,
+    "genuine_loader_authorized": false
+  },
+  "invocation": {
+    "operator_sha256": "5b3be4292f64fecb8178487840f534626d446dd0bcd20534a70fbe2d79fcd504",
+    "admission_source_sha256": "4ec6b9cf99b86031d7b1b16b30fc3659205124c49cd114c78bdb0a8850305137",
+    "invoke_source_sha256": "6a90e884caabe67cd8b353a552d1ed2d8f32b1dca8bb7d93696c52a1cd90ac10",
+    "route": "--admitted-synthetic-v3",
+    "caller_exit": 1,
+    "owned_stop": null,
+    "cause": "Independent verifier line406 fresh==after failed for suite Mounts list ordering only, AFTER both runtime phases and owner-candidate completed. This original caller failure is retained, not relabelled success.",
+    "no_automatic_test_retry": true
+  },
+  "actual_runtimes": [
+    {
+      "role": "prepare",
+      "cid": "ce60c9e62735d85adcf37bc5f131ef84231c4eeb41343b621aa8ea8c499ef5db",
+      "started": "2026-10-18T06:07:23.489217365Z",
+      "finished": "2026-10-18T06:07:23.75195886Z",
+      "exit": 0,
+      "oom": false,
+      "binds": 2,
+      "inspect_sha256": "dacc14ca471506471189e8ba128a69ea20cf7439ae528d769dfe340de9fff9b9",
+      "fresh_mount_order_equal": true
+    },
+    {
+      "role": "suite",
+      "cid": "ba04b6f8cb622281a64098c2c2a2e0bc538c3b12e29293095818313cc0b43151",
+      "started": "2026-10-18T06:07:24.054403352Z",
+      "finished": "2026-10-18T06:07:38.905699143Z",
+      "exit": 0,
+      "oom": false,
+      "binds": 4,
+      "inspect_sha256": "e37320577c68a3b2bdbc70506f293acc7584266c77df51fbcce5721be53a2bd5",
+      "fresh_mount_order_equal": false
+    }
+  ],
+  "runtime_profile": {
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "uid": 1000,
+    "network": "none",
+    "read_only": true,
+    "cpu": 1,
+    "memory_bytes": 2147483648,
+    "memory_swap_bytes": 2147483648,
+    "pids": 32,
+    "tmpfs_bytes": 67108864,
+    "healthcheck": false,
+    "logging": "none",
+    "audit_and_fixture_and_tiny_app_only": true,
+    "genuine_backend_model_account_original_market_credentials_socket_mounts": false,
+    "CPU_wait_caps_unchanged": true
+  },
+  "acceptance": {
+    "cases": 65,
+    "cleanup_children": 4,
+    "total_children": 69,
+    "all_expected_observations_passed": true,
+    "unexpected_failures": 0,
+    "skips": 0,
+    "case_exit0_positive": 4,
+    "case_exit1_expected_metadata_refusal": 39,
+    "case_exit86_expected_guard_refusal": 22,
+    "suite_sha256": "c0d02a6d1ae16680867ce85cba881702d76899484a17ef68a8fcded78961415a",
+    "suite_bytes": 28917,
+    "G08_generated": {
+      "status": "FAILED_CLOSED",
+      "reason": "BROKER_OR_ACCOUNT_FUNCTION",
+      "identity": "backend.market.replay_broker.__create_fn__",
+      "phase": "BOOTSTRAP",
+      "publication": "CLOSED"
+    },
+    "G18": "Actual READY children; timeout and real SIGALRM wait interruption terminate exact owned children, exit7 retained, separate sentinel remains alive during all three controls then reaped. No external Docker-force-stop/transport-loss claim.",
+    "G17_stress": {
+      "error_class": "RuntimeError",
+      "message": "CAPACITY_RESULT_BOUND_EXCEEDED",
+      "complete_JSON_and_UTF8_bound_path": true,
+      "timeout_OOM_or_FSIZE_substitute": false,
+      "AFTER_phase_peak_bytes": "312631296",
+      "AFTER_phase_ru_maxrss_kib": 286688,
+      "AFTER_is_before_serialization": true,
+      "full_late_serialization_peak_recorded": false,
+      "genuine_model_RAM_acceptance": false
+    },
+    "injected_SourceBook_fake_audit_inspection_explicit": true,
+    "genuine2446_source_runtime_admission": false,
+    "combined_model_memory": false
+  },
+  "independent_report": {
+    "original_verifier_sha256": "ed3af3c9a026f2e83da3e976e7f4b596a62106984e32e1503f41466da46dbcdd",
+    "distinct_reporter": {
+      "repository_path": "sources/original-loader-guard-verifier-v3-report-v2-2026-10-18.py",
+      "sha256": "cd8286fe93802f49828a1d80973f7ea13ad71790d589496014796a87c0469be9",
+      "bytes": 28334
+    },
+    "changed_functions_only": [
+      "fold",
+      "verify"
+    ],
+    "change": "Every non-Mounts runtime field remains exact. Both Mounts lists must have unique destinations; complete raw mount records must be identical by destination. Raw list order equality is separately retained. Exclusive new report root only.",
+    "raw_inspections_unchanged": true,
+    "proof_sha256": "4e826559cef37475bde075a224aa5485052b7dd63db3e496fb0d83b668cd6b32",
+    "proof_bytes": 328421,
+    "run_files": 663,
+    "stage_files": 13,
+    "prepared15_full_SHA_physical_before_after": true,
+    "source6_full_SHA_physical_before_after": true,
+    "two_fresh_exact_CID_inspections": true,
+    "all65_case_assertions_and4controls_checked": true,
+    "raw_proof_fetched_hashchecked_on_Mac": true,
+    "test_bodies_reexecuted": 0,
+    "healthy_worker_review": "READONLY exact packet/prerequisite/invocation review before create; report-only fix reviewed before fold; final interpretation confirms full synthetic boundary only. No limited-agent retry/new agent."
+  },
+  "preservation": {
+    "evidence_files": 46,
+    "evidence_bytes": 678266,
+    "manifest_sha256": "f7ef50e686c7faffd0daa98399313df6b5efbf47d8b66cdd523e008b1dad71a5",
+    "preserver_sha256": "06cb5a7e450255c169c79a2f5acfdcc3f1296b6ab348b45e81111aa4ece0548d",
+    "fsync_readback": true,
+    "independent_verifier_sha256": "761d31e487c7735ce4001aa2f769e4c9ca878e16c8b9cd5074098e47e74c56de",
+    "independent_proof_sha256": "17ebe02faf571887650553f054f8a657baa60794613a2bb77ca926ada01bfbb9",
+    "independent_proof_bytes": 21766,
+    "two_full_reads_exact_physical_fields": true,
+    "evidence_bound_exception": "Only exact logs/proof.json is permitted328421B with required wholeSHA4e826559; ordinary262KiB bound unchanged. Duplicate full-proof-fetch.stdout remains local and is omitted from mirror because exact same raw proof is retained. No guard/native/model cap change.",
+    "ns_fields": "Exact decimal strings, no JS Number roundtrip"
+  },
+  "validation": {
+    "source_AST_and_purpose_comments": 112,
+    "embedded_purpose_comments": 16,
+    "reporter_AST_only_fold_verify_changed": true,
+    "source_JSON_hash_links": "PASS",
+    "diff_check": "PASS",
+    "Ruff": "UNAVAILABLE established environment; no lint claim",
+    "completed_old_gate_bodies_replayed": 0,
+    "source_only_checkpoint_remains_historically_inert": true
+  },
+  "unverified": [
+    "genuine2446 composed source/import closure",
+    "exact genuine runtime/mount/invocation/phase call manifest admission",
+    "genuine loader and combined model+receipt RAM",
+    "full horizon/historical/ordinary weekday/intraday/fill/UI",
+    "actualtwohost/Spark2 image-load/daemon-temp/incremental RAM",
+    "overall suite/owner deadline/forcekill/transport loss cleanup"
+  ],
+  "unchanged": {
+    "old737d_schema1_v2_source_failed_roots_admissions": true,
+    "completed_tiny_roots_admissions": true,
+    "native_Store_Nightly_Cycle_and_contract_ecc": true,
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "missing_original_raw_receipts": "UNCHANGED",
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "production_deployed": false,
+    "heartbeat": "ACTIVE"
+  },
+  "next": "Full synthetic guard boundary CLOSED. Never rerun65+4 or prior tiny/failedv2 bodies for docs. Prepare INERT exact genuine2446 source/runtime/mount recipe and phase call manifest composition using v3 fingerprint semantics, preserving no-fit stop-at-loader-return/publicationCLOSED/missingreceipt restrictions. Independently review source composition and fresh genuine runtime/resources before any capacity execution; this result authorizes no genuine loader/account/history/model launch or actualtwohost owner run."
+}
