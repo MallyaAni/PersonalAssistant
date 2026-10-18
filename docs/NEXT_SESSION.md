@@ -1,5 +1,69 @@
 # Next session
 
+## 2026-10-18 — Versioned v3 actual tiny fence VERIFIED; full suite still open
+
+Read research/original-loader-guard-v3-tiny-proof-2026-10-18.json and exact
+proposal7f6b320a/6916B. Sourcec6d52ff5 pins DISTINCT harness030cb5bb/31002B,
+bootstrapbde38c29/21295B/owner97acb166/7196B/verifieraaabadff/11815B. Old737d/
+schema1/fixtures/failedv2/diagnostics remain immutable. Only constructor/profile
+ASTs change;26other functions/guards/caps remain identical. Candidate requires
+n2-capacity-call-manifest/2 + exact fingerprint algorithm/version(int2), with
+shared inline format2 for dataclass AND daily-prefix generated records. Public
+execute still unconditionally refuses. Source is research-only, not deployed.
+
+ONE new scoped tiny phase, not oldv2/diagnostic replay. Packet36824e27/184384B/
+9records/137301decodedB, book548d4e5e/stagef4328c6a retained exclusively under
+scratch/n2-guard-v3-tiny-{source,run,reviews,evidence}-20261018-v1. Independent
+source/prereqeb9cf847/7374B checked14files/actual cached e0/hostUID/jobs/
+resources/absent roots. Fresh admission3e83b99f at1792302340321820543ns,
+MemAvailable10186199040B, consumed ONLY here and never reusable. Headroom is
+NOT a reservation or full-model/daemon RAM guarantee. Exact callercead761a/
+8475B reviewed; stale two-child purpose comment corrected before execution.
+
+Actualb0a79457/e0 exited0/noOOM05:45:45.838075392Z; fresh independent inspect
+e17463bd confirms stopped. UID1000/noneRO/1CPU/2GiB=swap/PIDs32/tmp64/noHC/
+lognone/two tiny auditRO+outRW binds only. No genuine backend/model/original/
+account/market/credentials/socket binds. Actual23childrenPID7–29 reaped/empty
+logs/no owned stop:1prep +22expected cases,0unexpected failures/0skips.
+
+Actual candidate constructor/register/install/profile/audit-hook/trip used,
+WITHOUT injected marshal adapter or metric patch. Tiny SourceBook constructor
+still explicitly BYPASSED/INJECTED (six source files, not2446); real read/
+authenticate_all/finder run. Prepared16generated rows/8files:14dataclass+
+2exact original prefix records. Producer remains inert text; only source-pinned
+inputs AST prefix compiled, stops at first non-backend MarketStore dependency
+before data. No full numerical function/model/genuine source admission.
+
+Two positives exit0 (Sample3 and prefix); seven constructor refusals exit1 with
+zero slots/no backend imports; thirteen actual profile refusals exit86 retain
+exact finite reason/identity/phase/publicationCLOSED JSON+zero padding in the
+same allocated65536B/128block inode. All eight binding fields/code/constants/
+schema/algorithm/version controls covered at their actual first boundaries.
+Broker wrapper now passes, then __create_fn__ retains intended BROKER_OR_ACCOUNT_
+FUNCTION refusal; old G08 outcome was never relabelled. Audit hook installed,
+but audit-event refusal cases are NOT exercised in this narrow phase.
+
+Independent terminalproof540b0497/114673B checks181run/22source-at-review files,
+all23actualPIDs/exits/slots/markers; prepared8/source5 fullSHA+bytes+physical
+beforeafter unchanged. Raw proof+seven small observations fetched/hashchecked.
+Exclusive evidence36files595687B/manifesta5ef4fdf/preserver16386155 fsynced/
+readback; independentdebe629e/proof79237022/17186B verifies two full reads/exact
+physical fields. Healthy existing worker READONLY reviewed sources, actual
+prereqs/exactcaller/final interpretation; no limited-agent retry/new agent.
+AST/purpose75/JSON/hashlinks/diff pass; Ruff unavailable. Zero old gate bodies
+replayed. Force-stop/alarm/SIGKILL/transport-loss branches unexercised.
+
+NEXT ROOT: prepare INERT separately pinned v3 FULL SOURCE CLOSURE. Update all
+fixture/manifest producers/verifiers/bootstrap/caller for explicit schema2 and
+format2 at BOTH generated seams; retain all65cases+4G18controls/G08factory refusal,
+all guards/caps and v2 evidence. Independently review closure/exact invocation,
+then fresh synthetic actual host/source/resource admission before ONE separately
+named NEW v3 full attempt. Never replay/adopt oldv2 or completed tiny roots/reuse
+admissions. Full65/stress/G18/workflow/genuine2446/model+receiptRAM/horizon/
+historical/weekday/intraday/fill/UI remain UNVERIFIED. OriginaltimingFAILED/
+publicationCLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/
+actualtwohost/Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Explicit format-2 tiny hypothesis VERIFIED; guard still unchanged
 
 Read research/original-loader-format2-hypothesis-proof-2026-10-18.json and the

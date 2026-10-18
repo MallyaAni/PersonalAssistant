@@ -1,0 +1,263 @@
+{
+  "schema": "n2-guard-v3-tiny-proof/1",
+  "status": "VERIFIED_NARROW_ACTUAL_CANDIDATE_FENCE_ONLY",
+  "source_revision": "c6d52ff5",
+  "starting_revision": "0c666839b2323b26116a4b05a7e97b931a1dbfef",
+  "branch": "codex/learned-live-release-20261006",
+  "objective": "Validate the distinct schema/2 format-2 guard candidate through its actual constructor/profile/failure-slot path without an injected marshal adapter.",
+  "proposal": {
+    "path": "original-loader-guard-v3-tiny-proposal-2026-10-18.json",
+    "sha256": "7f6b320a2a482c0d996ca2e46b9609cbfb69d91bdafee5817af15c03ea622556"
+  },
+  "sources": {
+    "harness": {
+      "sha256": "030cb5bb25f89c2785e6acbd55aceff5c99b632a5eb538079ee027362ae6178a",
+      "bytes": 31002
+    },
+    "bootstrap": {
+      "sha256": "bde38c29de0db4ed9389f5854eade3ca5467ccd23834fb743007823f402f6fd8",
+      "bytes": 21295
+    },
+    "owner": {
+      "sha256": "97acb166944cf57709ce8f26526425942acd8ad146e81b9efa3844e1f43a8fda",
+      "bytes": 7196
+    },
+    "verifier": {
+      "sha256": "aaabadff42e33cb95de21a4bfb5be425f48fc179ae52a3d38c64ab28355687c1",
+      "bytes": 11815
+    },
+    "inert_producer_sha256": "fae5bfc7d7438071094f31f42e884cb48e3709c55f364954e51c28302d3c3e30",
+    "inert_continuation_sha256": "14357ed7b87618ee514dd3cd4e4a71e2c27290875c3df257e692773e524cfaaf",
+    "unchanged_controller_sha256": "2e505205cc8a3793d7b3313a5b5c3b670b00134575982d26c725787b6530df5a"
+  },
+  "candidate": {
+    "manifest_schema": "n2-capacity-call-manifest/2",
+    "fingerprint": {
+      "algorithm": "cpython-code-marshal-format-2-sha256/1",
+      "marshal_version": 2
+    },
+    "changed_functions": [
+      "CallFence.__init__",
+      "CallFence.profile"
+    ],
+    "unchanged_function_asts": 26,
+    "all_eight_generated_binding_checks_retained": true,
+    "both_dataclass_and_daily_prefix_use_explicit_format2": true,
+    "old_harness_737d_preserved": true,
+    "old_schema1_not_reinterpreted": true,
+    "public_execute_unconditionally_refuses": true,
+    "deployed": false
+  },
+  "roots": {
+    "source": "/home/animallya96/scratch/n2-guard-v3-tiny-source-20261018-v1",
+    "run": "/home/animallya96/scratch/n2-guard-v3-tiny-20261018-v1",
+    "source_review": "/home/animallya96/scratch/n2-guard-v3-tiny-source-review-20261018-v1",
+    "terminal_review": "/home/animallya96/scratch/n2-guard-v3-tiny-independent-review-20261018-v1",
+    "evidence": "/home/animallya96/scratch/n2-guard-v3-tiny-evidence-20261018-v1",
+    "evidence_review": "/home/animallya96/scratch/n2-guard-v3-tiny-evidence-review-20261018-v1",
+    "local_small_evidence": "/tmp/n2-guard-v3-tiny-20261018-v1",
+    "all_complete_never_replay_adopt_overwrite": true
+  },
+  "packet": {
+    "sha256": "36824e278ffec2e0f33e525da225a0979a802c9579b867d3856e06f2712c4586",
+    "bytes": 184384,
+    "records": 9,
+    "decoded_bytes": 137301,
+    "stager_sha256": "9582321beb236963b26f483df3763e70985908a1cd0e17dbacdb310c16c7dd40",
+    "source_book_sha256": "548d4e5e8cfc9f63a12d93511c099f8136c17e079a83e03c68908383a0118c8d",
+    "stage_proof_sha256": "f4328c6ad76b366de6c1cc23edaf3ec8bf2e1ab931ccd326839062385e256c3f",
+    "stage_files": 12,
+    "stage_bytes": 329323,
+    "fsync_readback": true
+  },
+  "source_review": {
+    "source_sha256": "597d2c8e8f33ffbc54d489a615aad08990f2dbc5479ac655d5d9f32975b53736",
+    "proof_sha256": "eb9cf8474aff507e3936679fd28dca1c1fcaa479e236d7d89f2f9b67e344367e",
+    "proof_bytes": 7374,
+    "source_files": 14,
+    "actual_cached_image_host_UID_jobs_resources_absent_targets": true,
+    "healthy_existing_worker_review": "Sources, exact staged source/prerequisite proof and final invocation independently reviewed READONLY before create; no blocker. No limited-agent retry/new agent.",
+    "only_review_correction": "Stale two-child launcher comment corrected to narrow v3 cases; code AST unchanged before execution."
+  },
+  "admission": {
+    "sha256": "3e83b99fd0c8c160de66215d645f8a3b8b68839556eeca2e748f7cd2c6e81d0d",
+    "schema": "tiny-guard-v3-admission/1",
+    "scope": "TINY_SYNTHETIC_V3_ACTUAL_FENCE_ONLY",
+    "observed_at_ns": "1792302340321820543",
+    "MemAvailable_bytes": "10186199040",
+    "scratch_available_bytes": "2811257044992",
+    "scratch_inodes_available": "243505442",
+    "host": "animallya-spark1",
+    "uid": 1000,
+    "fresh_run_absent": true,
+    "active_labelled_jobs": [],
+    "image_raw_sha256": "c705c23b6839359fb0382e3d4b21638c02344956aecb732d4dfbbfe587db0fe5",
+    "consumed": true,
+    "reusable": false,
+    "reservation": false,
+    "genuine_execution_authorized": false
+  },
+  "invocation": {
+    "launcher_sha256": "cead761a2a8db31f7e494b8ecaa63e6b3a11f04b6dbaf02b325f121aa6cde0d0",
+    "argv": [
+      "--admitted-v3-tiny-fence",
+      "3e83b99fd0c8c160de66215d645f8a3b8b68839556eeca2e748f7cd2c6e81d0d",
+      "97acb166944cf57709ce8f26526425942acd8ad146e81b9efa3844e1f43a8fda",
+      "548d4e5e8cfc9f63a12d93511c099f8136c17e079a83e03c68908383a0118c8d"
+    ],
+    "launcher_exit": 0,
+    "owned_stop": null,
+    "local_SSH_wait_seconds": 180
+  },
+  "actual_runtime": {
+    "cid": "b0a794576aa2621a728adea9f141688efd693c819e121641bf3fab45ce7700f6",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "started_at": "2026-10-18T05:45:41.001136234Z",
+    "finished_at": "2026-10-18T05:45:45.838075392Z",
+    "exit": 0,
+    "oom": false,
+    "stopped": true,
+    "uid": 1000,
+    "network": "none",
+    "read_only": true,
+    "cpu": 1,
+    "memory_bytes": 2147483648,
+    "memory_swap_bytes": 2147483648,
+    "pids": 32,
+    "tmpfs_bytes": 67108864,
+    "healthcheck": false,
+    "logging": "none",
+    "binds": [
+      "tiny audit source RO",
+      "new out RW"
+    ],
+    "genuine_backend_model_account_original_market_credentials_socket_mounts": false,
+    "children": 23,
+    "child_PIDs": "7 through29 inclusive",
+    "all_owned_children_reaped": true,
+    "child_logs_empty": true,
+    "owned_stop": null,
+    "parent_alarm_seconds": 60,
+    "child_cpu_seconds": 5,
+    "child_wait_seconds": 7,
+    "phase_wait_seconds": 75,
+    "owner_alarm_seconds": 120
+  },
+  "acceptance": {
+    "actual_cases": 22,
+    "expected_outcomes_passed": 22,
+    "unexpected_failures": 0,
+    "skips": 0,
+    "preparation_children": 1,
+    "positive_exit0": 2,
+    "constructor_refusal_exit1": 7,
+    "profile_refusal_exit86": 13,
+    "actual_methods": [
+      "CallFence.__init__",
+      "register via real PinnedBackendFinder",
+      "install with real profile and audit hook",
+      "profile",
+      "trip pwrite/fsync/exit86"
+    ],
+    "marshal_adapter": false,
+    "metrics_patched": false,
+    "synthetic_SourceBook_constructor_bypass_explicit": true,
+    "real_SourceBook_authenticate_all_read_and_finder": true,
+    "genuine2446_recipe_admission": false,
+    "prepared_files": 8,
+    "tiny_source_files": 6,
+    "generated_records": 16,
+    "dataclass_records": 14,
+    "daily_prefix_records": 2,
+    "prepared_calls_sha256": "e7d3612d6fc2b6840dc8e0f58f0d1f6562d3a8ba438616aba336a7dd124db48b",
+    "prepared_summary_sha256": "e450cd069c631093158b9171828aae942545965725bdfbf179e48562fb5e87c5",
+    "prepared_before_after_sha256": "fd275719d094d36e6964703406ec1aa3fb791d9e8e7f2c60b10b078a16b0ab04",
+    "failure_slots": {
+      "count": 22,
+      "bytes_each": 65536,
+      "allocated_blocks_each": 128,
+      "control": "Exact same inode/size/allocation/uid/mode/nlink beforeafter, exact finite JSON+zero padding and publication CLOSED for13profile refusals, zero body for7constructor refusals+2positives",
+      "catchable_constructor_refusals": "RuntimeError before guard install, no backend imports; not claimed fixed-slot failures"
+    },
+    "positive_paths": [
+      "ordinary stdlib dataclass import and Sample(3).value==3",
+      "exact original prefix wrapper+inputs under LOAD, stop at first non-backend MarketStore dependency before data"
+    ],
+    "refusals": [
+      "broker generated factory __create_fn__ retains intended BROKER_OR_ACCOUNT_FUNCTION",
+      "all8 individual dataclass bindings, first constructor/profile boundary as declared",
+      "changed outer wrapper bytecode and exact nested constant",
+      "missing prefix wrapper/inputs records, wrong producer, wrong phase",
+      "old schema, absent fingerprint, implicit algorithm, version4, bool version"
+    ],
+    "genuine_or_full_guard_suite_acceptance": false
+  },
+  "independent_terminal": {
+    "verifier_sha256": "aaabadff42e33cb95de21a4bfb5be425f48fc179ae52a3d38c64ab28355687c1",
+    "proof_sha256": "540b0497b87c66d912b69306271fd3836acba3ae653735cbd2396450c4ec8ea3",
+    "proof_bytes": 114673,
+    "fresh_inspect_sha256": "e17463bddf854750cf488f133b48e93f9a36c559f7b65f0763173913d01c923b",
+    "run_files": 181,
+    "source_files_at_review": 22,
+    "source_book_five_files_full_sha_bytes_physical_before_after_equal": true,
+    "prepared_eight_files_full_sha_bytes_physical_before_after_equal": true,
+    "distinct_actual_child_PID_exit_receipts": 23,
+    "exact_failure_bytes_padding_same_inode_and_marker_exclusions": true,
+    "created_to_stopped_HostConfig_only_difference": {
+      "OomKillDisable": [
+        false,
+        null
+      ]
+    },
+    "complete_mounts_equal_by_unique_destination": true,
+    "test_bodies_reexecuted": 0,
+    "raw_proof_plus_seven_small_observations_fetched_hash_checked": true,
+    "healthy_worker_interpretation": "Actual candidate narrow fence accepted; next separately pinned full v3 source closure must retain all assertions and update every schema/fingerprint producer/verifier. Full65/stress/G18/genuineRAM unverified."
+  },
+  "evidence": {
+    "files": 36,
+    "bytes": 595687,
+    "manifest_sha256": "a5ef4fdfdeccbd41200c9ddaca76289ce5ba9d6c58d03785b05d378663aba2ff",
+    "preserver_sha256": "163861551716b4fe96af4b29247bf20ef87b1fe7255a11e28d9f6c20626271b0",
+    "fsync_readback": true,
+    "independent_verifier_sha256": "debe629e92bfc3f000e634cbf9e0c106afce9b1bd58145322a6194f35597d41d",
+    "independent_proof_sha256": "792370226724fa95198595815af35a6d2a9998fa34f57715a9eede3140b4713d",
+    "independent_proof_bytes": 17186,
+    "two_full_reads_physical_fields": true,
+    "ns_values": "exact decimal strings, never JS Number"
+  },
+  "validation": {
+    "AST_and_purpose_comments_pass": 75,
+    "json_source_hash_links": "PASS",
+    "guard_ast_only_two_named_functions_change": "PASS",
+    "final_diff_check": "PASS",
+    "ruff": "UNAVAILABLE from established environment; no lint claim",
+    "completed_old_gates_or_bodies_reexecuted": 0,
+    "old_v2_expected_reason_changed": false
+  },
+  "unchanged": {
+    "old_harness_737d_schema1_fixture_and_manifest": true,
+    "old_contract_ecc": true,
+    "guard_caps_other26methods": true,
+    "native_Store_Nightly_Cycle": true,
+    "old_failed_v2_and_completed_diagnostic_roots_admissions": true,
+    "original_failed_guard_hash_missing": true,
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "missing_raw_receipts": "UNCHANGED",
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "actual_twohost": false,
+    "heartbeat": "ACTIVE"
+  },
+  "unverified": [
+    "full65-case v3 source closure and all outcomes",
+    "G18 cleanup controls/stress/full workflow",
+    "audit-event refusal cases not exercised here, installed hook only",
+    "genuine2446 source/runtime/loader admission",
+    "full numerical model+receipt coexistence RAM/horizon",
+    "historical/ordinary weekday/intraday/fill/UI",
+    "actual twohost/Spark2 image-load/daemon-temp/incremental RAM",
+    "forced stop/alarm/SIGKILL/transport loss branches"
+  ],
+  "next": "Prepare an INERT separately pinned v3 full source closure: update fixtures/manifest producers/verifiers/bootstrap/caller to explicit schema2/format2 for both generated seams, retain all65cases+4G18controls and G08 intended factory refusal, preserve all v2 sources/roots. Independently review exact closure/invocation, then fresh synthetic actual host/source/resource admission before ONE separately named new v3 full attempt. Never replay/adopt old v2 or tiny runs, reuse admissions, weaken caps, or launch genuine loader/history/account from this checkpoint."
+}
