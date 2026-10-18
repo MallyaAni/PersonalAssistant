@@ -1,5 +1,76 @@
 # Next session
 
+## 2026-10-18 — Source graph and lambda supplement VERIFIED; executable closure unadmitted
+
+Read research/original-loader-data-closure-source-proof-v1-2026-10-18.json.
+Sourcea9ca9308fbf5c5a615f217719b06c97456a38a12 pins analyzer1d03d699/13975B,
+independentcheckerca0b2942/12776B/inventorya90f578d/24008B/independent96862433/
+69340B/lambdasupplementa5de151b/3261B/contractc2a72054/8912B. Only NEW local
+stdlib source/AST/JSON/SHA analyzer+independent checker/preservation/Git ran.
+No payload import/CodeType/body/test/numerical/model/account/data/SSH/hostprobe/
+Docker/job or old gate/packet replay. Every payload body remains UNRUN.
+
+Exact2468 map544fe185 and unchanged030cb5bb guard bind35 lexical modules/221edges/
+190external+38deferred import declarations/362functions/53classes/494189sourceB.
+Separate lifecycle+deferred inputs LOAD roots; explicit module/class conditional
+imports+implicit packages only. All FIVE guard effect prefixes absent from lexical
+nodes; no unresolved lexical backend imports.112bounded pages2559625B/max28633B/
+64records each retain7120 initial records/fullSHA pointers; no cap exception.
+No evaluated branch/default/decorator/annotation/import-order/dynamic/native or
+complete callable closure. Local source copies are content, not root authority.
+
+Independent full-AST multiset found initial5886 call records INCOMPLETE: exactly
+3missing calls inside5omitted lambdas, full5889calls/no extras. Original analyzer/
+inventory/pages preserved; no analyzer/body rerun. Separate supplement records
+all5lambda AST expressions/3calls. Initial319 generated-source declarations plus
+5lambdas are source expressions, NOT compiled records. Register only actual
+compiler-emitted nested CodeTypes; no manufactured record for inlined expressions.
+Independent7checks fold full35source+112page SHA/two reads/physical bookends,
+exact lexical graph/external/deferred multisets/reachability/prefix absence/counts/
+call discrepancy. Not independent every-function-qualname/AST-record certification.
+
+Selected source review traces bank/risk constructors, publication->_admit->real
+numeric_head/_numeric_tree, daily_prefix->panel->MarketStore.read->deferred
+pyarrow.parquet.read_table/Yahoo data classes and two frozen constructor frames/
+predictions/copies then market/calibration _bind/deepcopy. No further definite
+forbidden backend call established; NOT fullclosure or certified first event.
+No selected distribution/_stock_fit/fit_market_log; other inventoried fits/effects
+stay unadmitted. Exact numeric factory/global/type provenance remains required.
+
+New immutable REQUIREMENTS contract declares distinct2468 sourcebook/finder/guard,
+selected call/generated/native/phase provenance and unchanged original bounds.
+Constructor's full first byte-auth graph runs under caller ADMISSION; internal
+lease self.phase does NOT advance guard. BEFORE is completed constructor boundary.
+Dataclass-only format2 needs actual CPython/module/phase provenance. Native Python/
+NumPy/SciPy/sklearn/threadpool/PyArrow closure still unresolved. Full context/spools/
+BEFORE+AFTER graphs/JSON+UTF8/256MiB/file+destinationTHENparent sync/release remain
+mandatory; no combined late peak/RAM/crash/model acceptance. Old source/guard/
+G08/caps unchanged. No all362functions/5889calls allowlist or implementation.
+
+Healthy existing worker READONLY reviewed final source/contract; inlining wording
+corrected before freeze. No newagent/limitedretry/workerops. AST warnings-as-errors/
+purpose18 across2tool sources/JSON/SHA/hashlinks/staged diff PASS; Ruff unavailable.
+Exclusive /tmp/capacity-data-closure-source-20261018-v1 retains35 inert numbered
+source copies/pointer; separate -independent-20261018-v1 retains tools/proofs/
+inventory/supplement and finalcontract. File/readback+directory fsync complete;
+preservationa21c174e/1183B plus distinctcontractpreservation0304e448/469B.112pages
+retained Git, not recopied. All older failed/completed roots/admissions unchanged.
+
+NEXT ROOT: SOURCE ONLY prepare bounded read-only package-source/metadata census
+for exact retained STOPPED N2 image/container paths, especially PyArrow/dataclasses,
+with independent source/invocation/resource review BEFORE use. No container start,
+package/model import, payload CodeType compilation or account/market-data read.
+Implement distinct inert sourcebook/finder/guard against contract; review complete
+selected-call/generated/native/phase binding BEFORE any synthetic/genuine capacity
+proposal. Producer2431/reference2446/executor2468/original receipts stay separate.
+New sourcebook/finder/guard/entrypoint/modelstrategy/manifests/wrapper/owner/caller/
+stager/bootstrap/packet/runtime/launch/admission NULL/execution_authorizedFALSE.
+No old73/80/23/65+4/tiny/diagnostic/v2 replay/packet regeneration/genuine loader/
+model/account/history/twohost launch/guard-G08-cap relaxation. Model/RAM/horizon/
+history/ordinary/intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/
+missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-
+daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — New data identities composed upstream in SOURCE; all bodies UNRUN
 
 Read research/original-loader-data-composition-source-proof-v1-2026-10-18.json.

@@ -1,0 +1,94 @@
+{
+  "schema": "capacity-data-closure-source-checkpoint/1",
+  "status": "SOURCE_LEXICAL_GRAPH_AND_SUPPLEMENT_VERIFIED_REQUIREMENTS_CONTRACT_REVIEWED_EXECUTABLE_CLOSURE_UNADMITTED",
+  "source_revision": "a9ca9308fbf5c5a615f217719b06c97456a38a12",
+  "starting_revision": "cd10974082c62c642ab45d182f577a47708280a6",
+  "branch": "codex/learned-live-release-20261006",
+  "starting_owned_worktree": "CLEAN; git pull --rebase origin main up to date",
+  "objective": "Inspect the new2468 composition's lexical import graph and selected constructor call boundaries against the unchanged guard, retain explicit incomplete-call evidence and declare distinct source/finder/guard/phase/native requirements without admitting execution.",
+  "files": {
+    "sources/inspect-capacity-data-closure-v1-2026-10-18.py": {"sha256": "1d03d6999eec20953c64a9f0a9e552b8f7bc40685d1987089a36be75ce0b24ed", "bytes": 13975},
+    "sources/verify-capacity-data-closure-v1-2026-10-18.py": {"sha256": "ca0b29423c35ed95877bed9e5d2db3ac4391b89b0ba2205ddbe410aa22f48d08", "bytes": 12776},
+    "original-loader-data-closure-inventory-v1-2026-10-18.json": {"sha256": "a90f578d09edf0c54193156595d8d859e27488b49fac0964caf08558cc128cf1", "bytes": 24008},
+    "original-loader-data-closure-independent-proof-v1-2026-10-18.json": {"sha256": "968624338d8e81370054d8e44353d18ded53721b5233bf059c64870eb98a5803", "bytes": 69340},
+    "original-loader-data-closure-lambda-supplement-v1-2026-10-18.json": {"sha256": "a5de151b6ca90bfe71c5c4bcb367af77574be1519bc5209bf6b3378b86e85b90", "bytes": 3261},
+    "original-loader-data-closure-contract-v1-2026-10-18.json": {"sha256": "c2a720543b3f2dda0d824e61b6d15f5ee7f7fa47669dad8891d33ff584971b63", "bytes": 8912}
+  },
+  "source_graph": {
+    "executor_map_files": 2468,
+    "executor_map_sha256": "544fe1859ec11e62f2bf506eff70e9111a6a930d53dff59450d9d4816abaa202",
+    "guard_sha256": "030cb5bb25f89c2785e6acbd55aceff5c99b632a5eb538079ee027362ae6178a",
+    "roots": ["backend.market.capacity_original_loader_lifecycle_v2", "backend.market.capacity_original_inputs_v2"],
+    "modules": 35,
+    "edges": 221,
+    "external_import_declarations": 190,
+    "deferred_import_declarations": 38,
+    "source_bytes": 494189,
+    "function_declarations": 362,
+    "class_declarations": 53,
+    "unresolved_lexical_backend_imports": 0,
+    "all_five_guard_effect_prefixes_absent_from_lexical_nodes": true,
+    "scope": "Explicit module/class lexical imports including conditional declarations and implicit packages. InputsV2 is a separate LOAD root because deferred imports are recorded, not followed. No evaluated branch/default/decorator/annotation/import-order/dynamic/native/generated/callable-body closure claim.",
+    "ordinary_pages": {"files": 112, "total_bytes": 2559625, "max_file_bytes": 28633, "max_records_per_page": 64, "pointers": "All112 exact SHA/size links in the top inventory; no cap exception."},
+    "namespace_limits": "Local retained source copies bind content only, not actual producer/reference/executor root authority. Original producer2431/reference2446/executor2468 and N2native31 remain distinct. No assembled package tree or finder exists."
+  },
+  "initial_inventory_gap_preserved": {
+    "original_call_records": 5886,
+    "independent_full_AST_calls": 5889,
+    "missing_calls": 3,
+    "omitted_lambda_expressions": 5,
+    "extra_original_call_records": 0,
+    "original_generated_source_declarations": 319,
+    "additional_lambda_source_declarations": 5,
+    "result": "Initial analyzer omitted lambda scopes. Independent full-AST multiset comparison isolates exactly3 omitted calls within5 lambdas; separate supplement retains exact source expressions/ASTs and all original bytes/counts. Original inventory is not relabelled complete, and analyzer was not rerun.",
+    "compiled_identity_limit": "Source lambda/comprehension expressions are not actual generated records or guaranteed nested CodeTypes. Register only compiler-emitted nested code; never manufacture a nested record for an inlined expression. No payload compilation occurred."
+  },
+  "independent_review": {
+    "checker_exit": 0,
+    "checks": 7,
+    "physical_scope": "Two full reads of35 source copies,112 pages, top inventory and unchanged guard; local physical bookends with lossless decimal-string fields. Typed2468 map read twice within unchanged16MiB bound outside ordinary262KiB roots.",
+    "recomputed": "Exact lexical edge/external/deferred multisets, root reachability, all five guard-prefix absences, full AST function/class/source-byte counts and call multiset discrepancy plus lambda supplement.",
+    "limits": "Does not independently recompute every function's qualified-name/AST record; no compiled/global/type/native/behavior/RAM closure proof.",
+    "worker": "Reused healthy trading_action_consistency READONLY source review; no new agent, limited-worker retry, edits/imports/tests/host/runtime operations.",
+    "worker_final": "No deterministic source/workflow blocker found within stated scope. Accepted separate lambda supplement and selected path limits. Requested and confirmed the compiler-emitted/inlined-expression wording correction. All implementations/manifests/runtime/admission remain absent."
+  },
+  "selected_source_review": {
+    "state": "NOT_COMPLETE_CALLABLE_CLOSURE",
+    "numeric": "load_bank constructors and load_publication->_admit->numeric_head->_numeric_tree selected in source; exact factory-produced NumericHead/None and full original publication/config guards remain required.",
+    "daily": "daily_prefix->build_panel->MarketStore.read has deferred pyarrow.parquet.read_table plus Yahoo data-class construction; actual PyArrow/native closure unresolved, no fetch selected by this trace.",
+    "readers": "Two complete feature/prediction/copy constructor frames then market/calibration _bind and parent deepcopy preserved in source. No selected distribution/_stock_fit/fit_market_log; inherited and other inventoried fit/select/account/effect declarations remain unadmitted.",
+    "guard": "No additional definite forbidden backend call established by selected source review. This is not certified first-runtime-event, guard acceptance or full call closure. All existing name/class/effect/G08/cap checks unchanged."
+  },
+  "contract": {
+    "kind": "IMMUTABLE_REQUIREMENTS_ONLY_NOT_IMPLEMENTATION_OR_EXECUTABLE_MANIFEST",
+    "source_finder": "Distinct source-book/finder/guard identities, exact2468 content/root authority, original bounds and compile/register-before-module-body requirements; original2446 SourceBook and030cb5bb guard unchanged.",
+    "phase_correction": "Constructor performs complete first byte-auth graph under caller ADMISSION. Lease self.phase cannot advance guard phase. BEFORE denotes completed constructor/first-graph boundary; do not relabel authentication as performed under BEFORE.",
+    "call_generated_native": "Selected exact CodeType/global/bound-type/phase bindings required, never all362 functions/5889calls. Dataclass-only format2 records need actual source/module/phase provenance. Compiler-emitted ordinary nested code is separate. Python/NumPy/SciPy/sklearn/threadpool/PyArrow package closure remains unresolved.",
+    "lifetime": "Full archive/spool/context/first graph, one real-UTC private factory, second graph, complete JSON+UTF8 and file/destination-then-parent fsync/readback before release remain requirements.256MiB bound unchanged; no late combined peak/RAM/crash acceptance."
+  },
+  "actual_operations": {
+    "ran": ["one new local stdlib source/AST/JSON/SHA analyzer", "one new independent static checker and explicit lambda supplement", "source/pointer/contract preservation with fsync/readback", "Git validation/checkpoint"],
+    "payload_import_CodeType_body_or_test": false,
+    "numerical_model_load_fit_predict": false,
+    "original_account_market_data_read": false,
+    "SSH_hostprobe_Docker_job": false,
+    "old_completed_gate_or_packet_body_replay": false,
+    "production_original_guard_G08_cap_change": false
+  },
+  "checks": {"AST_warnings_as_errors": "PASS2newtool_sources", "function_purpose_comments": "PASS18functions", "JSON_SHA_page_hashlinks": "PASS", "independent_static_checks": "PASS7_with_explicit_initial_lambda_gap", "staged_source_diff": "PASS", "Ruff": "UNAVAILABLE", "payload_behavior_model_lifetime_RAM": "UNRUN_UNVERIFIED"},
+  "preservation": {
+    "exclusive_source_root": "/tmp/capacity-data-closure-source-20261018-v1",
+    "source_contents": "35 inert numbered source copies and inventory pointer; not a Python package/import tree.",
+    "exclusive_independent_root": "/tmp/capacity-data-closure-independent-20261018-v1",
+    "independent_contents": "Proof/supplement pointers plus exact two tools/top inventory/proof/supplement copies. Separate final contract copy and contract preservation pointer added without overwriting prior files. File fsync/readback and directory fsync completed.",
+    "original_preservation_sha256": "a21c174ed7cc253f54fcaaba938d2cb942aef3ace51c3de524289916dcc85537",
+    "original_preservation_bytes": 1183,
+    "contract_preservation_sha256": "0304e4485c985adf4ae0796fea09470039f597f514a1a87d5ba2260f163bd5f5",
+    "contract_preservation_bytes": 469,
+    "pages": "112 exact pages retained in source commit; not recopied into independent root.",
+    "old_roots_packets_admissions": "UNCHANGED; no replay/adoption/overwrite/reuse"
+  },
+  "unadmitted": {"source_book": null, "finder": null, "new_guard_source": null, "selected_callable_closure": null, "call_manifest": null, "generated_manifest": null, "phase_manifest": null, "native_package_closure": null, "entrypoint": null, "model_import_strategy": null, "wrapper": null, "owner": null, "caller": null, "stager": null, "bootstrap": null, "packet": null, "runtime": null, "launch": null, "admission": null, "execution_authorized": false},
+  "next": "SOURCE ONLY prepare a bounded read-only package-source/metadata census for exact retained stopped N2 image/container paths, especially deferred PyArrow and dataclasses, with independent source/invocation/resource review before use; no container start, package/model import, payload CodeType compilation or account/market-data read. Implement distinct inert source-book/finder/guard source against the contract and review complete selected-call/generated/native/phase bindings before any synthetic or genuine capacity proposal. Keep producer/reference/executor identities, original receipts and all allocation lifetimes separate. Never rerun closed gates or regenerate packets for documentation.",
+  "unchanged": {"original_timing": "FAILED", "publication": "CLOSED", "missing_original_raw_receipts": "MISSING", "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN", "actual_two_host": false, "Spark2_image_daemon_temp_incremental_RAM": "UNADMITTED", "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED", "heartbeat": "ACTIVE", "diagram": "NONE"}
+}
