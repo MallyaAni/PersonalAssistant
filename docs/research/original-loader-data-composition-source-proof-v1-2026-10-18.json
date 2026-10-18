@@ -1,0 +1,70 @@
+{
+  "schema": "capacity-data-upstream-source-checkpoint-proof/1",
+  "status": "SOURCE_REVIEWED_UPSTREAM_DATA_COMPOSITION_ALL_PAYLOAD_BODIES_UNRUN",
+  "source_revision": "4961d0a2aa272b10c2952405e221c14f9e11f9e0",
+  "starting_revision": "22cda93ac594ed7a218d0dbfd1ae64a4bc7e8f30",
+  "branch": "codex/learned-live-release-20261006",
+  "starting_owned_worktree": "CLEAN; git pull --rebase origin main up to date",
+  "objective": "Compose the four new pure-data interfaces consistently through separately versioned upstream type, source, receipt and lifecycle bindings without changing the old guard or sources.",
+  "files": {
+    "sources/prepare-capacity-data-composition-v1-2026-10-18.py": {"sha256": "77b8bb07a3ecc516dbd45eeffd79dbd66dc8d8d51dd72eff7c9e38115c85aded", "bytes": 15530},
+    "sources/review-capacity-data-composition-v1-2026-10-18.py": {"sha256": "2e41f5f3f93a48c319279dba3caba541c6ab8401c17987474408ef41dfa6f31e", "bytes": 14455},
+    "sources/capacity-data-admissions-composition-v1-2026-10-18.py": {"sha256": "92115c2a2e227cd16eb2cf0fab3e38f9cfb044b01efc9861b600e69493425fb9", "bytes": 13412},
+    "sources/capacity-data-inputs-composition-v1-2026-10-18.py": {"sha256": "e77195289c37d540269cdea2bfdf09ceed2b8c837f63af8e094f7bd4727bd1fe", "bytes": 7592},
+    "sources/capacity-data-binding-composition-v1-2026-10-18.py": {"sha256": "8182adf55aa8780b1ae781167734427ef1879298ab3d4456932427773a8298b5", "bytes": 18627},
+    "sources/capacity-data-lifecycle-composition-v1-2026-10-18.py": {"sha256": "e001293c9b043005926fc4915649f06924eb6f4923b760cdc419692db2f43fa5", "bytes": 10511},
+    "sources/capacity-data-durability-composition-v1-2026-10-18.py": {"sha256": "3fbef0d64244652d583b5a751172e0b2ec54d3c196e7f5846b7f90b8b07aa284", "bytes": 1113},
+    "original-loader-data-composition-source-contract-v1-2026-10-18.json": {"sha256": "3a2b5faf0904a89d6c95ca967f4eb1d7af867f0678fba1e934cd7bc1e7bb8f6e", "bytes": 5723},
+    "original-loader-data-composition-source-map-v1-2026-10-18.json": {"sha256": "544fe1859ec11e62f2bf506eff70e9111a6a930d53dff59450d9d4816abaa202", "bytes": 287897},
+    "original-loader-data-composition-independent-source-review-v1-2026-10-18.json": {"sha256": "fd5e243fdf2832f5184ad12e3cf06e3131dc49c5aec9fadad49c7a25376f3c82", "bytes": 3411}
+  },
+  "new_payload": {
+    "modules": 5,
+    "functions_including_methods": 29,
+    "all_bodies": "UNRUN",
+    "admissions_v2": "Only new input-auth and adaptations imports. Original schema2 invocation/runtime/source/producer/calendar/native-package declarations and bodies retained; selected reference-root/calendar admissions remain the new binding functions, not the older alternatives in this module.",
+    "inputs_v2": "Exact new CapacityOriginalArchivesV2 guard/import and CapacityAuditInputsV2 result/schema. Every original publication/config/economic/source/observation/raw construction/readonly statement retained. Numeric factory provenance and behavior still require exact future call/global/source/native admission.",
+    "durability_v1": "Only original MAX_RESULT_BYTES expression and complete sync_directory body with real os/stat/evidence dependencies. No old lifecycle or old byte-auth import. Original256MiB bound and file/destination/parent durability order unchanged.",
+    "binding_v2": "Exact reference2446/prior2453/entry2457/old2459 chain and sole original learned_entry_data variant transition retained. Six additional predicates authenticate raw2459 and2463 SHA bindings, exact four data additions/union, exact five upstream path additions and complete2468 union. Wrapper schema2 adds explicit composition_map/data_map path and SHA fields. Root isolation, reference archive source, original executor calendar and native31 checks otherwise retain complete bodies under explicit new dependency globals.",
+    "lifecycle_v2": "New admissions/archive/source-reader/input factory/result/byte-auth Pins+authenticate/durability/binding identities used consistently. Sixteen declared module origins include all four new data interfaces. Real UTC clock remains adjacent to one private factory call, with exact new result/parent/observation checks. Full loaded context/archive/ShaMap/BEFORE+AFTER graphs/string/UTF8 lifetimes and persistence order remain in source.",
+    "new_receipt": "capacity-loader-data-candidate/1 plus implementation_binding records all four data module hashes, all five upstream hashes and original_byte_receipt_adopted=false. Original byte receipt795d4c6b and full producer/source/archive facts remain distinct, never relabelled as new implementation acceptance.",
+    "identity_limits": "New module/class/global/CodeType identities are not old V1 identities. Exact source/type checks do not establish executable factory/global provenance, interoperability, behavioral/type/alias/readonly/deepcopy/numerical/lifetime/RAM parity.",
+    "public_execute": "Inputs, binding and lifecycle retain unconditional refusal bodies. No public admitted executor or launch exists."
+  },
+  "map": {
+    "files": 2468,
+    "base2463_sha256": "d78058068ee9fb03722971917a32dcb6589dcf43fa2320fa51d4c998e8c695f0",
+    "new_paths": 5,
+    "old_paths_unchanged": true,
+    "state": "UNASSEMBLED_DECLARATION_ONLY; not an executed map, actual source book/finder/import/physical/runtime admission",
+    "typed_metadata_bound_bytes": 16777216,
+    "ordinary_source_log_packet_bound_bytes": 262144,
+    "map_outside_ordinary_roots": true,
+    "cap_increase_or_exception": false
+  },
+  "independent_review": {
+    "checker_exit": 0,
+    "checks": 7,
+    "complete_module_AST_comparisons_after_declared_deltas": 4,
+    "durability_complete_function_and_bound_AST": true,
+    "payload_functions": 29,
+    "module_origin_members": 16,
+    "scope": "Full normalized admissions/inputs/binding/lifecycle source AST correspondence; exact durability function/bound; direct-import consistency and map union only. No transitive module or selected-call/native/generated/finder/phase closure claim.",
+    "worker": "Reused healthy trading_action_consistency READONLY review, no new agents/limited-worker retries/edits/imports/tests/host/runtime operations.",
+    "worker_final": "No deterministic source blocker found; contract/report hashes match. Six added predicates enforce pinned2459->2463->2468 chain and exact additions/unions. New types/Pins/authentication consistent; all16origins statically reachable conditional on successful imports; receipt/context retention and fsync order intact. All29bodies UNRUN and runtime/parity/fullclosure unverified."
+  },
+  "actual_operations": {
+    "ran": ["one new local stdlib source/tokenize/AST/JSON/SHA builder", "one new independent AST source checker", "source preservation/file and directory fsync/readback", "Git validation/checkpoint"],
+    "payload_import_CodeType_body_or_test": false,
+    "numerical_model_load_fit_predict": false,
+    "original_account_market_data_read": false,
+    "SSH_hostprobe_Docker_job": false,
+    "old_completed_gate_body_packet_replay": false,
+    "production_original_guard_G08_cap_change": false
+  },
+  "checks": {"AST_warnings_as_errors": "PASS7sources", "function_purpose_comments": "PASS43functions across7sources", "JSON_fullSHA_hashlinks_map": "PASS", "independent_source_checks": "PASS7", "staged_source_diff": "PASS", "Ruff": "UNAVAILABLE", "runtime_parity_numeric_type_lifetime_RAM": "UNRUN_UNVERIFIED"},
+  "preservation": {"exclusive_source_root": "/tmp/capacity-data-composition-source-20261018-v1", "contents": "Five inert payload copies/contract pointer plus exact tools/contract/independent review and preservation.json. Files fsynced/readback and root directory fsynced; typed map remains outside ordinary source root.", "preservation_sha256": "c75b99d94fc581e60f47c50b211981daef6b82ef850558d754cc258d134fdc7a", "preservation_bytes": 888, "old_roots_packets_admissions_sources": "UNCHANGED; no replay/adoption/overwrite/reuse"},
+  "unadmitted": {"entrypoint": null, "executed_map": null, "finder": null, "call_manifest": null, "generated_manifest": null, "phase_manifest": null, "native_package_closure": null, "model_import_strategy": null, "wrapper": null, "owner": null, "caller": null, "stager": null, "bootstrap": null, "packet": null, "runtime": null, "launch": null, "admission": null, "execution_authorized": false},
+  "next": "SOURCE ONLY inspect the complete new admissions/binding/lifecycle/context/input-auth/parser and constructor import plus selected-call closure against unchanged030cb5bb profile, including generated dataclass and deferred numerical/native package seams. Build a DISTINCT immutable source-book/finder/guard/phase/call/generated/native contract only after the closure is reviewed. Keep original producer2431/reference2446/executor2468 namespaces and all source/config/calendar/economic/archive/input-byte/JSON/UTF8 lifetimes separate. No synthetic or genuine proposal before source closure and independent review; no old73/80/23/65+4/tiny/diagnostic/v2 replay or packet regeneration.",
+  "unchanged": {"original_timing": "FAILED", "publication": "CLOSED", "missing_original_raw_receipts": "MISSING", "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN", "actual_two_host": false, "Spark2_image_daemon_temp_incremental_RAM": "UNADMITTED", "genuine_model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED", "heartbeat": "ACTIVE"}
+}

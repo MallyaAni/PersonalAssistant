@@ -1,5 +1,66 @@
 # Next session
 
+## 2026-10-18 — New data identities composed upstream in SOURCE; all bodies UNRUN
+
+Read research/original-loader-data-composition-source-proof-v1-2026-10-18.json.
+Source4961d0a2aa272b10c2952405e221c14f9e11f9e0 pins builder77b8bb07/15530B,
+reviewer2e41f5f3/14455B/admissions92115c2a/13412B/inputse7719528/7592B/
+binding8182adf5/18627B/lifecyclee001293c/10511B/durability3fbef0d6/1113B/
+contract3a2b5faf/5723B/independentfd5e243f/3411B. Only new local stdlib source/
+tokenize/AST/JSON/SHA builder+independent checker/preservation/Git ran. No payload
+import/CodeType/body/test/numerical/model/account/data/SSH/hostprobe/Docker/job.
+Five new modules/29payload functions remain UNRUN; public execute still refuses.
+
+New admissions_v2 retains original schema2 invocation/runtime/source/producer/
+calendar/native package bodies with only new inputauth/adaptations imports.
+New inputs_v2 exact archiveV2 guard and resultV2/schema select the new context;
+original publication/config/economic/observation/raw/readonly sequence unchanged.
+New durability_v1 extracts ONLY exact sync_directory body+256MiB expression with
+real os/stat/evidence dependencies; avoids old lifecycle/byteauth imports.
+New binding_v2 preserves complete2446/2453/2457/2459 chain/sole learned_entry_data
+variant, then SIX added predicates enforce pinned2459->2463 fourdata additions
+and2463->2468 fiveupstream additions/fullunions. Wrapper schema2 explicitly adds
+composition_map/data_map paths+SHA. Old maps/bindings remain unchanged/refusing.
+
+New lifecycle_v2 consistently binds new admissions/archive/source-reader/input
+factory/result/Pins/authenticate/binding/durability. Sixteen declared module origins
+include all four new data interfaces. Real UTC clock immediately before ONE
+private factory and complete context/archive/spool/BEFORE+AFTER graphs/JSON/UTF8
+retention/file fsync/readback/destinationTHENparent sync/release remain in source.
+New capacity-loader-data-candidate/1 receipt records all four data and five upstream
+hashes plus original_byte_receipt_adoptedFALSE. Original795d4c6b receipt stays
+separate; new module/global/type/CodeType identities are not old verified identity.
+No runtime behavior/type/alias/readonly/deepcopy/numeric/factory/lifetime/RAM proof.
+
+New2468 declaration544fe185/287897B is old2463+five NEW paths only, not assembled
+tree/executed-map/sourcebook/finder/runtime admission. Typed16MiB metadata outside
+ordinary262KiB source/log/packet roots; no capincrease/exception. Unchanged guard
+030cb5bb/G08/forbidden names/classes/effect prefixes; no verify whitelist.
+Seven independent checks include FOUR complete normalized-module AST comparisons,
+exact sync_directory/bound, direct imports and fullmapunion;29functions inventoried.
+Existing healthy worker READONLY final review found no deterministic blocker;
+all16origins reachable conditional on successful imports, not observed acceptance.
+No newagent/limitedretry/workerops. AST warning-as-error/purpose43 across7sources/
+JSON/fullSHA/hashlinks/staged diff PASS; Ruff unavailable. Exclusive local
+/tmp/capacity-data-composition-source-20261018-v1 retains five inert copies/pointer/
+tools/contract/review/preservationc75b99d9/888B; file/readback+directory fsync done.
+
+NEXT ROOT: SOURCE ONLY inspect COMPLETE new admissions/binding/lifecycle/context/
+inputauth/parser and constructor import plus selected-call closure against
+unchanged guard, including generated dataclasses/deferred numerical/native seams.
+Build DISTINCT immutable source-book/finder/guard/phase/call/generated/native
+contract only after closure reviewed. Keep producer2431/reference2446/executor2468
+namespaces/original source/config/calendar/economics/preservation/fullbyte receipts
+and allocation lifetimes separate. No synthetic or genuine proposal until source
+closure+independent review. Entrypoint/executedmap/finder/modelstrategy/manifests/
+wrapper/owner/caller/stager/bootstrap/packet/runtime/launch/admission NULL/
+execution_authorizedFALSE. No old73/80/23/65+4/tiny/diagnostic/v2 replay/packet
+regeneration/genuine loader/model/account/history/twohost launch/guard-G08-cap
+relaxation. Model/RAM/horizon/history/ordinary/intraday/fill/UI UNVERIFIED;
+originaltimingFAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/no replay/
+adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM unchanged.
+Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Pure-data guard-name collision SOURCE cut; four new modules UNRUN
 
 Read research/original-loader-map-auth-interface-source-proof-v1-2026-10-18.json.
