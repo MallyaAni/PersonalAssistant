@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-10-18 — Reserve native metadata and private synthetic Store/CAS
+
+New separately versioned CAS/phase2 fully initializes fixed body/catalog/control
+extents before arming:32MiB body/eight4MiB phases,64calls/2MiB metadata/4items each.
+Store mode/header persists explicitly; ordinary paths/caps/schema stay unchanged.
+Native metadata2 retains exact native JSON/NaN bytes with source/identity/encoder/
+phase membership. Pending/poisoned metadata or CAS refuses subsequent native work;
+completed phases remain readable. Private Nightly composes pre-effect leases and
+only seals its original result during recovery. Bound-CAS Cycle finalization stays
+closed pending whole stage/final composition.
+
+Sourceb0cfdb24/tree7381ad45 passed8NEWtests/0fail/0error/0skip42.704214532s/57312KiB
+on one isolated f612 runtime. Actual native entry/decision bytes, Store DECISION
+commit/head/reopen, original recovery, multi-slot/empty/dedup and refusal paths
+passed. Two actual SIGKILL children at index-before-control/result-before-seal
+were reaped; no orphan adoption or replay. Complete8inventories/4128originalinodes
+retain identical sizes/blocks;34344960 allocated and logical bytes per pool.
+
+Firstsource51c53060/v1 remains FAILED:8tests/5inventory failures,512to520blocks,
+0errors/skips. V2 initializes extents and enforces the original allocation
+assertions. The specific filesystem mechanism remains a hypothesis. Both roots,
+sources and results are preserved. Proof9a29858d/87492B plus complete compressed
+inventories: research/reserved-native-metadata-store-proof-2026-10-18.json.
+
+SQLite/directory/latch/twohost/fullhorizon/model-RAM/powerloss/genuine acceptance
+remain UNVERIFIED; context/policy/trade/stage surroundings remain SYNTHETIC.
+Production/public genuine entry unchanged; no deploy/fullunit/build claim.
+Next: private raw Cycle stage/final CAS composition with NEW bounded assertions.
+Original timingFAILED/publicationCLOSED/v6OPEN-PAUSED unchanged. Diagram NONE.
+
 ## 2026-10-18 — Compose private raw saves with physically reserved native inodes
 
 Distinct synthetic-current-native-write/1 narrows old8MiB slots to1MiB under the

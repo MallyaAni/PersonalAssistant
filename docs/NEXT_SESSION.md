@@ -1,5 +1,105 @@
 # Next session
 
+## 2026-10-18 — Reserved synthetic native metadata and Store/CAS VERIFIED
+
+Product acceptance remains the priority. This NEW eight-test boundary is CLOSED;
+never rerun v2 preflight/stage/copy/tests/getter or earlier closed gates for docs.
+Verified source b0cfdb24787221ea1046e9b6d4e7acb532cd0e0e, exact tested tree
+7381ad45466247c68bd6d6b1ceb78d6cdd31b39d, preserves the failed first source
+51c53060853efec8be51fe8915f3b219b7add59e and is pushed to origin/main. Read
+research/reserved-native-metadata-store-proof-2026-10-18.json.
+
+PRODUCT: distinct synthetic-reserved-store-cas/2 and phase/2 preallocate and
+fully initialize 512x64KiB body slots plus fixed catalog/header/control/lock before
+arming. Total body capacity32MiB, divided into eight4MiB phases; each permits
+64calls,2MiB metadata and4descriptors. All516 original inode/size/block identities
+remain bound. Fixed checksummed catalog, pending-before-stream/body/index and
+original descriptor membership replace post-effect incoming/hash-name allocation
+ONLY in explicitly bound Store mode. Whole multi-slot/empty/duplicate blob contracts
+remain exact; duplicate bytes/calls are charged. Ordinary Store paths/caps/schema
+and old8MiB/native1MiB helpers stay unchanged. No external spool adoption.
+
+Native-json-metadata/2 retains exact standalone native indent2/default encoder/
+NaN/Unicode/no-newline bytes in reserved64KiB chunks. Source/identity/kind/encoder/
+original phase/item bindings are finite typed evidence, not native adoption.
+Persisted Store mode/header refuses missing/removed/malformed pool downgrade;
+schema1 metadata cannot bypass reserved membership. Caught encoding uncertainty,
+pending metadata and CAS state refuse later native saves/policy/evidence.
+Completed phases cannot be poisoned by another refused capture. Pre-close
+component comparison is read-only before the next phase is armed.
+
+Private raw Nightly birth/close now compose these leases before native effects.
+Original result persistence precedes phase sealing; recovery may seal ONLY that
+original result and never saves/captures/appends/replays native work. Separate
+explicit SYNTHETIC storage producer proves actual Store DECISION_FROZEN commit,
+authoritative head and reopen/readback. Reserved-CAS Cycle finalization explicitly
+refuses BEFORE effects until its whole stage/final composition is implemented.
+This is NOT whole Cycle CAS admission.
+
+FAILED/PRESERVED v1: CID209f837b90aba7431c12209c37ff61fcf1476405dc6b56e9a9ba224cb8ad4dcd
+exited1/noOOM22:38:01.732951734Z;8tests/5fail/0error/0skip26.996022867s/58776KiB.
+All five failures were unchanged inventory equality assertions showing blocks512
+to520. Truncated diffs do not conclusively name the inode or filesystem mechanism.
+Unwritten extent conversion is the evidence-backed hypothesis. V2 initializes
+every extent before arming and enforces block equality; no assertion/cap weakening.
+Original v1 source/root/logs/proof983d663b/54475B remain immutable, never adopted.
+
+VERIFIED v2: ONE b51bcb4a07bf6097ce58062342c3e3af2cd4be2e5ccd95d7e40e0d00e4b6ad45/f612
+exited0/noOOM22:42:51.878406499Z.8pass/0fail/0error/0skip42.704214532s/57312KiB.
+Actual native large/NaN entry+decision bytes, reserved birth/close, exact whole
+blobs/dedup/empty, finite quotas, missing/removed/source/mode/descriptor refusals,
+persistent uncertainty, original recovery and real Store commitment all passed.
+Two ACTUAL owned SIGKILL children PID7 after catalog fsync BEFORE control commit
+and PID8 after original result BEFORE phase seal exited-9/reaped. Pending indexed
+orphan stays unreadable/no replay; older committed objects remain readable.
+Post-result recovery changes only the original phase seal. These are protocol
+boundary process kills, NOT power loss or interruption inside syscall/SQLite commit.
+
+Raw proof9a29858d7af1d1e4dd1a7daf66192fe44e9f013bfedb05f23a7e0575a57a2df0/
+87492B and7fixed results remain /tmp/reserved-metadata-store-20261018-v2 and matching
+Spark1 scratch; v1 remains alongside. Complete379535B physical inventory JSON is
+retained as bounded24490B gzip in proof. ROOT and healthy READONLY reviewer
+independently reconstructed all8 inventories/all4128distinct original inodes/
+all fields: before==after, each34344960 allocated ANDlogical bytes. Both also
+reconstructed all4 canonical cut/exit strings500B/allSHA+length exact.
+
+All5v2phases0/emptyerr;22product/test pins/27payloads497622B<524288/
+28physical pinned source+map files,47native SHA/physical bookends, writer globals
+unchanged/forbidden[]. Four FULL mounts ANDraw order equal; HostConfig ONLY
+OomKillDisablefalse to null. UID1000/noneRO/1CPU/512MiB=swap/PIDs32/tmp64;
+native1MiB FSIZE and source/control/log256KiB unchanged.66local source/control/
+transport fullSHA two-held-read physical bookends across v1/v2 retained.439purpose
+functions/AST warnings-as-errors/pins/runner-byte/zero-backspaces/diff PASS.
+Ruff unavailable; no full unit/build/deploy/UI/model claim. Diagram impact NONE.
+
+UNVERIFIED: SQLite database/journal/temp physical reservation, directory and
+operation/result metadata, latch, whole reserved-CAS Cycle stages/final producer,
+genuine constructors/market_daily/planning/models/providers/actual context/
+calendar/economics, full832MB horizon and load-save/deepcopy/serialization/model
+RAM coexistence, two-host reservation, power loss, native operation or simulator
+adoption, independent publication/API/UI. Source-isolated context/policy/trade/
+stage/calendar/source-manifest surroundings remain explicitly SYNTHETIC.
+
+NEXT CONCRETE PRODUCT TASK: integrate the finite reserved CAS into PRIVATE raw
+Cycle stage production and final persistence/recovery, then same-session Nightly.
+First inspect every Cycle pre/post-effect Store put, component/latch capture,
+stage receipt/commit and final preparation. Reserve exact source/head/input-bound
+stage allowances BEFORE selected effects; never reopen a COMPLETE/OPEN lease to
+accommodate later writes. Preserve the explicit bound-CAS final refusal until
+that entire new seam has NEW bounded interruption/original-result assertions.
+Do not equate a manually armed synthetic Store stage with whole Cycle admission.
+Continue one coherent boundary; no recursive provenance detour/closed-gate replay.
+
+Remaining chain: reserved-CAS Cycle composition -> complete native filesystem/
+SQLite/latch/fullhorizon/twohost/model-RAM lifecycle -> genuine proposals/
+ordinary/intraday/fills -> independent publication -> API/UI. Complete admission
+mandatory BEFORE genuine effects. Original timingFAILED/publicationCLOSED/missing
+receipts/immutable roots unchanged. Genuinev6 OPEN/PAUSED/no replay/adoption/new
+genuine run from its failed reservation. No Spark2 load, guard/G08/cap weakening,
+fakeclock/actual-day replay/history rewrite/model-provider-account-service change/
+denied-read bypass/paiddata/tuning/real-money orders. Production unchanged; NEVER
+deploy historical main wholesale. Heartbeat ACTIVE/quiet unchanged/no question.
+
 ## 2026-10-18 — Synthetic reserved native-save composition VERIFIED
 
 Product acceptance remains the priority. This NEW eight-test seam is CLOSED;

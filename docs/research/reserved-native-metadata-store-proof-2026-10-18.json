@@ -1,0 +1,3371 @@
+{
+  "actual_create_argv": [
+    "docker",
+    "--host",
+    "unix:///var/run/docker.sock",
+    "create",
+    "--name",
+    "reserved-metadata-store-20261018-v2",
+    "--cidfile",
+    "/home/animallya96/scratch/reserved-metadata-store-20261018-v2/cid",
+    "--pull",
+    "never",
+    "--user",
+    "1000:1000",
+    "--network",
+    "none",
+    "--read-only",
+    "--cpus",
+    "1",
+    "--memory",
+    "512m",
+    "--memory-swap",
+    "512m",
+    "--pids-limit",
+    "32",
+    "--cap-drop",
+    "ALL",
+    "--security-opt",
+    "no-new-privileges",
+    "--no-healthcheck",
+    "--log-driver",
+    "none",
+    "--ulimit",
+    "cpu=30:30",
+    "--ulimit",
+    "fsize=1048576:1048576",
+    "--tmpfs",
+    "/tmp:rw,noexec,nosuid,size=64m",
+    "--workdir",
+    "/audit",
+    "--env",
+    "PYTHONPATH=/audit",
+    "--env",
+    "PYTHONDONTWRITEBYTECODE=1",
+    "--env",
+    "ANIOS_TEST_MODE=1",
+    "--env",
+    "PYTHONUNBUFFERED=1",
+    "--env",
+    "OPENBLAS_NUM_THREADS=1",
+    "--env",
+    "OMP_NUM_THREADS=1",
+    "--env",
+    "MKL_NUM_THREADS=1",
+    "--env",
+    "NUMEXPR_NUM_THREADS=1",
+    "--env",
+    "VECLIB_MAXIMUM_THREADS=1",
+    "--env",
+    "BLIS_NUM_THREADS=1",
+    "--mount",
+    "type=bind,src=/home/animallya96/scratch/reserved-metadata-store-20261018-v2/source,dst=/audit,readonly",
+    "--mount",
+    "type=bind,src=/home/animallya96/scratch/reserved-metadata-store-20261018-v2/fixture,dst=/fixture,readonly",
+    "--mount",
+    "type=bind,src=/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source,dst=/native,readonly",
+    "--mount",
+    "type=bind,src=/home/animallya96/scratch/reserved-metadata-store-20261018-v2/out,dst=/out",
+    "--entrypoint",
+    "python",
+    "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "/audit/run.py"
+  ],
+  "failed_v1": {
+    "actual_owned_sigkill_children": [
+      {
+        "cut": {
+          "path": "/out/cases/runTest-u55cg1_f/store/SYNTHETIC-reserved-workspace/work/actual-child-cut.json",
+          "physical": {
+            "st_ctime_ns": "1792363057313006271",
+            "st_dev": "66306",
+            "st_ino": "60688823",
+            "st_mtime_ns": "1792363057313006271",
+            "st_size": "95"
+          },
+          "sha256": "bbfae67dfcc5caaf9d92c3c0ad85c5a7143c450f0f8ee8d062c42b43a6d60ab4",
+          "value": {
+            "head": null,
+            "paper_sha256": null,
+            "pid": 7,
+            "point": "reserved_cas_index_fsynced",
+            "policy_calls": 0
+          }
+        },
+        "exit": {
+          "path": "/out/cases/runTest-u55cg1_f/store/SYNTHETIC-reserved-workspace/work/actual-child-exit.json",
+          "physical": {
+            "st_ctime_ns": "1792363057346099871",
+            "st_dev": "66306",
+            "st_ino": "60688824",
+            "st_mtime_ns": "1792363057346099871",
+            "st_size": "121"
+          },
+          "sha256": "182196cb74a66ec6f9792e4149ad2e9a03e5630d52ecca80deb20e872d1d76fc",
+          "value": {
+            "boundary": "reserved_cas_index_fsynced",
+            "exitcode": -9,
+            "head": null,
+            "pid": 7,
+            "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+          }
+        }
+      },
+      {
+        "cut": {
+          "path": "/out/cases/runTest-chf6lms0/store/SYNTHETIC-reserved-workspace/work/actual-child-cut.json",
+          "physical": {
+            "st_ctime_ns": "1792363060818098618",
+            "st_dev": "66306",
+            "st_ino": "60689551",
+            "st_mtime_ns": "1792363060818098618",
+            "st_size": "160"
+          },
+          "sha256": "50b38c3919b73ffc93dfc00ca03ac2a086421c0c26171dfd12f2e975df01bbe8",
+          "value": {
+            "head": null,
+            "paper_sha256": "0b68fa841f167834d2bf072cd14eeb10e1c937e6ab7ac954b9e0a4df561f3167",
+            "pid": 8,
+            "point": "reserved_phase_result_written",
+            "policy_calls": 1
+          }
+        },
+        "exit": {
+          "path": "/out/cases/runTest-chf6lms0/store/SYNTHETIC-reserved-workspace/work/actual-child-exit.json",
+          "physical": {
+            "st_ctime_ns": "1792363060842181606",
+            "st_dev": "66306",
+            "st_ino": "60689552",
+            "st_mtime_ns": "1792363060842181606",
+            "st_size": "124"
+          },
+          "sha256": "f81d1eb69d5fda69e6be2bbaa5bd22fedad1f6a869d04ace43a9ddb6e08a24e6",
+          "value": {
+            "boundary": "reserved_phase_result_written",
+            "exitcode": -9,
+            "head": null,
+            "pid": 8,
+            "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+          }
+        }
+      }
+    ],
+    "elapsed_seconds": 26.996022867038846,
+    "errors": 0,
+    "failure": "Five inventory equality assertions observed st_blocks512→520; truncated v1 diffs do not conclusively name inode or filesystem mechanism. Unwritten extent conversion is the evidence-backed hypothesis, not an established cause.",
+    "failures": 5,
+    "files": {
+      "create-argv.json": {
+        "physical": {
+          "st_ctime_ns": "1792363053996710282",
+          "st_dev": "66306",
+          "st_ino": "60688057",
+          "st_mtime_ns": "1792363053996710282",
+          "st_size": "1503"
+        },
+        "sha256": "c67e5774ae5dec45fd7cbf36a284af1ec05a26d30206535d1d504550ea1c04d9"
+      },
+      "inspect-after.json": {
+        "physical": {
+          "st_ctime_ns": "1792363081825525563",
+          "st_dev": "66306",
+          "st_ino": "60688091",
+          "st_mtime_ns": "1792363081825525563",
+          "st_size": "3587"
+        },
+        "sha256": "a86e7eab0e2bc11d75eae29ba05367e0188f5015c4822317216dd575f21adc1e"
+      },
+      "inspect-before.json": {
+        "physical": {
+          "st_ctime_ns": "1792363054140342338",
+          "st_dev": "66306",
+          "st_ino": "60688093",
+          "st_mtime_ns": "1792363054140342338",
+          "st_size": "3569"
+        },
+        "sha256": "1ed7baabd6115c84de70c49fc50faf7b883c07172bae3d68c8709acf57cb6f39"
+      },
+      "out/proof.json": {
+        "physical": {
+          "st_ctime_ns": "1792363081694318521",
+          "st_dev": "66306",
+          "st_ino": "60693886",
+          "st_mtime_ns": "1792363081694318521",
+          "st_size": "54475"
+        },
+        "sha256": "983d663b1bf2afea8597286b229c5205072c1b349da06d4d944659e475cd6ef2"
+      },
+      "run.log": {
+        "physical": {
+          "st_ctime_ns": "1792363081685318439",
+          "st_dev": "66306",
+          "st_ino": "60688094",
+          "st_mtime_ns": "1792363081685318439",
+          "st_size": "6093"
+        },
+        "sha256": "42d46e3fb59711fe2f1fc8c6162f2da2985464711e0f82ff9e245bbb44d7bcdd"
+      },
+      "source/pins.json": {
+        "physical": {
+          "st_ctime_ns": "1792363052554124719",
+          "st_dev": "66306",
+          "st_ino": "60688025",
+          "st_mtime_ns": "1792363052554124719",
+          "st_size": "3375"
+        },
+        "sha256": "e3384903c4cf9d49a69f96aa9d072975037978e117b5b8e6556463ce8a722405"
+      },
+      "stage.json": {
+        "physical": {
+          "st_ctime_ns": "1792363052557330557",
+          "st_dev": "66306",
+          "st_ino": "60688026",
+          "st_mtime_ns": "1792363052557330557",
+          "st_size": "4374"
+        },
+        "sha256": "2861130cdeb94b05ea553470551833983357bbd455f790846d7418768a4b0877"
+      }
+    },
+    "peak_kib": 58776,
+    "proof_bytes": 54475,
+    "proof_sha256": "983d663b1bf2afea8597286b229c5205072c1b349da06d4d944659e475cd6ef2",
+    "root": "/tmp/reserved-metadata-store-20261018-v1",
+    "runtime_after": {
+      "HostConfig": {
+        "AutoRemove": false,
+        "Binds": null,
+        "BlkioDeviceReadBps": [],
+        "BlkioDeviceReadIOps": [],
+        "BlkioDeviceWriteBps": [],
+        "BlkioDeviceWriteIOps": [],
+        "BlkioWeight": 0,
+        "BlkioWeightDevice": [],
+        "CapAdd": null,
+        "CapDrop": [
+          "ALL"
+        ],
+        "Cgroup": "",
+        "CgroupParent": "",
+        "CgroupnsMode": "private",
+        "ConsoleSize": [
+          0,
+          0
+        ],
+        "ContainerIDFile": "/home/animallya96/scratch/reserved-metadata-store-20261018-v1/cid",
+        "CpuCount": 0,
+        "CpuPercent": 0,
+        "CpuPeriod": 0,
+        "CpuQuota": 0,
+        "CpuRealtimePeriod": 0,
+        "CpuRealtimeRuntime": 0,
+        "CpuShares": 0,
+        "CpusetCpus": "",
+        "CpusetMems": "",
+        "DeviceCgroupRules": null,
+        "DeviceRequests": null,
+        "Devices": [],
+        "Dns": null,
+        "DnsOptions": [],
+        "DnsSearch": [],
+        "ExtraHosts": null,
+        "GroupAdd": null,
+        "IOMaximumBandwidth": 0,
+        "IOMaximumIOps": 0,
+        "IpcMode": "private",
+        "Isolation": "",
+        "Links": null,
+        "LogConfig": {
+          "Config": {},
+          "Type": "none"
+        },
+        "MaskedPaths": [
+          "/proc/acpi",
+          "/proc/asound",
+          "/proc/interrupts",
+          "/proc/kcore",
+          "/proc/keys",
+          "/proc/latency_stats",
+          "/proc/sched_debug",
+          "/proc/scsi",
+          "/proc/timer_list",
+          "/proc/timer_stats",
+          "/sys/devices/virtual/powercap",
+          "/sys/firmware"
+        ],
+        "Memory": 536870912,
+        "MemoryReservation": 0,
+        "MemorySwap": 536870912,
+        "MemorySwappiness": null,
+        "Mounts": [
+          {
+            "ReadOnly": true,
+            "Source": "/home/animallya96/scratch/reserved-metadata-store-20261018-v1/source",
+            "Target": "/audit",
+            "Type": "bind"
+          },
+          {
+            "ReadOnly": true,
+            "Source": "/home/animallya96/scratch/reserved-metadata-store-20261018-v1/fixture",
+            "Target": "/fixture",
+            "Type": "bind"
+          },
+          {
+            "ReadOnly": true,
+            "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+            "Target": "/native",
+            "Type": "bind"
+          },
+          {
+            "Source": "/home/animallya96/scratch/reserved-metadata-store-20261018-v1/out",
+            "Target": "/out",
+            "Type": "bind"
+          }
+        ],
+        "NanoCpus": 1000000000,
+        "NetworkMode": "none",
+        "OomKillDisable": null,
+        "OomScoreAdj": 0,
+        "PidMode": "",
+        "PidsLimit": 32,
+        "PortBindings": {},
+        "Privileged": false,
+        "PublishAllPorts": false,
+        "ReadonlyPaths": [
+          "/proc/bus",
+          "/proc/fs",
+          "/proc/irq",
+          "/proc/sys",
+          "/proc/sysrq-trigger"
+        ],
+        "ReadonlyRootfs": true,
+        "RestartPolicy": {
+          "MaximumRetryCount": 0,
+          "Name": "no"
+        },
+        "Runtime": "runc",
+        "SecurityOpt": [
+          "no-new-privileges"
+        ],
+        "ShmSize": 67108864,
+        "Tmpfs": {
+          "/tmp": "rw,noexec,nosuid,size=64m"
+        },
+        "UTSMode": "",
+        "Ulimits": [
+          {
+            "Hard": 30,
+            "Name": "cpu",
+            "Soft": 30
+          },
+          {
+            "Hard": 1048576,
+            "Name": "fsize",
+            "Soft": 1048576
+          }
+        ],
+        "UsernsMode": "",
+        "VolumeDriver": "",
+        "VolumesFrom": null
+      },
+      "Id": "209f837b90aba7431c12209c37ff61fcf1476405dc6b56e9a9ba224cb8ad4dcd",
+      "Image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "Mounts": [
+        {
+          "Destination": "/out",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": true,
+          "Source": "/home/animallya96/scratch/reserved-metadata-store-20261018-v1/out",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/audit",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/reserved-metadata-store-20261018-v1/source",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/fixture",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/reserved-metadata-store-20261018-v1/fixture",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/native",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+          "Type": "bind"
+        }
+      ],
+      "State": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 1,
+        "FinishedAt": "2026-10-18T22:38:01.732951734Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-18T22:37:34.174809294Z",
+        "Status": "exited"
+      }
+    },
+    "skips": 0,
+    "source_native_bookends_equal": true,
+    "spark_root": "/home/animallya96/scratch/reserved-metadata-store-20261018-v1",
+    "status": "FAILED_PRESERVED_NOT_REPLAYED_OR_ADOPTED",
+    "tests": 8
+  },
+  "initial_source_commit": "51c53060853efec8be51fe8915f3b219b7add59e",
+  "local_source_control_transport_bookends": {
+    "/tmp/get_reserved_metadata_store_failure_20261018.py": {
+      "physical": {
+        "st_ctime_ns": "1792363092288357230",
+        "st_dev": "16777223",
+        "st_ino": "189570108",
+        "st_mtime_ns": "1792363092288357230",
+        "st_size": "2102"
+      },
+      "sha256": "321b686f2fa693a67fce97530f6144fc64e71bac193acab1cf39f0172e9095bb"
+    },
+    "/tmp/get_reserved_metadata_store_results_v2_20261018.py": {
+      "physical": {
+        "st_ctime_ns": "1792363390089676819",
+        "st_dev": "16777223",
+        "st_ino": "189628749",
+        "st_mtime_ns": "1792363390089676819",
+        "st_size": "2054"
+      },
+      "sha256": "179e4a2148e46dbfd9dbb9909cb8725da641a3d8261d45fffb8f7337dd9d2c73"
+    },
+    "/tmp/launch_reserved_metadata_store_20261018.py": {
+      "physical": {
+        "st_ctime_ns": "1792362989721789094",
+        "st_dev": "16777223",
+        "st_ino": "189566662",
+        "st_mtime_ns": "1792362989721789094",
+        "st_size": "10716"
+      },
+      "sha256": "e10ec58f6345b8c4386d389a7cfb66f8c5dad00e7f56e521683fa56df82f72a8"
+    },
+    "/tmp/launch_reserved_metadata_store_v2_20261018.py": {
+      "physical": {
+        "st_ctime_ns": "1792363287653557011",
+        "st_dev": "16777223",
+        "st_ino": "189603541",
+        "st_mtime_ns": "1792363287653557011",
+        "st_size": "10722"
+      },
+      "sha256": "a552cf9c692c73bdfc9207f42009f233a5040ebe7a0c2c30b42fb9edd5151f89"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/execute-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792363053479868204",
+        "st_dev": "16777223",
+        "st_ino": "189570032",
+        "st_mtime_ns": "1792363053479868204",
+        "st_size": "17309"
+      },
+      "sha256": "0226f8947230004dd2ba67b6a21af454273404e422c963955d2a697dd9ff8815"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/execute-exit.json": {
+      "physical": {
+        "st_ctime_ns": "1792363081840001670",
+        "st_dev": "16777223",
+        "st_ino": "189570086",
+        "st_mtime_ns": "1792363081840001670",
+        "st_size": "48"
+      },
+      "sha256": "7a60e747dd75b46142181b7261b377f417815b5bd444964f066740524c89d2e0"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/execute-input.bin": {
+      "physical": {
+        "st_ctime_ns": "1792363053480318197",
+        "st_dev": "16777223",
+        "st_ino": "189570033",
+        "st_mtime_ns": "1792363053480258595",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/execute-stderr": {
+      "physical": {
+        "st_ctime_ns": "1792363081830338139",
+        "st_dev": "16777223",
+        "st_ino": "189570035",
+        "st_mtime_ns": "1792363081830338139",
+        "st_size": "168"
+      },
+      "sha256": "5f9b7edde84cfe5ede9d41556731dc387aef1e9e266beaae7b87828a749d5b93"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/execute-stdout": {
+      "physical": {
+        "st_ctime_ns": "1792363053480548172",
+        "st_dev": "16777223",
+        "st_ino": "189570034",
+        "st_mtime_ns": "1792363053480495386",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/failure-results-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792363119710663209",
+        "st_dev": "16777223",
+        "st_ino": "189570160",
+        "st_mtime_ns": "1792363119710663209",
+        "st_size": "2751"
+      },
+      "sha256": "4a018e2981e9e2cb3d0ec8a1a6398fb9bb44859106fa07e8eef9af20c955a65b"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/failure-results-exit.json": {
+      "physical": {
+        "st_ctime_ns": "1792363120330281897",
+        "st_dev": "16777223",
+        "st_ino": "189570164",
+        "st_mtime_ns": "1792363120330281897",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/failure-results-input.bin": {
+      "physical": {
+        "st_ctime_ns": "1792363119711442049",
+        "st_dev": "16777223",
+        "st_ino": "189570161",
+        "st_mtime_ns": "1792363119711379643",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/failure-results-stderr": {
+      "physical": {
+        "st_ctime_ns": "1792363119711828638",
+        "st_dev": "16777223",
+        "st_ino": "189570163",
+        "st_mtime_ns": "1792363119711796508",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/failure-results-stdout": {
+      "physical": {
+        "st_ctime_ns": "1792363120317332725",
+        "st_dev": "16777223",
+        "st_ino": "189570162",
+        "st_mtime_ns": "1792363120317332725",
+        "st_size": "104478"
+      },
+      "sha256": "337ccdcce6b5aed8551a2349d368e05c3f3417cfe78e51f30cc8e0deb353af90"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/launcher.py": {
+      "physical": {
+        "st_ctime_ns": "1792363018176309922",
+        "st_dev": "16777223",
+        "st_ino": "189569911",
+        "st_mtime_ns": "1792363018176309922",
+        "st_size": "10716"
+      },
+      "sha256": "e10ec58f6345b8c4386d389a7cfb66f8c5dad00e7f56e521683fa56df82f72a8"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/preflight-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792363018178250950",
+        "st_dev": "16777223",
+        "st_ino": "189569912",
+        "st_mtime_ns": "1792363018178250950",
+        "st_size": "17246"
+      },
+      "sha256": "93be461bd98585a7777644a60f52ebd6450f783b86eb60b83d75636a946b4b24"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/preflight-exit.json": {
+      "physical": {
+        "st_ctime_ns": "1792363019176327143",
+        "st_dev": "16777223",
+        "st_ino": "189569916",
+        "st_mtime_ns": "1792363019176327143",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/preflight-input.bin": {
+      "physical": {
+        "st_ctime_ns": "1792363018178793771",
+        "st_dev": "16777223",
+        "st_ino": "189569913",
+        "st_mtime_ns": "1792363018178705903",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/preflight-stderr": {
+      "physical": {
+        "st_ctime_ns": "1792363018179769962",
+        "st_dev": "16777223",
+        "st_ino": "189569915",
+        "st_mtime_ns": "1792363018179654792",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/preflight-stdout": {
+      "physical": {
+        "st_ctime_ns": "1792363019156447845",
+        "st_dev": "16777223",
+        "st_ino": "189569914",
+        "st_mtime_ns": "1792363019156447845",
+        "st_size": "243727"
+      },
+      "sha256": "c072c13c7dfca43c45fc5caf222f23e323479f51f44b9b679b183e4f756af4b7"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/remote.py": {
+      "physical": {
+        "st_ctime_ns": "1792363018174684222",
+        "st_dev": "16777223",
+        "st_ino": "189569909",
+        "st_mtime_ns": "1792363018174684222",
+        "st_size": "14002"
+      },
+      "sha256": "fec8112143e8b30a1ed456d1f3ec9aa068d214490ebf446720d77204a7c181bb"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/runner.py": {
+      "physical": {
+        "st_ctime_ns": "1792363018175555480",
+        "st_dev": "16777223",
+        "st_ino": "189569910",
+        "st_mtime_ns": "1792363018175555480",
+        "st_size": "6710"
+      },
+      "sha256": "fb884148eb7fa2303de8ac8b5169ce6f7a973382179458f956132e26d0e78333"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/source-copy-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792363052540181433",
+        "st_dev": "16777223",
+        "st_ino": "189570022",
+        "st_mtime_ns": "1792363052540181433",
+        "st_size": "461"
+      },
+      "sha256": "0a50b8466e23124d1739bb979a5c932258c6df255be4daa70202eeae65d8b656"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/source-copy-exit.json": {
+      "physical": {
+        "st_ctime_ns": "1792363053470909242",
+        "st_dev": "16777223",
+        "st_ino": "189570031",
+        "st_mtime_ns": "1792363053470909242",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/source-copy-input.bin": {
+      "physical": {
+        "st_ctime_ns": "1792363052540651565",
+        "st_dev": "16777223",
+        "st_ino": "189570023",
+        "st_mtime_ns": "1792363052540577935",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/source-copy-stderr": {
+      "physical": {
+        "st_ctime_ns": "1792363052541781459",
+        "st_dev": "16777223",
+        "st_ino": "189570025",
+        "st_mtime_ns": "1792363052541699685",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/source-copy-stdout": {
+      "physical": {
+        "st_ctime_ns": "1792363052540897886",
+        "st_dev": "16777223",
+        "st_ino": "189570024",
+        "st_mtime_ns": "1792363052540826272",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/source-pins.json": {
+      "physical": {
+        "st_ctime_ns": "1792363051983679580",
+        "st_dev": "16777223",
+        "st_ino": "189569983",
+        "st_mtime_ns": "1792363051983679580",
+        "st_size": "3825"
+      },
+      "sha256": "35d574dc51a3301c4b6a684ed72c388acc2c73f0ec7622277dea184c5f863537"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/stage-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792363052007237459",
+        "st_dev": "16777223",
+        "st_ino": "189570017",
+        "st_mtime_ns": "1792363052007237459",
+        "st_size": "17307"
+      },
+      "sha256": "e0705566957b76db9cd16759d66fc425284353195a658afc18d1bdf1fcc55d99"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/stage-exit.json": {
+      "physical": {
+        "st_ctime_ns": "1792363052539225818",
+        "st_dev": "16777223",
+        "st_ino": "189570021",
+        "st_mtime_ns": "1792363052539225818",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/stage-input.bin": {
+      "physical": {
+        "st_ctime_ns": "1792363052007736661",
+        "st_dev": "16777223",
+        "st_ino": "189570018",
+        "st_mtime_ns": "1792363052007736661",
+        "st_size": "4267"
+      },
+      "sha256": "90ee1c5e9bc16359819f71a8709a71bf151d878834f6a8a37d2b56a10a55e6f4"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/stage-stderr": {
+      "physical": {
+        "st_ctime_ns": "1792363052008356746",
+        "st_dev": "16777223",
+        "st_ino": "189570020",
+        "st_mtime_ns": "1792363052008304589",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v1/stage-stdout": {
+      "physical": {
+        "st_ctime_ns": "1792363052525772489",
+        "st_dev": "16777223",
+        "st_ino": "189570019",
+        "st_mtime_ns": "1792363052525772489",
+        "st_size": "208"
+      },
+      "sha256": "df6ad064f9ce349a8fb4324c8d9929f4274f8c7f50da28c3de0fe177270b2f96"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/execute-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792363328036331204",
+        "st_dev": "16777223",
+        "st_ino": "189615794",
+        "st_mtime_ns": "1792363328036331204",
+        "st_size": "17309"
+      },
+      "sha256": "a2df3a670d936f4a1409769d5b08391e6a16b6db32cb7765c3bac927581c51a3"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/execute-exit.json": {
+      "physical": {
+        "st_ctime_ns": "1792363372046317344",
+        "st_dev": "16777223",
+        "st_ino": "189621911",
+        "st_mtime_ns": "1792363372046317344",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/execute-input.bin": {
+      "physical": {
+        "st_ctime_ns": "1792363328036726664",
+        "st_dev": "16777223",
+        "st_ino": "189615795",
+        "st_mtime_ns": "1792363328036674987",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/execute-stderr": {
+      "physical": {
+        "st_ctime_ns": "1792363328037035864",
+        "st_dev": "16777223",
+        "st_ino": "189615797",
+        "st_mtime_ns": "1792363328036997275",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/execute-stdout": {
+      "physical": {
+        "st_ctime_ns": "1792363372031901695",
+        "st_dev": "16777223",
+        "st_ino": "189615796",
+        "st_mtime_ns": "1792363372031901695",
+        "st_size": "244"
+      },
+      "sha256": "12a74f000aa46b20a2f4e57ee7b50fbe1e4924205a3edf25d8dfd3b166639e7e"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/launcher.py": {
+      "physical": {
+        "st_ctime_ns": "1792363300411213570",
+        "st_dev": "16777223",
+        "st_ino": "189615688",
+        "st_mtime_ns": "1792363300411213570",
+        "st_size": "10722"
+      },
+      "sha256": "a552cf9c692c73bdfc9207f42009f233a5040ebe7a0c2c30b42fb9edd5151f89"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/preflight-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792363300411887788",
+        "st_dev": "16777223",
+        "st_ino": "189615689",
+        "st_mtime_ns": "1792363300411887788",
+        "st_size": "17246"
+      },
+      "sha256": "720691b6b0e626e3636a832e1305e52c4a3e59946e44c2e70ade49dcbaef676c"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/preflight-exit.json": {
+      "physical": {
+        "st_ctime_ns": "1792363301252233818",
+        "st_dev": "16777223",
+        "st_ino": "189615698",
+        "st_mtime_ns": "1792363301252233818",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/preflight-input.bin": {
+      "physical": {
+        "st_ctime_ns": "1792363300412174664",
+        "st_dev": "16777223",
+        "st_ino": "189615690",
+        "st_mtime_ns": "1792363300412143632",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/preflight-stderr": {
+      "physical": {
+        "st_ctime_ns": "1792363300412517458",
+        "st_dev": "16777223",
+        "st_ino": "189615692",
+        "st_mtime_ns": "1792363300412463959",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/preflight-stdout": {
+      "physical": {
+        "st_ctime_ns": "1792363301241761407",
+        "st_dev": "16777223",
+        "st_ino": "189615691",
+        "st_mtime_ns": "1792363301241761407",
+        "st_size": "243727"
+      },
+      "sha256": "4521830aef38b0c790143da35e2f86035b723dc2bd883f297cc6ad68fcec0fc8"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/remote.py": {
+      "physical": {
+        "st_ctime_ns": "1792363300408910724",
+        "st_dev": "16777223",
+        "st_ino": "189615686",
+        "st_mtime_ns": "1792363300408910724",
+        "st_size": "14002"
+      },
+      "sha256": "2e2164ae2a3c9d3d946bda55b9e70036c490d94d1f169dbf0a11a9e0dcc1cb68"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/results-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792363415569393267",
+        "st_dev": "16777223",
+        "st_ino": "189631540",
+        "st_mtime_ns": "1792363415569393267",
+        "st_size": "2711"
+      },
+      "sha256": "da551bbda12fad608ca92ad9edb132e7854e489a3daf564adbc8247523cfd53b"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/results-exit.json": {
+      "physical": {
+        "st_ctime_ns": "1792363416262322969",
+        "st_dev": "16777223",
+        "st_ino": "189631785",
+        "st_mtime_ns": "1792363416262322969",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/results-input.bin": {
+      "physical": {
+        "st_ctime_ns": "1792363415570355779",
+        "st_dev": "16777223",
+        "st_ino": "189631541",
+        "st_mtime_ns": "1792363415570271283",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/results-stderr": {
+      "physical": {
+        "st_ctime_ns": "1792363415570850364",
+        "st_dev": "16777223",
+        "st_ino": "189631543",
+        "st_mtime_ns": "1792363415570768534",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/results-stdout": {
+      "physical": {
+        "st_ctime_ns": "1792363416256429700",
+        "st_dev": "16777223",
+        "st_ino": "189631542",
+        "st_mtime_ns": "1792363416256429700",
+        "st_size": "142850"
+      },
+      "sha256": "cc67ea120ecd43c9546f01398adf8f3722314b404199e27cc048b0a6553f4c73"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/runner.py": {
+      "physical": {
+        "st_ctime_ns": "1792363300410762425",
+        "st_dev": "16777223",
+        "st_ino": "189615687",
+        "st_mtime_ns": "1792363300410762425",
+        "st_size": "7466"
+      },
+      "sha256": "d281b4a6a402771c46d8b6088ede2b503a5b34879dabbe11650f57924b66efa0"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/source-copy-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792363327123210002",
+        "st_dev": "16777223",
+        "st_ino": "189615784",
+        "st_mtime_ns": "1792363327123210002",
+        "st_size": "461"
+      },
+      "sha256": "f76752d6aa01261a4b99fefe11125aff51ff1ba5c4bf5da8785bdc1aee04d055"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/source-copy-exit.json": {
+      "physical": {
+        "st_ctime_ns": "1792363328033842040",
+        "st_dev": "16777223",
+        "st_ino": "189615793",
+        "st_mtime_ns": "1792363328033842040",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/source-copy-input.bin": {
+      "physical": {
+        "st_ctime_ns": "1792363327123732037",
+        "st_dev": "16777223",
+        "st_ino": "189615785",
+        "st_mtime_ns": "1792363327123665774",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/source-copy-stderr": {
+      "physical": {
+        "st_ctime_ns": "1792363327124039450",
+        "st_dev": "16777223",
+        "st_ino": "189615787",
+        "st_mtime_ns": "1792363327123998169",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/source-copy-stdout": {
+      "physical": {
+        "st_ctime_ns": "1792363327123911820",
+        "st_dev": "16777223",
+        "st_ino": "189615786",
+        "st_mtime_ns": "1792363327123874075",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/source-pins.json": {
+      "physical": {
+        "st_ctime_ns": "1792363326582503871",
+        "st_dev": "16777223",
+        "st_ino": "189615745",
+        "st_mtime_ns": "1792363326582503871",
+        "st_size": "3825"
+      },
+      "sha256": "bf58da0bf66721f0899fc1f39fda68ece050f3b5b267b4fde3bdf13255376de2"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/stage-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792363326599498368",
+        "st_dev": "16777223",
+        "st_ino": "189615779",
+        "st_mtime_ns": "1792363326599498368",
+        "st_size": "17307"
+      },
+      "sha256": "f94b985b8c320617ad4fd326fe84811b4dd94116152dc92945c6f987b012e79e"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/stage-exit.json": {
+      "physical": {
+        "st_ctime_ns": "1792363327121254998",
+        "st_dev": "16777223",
+        "st_ino": "189615783",
+        "st_mtime_ns": "1792363327121254998",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/stage-input.bin": {
+      "physical": {
+        "st_ctime_ns": "1792363326599880756",
+        "st_dev": "16777223",
+        "st_ino": "189615780",
+        "st_mtime_ns": "1792363326599880756",
+        "st_size": "4267"
+      },
+      "sha256": "56e32336f7c8b8fad1613a821bb1d98b4f6fae971b3774ef7163daf6cb17b9e9"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/stage-stderr": {
+      "physical": {
+        "st_ctime_ns": "1792363326600307649",
+        "st_dev": "16777223",
+        "st_ino": "189615782",
+        "st_mtime_ns": "1792363326600277561",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-metadata-store-20261018-v2/stage-stdout": {
+      "physical": {
+        "st_ctime_ns": "1792363327060768890",
+        "st_dev": "16777223",
+        "st_ino": "189615781",
+        "st_mtime_ns": "1792363327060768890",
+        "st_size": "208"
+      },
+      "sha256": "2e8414c93c858912c6b1ae74f96567fb3b1eaf1161ab4fcb16741aa9ca0b067e"
+    },
+    "/tmp/reserved_metadata_store_remote_20261018.py": {
+      "physical": {
+        "st_ctime_ns": "1792362868331841921",
+        "st_dev": "16777223",
+        "st_ino": "189566659",
+        "st_mtime_ns": "1792362868331841921",
+        "st_size": "14002"
+      },
+      "sha256": "fec8112143e8b30a1ed456d1f3ec9aa068d214490ebf446720d77204a7c181bb"
+    },
+    "/tmp/reserved_metadata_store_remote_v2_20261018.py": {
+      "physical": {
+        "st_ctime_ns": "1792363244224210026",
+        "st_dev": "16777223",
+        "st_ino": "189603535",
+        "st_mtime_ns": "1792363244224210026",
+        "st_size": "14002"
+      },
+      "sha256": "2e2164ae2a3c9d3d946bda55b9e70036c490d94d1f169dbf0a11a9e0dcc1cb68"
+    },
+    "/tmp/run_reserved_metadata_store_20261018.py": {
+      "physical": {
+        "st_ctime_ns": "1792362868317568218",
+        "st_dev": "16777223",
+        "st_ino": "189566655",
+        "st_mtime_ns": "1792362868317568218",
+        "st_size": "6710"
+      },
+      "sha256": "fb884148eb7fa2303de8ac8b5169ce6f7a973382179458f956132e26d0e78333"
+    },
+    "/tmp/run_reserved_metadata_store_v2_20261018.py": {
+      "physical": {
+        "st_ctime_ns": "1792363244207378852",
+        "st_dev": "16777223",
+        "st_ino": "189603528",
+        "st_mtime_ns": "1792363244207378852",
+        "st_size": "7466"
+      },
+      "sha256": "d281b4a6a402771c46d8b6088ede2b503a5b34879dabbe11650f57924b66efa0"
+    }
+  },
+  "owned_cut_exit_canonical_reconstruction": [
+    {
+      "bytes": 95,
+      "canonical_reconstruction_base64": "eyJoZWFkIjpudWxsLCJwYXBlcl9zaGEyNTYiOm51bGwsInBpZCI6NywicG9pbnQiOiJyZXNlcnZlZF9jYXNfaW5kZXhfZnN5bmNlZCIsInBvbGljeV9jYWxscyI6MH0=",
+      "path": "/out/cases/runTest-kx5gls0s/store/SYNTHETIC-reserved-workspace/work/actual-child-cut.json",
+      "sha256": "bbfae67dfcc5caaf9d92c3c0ad85c5a7143c450f0f8ee8d062c42b43a6d60ab4"
+    },
+    {
+      "bytes": 121,
+      "canonical_reconstruction_base64": "eyJib3VuZGFyeSI6InJlc2VydmVkX2Nhc19pbmRleF9mc3luY2VkIiwiZXhpdGNvZGUiOi05LCJoZWFkIjpudWxsLCJwaWQiOjcsInNjb3BlIjoiQUNUVUFMX09XTkVEX1NJR0tJTExfTk9UX1BPV0VSX0xPU1MifQ==",
+      "path": "/out/cases/runTest-kx5gls0s/store/SYNTHETIC-reserved-workspace/work/actual-child-exit.json",
+      "sha256": "182196cb74a66ec6f9792e4149ad2e9a03e5630d52ecca80deb20e872d1d76fc"
+    },
+    {
+      "bytes": 160,
+      "canonical_reconstruction_base64": "eyJoZWFkIjpudWxsLCJwYXBlcl9zaGEyNTYiOiJkMTRkYjAxZmE3MGFlOTJjODhkNTMwZjhjM2JhYmNkNThmODA5OWEyMDFlZThhMTgxNTQ2Njc0NmE3NzVjYThkIiwicGlkIjo4LCJwb2ludCI6InJlc2VydmVkX3BoYXNlX3Jlc3VsdF93cml0dGVuIiwicG9saWN5X2NhbGxzIjoxfQ==",
+      "path": "/out/cases/runTest-grog6kmr/store/SYNTHETIC-reserved-workspace/work/actual-child-cut.json",
+      "sha256": "3123b69d1b1fea9229baff1eb4074cf6f8bfc0957690ff8279fb6646973c2d60"
+    },
+    {
+      "bytes": 124,
+      "canonical_reconstruction_base64": "eyJib3VuZGFyeSI6InJlc2VydmVkX3BoYXNlX3Jlc3VsdF93cml0dGVuIiwiZXhpdGNvZGUiOi05LCJoZWFkIjpudWxsLCJwaWQiOjgsInNjb3BlIjoiQUNUVUFMX09XTkVEX1NJR0tJTExfTk9UX1BPV0VSX0xPU1MifQ==",
+      "path": "/out/cases/runTest-grog6kmr/store/SYNTHETIC-reserved-workspace/work/actual-child-exit.json",
+      "sha256": "f81d1eb69d5fda69e6be2bbaa5bd22fedad1f6a869d04ace43a9ddb6e08a24e6"
+    }
+  ],
+  "recorded_at": "2026-10-18T22:44:56.003441+00:00",
+  "retained_result_files": {
+    "create-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792363328516373844",
+        "st_dev": "66306",
+        "st_ino": "60693924",
+        "st_mtime_ns": "1792363328516373844",
+        "st_size": "1503"
+      },
+      "sha256": "5a4fa2b300966702a3f6995e6c962380fc71d98bcf721862879299373282de93"
+    },
+    "inspect-after.json": {
+      "physical": {
+        "st_ctime_ns": "1792363371988482286",
+        "st_dev": "66306",
+        "st_ino": "60693958",
+        "st_mtime_ns": "1792363371988482286",
+        "st_size": "3587"
+      },
+      "sha256": "e963c60200c403fecb36c26a42b0a06e9e81c4032c3887f9d3409d9def5c62e4"
+    },
+    "inspect-before.json": {
+      "physical": {
+        "st_ctime_ns": "1792363328616020457",
+        "st_dev": "66306",
+        "st_ino": "60693960",
+        "st_mtime_ns": "1792363328616020457",
+        "st_size": "3569"
+      },
+      "sha256": "3b335a6e546e09c1f7da6e8eff1984f38ded313e86f67d76bccd61085b63f918"
+    },
+    "out/proof.json": {
+      "physical": {
+        "st_ctime_ns": "1792363371842435925",
+        "st_dev": "66306",
+        "st_ino": "60699753",
+        "st_mtime_ns": "1792363371842435925",
+        "st_size": "87492"
+      },
+      "sha256": "9a29858d7af1d1e4dd1a7daf66192fe44e9f013bfedb05f23a7e0575a57a2df0"
+    },
+    "run.log": {
+      "physical": {
+        "st_ctime_ns": "1792363371823768880",
+        "st_dev": "66306",
+        "st_ino": "60693961",
+        "st_mtime_ns": "1792363371823768880",
+        "st_size": "1855"
+      },
+      "sha256": "3ff17aef9f4f212b09041b5a7f59b7917ab43108ba8f8fd9ba64383873681c3e"
+    },
+    "source/pins.json": {
+      "physical": {
+        "st_ctime_ns": "1792363327091071755",
+        "st_dev": "66306",
+        "st_ino": "60693892",
+        "st_mtime_ns": "1792363327091071755",
+        "st_size": "3375"
+      },
+      "sha256": "1bcd2ea82a5afe8ba794e4330879f5bd71be556914cc17da1d618ed69bc16224"
+    },
+    "stage.json": {
+      "physical": {
+        "st_ctime_ns": "1792363327094977338",
+        "st_dev": "66306",
+        "st_ino": "60693893",
+        "st_mtime_ns": "1792363327094977338",
+        "st_size": "4374"
+      },
+      "sha256": "1c8043af902d0b24c2bd81cfcddf50fbf3d686dc8b4c82b41b511ce105d7a14a"
+    }
+  },
+  "runtime_after": {
+    "HostConfig": {
+      "AutoRemove": false,
+      "Binds": null,
+      "BlkioDeviceReadBps": [],
+      "BlkioDeviceReadIOps": [],
+      "BlkioDeviceWriteBps": [],
+      "BlkioDeviceWriteIOps": [],
+      "BlkioWeight": 0,
+      "BlkioWeightDevice": [],
+      "CapAdd": null,
+      "CapDrop": [
+        "ALL"
+      ],
+      "Cgroup": "",
+      "CgroupParent": "",
+      "CgroupnsMode": "private",
+      "ConsoleSize": [
+        0,
+        0
+      ],
+      "ContainerIDFile": "/home/animallya96/scratch/reserved-metadata-store-20261018-v2/cid",
+      "CpuCount": 0,
+      "CpuPercent": 0,
+      "CpuPeriod": 0,
+      "CpuQuota": 0,
+      "CpuRealtimePeriod": 0,
+      "CpuRealtimeRuntime": 0,
+      "CpuShares": 0,
+      "CpusetCpus": "",
+      "CpusetMems": "",
+      "DeviceCgroupRules": null,
+      "DeviceRequests": null,
+      "Devices": [],
+      "Dns": null,
+      "DnsOptions": [],
+      "DnsSearch": [],
+      "ExtraHosts": null,
+      "GroupAdd": null,
+      "IOMaximumBandwidth": 0,
+      "IOMaximumIOps": 0,
+      "IpcMode": "private",
+      "Isolation": "",
+      "Links": null,
+      "LogConfig": {
+        "Config": {},
+        "Type": "none"
+      },
+      "MaskedPaths": [
+        "/proc/acpi",
+        "/proc/asound",
+        "/proc/interrupts",
+        "/proc/kcore",
+        "/proc/keys",
+        "/proc/latency_stats",
+        "/proc/sched_debug",
+        "/proc/scsi",
+        "/proc/timer_list",
+        "/proc/timer_stats",
+        "/sys/devices/virtual/powercap",
+        "/sys/firmware"
+      ],
+      "Memory": 536870912,
+      "MemoryReservation": 0,
+      "MemorySwap": 536870912,
+      "MemorySwappiness": null,
+      "Mounts": [
+        {
+          "ReadOnly": true,
+          "Source": "/home/animallya96/scratch/reserved-metadata-store-20261018-v2/source",
+          "Target": "/audit",
+          "Type": "bind"
+        },
+        {
+          "ReadOnly": true,
+          "Source": "/home/animallya96/scratch/reserved-metadata-store-20261018-v2/fixture",
+          "Target": "/fixture",
+          "Type": "bind"
+        },
+        {
+          "ReadOnly": true,
+          "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+          "Target": "/native",
+          "Type": "bind"
+        },
+        {
+          "Source": "/home/animallya96/scratch/reserved-metadata-store-20261018-v2/out",
+          "Target": "/out",
+          "Type": "bind"
+        }
+      ],
+      "NanoCpus": 1000000000,
+      "NetworkMode": "none",
+      "OomKillDisable": null,
+      "OomScoreAdj": 0,
+      "PidMode": "",
+      "PidsLimit": 32,
+      "PortBindings": {},
+      "Privileged": false,
+      "PublishAllPorts": false,
+      "ReadonlyPaths": [
+        "/proc/bus",
+        "/proc/fs",
+        "/proc/irq",
+        "/proc/sys",
+        "/proc/sysrq-trigger"
+      ],
+      "ReadonlyRootfs": true,
+      "RestartPolicy": {
+        "MaximumRetryCount": 0,
+        "Name": "no"
+      },
+      "Runtime": "runc",
+      "SecurityOpt": [
+        "no-new-privileges"
+      ],
+      "ShmSize": 67108864,
+      "Tmpfs": {
+        "/tmp": "rw,noexec,nosuid,size=64m"
+      },
+      "UTSMode": "",
+      "Ulimits": [
+        {
+          "Hard": 30,
+          "Name": "cpu",
+          "Soft": 30
+        },
+        {
+          "Hard": 1048576,
+          "Name": "fsize",
+          "Soft": 1048576
+        }
+      ],
+      "UsernsMode": "",
+      "VolumeDriver": "",
+      "VolumesFrom": null
+    },
+    "Id": "b51bcb4a07bf6097ce58062342c3e3af2cd4be2e5ccd95d7e40e0d00e4b6ad45",
+    "Image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "Mounts": [
+      {
+        "Destination": "/audit",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/reserved-metadata-store-20261018-v2/source",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/fixture",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/reserved-metadata-store-20261018-v2/fixture",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/native",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/out",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": true,
+        "Source": "/home/animallya96/scratch/reserved-metadata-store-20261018-v2/out",
+        "Type": "bind"
+      }
+    ],
+    "State": {
+      "Dead": false,
+      "Error": "",
+      "ExitCode": 0,
+      "FinishedAt": "2026-10-18T22:42:51.878406499Z",
+      "OOMKilled": false,
+      "Paused": false,
+      "Pid": 0,
+      "Restarting": false,
+      "Running": false,
+      "StartedAt": "2026-10-18T22:42:08.648341326Z",
+      "Status": "exited"
+    }
+  },
+  "runtime_before": {
+    "HostConfig": {
+      "AutoRemove": false,
+      "Binds": null,
+      "BlkioDeviceReadBps": [],
+      "BlkioDeviceReadIOps": [],
+      "BlkioDeviceWriteBps": [],
+      "BlkioDeviceWriteIOps": [],
+      "BlkioWeight": 0,
+      "BlkioWeightDevice": [],
+      "CapAdd": null,
+      "CapDrop": [
+        "ALL"
+      ],
+      "Cgroup": "",
+      "CgroupParent": "",
+      "CgroupnsMode": "private",
+      "ConsoleSize": [
+        0,
+        0
+      ],
+      "ContainerIDFile": "/home/animallya96/scratch/reserved-metadata-store-20261018-v2/cid",
+      "CpuCount": 0,
+      "CpuPercent": 0,
+      "CpuPeriod": 0,
+      "CpuQuota": 0,
+      "CpuRealtimePeriod": 0,
+      "CpuRealtimeRuntime": 0,
+      "CpuShares": 0,
+      "CpusetCpus": "",
+      "CpusetMems": "",
+      "DeviceCgroupRules": null,
+      "DeviceRequests": null,
+      "Devices": [],
+      "Dns": null,
+      "DnsOptions": [],
+      "DnsSearch": [],
+      "ExtraHosts": null,
+      "GroupAdd": null,
+      "IOMaximumBandwidth": 0,
+      "IOMaximumIOps": 0,
+      "IpcMode": "private",
+      "Isolation": "",
+      "Links": null,
+      "LogConfig": {
+        "Config": {},
+        "Type": "none"
+      },
+      "MaskedPaths": [
+        "/proc/acpi",
+        "/proc/asound",
+        "/proc/interrupts",
+        "/proc/kcore",
+        "/proc/keys",
+        "/proc/latency_stats",
+        "/proc/sched_debug",
+        "/proc/scsi",
+        "/proc/timer_list",
+        "/proc/timer_stats",
+        "/sys/devices/virtual/powercap",
+        "/sys/firmware"
+      ],
+      "Memory": 536870912,
+      "MemoryReservation": 0,
+      "MemorySwap": 536870912,
+      "MemorySwappiness": null,
+      "Mounts": [
+        {
+          "ReadOnly": true,
+          "Source": "/home/animallya96/scratch/reserved-metadata-store-20261018-v2/source",
+          "Target": "/audit",
+          "Type": "bind"
+        },
+        {
+          "ReadOnly": true,
+          "Source": "/home/animallya96/scratch/reserved-metadata-store-20261018-v2/fixture",
+          "Target": "/fixture",
+          "Type": "bind"
+        },
+        {
+          "ReadOnly": true,
+          "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+          "Target": "/native",
+          "Type": "bind"
+        },
+        {
+          "Source": "/home/animallya96/scratch/reserved-metadata-store-20261018-v2/out",
+          "Target": "/out",
+          "Type": "bind"
+        }
+      ],
+      "NanoCpus": 1000000000,
+      "NetworkMode": "none",
+      "OomKillDisable": false,
+      "OomScoreAdj": 0,
+      "PidMode": "",
+      "PidsLimit": 32,
+      "PortBindings": {},
+      "Privileged": false,
+      "PublishAllPorts": false,
+      "ReadonlyPaths": [
+        "/proc/bus",
+        "/proc/fs",
+        "/proc/irq",
+        "/proc/sys",
+        "/proc/sysrq-trigger"
+      ],
+      "ReadonlyRootfs": true,
+      "RestartPolicy": {
+        "MaximumRetryCount": 0,
+        "Name": "no"
+      },
+      "Runtime": "runc",
+      "SecurityOpt": [
+        "no-new-privileges"
+      ],
+      "ShmSize": 67108864,
+      "Tmpfs": {
+        "/tmp": "rw,noexec,nosuid,size=64m"
+      },
+      "UTSMode": "",
+      "Ulimits": [
+        {
+          "Hard": 30,
+          "Name": "cpu",
+          "Soft": 30
+        },
+        {
+          "Hard": 1048576,
+          "Name": "fsize",
+          "Soft": 1048576
+        }
+      ],
+      "UsernsMode": "",
+      "VolumeDriver": "",
+      "VolumesFrom": null
+    },
+    "Id": "b51bcb4a07bf6097ce58062342c3e3af2cd4be2e5ccd95d7e40e0d00e4b6ad45",
+    "Image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "Mounts": [
+      {
+        "Destination": "/audit",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/reserved-metadata-store-20261018-v2/source",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/fixture",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/reserved-metadata-store-20261018-v2/fixture",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/native",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/out",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": true,
+        "Source": "/home/animallya96/scratch/reserved-metadata-store-20261018-v2/out",
+        "Type": "bind"
+      }
+    ],
+    "State": {
+      "Dead": false,
+      "Error": "",
+      "ExitCode": 0,
+      "FinishedAt": "0001-01-01T00:00:00Z",
+      "OOMKilled": false,
+      "Paused": false,
+      "Pid": 0,
+      "Restarting": false,
+      "Running": false,
+      "StartedAt": "0001-01-01T00:00:00Z",
+      "Status": "created"
+    }
+  },
+  "physical_inventory_validation": {
+    "status": "VERIFIED_COMPLETE_BOUNDED_INDEPENDENT_ROOT_FOLD",
+    "raw_sha256": "1f47af81ff80fa2ac6c03811c3539390865decd845131c5deb410aca912ae54f",
+    "raw_bytes": 379535,
+    "gzip_bytes": 24490,
+    "complete_inventories": 8,
+    "unique_inodes": 4128,
+    "inodes_per_pool": 516,
+    "logical_and_allocated_bytes_per_pool": 34344960,
+    "total_allocated_bytes": 274759680,
+    "all_names_fields_inode_size_block_counts_equal": true,
+    "all_inodes_distinct_across_cases": true,
+    "raw_mount_order_equal": true,
+    "full_mount_records_equal": true,
+    "only_host_config_delta": {
+      "OomKillDisable": [
+        false,
+        null
+      ]
+    },
+    "canonical_cut_exit_records": 4,
+    "canonical_cut_exit_bytes": 500
+  },
+  "runtime_proof": {
+    "actual_owned_sigkill_children": [
+      {
+        "cut": {
+          "path": "/out/cases/runTest-kx5gls0s/store/SYNTHETIC-reserved-workspace/work/actual-child-cut.json",
+          "physical": {
+            "st_ctime_ns": "1792363334153186901",
+            "st_dev": "66306",
+            "st_ino": "60694690",
+            "st_mtime_ns": "1792363334153186901",
+            "st_size": "95"
+          },
+          "sha256": "bbfae67dfcc5caaf9d92c3c0ad85c5a7143c450f0f8ee8d062c42b43a6d60ab4",
+          "value": {
+            "head": null,
+            "paper_sha256": null,
+            "pid": 7,
+            "point": "reserved_cas_index_fsynced",
+            "policy_calls": 0
+          }
+        },
+        "exit": {
+          "path": "/out/cases/runTest-kx5gls0s/store/SYNTHETIC-reserved-workspace/work/actual-child-exit.json",
+          "physical": {
+            "st_ctime_ns": "1792363334187527290",
+            "st_dev": "66306",
+            "st_ino": "60694691",
+            "st_mtime_ns": "1792363334187527290",
+            "st_size": "121"
+          },
+          "sha256": "182196cb74a66ec6f9792e4149ad2e9a03e5630d52ecca80deb20e872d1d76fc",
+          "value": {
+            "boundary": "reserved_cas_index_fsynced",
+            "exitcode": -9,
+            "head": null,
+            "pid": 7,
+            "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+          }
+        }
+      },
+      {
+        "cut": {
+          "path": "/out/cases/runTest-grog6kmr/store/SYNTHETIC-reserved-workspace/work/actual-child-cut.json",
+          "physical": {
+            "st_ctime_ns": "1792363340007927615",
+            "st_dev": "66306",
+            "st_ino": "60695418",
+            "st_mtime_ns": "1792363340007927615",
+            "st_size": "160"
+          },
+          "sha256": "3123b69d1b1fea9229baff1eb4074cf6f8bfc0957690ff8279fb6646973c2d60",
+          "value": {
+            "head": null,
+            "paper_sha256": "d14db01fa70ae92c88d530f8c3babcd58f8099a201ee8a1815466746a775ca8d",
+            "pid": 8,
+            "point": "reserved_phase_result_written",
+            "policy_calls": 1
+          }
+        },
+        "exit": {
+          "path": "/out/cases/runTest-grog6kmr/store/SYNTHETIC-reserved-workspace/work/actual-child-exit.json",
+          "physical": {
+            "st_ctime_ns": "1792363340030024769",
+            "st_dev": "66306",
+            "st_ino": "60695419",
+            "st_mtime_ns": "1792363340030024769",
+            "st_size": "124"
+          },
+          "sha256": "f81d1eb69d5fda69e6be2bbaa5bd22fedad1f6a869d04ace43a9ddb6e08a24e6",
+          "value": {
+            "boundary": "reserved_phase_result_written",
+            "exitcode": -9,
+            "head": null,
+            "pid": 8,
+            "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+          }
+        }
+      }
+    ],
+    "elapsed_seconds": 42.7042145319283,
+    "errors": 0,
+    "failures": 0,
+    "forbidden_imports": [],
+    "native_after": {
+      "backend.agents": {
+        "physical": {
+          "st_ctime_ns": "1792252095713452724",
+          "st_dev": "66306",
+          "st_ino": "56003890",
+          "st_mtime_ns": "1788401448000000000",
+          "st_size": "30"
+        },
+        "sha256": "6f54ad4ec10e21b19085989fe0589d17a654a8d1bafdf62d3a6f5838833bdae4"
+      },
+      "backend.agents.trading": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794570",
+          "st_mtime_ns": "1788496919000000000",
+          "st_size": "442"
+        },
+        "sha256": "e2674427378cce57e276762d62e35f76df4220e65f989b2468c6b900ff7a5593"
+      },
+      "backend.agents.trading.desk": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794576",
+          "st_mtime_ns": "1788651713000000000",
+          "st_size": "612"
+        },
+        "sha256": "c4915530882e9d8abb10ca8334719c416fc4b0d63502c25ea079ab7aba6fab57"
+      },
+      "backend.agents.trading.desk.allocation": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794578",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "26094"
+        },
+        "sha256": "e031ecbd40f4303fb34c0a1b8d497d55abcf33e941d997b3210d91224d1a7563"
+      },
+      "backend.agents.trading.desk.backtest": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794579",
+          "st_mtime_ns": "1788666740000000000",
+          "st_size": "10956"
+        },
+        "sha256": "0f6b7a2258960982ecab9199d6965cf2c15aece0eaf5c3a6813f1d81015dce7a"
+      },
+      "backend.agents.trading.desk.entry": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794584",
+          "st_mtime_ns": "1788658778000000000",
+          "st_size": "3467"
+        },
+        "sha256": "d3981dcc762ae2b5cc59d562999627f1f0fade57496b9470b7bca99defdabeb3"
+      },
+      "backend.agents.trading.desk.execution_evidence": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794587",
+          "st_mtime_ns": "1789351742000000000",
+          "st_size": "2050"
+        },
+        "sha256": "ba0d3b0e329410d3915a57b44eba004ae9e1479e35022de8d52d2ca36e3ec171"
+      },
+      "backend.agents.trading.desk.exit": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794588",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "7612"
+        },
+        "sha256": "ad4efad8fa146bedccd571f20fda60c60e5bdfe518e28bb51db468fd660e045b"
+      },
+      "backend.agents.trading.desk.funded_execution": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794590",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "32942"
+        },
+        "sha256": "6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c"
+      },
+      "backend.agents.trading.desk.grading": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794591",
+          "st_mtime_ns": "1789942231000000000",
+          "st_size": "11525"
+        },
+        "sha256": "00561286fcbce8d6b4d63d7f24174064640b3d80e40567ce4045c5a5d3d0b4aa"
+      },
+      "backend.agents.trading.desk.intraday_orders": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794593",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "52215"
+        },
+        "sha256": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c"
+      },
+      "backend.agents.trading.desk.opinions": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794598",
+          "st_mtime_ns": "1790455279000000000",
+          "st_size": "8212"
+        },
+        "sha256": "f55e5ca041deae749cea9e6733510a7ef3a6e1fff81985fdd516769d327accbb"
+      },
+      "backend.agents.trading.desk.paper": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794599",
+          "st_mtime_ns": "1792246285000000000",
+          "st_size": "66598"
+        },
+        "sha256": "a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c"
+      },
+      "backend.agents.trading.desk.planner": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794602",
+          "st_mtime_ns": "1789039782000000000",
+          "st_size": "3388"
+        },
+        "sha256": "ad917b5344654087e12b25b55cf558d3f519d3955ee2f3191b58ae263d8d248c"
+      },
+      "backend.agents.trading.desk.policy_v4": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794604",
+          "st_mtime_ns": "1790473980000000000",
+          "st_size": "3579"
+        },
+        "sha256": "d918aeb225d2f8873bdcda004c803c5040149cbd63fa6274e0bff6ec02f6d6f5"
+      },
+      "backend.agents.trading.desk.risk": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794608",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "11877"
+        },
+        "sha256": "2ed66bfc516eddff40c97fb99b0b953fa8ac255b47b5a1dde5db5476e18a00c7"
+      },
+      "backend.agents.trading.desk.simulate": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794613",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "110487"
+        },
+        "sha256": "ac1ff48a0746fb112cbcbfbf88e254f6c7a73d554d5ecb1eb015222a103e80e6"
+      },
+      "backend.agents.trading.desk.trend_brake": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794617",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "3414"
+        },
+        "sha256": "2262e0fd79101d68b10cf2d06e690442af00e94e0b6a215b14294681c4df9931"
+      },
+      "backend.market.alpaca": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59794960",
+          "st_mtime_ns": "1790473980000000000",
+          "st_size": "15047"
+        },
+        "sha256": "698e2425964622290b06a0f51eda7fd148d2a79f24be58d01577ae8c1804840a"
+      },
+      "backend.market.alpaca_trading": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794961",
+          "st_mtime_ns": "1790986089000000000",
+          "st_size": "15211"
+        },
+        "sha256": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2"
+      },
+      "backend.market.alpha": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794962",
+          "st_mtime_ns": "1788580522000000000",
+          "st_size": "6628"
+        },
+        "sha256": "72b1c9487135f642f7bd6f1850aca1351856fda48f53218e402897ebaf53f76d"
+      },
+      "backend.market.bands": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59794963",
+          "st_mtime_ns": "1789827168000000000",
+          "st_size": "3836"
+        },
+        "sha256": "82f69d93471b62cba47e38beef39627aaee72d2e27031f2aea7a310ac46567d5"
+      },
+      "backend.market.baselines": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794964",
+          "st_mtime_ns": "1788797239000000000",
+          "st_size": "7548"
+        },
+        "sha256": "ced5769bece00034e6a659866ac7f8ec3d3465a50be17795b446dbf6ce58fdc8"
+      },
+      "backend.market.bounded_execution": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794967",
+          "st_mtime_ns": "1790903972000000000",
+          "st_size": "11204"
+        },
+        "sha256": "ccaa9f62b7ee49b30041a80b366c13fadb69ba2c6e551630e35575b0ddc6dd32"
+      },
+      "backend.market.calendar": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794968",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "13181"
+        },
+        "sha256": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4"
+      },
+      "backend.market.candidate_stats": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794969",
+          "st_mtime_ns": "1790644500000000000",
+          "st_size": "16550"
+        },
+        "sha256": "93ecebb36422470684208429836f81a27c64b704cc70dc1db7b25b991ff78780"
+      },
+      "backend.market.deep_intraday": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794996",
+          "st_mtime_ns": "1790644500000000000",
+          "st_size": "48371"
+        },
+        "sha256": "cdcf42880c4c8c6aec6cb5138aca12ad09dc56d14e3b7f6786c8c1b615050cae"
+      },
+      "backend.market.desk_freshness": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795002",
+          "st_mtime_ns": "1790432515000000000",
+          "st_size": "3900"
+        },
+        "sha256": "ca9e546915aefb6557d21297bcf194ef70fdda0fae6ed1dcb127b6938cf9b96c"
+      },
+      "backend.market.entry_timing": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795013",
+          "st_mtime_ns": "1790986089000000000",
+          "st_size": "28453"
+        },
+        "sha256": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88"
+      },
+      "backend.market.execution_quotes": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795017",
+          "st_mtime_ns": "1789827168000000000",
+          "st_size": "5151"
+        },
+        "sha256": "4dc6415247b79faba9b557478702facfc0a74950bc9edba7cd679d89aa8bf2f2"
+      },
+      "backend.market.fill_timing": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795020",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "115733"
+        },
+        "sha256": "2bb9eb6c6bbc5bc593a873ef825d8233c890a7b026289ad2b5874bbeda4366fc"
+      },
+      "backend.market.intraday_sip": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795055",
+          "st_mtime_ns": "1790484391000000000",
+          "st_size": "28544"
+        },
+        "sha256": "bbe74be27e547ab4e71ae83521581d4ecd9942a9e9e7498bcbd09f8e3b5197ec"
+      },
+      "backend.market.levels": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795079",
+          "st_mtime_ns": "1789827168000000000",
+          "st_size": "11949"
+        },
+        "sha256": "0b52c13a65146d2225319568ec605a4373a60fbb6ebf385e925f0dc163d07d8f"
+      },
+      "backend.market.options": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795119",
+          "st_mtime_ns": "1790432515000000000",
+          "st_size": "16584"
+        },
+        "sha256": "e81142caa5a6458c44508bc7d8a6a017c3aedecebc1428a5beef3507d2049fd6"
+      },
+      "backend.market.options_evidence": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795120",
+          "st_mtime_ns": "1790432515000000000",
+          "st_size": "8370"
+        },
+        "sha256": "3d506ab19f745582d98942a6a8bf854bc9d1ca78f7344596a71e9b4c34ca1ae8"
+      },
+      "backend.market.panel": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795121",
+          "st_mtime_ns": "1788651713000000000",
+          "st_size": "9202"
+        },
+        "sha256": "dee6b591080f18ba0b35c1241d96cb0e906957b3007f25be941957d2ee7252a2"
+      },
+      "backend.market.replay_broker": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795137",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "46431"
+        },
+        "sha256": "c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616"
+      },
+      "backend.market.session_anatomy": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795151",
+          "st_mtime_ns": "1790484391000000000",
+          "st_size": "25534"
+        },
+        "sha256": "ec56a9e2025613423c35c0d676e69985c880601c808c43824a82fc329b94bf25"
+      },
+      "backend.market.sip_cube": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795154",
+          "st_mtime_ns": "1790484391000000000",
+          "st_size": "10961"
+        },
+        "sha256": "2a6689f13dfbe97a677fabf53010c9a0a9ee5acd4ab2ecc8d55a9daeea8a6bad"
+      },
+      "backend.market.sizing": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795155",
+          "st_mtime_ns": "1788797239000000000",
+          "st_size": "22330"
+        },
+        "sha256": "af98cc0ee0e83b2a4d80f980e93471c712d4d6717a93ee093c9f282ff5d8a162"
+      },
+      "backend.market.sr_levels": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795157",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "26808"
+        },
+        "sha256": "3ae96df32dc326e647a2489cac52afa6546c88517c94016400d70f25ab47cec0"
+      },
+      "backend.market.stage3_io": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795164",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "27286"
+        },
+        "sha256": "b0775a216b319c8e2f35d609b8e6678a7651c46815f5eb34007c52020efc86d5"
+      },
+      "backend.market.stage3_verdict": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795168",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "33122"
+        },
+        "sha256": "ae5e5472a802de3c757b0077797648ab10a0838cc49d38a7c436756b04f7e0ce"
+      },
+      "backend.market.store": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795174",
+          "st_mtime_ns": "1790214767000000000",
+          "st_size": "13705"
+        },
+        "sha256": "a299516ab68710d56355e036770d3c9695ed332641e9fa6ee4d64c9f6ede9aff"
+      },
+      "backend.market.technical": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795179",
+          "st_mtime_ns": "1790903972000000000",
+          "st_size": "14415"
+        },
+        "sha256": "11bf94ad0a0e74ee7d859de204f1e89423a78605dc2a9dfd81569d306b29a742"
+      },
+      "backend.market.vol_forecast": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795188",
+          "st_mtime_ns": "1790644500000000000",
+          "st_size": "12195"
+        },
+        "sha256": "17f8b1948b9ba378db747739d3e2ea99d124e65348a71416c288358dedd20b97"
+      },
+      "backend.market.yahoo": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795191",
+          "st_mtime_ns": "1788578401000000000",
+          "st_size": "13065"
+        },
+        "sha256": "311323b71355858a1ea1fca9d7b03861df71f35466a789d90a872bbbdc93e82d"
+      }
+    },
+    "native_before": {
+      "backend.agents": {
+        "physical": {
+          "st_ctime_ns": "1792252095713452724",
+          "st_dev": "66306",
+          "st_ino": "56003890",
+          "st_mtime_ns": "1788401448000000000",
+          "st_size": "30"
+        },
+        "sha256": "6f54ad4ec10e21b19085989fe0589d17a654a8d1bafdf62d3a6f5838833bdae4"
+      },
+      "backend.agents.trading": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794570",
+          "st_mtime_ns": "1788496919000000000",
+          "st_size": "442"
+        },
+        "sha256": "e2674427378cce57e276762d62e35f76df4220e65f989b2468c6b900ff7a5593"
+      },
+      "backend.agents.trading.desk": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794576",
+          "st_mtime_ns": "1788651713000000000",
+          "st_size": "612"
+        },
+        "sha256": "c4915530882e9d8abb10ca8334719c416fc4b0d63502c25ea079ab7aba6fab57"
+      },
+      "backend.agents.trading.desk.allocation": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794578",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "26094"
+        },
+        "sha256": "e031ecbd40f4303fb34c0a1b8d497d55abcf33e941d997b3210d91224d1a7563"
+      },
+      "backend.agents.trading.desk.backtest": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794579",
+          "st_mtime_ns": "1788666740000000000",
+          "st_size": "10956"
+        },
+        "sha256": "0f6b7a2258960982ecab9199d6965cf2c15aece0eaf5c3a6813f1d81015dce7a"
+      },
+      "backend.agents.trading.desk.entry": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794584",
+          "st_mtime_ns": "1788658778000000000",
+          "st_size": "3467"
+        },
+        "sha256": "d3981dcc762ae2b5cc59d562999627f1f0fade57496b9470b7bca99defdabeb3"
+      },
+      "backend.agents.trading.desk.execution_evidence": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794587",
+          "st_mtime_ns": "1789351742000000000",
+          "st_size": "2050"
+        },
+        "sha256": "ba0d3b0e329410d3915a57b44eba004ae9e1479e35022de8d52d2ca36e3ec171"
+      },
+      "backend.agents.trading.desk.exit": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794588",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "7612"
+        },
+        "sha256": "ad4efad8fa146bedccd571f20fda60c60e5bdfe518e28bb51db468fd660e045b"
+      },
+      "backend.agents.trading.desk.funded_execution": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794590",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "32942"
+        },
+        "sha256": "6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c"
+      },
+      "backend.agents.trading.desk.grading": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794591",
+          "st_mtime_ns": "1789942231000000000",
+          "st_size": "11525"
+        },
+        "sha256": "00561286fcbce8d6b4d63d7f24174064640b3d80e40567ce4045c5a5d3d0b4aa"
+      },
+      "backend.agents.trading.desk.intraday_orders": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794593",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "52215"
+        },
+        "sha256": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c"
+      },
+      "backend.agents.trading.desk.opinions": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794598",
+          "st_mtime_ns": "1790455279000000000",
+          "st_size": "8212"
+        },
+        "sha256": "f55e5ca041deae749cea9e6733510a7ef3a6e1fff81985fdd516769d327accbb"
+      },
+      "backend.agents.trading.desk.paper": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794599",
+          "st_mtime_ns": "1792246285000000000",
+          "st_size": "66598"
+        },
+        "sha256": "a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c"
+      },
+      "backend.agents.trading.desk.planner": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794602",
+          "st_mtime_ns": "1789039782000000000",
+          "st_size": "3388"
+        },
+        "sha256": "ad917b5344654087e12b25b55cf558d3f519d3955ee2f3191b58ae263d8d248c"
+      },
+      "backend.agents.trading.desk.policy_v4": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794604",
+          "st_mtime_ns": "1790473980000000000",
+          "st_size": "3579"
+        },
+        "sha256": "d918aeb225d2f8873bdcda004c803c5040149cbd63fa6274e0bff6ec02f6d6f5"
+      },
+      "backend.agents.trading.desk.risk": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794608",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "11877"
+        },
+        "sha256": "2ed66bfc516eddff40c97fb99b0b953fa8ac255b47b5a1dde5db5476e18a00c7"
+      },
+      "backend.agents.trading.desk.simulate": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794613",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "110487"
+        },
+        "sha256": "ac1ff48a0746fb112cbcbfbf88e254f6c7a73d554d5ecb1eb015222a103e80e6"
+      },
+      "backend.agents.trading.desk.trend_brake": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794617",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "3414"
+        },
+        "sha256": "2262e0fd79101d68b10cf2d06e690442af00e94e0b6a215b14294681c4df9931"
+      },
+      "backend.market.alpaca": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59794960",
+          "st_mtime_ns": "1790473980000000000",
+          "st_size": "15047"
+        },
+        "sha256": "698e2425964622290b06a0f51eda7fd148d2a79f24be58d01577ae8c1804840a"
+      },
+      "backend.market.alpaca_trading": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794961",
+          "st_mtime_ns": "1790986089000000000",
+          "st_size": "15211"
+        },
+        "sha256": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2"
+      },
+      "backend.market.alpha": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794962",
+          "st_mtime_ns": "1788580522000000000",
+          "st_size": "6628"
+        },
+        "sha256": "72b1c9487135f642f7bd6f1850aca1351856fda48f53218e402897ebaf53f76d"
+      },
+      "backend.market.bands": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59794963",
+          "st_mtime_ns": "1789827168000000000",
+          "st_size": "3836"
+        },
+        "sha256": "82f69d93471b62cba47e38beef39627aaee72d2e27031f2aea7a310ac46567d5"
+      },
+      "backend.market.baselines": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794964",
+          "st_mtime_ns": "1788797239000000000",
+          "st_size": "7548"
+        },
+        "sha256": "ced5769bece00034e6a659866ac7f8ec3d3465a50be17795b446dbf6ce58fdc8"
+      },
+      "backend.market.bounded_execution": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794967",
+          "st_mtime_ns": "1790903972000000000",
+          "st_size": "11204"
+        },
+        "sha256": "ccaa9f62b7ee49b30041a80b366c13fadb69ba2c6e551630e35575b0ddc6dd32"
+      },
+      "backend.market.calendar": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794968",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "13181"
+        },
+        "sha256": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4"
+      },
+      "backend.market.candidate_stats": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794969",
+          "st_mtime_ns": "1790644500000000000",
+          "st_size": "16550"
+        },
+        "sha256": "93ecebb36422470684208429836f81a27c64b704cc70dc1db7b25b991ff78780"
+      },
+      "backend.market.deep_intraday": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794996",
+          "st_mtime_ns": "1790644500000000000",
+          "st_size": "48371"
+        },
+        "sha256": "cdcf42880c4c8c6aec6cb5138aca12ad09dc56d14e3b7f6786c8c1b615050cae"
+      },
+      "backend.market.desk_freshness": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795002",
+          "st_mtime_ns": "1790432515000000000",
+          "st_size": "3900"
+        },
+        "sha256": "ca9e546915aefb6557d21297bcf194ef70fdda0fae6ed1dcb127b6938cf9b96c"
+      },
+      "backend.market.entry_timing": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795013",
+          "st_mtime_ns": "1790986089000000000",
+          "st_size": "28453"
+        },
+        "sha256": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88"
+      },
+      "backend.market.execution_quotes": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795017",
+          "st_mtime_ns": "1789827168000000000",
+          "st_size": "5151"
+        },
+        "sha256": "4dc6415247b79faba9b557478702facfc0a74950bc9edba7cd679d89aa8bf2f2"
+      },
+      "backend.market.fill_timing": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795020",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "115733"
+        },
+        "sha256": "2bb9eb6c6bbc5bc593a873ef825d8233c890a7b026289ad2b5874bbeda4366fc"
+      },
+      "backend.market.intraday_sip": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795055",
+          "st_mtime_ns": "1790484391000000000",
+          "st_size": "28544"
+        },
+        "sha256": "bbe74be27e547ab4e71ae83521581d4ecd9942a9e9e7498bcbd09f8e3b5197ec"
+      },
+      "backend.market.levels": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795079",
+          "st_mtime_ns": "1789827168000000000",
+          "st_size": "11949"
+        },
+        "sha256": "0b52c13a65146d2225319568ec605a4373a60fbb6ebf385e925f0dc163d07d8f"
+      },
+      "backend.market.options": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795119",
+          "st_mtime_ns": "1790432515000000000",
+          "st_size": "16584"
+        },
+        "sha256": "e81142caa5a6458c44508bc7d8a6a017c3aedecebc1428a5beef3507d2049fd6"
+      },
+      "backend.market.options_evidence": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795120",
+          "st_mtime_ns": "1790432515000000000",
+          "st_size": "8370"
+        },
+        "sha256": "3d506ab19f745582d98942a6a8bf854bc9d1ca78f7344596a71e9b4c34ca1ae8"
+      },
+      "backend.market.panel": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795121",
+          "st_mtime_ns": "1788651713000000000",
+          "st_size": "9202"
+        },
+        "sha256": "dee6b591080f18ba0b35c1241d96cb0e906957b3007f25be941957d2ee7252a2"
+      },
+      "backend.market.replay_broker": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795137",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "46431"
+        },
+        "sha256": "c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616"
+      },
+      "backend.market.session_anatomy": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795151",
+          "st_mtime_ns": "1790484391000000000",
+          "st_size": "25534"
+        },
+        "sha256": "ec56a9e2025613423c35c0d676e69985c880601c808c43824a82fc329b94bf25"
+      },
+      "backend.market.sip_cube": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795154",
+          "st_mtime_ns": "1790484391000000000",
+          "st_size": "10961"
+        },
+        "sha256": "2a6689f13dfbe97a677fabf53010c9a0a9ee5acd4ab2ecc8d55a9daeea8a6bad"
+      },
+      "backend.market.sizing": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795155",
+          "st_mtime_ns": "1788797239000000000",
+          "st_size": "22330"
+        },
+        "sha256": "af98cc0ee0e83b2a4d80f980e93471c712d4d6717a93ee093c9f282ff5d8a162"
+      },
+      "backend.market.sr_levels": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795157",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "26808"
+        },
+        "sha256": "3ae96df32dc326e647a2489cac52afa6546c88517c94016400d70f25ab47cec0"
+      },
+      "backend.market.stage3_io": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795164",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "27286"
+        },
+        "sha256": "b0775a216b319c8e2f35d609b8e6678a7651c46815f5eb34007c52020efc86d5"
+      },
+      "backend.market.stage3_verdict": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795168",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "33122"
+        },
+        "sha256": "ae5e5472a802de3c757b0077797648ab10a0838cc49d38a7c436756b04f7e0ce"
+      },
+      "backend.market.store": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795174",
+          "st_mtime_ns": "1790214767000000000",
+          "st_size": "13705"
+        },
+        "sha256": "a299516ab68710d56355e036770d3c9695ed332641e9fa6ee4d64c9f6ede9aff"
+      },
+      "backend.market.technical": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795179",
+          "st_mtime_ns": "1790903972000000000",
+          "st_size": "14415"
+        },
+        "sha256": "11bf94ad0a0e74ee7d859de204f1e89423a78605dc2a9dfd81569d306b29a742"
+      },
+      "backend.market.vol_forecast": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795188",
+          "st_mtime_ns": "1790644500000000000",
+          "st_size": "12195"
+        },
+        "sha256": "17f8b1948b9ba378db747739d3e2ea99d124e65348a71416c288358dedd20b97"
+      },
+      "backend.market.yahoo": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795191",
+          "st_mtime_ns": "1788578401000000000",
+          "st_size": "13065"
+        },
+        "sha256": "311323b71355858a1ea1fca9d7b03861df71f35466a789d90a872bbbdc93e82d"
+      }
+    },
+    "native_writer_globals_unchanged": true,
+    "peak_kib": 57312,
+    "physical_inventories": {
+      "base64": "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RvoxAR1+0w4fGvymDT70980hdqi2tvfQ3Tft7qG5b9rcQ2/ftLeH1r5paw+dfdPOHhr7po09vA/oxzy09U3beujqm3b10NQ3beqhp2/a00NL37Slh46+aUcPDX3Thh76+ab9PLTzTdt56OYbdfMioPf6+yNfFNB7/f1JXxPQe/395bgioPf6+1P+bwL6x9vn55dbYuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScmnph4YuKJiScm/m+HiX9+un359Pp95evb46fbb+e/OH94+vr8xw+vT/+4/fHTx++P+Pr9oV+en9/e/fnd++dvb+9//vB6e33/8u3rX26vbz99/Ef57fH/PD6+f317frm9f7m93l5+u3366fzdj6/nw7ydi87f/P6Px7/d3j58Ol+tx4/P375+evz84enLt5fb46/PT6/PX18ff/3r+ciPH85/83IufDr/L88vT788ff3w5fHj388HePevP/3z3YfPb99fEIPQx4O7vrC2XIbQx4O7sT/ecI3Dn8aPN1zjuPNECqyu1yH0cTgv/OMN1zicF/7xhmsczgv/eMM1DheDf7zhGoeLwT/ecI3DxeAfb7jG4WIwXCVOAMNlcvhlAo993HlsKLzzwgcU3nnhAwrvvPABhXde+IDCuxh8QOFdDD6g8C4GH1B4F4MLFL5eh9DH4bxwgcI7L1yg8M4LFyi888IFCu+8cIHCOy9coPAuBhcovIvBBQrvYnCBwrsYXKHw7TqEPg7nhSsU3nnhCoV3XrhC4Z0XrlB454UrFN554QqFdzG4QuFdDK5QeBeDKxTexeAGhY/rEPo4nBduUHjnhRsU3nnhBoV3XrhB4Z0XblB454UbFN7F4AaFdzG4QeFdDP7xW5RRXAwOKHy/DqGP4rzwj4HtKM4L/5iqjuK88I+x6ijOC/+Yq47ivPCPweoozgv/mKyO4mLwj9HqKC4G/5itjuJicEDhXQzuUPhx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yy0x8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExNPTDwx8cTEExP/t8PEPz/dvnx6/b7y9e3x0+2381+cPzx9ff7jh9enf9z++Onj90d8/f7QL8/Pb+/+/O7987e39z9/eL29vn/59vUvt9e3n1r/MF6e5nz/+vb8cnv/cnu9vfx2+/TT+bsfX8+HeTsXnb/5/R+Pv95eXp9e326fHn99fv7y+PHp66enr788vtw+fzsf8vFvT6+vf/z///Z8PsTj88vjz3/98PWX/1r/7l9/+ue7D5/fvr8e5qDP5swZrO2XHfQZ7u7C/Vb404D7rbjzRAqsHtcd9HP1vO6gn6vXdQf9/CR4uO6gn6uP6w76ubpcd9DP1fW6g36ubpcd9BlOKMNl0v0ygcfudx67wOpx3UE/V8/rDvq5el130M9P9YfrDvq5+rjuoJ+ry3UH/Vxdrzvo5+p22UGf4S837KrozjPDroruPDPsquguLsOuiu7iMuyq6C4uw66K7uIy7KroLi7Droru4jLsquguLsOuiu7iMrxl3rHKofDOM8Ouiu48M+yq6C4uw66K7uIy7KroLi7Droru4jLsquguLsOuiu7iMuyq6C4uw66K7uIyfPr5myDsqujOM8Ouiu48M+yq6C4uw66K7uIy7KroLi7Droru4jLsquguLsOuiu7iMuyq6C4uw66K7uLyj39k+OcZ7KrozjPDroruPDPsquguLsOuiu7iMuyq6C4uw66K7uIy7KroLi7Droru4jLsquguLsOuiu7icofCH9cd9POh47qDfq7u1x30c/W47qCfq+d1B/1cva476LO7uAy7KrqLy7Croru4DLsquovLsKuiu7g8oPDluoN+PnRcd9DP1f26g36uHtcd9HP1vO6gn6vXdQd9dheXYVdFd3EZdlV0F5dhV0V3cRl2VXQXlycUvl530M+HjusO+rm6X3fQz9XjuoN+rp7XHfRz9bru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",
+      "encoding": "gzip-base64-complete-json/1",
+      "gzip_bytes": 24490,
+      "gzip_sha256": "00dd668fa81e1737f750e55eff4f2cebfc2ab7e85346c802753b69c5a3415821",
+      "raw_bytes": 379535,
+      "raw_sha256": "1f47af81ff80fa2ac6c03811c3539390865decd845131c5deb410aca912ae54f"
+    },
+    "scope": "NEW synthetic account from reserved birth; metadata2 exact native JSON; preallocated32MiB CAS/eight4MiB phases/2MiB metadata/four descriptors/64calls each; actual Nightly/native paper/broker/checkpoint/SQLite stage commit; two owned SIGKILLs at index-before-control and result-before-seal; no SQLite journal/directory/latch/Cycle producer/twohost/fullhorizon/model/RAM/powerloss/genuine admission",
+    "skips": 0,
+    "source_after": {
+      "/audit/backend/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327689415245",
+          "st_dev": "66306",
+          "st_ino": "60693904",
+          "st_mtime_ns": "1792363327689415245",
+          "st_size": "35"
+        },
+        "sha256": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5"
+      },
+      "/audit/backend/market/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327797416117",
+          "st_dev": "66306",
+          "st_ino": "60693912",
+          "st_mtime_ns": "1792363327797416117",
+          "st_size": "42"
+        },
+        "sha256": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e"
+      },
+      "/audit/backend/market/historical_broker_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327754415770",
+          "st_dev": "66306",
+          "st_ino": "60693909",
+          "st_mtime_ns": "1792363327754415770",
+          "st_size": "40026"
+        },
+        "sha256": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08"
+      },
+      "/audit/backend/market/historical_conditional_cycle.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327844416497",
+          "st_dev": "66306",
+          "st_ino": "60693914",
+          "st_mtime_ns": "1792363327844416497",
+          "st_size": "61225"
+        },
+        "sha256": "086a85c052aa536edc77cf92035864eb92c8ce009d3e5593fa8f44e4b67bca9a"
+      },
+      "/audit/backend/market/historical_conditional_nightly.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327953417378",
+          "st_dev": "66306",
+          "st_ino": "60693920",
+          "st_mtime_ns": "1792363327953417378",
+          "st_size": "63878"
+        },
+        "sha256": "6b16b70bf8a392ddb3a505a9051077b9138396c4e748950391c5ef35171963f5"
+      },
+      "/audit/backend/market/historical_native_metadata.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327763415843",
+          "st_dev": "66306",
+          "st_ino": "60693910",
+          "st_mtime_ns": "1792363327763415843",
+          "st_size": "7097"
+        },
+        "sha256": "333c5d22c49e06742eb4cb50183bf90fa0859d0ce200d3be5f2a4914c8f71e21"
+      },
+      "/audit/backend/market/historical_packet_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327890416869",
+          "st_dev": "66306",
+          "st_ino": "60693917",
+          "st_mtime_ns": "1792363327890416869",
+          "st_size": "4763"
+        },
+        "sha256": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f"
+      },
+      "/audit/backend/market/historical_packet_demand.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327720415495",
+          "st_dev": "66306",
+          "st_ino": "60693907",
+          "st_mtime_ns": "1792363327720415495",
+          "st_size": "6666"
+        },
+        "sha256": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0"
+      },
+      "/audit/backend/market/historical_packet_registry.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327914417063",
+          "st_dev": "66306",
+          "st_ino": "60693919",
+          "st_mtime_ns": "1792363327914417063",
+          "st_size": "6645"
+        },
+        "sha256": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3"
+      },
+      "/audit/backend/market/historical_packet_store.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327790416061",
+          "st_dev": "66306",
+          "st_ino": "60693911",
+          "st_mtime_ns": "1792363327790416061",
+          "st_size": "44181"
+        },
+        "sha256": "3eebf35b529bd616413c8266dc5d6efcae99a16763da059142d7cf853592b488"
+      },
+      "/audit/backend/market/historical_paper_component.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327728415560",
+          "st_dev": "66306",
+          "st_ino": "60693908",
+          "st_mtime_ns": "1792363327728415560",
+          "st_size": "4280"
+        },
+        "sha256": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648"
+      },
+      "/audit/backend/market/historical_physical_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327882416804",
+          "st_dev": "66306",
+          "st_ino": "60693916",
+          "st_mtime_ns": "1792363327882416804",
+          "st_size": "36101"
+        },
+        "sha256": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+      },
+      "/audit/backend/market/historical_raw_cycle.py": {
+        "physical": {
+          "st_ctime_ns": "1792363328029417992",
+          "st_dev": "66306",
+          "st_ino": "60693923",
+          "st_mtime_ns": "1792363328029417992",
+          "st_size": "7137"
+        },
+        "sha256": "3dee58cf49bd1e4f2a4879ca2ca103d166179b3f3dba33c143b66406f87e1bfa"
+      },
+      "/audit/backend/market/historical_raw_nightly.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327710415414",
+          "st_dev": "66306",
+          "st_ino": "60693906",
+          "st_mtime_ns": "1792363327710415414",
+          "st_size": "30224"
+        },
+        "sha256": "85532ecebae22488c2b1373ea160ee4ecee2dd8ae208c7e3612d9a4f51bdbed2"
+      },
+      "/audit/backend/market/historical_reserved_blob_store.py": {
+        "physical": {
+          "st_ctime_ns": "1792363328016417887",
+          "st_dev": "66306",
+          "st_ino": "60693922",
+          "st_mtime_ns": "1792363328016417887",
+          "st_size": "28606"
+        },
+        "sha256": "9058cf5f54902ef7043a1d95514e1262b8a47b405413d389d636f3a107260caf"
+      },
+      "/audit/backend/market/historical_reserved_native_io.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327856416594",
+          "st_dev": "66306",
+          "st_ino": "60693915",
+          "st_mtime_ns": "1792363327856416594",
+          "st_size": "15061"
+        },
+        "sha256": "2e90850d7dcc7208b3e22da4fd939ebcd4f23d0156998c970a805ff002308384"
+      },
+      "/audit/backend/market/historical_reserved_native_metadata.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327806416190",
+          "st_dev": "66306",
+          "st_ino": "60693913",
+          "st_mtime_ns": "1792363327806416190",
+          "st_size": "7719"
+        },
+        "sha256": "23a60cfb3020ab333911592c47458b85541e1a59bdb0bd91ac8f39078f37cd51"
+      },
+      "/audit/backend/market/historical_synthetic_native_write.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327973417539",
+          "st_dev": "66306",
+          "st_ino": "60693921",
+          "st_mtime_ns": "1792363327973417539",
+          "st_size": "28492"
+        },
+        "sha256": "21f5c29c89405d6b9b59e081b14e6a2c649e4547b86dba9c314a7efba1fb7501"
+      },
+      "/audit/backend/market/historical_timing_packet.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327904416982",
+          "st_dev": "66306",
+          "st_ino": "60693918",
+          "st_mtime_ns": "1792363327904416982",
+          "st_size": "18520"
+        },
+        "sha256": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d"
+      },
+      "/audit/backend/tests/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327659415002",
+          "st_dev": "66306",
+          "st_ino": "60693901",
+          "st_mtime_ns": "1792363327659415002",
+          "st_size": "0"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "/audit/backend/tests/synthetic_reserved_stage_fixture.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327680415172",
+          "st_dev": "66306",
+          "st_ino": "60693903",
+          "st_mtime_ns": "1792363327680415172",
+          "st_size": "2974"
+        },
+        "sha256": "fedb21d9dd66875d9761bbd46f2de371e1a0bb7e526b5f1c0d02514f33f94062"
+      },
+      "/audit/backend/tests/test_historical_paper_component_integration.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327640414849",
+          "st_dev": "66306",
+          "st_ino": "60693899",
+          "st_mtime_ns": "1792363327640414849",
+          "st_size": "17814"
+        },
+        "sha256": "906c22c408316e76ec04e94fbda874dbac0615ef61cf122f082b70ee2e0e0300"
+      },
+      "/audit/backend/tests/test_historical_raw_nightly_lifecycle.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327672415107",
+          "st_dev": "66306",
+          "st_ino": "60693902",
+          "st_mtime_ns": "1792363327672415107",
+          "st_size": "16442"
+        },
+        "sha256": "fb2276e215bfb88810272452215b47375776c570aa8fcce50d2d4c3b14daa730"
+      },
+      "/audit/backend/tests/test_historical_raw_nightly_metadata.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327654414962",
+          "st_dev": "66306",
+          "st_ino": "60693900",
+          "st_mtime_ns": "1792363327654414962",
+          "st_size": "16557"
+        },
+        "sha256": "f7a4c26e44249122e5e7107d7cde71bd2cdf30a8463e869f09fa1dfe3682b182"
+      },
+      "/audit/backend/tests/test_historical_reserved_metadata_store.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327626414736",
+          "st_dev": "66306",
+          "st_ino": "60693898",
+          "st_mtime_ns": "1792363327626414736",
+          "st_size": "21601"
+        },
+        "sha256": "25287374749f8017242b27a1fb2c20b83110a51e3651db36a1a460623d79fdea"
+      },
+      "/audit/run.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327602414542",
+          "st_dev": "66306",
+          "st_ino": "60693895",
+          "st_mtime_ns": "1792363327602414542",
+          "st_size": "7466"
+        },
+        "sha256": "d281b4a6a402771c46d8b6088ede2b503a5b34879dabbe11650f57924b66efa0"
+      },
+      "/fixture/current-identity.json": {
+        "physical": {
+          "st_ctime_ns": "1792363327585414405",
+          "st_dev": "66306",
+          "st_ino": "60693894",
+          "st_mtime_ns": "1792363327585414405",
+          "st_size": "4070"
+        },
+        "sha256": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d"
+      },
+      "/fixture/native-source-map.json": {
+        "physical": {
+          "st_ctime_ns": "1792363327087534958",
+          "st_dev": "66306",
+          "st_ino": "60693891",
+          "st_mtime_ns": "1792363327087534958",
+          "st_size": "182466"
+        },
+        "sha256": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5"
+      }
+    },
+    "source_before": {
+      "/audit/backend/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327689415245",
+          "st_dev": "66306",
+          "st_ino": "60693904",
+          "st_mtime_ns": "1792363327689415245",
+          "st_size": "35"
+        },
+        "sha256": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5"
+      },
+      "/audit/backend/market/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327797416117",
+          "st_dev": "66306",
+          "st_ino": "60693912",
+          "st_mtime_ns": "1792363327797416117",
+          "st_size": "42"
+        },
+        "sha256": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e"
+      },
+      "/audit/backend/market/historical_broker_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327754415770",
+          "st_dev": "66306",
+          "st_ino": "60693909",
+          "st_mtime_ns": "1792363327754415770",
+          "st_size": "40026"
+        },
+        "sha256": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08"
+      },
+      "/audit/backend/market/historical_conditional_cycle.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327844416497",
+          "st_dev": "66306",
+          "st_ino": "60693914",
+          "st_mtime_ns": "1792363327844416497",
+          "st_size": "61225"
+        },
+        "sha256": "086a85c052aa536edc77cf92035864eb92c8ce009d3e5593fa8f44e4b67bca9a"
+      },
+      "/audit/backend/market/historical_conditional_nightly.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327953417378",
+          "st_dev": "66306",
+          "st_ino": "60693920",
+          "st_mtime_ns": "1792363327953417378",
+          "st_size": "63878"
+        },
+        "sha256": "6b16b70bf8a392ddb3a505a9051077b9138396c4e748950391c5ef35171963f5"
+      },
+      "/audit/backend/market/historical_native_metadata.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327763415843",
+          "st_dev": "66306",
+          "st_ino": "60693910",
+          "st_mtime_ns": "1792363327763415843",
+          "st_size": "7097"
+        },
+        "sha256": "333c5d22c49e06742eb4cb50183bf90fa0859d0ce200d3be5f2a4914c8f71e21"
+      },
+      "/audit/backend/market/historical_packet_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327890416869",
+          "st_dev": "66306",
+          "st_ino": "60693917",
+          "st_mtime_ns": "1792363327890416869",
+          "st_size": "4763"
+        },
+        "sha256": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f"
+      },
+      "/audit/backend/market/historical_packet_demand.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327720415495",
+          "st_dev": "66306",
+          "st_ino": "60693907",
+          "st_mtime_ns": "1792363327720415495",
+          "st_size": "6666"
+        },
+        "sha256": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0"
+      },
+      "/audit/backend/market/historical_packet_registry.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327914417063",
+          "st_dev": "66306",
+          "st_ino": "60693919",
+          "st_mtime_ns": "1792363327914417063",
+          "st_size": "6645"
+        },
+        "sha256": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3"
+      },
+      "/audit/backend/market/historical_packet_store.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327790416061",
+          "st_dev": "66306",
+          "st_ino": "60693911",
+          "st_mtime_ns": "1792363327790416061",
+          "st_size": "44181"
+        },
+        "sha256": "3eebf35b529bd616413c8266dc5d6efcae99a16763da059142d7cf853592b488"
+      },
+      "/audit/backend/market/historical_paper_component.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327728415560",
+          "st_dev": "66306",
+          "st_ino": "60693908",
+          "st_mtime_ns": "1792363327728415560",
+          "st_size": "4280"
+        },
+        "sha256": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648"
+      },
+      "/audit/backend/market/historical_physical_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327882416804",
+          "st_dev": "66306",
+          "st_ino": "60693916",
+          "st_mtime_ns": "1792363327882416804",
+          "st_size": "36101"
+        },
+        "sha256": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+      },
+      "/audit/backend/market/historical_raw_cycle.py": {
+        "physical": {
+          "st_ctime_ns": "1792363328029417992",
+          "st_dev": "66306",
+          "st_ino": "60693923",
+          "st_mtime_ns": "1792363328029417992",
+          "st_size": "7137"
+        },
+        "sha256": "3dee58cf49bd1e4f2a4879ca2ca103d166179b3f3dba33c143b66406f87e1bfa"
+      },
+      "/audit/backend/market/historical_raw_nightly.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327710415414",
+          "st_dev": "66306",
+          "st_ino": "60693906",
+          "st_mtime_ns": "1792363327710415414",
+          "st_size": "30224"
+        },
+        "sha256": "85532ecebae22488c2b1373ea160ee4ecee2dd8ae208c7e3612d9a4f51bdbed2"
+      },
+      "/audit/backend/market/historical_reserved_blob_store.py": {
+        "physical": {
+          "st_ctime_ns": "1792363328016417887",
+          "st_dev": "66306",
+          "st_ino": "60693922",
+          "st_mtime_ns": "1792363328016417887",
+          "st_size": "28606"
+        },
+        "sha256": "9058cf5f54902ef7043a1d95514e1262b8a47b405413d389d636f3a107260caf"
+      },
+      "/audit/backend/market/historical_reserved_native_io.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327856416594",
+          "st_dev": "66306",
+          "st_ino": "60693915",
+          "st_mtime_ns": "1792363327856416594",
+          "st_size": "15061"
+        },
+        "sha256": "2e90850d7dcc7208b3e22da4fd939ebcd4f23d0156998c970a805ff002308384"
+      },
+      "/audit/backend/market/historical_reserved_native_metadata.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327806416190",
+          "st_dev": "66306",
+          "st_ino": "60693913",
+          "st_mtime_ns": "1792363327806416190",
+          "st_size": "7719"
+        },
+        "sha256": "23a60cfb3020ab333911592c47458b85541e1a59bdb0bd91ac8f39078f37cd51"
+      },
+      "/audit/backend/market/historical_synthetic_native_write.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327973417539",
+          "st_dev": "66306",
+          "st_ino": "60693921",
+          "st_mtime_ns": "1792363327973417539",
+          "st_size": "28492"
+        },
+        "sha256": "21f5c29c89405d6b9b59e081b14e6a2c649e4547b86dba9c314a7efba1fb7501"
+      },
+      "/audit/backend/market/historical_timing_packet.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327904416982",
+          "st_dev": "66306",
+          "st_ino": "60693918",
+          "st_mtime_ns": "1792363327904416982",
+          "st_size": "18520"
+        },
+        "sha256": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d"
+      },
+      "/audit/backend/tests/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327659415002",
+          "st_dev": "66306",
+          "st_ino": "60693901",
+          "st_mtime_ns": "1792363327659415002",
+          "st_size": "0"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "/audit/backend/tests/synthetic_reserved_stage_fixture.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327680415172",
+          "st_dev": "66306",
+          "st_ino": "60693903",
+          "st_mtime_ns": "1792363327680415172",
+          "st_size": "2974"
+        },
+        "sha256": "fedb21d9dd66875d9761bbd46f2de371e1a0bb7e526b5f1c0d02514f33f94062"
+      },
+      "/audit/backend/tests/test_historical_paper_component_integration.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327640414849",
+          "st_dev": "66306",
+          "st_ino": "60693899",
+          "st_mtime_ns": "1792363327640414849",
+          "st_size": "17814"
+        },
+        "sha256": "906c22c408316e76ec04e94fbda874dbac0615ef61cf122f082b70ee2e0e0300"
+      },
+      "/audit/backend/tests/test_historical_raw_nightly_lifecycle.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327672415107",
+          "st_dev": "66306",
+          "st_ino": "60693902",
+          "st_mtime_ns": "1792363327672415107",
+          "st_size": "16442"
+        },
+        "sha256": "fb2276e215bfb88810272452215b47375776c570aa8fcce50d2d4c3b14daa730"
+      },
+      "/audit/backend/tests/test_historical_raw_nightly_metadata.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327654414962",
+          "st_dev": "66306",
+          "st_ino": "60693900",
+          "st_mtime_ns": "1792363327654414962",
+          "st_size": "16557"
+        },
+        "sha256": "f7a4c26e44249122e5e7107d7cde71bd2cdf30a8463e869f09fa1dfe3682b182"
+      },
+      "/audit/backend/tests/test_historical_reserved_metadata_store.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327626414736",
+          "st_dev": "66306",
+          "st_ino": "60693898",
+          "st_mtime_ns": "1792363327626414736",
+          "st_size": "21601"
+        },
+        "sha256": "25287374749f8017242b27a1fb2c20b83110a51e3651db36a1a460623d79fdea"
+      },
+      "/audit/run.py": {
+        "physical": {
+          "st_ctime_ns": "1792363327602414542",
+          "st_dev": "66306",
+          "st_ino": "60693895",
+          "st_mtime_ns": "1792363327602414542",
+          "st_size": "7466"
+        },
+        "sha256": "d281b4a6a402771c46d8b6088ede2b503a5b34879dabbe11650f57924b66efa0"
+      },
+      "/fixture/current-identity.json": {
+        "physical": {
+          "st_ctime_ns": "1792363327585414405",
+          "st_dev": "66306",
+          "st_ino": "60693894",
+          "st_mtime_ns": "1792363327585414405",
+          "st_size": "4070"
+        },
+        "sha256": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d"
+      },
+      "/fixture/native-source-map.json": {
+        "physical": {
+          "st_ctime_ns": "1792363327087534958",
+          "st_dev": "66306",
+          "st_ino": "60693891",
+          "st_mtime_ns": "1792363327087534958",
+          "st_size": "182466"
+        },
+        "sha256": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5"
+      }
+    },
+    "status": "VERIFIED_SYNTHETIC_RESERVED_NATIVE_METADATA_STORE",
+    "tests": 8
+  },
+  "schema": "synthetic-reserved-native-metadata-store-proof/2",
+  "scope": "PRIVATE explicitly synthetic Nightly birth/close + storage-only synthetic producer real Store DECISION_FROZEN commit; genuine constructors/public entry/native adoption and bound-CAS Cycle producer refuse/unadmitted",
+  "source_commit": "b0cfdb24787221ea1046e9b6d4e7acb532cd0e0e",
+  "source_pins": {
+    "/audit/backend/__init__.py": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5",
+    "/audit/backend/market/__init__.py": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e",
+    "/audit/backend/market/historical_broker_checkpoint.py": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08",
+    "/audit/backend/market/historical_conditional_cycle.py": "086a85c052aa536edc77cf92035864eb92c8ce009d3e5593fa8f44e4b67bca9a",
+    "/audit/backend/market/historical_conditional_nightly.py": "6b16b70bf8a392ddb3a505a9051077b9138396c4e748950391c5ef35171963f5",
+    "/audit/backend/market/historical_native_metadata.py": "333c5d22c49e06742eb4cb50183bf90fa0859d0ce200d3be5f2a4914c8f71e21",
+    "/audit/backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+    "/audit/backend/market/historical_packet_demand.py": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0",
+    "/audit/backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+    "/audit/backend/market/historical_packet_store.py": "3eebf35b529bd616413c8266dc5d6efcae99a16763da059142d7cf853592b488",
+    "/audit/backend/market/historical_paper_component.py": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648",
+    "/audit/backend/market/historical_physical_checkpoint.py": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604",
+    "/audit/backend/market/historical_raw_cycle.py": "3dee58cf49bd1e4f2a4879ca2ca103d166179b3f3dba33c143b66406f87e1bfa",
+    "/audit/backend/market/historical_raw_nightly.py": "85532ecebae22488c2b1373ea160ee4ecee2dd8ae208c7e3612d9a4f51bdbed2",
+    "/audit/backend/market/historical_reserved_blob_store.py": "9058cf5f54902ef7043a1d95514e1262b8a47b405413d389d636f3a107260caf",
+    "/audit/backend/market/historical_reserved_native_io.py": "2e90850d7dcc7208b3e22da4fd939ebcd4f23d0156998c970a805ff002308384",
+    "/audit/backend/market/historical_reserved_native_metadata.py": "23a60cfb3020ab333911592c47458b85541e1a59bdb0bd91ac8f39078f37cd51",
+    "/audit/backend/market/historical_synthetic_native_write.py": "21f5c29c89405d6b9b59e081b14e6a2c649e4547b86dba9c314a7efba1fb7501",
+    "/audit/backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+    "/audit/backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/audit/backend/tests/synthetic_reserved_stage_fixture.py": "fedb21d9dd66875d9761bbd46f2de371e1a0bb7e526b5f1c0d02514f33f94062",
+    "/audit/backend/tests/test_historical_paper_component_integration.py": "906c22c408316e76ec04e94fbda874dbac0615ef61cf122f082b70ee2e0e0300",
+    "/audit/backend/tests/test_historical_raw_nightly_lifecycle.py": "fb2276e215bfb88810272452215b47375776c570aa8fcce50d2d4c3b14daa730",
+    "/audit/backend/tests/test_historical_raw_nightly_metadata.py": "f7a4c26e44249122e5e7107d7cde71bd2cdf30a8463e869f09fa1dfe3682b182",
+    "/audit/backend/tests/test_historical_reserved_metadata_store.py": "25287374749f8017242b27a1fb2c20b83110a51e3651db36a1a460623d79fdea",
+    "/audit/run.py": "d281b4a6a402771c46d8b6088ede2b503a5b34879dabbe11650f57924b66efa0",
+    "/fixture/current-identity.json": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d",
+    "/fixture/native-source-map.json": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5"
+  },
+  "stage": {
+    "actual_prerequisite": {
+      "at_ns": "1792363327086587191",
+      "available_bytes": 9738645504,
+      "free_inodes": 243482438,
+      "host": "animallya-spark1",
+      "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "native_map_sha256": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5",
+      "root": "/home/animallya96/scratch/reserved-metadata-store-20261018-v2",
+      "scratch_free_bytes": 2802166829056,
+      "uid": 1000
+    },
+    "files": {
+      "backend/__init__.py": {
+        "bytes": 35,
+        "sha256": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5"
+      },
+      "backend/market/__init__.py": {
+        "bytes": 42,
+        "sha256": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e"
+      },
+      "backend/market/historical_broker_checkpoint.py": {
+        "bytes": 40026,
+        "sha256": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08"
+      },
+      "backend/market/historical_conditional_cycle.py": {
+        "bytes": 61225,
+        "sha256": "086a85c052aa536edc77cf92035864eb92c8ce009d3e5593fa8f44e4b67bca9a"
+      },
+      "backend/market/historical_conditional_nightly.py": {
+        "bytes": 63878,
+        "sha256": "6b16b70bf8a392ddb3a505a9051077b9138396c4e748950391c5ef35171963f5"
+      },
+      "backend/market/historical_native_metadata.py": {
+        "bytes": 7097,
+        "sha256": "333c5d22c49e06742eb4cb50183bf90fa0859d0ce200d3be5f2a4914c8f71e21"
+      },
+      "backend/market/historical_packet_checkpoint.py": {
+        "bytes": 4763,
+        "sha256": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f"
+      },
+      "backend/market/historical_packet_demand.py": {
+        "bytes": 6666,
+        "sha256": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0"
+      },
+      "backend/market/historical_packet_registry.py": {
+        "bytes": 6645,
+        "sha256": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3"
+      },
+      "backend/market/historical_packet_store.py": {
+        "bytes": 44181,
+        "sha256": "3eebf35b529bd616413c8266dc5d6efcae99a16763da059142d7cf853592b488"
+      },
+      "backend/market/historical_paper_component.py": {
+        "bytes": 4280,
+        "sha256": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648"
+      },
+      "backend/market/historical_physical_checkpoint.py": {
+        "bytes": 36101,
+        "sha256": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+      },
+      "backend/market/historical_raw_cycle.py": {
+        "bytes": 7137,
+        "sha256": "3dee58cf49bd1e4f2a4879ca2ca103d166179b3f3dba33c143b66406f87e1bfa"
+      },
+      "backend/market/historical_raw_nightly.py": {
+        "bytes": 30224,
+        "sha256": "85532ecebae22488c2b1373ea160ee4ecee2dd8ae208c7e3612d9a4f51bdbed2"
+      },
+      "backend/market/historical_reserved_blob_store.py": {
+        "bytes": 28606,
+        "sha256": "9058cf5f54902ef7043a1d95514e1262b8a47b405413d389d636f3a107260caf"
+      },
+      "backend/market/historical_reserved_native_io.py": {
+        "bytes": 15061,
+        "sha256": "2e90850d7dcc7208b3e22da4fd939ebcd4f23d0156998c970a805ff002308384"
+      },
+      "backend/market/historical_reserved_native_metadata.py": {
+        "bytes": 7719,
+        "sha256": "23a60cfb3020ab333911592c47458b85541e1a59bdb0bd91ac8f39078f37cd51"
+      },
+      "backend/market/historical_synthetic_native_write.py": {
+        "bytes": 28492,
+        "sha256": "21f5c29c89405d6b9b59e081b14e6a2c649e4547b86dba9c314a7efba1fb7501"
+      },
+      "backend/market/historical_timing_packet.py": {
+        "bytes": 18520,
+        "sha256": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d"
+      },
+      "backend/tests/__init__.py": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "backend/tests/synthetic_reserved_stage_fixture.py": {
+        "bytes": 2974,
+        "sha256": "fedb21d9dd66875d9761bbd46f2de371e1a0bb7e526b5f1c0d02514f33f94062"
+      },
+      "backend/tests/test_historical_paper_component_integration.py": {
+        "bytes": 17814,
+        "sha256": "906c22c408316e76ec04e94fbda874dbac0615ef61cf122f082b70ee2e0e0300"
+      },
+      "backend/tests/test_historical_raw_nightly_lifecycle.py": {
+        "bytes": 16442,
+        "sha256": "fb2276e215bfb88810272452215b47375776c570aa8fcce50d2d4c3b14daa730"
+      },
+      "backend/tests/test_historical_raw_nightly_metadata.py": {
+        "bytes": 16557,
+        "sha256": "f7a4c26e44249122e5e7107d7cde71bd2cdf30a8463e869f09fa1dfe3682b182"
+      },
+      "backend/tests/test_historical_reserved_metadata_store.py": {
+        "bytes": 21601,
+        "sha256": "25287374749f8017242b27a1fb2c20b83110a51e3651db36a1a460623d79fdea"
+      },
+      "fixture/current-identity.json": {
+        "bytes": 4070,
+        "sha256": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d"
+      },
+      "run.py": {
+        "bytes": 7466,
+        "sha256": "d281b4a6a402771c46d8b6088ede2b503a5b34879dabbe11650f57924b66efa0"
+      }
+    },
+    "reviewed_prerequisite_sha256": "958a2b273ffa53d5694f7c2de064a02c41072a86228064f9cfa34eadea79e6bf"
+  },
+  "tested_tree": "7381ad45466247c68bd6d6b1ceb78d6cdd31b39d",
+  "unverified": [
+    "SQLite journals/temp/database physical reservation",
+    "directory metadata and operation/result namespaces",
+    "latch storage",
+    "whole reserved-CAS Cycle stage/final producer",
+    "native market_daily/model/context/calendar/economics/provider behavior",
+    "full832MB native horizon and model/load-save/deepcopy/serialization RAM coexistence",
+    "two-host reservation/placement",
+    "power loss or interruption inside syscall/SQLite commit",
+    "genuine execution/native operation/simulator adoption",
+    "independent historical publication/API/UI acceptance"
+  ],
+  "validation": {
+    "caps_unchanged": true,
+    "diagram_impact": "NONE",
+    "full_unit_build_deploy": "NOT_RUN",
+    "native_writer_and_physical_helpers_unchanged": true,
+    "new_tests_only": true,
+    "no_closed_test_body_replayed": true,
+    "old8MiB_helper_unchanged": true,
+    "ruff": "UNAVAILABLE"
+  }
+}
