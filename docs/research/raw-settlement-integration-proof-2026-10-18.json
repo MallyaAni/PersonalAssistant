@@ -1,0 +1,1870 @@
+{
+  "actual_before_stage_resources": {
+    "at_ns": "1792354819476302909",
+    "available_bytes": 9706319872,
+    "free_inodes": 243497053,
+    "host": "animallya-spark1",
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "native_map_sha256": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5",
+    "root": "/home/animallya96/scratch/raw-settlement-integration-20261018-v1",
+    "scratch_free_bytes": 2805025263616,
+    "uid": 1000
+  },
+  "actual_proof": {
+    "elapsed_seconds": 5.356740677729249,
+    "errors": 0,
+    "failures": 0,
+    "forbidden_imports": [],
+    "native_after": {
+      "backend.agents": {
+        "physical": {
+          "st_ctime_ns": "1792252095713452724",
+          "st_dev": "66306",
+          "st_ino": "56003890",
+          "st_mtime_ns": "1788401448000000000",
+          "st_size": "30"
+        },
+        "sha256": "6f54ad4ec10e21b19085989fe0589d17a654a8d1bafdf62d3a6f5838833bdae4"
+      },
+      "backend.agents.trading": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794570",
+          "st_mtime_ns": "1788496919000000000",
+          "st_size": "442"
+        },
+        "sha256": "e2674427378cce57e276762d62e35f76df4220e65f989b2468c6b900ff7a5593"
+      },
+      "backend.agents.trading.desk": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794576",
+          "st_mtime_ns": "1788651713000000000",
+          "st_size": "612"
+        },
+        "sha256": "c4915530882e9d8abb10ca8334719c416fc4b0d63502c25ea079ab7aba6fab57"
+      },
+      "backend.agents.trading.desk.allocation": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794578",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "26094"
+        },
+        "sha256": "e031ecbd40f4303fb34c0a1b8d497d55abcf33e941d997b3210d91224d1a7563"
+      },
+      "backend.agents.trading.desk.backtest": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794579",
+          "st_mtime_ns": "1788666740000000000",
+          "st_size": "10956"
+        },
+        "sha256": "0f6b7a2258960982ecab9199d6965cf2c15aece0eaf5c3a6813f1d81015dce7a"
+      },
+      "backend.agents.trading.desk.entry": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794584",
+          "st_mtime_ns": "1788658778000000000",
+          "st_size": "3467"
+        },
+        "sha256": "d3981dcc762ae2b5cc59d562999627f1f0fade57496b9470b7bca99defdabeb3"
+      },
+      "backend.agents.trading.desk.execution_evidence": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794587",
+          "st_mtime_ns": "1789351742000000000",
+          "st_size": "2050"
+        },
+        "sha256": "ba0d3b0e329410d3915a57b44eba004ae9e1479e35022de8d52d2ca36e3ec171"
+      },
+      "backend.agents.trading.desk.exit": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794588",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "7612"
+        },
+        "sha256": "ad4efad8fa146bedccd571f20fda60c60e5bdfe518e28bb51db468fd660e045b"
+      },
+      "backend.agents.trading.desk.funded_execution": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794590",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "32942"
+        },
+        "sha256": "6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c"
+      },
+      "backend.agents.trading.desk.grading": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794591",
+          "st_mtime_ns": "1789942231000000000",
+          "st_size": "11525"
+        },
+        "sha256": "00561286fcbce8d6b4d63d7f24174064640b3d80e40567ce4045c5a5d3d0b4aa"
+      },
+      "backend.agents.trading.desk.intraday_orders": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794593",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "52215"
+        },
+        "sha256": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c"
+      },
+      "backend.agents.trading.desk.opinions": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794598",
+          "st_mtime_ns": "1790455279000000000",
+          "st_size": "8212"
+        },
+        "sha256": "f55e5ca041deae749cea9e6733510a7ef3a6e1fff81985fdd516769d327accbb"
+      },
+      "backend.agents.trading.desk.paper": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794599",
+          "st_mtime_ns": "1792246285000000000",
+          "st_size": "66598"
+        },
+        "sha256": "a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c"
+      },
+      "backend.agents.trading.desk.planner": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794602",
+          "st_mtime_ns": "1789039782000000000",
+          "st_size": "3388"
+        },
+        "sha256": "ad917b5344654087e12b25b55cf558d3f519d3955ee2f3191b58ae263d8d248c"
+      },
+      "backend.agents.trading.desk.policy_v4": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794604",
+          "st_mtime_ns": "1790473980000000000",
+          "st_size": "3579"
+        },
+        "sha256": "d918aeb225d2f8873bdcda004c803c5040149cbd63fa6274e0bff6ec02f6d6f5"
+      },
+      "backend.agents.trading.desk.risk": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794608",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "11877"
+        },
+        "sha256": "2ed66bfc516eddff40c97fb99b0b953fa8ac255b47b5a1dde5db5476e18a00c7"
+      },
+      "backend.agents.trading.desk.simulate": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794613",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "110487"
+        },
+        "sha256": "ac1ff48a0746fb112cbcbfbf88e254f6c7a73d554d5ecb1eb015222a103e80e6"
+      },
+      "backend.agents.trading.desk.trend_brake": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794617",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "3414"
+        },
+        "sha256": "2262e0fd79101d68b10cf2d06e690442af00e94e0b6a215b14294681c4df9931"
+      },
+      "backend.market.alpaca": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59794960",
+          "st_mtime_ns": "1790473980000000000",
+          "st_size": "15047"
+        },
+        "sha256": "698e2425964622290b06a0f51eda7fd148d2a79f24be58d01577ae8c1804840a"
+      },
+      "backend.market.alpaca_trading": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794961",
+          "st_mtime_ns": "1790986089000000000",
+          "st_size": "15211"
+        },
+        "sha256": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2"
+      },
+      "backend.market.alpha": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794962",
+          "st_mtime_ns": "1788580522000000000",
+          "st_size": "6628"
+        },
+        "sha256": "72b1c9487135f642f7bd6f1850aca1351856fda48f53218e402897ebaf53f76d"
+      },
+      "backend.market.bands": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59794963",
+          "st_mtime_ns": "1789827168000000000",
+          "st_size": "3836"
+        },
+        "sha256": "82f69d93471b62cba47e38beef39627aaee72d2e27031f2aea7a310ac46567d5"
+      },
+      "backend.market.baselines": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794964",
+          "st_mtime_ns": "1788797239000000000",
+          "st_size": "7548"
+        },
+        "sha256": "ced5769bece00034e6a659866ac7f8ec3d3465a50be17795b446dbf6ce58fdc8"
+      },
+      "backend.market.bounded_execution": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794967",
+          "st_mtime_ns": "1790903972000000000",
+          "st_size": "11204"
+        },
+        "sha256": "ccaa9f62b7ee49b30041a80b366c13fadb69ba2c6e551630e35575b0ddc6dd32"
+      },
+      "backend.market.calendar": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794968",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "13181"
+        },
+        "sha256": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4"
+      },
+      "backend.market.candidate_stats": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794969",
+          "st_mtime_ns": "1790644500000000000",
+          "st_size": "16550"
+        },
+        "sha256": "93ecebb36422470684208429836f81a27c64b704cc70dc1db7b25b991ff78780"
+      },
+      "backend.market.deep_intraday": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794996",
+          "st_mtime_ns": "1790644500000000000",
+          "st_size": "48371"
+        },
+        "sha256": "cdcf42880c4c8c6aec6cb5138aca12ad09dc56d14e3b7f6786c8c1b615050cae"
+      },
+      "backend.market.desk_freshness": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795002",
+          "st_mtime_ns": "1790432515000000000",
+          "st_size": "3900"
+        },
+        "sha256": "ca9e546915aefb6557d21297bcf194ef70fdda0fae6ed1dcb127b6938cf9b96c"
+      },
+      "backend.market.entry_timing": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795013",
+          "st_mtime_ns": "1790986089000000000",
+          "st_size": "28453"
+        },
+        "sha256": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88"
+      },
+      "backend.market.execution_quotes": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795017",
+          "st_mtime_ns": "1789827168000000000",
+          "st_size": "5151"
+        },
+        "sha256": "4dc6415247b79faba9b557478702facfc0a74950bc9edba7cd679d89aa8bf2f2"
+      },
+      "backend.market.fill_timing": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795020",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "115733"
+        },
+        "sha256": "2bb9eb6c6bbc5bc593a873ef825d8233c890a7b026289ad2b5874bbeda4366fc"
+      },
+      "backend.market.intraday_sip": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795055",
+          "st_mtime_ns": "1790484391000000000",
+          "st_size": "28544"
+        },
+        "sha256": "bbe74be27e547ab4e71ae83521581d4ecd9942a9e9e7498bcbd09f8e3b5197ec"
+      },
+      "backend.market.levels": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795079",
+          "st_mtime_ns": "1789827168000000000",
+          "st_size": "11949"
+        },
+        "sha256": "0b52c13a65146d2225319568ec605a4373a60fbb6ebf385e925f0dc163d07d8f"
+      },
+      "backend.market.options": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795119",
+          "st_mtime_ns": "1790432515000000000",
+          "st_size": "16584"
+        },
+        "sha256": "e81142caa5a6458c44508bc7d8a6a017c3aedecebc1428a5beef3507d2049fd6"
+      },
+      "backend.market.options_evidence": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795120",
+          "st_mtime_ns": "1790432515000000000",
+          "st_size": "8370"
+        },
+        "sha256": "3d506ab19f745582d98942a6a8bf854bc9d1ca78f7344596a71e9b4c34ca1ae8"
+      },
+      "backend.market.panel": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795121",
+          "st_mtime_ns": "1788651713000000000",
+          "st_size": "9202"
+        },
+        "sha256": "dee6b591080f18ba0b35c1241d96cb0e906957b3007f25be941957d2ee7252a2"
+      },
+      "backend.market.replay_broker": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795137",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "46431"
+        },
+        "sha256": "c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616"
+      },
+      "backend.market.session_anatomy": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795151",
+          "st_mtime_ns": "1790484391000000000",
+          "st_size": "25534"
+        },
+        "sha256": "ec56a9e2025613423c35c0d676e69985c880601c808c43824a82fc329b94bf25"
+      },
+      "backend.market.sip_cube": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795154",
+          "st_mtime_ns": "1790484391000000000",
+          "st_size": "10961"
+        },
+        "sha256": "2a6689f13dfbe97a677fabf53010c9a0a9ee5acd4ab2ecc8d55a9daeea8a6bad"
+      },
+      "backend.market.sizing": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795155",
+          "st_mtime_ns": "1788797239000000000",
+          "st_size": "22330"
+        },
+        "sha256": "af98cc0ee0e83b2a4d80f980e93471c712d4d6717a93ee093c9f282ff5d8a162"
+      },
+      "backend.market.sr_levels": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795157",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "26808"
+        },
+        "sha256": "3ae96df32dc326e647a2489cac52afa6546c88517c94016400d70f25ab47cec0"
+      },
+      "backend.market.stage3_io": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795164",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "27286"
+        },
+        "sha256": "b0775a216b319c8e2f35d609b8e6678a7651c46815f5eb34007c52020efc86d5"
+      },
+      "backend.market.stage3_verdict": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795168",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "33122"
+        },
+        "sha256": "ae5e5472a802de3c757b0077797648ab10a0838cc49d38a7c436756b04f7e0ce"
+      },
+      "backend.market.store": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795174",
+          "st_mtime_ns": "1790214767000000000",
+          "st_size": "13705"
+        },
+        "sha256": "a299516ab68710d56355e036770d3c9695ed332641e9fa6ee4d64c9f6ede9aff"
+      },
+      "backend.market.technical": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795179",
+          "st_mtime_ns": "1790903972000000000",
+          "st_size": "14415"
+        },
+        "sha256": "11bf94ad0a0e74ee7d859de204f1e89423a78605dc2a9dfd81569d306b29a742"
+      },
+      "backend.market.vol_forecast": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795188",
+          "st_mtime_ns": "1790644500000000000",
+          "st_size": "12195"
+        },
+        "sha256": "17f8b1948b9ba378db747739d3e2ea99d124e65348a71416c288358dedd20b97"
+      },
+      "backend.market.yahoo": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795191",
+          "st_mtime_ns": "1788578401000000000",
+          "st_size": "13065"
+        },
+        "sha256": "311323b71355858a1ea1fca9d7b03861df71f35466a789d90a872bbbdc93e82d"
+      }
+    },
+    "native_before": {
+      "backend.agents": {
+        "physical": {
+          "st_ctime_ns": "1792252095713452724",
+          "st_dev": "66306",
+          "st_ino": "56003890",
+          "st_mtime_ns": "1788401448000000000",
+          "st_size": "30"
+        },
+        "sha256": "6f54ad4ec10e21b19085989fe0589d17a654a8d1bafdf62d3a6f5838833bdae4"
+      },
+      "backend.agents.trading": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794570",
+          "st_mtime_ns": "1788496919000000000",
+          "st_size": "442"
+        },
+        "sha256": "e2674427378cce57e276762d62e35f76df4220e65f989b2468c6b900ff7a5593"
+      },
+      "backend.agents.trading.desk": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794576",
+          "st_mtime_ns": "1788651713000000000",
+          "st_size": "612"
+        },
+        "sha256": "c4915530882e9d8abb10ca8334719c416fc4b0d63502c25ea079ab7aba6fab57"
+      },
+      "backend.agents.trading.desk.allocation": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794578",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "26094"
+        },
+        "sha256": "e031ecbd40f4303fb34c0a1b8d497d55abcf33e941d997b3210d91224d1a7563"
+      },
+      "backend.agents.trading.desk.backtest": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794579",
+          "st_mtime_ns": "1788666740000000000",
+          "st_size": "10956"
+        },
+        "sha256": "0f6b7a2258960982ecab9199d6965cf2c15aece0eaf5c3a6813f1d81015dce7a"
+      },
+      "backend.agents.trading.desk.entry": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794584",
+          "st_mtime_ns": "1788658778000000000",
+          "st_size": "3467"
+        },
+        "sha256": "d3981dcc762ae2b5cc59d562999627f1f0fade57496b9470b7bca99defdabeb3"
+      },
+      "backend.agents.trading.desk.execution_evidence": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794587",
+          "st_mtime_ns": "1789351742000000000",
+          "st_size": "2050"
+        },
+        "sha256": "ba0d3b0e329410d3915a57b44eba004ae9e1479e35022de8d52d2ca36e3ec171"
+      },
+      "backend.agents.trading.desk.exit": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794588",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "7612"
+        },
+        "sha256": "ad4efad8fa146bedccd571f20fda60c60e5bdfe518e28bb51db468fd660e045b"
+      },
+      "backend.agents.trading.desk.funded_execution": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794590",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "32942"
+        },
+        "sha256": "6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c"
+      },
+      "backend.agents.trading.desk.grading": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794591",
+          "st_mtime_ns": "1789942231000000000",
+          "st_size": "11525"
+        },
+        "sha256": "00561286fcbce8d6b4d63d7f24174064640b3d80e40567ce4045c5a5d3d0b4aa"
+      },
+      "backend.agents.trading.desk.intraday_orders": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794593",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "52215"
+        },
+        "sha256": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c"
+      },
+      "backend.agents.trading.desk.opinions": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794598",
+          "st_mtime_ns": "1790455279000000000",
+          "st_size": "8212"
+        },
+        "sha256": "f55e5ca041deae749cea9e6733510a7ef3a6e1fff81985fdd516769d327accbb"
+      },
+      "backend.agents.trading.desk.paper": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794599",
+          "st_mtime_ns": "1792246285000000000",
+          "st_size": "66598"
+        },
+        "sha256": "a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c"
+      },
+      "backend.agents.trading.desk.planner": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794602",
+          "st_mtime_ns": "1789039782000000000",
+          "st_size": "3388"
+        },
+        "sha256": "ad917b5344654087e12b25b55cf558d3f519d3955ee2f3191b58ae263d8d248c"
+      },
+      "backend.agents.trading.desk.policy_v4": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794604",
+          "st_mtime_ns": "1790473980000000000",
+          "st_size": "3579"
+        },
+        "sha256": "d918aeb225d2f8873bdcda004c803c5040149cbd63fa6274e0bff6ec02f6d6f5"
+      },
+      "backend.agents.trading.desk.risk": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794608",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "11877"
+        },
+        "sha256": "2ed66bfc516eddff40c97fb99b0b953fa8ac255b47b5a1dde5db5476e18a00c7"
+      },
+      "backend.agents.trading.desk.simulate": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794613",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "110487"
+        },
+        "sha256": "ac1ff48a0746fb112cbcbfbf88e254f6c7a73d554d5ecb1eb015222a103e80e6"
+      },
+      "backend.agents.trading.desk.trend_brake": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794617",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "3414"
+        },
+        "sha256": "2262e0fd79101d68b10cf2d06e690442af00e94e0b6a215b14294681c4df9931"
+      },
+      "backend.market.alpaca": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59794960",
+          "st_mtime_ns": "1790473980000000000",
+          "st_size": "15047"
+        },
+        "sha256": "698e2425964622290b06a0f51eda7fd148d2a79f24be58d01577ae8c1804840a"
+      },
+      "backend.market.alpaca_trading": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794961",
+          "st_mtime_ns": "1790986089000000000",
+          "st_size": "15211"
+        },
+        "sha256": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2"
+      },
+      "backend.market.alpha": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794962",
+          "st_mtime_ns": "1788580522000000000",
+          "st_size": "6628"
+        },
+        "sha256": "72b1c9487135f642f7bd6f1850aca1351856fda48f53218e402897ebaf53f76d"
+      },
+      "backend.market.bands": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59794963",
+          "st_mtime_ns": "1789827168000000000",
+          "st_size": "3836"
+        },
+        "sha256": "82f69d93471b62cba47e38beef39627aaee72d2e27031f2aea7a310ac46567d5"
+      },
+      "backend.market.baselines": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794964",
+          "st_mtime_ns": "1788797239000000000",
+          "st_size": "7548"
+        },
+        "sha256": "ced5769bece00034e6a659866ac7f8ec3d3465a50be17795b446dbf6ce58fdc8"
+      },
+      "backend.market.bounded_execution": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794967",
+          "st_mtime_ns": "1790903972000000000",
+          "st_size": "11204"
+        },
+        "sha256": "ccaa9f62b7ee49b30041a80b366c13fadb69ba2c6e551630e35575b0ddc6dd32"
+      },
+      "backend.market.calendar": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794968",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "13181"
+        },
+        "sha256": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4"
+      },
+      "backend.market.candidate_stats": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794969",
+          "st_mtime_ns": "1790644500000000000",
+          "st_size": "16550"
+        },
+        "sha256": "93ecebb36422470684208429836f81a27c64b704cc70dc1db7b25b991ff78780"
+      },
+      "backend.market.deep_intraday": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794996",
+          "st_mtime_ns": "1790644500000000000",
+          "st_size": "48371"
+        },
+        "sha256": "cdcf42880c4c8c6aec6cb5138aca12ad09dc56d14e3b7f6786c8c1b615050cae"
+      },
+      "backend.market.desk_freshness": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795002",
+          "st_mtime_ns": "1790432515000000000",
+          "st_size": "3900"
+        },
+        "sha256": "ca9e546915aefb6557d21297bcf194ef70fdda0fae6ed1dcb127b6938cf9b96c"
+      },
+      "backend.market.entry_timing": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795013",
+          "st_mtime_ns": "1790986089000000000",
+          "st_size": "28453"
+        },
+        "sha256": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88"
+      },
+      "backend.market.execution_quotes": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795017",
+          "st_mtime_ns": "1789827168000000000",
+          "st_size": "5151"
+        },
+        "sha256": "4dc6415247b79faba9b557478702facfc0a74950bc9edba7cd679d89aa8bf2f2"
+      },
+      "backend.market.fill_timing": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795020",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "115733"
+        },
+        "sha256": "2bb9eb6c6bbc5bc593a873ef825d8233c890a7b026289ad2b5874bbeda4366fc"
+      },
+      "backend.market.intraday_sip": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795055",
+          "st_mtime_ns": "1790484391000000000",
+          "st_size": "28544"
+        },
+        "sha256": "bbe74be27e547ab4e71ae83521581d4ecd9942a9e9e7498bcbd09f8e3b5197ec"
+      },
+      "backend.market.levels": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795079",
+          "st_mtime_ns": "1789827168000000000",
+          "st_size": "11949"
+        },
+        "sha256": "0b52c13a65146d2225319568ec605a4373a60fbb6ebf385e925f0dc163d07d8f"
+      },
+      "backend.market.options": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795119",
+          "st_mtime_ns": "1790432515000000000",
+          "st_size": "16584"
+        },
+        "sha256": "e81142caa5a6458c44508bc7d8a6a017c3aedecebc1428a5beef3507d2049fd6"
+      },
+      "backend.market.options_evidence": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795120",
+          "st_mtime_ns": "1790432515000000000",
+          "st_size": "8370"
+        },
+        "sha256": "3d506ab19f745582d98942a6a8bf854bc9d1ca78f7344596a71e9b4c34ca1ae8"
+      },
+      "backend.market.panel": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795121",
+          "st_mtime_ns": "1788651713000000000",
+          "st_size": "9202"
+        },
+        "sha256": "dee6b591080f18ba0b35c1241d96cb0e906957b3007f25be941957d2ee7252a2"
+      },
+      "backend.market.replay_broker": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795137",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "46431"
+        },
+        "sha256": "c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616"
+      },
+      "backend.market.session_anatomy": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795151",
+          "st_mtime_ns": "1790484391000000000",
+          "st_size": "25534"
+        },
+        "sha256": "ec56a9e2025613423c35c0d676e69985c880601c808c43824a82fc329b94bf25"
+      },
+      "backend.market.sip_cube": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795154",
+          "st_mtime_ns": "1790484391000000000",
+          "st_size": "10961"
+        },
+        "sha256": "2a6689f13dfbe97a677fabf53010c9a0a9ee5acd4ab2ecc8d55a9daeea8a6bad"
+      },
+      "backend.market.sizing": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795155",
+          "st_mtime_ns": "1788797239000000000",
+          "st_size": "22330"
+        },
+        "sha256": "af98cc0ee0e83b2a4d80f980e93471c712d4d6717a93ee093c9f282ff5d8a162"
+      },
+      "backend.market.sr_levels": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795157",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "26808"
+        },
+        "sha256": "3ae96df32dc326e647a2489cac52afa6546c88517c94016400d70f25ab47cec0"
+      },
+      "backend.market.stage3_io": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795164",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "27286"
+        },
+        "sha256": "b0775a216b319c8e2f35d609b8e6678a7651c46815f5eb34007c52020efc86d5"
+      },
+      "backend.market.stage3_verdict": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795168",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "33122"
+        },
+        "sha256": "ae5e5472a802de3c757b0077797648ab10a0838cc49d38a7c436756b04f7e0ce"
+      },
+      "backend.market.store": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795174",
+          "st_mtime_ns": "1790214767000000000",
+          "st_size": "13705"
+        },
+        "sha256": "a299516ab68710d56355e036770d3c9695ed332641e9fa6ee4d64c9f6ede9aff"
+      },
+      "backend.market.technical": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795179",
+          "st_mtime_ns": "1790903972000000000",
+          "st_size": "14415"
+        },
+        "sha256": "11bf94ad0a0e74ee7d859de204f1e89423a78605dc2a9dfd81569d306b29a742"
+      },
+      "backend.market.vol_forecast": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795188",
+          "st_mtime_ns": "1790644500000000000",
+          "st_size": "12195"
+        },
+        "sha256": "17f8b1948b9ba378db747739d3e2ea99d124e65348a71416c288358dedd20b97"
+      },
+      "backend.market.yahoo": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795191",
+          "st_mtime_ns": "1788578401000000000",
+          "st_size": "13065"
+        },
+        "sha256": "311323b71355858a1ea1fca9d7b03861df71f35466a789d90a872bbbdc93e82d"
+      }
+    },
+    "native_writer_globals_unchanged": true,
+    "peak_kib": 60276,
+    "scope": "Exact settlement/Cycle and two market_daily helper CodeTypes with isolated module startup/latch/markers; real native ReplayBroker, codec, paper, Store SQLite/CAS and PhysicalCheckpoint; native model-related module declarations import but no model/provider call; no full constructor/Store head commitment/adoption/genuine-run admission",
+    "skips": 0,
+    "source_after": {
+      "/audit/backend/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792354869898988326",
+          "st_dev": "66306",
+          "st_ino": "60584519",
+          "st_mtime_ns": "1792354869898988326",
+          "st_size": "35"
+        },
+        "sha256": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5"
+      },
+      "/audit/backend/market/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870163989871",
+          "st_dev": "66306",
+          "st_ino": "60584525",
+          "st_mtime_ns": "1792354870163989871",
+          "st_size": "42"
+        },
+        "sha256": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e"
+      },
+      "/audit/backend/market/historical_broker_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870120989621",
+          "st_dev": "66306",
+          "st_ino": "60584523",
+          "st_mtime_ns": "1792354870120989621",
+          "st_size": "40026"
+        },
+        "sha256": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08"
+      },
+      "/audit/backend/market/historical_conditional_cycle.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870292990624",
+          "st_dev": "66306",
+          "st_ino": "60584527",
+          "st_mtime_ns": "1792354870292990624",
+          "st_size": "61225"
+        },
+        "sha256": "086a85c052aa536edc77cf92035864eb92c8ce009d3e5593fa8f44e4b67bca9a"
+      },
+      "/audit/backend/market/historical_conditional_nightly.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870511991901",
+          "st_dev": "66306",
+          "st_ino": "60584532",
+          "st_mtime_ns": "1792354870511991901",
+          "st_size": "55925"
+        },
+        "sha256": "58af2684b6a363fbbb29005594ac926db4cc51a1a0b8b2dc4af25b06f2410f6f"
+      },
+      "/audit/backend/market/historical_conditional_settlement.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870180989971",
+          "st_dev": "66306",
+          "st_ino": "60584526",
+          "st_mtime_ns": "1792354870180989971",
+          "st_size": "11377"
+        },
+        "sha256": "9e194856545dbf07e0ba6f0f2af9b022f75f767ee6371bb6af1f85e522f4c90d"
+      },
+      "/audit/backend/market/historical_packet_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870395991224",
+          "st_dev": "66306",
+          "st_ino": "60584529",
+          "st_mtime_ns": "1792354870395991224",
+          "st_size": "4763"
+        },
+        "sha256": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f"
+      },
+      "/audit/backend/market/historical_packet_demand.py": {
+        "physical": {
+          "st_ctime_ns": "1792354869958988676",
+          "st_dev": "66306",
+          "st_ino": "60584521",
+          "st_mtime_ns": "1792354869958988676",
+          "st_size": "6666"
+        },
+        "sha256": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0"
+      },
+      "/audit/backend/market/historical_packet_registry.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870471991667",
+          "st_dev": "66306",
+          "st_ino": "60584531",
+          "st_mtime_ns": "1792354870471991667",
+          "st_size": "6645"
+        },
+        "sha256": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3"
+      },
+      "/audit/backend/market/historical_packet_store.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870154989819",
+          "st_dev": "66306",
+          "st_ino": "60584524",
+          "st_mtime_ns": "1792354870154989819",
+          "st_size": "41884"
+        },
+        "sha256": "be90098bf2c64e7e8da390f2b40db646b50c7d0be659e1a3c9391b8b5595fdbf"
+      },
+      "/audit/backend/market/historical_paper_component.py": {
+        "physical": {
+          "st_ctime_ns": "1792354869971988752",
+          "st_dev": "66306",
+          "st_ino": "60584522",
+          "st_mtime_ns": "1792354869971988752",
+          "st_size": "4280"
+        },
+        "sha256": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648"
+      },
+      "/audit/backend/market/historical_physical_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870385991166",
+          "st_dev": "66306",
+          "st_ino": "60584528",
+          "st_mtime_ns": "1792354870385991166",
+          "st_size": "36101"
+        },
+        "sha256": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+      },
+      "/audit/backend/market/historical_timing_packet.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870459991597",
+          "st_dev": "66306",
+          "st_ino": "60584530",
+          "st_mtime_ns": "1792354870459991597",
+          "st_size": "18520"
+        },
+        "sha256": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d"
+      },
+      "/audit/backend/tests/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792354869866988140",
+          "st_dev": "66306",
+          "st_ino": "60584517",
+          "st_mtime_ns": "1792354869866988140",
+          "st_size": "0"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "/audit/backend/tests/test_historical_paper_component_integration.py": {
+        "physical": {
+          "st_ctime_ns": "1792354869861988110",
+          "st_dev": "66306",
+          "st_ino": "60584516",
+          "st_mtime_ns": "1792354869861988110",
+          "st_size": "17814"
+        },
+        "sha256": "906c22c408316e76ec04e94fbda874dbac0615ef61cf122f082b70ee2e0e0300"
+      },
+      "/audit/backend/tests/test_historical_raw_settlement_integration.py": {
+        "physical": {
+          "st_ctime_ns": "1792354869883988239",
+          "st_dev": "66306",
+          "st_ino": "60584518",
+          "st_mtime_ns": "1792354869883988239",
+          "st_size": "16665"
+        },
+        "sha256": "ac14872456f03729687f7f37bafa1b6c25fe5919b1eaca0592c88e0cd7012e43"
+      },
+      "/audit/run.py": {
+        "physical": {
+          "st_ctime_ns": "1792354869784987661",
+          "st_dev": "66306",
+          "st_ino": "60584513",
+          "st_mtime_ns": "1792354869784987661",
+          "st_size": "4237"
+        },
+        "sha256": "320b8d9308093c4454c15bb9a91725ae95e74bc51c7621a6674c19e8686b8d2f"
+      },
+      "/fixture/current-identity.json": {
+        "physical": {
+          "st_ctime_ns": "1792354869694987136",
+          "st_dev": "66306",
+          "st_ino": "60584512",
+          "st_mtime_ns": "1792354869694987136",
+          "st_size": "4070"
+        },
+        "sha256": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d"
+      },
+      "/fixture/native-source-map.json": {
+        "physical": {
+          "st_ctime_ns": "1792354869102205662",
+          "st_dev": "66306",
+          "st_ino": "60584509",
+          "st_mtime_ns": "1792354869102205662",
+          "st_size": "182466"
+        },
+        "sha256": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5"
+      }
+    },
+    "source_before": {
+      "/audit/backend/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792354869898988326",
+          "st_dev": "66306",
+          "st_ino": "60584519",
+          "st_mtime_ns": "1792354869898988326",
+          "st_size": "35"
+        },
+        "sha256": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5"
+      },
+      "/audit/backend/market/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870163989871",
+          "st_dev": "66306",
+          "st_ino": "60584525",
+          "st_mtime_ns": "1792354870163989871",
+          "st_size": "42"
+        },
+        "sha256": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e"
+      },
+      "/audit/backend/market/historical_broker_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870120989621",
+          "st_dev": "66306",
+          "st_ino": "60584523",
+          "st_mtime_ns": "1792354870120989621",
+          "st_size": "40026"
+        },
+        "sha256": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08"
+      },
+      "/audit/backend/market/historical_conditional_cycle.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870292990624",
+          "st_dev": "66306",
+          "st_ino": "60584527",
+          "st_mtime_ns": "1792354870292990624",
+          "st_size": "61225"
+        },
+        "sha256": "086a85c052aa536edc77cf92035864eb92c8ce009d3e5593fa8f44e4b67bca9a"
+      },
+      "/audit/backend/market/historical_conditional_nightly.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870511991901",
+          "st_dev": "66306",
+          "st_ino": "60584532",
+          "st_mtime_ns": "1792354870511991901",
+          "st_size": "55925"
+        },
+        "sha256": "58af2684b6a363fbbb29005594ac926db4cc51a1a0b8b2dc4af25b06f2410f6f"
+      },
+      "/audit/backend/market/historical_conditional_settlement.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870180989971",
+          "st_dev": "66306",
+          "st_ino": "60584526",
+          "st_mtime_ns": "1792354870180989971",
+          "st_size": "11377"
+        },
+        "sha256": "9e194856545dbf07e0ba6f0f2af9b022f75f767ee6371bb6af1f85e522f4c90d"
+      },
+      "/audit/backend/market/historical_packet_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870395991224",
+          "st_dev": "66306",
+          "st_ino": "60584529",
+          "st_mtime_ns": "1792354870395991224",
+          "st_size": "4763"
+        },
+        "sha256": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f"
+      },
+      "/audit/backend/market/historical_packet_demand.py": {
+        "physical": {
+          "st_ctime_ns": "1792354869958988676",
+          "st_dev": "66306",
+          "st_ino": "60584521",
+          "st_mtime_ns": "1792354869958988676",
+          "st_size": "6666"
+        },
+        "sha256": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0"
+      },
+      "/audit/backend/market/historical_packet_registry.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870471991667",
+          "st_dev": "66306",
+          "st_ino": "60584531",
+          "st_mtime_ns": "1792354870471991667",
+          "st_size": "6645"
+        },
+        "sha256": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3"
+      },
+      "/audit/backend/market/historical_packet_store.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870154989819",
+          "st_dev": "66306",
+          "st_ino": "60584524",
+          "st_mtime_ns": "1792354870154989819",
+          "st_size": "41884"
+        },
+        "sha256": "be90098bf2c64e7e8da390f2b40db646b50c7d0be659e1a3c9391b8b5595fdbf"
+      },
+      "/audit/backend/market/historical_paper_component.py": {
+        "physical": {
+          "st_ctime_ns": "1792354869971988752",
+          "st_dev": "66306",
+          "st_ino": "60584522",
+          "st_mtime_ns": "1792354869971988752",
+          "st_size": "4280"
+        },
+        "sha256": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648"
+      },
+      "/audit/backend/market/historical_physical_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870385991166",
+          "st_dev": "66306",
+          "st_ino": "60584528",
+          "st_mtime_ns": "1792354870385991166",
+          "st_size": "36101"
+        },
+        "sha256": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+      },
+      "/audit/backend/market/historical_timing_packet.py": {
+        "physical": {
+          "st_ctime_ns": "1792354870459991597",
+          "st_dev": "66306",
+          "st_ino": "60584530",
+          "st_mtime_ns": "1792354870459991597",
+          "st_size": "18520"
+        },
+        "sha256": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d"
+      },
+      "/audit/backend/tests/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792354869866988140",
+          "st_dev": "66306",
+          "st_ino": "60584517",
+          "st_mtime_ns": "1792354869866988140",
+          "st_size": "0"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "/audit/backend/tests/test_historical_paper_component_integration.py": {
+        "physical": {
+          "st_ctime_ns": "1792354869861988110",
+          "st_dev": "66306",
+          "st_ino": "60584516",
+          "st_mtime_ns": "1792354869861988110",
+          "st_size": "17814"
+        },
+        "sha256": "906c22c408316e76ec04e94fbda874dbac0615ef61cf122f082b70ee2e0e0300"
+      },
+      "/audit/backend/tests/test_historical_raw_settlement_integration.py": {
+        "physical": {
+          "st_ctime_ns": "1792354869883988239",
+          "st_dev": "66306",
+          "st_ino": "60584518",
+          "st_mtime_ns": "1792354869883988239",
+          "st_size": "16665"
+        },
+        "sha256": "ac14872456f03729687f7f37bafa1b6c25fe5919b1eaca0592c88e0cd7012e43"
+      },
+      "/audit/run.py": {
+        "physical": {
+          "st_ctime_ns": "1792354869784987661",
+          "st_dev": "66306",
+          "st_ino": "60584513",
+          "st_mtime_ns": "1792354869784987661",
+          "st_size": "4237"
+        },
+        "sha256": "320b8d9308093c4454c15bb9a91725ae95e74bc51c7621a6674c19e8686b8d2f"
+      },
+      "/fixture/current-identity.json": {
+        "physical": {
+          "st_ctime_ns": "1792354869694987136",
+          "st_dev": "66306",
+          "st_ino": "60584512",
+          "st_mtime_ns": "1792354869694987136",
+          "st_size": "4070"
+        },
+        "sha256": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d"
+      },
+      "/fixture/native-source-map.json": {
+        "physical": {
+          "st_ctime_ns": "1792354869102205662",
+          "st_dev": "66306",
+          "st_ino": "60584509",
+          "st_mtime_ns": "1792354869102205662",
+          "st_size": "182466"
+        },
+        "sha256": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5"
+      }
+    },
+    "status": "VERIFIED_SOURCE_ISOLATED_RAW_SETTLEMENT",
+    "tests": 10
+  },
+  "actual_proof_sha256": "5f42786d8a1818721efe0bb84db6225287905d4a6bb6f9af150851f82cb88f59",
+  "bounds": {
+    "fresh_resources_are_reservation": false,
+    "physical_source_files_including_pins": 20,
+    "pinned_payload_files_including_map": 19,
+    "production_caps_changed": false,
+    "source_control_log_bytes": 262144,
+    "synthetic_native_artifact_bytes": 1048576,
+    "transferred_payload_files": 18
+  },
+  "closed_acceptance": [
+    "Exact native serialization SHA and length bind actual native-written large NaN-bearing prior state without canonical normalization",
+    "Actual ReplayBroker/codec and native settle/apply_settlements record terminal partial desired8/submitted5/filled5 in journal and remove resolved pending row",
+    "A future unsent intent remains pending; original broker bytes and original paper file stay unchanged during pure reconciliation",
+    "Actual native save final bytes match finite typed raw evidence; real SQLite/CAS receipt2 binds one plain prior snapshot and unchanged broker/latch/session/context",
+    "Store and checkpoint reopen; edited receipt read and fresh native restore preserve exact bytes and actual native load/save parity",
+    "Finite buy/sell results and settled rows match unchanged legacy reconcile on their common domain",
+    "Prior-state mismatch, stale final save, evidence/source/identity/clock/graph tamper, nonfinite evidence, serialization cap, recursive prior and storage mode confusion refused",
+    "Literal Cycle settlement source pin and Nightly Cycle pin match edited sources; every pre-existing settlement function AST unchanged"
+  ],
+  "control_sources": {
+    "/tmp/get_raw_settlement_results_20261018.py": {
+      "bytes": 2041,
+      "sha256": "dc4c1d403a5948532139476b79b4d5500c51ef7c2ab75f0ed24ab86f2408d144"
+    },
+    "/tmp/launch_raw_settlement_integration_20261018.py": {
+      "bytes": 9627,
+      "sha256": "f1bf98a8b511ad5a2d23a693b65e1b6b5924c72fa52a0493bb2a1a1d46e698bc"
+    },
+    "/tmp/raw_settlement_remote_20261018.py": {
+      "bytes": 13551,
+      "sha256": "4a93af535c15b02d33c0b81e7ac40bd988a0454b89e4d82b5056600e0d8b83ff"
+    },
+    "/tmp/run_raw_settlement_integration_20261018.py": {
+      "bytes": 4237,
+      "sha256": "320b8d9308093c4454c15bb9a91725ae95e74bc51c7621a6674c19e8686b8d2f"
+    }
+  },
+  "diagram_impact": "NONE — private optional reconciliation inside existing historical account adapters; no deployed subsystem, store, trust boundary or public flow changed.",
+  "fixed_result_inventory": {
+    "create-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792354871026139619",
+        "st_dev": "66306",
+        "st_ino": "60584533",
+        "st_mtime_ns": "1792354871026139619",
+        "st_size": "1518"
+      },
+      "sha256": "76f2216c3494a50a583fe2a20c2a3a12f55a7c8cc85c4bc5048b475fd9d262c3"
+    },
+    "inspect-after.json": {
+      "physical": {
+        "st_ctime_ns": "1792354877148842328",
+        "st_dev": "66306",
+        "st_ino": "60584567",
+        "st_mtime_ns": "1792354877148842328",
+        "st_size": "3608"
+      },
+      "sha256": "8f1024bca202a807eb90416566b2cf8c76395e77fd5496fa7cdfa78635eabd5b"
+    },
+    "inspect-before.json": {
+      "physical": {
+        "st_ctime_ns": "1792354871177150739",
+        "st_dev": "66306",
+        "st_ino": "60584569",
+        "st_mtime_ns": "1792354871177150739",
+        "st_size": "3590"
+      },
+      "sha256": "27fc76591edb3d2943fb15533def60111e19731ae6a41dde9d8da894cc698bf6"
+    },
+    "out/proof.json": {
+      "physical": {
+        "st_ctime_ns": "1792354877015406528",
+        "st_dev": "66306",
+        "st_ino": "60585349",
+        "st_mtime_ns": "1792354877015406528",
+        "st_size": "45332"
+      },
+      "sha256": "5f42786d8a1818721efe0bb84db6225287905d4a6bb6f9af150851f82cb88f59"
+    },
+    "run.log": {
+      "physical": {
+        "st_ctime_ns": "1792354877010029744",
+        "st_dev": "66306",
+        "st_ino": "60584570",
+        "st_mtime_ns": "1792354877010029744",
+        "st_size": "1935"
+      },
+      "sha256": "6ed0766f59bc788eee8d611c17f1b11aa2e074426d1eacd5457d21a319742f8e"
+    },
+    "source/pins.json": {
+      "physical": {
+        "st_ctime_ns": "1792354869115265179",
+        "st_dev": "66306",
+        "st_ino": "60584510",
+        "st_mtime_ns": "1792354869115265179",
+        "st_size": "2241"
+      },
+      "sha256": "9e390e58d147c8545ae41fd834d5b8b38fe1b49fa93cf459d88a5f04b376e217"
+    },
+    "stage.json": {
+      "physical": {
+        "st_ctime_ns": "1792354869117984506",
+        "st_dev": "66306",
+        "st_ino": "60584511",
+        "st_mtime_ns": "1792354869117984506",
+        "st_size": "3058"
+      },
+      "sha256": "2701ecca3bffc287784e4c1490f1e0f4297301565ff28774cae551eab73b211b"
+    }
+  },
+  "local_evidence_root": "/tmp/raw-settlement-integration-20261018-v1",
+  "next_action": "Implement raw Nightly entry/decision metadata and full continuation plus actual Store stage/head commit/readback. Keep pre-effect/native/model/RAM admission mandatory before any genuine execution. Do not repeat closed synthetic gates or expand interpreter provenance prerequisites.",
+  "phase_terminals": {
+    "execute": {
+      "exit": 0,
+      "remote_quiescence_inferred": false
+    },
+    "preflight": {
+      "exit": 0,
+      "remote_quiescence_inferred": false
+    },
+    "results": {
+      "exit": 0,
+      "remote_quiescence_inferred": false
+    },
+    "source-copy": {
+      "exit": 0,
+      "remote_quiescence_inferred": false
+    },
+    "stage": {
+      "exit": 0,
+      "remote_quiescence_inferred": false
+    }
+  },
+  "preserved_constraints": "Original roots immutable; timing FAILED/publication CLOSED/missing receipts unchanged; genuinev6 OPEN/PAUSED/no replay/adoption/new genuine run; production unchanged; no Spark2 load/guard/cap weakening/model/provider/account/service change.",
+  "remote_evidence_root": "/home/animallya96/scratch/raw-settlement-integration-20261018-v1",
+  "result_bundle_sha256": "fbbd2a81896e1006dc1ddda58441628b9a68220101037c7503140c30aeda9c0e",
+  "runtime": {
+    "container": "d0c5934fce946e69c8416a8a2d9825cebbf5c2206428c866d853756c3c8138ee",
+    "create_argv": [
+      "docker",
+      "--host",
+      "unix:///var/run/docker.sock",
+      "create",
+      "--name",
+      "raw-settlement-integration-20261018-v1",
+      "--cidfile",
+      "/home/animallya96/scratch/raw-settlement-integration-20261018-v1/cid",
+      "--pull",
+      "never",
+      "--user",
+      "1000:1000",
+      "--network",
+      "none",
+      "--read-only",
+      "--cpus",
+      "1",
+      "--memory",
+      "512m",
+      "--memory-swap",
+      "512m",
+      "--pids-limit",
+      "32",
+      "--cap-drop",
+      "ALL",
+      "--security-opt",
+      "no-new-privileges",
+      "--no-healthcheck",
+      "--log-driver",
+      "none",
+      "--ulimit",
+      "cpu=30:30",
+      "--ulimit",
+      "fsize=1048576:1048576",
+      "--tmpfs",
+      "/tmp:rw,noexec,nosuid,size=64m",
+      "--workdir",
+      "/audit",
+      "--env",
+      "PYTHONPATH=/audit",
+      "--env",
+      "PYTHONDONTWRITEBYTECODE=1",
+      "--env",
+      "ANIOS_TEST_MODE=1",
+      "--env",
+      "PYTHONUNBUFFERED=1",
+      "--env",
+      "OPENBLAS_NUM_THREADS=1",
+      "--env",
+      "OMP_NUM_THREADS=1",
+      "--env",
+      "MKL_NUM_THREADS=1",
+      "--env",
+      "NUMEXPR_NUM_THREADS=1",
+      "--env",
+      "VECLIB_MAXIMUM_THREADS=1",
+      "--env",
+      "BLIS_NUM_THREADS=1",
+      "--mount",
+      "type=bind,src=/home/animallya96/scratch/raw-settlement-integration-20261018-v1/source,dst=/audit,readonly",
+      "--mount",
+      "type=bind,src=/home/animallya96/scratch/raw-settlement-integration-20261018-v1/fixture,dst=/fixture,readonly",
+      "--mount",
+      "type=bind,src=/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source,dst=/native,readonly",
+      "--mount",
+      "type=bind,src=/home/animallya96/scratch/raw-settlement-integration-20261018-v1/out,dst=/out",
+      "--entrypoint",
+      "python",
+      "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "/audit/run.py"
+    ],
+    "host_config": {
+      "AutoRemove": false,
+      "Binds": null,
+      "BlkioDeviceReadBps": [],
+      "BlkioDeviceReadIOps": [],
+      "BlkioDeviceWriteBps": [],
+      "BlkioDeviceWriteIOps": [],
+      "BlkioWeight": 0,
+      "BlkioWeightDevice": [],
+      "CapAdd": null,
+      "CapDrop": [
+        "ALL"
+      ],
+      "Cgroup": "",
+      "CgroupParent": "",
+      "CgroupnsMode": "private",
+      "ConsoleSize": [
+        0,
+        0
+      ],
+      "ContainerIDFile": "/home/animallya96/scratch/raw-settlement-integration-20261018-v1/cid",
+      "CpuCount": 0,
+      "CpuPercent": 0,
+      "CpuPeriod": 0,
+      "CpuQuota": 0,
+      "CpuRealtimePeriod": 0,
+      "CpuRealtimeRuntime": 0,
+      "CpuShares": 0,
+      "CpusetCpus": "",
+      "CpusetMems": "",
+      "DeviceCgroupRules": null,
+      "DeviceRequests": null,
+      "Devices": [],
+      "Dns": null,
+      "DnsOptions": [],
+      "DnsSearch": [],
+      "ExtraHosts": null,
+      "GroupAdd": null,
+      "IOMaximumBandwidth": 0,
+      "IOMaximumIOps": 0,
+      "IpcMode": "private",
+      "Isolation": "",
+      "Links": null,
+      "LogConfig": {
+        "Config": {},
+        "Type": "none"
+      },
+      "MaskedPaths": [
+        "/proc/acpi",
+        "/proc/asound",
+        "/proc/interrupts",
+        "/proc/kcore",
+        "/proc/keys",
+        "/proc/latency_stats",
+        "/proc/sched_debug",
+        "/proc/scsi",
+        "/proc/timer_list",
+        "/proc/timer_stats",
+        "/sys/devices/virtual/powercap",
+        "/sys/firmware"
+      ],
+      "Memory": 536870912,
+      "MemoryReservation": 0,
+      "MemorySwap": 536870912,
+      "MemorySwappiness": null,
+      "Mounts": [
+        {
+          "ReadOnly": true,
+          "Source": "/home/animallya96/scratch/raw-settlement-integration-20261018-v1/source",
+          "Target": "/audit",
+          "Type": "bind"
+        },
+        {
+          "ReadOnly": true,
+          "Source": "/home/animallya96/scratch/raw-settlement-integration-20261018-v1/fixture",
+          "Target": "/fixture",
+          "Type": "bind"
+        },
+        {
+          "ReadOnly": true,
+          "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+          "Target": "/native",
+          "Type": "bind"
+        },
+        {
+          "Source": "/home/animallya96/scratch/raw-settlement-integration-20261018-v1/out",
+          "Target": "/out",
+          "Type": "bind"
+        }
+      ],
+      "NanoCpus": 1000000000,
+      "NetworkMode": "none",
+      "OomKillDisable": null,
+      "OomScoreAdj": 0,
+      "PidMode": "",
+      "PidsLimit": 32,
+      "PortBindings": {},
+      "Privileged": false,
+      "PublishAllPorts": false,
+      "ReadonlyPaths": [
+        "/proc/bus",
+        "/proc/fs",
+        "/proc/irq",
+        "/proc/sys",
+        "/proc/sysrq-trigger"
+      ],
+      "ReadonlyRootfs": true,
+      "RestartPolicy": {
+        "MaximumRetryCount": 0,
+        "Name": "no"
+      },
+      "Runtime": "runc",
+      "SecurityOpt": [
+        "no-new-privileges"
+      ],
+      "ShmSize": 67108864,
+      "Tmpfs": {
+        "/tmp": "rw,noexec,nosuid,size=64m"
+      },
+      "UTSMode": "",
+      "Ulimits": [
+        {
+          "Hard": 30,
+          "Name": "cpu",
+          "Soft": 30
+        },
+        {
+          "Hard": 1048576,
+          "Name": "fsize",
+          "Soft": 1048576
+        }
+      ],
+      "UsernsMode": "",
+      "VolumeDriver": "",
+      "VolumesFrom": null
+    },
+    "host_config_differences": {
+      "OomKillDisable": [
+        false,
+        null
+      ]
+    },
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "mount_records_equal_by_destination": true,
+    "mounts": [
+      {
+        "Destination": "/out",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": true,
+        "Source": "/home/animallya96/scratch/raw-settlement-integration-20261018-v1/out",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/audit",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/raw-settlement-integration-20261018-v1/source",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/fixture",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/raw-settlement-integration-20261018-v1/fixture",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/native",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+        "Type": "bind"
+      }
+    ],
+    "raw_mount_order_equal": false,
+    "state": {
+      "Dead": false,
+      "Error": "",
+      "ExitCode": 0,
+      "FinishedAt": "2026-10-18T20:21:17.046507348Z",
+      "OOMKilled": false,
+      "Paused": false,
+      "Pid": 0,
+      "Restarting": false,
+      "Running": false,
+      "StartedAt": "2026-10-18T20:21:11.207243106Z",
+      "Status": "exited"
+    }
+  },
+  "schema": "raw-settlement-integration-proof/1",
+  "source_base": "05e9da5894ebd82ffb2ef5e631f30e6ec4dc456e",
+  "source_commit": "9fe6d143f9389211d606059e329abc634cbb5531",
+  "source_tree": "cec14f3fa4f85183395b95f2e20c5da507850a1d",
+  "stage": {
+    "actual_prerequisite": {
+      "at_ns": "1792354869101262633",
+      "available_bytes": 9717735424,
+      "free_inodes": 243497052,
+      "host": "animallya-spark1",
+      "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "native_map_sha256": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5",
+      "root": "/home/animallya96/scratch/raw-settlement-integration-20261018-v1",
+      "scratch_free_bytes": 2805008465920,
+      "uid": 1000
+    },
+    "files": {
+      "backend/__init__.py": {
+        "bytes": 35,
+        "sha256": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5"
+      },
+      "backend/market/__init__.py": {
+        "bytes": 42,
+        "sha256": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e"
+      },
+      "backend/market/historical_broker_checkpoint.py": {
+        "bytes": 40026,
+        "sha256": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08"
+      },
+      "backend/market/historical_conditional_cycle.py": {
+        "bytes": 61225,
+        "sha256": "086a85c052aa536edc77cf92035864eb92c8ce009d3e5593fa8f44e4b67bca9a"
+      },
+      "backend/market/historical_conditional_nightly.py": {
+        "bytes": 55925,
+        "sha256": "58af2684b6a363fbbb29005594ac926db4cc51a1a0b8b2dc4af25b06f2410f6f"
+      },
+      "backend/market/historical_conditional_settlement.py": {
+        "bytes": 11377,
+        "sha256": "9e194856545dbf07e0ba6f0f2af9b022f75f767ee6371bb6af1f85e522f4c90d"
+      },
+      "backend/market/historical_packet_checkpoint.py": {
+        "bytes": 4763,
+        "sha256": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f"
+      },
+      "backend/market/historical_packet_demand.py": {
+        "bytes": 6666,
+        "sha256": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0"
+      },
+      "backend/market/historical_packet_registry.py": {
+        "bytes": 6645,
+        "sha256": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3"
+      },
+      "backend/market/historical_packet_store.py": {
+        "bytes": 41884,
+        "sha256": "be90098bf2c64e7e8da390f2b40db646b50c7d0be659e1a3c9391b8b5595fdbf"
+      },
+      "backend/market/historical_paper_component.py": {
+        "bytes": 4280,
+        "sha256": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648"
+      },
+      "backend/market/historical_physical_checkpoint.py": {
+        "bytes": 36101,
+        "sha256": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+      },
+      "backend/market/historical_timing_packet.py": {
+        "bytes": 18520,
+        "sha256": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d"
+      },
+      "backend/tests/__init__.py": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "backend/tests/test_historical_paper_component_integration.py": {
+        "bytes": 17814,
+        "sha256": "906c22c408316e76ec04e94fbda874dbac0615ef61cf122f082b70ee2e0e0300"
+      },
+      "backend/tests/test_historical_raw_settlement_integration.py": {
+        "bytes": 16665,
+        "sha256": "ac14872456f03729687f7f37bafa1b6c25fe5919b1eaca0592c88e0cd7012e43"
+      },
+      "fixture/current-identity.json": {
+        "bytes": 4070,
+        "sha256": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d"
+      },
+      "run.py": {
+        "bytes": 4237,
+        "sha256": "320b8d9308093c4454c15bb9a91725ae95e74bc51c7621a6674c19e8686b8d2f"
+      }
+    },
+    "reviewed_prerequisite_sha256": "91ff13e168cc08005b5a7f9840a9f0ee039f79e44f55a9eff513afc511769cfd"
+  },
+  "static_validation": {
+    "exact_thirteen_source_pins": "PASS",
+    "git_diff_check": "PASS",
+    "new_function_purpose_comments": "PASS",
+    "pre_existing_settlement_function_asts_unchanged": true,
+    "ruff": "UNAVAILABLE",
+    "runner_byte_equality": "PASS",
+    "warnings_as_errors_ast": "PASS",
+    "zero_literal_backspaces": "PASS"
+  },
+  "status": "VERIFIED_SOURCE_ISOLATED_RAW_SETTLEMENT_ONLY",
+  "test_log": "test_changed_state_refused_before_reconciliation (backend.tests.test_historical_raw_settlement_integration.RawSettlementIntegrationTests.test_changed_state_refused_before_reconciliation) ... ok\ntest_evidence_tampering_refused (backend.tests.test_historical_raw_settlement_integration.RawSettlementIntegrationTests.test_evidence_tampering_refused) ... ok\ntest_finite_buy_sell_parity_with_legacy (backend.tests.test_historical_raw_settlement_integration.RawSettlementIntegrationTests.test_finite_buy_sell_parity_with_legacy) ... ok\ntest_future_unsent_intent_retained (backend.tests.test_historical_raw_settlement_integration.RawSettlementIntegrationTests.test_future_unsent_intent_retained) ... ok\ntest_large_nan_native_settlement_save_receipt_restore (backend.tests.test_historical_raw_settlement_integration.RawSettlementIntegrationTests.test_large_nan_native_settlement_save_receipt_restore) ... ok\ntest_nonfinite_evidence_and_serialization_bound_refuse (backend.tests.test_historical_raw_settlement_integration.RawSettlementIntegrationTests.test_nonfinite_evidence_and_serialization_bound_refuse) ... ok\ntest_receipt_graph_and_native_save_mismatch (backend.tests.test_historical_raw_settlement_integration.RawSettlementIntegrationTests.test_receipt_graph_and_native_save_mismatch) ... ok\ntest_recursive_prior_and_mode_confusion_refuse (backend.tests.test_historical_raw_settlement_integration.RawSettlementIntegrationTests.test_recursive_prior_and_mode_confusion_refuse) ... ok\ntest_request_and_clock_guards (backend.tests.test_historical_raw_settlement_integration.RawSettlementIntegrationTests.test_request_and_clock_guards) ... ok\ntest_source_pins_and_native_serialization_semantics (backend.tests.test_historical_raw_settlement_integration.RawSettlementIntegrationTests.test_source_pins_and_native_serialization_semantics) ... ok\n\n----------------------------------------------------------------------\nRan 10 tests in 5.354s\n\nOK\n",
+  "unverified": [
+    "Independent recomputation of every evidence row/economic or ledger audit",
+    "Store stage/head operation commitment and restore_operation journey",
+    "Full Nightly/Cycle constructor/continuation and native nonfinite entry/decision metadata",
+    "Complete pre-effect/native metadata/two-host reservation/interruption/model/RAM lifecycle and crash safety",
+    "Genuine historical/ordinary/intraday/fill/publication/API/UI acceptance"
+  ],
+  "validation_limits": "Ten new source-isolated tests only. Exact complete-source selected settlement/Cycle and two market_daily helper CodeTypes in isolated startup/latch/marker globals; actual native broker/codec/paper/deferred imports/Store/checkpoint. Forty-seven native modules including model-related declarations imported, no model/provider/policy calls. Not an independent economic audit or complete module/constructor identity. No full unit/build/lint/deploy or crash acceptance."
+}

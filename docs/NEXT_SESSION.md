@@ -1,5 +1,73 @@
 # Next session
 
+## 2026-10-18 — Native raw reconciliation/save/receipt/restore VERIFIED
+
+Task control: product acceptance first. This isolated settlement slice is closed;
+never rerun its ten tests/preflight/stage/copy/getter, or older closed gates, for
+documentation. Do not expand interpreter/ELF/native-origin research as a prerequisite
+for the next synthetic product integration. Production is unchanged.
+
+Source checkpoint9fe6d143f9389211d606059e329abc634cbb5531 adds reconcile_raw and
+verify_raw_saved to the existing settlement module; every prior function AST,
+including legacy finite reconcile, remains unchanged. Raw reconciliation binds
+the supplied exact native PaperState to the prior raw component's native writer
+serialization SHA AND length. It hashes native JSON incrementally with original
+field/mapping order, indent2, default dataclass encoder, NaN semantics and no newline;
+it never uses old canonical finite-paper hash names for these raw hashes.
+
+Optional Cycle receipt2 raw_reconciliation binds a plain prior receipt, identity,
+broker/latch/session/context, actual broker observation clock, source-bound finite
+evidence and actual final native captured bytes. Recursive prior evidence and
+mode confusion refuse before recursive reads. Native saved state must match the
+computed updated-state serialization. The legacy CURRENT committed-outcome path
+and raw Nightly continuation remain structurally closed. Cycle settlement and
+Nightly Cycle source pins are updated; raw primitive/component adapters unchanged.
+
+VERIFIED: ONE new isolated d0c5934fce946e69c8416a8a2d9825cebbf5c2206428c866d853756c3c8138ee
+on exactf612 exited0/noOOM at20:21:17.046507348Z. Ten tests passed0fail/0error/0skip
+in5.35674068s/60276KiB peak. Actual ReplayBroker/codec/native settle/apply_settlements
+recorded a terminal partial desired8/submitted5/filled5 in the journal, removed its
+resolved pending row, and retained a future unsent intent. Original broker bytes
+and prior paper file stayed unchanged during pure reconciliation. Actual native
+large >256KiB/NaN write, native save of the updated state, finite raw receipt,
+actual Store/checkpoint reopen, receipt read, exact fresh restore and native
+load/save byte parity passed. Finite buy/sell outcomes matched legacy reconcile.
+State/evidence/source/clock/graph tampering, stale final save, nonfinite metadata,
+serialization bound, recursive prior and storage confusion refusals all passed.
+
+Read research/raw-settlement-integration-proof-2026-10-18.json. Actual proof5f42786d
+and seven fixed results are retained under /tmp/raw-settlement-integration-20261018-v1
+and matching Spark1scratch root. Preflight, source stage, finite18file SCP, execute
+and results-only getter all exited0/empty stderr. Nineteen pinned payloads plus
+pins.json make20 physical source files. All source and47 native module SHA/physical
+bookends and native writer globals matched. Complete four mount records match by
+destination; raw list order differs; HostConfig ONLY OomKillDisable false→null.
+Runtime UID1000/noneRO/1CPU/512MiB=swap/PIDs32/tmp64; explicit synthetic native1MiB
+artifact bound, source/control/log256KiB and production caps unchanged. Headroom
+is not full lifecycle reservation. All original/failed/completed roots preserved.
+
+The runner uses exact full-source selected settlement/Cycle and two market_daily
+helper CodeTypes with isolated module startup/latch/marker globals. Actual native
+broker/codec/paper and deferred imports run; model-related declarations import,
+but no model/provider/policy call runs. This is not whole module/constructor identity,
+Store stage/head commitment, independent recomputation of every evidence row or an
+independent economic audit. No full unit/build/lint/deploy/crash/RAM claim. Exact
+thirteen source pins, legacy AST equality, runner byte equality, purpose comments,
+warnings-as-errors AST, zero backspaces and diff checks pass; Ruff unavailable.
+Diagram impact: NONE — private optional reconciliation inside existing historical
+account adapters; no deployed subsystem/store/trust boundary/public flow changed.
+
+NEXT: raw Nightly entry/decision metadata and full continuation, plus actual Store
+stage/head commit and readback. Continue actual native large/NaN assertions and
+finite typed evidence; never normalize NaNs, truncate state, relabel raw hashes or
+put raw roots in legacy blob strings. Complete pre-effect reservation/interruption,
+native metadata/two-host/model/RAM lifecycle admission BEFORE genuine execution;
+these remain UNVERIFIED. Then genuine nightly/ordinary/intraday/fills, independent
+publication and API/UI. Original timingFAILED/publicationCLOSED/missing receipts
+unchanged; genuinev6 OPEN/PAUSED/no replay/adoption/new genuine run. No Spark2 load,
+model/provider/account/service change, guard/cap weakening or historical-main
+deployment. Heartbeat ACTIVE; quiet on unchanged/non-actionable state; no ETA.
+
 ## 2026-10-18 — Raw paper component receipts and exact restore VERIFIED
 
 Task control: continue product acceptance. This boundary is closed; do not replay

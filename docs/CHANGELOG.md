@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-10-18 — Bind raw native reconciliation to its saved component receipt
+
+The optional raw settlement path now binds actual native input and saved output
+through exact native serialization SHA/length, preserving NaNs without finite
+canonical-paper hashes. Receipt2 ties source-bound finite evidence to a plain prior
+snapshot, unchanged broker/latch/context/session and actual broker clock. Legacy
+settlement function bodies remain unchanged; full committed-outcome/Nightly raw
+continuation stays closed.
+
+Source9fe6d143 passed10 new isolated tests,0fail/0error/0skip,5.35674068s/60276KiB.
+Actual native settlement wrote terminal-partial journal metadata and removed its
+resolved pending row while preserving a future intent, then actual native save,
+Store/checkpoint reopen and raw receipt/restore preserved bytes exactly. Finite
+buy/sell parity and state/source/clock/graph/tamper/bound/refusal checks passed.
+Proof: research/raw-settlement-integration-proof-2026-10-18.json.
+
+This is source-isolated native reconciliation, not independent economic audit,
+Store operation commitment, whole constructors/full lifecycle/model/RAM/genuine
+acceptance. Production and original timingFAILED/publicationCLOSED/pausedv6 remain
+unchanged. Next product work is raw Nightly metadata/continuation and Store commit.
+Diagram impact: NONE — existing private historical account adapter boundaries.
+
 ## 2026-10-18 — Persist and restore versioned raw paper components
 
 Optional Nightly/Cycle component paths now retain opaque native paper through a
