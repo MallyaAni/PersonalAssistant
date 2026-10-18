@@ -94,12 +94,22 @@ def _put(store, raw, limit=META_CAP):
     return store.put_stream(io.BytesIO(raw), limit=limit, expected_sha256=sha(raw))[0]
 
 
-# Keep full broker, paper and optional latch in the same complete-operation receipt.
-def _components(store, client, root, pins, session=DAY):
-    state = _file(paper.state_path(root))
-    document = packet._decode(state)
-    if set(document) != {f.name for f in fields(paper.PaperState)}:
-        raise ValueError("Complete native paper state required")
+# Capture broker/latch and either legacy paper bytes or a tagged opaque component.
+def _components(store, client, root, pins, session=DAY, *, raw_checkpoint=None):
+    if raw_checkpoint is None:
+        state = _file(paper.state_path(root))
+        document = packet._decode(state)
+        if set(document) != {f.name for f in fields(paper.PaperState)}:
+            raise ValueError("Complete native paper state required")
+        paper_ref = None
+    else:
+        from backend.market import historical_paper_component
+
+        if store.identity != pins["identity_sha256"]:
+            raise ValueError("Raw paper Store identity differs")
+        paper_ref = historical_paper_component.capture(
+            raw_checkpoint, paper.state_path(root), expected_identity=store.identity
+        )
     latch = _file(entry_timing.latch_path(root, session), absent=True)
     if (
         latch is not None
@@ -109,12 +119,12 @@ def _components(store, client, root, pins, session=DAY):
     encoded = codec.encode(client, **pins)
     return {
         "broker": _put(store, encoded, codec.CAPS["bytes"]),
-        "paper": _put(store, state),
+        "paper": _put(store, state) if raw_checkpoint is None else paper_ref,
         "latch": None if latch is None else _put(store, latch),
     }
 
 
-# Persist one detached receipt containing all component references together.
+# Persist distinct receipt versions without admitting raw components to settlement.
 def _receipt(
     store,
     client,
@@ -125,16 +135,22 @@ def _receipt(
     session=DAY,
     context=None,
     settle_current=False,
+    raw_checkpoint=None,
 ):
+    if raw_checkpoint is not None and settle_current:
+        raise ValueError("Raw paper settlement is not admitted")
     value = {
-        "schema": "private-conditional-cycle-receipt/1",
+        "schema": "private-conditional-cycle-receipt/1" if raw_checkpoint is None
+        else "private-conditional-cycle-receipt/2",
         "identity_sha256": pins["identity_sha256"],
         "adapter_sha256": sha(Path(__file__).read_bytes()),
         "session": session.isoformat(),
         "context": context,
         "generic_adapter_sha256": sha(Path(market.__file__).read_bytes()),
         "final_observer_sha256": sha(Path(completion.__file__).read_bytes()),
-        "components": _components(store, client, root, pins, session),
+        "components": _components(
+            store, client, root, pins, session, raw_checkpoint=raw_checkpoint
+        ),
         "detail": deepcopy(detail),
         "actual_historical_clocks_or_fills": False,
         "paper_journal_reconciliation": "NOT_RUN_NATIVE_SENT_PENDING_RETAINED",
@@ -207,12 +223,14 @@ def _anchor(parsed, manifest, original_open):
         raise ValueError("Original synthetic opening reference differs")
 
 
-# Authenticate source-bound immutable receipt bytes without writing any components.
-def _read_receipt(store, receipt_sha256, pins):
+# Authenticate source-bound receipts and explicit storage mode without adoption.
+def _read_receipt(store, receipt_sha256, pins, *, raw_checkpoint=None):
     raw = store.read_blob(receipt_sha256, limit=META_CAP)
     receipt = packet._decode(raw)
     if (
-        receipt["schema"] != "private-conditional-cycle-receipt/1"
+        receipt["schema"] not in (
+            "private-conditional-cycle-receipt/1", "private-conditional-cycle-receipt/2"
+        )
         or receipt["identity_sha256"] != pins["identity_sha256"]
         or receipt["adapter_sha256"] != sha(Path(__file__).read_bytes())
         or receipt["generic_adapter_sha256"] != sha(Path(market.__file__).read_bytes())
@@ -220,6 +238,17 @@ def _read_receipt(store, receipt_sha256, pins):
         != sha(Path(completion.__file__).read_bytes())
     ):
         raise ValueError("Original source-bound operation receipt required")
+    if receipt["schema"] == "private-conditional-cycle-receipt/2":
+        from backend.market import historical_paper_component
+
+        if "current_settlement_sha256" in receipt or raw_checkpoint is None:
+            raise ValueError("Raw component storage required; settlement not admitted")
+        historical_paper_component.verify(
+            receipt["components"]["paper"], raw_checkpoint,
+            expected_identity=pins["identity_sha256"],
+        )
+    elif raw_checkpoint is not None or type(receipt["components"]["paper"]) is not str:
+        raise ValueError("Receipt paper storage mode differs")
     if "current_settlement_sha256" in receipt:
         if (
             receipt["current_settlement_sha256"] != SETTLEMENT_SHA256
@@ -288,8 +317,11 @@ def _current_submission(store, pins, submission_head, cycle):
     return receipt, descriptor
 
 
-# Verify the pre-fold commitment and final paper/broker/latch graph before restoration.
+# Verify legacy settlement only, before any finite decoding of paper components.
 def _final_settlement(store, receipt, pins):
+    if (receipt["schema"] != "private-conditional-cycle-receipt/1"
+            or type(receipt["components"]["paper"]) is not str):
+        raise ValueError("Raw paper settlement is not admitted")
     detail = receipt["detail"]
     reference = detail["pre_settlement_receipt"]
     pre = _read_receipt(store, reference, pins)
@@ -349,9 +381,11 @@ def _final_settlement(store, receipt, pins):
         raise ValueError("Original reconciled outcome component graph differs")
 
 
-# Restore exact component references without executing a decision or submission.
-def restore_receipt(store, receipt_sha256, root, *, pins):
-    receipt = _read_receipt(store, receipt_sha256, pins)
+# Restore explicit component versions without decisions, submissions or replay.
+def restore_receipt(store, receipt_sha256, root, *, pins, raw_checkpoint=None):
+    receipt = _read_receipt(
+        store, receipt_sha256, pins, raw_checkpoint=raw_checkpoint
+    )
     if (
         "current_settlement_sha256" in receipt
         and receipt["detail"]["stage"] == "OUTCOME_COMMITTED"
@@ -372,11 +406,14 @@ def restore_receipt(store, receipt_sha256, root, *, pins):
     refs = receipt["components"]
     encoded = store.read_blob(refs["broker"], limit=codec.CAPS["bytes"])
     client = codec.restore(encoded, expected_sha256=refs["broker"], **pins)
-    state = store.read_blob(refs["paper"], limit=META_CAP)
-    document = packet._decode(state)
-    if set(document) != {f.name for f in fields(paper.PaperState)}:
-        raise ValueError("Complete restored native paper fields required")
-    paper.PaperState(**document)
+    raw_paper = receipt["schema"] == "private-conditional-cycle-receipt/2"
+    state = None
+    if not raw_paper:
+        state = store.read_blob(refs["paper"], limit=META_CAP)
+        document = packet._decode(state)
+        if set(document) != {f.name for f in fields(paper.PaperState)}:
+            raise ValueError("Complete restored native paper fields required")
+        paper.PaperState(**document)
     latch = (
         None
         if refs["latch"] is None
@@ -391,6 +428,15 @@ def restore_receipt(store, receipt_sha256, root, *, pins):
     if not root.resolve().is_relative_to(store.root.resolve()):
         raise ValueError("Fresh private Store descendant required")
     root.mkdir(mode=0o700)
+    if raw_paper:
+        from backend.market import historical_paper_component
+
+        destination = paper.state_path(root)
+        destination.parent.mkdir(mode=0o700, parents=True)
+        historical_paper_component.restore(
+            refs["paper"], raw_checkpoint, destination,
+            expected_identity=pins["identity_sha256"],
+        )
     for path, body in (
         (paper.state_path(root), state),
         (entry_timing.latch_path(root, session), latch),
@@ -406,10 +452,12 @@ def restore_receipt(store, receipt_sha256, root, *, pins):
     return client, receipt
 
 
-# Recover only already-committed operations; an interrupted OPEN operation pauses.
-def restore_operation(store, operation, root, *, pins):
+# Recover committed components with explicit raw storage; OPEN operations pause.
+def restore_operation(store, operation, root, *, pins, raw_checkpoint=None):
     entry = store.recover_operation(operation)
-    return restore_receipt(store, entry["receipt_sha256"], root, pins=pins)
+    return restore_receipt(
+        store, entry["receipt_sha256"], root, pins=pins, raw_checkpoint=raw_checkpoint
+    )
 
 
 # Connect a private synthetic account to retained native operations.

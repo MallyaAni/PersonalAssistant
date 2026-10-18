@@ -48,7 +48,7 @@ CAP = 256 * 1024
 LOCK = Lock()
 SAVE_STATE = paper.save_state
 SUBMIT = native.ReplayBroker._submit
-CYCLE = "f55b51fa3ff896e6a3a6f32e651816fd2372d079ad8cfb4781d5d3c48ffaf1d2"
+CYCLE = "883c44e82a573a06979a22123ada022cd21c63f99277467977b5a96a69c5b657"
 SOURCES = {
     "backend/market/live_model_history.py": (
         "fa8ecdb9c0c32d2f034ece8c7da57fec9f198d8d8427a0273d5b59dc4ca6b37b"
@@ -669,9 +669,20 @@ def put(store, raw, cap=CAP):
     )[0]
 
 
-# Retain complete native broker and exact physical paper bytes as separate references.
-def components(store, client, root, pins):
+# Retain broker and paper, optionally using a separately tagged opaque raw component.
+def components(store, client, root, pins, *, raw_checkpoint=None):
     broker = codec.encode(client, **pins)
+    if raw_checkpoint is not None:
+        from backend.market import historical_paper_component
+
+        admitted.require(
+            store.identity == pins["identity_sha256"],
+            "Raw paper Store identity differs",
+        )
+        reference = historical_paper_component.capture(
+            raw_checkpoint, paper.state_path(root), expected_identity=store.identity
+        )
+        return {"broker": put(store, broker, codec.CAPS["bytes"]), "paper": reference}
     raw = physical(paper.state_path(root))
     paper_ref = put(store, raw)
     try:
@@ -915,6 +926,7 @@ class Nightly:
         record = admitted.decoded(self.store.read_blob(reference, limit=CAP))
         admitted.require(
             record["schema"] == "standalone-current-nightly/1"
+            and type(record["components"]["paper"]) is str
             and record["identity"] == self.store.identity
             and record["packet_pipeline_integrated"] is False
             and record["publication_barrier"] == "CLOSED",
@@ -1038,8 +1050,12 @@ class Nightly:
         write_once(directory / "reservation.json", raw)
         return directory, sha256(raw).hexdigest()
 
-    # Commit a durable result only after its original complete components exist.
+    # Commit only legacy components until raw Nightly continuation is admitted.
     def complete(self, directory, reservation, value):
+        admitted.require(
+            type(value["components"]["paper"]) is str,
+            "Raw Nightly component continuation is not admitted",
+        )
         operation = admitted.decoded(physical(directory / "reservation.json"))
         admitted.require(
             sha256(admitted.encoded(operation)).hexdigest() == reservation,
