@@ -1,5 +1,75 @@
 # Next session
 
+## 2026-10-18 — Private raw Nightly birth/two-close lifecycle VERIFIED
+
+Product acceptance remains the priority. This seven-test private lifecycle boundary
+is closed; never rerun its tests/preflight/stage/copy/getter or old8/10/11/5 gates for
+documentation. Production and genuine execution remain unchanged/closed.
+
+Source854a7e7e24cd08da9aa75cde23210537fedafc5c, tree51716a4f0fac223953f0ba52f111d439ae0a8e89,
+adds historical_raw_nightly.RawNightly with a distinct physically reserved raw
+lifecycle receipt. Every pre-existing file remains byte-identical. Public raw
+initialize/close refuse before reservation/effects until complete admission exists.
+Private bodies compose actual birth, native save observations, raw entry/decision
+metadata, raw Nightly predecessors, close and recovery. They preserve source,
+context, birth, previous and pre-close components in the reservation BEFORE native
+work. Readback binds the original physical reservation/result and verifies all
+observed writes/final component. Returned entry bytes must match the actual saved
+last history entry's native serialization. Entry/decisions retain the20MiB aggregate
+local bound; paper stays an opaque component. All adoption/integration flags FALSE.
+
+Recaptured descriptors are compared by authenticated raw SHA/length and exact
+broker bytes, not reference equality. Unavailable closes compare NaN-bearing paper
+bytes unchanged and exact post-observe broker bytes; the observation clock may
+legitimately advance. Interrupted operations never reexecute. Raw Cycle predecessors
+and due economic actions remain refused pending their explicit integration.
+
+VERIFIED: ONE new56caa56015230eb4255ef443015e49e1d7660f2cb4b394e1868a9b69eae851b0/f612
+exited0/noOOM at21:05:01.199484917Z. Seven tests passed0fail/0error/0skip in7.011966079s/
+49248KiB peak. Actual ReplayBroker/codec, native snapshot/save, metadata/checkpoint
+and SQLite/CAS exercised birth100000cash/zero shares/10bp →prior-day close →next
+session close →reopen →exact recovery with policy invocation counter unchanged.
+Native paper >512KiB with NaN restores and native load/save preserves exact bytes.
+Source/context/session/predecessor checks, unavailable preservation, pre-SUBMIT
+refusal, wrong returned entry and post-save context invalidation all passed.
+Expected interrupted cases retain saved bytes and reservation without result;
+recovery stays paused and never invokes the synthetic policy again.
+
+Read research/raw-nightly-lifecycle-proof-2026-10-18.json. Actual proof56fabbaa/24131B
+and seven fixed results remain /tmp/raw-nightly-lifecycle-20261018-v1 and matching
+Spark1scratch. All five phases exited0/empty stderr. Sixteen product/test pins;
+22payloads+pins=23physical source files, twelve native SHA/physical bookends and
+writer globals unchanged. Complete four mounts match by destination; raw order
+differs; HostConfig ONLY OomKillDisable false→null. UID1000/noneRO/1CPU/512MiB=swap/
+PIDs32/tmp64. Explicit synthetic512KiB spans/1MiB raw/32body32page checkpoint plus
+retained reused fixture reservations; native artifact1MiB FSIZE/source-controls-log
+256KiB/production caps unchanged. Twenty-nine local control/transport readbacks
+retain exact decimal ns strings. No operational/test failure or replay.
+
+Exact full-source private raw lifecycle/legacy observer CodeTypes run with SYNTHETIC
+context/policy/trade-orchestration/calendar/source-manifest globals. Real native
+broker/paper/storage execute; native market_daily planning does NOT. Whole Nightly
+constructor, model/context/calendar/economic capability, full pre-effect physical
+reservation/interruption/native metadata/two-host/RAM/crash/genuine acceptance remain
+UNVERIFIED. Decision deepcopy, full native load/save and encoding/readback retain
+RAM/full-horizon limits. Existing healthy worker independently reviewed source,
+actual preflight/exact calls/getter/results READONLY. Source/purpose43/AST warnings/
+runner-byte/pins/zero-backspace/diff checks pass; Ruff unavailable, no full unit/build/
+deploy claim. Diagram impact: NONE — private composition within existing adapters.
+
+NEXT CONCRETE PRODUCT TASK: integrate raw Cycle final settlement/committed
+OUTCOME_COMMITTED receipts into RawNightly.raw_predecessor. Prove actual Store
+head/entry/receipt linkage and source-bound final raw reconciliation components
+with NEW source-isolated synthetic assertions. Preserve legacy _final_settlement
+and the public genuine admission gate. This closes the remaining raw Cycle→Nightly
+bridge before complete pre-effect/native/two-host/model/RAM lifecycle admission,
+then genuine proposals/ordinary/intraday/fills, independent publication and API/UI.
+No provenance-audit detours or closed-gate reruns. Original timingFAILED/publication
+CLOSED/missing receipts/immutable roots unchanged; genuinev6 OPEN/PAUSED/no replay/
+adoption/new genuine run. No Spark2 load, guard/cap weakening, model/provider/account/
+service change or historical-main deployment. Heartbeat ACTIVE; quiet unless progress,
+completion, failure or required user action; no ETA.
+
 ## 2026-10-18 — Raw Nightly metadata and reserved Store commitment VERIFIED
 
 Task control: product acceptance first. This eight-test synthetic boundary is

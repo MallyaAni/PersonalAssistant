@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-10-18 — Compose the private raw Nightly birth and close lifecycle
+
+New RawNightly private bodies retain source/context/birth/previous/pre-close
+reservation lineage, native write observations, exact large/NaN entry/decision
+metadata, saved-entry comparison and original-result recovery. All legacy files
+are unchanged. Public raw entry refuses before effects pending complete admission;
+raw Cycle predecessors/economic actions remain closed.
+
+Exact source854a7e7e/tree51716a4f passed seven new isolated tests,0fail/0error/0skip,
+7.011966079s/49248KiB. Actual ReplayBroker/codec/paper/storage ran birth and two
+sequential closes, native >512KiB/NaN restore/load-save parity and recovery without
+additional synthetic policy calls. Unavailable preservation, submission/source/
+predecessor/context/session refusals, wrong returned entry and post-save context
+invalidation preserve incomplete reservations without replay. Proof56fabbaa:
+research/raw-nightly-lifecycle-proof-2026-10-18.json.
+
+The whole private lifecycle body uses explicitly synthetic context/policy/trade
+orchestration/calendar/source-manifest globals; native market_daily planning,
+whole constructors/models/genuine execution and full pre-effect/native/two-host/
+RAM admission remain unverified. Production unchanged. Next product boundary is
+the committed raw Cycle→Nightly predecessor bridge. Original timingFAILED/publication
+CLOSED/pausedv6 unchanged. Diagram impact: NONE — existing private adapter boundaries.
+
 ## 2026-10-18 — Preserve raw Nightly metadata and commit its Store decision stage
 
 Versioned native-json-metadata/1 retains exact standalone native-format entry and

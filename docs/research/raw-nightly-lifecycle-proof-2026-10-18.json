@@ -1,0 +1,1382 @@
+{
+  "schema": "raw-nightly-lifecycle-proof/1",
+  "date": "2026-10-18",
+  "source_commit": "854a7e7e24cd08da9aa75cde23210537fedafc5c",
+  "source_tree": "51716a4f0fac223953f0ba52f111d439ae0a8e89",
+  "local_root": "/tmp/raw-nightly-lifecycle-20261018-v1",
+  "remote_root": "/home/animallya96/scratch/raw-nightly-lifecycle-20261018-v1",
+  "actual_before_stage_resources": {
+    "at_ns": "1792357491876564627",
+    "available_bytes": 9727004672,
+    "free_inodes": 243495196,
+    "host": "animallya-spark1",
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "native_map_sha256": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5",
+    "root": "/home/animallya96/scratch/raw-nightly-lifecycle-20261018-v1",
+    "scratch_free_bytes": 2804611194880,
+    "uid": 1000
+  },
+  "actual_proof": {
+    "elapsed_seconds": 7.0119660794734955,
+    "errors": 0,
+    "failures": 0,
+    "forbidden_imports": [],
+    "native_after": {
+      "backend.agents": {
+        "physical": {
+          "st_ctime_ns": "1792252095713452724",
+          "st_dev": "66306",
+          "st_ino": "56003890",
+          "st_mtime_ns": "1788401448000000000",
+          "st_size": "30"
+        },
+        "sha256": "6f54ad4ec10e21b19085989fe0589d17a654a8d1bafdf62d3a6f5838833bdae4"
+      },
+      "backend.agents.trading": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794570",
+          "st_mtime_ns": "1788496919000000000",
+          "st_size": "442"
+        },
+        "sha256": "e2674427378cce57e276762d62e35f76df4220e65f989b2468c6b900ff7a5593"
+      },
+      "backend.agents.trading.desk": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794576",
+          "st_mtime_ns": "1788651713000000000",
+          "st_size": "612"
+        },
+        "sha256": "c4915530882e9d8abb10ca8334719c416fc4b0d63502c25ea079ab7aba6fab57"
+      },
+      "backend.agents.trading.desk.execution_evidence": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794587",
+          "st_mtime_ns": "1789351742000000000",
+          "st_size": "2050"
+        },
+        "sha256": "ba0d3b0e329410d3915a57b44eba004ae9e1479e35022de8d52d2ca36e3ec171"
+      },
+      "backend.agents.trading.desk.paper": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794599",
+          "st_mtime_ns": "1792246285000000000",
+          "st_size": "66598"
+        },
+        "sha256": "a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c"
+      },
+      "backend.agents.trading.desk.planner": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794602",
+          "st_mtime_ns": "1789039782000000000",
+          "st_size": "3388"
+        },
+        "sha256": "ad917b5344654087e12b25b55cf558d3f519d3955ee2f3191b58ae263d8d248c"
+      },
+      "backend.market.alpaca_trading": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794961",
+          "st_mtime_ns": "1790986089000000000",
+          "st_size": "15211"
+        },
+        "sha256": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2"
+      },
+      "backend.market.calendar": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794968",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "13181"
+        },
+        "sha256": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4"
+      },
+      "backend.market.panel": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795121",
+          "st_mtime_ns": "1788651713000000000",
+          "st_size": "9202"
+        },
+        "sha256": "dee6b591080f18ba0b35c1241d96cb0e906957b3007f25be941957d2ee7252a2"
+      },
+      "backend.market.replay_broker": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795137",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "46431"
+        },
+        "sha256": "c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616"
+      },
+      "backend.market.store": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795174",
+          "st_mtime_ns": "1790214767000000000",
+          "st_size": "13705"
+        },
+        "sha256": "a299516ab68710d56355e036770d3c9695ed332641e9fa6ee4d64c9f6ede9aff"
+      },
+      "backend.market.yahoo": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795191",
+          "st_mtime_ns": "1788578401000000000",
+          "st_size": "13065"
+        },
+        "sha256": "311323b71355858a1ea1fca9d7b03861df71f35466a789d90a872bbbdc93e82d"
+      }
+    },
+    "native_before": {
+      "backend.agents": {
+        "physical": {
+          "st_ctime_ns": "1792252095713452724",
+          "st_dev": "66306",
+          "st_ino": "56003890",
+          "st_mtime_ns": "1788401448000000000",
+          "st_size": "30"
+        },
+        "sha256": "6f54ad4ec10e21b19085989fe0589d17a654a8d1bafdf62d3a6f5838833bdae4"
+      },
+      "backend.agents.trading": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794570",
+          "st_mtime_ns": "1788496919000000000",
+          "st_size": "442"
+        },
+        "sha256": "e2674427378cce57e276762d62e35f76df4220e65f989b2468c6b900ff7a5593"
+      },
+      "backend.agents.trading.desk": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794576",
+          "st_mtime_ns": "1788651713000000000",
+          "st_size": "612"
+        },
+        "sha256": "c4915530882e9d8abb10ca8334719c416fc4b0d63502c25ea079ab7aba6fab57"
+      },
+      "backend.agents.trading.desk.execution_evidence": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794587",
+          "st_mtime_ns": "1789351742000000000",
+          "st_size": "2050"
+        },
+        "sha256": "ba0d3b0e329410d3915a57b44eba004ae9e1479e35022de8d52d2ca36e3ec171"
+      },
+      "backend.agents.trading.desk.paper": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794599",
+          "st_mtime_ns": "1792246285000000000",
+          "st_size": "66598"
+        },
+        "sha256": "a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c"
+      },
+      "backend.agents.trading.desk.planner": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794602",
+          "st_mtime_ns": "1789039782000000000",
+          "st_size": "3388"
+        },
+        "sha256": "ad917b5344654087e12b25b55cf558d3f519d3955ee2f3191b58ae263d8d248c"
+      },
+      "backend.market.alpaca_trading": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794961",
+          "st_mtime_ns": "1790986089000000000",
+          "st_size": "15211"
+        },
+        "sha256": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2"
+      },
+      "backend.market.calendar": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794968",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "13181"
+        },
+        "sha256": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4"
+      },
+      "backend.market.panel": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795121",
+          "st_mtime_ns": "1788651713000000000",
+          "st_size": "9202"
+        },
+        "sha256": "dee6b591080f18ba0b35c1241d96cb0e906957b3007f25be941957d2ee7252a2"
+      },
+      "backend.market.replay_broker": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795137",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "46431"
+        },
+        "sha256": "c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616"
+      },
+      "backend.market.store": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795174",
+          "st_mtime_ns": "1790214767000000000",
+          "st_size": "13705"
+        },
+        "sha256": "a299516ab68710d56355e036770d3c9695ed332641e9fa6ee4d64c9f6ede9aff"
+      },
+      "backend.market.yahoo": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795191",
+          "st_mtime_ns": "1788578401000000000",
+          "st_size": "13065"
+        },
+        "sha256": "311323b71355858a1ea1fca9d7b03861df71f35466a789d90a872bbbdc93e82d"
+      }
+    },
+    "native_writer_globals_unchanged": true,
+    "peak_kib": 49248,
+    "scope": "Exact complete RawNightly private birth/close/read/recovery bodies and unchanged legacy observer CodeTypes with synthetic context/policy/trade-orchestration/calendar/source-manifest globals; real ReplayBroker/codec/paper snapshot-save/metadata/checkpoint/SQLite-CAS; native market_daily planning is NOT executed; public entry refuses before effects; no whole constructor/model/Cycle/genuine admission",
+    "skips": 0,
+    "source_after": {
+      "/audit/backend/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492704077747",
+          "st_dev": "66306",
+          "st_ino": "60586365",
+          "st_mtime_ns": "1792357492704077747",
+          "st_size": "35"
+        },
+        "sha256": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5"
+      },
+      "/audit/backend/market/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492840078667",
+          "st_dev": "66306",
+          "st_ino": "60586373",
+          "st_mtime_ns": "1792357492840078667",
+          "st_size": "42"
+        },
+        "sha256": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e"
+      },
+      "/audit/backend/market/historical_broker_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492789078322",
+          "st_dev": "66306",
+          "st_ino": "60586370",
+          "st_mtime_ns": "1792357492789078322",
+          "st_size": "40026"
+        },
+        "sha256": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08"
+      },
+      "/audit/backend/market/historical_conditional_cycle.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492883078958",
+          "st_dev": "66306",
+          "st_ino": "60586374",
+          "st_mtime_ns": "1792357492883078958",
+          "st_size": "61225"
+        },
+        "sha256": "086a85c052aa536edc77cf92035864eb92c8ce009d3e5593fa8f44e4b67bca9a"
+      },
+      "/audit/backend/market/historical_conditional_nightly.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492989079676",
+          "st_dev": "66306",
+          "st_ino": "60586379",
+          "st_mtime_ns": "1792357492989079676",
+          "st_size": "63878"
+        },
+        "sha256": "2b9ed4161123813a7d126229e4912e8c8b873caf896c4bd2a84d8b20f7fb95ee"
+      },
+      "/audit/backend/market/historical_native_metadata.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492801078404",
+          "st_dev": "66306",
+          "st_ino": "60586371",
+          "st_mtime_ns": "1792357492801078404",
+          "st_size": "6432"
+        },
+        "sha256": "c234c1005a7a8e50062be3aadcf6892e34a0adf8249d3351b69bd6e861b2d13e"
+      },
+      "/audit/backend/market/historical_packet_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492921079216",
+          "st_dev": "66306",
+          "st_ino": "60586376",
+          "st_mtime_ns": "1792357492921079216",
+          "st_size": "4763"
+        },
+        "sha256": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f"
+      },
+      "/audit/backend/market/historical_packet_demand.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492739077984",
+          "st_dev": "66306",
+          "st_ino": "60586368",
+          "st_mtime_ns": "1792357492739077984",
+          "st_size": "6666"
+        },
+        "sha256": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0"
+      },
+      "/audit/backend/market/historical_packet_registry.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492948079398",
+          "st_dev": "66306",
+          "st_ino": "60586378",
+          "st_mtime_ns": "1792357492948079398",
+          "st_size": "6645"
+        },
+        "sha256": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3"
+      },
+      "/audit/backend/market/historical_packet_store.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492831078607",
+          "st_dev": "66306",
+          "st_ino": "60586372",
+          "st_mtime_ns": "1792357492831078607",
+          "st_size": "41884"
+        },
+        "sha256": "be90098bf2c64e7e8da390f2b40db646b50c7d0be659e1a3c9391b8b5595fdbf"
+      },
+      "/audit/backend/market/historical_paper_component.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492750078059",
+          "st_dev": "66306",
+          "st_ino": "60586369",
+          "st_mtime_ns": "1792357492750078059",
+          "st_size": "4280"
+        },
+        "sha256": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648"
+      },
+      "/audit/backend/market/historical_physical_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492911079148",
+          "st_dev": "66306",
+          "st_ino": "60586375",
+          "st_mtime_ns": "1792357492911079148",
+          "st_size": "36101"
+        },
+        "sha256": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+      },
+      "/audit/backend/market/historical_raw_nightly.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492726077896",
+          "st_dev": "66306",
+          "st_ino": "60586367",
+          "st_mtime_ns": "1792357492726077896",
+          "st_size": "25181"
+        },
+        "sha256": "3871bad14b1fa86ec6a6fdba1b38260dde22f9d90056db90c65b09511975c79e"
+      },
+      "/audit/backend/market/historical_timing_packet.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492936079317",
+          "st_dev": "66306",
+          "st_ino": "60586377",
+          "st_mtime_ns": "1792357492936079317",
+          "st_size": "18520"
+        },
+        "sha256": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d"
+      },
+      "/audit/backend/tests/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492677077565",
+          "st_dev": "66306",
+          "st_ino": "60586363",
+          "st_mtime_ns": "1792357492677077565",
+          "st_size": "0"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "/audit/backend/tests/test_historical_packet_store.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492670077517",
+          "st_dev": "66306",
+          "st_ino": "60586362",
+          "st_mtime_ns": "1792357492670077517",
+          "st_size": "29406"
+        },
+        "sha256": "3556d1b866a4b48d3cad9508eee85b5e799ba8e5d7255ca48e7635747a1926aa"
+      },
+      "/audit/backend/tests/test_historical_paper_component_integration.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492631077253",
+          "st_dev": "66306",
+          "st_ino": "60586360",
+          "st_mtime_ns": "1792357492631077253",
+          "st_size": "17814"
+        },
+        "sha256": "906c22c408316e76ec04e94fbda874dbac0615ef61cf122f082b70ee2e0e0300"
+      },
+      "/audit/backend/tests/test_historical_raw_nightly_lifecycle.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492692077666",
+          "st_dev": "66306",
+          "st_ino": "60586364",
+          "st_mtime_ns": "1792357492692077666",
+          "st_size": "16342"
+        },
+        "sha256": "a1c9c5a730863bd60231eb7db3973fb3a9218c271edc11b767f9353baaafaad2"
+      },
+      "/audit/backend/tests/test_historical_raw_nightly_metadata.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492647077361",
+          "st_dev": "66306",
+          "st_ino": "60586361",
+          "st_mtime_ns": "1792357492647077361",
+          "st_size": "16557"
+        },
+        "sha256": "f7a4c26e44249122e5e7107d7cde71bd2cdf30a8463e869f09fa1dfe3682b182"
+      },
+      "/audit/run.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492610077111",
+          "st_dev": "66306",
+          "st_ino": "60586357",
+          "st_mtime_ns": "1792357492610077111",
+          "st_size": "4299"
+        },
+        "sha256": "6a0c04e17f78a89d454910e8ef2b07b0b81be8b372b06eed89debc5b11f8b5f5"
+      },
+      "/fixture/current-identity.json": {
+        "physical": {
+          "st_ctime_ns": "1792357492590076976",
+          "st_dev": "66306",
+          "st_ino": "60586356",
+          "st_mtime_ns": "1792357492590076976",
+          "st_size": "4070"
+        },
+        "sha256": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d"
+      },
+      "/fixture/native-source-map.json": {
+        "physical": {
+          "st_ctime_ns": "1792357491887197963",
+          "st_dev": "66306",
+          "st_ino": "60586353",
+          "st_mtime_ns": "1792357491887197963",
+          "st_size": "182466"
+        },
+        "sha256": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5"
+      }
+    },
+    "source_before": {
+      "/audit/backend/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492704077747",
+          "st_dev": "66306",
+          "st_ino": "60586365",
+          "st_mtime_ns": "1792357492704077747",
+          "st_size": "35"
+        },
+        "sha256": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5"
+      },
+      "/audit/backend/market/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492840078667",
+          "st_dev": "66306",
+          "st_ino": "60586373",
+          "st_mtime_ns": "1792357492840078667",
+          "st_size": "42"
+        },
+        "sha256": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e"
+      },
+      "/audit/backend/market/historical_broker_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492789078322",
+          "st_dev": "66306",
+          "st_ino": "60586370",
+          "st_mtime_ns": "1792357492789078322",
+          "st_size": "40026"
+        },
+        "sha256": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08"
+      },
+      "/audit/backend/market/historical_conditional_cycle.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492883078958",
+          "st_dev": "66306",
+          "st_ino": "60586374",
+          "st_mtime_ns": "1792357492883078958",
+          "st_size": "61225"
+        },
+        "sha256": "086a85c052aa536edc77cf92035864eb92c8ce009d3e5593fa8f44e4b67bca9a"
+      },
+      "/audit/backend/market/historical_conditional_nightly.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492989079676",
+          "st_dev": "66306",
+          "st_ino": "60586379",
+          "st_mtime_ns": "1792357492989079676",
+          "st_size": "63878"
+        },
+        "sha256": "2b9ed4161123813a7d126229e4912e8c8b873caf896c4bd2a84d8b20f7fb95ee"
+      },
+      "/audit/backend/market/historical_native_metadata.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492801078404",
+          "st_dev": "66306",
+          "st_ino": "60586371",
+          "st_mtime_ns": "1792357492801078404",
+          "st_size": "6432"
+        },
+        "sha256": "c234c1005a7a8e50062be3aadcf6892e34a0adf8249d3351b69bd6e861b2d13e"
+      },
+      "/audit/backend/market/historical_packet_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492921079216",
+          "st_dev": "66306",
+          "st_ino": "60586376",
+          "st_mtime_ns": "1792357492921079216",
+          "st_size": "4763"
+        },
+        "sha256": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f"
+      },
+      "/audit/backend/market/historical_packet_demand.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492739077984",
+          "st_dev": "66306",
+          "st_ino": "60586368",
+          "st_mtime_ns": "1792357492739077984",
+          "st_size": "6666"
+        },
+        "sha256": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0"
+      },
+      "/audit/backend/market/historical_packet_registry.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492948079398",
+          "st_dev": "66306",
+          "st_ino": "60586378",
+          "st_mtime_ns": "1792357492948079398",
+          "st_size": "6645"
+        },
+        "sha256": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3"
+      },
+      "/audit/backend/market/historical_packet_store.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492831078607",
+          "st_dev": "66306",
+          "st_ino": "60586372",
+          "st_mtime_ns": "1792357492831078607",
+          "st_size": "41884"
+        },
+        "sha256": "be90098bf2c64e7e8da390f2b40db646b50c7d0be659e1a3c9391b8b5595fdbf"
+      },
+      "/audit/backend/market/historical_paper_component.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492750078059",
+          "st_dev": "66306",
+          "st_ino": "60586369",
+          "st_mtime_ns": "1792357492750078059",
+          "st_size": "4280"
+        },
+        "sha256": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648"
+      },
+      "/audit/backend/market/historical_physical_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492911079148",
+          "st_dev": "66306",
+          "st_ino": "60586375",
+          "st_mtime_ns": "1792357492911079148",
+          "st_size": "36101"
+        },
+        "sha256": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+      },
+      "/audit/backend/market/historical_raw_nightly.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492726077896",
+          "st_dev": "66306",
+          "st_ino": "60586367",
+          "st_mtime_ns": "1792357492726077896",
+          "st_size": "25181"
+        },
+        "sha256": "3871bad14b1fa86ec6a6fdba1b38260dde22f9d90056db90c65b09511975c79e"
+      },
+      "/audit/backend/market/historical_timing_packet.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492936079317",
+          "st_dev": "66306",
+          "st_ino": "60586377",
+          "st_mtime_ns": "1792357492936079317",
+          "st_size": "18520"
+        },
+        "sha256": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d"
+      },
+      "/audit/backend/tests/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492677077565",
+          "st_dev": "66306",
+          "st_ino": "60586363",
+          "st_mtime_ns": "1792357492677077565",
+          "st_size": "0"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "/audit/backend/tests/test_historical_packet_store.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492670077517",
+          "st_dev": "66306",
+          "st_ino": "60586362",
+          "st_mtime_ns": "1792357492670077517",
+          "st_size": "29406"
+        },
+        "sha256": "3556d1b866a4b48d3cad9508eee85b5e799ba8e5d7255ca48e7635747a1926aa"
+      },
+      "/audit/backend/tests/test_historical_paper_component_integration.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492631077253",
+          "st_dev": "66306",
+          "st_ino": "60586360",
+          "st_mtime_ns": "1792357492631077253",
+          "st_size": "17814"
+        },
+        "sha256": "906c22c408316e76ec04e94fbda874dbac0615ef61cf122f082b70ee2e0e0300"
+      },
+      "/audit/backend/tests/test_historical_raw_nightly_lifecycle.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492692077666",
+          "st_dev": "66306",
+          "st_ino": "60586364",
+          "st_mtime_ns": "1792357492692077666",
+          "st_size": "16342"
+        },
+        "sha256": "a1c9c5a730863bd60231eb7db3973fb3a9218c271edc11b767f9353baaafaad2"
+      },
+      "/audit/backend/tests/test_historical_raw_nightly_metadata.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492647077361",
+          "st_dev": "66306",
+          "st_ino": "60586361",
+          "st_mtime_ns": "1792357492647077361",
+          "st_size": "16557"
+        },
+        "sha256": "f7a4c26e44249122e5e7107d7cde71bd2cdf30a8463e869f09fa1dfe3682b182"
+      },
+      "/audit/run.py": {
+        "physical": {
+          "st_ctime_ns": "1792357492610077111",
+          "st_dev": "66306",
+          "st_ino": "60586357",
+          "st_mtime_ns": "1792357492610077111",
+          "st_size": "4299"
+        },
+        "sha256": "6a0c04e17f78a89d454910e8ef2b07b0b81be8b372b06eed89debc5b11f8b5f5"
+      },
+      "/fixture/current-identity.json": {
+        "physical": {
+          "st_ctime_ns": "1792357492590076976",
+          "st_dev": "66306",
+          "st_ino": "60586356",
+          "st_mtime_ns": "1792357492590076976",
+          "st_size": "4070"
+        },
+        "sha256": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d"
+      },
+      "/fixture/native-source-map.json": {
+        "physical": {
+          "st_ctime_ns": "1792357491887197963",
+          "st_dev": "66306",
+          "st_ino": "60586353",
+          "st_mtime_ns": "1792357491887197963",
+          "st_size": "182466"
+        },
+        "sha256": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5"
+      }
+    },
+    "status": "VERIFIED_SOURCE_ISOLATED_RAW_NIGHTLY_LIFECYCLE",
+    "tests": 7
+  },
+  "actual_proof_bytes": 24131,
+  "actual_proof_sha256": "56fabbaab29090ba7c2531969d1b5b3ee978793a405160e83da67e64a157e5f0",
+  "phases": {
+    "execute": {
+      "exit": 0,
+      "stderr_bytes": 0
+    },
+    "preflight": {
+      "exit": 0,
+      "stderr_bytes": 0
+    },
+    "results": {
+      "exit": 0,
+      "stderr_bytes": 0
+    },
+    "source-copy": {
+      "exit": 0,
+      "stderr_bytes": 0
+    },
+    "stage": {
+      "exit": 0,
+      "stderr_bytes": 0
+    }
+  },
+  "results_inventory": {
+    "create-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792357493512308847",
+        "st_dev": "66306",
+        "st_ino": "60586380",
+        "st_mtime_ns": "1792357493512308847",
+        "st_size": "1493"
+      },
+      "sha256": "96540e9c3bb44fefac0e937d7b7b5c2d5e58c89da5e08e7e9c2b394889cac365"
+    },
+    "inspect-after.json": {
+      "physical": {
+        "st_ctime_ns": "1792357501297928797",
+        "st_dev": "66306",
+        "st_ino": "60586414",
+        "st_mtime_ns": "1792357501297928797",
+        "st_size": "3573"
+      },
+      "sha256": "2c00b6e26ce85df17eb046cccb40e80e9261f81d312c58896235237f5d7aa311"
+    },
+    "inspect-before.json": {
+      "physical": {
+        "st_ctime_ns": "1792357493662968842",
+        "st_dev": "66306",
+        "st_ino": "60586416",
+        "st_mtime_ns": "1792357493662968842",
+        "st_size": "3555"
+      },
+      "sha256": "ea1c84424c158ce64eb294196600821a1bd93a7e27dad76002fb19e389de8a37"
+    },
+    "out/proof.json": {
+      "physical": {
+        "st_ctime_ns": "1792357501171067189",
+        "st_dev": "66306",
+        "st_ino": "60587789",
+        "st_mtime_ns": "1792357501171067189",
+        "st_size": "24131"
+      },
+      "sha256": "56fabbaab29090ba7c2531969d1b5b3ee978793a405160e83da67e64a157e5f0"
+    },
+    "run.log": {
+      "physical": {
+        "st_ctime_ns": "1792357501168134929",
+        "st_dev": "66306",
+        "st_ino": "60586417",
+        "st_mtime_ns": "1792357501168134929",
+        "st_size": "1510"
+      },
+      "sha256": "f003ee0c20681168782140bb4898cd74b1b5af84fddfff23ac1edf6de293b3ab"
+    },
+    "source/pins.json": {
+      "physical": {
+        "st_ctime_ns": "1792357491890437985",
+        "st_dev": "66306",
+        "st_ino": "60586354",
+        "st_mtime_ns": "1792357491890437985",
+        "st_size": "2604"
+      },
+      "sha256": "36d71fc5b63428071db16f46aeed2a628ff2c5ce793eef95a9ecdfbaa6dc7642"
+    },
+    "stage.json": {
+      "physical": {
+        "st_ctime_ns": "1792357491893762616",
+        "st_dev": "66306",
+        "st_ino": "60586355",
+        "st_mtime_ns": "1792357491893762616",
+        "st_size": "3478"
+      },
+      "sha256": "00550ad6057067081e46dc12ea1a91e2bf05af6eed00bbc045fa34cbf101e00b"
+    }
+  },
+  "run_log": "test_birth_two_closes_reopen_exact_lineage_and_native_restore (backend.tests.test_historical_raw_nightly_lifecycle.RawNightlyLifecycleTests.test_birth_two_closes_reopen_exact_lineage_and_native_restore) ... ok\ntest_post_native_context_change_keeps_open_reservation (backend.tests.test_historical_raw_nightly_lifecycle.RawNightlyLifecycleTests.test_post_native_context_change_keeps_open_reservation) ... ok\ntest_predecessor_context_session_and_source_guards (backend.tests.test_historical_raw_nightly_lifecycle.RawNightlyLifecycleTests.test_predecessor_context_session_and_source_guards) ... ok\ntest_public_admission_refuses_before_any_effect (backend.tests.test_historical_raw_nightly_lifecycle.RawNightlyLifecycleTests.test_public_admission_refuses_before_any_effect) ... ok\ntest_submission_refused_before_native_broker_and_never_replayed (backend.tests.test_historical_raw_nightly_lifecycle.RawNightlyLifecycleTests.test_submission_refused_before_native_broker_and_never_replayed) ... ok\ntest_unavailable_close_preserves_nan_and_recovery_does_not_repeat (backend.tests.test_historical_raw_nightly_lifecycle.RawNightlyLifecycleTests.test_unavailable_close_preserves_nan_and_recovery_does_not_repeat) ... ok\ntest_wrong_returned_entry_preserves_failure_without_result (backend.tests.test_historical_raw_nightly_lifecycle.RawNightlyLifecycleTests.test_wrong_returned_entry_preserves_failure_without_result) ... ok\n\n----------------------------------------------------------------------\nRan 7 tests in 7.011s\n\nOK\n",
+  "runtime": {
+    "cid": "56caa56015230eb4255ef443015e49e1d7660f2cb4b394e1868a9b69eae851b0",
+    "host_config": {
+      "AutoRemove": false,
+      "Binds": null,
+      "BlkioDeviceReadBps": [],
+      "BlkioDeviceReadIOps": [],
+      "BlkioDeviceWriteBps": [],
+      "BlkioDeviceWriteIOps": [],
+      "BlkioWeight": 0,
+      "BlkioWeightDevice": [],
+      "CapAdd": null,
+      "CapDrop": [
+        "ALL"
+      ],
+      "Cgroup": "",
+      "CgroupParent": "",
+      "CgroupnsMode": "private",
+      "ConsoleSize": [
+        0,
+        0
+      ],
+      "ContainerIDFile": "/home/animallya96/scratch/raw-nightly-lifecycle-20261018-v1/cid",
+      "CpuCount": 0,
+      "CpuPercent": 0,
+      "CpuPeriod": 0,
+      "CpuQuota": 0,
+      "CpuRealtimePeriod": 0,
+      "CpuRealtimeRuntime": 0,
+      "CpuShares": 0,
+      "CpusetCpus": "",
+      "CpusetMems": "",
+      "DeviceCgroupRules": null,
+      "DeviceRequests": null,
+      "Devices": [],
+      "Dns": null,
+      "DnsOptions": [],
+      "DnsSearch": [],
+      "ExtraHosts": null,
+      "GroupAdd": null,
+      "IOMaximumBandwidth": 0,
+      "IOMaximumIOps": 0,
+      "IpcMode": "private",
+      "Isolation": "",
+      "Links": null,
+      "LogConfig": {
+        "Config": {},
+        "Type": "none"
+      },
+      "MaskedPaths": [
+        "/proc/acpi",
+        "/proc/asound",
+        "/proc/interrupts",
+        "/proc/kcore",
+        "/proc/keys",
+        "/proc/latency_stats",
+        "/proc/sched_debug",
+        "/proc/scsi",
+        "/proc/timer_list",
+        "/proc/timer_stats",
+        "/sys/devices/virtual/powercap",
+        "/sys/firmware"
+      ],
+      "Memory": 536870912,
+      "MemoryReservation": 0,
+      "MemorySwap": 536870912,
+      "MemorySwappiness": null,
+      "Mounts": [
+        {
+          "ReadOnly": true,
+          "Source": "/home/animallya96/scratch/raw-nightly-lifecycle-20261018-v1/source",
+          "Target": "/audit",
+          "Type": "bind"
+        },
+        {
+          "ReadOnly": true,
+          "Source": "/home/animallya96/scratch/raw-nightly-lifecycle-20261018-v1/fixture",
+          "Target": "/fixture",
+          "Type": "bind"
+        },
+        {
+          "ReadOnly": true,
+          "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+          "Target": "/native",
+          "Type": "bind"
+        },
+        {
+          "Source": "/home/animallya96/scratch/raw-nightly-lifecycle-20261018-v1/out",
+          "Target": "/out",
+          "Type": "bind"
+        }
+      ],
+      "NanoCpus": 1000000000,
+      "NetworkMode": "none",
+      "OomKillDisable": null,
+      "OomScoreAdj": 0,
+      "PidMode": "",
+      "PidsLimit": 32,
+      "PortBindings": {},
+      "Privileged": false,
+      "PublishAllPorts": false,
+      "ReadonlyPaths": [
+        "/proc/bus",
+        "/proc/fs",
+        "/proc/irq",
+        "/proc/sys",
+        "/proc/sysrq-trigger"
+      ],
+      "ReadonlyRootfs": true,
+      "RestartPolicy": {
+        "MaximumRetryCount": 0,
+        "Name": "no"
+      },
+      "Runtime": "runc",
+      "SecurityOpt": [
+        "no-new-privileges"
+      ],
+      "ShmSize": 67108864,
+      "Tmpfs": {
+        "/tmp": "rw,noexec,nosuid,size=64m"
+      },
+      "UTSMode": "",
+      "Ulimits": [
+        {
+          "Hard": 30,
+          "Name": "cpu",
+          "Soft": 30
+        },
+        {
+          "Hard": 1048576,
+          "Name": "fsize",
+          "Soft": 1048576
+        }
+      ],
+      "UsernsMode": "",
+      "VolumeDriver": "",
+      "VolumesFrom": null
+    },
+    "host_config_delta": {
+      "OomKillDisable": [
+        false,
+        null
+      ]
+    },
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "mount_raw_order_equal": false,
+    "mounts": [
+      {
+        "Destination": "/audit",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/raw-nightly-lifecycle-20261018-v1/source",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/fixture",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/raw-nightly-lifecycle-20261018-v1/fixture",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/native",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/out",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": true,
+        "Source": "/home/animallya96/scratch/raw-nightly-lifecycle-20261018-v1/out",
+        "Type": "bind"
+      }
+    ],
+    "state": {
+      "Dead": false,
+      "Error": "",
+      "ExitCode": 0,
+      "FinishedAt": "2026-10-18T21:05:01.199484917Z",
+      "OOMKilled": false,
+      "Paused": false,
+      "Pid": 0,
+      "Restarting": false,
+      "Running": false,
+      "StartedAt": "2026-10-18T21:04:53.696372092Z",
+      "Status": "exited"
+    }
+  },
+  "source_pins": {
+    "/audit/backend/__init__.py": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5",
+    "/audit/backend/market/__init__.py": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e",
+    "/audit/backend/market/historical_broker_checkpoint.py": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08",
+    "/audit/backend/market/historical_conditional_cycle.py": "086a85c052aa536edc77cf92035864eb92c8ce009d3e5593fa8f44e4b67bca9a",
+    "/audit/backend/market/historical_conditional_nightly.py": "2b9ed4161123813a7d126229e4912e8c8b873caf896c4bd2a84d8b20f7fb95ee",
+    "/audit/backend/market/historical_native_metadata.py": "c234c1005a7a8e50062be3aadcf6892e34a0adf8249d3351b69bd6e861b2d13e",
+    "/audit/backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+    "/audit/backend/market/historical_packet_demand.py": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0",
+    "/audit/backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+    "/audit/backend/market/historical_packet_store.py": "be90098bf2c64e7e8da390f2b40db646b50c7d0be659e1a3c9391b8b5595fdbf",
+    "/audit/backend/market/historical_paper_component.py": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648",
+    "/audit/backend/market/historical_physical_checkpoint.py": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604",
+    "/audit/backend/market/historical_raw_nightly.py": "3871bad14b1fa86ec6a6fdba1b38260dde22f9d90056db90c65b09511975c79e",
+    "/audit/backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+    "/audit/backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/audit/backend/tests/test_historical_packet_store.py": "3556d1b866a4b48d3cad9508eee85b5e799ba8e5d7255ca48e7635747a1926aa",
+    "/audit/backend/tests/test_historical_paper_component_integration.py": "906c22c408316e76ec04e94fbda874dbac0615ef61cf122f082b70ee2e0e0300",
+    "/audit/backend/tests/test_historical_raw_nightly_lifecycle.py": "a1c9c5a730863bd60231eb7db3973fb3a9218c271edc11b767f9353baaafaad2",
+    "/audit/backend/tests/test_historical_raw_nightly_metadata.py": "f7a4c26e44249122e5e7107d7cde71bd2cdf30a8463e869f09fa1dfe3682b182",
+    "/audit/run.py": "6a0c04e17f78a89d454910e8ef2b07b0b81be8b372b06eed89debc5b11f8b5f5",
+    "/fixture/current-identity.json": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d",
+    "/fixture/native-source-map.json": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5"
+  },
+  "tests": [
+    "test_birth_two_closes_reopen_exact_lineage_and_native_restore",
+    "test_post_native_context_change_keeps_open_reservation",
+    "test_predecessor_context_session_and_source_guards",
+    "test_public_admission_refuses_before_any_effect",
+    "test_submission_refused_before_native_broker_and_never_replayed",
+    "test_unavailable_close_preserves_nan_and_recovery_does_not_repeat",
+    "test_wrong_returned_entry_preserves_failure_without_result"
+  ],
+  "control_and_transport_readback": {
+    "/tmp/get_raw_nightly_lifecycle_results_20261018.py": {
+      "physical": {
+        "st_ctime_ns": "1792357543612299405",
+        "st_dev": "16777223",
+        "st_ino": "188674081",
+        "st_mtime_ns": "1792357543612299405",
+        "st_size": "2043"
+      },
+      "sha256": "2b76b06dfbb44cb90fb6a82863c38887f30721a9dca16eb9d0ad928aee2b367a"
+    },
+    "/tmp/launch_raw_nightly_lifecycle_20261018.py": {
+      "physical": {
+        "st_ctime_ns": "1792357378798888011",
+        "st_dev": "16777223",
+        "st_ino": "188628768",
+        "st_mtime_ns": "1792357378798888011",
+        "st_size": "9967"
+      },
+      "sha256": "e6bbb03addb47cd06a9c02c7f4ab1aceb9b27fe49307136ed6013f86ae138416"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/execute-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792357492997704058",
+        "st_dev": "16777223",
+        "st_ino": "188655898",
+        "st_mtime_ns": "1792357492997704058",
+        "st_size": "16978"
+      },
+      "sha256": "c48e04844b1486e545a26f0fa6c248e7edc34db9827926f02e6a4f4fb6922638"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/execute-exit.json": {
+      "physical": {
+        "st_ctime_ns": "1792357501299959153",
+        "st_dev": "16777223",
+        "st_ino": "188658491",
+        "st_mtime_ns": "1792357501299959153",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/execute-input.bin": {
+      "physical": {
+        "st_ctime_ns": "1792357492998081356",
+        "st_dev": "16777223",
+        "st_ino": "188655899",
+        "st_mtime_ns": "1792357492998030361",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/execute-stderr": {
+      "physical": {
+        "st_ctime_ns": "1792357492998674405",
+        "st_dev": "16777223",
+        "st_ino": "188655901",
+        "st_mtime_ns": "1792357492998625660",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/execute-stdout": {
+      "physical": {
+        "st_ctime_ns": "1792357501269622290",
+        "st_dev": "16777223",
+        "st_ino": "188655900",
+        "st_mtime_ns": "1792357501269622290",
+        "st_size": "242"
+      },
+      "sha256": "b8c27920e6c971e1978c39a26e1fdae4ff4fa5244b9856e253f86b57e12bc86a"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/preflight-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792357434265541380",
+        "st_dev": "16777223",
+        "st_ino": "188650696",
+        "st_mtime_ns": "1792357434265541380",
+        "st_size": "16915"
+      },
+      "sha256": "b339940d1f6f21458157b6084a736a10ef1adb1d0f4d79b64a668957943bc5b2"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/preflight-exit.json": {
+      "physical": {
+        "st_ctime_ns": "1792357435205106630",
+        "st_dev": "16777223",
+        "st_ino": "188650700",
+        "st_mtime_ns": "1792357435205106630",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/preflight-input.bin": {
+      "physical": {
+        "st_ctime_ns": "1792357434265954186",
+        "st_dev": "16777223",
+        "st_ino": "188650697",
+        "st_mtime_ns": "1792357434265897120",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/preflight-stderr": {
+      "physical": {
+        "st_ctime_ns": "1792357434266509814",
+        "st_dev": "16777223",
+        "st_ino": "188650699",
+        "st_mtime_ns": "1792357434266455064",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/preflight-stdout": {
+      "physical": {
+        "st_ctime_ns": "1792357435156456304",
+        "st_dev": "16777223",
+        "st_ino": "188650698",
+        "st_mtime_ns": "1792357435156456304",
+        "st_size": "243725"
+      },
+      "sha256": "7f06ec29a89ae52439e937630ac13008637b578294740bc777fb002c139016e6"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/results-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792357570871031848",
+        "st_dev": "16777223",
+        "st_ino": "188676142",
+        "st_mtime_ns": "1792357570871031848",
+        "st_size": "2700"
+      },
+      "sha256": "d43298f3f65f75374fa58bfab2b5d50ffddb75b9e31cd7f0977323307dde0dd8"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/results-exit.json": {
+      "physical": {
+        "st_ctime_ns": "1792357571606456129",
+        "st_dev": "16777223",
+        "st_ino": "188676151",
+        "st_mtime_ns": "1792357571606456129",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/results-input.bin": {
+      "physical": {
+        "st_ctime_ns": "1792357570871704707",
+        "st_dev": "16777223",
+        "st_ino": "188676143",
+        "st_mtime_ns": "1792357570871629277",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/results-stderr": {
+      "physical": {
+        "st_ctime_ns": "1792357570872141599",
+        "st_dev": "16777223",
+        "st_ino": "188676145",
+        "st_mtime_ns": "1792357570872079434",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/results-stdout": {
+      "physical": {
+        "st_ctime_ns": "1792357571560739379",
+        "st_dev": "16777223",
+        "st_ino": "188676144",
+        "st_mtime_ns": "1792357571560739379",
+        "st_size": "55638"
+      },
+      "sha256": "4f933d62f3facec8dcbcda5801b97fcd29c8865399ca86da0e0f748c7d460155"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/source-copy-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792357491952062987",
+        "st_dev": "16777223",
+        "st_ino": "188655714",
+        "st_mtime_ns": "1792357491952062987",
+        "st_size": "457"
+      },
+      "sha256": "83065ebb7db9543f9ef8088fc4ca3bee3de04b28afd3b544de41c0f615cc083b"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/source-copy-exit.json": {
+      "physical": {
+        "st_ctime_ns": "1792357492996455650",
+        "st_dev": "16777223",
+        "st_ino": "188655897",
+        "st_mtime_ns": "1792357492996455650",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/source-copy-input.bin": {
+      "physical": {
+        "st_ctime_ns": "1792357491952483801",
+        "st_dev": "16777223",
+        "st_ino": "188655715",
+        "st_mtime_ns": "1792357491952414281",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/source-copy-stderr": {
+      "physical": {
+        "st_ctime_ns": "1792357491953176230",
+        "st_dev": "16777223",
+        "st_ino": "188655717",
+        "st_mtime_ns": "1792357491953125235",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/source-copy-stdout": {
+      "physical": {
+        "st_ctime_ns": "1792357491952711230",
+        "st_dev": "16777223",
+        "st_ino": "188655716",
+        "st_mtime_ns": "1792357491952646661",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/stage-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792357491328860341",
+        "st_dev": "16777223",
+        "st_ino": "188655524",
+        "st_mtime_ns": "1792357491328860341",
+        "st_size": "16976"
+      },
+      "sha256": "d327cc11325f2f5e30c5f532d5adcba809b966398d99de0272a5b8f08d049558"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/stage-exit.json": {
+      "physical": {
+        "st_ctime_ns": "1792357491950012156",
+        "st_dev": "16777223",
+        "st_ino": "188655712",
+        "st_mtime_ns": "1792357491950012156",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/stage-input.bin": {
+      "physical": {
+        "st_ctime_ns": "1792357491330136394",
+        "st_dev": "16777223",
+        "st_ino": "188655525",
+        "st_mtime_ns": "1792357491330136394",
+        "st_size": "3371"
+      },
+      "sha256": "73d6d8f35e54f4ced33f75bb45f04d8dc72a62bd025149a947e73ce92e323abe"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/stage-stderr": {
+      "physical": {
+        "st_ctime_ns": "1792357491330889234",
+        "st_dev": "16777223",
+        "st_ino": "188655527",
+        "st_mtime_ns": "1792357491330824231",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/raw-nightly-lifecycle-20261018-v1/stage-stdout": {
+      "physical": {
+        "st_ctime_ns": "1792357491925635146",
+        "st_dev": "16777223",
+        "st_ino": "188655526",
+        "st_mtime_ns": "1792357491925635146",
+        "st_size": "206"
+      },
+      "sha256": "d8cc342974cd2c7ace82fc13c9205a0fe6f88bab49d4de567c70ebdfaf70063d"
+    },
+    "/tmp/raw_nightly_lifecycle_remote_20261018.py": {
+      "physical": {
+        "st_ctime_ns": "1792357335513915995",
+        "st_dev": "16777223",
+        "st_ino": "188628732",
+        "st_mtime_ns": "1792357335513915995",
+        "st_size": "13683"
+      },
+      "sha256": "f38ecbe607e09d95ebe689bbb75ba23a805ce80e22c8a3699a4d71b7e2ecf056"
+    },
+    "/tmp/run_raw_nightly_lifecycle_20261018.py": {
+      "physical": {
+        "st_ctime_ns": "1792357364109220704",
+        "st_dev": "16777223",
+        "st_ino": "188628646",
+        "st_mtime_ns": "1792357364109220704",
+        "st_size": "4299"
+      },
+      "sha256": "6a0c04e17f78a89d454910e8ef2b07b0b81be8b372b06eed89debc5b11f8b5f5"
+    }
+  },
+  "acceptance": {
+    "private_lifecycle": "VERIFIED: exact complete private RawNightly birth/close/read/recover bodies with explicit synthetic context/policy/trade-orchestration/calendar/source-manifest globals. Actual ReplayBroker/codec, native snapshot/save, raw metadata, checkpoint and SQLite/CAS execute. Birth100000cash/zero shares/10bp -> prior-day close -> sequential next-day close -> Store/checkpoint reopen -> exact original recovery with policy count unchanged. Native paper >512KiB/NaN restores and native load/save preserves exact bytes.",
+    "lineage": "VERIFIED: source/context/birth/previous/before component reservation BEFORE native work; finite result physically binds reservation/result marker, native-write observations/final component, returned entry's exact native encoding vs actual saved last history entry, and entry/decision aggregate allowance. New checkpoint references compare authenticated raw SHA+length, not descriptor equality. Actual broker bytes remain exact; unavailable observation legitimately advances broker clock while native paper bytes remain unchanged.",
+    "failures": "VERIFIED: public admission refuses before effects; attempted native submission refuses before underlying broker and leaves OPEN/no result; wrong returned entry and post-native context invalidation retain saved NaN bytes/OPEN without replay; missing completion never reexecutes; changed source/context/date and non-lifecycle predecessor refuse. All expected refusal cases passed, no unexpected application/runtime failure.",
+    "runtime": "VERIFIED: exactf612 UID1000/networknone/read-only/1CPU/512MiB=swap/PIDs32/tmp64/capdropALL/no-new-privileges/no-healthcheck/lognone, synthetic native artifact1MiB FSIZE, source/control/log256KiB;16 product/test pins;22 payload+pins23physicalsourcefiles;12native SHA+physical bookends and native writer globals unchanged. Four full mounts equal by destination, raw order differs; HostConfig only OomKillDisable false→null. Five SSH/stage/copy/execute/results phases exit0/empty stderr.",
+    "legacy": "VERIFIED SOURCE: all pre-existing files unchanged; new module/test/runner only. Legacy Nightly, Cycle, component, metadata and raw primitive byte pins remain exact. No old7/8/10/11/5 or other completed gate/body rerun.",
+    "native_planning": "UNVERIFIED: native market_daily.paper_trade planning is replaced by an explicitly synthetic callable; no actual policy/model/provider call. Synthetic helper next_session covers only the tested date pair. No full constructor/context/model/calendar/economic capability acceptance.",
+    "admission": "UNVERIFIED/CLOSED: public raw initialize/close unconditionally pause before effects. Raw Cycle final-settlement/predecessor, full pre-effect physical reservation/interruption/native metadata/two-host/model/RAM lifecycle, genuine proposals/ordinary/intraday/fills, independent publication and API/UI remain open. This is a private no-submission raw Nightly chain, not genuine execution or native outcome adoption.",
+    "historical": "Original timing FAILED/publication CLOSED/missing receipts unchanged. Original roots immutable; genuinev6 OPEN/PAUSED/no replay/adoption/new genuine run."
+  },
+  "scope_limits": [
+    "Raw lifecycle receipt standalone-current-raw-nightly-lifecycle/1 is distinct from schema2 standalone metadata and legacy schema1. No raw root enters a legacy blob string. Native operation/adoption/packet integration remain false.",
+    "Private lifecycle supports raw Nightly predecessors only. Raw Cycle receipts refuse rather than weakening legacy _final_settlement. Due economic actions refuse pending coordinator evidence.",
+    "NativeCapture decision deepcopy, full native load/save and raw verification, metadata encoding and bounded readback retain whole-process/full-horizon RAM limitations; headroom and local bounds are not pre-effect reservations.",
+    "Explicit synthetic checkpoint512KiB spans/1MiB raw/32body32page slots in addition to retained reused fixture reservations. Production limits unchanged. No crash/transport-loss/full preallocation/two-host acceptance.",
+    "No model/provider/account/service/production/deployment change, new agent, usage-limited retry, Spark2 image load, history rewrite or original evidence mutation."
+  ],
+  "review": {
+    "worker": "existing trading_action_consistency READONLY",
+    "before": [
+      "full new source/tests/controls/exact invocation",
+      "actual fresh preflight and exact one-run call",
+      "fixed7file getter/actual proof pin/exact retrieval"
+    ],
+    "after": "actual complete proof/log/source/runtime/scope reviewed; no mismatch",
+    "findings_fixed_before_first_runtime": [
+      "previous pointer added to pre-effect reservation/publish/read/recovery",
+      "seventh test exercises post-save context invalidation",
+      "unavailable paper-only comparison plus exact post-observe broker hash",
+      "explicit fresh native restore parent"
+    ],
+    "local_review_failure": "Reviewer AST-only OPTIONS literal_eval refused computed concatenation; corrected read-only explicit prefix inspection, no mutation/operational effect."
+  },
+  "static_checks": {
+    "all_preexisting_files_unchanged": true,
+    "new_purpose_comments": 43,
+    "tests": 7,
+    "ast_warnings_errors": true,
+    "zero_backspaces": true,
+    "runner_byte_equal": true,
+    "pin_count": 16,
+    "source_payload_bytes": 395720,
+    "diff_check": true,
+    "ruff": "UNAVAILABLE; no full unit/build/lint/deployment claim"
+  },
+  "diagram_impact": "NONE — private historical lifecycle composition behind a closed public execution gate, within existing account adapter/storage boundaries.",
+  "next": "Integrate raw Cycle final settlement/committed OUTCOME_COMMITTED receipts into RawNightly.raw_predecessor using actual Store head/entry/receipt linkage and source-bound final raw reconciliation components. New source-isolated synthetic assertions only; preserve legacy _final_settlement and public genuine admission gate. Never rerun this7 or old8/10/11/5 gates for documentation."
+}
