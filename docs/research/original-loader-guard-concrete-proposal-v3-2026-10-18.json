@@ -1,0 +1,302 @@
+{
+  "schema": "original-loader-guard-concrete-source-proposal/3",
+  "status": "SOURCE_ONLY_UNEXECUTED_NOT_RUNTIME_ADMITTED",
+  "starting_head": "5267f7685964bc841b4af86b3ad3a66661bc2df1",
+  "objective": "Complete the inert full v3 synthetic source closure around the actual tiny-accepted format-2 candidate, retaining every original case and cap.",
+  "candidate_harness": {
+    "repository_path": "sources/original-loader-capacity-harness-v3-2026-10-18.py",
+    "sha256": "030cb5bb25f89c2785e6acbd55aceff5c99b632a5eb538079ee027362ae6178a",
+    "bytes": 31002,
+    "prior_actual_tiny_proof": "original-loader-guard-v3-tiny-proof-2026-10-18.json",
+    "public_execute_unconditionally_refuses": true
+  },
+  "sources": {
+    "bootstrap": {
+      "bytes": 4156,
+      "changed_functions": [
+        "sources"
+      ],
+      "purpose_comments": 4,
+      "repository_path": "sources/original-loader-guard-bootstrap-v3-2026-10-18.py",
+      "sha256": "0eeb8459393e2ff006dce8ccb03aa9e0c14eb5be7af1f7251342d793292f429c",
+      "unchanged_function_asts": 3
+    },
+    "caller": {
+      "bytes": 7197,
+      "changed_functions": [
+        "admission",
+        "main",
+        "proposed_call"
+      ],
+      "purpose_comments": 8,
+      "repository_path": "sources/original-loader-guard-caller-v3-2026-10-18.py",
+      "sha256": "14933f1735352a313bdff6de627c7180c73ebb816ea46c214eb8273773b0f7ec",
+      "unchanged_function_asts": 5
+    },
+    "controller": {
+      "bytes": 17688,
+      "changed_functions": [
+        "proposed_run"
+      ],
+      "purpose_comments": 14,
+      "repository_path": "sources/original-loader-guard-controller-v3-2026-10-18.py",
+      "sha256": "544e3c96c262ee8ee5e1c786a7d66f8709183a9932c176534edef523f6b5df8a",
+      "unchanged_function_asts": 13
+    },
+    "fixtures": {
+      "bytes": 15890,
+      "changed_functions": [
+        "dataclass_codes",
+        "generated",
+        "prepare"
+      ],
+      "purpose_comments": 11,
+      "repository_path": "sources/original-loader-guard-fixtures-v3-2026-10-18.py",
+      "sha256": "59441acb9e373f109fd822e5b71ba1bee638d3f378defda9d32757476604c05c",
+      "unchanged_function_asts": 7
+    },
+    "stage": {
+      "bytes": 6496,
+      "changed_functions": [
+        "packet",
+        "stage"
+      ],
+      "purpose_comments": 8,
+      "repository_path": "sources/original-loader-guard-stage-v3-2026-10-18.py",
+      "sha256": "81bb71d80c202e08f9c38a04692bee3fd1ccca2ec39779de4ac3080f2f364254",
+      "unchanged_function_asts": 6
+    },
+    "suite": {
+      "bytes": 29329,
+      "changed_functions": [
+        "run"
+      ],
+      "purpose_comments": 22,
+      "repository_path": "sources/original-loader-guard-suite-v3-2026-10-18.py",
+      "sha256": "6fee6ff1038e26b9923959688f06407ac7faa3ef3c6851b8791ed4c0cdacfdb6",
+      "unchanged_function_asts": 21
+    },
+    "verifier": {
+      "bytes": 27603,
+      "changed_functions": [
+        "fold",
+        "verify"
+      ],
+      "purpose_comments": 17,
+      "repository_path": "sources/original-loader-guard-verifier-v3-2026-10-18.py",
+      "sha256": "ed3af3c9a026f2e83da3e976e7f4b596a62106984e32e1503f41466da46dbcdd",
+      "unchanged_function_asts": 15
+    }
+  },
+  "packet_mapping": {
+    "audit/bootstrap.py": "sources/original-loader-guard-bootstrap-v3-2026-10-18.py",
+    "audit/fixture.py": "sources/original-loader-guard-fixtures-v3-2026-10-18.py",
+    "audit/suite.py": "sources/original-loader-guard-suite-v3-2026-10-18.py",
+    "audit/harness.py": "sources/original-loader-capacity-harness-v3-2026-10-18.py",
+    "audit/producer-source.txt": "backend/market/live_model_history_audit_inputs.py@fae5bfc7d7438071094f31f42e884cb48e3709c55f364954e51c28302d3c3e30",
+    "audit/continuation-source.txt": "backend/cli/market_strategy_continue.py@14357ed7b87618ee514dd3cd4e4a71e2c27290875c3df257e692773e524cfaaf",
+    "owner/controller.py": "sources/original-loader-guard-controller-v3-2026-10-18.py",
+    "owner/verifier.py": "sources/original-loader-guard-verifier-v3-2026-10-18.py",
+    "owner/caller.py": "sources/original-loader-guard-caller-v3-2026-10-18.py",
+    "stage.py": "sources/original-loader-guard-stage-v3-2026-10-18.py"
+  },
+  "version_contract": {
+    "packet_schema": "n2-guard-source-packet/3",
+    "source_review_schema": "n2-guard-source-review/3",
+    "stage_schema": "n2-guard-source-stage/3",
+    "fixture_schema": "guard-fixtures/3",
+    "suite_schema": "n2-guard-synthetic-suite/3",
+    "admission_schema": "n2-guard-synthetic-admission/3",
+    "independent_proof_schema": "n2-guard-independent-proof/3",
+    "manifest_schema": "n2-capacity-call-manifest/2",
+    "fingerprint": {
+      "algorithm": "cpython-code-marshal-format-2-sha256/1",
+      "marshal_version": 2
+    },
+    "algorithm_binding": "New review/bundle/fixture/suite/admission fields require explicit manifest schema and fingerprint. All three fixture marshal operations select2, including retained templates. Stage/bootstrap/controller/verifier require exact030c candidate SHA; no old8field record reinterpretation."
+  },
+  "preservation": {
+    "old_v2_sources": {
+      "bootstrap": {
+        "bytes": 3706,
+        "sha256": "d0e888e703626cf98a9b3f12dd625cec4789f951bea9a8f583aa8dbcf46d8db5"
+      },
+      "caller": {
+        "bytes": 6863,
+        "sha256": "9bb579fe0cc839823c8a0558e4da994ea94deb8865a28a243c9da49effaa0503"
+      },
+      "controller": {
+        "bytes": 16728,
+        "sha256": "2e505205cc8a3793d7b3313a5b5c3b670b00134575982d26c725787b6530df5a"
+      },
+      "fixtures": {
+        "bytes": 15657,
+        "sha256": "9ec2e1e335d7f905a26751099f5a75f4ac47a34fc97ff58f9a6b3497153ec1cc"
+      },
+      "stage": {
+        "bytes": 6012,
+        "sha256": "a7c03b87ede45671c7ae7c9e08172b4f4b9ea8e95a0d2eeaa1b3b815fb08afb2"
+      },
+      "suite": {
+        "bytes": 28793,
+        "sha256": "364307c95d7ee0544f746ac36a2771293f26f3a1e1c96b52f13e32ae7484144e"
+      },
+      "verifier": {
+        "bytes": 26520,
+        "sha256": "e0fa867a793c78b8260d935ed0c1518f60caa10ba3ab11e084a51ae249ec92f5"
+      }
+    },
+    "old_harness_737d_and_schema1": true,
+    "all_failed_completed_roots_admissions_preserved": true,
+    "scenarios65_AST_unchanged": true,
+    "case_child_assess_AST_unchanged": true,
+    "cleanup4_controls_AST_unchanged": true,
+    "expected_G08_generated_factory_refusal_unchanged": true,
+    "embedded_BASE_AUDIT_DATACLASS_bytes_unchanged": true,
+    "source_caps_and_acceptance_assertions_not_weakened": true
+  },
+  "source_staging": {
+    "packet_files": 10,
+    "per_source_bytes": 262144,
+    "total_decoded_bytes": 1048576,
+    "packet_bytes": 2097152,
+    "packet_created": false,
+    "packet_sha256": null,
+    "source_or_runtime_roots_created": false,
+    "builder": "Pinned stage.packet(exact_ten_sources) builds finite source-only packet; no helper imported/executed here.",
+    "writer": "Pinned stage.stage(new_root,packet_raw,externalSHA) writes exclusive source/readback/fsync/review/receipt. Staging never grants runtime admission."
+  },
+  "future_roots": {
+    "capsule": "/home/animallya96/scratch/n2-loader-guard-transfer-20261018-v3",
+    "stage": "/home/animallya96/scratch/n2-loader-guard-source-20261018-v3",
+    "run": "/home/animallya96/scratch/n2-loader-guard-synthetic-20261018-v3",
+    "independent_review": "/home/animallya96/scratch/n2-loader-guard-synthetic-20261018-v3-independent-review-v3"
+  },
+  "future_caller": {
+    "sha256": "14933f1735352a313bdff6de627c7180c73ebb816ea46c214eb8273773b0f7ec",
+    "argv": [
+      "python3",
+      "-I",
+      "-S",
+      "-B",
+      "<externally preserved exact caller path>",
+      "--admitted-synthetic-v3",
+      "<packet path>",
+      "<packet SHA256>",
+      "/home/animallya96/scratch/n2-loader-guard-source-20261018-v3",
+      "/home/animallya96/scratch/n2-loader-guard-synthetic-20261018-v3",
+      "<fresh admission path>",
+      "<fresh admission SHA256>",
+      "14933f1735352a313bdff6de627c7180c73ebb816ea46c214eb8273773b0f7ec"
+    ],
+    "default_refuses": true,
+    "sole_activation_route": "Self/source SHA plus NEW external n2-guard-synthetic-admission/3, scope SYNTHETIC_ONLY_NOT_GENUINE_LOADER, exact schema2/fingerprint metadata and two bounded actual host/image evidence files, actual UID/host/root/image/source/resource review. Age at most120 real seconds. No future time/fake clock.",
+    "existing_admissions_reusable": false,
+    "admission_created": false,
+    "execution_authorized": false,
+    "prerequisites": "Preserve exact small packet/caller/source readback; independently review fresh SYNTHETIC actual host/image/UID/jobs/resources and exact final invocation BEFORE any create. One new separately named run only; preserve any failure, no automatic retry."
+  },
+  "runtime": {
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "daemon": "unix:///var/run/docker.sock",
+    "pull": "never",
+    "user": "1000:1000",
+    "network": "none",
+    "read_only": true,
+    "cpu": 1,
+    "memory_bytes": 2147483648,
+    "memory_swap_bytes": 2147483648,
+    "pids": 32,
+    "tmpfs": {
+      "/tmp": "rw,size=64m"
+    },
+    "healthcheck": "NONE",
+    "logging": "none",
+    "cap_drop": [
+      "ALL"
+    ],
+    "security_opt": [
+      "no-new-privileges:true"
+    ],
+    "headroom_not_reservation": {
+      "memory_bytes": 5368709120,
+      "disk_bytes": 4294967296,
+      "inodes": 8192
+    },
+    "actual_fresh_host_image_proof": null
+  },
+  "prepare": {
+    "arguments": [
+      "prepare",
+      "/audit/review.json",
+      "<exact review SHA>"
+    ],
+    "binds": [
+      "tiny staged audit RO",
+      "new preparation out RW"
+    ],
+    "wait_seconds": 15,
+    "expected_prepared_files": 15,
+    "scope": "Tiny stdlib fake backend only. Producer remains inert text; original inputs AST prefix compiled and stops first non-backend dependency before data. No actual financial model/data/account artifacts."
+  },
+  "suite": {
+    "arguments": [
+      "suite",
+      "/fixture/bundle.json",
+      "<exact bundle SHA>"
+    ],
+    "binds": [
+      "tiny staged audit RO",
+      "new prepared fixtures RO",
+      "new prepared tiny source /app RO",
+      "new suite output RW"
+    ],
+    "cases": 65,
+    "cleanup_children": 4,
+    "total_children": 69,
+    "total_child_ceiling": 128,
+    "work_alarm_seconds": 60,
+    "owner_alarm_seconds": 120,
+    "phase_wait_seconds": 75,
+    "child_CPU_seconds": 3,
+    "child_wait_seconds": 3,
+    "per_file_bytes": 262144,
+    "output_target_not_quota_bytes": 33554432,
+    "prepared15_full_SHA_physical_before_after": true,
+    "stress": "Unchanged one shared256MiB ASCII fixture remains through complete JSON and UTF8. Timeout/OOM/FSIZE is FAILED intended observation, not output-size refusal acceptance. No cap increase or automatic replay.",
+    "injected": "Tiny SourceBook FD/root recipe and fake audit/runtime/inspection declarations are explicitly synthetic; no genuine2446 or model admission. Kernel metrics remain actual/unpatched."
+  },
+  "independent_verifier": {
+    "imports_fixture_suite_harness_backend": false,
+    "wall_seconds": 30,
+    "inspect_wait_seconds": 10,
+    "fresh_exact_CID_inspections": 2,
+    "file_count_bound": 4096,
+    "cumulative_read_bytes": 67108864,
+    "ordinary_file_bytes": 262144,
+    "packet_bytes": 2097152,
+    "oversized_exception": "Exact G05-grow private replacement path only; full bytes/SHA/inode/source formula checked, no generic read cap increase.",
+    "preserves_all_cases": true,
+    "checks": "Packet/source SHA/physical, all15prepared, schema2/fingerprint/16generated records, actual complete runtimes, exact69children/case order/refusals/markers/coexistence/metrics/G18 terminal+READY+alarm/control receipts. No test body replay for verification."
+  },
+  "validation": {
+    "source_only_independent_review": "Existing healthy trading_action_consistency READONLY narrow diffs: no blocker; schema propagation/harness pins/65cases/G18/G08/caps consistent. No imports/compilation/probes/edits.",
+    "AST_purpose_comments": 112,
+    "embedded_purpose_comments": 16,
+    "Ruff": "UNAVAILABLE from established environment; no lint claim"
+  },
+  "unverified": [
+    "Actual packet/staging/caller readback/fresh runtime admission",
+    "full65cases+4G18 runtime acceptance",
+    "genuine2446 source/import/runtime/loader admission",
+    "combined numerical model+receipt RAM/horizon",
+    "historical/ordinary/intraday/fill/UI",
+    "actual twohost/Spark2 image/daemon-temp/incremental RAM"
+  ],
+  "original_timing": "FAILED_UNCHANGED",
+  "publication": "CLOSED",
+  "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+  "genuine_loader_full_history_or_account_authorized": false,
+  "heartbeat": "ACTIVE",
+  "next": "Do not regenerate/re-review this prepared closure for docs. Pin exact packet/caller and preserve independent source readback; independently review fresh synthetic host/image/jobs/resources and exact invocation before ONE new v3 full attempt. No old completed or failed body replay, admission reuse or genuine launch."
+}
