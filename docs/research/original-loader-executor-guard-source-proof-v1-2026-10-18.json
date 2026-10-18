@@ -1,0 +1,88 @@
+{
+  "schema": "capacity-executor-source-guard-checkpoint/1",
+  "status": "SOURCE_PREPARED_STATIC_CHECKS_VERIFIED_RUNTIME_UNADMITTED",
+  "starting_git": {"branch": "codex/learned-live-release-20261006", "HEAD": "09f2349f5373246ef88edcfc4cb8f446b5b8e561", "working_tree": "CLEAN", "pull_rebase_origin_main": "EXIT0_UP_TO_DATE"},
+  "source_commit": "3a699124ae32a38756f514d6f575723687e047a3",
+  "files": {
+    "sources/capacity-executor-source-guard-v1-2026-10-18.py": {"sha256": "3b8be00b26cbf02f375bca5207e207dc8505dcfb997e281ab7c80cee3c187594", "bytes": 23426},
+    "sources/prepare-capacity-executor-guard-v1-2026-10-18.py": {"sha256": "83f3ab892eb01e32c1097824f0fa8307fce0ff70d8501c41b109dafe4f0d0694", "bytes": 14435},
+    "sources/review-capacity-executor-guard-v1-2026-10-18.py": {"sha256": "971bd591467f04064a4914b690b809e731d41246fe6e077ab0613de26d00cab2", "bytes": 8359},
+    "sources/preserve-capacity-executor-guard-v1-2026-10-18.py": {"sha256": "5ff77172119eef3fc0c30d0bb5f931dcf87941f94389769874fe2659bd428208", "bytes": 3458},
+    "original-loader-executor-guard-contract-v1-2026-10-18.json": {"sha256": "6f031ea03e976b897c21dc5c25454493bc3b8081d9acc14f61a110f38afc3b44", "bytes": 6414},
+    "original-loader-executor-guard-static-v1-2026-10-18.json": {"sha256": "9d31e8c141dd758524160dcf361bac3ec6ea0fba39891cbd3bd6e528c866a7c1", "bytes": 2506},
+    "original-loader-executor-guard-static-v2-2026-10-18.json": {"sha256": "840cb75aa1c1f0d9084d516aee92a75d22e9532576dee17b845437ed4f96e782", "bytes": 2554},
+    "original-loader-executor-guard-independent-v1-2026-10-18.json": {"sha256": "17cd628138ff59d207286b90e9122c3659c77ef9f529afd79549af000a82dfd5", "bytes": 1617},
+    "original-loader-executor-guard-preservation-v1-2026-10-18.json": {"sha256": "8145370f8ef238acce37adc13d9e9b47b7b50a183fb094d4009eb043d5289049", "bytes": 468}
+  },
+  "new_source_identities": {
+    "source_book": "CapacitySourceBookV1",
+    "finder": "CapacityBackendFinderV1",
+    "guard": "CapacityCallFenceV1",
+    "declared_executor_files": 2468,
+    "raw_map_sha256": "544fe1859ec11e62f2bf506eff70e9111a6a930d53dff59450d9d4816abaa202",
+    "compact_files_sha256": "b7043211743bad04da3cc894faa6d2d85977d93ff10f4345178fdbad0ff1d3bd",
+    "requirements_sha256": "c2a720543b3f2dda0d824e61b6d15f5ee7f7fa47669dad8891d33ff584971b63",
+    "manifest_schema": "capacity-executor-call-manifest/1",
+    "manifest": null,
+    "assembled_tree": null,
+    "source_scope": "Distinct inert standalone audit/control source outside unchanged2468 backend map, not an extension or replacement of old2446 SourceBook or030cb5bb guard."
+  },
+  "source_findings": [
+    "Exact2468 recipe, canonical path/SHA entries, externally supplied decimal-string root identity, held/named no-follow root checks and complete authentication are source requirements before guard construction. Python1MiB/metadata16MiB remain unchanged.",
+    "Finder declares exact package parent/search paths and module spec/origin/file checks. It compiles authenticated bytes at real filenames, registers compiler-emitted nested CodeTypes, then enters module body. No finder body was exercised.",
+    "Guard retains original forbidden-call checks before dynamic handling, trip/audit/install/advance bodies, slot and source bounds. Exact dataclass-only format2 remains; obsolete daily-prefix generated path is absent. No verify exception.",
+    "External CPython3.12.14/dataclasses source binding and bounded source read are declared. They do not establish live producer function/global/class flags, binary build certification or selected generated provenance.",
+    "Actual selected callable/global/type/generated/native/phase closure remains unresolved. Existing three-field call mechanism and exact generated membership alone are not full provenance. Runtime/mount/resource/lifecycle owner and all original admissions remain external and mandatory."
+  ],
+  "actual_operational_execution": {
+    "local_stdlib_only": true,
+    "initial_builder": "EXIT0 produced preserved initial source draft; payload bodies UNRUN",
+    "initial_static_checker": "EXIT0 32 static checks; immutable initial report retained",
+    "final_static_checker": "EXIT0 33 static checks after builder input proofSHA pin",
+    "final_builder": "EXIT0 fresh exclusive candidate reproduction, byte-exact23426B/3b8be00b; builder loaded as operational control via runpy, payload text never compiled/imported",
+    "preserver": "EXIT0 eight source/review copies plus one exclusive builder candidate, full readbacks/file/root/resolved-parent fsync",
+    "payload_functions": 25,
+    "payload_function_bodies": "UNRUN",
+    "payload_CodeType_compilation": false,
+    "package_backend_model_import_or_body": false,
+    "SSH_Docker_hostprobe_data_credentials_old_gate_packet_census": false
+  },
+  "static_validation": {
+    "checks": 33,
+    "scope": "Six full utility ASTs, eleven constants, four full guard methods, all profile refusals before dynamic seam and generated membership tail, register traversal after one added predicate, removed obsolete path, compile/register/body order, explicit package path, public refusal, exactmap/contract/priorproof/dataclasspin, purpose comments.",
+    "AST_warnings_as_errors": "PASS",
+    "purpose_comments": {"payload": 25, "builder": 2, "checker": 4, "preserver": 2, "total": 33},
+    "JSON_hashlinks_staged_diff": "PASS",
+    "ruff": "EXECUTABLE_AND_MODULE_UNAVAILABLE",
+    "behavior_or_CodeType_global_type_native_RAM_proof": false
+  },
+  "independent_review": {
+    "worker": "existing /root/trading_action_consistency",
+    "review_only": true,
+    "new_agent_or_limited_agent_retry": false,
+    "corrections": "Package search locations fixed before any body execution; builder prior-proofSHA pinned before final reproduction. Initial sources/checker/report preserved.",
+    "final": "No remaining deterministic issue found within source-only scope. All25 payload functions UNRUN; provenance/manifests/native/runtime remain unadmitted."
+  },
+  "preservation": {
+    "root": "/tmp/capacity-executor-guard-source-20261018-v1",
+    "data_files": 9,
+    "data_bytes": 86195,
+    "manifest_sha256": "23684938221ba4407061acf39f7c55d724d3f3b338359b89d47c7019581adf3b",
+    "manifest_bytes": 6631,
+    "draft_root": "/tmp/capacity-executor-guard-source-drafts-20261018-v1",
+    "file_readback_root_resolved_parent_fsync": true,
+    "crash_durability_guarantee": false,
+    "all_old_failed_completed_roots_packets_admissions": "UNCHANGED"
+  },
+  "next_source_only": "Resolve complete selected callable/global/type/dataclass live-producer/class-flag/native/phase contracts against this distinct source before any capacity proposal. Prepare only exact previously-unread bounded Python/version/RECORD/native metadata reads listed in ada07c95, independently review source/invocation/resources before use. No package import, guessed binary suffix, recursive copy or closed gate/census replay.",
+  "execution_authorized": false,
+  "entrypoint_modelstrategy_manifests_bootstrap_owner_caller_stager_packet_runtime_launch_admission": null,
+  "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+  "original_timing": "FAILED",
+  "publication": "CLOSED",
+  "missing_original_raw_receipts": "MISSING",
+  "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+  "actual_twohost_Spark2_image_daemon_temp_RAM": "UNADMITTED_UNCHANGED",
+  "heartbeat": "ACTIVE",
+  "diagram": "NONE"
+}
