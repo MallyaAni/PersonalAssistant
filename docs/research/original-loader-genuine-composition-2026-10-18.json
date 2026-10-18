@@ -1,0 +1,758 @@
+{
+  "contract_sha256": "ecc58ad7f6ec65bb42a28ef0c2bea8d116b0e9be5ea59e490388fa0e74dfddc8",
+  "execution_receipt": {
+    "bytes": 2187,
+    "read_mode": "One new bounded held-FD SHA-authenticated original metadata read; no Docker/host resource probes, data read or application import.",
+    "retained_local_root": "/tmp/original-loader-genuine-composition-20261018-v1",
+    "sha256": "eaa07107c2f88e31f6c3eaf1f5eee1bf579bc86fed60db7f578a502859960e96"
+  },
+  "namespace_recipe": {
+    "composed_app_source": {
+      "mode": "ro",
+      "requires": "NEW immutable full2446 source tree authenticated against source_map; never original producer source substituted for composed tree.",
+      "source": null,
+      "target": "/app"
+    },
+    "exact_actual_mount_inventory": null,
+    "excluded_original_writable_results": true,
+    "new_audit_and_admission_sources": [
+      {
+        "mode": "ro",
+        "source": null,
+        "target": "/audit"
+      },
+      {
+        "mode": "ro",
+        "source": null,
+        "target": "/admission"
+      }
+    ],
+    "original_account": {
+      "mode": "ro",
+      "source": "/home/animallya96/scratch/live-model-history-full-20261013-v1/output/account",
+      "target": "/original-account"
+    },
+    "original_readonly_absolute_host_aliases": [
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/live-model-history-full-20261013-v1/source",
+        "target": "/home/animallya96/scratch/live-model-history-full-20261013-v1/source"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/live-model-history-20261013-v4/market",
+        "target": "/home/animallya96/scratch/live-model-history-20261013-v4/market"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/deploy/anios/data/market",
+        "target": "/home/animallya96/deploy/anios/data/market"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/open-source-inputs-20261001",
+        "target": "/home/animallya96/scratch/open-source-inputs-20261001"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/live-policy-inputs-20261004/frozen-actions",
+        "target": "/home/animallya96/scratch/live-policy-inputs-20261004/frozen-actions"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/frozen-learned-entry-cubes-20261002-8670c86d",
+        "target": "/home/animallya96/scratch/frozen-learned-entry-cubes-20261002-8670c86d"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/passive-valuation-20261004-111e0655/proof/passive-arrays",
+        "target": "/home/animallya96/scratch/passive-valuation-20261004-111e0655/proof/passive-arrays"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/independent-reviewed-source-20261004-f9c87cdd/proof/independent-original-input-proof.json",
+        "target": "/home/animallya96/scratch/independent-reviewed-source-20261004-f9c87cdd/proof/independent-original-input-proof.json"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/joint-funded-20261004-8a7b9cc7/codex-reviewed-economic-study-execution-receipt-20261004.json",
+        "target": "/home/animallya96/scratch/joint-funded-20261004-8a7b9cc7/codex-reviewed-economic-study-execution-receipt-20261004.json"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/actual-policy-study-20261004-4ff85fbf/evidence",
+        "target": "/home/animallya96/scratch/actual-policy-study-20261004-4ff85fbf/evidence"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/learned-nightly-first-ordinary-failure-20261012",
+        "target": "/home/animallya96/scratch/learned-nightly-first-ordinary-failure-20261012"
+      }
+    ],
+    "original_readonly_target_mounts_except_original_app": [
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/live-model-history-20261013-v4/market",
+        "target": "/private"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/deploy/anios/data/market",
+        "target": "/original"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/open-source-inputs-20261001",
+        "target": "/inputs"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/live-policy-inputs-20261004/frozen-actions",
+        "target": "/actions"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/frozen-learned-entry-cubes-20261002-8670c86d",
+        "target": "/cubes"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/passive-valuation-20261004-111e0655/proof/passive-arrays",
+        "target": "/passive"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/independent-reviewed-source-20261004-f9c87cdd/proof/independent-original-input-proof.json",
+        "target": "/economic-input-proof.json"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/joint-funded-20261004-8a7b9cc7/codex-reviewed-economic-study-execution-receipt-20261004.json",
+        "target": "/economic-receipt.json"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/actual-policy-study-20261004-4ff85fbf/evidence",
+        "target": "/evidence"
+      },
+      {
+        "mode": "ro",
+        "source": "/home/animallya96/scratch/learned-nightly-first-ordinary-failure-20261012",
+        "target": "/observation"
+      }
+    ],
+    "original_source_at_original_absolute_host_alias": true,
+    "sole_new_proof": {
+      "mode": "rw",
+      "requires": "NEW independently admitted UID1000 nonoverlapping root with only preallocated guard-failure.bin before capacity steps.",
+      "source": null,
+      "target": "/capacity-proof"
+    },
+    "source_root_paths_are_not_reservations": true
+  },
+  "next": "Resolve the first static bootstrap incompatibility by a separately source-reviewed capacity-only dependency boundary that does not execute broker/account/planner functions. Review exact declaration needs and preservation helpers before proposing code. Keep existing guard/G08/source/native/config/caps unchanged; no genuine launch or automatic synthetic rerun. A new audited source design or explicit versioned contract is required if immutable recipe cannot provide this separation.",
+  "phase_manifest_recipe": {
+    "actual_executable_manifest": null,
+    "calls": null,
+    "fingerprint": {
+      "algorithm": "cpython-code-marshal-format-2-sha256/1",
+      "marshal_version": 2
+    },
+    "generated": null,
+    "phase_intent": {
+      "ADMISSION": "Unchanged invocation/runtime/source/producer/calendar/preservation and real OriginalArchives.",
+      "AFTER": "Second complete authentication receipt, full graph equality/source and original physical bookends.",
+      "BEFORE": "First complete two-pass input/source authentication receipt retained.",
+      "BOOTSTRAP": "Only authenticated required imports after active fence/finder; currently blocked.",
+      "DONE": "Candidate only; independent stopped-runtime/preservation review still required.",
+      "FROZEN": "Retained context and alias-aware array inventory; no distribution/select/fit.",
+      "LOAD": "One exact loader call, original daily-prefix transformation, constructor prediction only; stop on return.",
+      "SERIALIZE": "Both receipt graphs, archives/context, complete JSON and UTF8 coexist through durable output and final peak metric."
+    },
+    "reason": "No manifest contents can override the unchanged pre-lookup effect-prefix refusal. Do not publish an all-functions/wildcard phase list or synthetic fixture manifest as a genuine one.",
+    "required_phase_order": [
+      "BOOTSTRAP",
+      "ADMISSION",
+      "BEFORE",
+      "LOAD",
+      "FROZEN",
+      "AFTER",
+      "SERIALIZE",
+      "DONE"
+    ],
+    "required_schema": "n2-capacity-call-manifest/2"
+  },
+  "runtime_recipe_not_admission": {
+    "cpu": 1,
+    "execution_authorized": false,
+    "fresh_headroom": null,
+    "genuine_controller": null,
+    "healthcheck": false,
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "launch_command": null,
+    "log_driver": "none",
+    "memory_bytes": 2147483648,
+    "memory_swap_bytes": 2147483648,
+    "network": "none",
+    "pids_limit_proposed": 32,
+    "pull_policy": "never",
+    "read_only": true,
+    "runtime_admission": null,
+    "tmpfs": {
+      "/tmp": "rw,size=64m"
+    },
+    "uid": "1000:1000"
+  },
+  "schema": "original-n2-genuine-capacity-composition/1",
+  "source_map": {
+    "CURRENT_paper_substituted": false,
+    "bytes": 279395,
+    "compact_sha256": "503e8d508ebe5fdc82a17c11974ccce5366c60ce8e78fc549c129fc6c6d81e03",
+    "files": 2446,
+    "materialized_source_tree": false,
+    "native31_compact_sha256": "99e62ab9f8b02bc315ce59b81f8b461ae5c988e275cdf09cacf2d36b1025f8ab",
+    "original_git_map_is_separate": true,
+    "path": "original-loader-genuine-source-map-2026-10-18.json",
+    "precedence": [
+      "original_git_map",
+      "frozen_n2_baseline",
+      "six_original_audit_overlays",
+      "three_binding_reviews"
+    ],
+    "sha256": "9a0bfbeb59e0a63072453a6ac0e930e65a89684efd90bc705febf9b1bdbe6224"
+  },
+  "source_root_dependency_check": {
+    "loader_DEPENDENCIES_all9_match_original_git": true,
+    "unreviewed_source_root_conflict_asserted": false
+  },
+  "starting_revision": "eb670398f67cc8b28d85817cbdf1d1c86a894e8b",
+  "static_incompatibility": {
+    "do_not": [
+      "preload or import before installing guard",
+      "inject TinySourceBook/fake audit/metric patches into genuine path",
+      "approve generated rows as if they bypass effect guard",
+      "change G08 expected refusal or relax effect/source/phase/cap checks"
+    ],
+    "effect_prefix": "backend.agents.trading.desk",
+    "exact_first_runtime_event_certified": false,
+    "manifest_can_override": false,
+    "next_dataclass_factory_identity": "backend.agents.trading.desk.planner.__create_fn__",
+    "observed_genuine_runtime_failure": false,
+    "other_reachable_barriers": [
+      "paper and Alpaca generated dataclass factory functions also match effect prefixes.",
+      "ADMISSION preserved_archives calls paper.state_path, also an effect-prefix function; no call-list entry can admit it."
+    ],
+    "path": [
+      "backend/cli/audit_original_live_model_history.py",
+      "backend/agents/trading/desk/paper.py",
+      "backend/agents/trading/desk/planner.py"
+    ],
+    "planner_Order": {
+      "AST_sha256": "e6273c65ccf3f9440c934b43d56839445d9464e34ec6ea939629ce654ad2512b",
+      "end_line": 36,
+      "line": 29
+    },
+    "profile_effect_branch_before_manifest_lookup": true,
+    "reason": "BROKER_OR_ACCOUNT_FUNCTION",
+    "status": "SOURCE_PROVED_UNAVOIDABLE_BACKEND_BOOTSTRAP_FRONTIER_IF_PRIOR_EXTERNAL_IMPORTS_SUCCEED"
+  },
+  "static_sources": {
+    "backend/__init__.py": {
+      "bytes": 29,
+      "classes": [],
+      "imports": [],
+      "source_origin": "matching local bytes",
+      "source_sha256": "162e5eeb402108f20b1a976525f5bbf5a03a12ea619f64a19ce5c0fe9aec09af"
+    },
+    "backend/agents/__init__.py": {
+      "bytes": 30,
+      "classes": [],
+      "imports": [],
+      "source_origin": "matching local bytes",
+      "source_sha256": "6f54ad4ec10e21b19085989fe0589d17a654a8d1bafdf62d3a6f5838833bdae4"
+    },
+    "backend/agents/trading/__init__.py": {
+      "bytes": 442,
+      "classes": [],
+      "imports": [],
+      "source_origin": "matching local bytes",
+      "source_sha256": "e2674427378cce57e276762d62e35f76df4220e65f989b2468c6b900ff7a5593"
+    },
+    "backend/agents/trading/desk/__init__.py": {
+      "bytes": 612,
+      "classes": [],
+      "imports": [],
+      "source_origin": "matching local bytes",
+      "source_sha256": "c4915530882e9d8abb10ca8334719c416fc4b0d63502c25ea079ab7aba6fab57"
+    },
+    "backend/agents/trading/desk/execution_evidence.py": {
+      "bytes": 2050,
+      "classes": [],
+      "imports": [
+        {
+          "line": 7,
+          "statement": "import math"
+        },
+        {
+          "line": 8,
+          "statement": "from datetime import datetime"
+        },
+        {
+          "line": 9,
+          "statement": "from zoneinfo import ZoneInfo"
+        }
+      ],
+      "source_origin": "matching local bytes",
+      "source_sha256": "ba0d3b0e329410d3915a57b44eba004ae9e1479e35022de8d52d2ca36e3ec171"
+    },
+    "backend/agents/trading/desk/paper.py": {
+      "bytes": 63498,
+      "classes": [
+        {
+          "decorators": [
+            "dataclass"
+          ],
+          "line": 235,
+          "name": "PaperState"
+        },
+        {
+          "decorators": [
+            "dataclass(frozen=True)"
+          ],
+          "line": 307,
+          "name": "PaperOrder"
+        },
+        {
+          "decorators": [
+            "dataclass(frozen=True)"
+          ],
+          "line": 1170,
+          "name": "Settled"
+        }
+      ],
+      "imports": [
+        {
+          "line": 37,
+          "statement": "import json"
+        },
+        {
+          "line": 38,
+          "statement": "import math"
+        },
+        {
+          "line": 39,
+          "statement": "import os"
+        },
+        {
+          "line": 40,
+          "statement": "import tempfile"
+        },
+        {
+          "line": 41,
+          "statement": "from contextlib import contextmanager"
+        },
+        {
+          "line": 42,
+          "statement": "from dataclasses import asdict, dataclass, field, fields, is_dataclass, replace"
+        },
+        {
+          "line": 43,
+          "statement": "from datetime import UTC, datetime"
+        },
+        {
+          "line": 44,
+          "statement": "from pathlib import Path"
+        },
+        {
+          "line": 46,
+          "statement": "from backend.agents.trading.desk import execution_evidence, planner"
+        }
+      ],
+      "source_origin": "original Git blob at 27471b9c61b958f759e9f48b80acaf60cdf75f2e",
+      "source_sha256": "e2eef2f0270497d9a5944212d6581b7ebf503d2675687a172e76690fcc7bc3c3"
+    },
+    "backend/agents/trading/desk/planner.py": {
+      "bytes": 3388,
+      "classes": [
+        {
+          "decorators": [
+            "dataclass(frozen=True)"
+          ],
+          "line": 29,
+          "name": "Order"
+        }
+      ],
+      "imports": [
+        {
+          "line": 21,
+          "statement": "from dataclasses import dataclass"
+        },
+        {
+          "line": 23,
+          "statement": "import numpy as np"
+        }
+      ],
+      "source_origin": "matching local bytes",
+      "source_sha256": "ad917b5344654087e12b25b55cf558d3f519d3955ee2f3191b58ae263d8d248c"
+    },
+    "backend/cli/audit_original_live_model_history.py": {
+      "bytes": 21981,
+      "classes": [],
+      "imports": [
+        {
+          "line": 3,
+          "statement": "import argparse"
+        },
+        {
+          "line": 4,
+          "statement": "import json"
+        },
+        {
+          "line": 5,
+          "statement": "import os"
+        },
+        {
+          "line": 6,
+          "statement": "import socket"
+        },
+        {
+          "line": 7,
+          "statement": "import tempfile"
+        },
+        {
+          "line": 8,
+          "statement": "from dataclasses import fields"
+        },
+        {
+          "line": 9,
+          "statement": "from datetime import UTC, datetime"
+        },
+        {
+          "line": 10,
+          "statement": "from hashlib import sha256"
+        },
+        {
+          "line": 11,
+          "statement": "from pathlib import Path"
+        },
+        {
+          "line": 13,
+          "statement": "import numpy as np"
+        },
+        {
+          "line": 14,
+          "statement": "import sklearn"
+        },
+        {
+          "line": 16,
+          "statement": "from backend.agents.trading.desk import paper"
+        },
+        {
+          "line": 17,
+          "statement": "from backend.market import calendar"
+        },
+        {
+          "line": 18,
+          "statement": "from backend.market import live_model_history_audit_inputs as loader"
+        },
+        {
+          "line": 19,
+          "statement": "from backend.market import live_model_history_input_auth as byte_auth"
+        },
+        {
+          "line": 20,
+          "statement": "from backend.market import original_history_json as streamed"
+        },
+        {
+          "line": 21,
+          "statement": "from backend.market.live_model_history_receipts import require"
+        },
+        {
+          "line": 22,
+          "statement": "from backend.market.live_model_history_stream_audit import InitialReceipts, OriginalArchives, StreamAudit, authenticate_file, digest, pinned, strict_json"
+        },
+        {
+          "line": 31,
+          "statement": "from backend.market.live_policy_replay import plain"
+        }
+      ],
+      "source_origin": "matching local bytes",
+      "source_sha256": "22d374f166b77d4b0346120aa55b3f9e652496503b88d3fae0681be04b9ab5d5"
+    },
+    "backend/market/alpaca_trading.py": {
+      "bytes": 15211,
+      "classes": [
+        {
+          "decorators": [],
+          "line": 23,
+          "name": "AlpacaTradingError"
+        },
+        {
+          "decorators": [
+            "dataclass(frozen=True, slots=True)"
+          ],
+          "line": 28,
+          "name": "Position"
+        },
+        {
+          "decorators": [
+            "dataclass(frozen=True, slots=True)"
+          ],
+          "line": 40,
+          "name": "Account"
+        },
+        {
+          "decorators": [],
+          "line": 62,
+          "name": "AlpacaTradingClient"
+        }
+      ],
+      "imports": [
+        {
+          "line": 11,
+          "statement": "import json"
+        },
+        {
+          "line": 12,
+          "statement": "import os"
+        },
+        {
+          "line": 13,
+          "statement": "from collections.abc import Callable"
+        },
+        {
+          "line": 14,
+          "statement": "from dataclasses import dataclass"
+        },
+        {
+          "line": 15,
+          "statement": "from datetime import date"
+        },
+        {
+          "line": 16,
+          "statement": "from typing import Any"
+        },
+        {
+          "line": 17,
+          "statement": "from urllib import error, request"
+        }
+      ],
+      "source_origin": "matching local bytes",
+      "source_sha256": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2"
+    },
+    "backend/market/live_model_history.py": {
+      "bytes": 6444,
+      "classes": [
+        {
+          "decorators": [],
+          "line": 28,
+          "name": "FrozenCurrentRiskReader"
+        },
+        {
+          "decorators": [],
+          "line": 125,
+          "name": "FrozenCurrentMarketReader"
+        },
+        {
+          "decorators": [],
+          "line": 143,
+          "name": "FrozenCurrentGradePolicy"
+        }
+      ],
+      "imports": [
+        {
+          "line": 7,
+          "statement": "from copy import deepcopy"
+        },
+        {
+          "line": 8,
+          "statement": "from dataclasses import replace"
+        },
+        {
+          "line": 9,
+          "statement": "from types import SimpleNamespace"
+        },
+        {
+          "line": 11,
+          "statement": "import numpy as np"
+        },
+        {
+          "line": 13,
+          "statement": "from backend.market import direct_daily_arithmetic, forward_arithmetic, joint_funded_policy, learned_retention_models"
+        },
+        {
+          "line": 19,
+          "statement": "from backend.market.counterfactual_holding import CounterfactualRiskReader"
+        },
+        {
+          "line": 20,
+          "statement": "from backend.market.daily_arithmetic_bridge import _hash"
+        },
+        {
+          "line": 21,
+          "statement": "from backend.market.market_conditioned_holding import ForwardMarketConditionedHoldingReader"
+        },
+        {
+          "line": 24,
+          "statement": "from backend.market.replay_broker import ReplayBroker"
+        }
+      ],
+      "source_origin": "matching local bytes",
+      "source_sha256": "fa8ecdb9c0c32d2f034ece8c7da57fec9f198d8d8427a0273d5b59dc4ca6b37b"
+    },
+    "backend/market/live_model_history_audit_inputs.py": {
+      "bytes": 12316,
+      "classes": [
+        {
+          "decorators": [
+            "dataclass(frozen=True, slots=True)"
+          ],
+          "line": 68,
+          "name": "AuditInputs"
+        }
+      ],
+      "imports": [
+        {
+          "line": 3,
+          "statement": "import ast"
+        },
+        {
+          "line": 4,
+          "statement": "import inspect"
+        },
+        {
+          "line": 5,
+          "statement": "from dataclasses import dataclass"
+        },
+        {
+          "line": 6,
+          "statement": "from datetime import date"
+        },
+        {
+          "line": 7,
+          "statement": "from hashlib import sha256"
+        },
+        {
+          "line": 8,
+          "statement": "from pathlib import Path"
+        },
+        {
+          "line": 9,
+          "statement": "from types import SimpleNamespace"
+        },
+        {
+          "line": 11,
+          "statement": "import numpy as np"
+        },
+        {
+          "line": 13,
+          "statement": "from backend.cli import market_actual_policy_timing as economics"
+        },
+        {
+          "line": 14,
+          "statement": "from backend.cli import market_strategy_continue as continuation"
+        },
+        {
+          "line": 15,
+          "statement": "from backend.market import forward_arithmetic, holding_risk_bank"
+        },
+        {
+          "line": 16,
+          "statement": "from backend.market.daily_arithmetic_bridge import _hash"
+        },
+        {
+          "line": 17,
+          "statement": "from backend.market.live_execution_inputs import DAILY_BASIS, PassiveMarks, RawExecutionInputs, _actions, _dates_by_name, _inherited_actions, review_action_export"
+        },
+        {
+          "line": 26,
+          "statement": "from backend.market.live_model_history import FrozenCurrentMarketReader, FrozenCurrentRiskReader"
+        },
+        {
+          "line": 30,
+          "statement": "from backend.market.live_model_history_receipts import require"
+        },
+        {
+          "line": 31,
+          "statement": "from backend.market.live_model_history_stream_audit import authenticate_file, pinned, strict_json"
+        }
+      ],
+      "source_origin": "matching local bytes",
+      "source_sha256": "fae5bfc7d7438071094f31f42e884cb48e3709c55f364954e51c28302d3c3e30"
+    },
+    "backend/market/replay_broker.py": {
+      "bytes": 46431,
+      "classes": [
+        {
+          "decorators": [
+            "dataclass(frozen=True, slots=True)"
+          ],
+          "line": 27,
+          "name": "ReplayPosition"
+        },
+        {
+          "decorators": [],
+          "line": 146,
+          "name": "ReplayBroker"
+        }
+      ],
+      "imports": [
+        {
+          "line": 10,
+          "statement": "from __future__ import annotations"
+        },
+        {
+          "line": 12,
+          "statement": "import math"
+        },
+        {
+          "line": 13,
+          "statement": "from contextlib import suppress"
+        },
+        {
+          "line": 14,
+          "statement": "from copy import deepcopy"
+        },
+        {
+          "line": 15,
+          "statement": "from dataclasses import dataclass"
+        },
+        {
+          "line": 16,
+          "statement": "from datetime import UTC, datetime"
+        },
+        {
+          "line": 17,
+          "statement": "from fractions import Fraction"
+        },
+        {
+          "line": 19,
+          "statement": "import numpy as np"
+        },
+        {
+          "line": 21,
+          "statement": "from backend.market import calendar"
+        },
+        {
+          "line": 22,
+          "statement": "from backend.market.alpaca_trading import Account, AlpacaTradingError"
+        }
+      ],
+      "source_origin": "matching local bytes",
+      "source_sha256": "c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616"
+    }
+  },
+  "status": "INERT_COMPOSITION_WITH_STATIC_BOOTSTRAP_INCOMPATIBILITY",
+  "unchanged": {
+    "genuine_loader_not_run": true,
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "heartbeat": "ACTIVE",
+    "historical_weekday_intraday_fill_UI": "UNVERIFIED",
+    "model_import_load_fit_or_predict": false,
+    "old_source_roots_admissions": true,
+    "original_files_changed": false,
+    "original_timing": "FAILED",
+    "production_changed": false,
+    "publication": "CLOSED"
+  }
+}
