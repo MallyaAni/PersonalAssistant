@@ -1,0 +1,105 @@
+{
+  "schema": "callback-symbol-version-source-contract/1",
+  "status": "SOURCE_PREPARED_UNEXECUTED_NO_RUNTIME_ADMISSION",
+  "date": "2026-10-18",
+  "requirements": {
+    "path": "docs/research/original-loader-callback-symbol-requirements-v1-2026-10-18.json",
+    "bytes": 12746,
+    "sha256": "ca3503c0c58352297104f286ca8784422dc66612aa46ad27eb20f9bbfd51b40f"
+  },
+  "actual_section_page": {
+    "path": "docs/research/original-loader-callback-section-page-v1-2026-10-18.json",
+    "bytes": 15279,
+    "sha256": "43ce64015bf67ad315821caa994123c7134d55e4dabb89c7bea9414607a5daa3",
+    "contents": "Authenticated complete header records only. No new actual symbol/version binary data read or decoding."
+  },
+  "sources": [
+    {
+      "bytes": 13496,
+      "name": "parse-callback-symbol-data-v1-2026-10-18.py",
+      "purpose_functions": 8,
+      "sha256": "6fe24522e57910ed2f9136762ea4f910f46fd6a6a91afe4f55c80b5e8462bd11"
+    },
+    {
+      "bytes": 14287,
+      "name": "fold-callback-symbol-data-v1-2026-10-18.py",
+      "purpose_functions": 9,
+      "sha256": "a526e85d63313fac8a4de11eb31dc34964ad9eaeed6d93a4a78d25cb5b469127"
+    },
+    {
+      "name": "check-callback-symbol-data-v1-2026-10-18.py",
+      "bytes": 17574,
+      "sha256": "847127b3a70b7522645e8901c881cb135ca2da5850400c9a282647096a9cd76d",
+      "purpose_functions": 5
+    },
+    {
+      "bytes": 3491,
+      "name": "prepare-callback-symbol-preserver-v1-2026-10-18.py",
+      "purpose_functions": 2,
+      "sha256": "8aaf0af5879576123811f76150e87f01401295871f451e1122cd44c8e6e6cc54"
+    },
+    {
+      "bytes": 4956,
+      "name": "preserve-callback-symbol-sources-v1-2026-10-18.py",
+      "purpose_functions": 4,
+      "sha256": "5c595bb8f6b52bc69025d6c9672c14663bd8724fe217cc748667cb8fcafe0d06"
+    }
+  ],
+  "interfaces": {
+    "primary": "decode(raw_bytes, complete_section_page_bytes) -> complete finite DATA result; encoded(result) -> canonical bytes; pages(result) -> complete ordered bounded page byte strings.",
+    "independent": "fold(raw_bytes, complete_section_page_bytes) -> separately reconstructed equal DATA result; canonical(result), fold_pages(result). No primary import/call; explicit int.from_bytes widths/cursors, byte-set version coverage.",
+    "fixtures": "run(primary_module, independent_module) returns every declared new synthetic outcome; no self-loading, fileIO, network, subprocess, native or application imports. Requires a future exact-source owner.",
+    "input_authority": "Pure DATA functions do not establish source/root/runtime authority. Future actual driver MUST authenticate binary and prior complete page with existing SHA+original decimal physical pins, two full held/named reads and later full SHA/physical bookends before adoption. Fixture page hashes authenticate only SYNTHETIC fixture DATA."
+  },
+  "scope": {
+    "header_binding": "Bind complete supplied page schema/count/order/index/full raw section header bytes/fields to binary; select unique numeric SHT_SYMTAB/SHT_DYNSYM/GNU_versym/GNU_verneed and linked SHT_STRTAB records, verify selected full payload hashes. No program-header/dynamic parser invocation or generic full-ELF conformance claim.",
+    "symbols": "Retain every raw record/name/terminating-NUL span/hash, full numeric fields, zero/duplicate/substrings/nonUTF8, both low2 and low3 visibility projections with named reference conventions, undefined/ordinary/reserved indices without dereferencing values/sizes. Explicit unsupported XINDEX and version-definition/index-extension-table domain.",
+    "versions": "Raw u16 values/low15/highbit by dynamic-symbol index. Verneed/Vernaux relative offsets use their explicit bases; finite counts/alignment/progress/ranges/overlap/termination, complete gap bytes and declaration associations with multiplicity. LOCAL/GLOBAL/RESERVED/missing/matched/ambiguous are declared-data labels, not runtime provider resolution.",
+    "hash_work": "One16MiB ledger charges whole binary/page, all header/selected-table/record/string-terminator/gap hashed bytes BEFORE hashing. Result reports hash_work_bytes_before_output_hashes; future driver MUST carry that remaining budget forward and charge any complete-result/page/output hashes before hashing, not silently start fresh per-file ledgers.",
+    "records": "8192 total retained rows includes nested auxiliaries; upfront symbol/versym/association/need budget and auxiliary precharge. Additional candidate-reference fanout charged within the same8192 row/reference budget BEFORE association serialization. No output truncation/deduplication.",
+    "paging": "Complete finite canonical result<=16MiB, greedy complete records<=64 and encoded page<=65536 bytes, max256pages and16MiBtotal. Single oversized record refuses. Post-encoding size checks do not certify an exact peak-RAM bound.",
+    "limits": {
+      "binary_bytes": 262144,
+      "complete_section_page_bytes": 65536,
+      "string_bytes_excluding_NUL": 4096,
+      "hash_work_bytes": 16777216,
+      "rows_and_candidate_references": 8192,
+      "canonical_bytes": 16777216,
+      "page_bytes": 65536,
+      "page_records": 64,
+      "max_pages": 256,
+      "total_page_bytes": 16777216
+    }
+  },
+  "synthetic_proposal": {
+    "total": 63,
+    "parser_cases": 60,
+    "positive": 9,
+    "expected_parser_refusals": 51,
+    "injected_paging_units": 3,
+    "all_UNRUN": true,
+    "case_manifest": "docs/research/original-loader-callback-symbol-source-static-v1-2026-10-18.json",
+    "known_values": "Both complete arrays/zero symbol/local partition/arbitrary byte names/substrings/duplicate names/MAX64 values/reserved+undefined indices; GNU record file/name offsets, relative multi-aux chain, exact gaps/contiguous coverage, raw high/reserved version bits and ambiguous/missing declarations; full canonical/page equality plus independent assertions.",
+    "scope_of_paging_units": "Arbitrary injected JSON root exercises three pager bounds; not valid-binary/native/actual-callback evidence.",
+    "fanout_refusal": "100dynamic+100regular/500same-indexaux;907retained rows but49500candidate references, requiring SYM_ASSOCIATION_FANOUT_BOUND before serialization.",
+    "hash_work_refusal": "262144-byte SYNTHETIC input with3998 repeated4096-byte names charges every4097-byte terminated span plus input/header/table/record work; not merely an input-size check.",
+    "owner": null,
+    "caller": null,
+    "stager": null,
+    "packet": null,
+    "invocation": null,
+    "admission": null,
+    "resource_policy": "Future concrete Linux owner/transport/child sources, cleanup and invocation must be independently reviewed BEFORE any new fixture or decoder use. Keep existing512MiB helperAS/20CPU/262KiBsource-file-logs/65536source-envelope and finite SSH/child deadlines; fresh headroom is not a reservation. Whole encoded envelope must fit without cap increase; otherwise separately reviewed bounded staging is required. Fixture run() catches Exception for outcome retention; the future hard child deadline must escape that handler (for example KeyboardInterrupt/BaseException), with separately bounded parent wait and owned TERM/KILL/reap."
+  },
+  "review_corrections": {
+    "first": "ROOT added upfront combined row precharge before symbol/versym/need traversal; initial unrun primary0187982f and independent4642ccd4 sources preserved in /tmp/callback-symbol-source-preparation-drafts-20261018-v1.",
+    "second": "READONLY reviewer found candidate-list multiplicity could expand canonical JSON before a late bound. Corrected primaryincremental and independentprecomputed fanout charge; pre-correction4b5019a9/ad9e6f34/harness9c62b81c retained /tmp/callback-symbol-fanout-preparation-drafts-20261018-v1. No decoder/fixture runtime failure or replay."
+  },
+  "new_actual_symbol_driver": null,
+  "new_actual_independent_driver": null,
+  "dependency_origin_observer": null,
+  "actual_loader_Python_build_authentication": null,
+  "native_runtime_admission": null,
+  "execution_authorized": false,
+  "unchanged": "No SSH/Docker/container/native/package/backend/model/account/marketdata/credential operations this source step. No old parser/37/page observation/copy/HEAD/census/AST-job/gate/packet replay. Other19 oversized native bodies UNREAD, guard3b8be00b/all25payloadbodies UNRUN; old2446/030c/G08/caps/maps unchanged. Producer2431/reference2446/executor2468/originalreceipts/lifetimes distinct. Model/RAM/horizon/history/ordinary/intraday/fill/UI remain UNVERIFIED; original timingFAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/twohost/Spark2image-daemon-temp-RAM unchanged."
+}

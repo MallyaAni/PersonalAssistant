@@ -1,0 +1,363 @@
+{
+  "Ruff": "PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM",
+  "all63_UNRUN": true,
+  "decoder_fixture_bodies_executed": false,
+  "independent_imports_or_calls_primary": false,
+  "proposed_cases": [
+    {
+      "expected": "positive",
+      "name": "baseline_arbitrary_names_values_and_gaps",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "positive",
+      "name": "two_aux_relative_chain_and_ambiguous_index",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "positive",
+      "name": "missing_version_declaration",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "positive",
+      "name": "reserved_raw_version",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "positive",
+      "name": "high_bit_global_raw_retained",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "positive",
+      "name": "zero_aux_retains_uncovered_bytes",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "positive",
+      "name": "repeated_dependency_byte_name",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "positive",
+      "name": "exact4096_byte_name",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "positive",
+      "name": "contiguous_version_records_no_gap",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_INPUT_DOMAIN",
+      "name": "input_type",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_INPUT_DOMAIN",
+      "name": "input_file_cap",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_INPUT_DOMAIN",
+      "name": "input_header_short",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_INPUT_DOMAIN",
+      "name": "section_page_byte_cap",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_ELF64_LE_CURRENT",
+      "name": "ELF_class",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_ELF_HEADER_DOMAIN",
+      "name": "ELF_type",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_FILE_SPAN",
+      "name": "section_header_file_range",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_FILE_SPAN",
+      "name": "selected_payload_file_range",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_PAGE_BINDING",
+      "name": "page_binary_binding",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_PAGE_DUPLICATE_KEY",
+      "name": "page_duplicate_key",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_PAGE_SECTION_COUNT",
+      "name": "page_section_count",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_SECTION_INDEX",
+      "name": "page_record_index",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_SECTION_HEADER_BINDING",
+      "name": "page_header_raw",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_SECTION_PAYLOAD_BINDING",
+      "name": "selected_payload_SHA",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_EXTENDED_OR_VERDEF_UNSUPPORTED",
+      "name": "unsupported_verdef",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_EXTENDED_OR_VERDEF_UNSUPPORTED",
+      "name": "unsupported_index_extension_table",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_TABLE_SET_DOMAIN",
+      "name": "missing_symbol_table",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_STRING_LINK",
+      "name": "bad_string_link",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_VERSION_LINK",
+      "name": "bad_version_link",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_SYMBOL_WIDTH",
+      "name": "symbol_record_width",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_SYMBOL_WIDTH",
+      "name": "symbol_size_remainder",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_SYMBOL_COUNT_OR_INFO",
+      "name": "symbol_local_info",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_ZERO_SYMBOL",
+      "name": "nonzero_first_symbol",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_LOCAL_PARTITION",
+      "name": "local_partition",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_XINDEX_UNSUPPORTED",
+      "name": "symbol_extended_index",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_ORDINARY_SECTION_INDEX",
+      "name": "symbol_ordinary_section_index",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_STRING_INDEX",
+      "name": "string_index",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_STRING_EDGES",
+      "name": "string_edges",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_STRING_NUL_OR_BOUND",
+      "name": "string4097_bound",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_VERSYM_WIDTH_OR_COUNT",
+      "name": "versym_width",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_VERSYM_WIDTH_OR_COUNT",
+      "name": "versym_count",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_VERNEED_DOMAIN",
+      "name": "verneed_domain",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_VERSION_REVISION_UNSUPPORTED",
+      "name": "version_revision",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_VERSION_RECORD_RANGE",
+      "name": "version_aux_unaligned",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_VERSION_OVERLAP",
+      "name": "version_aux_overlaps_parent",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_VERSION_RECORD_RANGE",
+      "name": "version_aux_range",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_RECORD_BOUND",
+      "name": "version_aux_count_budget_before_loop",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_AUX_COUNT_OR_OFFSET",
+      "name": "version_aux_count_zero_with_pointer",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_AUX_TERMINATOR_OR_COUNT",
+      "name": "version_aux_early_end",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_AUX_TERMINATOR_OR_COUNT",
+      "name": "version_aux_late_end",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_VERSION_PROGRESS",
+      "name": "version_aux_nonprogress",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_NEED_TERMINATOR_OR_COUNT",
+      "name": "version_need_early_end",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_NEED_TERMINATOR_OR_COUNT",
+      "name": "version_need_late_end",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_VERSION_PROGRESS",
+      "name": "version_need_nonprogress",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_VERSION_OVERLAP",
+      "name": "version_next_parent_overlaps_prior_aux",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_VERSION_RECORD_RANGE",
+      "name": "version_need_range_wrap_shape",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_STRING_INDEX",
+      "name": "version_file_is_linked_string_index",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_STRING_INDEX",
+      "name": "version_aux_name_is_linked_string_index",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_RECORD_BOUND",
+      "name": "global_row_budget_before_traversal",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_HASH_WORK_BOUND",
+      "name": "aggregate_hash_work_not_just_input_size",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_ASSOCIATION_FANOUT_BOUND",
+      "name": "association_reference_fanout_before_serialization",
+      "scope": "SYNTHETIC_PARSER"
+    },
+    {
+      "expected": "SYM_SINGLE_RECORD_PAGE_BOUND",
+      "name": "single_complete_record_byte_bound",
+      "scope": "INJECTED_JSON_PAGING_UNIT"
+    },
+    {
+      "expected": "SYM_PAGE_COUNT_BOUND",
+      "name": "page_count_bound",
+      "scope": "INJECTED_JSON_PAGING_UNIT"
+    },
+    {
+      "expected": "SYM_CANONICAL_BOUND",
+      "name": "canonical_bound",
+      "scope": "INJECTED_JSON_PAGING_UNIT"
+    }
+  ],
+  "proposed_injected_paging_units": 3,
+  "proposed_parser_cases": 60,
+  "proposed_positive": 9,
+  "proposed_refusals": 51,
+  "pure_control_import_allowlist": true,
+  "purpose_functions": 28,
+  "schema": "callback-symbol-source-static/1",
+  "sources": [
+    {
+      "bytes": 13496,
+      "name": "parse-callback-symbol-data-v1-2026-10-18.py",
+      "purpose_functions": 8,
+      "sha256": "6fe24522e57910ed2f9136762ea4f910f46fd6a6a91afe4f55c80b5e8462bd11"
+    },
+    {
+      "bytes": 14287,
+      "name": "fold-callback-symbol-data-v1-2026-10-18.py",
+      "purpose_functions": 9,
+      "sha256": "a526e85d63313fac8a4de11eb31dc34964ad9eaeed6d93a4a78d25cb5b469127"
+    },
+    {
+      "name": "check-callback-symbol-data-v1-2026-10-18.py",
+      "bytes": 17574,
+      "sha256": "847127b3a70b7522645e8901c881cb135ca2da5850400c9a282647096a9cd76d",
+      "purpose_functions": 5
+    },
+    {
+      "bytes": 3491,
+      "name": "prepare-callback-symbol-preserver-v1-2026-10-18.py",
+      "purpose_functions": 2,
+      "sha256": "8aaf0af5879576123811f76150e87f01401295871f451e1122cd44c8e6e6cc54"
+    },
+    {
+      "bytes": 4956,
+      "name": "preserve-callback-symbol-sources-v1-2026-10-18.py",
+      "purpose_functions": 4,
+      "sha256": "5c595bb8f6b52bc69025d6c9672c14663bd8724fe217cc748667cb8fcafe0d06"
+    }
+  ],
+  "warnings_as_errors_AST": true
+}
