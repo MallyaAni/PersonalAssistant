@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-10-18 — Persist and restore versioned raw paper components
+
+Optional Nightly/Cycle component paths now retain opaque native paper through a
+source-bound physical-paper-component/1 descriptor and Cycle receipt2. The receipt
+can persist through actual SQLite/CAS Store reopen and restore native bytes exactly;
+legacy finite receipt1 stays separate. Old captured references remain readable,
+restore is one-shot, and raw settlement/Nightly continuation refuse before work.
+
+Source4b3d0275 passed11 new source-isolated Linux tests,0fail/0error/0skip,
+5.0103898s/42832KiB peak. They cover actual native large/NaN write and load/save byte
+parity, persisted/reopened receipt restore, tamper/identity/mode guards, legacy
+compatibility and structural settlement refusal. Exact proof and limits:
+research/raw-paper-component-integration-proof-2026-10-18.json.
+
+Production is unchanged. Store operation commitment, full constructors/continuation,
+raw settlement, full pre-effect/native/model/RAM lifecycle and genuine trading/UI
+acceptance remain unverified. Original timingFAILED/publicationCLOSED and pausedv6
+are unchanged. Next product boundary is raw settlement integration.
+
 ## 2026-10-18 — Connect native saves to the raw checkpoint primitive
 
 NativeCapture can now opt into a same-account PhysicalCheckpoint and record a

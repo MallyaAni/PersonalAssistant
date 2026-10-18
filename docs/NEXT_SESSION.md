@@ -1,5 +1,61 @@
 # Next session
 
+## 2026-10-18 — Raw paper component receipts and exact restore VERIFIED
+
+Task control: continue product acceptance. This boundary is closed; do not replay
+its suite, preflight, source stage, copy or getter for documentation. Earlier
+interpreter/native-origin research directions are not prerequisites for synthetic
+product integration. Production is unchanged.
+
+Source checkpoint4b3d027575dc34a329041aa2694fbcdc746f2c16 adds the separately
+versioned physical-paper-component/1 descriptor and optional raw component paths
+in Nightly.components and Cycle._components/receipt/read/restore. Cycle receipt2
+never puts a raw root into a legacy paper blob-string contract. Descriptors bind
+identity, primitive, adapter source, limits and exact raw content; old captures
+remain readable after newer captures, and restore consumes the one reserved inode.
+The default finite receipt1 remains separate. Raw settlement and raw Nightly
+continuation refuse structurally before work. Nightly's Cycle source pin is updated.
+
+VERIFIED: ONE new source-isolated f612 Linux run c5dddffba46e8d201b2089e435f50c78
+efac89f99743c5e8b5e8ce442d644064 exited0/noOOM at20:09:15.625100655Z. Eleven tests
+passed0fail/0error/0skip in5.0103898s, peak42832KiB. Actual native a8 writer produced
+large >256KiB state with NaN; actual SQLite/CAS Store persisted a finite v2 receipt,
+closed/reopened, then a reopened checkpoint restored exact native bytes into its
+reserved inode and native load/save retained byte parity. Older-reference reads,
+one-shot restore, metadata tampering/cross-account/mode confusion, unchanged legacy
+finite restore and large/nonfinite refusal, raw settlement/continuation refusal and
+the Nightly Cycle source pin all passed. Original checkpoint primitive5d616928 unchanged.
+
+Proof f75c7bce and all seven results are retained under local
+/tmp/paper-component-integration-20261018-v1 and remote
+/home/animallya96/scratch/paper-component-integration-20261018-v1. Read
+research/raw-paper-component-integration-proof-2026-10-18.json. Preflight, source
+stage, finite15file SCP, execute and result-only getter all exited0/empty stderr.
+Sixteen pinned payloads plus pins.json make17 physical source files. All source
+and native physical/hash bookends and writer globals matched. Full four mount
+records/order matched; HostConfig differs only OomKillDisable false→null. Runtime
+UID1000/noneRO/1CPU/512MiB=swap/PIDs32/tmp64; explicit synthetic native artifact
+bound1MiB, source/control/log256KiB and production caps unchanged. Fresh headroom
+was checked before stage and execute; it is not a full lifecycle reservation.
+
+The tests execute exact full-source selected Nightly/Cycle CodeTypes with explicit
+synthetic broker codec/latch/source-marker globals and actual native paper, Store
+and checkpoint modules. They verify persisted CAS receipts, not Store stage/head
+commit or simulator adoption. No whole constructor, settlement body, model, full
+unit/build/lint/deploy or actual process-crash acceptance is claimed. AST/purpose
+comments/zero-backspace/exact-source-pin/diff checks pass; Ruff remains unavailable.
+
+NEXT: implement versioned raw settlement integration with native-written large/NaN
+readback and actual state-transition assertions, preserving opaque bytes and finite
+metadata. Never normalize native NaNs, truncate state, relabel raw roots as canonical
+paper hashes, or pass raw descriptors through receipt1. Full Nightly continuation,
+entry/decision metadata, Store stage commitment, pre-effect reservation/interruption/
+native metadata/two-host/full model+RAM lifecycle remain UNVERIFIED and mandatory
+before genuine execution. Then genuine proposals/ordinary/intraday/fills, independent
+publication and API/UI. Original timingFAILED/publicationCLOSED/missing receipts and
+genuinev6 OPEN/PAUSED/no replay/adoption/new genuine run remain unchanged. No Spark2
+image load, guard/cap weakening or production deployment. Heartbeat stays ACTIVE.
+
 ## 2026-10-18 — Native save observer raw capture/restore seam VERIFIED
 
 Task control: advance the trading acceptance path below. Earlier self-authored
