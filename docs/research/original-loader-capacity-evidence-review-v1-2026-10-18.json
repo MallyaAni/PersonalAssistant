@@ -1,0 +1,232 @@
+{
+  "adaptation_imports": [
+    "import ast",
+    "import json",
+    "import math",
+    "from hashlib import sha256",
+    "from backend.market import original_history_json as streamed",
+    "from backend.market import capacity_original_evidence_v1 as evidence"
+  ],
+  "analyzer": {
+    "path": "sources/review-original-loader-capacity-evidence-v1-2026-10-18.py",
+    "sha256": "09f9f67d419c88e29405ad7d152641859b882a928c66657a39384f20b38c2fd0"
+  },
+  "application_import_compile_exec_or_test": false,
+  "archive_adaptations": {
+    "bytes": 6677,
+    "functions": 6,
+    "path": "sources/original-loader-capacity-archive-adaptations-v1-2026-10-18.py",
+    "schema": "capacity-original-archive-adaptations/1",
+    "sha256": "39f2884741036bbe3a33f451909a59b46924c43ea699e39670c1c13fbcde5134"
+  },
+  "contract": {
+    "bytes": 10376,
+    "path": "original-loader-capacity-evidence-contract-v1-2026-10-18.json",
+    "sha256": "c9b7cd09d7ee08cfba79e7e6673707fa44aab492d8a2db98d82b9af7050142e5"
+  },
+  "declarations": {
+    "_ReadOnlyDict": {
+      "candidate_AST_sha256": "240c9ac1c7664a4039db803bfa18506ee3de245320995678670b6d220dec9552",
+      "candidate_end_line": 155,
+      "candidate_line": 137,
+      "comparison": "EXACT_AST",
+      "origin": "backend/market/live_model_history_stream_audit.py",
+      "original_AST_sha256": "240c9ac1c7664a4039db803bfa18506ee3de245320995678670b6d220dec9552",
+      "original_end_line": 172,
+      "original_line": 154
+    },
+    "_ReadOnlyList": {
+      "candidate_AST_sha256": "61de730998ead27f9989d1ca6c71bea114a138962fdae4737ce5acac51b80af4",
+      "candidate_end_line": 177,
+      "candidate_line": 159,
+      "comparison": "EXACT_AST",
+      "origin": "backend/market/live_model_history_stream_audit.py",
+      "original_AST_sha256": "61de730998ead27f9989d1ca6c71bea114a138962fdae4737ce5acac51b80af4",
+      "original_end_line": 194,
+      "original_line": 176
+    },
+    "_freeze": {
+      "candidate_AST_sha256": "4fdbaebe946360311fc826aa610f79b575f6c3968cda1ae95941a17f841967a9",
+      "candidate_end_line": 186,
+      "candidate_line": 181,
+      "comparison": "EXACT_AST",
+      "origin": "backend/market/live_model_history_stream_audit.py",
+      "original_AST_sha256": "4fdbaebe946360311fc826aa610f79b575f6c3968cda1ae95941a17f841967a9",
+      "original_end_line": 203,
+      "original_line": 198
+    },
+    "_immutable": {
+      "candidate_AST_sha256": "a0993e875d5edf2d116f72546299da7acb2249cbbe467f2bfa113dc7ecf29b7f",
+      "candidate_end_line": 133,
+      "candidate_line": 132,
+      "comparison": "EXACT_AST",
+      "origin": "backend/market/live_model_history_stream_audit.py",
+      "original_AST_sha256": "a0993e875d5edf2d116f72546299da7acb2249cbbe467f2bfa113dc7ecf29b7f",
+      "original_end_line": 150,
+      "original_line": 149
+    },
+    "archive_value": {
+      "candidate_AST_sha256": "a6f93cc1ae1be32188db9ab3e4a0935ab53c3a0ec29b2020140c79eb78ce1351",
+      "candidate_end_line": 199,
+      "candidate_line": 190,
+      "comparison": "EXACT_AST_WITH_DECLARED_LOCAL_REBINDINGS",
+      "origin": "backend/market/live_model_history_stream_audit.py",
+      "original_AST_sha256": "600d0fb3aaebc9bc3650f49ecadf661dfb0f9b3ac8f17b827cd79499d33c8551",
+      "original_end_line": 216,
+      "original_line": 207
+    },
+    "authenticate_file": {
+      "candidate_AST_sha256": "2247c6c32e6a12c102465fbf7e03f78a0699dc6aedf2d3118febed6bfb8d1290",
+      "candidate_end_line": 96,
+      "candidate_line": 82,
+      "comparison": "EXACT_AST",
+      "origin": "backend/market/live_model_history_stream_audit.py",
+      "original_AST_sha256": "2247c6c32e6a12c102465fbf7e03f78a0699dc6aedf2d3118febed6bfb8d1290",
+      "original_end_line": 134,
+      "original_line": 120
+    },
+    "expected_digest": {
+      "candidate_AST_sha256": "29c444d8c95ce3c01373a3d20756f73aca96d87953724c69e29cddeadedd10c2",
+      "candidate_end_line": 37,
+      "candidate_line": 31,
+      "comparison": "EXACT_AST",
+      "origin": "backend/market/live_model_history_stream_audit.py",
+      "original_AST_sha256": "29c444d8c95ce3c01373a3d20756f73aca96d87953724c69e29cddeadedd10c2",
+      "original_end_line": 75,
+      "original_line": 69
+    },
+    "file_identity": {
+      "candidate_AST_sha256": "7c7dd279b4196fdec25c5b8c709afbc977e5a549b92e26c282845f5072142706",
+      "candidate_end_line": 49,
+      "candidate_line": 41,
+      "comparison": "EXACT_AST",
+      "origin": "backend/market/live_model_history_stream_audit.py",
+      "original_AST_sha256": "7c7dd279b4196fdec25c5b8c709afbc977e5a549b92e26c282845f5072142706",
+      "original_end_line": 87,
+      "original_line": 79
+    },
+    "finite_float": {
+      "candidate_AST_sha256": "d6897f3262f679933c3367acd2d0b24de0e48530d10703c4ea29be6a24fd7696",
+      "candidate_end_line": 117,
+      "candidate_line": 114,
+      "comparison": "EXACT_AST",
+      "origin": "backend/market/live_model_history_pending_audit.py",
+      "original_AST_sha256": "d6897f3262f679933c3367acd2d0b24de0e48530d10703c4ea29be6a24fd7696",
+      "original_end_line": 63,
+      "original_line": 60
+    },
+    "pinned": {
+      "candidate_AST_sha256": "d370456e2703b2942ed3ca90026d1a33e31d8d63fab0e4e7c7c7c9a8b51be8e9",
+      "candidate_end_line": 78,
+      "candidate_line": 62,
+      "comparison": "EXACT_AST",
+      "origin": "backend/market/live_model_history_stream_audit.py",
+      "original_AST_sha256": "d370456e2703b2942ed3ca90026d1a33e31d8d63fab0e4e7c7c7c9a8b51be8e9",
+      "original_end_line": 116,
+      "original_line": 100
+    },
+    "reject_constant": {
+      "candidate_AST_sha256": "5a8b2216cf8217a524190cea04e55b430e26a18164b840ca755c06060486f3ce",
+      "candidate_end_line": 110,
+      "candidate_line": 109,
+      "comparison": "EXACT_AST",
+      "origin": "backend/market/live_model_history_pending_audit.py",
+      "original_AST_sha256": "5a8b2216cf8217a524190cea04e55b430e26a18164b840ca755c06060486f3ce",
+      "original_end_line": 56,
+      "original_line": 55
+    },
+    "require": {
+      "candidate_AST_sha256": "0f4163611ce0bc40358ee49a9ef0fc10b5a6a2c2f0ec03bd30dfdc6b54a6af7f",
+      "candidate_end_line": 27,
+      "candidate_line": 25,
+      "comparison": "EXACT_AST",
+      "origin": "backend/market/live_model_history_receipts.py",
+      "original_AST_sha256": "0f4163611ce0bc40358ee49a9ef0fc10b5a6a2c2f0ec03bd30dfdc6b54a6af7f",
+      "original_end_line": 13,
+      "original_line": 11
+    },
+    "stable_file": {
+      "candidate_AST_sha256": "7c02bbfc785e3fe4903f3325bb1b7166902b8b78cab43aba8adefed144cb24b0",
+      "candidate_end_line": 58,
+      "candidate_line": 53,
+      "comparison": "EXACT_AST",
+      "origin": "backend/market/live_model_history_stream_audit.py",
+      "original_AST_sha256": "7c02bbfc785e3fe4903f3325bb1b7166902b8b78cab43aba8adefed144cb24b0",
+      "original_end_line": 96,
+      "original_line": 91
+    },
+    "strict_json": {
+      "candidate_AST_sha256": "ca0918cde84c778d115a355ed0e91991c100c21495d957e311e5f07fda88824f",
+      "candidate_end_line": 128,
+      "candidate_line": 121,
+      "comparison": "EXACT_AST_WITH_DECLARED_LOCAL_REBINDINGS",
+      "origin": "backend/market/live_model_history_stream_audit.py",
+      "original_AST_sha256": "97d5f231182fdb2fdaaed27f691d070391ed0fa5847fbcfc19832d5f1bfdd7ef",
+      "original_end_line": 145,
+      "original_line": 138
+    },
+    "unique": {
+      "candidate_AST_sha256": "dd71d527cd1bb5630ed011fd78cea36cc1ce98a2665a76c59dc0303baf1448b7",
+      "candidate_end_line": 105,
+      "candidate_line": 100,
+      "comparison": "EXACT_AST",
+      "origin": "backend/market/live_model_history_pending_audit.py",
+      "original_AST_sha256": "dd71d527cd1bb5630ed011fd78cea36cc1ce98a2665a76c59dc0303baf1448b7",
+      "original_end_line": 51,
+      "original_line": 46
+    }
+  },
+  "explicitly_rebound_AST_declarations": 2,
+  "functions_including_methods": 19,
+  "imports": [
+    "import gzip",
+    "import io",
+    "import json",
+    "import math",
+    "import os",
+    "import stat",
+    "from hashlib import sha256",
+    "from pathlib import Path"
+  ],
+  "limits": "Original16MiBmetadata/1MiBhashchunk/64MiBcompressed/256MiBexpanded expressions identical; no native/model/log cap changes.",
+  "old_gate_replay": false,
+  "original_sources": {
+    "backend/market/live_model_history_pending_audit.py": {
+      "bytes": 22885,
+      "sha256": "74e7d9800bf1bdeb51655f09ae2846bfb0dbbcc67afdcad705405a849eb0cf02"
+    },
+    "backend/market/live_model_history_receipts.py": {
+      "bytes": 20722,
+      "sha256": "1e9d72e817caa5470842aa50936b3f004f48fbfde77deb0fa5617b72972fea9f"
+    },
+    "backend/market/live_model_history_stream_audit.py": {
+      "bytes": 34983,
+      "sha256": "f404e15be6e97caf856a4ba6db22eedef51ff5a4e3304dcbed90cf8e0abac2ff"
+    }
+  },
+  "primitive": {
+    "bytes": 6656,
+    "path": "sources/original-loader-capacity-evidence-v1-2026-10-18.py",
+    "schema": "capacity-original-evidence-primitives/1",
+    "sha256": "400de9e73e2debb06c7267c925ca0914dc75a98c77f3044a49b88d26db26be25"
+  },
+  "pure_unchanged_dependency_sources": {
+    "backend/__init__.py": {
+      "bytes": 29,
+      "sha256": "162e5eeb402108f20b1a976525f5bbf5a03a12ea619f64a19ce5c0fe9aec09af"
+    },
+    "backend/market/__init__.py": {
+      "bytes": 605,
+      "sha256": "5a886c13f35054c2238d9a661349a38ea242495972aae02a7aa2029dd1533910"
+    },
+    "backend/market/original_history_json.py": {
+      "bytes": 27574,
+      "sha256": "de29c1017f4c9eadd874b2fbe0d85b4c80ced8e7a43fb6bd4f779c3d726cb2eb"
+    }
+  },
+  "remote_or_runtime_operations": false,
+  "schema": "capacity-original-evidence-static-review/1",
+  "selected_model_import_strategy": null,
+  "status": "SOURCE_AST_PINNED_NOT_BEHAVIORAL_PARITY",
+  "unchanged_AST_declarations": 13
+}
