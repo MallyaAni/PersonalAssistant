@@ -475,7 +475,8 @@ class _Stages:
         state = paper.load_state(self.nightly.root)
         prior_refs = bridge.cycle._read_receipt(store, prior, self.nightly.pins(), raw_checkpoint=self.checkpoint)['components']
         value = demand.build(entity_registry, identity_sha256=store.identity, parent_sha256=entry['sha256'],
-            completed_at=self.window['completed_at'], prior={'ledger': prior_refs['broker'],
+            completed_at=self.window['completed_at'], used=store.snapshot()['used'],
+            prior={'ledger': prior_refs['broker'],
                 'pending': packet._digest(state.pending), 'reservations': packet._digest(self.client.open_orders()),
                 'actions': packet._digest(codec._pack(self.client._actions)), 'inputs': prior},
             held=sorted(name for name, qty in self.client._held.items() if qty > 0),
