@@ -1,0 +1,36 @@
+{
+  "schema": "original-loader-evidence-parity-source-proof/1",
+  "status": "SOURCE_PACKET_PREPARED_ALL80_TEST_BODIES_UNRUN",
+  "starting_revision": "444cc1dd9e7a9b51c96271ec1a957b158b8d4b45",
+  "source_revision": "a3ef3ec8340f2b43abc7e50db500b9b454efdf6a",
+  "proposal": {"path": "original-loader-evidence-parity-proposal-v1-2026-10-18.json", "sha256": "919f186cc4d57c4dd7164d926bc9ba2cd49637310946f7f12c206dca7a077635", "bytes": 12297},
+  "packet": {"sha256": "edac83ca50254771cec2d79bb7e2d562b43bc1578e8fbeaa81730b2b21ad3fd2", "bytes": 356825, "records": 22, "decoded_source_bytes": 261435},
+  "source_book": {"sha256": "9cffe5361488307afd63123a4a79ef8b92ec2da53f629c1521734c2d3217b502", "bytes": 3764, "records": 22},
+  "pins": {
+    "sources/original-loader-evidence-parity-bootstrap-v1-2026-10-18.py": {"sha256": "d9b1ebc626317285e05a5294e8af7ee323120fd9f2928d760a980c67aeb22305", "bytes": 25893},
+    "sources/original-loader-evidence-parity-owner-v1-2026-10-18.py": {"sha256": "3514a6f4d9bfd6be699d0eab6d1b33f6c4e6974b59b94f3734f9f47fa16e36ff", "bytes": 6258},
+    "sources/original-loader-evidence-parity-caller-v1-2026-10-18.py": {"sha256": "024a4e1e12891c902206e5597d8bcb8a1bb03ba56e7f395fd68b0b90151bc354", "bytes": 2247},
+    "sources/prepare-original-loader-evidence-parity-packet-v1-2026-10-18.py": {"sha256": "eabe4141043617bafcdf5f27488f832a2ff70c2a2ba685ba33c9e39fa7a22b3d", "bytes": 10070}
+  },
+  "unchanged_payload": {"evidence": "400de9e73e2debb06c7267c925ca0914dc75a98c77f3044a49b88d26db26be25", "archive_adaptations": "39f2884741036bbe3a33f451909a59b46924c43ea699e39670c1c13fbcde5134", "controller_library": "2e505205cc8a3793d7b3313a5b5c3b670b00134575982d26c725787b6530df5a", "old_guard_helpers_caps_sources": "UNCHANGED"},
+  "planned_scope": {
+    "cases": 80,
+    "primitive_cases": 53,
+    "adaptation_cases": 27,
+    "children": 2,
+    "bodies_executed": 0,
+    "runtime": "One proposed e0 UID1000/noneRO/1CPU/2GiB=swap/PIDs32/tmp64/noHC/lognone/capdropALL/no-new-privileges; exactly auditRO+outRW. No genuine account/model/original/data/credential/socket mounts.",
+    "limits": "15s childCPU/20swait/55sparent/85sphase/130sowner/262KiB childperfile. Actual invocation/transport/outer deadline not prepared or admitted.",
+    "candidate": "Real separately named backend.market evidence/adaptation modules plus real unchanged parser/package files under /audit/app; complete22-file source book and real five-module origin inventory. No fake original modules or sys.modules substitute; no old SourceBook/guard body execution.",
+    "reference": "Exact functions/class bodies taken from full source compilation only in explicit ISOLATED_SYNTHETIC_ORIGINAL_REFERENCE globals; original effect module bodies/imports never execute. Callback namespaces are explicit reference-only bindings. This is not original runtime/identity acceptance.",
+    "native_reference": "Proposed actual NumPy in adaptations child only, after candidate import trace, for original plain and scalar-domain controls. Six native thread envs fixed1. Proposed /usr/local/lib/python3.12/site-packages and actual package/image/Python/origin/version remain UNVERIFIED and require independent actual checks BEFORE admission. No model loading/feature arrays/fits/inference.",
+    "coverage_limits": "Custom small pinned bounds and explicitly injected/restored smaller gzip UNIT bounds; no actual16MiB/64MiB/256MiB boundary or RAM acceptance. Actual synthetic file growth/replace at stable_file boundary, not full pinned mid-read race. Three synthetic rows via actual strict reader/spool/release, not1916/genuine historical capacity. Reconstructed predecessor30 is explicitly SYNTHETIC, not genuine original completion provenance.",
+    "domain_separation": "Candidate-only narrow-domain refusals are explicitly labelled CANDIDATE_DOMAIN_REFUSAL_ONLY_REFERENCE_NOT_EXECUTED; they do not assert original general-domain behavior parity. Reference-parity rows separately labelled."
+  },
+  "independent_review": {"worker": "Existing healthy trading_action_consistency READONLY; no operations/imports/tests/edits/new agent/limited-worker retry", "source_corrections_before_build": ["Original guard-extension reference receives missing ast binding", "-I -S real NumPy requires explicit proposed package path and actual future verification", "Raw bytes JSON literal avoids invalid-escape SyntaxWarning under empty-stderr criterion", "CURRENT paper refusal derives actual successor from exact third review, not zeros", "Six native thread env limits fixed1 before import", "Candidate-only domain controls explicitly separated from reference parity"], "conclusion": "No further deterministic source-only blocker found in bootstrap/owner/caller/builder. No runtime or behavioral acceptance implied."},
+  "validation": {"AST_warnings_as_errors": "PASS", "purpose_functions": 28, "JSON_base64_fullSHA_bytes_readback": "PASS", "exact_source_inventory": 22, "case_inventory": "53+27=80 unique", "diff_check": "PASS", "Ruff": "UNAVAILABLE established environment; no lint claim", "executed_this_checkpoint": "Only stdlib local source AST/JSON/packet builder", "payload_import_CodeType_compile_exec_test": 0, "SSH_host_Docker_runtime_operations": 0},
+  "preservation": {"local_packet_root": "/tmp/capacity-evidence-parity-packet-20261018-v1", "packet_book_build": "Exclusive/fsync/exact byte readback, complete base64/source SHA independently checked; preserve exact packet and do not regenerate for docs", "old_failed_completed_roots_admissions": "PRESERVED_UNCHANGED"},
+  "not_ready": {"stager": null, "independent_source_prerequisite_terminal_preservation_verifier": null, "remote_source_staging": null, "actual_NumPy_path_version_origin": null, "actual_resources": null, "exact_final_invocation": null, "admission": null, "test_acceptance": null},
+  "next": "Finish separately pinned exclusive stager and independent source/prerequisite/terminal/preservation verifier for exact22-file packet/book and80 named outcomes. Preserve exact current packet. Independently review fresh actual e0/Python/NumPy path-version-origin/UID/jobs/absent roots/resources/exact final caller BEFORE one new scoped synthetic admission/test. No old23/65+4/tiny/diagnostic/v2 replay or old root/admission reuse. No genuine loader/model/account/history/twohost launch or guard/G08/cap changes. Archive context, full source binding and numerical/RAM path remain unadmitted.",
+  "unchanged": {"model_import_strategy": null, "original_timing": "FAILED", "publication": "CLOSED", "missing_receipts": "STILL_MISSING", "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN", "historical_weekday_intraday_fill_UI_RAM_horizon": "UNVERIFIED", "actual_twohost_Spark2_image_daemon_temp_RAM": "NOT_ADMITTED_UNVERIFIED", "heartbeat": "ACTIVE"}
+}
