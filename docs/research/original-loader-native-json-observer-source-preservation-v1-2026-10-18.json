@@ -1,0 +1,391 @@
+{
+  "bytes": 154931,
+  "file_bound": 262144,
+  "files": 11,
+  "inputs": {
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/original-loader-native-origin-contract-proof-v1-2026-10-18.json": {
+      "copy": {
+        "bytes": 11169,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792347956554725919",
+          "st_dev": "16777223",
+          "st_ino": "186866865",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792347956554725919",
+          "st_nlink": "1",
+          "st_size": "11169",
+          "st_uid": "501"
+        },
+        "sha256": "07e5943049cd3b88411737ab11a30f1598d29d1e4ad4c20aa9c9ec51f967cb9d"
+      },
+      "copy_path": "/tmp/capacity-native-origin-observer-source-evidence-20261018-v1/07-original-loader-native-origin-contract-proof-v1-2026-10-18.json",
+      "original": {
+        "bytes": 11169,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792346480914726361",
+          "st_dev": "16777223",
+          "st_ino": "186443856",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346480914726361",
+          "st_nlink": "1",
+          "st_size": "11169",
+          "st_uid": "501"
+        },
+        "sha256": "07e5943049cd3b88411737ab11a30f1598d29d1e4ad4c20aa9c9ec51f967cb9d"
+      }
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/original-loader-native-origin-contract-v1-2026-10-18.json": {
+      "copy": {
+        "bytes": 24905,
+        "physical": {
+          "st_blocks": "56",
+          "st_ctime_ns": "1792347956553174610",
+          "st_dev": "16777223",
+          "st_ino": "186866864",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792347956553174610",
+          "st_nlink": "1",
+          "st_size": "24905",
+          "st_uid": "501"
+        },
+        "sha256": "4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5"
+      },
+      "copy_path": "/tmp/capacity-native-origin-observer-source-evidence-20261018-v1/06-original-loader-native-origin-contract-v1-2026-10-18.json",
+      "original": {
+        "bytes": 24905,
+        "physical": {
+          "st_blocks": "56",
+          "st_ctime_ns": "1792346385737619285",
+          "st_dev": "16777223",
+          "st_ino": "186436380",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792346385737619285",
+          "st_nlink": "1",
+          "st_size": "24905",
+          "st_uid": "501"
+        },
+        "sha256": "4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5"
+      }
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/observe-retained-native-json-v1-2026-10-18.py": {
+      "copy": {
+        "bytes": 14395,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792347956546178544",
+          "st_dev": "16777223",
+          "st_ino": "186866856",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792347956546178544",
+          "st_nlink": "1",
+          "st_size": "14395",
+          "st_uid": "501"
+        },
+        "sha256": "b7f6ffb0b968c08caa0b6133c0d2aa20d75c54f87b0abc80326c28c9096a6e5b"
+      },
+      "copy_path": "/tmp/capacity-native-origin-observer-source-evidence-20261018-v1/00-observe-retained-native-json-v1-2026-10-18.py",
+      "original": {
+        "bytes": 14395,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792347500907995254",
+          "st_dev": "16777223",
+          "st_ino": "186711279",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792347500907995254",
+          "st_nlink": "1",
+          "st_size": "14395",
+          "st_uid": "501"
+        },
+        "sha256": "b7f6ffb0b968c08caa0b6133c0d2aa20d75c54f87b0abc80326c28c9096a6e5b"
+      }
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/original-loader-context-native-probe-v1-2026-10-18.py": {
+      "copy": {
+        "bytes": 1878,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792347956552474013",
+          "st_dev": "16777223",
+          "st_ino": "186866863",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792347956552474013",
+          "st_nlink": "1",
+          "st_size": "1878",
+          "st_uid": "501"
+        },
+        "sha256": "6a9e82a33291466c7ef7abc57554c90b26f56c9253bbc1ff4969c49515f0105f"
+      },
+      "copy_path": "/tmp/capacity-native-origin-observer-source-evidence-20261018-v1/05-original-loader-context-native-probe-v1-2026-10-18.py",
+      "original": {
+        "bytes": 1878,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792316675409652272",
+          "st_dev": "16777223",
+          "st_ino": "178023885",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792316675409652272",
+          "st_nlink": "1",
+          "st_size": "1878",
+          "st_uid": "501"
+        },
+        "sha256": "6a9e82a33291466c7ef7abc57554c90b26f56c9253bbc1ff4969c49515f0105f"
+      }
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/preserve-native-json-observer-source-v1-2026-10-18.py": {
+      "copy": {
+        "bytes": 9289,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792347956547674079",
+          "st_dev": "16777223",
+          "st_ino": "186866858",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792347956547674079",
+          "st_nlink": "1",
+          "st_size": "9289",
+          "st_uid": "501"
+        },
+        "sha256": "257322a224360b7b0177842dccfa850dad4da5405436024fb181b63ef45e9947"
+      },
+      "copy_path": "/tmp/capacity-native-origin-observer-source-evidence-20261018-v1/02-preserve-native-json-observer-source-v1-2026-10-18.py",
+      "original": {
+        "bytes": 9289,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792347923690402538",
+          "st_dev": "16777223",
+          "st_ino": "186798328",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792347923690402538",
+          "st_nlink": "1",
+          "st_size": "9289",
+          "st_uid": "501"
+        },
+        "sha256": "257322a224360b7b0177842dccfa850dad4da5405436024fb181b63ef45e9947"
+      }
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/verify-retained-native-json-v1-2026-10-18.py": {
+      "copy": {
+        "bytes": 16701,
+        "physical": {
+          "st_blocks": "40",
+          "st_ctime_ns": "1792347956547068570",
+          "st_dev": "16777223",
+          "st_ino": "186866857",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792347956547068570",
+          "st_nlink": "1",
+          "st_size": "16701",
+          "st_uid": "501"
+        },
+        "sha256": "094561ab917e774ae04af52dc81cdbc5865db23ae5898f1ae25fd00496867a76"
+      },
+      "copy_path": "/tmp/capacity-native-origin-observer-source-evidence-20261018-v1/01-verify-retained-native-json-v1-2026-10-18.py",
+      "original": {
+        "bytes": 16701,
+        "physical": {
+          "st_blocks": "40",
+          "st_ctime_ns": "1792347571180635176",
+          "st_dev": "16777223",
+          "st_ino": "186771461",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792347571180635176",
+          "st_nlink": "1",
+          "st_size": "16701",
+          "st_uid": "501"
+        },
+        "sha256": "094561ab917e774ae04af52dc81cdbc5865db23ae5898f1ae25fd00496867a76"
+      }
+    },
+    "/tmp/capacity-context-parity-operations-20261018-v1/fetch-evidence-manifest.stdout": {
+      "copy": {
+        "bytes": 10845,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792347956558710281",
+          "st_dev": "16777223",
+          "st_ino": "186866870",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792347956558710281",
+          "st_nlink": "1",
+          "st_size": "10845",
+          "st_uid": "501"
+        },
+        "sha256": "d2378ddf7f0e5cf9eac724ff1f7c8f3f5d3cff70c0ba39f45cd2ca18546fd9f9"
+      },
+      "copy_path": "/tmp/capacity-native-origin-observer-source-evidence-20261018-v1/10-fetch-evidence-manifest.stdout",
+      "original": {
+        "bytes": 10845,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792317398863489141",
+          "st_dev": "16777223",
+          "st_ino": "178229098",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792317398863489141",
+          "st_nlink": "1",
+          "st_size": "10845",
+          "st_uid": "501"
+        },
+        "sha256": "d2378ddf7f0e5cf9eac724ff1f7c8f3f5d3cff70c0ba39f45cd2ca18546fd9f9"
+      }
+    },
+    "/tmp/capacity-context-parity-operations-20261018-v1/fetch-native-inspect.stdout": {
+      "copy": {
+        "bytes": 9755,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792347956557605918",
+          "st_dev": "16777223",
+          "st_ino": "186866868",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792347956557605918",
+          "st_nlink": "1",
+          "st_size": "9755",
+          "st_uid": "501"
+        },
+        "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+      },
+      "copy_path": "/tmp/capacity-native-origin-observer-source-evidence-20261018-v1/09-fetch-native-inspect.stdout",
+      "original": {
+        "bytes": 9755,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792317264562997733",
+          "st_dev": "16777223",
+          "st_ino": "178190217",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792317264562997733",
+          "st_nlink": "1",
+          "st_size": "9755",
+          "st_uid": "501"
+        },
+        "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+      }
+    },
+    "/tmp/capacity-context-parity-operations-20261018-v1/fetch-native-proof.stdout": {
+      "copy": {
+        "bytes": 46814,
+        "physical": {
+          "st_blocks": "96",
+          "st_ctime_ns": "1792347956556342004",
+          "st_dev": "16777223",
+          "st_ino": "186866867",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792347956556342004",
+          "st_nlink": "1",
+          "st_size": "46814",
+          "st_uid": "501"
+        },
+        "sha256": "1355771ff667f81e02dbe07885914dd5be8bf5cf395a3e74ef3bfdfd4988c6f7"
+      },
+      "copy_path": "/tmp/capacity-native-origin-observer-source-evidence-20261018-v1/08-fetch-native-proof.stdout",
+      "original": {
+        "bytes": 46814,
+        "physical": {
+          "st_blocks": "96",
+          "st_ctime_ns": "1792317247225903378",
+          "st_dev": "16777223",
+          "st_ino": "178188977",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792317247225903378",
+          "st_nlink": "1",
+          "st_size": "46814",
+          "st_uid": "501"
+        },
+        "sha256": "1355771ff667f81e02dbe07885914dd5be8bf5cf395a3e74ef3bfdfd4988c6f7"
+      }
+    },
+    "/tmp/capacity-native-origin-observer-source-drafts-20261018-v1/preserver-unrun.py": {
+      "copy": {
+        "bytes": 8855,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792347956551764256",
+          "st_dev": "16777223",
+          "st_ino": "186866861",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792347956551764256",
+          "st_nlink": "1",
+          "st_size": "8855",
+          "st_uid": "501"
+        },
+        "sha256": "ff974a21903f1b9815c46513f8b121a7a2e8f71d8a8bd185f9afd6b7400b9d3a"
+      },
+      "copy_path": "/tmp/capacity-native-origin-observer-source-evidence-20261018-v1/04-preserver-unrun.py",
+      "original": {
+        "bytes": 8855,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792347919836736085",
+          "st_dev": "16777223",
+          "st_ino": "186861032",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792347919836736085",
+          "st_nlink": "1",
+          "st_size": "8855",
+          "st_uid": "501"
+        },
+        "sha256": "ff974a21903f1b9815c46513f8b121a7a2e8f71d8a8bd185f9afd6b7400b9d3a"
+      }
+    },
+    "/tmp/capacity-native-origin-observer-source-drafts-20261018-v1/reason.json": {
+      "copy": {
+        "bytes": 325,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792347956549707317",
+          "st_dev": "16777223",
+          "st_ino": "186866860",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792347956549707317",
+          "st_nlink": "1",
+          "st_size": "325",
+          "st_uid": "501"
+        },
+        "sha256": "1a328b4b04ac398cae0da1a34a48bddf44f8a0cfc230b31d0176bccaff4e2522"
+      },
+      "copy_path": "/tmp/capacity-native-origin-observer-source-evidence-20261018-v1/03-reason.json",
+      "original": {
+        "bytes": 325,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792347919838099509",
+          "st_dev": "16777223",
+          "st_ino": "186861033",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792347919838099509",
+          "st_nlink": "1",
+          "st_size": "325",
+          "st_uid": "501"
+        },
+        "sha256": "1a328b4b04ac398cae0da1a34a48bddf44f8a0cfc230b31d0176bccaff4e2522"
+      }
+    }
+  },
+  "kernel_AS_FSIZE_or_crash_durability_claim": false,
+  "payload_bodies_UNRUN": true,
+  "remote_observation_UNRUN": true,
+  "schema": "retained-native-json-observer-source-preservation/1",
+  "software_input_bound": 1048576,
+  "source_review": {
+    "bytes": 5582,
+    "physical": {
+      "st_blocks": "16",
+      "st_ctime_ns": "1792347956560656400",
+      "st_dev": "16777223",
+      "st_ino": "186866871",
+      "st_mode": "33188",
+      "st_mtime_ns": "1792347956560656400",
+      "st_nlink": "1",
+      "st_size": "5582",
+      "st_uid": "501"
+    },
+    "sha256": "d17875adb538cb830939484ef33b49d0f2a16c030999b49e559bcd8f523b8956"
+  },
+  "source_review_path": "/tmp/capacity-native-origin-observer-source-evidence-20261018-v1/source-review.json"
+}

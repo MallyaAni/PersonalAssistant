@@ -1,0 +1,180 @@
+{
+  "actual_prerequisites": null,
+  "all_remote_pages_target_and_native_json_UNREAD_here": true,
+  "contract_page_bytes": 1289452,
+  "contract_pages": 21,
+  "execution_admission": null,
+  "function_inventory": {
+    "observe-retained-native-json-v1-2026-10-18.py": [
+      {
+        "AST_sha256": "f9d11e40b137f157ed986d7c9408e78096697551cf5d43f4579bcaf91b415a88",
+        "line": 31,
+        "name": "physical"
+      },
+      {
+        "AST_sha256": "b47fb221e85fb82b5495acc68dac268d48a50c292fc66e325213e9fef27553f9",
+        "line": 36,
+        "name": "digest"
+      },
+      {
+        "AST_sha256": "fcd50dd3b757cc9db65a0361955026ee88b336f88963a5f717f6486fe3882c66",
+        "line": 44,
+        "name": "pairs"
+      },
+      {
+        "AST_sha256": "50352b7ddccca678a186e16fe8f9db52fb2cfa22d17e1d01658d5297eb8811a6",
+        "line": 54,
+        "name": "nonfinite"
+      },
+      {
+        "AST_sha256": "42165832aeec19123d16e410803244737d5ecfdf34d3810765530d2fdeaeead8",
+        "line": 59,
+        "name": "finite_number"
+      },
+      {
+        "AST_sha256": "1b60dd02f4857bd9d55c51a4305bf3c36915501b8254546785f30f982e3cd426",
+        "line": 66,
+        "name": "decoded"
+      },
+      {
+        "AST_sha256": "67327c1ad0f98764697e537c22f70d181d56de538e84ad8a1674e39c54bffe1e",
+        "line": 72,
+        "name": "metadata"
+      },
+      {
+        "AST_sha256": "6ed927c92ea61a126d6b14905912fbc3424832113bc39839d2b79b4ec5eb7a96",
+        "line": 84,
+        "name": "read"
+      },
+      {
+        "AST_sha256": "3f1d06fe6a365788f08c29bcb82240ddebd32adab34837f9f0d770868f0da4e0",
+        "line": 105,
+        "name": "page_names"
+      },
+      {
+        "AST_sha256": "f84a70d77e366315ab40f7b1df96f8d2fd074ea11fecf15ca33edd34be731c95",
+        "line": 118,
+        "name": "encoded"
+      },
+      {
+        "AST_sha256": "a6791447226d73eaec1ca90b3237f10d761ce755692846eb7a6150f19bf12a31",
+        "line": 125,
+        "name": "save"
+      },
+      {
+        "AST_sha256": "e7c9aa03f05cbdb62a63e1f8893ca6b6fd72f8ff66c528c8c3edb555964da1cb",
+        "line": 139,
+        "name": "interrupted"
+      },
+      {
+        "AST_sha256": "019fd21f6d5679fd9cc7c32cc73aa55bd2f4e388281507a024cf6dd73d4db6e7",
+        "line": 144,
+        "name": "main"
+      }
+    ],
+    "preserve-native-json-observer-source-v1-2026-10-18.py": [
+      {
+        "AST_sha256": "24afb114294e47e10a9b244a24736f28ac4dfa504683a32e0f6b745e10c2614a",
+        "line": 22,
+        "name": "physical"
+      },
+      {
+        "AST_sha256": "6443835e18a18d943567427859aa512a68bd7478e487c1fbb77035b111a9f410",
+        "line": 27,
+        "name": "sha"
+      },
+      {
+        "AST_sha256": "6f897a9a40c81ddc8346ea60c4f21413f7758d44bbf3edb0b42d9de0db57ea7f",
+        "line": 35,
+        "name": "read"
+      },
+      {
+        "AST_sha256": "52d21a6fb601e71e2a8bf026c4c18b7d1089a5bacf0cc7e5515ebd7688220b5d",
+        "line": 56,
+        "name": "write"
+      },
+      {
+        "AST_sha256": "a77f250aba58881c587a39df2fbcec4d94fd1b7d8471ac567095bfd29076ee54",
+        "line": 69,
+        "name": "stop"
+      },
+      {
+        "AST_sha256": "06b7777114a0b35d496afd1bdfa4aa75a3e831b03696d0cd83f718a2194a2a08",
+        "line": 74,
+        "name": "main"
+      }
+    ],
+    "verify-retained-native-json-v1-2026-10-18.py": [
+      {
+        "AST_sha256": "66cd2cd3b37e976421cf0336f0064df9f894d58dc1e4356da95ec5db5161d286",
+        "line": 37,
+        "name": "identity"
+      },
+      {
+        "AST_sha256": "4262b7fa1ade49865b6fc32871082dad595b4f1178dab344747720a58b8857c4",
+        "line": 42,
+        "name": "charged_sha"
+      },
+      {
+        "AST_sha256": "ebf4252319af0d3d73073b119bf7c700afefa8673a72e0d3d908739eb2ad430c",
+        "line": 52,
+        "name": "acquire"
+      },
+      {
+        "AST_sha256": "cbbc7308ede5257f087c0d1b9c159a4357385b94b5538f43eab820260f271690",
+        "line": 87,
+        "name": "unique_members"
+      },
+      {
+        "AST_sha256": "029ade7ed0530294386a0d50894374baccfa21ba624893630c78bf4eac83c331",
+        "line": 96,
+        "name": "finite_decimal"
+      },
+      {
+        "AST_sha256": "170d0164fbfca8e43043853941fc4d626f47832342c249ae73e36d1e0cdfbda4",
+        "line": 103,
+        "name": "invalid_constant"
+      },
+      {
+        "AST_sha256": "fc193064a8c3d94b6e700ec8b3d7ec7b157b242f94ca2d4ff6d2e012dbf8ed40",
+        "line": 108,
+        "name": "parse"
+      },
+      {
+        "AST_sha256": "b18be2b13a1902b37fe0c3652657518543067911940aa81662c45c1892e4de72",
+        "line": 115,
+        "name": "check_row"
+      },
+      {
+        "AST_sha256": "82953286eb6b955eb83b7048c3f4043f3a177822d146a20853140b6fe613725b",
+        "line": 130,
+        "name": "names"
+      },
+      {
+        "AST_sha256": "949c35728292c9ca3f6057f7004d0515fbda230407ba94a4369872fc1dea0802",
+        "line": 144,
+        "name": "canonical"
+      },
+      {
+        "AST_sha256": "1572032045ad1abf0b10ed2cb5682de29a720360f8663eb68d07eee618b261c7",
+        "line": 151,
+        "name": "stop"
+      },
+      {
+        "AST_sha256": "0491d3bd303954fd5c951ecd91521e43becda4ac9004ca66afa967eacfbab0c9",
+        "line": 156,
+        "name": "main"
+      }
+    ]
+  },
+  "genuine_execution_authorized": false,
+  "independent_invocation": null,
+  "independent_summary_unobserved_fail_closed": true,
+  "native_runtime_admission": null,
+  "observer_invocation": null,
+  "payload_functions_UNRUN": 25,
+  "primary_independent_source_hash_pinned": true,
+  "schema": "retained-native-json-observer-SOURCE-review/1",
+  "scope": "LOCAL_AST_JSON_SHA_ONLY",
+  "staging_transport": null
+}
