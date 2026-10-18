@@ -1,0 +1,76 @@
+{
+  "schema": "original-loader-guard-source-package/1",
+  "status": "SOURCE_PREPARED_REVIEWED_ONLY_NO_RUNTIME_ACCEPTANCE",
+  "starting_head": "4197ec58656bc8bc2c49b89f5f78be8c0618113c",
+  "source_checkpoint": "831004358842b2cc95014c8df59bbd03e56de04a",
+  "objective": "Prepare tiny synthetic fixtures, exact phase/generated-code manifest construction, runner and bounded owned-child/Docker controller source with a concrete invocation proposal. No execution or genuine admission.",
+  "artifacts": {
+    "sources/original-loader-guard-fixtures-2026-10-18.py": {"sha256": "7e5ba241515a2407b412bed46dae287f8b4d501b900cd0713aca5d516cf4da56", "bytes": 14799, "purpose_commented_functions": 11, "embedded_fixture_functions": 16},
+    "sources/original-loader-guard-suite-2026-10-18.py": {"sha256": "04aba4f2d16b774c9d8542cdec85215ca58018111e6d9f1e645b37ecafacaca9", "bytes": 25061, "purpose_commented_functions": 20},
+    "sources/original-loader-guard-bootstrap-2026-10-18.py": {"sha256": "d0e888e703626cf98a9b3f12dd625cec4789f951bea9a8f583aa8dbcf46d8db5", "bytes": 3706, "purpose_commented_functions": 4},
+    "sources/original-loader-guard-controller-2026-10-18.py": {"sha256": "c705fcc9655241c6ecfc38ca755527920db2daf04c76cdca1539babbeff4d9ca", "bytes": 15017, "purpose_commented_functions": 13},
+    "original-loader-guard-concrete-proposal-2026-10-18.json": {"sha256": "d52a1b3f808129cb822a0880233146f026e57c2f091a3b6b4bd3b7bf70398550", "bytes": 7305}
+  },
+  "unchanged": {
+    "harness": "737d4236345ebfbc90a0ecf33e3e9ce733e5f06afb2e53c3125e465e9b1a2eea",
+    "contract": "ecc58ad7f6ec65bb42a28ef0c2bea8d116b0e9be5ea59e490388fa0e74dfddc8",
+    "producer_inert_text": "fae5bfc7d7438071094f31f42e884cb48e3709c55f364954e51c28302d3c3e30",
+    "continuation_inert_text": "14357ed7b87618ee514dd3cd4e4a71e2c27290875c3df257e692773e524cfaaf",
+    "original_current_selector_separation": true,
+    "production_native_store_nightly_cycle_caps": true
+  },
+  "source_design": [
+    "A separate preparation interpreter would compile only tiny stdlib fake-backend modules and freeze native dataclass generated templates. Exact original daily-prefix wrapper/inputs are compiler inputs only; a future guarded call stops at a non-backend MarketStore sentinel before any data access. Original producer module remains inert text.",
+    "56 proposed G01-G17 children each own a new interpreter, permanent fence, allocated failure inode and exact physical marker assertions. Four G18 children test real readiness/waits/alarm/exit7 and separately owned sentinel survival. This is not protection of an unrelated production process.",
+    "Fake SourceBook construction bypasses its genuine2446 constructor only in explicitly injected tiny fixtures. Fake inspection declarations are not actual Docker evidence and original account path is a JSON string only, never mounted or read.",
+    "Fake workflow checks full tiny receipt/context/JSON/UTF8 coexistence, alias inventory, strict NaN refusal and orphan candidate preservation. Unchanged actual cgroup metrics are proposed; no metric monkeypatch.",
+    "Bootstrap verifies external source pins. Two actual future runtime phases would mount only small source, prepared tiny fixtures and owned output. The tiny /app bind hides the genuine backend. Exact N2e0/UID1000/noneRO/1CPU/2GiB=swap/PIDs32/tmp64; no original artifacts, credentials, models, provider or Docker socket mount.",
+    "Controller source uses local Unix Docker socket/pullnever, finite CLI logs/deadlines, exclusive root/source-labelled names, per-name cleanup continuation and durable terminal receipts on outer interruption. Direct controller main remains SOURCE_ONLY. Headroom and output targets are not reservations or daemon RAM bounds."
+  ],
+  "readonly_review": {
+    "worker": "Reused healthy trading_action_consistency; READONLY source review and final narrow reread. No edits/import/compile/runtime. Limited workers not retried.",
+    "findings": [
+      "Dataclass generated factory/module frames must be separately frozen, not only __init__. Added tiny native-template preparation path. Effect dataclass is expected to refuse at factory import, not prove instance denial or genuine broker import acceptance.",
+      "Owner CLI receipt/log finalization could be skipped by outer KeyboardInterrupt. Spawn/unmask/wait now have outer finally for exact child reap/logfsync/exit receipt.",
+      "A first failed container cleanup could skip the second. Cleanup now retains per-name uncertainty, continues every registered name and fails aggregate.",
+      "G18 must distinguish the actual timer handler from another KeyboardInterrupt. Added physical READY observation and exact handler message assertion."
+    ],
+    "final_narrow_reread": "All three cleanup/alarm findings addressed in source; no further blocker in that narrow reread. No runtime or genuine admission implied.",
+    "runtime_red_or_green": "NONE; these were source findings, not executed failures."
+  },
+  "checks": {
+    "four_source_ast_parse": "PASS",
+    "embedded_fixture_ast_parse": "PASS",
+    "purpose_comments": "PASS:48 helper functions plus16 embedded fixture functions",
+    "proposal_json_parse_and_inert_fields": "PASS",
+    "exact_source_hashes_and_small_original_text_hashes": "PASS",
+    "git_staged_diff_check": "PASS",
+    "ruff": "UNAVAILABLE_NOT_CLAIMED",
+    "synthetic_tests_run": 0,
+    "genuine_tests_run": 0,
+    "completed_old_gates_repeated": 0,
+    "helpers_imported_or_bytecode_compiled_or_execed": false,
+    "fixture_built_or_generated_manifest_created": false,
+    "SSH_Docker_host_probe_or_container_created": false,
+    "application_numerical_model_account_provider_called": false
+  },
+  "required_before_synthetic_runtime": [
+    "Finish remaining declared G17 full-workflow source/inventory/output-growth coverage and G13 full-workflow FD/path mismatch; do not count the current narrower cases as complete coverage of the previous plan.",
+    "Prepare independent actual runtime/source/child/physical evidence verifier and exact source preservation/staging/caller record. Review malformed runtime/invocation and complete prepared-source preservation paths.",
+    "Fresh exact host/image/runtime/mount/resource admission before any create. No missing-image probe repetition or profile substitute.",
+    "Only after source/invocation review may a newly admitted synthetic suite be executed once in separate roots. Preserve failures and require exact observed causes, not generic nonzero exits.",
+    "No genuine source/call manifest/loader/controller/runtime admission follows from a synthetic result. Genuine combined loader/receipt/model RAM remains separately unproven."
+  ],
+  "runtime_admission": null,
+  "execution_authorized": false,
+  "source_checkpoint_deployed": false,
+  "original_files_changed": false,
+  "production_changed": false,
+  "original_timing": "FAILED_UNCHANGED",
+  "publication": "CLOSED",
+  "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+  "actual_two_host": false,
+  "historical_weekday_intraday_fill_UI": "UNVERIFIED",
+  "heartbeat": "ACTIVE",
+  "diagram_impact": "NONE: private source-only proposal; no production component/runtime flow changed."
+}

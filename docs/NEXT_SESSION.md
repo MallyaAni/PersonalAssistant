@@ -1,5 +1,53 @@
 # Next session
 
+## 2026-10-18 — Tiny N2 guard source package prepared; all runtime UNVERIFIED
+
+Source checkpoint831004358842b2cc95014c8df59bbd03e56de04a passed local
+source-only AST/metadata review; NOT runtime acceptance. Read
+research/original-loader-guard-source-package-proof-2026-10-18.json and
+original-loader-guard-concrete-proposal-2026-10-18.json (d52a1b3f/7305B).
+New fixture7e5ba241/14799B, suite04aba4f2/25061B, bootstrapd0e888e7/3706B,
+controllerc705fcc9/15017B remain unexecuted under research/sources.
+Harness737d/contractecc/source4197 remain unchanged. No helper import,
+bytecode compilation/exec, fixture build/generated manifest, tests, SSH,
+Docker/host probe, model/account/provider call or original/production change.
+
+The proposal separates native tiny-fixture template preparation from guarded
+children; dataclass factory/module/init and exact daily-prefix wrapper/inputs
+have distinct fingerprints. Original producer text is inert. Tiny prefix
+would stop at first non-backend dependency sentinel before any data read.
+56 G01-G17 cases plus four G18 cleanup children are proposed, all UNEXECUTED.
+Fake SourceBook/inspection/audit metadata are explicitly injected synthetic;
+genuine2446/native/runtime/source admissions are not replaced or claimed.
+Two proposed exacte0/UID1000/noneRO/1CPU/2GiB=swap/PIDs32/tmp64 runtimes mount
+only small source/tiny fixtures/owned output; actual metrics are not patched.
+No genuine backend/model/original/account/market/credential/socket mounts.
+60s suite/120s owner/128 children/perfile262KiB/32MiB output target and fresh
+5GiB memory/4GiB disk/8192inode headroom are NOT reservations/admission.
+
+Existing healthy worker READONLY review found interrupted CLI receipt/log,
+per-name cleanup continuation and timer-identity gaps. Source now reaps and
+fsyncs terminal evidence in outer finally, attempts every owned labelled name,
+and requires READY bytes plus exact real-alarm message. Final narrow reread
+confirmed those three source fixes; no runtime tests or limited-agent retry.
+Effect dataclass is expected to refuse a generated factory at import: NOT
+instance denial or genuine broker import acceptance. Possible genuine import
+blocker stays explicit; unchanged harness guards were not weakened.
+ASTs/JSON/hash links/purpose comments48+16/diff passed; Ruff unavailable.
+Zero old completed gates repeated; all existing roots/evidence preserved.
+
+NEXT: finish declared G17 full-workflow source/inventory/output-growth and G13
+FD/path mismatch coverage, independent actual runtime/source/child/physical
+verifier and exact source preservation/staging/caller record. Re-review that
+concrete source/invocation, then obtain fresh exact synthetic runtime/host/
+resource admission before any new create. No blanket source-ready/runtime
+claim from this partial coverage. No genuine loader/full original/corrected/
+account launch or actual owner execution. Combined RAM/historical/weekday/
+intraday/fill/UI UNVERIFIED; original timing FAILED/publication CLOSED/missing
+receipts unchanged; genuinev6 OPEN/PAUSED/no replay/adoption/new run;
+actualtwohost/Spark2 image/daemon-temp/RAM gaps unchanged. Heartbeat ACTIVE.
+Diagram impact: NONE — private source-only proposal, no production flow change.
+
 ## 2026-10-18 — N2 capacity harness SOURCE PREPARED; synthetic behavior UNVERIFIED
 
 Source checkpointacb314d68a6dcaee5715114fb0657dd97976b313 passed the
