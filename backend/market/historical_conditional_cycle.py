@@ -41,7 +41,7 @@ WINDOW = packet.schedule("2019-03-01T14:45:00Z")
 DAY = date(2019, 3, 1)
 META_CAP = 256 * 1024
 CURRENT = "3b72cd4e0bc15acd24432d501918c721685a5333"
-SETTLEMENT_SHA256 = "81286e30aabef22eeb2d05e68fb74ffdf6a060dc1e1813eda80cae9cfd5c5a0b"
+SETTLEMENT_SHA256 = "9e194856545dbf07e0ba6f0f2af9b022f75f767ee6371bb6af1f85e522f4c90d"
 
 
 # Hash original bytes independently of normalized declaration hashes.
@@ -124,7 +124,7 @@ def _components(store, client, root, pins, session=DAY, *, raw_checkpoint=None):
     }
 
 
-# Persist distinct receipt versions without admitting raw components to settlement.
+# Persist distinct component versions and optionally bind a raw reconciliation save.
 def _receipt(
     store,
     client,
@@ -136,9 +136,12 @@ def _receipt(
     context=None,
     settle_current=False,
     raw_checkpoint=None,
+    raw_reconciliation=None,
 ):
     if raw_checkpoint is not None and settle_current:
         raise ValueError("Raw paper settlement is not admitted")
+    if raw_reconciliation is not None and raw_checkpoint is None:
+        raise ValueError("Raw reconciliation requires explicit component storage")
     value = {
         "schema": "private-conditional-cycle-receipt/1" if raw_checkpoint is None
         else "private-conditional-cycle-receipt/2",
@@ -155,6 +158,10 @@ def _receipt(
         "actual_historical_clocks_or_fills": False,
         "paper_journal_reconciliation": "NOT_RUN_NATIVE_SENT_PENDING_RETAINED",
     }
+    if raw_reconciliation is not None:
+        value["raw_reconciliation"] = deepcopy(raw_reconciliation)
+        value["paper_journal_reconciliation"] = "CURRENT_RAW_NATIVE_RECONCILIATION_COMPONENTS"
+        _raw_reconciliation(store, value, pins, raw_checkpoint)
     if settle_current:
         _settlement_source()
         value["current_settlement_sha256"] = SETTLEMENT_SHA256
@@ -249,6 +256,10 @@ def _read_receipt(store, receipt_sha256, pins, *, raw_checkpoint=None):
         )
     elif raw_checkpoint is not None or type(receipt["components"]["paper"]) is not str:
         raise ValueError("Receipt paper storage mode differs")
+    if "raw_reconciliation" in receipt:
+        _raw_reconciliation(store, receipt, pins, raw_checkpoint)
+    elif receipt["paper_journal_reconciliation"] == "CURRENT_RAW_NATIVE_RECONCILIATION_COMPONENTS":
+        raise ValueError("Raw reconciliation evidence missing")
     if "current_settlement_sha256" in receipt:
         if (
             receipt["current_settlement_sha256"] != SETTLEMENT_SHA256
@@ -257,6 +268,43 @@ def _read_receipt(store, receipt_sha256, pins, *, raw_checkpoint=None):
             raise ValueError("Exact CURRENT settlement receipt profile required")
         _settlement_source()
     return receipt
+
+
+# Bind final raw state to one plain prior receipt without adopting a Store operation.
+def _raw_reconciliation(store, receipt, pins, raw_checkpoint):
+    if (receipt["schema"] != "private-conditional-cycle-receipt/2"
+            or raw_checkpoint is None or "current_settlement_sha256" in receipt
+            or receipt["paper_journal_reconciliation"] != "CURRENT_RAW_NATIVE_RECONCILIATION_COMPONENTS"):
+        raise ValueError("Exact raw reconciliation receipt mode required")
+    link = receipt["raw_reconciliation"]
+    if type(link) is not dict or set(link) != {"pre_settlement_receipt", "evidence"}:
+        raise ValueError("Exact prior raw reconciliation link required")
+    reference = link["pre_settlement_receipt"]
+    prior = packet._decode(store.read_blob(reference, limit=META_CAP))
+    if "raw_reconciliation" in prior:
+        raise ValueError("Plain prior raw receipt required; recursive evidence refused")
+    prior = _read_receipt(store, reference, pins, raw_checkpoint=raw_checkpoint)
+    evidence = link["evidence"]
+    if (prior["schema"] != "private-conditional-cycle-receipt/2"
+            or prior["session"] != receipt["session"]
+            or prior["context"] != receipt["context"]
+            or evidence["outcome_sha256"] != reference
+            or evidence["prior_component"] != prior["components"]["paper"]
+            or evidence["broker_checkpoint_sha256"] != receipt["components"]["broker"]
+            or any(prior["components"][key] != receipt["components"][key]
+                   for key in ("broker", "latch"))):
+        raise ValueError("Original raw reconciliation component graph differs")
+    broker_ref = receipt["components"]["broker"]
+    client = codec.restore(
+        store.read_blob(broker_ref, limit=codec.CAPS["bytes"]),
+        expected_sha256=broker_ref, **pins,
+    )
+    if (client._now is None
+            or evidence["conditional_observed_at"] != client._now.isoformat()):
+        raise ValueError("Raw reconciliation broker observation clock differs")
+    return _settlement_source().verify_raw_saved(
+        evidence, receipt["components"]["paper"], raw_checkpoint, pins=pins
+    )
 
 
 # Read one bounded indexed checkpoint and reuse its original integrity validator.
