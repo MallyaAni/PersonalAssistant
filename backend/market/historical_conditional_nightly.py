@@ -50,6 +50,9 @@ SAVE_STATE = paper.save_state
 SUBMIT = native.ReplayBroker._submit
 CYCLE = "086a85c052aa536edc77cf92035864eb92c8ce009d3e5593fa8f44e4b67bca9a"
 SOURCES = {
+    "backend/market/historical_native_metadata.py": (
+        "c234c1005a7a8e50062be3aadcf6892e34a0adf8249d3351b69bd6e861b2d13e"
+    ),
     "backend/market/live_model_history.py": (
         "fa8ecdb9c0c32d2f034ece8c7da57fec9f198d8d8427a0273d5b59dc4ca6b37b"
     ),
@@ -734,11 +737,31 @@ class NativeCapture:
     # Encode after native persistence; a recording failure leaves uncertainty.
     def finish(self):
         references = []
+        remaining = None
+        if self.raw_checkpoint is not None:
+            from backend.market import historical_native_metadata as metadata
+
+            admitted.require(len(self.decisions) <= 320, "Raw decision count bound exceeded")
+            if self.recording_failures:
+                raise StorePause("Prior native recording uncertainty; never replay: "
+                                 + "; ".join(self.recording_failures))
+            remaining = metadata.LIMIT
         for decision in self.decisions:
             try:
-                references.append(put(self.store, admitted.encoded(decision)))
+                if self.raw_checkpoint is None:
+                    references.append(put(self.store, admitted.encoded(decision)))
+                else:
+                    reference = metadata.capture(
+                        self.store, decision, kind="holding-decision",
+                        producer_sha256=sha256(Path(__file__).read_bytes()).hexdigest(),
+                        byte_limit=remaining,
+                    )
+                    remaining -= reference["raw_bytes"]
+                    references.append(reference)
             except (ValueError, TypeError, OSError) as error:
                 self.recording_failures.append("decision evidence: " + str(error))
+                if self.raw_checkpoint is not None:
+                    break
         if self.recording_failures:
             raise StorePause(
                 "Native recording failure; physical writes retained; never replay: "
@@ -1078,6 +1101,123 @@ class Nightly:
         )
         write_once(directory / "result.json", admitted.encoded({"receipt": receipt}))
         return receipt
+
+    # Validate raw metadata separately from legacy native execution and adoption.
+    def raw_value(self, value, raw_checkpoint):
+        from backend.market import historical_native_metadata as metadata
+        from backend.market import historical_paper_component as component
+
+        admitted.require(
+            type(value) is dict
+            and set(value) == {"phase", "session", "context", "birth", "components",
+                               "entry", "decisions"}
+            and value["phase"] == "NIGHTLY_CLOSE"
+            and type(value["components"]) is dict
+            and set(value["components"]) == {"broker", "paper"}
+            and type(value["decisions"]) is list and len(value["decisions"]) <= 320,
+            "Exact raw Nightly metadata value required",
+        )
+        date.fromisoformat(value["session"])
+        component.verify(value["components"]["paper"], raw_checkpoint,
+                         expected_identity=self.store.identity)
+        self.store.read_blob(value["components"]["broker"], limit=codec.CAPS["bytes"])
+        self.store.read_blob(value["context"], limit=CAP)
+        producer = sha256(Path(__file__).read_bytes()).hexdigest()
+        references = [(value["entry"], "nightly-entry")]
+        references.extend((item, "holding-decision") for item in value["decisions"])
+        total = 0
+        for reference, kind in references:
+            metadata._declaration(self.store, reference, kind, producer)
+            total += reference["raw_bytes"]
+        admitted.require(total <= metadata.LIMIT,
+                         "Raw Nightly metadata aggregate bound exceeded")
+        for reference, kind in references:
+            metadata.read_bytes(self.store, reference, kind=kind,
+                                producer_sha256=producer)
+        return value
+
+    # Publish source-bound raw metadata only after its original reservation matches.
+    def complete_raw(self, directory, reservation, value, *, raw_checkpoint):
+        value = self.raw_value(value, raw_checkpoint)
+        raw = physical(Path(directory) / "reservation.json")
+        operation = admitted.decoded(raw)
+        admitted.require(
+            Path(directory) == self.operation(value["phase"], value["session"])
+            and sha256(raw).hexdigest() == reservation
+            and operation["identity"] == self.store.identity
+            and operation["pre_head"] == self.expected_head
+            and operation["source_sha256"] == sources()
+            and self.store.snapshot()["head"] == self.expected_head
+            and all(operation[key] == value[key] for key in ("phase", "session", "birth"))
+            and operation["context_sha256"] == value["context"],
+            "Raw Nightly reservation lineage differs",
+        )
+        receipt = put(self.store, admitted.encoded({
+            **value, "schema": "standalone-current-nightly/2",
+            "identity": self.store.identity, "reservation_sha256": reservation,
+            "operation": operation, "store_head": self.expected_head,
+            "packet_pipeline_integrated": False, "publication_barrier": "CLOSED",
+            "native_operation_committed": False, "durable_simulator_adoption": False,
+        }))
+        write_once(Path(directory) / "result.json",
+                   admitted.encoded({"schema": "raw-nightly-result/1", "receipt": receipt}))
+        return receipt
+
+    # Authenticate the original raw result without recapturing or invoking native work.
+    def read_raw(self, reference, *, raw_checkpoint):
+        record = admitted.decoded(self.store.read_blob(reference, limit=CAP))
+        admitted.require(
+            type(record) is dict and set(record) == {
+                "phase", "session", "context", "birth", "components", "entry", "decisions",
+                "schema", "identity", "reservation_sha256", "operation", "store_head",
+                "packet_pipeline_integrated", "publication_barrier",
+                "native_operation_committed", "durable_simulator_adoption"}
+            and record["schema"] == "standalone-current-nightly/2"
+            and record["identity"] == self.store.identity
+            and record["packet_pipeline_integrated"] is False
+            and record["publication_barrier"] == "CLOSED"
+            and record["native_operation_committed"] is False
+            and record["durable_simulator_adoption"] is False,
+            "Exact standalone raw Nightly result required",
+        )
+        operation = record["operation"]
+        directory = self.operation(operation["phase"], operation["session"], operation["pre_head"])
+        raw = physical(directory / "reservation.json")
+        admitted.require(
+            admitted.decoded(raw) == operation
+            and operation["identity"] == self.store.identity
+            and operation["source_sha256"] == sources()
+            and operation["pre_head"] == record["store_head"]
+            and sha256(raw).hexdigest() == record["reservation_sha256"]
+            and all(operation[key] == record[key] for key in ("phase", "session", "birth"))
+            and operation["context_sha256"] == record["context"]
+            and admitted.decoded(physical(directory / "result.json"))
+                == {"schema": "raw-nightly-result/1", "receipt": reference},
+            "Raw Nightly reservation/result lineage differs",
+        )
+        self.raw_value({key: record[key] for key in
+                       ("phase", "session", "context", "birth", "components", "entry", "decisions")},
+                       raw_checkpoint)
+        return record
+
+    # Recover only the original raw receipt, leaving interrupted operations paused.
+    def recover_raw(self, phase, session, *, context_sha256, birth, raw_checkpoint):
+        directory = self.operation(phase, session)
+        operation = admitted.decoded(physical(directory / "reservation.json"))
+        expected = {"identity": self.store.identity, "pre_head": self.expected_head,
+                    "phase": phase, "session": session, "source_sha256": sources(),
+                    "context_sha256": context_sha256, "birth": birth}
+        admitted.require(all(operation.get(key) == value for key, value in expected.items()),
+                         "Conflicting raw Nightly reservation")
+        try:
+            result = admitted.decoded(physical(directory / "result.json"))
+        except FileNotFoundError as error:
+            raise StorePause("Interrupted raw Nightly operation; never re-execute") from error
+        admitted.require(type(result) is dict and set(result) == {"schema", "receipt"}
+                         and result["schema"] == "raw-nightly-result/1",
+                         "Exact raw Nightly result required")
+        self.read_raw(result["receipt"], raw_checkpoint=raw_checkpoint)
+        return result["receipt"]
 
     # Birth exactly100000cash/zero shares and preserve its native empty state first.
     def initialize(self, context):
