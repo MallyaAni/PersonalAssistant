@@ -1,0 +1,242 @@
+{
+  "declared_AST_rebindings": {
+    "daily_prefix_statement_body": "Original inputs prefix before unique shape assignment, explicit six-value return, new function/source identity; no runtime AST/inspect projection.",
+    "economic_paths_align_passive_readonly": "Exact original function ASTs; globals explicitly new evidence/economic helper bindings.",
+    "load_passive_inputs": "Only forecasts.evidence -> _passive_evidence and plain -> _passive_provenance_plain rebindings.",
+    "market_initializer": "Only exact parent identity changes to CapacityFrozenRiskReaderV1; unchanged real ForwardMarketConditionedHoldingReader base/MRO/_bind.",
+    "passive_evidence_file_hash": "Original full helper ASTs apart from declared local function/call names; original leaf-symlink, Path-or-JSON and second-read semantics, no added held-FD claim.",
+    "passive_provenance_projection": "Only original nonfinite-to-None float return replaced by finite refusal then float. Actual prepare_passive._freeze rejects nonfinite input; no generic native/account normalization. Narrower domain requires new positive/refusal parity.",
+    "private_load": "Original load statement order; exact archives type and post-factory head/status checks inserted; only explicit new reader/result/economic identities rebound.",
+    "reviewed_economics": "Only economics.<six constants/functions> qualification removed; explicit original constant assignments and copied load_passive_inputs.",
+    "two_risk_initializers": "Complete original AST bodies/arguments, same super call, distinct new class names/base chain and two returning frames. Neither original policy module imported."
+  },
+  "factory_chain": "Exact unchanged load_publication->_admit->numeric_head produces NumericHead/None; entry accepts exact head type+status only immediately after that call. The type/status helper alone does NOT prove factory provenance or reject a forged exact-type object; full source/fence/call binding remains mandatory.",
+  "lifetimes": "Distinct returning base/frozen constructor frames retain original first-feature release before second RHS allocation; both predictions/copies, original bank/head, market deepcopy and raw/panel/archive/receipt/JSON/UTF8 coexistence obligations unchanged. AST source equality is not lifetime/RAM proof.",
+  "map_compact_files_sha256": "67faa3bfdb679ddf7722a801446a84a916b2bfc922e309f8d63ce7a26c20e2d6",
+  "map_declaration": {
+    "bytes": 286816,
+    "path": "original-loader-entry-source-map-v1-2026-10-18.json",
+    "sha256": "aaa1ad0622f18f35e8f639d4a7a9e78e21d8681e19860c7a7284b0876b043f9c"
+  },
+  "modules": {
+    "daily-inputs": {
+      "bodies_run": false,
+      "bytes": 2758,
+      "functions": 1,
+      "path": "sources/original-loader-capacity-daily-inputs-v1-2026-10-18.py",
+      "proposed_origin": "backend/market/capacity_original_daily_inputs_v1.py",
+      "sha256": "a77634e8c54575f3295179c48b4d6577940deff44d1daa691553d826ecc3f9cc"
+    },
+    "economics": {
+      "bodies_run": false,
+      "bytes": 8862,
+      "functions": 7,
+      "path": "sources/original-loader-capacity-economics-v1-2026-10-18.py",
+      "proposed_origin": "backend/market/capacity_original_economics_v1.py",
+      "sha256": "b66cebc1f24f6938a2a4e9dd17cfd6efd233d0ab44091b293c980f9e5a6eadcc"
+    },
+    "frozen-readers": {
+      "bodies_run": false,
+      "bytes": 5839,
+      "functions": 3,
+      "path": "sources/original-loader-capacity-frozen-readers-v1-2026-10-18.py",
+      "proposed_origin": "backend/market/capacity_original_frozen_readers_v1.py",
+      "sha256": "7a0352cb56ad74332c80f64c7b676d85d6e88fdf903f768c0b5f4a5de0536915"
+    },
+    "inputs": {
+      "bodies_run": false,
+      "bytes": 7523,
+      "functions": 4,
+      "path": "sources/original-loader-capacity-inputs-v1-2026-10-18.py",
+      "proposed_origin": "backend/market/capacity_original_inputs_v1.py",
+      "sha256": "8470e2b579cc39b32113e2fcb88e8e918eac283e900f7d62341059761c524661"
+    }
+  },
+  "not_run": [
+    "payload import/CodeType compile/body",
+    "numerical/model/array/load/fit/predict",
+    "tests or old completed gate/body replay",
+    "SSH/hostprobe/Docker/jobs",
+    "original/account/market data reads"
+  ],
+  "old_map_and_binding": "Original2446/old2453 declarations and capacity_binding unchanged, deliberately refuse legacy-path override. New2457 typed16MiB metadata declaration is not a SourceBook/finder/import/physical tree/executed-map/runtime admission.",
+  "original_constant_assignments": {
+    "audit": [
+      "OBSERVATION_METADATA_SHA256",
+      "OBSERVATION_ARRAYS_SHA256",
+      "ORIGINAL_CONFIG_SHA256",
+      "OVERLAY_SHA256",
+      "DEPENDENCIES",
+      "ECONOMIC_RECEIPT_SHA256"
+    ],
+    "economics": [
+      "SNAPSHOT_SHA",
+      "ACTIONS_SHA",
+      "ACTION_REVIEW_SHA",
+      "ECONOMIC_INPUT_PROOF_SHA",
+      "PASSIVE_ARRAYS_SHA",
+      "PASSIVE_RECEIPT_SHA"
+    ]
+  },
+  "original_declarations": {
+    "backend/cli/market_actual_policy_timing.py:load_passive_inputs": {
+      "AST_sha256": "2d5d83565b04eee07146340dd97ddba57f71d6f218111a9f5ebef983374bb8b4",
+      "end_line": 168,
+      "line": 128
+    },
+    "backend/cli/market_learned_entry.py:sha256": {
+      "AST_sha256": "8fed82f2b35f6a77bcec644975dc75a0219bc745e7e75988cfa2c6f94fabaa08",
+      "end_line": 30,
+      "line": 25
+    },
+    "backend/cli/market_probabilistic_execution.py:evidence": {
+      "AST_sha256": "edca0b3416e127f89fd6642190643b0eabe828881eb8899a52f98510f3a8f937",
+      "end_line": 44,
+      "line": 40
+    },
+    "backend/cli/market_strategy_continue.py:inputs": {
+      "AST_sha256": "1171582043ee64990a3c98332875b2ce16e003a9857c70ad1730f9b78b61e15b",
+      "end_line": 172,
+      "line": 99
+    },
+    "backend/market/counterfactual_holding.py:CounterfactualRiskReader.__init__": {
+      "AST_sha256": "0669d8d49b1f476798884eea0d390fce9ca045aa467bc671083ccee0115466d8",
+      "end_line": 94,
+      "line": 29
+    },
+    "backend/market/live_execution_inputs.py:_freeze": {
+      "AST_sha256": "2c27f28ac12bb229258fdff232cb491b8e3dff3d0771b905e3f02c561d5ef4e6",
+      "end_line": 134,
+      "line": 121
+    },
+    "backend/market/live_execution_inputs.py:prepare_passive": {
+      "AST_sha256": "4709d9d2b3463ca0c9c30de4f10f5d43bc080ded7b19f7ca5d96ea47f829d256",
+      "end_line": 237,
+      "line": 138
+    },
+    "backend/market/live_model_history.py:FrozenCurrentMarketReader.__init__": {
+      "AST_sha256": "bc6c965be451f260ebfa184f043c09ce93f24f8aecb7877a25dd0551de40c080",
+      "end_line": 130,
+      "line": 127
+    },
+    "backend/market/live_model_history.py:FrozenCurrentRiskReader.__init__": {
+      "AST_sha256": "35d3a095d632d71d58574d78eb36f19bc8e2623cf1f32ce0323164b743cb0485",
+      "end_line": 70,
+      "line": 30
+    },
+    "backend/market/live_model_history_audit_inputs.py:AuditInputs": {
+      "AST_sha256": "f5994e768cb86d0b6f5a2ba23a00b092387a6a1f0735c18501a39d1f11e78262",
+      "end_line": 74,
+      "line": 68
+    },
+    "backend/market/live_model_history_audit_inputs.py:align_passive": {
+      "AST_sha256": "5bb59af936f46d3d796fb68a4d9d6c159938d42a5107b5fa9e7720bd9a2bbf98",
+      "end_line": 172,
+      "line": 150
+    },
+    "backend/market/live_model_history_audit_inputs.py:economic_paths": {
+      "AST_sha256": "9ac675c34fb794b2ded1bd5a6bd4829ddba049ee4b66f84a55c21b32d7e71551",
+      "end_line": 146,
+      "line": 122
+    },
+    "backend/market/live_model_history_audit_inputs.py:load": {
+      "AST_sha256": "1516a7f5fee1d5cc53ec5a21e9cffd2f03ee4f306ba71c78e09eb37a985e540f",
+      "end_line": 346,
+      "line": 247
+    },
+    "backend/market/live_model_history_audit_inputs.py:readonly": {
+      "AST_sha256": "f329b831ba64bd0f2d11423dc156b387d5348a1ac86d5365d2f33e5f82394be2",
+      "end_line": 243,
+      "line": 235
+    },
+    "backend/market/live_model_history_audit_inputs.py:reviewed_economics": {
+      "AST_sha256": "6a474c74a362fcfd5c048815e9cccd4aad3fdde5e416621cd45e64ddfb75caa0",
+      "end_line": 231,
+      "line": 176
+    },
+    "backend/market/live_policy_replay.py:plain": {
+      "AST_sha256": "8e59ae19c1899b9606531c55ef504d19743089bbb36be32ba98d9b6ead89bee7",
+      "end_line": 46,
+      "line": 35
+    }
+  },
+  "original_inheritance_and_receipts": "Keep actual original forward/calibration/calendar files and __file__/protocol/data paths, ForwardVolatility ancestry, original _bind deepcopy, original numeric identity dicts; new Python class/module/result identities explicit, not original-policy instances.",
+  "original_sources": {
+    "backend/cli/market_actual_policy_timing.py": {
+      "bytes": 35059,
+      "origin": "matching local source",
+      "sha256": "58d481f6fa4b0ec5d997c612c701a8706ee167cc1e4fe19856caf04e02342d7e"
+    },
+    "backend/cli/market_learned_entry.py": {
+      "bytes": 11993,
+      "origin": "matching local source",
+      "sha256": "d70e3814e41bdb8b7dbb81f42efbd6f31fbd9e7ec27cb4c4e3cf1234dc01fb61"
+    },
+    "backend/cli/market_probabilistic_execution.py": {
+      "bytes": 15995,
+      "origin": "matching local source",
+      "sha256": "11679d30fd12e6a3071e7b77e3ca2eb6db323898428d96eb2e9c96fdf4ce635a"
+    },
+    "backend/cli/market_strategy_continue.py": {
+      "bytes": 20140,
+      "origin": "matching local source",
+      "sha256": "14357ed7b87618ee514dd3cd4e4a71e2c27290875c3df257e692773e524cfaaf"
+    },
+    "backend/market/counterfactual_holding.py": {
+      "bytes": 5627,
+      "origin": "matching local source",
+      "sha256": "af8b06a13f9ffeb6f8635cf35852051ed10fb267e3d2d861dd87d9ee984e2fad"
+    },
+    "backend/market/live_execution_inputs.py": {
+      "bytes": 51423,
+      "origin": "matching local source",
+      "sha256": "4756673840814a02d5d0a341d54cbbec9e3a855b8cd8a163cc5f0a9c31b44a86"
+    },
+    "backend/market/live_model_history.py": {
+      "bytes": 6444,
+      "origin": "matching local source",
+      "sha256": "fa8ecdb9c0c32d2f034ece8c7da57fec9f198d8d8427a0273d5b59dc4ca6b37b"
+    },
+    "backend/market/live_model_history_audit_inputs.py": {
+      "bytes": 12316,
+      "origin": "matching local source",
+      "sha256": "fae5bfc7d7438071094f31f42e884cb48e3709c55f364954e51c28302d3c3e30"
+    },
+    "backend/market/live_policy_replay.py": {
+      "bytes": 28355,
+      "origin": "matching local source",
+      "sha256": "b6ef95f0c5eaa53bd732f0ee5baa55f21ef875d07c69e5abbbb236aafd0586e9"
+    }
+  },
+  "remaining_source_seams": [
+    "Independent exact source/delta/import-closure review and scope-specific numeric/type/readonly/alias/deepcopy/finite-provenance proposal.",
+    "New map-transition admission/lifecycle wrapper rather than altering old legacy-source refusal.",
+    "Complete new finder/native-package/generated/call/phase manifest; full real runtime/source/original archive/producer/calendar/config/economic/preservation/before-after byte receipts.",
+    "Private _load prototype is not a genuine executor: no owner/caller/stager/bootstrap/packet/launch or admitted model strategy; public execute refuses."
+  ],
+  "schema": "capacity-original-entry-source-contract/1",
+  "starting_revision": "3da195b911899934238d3e8d189f7358a116af4e",
+  "status": "SOURCE_PREPARED_ALL_MODULE_AND_FUNCTION_BODIES_UNRUN",
+  "unadmitted": {
+    "admission": null,
+    "entrypoint": null,
+    "executed_map": null,
+    "execution_authorized": false,
+    "finder": null,
+    "generated_manifest": null,
+    "launch": null,
+    "model_import_strategy": null,
+    "phase_manifest": null,
+    "runtime": null
+  },
+  "unchanged": {
+    "G08_guard_caps": true,
+    "genuine_loader_model_RAM_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+    "heartbeat": "ACTIVE",
+    "original_source_maps_and_data": true,
+    "original_timing": "FAILED",
+    "production": true,
+    "publication": "CLOSED",
+    "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN"
+  }
+}

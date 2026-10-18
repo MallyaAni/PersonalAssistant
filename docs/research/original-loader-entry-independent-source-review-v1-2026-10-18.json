@@ -1,0 +1,2407 @@
+{
+  "AST_checks": [
+    "original_prefix_statements_and_explicit_return",
+    "economic_paths",
+    "align_passive",
+    "readonly",
+    "reviewed_economics_explicit_namespace",
+    "load_passive_inputs_bindings",
+    "passive_evidence_original_semantics",
+    "file_hash_path_API",
+    "only_nonfinite_refusal_in_provenance_projection",
+    "base_constructor_separate_frame",
+    "frozen_constructor_super_then_second_features",
+    "market_constructor_new_exact_parent",
+    "real_base_MRO_declaration",
+    "six_result_fields_new_identity",
+    "private_load_only_declared_two_guards_and_type_namespace_rebindings",
+    "factory_guard_only_type_and_fitted_nonnull_consistency",
+    "public_execute_unconditionally_refuses",
+    "all12_original_constant_assignments"
+  ],
+  "application_numpy_model_test_SSH_Docker_account_data_bodies_or_operations": false,
+  "candidate_edge_count": 188,
+  "candidate_module_count": 31,
+  "contract_sha256": "8ee53eaf913e5ad5639ce874ad3b205e91ba1425634047c63c6b62d0b6cfaaf0",
+  "entrypoint_model_strategy_finder_phase_generated_runtime_launch_admission": null,
+  "factory_type_status_guard_is_not_provenance_by_itself": true,
+  "graph": {
+    "callable_scope_imports_not_followed": [
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "line": 425,
+        "statement": "import scipy"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "line": 426,
+        "statement": "import sklearn"
+      },
+      {
+        "from": "backend.market.learned_entry_data",
+        "line": 118,
+        "statement": "from backend.market.fill_timing import session_scale"
+      },
+      {
+        "from": "backend.market.learned_entry_models",
+        "line": 129,
+        "statement": "from sklearn.impute import SimpleImputer"
+      },
+      {
+        "from": "backend.market.learned_entry_models",
+        "line": 130,
+        "statement": "from sklearn.linear_model import Ridge"
+      },
+      {
+        "from": "backend.market.learned_entry_models",
+        "line": 131,
+        "statement": "from sklearn.pipeline import make_pipeline"
+      },
+      {
+        "from": "backend.market.learned_entry_models",
+        "line": 132,
+        "statement": "from sklearn.preprocessing import StandardScaler"
+      },
+      {
+        "from": "backend.market.learned_entry_models",
+        "line": 143,
+        "statement": "import scipy"
+      },
+      {
+        "from": "backend.market.learned_entry_models",
+        "line": 144,
+        "statement": "import sklearn"
+      },
+      {
+        "from": "backend.market.learned_entry_models",
+        "line": 227,
+        "statement": "import joblib"
+      },
+      {
+        "from": "backend.market.learned_entry_models",
+        "line": 244,
+        "statement": "from threadpoolctl import threadpool_limits"
+      },
+      {
+        "from": "backend.market.learned_entry_models",
+        "line": 126,
+        "statement": "from sklearn.ensemble import HistGradientBoostingRegressor"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "line": 494,
+        "statement": "from backend.market.direct_feature_arithmetic import HoldingScenarioReader"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "line": 634,
+        "statement": "from backend.market import direct_feature_arithmetic as feature"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "line": 685,
+        "statement": "from backend.market import direct_feature_arithmetic as feature"
+      },
+      {
+        "from": "backend.market.learned_retention_models",
+        "line": 247,
+        "statement": "import scipy"
+      },
+      {
+        "from": "backend.market.learned_retention_models",
+        "line": 248,
+        "statement": "import sklearn"
+      },
+      {
+        "from": "backend.market.original_history_json",
+        "line": 599,
+        "statement": "import tempfile"
+      },
+      {
+        "from": "backend.market.panel",
+        "line": 109,
+        "statement": "from backend.market.alpha import _rolling_beta"
+      },
+      {
+        "from": "backend.market.store",
+        "line": 83,
+        "statement": "import pyarrow as pa"
+      },
+      {
+        "from": "backend.market.store",
+        "line": 84,
+        "statement": "import pyarrow.parquet as pq"
+      },
+      {
+        "from": "backend.market.store",
+        "line": 143,
+        "statement": "import pyarrow as pa"
+      },
+      {
+        "from": "backend.market.store",
+        "line": 144,
+        "statement": "import pyarrow.parquet as pq"
+      },
+      {
+        "from": "backend.market.store",
+        "line": 169,
+        "statement": "import pyarrow.parquet as pq"
+      },
+      {
+        "from": "backend.market.store",
+        "line": 231,
+        "statement": "import pyarrow.parquet as pq"
+      },
+      {
+        "from": "backend.market.store",
+        "line": 250,
+        "statement": "import pyarrow.parquet as pq"
+      },
+      {
+        "from": "backend.market.store",
+        "line": 297,
+        "statement": "import pyarrow.parquet as pq"
+      },
+      {
+        "from": "backend.market.allocation_controls",
+        "line": 205,
+        "statement": "import pyarrow.parquet as pq"
+      },
+      {
+        "from": "backend.market.yahoo",
+        "line": 221,
+        "statement": "from curl_cffi import requests"
+      }
+    ],
+    "edges": [
+      {
+        "from": "backend.market.capacity_original_inputs_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.capacity_original_inputs_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.capacity_original_inputs_v1",
+        "kind": "source_import",
+        "line": 15,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.capacity_original_inputs_v1",
+        "kind": "source_import",
+        "line": 15,
+        "to": "backend.market.direct_daily_arithmetic"
+      },
+      {
+        "from": "backend.market.capacity_original_inputs_v1",
+        "kind": "source_import",
+        "line": 15,
+        "to": "backend.market.forward_arithmetic"
+      },
+      {
+        "from": "backend.market.capacity_original_inputs_v1",
+        "kind": "source_import",
+        "line": 15,
+        "to": "backend.market.holding_risk_bank"
+      },
+      {
+        "from": "backend.market.capacity_original_inputs_v1",
+        "kind": "source_import",
+        "line": 16,
+        "to": "backend.market.capacity_original_archives_v1"
+      },
+      {
+        "from": "backend.market.capacity_original_inputs_v1",
+        "kind": "source_import",
+        "line": 17,
+        "to": "backend.market.capacity_original_daily_inputs_v1"
+      },
+      {
+        "from": "backend.market.capacity_original_inputs_v1",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market.capacity_original_economics_v1"
+      },
+      {
+        "from": "backend.market.capacity_original_inputs_v1",
+        "kind": "source_import",
+        "line": 19,
+        "to": "backend.market.capacity_original_evidence_v1"
+      },
+      {
+        "from": "backend.market.capacity_original_inputs_v1",
+        "kind": "source_import",
+        "line": 20,
+        "to": "backend.market.capacity_original_frozen_readers_v1"
+      },
+      {
+        "from": "backend.market.capacity_original_inputs_v1",
+        "kind": "source_import",
+        "line": 21,
+        "to": "backend.market.daily_arithmetic_bridge"
+      },
+      {
+        "from": "backend.market.capacity_original_inputs_v1",
+        "kind": "source_import",
+        "line": 22,
+        "to": "backend.market.live_execution_inputs"
+      },
+      {
+        "from": "backend.market",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market.calendar"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "source_import",
+        "line": 19,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "source_import",
+        "line": 19,
+        "to": "backend.market.daily_arithmetic_bridge"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "source_import",
+        "line": 20,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "source_import",
+        "line": 20,
+        "to": "backend.market.learned_entry_data"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "source_import",
+        "line": 21,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "kind": "source_import",
+        "line": 21,
+        "to": "backend.market.learned_entry_models"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market.calendar"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "kind": "source_import",
+        "line": 19,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "kind": "source_import",
+        "line": 19,
+        "to": "backend.market.daily_arithmetic_bridge"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "kind": "source_import",
+        "line": 20,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "kind": "source_import",
+        "line": 20,
+        "to": "backend.market.direct_daily_arithmetic"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "kind": "source_import",
+        "line": 21,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "kind": "source_import",
+        "line": 21,
+        "to": "backend.market.direct_error_band"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "kind": "source_import",
+        "line": 22,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "kind": "source_import",
+        "line": 22,
+        "to": "backend.market.direct_feature_arithmetic"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "kind": "source_import",
+        "line": 23,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "kind": "source_import",
+        "line": 23,
+        "to": "backend.market.learned_entry_models"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "kind": "source_import",
+        "line": 24,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "kind": "source_import",
+        "line": 24,
+        "to": "backend.market.learned_retention_models"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "kind": "source_import",
+        "line": 17,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "kind": "source_import",
+        "line": 17,
+        "to": "backend.market.calendar"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market.daily_arithmetic_bridge"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "kind": "source_import",
+        "line": 19,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "kind": "source_import",
+        "line": 19,
+        "to": "backend.market.direct_error_band"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "kind": "source_import",
+        "line": 20,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "kind": "source_import",
+        "line": 20,
+        "to": "backend.market.direct_feature_arithmetic"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "kind": "source_import",
+        "line": 21,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "kind": "source_import",
+        "line": 21,
+        "to": "backend.market.learned_entry_models"
+      },
+      {
+        "from": "backend.market.capacity_original_archives_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.capacity_original_archives_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.capacity_original_archives_v1",
+        "kind": "source_import",
+        "line": 14,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.capacity_original_archives_v1",
+        "kind": "source_import",
+        "line": 14,
+        "to": "backend.market.capacity_original_archive_adaptations_v1"
+      },
+      {
+        "from": "backend.market.capacity_original_archives_v1",
+        "kind": "source_import",
+        "line": 15,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.capacity_original_archives_v1",
+        "kind": "source_import",
+        "line": 15,
+        "to": "backend.market.capacity_original_evidence_v1"
+      },
+      {
+        "from": "backend.market.capacity_original_archives_v1",
+        "kind": "source_import",
+        "line": 16,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.capacity_original_archives_v1",
+        "kind": "source_import",
+        "line": 16,
+        "to": "backend.market.capacity_original_metadata_v1"
+      },
+      {
+        "from": "backend.market.capacity_original_archives_v1",
+        "kind": "source_import",
+        "line": 17,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.capacity_original_archives_v1",
+        "kind": "source_import",
+        "line": 17,
+        "to": "backend.market.live_model_history_input_auth"
+      },
+      {
+        "from": "backend.market.capacity_original_archives_v1",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.capacity_original_archives_v1",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market.original_history_json"
+      },
+      {
+        "from": "backend.market.capacity_original_daily_inputs_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.capacity_original_daily_inputs_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.capacity_original_daily_inputs_v1",
+        "kind": "source_import",
+        "line": 7,
+        "to": "backend.market.panel"
+      },
+      {
+        "from": "backend.market.capacity_original_daily_inputs_v1",
+        "kind": "source_import",
+        "line": 8,
+        "to": "backend.market.store"
+      },
+      {
+        "from": "backend.market.capacity_original_economics_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.capacity_original_economics_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.capacity_original_economics_v1",
+        "kind": "source_import",
+        "line": 17,
+        "to": "backend.market.capacity_original_evidence_v1"
+      },
+      {
+        "from": "backend.market.capacity_original_economics_v1",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market.live_execution_inputs"
+      },
+      {
+        "from": "backend.market.capacity_original_evidence_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.capacity_original_evidence_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.capacity_original_frozen_readers_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.capacity_original_frozen_readers_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.capacity_original_frozen_readers_v1",
+        "kind": "source_import",
+        "line": 11,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.capacity_original_frozen_readers_v1",
+        "kind": "source_import",
+        "line": 11,
+        "to": "backend.market.direct_daily_arithmetic"
+      },
+      {
+        "from": "backend.market.capacity_original_frozen_readers_v1",
+        "kind": "source_import",
+        "line": 11,
+        "to": "backend.market.forward_arithmetic"
+      },
+      {
+        "from": "backend.market.capacity_original_frozen_readers_v1",
+        "kind": "source_import",
+        "line": 11,
+        "to": "backend.market.learned_retention_models"
+      },
+      {
+        "from": "backend.market.capacity_original_frozen_readers_v1",
+        "kind": "source_import",
+        "line": 12,
+        "to": "backend.market.daily_arithmetic_bridge"
+      },
+      {
+        "from": "backend.market.capacity_original_frozen_readers_v1",
+        "kind": "source_import",
+        "line": 13,
+        "to": "backend.market.market_conditioned_holding"
+      },
+      {
+        "from": "backend.market.daily_arithmetic_bridge",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.daily_arithmetic_bridge",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.daily_arithmetic_bridge",
+        "kind": "source_import",
+        "line": 17,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.daily_arithmetic_bridge",
+        "kind": "source_import",
+        "line": 17,
+        "to": "backend.market.calendar"
+      },
+      {
+        "from": "backend.market.live_execution_inputs",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.live_execution_inputs",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.live_execution_inputs",
+        "kind": "source_import",
+        "line": 19,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.live_execution_inputs",
+        "kind": "source_import",
+        "line": 19,
+        "to": "backend.market.calendar"
+      },
+      {
+        "from": "backend.market.live_execution_inputs",
+        "kind": "source_import",
+        "line": 20,
+        "to": "backend.market.daily_arithmetic_bridge"
+      },
+      {
+        "from": "backend.market.calendar",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.calendar",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.calendar",
+        "kind": "source_import",
+        "line": 39,
+        "to": "backend.market.panel"
+      },
+      {
+        "from": "backend.market.learned_entry_data",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.learned_entry_data",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.learned_entry_models",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.learned_entry_models",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "kind": "source_import",
+        "line": 17,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "kind": "source_import",
+        "line": 17,
+        "to": "backend.market.calendar"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market.daily_arithmetic_bridge"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "kind": "source_import",
+        "line": 19,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "kind": "source_import",
+        "line": 19,
+        "to": "backend.market.direct_daily_arithmetic"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "kind": "source_import",
+        "line": 20,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "kind": "source_import",
+        "line": 20,
+        "to": "backend.market.learned_entry_models"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "kind": "source_import",
+        "line": 21,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "kind": "source_import",
+        "line": 21,
+        "to": "backend.market.probabilistic_execution"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "source_import",
+        "line": 14,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "source_import",
+        "line": 14,
+        "to": "backend.market.calendar"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "source_import",
+        "line": 15,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "source_import",
+        "line": 15,
+        "to": "backend.market.daily_arithmetic_bridge"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "source_import",
+        "line": 16,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "source_import",
+        "line": 16,
+        "to": "backend.market.direct_daily_arithmetic"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "source_import",
+        "line": 17,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "source_import",
+        "line": 17,
+        "to": "backend.market.direct_error_band"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market.learned_entry_models"
+      },
+      {
+        "from": "backend.market.learned_retention_models",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.learned_retention_models",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.learned_retention_models",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.learned_retention_models",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market.allocation_controls"
+      },
+      {
+        "from": "backend.market.learned_retention_models",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market.learned_entry_data"
+      },
+      {
+        "from": "backend.market.learned_retention_models",
+        "kind": "source_import",
+        "line": 19,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.learned_retention_models",
+        "kind": "source_import",
+        "line": 19,
+        "to": "backend.market.learned_entry_models"
+      },
+      {
+        "from": "backend.market.capacity_original_archive_adaptations_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.capacity_original_archive_adaptations_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.capacity_original_archive_adaptations_v1",
+        "kind": "source_import",
+        "line": 11,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.capacity_original_archive_adaptations_v1",
+        "kind": "source_import",
+        "line": 11,
+        "to": "backend.market.original_history_json"
+      },
+      {
+        "from": "backend.market.capacity_original_archive_adaptations_v1",
+        "kind": "source_import",
+        "line": 12,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.capacity_original_archive_adaptations_v1",
+        "kind": "source_import",
+        "line": 12,
+        "to": "backend.market.capacity_original_evidence_v1"
+      },
+      {
+        "from": "backend.market.capacity_original_metadata_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.capacity_original_metadata_v1",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.live_model_history_input_auth",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.live_model_history_input_auth",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.live_model_history_input_auth",
+        "kind": "source_import",
+        "line": 11,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.live_model_history_input_auth",
+        "kind": "source_import",
+        "line": 11,
+        "to": "backend.market.original_history_json"
+      },
+      {
+        "from": "backend.market.original_history_json",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.original_history_json",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.panel",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.panel",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.panel",
+        "kind": "source_import",
+        "line": 26,
+        "to": "backend.market.store"
+      },
+      {
+        "from": "backend.market.panel",
+        "kind": "source_import",
+        "line": 27,
+        "to": "backend.market.yahoo"
+      },
+      {
+        "from": "backend.market.store",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.store",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.store",
+        "kind": "source_import",
+        "line": 29,
+        "to": "backend.market.yahoo"
+      },
+      {
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "source_import",
+        "line": 13,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "source_import",
+        "line": 13,
+        "to": "backend.market.daily_arithmetic_bridge"
+      },
+      {
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "source_import",
+        "line": 14,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "source_import",
+        "line": 14,
+        "to": "backend.market.direct_feature_arithmetic"
+      },
+      {
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "source_import",
+        "line": 15,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "source_import",
+        "line": 15,
+        "to": "backend.market.learned_entry_models"
+      },
+      {
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "source_import",
+        "line": 16,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "source_import",
+        "line": 16,
+        "to": "backend.market.market_conditioned_calibration"
+      },
+      {
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "source_import",
+        "line": 17,
+        "to": "backend.market.conditional_holding_calibration"
+      },
+      {
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market.direct_error_band"
+      },
+      {
+        "from": "backend.market.market_conditioned_holding",
+        "kind": "source_import",
+        "line": 19,
+        "to": "backend.market.forward_arithmetic"
+      },
+      {
+        "from": "backend.market.probabilistic_execution",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.probabilistic_execution",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.probabilistic_execution",
+        "kind": "source_import",
+        "line": 19,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.probabilistic_execution",
+        "kind": "source_import",
+        "line": 19,
+        "to": "backend.market.calendar"
+      },
+      {
+        "from": "backend.market.probabilistic_execution",
+        "kind": "source_import",
+        "line": 20,
+        "to": "backend.market.daily_arithmetic_bridge"
+      },
+      {
+        "from": "backend.market.allocation_controls",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.allocation_controls",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.yahoo",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.yahoo",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.market_conditioned_calibration",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.market_conditioned_calibration",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.market_conditioned_calibration",
+        "kind": "source_import",
+        "line": 14,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.market_conditioned_calibration",
+        "kind": "source_import",
+        "line": 14,
+        "to": "backend.market.calendar"
+      },
+      {
+        "from": "backend.market.market_conditioned_calibration",
+        "kind": "source_import",
+        "line": 15,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.market_conditioned_calibration",
+        "kind": "source_import",
+        "line": 15,
+        "to": "backend.market.daily_arithmetic_bridge"
+      },
+      {
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      },
+      {
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "source_import",
+        "line": 14,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "source_import",
+        "line": 14,
+        "to": "backend.market.daily_arithmetic_bridge"
+      },
+      {
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "source_import",
+        "line": 15,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "source_import",
+        "line": 15,
+        "to": "backend.market.direct_feature_arithmetic"
+      },
+      {
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "source_import",
+        "line": 16,
+        "to": "backend.market"
+      },
+      {
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "source_import",
+        "line": 16,
+        "to": "backend.market.learned_entry_models"
+      },
+      {
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "source_import",
+        "line": 17,
+        "to": "backend.market.direct_error_band"
+      },
+      {
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market.forward_arithmetic"
+      }
+    ],
+    "external_package_declarations_not_admitted": [
+      {
+        "from": "backend.market.capacity_original_inputs_v1",
+        "line": 9,
+        "statement": "from dataclasses import dataclass"
+      },
+      {
+        "from": "backend.market.capacity_original_inputs_v1",
+        "line": 10,
+        "statement": "from datetime import date"
+      },
+      {
+        "from": "backend.market.capacity_original_inputs_v1",
+        "line": 11,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.capacity_original_inputs_v1",
+        "line": 13,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "line": 7,
+        "statement": "from __future__ import annotations"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "line": 9,
+        "statement": "import hashlib"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "line": 10,
+        "statement": "import platform"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "line": 11,
+        "statement": "from dataclasses import dataclass"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "line": 12,
+        "statement": "from datetime import datetime"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "line": 13,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "line": 15,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.direct_daily_arithmetic",
+        "line": 16,
+        "statement": "from threadpoolctl import threadpool_limits"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "line": 8,
+        "statement": "import hashlib"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "line": 9,
+        "statement": "import json"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "line": 10,
+        "statement": "from copy import deepcopy"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "line": 11,
+        "statement": "from dataclasses import dataclass"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "line": 12,
+        "statement": "from datetime import datetime, time"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "line": 13,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "line": 15,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.forward_arithmetic",
+        "line": 16,
+        "statement": "from threadpoolctl import threadpool_limits"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "line": 7,
+        "statement": "import io"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "line": 8,
+        "statement": "import json"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "line": 9,
+        "statement": "import os"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "line": 10,
+        "statement": "from copy import deepcopy"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "line": 11,
+        "statement": "from datetime import datetime"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "line": 12,
+        "statement": "from hashlib import sha256"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "line": 13,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.holding_risk_bank",
+        "line": 15,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.capacity_original_archives_v1",
+        "line": 9,
+        "statement": "import tempfile"
+      },
+      {
+        "from": "backend.market.capacity_original_archives_v1",
+        "line": 10,
+        "statement": "from dataclasses import dataclass"
+      },
+      {
+        "from": "backend.market.capacity_original_archives_v1",
+        "line": 11,
+        "statement": "from pathlib import Path, PurePosixPath"
+      },
+      {
+        "from": "backend.market.capacity_original_archives_v1",
+        "line": 12,
+        "statement": "from types import MappingProxyType"
+      },
+      {
+        "from": "backend.market.capacity_original_daily_inputs_v1",
+        "line": 2,
+        "statement": "import json"
+      },
+      {
+        "from": "backend.market.capacity_original_daily_inputs_v1",
+        "line": 3,
+        "statement": "from hashlib import sha256"
+      },
+      {
+        "from": "backend.market.capacity_original_daily_inputs_v1",
+        "line": 5,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.capacity_original_economics_v1",
+        "line": 8,
+        "statement": "import hashlib"
+      },
+      {
+        "from": "backend.market.capacity_original_economics_v1",
+        "line": 9,
+        "statement": "import json"
+      },
+      {
+        "from": "backend.market.capacity_original_economics_v1",
+        "line": 10,
+        "statement": "import math"
+      },
+      {
+        "from": "backend.market.capacity_original_economics_v1",
+        "line": 11,
+        "statement": "from collections.abc import Mapping"
+      },
+      {
+        "from": "backend.market.capacity_original_economics_v1",
+        "line": 12,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.capacity_original_economics_v1",
+        "line": 13,
+        "statement": "from types import SimpleNamespace"
+      },
+      {
+        "from": "backend.market.capacity_original_economics_v1",
+        "line": 15,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.capacity_original_evidence_v1",
+        "line": 8,
+        "statement": "import gzip"
+      },
+      {
+        "from": "backend.market.capacity_original_evidence_v1",
+        "line": 9,
+        "statement": "import io"
+      },
+      {
+        "from": "backend.market.capacity_original_evidence_v1",
+        "line": 10,
+        "statement": "import json"
+      },
+      {
+        "from": "backend.market.capacity_original_evidence_v1",
+        "line": 11,
+        "statement": "import math"
+      },
+      {
+        "from": "backend.market.capacity_original_evidence_v1",
+        "line": 12,
+        "statement": "import os"
+      },
+      {
+        "from": "backend.market.capacity_original_evidence_v1",
+        "line": 13,
+        "statement": "import stat"
+      },
+      {
+        "from": "backend.market.capacity_original_evidence_v1",
+        "line": 14,
+        "statement": "from hashlib import sha256"
+      },
+      {
+        "from": "backend.market.capacity_original_evidence_v1",
+        "line": 15,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.capacity_original_frozen_readers_v1",
+        "line": 7,
+        "statement": "from copy import deepcopy"
+      },
+      {
+        "from": "backend.market.capacity_original_frozen_readers_v1",
+        "line": 9,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.daily_arithmetic_bridge",
+        "line": 7,
+        "statement": "from __future__ import annotations"
+      },
+      {
+        "from": "backend.market.daily_arithmetic_bridge",
+        "line": 9,
+        "statement": "import hashlib"
+      },
+      {
+        "from": "backend.market.daily_arithmetic_bridge",
+        "line": 10,
+        "statement": "import json"
+      },
+      {
+        "from": "backend.market.daily_arithmetic_bridge",
+        "line": 11,
+        "statement": "from dataclasses import dataclass"
+      },
+      {
+        "from": "backend.market.daily_arithmetic_bridge",
+        "line": 12,
+        "statement": "from datetime import datetime, time"
+      },
+      {
+        "from": "backend.market.daily_arithmetic_bridge",
+        "line": 13,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.daily_arithmetic_bridge",
+        "line": 15,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.live_execution_inputs",
+        "line": 8,
+        "statement": "from __future__ import annotations"
+      },
+      {
+        "from": "backend.market.live_execution_inputs",
+        "line": 10,
+        "statement": "import json"
+      },
+      {
+        "from": "backend.market.live_execution_inputs",
+        "line": 11,
+        "statement": "from collections.abc import Mapping"
+      },
+      {
+        "from": "backend.market.live_execution_inputs",
+        "line": 12,
+        "statement": "from dataclasses import dataclass"
+      },
+      {
+        "from": "backend.market.live_execution_inputs",
+        "line": 13,
+        "statement": "from datetime import date, datetime"
+      },
+      {
+        "from": "backend.market.live_execution_inputs",
+        "line": 14,
+        "statement": "from hashlib import sha256"
+      },
+      {
+        "from": "backend.market.live_execution_inputs",
+        "line": 15,
+        "statement": "from types import MappingProxyType"
+      },
+      {
+        "from": "backend.market.live_execution_inputs",
+        "line": 17,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.calendar",
+        "line": 31,
+        "statement": "import json"
+      },
+      {
+        "from": "backend.market.calendar",
+        "line": 32,
+        "statement": "from datetime import date, datetime, time, timedelta"
+      },
+      {
+        "from": "backend.market.calendar",
+        "line": 33,
+        "statement": "from functools import lru_cache"
+      },
+      {
+        "from": "backend.market.calendar",
+        "line": 34,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.calendar",
+        "line": 35,
+        "statement": "from zoneinfo import ZoneInfo"
+      },
+      {
+        "from": "backend.market.calendar",
+        "line": 37,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.learned_entry_data",
+        "line": 7,
+        "statement": "from __future__ import annotations"
+      },
+      {
+        "from": "backend.market.learned_entry_data",
+        "line": 9,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.learned_entry_models",
+        "line": 3,
+        "statement": "from __future__ import annotations"
+      },
+      {
+        "from": "backend.market.learned_entry_models",
+        "line": 5,
+        "statement": "import hashlib"
+      },
+      {
+        "from": "backend.market.learned_entry_models",
+        "line": 6,
+        "statement": "import json"
+      },
+      {
+        "from": "backend.market.learned_entry_models",
+        "line": 7,
+        "statement": "import os"
+      },
+      {
+        "from": "backend.market.learned_entry_models",
+        "line": 8,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.learned_entry_models",
+        "line": 10,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "line": 7,
+        "statement": "from __future__ import annotations"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "line": 9,
+        "statement": "import hashlib"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "line": 10,
+        "statement": "from copy import deepcopy"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "line": 11,
+        "statement": "from dataclasses import dataclass"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "line": 12,
+        "statement": "from datetime import datetime"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "line": 13,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.direct_error_band",
+        "line": 15,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "line": 3,
+        "statement": "from __future__ import annotations"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "line": 5,
+        "statement": "import hashlib"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "line": 6,
+        "statement": "from copy import deepcopy"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "line": 7,
+        "statement": "from dataclasses import dataclass"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "line": 8,
+        "statement": "from datetime import datetime"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "line": 9,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "line": 11,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.direct_feature_arithmetic",
+        "line": 12,
+        "statement": "from threadpoolctl import threadpool_limits"
+      },
+      {
+        "from": "backend.market.learned_retention_models",
+        "line": 8,
+        "statement": "from __future__ import annotations"
+      },
+      {
+        "from": "backend.market.learned_retention_models",
+        "line": 10,
+        "statement": "import hashlib"
+      },
+      {
+        "from": "backend.market.learned_retention_models",
+        "line": 11,
+        "statement": "import platform"
+      },
+      {
+        "from": "backend.market.learned_retention_models",
+        "line": 12,
+        "statement": "from dataclasses import dataclass"
+      },
+      {
+        "from": "backend.market.learned_retention_models",
+        "line": 13,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.learned_retention_models",
+        "line": 15,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.learned_retention_models",
+        "line": 16,
+        "statement": "from threadpoolctl import threadpool_limits"
+      },
+      {
+        "from": "backend.market.capacity_original_archive_adaptations_v1",
+        "line": 6,
+        "statement": "import ast"
+      },
+      {
+        "from": "backend.market.capacity_original_archive_adaptations_v1",
+        "line": 7,
+        "statement": "import json"
+      },
+      {
+        "from": "backend.market.capacity_original_archive_adaptations_v1",
+        "line": 8,
+        "statement": "import math"
+      },
+      {
+        "from": "backend.market.capacity_original_archive_adaptations_v1",
+        "line": 9,
+        "statement": "from hashlib import sha256"
+      },
+      {
+        "from": "backend.market.capacity_original_metadata_v1",
+        "line": 10,
+        "statement": "import ast"
+      },
+      {
+        "from": "backend.market.capacity_original_metadata_v1",
+        "line": 11,
+        "statement": "import hashlib"
+      },
+      {
+        "from": "backend.market.capacity_original_metadata_v1",
+        "line": 12,
+        "statement": "import json"
+      },
+      {
+        "from": "backend.market.capacity_original_metadata_v1",
+        "line": 13,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.live_model_history_input_auth",
+        "line": 3,
+        "statement": "import json"
+      },
+      {
+        "from": "backend.market.live_model_history_input_auth",
+        "line": 4,
+        "statement": "import math"
+      },
+      {
+        "from": "backend.market.live_model_history_input_auth",
+        "line": 5,
+        "statement": "import os"
+      },
+      {
+        "from": "backend.market.live_model_history_input_auth",
+        "line": 6,
+        "statement": "import stat"
+      },
+      {
+        "from": "backend.market.live_model_history_input_auth",
+        "line": 7,
+        "statement": "from dataclasses import dataclass"
+      },
+      {
+        "from": "backend.market.live_model_history_input_auth",
+        "line": 8,
+        "statement": "from hashlib import sha256"
+      },
+      {
+        "from": "backend.market.live_model_history_input_auth",
+        "line": 9,
+        "statement": "from pathlib import Path, PurePosixPath"
+      },
+      {
+        "from": "backend.market.original_history_json",
+        "line": 7,
+        "statement": "import gzip"
+      },
+      {
+        "from": "backend.market.original_history_json",
+        "line": 8,
+        "statement": "import io"
+      },
+      {
+        "from": "backend.market.original_history_json",
+        "line": 9,
+        "statement": "import json"
+      },
+      {
+        "from": "backend.market.original_history_json",
+        "line": 10,
+        "statement": "import math"
+      },
+      {
+        "from": "backend.market.original_history_json",
+        "line": 11,
+        "statement": "import os"
+      },
+      {
+        "from": "backend.market.original_history_json",
+        "line": 12,
+        "statement": "import sqlite3"
+      },
+      {
+        "from": "backend.market.original_history_json",
+        "line": 13,
+        "statement": "import stat"
+      },
+      {
+        "from": "backend.market.original_history_json",
+        "line": 14,
+        "statement": "import tempfile"
+      },
+      {
+        "from": "backend.market.original_history_json",
+        "line": 15,
+        "statement": "from dataclasses import dataclass, replace"
+      },
+      {
+        "from": "backend.market.original_history_json",
+        "line": 16,
+        "statement": "from hashlib import sha256"
+      },
+      {
+        "from": "backend.market.original_history_json",
+        "line": 17,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.panel",
+        "line": 20,
+        "statement": "from collections.abc import Mapping, Sequence"
+      },
+      {
+        "from": "backend.market.panel",
+        "line": 21,
+        "statement": "from dataclasses import dataclass"
+      },
+      {
+        "from": "backend.market.panel",
+        "line": 22,
+        "statement": "from datetime import date"
+      },
+      {
+        "from": "backend.market.panel",
+        "line": 24,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.store",
+        "line": 22,
+        "statement": "import json"
+      },
+      {
+        "from": "backend.market.store",
+        "line": 23,
+        "statement": "import os"
+      },
+      {
+        "from": "backend.market.store",
+        "line": 24,
+        "statement": "from collections.abc import Iterable"
+      },
+      {
+        "from": "backend.market.store",
+        "line": 25,
+        "statement": "from dataclasses import dataclass"
+      },
+      {
+        "from": "backend.market.store",
+        "line": 26,
+        "statement": "from datetime import date, datetime"
+      },
+      {
+        "from": "backend.market.store",
+        "line": 27,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.market_conditioned_holding",
+        "line": 7,
+        "statement": "import hashlib"
+      },
+      {
+        "from": "backend.market.market_conditioned_holding",
+        "line": 8,
+        "statement": "from copy import deepcopy"
+      },
+      {
+        "from": "backend.market.market_conditioned_holding",
+        "line": 9,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.market_conditioned_holding",
+        "line": 11,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.probabilistic_execution",
+        "line": 10,
+        "statement": "from __future__ import annotations"
+      },
+      {
+        "from": "backend.market.probabilistic_execution",
+        "line": 12,
+        "statement": "import hashlib"
+      },
+      {
+        "from": "backend.market.probabilistic_execution",
+        "line": 13,
+        "statement": "from dataclasses import dataclass"
+      },
+      {
+        "from": "backend.market.probabilistic_execution",
+        "line": 14,
+        "statement": "from datetime import UTC, datetime, timedelta"
+      },
+      {
+        "from": "backend.market.probabilistic_execution",
+        "line": 15,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.probabilistic_execution",
+        "line": 17,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.allocation_controls",
+        "line": 44,
+        "statement": "from __future__ import annotations"
+      },
+      {
+        "from": "backend.market.allocation_controls",
+        "line": 46,
+        "statement": "import hashlib"
+      },
+      {
+        "from": "backend.market.allocation_controls",
+        "line": 47,
+        "statement": "import json"
+      },
+      {
+        "from": "backend.market.allocation_controls",
+        "line": 48,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.allocation_controls",
+        "line": 50,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.yahoo",
+        "line": 30,
+        "statement": "import json"
+      },
+      {
+        "from": "backend.market.yahoo",
+        "line": 31,
+        "statement": "import logging"
+      },
+      {
+        "from": "backend.market.yahoo",
+        "line": 32,
+        "statement": "import time"
+      },
+      {
+        "from": "backend.market.yahoo",
+        "line": 33,
+        "statement": "from collections.abc import Callable"
+      },
+      {
+        "from": "backend.market.yahoo",
+        "line": 34,
+        "statement": "from dataclasses import dataclass"
+      },
+      {
+        "from": "backend.market.yahoo",
+        "line": 35,
+        "statement": "from datetime import UTC, date, datetime, timedelta"
+      },
+      {
+        "from": "backend.market.yahoo",
+        "line": 36,
+        "statement": "from typing import Any"
+      },
+      {
+        "from": "backend.market.yahoo",
+        "line": 37,
+        "statement": "from zoneinfo import ZoneInfo"
+      },
+      {
+        "from": "backend.market.market_conditioned_calibration",
+        "line": 8,
+        "statement": "import hashlib"
+      },
+      {
+        "from": "backend.market.market_conditioned_calibration",
+        "line": 9,
+        "statement": "from dataclasses import dataclass"
+      },
+      {
+        "from": "backend.market.market_conditioned_calibration",
+        "line": 10,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.market_conditioned_calibration",
+        "line": 12,
+        "statement": "import numpy as np"
+      },
+      {
+        "from": "backend.market.conditional_holding_calibration",
+        "line": 7,
+        "statement": "import hashlib"
+      },
+      {
+        "from": "backend.market.conditional_holding_calibration",
+        "line": 8,
+        "statement": "from copy import deepcopy"
+      },
+      {
+        "from": "backend.market.conditional_holding_calibration",
+        "line": 9,
+        "statement": "from dataclasses import asdict, dataclass"
+      },
+      {
+        "from": "backend.market.conditional_holding_calibration",
+        "line": 10,
+        "statement": "from pathlib import Path"
+      },
+      {
+        "from": "backend.market.conditional_holding_calibration",
+        "line": 12,
+        "statement": "import numpy as np"
+      }
+    ],
+    "nodes": {
+      "backend": {
+        "bytes": 29,
+        "path": "backend/__init__.py",
+        "sha256": "162e5eeb402108f20b1a976525f5bbf5a03a12ea619f64a19ce5c0fe9aec09af",
+        "source": "exact unchanged original source"
+      },
+      "backend.market": {
+        "bytes": 605,
+        "path": "backend/market/__init__.py",
+        "sha256": "5a886c13f35054c2238d9a661349a38ea242495972aae02a7aa2029dd1533910",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.allocation_controls": {
+        "bytes": 16447,
+        "path": "backend/market/allocation_controls.py",
+        "sha256": "df9e8cddba62b345a03914b6304c21471d8ef7c39c14c62a5f26b550d7dedb86",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.calendar": {
+        "bytes": 13181,
+        "path": "backend/market/calendar.py",
+        "sha256": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.capacity_original_archive_adaptations_v1": {
+        "bytes": 6677,
+        "path": "backend/market/capacity_original_archive_adaptations_v1.py",
+        "sha256": "39f2884741036bbe3a33f451909a59b46924c43ea699e39670c1c13fbcde5134",
+        "source": "explicit new capacity/variant source"
+      },
+      "backend.market.capacity_original_archives_v1": {
+        "bytes": 10886,
+        "path": "backend/market/capacity_original_archives_v1.py",
+        "sha256": "0212bc8dedd0fb44502547fe974670ef84c21db608ab633e2a818c9e718e692b",
+        "source": "explicit new capacity/variant source"
+      },
+      "backend.market.capacity_original_daily_inputs_v1": {
+        "bytes": 2758,
+        "path": "backend/market/capacity_original_daily_inputs_v1.py",
+        "sha256": "a77634e8c54575f3295179c48b4d6577940deff44d1daa691553d826ecc3f9cc",
+        "source": "explicit new capacity/variant source"
+      },
+      "backend.market.capacity_original_economics_v1": {
+        "bytes": 8862,
+        "path": "backend/market/capacity_original_economics_v1.py",
+        "sha256": "b66cebc1f24f6938a2a4e9dd17cfd6efd233d0ab44091b293c980f9e5a6eadcc",
+        "source": "explicit new capacity/variant source"
+      },
+      "backend.market.capacity_original_evidence_v1": {
+        "bytes": 6656,
+        "path": "backend/market/capacity_original_evidence_v1.py",
+        "sha256": "400de9e73e2debb06c7267c925ca0914dc75a98c77f3044a49b88d26db26be25",
+        "source": "explicit new capacity/variant source"
+      },
+      "backend.market.capacity_original_frozen_readers_v1": {
+        "bytes": 5839,
+        "path": "backend/market/capacity_original_frozen_readers_v1.py",
+        "sha256": "7a0352cb56ad74332c80f64c7b676d85d6e88fdf903f768c0b5f4a5de0536915",
+        "source": "explicit new capacity/variant source"
+      },
+      "backend.market.capacity_original_inputs_v1": {
+        "bytes": 7523,
+        "path": "backend/market/capacity_original_inputs_v1.py",
+        "sha256": "8470e2b579cc39b32113e2fcb88e8e918eac283e900f7d62341059761c524661",
+        "source": "explicit new capacity/variant source"
+      },
+      "backend.market.capacity_original_metadata_v1": {
+        "bytes": 5034,
+        "path": "backend/market/capacity_original_metadata_v1.py",
+        "sha256": "d413e748bf2b1eb63f4d267371f22cf6431f6ae650368676c815b07779723135",
+        "source": "explicit new capacity/variant source"
+      },
+      "backend.market.conditional_holding_calibration": {
+        "bytes": 12662,
+        "path": "backend/market/conditional_holding_calibration.py",
+        "sha256": "5b9a7f3036ba480a4b446ccfd5cd0f02a75e8059fa1de8fe0f7c93662342fe8f",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.daily_arithmetic_bridge": {
+        "bytes": 11285,
+        "path": "backend/market/daily_arithmetic_bridge.py",
+        "sha256": "e55d955c5b39b004f2ca7d6f8a11b1c26d7dd459dedcf714d6c170994a5db8a0",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.direct_daily_arithmetic": {
+        "bytes": 20999,
+        "path": "backend/market/direct_daily_arithmetic.py",
+        "sha256": "03cb9e837c291b190c89bb8cce3fb960f16c5b118d41bd67c5f294b4664076b9",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.direct_error_band": {
+        "bytes": 31296,
+        "path": "backend/market/direct_error_band.py",
+        "sha256": "4b72fbea142bf9a77d92897329ecc52a6c4c62e54efa105e2ba0320e8d11865d",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.direct_feature_arithmetic": {
+        "bytes": 38411,
+        "path": "backend/market/direct_feature_arithmetic.py",
+        "sha256": "3c10d505e0681f23144d319cc430cceba867dc80b3ef82d95a887507b07cf632",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.forward_arithmetic": {
+        "bytes": 33450,
+        "path": "backend/market/forward_arithmetic.py",
+        "sha256": "9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.holding_risk_bank": {
+        "bytes": 9592,
+        "path": "backend/market/holding_risk_bank.py",
+        "sha256": "4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.learned_entry_data": {
+        "bytes": 11470,
+        "path": "backend/market/learned_entry_data.py",
+        "sha256": "21adedb2a11ef8fe9802c4be6c2783b684bfd755db17032ae4bbaf0a2e2a693e",
+        "source": "explicit new capacity/variant source"
+      },
+      "backend.market.learned_entry_models": {
+        "bytes": 13741,
+        "path": "backend/market/learned_entry_models.py",
+        "sha256": "d6aac3546a60d7332c28198035d63422c12f3658677c2510abb27d130774d0ba",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.learned_retention_models": {
+        "bytes": 13606,
+        "path": "backend/market/learned_retention_models.py",
+        "sha256": "dc0ac21c8078dc2eb9759820b530e4ce9f2a50f709211f20a608d301caef707f",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.live_execution_inputs": {
+        "bytes": 51423,
+        "path": "backend/market/live_execution_inputs.py",
+        "sha256": "4756673840814a02d5d0a341d54cbbec9e3a855b8cd8a163cc5f0a9c31b44a86",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.live_model_history_input_auth": {
+        "bytes": 13404,
+        "path": "backend/market/live_model_history_input_auth.py",
+        "sha256": "35ad5f5f96fa7951b6163512ab733a9168869eef17038e030b7dad4dcbb1b111",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.market_conditioned_calibration": {
+        "bytes": 10275,
+        "path": "backend/market/market_conditioned_calibration.py",
+        "sha256": "00c176719372f5b1bc373be32c0c3007c0e6c8aa7808969e177710056c819145",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.market_conditioned_holding": {
+        "bytes": 10413,
+        "path": "backend/market/market_conditioned_holding.py",
+        "sha256": "e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.original_history_json": {
+        "bytes": 27574,
+        "path": "backend/market/original_history_json.py",
+        "sha256": "de29c1017f4c9eadd874b2fbe0d85b4c80ced8e7a43fb6bd4f779c3d726cb2eb",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.panel": {
+        "bytes": 9202,
+        "path": "backend/market/panel.py",
+        "sha256": "dee6b591080f18ba0b35c1241d96cb0e906957b3007f25be941957d2ee7252a2",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.probabilistic_execution": {
+        "bytes": 19641,
+        "path": "backend/market/probabilistic_execution.py",
+        "sha256": "cfd586859920f06d385447b1aa171f17e515d8e34bc07a8752164ef2b3705af2",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.store": {
+        "bytes": 13705,
+        "path": "backend/market/store.py",
+        "sha256": "a299516ab68710d56355e036770d3c9695ed332641e9fa6ee4d64c9f6ede9aff",
+        "source": "exact unchanged original source"
+      },
+      "backend.market.yahoo": {
+        "bytes": 13065,
+        "path": "backend/market/yahoo.py",
+        "sha256": "311323b71355858a1ea1fca9d7b03861df71f35466a789d90a872bbbdc93e82d",
+        "source": "exact unchanged original source"
+      }
+    },
+    "roots": [
+      "backend.market.capacity_original_inputs_v1"
+    ]
+  },
+  "guard_effect_prefixes": [
+    "backend.market.replay_broker",
+    "backend.market.alpaca_trading",
+    "backend.agents.trading.desk",
+    "backend.market.joint_funded_policy",
+    "backend.market.adaptive_growth_policy"
+  ],
+  "inherited_distribution_and_fit_methods_present_but_unadmitted": true,
+  "map_declaration": {
+    "bytes": 286816,
+    "path": "original-loader-entry-source-map-v1-2026-10-18.json",
+    "sha256": "aaa1ad0622f18f35e8f639d4a7a9e78e21d8681e19860c7a7284b0876b043f9c"
+  },
+  "modules": {
+    "daily-inputs": {
+      "bodies_run": false,
+      "bytes": 2758,
+      "functions": 1,
+      "path": "sources/original-loader-capacity-daily-inputs-v1-2026-10-18.py",
+      "proposed_origin": "backend/market/capacity_original_daily_inputs_v1.py",
+      "sha256": "a77634e8c54575f3295179c48b4d6577940deff44d1daa691553d826ecc3f9cc"
+    },
+    "economics": {
+      "bodies_run": false,
+      "bytes": 8862,
+      "functions": 7,
+      "path": "sources/original-loader-capacity-economics-v1-2026-10-18.py",
+      "proposed_origin": "backend/market/capacity_original_economics_v1.py",
+      "sha256": "b66cebc1f24f6938a2a4e9dd17cfd6efd233d0ab44091b293c980f9e5a6eadcc"
+    },
+    "frozen-readers": {
+      "bodies_run": false,
+      "bytes": 5839,
+      "functions": 3,
+      "path": "sources/original-loader-capacity-frozen-readers-v1-2026-10-18.py",
+      "proposed_origin": "backend/market/capacity_original_frozen_readers_v1.py",
+      "sha256": "7a0352cb56ad74332c80f64c7b676d85d6e88fdf903f768c0b5f4a5de0536915"
+    },
+    "inputs": {
+      "bodies_run": false,
+      "bytes": 7523,
+      "functions": 4,
+      "path": "sources/original-loader-capacity-inputs-v1-2026-10-18.py",
+      "proposed_origin": "backend/market/capacity_original_inputs_v1.py",
+      "sha256": "8470e2b579cc39b32113e2fcb88e8e918eac283e900f7d62341059761c524661"
+    }
+  },
+  "new_map_is_declaration_not_execution_admission": true,
+  "private_provenance_nonfinite_branch_refuses_not_normalizes": true,
+  "schema": "capacity-original-entry-independent-source-review/1",
+  "scope": "Lexical explicit module/class imports plus implicit packages only. No branch/default/decorator/annotation evaluation, generated CodeTypes, dynamic/native-extension/callable-body/package/runtime closure or actual import-order proof.",
+  "status": "SOURCE_AST_AND_DECLARED_IMPORT_GRAPH_ONLY_ALL_BODIES_UNRUN"
+}
