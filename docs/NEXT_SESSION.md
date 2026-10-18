@@ -1,5 +1,63 @@
 # Next session
 
+## 2026-10-18 — Tiny generated-code diagnostic VERIFIED; guard remains uncorrected
+
+Read research/original-loader-generated-code-diagnostic-proof-2026-10-18.json.
+Exact source66c10b36/diagnostic324d437e/owner743820b9/verifierb75869b6 ran ONE
+new scoped diagnostic, never v2 replay. Packetd7dd011c/127593B/7records staged
+exclusively; source-book8aa4bd9e/stageproof22aba0a2. Independent source review
+de6e7ade/7220B authenticated13files plus actual cached e0/jobs/host/resources.
+Fresh admissionafbff25e at1792299828460146153ns/MemAvailable10236485632B applied
+only here and is consumed. Old v2 admission was not reused; headroom is not
+a reservation. New scratch/n2-generated-code-diagnostic-{source,...}-20261018-v1
+roots/source/caller/observations retained; see exact full paths in proof.
+
+Actual395e1b5f/e0 exited0/noOOM05:03:50.057029885Z; fresh independent inspection
+cf405393 verifies stopped. UID1000/noneRO/1CPU/2GiB=swap/PIDs32/tmp64/noHC/
+lognone; tiny auditRO/outRW only, no app/backend/model/original/account/data/
+socket binds. Two fresh childrenPID7/8 exited0/empty logs/no owned stop. Actual
+Python3.12.14/dataclassesd242aea5. No genuine SourceBook/CallFence constructor/
+audit-hook/failure-slot/full context acceptance; live fence/registry are INJECTED.
+Only unchanged profile CodeType extracted from full pinned harness compilation
+was executed; module/class import code was never executed as an application.
+
+Deferred reproduced ALL7 exact frozen replay_broker rows7–13. Live profile
+refused <module> in BOOTSTRAP as UNREVIEWED_GENERATED_CODE. First wrapper's
+typed CodeType content is identical; only code_sha256 differs: deferreda59cf9b5
+versus live5e1fb707. Both521B serializations differ at14 offsets;38/104 have
+227→99/xor128, remaining positions follow reference-index markers. Live raw
+bytes remain labelled POST-observation control, but their SHA equals the actual
+computed primary record. This identifies representation mismatch in this
+diagnostic; it does NOT recover the missing original failed-v2 guard hash.
+
+Official CPythonv3.12.14/Python/marshal.c w_ref/source review supports reference-
+count-sensitive FLAG_REF/index encoding as the explanation consistent with these
+bytes; no image-binary build-source certificate. Source link/inference preserved
+in proof. One optional Mac raw-C download failed local TLS verification, no
+bypass/retry; no raw-C archival claim. Original physical/native data unchanged.
+
+NEXT ROOT: test the smallest targeted hypothesis, explicit marshal format2 in
+BOTH preparation/live fingerprinting, with changed-code/constants and wrong
+binding refusals. Prepare a bounded source-pinned tiny proposal and exact fresh
+admission first. Use explicitly versioned fingerprint/manifest semantics; do not
+silently reinterpret old8field manifests, replace G08's expected reason or weaken
+guards. Format2 is UNTESTED and no guard/fixture/harness/cap change was made.
+Never rerun this completed diagnostic/old23cases merely for docs; no v2 replay,
+old admission reuse, genuine loader/full original/corrected/account launch or
+actual two-host owner execution.
+
+Independent terminal proof3fd5abe2/35169B verifies33run/21source-at-review files,
+both actual children/complete matches/differences and source4 full beforeafter
+physical preservation. Raw proof+six small observations SHA checked on Mac.
+Exclusive evidence34files420016B/manifest87d2099f/preserverb124a0d1 fsynced/readback;
+independent9811ec45/proof2a577745/16288B verifies two full reads/physical fields.
+Operational AST/purpose21 pass/Ruff unavailable; no old gate/test body replay.
+Ordinary cleanup returned, but force-stop/alarm/SIGKILL/transport-loss branches
+remain unexercised. Old v2 FAILED23expected/1failed/41cases+4cleanup UNRUN preserved.
+Combined model/RAM/horizon/historical/weekday/intraday/fill/UI UNVERIFIED; timing
+FAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/
+Spark2 image/daemon-temp/RAM gaps unchanged. Heartbeat ACTIVE. Diagram: NONE.
+
 ## 2026-10-18 — Tiny generated-code diagnostic source prepared; UNEXECUTED
 
 Source66c10b36c60a322bac2785203bc4d4e5e33dae8f is SOURCE ONLY. Read
