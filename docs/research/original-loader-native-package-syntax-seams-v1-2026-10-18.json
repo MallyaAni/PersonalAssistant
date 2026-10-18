@@ -1,0 +1,69 @@
+{
+  "schema": "capacity-native-package-version-and-factory-source-seams/1",
+  "status": "SOURCE_REQUIREMENTS_ONLY_NO_PACKAGE_RUNTIME_ADMISSION",
+  "analysis_sha256": "5b36cad5f5c293e6e3a2236b77e2475dfb84c0328315ebc37747b174e80847b6",
+  "independent_sha256": "f54d3c054e8ac7068eab1dca05c7d70d3fa8d9e7b999f78c8ae389356752d1a6",
+  "prior_copied_source_proof_sha256": "f26f8539c52247f03e7e7c92daaa57a28bb06ccf3b5dfeb6024d1ff2ae6b1aa1",
+  "scope": "New fifteen copied texts137785B only. AST syntax and exact source texts, never evaluated imports/branches/annotations/factories/native functions or package CodeTypes.",
+  "version_source_declarations": [
+    {"module": "pyarrow._generated_version", "line": 21, "source_sha256": "73b0214d71c60cf5de583b31e010ce5db688b2734cb6ba9347eee8accbd53ade", "declared_literal": "25.0.1", "meaning": "Chained __version__/version literal and tuple in retained generated source; no installed distribution/native/runtime attestation."},
+    {"module": "numpy.version", "line": 5, "source_sha256": "c1357b603c81e0fcbf935e7ccfc9202cafba0b30e38c625b568004002e372205", "declared_literal": "2.5.3", "meaning": "Retained version literal; other version expressions were recorded but not evaluated. Prior native NumPy observation remains separately scoped."},
+    {"module": "scipy.version", "line": 5, "source_sha256": "76c439fe556df030423da9c852b801dc7a59f7d1e9d285f995486674374c6c0b", "declared_literal": "1.18.1", "meaning": "Retained version literal and conditional release reassignment source; no package import or actual version evaluation."}
+  ],
+  "source_findings": [
+    {
+      "boundary": "pyarrow.compute343 -> _make_global_functions314",
+      "source": "Module syntax calls _make_global_functions. That body gets function_registry(), iterates native reg.list_functions(), calls reg.get_function(), filters kind/arity, and assigns wrappers into two globals keys. Actual registry contents/kinds/arity/options remain unknown.",
+      "requirements": "Bind actual _compute registry/native extension and exact wrapper globals/cells/options/name/phase if this import path is proposed. Source inventory is not a selected native function allowlist or runtime registry snapshot. No native registration or factory ran here."
+    },
+    {
+      "boundary": "pyarrow.compute._wrap_function298/_make_generic_wrapper244/_make_signature275",
+      "source": "Factory obtains native func._doc arg_names/options_class, resolves options class from globals, inspects signatures and returns one of two ordinary nested wrapper definitions. Selected wrapper source calls native func.call or Expression._call when later invoked.",
+      "requirements": "The two wrapper definitions are ordinary nested SOURCE declarations, not dataclass <string> records or evidence of exec-based generation. Register only their actual compiler-emitted CodeTypes if later compiled; none were observed here. Bind actual closure cells/native callable/type provenance before any selected invocation. Import syntax does not prove wrappers were invoked or identify which branch was used."
+    },
+    {
+      "boundary": "pyarrow.compute119/imports18,111-112",
+      "source": "Separate namedtuple construction and _compute_docstrings/vendored docscrape imports appear in source. Their transitive/generated/native closure is not established by the ordinary wrapper source.",
+      "requirements": "Keep this separate from dataclass-only guard format2. No wildcard generated record, package function allowance or guard relaxation."
+    },
+    {
+      "boundary": "numpy._distributor_init/scipy._distributor_init",
+      "source": "Both try relative _distributor_init_local and catch ImportError. This does not prove the optional modules are absent or what their bodies would do.",
+      "requirements": "Authenticate actual installed optional branch/path from future package metadata. Never force missing modules or treat ImportError syntax as observed branch."
+    },
+    {
+      "boundary": "numpy._core/scipy._lib._ccallback",
+      "source": "Core imports multiarray/umath and numerous Python helpers, includes conditional environment writes/removal, type registration/copyreg calls and exception-only directory-listing syntax. _ccallback imports _ccallback_c/ctypes, with a CFUNCTYPE expression and deferred cffi import.",
+      "requirements": "Bind actual import order/source/native origins and selected callback/type behavior; do not claim directory scanning, callback allocation or any exception branch executed. Six BLAS environment values alone are not complete pool/resource admission."
+    },
+    {
+      "boundary": "sklearn._config/sklearn.base/sklearn.utils._show_versions",
+      "source": "Configuration syntax reads environment and creates threading.local; base imports metadata routing/validation/tags/output/repr helpers; version-report code has further dependencies. Declarations of fit/score/state methods do not establish selected calls.",
+      "requirements": "threading.local syntax is not proof of thread start. Preserve original mandatory native package/version admission. Source3-field guard rows cannot replace exact selected global/type/native provenance. No estimator restoration/model import strategy is admitted."
+    }
+  ],
+  "source_derived_metadata_path_proposal": {
+    "status": "UNREAD_INFERRED_CANDIDATES_NOT_OBSERVED_PATHS_OR_EXECUTABLE_INVOCATION",
+    "derivation": "Conventional distribution directory names from the three exact source literals above. Existence, naming/case, metadata version, RECORD size/format/digests and native file names must be observed separately; these paths are not declared actual installed authority.",
+    "prefix": "/usr/local/lib/python3.12/site-packages/",
+    "relative_candidates": [
+      "pyarrow-25.0.1.dist-info/METADATA", "pyarrow-25.0.1.dist-info/RECORD",
+      "numpy-2.5.3.dist-info/METADATA", "numpy-2.5.3.dist-info/RECORD",
+      "scipy-1.18.1.dist-info/METADATA", "scipy-1.18.1.dist-info/RECORD"
+    ],
+    "bounds": "Prepare concrete independently reviewed bounded metadata reads before use. Existing ordinary262KiB wire/file bounds unchanged; oversized/missing targets refuse, no blanket exception, recursive copy or guessed binary suffix. No metadata reader/bootstrap/invocation/admission supplied here.",
+    "sklearn_metadata_path": "UNRESOLVED: do not infer actual installed version merely from mandatory1.9.1 admission predicate.",
+    "actual_RECORD_or_native_extension_paths": null
+  },
+  "still_required": [
+    "Exact installed distribution metadata and every selected native/transitive Python source, extension origins/digests, generated/registry/global/type/closure/phase contracts and thread/pool/resource behavior.",
+    "Both source-only guard3b8be00b and original030cb5bb remain unchanged. No new manifest/strategy/entrypoint/runtime proposal until complete closure and independent review.",
+    "Producer2431/reference2446/executor2468/original receipts, real source/config/calendar/economics and full context/spools/before-after graphs/JSON+UTF8 lifetimes stay separate and mandatory."
+  ],
+  "package_import_CodeType_or_body_execution": false,
+  "execution_authorized": false,
+  "assembled_tree_manifests_native_closure_strategy_entrypoint_bootstrap_owner_caller_stager_packet_runtime_launch_admission": null,
+  "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+  "original_timing": "FAILED", "publication": "CLOSED",
+  "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN", "heartbeat": "ACTIVE"
+}

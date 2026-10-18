@@ -1,0 +1,603 @@
+{
+  "pages": {
+    "module-00-page-000.json": {
+      "bytes": 316,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792330088978868926",
+        "st_dev": "66306",
+        "st_ino": "60582800",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330088978868926",
+        "st_nlink": "1",
+        "st_size": "316",
+        "st_uid": "1000"
+      },
+      "sha256": "9242b45aafd1d3d96ae043fd034401097d5411444aff8dde9dae63711ca83ed5"
+    },
+    "module-01-page-000.json": {
+      "bytes": 19866,
+      "physical": {
+        "st_blocks": "40",
+        "st_ctime_ns": "1792330088990995659",
+        "st_dev": "66306",
+        "st_ino": "60582801",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330088990995659",
+        "st_nlink": "1",
+        "st_size": "19866",
+        "st_uid": "1000"
+      },
+      "sha256": "1c49834a768eddd225d9c2a880ae30e805c38400f853d55dada662756ea90f1f"
+    },
+    "module-02-page-000.json": {
+      "bytes": 19431,
+      "physical": {
+        "st_blocks": "40",
+        "st_ctime_ns": "1792330089014863361",
+        "st_dev": "66306",
+        "st_ino": "60582802",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089014863361",
+        "st_nlink": "1",
+        "st_size": "19431",
+        "st_uid": "1000"
+      },
+      "sha256": "ca8fd86956ad094cdf8e267a273f3aac448ba5f9a675d3ec7bfa513604cc1557"
+    },
+    "module-02-page-001.json": {
+      "bytes": 12301,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792330089020431003",
+        "st_dev": "66306",
+        "st_ino": "60582803",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089020431003",
+        "st_nlink": "1",
+        "st_size": "12301",
+        "st_uid": "1000"
+      },
+      "sha256": "8565432e43f7e8ce356c73447b9c9408d3b31495ffeee30d5c9e749e2cf86421"
+    },
+    "module-03-page-000.json": {
+      "bytes": 24769,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792330089038941000",
+        "st_dev": "66306",
+        "st_ino": "60582804",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089038941000",
+        "st_nlink": "1",
+        "st_size": "24769",
+        "st_uid": "1000"
+      },
+      "sha256": "93a1c5702bf7a1ffc1fb37a31d7e23a2cc4ec47a08768648646a153afaabb7ce"
+    },
+    "module-03-page-001.json": {
+      "bytes": 12548,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792330089043429163",
+        "st_dev": "66306",
+        "st_ino": "60582805",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089043429163",
+        "st_nlink": "1",
+        "st_size": "12548",
+        "st_uid": "1000"
+      },
+      "sha256": "06ad52a95fa5ca67eed1c8a31452f9b257ad9c641b6856532295eb4da7e5a80e"
+    },
+    "module-04-page-000.json": {
+      "bytes": 23208,
+      "physical": {
+        "st_blocks": "48",
+        "st_ctime_ns": "1792330089062375435",
+        "st_dev": "66306",
+        "st_ino": "60582806",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089062375435",
+        "st_nlink": "1",
+        "st_size": "23208",
+        "st_uid": "1000"
+      },
+      "sha256": "faa090be87fbc1ddd0455a047e9bbec10e0f195a79a7805b5421490d7672c503"
+    },
+    "module-04-page-001.json": {
+      "bytes": 36144,
+      "physical": {
+        "st_blocks": "72",
+        "st_ctime_ns": "1792330089066951054",
+        "st_dev": "66306",
+        "st_ino": "60582807",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089066951054",
+        "st_nlink": "1",
+        "st_size": "36144",
+        "st_uid": "1000"
+      },
+      "sha256": "166f990ca2d425400f4e4e414e897d23af77e844afd75b230b0ccfa5c1bd0fed"
+    },
+    "module-04-page-002.json": {
+      "bytes": 11090,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792330089070831548",
+        "st_dev": "66306",
+        "st_ino": "60582808",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089070831548",
+        "st_nlink": "1",
+        "st_size": "11090",
+        "st_uid": "1000"
+      },
+      "sha256": "9af1573d7dab879a89a3e6fe91097209a60b7b81e62d94a58777d71d2f05cad0"
+    },
+    "module-05-page-000.json": {
+      "bytes": 290,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792330089075996419",
+        "st_dev": "66306",
+        "st_ino": "60582809",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089075996419",
+        "st_nlink": "1",
+        "st_size": "290",
+        "st_uid": "1000"
+      },
+      "sha256": "9a73962811fd83d2c57f046b76c1125fbac61f0049721c683428b835ec2da2d3"
+    },
+    "module-06-page-000.json": {
+      "bytes": 461,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792330089081526349",
+        "st_dev": "66306",
+        "st_ino": "60582810",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089081526349",
+        "st_nlink": "1",
+        "st_size": "461",
+        "st_uid": "1000"
+      },
+      "sha256": "7b358974aedbd5d242acc22601a5d2e0797f493db29ff514405a2df323dda7f1"
+    },
+    "module-07-page-000.json": {
+      "bytes": 12930,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792330089090551570",
+        "st_dev": "66306",
+        "st_ino": "60582811",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089090551570",
+        "st_nlink": "1",
+        "st_size": "12930",
+        "st_uid": "1000"
+      },
+      "sha256": "185895e46a6b69e48cb176137e80dcb6f0c76e28f0004efff0cde6166a724a11"
+    },
+    "module-08-page-000.json": {
+      "bytes": 289,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792330089095820762",
+        "st_dev": "66306",
+        "st_ino": "60582812",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089095820762",
+        "st_nlink": "1",
+        "st_size": "289",
+        "st_uid": "1000"
+      },
+      "sha256": "8674c88cbd7d41186e532c1e7fd6f0f5ccb7d17927a58e48377f1f5f1708e725"
+    },
+    "module-09-page-000.json": {
+      "bytes": 461,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792330089099488310",
+        "st_dev": "66306",
+        "st_ino": "60582813",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089099488310",
+        "st_nlink": "1",
+        "st_size": "461",
+        "st_uid": "1000"
+      },
+      "sha256": "d3c47b0a59a8fa8139682649909c283ce7c0996cc4bd0dbdc42b07b86c40931e"
+    },
+    "module-10-page-000.json": {
+      "bytes": 28888,
+      "physical": {
+        "st_blocks": "64",
+        "st_ctime_ns": "1792330089108030007",
+        "st_dev": "66306",
+        "st_ino": "60582814",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089108030007",
+        "st_nlink": "1",
+        "st_size": "28888",
+        "st_uid": "1000"
+      },
+      "sha256": "e80e8aac501bf08ace2f95ac91d0dde95f12ebbe9d963f62689ec3494acb8bc7"
+    },
+    "module-11-page-000.json": {
+      "bytes": 6568,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792330089114498376",
+        "st_dev": "66306",
+        "st_ino": "60582815",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089114498376",
+        "st_nlink": "1",
+        "st_size": "6568",
+        "st_uid": "1000"
+      },
+      "sha256": "f20d47e8c664767a57177adf9ebcf98e0fd02269d3b61038d642798834a265c6"
+    },
+    "module-13-page-000.json": {
+      "bytes": 23971,
+      "physical": {
+        "st_blocks": "48",
+        "st_ctime_ns": "1792330089138929427",
+        "st_dev": "66306",
+        "st_ino": "60582816",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089138929427",
+        "st_nlink": "1",
+        "st_size": "23971",
+        "st_uid": "1000"
+      },
+      "sha256": "2f3d7315ee63916628a217c110a7052234dd2bfabde6afcdb0d356396e6c26eb"
+    },
+    "module-13-page-001.json": {
+      "bytes": 34647,
+      "physical": {
+        "st_blocks": "72",
+        "st_ctime_ns": "1792330089144445645",
+        "st_dev": "66306",
+        "st_ino": "60582817",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089144445645",
+        "st_nlink": "1",
+        "st_size": "34647",
+        "st_uid": "1000"
+      },
+      "sha256": "d2e25f0eaf50a002b4db994a30d650f4b43801a2267ffaaa4b6aa3ed951da09a"
+    },
+    "module-13-page-002.json": {
+      "bytes": 41957,
+      "physical": {
+        "st_blocks": "88",
+        "st_ctime_ns": "1792330089150014471",
+        "st_dev": "66306",
+        "st_ino": "60582818",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089150014471",
+        "st_nlink": "1",
+        "st_size": "41957",
+        "st_uid": "1000"
+      },
+      "sha256": "8896fee7caf7913f3133febf5cd481774b6bf9e9648c914c8c085af1e765889c"
+    },
+    "module-13-page-003.json": {
+      "bytes": 25397,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792330089154623018",
+        "st_dev": "66306",
+        "st_ino": "60582819",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089154623018",
+        "st_nlink": "1",
+        "st_size": "25397",
+        "st_uid": "1000"
+      },
+      "sha256": "bdb2e6f58ccf9c8c4184cc3c70d7878b97c18fff5a06b7797ca2c70c1664419c"
+    },
+    "module-13-page-004.json": {
+      "bytes": 2784,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792330089159151325",
+        "st_dev": "66306",
+        "st_ino": "60582820",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089159151325",
+        "st_nlink": "1",
+        "st_size": "2784",
+        "st_uid": "1000"
+      },
+      "sha256": "9d528a7390fac931c493c2289a847dbfa475dc4ac97093ed173b65f90a231156"
+    },
+    "module-14-page-000.json": {
+      "bytes": 13186,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792330089167464972",
+        "st_dev": "66306",
+        "st_ino": "60582821",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792330089167464972",
+        "st_nlink": "1",
+        "st_size": "13186",
+        "st_uid": "1000"
+      },
+      "sha256": "a32153e4896c4adbf70a0bd1bd4e36dfa864679f50d6ed4cd56ebb22ae2fca6a"
+    }
+  },
+  "payload_body_executed": false,
+  "prior": {
+    "bytes": 51904,
+    "physical": {
+      "st_blocks": "104",
+      "st_ctime_ns": "1792328976941062142",
+      "st_dev": "66306",
+      "st_ino": "60582796",
+      "st_mode": "33152",
+      "st_mtime_ns": "1792328976941062142",
+      "st_nlink": "1",
+      "st_size": "51904",
+      "st_uid": "1000"
+    },
+    "sha256": "f26f8539c52247f03e7e7c92daaa57a28bb06ccf3b5dfeb6024d1ff2ae6b1aa1"
+  },
+  "runtime_admission": null,
+  "schema": "native-package-text-analysis-independent/1",
+  "scope_limit": "Does not independently reconstruct every lexical ancestor/qualified-name/display projection. No evaluated branch, package import, CodeType, native/thread/network/model/RAM acceptance.",
+  "selected_compute_source_text": "# Licensed to the Apache Software Foundation (ASF) under one\n# or more contributor license agreements.  See the NOTICE file\n# distributed with this work for additional information\n# regarding copyright ownership.  The ASF licenses this file\n# to you under the Apache License, Version 2.0 (the\n# \"License\"); you may not use this file except in compliance\n# with the License.  You may obtain a copy of the License at\n#\n#   http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed to in writing,\n# software distributed under the License is distributed on an\n# \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n# KIND, either express or implied.  See the License for the\n# specific language governing permissions and limitations\n# under the License.\n\nfrom pyarrow._compute import (  # noqa\n    Function,\n    FunctionOptions,\n    FunctionRegistry,\n    HashAggregateFunction,\n    HashAggregateKernel,\n    Kernel,\n    ScalarAggregateFunction,\n    ScalarAggregateKernel,\n    ScalarFunction,\n    ScalarKernel,\n    VectorFunction,\n    VectorKernel,\n    # Option classes\n    ArraySortOptions,\n    AssumeTimezoneOptions,\n    CastOptions,\n    CountOptions,\n    CumulativeOptions,\n    CumulativeSumOptions,\n    DayOfWeekOptions,\n    DictionaryEncodeOptions,\n    RunEndEncodeOptions,\n    ElementWiseAggregateOptions,\n    ExtractRegexOptions,\n    ExtractRegexSpanOptions,\n    FilterOptions,\n    IndexOptions,\n    InversePermutationOptions,\n    JoinOptions,\n    ListSliceOptions,\n    ListFlattenOptions,\n    MakeStructOptions,\n    MapLookupOptions,\n    MatchSubstringOptions,\n    ModeOptions,\n    NullOptions,\n    PadOptions,\n    PairwiseOptions,\n    PartitionNthOptions,\n    PivotWiderOptions,\n    QuantileOptions,\n    RandomOptions,\n    RankOptions,\n    RankQuantileOptions,\n    ReplaceSliceOptions,\n    ReplaceSubstringOptions,\n    RoundBinaryOptions,\n    RoundOptions,\n    RoundTemporalOptions,\n    RoundToMultipleOptions,\n    ScalarAggregateOptions,\n    ScatterOptions,\n    SelectKOptions,\n    SetLookupOptions,\n    SkewOptions,\n    SliceOptions,\n    SortOptions,\n    SplitOptions,\n    SplitPatternOptions,\n    StrftimeOptions,\n    StrptimeOptions,\n    StructFieldOptions,\n    TakeOptions,\n    TDigestOptions,\n    TrimOptions,\n    Utf8NormalizeOptions,\n    VarianceOptions,\n    WeekOptions,\n    WinsorizeOptions,\n    ZeroFillOptions,\n    # Functions\n    call_function,\n    function_registry,\n    get_function,\n    list_functions,\n    # Udf\n    call_tabular_function,\n    register_scalar_function,\n    register_tabular_function,\n    register_aggregate_function,\n    register_vector_function,\n    UdfContext,\n    # Expressions\n    Expression,\n)\n\nfrom collections import namedtuple\nimport inspect\nfrom textwrap import dedent\nimport warnings\n\nimport pyarrow as pa\nfrom pyarrow import _compute_docstrings\nfrom pyarrow.vendored import docscrape\n\n\ndef _get_arg_names(func):\n    return func._doc.arg_names\n\n\n_OptionsClassDoc = namedtuple('_OptionsClassDoc', ('params',))\n\n\ndef _scrape_options_class_doc(options_class):\n    if not options_class.__doc__:\n        return None\n    doc = docscrape.NumpyDocString(options_class.__doc__)\n    return _OptionsClassDoc(doc['Parameters'])\n\n\ndef _decorate_compute_function(wrapper, exposed_name, func, options_class):\n    # Decorate the given compute function wrapper with useful metadata\n    # and documentation.\n    cpp_doc = func._doc\n\n    wrapper.__arrow_compute_function__ = dict(\n        name=func.name,\n        arity=func.arity,\n        options_class=cpp_doc.options_class,\n        options_required=cpp_doc.options_required)\n    wrapper.__name__ = exposed_name\n    wrapper.__qualname__ = exposed_name\n\n    doc_pieces = []\n\n    # 1. One-line summary\n    summary = cpp_doc.summary\n    if not summary:\n        arg_str = \"arguments\" if func.arity > 1 else \"argument\"\n        summary = f\"Call compute function {func.name!r} with the given {arg_str}\"\n\n    doc_pieces.append(f\"{summary}.\\n\\n\")\n\n    # 2. Multi-line description\n    description = cpp_doc.description\n    if description:\n        doc_pieces.append(f\"{description}\\n\\n\")\n\n    doc_addition = _compute_docstrings.function_doc_additions.get(func.name)\n\n    # 3. Parameter description\n    doc_pieces.append(dedent(\"\"\"\\\n        Parameters\n        ----------\n        \"\"\"))\n\n    # 3a. Compute function parameters\n    arg_names = _get_arg_names(func)\n    for arg_name in arg_names:\n        if func.kind in ('vector', 'scalar_aggregate'):\n            arg_type = 'Array-like'\n        else:\n            arg_type = 'Array-like or scalar-like'\n        doc_pieces.append(f\"{arg_name} : {arg_type}\\n\")\n        doc_pieces.append(\"    Argument to compute function.\\n\")\n\n    # 3b. Compute function option values\n    if options_class is not None:\n        options_class_doc = _scrape_options_class_doc(options_class)\n        if options_class_doc:\n            for p in options_class_doc.params:\n                doc_pieces.append(f\"{p.name} : {p.type}\\n\")\n                for s in p.desc:\n                    doc_pieces.append(f\"    {s}\\n\")\n        else:\n            warnings.warn(f\"Options class {options_class.__name__} \"\n                          f\"does not have a docstring\", RuntimeWarning)\n            options_sig = inspect.signature(options_class)\n            for p in options_sig.parameters.values():\n                doc_pieces.append(dedent(f\"\"\"\\\n                {p.name} : optional\n                    Parameter for {options_class.__name__} constructor. Either `options`\n                    or `{p.name}` can be passed, but not both at the same time.\n                \"\"\"))\n        doc_pieces.append(dedent(f\"\"\"\\\n            options : pyarrow.compute.{options_class.__name__}, optional\n                Alternative way of passing options.\n            \"\"\"))\n\n    doc_pieces.append(dedent(\"\"\"\\\n        memory_pool : pyarrow.MemoryPool, optional\n            If not passed, will allocate memory from the default memory pool.\n        \"\"\"))\n\n    # 4. Custom addition (e.g. examples)\n    if doc_addition is not None:\n        stripped = dedent(doc_addition).strip('\\n')\n        doc_pieces.append(f\"\\n{stripped}\\n\")\n\n    wrapper.__doc__ = \"\".join(doc_pieces)\n    return wrapper\n\n\ndef _get_options_class(func):\n    class_name = func._doc.options_class\n    if not class_name:\n        return None\n    try:\n        return globals()[class_name]\n    except KeyError:\n        warnings.warn(f\"Python binding for {class_name} not exposed\",\n                      RuntimeWarning)\n        return None\n\n\ndef _handle_options(name, options_class, options, args, kwargs):\n    if args or kwargs:\n        if options is not None:\n            raise TypeError(\n                f\"Function {name!r} called with both an 'options' argument \"\n                f\"and additional arguments\")\n        return options_class(*args, **kwargs)\n\n    if options is not None:\n        if isinstance(options, dict):\n            return options_class(**options)\n        elif isinstance(options, options_class):\n            return options\n        raise TypeError(\n            f\"Function {name!r} expected a {options_class} parameter, \"\n            f\"got {type(options)}\")\n\n    return None\n\n\ndef _make_generic_wrapper(func_name, func, options_class, arity):\n    if options_class is None:\n        def wrapper(*args, memory_pool=None):\n            if arity is not Ellipsis and len(args) != arity:\n                raise TypeError(\n                    f\"{func_name} takes {arity} positional argument(s), \"\n                    f\"but {len(args)} were given\"\n                )\n            if args and isinstance(args[0], Expression):\n                return Expression._call(func_name, list(args))\n            return func.call(args, None, memory_pool)\n    else:\n        def wrapper(*args, memory_pool=None, options=None, **kwargs):\n            if arity is not Ellipsis:\n                if len(args) < arity:\n                    raise TypeError(\n                        f\"{func_name} takes {arity} positional argument(s), \"\n                        f\"but {len(args)} were given\"\n                    )\n                option_args = args[arity:]\n                args = args[:arity]\n            else:\n                option_args = ()\n            options = _handle_options(func_name, options_class, options,\n                                      option_args, kwargs)\n            if args and isinstance(args[0], Expression):\n                return Expression._call(func_name, list(args), options)\n            return func.call(args, options, memory_pool)\n    return wrapper\n\n\ndef _make_signature(arg_names, var_arg_names, options_class):\n    from inspect import Parameter\n    params = []\n    for name in arg_names:\n        params.append(Parameter(name, Parameter.POSITIONAL_ONLY))\n    for name in var_arg_names:\n        params.append(Parameter(name, Parameter.VAR_POSITIONAL))\n    if options_class is not None:\n        options_sig = inspect.signature(options_class)\n        for p in options_sig.parameters.values():\n            assert p.kind in (Parameter.POSITIONAL_OR_KEYWORD,\n                              Parameter.KEYWORD_ONLY)\n            if var_arg_names:\n                # Cannot have a positional argument after a *args\n                p = p.replace(kind=Parameter.KEYWORD_ONLY)\n            params.append(p)\n        params.append(Parameter(\"options\", Parameter.KEYWORD_ONLY,\n                                default=None))\n    params.append(Parameter(\"memory_pool\", Parameter.KEYWORD_ONLY,\n                            default=None))\n    return inspect.Signature(params)\n\n\ndef _wrap_function(name, func):\n    options_class = _get_options_class(func)\n    arg_names = _get_arg_names(func)\n    has_vararg = arg_names and arg_names[-1].startswith('*')\n    if has_vararg:\n        var_arg_names = [arg_names.pop().lstrip('*')]\n    else:\n        var_arg_names = []\n\n    wrapper = _make_generic_wrapper(\n        name, func, options_class, arity=func.arity)\n    wrapper.__signature__ = _make_signature(arg_names, var_arg_names,\n                                            options_class)\n    return _decorate_compute_function(wrapper, name, func, options_class)\n\n\ndef _make_global_functions():\n    \"\"\"\n    Make global functions wrapping each compute function.\n\n    Note that some of the automatically-generated wrappers may be overridden\n    by custom versions below.\n    \"\"\"\n    g = globals()\n    reg = function_registry()\n\n    # Avoid clashes with Python keywords\n    rewrites = {'and': 'and_',\n                'or': 'or_'}\n\n    for cpp_name in reg.list_functions():\n        name = rewrites.get(cpp_name, cpp_name)\n        func = reg.get_function(cpp_name)\n        if func.kind == \"hash_aggregate\":\n            # Hash aggregate functions are not callable,\n            # so let's not expose them at module level.\n            continue\n        if func.kind == \"scalar_aggregate\" and func.arity == 0:\n            # Nullary scalar aggregate functions are not callable\n            # directly so let's not expose them at module level.\n            continue\n        assert name not in g, name\n        g[cpp_name] = g[name] = _wrap_function(name, func)\n\n\n_make_global_functions()\n# Alias for consistency; globals() is needed to avoid Python lint errors\nutf8_zfill = utf8_zero_fill = globals()[\"utf8_zero_fill\"]\n\n\ndef cast(arr, target_type=None, safe=None, options=None, memory_pool=None):\n    \"\"\"\n    Cast array values to another data type. Can also be invoked as an array\n    instance method.\n\n    Parameters\n    ----------\n    arr : Array-like\n    target_type : DataType or str\n        Type to cast to\n    safe : bool, default True\n        Check for overflows or other unsafe conversions\n    options : CastOptions, default None\n        Additional checks pass by CastOptions\n    memory_pool : MemoryPool, optional\n        memory pool to use for allocations during function execution.\n\n    Examples\n    --------\n    >>> from datetime import datetime\n    >>> import pyarrow as pa\n    >>> arr = pa.array([datetime(2010, 1, 1), datetime(2015, 1, 1)])\n    >>> arr.type\n    TimestampType(timestamp[us])\n\n    You can use ``pyarrow.DataType`` objects to specify the target type:\n\n    >>> cast(arr, pa.timestamp('ms'))\n    <pyarrow.lib.TimestampArray object at ...>\n    [\n      2010-01-01 00:00:00.000,\n      2015-01-01 00:00:00.000\n    ]\n\n    >>> cast(arr, pa.timestamp('ms')).type\n    TimestampType(timestamp[ms])\n\n    Alternatively, it is also supported to use the string aliases for these\n    types:\n\n    >>> arr.cast('timestamp[ms]')\n    <pyarrow.lib.TimestampArray object at ...>\n    [\n      2010-01-01 00:00:00.000,\n      2015-01-01 00:00:00.000\n    ]\n    >>> arr.cast('timestamp[ms]').type\n    TimestampType(timestamp[ms])\n\n    Returns\n    -------\n    casted : Array\n        The cast result as a new Array\n    \"\"\"\n    safe_vars_passed = (safe is not None) or (target_type is not None)\n\n    if safe_vars_passed and (options is not None):\n        raise ValueError(\"Must either pass values for 'target_type' and 'safe'\"\n                         \" or pass a value for 'options'\")\n\n    if options is None:\n        target_type = pa.types.lib.ensure_type(target_type)\n        if safe is False:\n            options = CastOptions.unsafe(target_type)\n        else:\n            options = CastOptions.safe(target_type)\n    return call_function(\"cast\", [arr], options, memory_pool)\n\n\ndef index(data, value, start=None, end=None, *, memory_pool=None):\n    \"\"\"\n    Find the index of the first occurrence of a given value.\n\n    Parameters\n    ----------\n    data : Array-like\n    value : Scalar-like object\n        The value to search for.\n    start : int, optional\n    end : int, optional\n    memory_pool : MemoryPool, optional\n        If not passed, will allocate memory from the default memory pool.\n\n    Returns\n    -------\n    index : int\n        the index, or -1 if not found\n\n    Examples\n    --------\n    >>> import pyarrow as pa\n    >>> import pyarrow.compute as pc\n    >>> arr = pa.array([\"Lorem\", \"ipsum\", \"dolor\", \"sit\", \"Lorem\", \"ipsum\"])\n    >>> pc.index(arr, \"ipsum\")\n    <pyarrow.Int64Scalar: 1>\n    >>> pc.index(arr, \"ipsum\", start=2)\n    <pyarrow.Int64Scalar: 5>\n    >>> pc.index(arr, \"amet\")\n    <pyarrow.Int64Scalar: -1>\n    \"\"\"\n    if start is not None:\n        if end is not None:\n            data = data.slice(start, end - start)\n        else:\n            data = data.slice(start)\n    elif end is not None:\n        data = data.slice(0, end)\n\n    if not isinstance(value, pa.Scalar):\n        value = pa.scalar(value, type=data.type)\n    elif data.type != value.type:\n        value = pa.scalar(value.as_py(), type=data.type)\n    options = IndexOptions(value=value)\n    result = call_function('index', [data], options, memory_pool)\n    if start is not None and result.as_py() >= 0:\n        result = pa.scalar(result.as_py() + start, type=pa.int64())\n    return result\n\n\ndef take(data, indices, *, boundscheck=True, memory_pool=None):\n    \"\"\"\n    Select values (or records) from array- or table-like data given integer\n    selection indices.\n\n    The result will be of the same type(s) as the input, with elements taken\n    from the input array (or record batch / table fields) at the given\n    indices. If an index is null then the corresponding value in the output\n    will be null.\n\n    Parameters\n    ----------\n    data : Array, ChunkedArray, RecordBatch, or Table\n    indices : Array, ChunkedArray\n        Must be of integer type\n    boundscheck : boolean, default True\n        Whether to boundscheck the indices. If False and there is an out of\n        bounds index, will likely cause the process to crash.\n    memory_pool : MemoryPool, optional\n        If not passed, will allocate memory from the default memory pool.\n\n    Returns\n    -------\n    result : depends on inputs\n        Selected values for the given indices\n\n    Examples\n    --------\n    >>> import pyarrow as pa\n    >>> arr = pa.array([\"a\", \"b\", \"c\", None, \"e\", \"f\"])\n    >>> indices = pa.array([0, None, 4, 3])\n    >>> arr.take(indices)\n    <pyarrow.lib.StringArray object at ...>\n    [\n      \"a\",\n      null,\n      \"e\",\n      null\n    ]\n    \"\"\"\n    options = TakeOptions(boundscheck=boundscheck)\n    return call_function('take', [data, indices], options, memory_pool)\n\n\ndef fill_null(values, fill_value):\n    \"\"\"Replace each null element in values with a corresponding\n    element from fill_value.\n\n    If fill_value is scalar-like, then every null element in values\n    will be replaced with fill_value. If fill_value is array-like,\n    then the i-th element in values will be replaced with the i-th\n    element in fill_value.\n\n    The fill_value's type must be the same as that of values, or it\n    must be able to be implicitly casted to the array's type.\n\n    This is an alias for :func:`coalesce`.\n\n    Parameters\n    ----------\n    values : Array, ChunkedArray, or Scalar-like object\n        Each null element is replaced with the corresponding value\n        from fill_value.\n    fill_value : Array, ChunkedArray, or Scalar-like object\n        If not same type as values, will attempt to cast.\n\n    Returns\n    -------\n    result : depends on inputs\n        Values with all null elements replaced\n\n    Examples\n    --------\n    >>> import pyarrow as pa\n    >>> arr = pa.array([1, 2, None, 3], type=pa.int8())\n    >>> fill_value = pa.scalar(5, type=pa.int8())\n    >>> arr.fill_null(fill_value)\n    <pyarrow.lib.Int8Array object at ...>\n    [\n      1,\n      2,\n      5,\n      3\n    ]\n    >>> arr = pa.array([1, 2, None, 4, None])\n    >>> arr.fill_null(pa.array([10, 20, 30, 40, 50]))\n    <pyarrow.lib.Int64Array object at ...>\n    [\n      1,\n      2,\n      30,\n      4,\n      50\n    ]\n    \"\"\"\n    if not isinstance(fill_value, (pa.Array, pa.ChunkedArray, pa.Scalar)):\n        fill_value = pa.scalar(fill_value, type=values.type)\n    elif values.type != fill_value.type:\n        fill_value = pa.scalar(fill_value.as_py(), type=values.type)\n\n    return call_function(\"coalesce\", [values, fill_value])\n\n\ndef top_k_unstable(\n        values, k, sort_keys=None, null_placements=None, *, memory_pool=None):\n    \"\"\"\n    Select the indices of the top-k ordered elements from array- or table-like\n    data.\n\n    This is a specialization for :func:`select_k_unstable`. Output is not\n    guaranteed to be stable.\n\n    Parameters\n    ----------\n    values : Array, ChunkedArray, RecordBatch, or Table\n        Data to sort and get top indices from.\n    k : int\n        The number of `k` elements to keep.\n    sort_keys : List-like\n        Column key names to order by when input is table-like data.\n    null_placements : A list of \"at_start\" or \"at_end\"\n        Whether nulls and NaNs are placed at the start or at the end.\n        Accepted values are \"at_end\", \"at_start\".\n    memory_pool : MemoryPool, optional\n        If not passed, will allocate memory from the default memory pool.\n\n    Returns\n    -------\n    result : Array\n        Indices of the top-k ordered elements\n\n    Examples\n    --------\n    >>> import pyarrow as pa\n    >>> import pyarrow.compute as pc\n    >>> arr = pa.array([\"a\", \"b\", \"c\", None, \"e\", \"f\"])\n    >>> pc.top_k_unstable(arr, k=3)\n    <pyarrow.lib.UInt64Array object at ...>\n    [\n      5,\n      4,\n      2\n    ]\n    \"\"\"\n    if sort_keys is None:\n        sort_keys = []\n    if isinstance(values, (pa.Array, pa.ChunkedArray)):\n        sort_keys.append((\"dummy\", \"descending\", \"at_end\"))\n    else:\n        sort_keys = [(sort_key, \"descending\", null_placement)\n                     for sort_key, null_placement in zip(sort_keys, null_placements)]\n    options = SelectKOptions(k, sort_keys)\n    return call_function(\"select_k_unstable\", [values], options, memory_pool)\n\n\ndef bottom_k_unstable(\n        values, k, sort_keys=None, null_placements=None, *, memory_pool=None):\n    \"\"\"\n    Select the indices of the bottom-k ordered elements from\n    array- or table-like data.\n\n    This is a specialization for :func:`select_k_unstable`. Output is not\n    guaranteed to be stable.\n\n    Parameters\n    ----------\n    values : Array, ChunkedArray, RecordBatch, or Table\n        Data to sort and get bottom indices from.\n    k : int\n        The number of `k` elements to keep.\n    sort_keys : List-like\n        Column key names to order by when input is table-like data.\n    null_placements : A list of \"at_start\" or \"at_end\"\n        Whether nulls and NaNs are placed at the start or at the end.\n        Accepted values are \"at_end\", \"at_start\".\n    memory_pool : MemoryPool, optional\n        If not passed, will allocate memory from the default memory pool.\n\n    Returns\n    -------\n    result : Array of indices\n        Indices of the bottom-k ordered elements\n\n    Examples\n    --------\n    >>> import pyarrow as pa\n    >>> import pyarrow.compute as pc\n    >>> arr = pa.array([\"a\", \"b\", \"c\", None, \"e\", \"f\"])\n    >>> pc.bottom_k_unstable(arr, k=3)\n    <pyarrow.lib.UInt64Array object at ...>\n    [\n      0,\n      1,\n      2\n    ]\n    \"\"\"\n    if sort_keys is None:\n        sort_keys = []\n    if isinstance(values, (pa.Array, pa.ChunkedArray)):\n        sort_keys.append((\"dummy\", \"ascending\", \"at_end\"))\n    else:\n        sort_keys = [(sort_key, \"ascending\", null_placement)\n                     for sort_key, null_placement in zip(sort_keys, null_placements)]\n\n    options = SelectKOptions(k, sort_keys)\n    return call_function(\"select_k_unstable\", [values], options, memory_pool)\n\n\ndef random(n, *, initializer='system', options=None, memory_pool=None):\n    \"\"\"\n    Generate numbers in the range [0, 1).\n\n    Generated values are uniformly-distributed, double-precision\n    in range [0, 1). Algorithm and seed can be changed via RandomOptions.\n\n    Parameters\n    ----------\n    n : int\n        Number of values to generate, must be greater than or equal to 0\n    initializer : int or str\n        How to initialize the underlying random generator.\n        If an integer is given, it is used as a seed.\n        If \"system\" is given, the random generator is initialized with\n        a system-specific source of (hopefully true) randomness.\n        Other values are invalid.\n    options : pyarrow.compute.RandomOptions, optional\n        Alternative way of passing options.\n    memory_pool : pyarrow.MemoryPool, optional\n        If not passed, will allocate memory from the default memory pool.\n    \"\"\"\n    options = RandomOptions(initializer=initializer)\n    return call_function(\"random\", [], options, memory_pool, length=n)\n\n\ndef field(*name_or_index):\n    \"\"\"Reference a column of the dataset.\n\n    Stores only the field's name. Type and other information is known only when\n    the expression is bound to a dataset having an explicit scheme.\n\n    Nested references are allowed by passing multiple names or a tuple of\n    names. For example ``('foo', 'bar')`` references the field named \"bar\"\n    inside the field named \"foo\".\n\n    Parameters\n    ----------\n    *name_or_index : string, multiple strings, tuple or int\n        The name or index of the (possibly nested) field the expression\n        references to.\n\n    Returns\n    -------\n    field_expr : Expression\n        Reference to the given field\n\n    Examples\n    --------\n    >>> import pyarrow.compute as pc\n    >>> pc.field(\"a\")\n    <pyarrow.compute.Expression a>\n    >>> pc.field(1)\n    <pyarrow.compute.Expression FieldPath(1)>\n    >>> pc.field((\"a\", \"b\"))\n    <pyarrow.compute.Expression FieldRef.Nested(FieldRef.Name(a) ...\n    >>> pc.field(\"a\", \"b\")\n    <pyarrow.compute.Expression FieldRef.Nested(FieldRef.Name(a) ...\n    \"\"\"\n    n = len(name_or_index)\n    if n == 1:\n        if isinstance(name_or_index[0], (str, int)):\n            return Expression._field(name_or_index[0])\n        elif isinstance(name_or_index[0], tuple):\n            return Expression._nested_field(name_or_index[0])\n        else:\n            raise TypeError(\n                \"field reference should be str, multiple str, tuple or \"\n                f\"integer, got {type(name_or_index[0])}\"\n            )\n    # In case of multiple strings not supplied in a tuple\n    else:\n        return Expression._nested_field(name_or_index)\n\n\ndef scalar(value):\n    \"\"\"Expression representing a scalar value.\n\n    Creates an Expression object representing a scalar value that can be used\n    in compute expressions and predicates.\n\n    Parameters\n    ----------\n    value : bool, int, float or string\n        Python value of the scalar. This function accepts any value that can be\n        converted to a ``pyarrow.Scalar`` using ``pa.scalar()``.\n\n    Notes\n    -----\n    This function differs from ``pyarrow.scalar()`` in the following way:\n\n    * ``pyarrow.scalar()`` creates a ``pyarrow.Scalar`` object that represents\n      a single value in Arrow's memory model.\n    * ``pyarrow.compute.scalar()`` creates an ``Expression`` object representing\n      a scalar value that can be used in compute expressions, predicates, and\n      dataset filtering operations.\n\n    Returns\n    -------\n    scalar_expr : Expression\n        An Expression representing the scalar value\n    \"\"\"\n    return Expression._scalar(value)\n",
+  "sources": {
+    "source-00.py.txt": {
+      "bytes": 522,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792328898508271782",
+        "st_dev": "66306",
+        "st_ino": "60582687",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792328898508271782",
+        "st_nlink": "1",
+        "st_size": "522",
+        "st_uid": "1000"
+      },
+      "sha256": "73b0214d71c60cf5de583b31e010ce5db688b2734cb6ba9347eee8accbd53ade"
+    },
+    "source-01.py.txt": {
+      "bytes": 9603,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792328898592434988",
+        "st_dev": "66306",
+        "st_ino": "60582694",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792328898592434988",
+        "st_nlink": "1",
+        "st_size": "9603",
+        "st_uid": "1000"
+      },
+      "sha256": "b2c89c9f5c768d166dda6d67419e2c07bd2c6b5141dddf0fa2a88e9d63beb738"
+    },
+    "source-02.py.txt": {
+      "bytes": 9734,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792328898679862790",
+        "st_dev": "66306",
+        "st_ino": "60582701",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792328898679862790",
+        "st_nlink": "1",
+        "st_size": "9734",
+        "st_uid": "1000"
+      },
+      "sha256": "77bf5c9a0af6303cfbf54432e8286829fe0c49c282b43bed38154621b575eb8e"
+    },
+    "source-03.py.txt": {
+      "bytes": 9267,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792328898760747207",
+        "st_dev": "66306",
+        "st_ino": "60582708",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792328898760747207",
+        "st_nlink": "1",
+        "st_size": "9267",
+        "st_uid": "1000"
+      },
+      "sha256": "75355a0e4b499d93778aa766c30f37ed32bf4f8ea392a964a505c4d4cf6ee606"
+    },
+    "source-04.py.txt": {
+      "bytes": 24952,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792328898838463508",
+        "st_dev": "66306",
+        "st_ino": "60582715",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792328898838463508",
+        "st_nlink": "1",
+        "st_size": "24952",
+        "st_uid": "1000"
+      },
+      "sha256": "a6ae9e92943d79be56725f097fc8b5c16bf47965d362f8cd0653029b07de7df6"
+    },
+    "source-05.py.txt": {
+      "bytes": 293,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792328898917211368",
+        "st_dev": "66306",
+        "st_ino": "60582722",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792328898917211368",
+        "st_nlink": "1",
+        "st_size": "293",
+        "st_uid": "1000"
+      },
+      "sha256": "c1357b603c81e0fcbf935e7ccfc9202cafba0b30e38c625b568004002e372205"
+    },
+    "source-06.py.txt": {
+      "bytes": 421,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792328899003917374",
+        "st_dev": "66306",
+        "st_ino": "60582729",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792328899003917374",
+        "st_nlink": "1",
+        "st_size": "421",
+        "st_uid": "1000"
+      },
+      "sha256": "14148976054795071ae41ad011560fa059ba2924c98481675ad59b1241214d2a"
+    },
+    "source-07.py.txt": {
+      "bytes": 6662,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792328899087689505",
+        "st_dev": "66306",
+        "st_ino": "60582736",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792328899087689505",
+        "st_nlink": "1",
+        "st_size": "6662",
+        "st_uid": "1000"
+      },
+      "sha256": "837ce8aec8693095d2e1c7c306d385d1785a50be97a009935c64cae04e3555d2"
+    },
+    "source-08.py.txt": {
+      "bytes": 318,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792328899166467061",
+        "st_dev": "66306",
+        "st_ino": "60582743",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792328899166467061",
+        "st_nlink": "1",
+        "st_size": "318",
+        "st_uid": "1000"
+      },
+      "sha256": "76c439fe556df030423da9c852b801dc7a59f7d1e9d285f995486674374c6c0b"
+    },
+    "source-09.py.txt": {
+      "bytes": 611,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792328899248622574",
+        "st_dev": "66306",
+        "st_ino": "60582750",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792328899248622574",
+        "st_nlink": "1",
+        "st_size": "611",
+        "st_uid": "1000"
+      },
+      "sha256": "cc94e137716fa1fd3d876e3cd38a4d0cf77688dfa5087577c8f959ca549e7e04"
+    },
+    "source-10.py.txt": {
+      "bytes": 7087,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792328899329340894",
+        "st_dev": "66306",
+        "st_ino": "60582757",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792328899329340894",
+        "st_nlink": "1",
+        "st_size": "7087",
+        "st_uid": "1000"
+      },
+      "sha256": "37d08eee4258ce4e885904792c77ff600d7e3aae3c477f142212452252764327"
+    },
+    "source-11.py.txt": {
+      "bytes": 16099,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792328899413435204",
+        "st_dev": "66306",
+        "st_ino": "60582764",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792328899413435204",
+        "st_nlink": "1",
+        "st_size": "16099",
+        "st_uid": "1000"
+      },
+      "sha256": "27f042f33beee2a241a97d4dbd18d9d26537ee5108cdae82e0e5ed663dc85895"
+    },
+    "source-12.py.txt": {
+      "bytes": 424,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792328899501028127",
+        "st_dev": "66306",
+        "st_ino": "60582771",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792328899501028127",
+        "st_nlink": "1",
+        "st_size": "424",
+        "st_uid": "1000"
+      },
+      "sha256": "1c9dce27c160ccdddaf9d34778f74977fadd30aeff198b27a94fdf7b756e8a91"
+    },
+    "source-13.py.txt": {
+      "bytes": 49206,
+      "physical": {
+        "st_blocks": "104",
+        "st_ctime_ns": "1792328899584845315",
+        "st_dev": "66306",
+        "st_ino": "60582778",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792328899584845315",
+        "st_nlink": "1",
+        "st_size": "49206",
+        "st_uid": "1000"
+      },
+      "sha256": "ff5dd28da53337f80e92925542e6a07d1aa49cb325b7f5636cd9c56d5f26b44f"
+    },
+    "source-14.py.txt": {
+      "bytes": 2586,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792328899667727025",
+        "st_dev": "66306",
+        "st_ino": "60582785",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792328899667727025",
+        "st_nlink": "1",
+        "st_size": "2586",
+        "st_uid": "1000"
+      },
+      "sha256": "2085398c3c1ef2b811d9551e8bcb4ee657681a6a62ea00294f83b99fe31f8691"
+    }
+  },
+  "status": "VERIFIED_STATIC_SYNTAX_COUNTS_MULTISETS_AND_FILE_BINDINGS_NOT_RUNTIME_CLOSURE",
+  "summary": {
+    "bytes": 70746,
+    "physical": {
+      "st_blocks": "144",
+      "st_ctime_ns": "1792330089174605539",
+      "st_dev": "66306",
+      "st_ino": "60582822",
+      "st_mode": "33152",
+      "st_mtime_ns": "1792330089174605539",
+      "st_nlink": "1",
+      "st_size": "70746",
+      "st_uid": "1000"
+    },
+    "sha256": "5b36cad5f5c293e6e3a2236b77e2475dfb84c0328315ebc37747b174e80847b6"
+  },
+  "totals": {
+    "calls": 570,
+    "declarations": 189,
+    "generated_source_expressions": 17,
+    "imports": 96
+  }
+}

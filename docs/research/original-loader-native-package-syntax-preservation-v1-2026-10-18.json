@@ -1,0 +1,9 @@
+{
+  "crash_guarantee": false,
+  "data_bytes": 255863,
+  "file_readback_root_resolved_parent_fsync": true,
+  "files": 15,
+  "manifest_bytes": 6919,
+  "manifest_sha256": "9d1062cfc5912d4757377291e41f0aa93d8f5e7bc54343c450009ceb3ef1be6a",
+  "root": "/tmp/capacity-native-package-syntax-evidence-20261018-v1"
+}

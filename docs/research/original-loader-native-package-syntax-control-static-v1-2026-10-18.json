@@ -1,0 +1,37 @@
+{
+  "AST_warnings_as_errors": "PASS",
+  "copied_package_CodeType_import_or_body": false,
+  "files": {
+    "sources/analyze-native-package-texts-v1-2026-10-18.py": {
+      "bytes": 9742,
+      "purpose_functions": 8,
+      "sha256": "cc111e8d0437088f56aaba837bd5367309a74834c76efa707a46c8a96fecd21a"
+    },
+    "sources/native-package-text-analysis-independent-transport-v1-2026-10-18.py": {
+      "bytes": 6021,
+      "purpose_functions": 3,
+      "sha256": "ba02d69609acc316a3ff364bb4f060e622674eccec019e2aa86bc0930954e78e"
+    },
+    "sources/native-package-text-analysis-transport-v1-2026-10-18.py": {
+      "bytes": 5995,
+      "purpose_functions": 3,
+      "sha256": "97af3e247ec221d0858f9aa23c69210aea4e2b6d0a15e76b8063b9d13ce3dff4"
+    },
+    "sources/prepare-native-package-syntax-v1-2026-10-18.py": {
+      "bytes": 8131,
+      "purpose_functions": 5,
+      "sha256": "8f3ef656d49225cd7bf626daf9fcebde2df78a76bba9080941f68def4b3ffe8a"
+    },
+    "sources/verify-native-package-text-analysis-v1-2026-10-18.py": {
+      "bytes": 8812,
+      "purpose_functions": 4,
+      "sha256": "d1ac48993d71bc7aef891f38d77d83597529e48766d6c76491ea3531fcd84fd0"
+    }
+  },
+  "four_control_sources_reproduced_byte_exact": true,
+  "literal_source_version_checks": 3,
+  "purpose_functions": 23,
+  "schema": "native-package-syntax-control-static-review/1",
+  "six_primary_utility_ASTs_exact": true,
+  "summary_proof_contract_hashlinks": "PASS"
+}
