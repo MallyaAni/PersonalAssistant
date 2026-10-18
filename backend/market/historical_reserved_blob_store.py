@@ -14,8 +14,8 @@ import struct
 from backend.market import historical_physical_checkpoint as physical
 from backend.market.historical_packet_demand import BUDGET
 
-SCHEMA = 'synthetic-reserved-store-cas/1'
-LEASE = 'synthetic-reserved-store-phase/1'
+SCHEMA = 'synthetic-reserved-store-cas/2'
+LEASE = 'synthetic-reserved-store-phase/2'
 CHUNK = 65536
 CELLS = 2048
 CELL = 128
@@ -26,6 +26,28 @@ CALLS = 64
 METADATA_BYTES = 2 * 1024**2
 METADATA_ITEMS = 4
 PREFIX = struct.Struct('>4s32sQIIII')
+
+
+# Materialize every allocated extent before arming so later writes need no unwritten-extent splits.
+def initialized_extent(path, size):
+    physical._allocate(path, size)
+    before = physical._extent(path, size, 1)
+    descriptor = os.open(path, os.O_RDWR | os.O_NOFOLLOW)
+    try:
+        physical._opened(path, descriptor, before)
+        zero = bytes(CHUNK)
+        for offset in range(0, size, CHUNK):
+            body = zero[:min(CHUNK, size - offset)]
+            physical._require(os.pwrite(descriptor, body, offset) == len(body), 'Short initial extent write')
+        os.fsync(descriptor)
+        physical._written(path, descriptor, before, size)
+        after = os.fstat(descriptor)
+        for offset in range(0, size, CHUNK):
+            physical._require(os.pread(descriptor, min(CHUNK, size - offset), offset)
+                == zero[:min(CHUNK, size - offset)], 'Initialized extent readback differs')
+        physical._opened(path, descriptor, after)
+    finally:
+        os.close(descriptor)
 
 
 # Bind this backend, ordinary Store API, metadata adapters and frozen IO primitives.
@@ -50,11 +72,11 @@ def reserve(store):
     root.mkdir(mode=0o700)
     (root / 'body').mkdir(mode=0o700)
     for name in ('header', 'control', 'catalog'):
-        physical._allocate(root / name, physical.META)
-    physical._allocate(root / 'lock', 4096)
+        initialized_extent(root / name, physical.META)
+    initialized_extent(root / 'lock', 4096)
     for index in range(SLOTS):
-        physical._allocate(root / 'body' / str(index), CHUNK)
-    inodes = {name: [str((info := (root / name).stat()).st_dev), str(info.st_ino)]
+        initialized_extent(root / 'body' / str(index), CHUNK)
+    inodes = {name: [str((info := (root / name).stat()).st_dev), str(info.st_ino), str(info.st_blocks)]
         for name in ('header', 'control', 'catalog', 'lock', *('body/' + str(i) for i in range(SLOTS)))}
     physical._require((root / 'catalog').read_bytes() == bytes(physical.META), 'New empty catalog required')
     header = {'schema': SCHEMA, 'identity': store.identity, 'store_root': str(store.root),
@@ -62,6 +84,7 @@ def reserve(store):
         'catalog_cells': CELLS, 'cell_bytes': CELL, 'groups': GROUPS,
         'phase_slots': PHASE_SLOTS, 'phase_calls': CALLS,
         'metadata_bytes': METADATA_BYTES, 'metadata_items': METADATA_ITEMS, 'inodes': inodes,
+        'initialized_zero_extents': True,
         'directory_metadata_reserved': False, 'sqlite_reserved': False,
         'two_host_reserved': False, 'native_operation_adopted': False}
     physical._fixed_write(root / 'header', header)
@@ -84,6 +107,7 @@ class ReservedCAS:
             'catalog_cells': CELLS, 'cell_bytes': CELL, 'groups': GROUPS,
             'phase_slots': PHASE_SLOTS, 'phase_calls': CALLS,
             'metadata_bytes': METADATA_BYTES, 'metadata_items': METADATA_ITEMS, 'inodes': inventory,
+            'initialized_zero_extents': True,
             'directory_metadata_reserved': False, 'sqlite_reserved': False,
             'two_host_reserved': False, 'native_operation_adopted': False}
         physical._require(self.root.name == 'reserved-blobs' and self.header == expected,
@@ -91,6 +115,8 @@ class ReservedCAS:
         physical._require(all(self.header[name] is False for name in (
             'directory_metadata_reserved', 'sqlite_reserved', 'two_host_reserved',
             'native_operation_adopted')), 'Explicit unadmitted capacity flags required')
+        physical._require(self.header['initialized_zero_extents'] is True,
+                          'Initialized reserved extents required')
         physical._require(all(type(self.header[name]) is int for name in (
             'slots', 'slot_bytes', 'catalog_cells', 'cell_bytes', 'groups', 'phase_slots',
             'phase_calls', 'metadata_bytes', 'metadata_items')), 'Exact integer CAS bounds required')
@@ -102,7 +128,7 @@ class ReservedCAS:
         for name in names:
             size = CHUNK if name.startswith('body/') else 4096 if name == 'lock' else physical.META
             info = physical._extent(self.root / name, size, 1)
-            physical._require(inventory[name] == [str(info.st_dev), str(info.st_ino)],
+            physical._require(inventory[name] == [str(info.st_dev), str(info.st_ino), str(info.st_blocks)],
                               'Original reserved inode differs on reopen')
             self.inodes[name] = info.st_dev, info.st_ino
         self._control()
@@ -113,6 +139,8 @@ class ReservedCAS:
         path = self.root / name
         before = physical._extent(path, size, 1)
         physical._require((before.st_dev, before.st_ino) == self.inodes[name], 'Reserved CAS inode changed')
+        physical._require(str(before.st_blocks) == self.header['inodes'][name][2],
+                          'Reserved CAS block allocation changed')
         descriptor = os.open(path, (os.O_RDWR if write else os.O_RDONLY) | os.O_NOFOLLOW)
         try:
             physical._opened(path, descriptor, before)
@@ -223,6 +251,8 @@ class ReservedCAS:
             physical._require(os.pwrite(descriptor, frame, 0) == len(frame), 'Short reserved control write')
             os.fsync(descriptor)
             physical._written(self.root / 'control', descriptor, before, physical.META)
+            physical._require(os.fstat(descriptor).st_blocks == before.st_blocks,
+                              'Reserved control allocation changed')
             physical._require(os.pread(descriptor, len(frame), 0) == frame, 'Control readback differs')
         finally:
             os.close(descriptor)
@@ -380,6 +410,8 @@ class ReservedCAS:
                         physical._require(os.pwrite(descriptor, body, 0) == len(body), 'Short reserved CAS write')
                         os.fsync(descriptor)
                         physical._written(self.root / name, descriptor, before, CHUNK)
+                        physical._require(os.fstat(descriptor).st_blocks == before.st_blocks,
+                                          'Reserved body allocation changed')
                         physical._require(os.pread(descriptor, len(body), 0) == body, 'Reserved CAS readback differs')
                     finally:
                         os.close(descriptor)
@@ -392,6 +424,8 @@ class ReservedCAS:
                     physical._require(os.pwrite(descriptor, cell, position * CELL) == CELL, 'Short catalog write')
                     os.fsync(descriptor)
                     physical._written(self.root / 'catalog', descriptor, before, physical.META)
+                    physical._require(os.fstat(descriptor).st_blocks == before.st_blocks,
+                                      'Reserved catalog allocation changed')
                     physical._require(os.pread(descriptor, CELL, position * CELL) == cell, 'Catalog readback differs')
                 finally:
                     os.close(descriptor)

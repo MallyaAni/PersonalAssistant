@@ -26,6 +26,7 @@ from backend.tests import synthetic_reserved_stage_fixture as stages
 from backend.tests import test_historical_raw_nightly_lifecycle as fixture
 
 ACTUAL_KILL_FILES = []
+PHYSICAL_OBSERVATIONS = []
 
 
 # Declare only the actual source bytes used by an otherwise unused Cycle reader seam.
@@ -68,8 +69,11 @@ class ReservedMetadataStoreTests(unittest.TestCase):
             trade_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
         self.initial = self.inventory()
 
-    # Release the actual Store lock while retaining every allocated/evidence file.
+    # Retain complete named before/after inventories and release the actual Store lock.
     def tearDown(self):
+        PHYSICAL_OBSERVATIONS.append({'test': self._testMethodName, 'root': str(self.cas.root),
+            'fields': ['st_dev', 'st_ino', 'st_size', 'st_blocks'],
+            'before': self.initial, 'after': self.inventory()})
         self.case.tearDown()
 
     # Record exact allocated inode identities and unchanged file sizes, excluding mtime.

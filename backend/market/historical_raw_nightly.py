@@ -81,7 +81,7 @@ class RawNightly(legacy.Nightly):
             and checkpoint.header['identity_sha256'] == self.store.identity,
             'Exact same-account raw lifecycle checkpoint required')
 
-    # Reserve source-bound raw lineage before native work without claiming capacity.
+    # Reserve source-bound lineage and the optional finite CAS phase before native work.
     def _reserve(self, phase, session, context, birth, previous, before, native_io=None):
         legacy.admitted.require(self.store.snapshot()['head'] == self.expected_head,
                                 'Stale raw lifecycle pre-head')

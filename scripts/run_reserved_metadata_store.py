@@ -1,5 +1,7 @@
 """Run only the source-isolated reserved native metadata and Store integration over synthetic accounts."""
 import hashlib
+import base64
+import gzip
 import importlib
 import json
 import os
@@ -116,9 +118,17 @@ def main():
         'backend.market.historical_raw_cycle_final',
         'backend.cli.market_daily', 'backend.market.historical_conditional_settlement'))]
     assert forbidden == []
+    physical_raw = json.dumps(module.PHYSICAL_OBSERVATIONS, sort_keys=True, separators=(',', ':')).encode()
+    assert len(module.PHYSICAL_OBSERVATIONS) == 8 and len(physical_raw) < 1024 * 1024
+    physical_gzip = gzip.compress(physical_raw, mtime=0)
+    assert len(physical_gzip) < 131072
     proof = {
         'status': 'VERIFIED_SYNTHETIC_RESERVED_NATIVE_METADATA_STORE' if result.wasSuccessful() and not result.skipped else 'FAILED',
         'actual_owned_sigkill_children': children,
+        'physical_inventories': {'encoding': 'gzip-base64-complete-json/1',
+            'raw_bytes': len(physical_raw), 'raw_sha256': hashlib.sha256(physical_raw).hexdigest(),
+            'gzip_bytes': len(physical_gzip), 'gzip_sha256': hashlib.sha256(physical_gzip).hexdigest(),
+            'base64': base64.b64encode(physical_gzip).decode()},
         'tests': result.testsRun, 'failures': len(result.failures),
         'errors': len(result.errors), 'skips': len(result.skipped),
         'elapsed_seconds': time.monotonic() - started,
@@ -129,6 +139,7 @@ def main():
         'forbidden_imports': forbidden,
         'scope': 'NEW synthetic account from reserved birth; metadata2 exact native JSON; preallocated32MiB CAS/eight4MiB phases/2MiB metadata/four descriptors/64calls each; actual Nightly/native paper/broker/checkpoint/SQLite stage commit; two owned SIGKILLs at index-before-control and result-before-seal; no SQLite journal/directory/latch/Cycle producer/twohost/fullhorizon/model/RAM/powerloss/genuine admission',
     }
+    assert len(json.dumps(proof, sort_keys=True, indent=2, allow_nan=False).encode()) < 262144
     with (OUT / 'proof.json').open('x') as handle:
         json.dump(proof, handle, sort_keys=True, indent=2, allow_nan=False)
         handle.flush()

@@ -55,7 +55,7 @@ class SyntheticNativeIO:
             and self.globals.get('paper') is paper,
             'Source-bound synthetic executor differs')
 
-    # Reserve this exact operation's starting slot and source declaration before native work.
+    # Reserve the starting native cursor and optional exact CAS phase before native work.
     def begin(self, nightly, directory, legacy):
         self.guard()
         physical._require(not self.failed and nightly.root == self.writer.root / 'work'

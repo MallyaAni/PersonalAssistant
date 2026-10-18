@@ -33,7 +33,7 @@ def _authority(store, kind, producer_sha256):
 
 
 
-# Claim a typed metadata allowance before encoding and poison any interrupted publication.
+# Claim a typed allowance before encoding and retain any uncertain publication state.
 def capture(store, value, *, kind, producer_sha256, byte_limit=LIMIT):
     _authority(store, kind, producer_sha256)
     from backend.market.historical_reserved_blob_store import ReservedCAS
