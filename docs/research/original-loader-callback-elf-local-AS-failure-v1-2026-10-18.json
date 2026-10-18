@@ -1,0 +1,24 @@
+{
+  "schema": "callback-elf-local-control-resource-refusal/1",
+  "status": "FAILED_BEFORE_TEST_ROOT_OR_DECODER_EXECUTION",
+  "invocation": "python3 -I -S -B docs/research/sources/run-callback-elf-checks-v1-2026-10-18.py",
+  "owner_sha256": "c4e523df4b57edce8b0d28978952101aac67b526812c8af46c0e4dde2982493f",
+  "owner_bytes": 5452,
+  "observed_exit": 1,
+  "first_boundary": "main line50 resource.setrlimit(resource.RLIMIT_AS, (512*1024*1024, 512*1024*1024))",
+  "exception": "ValueError: current limit exceeds maximum limit",
+  "python": "3.12.13 (main, Aug 8 2026, 04:52:31) [Clang 14.0.3 (clang-1403.0.22.14.1)]",
+  "executable": "/usr/local/bin/python3",
+  "separate_readonly_limit_observation": {
+    "AS_soft_and_hard_decimal": ["9223372036854775807", "9223372036854775807"],
+    "CPU_soft_and_hard_decimal": ["9223372036854775807", "9223372036854775807"],
+    "FSIZE_soft_and_hard_decimal": ["9223372036854775807", "9223372036854775807"],
+    "planned_new_root_exists": false
+  },
+  "decoder_bodies_or_child_run": false,
+  "actual_callback_opened": false,
+  "native_runtime_claim": false,
+  "scope": "This actual Mac resource-setting refusal does not prove a decoder defect or Linux behavior. No unchanged retry or cap relaxation.",
+  "preserved_unrun_owner": "/tmp/callback-elf-preparation-drafts-20261018-v1/mac-AS-refused-owner.py",
+  "next": "Independently review a separately staged Linux source/invocation with the same512MiB AS bound before a new synthetic-only attempt. Preserve this FAILED result."
+}

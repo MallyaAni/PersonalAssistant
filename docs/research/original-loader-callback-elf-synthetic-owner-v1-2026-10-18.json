@@ -1,0 +1,1 @@
+{"cleanup_failure": null, "command": ["/usr/bin/python3", "-I", "-S", "-B", "/tmp/callback-elf-synthetic-20261018-v1/check-callback-elf-data-v1-2026-10-18.py"], "exception": null, "exit_code": 0, "owned_child_reaped": true, "pid": 2304808, "schema": "local-synthetic-elf-owner/1", "timeout": false}

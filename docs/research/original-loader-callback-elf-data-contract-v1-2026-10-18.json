@@ -1,0 +1,67 @@
+{
+  "schema": "callback-elf-data-source-contract/1",
+  "status": "TWO_OPERATIONAL_DECODERS_SYNTHETIC37_VERIFIED_ACTUAL_CALLBACK_PARSE_UNRUN",
+  "scope": "Bounded ELF metadata DATA decoding only; no native code compilation, loading, execution, dependency resolution or runtime/model admission.",
+  "specification": {
+    "title": "Xinuos generic ABI ELF Object File Format 4.3 DRAFT",
+    "read_sections": [
+      "https://gabi.xinuos.com/elf/02-eheader.html",
+      "https://gabi.xinuos.com/elf/03-sheader.html",
+      "https://gabi.xinuos.com/elf/04-strtab.html",
+      "https://gabi.xinuos.com/elf/07-pheader.html",
+      "https://gabi.xinuos.com/elf/08-dynamic.html"
+    ],
+    "meaning": "Layout reference only; no image binary-build certification, complete ELF conformance, architecture-specific ABI or runtime claim. No external prose is embedded in the decoders."
+  },
+  "exact_future_input": {
+    "prior_source_commit": "95c4b5513d22059497fa5e9c43c4f871593a9de0",
+    "prior_independent_proof_sha256": "779a1f86987f55065061ca81d6891a61072d06a2f1514ec5bb64bbeb74dd4d9e",
+    "prior_requirement_seam_sha256": "ac822a964d90ba6bfdc07bd9fb3445ea1f7bccbac0d2675322dcfa18cf58e933",
+    "path": "/home/animallya96/scratch/capacity-callback-binary-copy-20261018-v1/callback.bin",
+    "bytes": 216280,
+    "sha256": "9edf4136653a328edcc88dc97f6d828440ad96550c436cbe087951845c89903b",
+    "container_path_origin": "/usr/local/lib/python3.12/site-packages/scipy/_lib/_ccallback_c.cpython-312-aarch64-linux-gnu.so",
+    "RECORD_source_sha256": "b4b210e29143fee78ff3abd82e2d308554642129deacfcfec4e7e626c2d4fd68",
+    "RECORD_index": 219,
+    "RECORD_end_line": 220,
+    "physical_binding": "Future driver must authenticate the exact prior proof and its original decimal-string physical identity, then two full held/named reads plus later physical/SHA bookends. Copied inode identity is separate from container-source authority."
+  },
+  "supported_domain": {
+    "schema": "callback-elf64-le-data/1",
+    "input": "Exact immutable bytes, 64 through 262144 inclusive; ELF64, little-endian, identification/header version CURRENT, ET_DYN, exact standard64/56/64-byte Ehdr/Phdr/Shdr widths.",
+    "tables": "Required nonempty standard-numbered program and section tables after the ELF header, required section-name table, bounded full spans. Extended phnum/shnum/shstrndx and absent tables refuse explicitly. This is a narrow support domain, not a claim those general ELF representations are invalid.",
+    "undefined_and_nonfilebacked": "PT_NULL and SHT_NULL payload fields are retained raw without file-span requirements. SHT_NOBITS size/offset are retained raw without allocation or treating them as file bytes. No conceptual memsz allocation occurs.",
+    "loads": "File-backed bounds, filesz no greater than memsz, nonwrapping virtual range, ascending virtual addresses, power-of-two alignment and offset/address congruence.",
+    "dynamic": "Exactly one PT_DYNAMIC and matching linked SHT_DYNAMIC. Every complete slot is retained in order; semantics end at the first DT_NULL, whose value is ignored. Later slots remain raw with inactive labels. Signed tags and unsigned values remain exact decimal strings.",
+    "strings": "Exactly one active DT_STRTAB and DT_STRSZ, positive size, whole nonwrapping range maps to exactly one PT_LOAD using filesz rather than memsz. Linked SHT_STRTAB span must match. Tables start/end in NUL; every selected index terminates inside its table. Arbitrary bytes are hex, no UTF8 assumptions. String length over4096 refuses; no truncation.",
+    "declarations": "Retain all ordered active DT_NEEDED/SONAME/RPATH/RUNPATH string declarations, including repeated NEEDED and substring/empty-string indices. Preserve unknown dynamic tags without interpreting them. No SONAME/path-to-library resolution.",
+    "resource_work": "One16MiB budget covers every hashed byte span, all record/table/payload/string-table hashes and the full-input digest. Each repeated span is charged again before hashing. A refused input returns no partial accepted document."
+  },
+  "implementation_separation": {
+    "primary": "parse-callback-elf-data-v1-2026-10-18.py uses struct.unpack_from and standard-width format strings.",
+    "independent": "fold-callback-elf-data-v1-2026-10-18.py uses explicit widths, cursor advancement, int.from_bytes, separately written bounds and string cursor. It never imports or invokes the primary decoder.",
+    "shared": "Only the declared schema, constants and refusal categories are shared. Both are new stdlib operational controls; neither has IO or native/payload imports. Equality alone cannot exclude a shared interpretation error, so synthetic known-value assertions are separate from full-output parity."
+  },
+  "synthetic_acceptance": {
+    "status": "VERIFIED_FIVE_POSITIVES_AND_32_EXPECTED_REFUSALS_ONLY",
+    "result_sha256": "851ad8a6399035c0f11a936e92b6085c0de91f77737378a398364b574036938b",
+    "fixture_bytes": 2048,
+    "fixture_sha256": "2bbc9c1d865eb24e8a66efc82f7081de7662482e3d650ad4b0d7ec90c1b8dbdb",
+    "runtime": "Spark1 host Python3.12.3, stdlib operational controls only; not N2 Python or native package runtime.",
+    "closed": "Never repeat this37-case synthetic acceptance for documentation or adopt its fixture as actual callback evidence.",
+    "Mac_resource_failure": "Separate actual pre-root/pre-child AS-setting failure preserved; Linux attempt was separately source/invocation reviewed and kept512MiB AS unchanged."
+  },
+  "actual_driver_and_independent_fold_requirements": [
+    "New bounded source-pinned drivers, source-staging, invocation and finite resource/ownership controls must be prepared and independently reviewed BEFORE use; none exists in this checkpoint.",
+    "Use only the exact retained callback and prior proof as DATA. No Docker, new cp/HEAD, container start/create/exec/load, package imports, dlopen, ldd, readelf or other19 native body reads.",
+    "Retain complete ordered headers, PH/SH/dynamic records, raw-record hex and full payload/span SHA; split full outputs into bounded pages by actual encoded byte size as well as record count. No truncation or output cap exception.",
+    "Independent driver must authenticate every page/summary/source/prior input with two full reads/SHA/held and named decimal physical identity and later bookends, reconstruct from the authenticated binary independently, and compare every field/record/order/raw span, not only aggregate counts.",
+    "Exclusive new output/tool/review roots, bounded files/stdout/stderr, files then root/parent fsync/readback; preserve refusal roots. No crash/durability assertion without actual evidence."
+  ],
+  "native_runtime_and_model_admission": null,
+  "actual_binary_parser_driver": null,
+  "actual_binary_independent_driver": null,
+  "actual_invocation": null,
+  "execution_authorized": false,
+  "remaining": "Other19 native bodies unread/above262KiB; sklearn actualmetadata, selected callable/global/type/dataclass live producer/classflags/native/phase, Arrow default pools and ordinary wrapper registry provenance unresolved. All25 guard payload bodies unrun; old2446/030c/G08/caps unchanged. Historical/ordinary/intraday/fill/UI remain UNVERIFIED; original timing FAILED/publication CLOSED/v6 OPEN-PAUSED."
+}
