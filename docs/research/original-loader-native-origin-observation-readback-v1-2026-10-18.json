@@ -1,0 +1,1032 @@
+{
+  "all_two_held_named_reads_and_later_full_SHA_physical_bookends_equal": true,
+  "files": 68,
+  "independent_remote_catalog_fold": false,
+  "input_bytes": 450919,
+  "inventory": {
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/original-loader-native-origin-contract-v1-2026-10-18.json": {
+      "bytes": 24905,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792346385737619285",
+        "st_dev": "16777223",
+        "st_ino": "186436380",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792346385737619285",
+        "st_nlink": "1",
+        "st_size": "24905",
+        "st_uid": "501"
+      },
+      "sha256": "4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/get-native-origin-result-v1-2026-10-18.py": {
+      "bytes": 5948,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792349878433583895",
+        "st_dev": "16777223",
+        "st_ino": "187369811",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349878433583895",
+        "st_nlink": "1",
+        "st_size": "5948",
+        "st_uid": "501"
+      },
+      "sha256": "6fce6e77b6eca5ef9f2d44dbbc5f66f5449c8e0c74cd75ae93911d8b5405cda4"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/native-origin-control-bootstrap-v1-2026-10-18.py": {
+      "bytes": 15611,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792348705960456846",
+        "st_dev": "16777223",
+        "st_ino": "186997790",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792348705960456846",
+        "st_nlink": "1",
+        "st_size": "15611",
+        "st_uid": "501"
+      },
+      "sha256": "70fb388a8cf1271a4eb0957a9071594490ef26318dc52ab9392b4572a6eacb67"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/native-origin-control-transport-v1-2026-10-18.py": {
+      "bytes": 26208,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792349001905724239",
+        "st_dev": "16777223",
+        "st_ino": "187149031",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001905724239",
+        "st_nlink": "1",
+        "st_size": "26208",
+        "st_uid": "501"
+      },
+      "sha256": "ce66a5d53a789bcb63f31633b222653f62af1cf59419ce3cfe30154952deb087"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/native-origin-result-getter-transport-v1-2026-10-18.py": {
+      "bytes": 6427,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792349894678196137",
+        "st_dev": "16777223",
+        "st_ino": "187375463",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349894678196137",
+        "st_nlink": "1",
+        "st_size": "6427",
+        "st_uid": "501"
+      },
+      "sha256": "93fb16a47e3fef1a29ffe53fd7b3ebccbd6a2113b0aa7b7c395e1f550f18bef4"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/observe-retained-native-json-v1-2026-10-18.py": {
+      "bytes": 14395,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792347500907995254",
+        "st_dev": "16777223",
+        "st_ino": "186711279",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792347500907995254",
+        "st_nlink": "1",
+        "st_size": "14395",
+        "st_uid": "501"
+      },
+      "sha256": "b7f6ffb0b968c08caa0b6133c0d2aa20d75c54f87b0abc80326c28c9096a6e5b"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/preserve-native-origin-observation-v1-2026-10-18.py": {
+      "bytes": 9395,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792349967835383592",
+        "st_dev": "16777223",
+        "st_ino": "187401670",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349967835383592",
+        "st_nlink": "1",
+        "st_size": "9395",
+        "st_uid": "501"
+      },
+      "sha256": "0098b20aefe71aa06e93154525b24817a81e83e9c60e6a5164c9279055f9da0c"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/verify-retained-native-json-v1-2026-10-18.py": {
+      "bytes": 16701,
+      "physical": {
+        "st_blocks": "40",
+        "st_ctime_ns": "1792347571180635176",
+        "st_dev": "16777223",
+        "st_ino": "186771461",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792347571180635176",
+        "st_nlink": "1",
+        "st_size": "16701",
+        "st_uid": "501"
+      },
+      "sha256": "094561ab917e774ae04af52dc81cdbc5865db23ae5898f1ae25fd00496867a76"
+    },
+    "/tmp/native-origin-before-observe-transport-20261018-v1/exit.json": {
+      "bytes": 20809,
+      "physical": {
+        "st_blocks": "48",
+        "st_ctime_ns": "1792349735525678609",
+        "st_dev": "16777223",
+        "st_ino": "187354346",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349735525678609",
+        "st_nlink": "1",
+        "st_size": "20809",
+        "st_uid": "501"
+      },
+      "sha256": "74388d12c65663b88f309e4331b302b40afb9d90464a777a965dfc7b06523ac8"
+    },
+    "/tmp/native-origin-before-observe-transport-20261018-v1/stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792349734800462459",
+        "st_dev": "16777223",
+        "st_ino": "187354156",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349734800421060",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "501"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-origin-before-observe-transport-20261018-v1/stdout": {
+      "bytes": 3074,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792349735509665221",
+        "st_dev": "16777223",
+        "st_ino": "187354155",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349735509665221",
+        "st_nlink": "1",
+        "st_size": "3074",
+        "st_uid": "501"
+      },
+      "sha256": "40b67f49196b44f4a07abb0192b99a9bf463cd5071694739c861f8ddadef8fc4"
+    },
+    "/tmp/native-origin-before-observe-transport-20261018-v1/wire.json": {
+      "bytes": 41049,
+      "physical": {
+        "st_blocks": "88",
+        "st_ctime_ns": "1792349734798890261",
+        "st_dev": "16777223",
+        "st_ino": "187354154",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349734798890261",
+        "st_nlink": "1",
+        "st_size": "41049",
+        "st_uid": "501"
+      },
+      "sha256": "21c3d360e3c84e7a50fd71cf07b13db9b80fac08e04744c9ef3aede9ad420cb3"
+    },
+    "/tmp/native-origin-before-stage-transport-20261018-v1/exit.json": {
+      "bytes": 20807,
+      "physical": {
+        "st_blocks": "48",
+        "st_ctime_ns": "1792349649610103706",
+        "st_dev": "16777223",
+        "st_ino": "187337395",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349649610103706",
+        "st_nlink": "1",
+        "st_size": "20807",
+        "st_uid": "501"
+      },
+      "sha256": "41cd48b1159c45ade002817e02e83d366b234cc52c7faa64c15ac3bfbcd314c2"
+    },
+    "/tmp/native-origin-before-stage-transport-20261018-v1/stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792349648798193027",
+        "st_dev": "16777223",
+        "st_ino": "187337081",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349648798143358",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "501"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-origin-before-stage-transport-20261018-v1/stdout": {
+      "bytes": 1210,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792349649589194829",
+        "st_dev": "16777223",
+        "st_ino": "187337080",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349649589194829",
+        "st_nlink": "1",
+        "st_size": "1210",
+        "st_uid": "501"
+      },
+      "sha256": "d78c5307ec2827f59279b6961da05b74f94073cf7f9b61d8a8da400c31b21a4c"
+    },
+    "/tmp/native-origin-before-stage-transport-20261018-v1/wire.json": {
+      "bytes": 41049,
+      "physical": {
+        "st_blocks": "88",
+        "st_ctime_ns": "1792349648796312353",
+        "st_dev": "16777223",
+        "st_ino": "187337078",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349648796312353",
+        "st_nlink": "1",
+        "st_size": "41049",
+        "st_uid": "501"
+      },
+      "sha256": "21c3d360e3c84e7a50fd71cf07b13db9b80fac08e04744c9ef3aede9ad420cb3"
+    },
+    "/tmp/native-origin-control-preparation-20261018-v1/packet.json": {
+      "bytes": 30745,
+      "physical": {
+        "st_blocks": "64",
+        "st_ctime_ns": "1792349001904725426",
+        "st_dev": "16777223",
+        "st_ino": "187149030",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349001904725426",
+        "st_nlink": "1",
+        "st_size": "30745",
+        "st_uid": "501"
+      },
+      "sha256": "3581a65f6bed8c5e5eaee081712502e7835820f6dbad71352b84c3ff17346151"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/00-native-origin-control-bootstrap-v1-2026-10-18.py": {
+      "bytes": 15611,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792350042281662855",
+        "st_dev": "16777223",
+        "st_ino": "187416331",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042281662855",
+        "st_nlink": "1",
+        "st_size": "15611",
+        "st_uid": "501"
+      },
+      "sha256": "70fb388a8cf1271a4eb0957a9071594490ef26318dc52ab9392b4572a6eacb67"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/01-native-origin-control-transport-v1-2026-10-18.py": {
+      "bytes": 26208,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792350042282551344",
+        "st_dev": "16777223",
+        "st_ino": "187416333",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042282551344",
+        "st_nlink": "1",
+        "st_size": "26208",
+        "st_uid": "501"
+      },
+      "sha256": "ce66a5d53a789bcb63f31633b222653f62af1cf59419ce3cfe30154952deb087"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/02-observe-retained-native-json-v1-2026-10-18.py": {
+      "bytes": 14395,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792350042283391866",
+        "st_dev": "16777223",
+        "st_ino": "187416334",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042283391866",
+        "st_nlink": "1",
+        "st_size": "14395",
+        "st_uid": "501"
+      },
+      "sha256": "b7f6ffb0b968c08caa0b6133c0d2aa20d75c54f87b0abc80326c28c9096a6e5b"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/03-verify-retained-native-json-v1-2026-10-18.py": {
+      "bytes": 16701,
+      "physical": {
+        "st_blocks": "40",
+        "st_ctime_ns": "1792350042284300083",
+        "st_dev": "16777223",
+        "st_ino": "187416336",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042284300083",
+        "st_nlink": "1",
+        "st_size": "16701",
+        "st_uid": "501"
+      },
+      "sha256": "094561ab917e774ae04af52dc81cdbc5865db23ae5898f1ae25fd00496867a76"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/04-get-native-origin-result-v1-2026-10-18.py": {
+      "bytes": 5948,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792350042284855671",
+        "st_dev": "16777223",
+        "st_ino": "187416337",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042284855671",
+        "st_nlink": "1",
+        "st_size": "5948",
+        "st_uid": "501"
+      },
+      "sha256": "6fce6e77b6eca5ef9f2d44dbbc5f66f5449c8e0c74cd75ae93911d8b5405cda4"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/05-native-origin-result-getter-transport-v1-2026-10-18.py": {
+      "bytes": 6427,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792350042285994855",
+        "st_dev": "16777223",
+        "st_ino": "187416338",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042285994855",
+        "st_nlink": "1",
+        "st_size": "6427",
+        "st_uid": "501"
+      },
+      "sha256": "93fb16a47e3fef1a29ffe53fd7b3ebccbd6a2113b0aa7b7c395e1f550f18bef4"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/06-preserve-native-origin-observation-v1-2026-10-18.py": {
+      "bytes": 9395,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792350042288015756",
+        "st_dev": "16777223",
+        "st_ino": "187416340",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042288015756",
+        "st_nlink": "1",
+        "st_size": "9395",
+        "st_uid": "501"
+      },
+      "sha256": "0098b20aefe71aa06e93154525b24817a81e83e9c60e6a5164c9279055f9da0c"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/07-original-loader-native-origin-contract-v1-2026-10-18.json": {
+      "bytes": 24905,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792350042288961864",
+        "st_dev": "16777223",
+        "st_ino": "187416342",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042288961864",
+        "st_nlink": "1",
+        "st_size": "24905",
+        "st_uid": "501"
+      },
+      "sha256": "4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/08-packet.json": {
+      "bytes": 30745,
+      "physical": {
+        "st_blocks": "64",
+        "st_ctime_ns": "1792350042290186212",
+        "st_dev": "16777223",
+        "st_ino": "187416343",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042290186212",
+        "st_nlink": "1",
+        "st_size": "30745",
+        "st_uid": "501"
+      },
+      "sha256": "3581a65f6bed8c5e5eaee081712502e7835820f6dbad71352b84c3ff17346151"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/09-stdout": {
+      "bytes": 1210,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792350042290994175",
+        "st_dev": "16777223",
+        "st_ino": "187416344",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042290994175",
+        "st_nlink": "1",
+        "st_size": "1210",
+        "st_uid": "501"
+      },
+      "sha256": "d78c5307ec2827f59279b6961da05b74f94073cf7f9b61d8a8da400c31b21a4c"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/10-stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792350042291400980",
+        "st_dev": "16777223",
+        "st_ino": "187416346",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042291365203",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "501"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/11-exit.json": {
+      "bytes": 20807,
+      "physical": {
+        "st_blocks": "48",
+        "st_ctime_ns": "1792350042292224117",
+        "st_dev": "16777223",
+        "st_ino": "187416347",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042292224117",
+        "st_nlink": "1",
+        "st_size": "20807",
+        "st_uid": "501"
+      },
+      "sha256": "41cd48b1159c45ade002817e02e83d366b234cc52c7faa64c15ac3bfbcd314c2"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/12-wire.json": {
+      "bytes": 41049,
+      "physical": {
+        "st_blocks": "88",
+        "st_ctime_ns": "1792350042292958673",
+        "st_dev": "16777223",
+        "st_ino": "187416348",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042292958673",
+        "st_nlink": "1",
+        "st_size": "41049",
+        "st_uid": "501"
+      },
+      "sha256": "21c3d360e3c84e7a50fd71cf07b13db9b80fac08e04744c9ef3aede9ad420cb3"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/13-stdout": {
+      "bytes": 2584,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792350042293710115",
+        "st_dev": "16777223",
+        "st_ino": "187416350",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042293710115",
+        "st_nlink": "1",
+        "st_size": "2584",
+        "st_uid": "501"
+      },
+      "sha256": "86c21199be5a7be1e43aaac3c90c38d0922445a6710e3892a449c387c76df51d"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/14-stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792350042294512490",
+        "st_dev": "16777223",
+        "st_ino": "187416351",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042294439613",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "501"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/15-exit.json": {
+      "bytes": 21353,
+      "physical": {
+        "st_blocks": "48",
+        "st_ctime_ns": "1792350042295336217",
+        "st_dev": "16777223",
+        "st_ino": "187416352",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042295336217",
+        "st_nlink": "1",
+        "st_size": "21353",
+        "st_uid": "501"
+      },
+      "sha256": "ae452afcbda1367190a06057758f488b5f3c098ffaad9862bfb80bee7552eea0"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/16-wire.json": {
+      "bytes": 42663,
+      "physical": {
+        "st_blocks": "88",
+        "st_ctime_ns": "1792350042296550171",
+        "st_dev": "16777223",
+        "st_ino": "187416354",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042296550171",
+        "st_nlink": "1",
+        "st_size": "42663",
+        "st_uid": "501"
+      },
+      "sha256": "80478e6f42258fe091ab9088770963edc9630c22b9ca6d1ca28c5bfb575e71cd"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/17-stdout": {
+      "bytes": 3074,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792350042297784993",
+        "st_dev": "16777223",
+        "st_ino": "187416355",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042297784993",
+        "st_nlink": "1",
+        "st_size": "3074",
+        "st_uid": "501"
+      },
+      "sha256": "40b67f49196b44f4a07abb0192b99a9bf463cd5071694739c861f8ddadef8fc4"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/18-stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792350042298334299",
+        "st_dev": "16777223",
+        "st_ino": "187416357",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042298279497",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "501"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/19-exit.json": {
+      "bytes": 20809,
+      "physical": {
+        "st_blocks": "48",
+        "st_ctime_ns": "1792350042299134353",
+        "st_dev": "16777223",
+        "st_ino": "187416358",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042299134353",
+        "st_nlink": "1",
+        "st_size": "20809",
+        "st_uid": "501"
+      },
+      "sha256": "74388d12c65663b88f309e4331b302b40afb9d90464a777a965dfc7b06523ac8"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/20-wire.json": {
+      "bytes": 41049,
+      "physical": {
+        "st_blocks": "88",
+        "st_ctime_ns": "1792350042300075938",
+        "st_dev": "16777223",
+        "st_ino": "187416359",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042300075938",
+        "st_nlink": "1",
+        "st_size": "41049",
+        "st_uid": "501"
+      },
+      "sha256": "21c3d360e3c84e7a50fd71cf07b13db9b80fac08e04744c9ef3aede9ad420cb3"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/21-stdout": {
+      "bytes": 430,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792350042301006653",
+        "st_dev": "16777223",
+        "st_ino": "187416361",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042301006653",
+        "st_nlink": "1",
+        "st_size": "430",
+        "st_uid": "501"
+      },
+      "sha256": "12400297c573be7885ef4b375ae7fdc8c7c3585686642b038e75e7ba72e8588e"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/22-stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792350042302033201",
+        "st_dev": "16777223",
+        "st_ino": "187416362",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042301964039",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "501"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/23-exit.json": {
+      "bytes": 21357,
+      "physical": {
+        "st_blocks": "48",
+        "st_ctime_ns": "1792350042302796486",
+        "st_dev": "16777223",
+        "st_ino": "187416363",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042302796486",
+        "st_nlink": "1",
+        "st_size": "21357",
+        "st_uid": "501"
+      },
+      "sha256": "0ce3580cf135cbd447a527fe5272c048721c81b6b1f016ed5aabe8cc0422266e"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/24-wire.json": {
+      "bytes": 45147,
+      "physical": {
+        "st_blocks": "96",
+        "st_ctime_ns": "1792350042304884388",
+        "st_dev": "16777223",
+        "st_ino": "187416365",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042304884388",
+        "st_nlink": "1",
+        "st_size": "45147",
+        "st_uid": "501"
+      },
+      "sha256": "eea1b85b0ea0dc489cf30d4c852ce7acace43cbb169493e3d6c4b495543ea72f"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/25-stdout": {
+      "bytes": 24866,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792350042306033213",
+        "st_dev": "16777223",
+        "st_ino": "187416367",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042306033213",
+        "st_nlink": "1",
+        "st_size": "24866",
+        "st_uid": "501"
+      },
+      "sha256": "5efba0fcac26e163cf22a3dba5563f4d5be9a3136695f68a077b440b9d5bba19"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/26-stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792350042306742810",
+        "st_dev": "16777223",
+        "st_ino": "187416368",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042306668993",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "501"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/27-exit.json": {
+      "bytes": 1878,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792350042307129242",
+        "st_dev": "16777223",
+        "st_ino": "187416370",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042307129242",
+        "st_nlink": "1",
+        "st_size": "1878",
+        "st_uid": "501"
+      },
+      "sha256": "6ce94ff59ec1dea79f13fdedf7849b6b7128643d8d42459d2c91cdca5272c2ff"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/28-getter-unrun.py": {
+      "bytes": 5711,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792350042307814267",
+        "st_dev": "16777223",
+        "st_ino": "187416371",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042307814267",
+        "st_nlink": "1",
+        "st_size": "5711",
+        "st_uid": "501"
+      },
+      "sha256": "3e151bf8f60c18b37489e4ba8b64c78f99461754eda7f546acee71c661a9bc71"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/29-transport-unrun.py": {
+      "bytes": 6427,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792350042308383649",
+        "st_dev": "16777223",
+        "st_ino": "187416372",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042308383649",
+        "st_nlink": "1",
+        "st_size": "6427",
+        "st_uid": "501"
+      },
+      "sha256": "f762592d03e5a7e351c883029b98a72fb5c56996a1fac0aafe6d9ddedf96a3e6"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/30-reason.txt": {
+      "bytes": 170,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792350042309021394",
+        "st_dev": "16777223",
+        "st_ino": "187416373",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042309021394",
+        "st_nlink": "1",
+        "st_size": "170",
+        "st_uid": "501"
+      },
+      "sha256": "aff21701f34d6176e5296b27c5ff45af88996d3f165a250c6144be8522205b10"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/body-0000.json": {
+      "bytes": 1048,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792350042309608742",
+        "st_dev": "16777223",
+        "st_ino": "187416375",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042309608742",
+        "st_nlink": "1",
+        "st_size": "1048",
+        "st_uid": "501"
+      },
+      "sha256": "efbb47a1f36466cd4e16231de337533cf97eb03af2cd6d6cce2c748a05e55f5b"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/local-review.json": {
+      "bytes": 3683,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792350042312907774",
+        "st_dev": "16777223",
+        "st_ino": "187416380",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042312907774",
+        "st_nlink": "1",
+        "st_size": "3683",
+        "st_uid": "501"
+      },
+      "sha256": "f27cacc185a0cd4d430e71605ad4291b7a0e1abd52718b90735ec053c61b00fd"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/manifest.json": {
+      "bytes": 37799,
+      "physical": {
+        "st_blocks": "80",
+        "st_ctime_ns": "1792350042331406162",
+        "st_dev": "16777223",
+        "st_ino": "187416388",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042331406162",
+        "st_nlink": "1",
+        "st_size": "37799",
+        "st_uid": "501"
+      },
+      "sha256": "f9be69fda2f064a852d8c2be5646ae2e403c2567ec04277cf74b9d23b1c34f38"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/native-raw.json": {
+      "bytes": 650,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792350042311782358",
+        "st_dev": "16777223",
+        "st_ino": "187416379",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042311782358",
+        "st_nlink": "1",
+        "st_size": "650",
+        "st_uid": "501"
+      },
+      "sha256": "76daf7a43f8652e767817fb7da442664470c13b1d25915b02cb49534268c588e"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/stage.json": {
+      "bytes": 2584,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792350042310335606",
+        "st_dev": "16777223",
+        "st_ino": "187416376",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042310335606",
+        "st_nlink": "1",
+        "st_size": "2584",
+        "st_uid": "501"
+      },
+      "sha256": "86c21199be5a7be1e43aaac3c90c38d0922445a6710e3892a449c387c76df51d"
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/summary.json": {
+      "bytes": 13430,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792350042311182423",
+        "st_dev": "16777223",
+        "st_ino": "187416377",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042311182423",
+        "st_nlink": "1",
+        "st_size": "13430",
+        "st_uid": "501"
+      },
+      "sha256": "8402d4238508755502005d8290141e10827494083a6384b46be611b5e962986d"
+    },
+    "/tmp/native-origin-observe-transport-20261018-v1/exit.json": {
+      "bytes": 21357,
+      "physical": {
+        "st_blocks": "48",
+        "st_ctime_ns": "1792349786860357983",
+        "st_dev": "16777223",
+        "st_ino": "187363304",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349786860357983",
+        "st_nlink": "1",
+        "st_size": "21357",
+        "st_uid": "501"
+      },
+      "sha256": "0ce3580cf135cbd447a527fe5272c048721c81b6b1f016ed5aabe8cc0422266e"
+    },
+    "/tmp/native-origin-observe-transport-20261018-v1/stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792349786229993436",
+        "st_dev": "16777223",
+        "st_ino": "187363298",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349786229952149",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "501"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-origin-observe-transport-20261018-v1/stdout": {
+      "bytes": 430,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792349786854546052",
+        "st_dev": "16777223",
+        "st_ino": "187363297",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349786854546052",
+        "st_nlink": "1",
+        "st_size": "430",
+        "st_uid": "501"
+      },
+      "sha256": "12400297c573be7885ef4b375ae7fdc8c7c3585686642b038e75e7ba72e8588e"
+    },
+    "/tmp/native-origin-observe-transport-20261018-v1/wire.json": {
+      "bytes": 45147,
+      "physical": {
+        "st_blocks": "96",
+        "st_ctime_ns": "1792349786227696670",
+        "st_dev": "16777223",
+        "st_ino": "187363296",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349786227696670",
+        "st_nlink": "1",
+        "st_size": "45147",
+        "st_uid": "501"
+      },
+      "sha256": "eea1b85b0ea0dc489cf30d4c852ce7acace43cbb169493e3d6c4b495543ea72f"
+    },
+    "/tmp/native-origin-result-getter-drafts-20261018-v1/getter-unrun.py": {
+      "bytes": 5711,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792349878416800390",
+        "st_dev": "16777223",
+        "st_ino": "187382485",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349878416800390",
+        "st_nlink": "1",
+        "st_size": "5711",
+        "st_uid": "501"
+      },
+      "sha256": "3e151bf8f60c18b37489e4ba8b64c78f99461754eda7f546acee71c661a9bc71"
+    },
+    "/tmp/native-origin-result-getter-drafts-20261018-v1/reason.txt": {
+      "bytes": 170,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792349878418037175",
+        "st_dev": "16777223",
+        "st_ino": "187382487",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349878418037175",
+        "st_nlink": "1",
+        "st_size": "170",
+        "st_uid": "501"
+      },
+      "sha256": "aff21701f34d6176e5296b27c5ff45af88996d3f165a250c6144be8522205b10"
+    },
+    "/tmp/native-origin-result-getter-drafts-20261018-v1/transport-unrun.py": {
+      "bytes": 6427,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792349878417378508",
+        "st_dev": "16777223",
+        "st_ino": "187382486",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349878417378508",
+        "st_nlink": "1",
+        "st_size": "6427",
+        "st_uid": "501"
+      },
+      "sha256": "f762592d03e5a7e351c883029b98a72fb5c56996a1fac0aafe6d9ddedf96a3e6"
+    },
+    "/tmp/native-origin-result-getter-transport-20261018-v1/exit.json": {
+      "bytes": 1878,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792349972907689494",
+        "st_dev": "16777223",
+        "st_ino": "187402984",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349972907689494",
+        "st_nlink": "1",
+        "st_size": "1878",
+        "st_uid": "501"
+      },
+      "sha256": "6ce94ff59ec1dea79f13fdedf7849b6b7128643d8d42459d2c91cdca5272c2ff"
+    },
+    "/tmp/native-origin-result-getter-transport-20261018-v1/stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792349972194197289",
+        "st_dev": "16777223",
+        "st_ino": "187402820",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349972194164803",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "501"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-origin-result-getter-transport-20261018-v1/stdout": {
+      "bytes": 24866,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792349972865656336",
+        "st_dev": "16777223",
+        "st_ino": "187402819",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349972865656336",
+        "st_nlink": "1",
+        "st_size": "24866",
+        "st_uid": "501"
+      },
+      "sha256": "5efba0fcac26e163cf22a3dba5563f4d5be9a3136695f68a077b440b9d5bba19"
+    },
+    "/tmp/native-origin-stage-transport-20261018-v1/exit.json": {
+      "bytes": 21353,
+      "physical": {
+        "st_blocks": "48",
+        "st_ctime_ns": "1792349696539816733",
+        "st_dev": "16777223",
+        "st_ino": "187346069",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349696539816733",
+        "st_nlink": "1",
+        "st_size": "21353",
+        "st_uid": "501"
+      },
+      "sha256": "ae452afcbda1367190a06057758f488b5f3c098ffaad9862bfb80bee7552eea0"
+    },
+    "/tmp/native-origin-stage-transport-20261018-v1/stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792349696026072288",
+        "st_dev": "16777223",
+        "st_ino": "187346068",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349696026039128",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "501"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-origin-stage-transport-20261018-v1/stdout": {
+      "bytes": 2584,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792349696510823827",
+        "st_dev": "16777223",
+        "st_ino": "187346067",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349696510823827",
+        "st_nlink": "1",
+        "st_size": "2584",
+        "st_uid": "501"
+      },
+      "sha256": "86c21199be5a7be1e43aaac3c90c38d0922445a6710e3892a449c387c76df51d"
+    },
+    "/tmp/native-origin-stage-transport-20261018-v1/wire.json": {
+      "bytes": 42663,
+      "physical": {
+        "st_blocks": "88",
+        "st_ctime_ns": "1792349696024820222",
+        "st_dev": "16777223",
+        "st_ino": "187346066",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792349696024820222",
+        "st_nlink": "1",
+        "st_size": "42663",
+        "st_uid": "501"
+      },
+      "sha256": "80478e6f42258fe091ab9088770963edc9630c22b9ca6d1ca28c5bfb575e71cd"
+    }
+  },
+  "manifest_sha256": "f9be69fda2f064a852d8c2be5646ae2e403c2567ec04277cf74b9d23b1c34f38",
+  "native_runtime_admission": null,
+  "preserved_inputs": 31,
+  "schema": "native-origin-local-root-readback/1"
+}

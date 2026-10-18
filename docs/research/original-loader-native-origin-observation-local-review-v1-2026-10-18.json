@@ -1,0 +1,138 @@
+{
+  "catalog_page_counts": [
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    64,
+    59
+  ],
+  "catalog_records": 1339,
+  "genuine_execution_authorized": false,
+  "independent_fold": false,
+  "native_fields": {
+    "backend_modules": [],
+    "numpy": {
+      "init_sha256": "09295a80660f17925ae23765ce8cbd7ff7ceae968d5f2f89349f1cb74c0b9e11",
+      "path": "/usr/local/lib/python3.12/site-packages/numpy/__init__.py",
+      "version": "2.5.3"
+    },
+    "observed_at_ns": "1792317235957806688",
+    "parity_or_genuine_acceptance": false,
+    "python": "3.12.14",
+    "python_executable": "/usr/local/bin/python",
+    "schema": "capacity-context-native-probe/1",
+    "threads": {
+      "BLIS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    },
+    "uid": 1000
+  },
+  "native_runtime_admission": null,
+  "primary_terminal": {
+    "hash_work_final": 2825586,
+    "historical_artifact_only": true,
+    "output_bytes": 14478,
+    "pages": 1,
+    "summary": {
+      "bytes": 13430,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792349786884852600",
+        "st_dev": "66306",
+        "st_ino": "60583281",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792349786884852600",
+        "st_nlink": "1",
+        "st_size": "13430",
+        "st_uid": "1000"
+      },
+      "sha256": "8402d4238508755502005d8290141e10827494083a6384b46be611b5e962986d"
+    }
+  },
+  "raw_bytes": 650,
+  "raw_sha256": "76daf7a43f8652e767817fb7da442664470c13b1d25915b02cb49534268c588e",
+  "returned": {
+    "body-0000.json": {
+      "bytes": 1048,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792350042309608742",
+        "st_dev": "16777223",
+        "st_ino": "187416375",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042309608742",
+        "st_nlink": "1",
+        "st_size": "1048",
+        "st_uid": "501"
+      },
+      "sha256": "efbb47a1f36466cd4e16231de337533cf97eb03af2cd6d6cce2c748a05e55f5b"
+    },
+    "native-raw.json": {
+      "bytes": 650,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792350042311782358",
+        "st_dev": "16777223",
+        "st_ino": "187416379",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042311782358",
+        "st_nlink": "1",
+        "st_size": "650",
+        "st_uid": "501"
+      },
+      "sha256": "76daf7a43f8652e767817fb7da442664470c13b1d25915b02cb49534268c588e"
+    },
+    "stage.json": {
+      "bytes": 2584,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792350042310335606",
+        "st_dev": "16777223",
+        "st_ino": "187416376",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042310335606",
+        "st_nlink": "1",
+        "st_size": "2584",
+        "st_uid": "501"
+      },
+      "sha256": "86c21199be5a7be1e43aaac3c90c38d0922445a6710e3892a449c387c76df51d"
+    },
+    "summary.json": {
+      "bytes": 13430,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792350042311182423",
+        "st_dev": "16777223",
+        "st_ino": "187416377",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350042311182423",
+        "st_nlink": "1",
+        "st_size": "13430",
+        "st_uid": "501"
+      },
+      "sha256": "8402d4238508755502005d8290141e10827494083a6384b46be611b5e962986d"
+    }
+  },
+  "schema": "native-origin-observation-local-review/1",
+  "scope": "RETURNED_RESULT_AND_LOCAL_RECEIPT_REVIEW_NOT_INDEPENDENT_REMOTE_CATALOG_FOLD"
+}

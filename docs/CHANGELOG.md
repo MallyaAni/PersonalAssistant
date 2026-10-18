@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-10-18 — Observe the retained historical native JSON without opening its executable
+
+Five bounded, independently reviewed SSH operations staged fixed source files,
+checked fresh prerequisites, observed one historical JSON pair after the complete
+21-page metadata catalog, and retrieved its retained result. Both650B copies match
+the original catalog SHA and physical identities. The recovered executable string
+is /usr/local/bin/python; its file/build/runtime remains unadmitted.
+
+Primary summary8402d423/13430B and complete raw page are preserved with31local
+inputs450919B; separate68file SHA/physical readback passed. The complete independent
+remote catalog/raw/canonical-summary fold remains pending. No application, native,
+model, production or trading acceptance changed; no old completed gate was replayed.
+Exact sourcea451fd2c and limits/evidence:
+research/original-loader-native-origin-observation-proof-v1-2026-10-18.json.
+
 ## 2026-10-18 — Compose original streamed audit with the CURRENT nightly helper
 
 Integrated the reviewed original-reader source and tests from private6d4729c3,

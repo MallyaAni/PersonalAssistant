@@ -1,0 +1,1075 @@
+{
+  "schema": "native-origin-historical-observation-proof/1",
+  "status": "PRIMARY_HISTORICAL_JSON_OBSERVED_INDEPENDENT_REMOTE_FOLD_PENDING",
+  "source_checkpoint": {
+    "starting_HEAD": "504c37c29740a0bafec698767fa5459448ce4f03",
+    "starting_worktree": "CLEAN",
+    "branch": "codex/learned-live-release-20261006",
+    "starting_pull": "git pull --rebase origin main: already up to date",
+    "controls_commit": "696971c8df0019506dbfd51b655703b9784d5f84",
+    "new_source_commit": "a451fd2ce653f21b849587e426497896d3691d11",
+    "new_source_tree": "0fb1511d31971fe48991a115e3f46e9f4d92e148",
+    "scope": "New stdlib controls and historical retained DATA only; no production deployment or trading acceptance."
+  },
+  "sources": {
+    "get-native-origin-result-v1-2026-10-18.py": {
+      "bytes": 5948,
+      "sha256": "6fce6e77b6eca5ef9f2d44dbbc5f66f5449c8e0c74cd75ae93911d8b5405cda4"
+    },
+    "native-origin-result-getter-transport-v1-2026-10-18.py": {
+      "bytes": 6427,
+      "sha256": "93fb16a47e3fef1a29ffe53fd7b3ebccbd6a2113b0aa7b7c395e1f550f18bef4"
+    },
+    "preserve-native-origin-observation-v1-2026-10-18.py": {
+      "bytes": 9395,
+      "sha256": "0098b20aefe71aa06e93154525b24817a81e83e9c60e6a5164c9279055f9da0c"
+    }
+  },
+  "unchanged": {
+    "bootstrap_sha256": "70fb388a8cf1271a4eb0957a9071594490ef26318dc52ab9392b4572a6eacb67",
+    "transport_sha256": "ce66a5d53a789bcb63f31633b222653f62af1cf59419ce3cfe30154952deb087",
+    "primary_sha256": "b7f6ffb0b968c08caa0b6133c0d2aa20d75c54f87b0abc80326c28c9096a6e5b",
+    "primary_invocations": 1,
+    "independent_sha256": "094561ab917e774ae04af52dc81cdbc5865db23ae5898f1ae25fd00496867a76",
+    "independent_functions_UNRUN": 12,
+    "independent_summary_sha256": "UNOBSERVED_PRIMARY_RESULT",
+    "independent_summary_bytes": 0,
+    "independent_dispatchable": false,
+    "independent_draft_preserved_as_local_input": true,
+    "base_packet_sha256": "3581a65f6bed8c5e5eaee081712502e7835820f6dbad71352b84c3ff17346151",
+    "base_packet_bytes": 30745,
+    "packet_regenerated": false
+  },
+  "actual_control_observations": {
+    "before-observe": {
+      "receipt": {
+        "bytes": 20809,
+        "sha256": "74388d12c65663b88f309e4331b302b40afb9d90464a777a965dfc7b06523ac8"
+      },
+      "result": {
+        "base_packet_sha256": "3581a65f6bed8c5e5eaee081712502e7835820f6dbad71352b84c3ff17346151",
+        "control_source_sha256": "70fb388a8cf1271a4eb0957a9071594490ef26318dc52ab9392b4572a6eacb67",
+        "hostname": "animallya-spark1",
+        "native_runtime_admission": null,
+        "observed_at_ns": "1792349735546979858",
+        "phase": "before-observe",
+        "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+        "reader_executed": false,
+        "schema": "native-origin-readonly-prerequisite/1",
+        "source_pins": {
+          "native-inspect.json": {
+            "bytes": 9755,
+            "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+          },
+          "native-proof.json": {
+            "bytes": 46814,
+            "sha256": "1355771ff667f81e02dbe07885914dd5be8bf5cf395a3e74ef3bfdfd4988c6f7"
+          },
+          "observe-retained-native-json-v1-2026-10-18.py": {
+            "bytes": 14395,
+            "sha256": "b7f6ffb0b968c08caa0b6133c0d2aa20d75c54f87b0abc80326c28c9096a6e5b"
+          },
+          "origin-contract.json": {
+            "bytes": 24905,
+            "sha256": "4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5"
+          }
+        },
+        "state": {
+          "files": {
+            "native-inspect.json": {
+              "bytes": 9755,
+              "physical": {
+                "st_blocks": "24",
+                "st_ctime_ns": "1792349696519258711",
+                "st_dev": "66306",
+                "st_ino": "60583274",
+                "st_mode": "33152",
+                "st_mtime_ns": "1792349696519258711",
+                "st_nlink": "1",
+                "st_size": "9755",
+                "st_uid": "1000"
+              },
+              "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+            },
+            "native-proof.json": {
+              "bytes": 46814,
+              "physical": {
+                "st_blocks": "96",
+                "st_ctime_ns": "1792349696524248725",
+                "st_dev": "66306",
+                "st_ino": "60583275",
+                "st_mode": "33152",
+                "st_mtime_ns": "1792349696524248725",
+                "st_nlink": "1",
+                "st_size": "46814",
+                "st_uid": "1000"
+              },
+              "sha256": "1355771ff667f81e02dbe07885914dd5be8bf5cf395a3e74ef3bfdfd4988c6f7"
+            },
+            "observe-retained-native-json-v1-2026-10-18.py": {
+              "bytes": 14395,
+              "physical": {
+                "st_blocks": "32",
+                "st_ctime_ns": "1792349696528974209",
+                "st_dev": "66306",
+                "st_ino": "60583276",
+                "st_mode": "33152",
+                "st_mtime_ns": "1792349696528974209",
+                "st_nlink": "1",
+                "st_size": "14395",
+                "st_uid": "1000"
+              },
+              "sha256": "b7f6ffb0b968c08caa0b6133c0d2aa20d75c54f87b0abc80326c28c9096a6e5b"
+            },
+            "origin-contract.json": {
+              "bytes": 24905,
+              "physical": {
+                "st_blocks": "56",
+                "st_ctime_ns": "1792349696533955775",
+                "st_dev": "66306",
+                "st_ino": "60583277",
+                "st_mode": "33152",
+                "st_mtime_ns": "1792349696533955775",
+                "st_nlink": "1",
+                "st_size": "24905",
+                "st_uid": "1000"
+              },
+              "sha256": "4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5"
+            },
+            "stage.json": {
+              "bytes": 2584,
+              "physical": {
+                "st_blocks": "8",
+                "st_ctime_ns": "1792349696537452740",
+                "st_dev": "66306",
+                "st_ino": "60583278",
+                "st_mode": "33152",
+                "st_mtime_ns": "1792349696537452740",
+                "st_nlink": "1",
+                "st_size": "2584",
+                "st_uid": "1000"
+              },
+              "sha256": "86c21199be5a7be1e43aaac3c90c38d0922445a6710e3892a449c387c76df51d"
+            }
+          },
+          "output_absent": true,
+          "resources": {
+            "MemAvailable_bytes": "10021351424",
+            "headroom_is_reservation": false,
+            "scratch_available_bytes": "2805458128896",
+            "scratch_available_inodes": "243498300"
+          },
+          "root_physical": {
+            "st_blocks": "8",
+            "st_ctime_ns": "1792349696536539454",
+            "st_dev": "66306",
+            "st_ino": "60583273",
+            "st_mode": "16832",
+            "st_mtime_ns": "1792349696536539454",
+            "st_nlink": "2",
+            "st_size": "4096",
+            "st_uid": "1000"
+          },
+          "stage_sha256": "86c21199be5a7be1e43aaac3c90c38d0922445a6710e3892a449c387c76df51d",
+          "tools_absent": false
+        },
+        "uid": 1000
+      },
+      "stdout": {
+        "bytes": 3074,
+        "sha256": "40b67f49196b44f4a07abb0192b99a9bf463cd5071694739c861f8ddadef8fc4"
+      },
+      "wire_bytes": 41049
+    },
+    "before-stage": {
+      "receipt": {
+        "bytes": 20807,
+        "sha256": "41cd48b1159c45ade002817e02e83d366b234cc52c7faa64c15ac3bfbcd314c2"
+      },
+      "result": {
+        "base_packet_sha256": "3581a65f6bed8c5e5eaee081712502e7835820f6dbad71352b84c3ff17346151",
+        "control_source_sha256": "70fb388a8cf1271a4eb0957a9071594490ef26318dc52ab9392b4572a6eacb67",
+        "hostname": "animallya-spark1",
+        "native_runtime_admission": null,
+        "observed_at_ns": "1792349649617549321",
+        "phase": "before-stage",
+        "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+        "reader_executed": false,
+        "schema": "native-origin-readonly-prerequisite/1",
+        "source_pins": {
+          "native-inspect.json": {
+            "bytes": 9755,
+            "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+          },
+          "native-proof.json": {
+            "bytes": 46814,
+            "sha256": "1355771ff667f81e02dbe07885914dd5be8bf5cf395a3e74ef3bfdfd4988c6f7"
+          },
+          "observe-retained-native-json-v1-2026-10-18.py": {
+            "bytes": 14395,
+            "sha256": "b7f6ffb0b968c08caa0b6133c0d2aa20d75c54f87b0abc80326c28c9096a6e5b"
+          },
+          "origin-contract.json": {
+            "bytes": 24905,
+            "sha256": "4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5"
+          }
+        },
+        "state": {
+          "files": {},
+          "output_absent": true,
+          "resources": {
+            "MemAvailable_bytes": "9982451712",
+            "headroom_is_reservation": false,
+            "scratch_available_bytes": "2805458272256",
+            "scratch_available_inodes": "243498306"
+          },
+          "root_physical": null,
+          "stage_sha256": null,
+          "tools_absent": true
+        },
+        "uid": 1000
+      },
+      "stdout": {
+        "bytes": 1210,
+        "sha256": "d78c5307ec2827f59279b6961da05b74f94073cf7f9b61d8a8da400c31b21a4c"
+      },
+      "wire_bytes": 41049
+    },
+    "observe": {
+      "receipt": {
+        "bytes": 21357,
+        "sha256": "0ce3580cf135cbd447a527fe5272c048721c81b6b1f016ed5aabe8cc0422266e"
+      },
+      "result": {
+        "hash_work_final": 2825586,
+        "historical_artifact_only": true,
+        "output_bytes": 14478,
+        "pages": 1,
+        "summary": {
+          "bytes": 13430,
+          "physical": {
+            "st_blocks": "32",
+            "st_ctime_ns": "1792349786884852600",
+            "st_dev": "66306",
+            "st_ino": "60583281",
+            "st_mode": "33152",
+            "st_mtime_ns": "1792349786884852600",
+            "st_nlink": "1",
+            "st_size": "13430",
+            "st_uid": "1000"
+          },
+          "sha256": "8402d4238508755502005d8290141e10827494083a6384b46be611b5e962986d"
+        }
+      },
+      "stdout": {
+        "bytes": 430,
+        "sha256": "12400297c573be7885ef4b375ae7fdc8c7c3585686642b038e75e7ba72e8588e"
+      },
+      "wire_bytes": 45147
+    },
+    "stage": {
+      "receipt": {
+        "bytes": 21353,
+        "sha256": "ae452afcbda1367190a06057758f488b5f3c098ffaad9862bfb80bee7552eea0"
+      },
+      "result": {
+        "base_packet_sha256": "3581a65f6bed8c5e5eaee081712502e7835820f6dbad71352b84c3ff17346151",
+        "control_source_sha256": "70fb388a8cf1271a4eb0957a9071594490ef26318dc52ab9392b4572a6eacb67",
+        "files": {
+          "native-inspect.json": {
+            "bytes": 9755,
+            "physical": {
+              "st_blocks": "24",
+              "st_ctime_ns": "1792349696519258711",
+              "st_dev": "66306",
+              "st_ino": "60583274",
+              "st_mode": "33152",
+              "st_mtime_ns": "1792349696519258711",
+              "st_nlink": "1",
+              "st_size": "9755",
+              "st_uid": "1000"
+            },
+            "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+          },
+          "native-proof.json": {
+            "bytes": 46814,
+            "physical": {
+              "st_blocks": "96",
+              "st_ctime_ns": "1792349696524248725",
+              "st_dev": "66306",
+              "st_ino": "60583275",
+              "st_mode": "33152",
+              "st_mtime_ns": "1792349696524248725",
+              "st_nlink": "1",
+              "st_size": "46814",
+              "st_uid": "1000"
+            },
+            "sha256": "1355771ff667f81e02dbe07885914dd5be8bf5cf395a3e74ef3bfdfd4988c6f7"
+          },
+          "observe-retained-native-json-v1-2026-10-18.py": {
+            "bytes": 14395,
+            "physical": {
+              "st_blocks": "32",
+              "st_ctime_ns": "1792349696528974209",
+              "st_dev": "66306",
+              "st_ino": "60583276",
+              "st_mode": "33152",
+              "st_mtime_ns": "1792349696528974209",
+              "st_nlink": "1",
+              "st_size": "14395",
+              "st_uid": "1000"
+            },
+            "sha256": "b7f6ffb0b968c08caa0b6133c0d2aa20d75c54f87b0abc80326c28c9096a6e5b"
+          },
+          "origin-contract.json": {
+            "bytes": 24905,
+            "physical": {
+              "st_blocks": "56",
+              "st_ctime_ns": "1792349696533955775",
+              "st_dev": "66306",
+              "st_ino": "60583277",
+              "st_mode": "33152",
+              "st_mtime_ns": "1792349696533955775",
+              "st_nlink": "1",
+              "st_size": "24905",
+              "st_uid": "1000"
+            },
+            "sha256": "4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5"
+          }
+        },
+        "native_runtime_admission": null,
+        "observed_at_ns": "1792349696537399187",
+        "prerequisite_sha256": "d78c5307ec2827f59279b6961da05b74f94073cf7f9b61d8a8da400c31b21a4c",
+        "reader_executed": false,
+        "resources": {
+          "MemAvailable_bytes": "9997340672",
+          "headroom_is_reservation": false,
+          "scratch_available_bytes": "2805458255872",
+          "scratch_available_inodes": "243498306"
+        },
+        "root_physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792349696536539454",
+          "st_dev": "66306",
+          "st_ino": "60583273",
+          "st_mode": "16832",
+          "st_mtime_ns": "1792349696536539454",
+          "st_nlink": "2",
+          "st_size": "4096",
+          "st_uid": "1000"
+        },
+        "schema": "native-origin-source-stage/1",
+        "source_pins": {
+          "native-inspect.json": {
+            "bytes": 9755,
+            "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+          },
+          "native-proof.json": {
+            "bytes": 46814,
+            "sha256": "1355771ff667f81e02dbe07885914dd5be8bf5cf395a3e74ef3bfdfd4988c6f7"
+          },
+          "observe-retained-native-json-v1-2026-10-18.py": {
+            "bytes": 14395,
+            "sha256": "b7f6ffb0b968c08caa0b6133c0d2aa20d75c54f87b0abc80326c28c9096a6e5b"
+          },
+          "origin-contract.json": {
+            "bytes": 24905,
+            "sha256": "4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5"
+          }
+        }
+      },
+      "stdout": {
+        "bytes": 2584,
+        "sha256": "86c21199be5a7be1e43aaac3c90c38d0922445a6710e3892a449c387c76df51d"
+      },
+      "wire_bytes": 42663
+    }
+  },
+  "actual_getter": {
+    "receipt": {
+      "bytes": 1878,
+      "sha256": "6ce94ff59ec1dea79f13fdedf7849b6b7128643d8d42459d2c91cdca5272c2ff"
+    },
+    "resources": {
+      "MemAvailable_bytes": "9903681536",
+      "headroom_is_reservation": false,
+      "scratch_available_bytes": "2805441236992",
+      "scratch_available_inodes": "243498296"
+    },
+    "stdout": {
+      "bytes": 24866,
+      "sha256": "5efba0fcac26e163cf22a3dba5563f4d5be9a3136695f68a077b440b9d5bba19"
+    },
+    "whole_wire_bytes": 7981,
+    "invocation": "python3 docs/research/sources/native-origin-result-getter-transport-v1-2026-10-18.py",
+    "fixed_remote_files": 3,
+    "reader_rerun": false,
+    "independent_fold": false
+  },
+  "all_five_SSH_terminals": {
+    "exit": 0,
+    "stderr_bytes": 0,
+    "owned_stop": null,
+    "failure_class": null,
+    "cleanup_failure_class": null,
+    "full_fixed_SSH_prefix_and_embedded_source_args_checked": true,
+    "remote_quiescence_inferred_from_SSH_exit": false
+  },
+  "primary_result": {
+    "summary": {
+      "bytes": 13430,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792349786884852600",
+        "st_dev": "66306",
+        "st_ino": "60583281",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792349786884852600",
+        "st_nlink": "1",
+        "st_size": "13430",
+        "st_uid": "1000"
+      },
+      "sha256": "8402d4238508755502005d8290141e10827494083a6384b46be611b5e962986d"
+    },
+    "raw_bytes": 650,
+    "raw_sha256": "76daf7a43f8652e767817fb7da442664470c13b1d25915b02cb49534268c588e",
+    "native_fields": {
+      "backend_modules": [],
+      "numpy": {
+        "init_sha256": "09295a80660f17925ae23765ce8cbd7ff7ceae968d5f2f89349f1cb74c0b9e11",
+        "path": "/usr/local/lib/python3.12/site-packages/numpy/__init__.py",
+        "version": "2.5.3"
+      },
+      "observed_at_ns": "1792317235957806688",
+      "parity_or_genuine_acceptance": false,
+      "python": "3.12.14",
+      "python_executable": "/usr/local/bin/python",
+      "schema": "capacity-context-native-probe/1",
+      "threads": {
+        "BLIS_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "uid": 1000
+    },
+    "selection": {
+      "page": "manifest-page-020.json",
+      "row": {
+        "copy": {
+          "bytes": 650,
+          "physical": {
+            "st_blocks": "8",
+            "st_ctime_ns": "1792317367571594252",
+            "st_dev": "66306",
+            "st_ino": "60582265",
+            "st_mode": "33204",
+            "st_mtime_ns": "1792317367571594252",
+            "st_nlink": "1",
+            "st_size": "650",
+            "st_uid": "1000"
+          },
+          "sha256": "76daf7a43f8652e767817fb7da442664470c13b1d25915b02cb49534268c588e"
+        },
+        "original": {
+          "bytes": 650,
+          "physical": {
+            "st_blocks": "8",
+            "st_ctime_ns": "1792317235958189827",
+            "st_dev": "66306",
+            "st_ino": "60578789",
+            "st_mode": "33188",
+            "st_mtime_ns": "1792317235958189827",
+            "st_nlink": "1",
+            "st_size": "650",
+            "st_uid": "1000"
+          },
+          "sha256": "76daf7a43f8652e767817fb7da442664470c13b1d25915b02cb49534268c588e"
+        }
+      }
+    },
+    "catalog_records": 1339,
+    "catalog_page_record_counts": [
+      64,
+      64,
+      64,
+      64,
+      64,
+      64,
+      64,
+      64,
+      64,
+      64,
+      64,
+      64,
+      64,
+      64,
+      64,
+      64,
+      64,
+      64,
+      64,
+      64,
+      59
+    ],
+    "catalog_payload_bytes_declared_only": 24575979,
+    "input_inventory": {
+      "/home/animallya96/scratch/capacity-context-native-probe-20261018-v1/output/native.json": {
+        "bytes": 650,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792317235958189827",
+          "st_dev": "66306",
+          "st_ino": "60578789",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792317235958189827",
+          "st_nlink": "1",
+          "st_size": "650",
+          "st_uid": "1000"
+        },
+        "sha256": "76daf7a43f8652e767817fb7da442664470c13b1d25915b02cb49534268c588e"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-000.json": {
+        "bytes": 60262,
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317359010444893",
+          "st_dev": "66306",
+          "st_ino": "60580564",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317359010444893",
+          "st_nlink": "1",
+          "st_size": "60262",
+          "st_uid": "1000"
+        },
+        "sha256": "0eb5ad450fbccf7e174360f093d8d38ee201c0eae6647fca30aa4af95dce0093"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-001.json": {
+        "bytes": 59182,
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317359517098695",
+          "st_dev": "66306",
+          "st_ino": "60580653",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317359517098695",
+          "st_nlink": "1",
+          "st_size": "59182",
+          "st_uid": "1000"
+        },
+        "sha256": "04e46542998e303c0880fa3c29056b3bc12d750baf228bdc165de32bc4c647f1"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-002.json": {
+        "bytes": 61385,
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317360026630551",
+          "st_dev": "66306",
+          "st_ino": "60580740",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317360026630551",
+          "st_nlink": "1",
+          "st_size": "61385",
+          "st_uid": "1000"
+        },
+        "sha256": "9dfef1bd6824ebab72ec8cca05688b87913eea0d9ee2ed791a8e007609644598"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-003.json": {
+        "bytes": 62683,
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317360505683853",
+          "st_dev": "66306",
+          "st_ino": "60580823",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317360505683853",
+          "st_nlink": "1",
+          "st_size": "62683",
+          "st_uid": "1000"
+        },
+        "sha256": "a1c6b92ccb96d0f98b490ebc2522f1143ed7980aeeb0b4b226d8087d4f5f71b7"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-004.json": {
+        "bytes": 63864,
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317360918998714",
+          "st_dev": "66306",
+          "st_ino": "60580909",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317360918998714",
+          "st_nlink": "1",
+          "st_size": "63864",
+          "st_uid": "1000"
+        },
+        "sha256": "a1a10e81e2836b0de11d5341a55a05cd05b2f20fe66841cd7c3306b9ec3c69de"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-005.json": {
+        "bytes": 63367,
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317361358241038",
+          "st_dev": "66306",
+          "st_ino": "60581005",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317361358241038",
+          "st_nlink": "1",
+          "st_size": "63367",
+          "st_uid": "1000"
+        },
+        "sha256": "997bb703a19160462c78b088ce56e3ab1ef8ad084ddd44ac620b83319b3b09e2"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-006.json": {
+        "bytes": 62685,
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317361789009551",
+          "st_dev": "66306",
+          "st_ino": "60581088",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317361789009551",
+          "st_nlink": "1",
+          "st_size": "62685",
+          "st_uid": "1000"
+        },
+        "sha256": "e8deca7de9262da682010cd48a9ddfa67e86de74572421ad3b272664a6f0e7e3"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-007.json": {
+        "bytes": 61589,
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317362214928861",
+          "st_dev": "66306",
+          "st_ino": "60581172",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317362214928861",
+          "st_nlink": "1",
+          "st_size": "61589",
+          "st_uid": "1000"
+        },
+        "sha256": "a0d7012e9d2ddc8f923e2dc37f84b7090164e30d3c2dbd347506ffb2ca6c4dac"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-008.json": {
+        "bytes": 61163,
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317362615461416",
+          "st_dev": "66306",
+          "st_ino": "60581265",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317362615461416",
+          "st_nlink": "1",
+          "st_size": "61163",
+          "st_uid": "1000"
+        },
+        "sha256": "517f611ac67e984a764ecb5d5a8e8bfc30e23081529a39b51ad58b96bd9c7561"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-009.json": {
+        "bytes": 61338,
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317363030734340",
+          "st_dev": "66306",
+          "st_ino": "60581348",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317363030734340",
+          "st_nlink": "1",
+          "st_size": "61338",
+          "st_uid": "1000"
+        },
+        "sha256": "a3072f876c1aadc70925ae3e842ccd1b58c41c8894caa581d386db3e50d0b7cf"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-010.json": {
+        "bytes": 61800,
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317363434057684",
+          "st_dev": "66306",
+          "st_ino": "60581433",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317363434057684",
+          "st_nlink": "1",
+          "st_size": "61800",
+          "st_uid": "1000"
+        },
+        "sha256": "f5a00d25844605f665f00874f9289aad94945588d42bc12247ca7d8039eb632e"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-011.json": {
+        "bytes": 61321,
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317363866848022",
+          "st_dev": "66306",
+          "st_ino": "60581528",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317363866848022",
+          "st_nlink": "1",
+          "st_size": "61321",
+          "st_uid": "1000"
+        },
+        "sha256": "460a494e8e9d566e93c9d105f88826dd86ee4a6715dcd7db6b2ca6c08680809e"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-012.json": {
+        "bytes": 61325,
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317364272520361",
+          "st_dev": "66306",
+          "st_ino": "60581613",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317364272520361",
+          "st_nlink": "1",
+          "st_size": "61325",
+          "st_uid": "1000"
+        },
+        "sha256": "54c93aecaff679c649fffbe48cbaf4488cf016c1e66ad4083e998bc0d6d2dfc6"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-013.json": {
+        "bytes": 61237,
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317364675690328",
+          "st_dev": "66306",
+          "st_ino": "60581692",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317364675690328",
+          "st_nlink": "1",
+          "st_size": "61237",
+          "st_uid": "1000"
+        },
+        "sha256": "252c05ae1d7ac6683cdffeea4683df581c5f8a1740c4909dfa71792964cb9c74"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-014.json": {
+        "bytes": 61432,
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317365135949582",
+          "st_dev": "66306",
+          "st_ino": "60581786",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317365135949582",
+          "st_nlink": "1",
+          "st_size": "61432",
+          "st_uid": "1000"
+        },
+        "sha256": "35fe9807a8924ec92d7f17a06145f7ac6a548706ddb6796dc17d0e70efff04e0"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-015.json": {
+        "bytes": 61504,
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317365598541640",
+          "st_dev": "66306",
+          "st_ino": "60581874",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317365598541640",
+          "st_nlink": "1",
+          "st_size": "61504",
+          "st_uid": "1000"
+        },
+        "sha256": "de6e95b7c00d2009560b02bf1113d2d23aa32825bf1959c076dbffdb6c5c0a3d"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-016.json": {
+        "bytes": 61970,
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317365997906666",
+          "st_dev": "66306",
+          "st_ino": "60581957",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317365997906666",
+          "st_nlink": "1",
+          "st_size": "61970",
+          "st_uid": "1000"
+        },
+        "sha256": "822439549bed7e5e71e6c7d631d604bd449109d88cb7a8441ef8ccc02e77cf6d"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-017.json": {
+        "bytes": 63090,
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317366454023553",
+          "st_dev": "66306",
+          "st_ino": "60582048",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317366454023553",
+          "st_nlink": "1",
+          "st_size": "63090",
+          "st_uid": "1000"
+        },
+        "sha256": "40dd3243c3376fc978cd0a199bfb450bb588efd0bdae23956b8bfa35a682e066"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-018.json": {
+        "bytes": 63725,
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792317366888206512",
+          "st_dev": "66306",
+          "st_ino": "60582141",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317366888206512",
+          "st_nlink": "1",
+          "st_size": "63725",
+          "st_uid": "1000"
+        },
+        "sha256": "f81d2f6752aff38b8352435ee9c184fdb44a3aa9fad5539c7548f50e40d519aa"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-019.json": {
+        "bytes": 61009,
+        "physical": {
+          "st_blocks": "120",
+          "st_ctime_ns": "1792317367312870084",
+          "st_dev": "66306",
+          "st_ino": "60582219",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317367312870084",
+          "st_nlink": "1",
+          "st_size": "61009",
+          "st_uid": "1000"
+        },
+        "sha256": "765063c8f2ac803889a3b7c3937cd73df1795087d30ab7fc381e0f52bd49e483"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest-page-020.json": {
+        "bytes": 53521,
+        "physical": {
+          "st_blocks": "112",
+          "st_ctime_ns": "1792317367712705403",
+          "st_dev": "66306",
+          "st_ino": "60582287",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317367712705403",
+          "st_nlink": "1",
+          "st_size": "53521",
+          "st_uid": "1000"
+        },
+        "sha256": "bf88824c7ab9c0174821e9f836bedb07f1ff221512ad32bf09c51024caef1ddb"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest.json": {
+        "bytes": 10845,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792317367805919177",
+          "st_dev": "66306",
+          "st_ino": "60582288",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317367805919177",
+          "st_nlink": "1",
+          "st_size": "10845",
+          "st_uid": "1000"
+        },
+        "sha256": "d2378ddf7f0e5cf9eac724ff1f7c8f3f5d3cff70c0ba39f45cd2ca18546fd9f9"
+      },
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/native/output/native.json": {
+        "bytes": 650,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792317367571594252",
+          "st_dev": "66306",
+          "st_ino": "60582265",
+          "st_mode": "33204",
+          "st_mtime_ns": "1792317367571594252",
+          "st_nlink": "1",
+          "st_size": "650",
+          "st_uid": "1000"
+        },
+        "sha256": "76daf7a43f8652e767817fb7da442664470c13b1d25915b02cb49534268c588e"
+      },
+      "/home/animallya96/scratch/capacity-native-origin-observer-tools-20261018-v1/native-inspect.json": {
+        "bytes": 9755,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792349696519258711",
+          "st_dev": "66306",
+          "st_ino": "60583274",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792349696519258711",
+          "st_nlink": "1",
+          "st_size": "9755",
+          "st_uid": "1000"
+        },
+        "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+      },
+      "/home/animallya96/scratch/capacity-native-origin-observer-tools-20261018-v1/native-proof.json": {
+        "bytes": 46814,
+        "physical": {
+          "st_blocks": "96",
+          "st_ctime_ns": "1792349696524248725",
+          "st_dev": "66306",
+          "st_ino": "60583275",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792349696524248725",
+          "st_nlink": "1",
+          "st_size": "46814",
+          "st_uid": "1000"
+        },
+        "sha256": "1355771ff667f81e02dbe07885914dd5be8bf5cf395a3e74ef3bfdfd4988c6f7"
+      },
+      "/home/animallya96/scratch/capacity-native-origin-observer-tools-20261018-v1/observe-retained-native-json-v1-2026-10-18.py": {
+        "bytes": 14395,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792349696528974209",
+          "st_dev": "66306",
+          "st_ino": "60583276",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792349696528974209",
+          "st_nlink": "1",
+          "st_size": "14395",
+          "st_uid": "1000"
+        },
+        "sha256": "b7f6ffb0b968c08caa0b6133c0d2aa20d75c54f87b0abc80326c28c9096a6e5b"
+      },
+      "/home/animallya96/scratch/capacity-native-origin-observer-tools-20261018-v1/origin-contract.json": {
+        "bytes": 24905,
+        "physical": {
+          "st_blocks": "56",
+          "st_ctime_ns": "1792349696533955775",
+          "st_dev": "66306",
+          "st_ino": "60583277",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792349696533955775",
+          "st_nlink": "1",
+          "st_size": "24905",
+          "st_uid": "1000"
+        },
+        "sha256": "4a6ef7b722e4b4eb5e77df8de1be7b3fd2ca604d555985d8048409b5748180f5"
+      }
+    },
+    "raw_pages": [
+      {
+        "bytes": 1048,
+        "count": 1,
+        "file": "body-0000.json",
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792349786877300108",
+          "st_dev": "66306",
+          "st_ino": "60583280",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792349786877300108",
+          "st_nlink": "1",
+          "st_size": "1048",
+          "st_uid": "1000"
+        },
+        "sha256": "efbb47a1f36466cd4e16231de337533cf97eb03af2cd6d6cce2c748a05e55f5b",
+        "start": 0
+      }
+    ],
+    "hash_work_before_summary": 2798726,
+    "hash_work_final": 2825586,
+    "output_bytes": 14478,
+    "accounting": "before_summary = 2*sum(all28 input bytes)+650 raw bytes+3*1048 page bytes; final adds2*13430 summary bytes.",
+    "independent_remote_catalog_and_canonical_summary_fold": "PENDING",
+    "authority": "Authenticated historical /usr/local/bin/python STRING ONLY. Declared executable was never opened; no current path/link/build/ELF/interpreter/loader/provider/native authority."
+  },
+  "review": {
+    "worker": "/root/trading_action_consistency",
+    "reused": true,
+    "new_agent_or_limited_retry": false,
+    "before_use": [
+      "Complete exact first prerequisite source/key/wholewire/invocation",
+      "Actual fresh before-stage proof and exact stage invocation",
+      "Actual stage/source/root/terminal bindings and next before-observe invocation",
+      "Complete unchanged primary source and actual fresh before-observe proof/exact observation invocation",
+      "Complete new getter+embedded transport source/exact invocation/actual primary pointer",
+      "Local preserver source/exact invocation"
+    ],
+    "after_use": "Actual retrieval/terminal/source/result links and narrow scope reviewed; local preservation/readback metadata reviewed separately before final checkpoint.",
+    "worker_ops": false,
+    "inspection_failures": "Worker's read-only AST comparison initially asserted the wrong expected False; corrected expected True proved all3 outer function ASTs equal. No source/body/remote operation failed or replayed."
+  },
+  "pre_use_correction": {
+    "unrun_draft_root": "/tmp/native-origin-result-getter-drafts-20261018-v1",
+    "initial_getter_sha256": "3e151bf8f60c18b37489e4ba8b64c78f99461754eda7f546acee71c661a9bc71",
+    "initial_getter_bytes": 5711,
+    "files": [
+      "getter-unrun.py",
+      "transport-unrun.py",
+      "reason.txt"
+    ],
+    "finding": "ROOT noticed unbounded result iterdir name checks before first getter use.",
+    "correction": "Purpose-commented direct scandir max3 names/256UTF8B, both before/after checks. Repinned source/transport before independent review/use.",
+    "body_or_remote_failure": false
+  },
+  "preservation": {
+    "root": "/tmp/native-origin-observation-evidence-20261018-v1",
+    "files": 31,
+    "input_bytes": 450919,
+    "manifest": {
+      "bytes": 37799,
+      "sha256": "f9be69fda2f064a852d8c2be5646ae2e403c2567ec04277cf74b9d23b1c34f38"
+    },
+    "local_review": {
+      "bytes": 3683,
+      "sha256": "f27cacc185a0cd4d430e71605ad4291b7a0e1abd52718b90735ec053c61b00fd"
+    },
+    "hash_work_final": 2412090,
+    "invocation": "python3 -W error docs/research/sources/preserve-native-origin-observation-v1-2026-10-18.py",
+    "exit": 0,
+    "protocol": "31 inputs two full held/named reads/fullSHA/exact decimal physical; exclusive copies/fsync/full readbacks; later all original+copy fullSHAphysical; four reconstructed returned raw outputs plus report checked; manifest last/root then resolved parent and source directory sync.",
+    "root_readback": {
+      "files": 68,
+      "scope": "31 originals+31copies+4returnedoutputs+localreview+manifest, twofullheldnamedreads then laterfullSHAphysical; not remote catalog reexecution or independent remote fold.",
+      "source": "from pathlib import Path\nimport hashlib,json,os,stat\nroot=Path('/tmp/native-origin-observation-evidence-20261018-v1')\nfields=('st_dev','st_ino','st_mode','st_uid','st_nlink','st_size','st_blocks','st_mtime_ns','st_ctime_ns')\nchecks={}\n# Authenticate two full held reads and retain exact physical identity for later bookends.\ndef read(path,expected=None):\n fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW)\n try:\n  st=os.fstat(fd)\n  assert stat.S_ISREG(st.st_mode)and st.st_nlink==1 and 0<=st.st_size<=262144\n  a=os.read(fd,262145);os.lseek(fd,0,os.SEEK_SET);assert os.read(fd,262145)==a and len(a)==st.st_size\n  physical={k:str(getattr(st,k))for k in fields}\n  assert physical=={k:str(getattr(os.fstat(fd),k))for k in fields}=={k:str(getattr(os.lstat(path),k))for k in fields}\n  row={'bytes':len(a),'sha256':hashlib.sha256(a).hexdigest(),'physical':physical}\n  if expected:assert row==expected\n  return a,row\n finally:os.close(fd)\nraw,row=read(root/'manifest.json')\nassert row['sha256']=='f9be69fda2f064a852d8c2be5646ae2e403c2567ec04277cf74b9d23b1c34f38'\nm=json.loads(raw);checks[str(root/'manifest.json')]=row\nfor original,item in m['inputs'].items():\n for p,expected in ((Path(original),item['original']),(Path(item['copy_path']),item['copy'])):\n  _,seen=read(p,expected);checks[str(p)]=seen\nfor name,expected in m['returned_outputs'].items():\n _,seen=read(root/name,expected);checks[str(root/name)]=seen\n_,seen=read(Path(m['local_review_path']),m['local_review']);checks[m['local_review_path']]=seen\nassert len(m['inputs'])==31 and m['bytes']==450919 and len(checks)==68\nfor p,expected in checks.items():read(Path(p),expected)\nprint(json.dumps({'schema':'native-origin-local-root-readback/1','files':len(checks),'preserved_inputs':31,'input_bytes':450919,'manifest_sha256':row['sha256'],'all_two_held_named_reads_and_later_full_SHA_physical_bookends_equal':True,'inventory':checks,'independent_remote_catalog_fold':False,'native_runtime_admission':None},sort_keys=True,indent=2))"
+    },
+    "software_file_bound": 262144,
+    "software_input_bound": 1048576,
+    "software_hash_bound": 4194304,
+    "alarm_seconds": 30,
+    "Mac_AS_or_kernel_FSIZE_or_crash_durability_claim": false
+  },
+  "validation": {
+    "warnings_as_errors_AST": true,
+    "three_outer_transport_function_ASTs_equal_old78253": true,
+    "five_local_preserver_utility_ASTs_equal_257322a2": true,
+    "purpose_comments": true,
+    "literal_backspaces": 0,
+    "full_raw_page_reconstruction_and_summary_field_equality": true,
+    "all28_input_and_output_hash_accounting": true,
+    "Ruff": "Previously unavailable; no lint claim.",
+    "application_tests_or_old_completed_gates": "NOT RUN; no application or prompt change.",
+    "signal_timeout_overflow_IO_cleanup_crash_branches": "UNEXERCISED; no new guarantee."
+  },
+  "limits": {
+    "Linux_AS_soft_hard": 536870912,
+    "CPU_seconds_cumulative_same_process": 20,
+    "bootstrap_alarm_seconds": 30,
+    "cancel_bootstrap_alarm_before_unchanged_primary_own_30alarm": true,
+    "SSH_seconds": 70,
+    "TERM_seconds": 1,
+    "KILL_seconds": 1,
+    "ordinary_file_and_log_bound": 262144,
+    "control_hash_ledger": 4194304,
+    "separate_reader_hash_ledger": 4194304,
+    "hash_scope": "Separate ledgers, not wholeprocess4MiB",
+    "wire_bound": 65536,
+    "headroom": "2GiBMemAvailable/32MiBscratch/512inodes; checked before stage/read and getterreads; not reservations/native/model/daemon bounds.",
+    "getter_wrapper": "Additional bounded source-input authentication outside getter result ledger; same LinuxAS/CPU/FSIZE and outer70. No wholeprocess hash budget claim."
+  },
+  "unadmitted": {
+    "native_runtime": null,
+    "actual_interpreter_loader_provider_build_search_alias_version_transitive_closure": null,
+    "other1338_payload_bodies": "UNREAD",
+    "other19_native_bodies": "UNREAD",
+    "guard25_payload_functions": "UNRUN",
+    "genuine_assembled_tree_strategy_entrypoint_manifests_bootstrap_wrapper_owner_caller_stager_packet_runtime_launch_admission": null,
+    "execution_authorized": false,
+    "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "missing_original_receipts": "MISSING",
+    "genuine_v6": "OPEN/PAUSED; no replay/adoption/new genuine run",
+    "actual_two_host_Spark2_image_daemon_temp_RAM": "UNCHANGED_UNADMITTED",
+    "production_change": false
+  },
+  "next": "Do not repeat primary/prerequisites/stage/getter or closed old gates for documentation. Preserve current UNRUN094561ab draft (already copied here), separately repin actual8402d423/13430 primarysummary; prepare/review distinct independent staging/transport/freshprerequisite controls and exact source/invocation BEFORE ONE separate complete remote independent catalog/raw/everyfield/page/canonical-summary fold. No current independent dispatcher or admission exists. Historical executable string MUST NOT be opened as part of that fold. Keep all old roots/admissions and model/native/trading gates separate.",
+  "local_nonoperational_failures": [
+    "Read-only cat of a guessed local preserver filename failed ENOENT; rg found the actual source. No body or write.",
+    "Documentation toolscript ReferenceError: usr is not defined before any apply_patch call; no files mutated. Corrected raw toolstring without inline backticks.",
+    "Worker read-only AST inspection initially asserted wrong expected False, then corrected expected True; no file writes or reviewed-body/remote invocation."
+  ],
+  "heartbeat": "ACTIVE",
+  "diagram": "NONE"
+}

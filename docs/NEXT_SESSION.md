@@ -1,5 +1,90 @@
 # Next session
 
+## 2026-10-18 — Historical native.json observed; independent remote fold PENDING
+
+Read research/original-loader-native-origin-observation-proof-v1-2026-10-18.json.
+New sourcea451fd2ce653f21b849587e426497896d3691d11 pins getter6fce6e77/5948B,
+transport93fb16a4/6427B/preserver0098b20a/9395B. Bootstrap70fb388a/transportce66a5d5/
+primaryb7f6ffb0/contract4a6ef7b7/packet3581a65f unchanged. NEW stdlib operational
+controls and retained historical JSON DATA only ran. No Docker/container/native
+executable/provider/package/backend/model/account/marketdata/credential read, old
+gate/packet replay, guard/G08/cap/map/production change.
+
+Five separately reviewed SSHs each exit0/empty stderr/no ownedstop/failure/
+cleanupfailure: before-stage, source-only stage, fresh before-observe, ONE primary,
+separate fixed3file getter. Exact pinned keys/fullSSHargv/embeddedsource/phase/SHA/
+wire/terminal links checked. Spark1UID1000 hostPython3.12.3 NOT historicalN2/e0.
+Fresh actual d78c5307/1210B and40b67f49/3074B reviewed BEFORE respective dispatch,
+fullSHAargv/<=300s enforced. Stage86c21199/2584B binds4fixedfiles95869B/exact
+physicalroot/stage identities; never compiled reader. Wires41049/42663/41049/45147B,
+getter7981B all<=65536. MemAvailable9982451712/10021351424B prerequisites and
+9903681536B getter;2GiBmem/32MiBscratch512inodes checked, NOTreservation/native/
+model/daemon bound. Getter rechecks resources immediately before its3fixedreads.
+
+Primary summary8402d4238508755502005d8290141e10827494083a6384b46be611b5e962986d/
+13430B now observed. All21catalogpages/1339METADATA records checked before ONE
+target selection onpage020; declared24575979B is not payload-body authentication.
+Native original+copy650B SHA76daf7a43f8652e767817fb7da442664470c13b1d25915b02cb49534268c588e
+match fullcatalogSHA/size/originaldecimalphysical; twoheldfullreads/laterfullSHA/
+physical/crosscopy equality. Other1338payload bodies and19native bodies UNREAD.
+Recovered python_executable="/usr/local/bin/python" is HISTORICAL STRING ONLY;
+declared executable MUST NOT be opened. No path/link/build/interpreter/loader/
+provider/native/runtime authority follows. Historical Python3.12.14/NumPy2.5.3/
+UID1000/sixthreads1/backend[]/time match prior1355771f; no retroactive scope extension.
+
+Complete rawpage1048B+summary13430B=14478B/28inputs. Reader hashbefore2798726B/
+final2825586B equals2*all28inputbytes+650raw+3*1048page then2*13430summary.
+Separate control4MiB ANDreader4MiB ledgers, not wholeprocess4MiB.512MiBASsoft=hard/
+CPU20 cumulative sameprocess/bootstrap30alarm canceled BEFOREprimary own30alarm/
+outer70SSH/TERM1KILL1/262KiBfilelogs unchanged. Signal/timeout/overflow/IO/ownedstop/
+cleanup/crash branches UNEXERCISED. Getter stdout5efba0fc/24866B retains fullsummary/
+page/stage bytes, no reader rerun/independentfold. Catalog pages remainSpark.
+
+Reused healthy worker READONLY complete sources/exactcalls/actualfreshproof BEFORE
+each nextuse, actualresult/preservation metadata after; no newagent/limitedretry/
+workerops. ROOT caught unbounded getter nameiterators BEFOREfirstuse; directscandir
+max3/256UTF8B corrected/repinned. Initial UNRUN3e151bf8/5711B+transport+reason retained
+/tmp/native-origin-result-getter-drafts-20261018-v1 andfinalinputs. Worker metadata
+inspection wrongFalse ASTexpectation correctedTrue; no writes/body/remote failure.
+ROOT guessed localpreserverfilename ENOENT read-only; rg found exactsource. One
+documentation toolscript ReferenceError before apply_patch/no document mutation;
+corrected raw toolstring. No operational/payload failure or bodyreplay.
+
+Reviewed localpreserver ONCE exit0. Exclusive /tmp/native-origin-observation-
+evidence-20261018-v1 retains31inputs450919B including unchanged UNRUN094561ab draft.
+Manifestf9be69fda2f064a852d8c2be5646ae2e403c2567ec04277cf74b9d23b1c34f38/37799B;
+localreviewf27cacc1/3683B. Twofullheldnamedreads/fullSHA/exactdecimalphysical/
+exclusivecopies/fsync/readbacks/laterorig+copybookends/fourreturnedoutputs/report/
+manifestlast/rootresolvedparent+sourcedirsync. Separate ROOT68file SHAphysical
+readback PASS:31orig+31copies+4outputs+report+manifest. Research exactreports
+original-loader-native-origin-observation-{preservation,local-review,readback}-v1.
+Hash2412090B/4MiB, localsoftware262KiBfile/1MiBinput/30alarm; noMacAS/kernelFSIZE/
+crashdurability claim. Warnings-as-errors AST/purpose/3outer+5utilityASTequal/
+zero literalbackspaces/JSON/fullSHA/accounting/diff PASS; Ruff previously unavailable.
+No application/prompt change, app-test/deploy claim or completedgate rerun.
+
+NEXT ROOT: primary observation/stage/getter CLOSED; never replay for docs. Full
+independent remote catalog/raw/everyfield/page/canonical-summary fold PENDING.
+Preserve current UNRUN094561ab draft (already copied in31inputs), separately repin
+actual8402d423/13430 summary, prepare/review distinct bounded independent staging/
+transport/actualfreshprerequisite/exactinvocation BEFORE ONE independentfold.
+Existing SUMMARY_SHA UNOBSERVED/SUMMARY_BYTES0 refuses BEFORE data; no dispatchable
+verifier/current admission. No oldsymbols/ELF/copy/HEAD/metadata/censuses/AST/63/37/
+73/80/23/65+4/tiny/diagnostic/v2/nativeprobe/full1339contentfold/oldpacket replay.
+No guessedpaths/hostsubstitutes/ldd/readelf/dlopen/packageexecution/executableread/
+capraise. Old failed/completed roots/admissions preserved.
+
+Actualinterpreter/loader/provider/build/search/alias/version/transitive closure,
+selectedcallable/global/type/dataclassliveproducer/classflags/native/phase/Arrow
+pools+wrapper/sklearnactualmetadata open. Guard3b8be00b separate25payloadfunctions
+UNRUN; old2446/030c/G08/caps/maps unchanged. Producer2431/reference2446/executor2468/
+originalreceipts/fullcontext+graphs+JSON+UTF8 lifetimes separate. Genuineassembledtree/
+strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/
+launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/
+intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/
+v6OPEN-PAUSED/no replay/adoption/newgenuinerun/actualtwohost/Spark2image-daemon-temp-
+RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Native-origin staging controls SOURCE reviewed; all remote bodies UNRUN
 
 Read research/original-loader-native-origin-control-source-proof-v1-2026-10-18.json.
