@@ -1,0 +1,699 @@
+{
+  "actual_proof": {
+    "elapsed_seconds": 1.1530494252219796,
+    "errors": 0,
+    "failures": 0,
+    "forbidden_imports": [],
+    "native_after": {
+      "backend.agents": {
+        "physical": {
+          "st_ctime_ns": "1792252095713452724",
+          "st_dev": "66306",
+          "st_ino": "56003890",
+          "st_mtime_ns": "1788401448000000000",
+          "st_size": "30"
+        },
+        "sha256": "6f54ad4ec10e21b19085989fe0589d17a654a8d1bafdf62d3a6f5838833bdae4"
+      },
+      "backend.agents.trading": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794570",
+          "st_mtime_ns": "1788496919000000000",
+          "st_size": "442"
+        },
+        "sha256": "e2674427378cce57e276762d62e35f76df4220e65f989b2468c6b900ff7a5593"
+      },
+      "backend.agents.trading.desk": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794576",
+          "st_mtime_ns": "1788651713000000000",
+          "st_size": "612"
+        },
+        "sha256": "c4915530882e9d8abb10ca8334719c416fc4b0d63502c25ea079ab7aba6fab57"
+      },
+      "backend.agents.trading.desk.execution_evidence": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794587",
+          "st_mtime_ns": "1789351742000000000",
+          "st_size": "2050"
+        },
+        "sha256": "ba0d3b0e329410d3915a57b44eba004ae9e1479e35022de8d52d2ca36e3ec171"
+      },
+      "backend.agents.trading.desk.paper": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794599",
+          "st_mtime_ns": "1792246285000000000",
+          "st_size": "66598"
+        },
+        "sha256": "a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c"
+      },
+      "backend.agents.trading.desk.planner": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794602",
+          "st_mtime_ns": "1789039782000000000",
+          "st_size": "3388"
+        },
+        "sha256": "ad917b5344654087e12b25b55cf558d3f519d3955ee2f3191b58ae263d8d248c"
+      }
+    },
+    "native_before": {
+      "backend.agents": {
+        "physical": {
+          "st_ctime_ns": "1792252095713452724",
+          "st_dev": "66306",
+          "st_ino": "56003890",
+          "st_mtime_ns": "1788401448000000000",
+          "st_size": "30"
+        },
+        "sha256": "6f54ad4ec10e21b19085989fe0589d17a654a8d1bafdf62d3a6f5838833bdae4"
+      },
+      "backend.agents.trading": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794570",
+          "st_mtime_ns": "1788496919000000000",
+          "st_size": "442"
+        },
+        "sha256": "e2674427378cce57e276762d62e35f76df4220e65f989b2468c6b900ff7a5593"
+      },
+      "backend.agents.trading.desk": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794576",
+          "st_mtime_ns": "1788651713000000000",
+          "st_size": "612"
+        },
+        "sha256": "c4915530882e9d8abb10ca8334719c416fc4b0d63502c25ea079ab7aba6fab57"
+      },
+      "backend.agents.trading.desk.execution_evidence": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794587",
+          "st_mtime_ns": "1789351742000000000",
+          "st_size": "2050"
+        },
+        "sha256": "ba0d3b0e329410d3915a57b44eba004ae9e1479e35022de8d52d2ca36e3ec171"
+      },
+      "backend.agents.trading.desk.paper": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794599",
+          "st_mtime_ns": "1792246285000000000",
+          "st_size": "66598"
+        },
+        "sha256": "a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c"
+      },
+      "backend.agents.trading.desk.planner": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794602",
+          "st_mtime_ns": "1789039782000000000",
+          "st_size": "3388"
+        },
+        "sha256": "ad917b5344654087e12b25b55cf558d3f519d3955ee2f3191b58ae263d8d248c"
+      }
+    },
+    "native_writer_globals_unchanged": true,
+    "peak_kib": 38256,
+    "scope": "Exact NativeCapture CodeTypes in explicit synthetic broker/policy globals; real imported native writer and PhysicalCheckpoint; no whole Nightly/model/adoption/genuine-run admission",
+    "skips": 0,
+    "source_after": {
+      "/audit/backend/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792352768879897309",
+          "st_dev": "66306",
+          "st_ino": "60583292",
+          "st_mtime_ns": "1792352768879897309",
+          "st_size": "35"
+        },
+        "sha256": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5"
+      },
+      "/audit/backend/market/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792352768883346584",
+          "st_dev": "66306",
+          "st_ino": "60583294",
+          "st_mtime_ns": "1792352768883346584",
+          "st_size": "42"
+        },
+        "sha256": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e"
+      },
+      "/audit/backend/market/historical_conditional_nightly.py": {
+        "physical": {
+          "st_ctime_ns": "1792352768887293327",
+          "st_dev": "66306",
+          "st_ino": "60583295",
+          "st_mtime_ns": "1792352768887293327",
+          "st_size": "55212"
+        },
+        "sha256": "083cfc5e9419c66f1a552114f84dc3daadf9dad00badb4d8bccc561fddf0ca10"
+      },
+      "/audit/backend/market/historical_physical_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792352768890238332",
+          "st_dev": "66306",
+          "st_ino": "60583296",
+          "st_mtime_ns": "1792352768890238332",
+          "st_size": "36101"
+        },
+        "sha256": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+      },
+      "/audit/backend/tests/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792352768893441833",
+          "st_dev": "66306",
+          "st_ino": "60583298",
+          "st_mtime_ns": "1792352768893441833",
+          "st_size": "0"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "/audit/backend/tests/test_historical_native_capture_raw.py": {
+        "physical": {
+          "st_ctime_ns": "1792352768896796196",
+          "st_dev": "66306",
+          "st_ino": "60583299",
+          "st_mtime_ns": "1792352768896796196",
+          "st_size": "10099"
+        },
+        "sha256": "37a6ed38d754e17e448331feed06e8a151f7b7dab0a67ab8ff62508bf7a98fb2"
+      },
+      "/audit/run.py": {
+        "physical": {
+          "st_ctime_ns": "1792352768903377274",
+          "st_dev": "66306",
+          "st_ino": "60583301",
+          "st_mtime_ns": "1792352768903377274",
+          "st_size": "3945"
+        },
+        "sha256": "2c21e10f1484ac9d7e2f37b1ff4658f369e088b412cdbf6d5122f501a5e511e3"
+      },
+      "/fixture/current-identity.json": {
+        "physical": {
+          "st_ctime_ns": "1792352768900388125",
+          "st_dev": "66306",
+          "st_ino": "60583300",
+          "st_mtime_ns": "1792352768900388125",
+          "st_size": "4070"
+        },
+        "sha256": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d"
+      },
+      "/fixture/native-source-map.json": {
+        "physical": {
+          "st_ctime_ns": "1792352768907705007",
+          "st_dev": "66306",
+          "st_ino": "60583302",
+          "st_mtime_ns": "1792352768907705007",
+          "st_size": "182466"
+        },
+        "sha256": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5"
+      }
+    },
+    "source_before": {
+      "/audit/backend/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792352768879897309",
+          "st_dev": "66306",
+          "st_ino": "60583292",
+          "st_mtime_ns": "1792352768879897309",
+          "st_size": "35"
+        },
+        "sha256": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5"
+      },
+      "/audit/backend/market/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792352768883346584",
+          "st_dev": "66306",
+          "st_ino": "60583294",
+          "st_mtime_ns": "1792352768883346584",
+          "st_size": "42"
+        },
+        "sha256": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e"
+      },
+      "/audit/backend/market/historical_conditional_nightly.py": {
+        "physical": {
+          "st_ctime_ns": "1792352768887293327",
+          "st_dev": "66306",
+          "st_ino": "60583295",
+          "st_mtime_ns": "1792352768887293327",
+          "st_size": "55212"
+        },
+        "sha256": "083cfc5e9419c66f1a552114f84dc3daadf9dad00badb4d8bccc561fddf0ca10"
+      },
+      "/audit/backend/market/historical_physical_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792352768890238332",
+          "st_dev": "66306",
+          "st_ino": "60583296",
+          "st_mtime_ns": "1792352768890238332",
+          "st_size": "36101"
+        },
+        "sha256": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+      },
+      "/audit/backend/tests/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792352768893441833",
+          "st_dev": "66306",
+          "st_ino": "60583298",
+          "st_mtime_ns": "1792352768893441833",
+          "st_size": "0"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "/audit/backend/tests/test_historical_native_capture_raw.py": {
+        "physical": {
+          "st_ctime_ns": "1792352768896796196",
+          "st_dev": "66306",
+          "st_ino": "60583299",
+          "st_mtime_ns": "1792352768896796196",
+          "st_size": "10099"
+        },
+        "sha256": "37a6ed38d754e17e448331feed06e8a151f7b7dab0a67ab8ff62508bf7a98fb2"
+      },
+      "/audit/run.py": {
+        "physical": {
+          "st_ctime_ns": "1792352768903377274",
+          "st_dev": "66306",
+          "st_ino": "60583301",
+          "st_mtime_ns": "1792352768903377274",
+          "st_size": "3945"
+        },
+        "sha256": "2c21e10f1484ac9d7e2f37b1ff4658f369e088b412cdbf6d5122f501a5e511e3"
+      },
+      "/fixture/current-identity.json": {
+        "physical": {
+          "st_ctime_ns": "1792352768900388125",
+          "st_dev": "66306",
+          "st_ino": "60583300",
+          "st_mtime_ns": "1792352768900388125",
+          "st_size": "4070"
+        },
+        "sha256": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d"
+      },
+      "/fixture/native-source-map.json": {
+        "physical": {
+          "st_ctime_ns": "1792352768907705007",
+          "st_dev": "66306",
+          "st_ino": "60583302",
+          "st_mtime_ns": "1792352768907705007",
+          "st_size": "182466"
+        },
+        "sha256": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5"
+      }
+    },
+    "status": "VERIFIED_SOURCE_ISOLATED_OBSERVER",
+    "tests": 5
+  },
+  "actual_proof_sha256": "2d49c4dde71997c25b93bd7c02251b04e4a80ba1e4f53cccbba175aac3934723",
+  "bounds": {
+    "control_source_log_bytes": 262144,
+    "decoded_packet_bytes": 147491,
+    "gzip_wire_bytes": 46092,
+    "production_caps_changed": false,
+    "synthetic_native_artifact_bytes": 1048576,
+    "whole_shlex_command_plus_wire_bytes": 57770
+  },
+  "closed_acceptance": [
+    "Actual default observer refuses a completed native save above256KiB",
+    "Optional observer captures full native bytes with NaN, exact SHA/length/history count, and fresh same-inode restore",
+    "Actual imported native load/save preserves restored bytes exactly",
+    "Raw-mode broker submission is structurally refused before SUBMIT",
+    "Capture overflow leaves native bytes unchanged and CAPTURE OPEN without replay",
+    "Cross-account checkpoint refused before hook installation"
+  ],
+  "fixed_result_inventory": {
+    "create-argv.json": {
+      "physical": {
+        "st_ctime_ns": "1792352768920886157",
+        "st_dev": "66306",
+        "st_ino": "60583305",
+        "st_mtime_ns": "1792352768920886157",
+        "st_size": "1508"
+      },
+      "sha256": "b8bc2fe010fb6c01094e8971514c4a40118be1d041a7097c2a864fe48b5dec68"
+    },
+    "inspect-after.json": {
+      "physical": {
+        "st_ctime_ns": "1792352770758116793",
+        "st_dev": "66306",
+        "st_ino": "60583339",
+        "st_mtime_ns": "1792352770758116793",
+        "st_size": "3593"
+      },
+      "sha256": "43d83a473cd34d5275f24d1521886ecf70e1c20bbd61453cf497b5b2feb0e943"
+    },
+    "inspect-before.json": {
+      "physical": {
+        "st_ctime_ns": "1792352769063187845",
+        "st_dev": "66306",
+        "st_ino": "60583341",
+        "st_mtime_ns": "1792352769063187845",
+        "st_size": "3576"
+      },
+      "sha256": "872ddaeebecda36983f0eba3aa0b9758930212aecf793951dc86bd8cd0a6c09b"
+    },
+    "out/proof.json": {
+      "physical": {
+        "st_ctime_ns": "1792352770670014060",
+        "st_dev": "66306",
+        "st_ino": "60583597",
+        "st_mtime_ns": "1792352770670014060",
+        "st_size": "10666"
+      },
+      "sha256": "2d49c4dde71997c25b93bd7c02251b04e4a80ba1e4f53cccbba175aac3934723"
+    },
+    "run.log": {
+      "physical": {
+        "st_ctime_ns": "1792352770668430790",
+        "st_dev": "66306",
+        "st_ino": "60583342",
+        "st_mtime_ns": "1792352770668430790",
+        "st_size": "1054"
+      },
+      "sha256": "e30cd7adbf6ace1539fe1a3fb9ec771e35e6beb394d0df9b16f8efda84fac889"
+    },
+    "source/pins.json": {
+      "physical": {
+        "st_ctime_ns": "1792352768911117226",
+        "st_dev": "66306",
+        "st_ino": "60583303",
+        "st_mtime_ns": "1792352768911117226",
+        "st_size": "981"
+      },
+      "sha256": "e6bdb15520014b5c71500306644ce5f64aadd2f54cbd16dbe260982bf1d26995"
+    }
+  },
+  "local_evidence_root": "/tmp/raw-observer-integration-20261018-v1",
+  "next_action": "Product-code raw component references through Nightly/Cycle and settlement, with native-written NaN/large-state readback tests. Do not create further ELF/interpreter observers as prerequisites for this synthetic product path.",
+  "operational_source_sha256": {
+    "/tmp/get_raw_observer_results_20261018.py": "b0cffae868776d647bb6f162a39e99aaf4d26fbf8cfa72b0d4e9d9a553961783",
+    "/tmp/launch_raw_observer_integration_20261018.py": "8905a25c030e412d3a9fa915afaa478c468a504793df69f990f3802e3d4d81d7",
+    "/tmp/raw_observer_remote_20261018.py": "450a47ef9032009cdd53a5287dc8ed6c47fca9da34b60708f57954cc4ee204ab"
+  },
+  "phase_terminals": {
+    "preflight": {
+      "exit": 0,
+      "remote_quiescence_inferred": false
+    },
+    "results": {
+      "exit": 0,
+      "remote_quiescence_inferred": false
+    },
+    "run": {
+      "exit": 0,
+      "remote_quiescence_inferred": false
+    }
+  },
+  "preserved_constraints": "Original historical roots and raw NaNs immutable; timingFAILED/publicationCLOSED; genuinev6 OPEN/PAUSED/no replay/adoption/new genuine run; no original loader/native-origin gates replayed",
+  "remote_evidence_root": "/home/animallya96/scratch/raw-observer-integration-20261018-v1",
+  "result_bundle_sha256": "5fd13d233d1d7fdcb18adfaa44f8fc39e52ee581c33040292c903615b0700c98",
+  "runtime": {
+    "container": "0b6eb60daf1e4fcaedc026ed7ec014b6615521e8c9ace733ffae4992e1d48e1d",
+    "create_argv": [
+      "docker",
+      "--host",
+      "unix:///var/run/docker.sock",
+      "create",
+      "--name",
+      "raw-observer-integration-20261018-v1",
+      "--cidfile",
+      "/home/animallya96/scratch/raw-observer-integration-20261018-v1/cid",
+      "--pull",
+      "never",
+      "--user",
+      "1000:1000",
+      "--network",
+      "none",
+      "--read-only",
+      "--cpus",
+      "1",
+      "--memory",
+      "512m",
+      "--memory-swap",
+      "512m",
+      "--pids-limit",
+      "32",
+      "--cap-drop",
+      "ALL",
+      "--security-opt",
+      "no-new-privileges",
+      "--no-healthcheck",
+      "--log-driver",
+      "none",
+      "--ulimit",
+      "cpu=30:30",
+      "--ulimit",
+      "fsize=1048576:1048576",
+      "--tmpfs",
+      "/tmp:rw,noexec,nosuid,size=64m",
+      "--workdir",
+      "/audit",
+      "--env",
+      "PYTHONPATH=/audit",
+      "--env",
+      "PYTHONDONTWRITEBYTECODE=1",
+      "--env",
+      "ANIOS_TEST_MODE=1",
+      "--env",
+      "PYTHONUNBUFFERED=1",
+      "--env",
+      "OPENBLAS_NUM_THREADS=1",
+      "--env",
+      "OMP_NUM_THREADS=1",
+      "--env",
+      "MKL_NUM_THREADS=1",
+      "--env",
+      "NUMEXPR_NUM_THREADS=1",
+      "--env",
+      "VECLIB_MAXIMUM_THREADS=1",
+      "--env",
+      "BLIS_NUM_THREADS=1",
+      "--mount",
+      "type=bind,src=/home/animallya96/scratch/raw-observer-integration-20261018-v1/source,dst=/audit,readonly",
+      "--mount",
+      "type=bind,src=/home/animallya96/scratch/raw-observer-integration-20261018-v1/fixture,dst=/fixture,readonly",
+      "--mount",
+      "type=bind,src=/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source,dst=/native,readonly",
+      "--mount",
+      "type=bind,src=/home/animallya96/scratch/raw-observer-integration-20261018-v1/out,dst=/out",
+      "--entrypoint",
+      "python",
+      "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "/audit/run.py"
+    ],
+    "created_stopped_mount_records_equal_by_destination": true,
+    "host_config": {
+      "AutoRemove": false,
+      "Binds": null,
+      "BlkioDeviceReadBps": [],
+      "BlkioDeviceReadIOps": [],
+      "BlkioDeviceWriteBps": [],
+      "BlkioDeviceWriteIOps": [],
+      "BlkioWeight": 0,
+      "BlkioWeightDevice": [],
+      "CapAdd": null,
+      "CapDrop": [
+        "ALL"
+      ],
+      "Cgroup": "",
+      "CgroupParent": "",
+      "CgroupnsMode": "private",
+      "ConsoleSize": [
+        0,
+        0
+      ],
+      "ContainerIDFile": "/home/animallya96/scratch/raw-observer-integration-20261018-v1/cid",
+      "CpuCount": 0,
+      "CpuPercent": 0,
+      "CpuPeriod": 0,
+      "CpuQuota": 0,
+      "CpuRealtimePeriod": 0,
+      "CpuRealtimeRuntime": 0,
+      "CpuShares": 0,
+      "CpusetCpus": "",
+      "CpusetMems": "",
+      "DeviceCgroupRules": null,
+      "DeviceRequests": null,
+      "Devices": [],
+      "Dns": null,
+      "DnsOptions": [],
+      "DnsSearch": [],
+      "ExtraHosts": null,
+      "GroupAdd": null,
+      "IOMaximumBandwidth": 0,
+      "IOMaximumIOps": 0,
+      "IpcMode": "private",
+      "Isolation": "",
+      "Links": null,
+      "LogConfig": {
+        "Config": {},
+        "Type": "none"
+      },
+      "MaskedPaths": [
+        "/proc/acpi",
+        "/proc/asound",
+        "/proc/interrupts",
+        "/proc/kcore",
+        "/proc/keys",
+        "/proc/latency_stats",
+        "/proc/sched_debug",
+        "/proc/scsi",
+        "/proc/timer_list",
+        "/proc/timer_stats",
+        "/sys/devices/virtual/powercap",
+        "/sys/firmware"
+      ],
+      "Memory": 536870912,
+      "MemoryReservation": 0,
+      "MemorySwap": 536870912,
+      "MemorySwappiness": null,
+      "Mounts": [
+        {
+          "ReadOnly": true,
+          "Source": "/home/animallya96/scratch/raw-observer-integration-20261018-v1/source",
+          "Target": "/audit",
+          "Type": "bind"
+        },
+        {
+          "ReadOnly": true,
+          "Source": "/home/animallya96/scratch/raw-observer-integration-20261018-v1/fixture",
+          "Target": "/fixture",
+          "Type": "bind"
+        },
+        {
+          "ReadOnly": true,
+          "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+          "Target": "/native",
+          "Type": "bind"
+        },
+        {
+          "Source": "/home/animallya96/scratch/raw-observer-integration-20261018-v1/out",
+          "Target": "/out",
+          "Type": "bind"
+        }
+      ],
+      "NanoCpus": 1000000000,
+      "NetworkMode": "none",
+      "OomKillDisable": null,
+      "OomScoreAdj": 0,
+      "PidMode": "",
+      "PidsLimit": 32,
+      "PortBindings": {},
+      "Privileged": false,
+      "PublishAllPorts": false,
+      "ReadonlyPaths": [
+        "/proc/bus",
+        "/proc/fs",
+        "/proc/irq",
+        "/proc/sys",
+        "/proc/sysrq-trigger"
+      ],
+      "ReadonlyRootfs": true,
+      "RestartPolicy": {
+        "MaximumRetryCount": 0,
+        "Name": "no"
+      },
+      "Runtime": "runc",
+      "SecurityOpt": [
+        "no-new-privileges"
+      ],
+      "ShmSize": 67108864,
+      "Tmpfs": {
+        "/tmp": "rw,noexec,nosuid,size=64m"
+      },
+      "UTSMode": "",
+      "Ulimits": [
+        {
+          "Hard": 30,
+          "Name": "cpu",
+          "Soft": 30
+        },
+        {
+          "Hard": 1048576,
+          "Name": "fsize",
+          "Soft": 1048576
+        }
+      ],
+      "UsernsMode": "",
+      "VolumeDriver": "",
+      "VolumesFrom": null
+    },
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "mounts": [
+      {
+        "Destination": "/out",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": true,
+        "Source": "/home/animallya96/scratch/raw-observer-integration-20261018-v1/out",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/audit",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/raw-observer-integration-20261018-v1/source",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/fixture",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/raw-observer-integration-20261018-v1/fixture",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/native",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+        "Type": "bind"
+      }
+    ],
+    "oom_kill_disable_created": false,
+    "oom_kill_disable_stopped": null,
+    "raw_mount_list_order_equal": false,
+    "state": {
+      "Dead": false,
+      "Error": "",
+      "ExitCode": 0,
+      "FinishedAt": "2026-10-18T19:46:10.69122252Z",
+      "OOMKilled": false,
+      "Paused": false,
+      "Pid": 0,
+      "Restarting": false,
+      "Running": false,
+      "StartedAt": "2026-10-18T19:46:09.102003187Z",
+      "Status": "exited"
+    }
+  },
+  "schema": "native-save-observer-raw-integration-proof/1",
+  "source_base": "9bb5a1bcb98edb7d1f4d64303d7ad804ecf5d03b",
+  "source_commit": "c746d4099ccd921fa11aab2fddaa289ff86c372a",
+  "source_tree": "26f4fb89e6df27e00611f779e6bfec63961be759",
+  "status": "VERIFIED_SOURCE_ISOLATED_CAPTURE_RESTORE_ONLY",
+  "unverified": [
+    "Whole Nightly imports/real policy and broker identity",
+    "Nightly/Cycle receipt and settlement integration",
+    "Native writer/pre-effect metadata/two-host reservation and full lifecycle RAM/crash behavior",
+    "Genuine historical/ordinary/intraday/fill/UI acceptance"
+  ]
+}

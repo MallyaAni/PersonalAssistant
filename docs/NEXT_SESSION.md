@@ -1,5 +1,53 @@
 # Next session
 
+## 2026-10-18 — Native save observer raw capture/restore seam VERIFIED
+
+Task control: advance the trading acceptance path below. Earlier self-authored
+interpreter/ELF research handoffs are preserved, but are not prerequisites for
+synthetic product-code integration. Do not start another provenance toolchain.
+
+Source checkpoint c746d4099ccd921fa11aab2fddaa289ff86c372a contains the optional
+NativeCapture raw_checkpoint path, the unchanged private raw primitive5d616928,
+five regression tests, and the exact isolated runner. Read
+research/native-save-observer-raw-integration-proof-2026-10-18.json.
+
+VERIFIED: ONE source-isolated Linux acceptance passed5/0fail/0error/0skip in
+1.153049s, peak38256KiB. Actual f612 container0b6eb60d exited0/noOOM at
+19:46:10.69122252Z. Actual native a8 writer produced >256KiB state containing NaN;
+the edited observer captured a separately tagged raw reference, restored exact
+bytes into the reserved inode, and actual native load/save preserved those bytes.
+Cross-account rejection, pre-SUBMIT refusal and overflow retaining CAPTURE OPEN
+without erasing or repeating the completed native write also passed. Default
+observer still reproduces its original post-write256KiB refusal. The raw path
+does not put checkpoint roots into legacy Store blob-string references.
+
+The test executes exact full-source NativeCapture CodeTypes in explicit synthetic
+broker/policy globals; it does not import or admit the whole Nightly/model closure.
+Actual paper writer/global bindings and source/native physical bookends matched.
+Proof2d49c4dd and six complete results are retained locally under
+/tmp/raw-observer-integration-20261018-v1 and remotely under the same suffix in
+/home/animallya96/scratch. Three SSH phases exited0/empty stderr; never replay them.
+Runtime: UID1000/noneRO/1CPU/512MiB=swap/PIDs32/tmp64MiB; audit/fixture/nativeRO
+and soleoutRW. Synthetic native files have an explicit1MiB kernel bound; ordinary
+source/control/log bounds remain256KiB and production caps are unchanged.
+Complete mount records match by destination; raw mount order and OomKillDisable
+false→null differ. No raw-inspect equality, full unit/build/lint/deploy claim.
+
+UNVERIFIED: Nightly/Cycle raw component receipts and settlement, actual policy and
+broker constructor identities, pre-effect/native-metadata/two-host reservation,
+full lifecycle/model/RAM/crash behavior, and genuine historical/ordinary/intraday/
+fill/UI acceptance. This optional path is not wired into Nightly.close or Cycle.
+
+NEXT: implement versioned raw paper component references across Nightly.components,
+Cycle._components/restore_receipt and settlement's finite-JSON assumptions. Test
+native-written large/NaN state through those actual readback/restore boundaries;
+preserve finite metadata and explicit raw-byte authority, never normalize NaNs or
+relabel raw roots as legacy paper hashes. Keep pre-effect reservations and full
+lifecycle acceptance separate, then genuine nightly/intraday/fill/publication/UI.
+Original historical roots remain immutable; original timingFAILED/publicationCLOSED;
+genuinev6 remains OPEN/PAUSED/no replay/adoption/new genuine run. No model/provider/
+account/service change or old closed-gate replay. Heartbeat remains ACTIVE.
+
 ## 2026-10-18 — Historical native.json complete independent DATA fold VERIFIED
 
 Read research/original-loader-native-origin-independent-proof-v1-2026-10-18.json.

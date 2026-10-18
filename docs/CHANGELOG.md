@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-10-18 — Connect native saves to the raw checkpoint primitive
+
+NativeCapture can now opt into a same-account PhysicalCheckpoint and record a
+separately tagged raw receipt after native persistence. This handles a native
+file above256KiB containing NaN without normalizing or truncating it. The default
+path is unchanged; raw mode blocks submission before the broker until its receipt
+format is integrated. The existing raw primitive is copied unchanged from the
+private checkpoint branch.
+
+Source c746d409 passed5 new source-isolated Linux integration tests,0 skips/errors/
+failures,1.153049s. They execute the edited observer CodeTypes with synthetic
+broker/policy bindings and the actual native writer/checkpoint, including exact
+fresh restore and native load/save, original cap refusal, OPEN failure and
+cross-account/pre-submit rejection. Proof:
+research/native-save-observer-raw-integration-proof-2026-10-18.json.
+
+No deployment or full Nightly/Cycle/model/genuine-account acceptance is claimed.
+Next work is the versioned component receipt/restore/settlement integration;
+further interpreter provenance observers are not prerequisites for that synthetic
+product path. Original timingFAILED/publicationCLOSED and pausedv6 are unchanged.
+
 ## 2026-10-18 — Independently verify the retained historical native JSON
 
 A separately pinned selector reconstructed the complete 21-page metadata catalog,
