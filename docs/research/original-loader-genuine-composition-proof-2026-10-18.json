@@ -1,0 +1,136 @@
+{
+  "schema": "original-loader-genuine-composition-proof/1",
+  "status": "VERIFIED_INERT_COMPOSITION_STATIC_BOOTSTRAP_INCOMPATIBLE_NOT_RUNTIME_ACCEPTANCE",
+  "starting_revision": "eb670398f67cc8b28d85817cbdf1d1c86a894e8b",
+  "branch": "codex/learned-live-release-20261006",
+  "objective": "Bind exact genuine source and original namespaces, determine whether unchanged v3 guard can admit genuine bootstrap, without importing application code or running a loader.",
+  "artifacts": {
+    "original-loader-genuine-composition-2026-10-18.json": {
+      "sha256": "50cf43c55825b7332b4e1f91b6715e140c667f1e8b366a6a6c701b34583e1a94",
+      "bytes": 24697
+    },
+    "original-loader-genuine-source-map-2026-10-18.json": {
+      "sha256": "9a0bfbeb59e0a63072453a6ac0e930e65a89684efd90bc705febf9b1bdbe6224",
+      "bytes": 279395
+    },
+    "sources/prepare-original-loader-genuine-composition-2026-10-18.py": {
+      "sha256": "c6625d257a222e0d970af5f3306bcdec24b71bd0c246ad7bc67c546421b81244",
+      "bytes": 14002
+    },
+    "sources/original-loader-composition-metadata-read-2026-10-18.py": {
+      "sha256": "9ad06592c82d3d5cfad08813ee4847e55ba4704231b1363652f219ed7469a44f",
+      "bytes": 4163
+    }
+  },
+  "source": {
+    "recipe_files": 2446,
+    "compact_sha256": "503e8d508ebe5fdc82a17c11974ccce5366c60ce8e78fc549c129fc6c6d81e03",
+    "native31_sha256": "99e62ab9f8b02bc315ce59b81f8b461ae5c988e275cdf09cacf2d36b1025f8ab",
+    "original_git_files": 2431,
+    "static_sources_checked": 12,
+    "original_N2_paper": "e2eef2f0270497d9a5944212d6581b7ebf503d2675687a172e76690fcc7bc3c3",
+    "CURRENT_paper_substituted": false,
+    "full_source_tree_materialized": false,
+    "application_CodeTypes_compiled": false,
+    "full_import_closure_admitted": false
+  },
+  "original_metadata": {
+    "read": {
+      "bytes": 2187,
+      "physical_after": {
+        "st_ctime_ns": "1791929805990901577",
+        "st_dev": "66306",
+        "st_ino": "59263605",
+        "st_mode": "33204",
+        "st_mtime_ns": "1791929805990901577",
+        "st_nlink": "1",
+        "st_size": "2187",
+        "st_uid": "1000"
+      },
+      "physical_before": {
+        "st_ctime_ns": "1791929805990901577",
+        "st_dev": "66306",
+        "st_ino": "59263605",
+        "st_mode": "33204",
+        "st_mtime_ns": "1791929805990901577",
+        "st_nlink": "1",
+        "st_size": "2187",
+        "st_uid": "1000"
+      },
+      "sha256": "eaa07107c2f88e31f6c3eaf1f5eee1bf579bc86fed60db7f578a502859960e96"
+    },
+    "exit": {
+      "exit": 0,
+      "pid": "92540"
+    }
+  },
+  "namespaces": {
+    "original_readonly_targets_except_app": 10,
+    "original_readonly_absolute_host_aliases": 11,
+    "account_readonly": true,
+    "original_results_writable_mount_excluded": true,
+    "new_composed_app_audit_admission_and_proof_sources": null,
+    "exact_actual_inventory": null,
+    "actual_host_runtime_resource_admission": null,
+    "resource_recipe_variance": {
+      "pids_limit_proposed": 32,
+      "prior_contract_pids_limit_proposed": 64,
+      "full_v3_synthetic_tested_pids_limit": 32,
+      "actual_genuine_admission": false
+    }
+  },
+  "finding": {
+    "classification": "SOURCE_PROVED_INCOMPATIBILITY_NOT_OBSERVED_GENUINE_FAILURE",
+    "chain": [
+      "backend.cli.audit_original_live_model_history imports desk.paper",
+      "exact N2 paper imports desk.planner",
+      "planner.Order @dataclass requires backend.agents.trading.desk.planner.__create_fn__"
+    ],
+    "immutable_guard": "030cb5bb25f89c2785e6acbd55aceff5c99b632a5eb538079ee027362ae6178a",
+    "reason": "BROKER_OR_ACCOUNT_FUNCTION",
+    "effect_prefix": "backend.agents.trading.desk",
+    "effect_branch_precedes_registered_and_generated_manifest_lookups": true,
+    "no_manifest_can_override": true,
+    "exact_first_runtime_failure_not_certified": true,
+    "conditional_on_prior_external_imports_succeeding": true,
+    "additional_preservation_dependency": "ADMISSION preserved_archives -> paper.state_path is also refused by effect prefix.",
+    "genuine_calls_manifest": null,
+    "genuine_generated_manifest": null,
+    "guard_or_G08_or_source_or_config_or_caps_changed": false
+  },
+  "checks": {
+    "source_AST_and_finite_JSON": "PASS",
+    "artifact_full_SHA_bytes_and_map_compact_SHA": "PASS",
+    "purpose_comments": 10,
+    "embedded_remote_purpose_comments": 1,
+    "exact_original_execution_held_FD_physical_bookends": "PASS",
+    "original_execution_read_only_SSH_calls": 1,
+    "Docker_host_resource_probes": 0,
+    "application_import_compile_exec": 0,
+    "new_test_bodies": 0,
+    "completed_gate_replays": 0,
+    "models_arrays_account_data_read": 0,
+    "source_analysis_program_execution": "Only stdlib local metadata composition and bounded remote stdlib single-file metadata reader; no application execution.",
+    "functional_tests": "NOT_APPLICABLE_TO_INERT_METADATA_NO_RUNTIME_BEHAVIOR_CLAIM",
+    "Ruff": "UNAVAILABLE established environment; AST/purpose only",
+    "independent_existing_worker_review": "PASS as inert composition: exact source identities/namespace separation/static conditional incompatibility/null executable fields. READONLY no imports/operations/edits. Proposed PIDs32 versus original contract proposed64 explicitly recorded, not described as an unchanged full resource proposal.",
+    "initial_generator_trailing_blank_warning": "Preserved initial30da4800/14003B generator as local generator-initial.py. Removed only redundant EOF blank before source checkpoint; no composition generator/body replay."
+  },
+  "preservation": {
+    "old_contract_harness_v2_v3_sources_roots_admissions_unchanged": true,
+    "new_local_root": "/tmp/original-loader-genuine-composition-20261018-v1",
+    "original_execution_not_modified": true,
+    "physical_ns": "decimal strings"
+  },
+  "unchanged": {
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "genuine_loader_or_history_or_account_run": false,
+    "combined_RAM_horizon_historical_weekday_intraday_fill_UI": "UNVERIFIED",
+    "production_deployed": false,
+    "heartbeat": "ACTIVE"
+  },
+  "next": "Source-review a separately versioned capacity-only dependency boundary excluding broker/account/planner function execution while preserving genuine original source/input/config/preservation checks and existing guard/G08 semantics. Do not fill call lists with all functions, preload modules, inject fixtures, weaken guards, launch genuine work or repeat completed suites. Exact executable manifest, controller/runtime/mount/headroom admission and full RAM proof remain separate.",
+  "source_revision": "a35c090dd20c212e8446067b69379bbbfbd2aa7f"
+}

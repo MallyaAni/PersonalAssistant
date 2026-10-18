@@ -1,5 +1,62 @@
 # Next session
 
+## 2026-10-18 — Genuine composition pinned INERT; unchanged bootstrap incompatible
+
+Read research/original-loader-genuine-composition-proof-2026-10-18.json and
+original-loader-genuine-composition-2026-10-18.json. Sourcea35c090dd20c212e8446067b69379bbbfbd2aa7f
+pins composition50cf43c5/24697B, full2446 map9a0bfbeb/279395B (compact503e8d50),
+generatorc6625d25/14002B and metadata reader9ad06592/4163B. This is source-only
+composition/analysis, not assembled or admitted application source/runtime.
+Original2431/N2native31 map99e62 and CURRENTf612/bfb remain separate. Twelve
+exact source ASTs read; N2 paper e2eef2f0 comes from original27471 Git blob,
+never CURRENTa8 substitution. All9 loader DEPENDENCIES match original Git.
+
+ONE new bounded metadata-only SSH read authenticated original execution
+eaa07107/2187B, held-FD SHA/full physical beforeafter/decimal ns exact, exit0.
+No Docker/host-resource probe or model/account/data read. Retained local root
+/tmp/original-loader-genuine-composition-20261018-v1. Derived10 original RO
+target namespaces except original/app,11 original absolute-host RO aliases,
+and original account RO. Original producer source survives at its absolute
+host alias; new composed tree belongs at/app. Original writable/results is
+excluded. New source/audit/admission/proof host roots remain null/unreserved;
+actual complete mount inventory/runtime/admission/launch remain null.
+Proposed PIDs32 matches tested fullv3 but differs from prior contract's
+proposed64; do NOT describe the entire resource proposal as unchanged.
+
+SOURCE-PROVED incompatibility: audit imports desk.paper; exact N2 paper imports
+desk.planner; planner.Order @dataclass needs planner.__create_fn__. Unchanged
+v3 profile030cb5bb rejects this CO_NEWLOCALS function as BROKER_OR_ACCOUNT_
+FUNCTION under desk prefix BEFORE registered/generated manifest lookup. Thus
+no call/generated-manifest contents can admit unchanged genuine bootstrap.
+This is conditional on earlier external imports succeeding, not an observed
+genuine failure or certified exact first runtime event. Further paper/Alpaca
+factories and ADMISSION preserved_archives -> paper.state_path also conflict.
+G08 remains the verified intended refusal; no guard/code/cap was weakened.
+Executable phase calls/generated lists deliberately null, never all-functions
+or fixture manifests represented as genuine acceptance.
+
+Healthy existing worker READONLY independently reviewed identities/namespaces/
+static incompatibility/null fields; no operations/edits/new or limited worker.
+AST/JSON/hash links/purpose10+1embedded/diff pass; Ruff unavailable. Initial
+generator30da4800/14003B preserved locally when final EOF blank was removed;
+no generator/test/old-gate body replay. No application import/CodeType compile,
+numerical module/array/model/load/fit/predict/account/history/production change.
+
+NEXT ROOT: source-review a separately versioned capacity-only dependency
+boundary that avoids broker/account/planner function execution while retaining
+exact original input/source/config/preservation admissions and existing v3
+guard/G08 semantics. Review declaration dependencies and preservation helpers
+before proposing code; an explicit new reviewed source design/contract may be
+needed if immutable recipe cannot separate them. Do not preload imports,
+inject fixtures, broaden manifests, relax effect/source/phase/caps, repeat
+65+4/tiny/diagnostic/v2 bodies or launch genuine work. Exact executable closure,
+manifest/controller/mount/runtime/resources/RAM admission remains open.
+Historical/weekday/intraday/fill/UI/fullhorizon/combinedRAM UNVERIFIED;
+originaltimingFAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/no replay/
+adoption/newrun/actualtwohost/Spark2 image-daemon-temp-RAM unchanged.
+Heartbeat ACTIVE. Diagram:NONE. Prior proposed composition step below now
+completed ONLY as this inert record with explicit source incompatibility.
+
 ## 2026-10-18 — Full v3 synthetic guard VERIFIED: 65 cases + four cleanup controls
 
 Read research/original-loader-guard-full-synthetic-proof-2026-10-18.json.
