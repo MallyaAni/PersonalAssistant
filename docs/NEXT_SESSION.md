@@ -1,5 +1,44 @@
 # Next session
 
+## 2026-10-18 — Read-only persisted collector SOURCE reviewed, not run
+
+Read research/historical-checkpoint-persisted-collector-source-2026-10-18.json.
+ROOT prepared standalone collector6a99a1cd/28158B, independently reviewed
+read-only against exact endpointf4e/caller66ff/raw5d61/fixeda15a/RPC30f7. Source
+AST and21purpose-comments checked; no collector import/test/fixture/runtime.
+Both Sparks retain source+contract0dc58998 in exclusive
+scratch/checkpoint-persisted-collector-source-20261018-v1; read-back SHA equal,
+files/directories fsynced. No endpoint process/Docker/model/account change.
+This is SOURCE ONLY, not a numerical, positive transcript or two-host gate.
+
+Collector reads40 files including launch,39 reserved files under no-follow held
+directory descriptors and shared RPC-then-Peer locks. Exact source/identity/
+reservation/resource/permit/control/index/rawbody/page/harness comparisons and
+physical bookends; DECISION/ACK and unused buckets/slots must be entirely zero.
+Opaque NaN body retained without JSON decoding or normalization. Required
+external expectation binds actually observed terminal+STATUS and a pre-ARM
+output-root/five-harness-file inode inventory. Current endpoint does not retain
+that harness inode baseline; post-only reads cannot reconstruct acquisition
+timing. Collector explicitly leaves timing, full intermediate transcript, host
+placement, native/model capacity, adoption and two-host durability false.
+
+SOURCE ARITHMETIC CORRECTION: prior documentation5154464B Peer+RPC and6465184B
+including harness each overestimated100000B. Exact frozen formula gives
+Peer4263936B+RPC790528B+five262144B receipts=6365184B,39files/5checkpointdirs;
+output parent/launch/logs additional. Current endpoint proof corrected; original
+205ba368 contract retained unchanged. No cap understated, physical allocation
+changed or completed resource gate rerun. This is not new capacity acceptance.
+
+Next ROOT boundary: complete source-reviewed startup/controller capturing the
+baseline BEFORE ordinary ARM, actual runtime/exit/noOOM/stderr proof outside
+/out, and retained observed responses. Finish all ordinary/STATUS/refusal
+processes before SH-locked collector. Python-I-S-B endpoint invocation must
+explicitly pin a bootstrap adding only /audit; endpoint itself does not add
+the import path. Need a concrete bounded synthetic collector/endpoint invocation
+and fresh resource/runtime admission before execution. Spark2 f612 image load
+still NOT DONE/NOT ADMITTED; no full corrected launch or genuinev6 replay.
+Original timing FAILED/publication CLOSED; operational acceptance UNVERIFIED.
+
 ## 2026-10-18 — Docker input EOF and private caller guards VERIFIED
 
 Read research/historical-checkpoint-stdio-proof-2026-10-18.json and
@@ -62,7 +101,7 @@ reopen; bounded no-follow fd/path metadata; exact consumed-session refusal.
 Independent READONLY review found initial resource-pin, bounded-read and broad
 ValueError gaps; targeted corrections reviewed, NOT runtime/RED/GREEN claims.
 Optimized Python refused. Source AST passes; local Ruff unavailable/no lint.
-Tiny per-host actual future file arithmetic6465184B includes five preallocated
+Tiny per-host actual future file arithmetic6365184B includes five preallocated
 harness receipts; launch/bounded logs/metadata remain additional. No full native,
 model/account/horizon/adoption or actual two-host acceptance implied. Docker
 load remains NOT DONE; daemon temp/load resources unresolved. Next ROOT work:

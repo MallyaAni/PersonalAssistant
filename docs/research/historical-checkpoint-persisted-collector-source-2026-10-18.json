@@ -1,0 +1,107 @@
+{
+  "status": "REVIEWED_SOURCE_ONLY_NOT_EXECUTED",
+  "source_sha256": "6a99a1cdf6089fcc9a03c661c8daf338b18d6c048f8e3e9400d41406cffd97f8",
+  "source_bytes": 28158,
+  "profile": "CURRENT_f612_bfbcb6ec_a8c5083f",
+  "scope": "Standalone read-only collector for the exact tiny PREPARED-only infrastructure fixture. No new repository protocol/coordinator or actual host runtime admitted.",
+  "cli_shape_inert": [
+    "python",
+    "-I",
+    "-S",
+    "-B",
+    "/audit/collector.py",
+    "EXTERNAL_EXPECTATION_SHA256",
+    "COLLECTOR_SOURCE_SHA256"
+  ],
+  "expected_file": "/expected/acceptance.json",
+  "expectation_schema": [
+    "version",
+    "reservation",
+    "session",
+    "launch",
+    "identity",
+    "source_manifest",
+    "prearm_inventory",
+    "observed_terminal",
+    "observed_status"
+  ],
+  "expectation_version": "TINY_PREPARED_COLLECTOR/1",
+  "read_only_mounts_required": [
+    "smallsource:/audit",
+    "publicCURRENTfixture:/fixture",
+    "private_endpoint_output:/out",
+    "external_pinned_expectation:/expected"
+  ],
+  "reads": "Exactly declared tiny output namespace:40 files including launch,39 fixed reserved files,6 directories including output parent. Held no-follow directory fds, original source/file/directory identity bookends,64KiB reads, nonblocking shared RPC then Peer locks. No backend imports or arbitrary path from wire.",
+  "checks": [
+    "Exact CURRENT identity/map/writer/source pins and before/after physical source snapshots.",
+    "Actual source-defined peer/RPC inode resource digest and full exact permit/launch/root/control/session schemas.",
+    "Externally retained pre-ARM output root/five harness-file identities, with all eight file fields as exact decimal strings; timestamp changes allowed only because receipt writes legitimately change them.",
+    "Complete finite controls, genesis head banks, ARM/PREPARED witnesses, all64index buckets, five exact content references, opaque native NaN bytes and exact raw/leaf/root metadata.",
+    "DECISION/ACK and unused index/body/page slots entirely zero; no null-record substitution.",
+    "Ordinary terminal and STATUS match independently reconstructed expected controls and externally retained actual responses; consumed refusal matches unchanged state.",
+    "All five harness receipts, source snapshots and typed positive bounded RSS values. Metadata length/checksum/canonical JSON only; source-defined stale metadata padding retained without normalization."
+  ],
+  "resource_arithmetic": {
+    "peer_file_bytes": 4263936,
+    "rpc_file_bytes": 790528,
+    "harness_file_bytes": 1310720,
+    "reserved_file_bytes": 6365184,
+    "reserved_file_inodes": 39,
+    "checkpoint_directories": 5,
+    "output_parent_launch_logs_additional": true,
+    "previous_document_overestimate_bytes": 100000
+  },
+  "runtime_not_authorized_by_source": "Need reviewed full startup/controller, independent retained actual host/container/exit/stderr records, bounded source/runtime resources and a concrete synthetic invocation before tests; actual two-Spark path still requires Spark2 image/load admission. No endpoint run, fixture creation, collector import or tests performed at this boundary.",
+  "remaining_controller_obligations": [
+    "Capture all five harness inode identities before ordinary ARM and retain immutable external acquisition order/digest. Collector cannot establish acquisition timing from a later supplied object.",
+    "Retain actual observed wire responses if a complete intermediate transcript is claimed; current caller retains terminal only.",
+    "Keep all logs/runtime evidence outside /out; wait for every ordinary/STATUS/refusal process exit before shared-lock collection.",
+    "Independently validate actual host-key placement, image/container identity, resource isolation, exit/noOOM/stderr; declarations alone are not host proof.",
+    "For endpoint under Python-I-S-B, explicitly pin the import-path bootstrap that adds only /audit. Endpoint source itself does not add /audit; no silent site/environment fallback.",
+    "Cross-compare common root/references/rawSHA/length; peer witnesses and physical source/resource identities should differ. No DECISION/commit/adoption or unknownACK retry."
+  ],
+  "false_claims": [
+    "prearm_inventory_acquisition_timing_verified",
+    "complete_intermediate_wire_transcript_verified",
+    "actual_host_placement_verified",
+    "native_metadata_or_model_capacity_verified",
+    "two_host_durability_verified",
+    "owner_decision_or_adoption"
+  ],
+  "validation": "AST syntax and21purpose-comments checked. Independent existing worker reviewed entire exact505-line source and frozen helper mapping read-only; no concrete failing source boundary found. No imports, tests, fixture/runtime execution, Ruff claim or numerical/model/account acceptance.",
+  "diagram_impact": "NONE — unused standalone inspection source, no deployed architecture change",
+  "preserved_root_each_spark": "/home/animallya96/scratch/checkpoint-persisted-collector-source-20261018-v1",
+  "preservation": "Exclusive mode0700 roots and two mode0600 source/contract files on each host. Fsynced files/directories and read-back bytes/SHA match; no collector import, endpoint process, container creation, fixture or test execution. Existing pinned host keys on both hops; small source only.",
+  "preserved_contract_sha256": "0dc5899873e89d8f6be316f38ef2b74a47bcc5ff7d3cdd1d14af99348e402c4e",
+  "preserved_physical": {
+    "spark1": {
+      "collector.py": {
+        "inode": "46303511",
+        "bytes": "28158",
+        "mtime_ns": "1792284088108043273",
+        "ctime_ns": "1792284088108043273"
+      },
+      "contract.json": {
+        "inode": "46303512",
+        "bytes": "4784",
+        "mtime_ns": "1792284088113043304",
+        "ctime_ns": "1792284088113043304"
+      }
+    },
+    "spark2": {
+      "collector.py": {
+        "inode": "5265559",
+        "bytes": "28158",
+        "mtime_ns": "1792284089403429544",
+        "ctime_ns": "1792284089403429544"
+      },
+      "contract.json": {
+        "inode": "5265560",
+        "bytes": "4784",
+        "mtime_ns": "1792284089407429590",
+        "ctime_ns": "1792284089407429590"
+      }
+    }
+  }
+}

@@ -16,7 +16,8 @@
     "status",
     "refusal"
   ],
-  "resource_arithmetic": "Per host tiny default Peer+RPC5154464B plus five262144B preallocated harness receipts =6465184B. Launch file/bounded logs/metadata additional; source arithmetic only, no runtime or full-horizon capacity proof.",
+  "resource_arithmetic": "CORRECTED2026-10-18: per host fixed Peer4263936B+RPC790528B=5054464B; five262144B preallocated harness receipts add1310720B, total6365184B/39files/5checkpointdirs. Output parent/launch/bounded logs/metadata additional; source arithmetic only, no runtime or full-horizon capacity proof.",
+  "arithmetic_correction": "Previous copied5154464B/6465184B totals FAILED exact source arithmetic by overestimating100000B. Current source formula and independently reviewed collector agree; no cap understated or physical reservation changed, and no completed fixture repeated. Original source-stage contract205ba368 remains preserved unchanged as historical evidence.",
   "reviewed_source_corrections": [
     "Opened-file bounded/no-follow metadata reads with exact fd/path bookends excluding legitimate atime changes.",
     "Original external reservation schema/resources/identity/pins/full source snapshot compared on reopen.",
