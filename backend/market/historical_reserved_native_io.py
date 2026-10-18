@@ -73,8 +73,13 @@ class SyntheticNativeIO:
             'sources': sources(), 'trade_sha256': self.trade_sha256, 'trade_path': str(self.trade_path),
             'header_sha256': sha256((self.writer.root / 'header').read_bytes()).hexdigest(),
             'before': before, 'native_operation_adopted': False}
+        pool = nightly.store.blob_reservation
+        value['reserved_cas'] = None if pool is None else pool.arm(
+            operation=sha256(str(directory).encode()).hexdigest(), head=nightly.expected_head)
         legacy.write_once(directory / 'reserved-native-save.json', legacy.admitted.encoded(value))
         self.directory, self.saved, self.cursor = directory, [], deepcopy(before)
+        self.reserved_cas = value['reserved_cas']
+        self.cas_pool, self.cas_store = pool, nightly.store
 
     # Save only to the original workspace using the next preallocated native inode.
     def save(self, root, state):
@@ -88,6 +93,7 @@ class SyntheticNativeIO:
     # Bind each actual write to the original or last successfully completed cursor.
     def _save(self, root, state):
         self.guard()
+        self._lease()
         physical._require(self.directory is not None and Path(root) == self.writer.root / 'work',
                           'Explicit reserved native operation/root required')
         with self.writer._locked(shared=True):
@@ -107,13 +113,15 @@ class SyntheticNativeIO:
     # Return finite physical evidence while keeping local completion distinct from adoption.
     def evidence(self):
         self.guard()
+        self._lease()
         physical._require(not self.failed and self.directory is not None,
                           'Uncertain/unreserved operation has no evidence')
         with self.writer._locked(shared=True):
             physical._require(self.writer._control() == self.cursor, 'Reserved native evidence cursor differs')
         return {'schema': SCHEMA, 'reservation_sha256': sha256(
             (self.directory / 'reserved-native-save.json').read_bytes()).hexdigest(),
-            'saves': deepcopy(self.saved), 'native_operation_adopted': False}
+            'saves': deepcopy(self.saved), 'native_operation_adopted': False,
+            'reserved_cas': self.reserved_cas}
 
     # Observe explicit saves and policy calls without replacing paper.save_state.
     @contextmanager
@@ -129,6 +137,7 @@ class SyntheticNativeIO:
         # Reject changed ownership or hooks before observing any explicit native operation.
         def owned():
             self.guard()
+            self._lease()
             physical._require(not self.failed and legacy.LOCK.locked() and get_ident() == owner
                 and paper.save_state is self.writer.writer
                 and legacy.native.ReplayBroker._submit is submit
@@ -170,6 +179,19 @@ class SyntheticNativeIO:
             physical._require(not changed, 'Changed reserved observation bindings')
             self.guard()
 
+    # Refuse further native effects or fresh evidence once the exact CAS lease is uncertain.
+    def _lease(self):
+        if getattr(self, 'reserved_cas', None) is not None:
+            try:
+                physical._require(self.cas_store.blob_reservation is self.cas_pool,
+                                  'Original retained CAS pool required before native work')
+                _, group = self.cas_pool.group(self.reserved_cas, active=True)
+                physical._require(group['metadata_pending'] is None,
+                                  'Uncertain metadata lease; no further native work')
+            except BaseException:
+                self.failed = True
+                raise
+
 
 # Authenticate the separate narrow writer and this explicit composition implementation.
 def sources():
@@ -183,8 +205,8 @@ def validate(nightly, directory, evidence, native_contents, legacy, expected):
     value = legacy.admitted.decoded(raw)
     physical._require(type(value) is dict and set(value) == {'schema', 'identity', 'account',
         'writer_root', 'sources', 'trade_sha256', 'trade_path', 'header_sha256', 'before',
-        'native_operation_adopted'} and type(evidence) is dict and set(evidence) ==
-        {'schema', 'reservation_sha256', 'saves', 'native_operation_adopted'}
+        'native_operation_adopted', 'reserved_cas'} and type(evidence) is dict and set(evidence) ==
+        {'schema', 'reservation_sha256', 'saves', 'native_operation_adopted', 'reserved_cas'}
         and evidence['schema'] == value['schema'] == SCHEMA
         and expected == {**evidence, 'saves': []}
         and evidence['reservation_sha256'] == sha256(raw).hexdigest()
@@ -193,6 +215,12 @@ def validate(nightly, directory, evidence, native_contents, legacy, expected):
         and value['account'] == str(nightly.root)
         and Path(value['writer_root']) / 'work' == nightly.root,
         'Original synthetic reserved native evidence required')
+    physical._require(evidence['reserved_cas'] == value['reserved_cas'], 'Original CAS lease differs')
+    if value['reserved_cas'] is None:
+        physical._require(nightly.store.blob_reservation is None, 'Reserved CAS mode cannot downgrade')
+    else:
+        physical._require(nightly.store.blob_reservation is not None, 'Original reserved CAS binding required')
+        nightly.store.blob_reservation.group(value['reserved_cas'])
     trade_path = Path(value['trade_path'])
     physical._require(trade_path.stat().st_size <= physical.META
         and sha256(trade_path.read_bytes()).hexdigest() == value['trade_sha256'],
@@ -214,3 +242,21 @@ def validate(nightly, directory, evidence, native_contents, legacy, expected):
     expected = [(row['state']['sha256'], row['state']['length']) for row in evidence['saves']]
     physical._require(expected == list(native_contents), 'Reserved native saves/captures differ')
     return evidence
+
+
+# Seal only the original published result's reserved phase, including metadata-only recovery.
+def complete(nightly, declaration, result):
+    if declaration is not None and declaration['reserved_cas'] is not None:
+        physical._require(nightly.store.blob_reservation is not None, 'Original reserved CAS binding required')
+        nightly.store.blob_reservation.complete(declaration['reserved_cas'], result)
+
+
+# Validate pre-close bytes without allocating or publishing a duplicate Store component.
+def current_components(nightly, client, prior, checkpoint, legacy):
+    root = checkpoint.verify(prior['paper']['checkpoint'])
+    image = writer_module._image(paper.state_path(nightly.root))
+    physical._require((image['sha256'], image['length']) == (root['raw_sha256'], root['raw_bytes'])
+        and nightly.store.read_blob(prior['broker'], limit=legacy.codec.CAPS['bytes'])
+            == legacy.codec.encode(client, **nightly.pins()),
+        'Original reserved pre-close components differ')
+    return prior

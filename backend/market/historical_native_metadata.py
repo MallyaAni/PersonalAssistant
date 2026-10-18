@@ -35,6 +35,11 @@ def _authority(store, kind, producer_sha256):
 # Publish only native JSON chunks under an explicit per-descriptor aggregate bound.
 def capture(store, value, *, kind, producer_sha256, byte_limit=LIMIT):
     _authority(store, kind, producer_sha256)
+    if store.blob_reservation is not None:
+        from backend.market import historical_reserved_native_metadata
+
+        return historical_reserved_native_metadata.capture(store, value, kind=kind,
+            producer_sha256=producer_sha256, byte_limit=byte_limit)
     if type(byte_limit) is not int or not 0 < byte_limit <= LIMIT:
         raise ValueError("Native metadata remaining allowance required")
     if kind == "holding-decision" and (
@@ -86,6 +91,12 @@ def capture(store, value, *, kind, producer_sha256, byte_limit=LIMIT):
 # Authenticate finite metadata before reading any bounded opaque native chunks.
 def _declaration(store, reference, kind, producer_sha256):
     _authority(store, kind, producer_sha256)
+    if type(reference) is dict and reference.get('schema') == 'native-json-metadata/2':
+        from backend.market import historical_reserved_native_metadata
+
+        return historical_reserved_native_metadata._declaration(store, reference, kind, producer_sha256)
+    if store.blob_reservation is not None:
+        raise ValueError('Reserved Store requires native metadata schema2; no downgrade')
     if (type(reference) is not dict or set(reference) != KEYS
             or len(demand.encoded(reference)) > META_CAP
             or reference["schema"] != SCHEMA or reference["kind"] != kind

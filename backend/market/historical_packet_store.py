@@ -86,14 +86,15 @@ def _private(path, directory=False):
 
 # Persist one identity and authoritative head with indexed, crash-atomic appends.
 class Store:
-    # Open one private writer, refusing a different identity or stale pinned head.
-    def __init__(self, root, identity_sha256, expected_head, *, create=False):
+    # Open one private writer with an explicit reserved-CAS binding when persisted mode requires it.
+    def __init__(self, root, identity_sha256, expected_head, *, create=False, blob_reservation=None):
         self.root = Path(root)
         self.identity = registry.digest(identity_sha256)
         self.owner = uuid4().hex
         self.fault = None
         self.connection = None
         self._spools = {}
+        self._blob_reservation = None
         self._last_clock = None
         self._opened_clock = self._sample_clock()
         if create:
@@ -242,9 +243,39 @@ class Store:
                 "Actual UTC clock reversal on resume",
             )
             self._restart_quiet = not create and bool(rows)
+            reserved = self.connection.execute("SELECT raw FROM meta WHERE key='reserved_blob_header'").fetchone()
+            _require(blob_reservation is not None or (reserved is None
+                and not os.path.lexists(self.root / 'reserved-blobs')),
+                'Original explicit reserved CAS binding required; no downgrade')
+            if blob_reservation is not None:
+                self.bind_reserved_blobs(blob_reservation)
         except BaseException:
             self.close()
             raise
+
+    # Expose only the explicitly bound finite CAS, retaining ordinary mode when absent.
+    @property
+    def blob_reservation(self):
+        return self._blob_reservation
+
+    # Persist the exact pool header before selected native work, never adopt legacy blobs.
+    def bind_reserved_blobs(self, reservation):
+        from backend.market.historical_reserved_blob_store import ReservedCAS
+
+        _require(type(reservation) is ReservedCAS and reservation.identity == self.identity
+            and reservation.root == self.root / 'reserved-blobs'
+            and self._blob_reservation in (None, reservation), 'Exact same-Store reserved CAS required')
+        raw = demand.encoded({'schema': reservation.header['schema'], 'header_sha256': reservation.header_sha256})
+        row = self.connection.execute("SELECT raw FROM meta WHERE key='reserved_blob_header'").fetchone()
+        if row is None:
+            for name in ('blobs', 'incoming'):
+                with os.scandir(self.root / name) as entries:
+                    _require(next(entries, None) is None, 'Existing Store blob namespace cannot be adopted')
+            with self._transaction():
+                self.connection.execute("INSERT INTO meta VALUES ('reserved_blob_header',?)", (raw,))
+        else:
+            _require(row['raw'] == raw, 'Original reserved CAS header differs')
+        self._blob_reservation = reservation
 
     # Release process ownership without resolving any unfinished external operation.
     def close(self):
@@ -411,6 +442,8 @@ class Store:
         )
         if expected_sha256 is not None:
             registry.digest(expected_sha256)
+        if self._blob_reservation is not None:
+            return self._blob_reservation.put_stream(stream, limit=limit, expected_sha256=expected_sha256)
         temporary = self.root / "incoming" / uuid4().hex
         digest, total = hashlib.sha256(), 0
         descriptor = os.open(temporary, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
@@ -450,11 +483,14 @@ class Store:
 
     # Reject oversized or nonregular evidence before allocating its bytes.
     def read_blob(self, sha, *, limit):
-        path = self.root / "blobs" / registry.digest(sha)
+        registry.digest(sha)
         _require(
             type(limit) is int and 0 <= limit <= demand.BUDGET["bytes_per_group"],
             "Bounded blob read required",
         )
+        if self._blob_reservation is not None:
+            return self._blob_reservation.read_blob(sha, limit=limit)
+        path = self.root / "blobs" / sha
         descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
         with os.fdopen(descriptor, "rb") as stream:
             info = os.fstat(stream.fileno())
@@ -483,6 +519,7 @@ class Store:
 
     # Adopt exact sealed preallocated extents without copying into a new body file.
     def adopt_spool(self, spool, ref, *, expected_sha256, length):
+        _require(self._blob_reservation is None, 'Reserved CAS cannot adopt an external spool')
         self._spool_for(spool.attempt, spool)
         source = spool.resolve(ref, expected_sha256, length)
         registry.digest(expected_sha256)

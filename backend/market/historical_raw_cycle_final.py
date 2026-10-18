@@ -254,6 +254,8 @@ def _recover(nightly, *, submission_head, resolved, raw_checkpoint):
 # Reserve once, reconcile/save once and commit the prepared raw receipt without replay.
 def _finalize(nightly, client, *, submission_head, resolved, raw_checkpoint, native_io=None):
     guard(nightly, raw_checkpoint)
+    legacy.admitted.require(nightly.store.blob_reservation is None,
+                            'Reserved CAS Cycle stage admission incomplete; PAUSED before effects')
     token, directory = operation(nightly, submission_head)
     if directory.exists():
         return _recover(nightly, submission_head=submission_head, resolved=resolved,

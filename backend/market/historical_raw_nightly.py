@@ -85,6 +85,8 @@ class RawNightly(legacy.Nightly):
     def _reserve(self, phase, session, context, birth, previous, before, native_io=None):
         legacy.admitted.require(self.store.snapshot()['head'] == self.expected_head,
                                 'Stale raw lifecycle pre-head')
+        legacy.admitted.require(self.store.blob_reservation is None or native_io is not None,
+                                'Reserved Store requires pre-effect native IO lease')
         directory = self.operation(phase, session)
         directory.mkdir(mode=0o700)
         legacy.sync_directory(directory.parent)
@@ -122,6 +124,10 @@ class RawNightly(legacy.Nightly):
         references.extend((ref, 'holding-decision', decision_producer) for ref in value['decisions'])
         total = 0
         for reference, kind, source in references:
+            if self.store.blob_reservation is not None:
+                legacy.admitted.require(reference.get('schema') == 'native-json-metadata/2'
+                    and reference.get('reserved_cas') == value['detail']['reserved_native_io']['reserved_cas'],
+                    'Original reserved metadata phase required')
             metadata._declaration(self.store, reference, kind, source)
             total += reference['raw_bytes']
         legacy.admitted.require(total <= metadata.LIMIT, 'Raw lifecycle metadata aggregate bound')
@@ -201,6 +207,8 @@ class RawNightly(legacy.Nightly):
                   'publication_barrier': 'CLOSED', 'packet_pipeline_integrated': False}
         reference = legacy.put(self.store, legacy.admitted.encoded(record))
         legacy.write_once(directory / 'result.json', legacy.admitted.encoded({'schema': SCHEMA, 'receipt': reference}))
+        self.store._point('reserved_phase_result_written')
+        reserved_io.complete(self, operation['native_io'], reference)
         return reference
 
     # Read only physically reserved raw lifecycle receipts, never legacy or raw Cycle outcomes.
@@ -252,6 +260,7 @@ class RawNightly(legacy.Nightly):
         legacy.admitted.require(type(result) is dict and set(result) == {'schema', 'receipt'}
                                 and result['schema'] == SCHEMA, 'Raw lifecycle result marker required')
         self.read_lifecycle(result['receipt'], raw_checkpoint=raw_checkpoint)
+        reserved_io.complete(self, operation['native_io'], result['receipt'])
         return result['receipt']
 
     # Require a reserved raw birth rather than adopting a standalone metadata receipt.
@@ -337,7 +346,9 @@ class RawNightly(legacy.Nightly):
             legacy.admitted.require(birth_record['context_identity'] == prior['context_identity']
                 == legacy.context_identity(data) and birth_record['context'] == prior['context'] == context_hash
                 and (previous == birth or prior['birth'] == birth), 'Raw account/context lineage differs')
-            current = legacy.components(self.store, client, self.root, self.pins(), raw_checkpoint=raw_checkpoint)
+            current = (legacy.components(self.store, client, self.root, self.pins(), raw_checkpoint=raw_checkpoint)
+                if self.store.blob_reservation is None else reserved_io.current_components(
+                    self, client, prior['components'], raw_checkpoint, legacy))
             legacy.admitted.require(content(current, raw_checkpoint, self.store.identity)
                 == content(prior['components'], raw_checkpoint, self.store.identity), 'Raw pre-close components differ')
             if prior['phase'] == 'RAW_CYCLE_OUTCOME':
