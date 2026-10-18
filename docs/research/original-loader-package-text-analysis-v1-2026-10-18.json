@@ -1,0 +1,4389 @@
+{
+  "copied_sources_physical_bookends_equal": true,
+  "modules": [
+    {
+      "call_count": 280,
+      "declaration_count": 60,
+      "generated_source_expression_count": 27,
+      "imports": [
+        {
+          "ancestors": [],
+          "line": 1,
+          "source": "import re"
+        },
+        {
+          "ancestors": [],
+          "line": 2,
+          "source": "import sys"
+        },
+        {
+          "ancestors": [],
+          "line": 3,
+          "source": "import copy"
+        },
+        {
+          "ancestors": [],
+          "line": 4,
+          "source": "import types"
+        },
+        {
+          "ancestors": [],
+          "line": 5,
+          "source": "import inspect"
+        },
+        {
+          "ancestors": [],
+          "line": 6,
+          "source": "import keyword"
+        },
+        {
+          "ancestors": [],
+          "line": 7,
+          "source": "import functools"
+        },
+        {
+          "ancestors": [],
+          "line": 8,
+          "source": "import itertools"
+        },
+        {
+          "ancestors": [],
+          "line": 9,
+          "source": "import abc"
+        },
+        {
+          "ancestors": [],
+          "line": 10,
+          "source": "import _thread"
+        },
+        {
+          "ancestors": [],
+          "line": 11,
+          "source": "from types import FunctionType, GenericAlias"
+        }
+      ],
+      "module": "dataclasses",
+      "module_definition_call_syntax": [
+        {
+          "ancestors": [],
+          "function_syntax": "_HAS_DEFAULT_FACTORY_CLASS",
+          "line": 180
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "_MISSING_TYPE",
+          "line": 186
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "_KW_ONLY_TYPE",
+          "line": 192
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "types.MappingProxyType",
+          "line": 196
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "_FIELD_BASE",
+          "line": 204
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "_FIELD_BASE",
+          "line": 205
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "_FIELD_BASE",
+          "line": 206
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "re.compile",
+          "line": 223
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "frozenset",
+          "line": 227
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 295,
+              "name": "Field"
+            }
+          ],
+          "function_syntax": "classmethod",
+          "line": 356
+        }
+      ],
+      "selected": [
+        {
+          "ast_sha256": "48920a25e527051c2ed3669687b7f633e46d2fd7d6bc859775d1dbd9aa434a5e",
+          "kind": "FunctionDef",
+          "line": 449,
+          "name": "_create_fn",
+          "scope": "DISPLAY_ONLY_SOURCE_PROJECTION_NOT_CODETYPE_OR_EXECUTABLE",
+          "source_without_leading_docstring": "def _create_fn(name, args, body, *, globals=None, locals=None, return_type=MISSING):\n    if locals is None:\n        locals = {}\n    return_annotation = ''\n    if return_type is not MISSING:\n        locals['__dataclass_return_type__'] = return_type\n        return_annotation = '->__dataclass_return_type__'\n    args = ','.join(args)\n    body = '\\n'.join((f'  {b}' for b in body))\n    txt = f' def {name}({args}){return_annotation}:\\n{body}'\n    local_vars = ', '.join(locals.keys())\n    txt = f'def __create_fn__({local_vars}):\\n{txt}\\n return {name}'\n    ns = {}\n    exec(txt, globals, ns)\n    return ns['__create_fn__'](**locals)"
+        },
+        {
+          "ast_sha256": "7b58e6d3d630f2940a20330dbbfd984bc1fdaa3749d938569bcab810c8d792e5",
+          "kind": "FunctionDef",
+          "line": 921,
+          "name": "_process_class",
+          "scope": "DISPLAY_ONLY_SOURCE_PROJECTION_NOT_CODETYPE_OR_EXECUTABLE",
+          "source_without_leading_docstring": "def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen, match_args, kw_only, slots, weakref_slot):\n    fields = {}\n    if cls.__module__ in sys.modules:\n        globals = sys.modules[cls.__module__].__dict__\n    else:\n        globals = {}\n    setattr(cls, _PARAMS, _DataclassParams(init, repr, eq, order, unsafe_hash, frozen, match_args, kw_only, slots, weakref_slot))\n    any_frozen_base = False\n    has_dataclass_bases = False\n    for b in cls.__mro__[-1:0:-1]:\n        base_fields = getattr(b, _FIELDS, None)\n        if base_fields is not None:\n            has_dataclass_bases = True\n            for f in base_fields.values():\n                fields[f.name] = f\n            if getattr(b, _PARAMS).frozen:\n                any_frozen_base = True\n    cls_annotations = inspect.get_annotations(cls)\n    cls_fields = []\n    KW_ONLY_seen = False\n    dataclasses = sys.modules[__name__]\n    for name, type in cls_annotations.items():\n        if _is_kw_only(type, dataclasses) or (isinstance(type, str) and _is_type(type, cls, dataclasses, dataclasses.KW_ONLY, _is_kw_only)):\n            if KW_ONLY_seen:\n                raise TypeError(f'{name!r} is KW_ONLY, but KW_ONLY has already been specified')\n            KW_ONLY_seen = True\n            kw_only = True\n        else:\n            cls_fields.append(_get_field(cls, name, type, kw_only))\n    for f in cls_fields:\n        fields[f.name] = f\n        if isinstance(getattr(cls, f.name, None), Field):\n            if f.default is MISSING:\n                delattr(cls, f.name)\n            else:\n                setattr(cls, f.name, f.default)\n    for name, value in cls.__dict__.items():\n        if isinstance(value, Field) and (not name in cls_annotations):\n            raise TypeError(f'{name!r} is a field but has no type annotation')\n    if has_dataclass_bases:\n        if any_frozen_base and (not frozen):\n            raise TypeError('cannot inherit non-frozen dataclass from a frozen one')\n        if not any_frozen_base and frozen:\n            raise TypeError('cannot inherit frozen dataclass from a non-frozen one')\n    setattr(cls, _FIELDS, fields)\n    class_hash = cls.__dict__.get('__hash__', MISSING)\n    has_explicit_hash = not (class_hash is MISSING or (class_hash is None and '__eq__' in cls.__dict__))\n    if order and (not eq):\n        raise ValueError('eq must be true if order is true')\n    all_init_fields = [f for f in fields.values() if f._field_type in (_FIELD, _FIELD_INITVAR)]\n    std_init_fields, kw_only_init_fields = _fields_in_init_order(all_init_fields)\n    if init:\n        has_post_init = hasattr(cls, _POST_INIT_NAME)\n        _set_new_attribute(cls, '__init__', _init_fn(all_init_fields, std_init_fields, kw_only_init_fields, frozen, has_post_init, '__dataclass_self__' if 'self' in fields else 'self', globals, slots))\n    field_list = [f for f in fields.values() if f._field_type is _FIELD]\n    if repr:\n        flds = [f for f in field_list if f.repr]\n        _set_new_attribute(cls, '__repr__', _repr_fn(flds, globals))\n    if eq:\n        flds = [f for f in field_list if f.compare]\n        self_tuple = _tuple_str('self', flds)\n        other_tuple = _tuple_str('other', flds)\n        _set_new_attribute(cls, '__eq__', _cmp_fn('__eq__', '==', self_tuple, other_tuple, globals=globals))\n    if order:\n        flds = [f for f in field_list if f.compare]\n        self_tuple = _tuple_str('self', flds)\n        other_tuple = _tuple_str('other', flds)\n        for name, op in [('__lt__', '<'), ('__le__', '<='), ('__gt__', '>'), ('__ge__', '>=')]:\n            if _set_new_attribute(cls, name, _cmp_fn(name, op, self_tuple, other_tuple, globals=globals)):\n                raise TypeError(f'Cannot overwrite attribute {name} in class {cls.__name__}. Consider using functools.total_ordering')\n    if frozen:\n        for fn in _frozen_get_del_attr(cls, field_list, globals):\n            if _set_new_attribute(cls, fn.__name__, fn):\n                raise TypeError(f'Cannot overwrite attribute {fn.__name__} in class {cls.__name__}')\n    hash_action = _hash_action[bool(unsafe_hash), bool(eq), bool(frozen), has_explicit_hash]\n    if hash_action:\n        cls.__hash__ = hash_action(cls, field_list, globals)\n    if not getattr(cls, '__doc__'):\n        try:\n            text_sig = str(inspect.signature(cls)).replace(' -> None', '')\n        except (TypeError, ValueError):\n            text_sig = ''\n        cls.__doc__ = cls.__name__ + text_sig\n    if match_args:\n        _set_new_attribute(cls, '__match_args__', tuple((f.name for f in std_init_fields)))\n    if weakref_slot and (not slots):\n        raise TypeError('weakref_slot is True but slots is False')\n    if slots:\n        cls = _add_slots(cls, frozen, weakref_slot)\n    abc.update_abstractmethods(cls)\n    return cls"
+        }
+      ],
+      "source": {
+        "bytes": 62085,
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792325507447411560",
+          "st_dev": "66306",
+          "st_ino": "60582304",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325507447411560",
+          "st_nlink": "1",
+          "st_size": "62085",
+          "st_uid": "1000"
+        },
+        "sha256": "d242aea5fcf6408b1c1f622442f88f68b9526ce1f8bd2890d74a144677c427d9"
+      },
+      "source_AST_sha256": "c109b341a1712220f2e224991200926db4c623a6cbef87fba0b97e1e58cf6961"
+    },
+    {
+      "call_count": 73,
+      "declaration_count": 7,
+      "generated_source_expression_count": 2,
+      "imports": [
+        {
+          "ancestors": [],
+          "line": 85,
+          "source": "import os"
+        },
+        {
+          "ancestors": [],
+          "line": 86,
+          "source": "import sys"
+        },
+        {
+          "ancestors": [],
+          "line": 87,
+          "source": "import warnings"
+        },
+        {
+          "ancestors": [],
+          "line": 90,
+          "source": "from . import version"
+        },
+        {
+          "ancestors": [],
+          "line": 91,
+          "source": "from ._expired_attrs_2_0 import __expired_attributes__"
+        },
+        {
+          "ancestors": [],
+          "line": 92,
+          "source": "from ._globals import _CopyMode, _NoValue"
+        },
+        {
+          "ancestors": [],
+          "line": 93,
+          "source": "from .version import __version__"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 106,
+          "source": "from . import _distributor_init"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 119,
+          "source": "from . import _core"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 120,
+          "source": "from ._core import False_, ScalarType, True_, abs, absolute, acos, acosh, add, all, allclose, amax, amin, any, arange, arccos, arccosh, arcsin, arcsinh, arctan, arctan2, arctanh, argmax, argmin, argpartition, argsort, argwhere, around, array, array2string, array_equal, array_equiv, array_repr, array_str, asanyarray, asarray, ascontiguousarray, asfortranarray, asin, asinh, astype, atan, atan2, atanh, atleast_1d, atleast_2d, atleast_3d, base_repr, binary_repr, bitwise_and, bitwise_count, bitwise_invert, bitwise_left_shift, bitwise_not, bitwise_or, bitwise_right_shift, bitwise_xor, block, bool, bool_, broadcast, busday_count, busday_offset, busdaycalendar, byte, bytes_, can_cast, cbrt, cdouble, ceil, character, choose, clip, clongdouble, complex64, complex128, complexfloating, compress, concat, concatenate, conj, conjugate, convolve, copysign, copyto, correlate, cos, cosh, count_nonzero, cross, csingle, cumprod, cumsum, cumulative_prod, cumulative_sum, datetime64, datetime_as_string, datetime_data, deg2rad, degrees, diagonal, divide, divmod, dot, double, dtype, e, einsum, einsum_path, empty, empty_like, equal, errstate, euler_gamma, exp, exp2, expm1, fabs, finfo, flatiter, flatnonzero, flexible, float16, float32, float64, float_power, floating, floor, floor_divide, fmax, fmin, fmod, format_float_positional, format_float_scientific, frexp, from_dlpack, frombuffer, fromfile, fromfunction, fromiter, frompyfunc, fromstring, full, full_like, gcd, generic, geomspace, get_printoptions, getbufsize, geterr, geterrcall, greater, greater_equal, half, heaviside, hstack, hypot, identity, iinfo, indices, inexact, inf, inner, int8, int16, int32, int64, int_, intc, integer, intp, invert, is_busday, isclose, isdtype, isfinite, isfortran, isinf, isnan, isnat, isscalar, issubdtype, lcm, ldexp, left_shift, less, less_equal, lexsort, linspace, little_endian, log, log1p, log2, log10, logaddexp, logaddexp2, logical_and, logical_not, logical_or, logical_xor, logspace, long, longdouble, longlong, matmul, matrix_transpose, matvec, max, maximum, may_share_memory, mean, memmap, min, min_scalar_type, minimum, mod, modf, moveaxis, multiply, nan, ndarray, ndim, nditer, negative, nested_iters, newaxis, nextafter, nonzero, not_equal, number, object_, ones, ones_like, outer, partition, permute_dims, pi, positive, pow, power, printoptions, prod, promote_types, ptp, put, putmask, rad2deg, radians, ravel, recarray, reciprocal, record, remainder, repeat, require, reshape, resize, result_type, right_shift, rint, roll, rollaxis, round, sctypeDict, searchsorted, set_printoptions, setbufsize, seterr, seterrcall, shape, shares_memory, short, sign, signbit, signedinteger, sin, single, sinh, size, sort, spacing, sqrt, square, squeeze, stack, std, str_, subtract, sum, swapaxes, take, tan, tanh, tensordot, timedelta64, trace, transpose, true_divide, trunc, typecodes, ubyte, ufunc, uint, uint8, uint16, uint32, uint64, uintc, uintp, ulong, ulonglong, unsignedinteger, unstack, ushort, var, vdot, vecdot, vecmat, void, vstack, where, zeros, zeros_like"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 454,
+          "source": "from . import lib, matrixlib as _mat"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 455,
+          "source": "from .lib import scimath as emath"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 456,
+          "source": "from .lib._arraypad_impl import pad"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 457,
+          "source": "from .lib._arraysetops_impl import ediff1d, intersect1d, isin, setdiff1d, setxor1d, union1d, unique, unique_all, unique_counts, unique_inverse, unique_values"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 470,
+          "source": "from .lib._function_base_impl import angle, append, asarray_chkfinite, average, bartlett, bincount, blackman, copy, corrcoef, cov, delete, diff, digitize, extract, flip, gradient, hamming, hanning, i0, insert, interp, iterable, kaiser, median, meshgrid, percentile, piecewise, place, quantile, rot90, select, sinc, sort_complex, trapezoid, trim_zeros, unwrap, vectorize"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 509,
+          "source": "from .lib._histograms_impl import histogram, histogram_bin_edges, histogramdd"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 510,
+          "source": "from .lib._index_tricks_impl import c_, diag_indices, diag_indices_from, fill_diagonal, index_exp, ix_, mgrid, ndenumerate, ndindex, ogrid, r_, ravel_multi_index, s_, unravel_index"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 526,
+          "source": "from .lib._nanfunctions_impl import nanargmax, nanargmin, nancumprod, nancumsum, nanmax, nanmean, nanmedian, nanmin, nanpercentile, nanprod, nanquantile, nanstd, nansum, nanvar"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 542,
+          "source": "from .lib._npyio_impl import fromregex, genfromtxt, load, loadtxt, packbits, save, savetxt, savez, savez_compressed, unpackbits"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 554,
+          "source": "from .lib._polynomial_impl import poly, poly1d, polyadd, polyder, polydiv, polyfit, polyint, polymul, polysub, polyval, roots"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 567,
+          "source": "from .lib._shape_base_impl import apply_along_axis, apply_over_axes, array_split, column_stack, dsplit, dstack, expand_dims, hsplit, kron, put_along_axis, split, take_along_axis, tile, vsplit"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 583,
+          "source": "from .lib._stride_tricks_impl import broadcast_arrays, broadcast_shapes, broadcast_to"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 588,
+          "source": "from .lib._twodim_base_impl import diag, diagflat, eye, fliplr, flipud, histogram2d, mask_indices, tri, tril, tril_indices, tril_indices_from, triu, triu_indices, triu_indices_from, vander"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 605,
+          "source": "from .lib._type_check_impl import common_type, imag, iscomplex, iscomplexobj, isreal, isrealobj, mintypecode, nan_to_num, real, real_if_close, typename"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 618,
+          "source": "from .lib._ufunclike_impl import fix, isneginf, isposinf"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 619,
+          "source": "from .lib._utils_impl import get_include, info, show_runtime"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 620,
+          "source": "from .matrixlib import asmatrix, bmat, matrix"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 672,
+          "source": "from ._array_api_info import __array_namespace_info__"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "line": 782,
+          "source": "from numpy._pytesttester import PytestTester"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 108,
+              "name": null
+            }
+          ],
+          "line": 109,
+          "source": "from numpy.__config__ import show_config"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 700,
+              "name": "__getattr__"
+            }
+          ],
+          "line": 702,
+          "source": "import warnings"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 825,
+              "name": null
+            }
+          ],
+          "line": 826,
+          "source": "from . import exceptions"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 920,
+              "name": "_pyinstaller_hooks_dir"
+            }
+          ],
+          "line": 921,
+          "source": "from pathlib import Path"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 700,
+              "name": "__getattr__"
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 704,
+              "name": null
+            }
+          ],
+          "line": 705,
+          "source": "import numpy.linalg as linalg"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 700,
+              "name": "__getattr__"
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 704,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 707,
+              "name": null
+            }
+          ],
+          "line": 708,
+          "source": "import numpy.fft as fft"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 700,
+              "name": "__getattr__"
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 704,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 707,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 710,
+              "name": null
+            }
+          ],
+          "line": 711,
+          "source": "import numpy.dtypes as dtypes"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 700,
+              "name": "__getattr__"
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 704,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 707,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 710,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 713,
+              "name": null
+            }
+          ],
+          "line": 714,
+          "source": "import numpy.random as random"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 700,
+              "name": "__getattr__"
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 704,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 707,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 710,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 713,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 716,
+              "name": null
+            }
+          ],
+          "line": 717,
+          "source": "import numpy.polynomial as polynomial"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 700,
+              "name": "__getattr__"
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 704,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 707,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 710,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 713,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 716,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 719,
+              "name": null
+            }
+          ],
+          "line": 720,
+          "source": "import numpy.ma as ma"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 700,
+              "name": "__getattr__"
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 704,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 707,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 710,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 713,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 716,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 719,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 722,
+              "name": null
+            }
+          ],
+          "line": 723,
+          "source": "import numpy.ctypeslib as ctypeslib"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 700,
+              "name": "__getattr__"
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 704,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 707,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 710,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 713,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 716,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 719,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 722,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 725,
+              "name": null
+            }
+          ],
+          "line": 726,
+          "source": "import numpy.exceptions as exceptions"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 700,
+              "name": "__getattr__"
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 704,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 707,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 710,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 713,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 716,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 719,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 722,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 725,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 728,
+              "name": null
+            }
+          ],
+          "line": 729,
+          "source": "import numpy.testing as testing"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 700,
+              "name": "__getattr__"
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 704,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 707,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 710,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 713,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 716,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 719,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 722,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 725,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 728,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 731,
+              "name": null
+            }
+          ],
+          "line": 732,
+          "source": "import numpy.matlib as matlib"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 700,
+              "name": "__getattr__"
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 704,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 707,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 710,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 713,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 716,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 719,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 722,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 725,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 728,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 731,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 734,
+              "name": null
+            }
+          ],
+          "line": 735,
+          "source": "import numpy.f2py as f2py"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 700,
+              "name": "__getattr__"
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 704,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 707,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 710,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 713,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 716,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 719,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 722,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 725,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 728,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 731,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 734,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 737,
+              "name": null
+            }
+          ],
+          "line": 738,
+          "source": "import numpy.typing as typing"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 700,
+              "name": "__getattr__"
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 704,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 707,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 710,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 713,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 716,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 719,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 722,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 725,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 728,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 731,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 734,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 737,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 740,
+              "name": null
+            }
+          ],
+          "line": 741,
+          "source": "import numpy.rec as rec"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 700,
+              "name": "__getattr__"
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 704,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 707,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 710,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 713,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 716,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 719,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 722,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 725,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 728,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 731,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 734,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 737,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 740,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 743,
+              "name": null
+            }
+          ],
+          "line": 744,
+          "source": "import numpy.char as char"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 700,
+              "name": "__getattr__"
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 704,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 707,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 710,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 713,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 716,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 719,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 722,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 725,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 728,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 731,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 734,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 737,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 740,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 743,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 746,
+              "name": null
+            }
+          ],
+          "line": 747,
+          "source": "import numpy.core as core"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 700,
+              "name": "__getattr__"
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 704,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 707,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 710,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 713,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 716,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 719,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 722,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 725,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 728,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 731,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 734,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 737,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 740,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 743,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 746,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 749,
+              "name": null
+            }
+          ],
+          "line": 750,
+          "source": "import numpy.strings as strings"
+        }
+      ],
+      "module": "numpy",
+      "module_definition_call_syntax": [
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "sys.stderr.write",
+          "line": 103
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "list",
+          "line": 674
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "warnings.filterwarnings",
+          "line": 696
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "warnings.filterwarnings",
+          "line": 697
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "warnings.filterwarnings",
+          "line": 698
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "PytestTester",
+          "line": 783
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "_sanity_check",
+          "line": 809
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "blas_fpe_check",
+          "line": 871
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "_core.multiarray._set_madvise_hugepage",
+          "line": 904
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "_core.multiarray._multiarray_umath._reload_guard",
+          "line": 910
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "_msg.format",
+          "line": 659
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "hugepage_setup",
+          "line": 904
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "test",
+              "kind": "If",
+              "line": 913,
+              "name": null
+            }
+          ],
+          "function_syntax": "os.environ.get",
+          "line": 913
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 913,
+              "name": null
+            }
+          ],
+          "function_syntax": "warnings.warn",
+          "line": 914
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "For",
+              "line": 447,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 448,
+              "name": null
+            }
+          ],
+          "function_syntax": "getattr",
+          "line": 449
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "_specific_msg.format",
+          "line": 653
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "_specific_msg.format",
+          "line": 654
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "_specific_msg.format",
+          "line": 655
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "_int_extended_msg.format",
+          "line": 656
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 825,
+              "name": null
+            },
+            {
+              "child_field": "items",
+              "kind": "With",
+              "line": 827,
+              "name": null
+            }
+          ],
+          "function_syntax": "warnings.catch_warnings",
+          "line": 827
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 825,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "With",
+              "line": 827,
+              "name": null
+            }
+          ],
+          "function_syntax": "_mac_os_check",
+          "line": 828
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "handlers",
+              "kind": "Try",
+              "line": 108,
+              "name": null
+            },
+            {
+              "child_field": "test",
+              "kind": "If",
+              "line": 111,
+              "name": null
+            }
+          ],
+          "function_syntax": "isinstance",
+          "line": 111
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "handlers",
+              "kind": "Try",
+              "line": 108,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 111,
+              "name": null
+            }
+          ],
+          "function_syntax": "ImportError",
+          "line": 116
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "For",
+              "line": 447,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 448,
+              "name": null
+            }
+          ],
+          "function_syntax": "globals",
+          "line": 449
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "set",
+          "line": 691
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 825,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "With",
+              "line": 827,
+              "name": null
+            },
+            {
+              "child_field": "test",
+              "kind": "If",
+              "line": 831,
+              "name": null
+            }
+          ],
+          "function_syntax": "len",
+          "line": 831
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "set",
+          "line": 690
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "set",
+          "line": 689
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 825,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "With",
+              "line": 827,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 831,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "For",
+              "line": 832,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 833,
+              "name": null
+            }
+          ],
+          "function_syntax": "RuntimeError",
+          "line": 845
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "set",
+          "line": 688
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "set",
+          "line": 687
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "set",
+          "line": 686
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "set",
+          "line": 685
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "set",
+          "line": 684
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "set",
+          "line": 683
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "set",
+          "line": 682
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "set",
+          "line": 681
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "set",
+          "line": 680
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "set",
+          "line": 679
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "set",
+          "line": 678
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "set",
+          "line": 677
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 102,
+              "name": null
+            }
+          ],
+          "function_syntax": "set",
+          "line": 676
+        }
+      ],
+      "selected": [],
+      "source": {
+        "bytes": 25220,
+        "physical": {
+          "st_blocks": "56",
+          "st_ctime_ns": "1792325507526245273",
+          "st_dev": "66306",
+          "st_ino": "60582311",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325507526245273",
+          "st_nlink": "1",
+          "st_size": "25220",
+          "st_uid": "1000"
+        },
+        "sha256": "09295a80660f17925ae23765ce8cbd7ff7ceae968d5f2f89349f1cb74c0b9e11"
+      },
+      "source_AST_sha256": "5686139b5a9a008b3d4d689c1030712bbf27055de1a68a2a195e9caa979638a7"
+    },
+    {
+      "call_count": 13,
+      "declaration_count": 2,
+      "generated_source_expression_count": 0,
+      "imports": [
+        {
+          "ancestors": [],
+          "line": 42,
+          "source": "import importlib as _importlib"
+        },
+        {
+          "ancestors": [],
+          "line": 44,
+          "source": "from numpy import __version__ as __numpy_version__"
+        },
+        {
+          "ancestors": [],
+          "line": 56,
+          "source": "from scipy.version import version as __version__"
+        },
+        {
+          "ancestors": [],
+          "line": 60,
+          "source": "from . import _distributor_init"
+        },
+        {
+          "ancestors": [],
+          "line": 64,
+          "source": "from scipy._external.packaging_version.version import Version, parse"
+        },
+        {
+          "ancestors": [],
+          "line": 91,
+          "source": "from scipy._lib._testutils import PytestTester"
+        },
+        {
+          "ancestors": [],
+          "line": 118,
+          "source": "import os"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 47,
+              "name": null
+            }
+          ],
+          "line": 48,
+          "source": "from scipy.__config__ import show as show_config"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 68,
+              "name": null
+            }
+          ],
+          "line": 70,
+          "source": "import warnings"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 82,
+              "name": null
+            }
+          ],
+          "line": 83,
+          "source": "from scipy._lib._ccallback import LowLevelCallable"
+        }
+      ],
+      "module": "scipy",
+      "module_definition_call_syntax": [
+        {
+          "ancestors": [],
+          "function_syntax": "PytestTester",
+          "line": 92
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 68,
+              "name": null
+            }
+          ],
+          "function_syntax": "warnings.warn",
+          "line": 71
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "test",
+              "kind": "If",
+              "line": 119,
+              "name": null
+            }
+          ],
+          "function_syntax": "os.path.exists",
+          "line": 119
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 119,
+              "name": null
+            }
+          ],
+          "function_syntax": "submodules.remove",
+          "line": 120
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "handlers",
+              "kind": "Try",
+              "line": 47,
+              "name": null
+            }
+          ],
+          "function_syntax": "ImportError",
+          "line": 53
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "test",
+              "kind": "If",
+              "line": 68,
+              "name": null
+            }
+          ],
+          "function_syntax": "parse",
+          "line": 68
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "test",
+              "kind": "If",
+              "line": 68,
+              "name": null
+            }
+          ],
+          "function_syntax": "Version",
+          "line": 68
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "test",
+              "kind": "If",
+              "line": 68,
+              "name": null
+            }
+          ],
+          "function_syntax": "parse",
+          "line": 69
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "test",
+              "kind": "If",
+              "line": 68,
+              "name": null
+            }
+          ],
+          "function_syntax": "Version",
+          "line": 69
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "handlers",
+              "kind": "Try",
+              "line": 82,
+              "name": null
+            }
+          ],
+          "function_syntax": "ImportError",
+          "line": 88
+        }
+      ],
+      "selected": [],
+      "source": {
+        "bytes": 4193,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792325507606972582",
+          "st_dev": "66306",
+          "st_ino": "60582318",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325507606972582",
+          "st_nlink": "1",
+          "st_size": "4193",
+          "st_uid": "1000"
+        },
+        "sha256": "39ccae300a4739cc53719bd3b39ce3f8f66e736c6eb672006e338a4c5cc3dc76"
+      },
+      "source_AST_sha256": "5500f5fc3716e5651f7369c46d201554a6da06a61c81a9c008e18b339ce17141"
+    },
+    {
+      "call_count": 13,
+      "declaration_count": 3,
+      "generated_source_expression_count": 0,
+      "imports": [
+        {
+          "ancestors": [],
+          "line": 19,
+          "source": "import importlib as _importlib"
+        },
+        {
+          "ancestors": [],
+          "line": 20,
+          "source": "import logging"
+        },
+        {
+          "ancestors": [],
+          "line": 21,
+          "source": "import os"
+        },
+        {
+          "ancestors": [],
+          "line": 22,
+          "source": "import random"
+        },
+        {
+          "ancestors": [],
+          "line": 24,
+          "source": "from sklearn._config import config_context, get_config, set_config"
+        },
+        {
+          "ancestors": [],
+          "line": 69,
+          "source": "from sklearn import __check_build, _distributor_init"
+        },
+        {
+          "ancestors": [],
+          "line": 70,
+          "source": "from sklearn.base import clone"
+        },
+        {
+          "ancestors": [],
+          "line": 71,
+          "source": "from sklearn.utils._show_versions import show_versions"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 139,
+              "name": "setup_module"
+            }
+          ],
+          "line": 142,
+          "source": "import numpy as np"
+        }
+      ],
+      "module": "sklearn",
+      "module_definition_call_syntax": [
+        {
+          "ancestors": [],
+          "function_syntax": "logging.getLogger",
+          "line": 26
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "os.environ.setdefault",
+          "line": 56
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "os.environ.setdefault",
+          "line": 60
+        }
+      ],
+      "selected": [],
+      "source": {
+        "bytes": 4520,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792325507689446892",
+          "st_dev": "66306",
+          "st_ino": "60582325",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325507689446892",
+          "st_nlink": "1",
+          "st_size": "4520",
+          "st_uid": "1000"
+        },
+        "sha256": "66a78bb27706626c4cc8ef424a5479f6301204baacd85986e8002c16b751fef1"
+      },
+      "source_AST_sha256": "14dc076513c2498e57d9149053351eac108597f5503fc90050bf8a43c3b9189e"
+    },
+    {
+      "call_count": 326,
+      "declaration_count": 97,
+      "generated_source_expression_count": 36,
+      "imports": [
+        {
+          "ancestors": [],
+          "line": 14,
+          "source": "import os"
+        },
+        {
+          "ancestors": [],
+          "line": 15,
+          "source": "import re"
+        },
+        {
+          "ancestors": [],
+          "line": 16,
+          "source": "import sys"
+        },
+        {
+          "ancestors": [],
+          "line": 17,
+          "source": "import ctypes"
+        },
+        {
+          "ancestors": [],
+          "line": 18,
+          "source": "import itertools"
+        },
+        {
+          "ancestors": [],
+          "line": 19,
+          "source": "import textwrap"
+        },
+        {
+          "ancestors": [],
+          "line": 20,
+          "source": "from threading import Thread"
+        },
+        {
+          "ancestors": [],
+          "line": 21,
+          "source": "from typing import Callable, Literal, final"
+        },
+        {
+          "ancestors": [],
+          "line": 22,
+          "source": "import warnings"
+        },
+        {
+          "ancestors": [],
+          "line": 23,
+          "source": "from abc import ABC, abstractmethod"
+        },
+        {
+          "ancestors": [],
+          "line": 24,
+          "source": "from functools import lru_cache"
+        },
+        {
+          "ancestors": [],
+          "line": 25,
+          "source": "from contextlib import ContextDecorator"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 1675,
+              "name": "_main"
+            }
+          ],
+          "line": 1677,
+          "source": "import argparse"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 1675,
+              "name": "_main"
+            }
+          ],
+          "line": 1678,
+          "source": "import importlib"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 1675,
+              "name": "_main"
+            }
+          ],
+          "line": 1679,
+          "source": "import json"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 1675,
+              "name": "_main"
+            }
+          ],
+          "line": 1680,
+          "source": "import sys"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 950,
+              "name": "ThreadpoolController"
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 1280,
+              "name": "_find_libraries_on_windows"
+            }
+          ],
+          "line": 1296,
+          "source": "from ctypes.wintypes import MAX_PATH"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 950,
+              "name": "ThreadpoolController"
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 1334,
+              "name": "_setup_windows_module_apis"
+            }
+          ],
+          "line": 1336,
+          "source": "from ctypes.wintypes import BOOL, DWORD, HANDLE, HMODULE"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 950,
+              "name": "ThreadpoolController"
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 1371,
+              "name": "_snapshot_loaded_modules"
+            }
+          ],
+          "line": 1380,
+          "source": "from ctypes.wintypes import DWORD, HANDLE, MAX_PATH"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 950,
+              "name": "ThreadpoolController"
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 1442,
+              "name": "_resolve_module_filepath"
+            }
+          ],
+          "line": 1452,
+          "source": "from ctypes.wintypes import MAX_PATH"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 950,
+              "name": "ThreadpoolController"
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 1484,
+              "name": "_find_libraries_with_enum_process_modules_ex"
+            }
+          ],
+          "line": 1492,
+          "source": "from ctypes.wintypes import DWORD, HMODULE"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 950,
+              "name": "ThreadpoolController"
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 1528,
+              "name": "_find_libraries_pyodide"
+            },
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 1538,
+              "name": null
+            }
+          ],
+          "line": 1539,
+          "source": "from pyodide_js._module import LDSO"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 950,
+              "name": "ThreadpoolController"
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 1126,
+              "name": "_load_libraries"
+            },
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 1133,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 1134,
+              "name": null
+            }
+          ],
+          "line": 1135,
+          "source": "from ctypes.util import dllist"
+        }
+      ],
+      "module": "threadpoolctl",
+      "module_definition_call_syntax": [
+        {
+          "ancestors": [],
+          "function_syntax": "os.environ.setdefault",
+          "line": 48
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "list",
+          "line": 657
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "list",
+          "line": 659
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "decorator_list",
+              "kind": "FunctionDef",
+              "line": 686,
+              "name": "_realpath"
+            }
+          ],
+          "function_syntax": "lru_cache",
+          "line": 685
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "decorator_list",
+              "kind": "FunctionDef",
+              "line": 692,
+              "name": "threadpool_info"
+            }
+          ],
+          "function_syntax": "_format_docstring",
+          "line": 691
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "decorator_list",
+              "kind": "ClassDef",
+              "line": 895,
+              "name": "threadpool_limits"
+            }
+          ],
+          "function_syntax": "_format_docstring",
+          "line": 890
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 267,
+              "name": "OpenBLASController"
+            }
+          ],
+          "function_syntax": "tuple",
+          "line": 283
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "set",
+          "line": 657
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "set",
+          "line": 660
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 950,
+              "name": "ThreadpoolController"
+            }
+          ],
+          "function_syntax": "dict",
+          "line": 963
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 950,
+              "name": "ThreadpoolController"
+            },
+            {
+              "child_field": "decorator_list",
+              "kind": "FunctionDef",
+              "line": 1034,
+              "name": "limit"
+            }
+          ],
+          "function_syntax": "_format_docstring",
+          "line": 1029
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 950,
+              "name": "ThreadpoolController"
+            },
+            {
+              "child_field": "decorator_list",
+              "kind": "FunctionDef",
+              "line": 1087,
+              "name": "wrap"
+            }
+          ],
+          "function_syntax": "_format_docstring",
+          "line": 1082
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "If",
+              "line": 1713,
+              "name": null
+            }
+          ],
+          "function_syntax": "_main",
+          "line": 1714
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "decorator_list",
+              "kind": "FunctionDef",
+              "line": 692,
+              "name": "threadpool_info"
+            }
+          ],
+          "function_syntax": "list",
+          "line": 691
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "decorator_list",
+              "kind": "ClassDef",
+              "line": 895,
+              "name": "threadpool_limits"
+            }
+          ],
+          "function_syntax": "', '.join",
+          "line": 891
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "decorator_list",
+              "kind": "ClassDef",
+              "line": 895,
+              "name": "threadpool_limits"
+            }
+          ],
+          "function_syntax": "', '.join",
+          "line": 892
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "decorator_list",
+              "kind": "ClassDef",
+              "line": 895,
+              "name": "threadpool_limits"
+            }
+          ],
+          "function_syntax": "', '.join",
+          "line": 893
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 950,
+              "name": "ThreadpoolController"
+            },
+            {
+              "child_field": "decorator_list",
+              "kind": "FunctionDef",
+              "line": 1034,
+              "name": "limit"
+            }
+          ],
+          "function_syntax": "', '.join",
+          "line": 1030
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 950,
+              "name": "ThreadpoolController"
+            },
+            {
+              "child_field": "decorator_list",
+              "kind": "FunctionDef",
+              "line": 1034,
+              "name": "limit"
+            }
+          ],
+          "function_syntax": "', '.join",
+          "line": 1031
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 950,
+              "name": "ThreadpoolController"
+            },
+            {
+              "child_field": "decorator_list",
+              "kind": "FunctionDef",
+              "line": 1034,
+              "name": "limit"
+            }
+          ],
+          "function_syntax": "', '.join",
+          "line": 1032
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 950,
+              "name": "ThreadpoolController"
+            },
+            {
+              "child_field": "decorator_list",
+              "kind": "FunctionDef",
+              "line": 1087,
+              "name": "wrap"
+            }
+          ],
+          "function_syntax": "', '.join",
+          "line": 1083
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 950,
+              "name": "ThreadpoolController"
+            },
+            {
+              "child_field": "decorator_list",
+              "kind": "FunctionDef",
+              "line": 1087,
+              "name": "wrap"
+            }
+          ],
+          "function_syntax": "', '.join",
+          "line": 1084
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 950,
+              "name": "ThreadpoolController"
+            },
+            {
+              "child_field": "decorator_list",
+              "kind": "FunctionDef",
+              "line": 1087,
+              "name": "wrap"
+            }
+          ],
+          "function_syntax": "', '.join",
+          "line": 1085
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 267,
+              "name": "OpenBLASController"
+            },
+            {
+              "child_field": "generators",
+              "kind": "GeneratorExp",
+              "line": 283,
+              "name": null
+            }
+          ],
+          "function_syntax": "itertools.product",
+          "line": 285
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 950,
+              "name": "ThreadpoolController"
+            },
+            {
+              "child_field": "decorator_list",
+              "kind": "FunctionDef",
+              "line": 1034,
+              "name": "limit"
+            },
+            {
+              "child_field": "elt",
+              "kind": "GeneratorExp",
+              "line": 1030,
+              "name": null
+            }
+          ],
+          "function_syntax": "'\"{}\"'.format",
+          "line": 1030
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 950,
+              "name": "ThreadpoolController"
+            },
+            {
+              "child_field": "decorator_list",
+              "kind": "FunctionDef",
+              "line": 1087,
+              "name": "wrap"
+            },
+            {
+              "child_field": "elt",
+              "kind": "GeneratorExp",
+              "line": 1083,
+              "name": null
+            }
+          ],
+          "function_syntax": "'\"{}\"'.format",
+          "line": 1083
+        }
+      ],
+      "selected": [],
+      "source": {
+        "bytes": 67710,
+        "physical": {
+          "st_blocks": "136",
+          "st_ctime_ns": "1792325507769741781",
+          "st_dev": "66306",
+          "st_ino": "60582332",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325507769741781",
+          "st_nlink": "1",
+          "st_size": "67710",
+          "st_uid": "1000"
+        },
+        "sha256": "e5f119e394193e206655bec4b993ef0bb40b0fbb2f22c92bd5b2d70a622bb518"
+      },
+      "source_AST_sha256": "bef7801b5cdb73dc85c5d387c0ab97c8d18e20493f8e73d5a3143d1d2260dae6"
+    },
+    {
+      "call_count": 94,
+      "declaration_count": 17,
+      "generated_source_expression_count": 0,
+      "imports": [
+        {
+          "ancestors": [],
+          "line": 32,
+          "source": "import importlib as _importlib"
+        },
+        {
+          "ancestors": [],
+          "line": 33,
+          "source": "import os as _os"
+        },
+        {
+          "ancestors": [],
+          "line": 34,
+          "source": "import platform as _platform"
+        },
+        {
+          "ancestors": [],
+          "line": 35,
+          "source": "import sys as _sys"
+        },
+        {
+          "ancestors": [],
+          "line": 59,
+          "source": "from pyarrow.lib import BuildInfo, CppBuildInfo, RuntimeInfo, set_timezone_db_path, MonthDayNano, VersionInfo, build_info, cpp_build_info, cpp_version, cpp_version_info, runtime_info, cpu_count, set_cpu_count, enable_signal_handlers, io_thread_count, is_opentelemetry_enabled, set_io_thread_count"
+        },
+        {
+          "ancestors": [],
+          "line": 154,
+          "source": "from pyarrow.lib import null, bool_, int8, int16, int32, int64, uint8, uint16, uint32, uint64, time32, time64, timestamp, date32, date64, duration, month_day_nano_interval, float16, float32, float64, binary, string, utf8, binary_view, string_view, large_binary, large_string, large_utf8, decimal32, decimal64, decimal128, decimal256, list_, large_list, list_view, large_list_view, map_, struct, union, sparse_union, dense_union, dictionary, run_end_encoded, bool8, fixed_shape_tensor, json_, opaque, uuid, field, type_for_alias, DataType, DictionaryType, StructType, ListType, LargeListType, FixedSizeListType, ListViewType, LargeListViewType, MapType, UnionType, SparseUnionType, DenseUnionType, TimestampType, Time32Type, Time64Type, DurationType, FixedSizeBinaryType, Decimal32Type, Decimal64Type, Decimal128Type, Decimal256Type, BaseExtensionType, ExtensionType, RunEndEncodedType, Bool8Type, FixedShapeTensorType, JsonType, OpaqueType, UuidType, UnknownExtensionType, register_extension_type, unregister_extension_type, DictionaryMemo, KeyValueMetadata, Field, Schema, schema, unify_schemas, Array, Tensor, array, chunked_array, record_batch, nulls, repeat, SparseCOOTensor, SparseCSRMatrix, SparseCSCMatrix, SparseCSFTensor, infer_type, from_numpy_dtype, arange, NullArray, NumericArray, IntegerArray, FloatingPointArray, BooleanArray, Int8Array, UInt8Array, Int16Array, UInt16Array, Int32Array, UInt32Array, Int64Array, UInt64Array, HalfFloatArray, FloatArray, DoubleArray, ListArray, LargeListArray, FixedSizeListArray, ListViewArray, LargeListViewArray, MapArray, UnionArray, BinaryArray, StringArray, LargeBinaryArray, LargeStringArray, BinaryViewArray, StringViewArray, FixedSizeBinaryArray, DictionaryArray, Date32Array, Date64Array, TimestampArray, Time32Array, Time64Array, DurationArray, MonthDayNanoIntervalArray, Decimal32Array, Decimal64Array, Decimal128Array, Decimal256Array, StructArray, ExtensionArray, RunEndEncodedArray, Bool8Array, FixedShapeTensorArray, JsonArray, OpaqueArray, UuidArray, scalar, NA, _NULL as NULL, Scalar, NullScalar, BooleanScalar, Int8Scalar, Int16Scalar, Int32Scalar, Int64Scalar, UInt8Scalar, UInt16Scalar, UInt32Scalar, UInt64Scalar, HalfFloatScalar, FloatScalar, DoubleScalar, Decimal32Scalar, Decimal64Scalar, Decimal128Scalar, Decimal256Scalar, ListScalar, LargeListScalar, FixedSizeListScalar, ListViewScalar, LargeListViewScalar, Date32Scalar, Date64Scalar, Time32Scalar, Time64Scalar, TimestampScalar, DurationScalar, MonthDayNanoIntervalScalar, BinaryScalar, LargeBinaryScalar, BinaryViewScalar, StringScalar, LargeStringScalar, StringViewScalar, FixedSizeBinaryScalar, DictionaryScalar, MapScalar, StructScalar, UnionScalar, RunEndEncodedScalar, Bool8Scalar, ExtensionScalar, FixedShapeTensorScalar, JsonScalar, OpaqueScalar, UuidScalar"
+        },
+        {
+          "ancestors": [],
+          "line": 238,
+          "source": "from pyarrow.lib import DeviceAllocationType, Device, MemoryManager, default_cpu_memory_manager"
+        },
+        {
+          "ancestors": [],
+          "line": 241,
+          "source": "from pyarrow.lib import Buffer, ResizableBuffer, foreign_buffer, py_buffer, Codec, compress, decompress, allocate_buffer"
+        },
+        {
+          "ancestors": [],
+          "line": 244,
+          "source": "from pyarrow.lib import MemoryPool, LoggingMemoryPool, ProxyMemoryPool, total_allocated_bytes, set_memory_pool, default_memory_pool, system_memory_pool, jemalloc_memory_pool, mimalloc_memory_pool, logging_memory_pool, proxy_memory_pool, log_memory_allocations, jemalloc_set_decay_ms, supported_memory_backends"
+        },
+        {
+          "ancestors": [],
+          "line": 253,
+          "source": "from pyarrow.lib import NativeFile, PythonFile, BufferedInputStream, BufferedOutputStream, CacheOptions, CompressedInputStream, CompressedOutputStream, TransformInputStream, transcoding_input_stream, FixedSizeBufferWriter, BufferReader, BufferOutputStream, OSFile, MemoryMappedFile, memory_map, create_memory_map, MockOutputStream, input_stream, output_stream, have_libhdfs"
+        },
+        {
+          "ancestors": [],
+          "line": 264,
+          "source": "from pyarrow.lib import ChunkedArray, RecordBatch, Table, table, concat_arrays, concat_tables, TableGroupBy, RecordBatchReader, concat_batches"
+        },
+        {
+          "ancestors": [],
+          "line": 269,
+          "source": "from pyarrow.lib import ArrowCancelled, ArrowCapacityError, ArrowException, ArrowKeyError, ArrowIndexError, ArrowInvalid, ArrowIOError, ArrowMemoryError, ArrowNotImplementedError, ArrowTypeError, ArrowSerializationError"
+        },
+        {
+          "ancestors": [],
+          "line": 281,
+          "source": "from pyarrow.ipc import serialize_pandas, deserialize_pandas"
+        },
+        {
+          "ancestors": [],
+          "line": 282,
+          "source": "import pyarrow.ipc as ipc"
+        },
+        {
+          "ancestors": [],
+          "line": 284,
+          "source": "import pyarrow.types as types"
+        },
+        {
+          "ancestors": [],
+          "line": 290,
+          "source": "from pyarrow.util import _deprecate_api, _deprecate_class"
+        },
+        {
+          "ancestors": [],
+          "line": 294,
+          "source": "from pyarrow.ipc import Message, MessageReader, MetadataVersion, RecordBatchFileReader, RecordBatchFileWriter, RecordBatchStreamReader, RecordBatchStreamWriter"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 37,
+              "name": null
+            }
+          ],
+          "line": 38,
+          "source": "from ._generated_version import version as __version__"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 303,
+              "name": "get_include"
+            }
+          ],
+          "line": 311,
+          "source": "from pyarrow import lib as _lib"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 319,
+              "name": "_has_pkg_config"
+            }
+          ],
+          "line": 320,
+          "source": "import subprocess"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 328,
+              "name": "_read_pkg_config_variable"
+            }
+          ],
+          "line": 329,
+          "source": "import subprocess"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 347,
+              "name": "create_library_symlinks"
+            }
+          ],
+          "line": 362,
+          "source": "import glob"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 390,
+              "name": "get_library_dirs"
+            }
+          ],
+          "line": 398,
+          "source": "from pyarrow import lib as _lib"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 97,
+              "name": "_filesystem_is_available"
+            },
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 98,
+              "name": null
+            }
+          ],
+          "line": 99,
+          "source": "import pyarrow.fs"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "handlers",
+              "kind": "Try",
+              "line": 37,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 41,
+              "name": null
+            }
+          ],
+          "line": 42,
+          "source": "import setuptools_scm"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "handlers",
+              "kind": "Try",
+              "line": 37,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 41,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 45,
+              "name": "parse_git"
+            }
+          ],
+          "line": 50,
+          "source": "from setuptools_scm.git import parse"
+        }
+      ],
+      "module": "pyarrow",
+      "module_definition_call_syntax": [
+        {
+          "ancestors": [
+            {
+              "child_field": "handlers",
+              "kind": "Try",
+              "line": 37,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 41,
+              "name": null
+            }
+          ],
+          "function_syntax": "setuptools_scm.get_version",
+          "line": 54
+        }
+      ],
+      "selected": [],
+      "source": {
+        "bytes": 19173,
+        "physical": {
+          "st_blocks": "40",
+          "st_ctime_ns": "1792325507849359020",
+          "st_dev": "66306",
+          "st_ino": "60582339",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325507849359020",
+          "st_nlink": "1",
+          "st_size": "19173",
+          "st_uid": "1000"
+        },
+        "sha256": "04ef85e330eb3cda057b5f4f8e9c06891536bf06d7b26341d392153ecaa861e2"
+      },
+      "source_AST_sha256": "2b830e0b165444a88f4626160a3e553e9ed6a57b0b66fded9ea9a3c6e9ed40e7"
+    },
+    {
+      "call_count": 0,
+      "declaration_count": 0,
+      "generated_source_expression_count": 0,
+      "imports": [
+        {
+          "ancestors": [],
+          "line": 20,
+          "source": "from .core import *"
+        }
+      ],
+      "module": "pyarrow.parquet",
+      "module_definition_call_syntax": [],
+      "selected": [],
+      "source": {
+        "bytes": 822,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792325507930218921",
+          "st_dev": "66306",
+          "st_ino": "60582346",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325507930218921",
+          "st_nlink": "1",
+          "st_size": "822",
+          "st_uid": "1000"
+        },
+        "sha256": "e16eb809bbf0bceeb4b46e7c9df36dc82c0c5427ee3ee9adbbcda9fa48863da1"
+      },
+      "source_AST_sha256": "213fa84a0680fbcd3b5ed15a6aaf212bd9f0694dcdd11967829de9a10b4d7f30"
+    },
+    {
+      "call_count": 191,
+      "declaration_count": 55,
+      "generated_source_expression_count": 6,
+      "imports": [
+        {
+          "ancestors": [],
+          "line": 19,
+          "source": "from collections import defaultdict"
+        },
+        {
+          "ancestors": [],
+          "line": 20,
+          "source": "from contextlib import nullcontext"
+        },
+        {
+          "ancestors": [],
+          "line": 21,
+          "source": "from functools import reduce"
+        },
+        {
+          "ancestors": [],
+          "line": 23,
+          "source": "import inspect"
+        },
+        {
+          "ancestors": [],
+          "line": 24,
+          "source": "import json"
+        },
+        {
+          "ancestors": [],
+          "line": 25,
+          "source": "import os"
+        },
+        {
+          "ancestors": [],
+          "line": 26,
+          "source": "import re"
+        },
+        {
+          "ancestors": [],
+          "line": 27,
+          "source": "import operator"
+        },
+        {
+          "ancestors": [],
+          "line": 29,
+          "source": "import pyarrow as pa"
+        },
+        {
+          "ancestors": [],
+          "line": 39,
+          "source": "from pyarrow._parquet import ParquetReader, Statistics, FileMetaData, RowGroupMetaData, ColumnChunkMetaData, ParquetSchema, ColumnSchema, ParquetLogicalType, FileEncryptionProperties, FileDecryptionProperties, SortingColumn"
+        },
+        {
+          "ancestors": [],
+          "line": 47,
+          "source": "from pyarrow.fs import LocalFileSystem, FileType, _resolve_filesystem_and_path, _ensure_filesystem"
+        },
+        {
+          "ancestors": [],
+          "line": 49,
+          "source": "from pyarrow.util import guid, _is_path_like, _stringify_path, _deprecate_api"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 31,
+              "name": null
+            }
+          ],
+          "line": 32,
+          "source": "import pyarrow._parquet as _parquet"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 134,
+              "name": "filters_to_expression"
+            }
+          ],
+          "line": 157,
+          "source": "import pyarrow.dataset as ds"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 2121,
+              "name": "write_to_dataset"
+            }
+          ],
+          "line": 2257,
+          "source": "import pyarrow.dataset as ds"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 1322,
+              "name": "ParquetDataset"
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 1387,
+              "name": "__init__"
+            }
+          ],
+          "line": 1396,
+          "source": "import pyarrow.dataset as ds"
+        }
+      ],
+      "module": "pyarrow.parquet.core",
+      "module_definition_call_syntax": [
+        {
+          "ancestors": [],
+          "function_syntax": "_deprecate_api",
+          "line": 199
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "re.compile",
+          "line": 714
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "_read_table_docstring.format",
+          "line": 1968
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "_read_table_docstring.format",
+          "line": 1984
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "'\\n'.join",
+          "line": 1970
+        },
+        {
+          "ancestors": [],
+          "function_syntax": "'\\n'.join",
+          "line": 1987
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "handlers",
+              "kind": "Try",
+              "line": 31,
+              "name": null
+            }
+          ],
+          "function_syntax": "ImportError",
+          "line": 34
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "handlers",
+              "kind": "Try",
+              "line": 31,
+              "name": null
+            }
+          ],
+          "function_syntax": "str",
+          "line": 36
+        }
+      ],
+      "selected": [
+        {
+          "ast_sha256": "053e6df44f7911072f34130988528c01beac06b68fdc98da361e65b3ff35cb89",
+          "kind": "FunctionDef",
+          "line": 1884,
+          "name": "read_table",
+          "scope": "DISPLAY_ONLY_SOURCE_PROJECTION_NOT_CODETYPE_OR_EXECUTABLE",
+          "source_without_leading_docstring": "def read_table(source, *, columns=None, use_threads=True, schema=None, use_pandas_metadata=False, read_dictionary=None, binary_type=None, list_type=None, memory_map=False, buffer_size=0, partitioning='hive', filesystem=None, filters=None, ignore_prefixes=None, pre_buffer=True, coerce_int96_timestamp_unit=None, decryption_properties=None, thrift_string_size_limit=None, thrift_container_size_limit=None, page_checksum_verification=False, arrow_extensions_enabled=True):\n    try:\n        dataset = ParquetDataset(source, schema=schema, filesystem=filesystem, partitioning=partitioning, memory_map=memory_map, read_dictionary=read_dictionary, binary_type=binary_type, list_type=list_type, buffer_size=buffer_size, filters=filters, ignore_prefixes=ignore_prefixes, pre_buffer=pre_buffer, coerce_int96_timestamp_unit=coerce_int96_timestamp_unit, decryption_properties=decryption_properties, thrift_string_size_limit=thrift_string_size_limit, thrift_container_size_limit=thrift_container_size_limit, page_checksum_verification=page_checksum_verification, arrow_extensions_enabled=arrow_extensions_enabled)\n    except ImportError:\n        if filters is not None:\n            raise ValueError(\"the 'filters' keyword is not supported when the pyarrow.dataset module is not available\")\n        if partitioning != 'hive':\n            raise ValueError(\"the 'partitioning' keyword is not supported when the pyarrow.dataset module is not available\")\n        if schema is not None:\n            raise ValueError(\"the 'schema' argument is not supported when the pyarrow.dataset module is not available\")\n        if isinstance(source, list):\n            raise ValueError(\"the 'source' argument cannot be a list of files when the pyarrow.dataset module is not available\")\n        filesystem, path = _resolve_filesystem_and_path(source, filesystem)\n        if filesystem is not None:\n            if not filesystem.get_file_info(path).is_file:\n                raise ValueError(\"the 'source' argument should be an existing parquet file and not a directory when the pyarrow.dataset module is not available\")\n            source = filesystem.open_input_file(path)\n        dataset = ParquetFile(source, read_dictionary=read_dictionary, binary_type=binary_type, list_type=list_type, memory_map=memory_map, buffer_size=buffer_size, pre_buffer=pre_buffer, coerce_int96_timestamp_unit=coerce_int96_timestamp_unit, decryption_properties=decryption_properties, thrift_string_size_limit=thrift_string_size_limit, thrift_container_size_limit=thrift_container_size_limit, page_checksum_verification=page_checksum_verification)\n    return dataset.read(columns=columns, use_threads=use_threads, use_pandas_metadata=use_pandas_metadata)"
+        },
+        {
+          "ast_sha256": "7c0c4bbd8a834ac35b5723d526323984ab080ceb3a61231bbd36eddabebee28b",
+          "kind": "FunctionDef",
+          "line": 314,
+          "name": "ParquetFile.__init__",
+          "scope": "DISPLAY_ONLY_SOURCE_PROJECTION_NOT_CODETYPE_OR_EXECUTABLE",
+          "source_without_leading_docstring": "def __init__(self, source, *, metadata=None, common_metadata=None, read_dictionary=None, binary_type=None, list_type=None, memory_map=False, buffer_size=0, pre_buffer=True, coerce_int96_timestamp_unit=None, decryption_properties=None, thrift_string_size_limit=None, thrift_container_size_limit=None, filesystem=None, page_checksum_verification=False, arrow_extensions_enabled=True):\n    self._close_source = getattr(source, 'closed', True)\n    filesystem, source = _resolve_filesystem_and_path(source, filesystem, memory_map=memory_map)\n    if filesystem is not None:\n        source = filesystem.open_input_file(source)\n        self._close_source = True\n    self.reader = ParquetReader()\n    self.reader.open(source, use_memory_map=memory_map, buffer_size=buffer_size, pre_buffer=pre_buffer, read_dictionary=read_dictionary, metadata=metadata, binary_type=binary_type, list_type=list_type, coerce_int96_timestamp_unit=coerce_int96_timestamp_unit, decryption_properties=decryption_properties, thrift_string_size_limit=thrift_string_size_limit, thrift_container_size_limit=thrift_container_size_limit, page_checksum_verification=page_checksum_verification, arrow_extensions_enabled=arrow_extensions_enabled)\n    self.common_metadata = common_metadata\n    self._nested_paths_by_prefix = self._build_nested_paths()"
+        },
+        {
+          "ast_sha256": "4e7a9880a58060123ef62346b729742f92c9efff89511b79e519b2f956fb9bd9",
+          "kind": "FunctionDef",
+          "line": 1387,
+          "name": "ParquetDataset.__init__",
+          "scope": "DISPLAY_ONLY_SOURCE_PROJECTION_NOT_CODETYPE_OR_EXECUTABLE",
+          "source_without_leading_docstring": "def __init__(self, path_or_paths, filesystem=None, schema=None, *, filters=None, read_dictionary=None, binary_type=None, list_type=None, memory_map=False, buffer_size=None, partitioning='hive', ignore_prefixes=None, pre_buffer=True, coerce_int96_timestamp_unit=None, decryption_properties=None, thrift_string_size_limit=None, thrift_container_size_limit=None, page_checksum_verification=False, arrow_extensions_enabled=True):\n    import pyarrow.dataset as ds\n    read_options = {'pre_buffer': pre_buffer, 'coerce_int96_timestamp_unit': coerce_int96_timestamp_unit, 'thrift_string_size_limit': thrift_string_size_limit, 'thrift_container_size_limit': thrift_container_size_limit, 'page_checksum_verification': page_checksum_verification, 'arrow_extensions_enabled': arrow_extensions_enabled, 'binary_type': binary_type, 'list_type': list_type}\n    if buffer_size:\n        read_options.update(use_buffered_stream=True, buffer_size=buffer_size)\n    if read_dictionary is not None:\n        read_options.update(dictionary_columns=read_dictionary)\n    if decryption_properties is not None:\n        read_options.update(decryption_properties=decryption_properties)\n    self._filter_expression = None\n    if filters is not None:\n        self._filter_expression = filters_to_expression(filters)\n    if filesystem is not None:\n        filesystem = _ensure_filesystem(filesystem, use_mmap=memory_map)\n    elif filesystem is None and memory_map:\n        filesystem = LocalFileSystem(use_mmap=memory_map)\n    if hasattr(path_or_paths, '__fspath__') and filesystem is not None and (not isinstance(filesystem, LocalFileSystem)):\n        raise TypeError(f'Path-like objects with __fspath__ must only be used with local file systems, not {type(filesystem)}')\n    single_file = None\n    self._base_dir = None\n    if not isinstance(path_or_paths, list):\n        if _is_path_like(path_or_paths):\n            filesystem, path_or_paths = _resolve_filesystem_and_path(path_or_paths, filesystem, memory_map=memory_map)\n            finfo = filesystem.get_file_info(path_or_paths)\n            if finfo.is_file:\n                single_file = path_or_paths\n            if finfo.type == FileType.Directory:\n                self._base_dir = path_or_paths\n        else:\n            single_file = path_or_paths\n    parquet_format = ds.ParquetFileFormat(**read_options)\n    if single_file is not None:\n        fragment = parquet_format.make_fragment(single_file, filesystem)\n        self._dataset = ds.FileSystemDataset([fragment], schema=schema or fragment.physical_schema, format=parquet_format, filesystem=fragment.filesystem)\n        return\n    if partitioning == 'hive':\n        partitioning = ds.HivePartitioning.discover(infer_dictionary=True)\n    self._dataset = ds.dataset(path_or_paths, filesystem=filesystem, schema=schema, format=parquet_format, partitioning=partitioning, ignore_prefixes=ignore_prefixes)"
+        },
+        {
+          "ast_sha256": "bb531a960d4fdadc283827b2cdaec218957309fe31b84847076d981113a52308",
+          "kind": "FunctionDef",
+          "line": 1525,
+          "name": "ParquetDataset.read",
+          "scope": "DISPLAY_ONLY_SOURCE_PROJECTION_NOT_CODETYPE_OR_EXECUTABLE",
+          "source_without_leading_docstring": "def read(self, columns=None, use_threads=True, use_pandas_metadata=False):\n    metadata = self.schema.metadata or {}\n    if use_pandas_metadata:\n        if b'pandas' not in metadata:\n            common_metadata = self._get_common_pandas_metadata()\n            if common_metadata:\n                metadata = common_metadata\n    if columns is not None and use_pandas_metadata:\n        if metadata and b'pandas' in metadata:\n            index_columns = [col for col in _get_pandas_index_columns(metadata) if not isinstance(col, dict)]\n            columns = list(columns) + list(set(index_columns) - set(columns))\n    table = self._dataset.to_table(columns=columns, filter=self._filter_expression, use_threads=use_threads)\n    if use_pandas_metadata:\n        if metadata and b'pandas' in metadata:\n            new_metadata = table.schema.metadata or {}\n            new_metadata.update({b'pandas': metadata[b'pandas']})\n            table = table.replace_schema_metadata(new_metadata)\n    return table"
+        }
+      ],
+      "source": {
+        "bytes": 98264,
+        "physical": {
+          "st_blocks": "192",
+          "st_ctime_ns": "1792325508009620333",
+          "st_dev": "66306",
+          "st_ino": "60582353",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325508009620333",
+          "st_nlink": "1",
+          "st_size": "98264",
+          "st_uid": "1000"
+        },
+        "sha256": "149cfca45f9767541a6b6a9c002da5becc35d106f6eac35eb08b6878b153858b"
+      },
+      "source_AST_sha256": "45aaa5dbb81bcf590ab892f6cc766f693c0daf3d4bae22a7ba9b297f3f99f3a2"
+    },
+    {
+      "call_count": 90,
+      "declaration_count": 25,
+      "generated_source_expression_count": 0,
+      "imports": [
+        {
+          "ancestors": [],
+          "line": 22,
+          "source": "from pyarrow.util import _is_path_like, _stringify_path"
+        },
+        {
+          "ancestors": [],
+          "line": 24,
+          "source": "from pyarrow._fs import FileSelector, FileType, FileInfo, FileSystem, LocalFileSystem, SubTreeFileSystem, _MockFileSystem, FileSystemHandler, PyFileSystem, _copy_files, _copy_files_selector"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 42,
+              "name": null
+            }
+          ],
+          "line": 43,
+          "source": "from pyarrow._azurefs import AzureFileSystem"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 47,
+              "name": null
+            }
+          ],
+          "line": 48,
+          "source": "from pyarrow._hdfs import HadoopFileSystem"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 52,
+              "name": null
+            }
+          ],
+          "line": 53,
+          "source": "from pyarrow._gcsfs import GcsFileSystem"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 57,
+              "name": null
+            }
+          ],
+          "line": 58,
+          "source": "from pyarrow._s3fs import AwsDefaultS3RetryStrategy, AwsStandardS3RetryStrategy, S3FileSystem, S3LogLevel, S3RetryStrategy, ensure_s3_initialized, finalize_s3, ensure_s3_finalized, initialize_s3, resolve_s3_region"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "Try",
+              "line": 57,
+              "name": null
+            }
+          ],
+          "line": 69,
+          "source": "import atexit"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 265,
+              "name": "FSSpecHandler"
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 404,
+              "name": "open_input_stream"
+            }
+          ],
+          "line": 405,
+          "source": "from pyarrow import PythonFile"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 265,
+              "name": "FSSpecHandler"
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 412,
+              "name": "open_input_file"
+            }
+          ],
+          "line": 413,
+          "source": "from pyarrow import PythonFile"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 265,
+              "name": "FSSpecHandler"
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 420,
+              "name": "open_output_stream"
+            }
+          ],
+          "line": 421,
+          "source": "from pyarrow import PythonFile"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "ClassDef",
+              "line": 265,
+              "name": "FSSpecHandler"
+            },
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 425,
+              "name": "open_append_stream"
+            }
+          ],
+          "line": 426,
+          "source": "from pyarrow import PythonFile"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 85,
+              "name": "_ensure_filesystem"
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 86,
+              "name": null
+            },
+            {
+              "child_field": "orelse",
+              "kind": "If",
+              "line": 88,
+              "name": null
+            },
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 113,
+              "name": null
+            }
+          ],
+          "line": 114,
+          "source": "import fsspec"
+        }
+      ],
+      "module": "pyarrow.fs",
+      "module_definition_call_syntax": [
+        {
+          "ancestors": [
+            {
+              "child_field": "orelse",
+              "kind": "Try",
+              "line": 57,
+              "name": null
+            }
+          ],
+          "function_syntax": "atexit.register",
+          "line": 70
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "handlers",
+              "kind": "Try",
+              "line": 42,
+              "name": null
+            }
+          ],
+          "function_syntax": "_not_imported.append",
+          "line": 45
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "handlers",
+              "kind": "Try",
+              "line": 47,
+              "name": null
+            }
+          ],
+          "function_syntax": "_not_imported.append",
+          "line": 50
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "handlers",
+              "kind": "Try",
+              "line": 52,
+              "name": null
+            }
+          ],
+          "function_syntax": "_not_imported.append",
+          "line": 55
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "handlers",
+              "kind": "Try",
+              "line": 57,
+              "name": null
+            }
+          ],
+          "function_syntax": "_not_imported.append",
+          "line": 63
+        }
+      ],
+      "selected": [
+        {
+          "ast_sha256": "2ee26b15146cc70f833731b6d4ffc92026d7cfadd914e755af7f5c725367bc8b",
+          "kind": "FunctionDef",
+          "line": 85,
+          "name": "_ensure_filesystem",
+          "scope": "DISPLAY_ONLY_SOURCE_PROJECTION_NOT_CODETYPE_OR_EXECUTABLE",
+          "source_without_leading_docstring": "def _ensure_filesystem(filesystem, *, use_mmap=False):\n    if isinstance(filesystem, FileSystem):\n        return filesystem\n    elif isinstance(filesystem, str):\n        if use_mmap:\n            raise ValueError('Specifying to use memory mapping not supported for filesystem specified as an URI string')\n        fs, path = FileSystem.from_uri(filesystem)\n        prefix = fs.normalize_path(path)\n        if prefix:\n            prefix_info = fs.get_file_info([prefix])[0]\n            if prefix_info.type != FileType.Directory:\n                raise ValueError(f'The path component of the filesystem URI must point to a directory but it has a type: `{prefix_info.type.name}`. The path component is `{prefix_info.path}` and the given filesystem URI is `{filesystem}`')\n            fs = SubTreeFileSystem(prefix, fs)\n        return fs\n    else:\n        try:\n            import fsspec\n        except ImportError:\n            pass\n        else:\n            if isinstance(filesystem, fsspec.AbstractFileSystem):\n                if type(filesystem).__name__ == 'LocalFileSystem':\n                    return LocalFileSystem(use_mmap=use_mmap)\n                return PyFileSystem(FSSpecHandler(filesystem))\n        raise TypeError(f'Unrecognized filesystem: {type(filesystem)}. `filesystem` argument must be a FileSystem instance or a valid file system URI')"
+        },
+        {
+          "ast_sha256": "052be9e4395a15a98e65e1aa673b1395b9c0e38233612ff85f49c7f8aa562f6d",
+          "kind": "FunctionDef",
+          "line": 130,
+          "name": "_resolve_filesystem_and_path",
+          "scope": "DISPLAY_ONLY_SOURCE_PROJECTION_NOT_CODETYPE_OR_EXECUTABLE",
+          "source_without_leading_docstring": "def _resolve_filesystem_and_path(path, filesystem=None, *, memory_map=False):\n    if not _is_path_like(path):\n        if filesystem is not None:\n            raise ValueError(\"'filesystem' passed but the specified path is file-like, so there is nothing to open with 'filesystem'.\")\n        return (filesystem, path)\n    if filesystem is not None:\n        filesystem = _ensure_filesystem(filesystem, use_mmap=memory_map)\n        if isinstance(filesystem, LocalFileSystem):\n            path = _stringify_path(path)\n        elif not isinstance(path, str):\n            raise TypeError('Expected string path; path-like objects are only allowed with a local filesystem')\n        path = filesystem.normalize_path(path)\n        return (filesystem, path)\n    path = _stringify_path(path)\n    filesystem = LocalFileSystem(use_mmap=memory_map)\n    try:\n        file_info = filesystem.get_file_info(path)\n    except ValueError:\n        file_info = None\n        exists_locally = False\n    else:\n        exists_locally = file_info.type != FileType.NotFound\n    if not exists_locally:\n        try:\n            filesystem, path = FileSystem.from_uri(path)\n        except ValueError as e:\n            msg = str(e)\n            if 'empty scheme' in msg or 'Cannot parse URI' in msg:\n                pass\n            else:\n                raise e\n    else:\n        path = filesystem.normalize_path(path)\n    return (filesystem, path)"
+        }
+      ],
+      "source": {
+        "bytes": 14972,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792325508086928215",
+          "st_dev": "66306",
+          "st_ino": "60582360",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325508086928215",
+          "st_nlink": "1",
+          "st_size": "14972",
+          "st_uid": "1000"
+        },
+        "sha256": "a8bee55eed9049b0f725b3b02444307fae366393677b9eada56e6743c3bdb790"
+      },
+      "source_AST_sha256": "bf11c62f9dc394d0d65b7273b631d718fd59ea1d19e0594e4c79b994b438d778"
+    },
+    {
+      "call_count": 151,
+      "declaration_count": 13,
+      "generated_source_expression_count": 11,
+      "imports": [
+        {
+          "ancestors": [],
+          "line": 20,
+          "source": "import pyarrow as pa"
+        },
+        {
+          "ancestors": [],
+          "line": 21,
+          "source": "from pyarrow.util import _is_iterable, _stringify_path, _is_path_like"
+        },
+        {
+          "ancestors": [],
+          "line": 63,
+          "source": "from pyarrow.compute import Expression, scalar, field"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 23,
+              "name": null
+            }
+          ],
+          "line": 24,
+          "source": "from pyarrow._dataset import CsvFileFormat, CsvFragmentScanOptions, JsonFileFormat, JsonFragmentScanOptions, Dataset, DatasetFactory, DirectoryPartitioning, FeatherFileFormat, FilenamePartitioning, FileFormat, FileFragment, FileSystemDataset, FileSystemDatasetFactory, FileSystemFactoryOptions, FileWriteOptions, Fragment, FragmentScanOptions, HivePartitioning, IpcFileFormat, IpcFileWriteOptions, InMemoryDataset, Partitioning, PartitioningFactory, Scanner, TaggedRecordBatch, UnionDataset, UnionDatasetFactory, WrittenFile, get_partition_keys, get_partition_keys as _get_partition_keys, _filesystemdataset_write"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 72,
+              "name": null
+            }
+          ],
+          "line": 73,
+          "source": "from pyarrow._dataset_orc import OrcFileFormat"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 84,
+              "name": null
+            }
+          ],
+          "line": 85,
+          "source": "from pyarrow._dataset_parquet import ParquetDatasetFactory, ParquetFactoryOptions, ParquetFileFormat, ParquetFileFragment, ParquetFileWriteOptions, ParquetFragmentScanOptions, ParquetReadOptions, RowGroupInfo"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "Try",
+              "line": 100,
+              "name": null
+            }
+          ],
+          "line": 101,
+          "source": "from pyarrow._dataset_parquet_encryption import ParquetDecryptionConfig, ParquetEncryptionConfig"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 320,
+              "name": "_ensure_multiple_sources"
+            }
+          ],
+          "line": 349,
+          "source": "from pyarrow.fs import LocalFileSystem, SubTreeFileSystem, _MockFileSystem, FileType, _ensure_filesystem"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 395,
+              "name": "_ensure_single_source"
+            }
+          ],
+          "line": 419,
+          "source": "from pyarrow.fs import FileType, FileSelector, _resolve_filesystem_and_path"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 442,
+              "name": "_filesystem_dataset"
+            }
+          ],
+          "line": 455,
+          "source": "from pyarrow.fs import LocalFileSystem, _ensure_filesystem, FileInfo"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 517,
+              "name": "parquet_dataset"
+            }
+          ],
+          "line": 557,
+          "source": "from pyarrow.fs import LocalFileSystem, _ensure_filesystem"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 580,
+              "name": "dataset"
+            }
+          ],
+          "line": 777,
+          "source": "from pyarrow.fs import FileInfo"
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "body",
+              "kind": "FunctionDef",
+              "line": 846,
+              "name": "write_dataset"
+            }
+          ],
+          "line": 961,
+          "source": "from pyarrow.fs import _resolve_filesystem_and_path"
+        }
+      ],
+      "module": "pyarrow.dataset",
+      "module_definition_call_syntax": [
+        {
+          "ancestors": [
+            {
+              "child_field": "handlers",
+              "kind": "Try",
+              "line": 23,
+              "name": null
+            }
+          ],
+          "function_syntax": "ImportError",
+          "line": 58
+        },
+        {
+          "ancestors": [
+            {
+              "child_field": "handlers",
+              "kind": "Try",
+              "line": 23,
+              "name": null
+            }
+          ],
+          "function_syntax": "str",
+          "line": 59
+        }
+      ],
+      "selected": [],
+      "source": {
+        "bytes": 40507,
+        "physical": {
+          "st_blocks": "80",
+          "st_ctime_ns": "1792325508165830809",
+          "st_dev": "66306",
+          "st_ino": "60582367",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325508165830809",
+          "st_nlink": "1",
+          "st_size": "40507",
+          "st_uid": "1000"
+        },
+        "sha256": "4b78383bd1bd2218d6072afbb59e6af07c0c0b7e489e806680ab225f66860987"
+      },
+      "source_AST_sha256": "cbada0b0ad55021f6a08d22c6f655b3e9d1941ce13be726355c7d51e878a2680"
+    }
+  ],
+  "observed_at_ns": "1792326515450985162",
+  "pages": [
+    {
+      "bytes": 17938,
+      "file": "module-00-page-000.json",
+      "sha256": "f82d1fd4dfec8e7cb900c11dda6585a8dcdf8d2d6cc996f92ea0cb7a4e571e5b"
+    },
+    {
+      "bytes": 26264,
+      "file": "module-00-page-001.json",
+      "sha256": "743b76f0545c8eb38a3e89a6e532dd8fde1fe1a1f413ae76cb19e55cc8cf4845"
+    },
+    {
+      "bytes": 32809,
+      "file": "module-00-page-002.json",
+      "sha256": "710227be073071b45560cd2604a8738967d648e6452c4c255d586978b8597882"
+    },
+    {
+      "bytes": 44256,
+      "file": "module-00-page-003.json",
+      "sha256": "2339dcc691e868584cdcf928a00a312ad206dc05cd4b5b689025041311b79e70"
+    },
+    {
+      "bytes": 44635,
+      "file": "module-00-page-004.json",
+      "sha256": "5adc34a290bcaf63b63ae7ecf73ffb60ac4beae74dbc1a3c6a172610688be2fb"
+    },
+    {
+      "bytes": 7848,
+      "file": "module-00-page-005.json",
+      "sha256": "535e79d568c879153122533da165516bcdeda354c767f6001d4e53276a9fe05e"
+    },
+    {
+      "bytes": 45617,
+      "file": "module-01-page-000.json",
+      "sha256": "0aabe95771d907d1c011ea30cfd5f91679afe1ba1b1bcbed7f19f7522641a12c"
+    },
+    {
+      "bytes": 30835,
+      "file": "module-01-page-001.json",
+      "sha256": "3576d80941e29b42f7fc12754d6fe9efe099e6ab67edddacf7bff6aff6410b8f"
+    },
+    {
+      "bytes": 384,
+      "file": "module-01-page-002.json",
+      "sha256": "3640a497f5971fcbf299a92d1e8003bd7abca4144a1796f74989bf262928f0b9"
+    },
+    {
+      "bytes": 7193,
+      "file": "module-02-page-000.json",
+      "sha256": "a788953b65eb8252a7cf3ca5eae9e9a283ef94a602dc71419262ca028920606d"
+    },
+    {
+      "bytes": 7078,
+      "file": "module-03-page-000.json",
+      "sha256": "5a6b491ff937b1a974f3f47959fcfd87c71ee8aa8c1bdae0f938d4a88c0573e2"
+    },
+    {
+      "bytes": 22382,
+      "file": "module-04-page-000.json",
+      "sha256": "3b9061aeaf6f2b68a3fcdce75d55a49927fd14f215ae82d865f8870fea8f0a6f"
+    },
+    {
+      "bytes": 30969,
+      "file": "module-04-page-001.json",
+      "sha256": "fbead52e166d278596c7439d87b53bda51d4c8e42e7df23432cffd6fe0d9ec79"
+    },
+    {
+      "bytes": 34323,
+      "file": "module-04-page-002.json",
+      "sha256": "f94fff954370a68b7ecc786637dd26e2809058efefc1bab64795f38f949be673"
+    },
+    {
+      "bytes": 38817,
+      "file": "module-04-page-003.json",
+      "sha256": "2c0d9a59b6e94888abd2e1f979d2dfa98b10cc5f68f4a2930c77cab959c7c71a"
+    },
+    {
+      "bytes": 43528,
+      "file": "module-04-page-004.json",
+      "sha256": "1abeecedd63e3c6bbe458d30f07a9c2fc6d308fe8ec1ee74010941de3861379f"
+    },
+    {
+      "bytes": 33773,
+      "file": "module-04-page-005.json",
+      "sha256": "e1fe67db73c0970a834a7d7f736ab53b49837592fc0c89fc5e58ce2bda775d36"
+    },
+    {
+      "bytes": 16837,
+      "file": "module-04-page-006.json",
+      "sha256": "a3c66909042fccc7a8e0b10637cb05ba372ac5ed97119a2206d7d52ffd826927"
+    },
+    {
+      "bytes": 23407,
+      "file": "module-05-page-000.json",
+      "sha256": "9ff2ed237c91bd690d30ec28529eb3a1ee46b22c845679576c00cf255754fbdb"
+    },
+    {
+      "bytes": 29262,
+      "file": "module-05-page-001.json",
+      "sha256": "3261c657df1282f799cb476e26e861685c59bb8bd97a25329360fb1b98d3e365"
+    },
+    {
+      "bytes": 2440,
+      "file": "module-05-page-002.json",
+      "sha256": "29912e5ed065282369e3f35361de576c2a5c4843b82a4816f6170f7c9c7cca44"
+    },
+    {
+      "bytes": 291,
+      "file": "module-06-page-000.json",
+      "sha256": "8081b43186f5ef9798c40ea1de49028981d3093bd65c1f2f550792c40d853f9e"
+    },
+    {
+      "bytes": 21875,
+      "file": "module-07-page-000.json",
+      "sha256": "0f4ffa0d871fa5961b881b99a81787c2b8ee4e5d4e3ad46dca993ce944f16f92"
+    },
+    {
+      "bytes": 33858,
+      "file": "module-07-page-001.json",
+      "sha256": "337aaae735f5c3d0258543e24c1e97d0e5f27cfb224f7e07c31043e828bc8c2e"
+    },
+    {
+      "bytes": 41955,
+      "file": "module-07-page-002.json",
+      "sha256": "cce39c684b40f061c380dc2c693c2ebf432f7179d8c70205ab6db52fb0dca01d"
+    },
+    {
+      "bytes": 27075,
+      "file": "module-07-page-003.json",
+      "sha256": "1945f5663fdcdfeecac514cae5be0107949a1c59703ad3e0533f659da86836b1"
+    },
+    {
+      "bytes": 1694,
+      "file": "module-07-page-004.json",
+      "sha256": "8e5337ed106820251ea0e2c5cf9b70d1229d768e40a6d66f88a2071027e4f4f9"
+    },
+    {
+      "bytes": 30618,
+      "file": "module-08-page-000.json",
+      "sha256": "8efb7cdbc26bdaf22ebbd9594e967a7647ba2e56c1d47fc5386c489464b9bbd9"
+    },
+    {
+      "bytes": 33540,
+      "file": "module-08-page-001.json",
+      "sha256": "7849df0ec2322a46d660584f625139c4ab22cc966fa41ff0c230d72bdc5ba21c"
+    },
+    {
+      "bytes": 25620,
+      "file": "module-09-page-000.json",
+      "sha256": "37758dd258becf83396ef6bf82bed68919929038004e75e80fede63801c50d95"
+    },
+    {
+      "bytes": 40723,
+      "file": "module-09-page-001.json",
+      "sha256": "ac29901e642687bb15445172f31137380b2c9abbcbb80e696177297ab498b5d3"
+    },
+    {
+      "bytes": 37823,
+      "file": "module-09-page-002.json",
+      "sha256": "23c72085f6525ef63e70fc7b2799601f41fc29137457449f1fb8345160ca6d61"
+    }
+  ],
+  "payload_import_CodeType_or_body": false,
+  "prior_proof_sha256": "6860a76c8a50e4891549ea656ed881cf81518ae1e7d28b02ba65bd32d045c08b",
+  "runtime_admission": null,
+  "schema": "stopped-package-text-analysis/1",
+  "status": "SOURCE_SYNTAX_INVENTORY_ONLY_NOT_EVALUATED_IMPORT_NATIVE_CALL_CLOSURE"
+}

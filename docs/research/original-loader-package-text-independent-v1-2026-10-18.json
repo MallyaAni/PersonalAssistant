@@ -1,0 +1,677 @@
+{
+  "pages": {
+    "module-00-page-000.json": {
+      "bytes": 17938,
+      "physical": {
+        "st_blocks": "40",
+        "st_ctime_ns": "1792326515157034418",
+        "st_dev": "66306",
+        "st_ino": "60582382",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515157034418",
+        "st_nlink": "1",
+        "st_size": "17938",
+        "st_uid": "1000"
+      },
+      "sha256": "f82d1fd4dfec8e7cb900c11dda6585a8dcdf8d2d6cc996f92ea0cb7a4e571e5b"
+    },
+    "module-00-page-001.json": {
+      "bytes": 26264,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792326515163058188",
+        "st_dev": "66306",
+        "st_ino": "60582383",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515163058188",
+        "st_nlink": "1",
+        "st_size": "26264",
+        "st_uid": "1000"
+      },
+      "sha256": "743b76f0545c8eb38a3e89a6e532dd8fde1fe1a1f413ae76cb19e55cc8cf4845"
+    },
+    "module-00-page-002.json": {
+      "bytes": 32809,
+      "physical": {
+        "st_blocks": "72",
+        "st_ctime_ns": "1792326515167000839",
+        "st_dev": "66306",
+        "st_ino": "60582384",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515167000839",
+        "st_nlink": "1",
+        "st_size": "32809",
+        "st_uid": "1000"
+      },
+      "sha256": "710227be073071b45560cd2604a8738967d648e6452c4c255d586978b8597882"
+    },
+    "module-00-page-003.json": {
+      "bytes": 44256,
+      "physical": {
+        "st_blocks": "88",
+        "st_ctime_ns": "1792326515171218852",
+        "st_dev": "66306",
+        "st_ino": "60582385",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515171218852",
+        "st_nlink": "1",
+        "st_size": "44256",
+        "st_uid": "1000"
+      },
+      "sha256": "2339dcc691e868584cdcf928a00a312ad206dc05cd4b5b689025041311b79e70"
+    },
+    "module-00-page-004.json": {
+      "bytes": 44635,
+      "physical": {
+        "st_blocks": "88",
+        "st_ctime_ns": "1792326515177212813",
+        "st_dev": "66306",
+        "st_ino": "60582386",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515177212813",
+        "st_nlink": "1",
+        "st_size": "44635",
+        "st_uid": "1000"
+      },
+      "sha256": "5adc34a290bcaf63b63ae7ecf73ffb60ac4beae74dbc1a3c6a172610688be2fb"
+    },
+    "module-00-page-005.json": {
+      "bytes": 7848,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792326515181691452",
+        "st_dev": "66306",
+        "st_ino": "60582387",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515181691452",
+        "st_nlink": "1",
+        "st_size": "7848",
+        "st_uid": "1000"
+      },
+      "sha256": "535e79d568c879153122533da165516bcdeda354c767f6001d4e53276a9fe05e"
+    },
+    "module-01-page-000.json": {
+      "bytes": 45617,
+      "physical": {
+        "st_blocks": "96",
+        "st_ctime_ns": "1792326515199693640",
+        "st_dev": "66306",
+        "st_ino": "60582388",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515199693640",
+        "st_nlink": "1",
+        "st_size": "45617",
+        "st_uid": "1000"
+      },
+      "sha256": "0aabe95771d907d1c011ea30cfd5f91679afe1ba1b1bcbed7f19f7522641a12c"
+    },
+    "module-01-page-001.json": {
+      "bytes": 30835,
+      "physical": {
+        "st_blocks": "64",
+        "st_ctime_ns": "1792326515206279382",
+        "st_dev": "66306",
+        "st_ino": "60582389",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515206279382",
+        "st_nlink": "1",
+        "st_size": "30835",
+        "st_uid": "1000"
+      },
+      "sha256": "3576d80941e29b42f7fc12754d6fe9efe099e6ab67edddacf7bff6aff6410b8f"
+    },
+    "module-01-page-002.json": {
+      "bytes": 384,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792326515210277281",
+        "st_dev": "66306",
+        "st_ino": "60582390",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515210277281",
+        "st_nlink": "1",
+        "st_size": "384",
+        "st_uid": "1000"
+      },
+      "sha256": "3640a497f5971fcbf299a92d1e8003bd7abca4144a1796f74989bf262928f0b9"
+    },
+    "module-02-page-000.json": {
+      "bytes": 7193,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792326515216410587",
+        "st_dev": "66306",
+        "st_ino": "60582391",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515216410587",
+        "st_nlink": "1",
+        "st_size": "7193",
+        "st_uid": "1000"
+      },
+      "sha256": "a788953b65eb8252a7cf3ca5eae9e9a283ef94a602dc71419262ca028920606d"
+    },
+    "module-03-page-000.json": {
+      "bytes": 7078,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792326515223155834",
+        "st_dev": "66306",
+        "st_ino": "60582392",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515223155834",
+        "st_nlink": "1",
+        "st_size": "7078",
+        "st_uid": "1000"
+      },
+      "sha256": "5a6b491ff937b1a974f3f47959fcfd87c71ee8aa8c1bdae0f938d4a88c0573e2"
+    },
+    "module-04-page-000.json": {
+      "bytes": 22382,
+      "physical": {
+        "st_blocks": "48",
+        "st_ctime_ns": "1792326515268711107",
+        "st_dev": "66306",
+        "st_ino": "60582393",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515268711107",
+        "st_nlink": "1",
+        "st_size": "22382",
+        "st_uid": "1000"
+      },
+      "sha256": "3b9061aeaf6f2b68a3fcdce75d55a49927fd14f215ae82d865f8870fea8f0a6f"
+    },
+    "module-04-page-001.json": {
+      "bytes": 30969,
+      "physical": {
+        "st_blocks": "64",
+        "st_ctime_ns": "1792326515272715919",
+        "st_dev": "66306",
+        "st_ino": "60582394",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515272715919",
+        "st_nlink": "1",
+        "st_size": "30969",
+        "st_uid": "1000"
+      },
+      "sha256": "fbead52e166d278596c7439d87b53bda51d4c8e42e7df23432cffd6fe0d9ec79"
+    },
+    "module-04-page-002.json": {
+      "bytes": 34323,
+      "physical": {
+        "st_blocks": "72",
+        "st_ctime_ns": "1792326515277707969",
+        "st_dev": "66306",
+        "st_ino": "60582395",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515277707969",
+        "st_nlink": "1",
+        "st_size": "34323",
+        "st_uid": "1000"
+      },
+      "sha256": "f94fff954370a68b7ecc786637dd26e2809058efefc1bab64795f38f949be673"
+    },
+    "module-04-page-003.json": {
+      "bytes": 38817,
+      "physical": {
+        "st_blocks": "80",
+        "st_ctime_ns": "1792326515282756692",
+        "st_dev": "66306",
+        "st_ino": "60582396",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515282756692",
+        "st_nlink": "1",
+        "st_size": "38817",
+        "st_uid": "1000"
+      },
+      "sha256": "2c0d9a59b6e94888abd2e1f979d2dfa98b10cc5f68f4a2930c77cab959c7c71a"
+    },
+    "module-04-page-004.json": {
+      "bytes": 43528,
+      "physical": {
+        "st_blocks": "88",
+        "st_ctime_ns": "1792326515289121840",
+        "st_dev": "66306",
+        "st_ino": "60582397",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515289121840",
+        "st_nlink": "1",
+        "st_size": "43528",
+        "st_uid": "1000"
+      },
+      "sha256": "1abeecedd63e3c6bbe458d30f07a9c2fc6d308fe8ec1ee74010941de3861379f"
+    },
+    "module-04-page-005.json": {
+      "bytes": 33773,
+      "physical": {
+        "st_blocks": "72",
+        "st_ctime_ns": "1792326515295011464",
+        "st_dev": "66306",
+        "st_ino": "60582398",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515295011464",
+        "st_nlink": "1",
+        "st_size": "33773",
+        "st_uid": "1000"
+      },
+      "sha256": "e1fe67db73c0970a834a7d7f736ab53b49837592fc0c89fc5e58ce2bda775d36"
+    },
+    "module-04-page-006.json": {
+      "bytes": 16837,
+      "physical": {
+        "st_blocks": "40",
+        "st_ctime_ns": "1792326515301049746",
+        "st_dev": "66306",
+        "st_ino": "60582399",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515301049746",
+        "st_nlink": "1",
+        "st_size": "16837",
+        "st_uid": "1000"
+      },
+      "sha256": "a3c66909042fccc7a8e0b10637cb05ba372ac5ed97119a2206d7d52ffd826927"
+    },
+    "module-05-page-000.json": {
+      "bytes": 23407,
+      "physical": {
+        "st_blocks": "48",
+        "st_ctime_ns": "1792326515315425285",
+        "st_dev": "66306",
+        "st_ino": "60582400",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515315425285",
+        "st_nlink": "1",
+        "st_size": "23407",
+        "st_uid": "1000"
+      },
+      "sha256": "9ff2ed237c91bd690d30ec28529eb3a1ee46b22c845679576c00cf255754fbdb"
+    },
+    "module-05-page-001.json": {
+      "bytes": 29262,
+      "physical": {
+        "st_blocks": "64",
+        "st_ctime_ns": "1792326515322235396",
+        "st_dev": "66306",
+        "st_ino": "60582401",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515322235396",
+        "st_nlink": "1",
+        "st_size": "29262",
+        "st_uid": "1000"
+      },
+      "sha256": "3261c657df1282f799cb476e26e861685c59bb8bd97a25329360fb1b98d3e365"
+    },
+    "module-05-page-002.json": {
+      "bytes": 2440,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792326515327726970",
+        "st_dev": "66306",
+        "st_ino": "60582402",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515327726970",
+        "st_nlink": "1",
+        "st_size": "2440",
+        "st_uid": "1000"
+      },
+      "sha256": "29912e5ed065282369e3f35361de576c2a5c4843b82a4816f6170f7c9c7cca44"
+    },
+    "module-06-page-000.json": {
+      "bytes": 291,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792326515334641865",
+        "st_dev": "66306",
+        "st_ino": "60582403",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515334641865",
+        "st_nlink": "1",
+        "st_size": "291",
+        "st_uid": "1000"
+      },
+      "sha256": "8081b43186f5ef9798c40ea1de49028981d3093bd65c1f2f550792c40d853f9e"
+    },
+    "module-07-page-000.json": {
+      "bytes": 21875,
+      "physical": {
+        "st_blocks": "48",
+        "st_ctime_ns": "1792326515373031057",
+        "st_dev": "66306",
+        "st_ino": "60582404",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515373031057",
+        "st_nlink": "1",
+        "st_size": "21875",
+        "st_uid": "1000"
+      },
+      "sha256": "0f4ffa0d871fa5961b881b99a81787c2b8ee4e5d4e3ad46dca993ce944f16f92"
+    },
+    "module-07-page-001.json": {
+      "bytes": 33858,
+      "physical": {
+        "st_blocks": "72",
+        "st_ctime_ns": "1792326515378368422",
+        "st_dev": "66306",
+        "st_ino": "60582405",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515378368422",
+        "st_nlink": "1",
+        "st_size": "33858",
+        "st_uid": "1000"
+      },
+      "sha256": "337aaae735f5c3d0258543e24c1e97d0e5f27cfb224f7e07c31043e828bc8c2e"
+    },
+    "module-07-page-002.json": {
+      "bytes": 41955,
+      "physical": {
+        "st_blocks": "88",
+        "st_ctime_ns": "1792326515382317153",
+        "st_dev": "66306",
+        "st_ino": "60582406",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515382317153",
+        "st_nlink": "1",
+        "st_size": "41955",
+        "st_uid": "1000"
+      },
+      "sha256": "cce39c684b40f061c380dc2c693c2ebf432f7179d8c70205ab6db52fb0dca01d"
+    },
+    "module-07-page-003.json": {
+      "bytes": 27075,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792326515388452268",
+        "st_dev": "66306",
+        "st_ino": "60582407",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515388452268",
+        "st_nlink": "1",
+        "st_size": "27075",
+        "st_uid": "1000"
+      },
+      "sha256": "1945f5663fdcdfeecac514cae5be0107949a1c59703ad3e0533f659da86836b1"
+    },
+    "module-07-page-004.json": {
+      "bytes": 1694,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792326515393888113",
+        "st_dev": "66306",
+        "st_ino": "60582408",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515393888113",
+        "st_nlink": "1",
+        "st_size": "1694",
+        "st_uid": "1000"
+      },
+      "sha256": "8e5337ed106820251ea0e2c5cf9b70d1229d768e40a6d66f88a2071027e4f4f9"
+    },
+    "module-08-page-000.json": {
+      "bytes": 30618,
+      "physical": {
+        "st_blocks": "64",
+        "st_ctime_ns": "1792326515412218607",
+        "st_dev": "66306",
+        "st_ino": "60582409",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515412218607",
+        "st_nlink": "1",
+        "st_size": "30618",
+        "st_uid": "1000"
+      },
+      "sha256": "8efb7cdbc26bdaf22ebbd9594e967a7647ba2e56c1d47fc5386c489464b9bbd9"
+    },
+    "module-08-page-001.json": {
+      "bytes": 33540,
+      "physical": {
+        "st_blocks": "72",
+        "st_ctime_ns": "1792326515416676910",
+        "st_dev": "66306",
+        "st_ino": "60582410",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515416676910",
+        "st_nlink": "1",
+        "st_size": "33540",
+        "st_uid": "1000"
+      },
+      "sha256": "7849df0ec2322a46d660584f625139c4ab22cc966fa41ff0c230d72bdc5ba21c"
+    },
+    "module-09-page-000.json": {
+      "bytes": 25620,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792326515436248133",
+        "st_dev": "66306",
+        "st_ino": "60582411",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515436248133",
+        "st_nlink": "1",
+        "st_size": "25620",
+        "st_uid": "1000"
+      },
+      "sha256": "37758dd258becf83396ef6bf82bed68919929038004e75e80fede63801c50d95"
+    },
+    "module-09-page-001.json": {
+      "bytes": 40723,
+      "physical": {
+        "st_blocks": "80",
+        "st_ctime_ns": "1792326515440822772",
+        "st_dev": "66306",
+        "st_ino": "60582412",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515440822772",
+        "st_nlink": "1",
+        "st_size": "40723",
+        "st_uid": "1000"
+      },
+      "sha256": "ac29901e642687bb15445172f31137380b2c9abbcbb80e696177297ab498b5d3"
+    },
+    "module-09-page-002.json": {
+      "bytes": 37823,
+      "physical": {
+        "st_blocks": "80",
+        "st_ctime_ns": "1792326515445335187",
+        "st_dev": "66306",
+        "st_ino": "60582413",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792326515445335187",
+        "st_nlink": "1",
+        "st_size": "37823",
+        "st_uid": "1000"
+      },
+      "sha256": "23c72085f6525ef63e70fc7b2799601f41fc29137457449f1fb8345160ca6d61"
+    }
+  },
+  "payload_body_executed": false,
+  "prior": {
+    "bytes": 36153,
+    "physical": {
+      "st_blocks": "72",
+      "st_ctime_ns": "1792325689496317110",
+      "st_dev": "66306",
+      "st_ino": "60582378",
+      "st_mode": "33152",
+      "st_mtime_ns": "1792325689496317110",
+      "st_nlink": "1",
+      "st_size": "36153",
+      "st_uid": "1000"
+    },
+    "sha256": "6860a76c8a50e4891549ea656ed881cf81518ae1e7d28b02ba65bd32d045c08b"
+  },
+  "runtime_admission": null,
+  "schema": "package-text-analysis-independent/1",
+  "scope_limit": "Does not independently reconstruct every lexical ancestor/qualified-name/display projection. No evaluated branch, package import, CodeType, native/thread/network/model/RAM acceptance.",
+  "sources": {
+    "source-00.py.txt": {
+      "bytes": 62085,
+      "physical": {
+        "st_blocks": "128",
+        "st_ctime_ns": "1792325507447411560",
+        "st_dev": "66306",
+        "st_ino": "60582304",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507447411560",
+        "st_nlink": "1",
+        "st_size": "62085",
+        "st_uid": "1000"
+      },
+      "sha256": "d242aea5fcf6408b1c1f622442f88f68b9526ce1f8bd2890d74a144677c427d9"
+    },
+    "source-01.py.txt": {
+      "bytes": 25220,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792325507526245273",
+        "st_dev": "66306",
+        "st_ino": "60582311",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507526245273",
+        "st_nlink": "1",
+        "st_size": "25220",
+        "st_uid": "1000"
+      },
+      "sha256": "09295a80660f17925ae23765ce8cbd7ff7ceae968d5f2f89349f1cb74c0b9e11"
+    },
+    "source-02.py.txt": {
+      "bytes": 4193,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792325507606972582",
+        "st_dev": "66306",
+        "st_ino": "60582318",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507606972582",
+        "st_nlink": "1",
+        "st_size": "4193",
+        "st_uid": "1000"
+      },
+      "sha256": "39ccae300a4739cc53719bd3b39ce3f8f66e736c6eb672006e338a4c5cc3dc76"
+    },
+    "source-03.py.txt": {
+      "bytes": 4520,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792325507689446892",
+        "st_dev": "66306",
+        "st_ino": "60582325",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507689446892",
+        "st_nlink": "1",
+        "st_size": "4520",
+        "st_uid": "1000"
+      },
+      "sha256": "66a78bb27706626c4cc8ef424a5479f6301204baacd85986e8002c16b751fef1"
+    },
+    "source-04.py.txt": {
+      "bytes": 67710,
+      "physical": {
+        "st_blocks": "136",
+        "st_ctime_ns": "1792325507769741781",
+        "st_dev": "66306",
+        "st_ino": "60582332",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507769741781",
+        "st_nlink": "1",
+        "st_size": "67710",
+        "st_uid": "1000"
+      },
+      "sha256": "e5f119e394193e206655bec4b993ef0bb40b0fbb2f22c92bd5b2d70a622bb518"
+    },
+    "source-05.py.txt": {
+      "bytes": 19173,
+      "physical": {
+        "st_blocks": "40",
+        "st_ctime_ns": "1792325507849359020",
+        "st_dev": "66306",
+        "st_ino": "60582339",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507849359020",
+        "st_nlink": "1",
+        "st_size": "19173",
+        "st_uid": "1000"
+      },
+      "sha256": "04ef85e330eb3cda057b5f4f8e9c06891536bf06d7b26341d392153ecaa861e2"
+    },
+    "source-06.py.txt": {
+      "bytes": 822,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507930218921",
+        "st_dev": "66306",
+        "st_ino": "60582346",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507930218921",
+        "st_nlink": "1",
+        "st_size": "822",
+        "st_uid": "1000"
+      },
+      "sha256": "e16eb809bbf0bceeb4b46e7c9df36dc82c0c5427ee3ee9adbbcda9fa48863da1"
+    },
+    "source-07.py.txt": {
+      "bytes": 98264,
+      "physical": {
+        "st_blocks": "192",
+        "st_ctime_ns": "1792325508009620333",
+        "st_dev": "66306",
+        "st_ino": "60582353",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508009620333",
+        "st_nlink": "1",
+        "st_size": "98264",
+        "st_uid": "1000"
+      },
+      "sha256": "149cfca45f9767541a6b6a9c002da5becc35d106f6eac35eb08b6878b153858b"
+    },
+    "source-08.py.txt": {
+      "bytes": 14972,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792325508086928215",
+        "st_dev": "66306",
+        "st_ino": "60582360",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508086928215",
+        "st_nlink": "1",
+        "st_size": "14972",
+        "st_uid": "1000"
+      },
+      "sha256": "a8bee55eed9049b0f725b3b02444307fae366393677b9eada56e6743c3bdb790"
+    },
+    "source-09.py.txt": {
+      "bytes": 40507,
+      "physical": {
+        "st_blocks": "80",
+        "st_ctime_ns": "1792325508165830809",
+        "st_dev": "66306",
+        "st_ino": "60582367",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508165830809",
+        "st_nlink": "1",
+        "st_size": "40507",
+        "st_uid": "1000"
+      },
+      "sha256": "4b78383bd1bd2218d6072afbb59e6af07c0c0b7e489e806680ab225f66860987"
+    }
+  },
+  "status": "VERIFIED_STATIC_SYNTAX_COUNTS_MULTISETS_AND_FILE_BINDINGS_NOT_RUNTIME_CLOSURE",
+  "summary": {
+    "bytes": 137883,
+    "physical": {
+      "st_blocks": "272",
+      "st_ctime_ns": "1792326515452884695",
+      "st_dev": "66306",
+      "st_ino": "60582414",
+      "st_mode": "33152",
+      "st_mtime_ns": "1792326515452884695",
+      "st_nlink": "1",
+      "st_size": "137883",
+      "st_uid": "1000"
+    },
+    "sha256": "5b06e98e1335a62a8c71b0240653cb73fd13f1c009e7b5867914fcec8e02bb6e"
+  },
+  "totals": {
+    "calls": 1231,
+    "declarations": 279,
+    "generated_source_expressions": 82,
+    "imports": 170
+  }
+}

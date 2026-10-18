@@ -1,0 +1,156 @@
+{
+  "schema": "capacity-native-package-source-seams/1",
+  "status": "SOURCE_REQUIREMENTS_ONLY_NO_NATIVE_RUNTIME_ADMISSION",
+  "evidence": {
+    "summary": {
+      "path": "original-loader-package-text-analysis-v1-2026-10-18.json",
+      "bytes": 137883,
+      "file": "summary.json",
+      "sha256": "5b06e98e1335a62a8c71b0240653cb73fd13f1c009e7b5867914fcec8e02bb6e"
+    },
+    "independent": {
+      "path": "original-loader-package-text-independent-v1-2026-10-18.json",
+      "sha256": "292540bb4734e841daed7d6264ea000c0ac104a2e87798566ab0baa087b69083",
+      "bytes": 20447
+    },
+    "backend_store": {
+      "path": "backend/market/store.py",
+      "sha256": "a299516ab68710d56355e036770d3c9695ed332641e9fa6ee4d64c9f6ede9aff",
+      "executor2468_member": true
+    },
+    "guard_sha256": "030cb5bb25f89c2785e6acbd55aceff5c99b632a5eb538079ee027362ae6178a"
+  },
+  "selected_source_AST_declarations_NOT_CodeTypes": [
+    {
+      "module": "dataclasses",
+      "name": "_create_fn",
+      "line": 449,
+      "ast_sha256": "48920a25e527051c2ed3669687b7f633e46d2fd7d6bc859775d1dbd9aa434a5e"
+    },
+    {
+      "module": "dataclasses",
+      "name": "_process_class",
+      "line": 921,
+      "ast_sha256": "7b58e6d3d630f2940a20330dbbfd984bc1fdaa3749d938569bcab810c8d792e5"
+    },
+    {
+      "module": "pyarrow.parquet.core",
+      "name": "read_table",
+      "line": 1884,
+      "ast_sha256": "053e6df44f7911072f34130988528c01beac06b68fdc98da361e65b3ff35cb89"
+    },
+    {
+      "module": "pyarrow.parquet.core",
+      "name": "ParquetFile.__init__",
+      "line": 314,
+      "ast_sha256": "7c0c4bbd8a834ac35b5723d526323984ab080ceb3a61231bbd36eddabebee28b"
+    },
+    {
+      "module": "pyarrow.parquet.core",
+      "name": "ParquetDataset.__init__",
+      "line": 1387,
+      "ast_sha256": "4e7a9880a58060123ef62346b729742f92c9efff89511b79e519b2f956fb9bd9"
+    },
+    {
+      "module": "pyarrow.parquet.core",
+      "name": "ParquetDataset.read",
+      "line": 1525,
+      "ast_sha256": "bb531a960d4fdadc283827b2cdaec218957309fe31b84847076d981113a52308"
+    },
+    {
+      "module": "pyarrow.fs",
+      "name": "_ensure_filesystem",
+      "line": 85,
+      "ast_sha256": "2ee26b15146cc70f833731b6d4ffc92026d7cfadd914e755af7f5c725367bc8b"
+    },
+    {
+      "module": "pyarrow.fs",
+      "name": "_resolve_filesystem_and_path",
+      "line": 130,
+      "ast_sha256": "052be9e4395a15a98e65e1aa673b1395b9c0e38233612ff85f49c7f8aa562f6d"
+    }
+  ],
+  "source_findings": [
+    {
+      "boundary": "MarketStore.read",
+      "source": "Exact2468 store.py248: deferred pyarrow.parquet import; bare pq.read_table for bars and optional actions, Table.to_pydict, DailyBar/CorporateAction tuples and final TickerHistory. No read_table options override in this selected method. No data file read or method body executed in this checkpoint.",
+      "requirements": "Preserve original local paths, metadata/date/object construction and full source/producer/archive receipts. Do not substitute read_frame/to_pandas or a fake reader for the selected read path."
+    },
+    {
+      "boundary": "pyarrow.parquet.core.read_table1884",
+      "source": "Defaults use_threads=True, pre_buffer=True, arrow_extensions_enabled=True. Constructs ParquetDataset; on ImportError only, conditionally falls back to ParquetFile. Returns dataset.read(...use_threads...).",
+      "requirements": "Retain actual branch and original defaults; never force missing dataset/import failure or change flags to evade native/thread closure. Actual imported distribution, data type and exception paths remain unobserved."
+    },
+    {
+      "boundary": "ParquetDataset.__init__1387/read1525",
+      "source": "Explicit import pyarrow.dataset; ParquetFileFormat -> fragment/FileSystemDataset or ds.dataset. read -> native dataset.to_table(...use_threads...) then optional pandas metadata update.",
+      "requirements": "Bind actual _dataset/_dataset_parquet/native format/scanner/compute/filesystem implementations and resource lifetimes, including Table.to_pydict conversion. Existing six BLAS thread environment settings do not establish Arrow CPU/IO pool or pre-buffer bounds."
+    },
+    {
+      "boundary": "pyarrow.fs22-70/dataset20-101",
+      "source": "Direct _fs dependency; optional Try imports for Azure/Hadoop/GCS/S3, conditional atexit registration after S3 import; dataset references _dataset, compute, optional ORC/parquet/encryption extensions.",
+      "requirements": "Resolve actual installed branches/extensions before admission. Imports/atexit do not prove S3 initialization, networking or any actual thread creation. No new guard exception, native initialization test or network probe authorized here."
+    },
+    {
+      "boundary": "pyarrow.__init__37-54",
+      "source": "Tries _generated_version; exception path contains setuptools_scm fallback. Other direct imports include lib/ipc/types/util. Their complete dependencies and exact native origins remain unbound.",
+      "requirements": "First acquire only previously unread bounded Python/version metadata that source names explicitly. Resolve version and distribution RECORD path using exact authenticated source values, never guessed version/extension suffixes. Ordinary262KiB bounds stay unchanged; any oversized file remains a new refusal, not a blanket exception."
+    },
+    {
+      "boundary": "NumPy/SciPy/sklearn/threadpoolctl",
+      "source": "NumPy module syntax includes _sanity_check/blas_fpe_check/hugepage/reload guards; SciPy includes _distributor_init/_ccallback; sklearn includes base/utils imports and environment setdefault syntax; threadpoolctl declares Thread/ctypes and library scanning APIs.",
+      "requirements": "The old NumPy-only metadata observation is not full native closure. Preserve actual mandatory native-package admission bodies and version checks; do not replace them with metadata-only checks or assume declared Thread/ctypes operations execute."
+    },
+    {
+      "boundary": "dataclasses._create_fn449/_process_class921",
+      "source": "Builds a string wrapper, execs it with supplied globals, and calls __create_fn__; process_class selects class module globals and generated init/repr/eq/frozen/hash functions according to flags.",
+      "requirements": "Bind actual Python/dataclasses source, exact class flags/module/phase and dataclass-only format2 generated records. Display projections and source AST hashes are not live CodeTypes/fingerprints; keep ordinary compiler-emitted nested code separate and manufacture no record for inlined expressions."
+    }
+  ],
+  "bounded_next_source_reads": {
+    "state": "UNPREPARED_REQUIRES_EXACT_SOURCE_INVOCATION_INDEPENDENT_REVIEW_BEFORE_USE",
+    "candidate_new_text_paths": [
+      "pyarrow/_generated_version.py",
+      "pyarrow/ipc.py",
+      "pyarrow/types.py",
+      "pyarrow/util.py",
+      "pyarrow/compute.py",
+      "numpy/version.py",
+      "numpy/_distributor_init.py",
+      "numpy/_core/__init__.py",
+      "scipy/version.py",
+      "scipy/_distributor_init.py",
+      "scipy/_lib/_ccallback.py",
+      "sklearn/_config.py",
+      "sklearn/_distributor_init.py",
+      "sklearn/base.py",
+      "sklearn/utils/_show_versions.py"
+    ],
+    "limits": "Fixed new paths only, no repeat ten-source census, no recursive directory or guessed native-binary copy. Missing/oversized/linked targets must refuse and retain evidence; no fallback package import, Docker exec or cap raise.",
+    "native_binaries_distribution_RECORD_and_thread_control": null
+  },
+  "runtime_implementation": {
+    "source_book": null,
+    "finder": null,
+    "new_guard_source": null,
+    "call_manifest": null,
+    "generated_manifest": null,
+    "phase_manifest": null,
+    "native_package_closure": null,
+    "model_import_strategy": null,
+    "entrypoint": null,
+    "launch": null,
+    "admission": null,
+    "execution_authorized": false
+  },
+  "unchanged": {
+    "producer2431_reference2446_executor2468_separate": true,
+    "old_sources_guard_G08_caps": true,
+    "full_context_receipts_graphs_JSON_UTF8_lifetimes_required": true,
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "model_RAM_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+    "heartbeat": "ACTIVE"
+  }
+}

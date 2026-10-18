@@ -1,5 +1,81 @@
 # Next session
 
+## 2026-10-18 — Package syntax inventory VERIFIED; Arrow/native seams source reviewed
+
+Read research/original-loader-package-text-source-proof-v1-2026-10-18.json.
+Sourcea1914b08154e45ea4fcceecb7918de76e1700f50 (analysis88c86aa7) pins analyzer
+5992dab7/9446B/transport3ce05f3d/5982B/independent32ef34ba/7816B/transport
+315c3d07/6000B. Summary5b06e98e/137883B/independent292540bb/20447B and new
+native-seam REQUIREMENTS contractada07c95/8258B retained. Only new stdlib AST/
+JSON/SHA operational helpers ran on TEN immutable copied package texts337466B.
+No package/backend/model CodeType/import/body, Docker/hostprobe/account/data/
+credential read, old gate/census/packet replay or guard/G08/cap/production change.
+
+ONE source-AST SSH and ONE separately reviewed independent SSH each exited0/
+empty stderr/no owned stop/cleanup failure. Ten source SHA/physical bindings match
+prior6860a76c proof, full source/copy bookends retained.170imports/1231calls/
+279function+class declarations/82lambda-comprehension-generator source expressions;
+1680records/32pages835667B/max45617B/64records each. All pages<=262KiB; no cap
+exception. Summary retained locally; pages stay Spark. Lexical ancestor-field
+labels distinguish body/definition/conditional syntax but do NOT evaluate it;
+module-definition-call labels are NOT an execution trace or compiled-code records.
+
+Independent fold reads32pages+10source copies+summary+prior=44inputs, each two-read
+SHA/heldFD/named physical check then later bookend pass. Exact full source AST
+hashes, page/source association, all import(line,source),call(line,functionsyntax),
+declaration(line,kind,ASThash) multisets and82expressions match. It does NOT
+independently reconstruct every ancestor/qualname/display projection. Eight
+selected bodies displayed without leading docstrings are source projections ONLY,
+never runtime AST projection/CodeType identity/factory/global/generated acceptance.
+
+NEW SOURCE FINDINGS: exact2468 Storea299516a.read248 uses bare pq.read_table for
+bars/optional actions then to_pydict/data-class/date/source construction, NOT
+to_pandas. PyArrow read_table1884 defaults use_threadsTrue/pre_bufferTrue/
+arrow_extensions_enabledTrue -> ParquetDataset.__init__1387 imports dataset ->
+native parquet-format/fragment/dataset; read1525 -> to_table. ImportError fallback
+to ParquetFile remains CONDITIONAL; never force missing dependency or change
+defaults to evade closure. Native conversion/Arrow pools/prebuffer/extension
+origins/lifetimes remain unbound; six BLAS envs do NOT establish Arrow pool bounds.
+
+fs imports _fs plus optional Azure/Hadoop/GCS/S3; conditional atexit finalizer is
+NOT observed S3 initialization/network/thread creation. dataset reaches compute/
+_dataset and optional ORC/parquet/encryption extensions. PyArrow init has explicit
+_generated_version attempt and setuptools_scm fallback; actual version/RECORD/
+native paths still unbound. NumPy initialization syntax includes sanity/BLAS/
+hugepage/reload; SciPy/sklearn/threadpoolctl declarations also need transitive
+source/native/thread review. Old NumPy-only proof is NOT full package closure.
+Dataclasses _create_fn449 builds/execs wrapper in supplied globals; _process_class
+921 selects class globals/flag-dependent generators. Exact dataclass-only format2
+source/module/phase/class flags still mandatory; no all-functions/native allowance.
+
+Healthy existing worker READONLY reviewed exact source/invocation BEFORE each
+use, then actual proofs/seam contract; no newagent/limitedretry/workerops. Wording
+corrected before freeze: method SOURCE was read, method BODY never executed.
+AST warnings-as-errors/purpose18 across4controls/both transports six declared
+text deltas/JSON/SHA/source/diff PASS; Ruff executable/module unavailable. Helpers
+512MiBvirtualAS/20sCPU/30salarm/262KiBfile; timeout/signal/crash branches UNTESTED,
+no host/native/model/daemon RAM bound or reservation. New analysis/independent/
+tools roots COMPLETE immutable; file/readback+output-directory fsync done.
+Exclusive local /tmp/capacity-package-text-analysis-evidence-20261018-v1 retains
+13files306875B+manifest5d811905/7702B; files/root/resolved parent fsynced/readback.
+All old failed/completed roots/sources/packets/admissions unchanged.
+
+NEXT ROOT: SOURCE ONLY implement distinct inert2468 sourcebook/finder/guard
+sources againstc2a72054 contract; keep original2446 SourceBook/030cb5bb guard
+unchanged. In parallel prepare exact bounded previously-UNREAD Python/version
+paths in ada07c95 seam contract, with independent source/invocation/resource review
+BEFORE use. Resolve actual versions/RECORD/native paths without guessed binary
+suffixes, recursive directory copies, package import or cap relaxation. Complete
+selected-call/global/type/generated/native/phase contracts BEFORE any synthetic/
+genuine capacity proposal. Do NOT repeat closed ten-source census/AST analysis or
+73/80/23/65+4/tiny/diagnostic/v2 gates/packets for docs. Producer2431/reference2446/
+executor2468/original receipts/full context+graphs+JSON+UTF8 lifetimes separate.
+Sourcebook/finder/newguard/strategy/entrypoint/manifests/wrapper/owner/caller/
+stager/bootstrap/packet/runtime/launch/admission NULL/execution_authorizedFALSE.
+Model/RAM/horizon/history/ordinary/intraday/fill/UI UNVERIFIED; originaltimingFAILED/
+publicationCLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/actual
+twohost/Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Ten stopped-N2 package source copies VERIFIED; package runtime unadmitted
 
 Read research/original-loader-stopped-package-source-proof-v1-2026-10-18.json.

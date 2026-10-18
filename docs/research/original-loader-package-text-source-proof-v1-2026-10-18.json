@@ -1,0 +1,187 @@
+{
+  "schema": "capacity-package-text-source-checkpoint/1",
+  "status": "VERIFIED_STATIC_SYNTAX_INVENTORY_SOURCE_REVIEWED_NATIVE_SEAMS_ALL_PACKAGE_MODEL_BODIES_UNRUN",
+  "source_revision": "a1914b08154e45ea4fcceecb7918de76e1700f50",
+  "analysis_source_revision": "88c86aa7139d5d500063dcab258baa3e71802f3b",
+  "starting_revision": "eb3ea6cf0d0fafe75bc1d08f44cd6a6808d9ded2",
+  "branch": "codex/learned-live-release-20261006",
+  "starting_owned_worktree": "CLEAN; git pull --rebase origin main up to date",
+  "objective": "Inspect exactly ten authenticated package source copies, independently bind their complete syntax inventories, and declare unresolved native/generated/resource seams without importing package payloads or changing guard policy.",
+  "files": {
+    "sources/analyze-stopped-package-texts-v1-2026-10-18.py": {
+      "sha256": "5992dab789eb1a7136a77469bce2dd30a67b573cfed47fa8f7345070755b1867",
+      "bytes": 9446
+    },
+    "sources/stopped-package-text-analysis-transport-v1-2026-10-18.py": {
+      "sha256": "3ce05f3d0fffc59a2a8d0fcf68cc0527dc5b64ac7c8f15d0a8863fccea023954",
+      "bytes": 5982
+    },
+    "sources/verify-package-text-analysis-v1-2026-10-18.py": {
+      "sha256": "32ef34ba819c00301efcabf03288fb73f438bc4bd01cae033df8ecea2753c42b",
+      "bytes": 7816
+    },
+    "sources/package-text-analysis-independent-transport-v1-2026-10-18.py": {
+      "sha256": "315c3d07f73473c02674dac8e0f7ba6684621a6b349988dc351bc22b327150f4",
+      "bytes": 6000
+    }
+  },
+  "summary": {
+    "path": "original-loader-package-text-analysis-v1-2026-10-18.json",
+    "sha256": "5b06e98e1335a62a8c71b0240653cb73fd13f1c009e7b5867914fcec8e02bb6e",
+    "bytes": 137883
+  },
+  "independent": {
+    "path": "original-loader-package-text-independent-v1-2026-10-18.json",
+    "sha256": "292540bb4734e841daed7d6264ea000c0ac104a2e87798566ab0baa087b69083",
+    "bytes": 20447
+  },
+  "native_seam_contract": {
+    "path": "original-loader-package-native-seams-v1-2026-10-18.json",
+    "sha256": "ada07c95284817b7d918b01b8024c1d828c65fc6f129de1a6c69edcdb178398e",
+    "bytes": 8258,
+    "kind": "SOURCE_REQUIREMENTS_ONLY_NO_NATIVE_RUNTIME_ADMISSION"
+  },
+  "input_binding": {
+    "prior_independent_proof_sha256": "6860a76c8a50e4891549ea656ed881cf81518ae1e7d28b02ba65bd32d045c08b",
+    "sources": 10,
+    "source_bytes": 337466,
+    "scope": "Existing immutable stopped-N2 source copies only, exact SHA/size/local-copy physical fields with held-file two reads and later bookends; no Docker copy/inspect, package import or source-census replay. This does not reauthenticate current installed package roots or native binaries."
+  },
+  "inventory": {
+    "modules": 10,
+    "imports": 170,
+    "calls": 1231,
+    "declarations": 279,
+    "generated_source_expressions": 82,
+    "records": 1680,
+    "pages": 32,
+    "page_bytes": 835667,
+    "max_page_bytes": 45617,
+    "max_records_per_page": 64,
+    "summary_bytes": 137883,
+    "selected_source_projections": 8,
+    "limits": "AST syntax only, not evaluated branches/defaults/annotations/decorators/generator bodies or full import/call closure. Module-definition-call label records lexical syntax; it is not an execution trace. Source expressions do not imply compiler-emitted CodeTypes."
+  },
+  "actual_operations": {
+    "SSH_invocations": 2,
+    "all_exit": 0,
+    "stderr": "EMPTY",
+    "owned_stop": null,
+    "cleanup_failure": null,
+    "ran": [
+      "new stdlib AST analyzer on exact retained texts",
+      "separate independent stdlib AST/JSON/SHA verifier",
+      "new source/JSON/SHA validation and preservation",
+      "Git checkpoints"
+    ],
+    "Docker_or_container_create_start_exec_load": false,
+    "host_resource_probe": false,
+    "copied_package_backend_CodeType_import_or_body": false,
+    "model_account_market_data_credentials_read": false,
+    "old_gate_packet_or_census_body_replay": false,
+    "guard_G08_caps_original_production_change": false,
+    "control_helper_compilation": "Only reviewed operational helpers, not copied package/application source."
+  },
+  "independent_validation": {
+    "inputs": 44,
+    "scope": "32pages+10source copies+summary+prior proof; each read performs two full bounded reads and physical bookends, followed by another readback pass. Page SHA/size/source association and full source AST hashes bound; exact import(line,source), call(line,function syntax), declaration(line,kind,AST SHA) multisets and generated-expression counts recomputed.",
+    "totals": {
+      "calls": 1231,
+      "declarations": 279,
+      "generated_source_expressions": 82,
+      "imports": 170
+    },
+    "exclusions": "Does not independently reconstruct every ancestor-field path, source qualified name or display projection. Those are separately source-reviewed and never live CodeType/global/type/phase/native proof.",
+    "worker": "Reused healthy trading_action_consistency READONLY source/exact invocation/resource review BEFORE each single use, then final report/seam/proof review. No new agent, limited retry, worker ops/imports/tests.",
+    "final": "No deterministic source/invocation blocker found. Source findings consistent; requested wording correction clarifies method source was read but no method body executed, fixed before freeze."
+  },
+  "source_findings": {
+    "backend_store": "a299516a fullSHA matches2468 executor declaration. MarketStore.read248 uses bare pq.read_table for bars/optional actions then to_pydict and original data-class/date/source metadata construction; no to_pandas substitution.",
+    "Arrow_path": "read_table1884 defaults use_threads=True/pre_buffer=True/arrow_extensions_enabled=True -> ParquetDataset.__init__1387 imports pyarrow.dataset -> native format/fragment/dataset, read1525 -> to_table; ImportError fallback remains conditional and must not be forced.",
+    "native_optional_branches": "pyarrow.fs imports _fs and optional Azure/Hadoop/GCS/S3; conditionally registers an atexit finalizer. Dataset imports compute/_dataset and optional ORC/parquet/encryption. This is not observed S3 initialization, socket/network/thread creation or first runtime event.",
+    "thread_and_origin_limits": "Six existing BLAS env settings and old NumPy-only metadata proof do not establish Arrow CPU/IO pools/pre-buffer/native-extension resource bounds. Actual transitive origins/versions/RECORD/extension hashes and native code behavior remain unresolved.",
+    "dataclass": "Pinned dataclasses._create_fn449 constructs/execs wrapper using supplied globals; _process_class921 selects class-module globals and flag-dependent generation. Requires exact dataclass-only format2 actual source/module/phase/class flags; projections/ASTs are not generated fingerprints.",
+    "unchanged_admissions": "Retain mandatory native-package version bodies, full original source/config/calendar/economic/archive/input receipt and object/allocation lifetimes. No metadata-only substitution, forced dependency ImportError, altered Arrow default or generic native allowance."
+  },
+  "checks": {
+    "AST_warnings_as_errors": "PASS4control_sources",
+    "purpose_comments": "PASS18functions",
+    "whole_transports_after_six_declared_deltas_each": "PASS",
+    "JSON_SHA_source_commit_bindings": "PASS",
+    "independent_syntax_multisets": "PASS170imports_1231calls_279declarations_82expressions",
+    "staged_source_diff": "PASS",
+    "Ruff": "UNAVAILABLE",
+    "model_behavior_type_factory_lifetime_RAM": "UNRUN_UNVERIFIED"
+  },
+  "resources": {
+    "helpers": "512MiB virtualAS/20sCPU/30s alarm/262KiB files each; two separately owned70s SSH transports with bounded logs and reviewed cleanup. Actual timeout/signal/owned-stop/crash branches unexercised.",
+    "native_model_or_daemon_memory_bound": null,
+    "headroom_or_reservation_claim": false
+  },
+  "preservation": {
+    "analysis_root": "/home/animallya96/scratch/capacity-package-source-analysis-20261018-v1",
+    "analysis_tools_root": "/home/animallya96/scratch/capacity-package-text-analysis-tools-20261018-v1",
+    "independent_root": "/home/animallya96/scratch/capacity-package-text-analysis-independent-20261018-v1",
+    "independent_tools_root": "/home/animallya96/scratch/capacity-package-text-analysis-independent-tools-20261018-v1",
+    "remote": "32pages835667B stay Spark with original ten sources and new helper copies/proof; files/readback+output directories fsynced. No crash or parent-namespace durability guarantee claimed.",
+    "local": {
+      "root": "/tmp/capacity-package-text-analysis-evidence-20261018-v1",
+      "files": 13,
+      "bytes": 306875,
+      "manifest_sha256": "5d811905d76de0ca0a6dfd90ca9ad39776b52de743288b56e079a3ee402c7ed8",
+      "manifest_bytes": 7702,
+      "source_revision": "a1914b08154e45ea4fcceecb7918de76e1700f50",
+      "analysis_source_revision": "88c86aa7139d5d500063dcab258baa3e71802f3b",
+      "contract": {
+        "sha256": "ada07c95284817b7d918b01b8024c1d828c65fc6f129de1a6c69edcdb178398e",
+        "bytes": 8258,
+        "source": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/original-loader-package-native-seams-v1-2026-10-18.json",
+        "physical": {
+          "st_dev": "16777223",
+          "st_ino": "181001668",
+          "st_mode": "33188",
+          "st_uid": "501",
+          "st_nlink": "1",
+          "st_size": "8258",
+          "st_mtime_ns": "1792326866240359806",
+          "st_ctime_ns": "1792326866240359806"
+        }
+      }
+    },
+    "old_roots_sources_packets_admissions": "UNCHANGED; completed new roots immutable; never replay/overwrite for documentation"
+  },
+  "next": "SOURCE ONLY implement distinct inert2468 sourcebook/finder/guard sources against c2a72054 contract, retaining old2446 SourceBook/030cb5bb guard unchanged. In parallel prepare exact bounded previously-unread Python/version metadata source paths listed in ada07c95 native-seam contract; require source/invocation/resource independent review BEFORE use. Resolve actual version/RECORD/native paths without guessing binary suffixes, recursive directory copying, package import or cap relaxation. Complete selected-call/global/type/generated/native/phase contracts and independent review BEFORE any synthetic or genuine capacity proposal. Never repeat closed census/AST analysis or prior73/80/23/65+4/tiny/diagnostic/v2 for docs.",
+  "unadmitted": {
+    "source_book": null,
+    "finder": null,
+    "new_guard_source": null,
+    "selected_callable_closure": null,
+    "call_manifest": null,
+    "generated_manifest": null,
+    "phase_manifest": null,
+    "native_package_closure": null,
+    "model_import_strategy": null,
+    "entrypoint": null,
+    "wrapper": null,
+    "owner": null,
+    "caller": null,
+    "stager": null,
+    "bootstrap": null,
+    "packet": null,
+    "runtime": null,
+    "launch": null,
+    "admission": null,
+    "execution_authorized": false
+  },
+  "unchanged": {
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "missing_original_raw_receipts": "MISSING",
+    "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "actual_two_host": false,
+    "Spark2_image_daemon_temp_incremental_RAM": "UNADMITTED",
+    "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+    "heartbeat": "ACTIVE",
+    "diagram": "NONE"
+  }
+}
