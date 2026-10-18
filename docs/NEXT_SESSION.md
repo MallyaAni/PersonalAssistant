@@ -1,5 +1,64 @@
 # Next session
 
+## 2026-10-18 — LOCAL positive endpoint/collector and pair barrier VERIFIED
+
+Read research/historical-checkpoint-local-endpoint-proof-2026-10-18.json.
+ROOT new driver56f4f14e/17240B reuses unchanged owner266d library mechanics,
+endpointf4e/caller66ff/collector6a99/raw5d61/fixeda15a/RPC30f7. Both roles use
+the SAME actual pinned Spark1 SSH key. Distinct launch host_key_sha256 fields
+are domain-separated SYNTHETIC ROLE witnesses, expressly bound in retained
+provenance; immutable ACTUAL_TWO_HOST version token is not host proof. No real
+owner.execute/admission or Spark2 operation. Local-only flags remain false
+for actualtwohost/native/model/account/adoption. No production change.
+
+One separately named v2 ran two positive peer journeys:8actual decoded and
+validated responses each, common115B opaque fixture/rawSHAad414685/contentroot,
+distinct PREPARED witnesses. Both terminal streams half-close/EOF/exit0;
+one STATUS-only reopen perpeer and exact consumed-session refusal before read.
+All12f612 phase containers exited0/noOOM; first01:45:19.111444917Z through
+last01:45:58.176133796Z. Roots scratch/checkpoint-local-endpoint-20261018-v2-a
+and-v2-b COMPLETE; never restart/replay/adopt.39preallocated files6365184B
+plus launch perroot; all40files/80total full hashes and physical bookends
+independently compared with readonly collector reports. Synthetic NaN opaque
+bytes retained exactly; no native save/full account imported or executed.
+
+Strict pair-global quiescence barrierbacc653e binds launch/six exact ordinary/
+STATUS/refusal CIDs/states/inspection receipt hashes/both observed STATUS hashes,
+fsynced before either collector create. Actual last required exit
+01:45:48.632351149Z < first collector start01:45:54.917972474Z. Verifier3ee99658
+checks exact nanosecond strings without floating projection and local durable
+acquisition order. Independent proofb69faea0/82659B covers394closed local logs,
+actual stopped runtime,16responses,source/physical files. Retained exclusive
+scratch/checkpoint-local-endpoint-evidence-20261018-v2:404files639206B,
+manifest e0e3da52/preserver52ef2220, two bounded sub1MiB batches/fsync/readback.
+Driver/library/verifier/plan initially preserved in controller-source-v2 root.
+Exact UID1000/noneRO/1CPU/512MiB=swap/PIDs32/HCdisabled/lognone/tmp64MiB;
+endpoint threebinds, collector fourth expectationRO plus outputRO. Fresh3GiB
+MemAvailable/1GiB scratch/2048inode gate before each create. Headroom/targets
+are not full native/model/horizon physical reservations. Alarm/remote-stop
+failure branches not newly exercised. Existing worker READONLY source review;
+AST+purpose-comments checked, Ruff unavailable. No old6/11/18/17/15/21 reruns.
+
+PRESERVED v1 ordering finding: driver67a83424 finished12phases0/noOOM with
+per-role quiescence and16responses; firstcollector01:40:33.931813743Z preceded
+otherrole refusal finish01:40:39.600387511Z. Pair-global criterion NOT MET,
+though each collector read its own quiescent root and both ordinary sessions
+had finished. Original v1 roots/source/proofa3e8020f/manifest9f1abf8d retained
+unchanged. Explicit failure receipt retained in v2 evidence. V2 adds one pair
+barrier and new roots/localdir/container suffix, does not relabel/adopt v1.
+
+NEXT source boundary: actual-owner266d execute still has the same per-role
+collection loop. Fix/repin that UNEXECUTED source with pair-global ordering
+using retained v1/v2 evidence, preserving266d bytes. LOCALv2 does not repair
+or admit real owner.execute. Actual twohost still needs independent admission,
+Spark2 exactf612 DockerLOAD/resources NOTDONE/NOTADMITTED and actual host proof;
+never repeat unchanged availability probe or substitute profile. Native save/
+metadata/pre-effect reservation/restore/full-model RAM/horizon/coordinator/
+corporate actions remain open. No full corrected launch, failedv6 replay or
+genuine run authorized. Original timing FAILED/publication CLOSED/missing raw
+receipts unchanged; weekday/intraday/fill/UI UNVERIFIED. Heartbeat stays ACTIVE;
+no permission question pending. Diagram impact: NONE — private fixture only.
+
 ## 2026-10-18 — Private owner safety fixtures VERIFIED; real executor still gated
 
 Read research/historical-checkpoint-owner-safety-proof-2026-10-18.json.

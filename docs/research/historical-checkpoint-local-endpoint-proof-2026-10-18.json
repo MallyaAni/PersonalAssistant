@@ -1,0 +1,392 @@
+{
+  "diagram_impact": "NONE — private standalone fixture/controller/evidence, deployed architecture unchanged",
+  "evidence_sha256": {
+    "BOTH_LOCAL_ALL_PHASES_STOPPED_BEFORE_COLLECTION.json": "bacc653edb48c827e6fb61b0f728b7d2ff65b8be5c3450c075b470181c89fc46",
+    "BOTH_LOCAL_PREARM_DURABLE.json": "609ecb42dd02b75a73e07eccd7f687a9bc7c5433392ca2f7d48e716fc354a174",
+    "COMPLETE_LOCAL_ONLY.json": "b6babaf47833ca6dceee9ce1df11b21c25cdb6a4859220dfac6d12791632a954",
+    "LOCAL_ONLY_DECLARATION.json": "e392362d72d084c6b64a94ddf6a963c5ee66b13ef737c88300580e69fcc54ceb",
+    "SYNTHETIC_LAUNCH_FIELD_PROVENANCE.json": "779b58db58651790f351d4cb8604df5290aaa102bf5eded6b965e0a6deba69bd",
+    "a-collector.json": "87cfb5541dccd068f3ffdeafd20c189a43447fda9d5dbd51d0a5bd22bf661c7d",
+    "b-collector.json": "38160932cf3fac38166eb09465b4fd3e708e480d88f5be4920c1df193baa29c8"
+  },
+  "independent_proof_bytes": 82659,
+  "independent_proof_sha256": "b69faea0429787b188ff572e6641fc28e416706da87764383c7d994e64f4378f",
+  "limitations": [
+    "Actual two-host placement/durability/adoption flags stay false. Two synthetic launch-role hashes are not actual distinct host keys, despite immutable field/version names. Local positive integration is not real two-host owner admission.",
+    "Spark2 exactf612 Docker load/resources are still NOT DONE/NOT ADMITTED. No missing-image probe repeated, no image substitution, daemon experiment, service/model restart or denied-read bypass.",
+    "Owner266d real execute remains unrun/unadmitted and still needs the pair-global barrier fix with source repinning before a future actual two-host review. No external genuine admission exists.",
+    "Only115B tiny synthetic opaque state is captured. No full832MB/horizon prefix-suffix growth, native save/metadata/pre-effect reservation, restore, model/context RAM, coordinator/corporate actions, full corrected historical run or numerical/economic acceptance.",
+    "Logs/metadata/source staging have finite per-file/input bounds and small targets, not cumulative preallocated physical quota. Timeout/alarm/remote-stop branches were not newly exercised by this positive path.",
+    "Original timing FAILED/publication CLOSED/missing raw receipts unchanged. Genuinev6 OPEN/PAUSED/no replay/adoption/new genuine run; ordinary/intraday/fill/UI remain UNVERIFIED."
+  ],
+  "local_file_count_before_independent_proof": 394,
+  "local_logs": "/tmp/checkpoint-local-endpoint-owner-20261018-v2",
+  "next_boundary": "Fix and repin the unexecuted actual-owner pair-global ordering source using retained v1 evidence and localv2 proof; preserve its original266d bytes. Actual two-host execution still requires independent exact-image/runtime/resource/host admission. Do not repeat local positive gates or earlier completed suites for documentation.",
+  "objective": "Exercise the unchanged endpoint and independent collector through a complete tiny positive PREPARED/STATUS/consumed-refusal path on two distinct local roots, with both peers quiescent before any collection.",
+  "observed_decoded_transcript_sha256": {
+    "a": "3ad84a4dab6d4aae30d758fa7b6b0dbf03a0993aa45d4a981ef6559a4b3f9baf",
+    "b": "02d8d37c892daffc6cf556e67a070ea30654d8a1ad9f8f116b5ec0011de0ec8b"
+  },
+  "peer_reports": {
+    "a": {
+      "peak_rss_kib": {
+        "ordinary": 20744,
+        "refusal": 20344,
+        "status": 20548
+      },
+      "permit_sha256": "b1d4d9385b96cd30489c1ad5550490d1ad8b8e723e3c04b1992410ef25a2d38d",
+      "prepared_sha256": "4008e3e9a950748977a23eaf28174197ecf5a15e0b673f20453ab78dbceba082",
+      "raw_bytes": 115,
+      "raw_sha256": "ad414685fb444741640a5adc3fa8d3bc037c037eeb3b4d503d28ad81e7dfe10d",
+      "reserved_file_bytes": 6365184,
+      "reserved_file_inodes": 39
+    },
+    "b": {
+      "peak_rss_kib": {
+        "ordinary": 20628,
+        "refusal": 20540,
+        "status": 20536
+      },
+      "permit_sha256": "b8705e4f965232ba0b0763cda8fece27240e68ffe415ac3f86ac0d0dcd311f1a",
+      "prepared_sha256": "f296f2bccf89adc50bc8e4595b5b53ed138b84c6b776a7695c8a1de230a499a9",
+      "raw_bytes": 115,
+      "raw_sha256": "ad414685fb444741640a5adc3fa8d3bc037c037eeb3b4d503d28ad81e7dfe10d",
+      "reserved_file_bytes": 6365184,
+      "reserved_file_inodes": 39
+    }
+  },
+  "preservation": "Original closed local log bytes, independent proof, exact driver/library/verifier/preservation sources, v1 source and explicit ordering failure copied exclusively to a NEW Spark1 evidence root in two sub-one-MiB batches. Per-file fsync/readback SHA, directory fsync, final manifest last. No output root changed by preservation, and no completed gate rerun for documentation.",
+  "profile": "Exact immutable f612 image/public CURRENT31 mapbfbcb6ec/writera8c5083f; no native/model/account imports or calls. Public writer source is authenticated/read as source only.",
+  "retained_v2_evidence": {
+    "batches": 2,
+    "bytes": 639206,
+    "files": 404,
+    "manifest_sha256": "e0e3da52c58589692c2162681e191ab2c8d53f82d71030008c1fa21dd7820c75",
+    "preservation_helper_sha256": "52ef2220073d16906a8b47ebc1469013e26d76b862c798518d5fd70428d0efee",
+    "root": "/home/animallya96/scratch/checkpoint-local-endpoint-evidence-20261018-v2"
+  },
+  "review": "Existing healthy worker independently READONLY reviewed both driver variants, resource/invocation shape and barrier/verifier; no worker runtime. ROOT AST/purpose-comment checks passed; Ruff unavailable. Real positive endpoint and collector acceptance above is separate from earlier isolated6/11/18/17/15/21 suites, which were not rerun.",
+  "runtime_profile": "UID1000:1000/networknone/readonly rootfs/1CPU/512MiB RAM=total swap/PIDs32/capdropALL/no-new-privileges/healthcheckNONE/logdriverNONE/tmp64MiB/Python-I-S-B. Three exact binds for endpoint sourceRO/public fixtureRO/outputRW; collector adds expectationRO and output becomesRO. All stderr empty. No Spark2 probe/load/model/service operation.",
+  "scope": "Both roles use the same actual pinned Spark1 SSH host. New standalone fixture driver reuses exact owner library mechanics in separate ROOT namespaces, aggregate stderr observation, exclusive local logs and names. It never calls the real owner.execute or creates a two-host admission. Launch version and host_key_sha256 field names are immutable protocol tokens; distinct launch fields are domain-separated synthetic role witnesses, explicitly distinguished from the same actual Spark1 transport key in hash-bound provenance. No repository integration or production deployment.",
+  "source_sha256": {
+    "caller.py": "66ffdbad6b0edac14efd01532da3f9df3c7445f07051fa740cef0c29e7b61114",
+    "driver.py": "56f4f14e7cda692cadbe574d52554e718963284be790f3fa3dcc2fc5841c1f24",
+    "independent-verifier.py": "3ee9965863e805e9227d4cd6c454a967fc68303766fe9462bd89388ff378aabc",
+    "owner.py": "266d293847aef772b1392cc54e7280f61007f5dee2c71881adfb0938dff11a6e",
+    "preservation.py": "52ef2220073d16906a8b47ebc1469013e26d76b862c798518d5fd70428d0efee"
+  },
+  "status": "VERIFIED_LOCAL_ENDPOINT_COLLECTOR_AND_PAIR_GLOBAL_BARRIER_ONLY",
+  "unchanged_collector_sha256": "6a99a1cdf6089fcc9a03c661c8daf338b18d6c048f8e3e9400d41406cffd97f8",
+  "unchanged_endpoint_sha256": "f4e4e262c6140bd1a162e5c83aba87b104be1c86366652447fb73c7997befb06",
+  "unchanged_raw_fixed_rpc_sha256": {
+    "fixed": "a15a3720fe368a75d9aaf4e59d767347b7cb863dd180c531ebfa3c41f0b1ab2b",
+    "raw": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604",
+    "rpc": "30f7b6f3b17ff6736d45a14ecf26bbc19ef5882b40591b4ddd1e1949beacb54e"
+  },
+  "v1_additional_context": "Initial local source67a83424 completed all twelve phases/exit0/noOOM, sixteen validated replies and per-role read-only collection. The stricter pair-global ordering was NOT MET: first collector began before the other role finished STATUS/refusal. Original proofa3e8020f and source/roots/evidence manifest9f1abf8d retained unchanged. Separate v2 moves collectors after both roles finish; no old-root replay/adoption/relabel. Original future actual-owner266d execute still has the per-role collection loop; local v2 does not repair or admit that real path.",
+  "v1_preserved_ordering_failure": {
+    "actual_two_host_native_model_account_adoption": false,
+    "both_ordinary_exits_before_any_collection_verified": true,
+    "driver_sha256": "67a83424b26a80c8d3f33cf4598e3ba78aa5caf5e3c65d51fedc57f73f0f1ea5",
+    "first_collector": "480dee55721115bfdeacd4f9f8974e2f68ed6dd155930c708afee60dc9e2f161",
+    "first_collector_started_at": "2026-10-18T01:40:33.931813743Z",
+    "interpretation": "All twelve containers exited0/noOOM and each collector read its own quiescent root. Narrow per-role endpoint/collector acceptance remains valid. The stricter handoff-wide pair barrier was absent because collection occurred inside the per-role STATUS/refusal loop. New separately named v2 moves both collectors after the complete pair barrier; it cannot adopt or relabel v1 outputs.",
+    "last_required_phase": "107644bbfb58fbe1b3642ca1c57873c4418936c134af9b9341403cf6d69571a0",
+    "last_required_phase_finished_at": "2026-10-18T01:40:39.600387511Z",
+    "original_independent_proof_sha256": "a3e8020fdd4b380fd358ec39b1eb799998687a0b72476854c347511701aab0d1",
+    "pair_global_all_status_refusal_exits_before_any_collection_verified": false,
+    "per_role_quiescence_verified": true,
+    "retained_evidence_root": "/home/animallya96/scratch/checkpoint-local-endpoint-evidence-20261018-v1",
+    "retained_manifest_sha256": "9f1abf8d528b6957617b21e0a111c38d2084f28729aea02c30851ddeb51349d9",
+    "scope": "Read-only retrospective check of the already completed LOCAL synthetic infrastructure fixture. No protocol or source gate was rerun; no root was modified.",
+    "status": "V1_PAIR_GLOBAL_COLLECTION_ORDER_NOT_MET"
+  },
+  "v2_complete": {
+    "actual_two_host_native_model_account_adoption": false,
+    "all_phases_stopped_barrier_sha256": "bacc653edb48c827e6fb61b0f728b7d2ff65b8be5c3450c075b470181c89fc46",
+    "collector_sha256": {
+      "a": "87cfb5541dccd068f3ffdeafd20c189a43447fda9d5dbd51d0a5bd22bf661c7d",
+      "b": "38160932cf3fac38166eb09465b4fd3e708e480d88f5be4920c1df193baa29c8"
+    },
+    "common_root": {
+      "kind": "page",
+      "length": 300,
+      "sha256": "a8f7187bc656ed10e05c6899199d815b732f1a74ea249650a85a465c7fa9615f",
+      "slot": 1
+    },
+    "launch": "230ac402b77d48e7de59a4551823f4dc8864b0cc95d2c81029587eb242084b4c",
+    "observed_response_counts": {
+      "a": 8,
+      "b": 8
+    },
+    "plan_sha256": "e392362d72d084c6b64a94ddf6a963c5ee66b13ef737c88300580e69fcc54ceb",
+    "raw_sha256": "ad414685fb444741640a5adc3fa8d3bc037c037eeb3b4d503d28ad81e7dfe10d",
+    "real_owner_executor": false,
+    "scope": "LOCAL_ENDPOINT_COLLECTOR_ONLY"
+  },
+  "v2_invocation": [
+    "python3",
+    "-I",
+    "-S",
+    "-B",
+    "/tmp/checkpoint_local_endpoint_integration_20261018.py",
+    "--execute-reviewed-local",
+    "e392362d72d084c6b64a94ddf6a963c5ee66b13ef737c88300580e69fcc54ceb"
+  ],
+  "v2_roots": {
+    "a": "/home/animallya96/scratch/checkpoint-local-endpoint-20261018-v2-a",
+    "b": "/home/animallya96/scratch/checkpoint-local-endpoint-20261018-v2-b"
+  },
+  "v2_runtime": [
+    {
+      "container": "2497c52d3b55af56db3375d2b83371da66eb656e85318fa8784468f4329ea931",
+      "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "phase": "reserve",
+      "readonly_output": false,
+      "role": "a",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-18T01:45:19.571249668Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-18T01:45:19.111444917Z",
+        "Status": "exited"
+      }
+    },
+    {
+      "container": "4ca7673d599510db097ca8a3fac2dddf9a4a801ac025e99aff0e06292f04d5be",
+      "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "phase": "prepare",
+      "readonly_output": false,
+      "role": "a",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-18T01:45:26.66895062Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-18T01:45:26.45515938Z",
+        "Status": "exited"
+      }
+    },
+    {
+      "container": "4e92a82f4d5d1f3a307236ab51315b5fc756a3e1e92f64a81b781184411f2053",
+      "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "phase": "ordinary",
+      "readonly_output": false,
+      "role": "a",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-18T01:45:36.758983704Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-18T01:45:34.676691969Z",
+        "Status": "exited"
+      }
+    },
+    {
+      "container": "ba4c4ba68883f7d5c001761e8e2c38dc8ab0512ee8e800200bcf092818b96e94",
+      "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "phase": "status",
+      "readonly_output": false,
+      "role": "a",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-18T01:45:40.402351992Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-18T01:45:40.214840542Z",
+        "Status": "exited"
+      }
+    },
+    {
+      "container": "c5af790c90ecf95146455dcc126b37a272d497aa0be5d427508c5410d69f5b7f",
+      "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "phase": "refusal",
+      "readonly_output": false,
+      "role": "a",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-18T01:45:43.344974782Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-18T01:45:43.174478225Z",
+        "Status": "exited"
+      }
+    },
+    {
+      "container": "352ac421adb2e510184e5636cb3356647984c50e75733912c0cd5a8a483553d2",
+      "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "phase": "collect",
+      "readonly_output": true,
+      "role": "a",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-18T01:45:55.063706849Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-18T01:45:54.917972474Z",
+        "Status": "exited"
+      }
+    },
+    {
+      "container": "055f32898b6a06b69d1cf22dcd6dc04bdb706081ce1f611d1e690a3d0e4d84e6",
+      "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "phase": "reserve",
+      "readonly_output": false,
+      "role": "b",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-18T01:45:23.209411909Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-18T01:45:22.695591296Z",
+        "Status": "exited"
+      }
+    },
+    {
+      "container": "a5f8745d2f656a051287defc297aa3ecb754b4ec768ad5287417bf4d1ff21b57",
+      "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "phase": "prepare",
+      "readonly_output": false,
+      "role": "b",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-18T01:45:29.7688613Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-18T01:45:29.553866997Z",
+        "Status": "exited"
+      }
+    },
+    {
+      "container": "acf1a95f9edacf905a73dc69c7f43bb2608cb77da403a64dd4550df112be9f82",
+      "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "phase": "ordinary",
+      "readonly_output": false,
+      "role": "b",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-18T01:45:36.828031903Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-18T01:45:36.212556626Z",
+        "Status": "exited"
+      }
+    },
+    {
+      "container": "35215df8888972acdc1a99a687bfcf715a30bed7e9eb278c581be2f1b0e0a7de",
+      "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "phase": "status",
+      "readonly_output": false,
+      "role": "b",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-18T01:45:45.782443582Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-18T01:45:45.592120341Z",
+        "Status": "exited"
+      }
+    },
+    {
+      "container": "fd49e4e093e0a22dededdf2b21e2835de58694e7af363f5e3783aa269e2f245d",
+      "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "phase": "refusal",
+      "readonly_output": false,
+      "role": "b",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-18T01:45:48.632351149Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-18T01:45:48.434622715Z",
+        "Status": "exited"
+      }
+    },
+    {
+      "container": "6ddd17d7cfac1a765fd10014a0e3a815cdb70000b2cebeb4296f0e5d81a54632",
+      "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "phase": "collect",
+      "readonly_output": true,
+      "role": "b",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-18T01:45:58.176133796Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-18T01:45:58.018068761Z",
+        "Status": "exited"
+      }
+    }
+  ],
+  "v2_source_preservation_root": "/home/animallya96/scratch/checkpoint-local-endpoint-controller-source-20261018-v2",
+  "verified": [
+    "Two positive local peer journeys: eight actually observed decoded and semantically validated responses each, exact common content root/115 opaque fixture bytes/rawSHA, different peer-specific PREPARED witnesses. Synthetic NaN bytes retained unchanged; no canonical finite JSON substitution.",
+    "Both input streams half-close before final reply; EOF and exit0 required. Exactly one STATUS-only reopen per peer matches the original terminal; consumed ordinary reopen raises the exact pre-read refusal without changing state.",
+    "Both pre-ARM output roots and all five original harness inode/extents are captured externally, fsynced/read back and bound before either ordinary process is created.",
+    "Pair-global quiescence barrier binds common launch, six exact ordinary/STATUS/refusal CIDs, observed exit states, quiescent inspection receipt hashes and both actual STATUS reply hashes. Barrier is fsynced before either collector create. Independent exact UTC nanosecond comparison confirms all six required exits precede both collector starts.",
+    "Read-only collectors authenticate all40 output files each:39 preallocated files6365184B plus launch, full controls/index/body/page/harness receipts, original inode/extents, zero DECISION/ACK/unused slots and unchanged source physical bookends. Independent host reader rehashes all80 full files and compares all physical fields with collector receipts.",
+    "All twelve exact f612 containers independently observed stopped/exit0/noOOM. Actual argv/attach/user/network/rootfs/CPU/memory/PIDs/caps/health/log/tmpfs/mounts checked. Collector output and expectation mounts are read-only; no collection writes to checkpoint namespace.",
+    "Fresh3GiB MemAvailable/1GiB scratch/2048inode gates before every container; at most two live512MiB/1CPU containers,600s work alarm and separate15s per-owned-CID stop-only cleanup. Gates are headroom observations, not full native/model physical reservations."
+  ]
+}
