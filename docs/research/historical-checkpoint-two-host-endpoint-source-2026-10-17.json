@@ -1,0 +1,46 @@
+{
+  "status": "REVIEWED_SOURCE_ONLY_INERT_ENDPOINT_NOT_EXECUTED",
+  "endpoint_sha256": "f4e4e262c6140bd1a162e5c83aba87b104be1c86366652447fb73c7997befb06",
+  "endpoint_bytes": 11351,
+  "profile": "CURRENT_f612_bfbcb6ec_a8c5083f",
+  "scope": "Standalone /audit/peer.py endpoint for tiny actual-host PREPARED-only acceptance; not a new repository protocol or coordinator.",
+  "dependency_sha256": {
+    "historical_physical_checkpoint.py": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604",
+    "historical_fixed_slot_checkpoint.py": "a15a3720fe368a75d9aaf4e59d767347b7cb863dd180c531ebfa3c41f0b1ab2b",
+    "historical_checkpoint_peer_rpc.py": "30f7b6f3b17ff6736d45a14ecf26bbc19ef5882b40591b4ddd1e1949beacb54e"
+  },
+  "phases": [
+    "reserve",
+    "prepare",
+    "ordinary",
+    "status",
+    "refusal"
+  ],
+  "resource_arithmetic": "Per host tiny default Peer+RPC5154464B plus five262144B preallocated harness receipts =6465184B. Launch file/bounded logs/metadata additional; source arithmetic only, no runtime or full-horizon capacity proof.",
+  "reviewed_source_corrections": [
+    "Opened-file bounded/no-follow metadata reads with exact fd/path bookends excluding legitimate atime changes.",
+    "Original external reservation schema/resources/identity/pins/full source snapshot compared on reopen.",
+    "Second ordinary attempt requires exact consumed-session PhysicalPause with no incoming read and unchanged status.",
+    "Optimized Python execution is explicitly rejected."
+  ],
+  "source_only_checks": "Python AST parse; READONLY independent existing agent reviewed current full endpoint and called APIs. No imports of endpoint, runtime, unit/native/model tests, fixtures or host protocol effects performed.",
+  "remaining": [
+    "Owner/controller with explicit host/runtime/root/resource source receipt validation",
+    "Bounded per-frame/session deadline and stderr/response framing",
+    "Terminal input half-close before final response",
+    "Image-load resource/runtime admission",
+    "Actual two-host PREPARED/read-only STATUS/refusal acceptance"
+  ],
+  "forbidden": [
+    "Owner DECISION/ACK/commit/adoption",
+    "Native/model/account/order/provider calls",
+    "Generic new realGET",
+    "Replay/adoption of genuinev6",
+    "Production deployment"
+  ],
+  "source_stage_only": true,
+  "preserved_source_root_each_spark": "/home/animallya96/scratch/checkpoint-two-host-endpoint-source-20261017-v1",
+  "preserved_contract_sha256": "205ba368a70d586567a89c605a9e9bac1663be5d1a7133d8dd83e3b5c220c000",
+  "preservation": "Exclusive source-only roots on both Sparks; endpoint+contract SHA checked equal. No endpoint imports/execution or Docker mutation.",
+  "diagram_impact": "NONE — unused standalone endpoint source only, no deployed architecture change"
+}

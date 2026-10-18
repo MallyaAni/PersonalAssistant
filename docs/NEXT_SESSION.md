@@ -1,5 +1,38 @@
 # Next session
 
+## 2026-10-17 — Inert two-host endpoint source reviewed; exact timestamp copy repaired
+
+Read research/historical-checkpoint-two-host-endpoint-source-2026-10-17.json.
+ROOT prepared standalone /audit/peer.py sourcef4e4e262/11351B, not a repository
+protocol/coordinator change. Both Sparks retain exclusive
+scratch/checkpoint-two-host-endpoint-source-20261017-v1/peer.py and contract
+205ba368; both hashes read back equal. SOURCE ONLY: no endpoint import/runtime,
+tests or peer/container creation. Exact existing raw/fixed/RPC sources/pins/
+caps unchanged. New reserve/prepare/ordinary/status/refusal CLI is PARTIAL until
+owner/controller, deadlines, actual resource/runtime admission and two-host
+workflow exist. External source manifest/launch pins are required, not fresh
+host observations. Exact CURRENT identity/31map/writer and source bookends;
+original reservation resources/root/schema/identity/source pins compared on
+reopen; bounded no-follow fd/path metadata; exact consumed-session refusal.
+Independent READONLY review found initial resource-pin, bounded-read and broad
+ValueError gaps; targeted corrections reviewed, NOT runtime/RED/GREEN claims.
+Optimized Python refused. Source AST passes; local Ruff unavailable/no lint.
+Tiny per-host actual future file arithmetic6465184B includes five preallocated
+harness receipts; launch/bounded logs/metadata remain additional. No full native,
+model/account/horizon/adoption or actual two-host acceptance implied. Docker
+load remains NOT DONE; daemon temp/load resources unresolved. Next ROOT work:
+complete source-pinned owner/controller and concrete load admission; no genuine
+run or failedv6 replay. Production and all original histories untouched by task.
+
+Archive proof3c57d988 document projection FAILED four exact ns fields: JS Number
+rounded original Spark1 1792280376823941826→1792280376823942000 and Spark2
+1792280389171255069→1792280389171255000 (mtime+ctime each). Corrected ONLY these
+copied fields to decimal strings, checked4/4 exact against unchanged preserved
+Python independent receipt15cb6275/fullSHA. Original verifier compared exact
+integers; raw receipt/archive evidence unchanged. No completed physical gate
+rerun or old checkpoint rewritten. All future copied ns fields must use exact
+decimal strings or lossless integer handling; avoid JS Number round trips.
+
 ## 2026-10-17 — Exact image archives authenticated on both Sparks
 
 Read research/historical-checkpoint-image-archive-proof-2026-10-17.json.

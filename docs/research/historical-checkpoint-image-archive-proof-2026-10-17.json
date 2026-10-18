@@ -44,10 +44,10 @@
     "spark1": {
       "archive": {
         "bytes": 1519489536,
-        "ctime_ns": 1792280376823942000,
+        "ctime_ns": "1792280376823941826",
         "device": 66306,
         "inode": 42896040,
-        "mtime_ns": 1792280376823942000
+        "mtime_ns": "1792280376823941826"
       },
       "members": 27,
       "mode": "export",
@@ -98,10 +98,10 @@
     "spark2": {
       "archive": {
         "bytes": 1519489536,
-        "ctime_ns": 1792280389171255000,
+        "ctime_ns": "1792280389171255069",
         "device": 66306,
         "inode": 5265547,
-        "mtime_ns": 1792280389171255000
+        "mtime_ns": "1792280389171255069"
       },
       "members": 27,
       "mode": "receive",
@@ -178,6 +178,7 @@
   "load_metadata": {"manifest_sha256":"4cfbc9e0f21ac84efef620165a200bfafa49f433df48f769c65aeede56be7155","repo_tags":null,"image_config":"blobs/sha256/f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272","daemon_pid":2205,"daemon_temp_environment":"PERMISSION_DENIED_NO_BYPASS","meaning":"Empty RepoTags avoids load-time tag overwrite. Actual daemon temp path and incremental load memory remain unverified; scratch free space/client virtual limit cannot substitute."},
   "load_primary_source_review": ["https://raw.githubusercontent.com/docker/cli/v29.2.1/cli/command/image/load.go","https://raw.githubusercontent.com/moby/moby/docker-v29.2.1/daemon/internal/image/tarexport/load.go","https://raw.githubusercontent.com/moby/moby/docker-v29.2.1/daemon/daemon.go","https://raw.githubusercontent.com/moby/moby/docker-v29.2.1/daemon/internal/layer/layer_store.go"],
   "metadata_harness_failure_preserved": "First inline read-only metadata command exited1 and wrapper did not expose remote stderr; cause unverified. New standalone /tmp/checkpoint_image_load_metadata_20261017.py returned the actual bounded metadata above; no retry of original inline command or privilege bypass, no Docker load.",
+  "documentation_precision_correction": "Checkpoint3c57d988 copied four ns timestamp fields through JavaScript Number, rounding Spark1 1792280376823941826 to1792280376823942000 and Spark2 1792280389171255069 to1792280389171255000. Those copied values FAILED exact representation. Corrected only these document fields to decimal strings directly from preserved independent-proof15cb6275. Original Python verification compared exact integers and original receipt/archive bytes are unchanged; no completed physical check was rerun.",
   "unchanged": "No model/network/service restart, image load/start, account/order/history/config or production change by this task. Original timing FAILED/publication CLOSED/missing receipts unchanged. Genuinev6 OPEN/PAUSED/no replay/adoption. Completed gates not repeated.",
   "diagram_impact": "NONE — private one-off image archive preparation did not change deployed architecture"
 }
