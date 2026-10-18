@@ -1,5 +1,76 @@
 # Next session
 
+## 2026-10-18 — Capacity admission/lifecycle SOURCE reviewed;73case proposal ALL UNRUN
+
+Read research/original-loader-admission-source-proof-v1-2026-10-18.json.
+Source5cb62db385cb180294915f551e5d2e2adeaa00bb pins admissionsf7a226b3/13341B,
+calendar37140d9f/1094B/lifecycle3acd8b29/13575B/builder1c0ad9af/12591B/
+contract638e13dc/5531B/staticreviewb7a6f3e1/4466B. New73case proposal4e60ca45/
+10788B; bootstrap/caller/packet/admission NULL, ALL BODIES UNRUN. Only new local
+stdlib source-copy/AST/JSON/static builder+Git ran. No payload import/CodeType/
+body/test/application/numerical/model/account/dataread/SSH/hostprobe/Docker/job/
+oldbody replay. Prior context0212/evidence400d/adaptations39f2/metadata d413 unchanged.
+
+Separate real new admission module copies original invocation/runtime/source/
+producer ASTs exactly; calendar old body follows only deferred NumPy/new-calendar
+imports+explicit root equality. Ten image/profile/revision/account/SHA/size
+constants retained. New reviewed_sessions AST exact; actual real parent/data
+paths, new identity, NO original calendar/Panel/MarketStore/Yahoo import. Native
+NumPy/sklearn versions2.5.3/1.9.1 guarded but package bodies UNRUN. No model load/fit.
+
+Original schema2/audit_source/Git2431 receipt stays distinct from new wrapper/map/
+readonly host-root mapping. Old2446base503e8d50+11modules=2453 union, no legacy
+override. Full map declaration a68ebbef/570874B/compactunion5c3be1ff retained
+research/original-loader-admission-source-map-v1-2026-10-18.json and exclusive
+local /tmp/capacity-admission-source-map-20261018-v3. Typed metadata outside
+ordinary262KiB source/log/packet roots;16MiB metadata bound unchanged. Not an
+assembled tree/finder/import/native-extension/generated/phase closure/admission.
+Original2431/N2native31/producer27471 separate; old genuine bootstrap unchanged.
+
+Proposed lifecycle enforces BEFORE -> retain supplied non-None loaded object ->
+AFTER -> fullJSON+UTF8 -> exclusive candidate fsync/hashreadback -> destination
+THEN proof-parent heldFD/pathidentity fsync -> release own RAM refs/files retained.
+Archives/ShaMap spools/both complete receipt graphs/string+UTF8 retained. No loader
+call/type/model/RAM proof. Exact64KiB/128block/UID1000/nlink1 guard slot is NOT
+installed-fence proof. Public execute unconditionally refuses. Worker source review
+caught missing parent fsync; corrected before any body execution. Actual crash/
+IO/timeout/durability/default256MiB result-bound/RAM behavior remains UNVERIFIED.
+No original/native/Store/caps/guard/G08/account/production change.
+
+73planned outcomes:13reader/20context/11preservation/5calendar/10injected binding
+negative UNITS/14injected phase-holder UNITS. Four children15sCPU/20swait proposed,
+100sparent/130sphase/180sowner/240stransport; e0 UID1000/noneRO/1CPU/2GiB=swap/
+PIDs32/tmp64/noHC/lognone/auditRO+outRW/sixthreads1 only, no actual admission yet.
+Real tiny SYNTHETIC parser Rows/ShaMap/context/reference parity, separate scratch/
+copies; calendar actual new root/public frozen data+SYNTHETIC private-v10 two dates,
+not full-calendar claims from tiny rows. Consumed input tamper distinct from native
+source tamper. Binding/phase units NOT positive fullmap/root/runtime/genuine
+constructor/admission. Full570874B metadata cannot fit262KiB child file cap; no
+silent raise. No whole genuine lifecycle/crash/default-cap/model/RAM/history/live
+acceptance. Isolated original references explicit SYNTHETIC, no original effect
+module import/PaperState instance/provider/account/model calls.
+
+Healthy existing worker READONLY reviewed source/fix/proposal; no newagent/limited
+retry/workerops. Initial6drafts+proposal retained /tmp/capacity-admission-source-
+drafts-20261018-v1; old local mapv1/2678c442+v2/b81649d3 immutable. Source47febd12
+preserved: staged diff FAILED EOF blank but was committed/pushed;5cb62db3 removes
+only that blank (admissions AST identical), fixes generator/repins final map.
+Final AST/purpose27/5admission comparisons/calendar AST/JSON/fullSHA/hashlinks/
+2453union/73unique planned outcomes/diff pass; Ruff unavailable. No runtime fail
+or body rerun. All genuine entrypoint/launch/admission/modelstrategy remain NULL.
+
+NEXT ROOT: implement distinct bounded73case SYNTHETIC bootstrap/fixtures/reference
+boundaries/owner/caller/packet/stager/independent verifier/preservation; proposal
+above is not executable. Source-pin all new modules and explicit unit boundaries.
+Independently review source/fresh actual e0/native package origins/UID/jobs/absent
+roots/resources/exact invocation BEFORE ONE NEW scoped admission/test. No old80/
+23/65+4/tiny/diagnostic/v2 body/root/admission reuse or genuine loader/model/account/
+history/twohost launch/guard/G08/cap relaxation. Fullsource/import/fence/runtime/
+loader/combinedRAM/horizon/historical/weekday/intraday/fill/UI UNVERIFIED. Original
+timingFAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/
+newrun/actualtwohost/Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE.
+Diagram:NONE.
+
 ## 2026-10-18 — Capacity archive context SOURCE reviewed; all bodies UNRUN
 
 Read research/original-loader-archive-context-source-proof-v1-2026-10-18.json.

@@ -1,0 +1,56 @@
+{
+  "schema": "original-loader-admission-source-proof/1",
+  "status": "SOURCE_REVIEWED_UNEXECUTED_ADMISSIONS_LIFECYCLE_73CASE_PROPOSAL",
+  "starting_revision": "0c1f6109d3019b9f9223558d757182ac8835ab2a",
+  "starting_branch": "codex/learned-live-release-20261006",
+  "starting_worktree": "CLEAN",
+  "source_revision": "5cb62db385cb180294915f551e5d2e2adeaa00bb",
+  "prior_context_source": "a665e2d13a00314db211204fd34f5a975ed399cf",
+  "artifacts": {
+    "sources/original-loader-capacity-admissions-v1-2026-10-18.py": {"sha256": "f7a226b3d90472ac3ebe161e4c46beb2c49245d489ac1de4a78f90ee2af6d0a9", "bytes": 13341},
+    "sources/original-loader-capacity-calendar-v1-2026-10-18.py": {"sha256": "37140d9ff8ae5a59d10aa56923f1ce2008b6e603ddb38933a517437d1137fc05", "bytes": 1094},
+    "sources/original-loader-capacity-admission-lifecycle-v1-2026-10-18.py": {"sha256": "3acd8b296b3d14234d7c769e2ce4c5a63c8e381d87d7677476964ea1a5f84b1b", "bytes": 13575},
+    "sources/prepare-original-loader-admission-source-v1-2026-10-18.py": {"sha256": "1c0ad9afb9ff9730c85c988fb6de0456c866577e4d655fddc851ffb5af097336", "bytes": 12591},
+    "original-loader-admission-contract-v1-2026-10-18.json": {"sha256": "638e13dcdd7bc6ad6afea76c2660e73aa0a9b23885a18600aa42423907b9474b", "bytes": 5531},
+    "original-loader-admission-static-review-v1-2026-10-18.json": {"sha256": "b7a6f3e10655d1f686ea9ba9beb07c914a7d503f7a8c06123ff9fe7c214b5ee5", "bytes": 4466},
+    "original-loader-admission-source-map-v1-2026-10-18.json": {"sha256": "a68ebbefb776a93dfdfb56fc6c4893ac35450a224fcf2fa50498cb911bfeda43", "bytes": 570874},
+    "original-loader-archive-context-parity-proposal-v1-2026-10-18.json": {"sha256": "4e60ca45855d43f24b94b4ee7f7faccc1427ec993501cb33395b0b1c1fb2433e", "bytes": 10788}
+  },
+  "activity": "Only new local stdlib source-copy/AST/JSON/static-artifact builder and Git checks ran. No payload import/CodeType compile/body/test/application/numerical/model/account/data read/SSH/host probe/Docker/job/old test-body replay.",
+  "new_admissions": {
+    "identity": "Separately named real modules; source-level copies, not old CLI imports, runtime AST projection or original __file__ remapping.",
+    "unchanged_AST": "Original invocation/runtime/source/producer bodies exact AST. Original calendar body exact after only deferred NumPy/new-calendar imports and explicit calendar-root equality prefix. All ten original image/profile/account/revision/SHA/size constants retained. Source equality does not prove behavior.",
+    "calendar": "New capacity_original_calendar_v1 reviewed_sessions exact original AST/same parent/data paths, explicit new identity; no original calendar/Panel/MarketStore/Yahoo import. Actual NumPy and native package import/parity bodies UNRUN. Original calendar bytes and three data hashes remain separate mandatory authentication.",
+    "source_separation": "Old schema2 invocation/audit_source_sha256 and Git2431/source receipt remain unchanged, separate from capacity wrapper/new source map/root receipt. Exact inherited2446base compact503e8d50 plus11declared module paths =2453 file union; no legacy override. Original2431/N2native31/producer27471 remain distinct.",
+    "new_map_compact_union_sha256": "5c3be1ffa55eb86db02f45e76d2c21ca6a9c9a9e7c60f32d8e5622eefb95b17d",
+    "map_scope": "Source-file declaration only, no tree assembled/import finder/native-extension/generated-call/phase closure/runtime admission.570874B typed metadata retained in Git and local v3 root, outside ordinary262KiB source/log/packet roots; existing16MiB metadata limit unchanged. Future staging needs bounded authenticated representation, not cap relaxation."
+  },
+  "lifecycle": {
+    "order": "Distinct wrapper/schema2/runtime/host-root/new-map/native versions/fresh proof+reserved FD/full completion+concrete31+archive/source/Git/producer/calendar/preservation -> complete BEFORE bytes -> attach supplied loader result -> complete AFTER bytes/equality/preservation/unchanged/source -> complete JSON+UTF8 -> exclusive candidate file fsync/hash readback/destination+proof-parent fsync -> release only own RAM refs.",
+    "guard": "Exact owned64KiB/128block/UID1000/nlink1 failure FD/named inode equality is not proof a pre-import fence is installed; outer fence/complete source/call/runtime admission still absent.",
+    "loaded_object": "No loader call. Non-None supplied object only retained; no genuine model/type/RAM acceptance. All archives/ShaMap spools/two complete detached receipt graphs/string+UTF8 remain live through proposed durability edge.",
+    "durability": "Independent source review caught missing proof-parent fsync. Corrected before any body execution: held O_DIRECTORY|O_NOFOLLOW FD and named dev/ino/mode/uid checks before/after destination then parent fsync, BEFORE durable phase/release. Actual crash/IO/timeout behavior remains UNVERIFIED.",
+    "limits": "Existing256MiB result bound preserved; ordinary262KiB source/log and original2GiB RAM=swap guards unchanged. New phases do not prove memory/disk reservations or horizon capacity. Files/failed roots retained, no deletion/adoption/retry."
+  },
+  "proposal": {
+    "planned_outcomes": 73,
+    "groups": {"reader": 13, "context": 20, "preservation": 11, "calendar": 5, "binding_units": 10, "lifecycle_units": 14},
+    "scope": "Actual new tiny SYNTHETIC context/reader/strict-parser Rows+ShaMap and isolated original references; actual public calendar source/data with SYNTHETIC private-v10 two-session calendar metadata. Candidate-only/new identities/refusals remain explicit. Consumed input tamper is distinct from native source tamper; reference/candidate copies/scratch remain separate.",
+    "unit_limits": "10binding negative units use injected metadata/mount records;14phase units bypass constructor/use injected tiny receipts. Never positive full-map/root/runtime/genuine admission. Positive whole lifecycle constructor/full genuine profile/archive/before-after receipt execution, crash/default-cap/model/RAM/history/live acceptance excluded. Raw570874B metadata cannot fit262KiB child file cap; do not raise it for positive fixture.",
+    "proposed_resources": "ONE future e0/UID1000/noneRO/1CPU/2GiB=swap/PIDs32/tmp64/noHC/lognone/capdropALL/no-new-privileges/auditRO+outRW phase; four fresh children15sCPU/20swait,100sparent/130sphase/180sowner/240stransport, six native thread envs1. Source proposal only/unmeasured, not admission/reservation.",
+    "bootstrap": null,
+    "caller": null,
+    "packet": null,
+    "admission": null,
+    "all_bodies": "UNRUN"
+  },
+  "preserved": {
+    "drafts": "/tmp/capacity-admission-source-drafts-20261018-v1 retains initial six source/artifacts plus initial parity proposal before review corrections.",
+    "map_roots": "Exclusive local source-map v1/2678c442 and v2/b81649d3 preserved; current v3/a68ebbef is separate. No source tree/runtime/test root created.",
+    "initial_source_checkpoint": "47febd128ce03f872ad062684c1e5431f0210545 preserved. Its staged diff check FAILED extra EOF blank; it was committed/pushed despite that formatting result.5cb62db3 removes only that trailing blank (admissions AST identical), fixes generator rstrip, repins new map/review/contract, and passes final diff check. No executed payload/test failure or body replay."
+  },
+  "review": "Existing healthy trading_action_consistency READONLY reviewed source/calendar cut/separate maps/root/phase order, identified parent fsync gap and confirmed source closure after correction; reviewed73case feasibility/labels and clarified synthetic calendar/consumed-input fixtures. No new agent/limited-worker retry/worker edits/imports/tests/operations.",
+  "validation": {"AST_purpose_functions": 27, "copied_admission_comparisons": 5, "calendar_reader_AST_exact": true, "JSON_fullSHA_map_union_hashlinks": "PASS", "final_diff_check": "PASS", "Ruff": "UNAVAILABLE established environment; no lint claim", "production_change": false},
+  "next": "Implement distinct bounded73case SYNTHETIC bootstrap/fixtures/reference boundaries/owner/caller/packet plus stager/independent verification/preservation. Keep all new modules source-pinned and original references isolated explicitly synthetic. Review source/fresh actual e0/native package origins/UID/jobs/absent roots/resources/exact invocation BEFORE ONE new scoped admission/test. No old80/23/65+4/tiny/diagnostic/v2 replay or root/admission reuse; no genuine launch or guard/G08/cap relaxation. Full genuine source/import/fence/loader strategy and complete memory/lifetime acceptance remain absent.",
+  "unchanged": {"entrypoint": null, "launch": null, "admission": null, "execution_authorized": false, "model_import_strategy": null, "historical_weekday_intraday_fill_UI_RAM_horizon": "UNVERIFIED", "original_timing": "FAILED", "publication": "CLOSED", "missing_receipts": "STILL_MISSING", "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN", "Spark2_image_daemon_temp_RAM": "UNVERIFIED_NOT_ADMITTED", "heartbeat": "ACTIVE"}
+}
