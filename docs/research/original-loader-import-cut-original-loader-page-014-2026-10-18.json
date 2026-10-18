@@ -1,0 +1,645 @@
+{
+  "records": [
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "source_import",
+        "line": 14,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "source_import",
+        "line": 14,
+        "to": "backend.market.daily_arithmetic_bridge"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "source_import",
+        "line": 15,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "source_import",
+        "line": 15,
+        "to": "backend.market.direct_feature_arithmetic"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "source_import",
+        "line": 16,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "source_import",
+        "line": 16,
+        "to": "backend.market.learned_entry_models"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "source_import",
+        "line": 17,
+        "to": "backend.market.direct_error_band"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.conditional_holding_calibration",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.market.forward_arithmetic"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.cli"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.agents.trading.desk"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.agents.trading.desk.intraday_orders"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 18,
+        "to": "backend.agents.trading.desk.paper"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 19,
+        "to": "backend.cli"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 19,
+        "to": "backend.cli.market_actual_policy_timing"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 20,
+        "to": "backend.cli.market_strategy_continue"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 26,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 26,
+        "to": "backend.market.calendar"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 26,
+        "to": "backend.market.entry_timing"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 26,
+        "to": "backend.market.forward_arithmetic"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 26,
+        "to": "backend.market.forward_probability_timing"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 26,
+        "to": "backend.market.holding_risk_bank"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 26,
+        "to": "backend.market.learned_retention_models"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 26,
+        "to": "backend.market.live_policy_replay"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 35,
+        "to": "backend.market.daily_arithmetic_bridge"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 36,
+        "to": "backend.market.joint_funded_policy"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 37,
+        "to": "backend.market.live_execution_inputs"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 42,
+        "to": "backend.market.live_model_history"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 47,
+        "to": "backend.market.market_conditioned_holding"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_live_model_history",
+        "kind": "source_import",
+        "line": 50,
+        "to": "backend.market.replay_broker"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.live_model_history_projection",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.live_model_history_projection",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.live_model_history_projection",
+        "kind": "source_import",
+        "line": 8,
+        "to": "backend.market.grade_led_policy"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.live_model_history_projection",
+        "kind": "source_import",
+        "line": 9,
+        "to": "backend.market.strategy_simulation"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.grade_led_policy",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.grade_led_policy",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_live_timing",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_live_timing",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_live_timing",
+        "kind": "source_import",
+        "line": 20,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_live_timing",
+        "kind": "source_import",
+        "line": 20,
+        "to": "backend.market.alpaca"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_live_timing",
+        "kind": "source_import",
+        "line": 20,
+        "to": "backend.market.calendar"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_live_timing",
+        "kind": "source_import",
+        "line": 20,
+        "to": "backend.market.forward_execution"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_live_timing",
+        "kind": "source_import",
+        "line": 20,
+        "to": "backend.market.sequential_shadow_context"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_live_timing",
+        "kind": "source_import",
+        "line": 26,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_live_timing",
+        "kind": "source_import",
+        "line": 26,
+        "to": "backend.market.forward_market_evidence"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_live_timing",
+        "kind": "source_import",
+        "line": 27,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_live_timing",
+        "kind": "source_import",
+        "line": 27,
+        "to": "backend.market.forward_probability_timing"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.learned_live_timing",
+        "kind": "source_import",
+        "line": 28,
+        "to": "backend.market.live_probability_timing"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sequential_shadow_context",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sequential_shadow_context",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sequential_shadow_context",
+        "kind": "source_import",
+        "line": 21,
+        "to": "backend.market"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sequential_shadow_context",
+        "kind": "source_import",
+        "line": 21,
+        "to": "backend.market.calendar"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.nightly_plan",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.nightly_plan",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.agents"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.nightly_plan",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.agents.trading"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.nightly_plan",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.agents.trading.desk"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.nightly_plan",
+        "kind": "source_import",
+        "line": 11,
+        "to": "backend.agents.trading.desk"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.nightly_plan",
+        "kind": "source_import",
+        "line": 11,
+        "to": "backend.agents.trading.desk.event_execution"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.nightly_plan",
+        "kind": "source_import",
+        "line": 11,
+        "to": "backend.agents.trading.desk.event_risk"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.nightly_plan",
+        "kind": "source_import",
+        "line": 11,
+        "to": "backend.agents.trading.desk.intraday_orders"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.nightly_plan",
+        "kind": "source_import",
+        "line": 11,
+        "to": "backend.agents.trading.desk.live_policy"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.nightly_plan",
+        "kind": "source_import",
+        "line": 11,
+        "to": "backend.agents.trading.desk.paper"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.actions",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend"
+      }
+    },
+    {
+      "section": "edges",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.actions",
+        "kind": "implicit_package",
+        "line": null,
+        "to": "backend.agents"
+      }
+    }
+  ],
+  "schema": "capacity-loader-source-graph-page/1"
+}

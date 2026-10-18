@@ -1,0 +1,581 @@
+{
+  "records": [
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.baselines",
+        "line": 15,
+        "module": "numpy"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.harness",
+        "line": 26,
+        "module": "math"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.harness",
+        "line": 27,
+        "module": "dataclasses"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.harness",
+        "line": 29,
+        "module": "numpy"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sizing",
+        "line": 35,
+        "module": "math"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sizing",
+        "line": 36,
+        "module": "collections.abc"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sizing",
+        "line": 37,
+        "module": "dataclasses"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sizing",
+        "line": 39,
+        "module": "numpy"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.core.interfaces",
+        "line": 1,
+        "module": "abc"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.core.interfaces",
+        "line": 2,
+        "module": "collections.abc"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.core.interfaces",
+        "line": 3,
+        "module": "datetime"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.core.interfaces",
+        "line": 4,
+        "module": "typing"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.core.prompts",
+        "line": 18,
+        "module": "functools"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.core.prompts",
+        "line": 19,
+        "module": "pathlib"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.core.prompts",
+        "line": 20,
+        "module": "string"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.edgar",
+        "line": 44,
+        "module": "json"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.edgar",
+        "line": 45,
+        "module": "re"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.edgar",
+        "line": 46,
+        "module": "time"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.edgar",
+        "line": 47,
+        "module": "collections.abc"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.edgar",
+        "line": 48,
+        "module": "dataclasses"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.edgar",
+        "line": 49,
+        "module": "datetime"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.edgar",
+        "line": 50,
+        "module": "html"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.edgar",
+        "line": 51,
+        "module": "typing"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.edgar",
+        "line": 52,
+        "module": "zoneinfo"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.edgar",
+        "line": 54,
+        "module": "numpy"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.release_tone",
+        "line": 17,
+        "module": "asyncio"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.release_tone",
+        "line": 18,
+        "module": "json"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.release_tone",
+        "line": 19,
+        "module": "dataclasses"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.release_tone",
+        "line": 20,
+        "module": "typing"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.core.llm",
+        "line": 1,
+        "module": "json"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.core.llm",
+        "line": 2,
+        "module": "logging"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.core.llm",
+        "line": 3,
+        "module": "threading"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.core.llm",
+        "line": 4,
+        "module": "abc"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.core.llm",
+        "line": 5,
+        "module": "collections.abc"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.core.llm",
+        "line": 6,
+        "module": "contextlib"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.core.llm",
+        "line": 7,
+        "module": "typing"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.core.llm",
+        "line": 9,
+        "module": "httpx"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.language",
+        "line": 22,
+        "module": "json"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.language",
+        "line": 23,
+        "module": "re"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.language",
+        "line": 24,
+        "module": "time"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.language",
+        "line": 25,
+        "module": "collections.abc"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.language",
+        "line": 26,
+        "module": "dataclasses"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.language",
+        "line": 27,
+        "module": "datetime"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.language",
+        "line": 28,
+        "module": "pathlib"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.language",
+        "line": 30,
+        "module": "numpy"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.report_files",
+        "line": 13,
+        "module": "__future__"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.report_files",
+        "line": 15,
+        "module": "json"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.report_files",
+        "line": 16,
+        "module": "os"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.report_files",
+        "line": 17,
+        "module": "tempfile"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.report_files",
+        "line": 18,
+        "module": "pathlib"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sequential_shadow_prefix",
+        "line": 9,
+        "module": "__future__"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sequential_shadow_prefix",
+        "line": 11,
+        "module": "hashlib"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sequential_shadow_prefix",
+        "line": 12,
+        "module": "json"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sequential_shadow_prefix",
+        "line": 13,
+        "module": "datetime"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sequential_shadow_prefix",
+        "line": 14,
+        "module": "urllib.parse"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sequential_shadow_prefix",
+        "line": 16,
+        "module": "numpy"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.options",
+        "line": 21,
+        "module": "json"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.options",
+        "line": 22,
+        "module": "math"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.options",
+        "line": 23,
+        "module": "re"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.options",
+        "line": 24,
+        "module": "collections.abc"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.options",
+        "line": 25,
+        "module": "dataclasses"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.options",
+        "line": 26,
+        "module": "datetime"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.options",
+        "line": 27,
+        "module": "typing"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.alpha",
+        "line": 29,
+        "module": "numpy"
+      }
+    }
+  ],
+  "schema": "capacity-loader-source-graph-page/1"
+}

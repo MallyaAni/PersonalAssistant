@@ -1,0 +1,581 @@
+{
+  "records": [
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.fill_timing",
+        "line": 210,
+        "module": "typing"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.fill_timing",
+        "line": 212,
+        "module": "numpy"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.allocation",
+        "line": 31,
+        "module": "__future__"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.allocation",
+        "line": 33,
+        "module": "dataclasses"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.allocation",
+        "line": 35,
+        "module": "numpy"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.simulate",
+        "line": 45,
+        "module": "dataclasses"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.simulate",
+        "line": 46,
+        "module": "datetime"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.simulate",
+        "line": 48,
+        "module": "numpy"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.allocation_controls",
+        "line": 44,
+        "module": "__future__"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.allocation_controls",
+        "line": 46,
+        "module": "hashlib"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.allocation_controls",
+        "line": 47,
+        "module": "json"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.allocation_controls",
+        "line": 48,
+        "module": "pathlib"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.allocation_controls",
+        "line": 50,
+        "module": "numpy"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.policy_v5",
+        "line": 36,
+        "module": "__future__"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.policy_v5",
+        "line": 38,
+        "module": "numpy"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sip_cube",
+        "line": 47,
+        "module": "__future__"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sip_cube",
+        "line": 49,
+        "module": "dataclasses"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sip_cube",
+        "line": 50,
+        "module": "datetime"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sip_cube",
+        "line": 51,
+        "module": "pathlib"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sip_cube",
+        "line": 53,
+        "module": "numpy"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_daily",
+        "line": 16,
+        "module": "argparse"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_daily",
+        "line": 17,
+        "module": "json"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_daily",
+        "line": 18,
+        "module": "shutil"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_daily",
+        "line": 19,
+        "module": "time"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_daily",
+        "line": 20,
+        "module": "datetime"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_daily",
+        "line": 21,
+        "module": "pathlib"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.cli.market_daily",
+        "line": 23,
+        "module": "numpy"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.alpaca_trading",
+        "line": 11,
+        "module": "json"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.alpaca_trading",
+        "line": 12,
+        "module": "os"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.alpaca_trading",
+        "line": 13,
+        "module": "collections.abc"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.alpaca_trading",
+        "line": 14,
+        "module": "dataclasses"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.alpaca_trading",
+        "line": 15,
+        "module": "datetime"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.alpaca_trading",
+        "line": 16,
+        "module": "typing"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.alpaca_trading",
+        "line": 17,
+        "module": "urllib"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.yahoo",
+        "line": 30,
+        "module": "json"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.yahoo",
+        "line": 31,
+        "module": "logging"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.yahoo",
+        "line": 32,
+        "module": "time"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.yahoo",
+        "line": 33,
+        "module": "collections.abc"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.yahoo",
+        "line": 34,
+        "module": "dataclasses"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.yahoo",
+        "line": 35,
+        "module": "datetime"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.yahoo",
+        "line": 36,
+        "module": "typing"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.yahoo",
+        "line": 37,
+        "module": "zoneinfo"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.retention_inputs",
+        "line": 7,
+        "module": "__future__"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.retention_inputs",
+        "line": 9,
+        "module": "hashlib"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.retention_inputs",
+        "line": 10,
+        "module": "json"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.retention_inputs",
+        "line": 11,
+        "module": "pathlib"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.retention_inputs",
+        "line": 13,
+        "module": "numpy"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.research_journal",
+        "line": 9,
+        "module": "__future__"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.research_journal",
+        "line": 11,
+        "module": "json"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.research_journal",
+        "line": 12,
+        "module": "math"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.research_journal",
+        "line": 13,
+        "module": "collections.abc"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.research_journal",
+        "line": 14,
+        "module": "datetime"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.research_journal",
+        "line": 15,
+        "module": "hashlib"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.research_journal",
+        "line": 16,
+        "module": "pathlib"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.research_journal",
+        "line": 18,
+        "module": "numpy"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.research_journal_replay",
+        "line": 15,
+        "module": "__future__"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.research_journal_replay",
+        "line": 17,
+        "module": "hashlib"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.research_journal_replay",
+        "line": 18,
+        "module": "json"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.research_journal_replay",
+        "line": 19,
+        "module": "math"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.research_journal_replay",
+        "line": 20,
+        "module": "datetime"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.research_journal_replay",
+        "line": 21,
+        "module": "pathlib"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.research_journal_replay",
+        "line": 22,
+        "module": "typing"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.retention_replay",
+        "line": 7,
+        "module": "__future__"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.retention_replay",
+        "line": 9,
+        "module": "numpy"
+      }
+    }
+  ],
+  "schema": "capacity-loader-source-graph-page/1"
+}

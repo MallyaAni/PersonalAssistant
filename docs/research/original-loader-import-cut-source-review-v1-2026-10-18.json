@@ -1,0 +1,1143 @@
+{
+  "candidate_numerical_effect_imports_in_declared_graph": [],
+  "entry_bindings_required": [
+    "Separate versioned capacity entry/result dataclass, real exact CapacityOriginalArchivesV1, full authenticated original metadata and new source map. No old load entry reroute or public execute change.",
+    "Explicit daily loader using original prefix statement order with exact panel/store/yahoo source and pyarrow origin. No continuation CLI import or runtime CodeType/AST masquerading. Original inspect.getsource hash remains original-only evidence; new source needs its own binding.",
+    "Explicit economic helper using exact constants, strict pinned evidence, original action/passive functions and full calendar.session_close/REGULAR_OPEN/NEW_YORK. Tiny reviewed_sessions-only capacity calendar cannot supply that interface.",
+    "Readonly execution inputs may retain original real module after fresh full-map/fence review; its original calendar import follows panel/store/yahoo. Do not alias the small capacity calendar into original globals.",
+    "Explicit capacity risk constructor preserves both complete_features calls, both prediction calls, all original copies and readonly transitions with a declared new reader identity. Inherit unchanged ForwardVolatilityHoldingReader if retaining _Calibration isinstance semantics; exact new-parent check replaces only old FrozenCurrentRiskReader identity.",
+    "Retain unchanged original _Calibration._bind and _MarketCalibration._bind at real paths to preserve deepcopy, isinstance ForwardVolatilityHoldingReader, original file/protocol hashes and original market-context selection. No select/distribution/_stock_fit/fit_market_log calls.",
+    "Keep holding_risk_bank._sources original self/dependency/calendar file hashes and three actual frozen calendar data files. Authenticate original producer root separately from new executor root; no alias or relabel of changed executor bytes."
+  ],
+  "exact_declarations": {
+    "backend/cli/market_actual_policy_timing.py:load_passive_inputs": {
+      "AST_sha256": "2d5d83565b04eee07146340dd97ddba57f71d6f218111a9f5ebef983374bb8b4",
+      "calls": [
+        "archive['symbols'].tolist",
+        "forecasts.evidence",
+        "len",
+        "np.array_equal",
+        "np.load",
+        "plain",
+        "prepare_passive",
+        "require",
+        "set",
+        "tuple"
+      ],
+      "end_line": 168,
+      "line": 128
+    },
+    "backend/cli/market_strategy_continue.py:inputs": {
+      "AST_sha256": "1171582043ee64990a3c98332875b2ce16e003a9857c70ad1730f9b78b61e15b",
+      "calls": [
+        "MarketStore",
+        "ValueError",
+        "action.action_date.isoformat",
+        "actions[symbol].append",
+        "build_panel",
+        "enumerate",
+        "json.loads",
+        "labels.get",
+        "len",
+        "np.datetime64",
+        "np.full",
+        "np.ones",
+        "np.searchsorted",
+        "np.zeros",
+        "original.dates[0].astype",
+        "path.read_bytes",
+        "row.get",
+        "sha256",
+        "sha256(path.read_bytes()).hexdigest",
+        "sha256(raw).hexdigest",
+        "store.latest_asof",
+        "store.latest_asof(symbol, through).isoformat",
+        "store.read",
+        "str",
+        "through.isoformat",
+        "tuple"
+      ],
+      "end_line": 172,
+      "line": 99
+    },
+    "backend/market/calendar.py:reviewed_sessions": {
+      "AST_sha256": "840e10ad349718b08159e2f302d3006243d45769d823a327dc9c8ae116a30493",
+      "calls": [
+        "HISTORICAL_SESSIONS_PATH.read_text",
+        "HOLIDAYS_PATH.read_text",
+        "closures.extend",
+        "current.values",
+        "historical.values",
+        "int",
+        "json.loads",
+        "lru_cache",
+        "np.busdaycalendar"
+      ],
+      "end_line": 109,
+      "line": 99
+    },
+    "backend/market/calendar.py:session_close": {
+      "AST_sha256": "612c5debcd25dd0960f0c96238fb9aa4477580a665a2761224fc3e98d4daa639",
+      "calls": [
+        "_published_early_closes",
+        "_published_early_closes().get"
+      ],
+      "end_line": 140,
+      "line": 138
+    },
+    "backend/market/conditional_holding_calibration.py:_Calibration._bind": {
+      "AST_sha256": "c3f6771d2b3d5bf89f60f716d16b259906706efe3bc641ab8b69b852b23c96f9",
+      "calls": [
+        "(root / PROTOCOL).read_bytes",
+        "Path",
+        "Path(__file__).read_bytes",
+        "Path(__file__).resolve",
+        "base._json_hash",
+        "deepcopy",
+        "getattr",
+        "hashlib.sha256",
+        "hashlib.sha256((root / PROTOCOL).read_bytes()).hexdigest",
+        "hashlib.sha256(Path(__file__).read_bytes()).hexdigest",
+        "isinstance",
+        "self._frozen_bank.values"
+      ],
+      "end_line": 182,
+      "line": 148
+    },
+    "backend/market/counterfactual_holding.py:CounterfactualRiskReader.__init__": {
+      "AST_sha256": "0669d8d49b1f476798884eea0d390fce9ca045aa467bc671083ccee0115466d8",
+      "calls": [
+        "ValueError",
+        "_hash",
+        "actual_observed_at.isoformat",
+        "deepcopy",
+        "direct_daily_arithmetic.predict",
+        "forward_arithmetic.CloseObservation",
+        "getattr",
+        "getattr(original, key).copy",
+        "grades.copy",
+        "learned_retention_models.completed_features",
+        "len",
+        "min",
+        "np.array_equal",
+        "panel.adj_close.copy",
+        "panel.dates.copy",
+        "prepared['X'][-1].copy",
+        "prepared['prices'][-1].copy",
+        "prepared['risk_valid'][-1].copy",
+        "self._bank.values",
+        "tuple",
+        "values[-1].copy"
+      ],
+      "end_line": 94,
+      "line": 29
+    },
+    "backend/market/direct_daily_arithmetic.py:NumericHead.predict": {
+      "AST_sha256": "6f5a229a4186c2f4f2b1eb008789c75f42e01078165cd54f2d154a44ed588ea4",
+      "calls": [
+        "ValueError",
+        "active.any",
+        "current['missing_go_to_left'].astype",
+        "float",
+        "len",
+        "nodes['is_leaf'][positions].astype",
+        "np.asarray",
+        "np.flatnonzero",
+        "np.full",
+        "np.isinf",
+        "np.isinf(values).any",
+        "np.isnan",
+        "np.where",
+        "np.zeros"
+      ],
+      "end_line": 76,
+      "line": 55
+    },
+    "backend/market/direct_daily_arithmetic.py:numeric_head": {
+      "AST_sha256": "0605b230639af528b40ffe58afaa214ee50b09061a631825bdca2f59cd69efc0",
+      "calls": [
+        "NumericHead",
+        "ValueError",
+        "_numeric_tree",
+        "any",
+        "array.setflags",
+        "bundle.items",
+        "copied.values",
+        "int",
+        "len",
+        "np.any",
+        "np.array_equal",
+        "np.asarray",
+        "np.asarray(value).copy",
+        "np.dtype",
+        "np.isfinite",
+        "np.isfinite(baseline).all",
+        "np.unique",
+        "numeric_identity",
+        "range",
+        "set",
+        "str",
+        "tuple"
+      ],
+      "end_line": 185,
+      "line": 144
+    },
+    "backend/market/direct_daily_arithmetic.py:numeric_identity": {
+      "AST_sha256": "ddf679f2e71969b7a9176e4a481521bd07ddaee2c3b7121e6a3bbdedcd33f15d",
+      "calls": [
+        "base._json_hash",
+        "dict",
+        "len",
+        "reference._hash"
+      ],
+      "end_line": 97,
+      "line": 80
+    },
+    "backend/market/direct_daily_arithmetic.py:predict": {
+      "AST_sha256": "461749064dcb4106f0095698ba72f8ea905bd933900810bdc464def5c02926b8",
+      "calls": [
+        "ValueError",
+        "head.predict",
+        "impossible.sum",
+        "int",
+        "nonfinite.sum",
+        "np.asarray",
+        "np.full",
+        "np.isfinite",
+        "np.isinf",
+        "np.isinf(features).any",
+        "np.where",
+        "valid.any",
+        "valid.sum"
+      ],
+      "end_line": 420,
+      "line": 393
+    },
+    "backend/market/forward_arithmetic.py:_admit": {
+      "AST_sha256": "66441aedc2777ec799a5621bfb39d1b8e62cecf7e6f2948bccb58964ac338b05",
+      "calls": [
+        "ValueError",
+        "_close_window",
+        "_month_session",
+        "base._json_hash",
+        "datetime.combine",
+        "decision_date.astype",
+        "direct.numeric_head",
+        "exchange.session_close",
+        "fit_date.astype",
+        "list",
+        "min",
+        "np.datetime64",
+        "observed.date",
+        "published.date",
+        "reference._as_of",
+        "str"
+      ],
+      "end_line": 273,
+      "line": 220
+    },
+    "backend/market/forward_arithmetic.py:load_publication": {
+      "AST_sha256": "06cef193267a5c111ef5e8130b701dcaff9d88a491d68c64397ee17eed0d94ee",
+      "calls": [
+        "(output / 'publication.json').read_bytes",
+        "MonthlyPublication",
+        "Path",
+        "ValueError",
+        "_admit",
+        "dict",
+        "hashlib.sha256",
+        "hashlib.sha256(path.read_bytes()).hexdigest",
+        "hashlib.sha256(raw).hexdigest",
+        "json.loads",
+        "np.load",
+        "path.read_bytes"
+      ],
+      "end_line": 295,
+      "line": 277
+    },
+    "backend/market/holding_risk_bank.py:_sources": {
+      "AST_sha256": "3d0c7704c7075013a34d2f1253a31fcf5758fb98c21ca6566d702197155e2007",
+      "calls": [
+        "Path",
+        "Path(__file__).resolve",
+        "path.read_bytes",
+        "path.relative_to",
+        "sha256",
+        "sha256(path.read_bytes()).hexdigest",
+        "str"
+      ],
+      "end_line": 47,
+      "line": 30
+    },
+    "backend/market/holding_risk_bank.py:load_bank": {
+      "AST_sha256": "78ef144f9ad9df14fb1f192e1c6e4bbdc313f81d044f3d13611a34d219b8d46a",
+      "calls": [
+        "(folder / 'bank.json').read_bytes",
+        "(folder / 'bank.npz').read_bytes",
+        "Path",
+        "ValueError",
+        "_sources",
+        "any",
+        "arrays.items",
+        "base._json_hash",
+        "errors.VolatilityHoldingReader",
+        "feature.FeatureForecasts",
+        "feature.HoldingRiskForecasts",
+        "io.BytesIO",
+        "isinstance",
+        "json.loads",
+        "np.load",
+        "reference.BridgeForecasts",
+        "reference._as_of",
+        "reference._hash",
+        "set",
+        "sha256",
+        "sha256(content).hexdigest",
+        "sha256(raw).hexdigest",
+        "tuple"
+      ],
+      "end_line": 264,
+      "line": 173
+    },
+    "backend/market/learned_entry_data.py:_daily_context": {
+      "AST_sha256": "c3fd0420381a18efb2eddaaa0681714b259ef5b93388b5d22b6417fce04f3b8a",
+      "calls": [
+        "enumerate",
+        "np.all",
+        "np.any",
+        "np.array",
+        "np.diff",
+        "np.errstate",
+        "np.full",
+        "np.isfinite",
+        "np.log",
+        "np.max",
+        "np.mean",
+        "np.std",
+        "np.where",
+        "np.zeros",
+        "range"
+      ],
+      "end_line": 78,
+      "line": 41
+    },
+    "backend/market/learned_entry_data.py:_validate_panel": {
+      "AST_sha256": "d12d1f4a3f7e3f17c9bdd571e75370ab563e08864a1683a98ed17eac33aec898",
+      "calls": [
+        "ValueError",
+        "len",
+        "np.any",
+        "np.asarray",
+        "np.diff",
+        "np.diff(dates).astype",
+        "np.isfinite",
+        "np.isin",
+        "np.isnat",
+        "set",
+        "tuple"
+      ],
+      "end_line": 114,
+      "line": 95
+    },
+    "backend/market/learned_entry_data.py:prepare": {
+      "AST_sha256": "7c7864b3d4942591b3a8679de4fbfa4aba21982a331e78363b38266c0eafc5a3",
+      "calls": [
+        "_daily_context",
+        "_validate_cube",
+        "_validate_panel",
+        "cube_rows_by_day.get",
+        "cubes.get",
+        "dict",
+        "enumerate",
+        "getattr",
+        "int",
+        "len",
+        "missing_cubes.append",
+        "names.index",
+        "np.all",
+        "np.arange",
+        "np.asarray",
+        "np.broadcast_to",
+        "np.column_stack",
+        "np.count_nonzero",
+        "np.cumsum",
+        "np.datetime64",
+        "np.divide",
+        "np.errstate",
+        "np.flatnonzero",
+        "np.full",
+        "np.full_like",
+        "np.isfinite",
+        "np.log",
+        "np.logical_and.accumulate",
+        "np.maximum",
+        "np.maximum.accumulate",
+        "np.minimum",
+        "np.minimum.accumulate",
+        "np.sqrt",
+        "np.stack",
+        "np.where",
+        "np.zeros",
+        "session_scale"
+      ],
+      "end_line": 263,
+      "line": 118
+    },
+    "backend/market/learned_retention_models.py:completed_features": {
+      "AST_sha256": "9b35a71625a5c0937551544ef23d42c53f03f4b1e3c7697516915bf8e072af36",
+      "calls": [
+        "ValueError",
+        "getattr",
+        "isinstance",
+        "learned_entry_data._daily_context",
+        "learned_entry_data._validate_panel",
+        "len",
+        "list",
+        "names.index",
+        "np.any",
+        "np.array",
+        "np.array_equal",
+        "np.asarray",
+        "np.full",
+        "np.isfinite",
+        "np.isinf",
+        "np.isinf(values).any",
+        "np.vstack",
+        "np.zeros",
+        "stock.any"
+      ],
+      "end_line": 94,
+      "line": 47
+    },
+    "backend/market/live_model_history.py:FrozenCurrentMarketReader.__init__": {
+      "AST_sha256": "bc6c965be451f260ebfa184f043c09ce93f24f8aecb7877a25dd0551de40c080",
+      "calls": [
+        "ValueError",
+        "self._bind",
+        "type"
+      ],
+      "end_line": 130,
+      "line": 127
+    },
+    "backend/market/live_model_history.py:FrozenCurrentRiskReader.__init__": {
+      "AST_sha256": "35d3a095d632d71d58574d78eb36f19bc8e2623cf1f32ce0323164b743cb0485",
+      "calls": [
+        "_hash",
+        "deepcopy",
+        "direct_daily_arithmetic.predict",
+        "forecasts.copy",
+        "grades.copy",
+        "learned_retention_models.completed_features",
+        "observed_at.isoformat",
+        "panel.adj_close.copy",
+        "panel.dates.copy",
+        "prepared['X'].copy",
+        "prepared['prices'].copy",
+        "prepared['risk_valid'].copy",
+        "self.identity.update",
+        "super",
+        "super().__init__"
+      ],
+      "end_line": 70,
+      "line": 30
+    },
+    "backend/market/live_model_history_audit_inputs.py:AuditInputs": {
+      "AST_sha256": "f5994e768cb86d0b6f5a2ba23a00b092387a6a1f0735c18501a39d1f11e78262",
+      "calls": [
+        "dataclass"
+      ],
+      "end_line": 74,
+      "line": 68
+    },
+    "backend/market/live_model_history_audit_inputs.py:align_passive": {
+      "AST_sha256": "5bb59af936f46d3d796fb68a4d9d6c159938d42a5107b5fa9e7720bd9a2bbf98",
+      "calls": [
+        "PassiveMarks",
+        "dict",
+        "len",
+        "np.all",
+        "np.array_equal",
+        "np.full",
+        "np.searchsorted",
+        "require"
+      ],
+      "end_line": 172,
+      "line": 150
+    },
+    "backend/market/live_model_history_audit_inputs.py:daily_prefix": {
+      "AST_sha256": "ac66e0295b85e7ef3aedcb36bc9b1096569ec81cc441f2604d2bddf804962733",
+      "calls": [
+        "any",
+        "ast.Load",
+        "ast.Name",
+        "ast.Return",
+        "ast.Tuple",
+        "ast.fix_missing_locations",
+        "ast.parse",
+        "compile",
+        "dict",
+        "enumerate",
+        "exec",
+        "inspect.getsource",
+        "isinstance",
+        "len",
+        "namespace['inputs']",
+        "require",
+        "sha256",
+        "sha256(source.encode()).hexdigest",
+        "source.encode",
+        "vars"
+      ],
+      "end_line": 118,
+      "line": 78
+    },
+    "backend/market/live_model_history_audit_inputs.py:economic_paths": {
+      "AST_sha256": "9ac675c34fb794b2ded1bd5a6bd4829ddba049ee4b66f84a55c21b32d7e71551",
+      "calls": [
+        "Path",
+        "SimpleNamespace",
+        "all",
+        "command.count",
+        "command.index",
+        "len",
+        "name.replace",
+        "path.is_absolute",
+        "pinned",
+        "require",
+        "strict_json",
+        "type"
+      ],
+      "end_line": 146,
+      "line": 122
+    },
+    "backend/market/live_model_history_audit_inputs.py:load": {
+      "AST_sha256": "1516a7f5fee1d5cc53ec5a21e9cffd2f03ee4f306ba71c78e09eb37a985e540f",
+      "calls": [
+        "AuditInputs",
+        "FrozenCurrentMarketReader",
+        "FrozenCurrentRiskReader",
+        "Path",
+        "Path(name).relative_to",
+        "RawExecutionInputs",
+        "_hash",
+        "archives.authenticate_inputs",
+        "archives.authenticate_sources",
+        "authenticate_file",
+        "capture['files'].get",
+        "daily_prefix",
+        "date.fromisoformat",
+        "economic_paths",
+        "forward_arithmetic.load_publication",
+        "getattr",
+        "holding_risk_bank.load_bank",
+        "np.array_equal",
+        "np.load",
+        "overlay['histories'].get",
+        "panel.tickers.index",
+        "pinned",
+        "readonly",
+        "require",
+        "reviewed_economics",
+        "sources.items",
+        "str",
+        "strict_json",
+        "tuple",
+        "values['symbols'].tolist"
+      ],
+      "end_line": 346,
+      "line": 247
+    },
+    "backend/market/live_model_history_audit_inputs.py:readonly": {
+      "AST_sha256": "f329b831ba64bd0f2d11423dc156b387d5348a1ac86d5365d2f33e5f82394be2",
+      "calls": [
+        "getattr",
+        "getattr(raw.passive, name).setflags",
+        "isinstance",
+        "value.setflags"
+      ],
+      "end_line": 243,
+      "line": 235
+    },
+    "backend/market/live_model_history_audit_inputs.py:reviewed_economics": {
+      "AST_sha256": "6a474c74a362fcfd5c048815e9cccd4aad3fdde5e416621cd45e64ddfb75caa0",
+      "calls": [
+        "_actions",
+        "_dates_by_name",
+        "_inherited_actions",
+        "align_passive",
+        "authenticate_file",
+        "compiled.get",
+        "dict",
+        "economics.load_passive_inputs",
+        "np.allclose",
+        "np.array_equal",
+        "np.load",
+        "pinned",
+        "require",
+        "review_action_export",
+        "str",
+        "strict_json"
+      ],
+      "end_line": 231,
+      "line": 176
+    },
+    "backend/market/market_conditioned_holding.py:_MarketCalibration._bind": {
+      "AST_sha256": "42ab6db3e7e7d5e75b89767707a33a2dad4aed7457fb9ee5f2e4e0e3081fc5f6",
+      "calls": [
+        "(Path(__file__).resolve().parents[2] / numerical.PROTOCOL).read_bytes",
+        "Path",
+        "Path(__file__).read_bytes",
+        "Path(__file__).resolve",
+        "Path(numerical.__file__).read_bytes",
+        "ValueError",
+        "any",
+        "getattr",
+        "hashlib.sha256",
+        "hashlib.sha256((Path(__file__).resolve().parents[2] / numerical.PROTOCOL).read_bytes()).hexdigest",
+        "hashlib.sha256(Path(__file__).read_bytes()).hexdigest",
+        "hashlib.sha256(Path(numerical.__file__).read_bytes()).hexdigest",
+        "isinstance",
+        "list",
+        "reference._hash",
+        "self._frozen_bank['features'][:, self.symbols.index('SPY')][:, CONTEXT_COLUMNS].copy",
+        "self.identity.update",
+        "self.symbols.index",
+        "super",
+        "super()._bind"
+      ],
+      "end_line": 62,
+      "line": 28
+    },
+    "backend/market/market_conditioned_holding.py:_MarketCalibration._stock_fit": {
+      "AST_sha256": "43203cef2ce35142366fdc30ed86540b7399017900fc3e5aec5df20513511fc4",
+      "calls": [
+        "ValueError",
+        "fit.receipt",
+        "len",
+        "np.array_equal",
+        "np.asarray",
+        "np.datetime64",
+        "np.full",
+        "np.zeros",
+        "numerical.fit_market_log",
+        "self._parent.distribution",
+        "self.symbols.index"
+      ],
+      "end_line": 99,
+      "line": 65
+    },
+    "backend/market/panel.py:Panel": {
+      "AST_sha256": "87fa1b693d662b001661431ecb961b12fc02696358085de1eba2ba1bf592f876",
+      "calls": [
+        "KeyError",
+        "ValueError",
+        "_log_ratio",
+        "_rolling_beta",
+        "by_theme.get",
+        "dataclass",
+        "enumerate",
+        "known.sum",
+        "members_by_theme.items",
+        "members_by_theme.setdefault",
+        "members_by_theme.setdefault(theme, []).append",
+        "np.clip",
+        "np.empty_like",
+        "np.full_like",
+        "np.isfinite",
+        "np.maximum",
+        "np.where",
+        "np.where(known, block, 0.0).sum",
+        "self.benchmark_returns",
+        "self.forward_log_returns",
+        "self.index",
+        "self.log_returns",
+        "self.primary_theme",
+        "self.rolling_beta",
+        "self.theme_returns",
+        "self.themes.get",
+        "self.tickers.index"
+      ],
+      "end_line": 135,
+      "line": 33
+    },
+    "backend/market/panel.py:build_panel": {
+      "AST_sha256": "c79f8443604f09dfe2b60c6c81cc2879b64a09e755ed4b7234df65597f545f6b",
+      "calls": [
+        "dict.fromkeys",
+        "list",
+        "panel_from_histories",
+        "store.read"
+      ],
+      "end_line": 218,
+      "line": 204
+    },
+    "backend/market/panel.py:panel_from_histories": {
+      "AST_sha256": "225f7403a6c0dae0d564f92bc66e422cf27d165c792640eed368f79bd9f4d6c2",
+      "calls": [
+        "Panel",
+        "ValueError",
+        "enumerate",
+        "float",
+        "getattr",
+        "histories.values",
+        "index_of.get",
+        "len",
+        "np.asarray",
+        "np.full",
+        "sessions.update",
+        "set",
+        "sorted",
+        "themes.get",
+        "tuple"
+      ],
+      "end_line": 198,
+      "line": 157
+    },
+    "backend/market/store.py:MarketStore.read": {
+      "AST_sha256": "0bc56ce5e4630b983d4e319d1d06897ce13ccbada0933492c0010465a249c29f",
+      "calls": [
+        "CorporateAction",
+        "DailyBar",
+        "TickerHistory",
+        "actions_path.exists",
+        "bar_table.to_pydict",
+        "date.fromisoformat",
+        "datetime.fromisoformat",
+        "len",
+        "meta.get",
+        "meta.get(b'source', b'yahoo').decode",
+        "meta[b'complete_through'].decode",
+        "meta[b'source_time'].decode",
+        "pq.read_table",
+        "pq.read_table(actions_path).to_pydict",
+        "range",
+        "self._path",
+        "self.latest_asof",
+        "tuple"
+      ],
+      "end_line": 289,
+      "line": 248
+    }
+  },
+  "graphs": {
+    "candidate_numerical": {
+      "deferred_imports": 28,
+      "edges": 126,
+      "external_declarations": 109,
+      "nodes": 20,
+      "pages": [
+        {
+          "bytes": 16508,
+          "path": "original-loader-import-cut-candidate-numerical-page-000-2026-10-18.json",
+          "sha256": "2f4023e4ee62d812bd7be26b19fd9ca2f98900f24d91717417f53cabc4ea3f79"
+        },
+        {
+          "bytes": 15651,
+          "path": "original-loader-import-cut-candidate-numerical-page-001-2026-10-18.json",
+          "sha256": "4d37aaaca45c1e5d1cc03413af0d167d29fce6b55f627b8b0dd3c527672c2d9e"
+        },
+        {
+          "bytes": 14184,
+          "path": "original-loader-import-cut-candidate-numerical-page-002-2026-10-18.json",
+          "sha256": "afb1a5ca8a24ca9375381c2bd4d706214a3ccc15bf1d3f2b85b16dcd154e0e4f"
+        },
+        {
+          "bytes": 13611,
+          "path": "original-loader-import-cut-candidate-numerical-page-003-2026-10-18.json",
+          "sha256": "0918407eda638e3db4a0d881f43155ed9a638c368a520ae6b8832b3936c77e8b"
+        },
+        {
+          "bytes": 7412,
+          "path": "original-loader-import-cut-candidate-numerical-page-004-2026-10-18.json",
+          "sha256": "817ddce450bef15da0423e19725944481b7d42bee54bd0499fd9d062c550ae67"
+        }
+      ],
+      "unresolved_backend_imports": []
+    },
+    "original_loader": {
+      "deferred_imports": 204,
+      "edges": 1153,
+      "external_declarations": 811,
+      "nodes": 166,
+      "pages": [
+        {
+          "bytes": 20561,
+          "path": "original-loader-import-cut-original-loader-page-000-2026-10-18.json",
+          "sha256": "f2a11ee5044b32610da73ee5a39acf31d320a1f690f73b13a85f8f93471c041c"
+        },
+        {
+          "bytes": 20998,
+          "path": "original-loader-import-cut-original-loader-page-001-2026-10-18.json",
+          "sha256": "cc588b81ec7f22bdf723033ae6faf195fa6a7784cc209858d3cc268dadb852b0"
+        },
+        {
+          "bytes": 18776,
+          "path": "original-loader-import-cut-original-loader-page-002-2026-10-18.json",
+          "sha256": "729b732b734027217705bf202d8607c9056574fc5142abc72d3db59c5c280f8c"
+        },
+        {
+          "bytes": 15791,
+          "path": "original-loader-import-cut-original-loader-page-003-2026-10-18.json",
+          "sha256": "e52e155bf4f6da6175ef882fb8840162adbbfd0fe55ec66795b6e439ae05c909"
+        },
+        {
+          "bytes": 16187,
+          "path": "original-loader-import-cut-original-loader-page-004-2026-10-18.json",
+          "sha256": "d060f3b250a661030c5b9af73d81919c953d4e793971fe6882ce48bc10bdc671"
+        },
+        {
+          "bytes": 16010,
+          "path": "original-loader-import-cut-original-loader-page-005-2026-10-18.json",
+          "sha256": "b22a880561bbb4634439e9dd1135d56ec62934786c7719dd6b5f1ec3eee5b53c"
+        },
+        {
+          "bytes": 15510,
+          "path": "original-loader-import-cut-original-loader-page-006-2026-10-18.json",
+          "sha256": "4276dfef4937dd2f49e88d34c1768d6047616abe01d018ebd3e1e6421a3a2b14"
+        },
+        {
+          "bytes": 15653,
+          "path": "original-loader-import-cut-original-loader-page-007-2026-10-18.json",
+          "sha256": "cd94f7047d3e7820fbde766cb7bf49c48068e0db0e644a9e436bac91b2720e19"
+        },
+        {
+          "bytes": 15593,
+          "path": "original-loader-import-cut-original-loader-page-008-2026-10-18.json",
+          "sha256": "f9c43f2325396c8e72aad1a5c268720a15f09560fd9957c2abd1e6561d376615"
+        },
+        {
+          "bytes": 15933,
+          "path": "original-loader-import-cut-original-loader-page-009-2026-10-18.json",
+          "sha256": "6e5c4247b44b9817274642f3939df89914a24395ae649c0b3f1ef2e60e6252fa"
+        },
+        {
+          "bytes": 16387,
+          "path": "original-loader-import-cut-original-loader-page-010-2026-10-18.json",
+          "sha256": "a8aacf90815b74ddc0500ddebce73f0d65c74b3effcf0ae16a49489e5141a3db"
+        },
+        {
+          "bytes": 15808,
+          "path": "original-loader-import-cut-original-loader-page-011-2026-10-18.json",
+          "sha256": "d2de51890e4b7ae5379142aa3311dfe5b5ff99dcc91ba13856b78aa7ca0b3cea"
+        },
+        {
+          "bytes": 15337,
+          "path": "original-loader-import-cut-original-loader-page-012-2026-10-18.json",
+          "sha256": "7b2d6e5d4203db487d35e9096f8c26cb4372bbd0d38576838b3719dad22bdb22"
+        },
+        {
+          "bytes": 15486,
+          "path": "original-loader-import-cut-original-loader-page-013-2026-10-18.json",
+          "sha256": "e709cb5c2446dc6e5efcdd5622ed861d469c858d6e92890ee41096dfd334b2e0"
+        },
+        {
+          "bytes": 16039,
+          "path": "original-loader-import-cut-original-loader-page-014-2026-10-18.json",
+          "sha256": "cb08ae29b8dd6008b92c73fa7b949e9a79f8219f3bb2093edd4bcb4f097468ef"
+        },
+        {
+          "bytes": 15844,
+          "path": "original-loader-import-cut-original-loader-page-015-2026-10-18.json",
+          "sha256": "36f62bf241ef55619787282ed05f1066408d79b083fc4e944757a18fa130fdd5"
+        },
+        {
+          "bytes": 15316,
+          "path": "original-loader-import-cut-original-loader-page-016-2026-10-18.json",
+          "sha256": "d70344eab8a824084c630fd1e1efb6f820373e19dd6f43bce743bff02c5bdd55"
+        },
+        {
+          "bytes": 14826,
+          "path": "original-loader-import-cut-original-loader-page-017-2026-10-18.json",
+          "sha256": "e63cd2fd4f790e0940ce5ab3804d1e97a1b9420f84a9e43ff5922d688e0795c4"
+        },
+        {
+          "bytes": 15496,
+          "path": "original-loader-import-cut-original-loader-page-018-2026-10-18.json",
+          "sha256": "70a263f5b76d24c8c19c10d020b6cfdd86417cff29fec7ad17d608bca5ad98e9"
+        },
+        {
+          "bytes": 14983,
+          "path": "original-loader-import-cut-original-loader-page-019-2026-10-18.json",
+          "sha256": "e026bdae608370e4b8a36f2234ef88b6f8608ad492ce34d4322d4dd0a75a2327"
+        },
+        {
+          "bytes": 14666,
+          "path": "original-loader-import-cut-original-loader-page-020-2026-10-18.json",
+          "sha256": "cf708d7944d6090ee1bf62c7d61d546612160e712d68de853ed5fc044f038c99"
+        },
+        {
+          "bytes": 13906,
+          "path": "original-loader-import-cut-original-loader-page-021-2026-10-18.json",
+          "sha256": "beee9e9172427fcb808d5d636bd46048d7313b4499892a19650cc209fafe0521"
+        },
+        {
+          "bytes": 13645,
+          "path": "original-loader-import-cut-original-loader-page-022-2026-10-18.json",
+          "sha256": "4647b33b633775957eb7abb3795031c49fd81eef35847c677db49a83496f9e1b"
+        },
+        {
+          "bytes": 13516,
+          "path": "original-loader-import-cut-original-loader-page-023-2026-10-18.json",
+          "sha256": "4ee55a86cae8dfe24399f01aadd033e055cf95248a55261ce0126eef1f19f33d"
+        },
+        {
+          "bytes": 13677,
+          "path": "original-loader-import-cut-original-loader-page-024-2026-10-18.json",
+          "sha256": "247906e522f96b5411211564198ce3ddca7dd470860b26eb82bae678214aeb82"
+        },
+        {
+          "bytes": 13987,
+          "path": "original-loader-import-cut-original-loader-page-025-2026-10-18.json",
+          "sha256": "36d63298414de2e3242319a2df4396670c7d909edeed518dcec4a636aa6407f9"
+        },
+        {
+          "bytes": 13917,
+          "path": "original-loader-import-cut-original-loader-page-026-2026-10-18.json",
+          "sha256": "eabf3de54492a1b5b44e3981dfe725d2858b80057bccda31a9f27d33a14dbfdd"
+        },
+        {
+          "bytes": 13370,
+          "path": "original-loader-import-cut-original-loader-page-027-2026-10-18.json",
+          "sha256": "7812e0f22fb2aaaab8c32de5e16fc0c54b90524d83aa675e1ef2b46b609e6085"
+        },
+        {
+          "bytes": 13797,
+          "path": "original-loader-import-cut-original-loader-page-028-2026-10-18.json",
+          "sha256": "95e0d9a953457da3ccfeca9608c53062d5ed40ed22b940d48f5bd279670c8b8e"
+        },
+        {
+          "bytes": 13694,
+          "path": "original-loader-import-cut-original-loader-page-029-2026-10-18.json",
+          "sha256": "2f4ec8222e457840067b56270c58a71bb844aa41b23ceee3c24c8eacef999bef"
+        },
+        {
+          "bytes": 13172,
+          "path": "original-loader-import-cut-original-loader-page-030-2026-10-18.json",
+          "sha256": "c9115f1628c8d2ed821d48abbda6321b3306579d998e909dfcb8d61191a797ff"
+        },
+        {
+          "bytes": 13495,
+          "path": "original-loader-import-cut-original-loader-page-031-2026-10-18.json",
+          "sha256": "48163ec225fa8dd9aef5103967578ee7bda4064836cb83eb3fd684a3761162da"
+        },
+        {
+          "bytes": 12981,
+          "path": "original-loader-import-cut-original-loader-page-032-2026-10-18.json",
+          "sha256": "a17c6e967c7132c080ea27a844cf8319c6b67e4e135f607491a0ce33eaf4dead"
+        },
+        {
+          "bytes": 15238,
+          "path": "original-loader-import-cut-original-loader-page-033-2026-10-18.json",
+          "sha256": "ad463649aa830748f6aa76bf3cc8a495517c59ac9f9d1e977f6cda0036a2fedc"
+        },
+        {
+          "bytes": 16309,
+          "path": "original-loader-import-cut-original-loader-page-034-2026-10-18.json",
+          "sha256": "941f6d895998a706edfec4053665bd766ecdd7cc9344674cb042e4869acf9ce0"
+        },
+        {
+          "bytes": 15932,
+          "path": "original-loader-import-cut-original-loader-page-035-2026-10-18.json",
+          "sha256": "605b3aaf950c42732dc87adf40ecc2cd358463fca46463fab30e885da0553f91"
+        },
+        {
+          "bytes": 7657,
+          "path": "original-loader-import-cut-original-loader-page-036-2026-10-18.json",
+          "sha256": "b8ec87ed136ed79f79901b1646dcc391f7e87e34da9fd4a92415f08cffcdd539"
+        }
+      ],
+      "unresolved_backend_imports": []
+    },
+    "original_numerical": {
+      "deferred_imports": 78,
+      "edges": 397,
+      "external_declarations": 275,
+      "nodes": 65,
+      "pages": [
+        {
+          "bytes": 19473,
+          "path": "original-loader-import-cut-original-numerical-page-000-2026-10-18.json",
+          "sha256": "181513e391e1ed64e918a557235011598b34a6a1a1dcac2327c87349be537e1f"
+        },
+        {
+          "bytes": 16145,
+          "path": "original-loader-import-cut-original-numerical-page-001-2026-10-18.json",
+          "sha256": "dc59d315527265c46e2902d761aceac892d3996c09d8d254887040b7da67f14b"
+        },
+        {
+          "bytes": 15426,
+          "path": "original-loader-import-cut-original-numerical-page-002-2026-10-18.json",
+          "sha256": "7fac20e4415a0e65e7a6c014c8e08d00654b4b8b421482ab4cbd78891b902b92"
+        },
+        {
+          "bytes": 15400,
+          "path": "original-loader-import-cut-original-numerical-page-003-2026-10-18.json",
+          "sha256": "bb763cd4ecfd0941a8722af2a3d711636815284e4269946173f0c9bdfdd6605a"
+        },
+        {
+          "bytes": 15083,
+          "path": "original-loader-import-cut-original-numerical-page-004-2026-10-18.json",
+          "sha256": "d23be0188e327b1ce0cd65392b9f5b30243438fd1442c568ef955dba6b89de41"
+        },
+        {
+          "bytes": 15477,
+          "path": "original-loader-import-cut-original-numerical-page-005-2026-10-18.json",
+          "sha256": "177d8bd77fe85213d282db6afcea4f3f1f76971c7990054d1542cf3355257b86"
+        },
+        {
+          "bytes": 15305,
+          "path": "original-loader-import-cut-original-numerical-page-006-2026-10-18.json",
+          "sha256": "b2895487043074f6088589eddca1d7f75a37a33beafc83c5043f0472deeb65a3"
+        },
+        {
+          "bytes": 14033,
+          "path": "original-loader-import-cut-original-numerical-page-007-2026-10-18.json",
+          "sha256": "19c8846cc7b813e60b6cb77fe0424d33f5a346b807cffb4520421b70c947b9e7"
+        },
+        {
+          "bytes": 13544,
+          "path": "original-loader-import-cut-original-numerical-page-008-2026-10-18.json",
+          "sha256": "94faa1f20d2720f6f533682d97ba56061dc59c743980f2b879074d8009fb1979"
+        },
+        {
+          "bytes": 13327,
+          "path": "original-loader-import-cut-original-numerical-page-009-2026-10-18.json",
+          "sha256": "2ee70d1f56556e9314951d62ab62a3d7c5b4b2f7076313d192d2b644f84ee7a4"
+        },
+        {
+          "bytes": 13470,
+          "path": "original-loader-import-cut-original-numerical-page-010-2026-10-18.json",
+          "sha256": "1807274a97a9aba424025e3a0127ba6d6b78dfff3dc6a4a8a19836cc2296644d"
+        },
+        {
+          "bytes": 13809,
+          "path": "original-loader-import-cut-original-numerical-page-011-2026-10-18.json",
+          "sha256": "7a45c164e362c32602f84a66e75a7c4497f7db324980c7cea9f96c0a821549b3"
+        },
+        {
+          "bytes": 13036,
+          "path": "original-loader-import-cut-original-numerical-page-012-2026-10-18.json",
+          "sha256": "dc45f0677b9483f5817b877cfc7fd6a7a0297e2ae6b004a1f7b0c64e8eaba016"
+        }
+      ],
+      "unresolved_backend_imports": []
+    }
+  },
+  "lifetime_requirements": [
+    "First completed_features graph lives through first prediction and CloseObservation/bank copies; it may release when CounterfactualRiskReader constructor returns before second completed_features call.",
+    "Second completed_features graph and full predictions coexist with all frozen copies until FrozenCurrentRiskReader constructor returns.",
+    "Market binding deepcopies the complete parent before freezes/context copy; original parent, its copy, panel/raw arrays, bank/head/receipts and overlay remain live during this binding.",
+    "After loader return retain real loaded object, archives/ShaMap/Rows and both complete byte-auth receipt graphs plus full JSON and UTF8 through durable result and actual late peak observation. Source array sizes and synthetic peaks are not combined RAM bounds."
+  ],
+  "model_source_path_observation": "Unchanged load_publication restores non-executable numeric NPZ and numeric_head constructs NumericHead; NumericHead.predict traverses saved numeric trees. No executable estimator restoration is needed by these source bodies. This is not observed runtime/model acceptance or a selected admitted model import strategy.",
+  "next_atomic_source_work": "Review explicit new capacity daily/economic/reader/result entry implementations against these declarations and the sole inert import cut. Preserve pure numerical/calibration modules and original calendar at real paths; construct a NEW immutable executed-map/phase/finder/generated/native-package contract before synthetic proposal or genuine capacity proposal.",
+  "not_run": [
+    "payload import or CodeType compile",
+    "numerical/application/model bodies",
+    "tests or old completed gate replay",
+    "original/account/market data reads",
+    "SSH/host probes/Docker/jobs"
+  ],
+  "old_capacity2453_map_unchanged": true,
+  "original_composed_map": {
+    "files": 2446,
+    "sha256": "9a0bfbeb59e0a63072453a6ac0e930e65a89684efd90bc705febf9b1bdbe6224",
+    "unchanged": true
+  },
+  "original_numerical_effect_imports": [
+    "backend.agents.trading.desk",
+    "backend.agents.trading.desk.allocation",
+    "backend.agents.trading.desk.backtest",
+    "backend.agents.trading.desk.desk",
+    "backend.agents.trading.desk.entry",
+    "backend.agents.trading.desk.execution_evidence",
+    "backend.agents.trading.desk.exit",
+    "backend.agents.trading.desk.fundamental",
+    "backend.agents.trading.desk.funded_execution",
+    "backend.agents.trading.desk.grading",
+    "backend.agents.trading.desk.opinions",
+    "backend.agents.trading.desk.paper",
+    "backend.agents.trading.desk.planner",
+    "backend.agents.trading.desk.policy_v4",
+    "backend.agents.trading.desk.regime",
+    "backend.agents.trading.desk.risk",
+    "backend.agents.trading.desk.sentiment",
+    "backend.agents.trading.desk.simulate",
+    "backend.agents.trading.desk.technical",
+    "backend.agents.trading.desk.trend_brake",
+    "backend.agents.trading.desk.value"
+  ],
+  "original_source_inventory": {
+    "deferred_imports": 0,
+    "edges": 0,
+    "external_declarations": 0,
+    "nodes": 166,
+    "pages": [
+      {
+        "bytes": 17459,
+        "path": "original-loader-import-cut-source-inventory-page-000-2026-10-18.json",
+        "sha256": "c4f8b9867de40c7bd586ea5152a173dc926981a9d042fbc8b7fa1c69202f457d"
+      },
+      {
+        "bytes": 17537,
+        "path": "original-loader-import-cut-source-inventory-page-001-2026-10-18.json",
+        "sha256": "5dfcf39dec05cf278a52c5637b6e490db024d7ce0f8d37339cf480a051fb8da2"
+      },
+      {
+        "bytes": 10273,
+        "path": "original-loader-import-cut-source-inventory-page-002-2026-10-18.json",
+        "sha256": "3e6b5537060445ed721cbc541d5aa8d3944a50a12e2fcf843ad9dd25300f05c6"
+      }
+    ],
+    "unresolved_backend_imports": []
+  },
+  "schema": "capacity-loader-import-cut-source-review/1",
+  "scope": "Static explicit imports in module/class scopes including unexecuted branches, plus implicit packages. Callable imports are recorded but not followed. No branch evaluation, import order certificate, dynamic import/native-extension/package-origin or executable-call closure.",
+  "starting_revision": "6be26f34dc383b381b6f50dc48c793ef1dcb3e50",
+  "status": "SOURCE_ONLY_IMPORT_CUT_PROVED_NUMERICAL_AND_GENUINE_BODIES_UNRUN",
+  "unadmitted": {
+    "admission": null,
+    "call_manifest": null,
+    "entrypoint": null,
+    "executed_map": null,
+    "execution_authorized": false,
+    "generated_manifest": null,
+    "launch": null,
+    "model_import_strategy": null,
+    "runtime": null
+  },
+  "unchanged": {
+    "guard_G08_caps": true,
+    "heartbeat": "ACTIVE",
+    "historical_ordinary_intraday_fill_UI_combinedRAM": "UNVERIFIED",
+    "original_source_files": true,
+    "original_timing": "FAILED",
+    "production": true,
+    "publication": "CLOSED",
+    "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN"
+  },
+  "unconditional_original_witness": [
+    "backend.market.forward_arithmetic",
+    "backend.market.direct_daily_arithmetic",
+    "backend.market.learned_entry_data",
+    "backend.market.fill_timing",
+    "backend.agents.trading.desk.paper"
+  ],
+  "variant": {
+    "all_other_AST_nodes_identical": true,
+    "bytes": 11470,
+    "module_and_callable_bodies_executed": false,
+    "module_global_session_scale_alias_removed": true,
+    "new_explicit_map_transition_required": true,
+    "old_capacity_binding_accepts_variant": false,
+    "old_refusal": "LEGACY_SOURCE_OVERRIDE_FORBIDDEN",
+    "original_origin": "matching local source",
+    "original_sha256": "4b0555a6fd929c8a73a9063ef933fde22ce581fa85f37badb37fe611a9123365",
+    "path": "sources/capacity-learned-entry-data-import-cut-v1-2026-10-18.py",
+    "prepare_CodeType_and_import_order_changed": true,
+    "prospective_origin": "/app/backend/market/learned_entry_data.py",
+    "sha256": "21adedb2a11ef8fe9802c4be6c2783b684bfd755db17032ae4bbaf0a2e2a693e",
+    "sole_change": "Move the exact fill_timing.session_scale import into intraday prepare before its previous first statement.",
+    "source_identity": "NEW explicitly changed executor source, never original source identity"
+  }
+}

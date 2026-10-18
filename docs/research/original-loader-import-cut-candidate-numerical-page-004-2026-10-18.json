@@ -1,0 +1,265 @@
+{
+  "records": [
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.yahoo",
+        "line": 34,
+        "module": "dataclasses"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.yahoo",
+        "line": 35,
+        "module": "datetime"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.yahoo",
+        "line": 36,
+        "module": "typing"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.yahoo",
+        "line": 37,
+        "module": "zoneinfo"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.direct_daily_arithmetic",
+        "line": 425,
+        "statement": "import scipy"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.direct_daily_arithmetic",
+        "line": 426,
+        "statement": "import sklearn"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.direct_error_band",
+        "line": 494,
+        "statement": "from backend.market.direct_feature_arithmetic import HoldingScenarioReader"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.direct_error_band",
+        "line": 634,
+        "statement": "from backend.market import direct_feature_arithmetic as feature"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.direct_error_band",
+        "line": 685,
+        "statement": "from backend.market import direct_feature_arithmetic as feature"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.learned_entry_models",
+        "line": 129,
+        "statement": "from sklearn.impute import SimpleImputer"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.learned_entry_models",
+        "line": 130,
+        "statement": "from sklearn.linear_model import Ridge"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.learned_entry_models",
+        "line": 131,
+        "statement": "from sklearn.pipeline import make_pipeline"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.learned_entry_models",
+        "line": 132,
+        "statement": "from sklearn.preprocessing import StandardScaler"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.learned_entry_models",
+        "line": 143,
+        "statement": "import scipy"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.learned_entry_models",
+        "line": 144,
+        "statement": "import sklearn"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.learned_entry_models",
+        "line": 227,
+        "statement": "import joblib"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.learned_entry_models",
+        "line": 244,
+        "statement": "from threadpoolctl import threadpool_limits"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.learned_entry_models",
+        "line": 126,
+        "statement": "from sklearn.ensemble import HistGradientBoostingRegressor"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.learned_retention_models",
+        "line": 247,
+        "statement": "import scipy"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.learned_retention_models",
+        "line": 248,
+        "statement": "import sklearn"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.panel",
+        "line": 109,
+        "statement": "from backend.market.alpha import _rolling_beta"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.learned_entry_data",
+        "line": 118,
+        "statement": "from backend.market.fill_timing import session_scale"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.allocation_controls",
+        "line": 205,
+        "statement": "import pyarrow.parquet as pq"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.store",
+        "line": 83,
+        "statement": "import pyarrow as pa"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.store",
+        "line": 84,
+        "statement": "import pyarrow.parquet as pq"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.store",
+        "line": 143,
+        "statement": "import pyarrow as pa"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.store",
+        "line": 144,
+        "statement": "import pyarrow.parquet as pq"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.store",
+        "line": 169,
+        "statement": "import pyarrow.parquet as pq"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.store",
+        "line": 231,
+        "statement": "import pyarrow.parquet as pq"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.store",
+        "line": 250,
+        "statement": "import pyarrow.parquet as pq"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.store",
+        "line": 297,
+        "statement": "import pyarrow.parquet as pq"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.yahoo",
+        "line": 221,
+        "statement": "from curl_cffi import requests"
+      }
+    }
+  ],
+  "schema": "capacity-loader-source-graph-page/1"
+}

@@ -1,0 +1,253 @@
+{
+  "records": [
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.desk",
+        "line": 648,
+        "statement": "from backend.market import sizing"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.desk",
+        "line": 276,
+        "statement": "from backend.market.model import load_edgar_features"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_desk",
+        "line": 218,
+        "statement": "from backend.agents.trading.desk import backtest, entry"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_desk",
+        "line": 219,
+        "statement": "from backend.market import levels"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_desk",
+        "line": 291,
+        "statement": "from backend.cli.market_daily import DESK_KIND, record_path"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_desk",
+        "line": 326,
+        "statement": "from backend.cli.market_daily import record, save"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.prose",
+        "line": 80,
+        "statement": "import threading"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.prose",
+        "line": 81,
+        "statement": "import traceback"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.prose",
+        "line": 82,
+        "statement": "from concurrent.futures import ThreadPoolExecutor"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.prose",
+        "line": 91,
+        "statement": "from backend.agents.trading.desk.narrative import DeskNarrator"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.prose",
+        "line": 92,
+        "statement": "from backend.cli import market_tone"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.snapshot",
+        "line": 169,
+        "statement": "from backend.market import calendar"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.universe",
+        "line": 91,
+        "statement": "from backend.market import membership"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.forward_market_evidence",
+        "line": 410,
+        "statement": "from backend.market.daily_arithmetic_bridge import _hash"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.technical",
+        "line": 349,
+        "statement": "from backend.market.alpha import _rolling_std"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.deep_intraday",
+        "line": 299,
+        "statement": "from backend.market.calendar import reviewed_sessions"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.deep_intraday",
+        "line": 558,
+        "statement": "import torch"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.deep_intraday",
+        "line": 649,
+        "statement": "from backend.market import deep_intraday_cnn as family"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.deep_intraday",
+        "line": 653,
+        "statement": "from backend.market import deep_intraday_patchtst as family"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.deep_intraday",
+        "line": 627,
+        "statement": "from backend.market import deep_intraday_pretrained as pretrained"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.fundamental",
+        "line": 138,
+        "statement": "from backend.market.fundamental_features import FEATURE_NAMES"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.fundamental",
+        "line": 221,
+        "statement": "from backend.market.qualified_fundamentals import PROFILE_ID, REVENUE_TAG, SELECTION_POLICY, QualifiedFeatures"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.value",
+        "line": 90,
+        "statement": "from backend.market import baselines"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.sizing",
+        "line": 508,
+        "statement": "from backend.market.baselines import percentile_rank"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.edgar",
+        "line": 366,
+        "statement": "from curl_cffi import requests"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.edgar",
+        "line": 558,
+        "statement": "from backend.market import language"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.edgar",
+        "line": 991,
+        "statement": "from backend.market.calendar import publication_session"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.language",
+        "line": 172,
+        "statement": "from backend.market.edgar import strip_form_cover"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.valuation",
+        "line": 184,
+        "statement": "from backend.market.baselines import rank_blend"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.sequential_execution_shadow",
+        "line": 218,
+        "statement": "from backend.agents.trading.desk import intraday_orders, live_policy"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.sequential_execution_shadow",
+        "line": 246,
+        "statement": "from backend.agents.trading.desk import paper"
+      }
+    }
+  ],
+  "schema": "capacity-loader-source-graph-page/1"
+}

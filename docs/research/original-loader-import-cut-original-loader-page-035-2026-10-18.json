@@ -1,0 +1,517 @@
+{
+  "records": [
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 926,
+        "statement": "from backend.agents.trading.desk import live_policy"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1142,
+        "statement": "from backend.agents.trading.desk import actions, event_risk, intraday_orders, live_policy, nightly_plan, paper"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1150,
+        "statement": "from backend.market import alpaca_trading"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1433,
+        "statement": "from backend.market import opportunity_shadow"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1475,
+        "statement": "from backend.agents.trading.desk import live_policy, shadow_ledger"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1503,
+        "statement": "from backend.market import challenger"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1519,
+        "statement": "from backend.market import reversal"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1520,
+        "statement": "from backend.market.calendar import fomc_decisions"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1533,
+        "statement": "from backend.market import fundamentals_shadow"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1543,
+        "statement": "from backend.market import challenger"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1553,
+        "statement": "from backend.agents.trading.desk import fundamental"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1600,
+        "statement": "from backend.agents.trading.desk import live_policy"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1601,
+        "statement": "from backend.market import joint_funded_policy as funded"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1602,
+        "statement": "from backend.market.learned_holding_transition import POLICY as RETAINED_POLICY"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1603,
+        "statement": "from backend.market.grade_led_policy import POLICY as GRADE_LED_POLICY"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1651,
+        "statement": "from backend.agents.trading.desk import event_risk"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1931,
+        "statement": "from backend.agents.trading.desk import event_risk, intraday_orders, live_policy, policy_v4, simulate"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1938,
+        "statement": "from backend.agents.trading.desk import paper as paper_rules"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2101,
+        "statement": "from backend.agents.trading.desk import event_risk, live_policy, simulate"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2102,
+        "statement": "from backend.agents.trading.desk import paper as paper_rules"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2131,
+        "statement": "from backend.agents.trading.desk import live_policy, simulate"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2149,
+        "statement": "from backend.agents.trading.desk import point_in_time"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2195,
+        "statement": "from backend.agents.trading.desk import paper as paper_rules"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2196,
+        "statement": "from backend.agents.trading.desk import point_in_time, policy_v4, simulate"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2230,
+        "statement": "from backend.agents.trading.desk import simulate"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2231,
+        "statement": "from backend.market import benchmarks"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2251,
+        "statement": "from backend.agents.trading.desk import paper"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2333,
+        "statement": "from backend.agents.trading.desk import decision_history"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2346,
+        "statement": "from backend.agents.trading.desk import decision_history"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2362,
+        "statement": "from backend.agents.trading.desk import decision_history, live_policy"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2385,
+        "statement": "from backend.agents.trading.desk import decision_history"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2484,
+        "statement": "from backend.market import nightly_lock"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2528,
+        "statement": "from backend.market import data_vintage"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2562,
+        "statement": "from backend.market import release_coverage"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2589,
+        "statement": "from backend.market import tone_expiry"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2619,
+        "statement": "from backend.market.calendar import NEW_YORK"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2645,
+        "statement": "from backend.market import grade_parity"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2815,
+        "statement": "from backend.cli import market_economics"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 224,
+        "statement": "from backend.cli.market_fundamentals_asof import refresh as versions"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 794,
+        "statement": "from backend.market.joint_funded_policy import JointFundedPolicy"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 809,
+        "statement": "from backend.market import calendar"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1039,
+        "statement": "from backend.market import grade_led_policy"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 1891,
+        "statement": "import subprocess"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2742,
+        "statement": "from backend.market import execution_quality, fomc_gate"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2796,
+        "statement": "from backend.market import learned_inputs"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_daily",
+        "line": 2726,
+        "statement": "from backend.market import learned_live_holding"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.alpaca_trading",
+        "line": 242,
+        "statement": "from backend.market.bounded_execution import limit_text"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.yahoo",
+        "line": 221,
+        "statement": "from curl_cffi import requests"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.retention_inputs",
+        "line": 97,
+        "statement": "import pyarrow as pa"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.retention_inputs",
+        "line": 98,
+        "statement": "import pyarrow.parquet as pq"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.learned_intraday_moments",
+        "line": 138,
+        "statement": "import joblib"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.alpaca",
+        "line": 120,
+        "statement": "from curl_cffi import requests"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.funded_execution",
+        "line": 230,
+        "statement": "from backend.agents.trading.desk import risk"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.learned_holding_transition",
+        "line": 60,
+        "statement": "from backend.market.joint_funded_policy import _account"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.stage3_io",
+        "line": 365,
+        "statement": "from scipy.special import ndtri"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.desk",
+        "line": 119,
+        "statement": "from backend.market.macro import SERIES, aligned_close"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.desk",
+        "line": 215,
+        "statement": "from backend.market.levels_pit import point_in_time_levels"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.desk",
+        "line": 216,
+        "statement": "from backend.market.model import load_tone_features"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.desk",
+        "line": 233,
+        "statement": "from backend.market import challenger"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.desk",
+        "line": 280,
+        "statement": "from backend.market import fundamental_features as ff"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.desk",
+        "line": 281,
+        "statement": "from backend.market import fundamentals_asof as fa"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.desk",
+        "line": 332,
+        "statement": "from backend.market import fundamental_source_store as archive"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.desk",
+        "line": 333,
+        "statement": "from backend.market import qualified_fundamentals"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.desk",
+        "line": 647,
+        "statement": "from backend.agents.trading.desk import simulate"
+      }
+    }
+  ],
+  "schema": "capacity-loader-source-graph-page/1"
+}

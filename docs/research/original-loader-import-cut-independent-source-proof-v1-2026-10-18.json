@@ -1,0 +1,25 @@
+{
+  "SSH_Docker_host_model_account_or_original_data_operations": false,
+  "candidate_contains_any_of_all5_effect_prefixes": false,
+  "exact_candidate_nodes": 20,
+  "historical_ordinary_intraday_fill_UI_combined_RAM": "UNVERIFIED",
+  "new_map_fence_manifest_entry_runtime_model_strategy_admission": null,
+  "original_and_old_capacity_maps_unchanged": true,
+  "pages_hashchecked": 58,
+  "payload_CodeType_compile_import_body_or_tests": false,
+  "report_sha256": "3f408ce008e38066a9f54f7aa4b6ebef9e343d2184d52e6079c03384ee53de1d",
+  "schema": "capacity-loader-import-cut-independent-source-proof/1",
+  "sole_source_delta": "Same import removed from module body and inserted first in intraday prepare; every remaining AST node equal.",
+  "source_files_independently_hashchecked": 166,
+  "static_graph_limit": "Explicit lexical module/class source imports plus implicit packages only; deferred/dynamic imports, evaluated annotations/decorators/class bodies, packages/native extensions, actual import order and runtime are not accepted.",
+  "status": "VERIFIED_SOURCE_DELTA_AND_DECLARED_STATIC_GRAPH_ONLY",
+  "unchanged_harness_effect_prefixes": [
+    "backend.market.replay_broker",
+    "backend.market.alpaca_trading",
+    "backend.agents.trading.desk",
+    "backend.market.joint_funded_policy",
+    "backend.market.adaptive_growth_policy"
+  ],
+  "unique_candidate_edges": 126,
+  "variant_sha256": "21adedb2a11ef8fe9802c4be6c2783b684bfd755db17032ae4bbaf0a2e2a693e"
+}

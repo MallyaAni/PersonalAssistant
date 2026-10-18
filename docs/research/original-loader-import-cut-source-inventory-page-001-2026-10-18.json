@@ -1,0 +1,581 @@
+{
+  "records": [
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 15739,
+        "name": "backend/market/allocation_replay.py",
+        "origin": "matching local source",
+        "sha256": "c8dfcf93de108f1fbed615a0609470a60590e89dceb4f798237b6483f9841f15"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 15047,
+        "name": "backend/market/alpaca.py",
+        "origin": "matching local source",
+        "sha256": "698e2425964622290b06a0f51eda7fd148d2a79f24be58d01577ae8c1804840a"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 15211,
+        "name": "backend/market/alpaca_trading.py",
+        "origin": "matching local source",
+        "sha256": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 6628,
+        "name": "backend/market/alpha.py",
+        "origin": "matching local source",
+        "sha256": "72b1c9487135f642f7bd6f1850aca1351856fda48f53218e402897ebaf53f76d"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 3836,
+        "name": "backend/market/bands.py",
+        "origin": "matching local source",
+        "sha256": "82f69d93471b62cba47e38beef39627aaee72d2e27031f2aea7a310ac46567d5"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 7548,
+        "name": "backend/market/baselines.py",
+        "origin": "matching local source",
+        "sha256": "ced5769bece00034e6a659866ac7f8ec3d3465a50be17795b446dbf6ce58fdc8"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 11204,
+        "name": "backend/market/bounded_execution.py",
+        "origin": "matching local source",
+        "sha256": "ccaa9f62b7ee49b30041a80b366c13fadb69ba2c6e551630e35575b0ddc6dd32"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 13181,
+        "name": "backend/market/calendar.py",
+        "origin": "matching local source",
+        "sha256": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 16550,
+        "name": "backend/market/candidate_stats.py",
+        "origin": "matching local source",
+        "sha256": "93ecebb36422470684208429836f81a27c64b704cc70dc1db7b25b991ff78780"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 12662,
+        "name": "backend/market/conditional_holding_calibration.py",
+        "origin": "matching local source",
+        "sha256": "5b9a7f3036ba480a4b446ccfd5cd0f02a75e8059fa1de8fe0f7c93662342fe8f"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 5627,
+        "name": "backend/market/counterfactual_holding.py",
+        "origin": "matching local source",
+        "sha256": "af8b06a13f9ffeb6f8635cf35852051ed10fb267e3d2d861dd87d9ee984e2fad"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 11285,
+        "name": "backend/market/daily_arithmetic_bridge.py",
+        "origin": "matching local source",
+        "sha256": "e55d955c5b39b004f2ca7d6f8a11b1c26d7dd459dedcf714d6c170994a5db8a0"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 48371,
+        "name": "backend/market/deep_intraday.py",
+        "origin": "matching local source",
+        "sha256": "cdcf42880c4c8c6aec6cb5138aca12ad09dc56d14e3b7f6786c8c1b615050cae"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 3900,
+        "name": "backend/market/desk_freshness.py",
+        "origin": "matching local source",
+        "sha256": "ca9e546915aefb6557d21297bcf194ef70fdda0fae6ed1dcb127b6938cf9b96c"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 8093,
+        "name": "backend/market/deskrecord.py",
+        "origin": "matching local source",
+        "sha256": "c4064120a65f16e1a022b46b6287ea3931868ecf4c8619b09a9b9684873ef497"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 20999,
+        "name": "backend/market/direct_daily_arithmetic.py",
+        "origin": "matching local source",
+        "sha256": "03cb9e837c291b190c89bb8cce3fb960f16c5b118d41bd67c5f294b4664076b9"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 31296,
+        "name": "backend/market/direct_error_band.py",
+        "origin": "matching local source",
+        "sha256": "4b72fbea142bf9a77d92897329ecc52a6c4c62e54efa105e2ba0320e8d11865d"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 38411,
+        "name": "backend/market/direct_feature_arithmetic.py",
+        "origin": "matching local source",
+        "sha256": "3c10d505e0681f23144d319cc430cceba867dc80b3ef82d95a887507b07cf632"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 51312,
+        "name": "backend/market/edgar.py",
+        "origin": "matching local source",
+        "sha256": "7776df51e9bff9a385a7ee4a33e23cb68f6c447569a09c46c474a4f035d4b9be"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 28453,
+        "name": "backend/market/entry_timing.py",
+        "origin": "matching local source",
+        "sha256": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 5151,
+        "name": "backend/market/execution_quotes.py",
+        "origin": "matching local source",
+        "sha256": "4dc6415247b79faba9b557478702facfc0a74950bc9edba7cd679d89aa8bf2f2"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 115733,
+        "name": "backend/market/fill_timing.py",
+        "origin": "matching local source",
+        "sha256": "2bb9eb6c6bbc5bc593a873ef825d8233c890a7b026289ad2b5874bbeda4366fc"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 33450,
+        "name": "backend/market/forward_arithmetic.py",
+        "origin": "matching local source",
+        "sha256": "9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 7394,
+        "name": "backend/market/forward_entry_features.py",
+        "origin": "matching local source",
+        "sha256": "e196e754ce11692700d0eeebfc3ae78104726248f2f8f3b05fd6501875b20f25"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 25752,
+        "name": "backend/market/forward_execution.py",
+        "origin": "matching local source",
+        "sha256": "62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 18396,
+        "name": "backend/market/forward_market_evidence.py",
+        "origin": "matching local source",
+        "sha256": "737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 28327,
+        "name": "backend/market/forward_probability_timing.py",
+        "origin": "matching local source",
+        "sha256": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 3383,
+        "name": "backend/market/grade_led_policy.py",
+        "origin": "matching local source",
+        "sha256": "4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 8893,
+        "name": "backend/market/harness.py",
+        "origin": "matching local source",
+        "sha256": "87bba13007f329453938c45eb923337dedd0761327f4b991217b905f0941ce4c"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 9592,
+        "name": "backend/market/holding_risk_bank.py",
+        "origin": "matching local source",
+        "sha256": "4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 28544,
+        "name": "backend/market/intraday_sip.py",
+        "origin": "matching local source",
+        "sha256": "bbe74be27e547ab4e71ae83521581d4ecd9942a9e9e7498bcbd09f8e3b5197ec"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 23133,
+        "name": "backend/market/joint_funded_policy.py",
+        "origin": "matching local source",
+        "sha256": "5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 13890,
+        "name": "backend/market/language.py",
+        "origin": "matching local source",
+        "sha256": "399450c4034643fa175336d040b3d21b720882611325e9ba62f1b0ef0cfe6586"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 11466,
+        "name": "backend/market/learned_entry_data.py",
+        "origin": "matching local source",
+        "sha256": "4b0555a6fd929c8a73a9063ef933fde22ce581fa85f37badb37fe611a9123365"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 15946,
+        "name": "backend/market/learned_entry_evaluation.py",
+        "origin": "matching local source",
+        "sha256": "4ff5e51da4134cd959690e1ec2041f0c96bcac2cf286a020a45fc121313d49a2"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 13741,
+        "name": "backend/market/learned_entry_models.py",
+        "origin": "matching local source",
+        "sha256": "d6aac3546a60d7332c28198035d63422c12f3658677c2510abb27d130774d0ba"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 7688,
+        "name": "backend/market/learned_entry_policy.py",
+        "origin": "matching local source",
+        "sha256": "df472eb86848960ab2bc553d91fff9bce5c25b7b557e85c60c32d11c0dce52be"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 21659,
+        "name": "backend/market/learned_execution_timing.py",
+        "origin": "matching local source",
+        "sha256": "5ed296ccb48fe3f9170596239c94f1e07203ce4529d1215685ffacd5cefbc5d8"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 9301,
+        "name": "backend/market/learned_holding_transition.py",
+        "origin": "matching local source",
+        "sha256": "c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 20538,
+        "name": "backend/market/learned_intraday_moments.py",
+        "origin": "matching local source",
+        "sha256": "25f6674feae47f3c05529ceafa0ee043fbddaea28f8c42d8ffd4eeff6d20e7e1"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 16861,
+        "name": "backend/market/learned_live_holding.py",
+        "origin": "matching local source",
+        "sha256": "25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 9177,
+        "name": "backend/market/learned_live_timing.py",
+        "origin": "matching local source",
+        "sha256": "80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 11436,
+        "name": "backend/market/learned_retention.py",
+        "origin": "matching local source",
+        "sha256": "1ada0e038ae825010627ff2443ca7c364a32da489dba87a652773a41c5be6efc"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 13606,
+        "name": "backend/market/learned_retention_models.py",
+        "origin": "matching local source",
+        "sha256": "dc0ac21c8078dc2eb9759820b530e4ce9f2a50f709211f20a608d301caef707f"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 11949,
+        "name": "backend/market/levels.py",
+        "origin": "matching local source",
+        "sha256": "0b52c13a65146d2225319568ec605a4373a60fbb6ebf385e925f0dc163d07d8f"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 51423,
+        "name": "backend/market/live_execution_inputs.py",
+        "origin": "matching local source",
+        "sha256": "4756673840814a02d5d0a341d54cbbec9e3a855b8cd8a163cc5f0a9c31b44a86"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 6444,
+        "name": "backend/market/live_model_history.py",
+        "origin": "matching local source",
+        "sha256": "fa8ecdb9c0c32d2f034ece8c7da57fec9f198d8d8427a0273d5b59dc4ca6b37b"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 12316,
+        "name": "backend/market/live_model_history_audit_inputs.py",
+        "origin": "matching local source",
+        "sha256": "fae5bfc7d7438071094f31f42e884cb48e3709c55f364954e51c28302d3c3e30"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 12180,
+        "name": "backend/market/live_model_history_binding.py",
+        "origin": "matching local source",
+        "sha256": "e734613fd6efe95f4de04b969e837d71be43d60abea3e2baf2d457aa6f2167c3"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 9019,
+        "name": "backend/market/live_model_history_nightly_audit.py",
+        "origin": "matching local source",
+        "sha256": "4289bc4f44e0f622681457e81317d00429c735d89801012493605ffd34ed3581"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 17746,
+        "name": "backend/market/live_model_history_nightly_model.py",
+        "origin": "matching local source",
+        "sha256": "ae35feda683debb13e83bbcd9d5c75a35b71b10b1417d571cc7c3fcdd3f3cde9"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 14112,
+        "name": "backend/market/live_model_history_observation_context.py",
+        "origin": "matching local source",
+        "sha256": "cd2fab769ef75ab719b3c4e9162ce6a44a9e980b9f5ecd72283a44f6ddfd205c"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 22885,
+        "name": "backend/market/live_model_history_pending_audit.py",
+        "origin": "matching local source",
+        "sha256": "74e7d9800bf1bdeb51655f09ae2846bfb0dbbcc67afdcad705405a849eb0cf02"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 8398,
+        "name": "backend/market/live_model_history_projection.py",
+        "origin": "exact original Git blob",
+        "sha256": "dfbfeb734bc8e3a1140acfc38514403d6d37f2a641310180ec39912a402f1587"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 20722,
+        "name": "backend/market/live_model_history_receipts.py",
+        "origin": "matching local source",
+        "sha256": "1e9d72e817caa5470842aa50936b3f004f48fbfde77deb0fa5617b72972fea9f"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 34983,
+        "name": "backend/market/live_model_history_stream_audit.py",
+        "origin": "matching local source",
+        "sha256": "f404e15be6e97caf856a4ba6db22eedef51ff5a4e3304dcbed90cf8e0abac2ff"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 3894,
+        "name": "backend/market/live_policy_features.py",
+        "origin": "matching local source",
+        "sha256": "68a0ff3fe3a2c3df2230c5c2737937a1a1a64f8b2c9f4ca5457338430f321a87"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 28355,
+        "name": "backend/market/live_policy_replay.py",
+        "origin": "matching local source",
+        "sha256": "b6ef95f0c5eaa53bd732f0ee5baa55f21ef875d07c69e5abbbb236aafd0586e9"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 7793,
+        "name": "backend/market/live_policy_report.py",
+        "origin": "matching local source",
+        "sha256": "d16e4fbdf194c11f98c28539487da12dbd0210bc7911213f76990b54d5f5e7e2"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 12383,
+        "name": "backend/market/live_probability_timing.py",
+        "origin": "matching local source",
+        "sha256": "3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 4185,
+        "name": "backend/market/macro.py",
+        "origin": "matching local source",
+        "sha256": "74bdb3abfda3c125670392967ff5892e445180174ebb094051aa3fb876376dab"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 10275,
+        "name": "backend/market/market_conditioned_calibration.py",
+        "origin": "matching local source",
+        "sha256": "00c176719372f5b1bc373be32c0c3007c0e6c8aa7808969e177710056c819145"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 10413,
+        "name": "backend/market/market_conditioned_holding.py",
+        "origin": "matching local source",
+        "sha256": "e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4"
+      }
+    },
+    {
+      "section": "nodes",
+      "value": {
+        "bytes": 12342,
+        "name": "backend/market/normalized_continuation.py",
+        "origin": "matching local source",
+        "sha256": "a97bf43eb6d1dfbc49e9f75fca639957c1fcf7019d3f8840aa39b439deee627d"
+      }
+    }
+  ],
+  "schema": "capacity-loader-source-graph-page/1"
+}

@@ -1,0 +1,536 @@
+{
+  "records": [
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.entry",
+        "line": 20,
+        "module": "dataclasses"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.agents.trading.desk.entry",
+        "line": 22,
+        "module": "numpy"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.valuation",
+        "line": 25,
+        "module": "dataclasses"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.valuation",
+        "line": 27,
+        "module": "numpy"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.artifacts.lineage",
+        "line": 20,
+        "module": "json"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.artifacts.lineage",
+        "line": 21,
+        "module": "dataclasses"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.artifacts.lineage",
+        "line": 22,
+        "module": "typing"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.artifacts.types",
+        "line": 1,
+        "module": "dataclasses"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.artifacts.types",
+        "line": 2,
+        "module": "typing"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.search.types",
+        "line": 1,
+        "module": "contextvars"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.search.types",
+        "line": 2,
+        "module": "dataclasses"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sequential_execution_shadow",
+        "line": 8,
+        "module": "__future__"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sequential_execution_shadow",
+        "line": 10,
+        "module": "hashlib"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sequential_execution_shadow",
+        "line": 11,
+        "module": "json"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sequential_execution_shadow",
+        "line": 12,
+        "module": "dataclasses"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sequential_execution_shadow",
+        "line": 13,
+        "module": "datetime"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sequential_execution_shadow",
+        "line": 14,
+        "module": "pathlib"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sequential_execution_shadow",
+        "line": 15,
+        "module": "types"
+      }
+    },
+    {
+      "section": "external_declarations",
+      "value": {
+        "conditional": false,
+        "from": "backend.market.sequential_execution_shadow",
+        "line": 17,
+        "module": "numpy"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_strategy_continue",
+        "line": 548,
+        "statement": "from backend.cli.market_actual_policy_timing import archive_account"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.intraday_orders",
+        "line": 352,
+        "statement": "from backend.market import alpaca_trading"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.intraday_orders",
+        "line": 506,
+        "statement": "from backend.market import alpaca_trading"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.intraday_orders",
+        "line": 295,
+        "statement": "from backend.market import learned_live_timing"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.intraday_orders",
+        "line": 334,
+        "statement": "from backend.market import learned_order_observation"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.intraday_orders",
+        "line": 1177,
+        "statement": "from backend.market import learned_order_observation"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.intraday_orders",
+        "line": 1178,
+        "statement": "from backend.market.live_probability_timing import POLICY"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.intraday_orders",
+        "line": 1275,
+        "statement": "from backend.market import learned_order_observation"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.intraday_orders",
+        "line": 236,
+        "statement": "from backend.market.live_probability_timing import POLICY as TIMING_POLICY"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.intraday_orders",
+        "line": 1072,
+        "statement": "from backend.market import learned_order_observation"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.intraday_orders",
+        "line": 1073,
+        "statement": "from backend.market.live_probability_timing import POLICY"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_probabilistic_funded_timing",
+        "line": 110,
+        "statement": "from backend.market.retention_study import authenticate_source"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_learned_entry",
+        "line": 101,
+        "statement": "import subprocess"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.cli.market_learned_entry",
+        "line": 103,
+        "statement": "from backend.market import learned_entry_policy"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.live_policy_features",
+        "line": 72,
+        "statement": "from backend.agents.trading.desk import event_risk"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.live_policy_features",
+        "line": 73,
+        "statement": "from backend.cli import market_daily"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.live_policy_replay",
+        "line": 432,
+        "statement": "from backend.market.joint_funded_policy import JointFundedPolicy, ProbabilityTimedFundedPolicy"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.live_policy_replay",
+        "line": 445,
+        "statement": "from backend.market.live_probability_timing import build_reader"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.live_policy_replay",
+        "line": 446,
+        "statement": "from backend.market.probabilistic_execution_saved import SavedDistributions"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.live_policy_replay",
+        "line": 503,
+        "statement": "from backend.market.live_policy_report import build as report_builder"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.panel",
+        "line": 109,
+        "statement": "from backend.market.alpha import _rolling_beta"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.retention_study",
+        "line": 412,
+        "statement": "from dataclasses import replace"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.paper",
+        "line": 336,
+        "statement": "import fcntl"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.agents.trading.desk.paper",
+        "line": 945,
+        "statement": "from backend.agents.trading.desk.paper_allocation import _coerce, plan_funded_paper"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.entry_timing",
+        "line": 180,
+        "statement": "import fcntl"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.entry_timing",
+        "line": 355,
+        "statement": "import numpy as np"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.entry_timing",
+        "line": 560,
+        "statement": "from backend.market.bounded_execution import limit_text"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.intraday_sip",
+        "line": 413,
+        "statement": "import pyarrow.parquet as pq"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.store",
+        "line": 83,
+        "statement": "import pyarrow as pa"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.store",
+        "line": 84,
+        "statement": "import pyarrow.parquet as pq"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.store",
+        "line": 143,
+        "statement": "import pyarrow as pa"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.store",
+        "line": 144,
+        "statement": "import pyarrow.parquet as pq"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.store",
+        "line": 169,
+        "statement": "import pyarrow.parquet as pq"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.store",
+        "line": 231,
+        "statement": "import pyarrow.parquet as pq"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.store",
+        "line": 250,
+        "statement": "import pyarrow.parquet as pq"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.store",
+        "line": 297,
+        "statement": "import pyarrow.parquet as pq"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.direct_daily_arithmetic",
+        "line": 425,
+        "statement": "import scipy"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.direct_daily_arithmetic",
+        "line": 426,
+        "statement": "import sklearn"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.direct_error_band",
+        "line": 494,
+        "statement": "from backend.market.direct_feature_arithmetic import HoldingScenarioReader"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.direct_error_band",
+        "line": 634,
+        "statement": "from backend.market import direct_feature_arithmetic as feature"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.direct_error_band",
+        "line": 685,
+        "statement": "from backend.market import direct_feature_arithmetic as feature"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.learned_entry_models",
+        "line": 129,
+        "statement": "from sklearn.impute import SimpleImputer"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.learned_entry_models",
+        "line": 130,
+        "statement": "from sklearn.linear_model import Ridge"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.learned_entry_models",
+        "line": 131,
+        "statement": "from sklearn.pipeline import make_pipeline"
+      }
+    },
+    {
+      "section": "callable_scope_import_declarations_not_followed",
+      "value": {
+        "from": "backend.market.learned_entry_models",
+        "line": 132,
+        "statement": "from sklearn.preprocessing import StandardScaler"
+      }
+    }
+  ],
+  "schema": "capacity-loader-source-graph-page/1"
+}
