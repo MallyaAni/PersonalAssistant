@@ -1,5 +1,88 @@
 # Next session
 
+## 2026-10-18 — Six package METADATA/RECORD byte copies VERIFIED; interpretation open
+
+Read research/original-loader-package-metadata-text-proof-v2-2026-10-18.json.
+Sourcefa947a9fad49b444d42f2cb872d32763982a8097 pins collectord9cadb93/17472B/
+transportabdaf857/6019B/independent4ad058e8/19836B/transport6e09a48d/6039B,
+builders e9353d70/12386B+39a1b99f/6009B+8d8db027/8101B/preserver8ff16fc1/
+10525B. Contracte0bdde6c/4914B/static10875de5/7255B/rawproof2b2ca95a/27692B
+retained. Only new stdlib operational controls and metadata raw UTF8 copies ran.
+No copied package/backend/model AST/CodeType/import/body, container start/create/
+exec/load/account/marketdata/credential read, old HEAD/census/AST-job/gate/packet
+replay or guard/G08/cap/source-map/production change.
+
+Preserved v1FAILED a9af8e55/14943B + transport24c8a8f5/6019B: ONE SSH exit1/
+noownedstop/cleanupfailure, zero stdout; first failure raw inspect SHA assertion
+BEFORE first cp. Exact failed root has5files/no cp terminals; never replay/adopt.
+Selected stopped checks passed, but before rawb04d9314 differs baseline d526.
+ONE separately source/invocation/resource-reviewed retained-only diagnostic SSH
+exit0/empty stderr/noownedstop/cleanupfailure; helper13e43d68/7360B/transport
+99d256c7/6043B/rawproof7ec16ed3/4767B. Seven inputs(two reads/SHA/physical/later
+bookends) establish six positional Mounts deltas ONLY; all nonMounts fields and
+full uniqueDestination mount records equal. No Docker/HEAD/cp/hostprobe/content.
+Initial diagnostic argv-label-only913c transport retained before correction/use.
+
+Distinct v2SOURCE preserves all selected stopped invariants and compares every
+nonMounts field plus BOTH complete mount records by two unique Destinations
+against full pinned original baseline. Raw SHA/list order remain explicit; exact
+HEADproof4a30076a/baseline/diagnostic copies+original physical bindings retained.
+No other field ignored, no guard/cap change. New roots only, originalv1 FAILED.
+
+ONE independently source/invocation/resource-reviewed v2 primary SSH exit0/empty
+stderr/noownedstop/cleanupfailure: exact stopped803718a6/e0 only2inspect+12paired
+fixedcp reads. Six raw UTF8 metadata files462945B: PyArrowMETADATA3031/RECORD78313,
+NumPyMETADATA6635/RECORD111517,SciPyMETADATA62353/RECORD201096. Exact prior sizes/
+single regular tar member/no link/sparse/extra/trailingnonzero/no filesystem
+extraction; content AND tar-wire262KiB bounds unchanged. Candidate499766ac/10813B
+and53files remain Spark. Tar metadata is NOT held-FD container-source physical
+authority/every-file baked-image attestation; metadata fields/RECORD UNINTERPRETED.
+
+ONE separately reviewed independent SSH exit0/empty stderr/noownedstop/cleanup
+failure:53new files+3original prior inputs, each two full reads/SHA/held+named
+decimal physical and later bookends;14CLI terminals/12tar-source pairs/full archive
+fields/exact6sizes/UTF8/prior/candidate/baseline/diagnostic checked. One freshinspect.
+Actual successful before/after/fresh all rawd5265be8 again/orderflagsTRUE. Thus NEW
+v2 reordered-positive branch is SOURCE-reviewed, NOT exercised by this success;
+v1+diagnostic proves actual list-order variance ONLY. Same exited0/noOOM/Pid0/
+finish09:53:55.975021651Z/notpaused/notrestarting/RO/user1000:1000/two audit+out
+mounts/no target overlap. Worker final READONLY scope accepted; no newagent/
+limitedretry/workerops. No native/installed/runtime version or model/RAM claim.
+
+Helpers512MiBsoft/4GiBhard AS/GoCLI4GiB; CPU30primary20independent; primary90work/
+95alarm/5CLI/120SSH, independent30alarm/5CLI/70SSH. Diagnostic256MiBAS/10CPU/
+20alarm/50SSH. Fresh primary2GiB availableRAM/1GiB scratch/512inodes passed;
+headroom NOT reservation/native/model/daemon RAM bound. Timeout/signal/overflow/
+ownedstop/crash branches UNTESTED. AST warnings-as-errors/66purpose comments
+across12controls/26utility AST comparisons/JSON/fullSHA/staged diff PASS; Ruff
+previously unavailable/no lint claim. Inert v1-schema intermediate verifier/transport
+prepared locally ONLY during v2 builder, never dispatched to old failed root.
+
+New v2 census/tools/independent/tools + diagnostic/tools roots COMPLETE immutable/
+file+outputdir fsync/readback. Source462945B stays Spark; no second full remote
+archive/crash guarantee. Exclusive /tmp/capacity-package-metadata-text-evidence-
+20261018-v2 retains28smallcontrol/proof/transport files205270B+manifest55fae7a0/
+32298B; files/readbacks/root/resolvedparent fsynced. Failed/completed old roots,
+all admissions/sources/packets preserved. Local initial argv-label draft and unrun
+intermediate preparation-v2 root retained separately.
+
+NEXT ROOT: SOURCE/DATA ONLY prepare bounded stdlib METADATA header/full CSV RECORD
+parsers over exact6 copied files with SHA/physical bindings; independent exact
+source/invocation/resource review BEFORE use, then exact full row/hash fold with
+bounded pages. Establish actual Name/Version and RECORD-declared native paths;
+do not confuse declarations with actual native file authentication/runtime/thread/
+RAM closure. No guessed suffix/recursivecopy/packageimport/cap relaxation.
+Do NOT repeat closed metadata-copy/HEAD/15/10 censuses/AST inventories/73/80/23/
+65+4/tiny/diagnostic/v2 gates/packets. Finish selected callable/global/type/dataclass
+liveproducer/classflags/native/phase contracts. Guard3b8be00b/all25 payload bodies
+UNRUN; old2446/030c/G08/caps unchanged. Producer2431/reference2446/executor2468/
+original receipts/fullcontext+graphs+JSON+UTF8 lifetimes separate. Assembledtree/
+strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/
+launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/
+intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/
+v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM
+unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Six stopped package metadata paths/sizes VERIFIED; contents UNREAD
 
 Read research/original-loader-package-metadata-head-proof-v1-2026-10-18.json.

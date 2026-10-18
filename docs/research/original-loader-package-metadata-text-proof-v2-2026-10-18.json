@@ -1,0 +1,243 @@
+{
+  "schema": "stopped-n2-package-metadata-text-checkpoint/2",
+  "status": "VERIFIED_SIX_METADATA_TEXT_BYTE_COPIES_ONLY",
+  "starting_git": {
+    "branch": "codex/learned-live-release-20261006",
+    "HEAD": "3cffc4280367ad05e4bd1afdd328b90cfeb19b84",
+    "working_tree": "CLEAN",
+    "pull_rebase_origin_main": "EXIT0_UP_TO_DATE"
+  },
+  "source_commit": "fa947a9fad49b444d42f2cb872d32763982a8097",
+  "files": {
+    "original-loader-package-metadata-text-contract-v2-2026-10-18.json": {
+      "sha256": "e0bdde6c2be9f8ba3b651baf58e657192d200c2954f1ea02fdae2e2cf4b693c7",
+      "bytes": 4914
+    },
+    "original-loader-package-metadata-text-controls-static-v2-2026-10-18.json": {
+      "sha256": "10875de5c0e025fa26e01a687e8f27d3a0c9a347780f91819a53ca049c5e250b",
+      "bytes": 7255
+    },
+    "original-loader-package-metadata-text-independent-v2-2026-10-18.json": {
+      "sha256": "2b2ca95aaefdf78103e93b2393faa497419270ad0cc4d009f89684314cd046ba",
+      "bytes": 27692
+    },
+    "original-loader-package-metadata-text-inspect-diagnostic-v1-2026-10-18.json": {
+      "sha256": "7ec16ed395d9b1d75f542a7001e43aede48462accb066e9ae3005561a91cd85f",
+      "bytes": 4767
+    },
+    "original-loader-package-metadata-text-preservation-v2-2026-10-18.json": {
+      "sha256": "e49806d267cb3b4ff153dd9d7a91ef6a3615fe07e5c2e510f483683732f13da3",
+      "bytes": 339
+    },
+    "sources/capacity-package-metadata-text-census-v1-2026-10-18.py": {
+      "sha256": "a9af8e55fb60b2b950aeada945b7e0ac354fe853a3efeeb6ba4809ba8c226a60",
+      "bytes": 14943
+    },
+    "sources/capacity-package-metadata-text-census-v2-2026-10-18.py": {
+      "sha256": "d9cadb938ca5d78d722c4b1974a778130962f4d84d69fcfac43d5f7eaa32960c",
+      "bytes": 17472
+    },
+    "sources/package-metadata-text-diagnostic-transport-v1-2026-10-18.py": {
+      "sha256": "99d256c7b79745a5c4aadc6b1420ba879dff739115abe5c2951b81bcc051bd5d",
+      "bytes": 6043
+    },
+    "sources/package-metadata-text-independent-transport-v2-2026-10-18.py": {
+      "sha256": "6e09a48d774edee878b744188d64946db7ffafc9550e3f368cc815a6c3912318",
+      "bytes": 6039
+    },
+    "sources/package-metadata-text-inspect-diagnostic-v1-2026-10-18.py": {
+      "sha256": "13e43d68900d6dc8db90a92bdebceacbf15134d04b7f18fd6548ba41d850ba88",
+      "bytes": 7360
+    },
+    "sources/package-metadata-text-transport-v1-2026-10-18.py": {
+      "sha256": "24c8a8f5e57fd0f40908b079ae49126f137218ef12f99387cf14f3eda491cbe5",
+      "bytes": 6019
+    },
+    "sources/package-metadata-text-transport-v2-2026-10-18.py": {
+      "sha256": "abdaf8579552cb3f4f7d2d0e8e7e972dc9f7079b6badb66bc585c9e06df80691",
+      "bytes": 6019
+    },
+    "sources/prepare-package-metadata-text-independent-v2-2026-10-18.py": {
+      "sha256": "8d8db027baf76a6ec46fea50d0acbe43bb4ae7cd36ab90979012025155e5b605",
+      "bytes": 8101
+    },
+    "sources/prepare-package-metadata-text-v1-2026-10-18.py": {
+      "sha256": "e9353d70679a000b8956f23aa43dede3b59c240044b85ce79d9585b99db1f58b",
+      "bytes": 12386
+    },
+    "sources/prepare-package-metadata-text-v2-2026-10-18.py": {
+      "sha256": "39a1b99fa68ed2ab64470f9b2ecb27a421a3ff315cb2c1589fcdbcd7503c74ea",
+      "bytes": 6009
+    },
+    "sources/preserve-package-metadata-text-controls-v2-2026-10-18.py": {
+      "sha256": "8ff16fc146eeb835699ba2dffada3448fcaaae07f11c2f0b3deb9eb12f82d3e3",
+      "bytes": 10525
+    },
+    "sources/verify-package-metadata-text-census-v2-2026-10-18.py": {
+      "sha256": "4ad058e882c789d4fc9aa7d85d0005775c0cd770c32ca1dc3164d9d4067b6cec",
+      "bytes": 19836
+    }
+  },
+  "failed_v1": {
+    "status": "FAILED_PRESERVED_NOT_REPLAYED_OR_ADOPTED",
+    "helper_sha256": "a9af8e55fb60b2b950aeada945b7e0ac354fe853a3efeeb6ba4809ba8c226a60",
+    "SSH_exit": 1,
+    "stdout_bytes": 0,
+    "owned_stop": null,
+    "cleanup_failure": null,
+    "first_boundary": "After selected stopped-container checks passed, raw before-inspect SHA differed from d526 baseline; assertion failed BEFORE first cp.",
+    "remote_root": "/home/animallya96/scratch/capacity-package-metadata-text-census-20261018-v1",
+    "retained_files": 5,
+    "cp_terminals": 0,
+    "new_inspect_sha256": "b04d931483a4c70b3b3640ba23d76afbd1c9db43258c225181bc5133763c1021"
+  },
+  "new_diagnostic": {
+    "one_reviewed_SSH_exit": 0,
+    "stderr_bytes": 0,
+    "owned_stop": null,
+    "cleanup_failure": null,
+    "scope": "Read only failed5 files, old baseline and exact failed helper; each two reads/SHA/held+named decimal physical and later bookends. No Docker/HEAD/cp/hostprobe/package content.",
+    "inputs": 7,
+    "all_JSON_positional_differences": 6,
+    "all_nonMounts_fields_equal": true,
+    "complete_uniqueDestination_mount_records_equal": true,
+    "raw_Mounts_order_equal": false,
+    "raw_proof_sha256": "7ec16ed395d9b1d75f542a7001e43aede48462accb066e9ae3005561a91cd85f",
+    "raw_proof_bytes": 4767,
+    "pre_use_label_correction": "Only diagnostic bootstrap argv label changed to compare-retained-inspections after reviewer suggestion. Initial913c transport preserved locally; no diagnostic body replay."
+  },
+  "actual_v2": {
+    "primary_reviewed_SSH": {
+      "count": 1,
+      "exit": 0,
+      "stderr_bytes": 0,
+      "owned_stop": null,
+      "cleanup_failure": null
+    },
+    "independent_reviewed_SSH": {
+      "count": 1,
+      "exit": 0,
+      "stderr_bytes": 0,
+      "owned_stop": null,
+      "cleanup_failure": null
+    },
+    "primary_inspect_calls": 2,
+    "primary_paired_cp_calls": 12,
+    "independent_fresh_inspect_calls": 1,
+    "candidate_sha256": "499766ac3c5ea891f508bdab644956a9ee0d438174f9074aae96aa6848ecbf04",
+    "candidate_bytes": 10813,
+    "source_files": 6,
+    "source_bytes": 462945,
+    "ordinary_content_and_tar_wire_cap_bytes": 262144,
+    "UTF8_raw_bytes_only": true,
+    "package_metadata_field_or_RECORD_interpretation": false,
+    "package_CodeType_import_body_container_start_create_exec_load": false,
+    "account_marketdata_credentials_old_HEAD_census_ASTjob_gate_packet_replay": false
+  },
+  "independent_fold": {
+    "new_root_files": 53,
+    "additional_original_prior_inputs": 3,
+    "primary_CLI_terminals": 14,
+    "paired_tar_source_reads": 12,
+    "two_full_reads_SHA_held_named_decimal_physical_then_later_bookends": true,
+    "exact_candidate_prior_HEAD_baseline_diagnostic_bindings": true,
+    "exact_sizes_single_regular_tar_members_all_archive_fields_full_bytes_trailing_zero_checked": true,
+    "source_inventory_in_raw_proof": true,
+    "raw_proof_sha256": "2b2ca95aaefdf78103e93b2393faa497419270ad0cc4d009f89684314cd046ba",
+    "raw_proof_bytes": 27692
+  },
+  "inspection_scope": {
+    "retained_baseline_sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2",
+    "predicate": "Selected stopped-state guards retained. Every nonMounts field exact versus original baseline; two unique Destination entries and every field of both complete mount records equal. Raw SHA/list order preserved separately.",
+    "actual_successful_before_after_fresh_raw_sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2",
+    "actual_successful_raw_order_flags": true,
+    "new_v2_reordered_positive_branch": "SOURCE_REVIEWED_NOT_EXERCISED_BY_SUCCESSFUL_V2",
+    "original_v1_variance": "Actual failed v1 plus retained-only diagnostic establishes list-order variance, not runtime acceptance by new v2 on reordered input.",
+    "container": "803718a62e3cbd1f6070abab25a58e1fbc0ee5d04b5444f57c817d7e47b8bf57",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "state": "exited0/noOOM/Pid0/notpaused/notrestarting/finish2026-10-18T09:53:55.975021651Z/ROroot/user1000:1000/two unique audit+out mounts/no target overlap"
+  },
+  "interpretation_limits": {
+    "METADATA_and_RECORD": "COPIED_UTF8_BYTES_NOT_YET_DATA_PARSED",
+    "installed_distribution_versions_native_paths_runtime_versions": "UNVERIFIED",
+    "container_held_FD_source_identity_or_every_file_baked_image_attestation": false,
+    "native_callable_global_type_generated_phase_thread_model_RAM_closure": null
+  },
+  "review_validation": {
+    "existing_worker": "/root/trading_action_consistency",
+    "READONLY_source_invocation_resource_review_before_each_of_four_SSH_attempts": true,
+    "READONLY_actual_diagnostic_and_final_v2_proof_review": "No material mismatch or overclaim. New reordered-input positive branch remains untested; content-copy verification only.",
+    "new_agent_limited_retry_worker_operations": false,
+    "AST_warnings_as_errors_twelve_sources_66_purpose_comments": "PASS",
+    "exact_utility_function_AST_comparisons": 26,
+    "JSON_full_SHA_staged_diff": "PASS",
+    "Ruff": "PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM",
+    "v1_prepared_independent_checker": "Only inert intermediate source/transport generated locally during v2 builder; never dispatched to failed v1 root."
+  },
+  "resources": {
+    "ordinary_file_wire_bytes": 262144,
+    "helper_soft_hard_AS_bytes": [
+      536870912,
+      4294967296
+    ],
+    "owned_Go_CLI_AS_bytes": 4294967296,
+    "primary_independent_CPU_seconds": [
+      30,
+      20
+    ],
+    "primary_work_alarm_SSH_seconds": [
+      90,
+      95,
+      120
+    ],
+    "independent_outer_alarm_CLI_SSH_seconds": [
+      30,
+      5,
+      70
+    ],
+    "diagnostic_AS_CPU_alarm_SSH": [
+      268435456,
+      10,
+      20,
+      50
+    ],
+    "fresh_primary_minimum_MemAvailable_scratch_inodes": [
+      2147483648,
+      1073741824,
+      512
+    ],
+    "headroom_is_reservation_native_model_daemon_RAM_bound": false,
+    "timeout_signal_overflow_owned_stop_crash_branches": "UNTESTED"
+  },
+  "preservation": {
+    "failed_v1_and_tools_roots": "FAILED_IMMUTABLE_PRESERVED",
+    "new_diagnostic_and_tools_roots": "COMPLETE_IMMUTABLE",
+    "new_v2_census_tools_independent_tools_roots": "COMPLETE_IMMUTABLE_FILES_READBACK_OUTPUT_DIRECTORY_FSYNC",
+    "source_bytes_retained_on_Spark": 462945,
+    "raw_failure_and_v2_proofs_retained_on_Mac": true,
+    "local_root": "/tmp/capacity-package-metadata-text-evidence-20261018-v2",
+    "files": 28,
+    "data_bytes": 205270,
+    "manifest_sha256": "55fae7a0a8d24709bab7cfaa59c1463b24b7eea1939e055eda10cd3c487dd993",
+    "manifest_bytes": 32298,
+    "files_readback_root_resolved_parent_fsync": true,
+    "intermediate_unrun_builder_root": "/tmp/capacity-package-metadata-text-independent-preparation-20261018-v2",
+    "initial_diagnostic_transport_draft_root": "/tmp/capacity-package-metadata-text-preparation-drafts-20261018-v1",
+    "crash_durability_or_second_full_remote_evidence_archive": false,
+    "old_failed_completed_roots_sources_packets_admissions": "UNCHANGED"
+  },
+  "next_source_data_only": "Prepare independently reviewed bounded stdlib METADATA header/full CSV RECORD parsers over these exact6 copied bytes with SHA/physical bindings and independent exact full row/hash folds in bounded pages. Establish metadata Name/Version and actual RECORD-declared native paths without guessed suffixes/recursive copy/package import/cap relaxation. RECORD declarations are not actual native file authentication/runtime closure/thread/RAM admission. Resolve selected callable/global/type/dataclass live-producer/classflags/native/phase contracts before capacity proposals. Never repeat closed metadata-copy/HEAD/15/10 source censuses/AST jobs/73/80/23/65+4/tiny/diagnostic/v2 gates/packets for documentation.",
+  "runtime_capacity_execution_authorized": false,
+  "assembled_tree_manifests_native_closure_strategy_entrypoint_bootstrap_owner_caller_stager_packet_runtime_launch_admission": null,
+  "guard3b8be00b_25_payload_functions": "UNRUN_UNCHANGED",
+  "old2446_030c_G08_caps_source_maps": "UNCHANGED",
+  "producer2431_reference2446_executor2468_original_receipts_lifetimes": "SEPARATE_MANDATORY",
+  "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+  "original_timing": "FAILED",
+  "publication": "CLOSED",
+  "missing_original_receipts": "MISSING",
+  "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+  "actual_twohost_Spark2_image_daemon_temp_RAM": "UNADMITTED_UNCHANGED",
+  "heartbeat": "ACTIVE",
+  "diagram": "NONE"
+}
