@@ -1,0 +1,565 @@
+{
+  "checks": [
+    "exact_ShaMap_method_declaration_rename",
+    "exact3_direct_acceptance_calls_renamed",
+    "exact5_explicit_import_rebindings",
+    "exact2_schema_assignments",
+    "exact2_archive_class_names_and_references",
+    "adaptations_FULL_MODULE_AST_after_only_declared_deltas",
+    "archives_FULL_MODULE_AST_after_only_declared_deltas",
+    "input_auth_FULL_MODULE_AST_after_only_declared_deltas",
+    "parser_FULL_MODULE_AST_after_only_declared_deltas",
+    "all_selected_direct_verify_sites_and_three_byte_auth_edges_accounted",
+    "unchanged_guard_forbidden_name_precedes_manifest_lookup",
+    "exact4_additions_no_old2459_source_substitution_or_admission"
+  ],
+  "contract_sha256": "be1f4037e000f158b77a3cf085d77f2c3de23663b863bcb8b81de14a2674899b",
+  "guard_forbidden_line": 252,
+  "guard_registered_lookup_line": 260,
+  "guard_sha256": "030cb5bb25f89c2785e6acbd55aceff5c99b632a5eb538079ee027362ae6178a",
+  "limits": [
+    "Complete normalized AST equality is source evidence only; new module globals/class/type identities and method CodeTypes differ.",
+    "New reader/input-auth/context/adaptations must be selected consistently; old V1 exact-type input guard and lifecycle Pins/authenticate are not composed with them.",
+    "The new method name is absent from forbidden names; no full import/call/native/generated/phase/finder or model guard compatibility claim.",
+    "Original guard/sources/data/receipts and all failed/completed roots unchanged; no old receipt relabel, generic NaN normalization or gate replay."
+  ],
+  "map_sha256": "d78058068ee9fb03722971917a32dcb6589dcf43fa2320fa51d4c998e8c695f0",
+  "modules": {
+    "adaptations": {
+      "bytes": 6851,
+      "functions": 6,
+      "path": "sources/capacity-original-archive-adaptations-v2-2026-10-18.py",
+      "payload_bodies_run": false,
+      "proposed_origin": "backend/market/capacity_original_archive_adaptations_v2.py",
+      "sha256": "87a5d8582e8b3aef54e93e0433452468a6bde416ee17bf462dca3bf1436e1173"
+    },
+    "archives": {
+      "bytes": 11077,
+      "functions": 11,
+      "path": "sources/capacity-original-archive-context-v2-2026-10-18.py",
+      "payload_bodies_run": false,
+      "proposed_origin": "backend/market/capacity_original_archives_v2.py",
+      "sha256": "c6d7dfb305ae328bb8c31c3ed1058dfb8ecde7e4a1c27b31fda5438f4f737ac5"
+    },
+    "input_auth": {
+      "bytes": 13593,
+      "functions": 18,
+      "path": "sources/capacity-original-input-auth-v1-2026-10-18.py",
+      "payload_bodies_run": false,
+      "proposed_origin": "backend/market/capacity_original_input_auth_v1.py",
+      "sha256": "c152e2a47dab3c6cdd42903af54fed560857cea3ae7c47d0cdd26b454c2cc7de"
+    },
+    "parser": {
+      "bytes": 27766,
+      "functions": 44,
+      "path": "sources/capacity-original-history-json-v1-2026-10-18.py",
+      "payload_bodies_run": false,
+      "proposed_origin": "backend/market/capacity_original_history_json_v1.py",
+      "sha256": "b6f4b97f7804efa43f65cb4513d586cc5f092449a2660c126ed7306b53ff8c19"
+    }
+  },
+  "renamed_direct_sites": [
+    {
+      "line": 528,
+      "module": "parser",
+      "receiver": "result"
+    },
+    {
+      "line": 272,
+      "module": "input_auth",
+      "receiver": "value"
+    },
+    {
+      "line": 168,
+      "module": "archives",
+      "receiver": "inputs"
+    }
+  ],
+  "schema": "capacity-map-auth-interface-independent-source-review/1",
+  "static_declarations_NOT_compiled_allowlist": {
+    "adaptations": [
+      {
+        "AST_sha256": "a922b74c7853f3870cb67bc9ff0fb102e3827fe13e048f14a7951f4a455dfcad",
+        "end_line": 40,
+        "line": 29,
+        "qualname": "finite_controls"
+      },
+      {
+        "AST_sha256": "c64efad2340446cce9f062d45c2307cffd01c1cdb773d40a02cb7b229c6b7529",
+        "end_line": 52,
+        "line": 44,
+        "qualname": "logical_digest"
+      },
+      {
+        "AST_sha256": "454383bedc7b85082701437bbb7b7946eba99c06e18e9fa7763506490c8edecf",
+        "end_line": 60,
+        "line": 56,
+        "qualname": "source_digests"
+      },
+      {
+        "AST_sha256": "5fe97bb75953169acdac16065cd072059485da1fd44d160bbf80579866244ba1",
+        "end_line": 70,
+        "line": 64,
+        "qualname": "review_catalog"
+      },
+      {
+        "AST_sha256": "b4693798543cd2a84f47bd5e237e764a867ca4206d59118551d81893d22b8243",
+        "end_line": 99,
+        "line": 74,
+        "qualname": "guard_extension"
+      },
+      {
+        "AST_sha256": "b77e408a6dfb5bfb5bf45a27ef3ca191e9d48e59a2c59b454a4e5d94a965981f",
+        "end_line": 129,
+        "line": 103,
+        "qualname": "reviewed_n2_sources"
+      }
+    ],
+    "archives": [
+      {
+        "AST_sha256": "59b80a8d146f301a75be2271538ffd9cd0fd7cda208cc96293499c86e4c641b8",
+        "end_line": 59,
+        "line": 52,
+        "qualname": "CapacitySourceReaderV2.__init__"
+      },
+      {
+        "AST_sha256": "94fa690828afe7fc564cf74e5b93a3ccf254c77d396fdcc72219c1c80b1eb370",
+        "end_line": 67,
+        "line": 62,
+        "qualname": "CapacitySourceReaderV2.read"
+      },
+      {
+        "AST_sha256": "e4f4f7bbfccb6ab3da59a80248992e99b3b880a0067a590fa229fe4a2dfb4a75",
+        "end_line": 72,
+        "line": 70,
+        "qualname": "CapacitySourceReaderV2.authenticate_native"
+      },
+      {
+        "AST_sha256": "ea7904e669c3cfa55c92fb17e2ac34240bd18cad87d3d6b4bd1006cc36668678",
+        "end_line": 76,
+        "line": 75,
+        "qualname": "CapacitySourceReaderV2.paper_descriptor"
+      },
+      {
+        "AST_sha256": "fcc0c946410b101ea3ae97c973f2c167c90a0d5c8faf9eba5135f108021994bb",
+        "end_line": 125,
+        "line": 98,
+        "qualname": "CapacityOriginalArchivesV2.__init__"
+      },
+      {
+        "AST_sha256": "16366d5cf3ad1309b92739ff3a01b174d0b933546aa808390a2ed4bfe0a2ebfb",
+        "end_line": 130,
+        "line": 129,
+        "qualname": "CapacityOriginalArchivesV2.consumed_inputs"
+      },
+      {
+        "AST_sha256": "461458d063355e1236c649977d161985eef6c831532bbccbce4efb3c5afde743",
+        "end_line": 139,
+        "line": 133,
+        "qualname": "CapacityOriginalArchivesV2.authenticate_sources"
+      },
+      {
+        "AST_sha256": "56d5e8e4945724612a3febea93ed70c742ab181081a27bf32522998a562b2974",
+        "end_line": 158,
+        "line": 142,
+        "qualname": "CapacityOriginalArchivesV2.authenticate_inputs"
+      },
+      {
+        "AST_sha256": "12ebee881940f187b88c448737303debed5a97284eaa9c33b4372e20fc14e8d7",
+        "end_line": 162,
+        "line": 161,
+        "qualname": "CapacityOriginalArchivesV2.initial"
+      },
+      {
+        "AST_sha256": "3166e599951d29df7263f6a955f2d64c1d45b363b008fde0e9908696f34fa5b8",
+        "end_line": 174,
+        "line": 165,
+        "qualname": "CapacityOriginalArchivesV2.unchanged"
+      },
+      {
+        "AST_sha256": "ec590d825494cd683b3a4654bca9fd9db8a0b0f5330318850c9a4c54dfade238",
+        "end_line": 196,
+        "line": 178,
+        "qualname": "preserved_archives"
+      }
+    ],
+    "input_auth": [
+      {
+        "AST_sha256": "61326a9f2c20d277ff5d69624c891b91425305f22e4d5acd7fb8d3d9e4967cc7",
+        "end_line": 33,
+        "line": 31,
+        "qualname": "require"
+      },
+      {
+        "AST_sha256": "db6e8905b367867f76927977cae49d094c3c2b0138bb0487b49dca5b644ca3f3",
+        "end_line": 44,
+        "line": 37,
+        "qualname": "digest_value"
+      },
+      {
+        "AST_sha256": "69382a85ac63d3d47f8d2464128e67b6939bdf7ffe5a91f51f3963cf08d070a8",
+        "end_line": 53,
+        "line": 48,
+        "qualname": "unique"
+      },
+      {
+        "AST_sha256": "5780265ae2977066fb83f5f10f8644a6c68a261760866cf6d9340bf217fefd03",
+        "end_line": 58,
+        "line": 57,
+        "qualname": "constant"
+      },
+      {
+        "AST_sha256": "9dbcd3f2d9dc4c77e6d50786a0b64bac711534fcafc8ac32099bbd13e5cb9884",
+        "end_line": 65,
+        "line": 62,
+        "qualname": "finite"
+      },
+      {
+        "AST_sha256": "6c6fe6171a2f6b532c59f7f76616c5610b8b80dcdf56a7724a78b1fcdabeadd2",
+        "end_line": 73,
+        "line": 69,
+        "qualname": "decode"
+      },
+      {
+        "AST_sha256": "ae283306553f3944ab34cb1be911bc7c912cfb13de7dab529e02e313874e3a46",
+        "end_line": 88,
+        "line": 77,
+        "qualname": "canonical"
+      },
+      {
+        "AST_sha256": "7976507cac308c6dee6646bfa5bb3a783e58ec336f75bcf32307c39780cbac4f",
+        "end_line": 101,
+        "line": 92,
+        "qualname": "physical"
+      },
+      {
+        "AST_sha256": "5bdb93e55c3e3138b0a42bef7733191857128b220fd11cecc8c3350a79c92a8a",
+        "end_line": 113,
+        "line": 105,
+        "qualname": "identity"
+      },
+      {
+        "AST_sha256": "2c4e99431505b6ab74b856c388e5f24dfdde457267de8228725b9906a984476f",
+        "end_line": 122,
+        "line": 117,
+        "qualname": "unchanged"
+      },
+      {
+        "AST_sha256": "92f8b9757ff30fd4ae91c50946fc6985694b7fc9ea917620dd7556881df10781",
+        "end_line": 137,
+        "line": 126,
+        "qualname": "stream_file"
+      },
+      {
+        "AST_sha256": "0666d2cf5fa467b50b2d147bb614f109fe399258039839adff4e83365a19239e",
+        "end_line": 152,
+        "line": 141,
+        "qualname": "metadata"
+      },
+      {
+        "AST_sha256": "81f7d26b130e360c654c9bf7f86b34d9cd2e1e1c63651da22b890b5bd417b66d",
+        "end_line": 171,
+        "line": 164,
+        "qualname": "Pins.__post_init__"
+      },
+      {
+        "AST_sha256": "9b891cd79b43fdf82255d88971bc17a626e6400da4635b70d26e6dc3057b908a",
+        "end_line": 200,
+        "line": 175,
+        "qualname": "mounts_from_receipt"
+      },
+      {
+        "AST_sha256": "6cc4fe74fb0eaebf7f1a3ff26fe1845c1281e2678d182075daa0a8218db34409",
+        "end_line": 213,
+        "line": 204,
+        "qualname": "mapped_input"
+      },
+      {
+        "AST_sha256": "bc152bbb049d7fc9d29381b7349d8a48ab7837f144c2d32f1bffa8332edaa871",
+        "end_line": 266,
+        "line": 217,
+        "qualname": "resolve_input"
+      },
+      {
+        "AST_sha256": "184e34521d93fc38f694562caacc4e1e3662babf7266ba4d4eff422ddb5113e2",
+        "end_line": 272,
+        "line": 270,
+        "qualname": "verify_sha_map"
+      },
+      {
+        "AST_sha256": "5f7cd46c283923378fe456ed299390bf7db05c94a69af9904a04d33ae6a2fe62",
+        "end_line": 386,
+        "line": 276,
+        "qualname": "authenticate"
+      }
+    ],
+    "parser": [
+      {
+        "AST_sha256": "45408795229b8edcfb9348c3f5e143f614810f6b816c7e6bd9c26ef8b2484dea",
+        "end_line": 44,
+        "line": 42,
+        "qualname": "require"
+      },
+      {
+        "AST_sha256": "8a7d12cf18d2cfe9c4b0bfd218901c4c217ec74d3de7655b249c0c939e6a99d1",
+        "end_line": 55,
+        "line": 48,
+        "qualname": "unique"
+      },
+      {
+        "AST_sha256": "a04a5e6c8659e9aad21a0bacc5e29226fe9d4ea166e9e5e0fb8dc854aced4c87",
+        "end_line": 62,
+        "line": 59,
+        "qualname": "finite"
+      },
+      {
+        "AST_sha256": "46f8bd7219ad87bf4375eb12dc97957d15af3937d2d7e8db891b9613df60ac55",
+        "end_line": 67,
+        "line": 66,
+        "qualname": "constant"
+      },
+      {
+        "AST_sha256": "29ebab703c265c73f61d4d203c64b26fd55d04594bdc3ccbecf3e1bd8d970462",
+        "end_line": 73,
+        "line": 71,
+        "qualname": "physical_constant"
+      },
+      {
+        "AST_sha256": "2b48a65888ed1a9e4bafda0562d44e66ae7978b9a15f2f913039dbe69bdda3d9",
+        "end_line": 87,
+        "line": 77,
+        "qualname": "decode"
+      },
+      {
+        "AST_sha256": "fa7641d472e8207551c9d1391e36bca1d73f281fcfc07eb67944dea33d571431",
+        "end_line": 103,
+        "line": 91,
+        "qualname": "identity"
+      },
+      {
+        "AST_sha256": "e427ba2135213d49e8159caceb52461747df229c0a59772b0c91a9664940e0ce",
+        "end_line": 120,
+        "line": 107,
+        "qualname": "stable"
+      },
+      {
+        "AST_sha256": "3c410a8fe8c0df169222795611368af003d7c0b7ea43c204fc64dba435cae481",
+        "end_line": 139,
+        "line": 124,
+        "qualname": "authenticate"
+      },
+      {
+        "AST_sha256": "597cfbfe49b687aaa8bdd9a91a316b5e5d7bcb254aa3d29e4ab9c1455ef3a695",
+        "end_line": 166,
+        "line": 152,
+        "qualname": "Row.raw"
+      },
+      {
+        "AST_sha256": "f74f4217862c08dc2e20d0fb71aeef7c47c2085717f7e01a601d940ddf0ae980",
+        "end_line": 177,
+        "line": 176,
+        "qualname": "Rows.__deepcopy__"
+      },
+      {
+        "AST_sha256": "4e49f5b0f920be676ee138f51f2a619799fb897f81b28a88130b5d226610d8e8",
+        "end_line": 181,
+        "line": 180,
+        "qualname": "Rows.__len__"
+      },
+      {
+        "AST_sha256": "c92402d05529b3f83d6405b919fcf30c0cb6fc5ca45358cf093bebb25476ee6a",
+        "end_line": 185,
+        "line": 184,
+        "qualname": "Rows.__getitem__"
+      },
+      {
+        "AST_sha256": "d3f9b9554720c9e284cd33a3fd73fa872e45b0c66d70affc7ed5721b35d8afbd",
+        "end_line": 190,
+        "line": 188,
+        "qualname": "Rows.__iter__"
+      },
+      {
+        "AST_sha256": "49d508f44d8859e674a9757515497e14929c1e7607072273504e6a32ab0d2c4f",
+        "end_line": 197,
+        "line": 194,
+        "qualname": "canonical_items"
+      },
+      {
+        "AST_sha256": "3c5d8c9f80c814d476196be5af916bdd5c8d28a7bbd957df9a31b8852bfe50d7",
+        "end_line": 226,
+        "line": 201,
+        "qualname": "chunks"
+      },
+      {
+        "AST_sha256": "0e60658cbaea7315f8e3fc2cbeb9aa09b2852e0ad6558ddba1fb4a2f23d74b59",
+        "end_line": 234,
+        "line": 230,
+        "qualname": "digest"
+      },
+      {
+        "AST_sha256": "f74f4217862c08dc2e20d0fb71aeef7c47c2085717f7e01a601d940ddf0ae980",
+        "end_line": 252,
+        "line": 251,
+        "qualname": "ShaMap.__deepcopy__"
+      },
+      {
+        "AST_sha256": "784c8278d333fa08b804a0d1251fa5a2d31f2f585376f1415ddc7e30ba9cb9b3",
+        "end_line": 257,
+        "line": 255,
+        "qualname": "ShaMap.__len__"
+      },
+      {
+        "AST_sha256": "f85f70916fcf1e86952dc88b6e0c6417e52761e3fe3e994a07afc3bb67d4327d",
+        "end_line": 262,
+        "line": 260,
+        "qualname": "ShaMap._stable"
+      },
+      {
+        "AST_sha256": "09cddef010ef68d4ba13ee7d36a8b54dcef49dd1f5c2a63e4d76c6f58d874531",
+        "end_line": 295,
+        "line": 265,
+        "qualname": "ShaMap._row"
+      },
+      {
+        "AST_sha256": "281cc855a44486e43decc740d308117365de577b40ab2b45749dcbafd3fd3052",
+        "end_line": 320,
+        "line": 298,
+        "qualname": "ShaMap.pairs"
+      },
+      {
+        "AST_sha256": "ad4bed3b4c2b28ebef4210e7fe975459ff891e06b21e002d0b4eac83080f9a65",
+        "end_line": 324,
+        "line": 323,
+        "qualname": "ShaMap.items"
+      },
+      {
+        "AST_sha256": "68216dc552c6968dfa6c0c61112f96326aa19b8b8b5431c66749c07f9ad7d6bb",
+        "end_line": 329,
+        "line": 327,
+        "qualname": "ShaMap.__iter__"
+      },
+      {
+        "AST_sha256": "095fe01a83e748e664975e000fb5c3bd0d32432431df4873f4c62487f3953c72",
+        "end_line": 351,
+        "line": 332,
+        "qualname": "ShaMap.__getitem__"
+      },
+      {
+        "AST_sha256": "c604a3b2dd1f77ae8a0d35d01e4f06e0359e2742919671794aa124290b0cd751",
+        "end_line": 358,
+        "line": 354,
+        "qualname": "ShaMap.get"
+      },
+      {
+        "AST_sha256": "b394ec857de93590ee0de1ac682f3b589add2635d636543111996d1bdac8fc65",
+        "end_line": 366,
+        "line": 361,
+        "qualname": "ShaMap.__contains__"
+      },
+      {
+        "AST_sha256": "293faf5c1afc7d80b49afba024e438c0d16cb541ae427aabbe66b600c92a9568",
+        "end_line": 383,
+        "line": 369,
+        "qualname": "ShaMap.__eq__"
+      },
+      {
+        "AST_sha256": "2ed8b7aa56efd67071cc6d7464904ee53a810f8be4c0a12080fd4c0f2aa287bb",
+        "end_line": 399,
+        "line": 386,
+        "qualname": "ShaMap.authenticate_contents"
+      },
+      {
+        "AST_sha256": "7979cff475a5d5d16adbec9561b110f47295d5e05cc13bb7775041fca1cd6d46",
+        "end_line": 408,
+        "line": 403,
+        "qualname": "private_digest"
+      },
+      {
+        "AST_sha256": "89150c0074fb16dc7ae344c43dba0907fbceb46f43ed19b5c17ba08bbc666f27",
+        "end_line": 422,
+        "line": 414,
+        "qualname": "Cursor.__init__"
+      },
+      {
+        "AST_sha256": "9ad1abd36929f9bd6a70db69fa3a46304190f3190130cc6c099c6979ee022483",
+        "end_line": 433,
+        "line": 425,
+        "qualname": "Cursor.peek"
+      },
+      {
+        "AST_sha256": "204e3ad716d3e8225341877e2a4371ba584107f713af526b66f0914547a2dce5",
+        "end_line": 443,
+        "line": 436,
+        "qualname": "Cursor.take"
+      },
+      {
+        "AST_sha256": "c390dc11ac0c55efe6c73b5746202284c47e821f5fe1b932ac39c77245fe27fb",
+        "end_line": 537,
+        "line": 446,
+        "qualname": "Cursor.sha_map"
+      },
+      {
+        "AST_sha256": "b8d73f1cb437cd188ec861d76c7096bb004445a2be1f12a759dd5526f703c829",
+        "end_line": 542,
+        "line": 540,
+        "qualname": "Cursor.whitespace"
+      },
+      {
+        "AST_sha256": "94a2193b33316d928c7af0306a5dac7cc5b8cc683734d69c63f94dca9c6deed5",
+        "end_line": 547,
+        "line": 545,
+        "qualname": "Cursor.expect"
+      },
+      {
+        "AST_sha256": "58879916402cf5e580440939643cc16e4ce2b332e97deea0acda6fb4151883b9",
+        "end_line": 592,
+        "line": 550,
+        "qualname": "Cursor.unit"
+      },
+      {
+        "AST_sha256": "f6834eccb7a922f9ff81cc7b69abe3a3a5dfa45f503da58bfb17880ea4ef9c11",
+        "end_line": 640,
+        "line": 595,
+        "qualname": "Cursor.history"
+      },
+      {
+        "AST_sha256": "7d6d67df9f2cfff584f4364058b16b4124bf5dca686c1b01eb747a1a0901101e",
+        "end_line": 669,
+        "line": 643,
+        "qualname": "Cursor.object"
+      },
+      {
+        "AST_sha256": "19f7964ece023242078349266592f5f5d8471e114b6fab06624981c6b3dcbc84",
+        "end_line": 711,
+        "line": 673,
+        "qualname": "read"
+      },
+      {
+        "AST_sha256": "c3ae03e5444ec05837d000a077ac4aced5f611fc2197fbfc8fa5f587d18d94b2",
+        "end_line": 720,
+        "line": 717,
+        "qualname": "History.__init__"
+      },
+      {
+        "AST_sha256": "62577503b1637c7830d2a1f3f3b0614b902fb2ac9bba4c7bebb61522afda791b",
+        "end_line": 724,
+        "line": 723,
+        "qualname": "History.view"
+      },
+      {
+        "AST_sha256": "3bd0ba473800fe3f4db60431ae0c9447ac171c08865579e06f189e2426df64f5",
+        "end_line": 747,
+        "line": 727,
+        "qualname": "History.record"
+      },
+      {
+        "AST_sha256": "c457300a264a5d22b0d92d4542c30b1134d7e0b17bcaf34e62a8a2c0c6beba2d",
+        "end_line": 757,
+        "line": 751,
+        "qualname": "release"
+      }
+    ]
+  },
+  "status": "SOURCE_AST_ONLY_ALL79_PAYLOAD_FUNCTIONS_UNRUN",
+  "upstream_composition_and_all_runtime_acceptance": null
+}

@@ -1,0 +1,123 @@
+{
+  "exact_deltas": {
+    "adaptations": "Only new parser import and schema2; exact new Rows type check and digest use same parser identity as new archive context.",
+    "archives": "Only new parser/input_auth/adaptations imports, schema2, explicit class/source-reader namesV2 and input-map method call. Complete original admissions, source catalogs, physical=True logical comparison, archive sizes/source checks/scratch/lifetimes retained.",
+    "input_auth": "Import new parser identity and call authenticate_contents only; verify_sha_map name is already permitted. All full original source/input two-read receipts and return fields unchanged in source; new Pins/ShaMap/module identities explicit.",
+    "parser": "ShaMap.verify declaration becomes authenticate_contents; only Cursor.sha_map own call changes. All complete method bodies, checks, sealed spool/index/canonical hashes, bounds, return fields, release semantics and allocations retained as source."
+  },
+  "execution_authorized": false,
+  "guard": {
+    "path": "sources/original-loader-capacity-harness-v3-2026-10-18.py",
+    "profile_forbidden_before_manifest": "backend co_name verify => FORBIDDEN_FUNCTION",
+    "sha256": "030cb5bb25f89c2785e6acbd55aceff5c99b632a5eb538079ee027362ae6178a",
+    "unchanged": true
+  },
+  "identity_receipt_limits": "New Row/Rows/ShaMap/ArchiveRef/History/Cursor/Pins/context/source-reader identities. No alias, monkeypatch, sys.modules injection, original source overwrite or old receipt relabel. Equal source bodies/receipt shapes do not prove behavior/type/readonly/alias/digest/lifetime/RAM parity. Original byte-auth receipt795d4c6b and all old proofs stay separate.",
+  "modules": {
+    "adaptations": {
+      "bytes": 6851,
+      "functions": 6,
+      "path": "sources/capacity-original-archive-adaptations-v2-2026-10-18.py",
+      "payload_bodies_run": false,
+      "proposed_origin": "backend/market/capacity_original_archive_adaptations_v2.py",
+      "sha256": "87a5d8582e8b3aef54e93e0433452468a6bde416ee17bf462dca3bf1436e1173"
+    },
+    "archives": {
+      "bytes": 11077,
+      "functions": 11,
+      "path": "sources/capacity-original-archive-context-v2-2026-10-18.py",
+      "payload_bodies_run": false,
+      "proposed_origin": "backend/market/capacity_original_archives_v2.py",
+      "sha256": "c6d7dfb305ae328bb8c31c3ed1058dfb8ecde7e4a1c27b31fda5438f4f737ac5"
+    },
+    "input_auth": {
+      "bytes": 13593,
+      "functions": 18,
+      "path": "sources/capacity-original-input-auth-v1-2026-10-18.py",
+      "payload_bodies_run": false,
+      "proposed_origin": "backend/market/capacity_original_input_auth_v1.py",
+      "sha256": "c152e2a47dab3c6cdd42903af54fed560857cea3ae7c47d0cdd26b454c2cc7de"
+    },
+    "parser": {
+      "bytes": 27766,
+      "functions": 44,
+      "path": "sources/capacity-original-history-json-v1-2026-10-18.py",
+      "payload_bodies_run": false,
+      "proposed_origin": "backend/market/capacity_original_history_json_v1.py",
+      "sha256": "b6f4b97f7804efa43f65cb4513d586cc5f092449a2660c126ed7306b53ff8c19"
+    }
+  },
+  "native_and_generated": "Parser dataclasses/SQLite/tempfile/fsync and input-auth Pins are unexecuted new identities. Exact runtime/dataclass format2/native closure/call and phase manifests remain absent. No model/provider/account imports or source-body tests run.",
+  "next": "Independently compare every complete AST after only declared interface/import/type/schema changes. Then SOURCE ONLY compose all new upstream archive/result/input-auth/admission/lifecycle/type/map bindings and complete import/call/guard closure. Do not weaken original verify guard or execute old/new payloads.",
+  "original_collision_chain": [
+    "CapacityLoaderLeaseV1.__init__ -> CapacityOriginalArchivesV1.__init__ -> streamed.read external_inputs=True -> Cursor.sha_map -> ShaMap.verify during ADMISSION",
+    "CapacityArchive/LoaderLeaseV1._bytes -> byte_auth.authenticate -> streamed.read external_inputs=True -> ShaMap.verify, then verify_sha_map(inputs) -> ShaMap.verify",
+    "CapacityOriginalArchivesV1.unchanged -> completion input_sha256.verify during AFTER"
+  ],
+  "original_sources": {
+    "adaptations": {
+      "bytes": 6677,
+      "path": "docs/research/sources/original-loader-capacity-archive-adaptations-v1-2026-10-18.py",
+      "sha256": "39f2884741036bbe3a33f451909a59b46924c43ea699e39670c1c13fbcde5134"
+    },
+    "archives": {
+      "bytes": 10886,
+      "path": "docs/research/sources/original-loader-capacity-archive-context-v1-2026-10-18.py",
+      "sha256": "0212bc8dedd0fb44502547fe974670ef84c21db608ab633e2a818c9e718e692b"
+    },
+    "input_auth": {
+      "bytes": 13404,
+      "path": "backend/market/live_model_history_input_auth.py",
+      "sha256": "35ad5f5f96fa7951b6163512ab733a9168869eef17038e030b7dad4dcbb1b111"
+    },
+    "lifecycle": {
+      "bytes": 10027,
+      "path": "docs/research/sources/original-loader-capacity-loader-lifecycle-v1-2026-10-18.py",
+      "sha256": "ba888e95f5925d7ffb084ce3d15688299f9987284e8a9e38fd1d54a1c772ebc4"
+    },
+    "parser": {
+      "bytes": 27574,
+      "path": "backend/market/original_history_json.py",
+      "sha256": "de29c1017f4c9eadd874b2fbe0d85b4c80ced8e7a43fb6bd4f779c3d726cb2eb"
+    }
+  },
+  "schema": "capacity-map-auth-interface-source-contract/1",
+  "source_map_declaration": {
+    "bytes": 287138,
+    "path": "original-loader-map-auth-interface-source-map-v1-2026-10-18.json",
+    "sha256": "d78058068ee9fb03722971917a32dcb6589dcf43fa2320fa51d4c998e8c695f0"
+  },
+  "source_only_conditional_barrier": "Given earlier imports/admissions/reads succeed, unchanged guard refuses the pure-data ShaMap.verify body before call-manifest lookup. This is source reachability, not an observed genuine failure or certified first runtime event.",
+  "status": "SOURCE_ONLY_NEW_DATA_IDENTITIES_ALL_PAYLOAD_BODIES_UNRUN",
+  "unadmitted": {
+    "admission": null,
+    "bootstrap": null,
+    "call_manifest": null,
+    "caller": null,
+    "entrypoint": null,
+    "executed_map": null,
+    "finder": null,
+    "generated_manifest": null,
+    "launch": null,
+    "model_import_strategy": null,
+    "native_package_closure": null,
+    "owner": null,
+    "packet": null,
+    "phase_manifest": null,
+    "runtime": null,
+    "stager": null,
+    "upstream_composition": null,
+    "wrapper": null
+  },
+  "unchanged": {
+    "guard_G08_caps": true,
+    "heartbeat": "ACTIVE",
+    "model_RAM_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+    "old_sources_maps_proofs_roots_packets_admissions": true,
+    "original_timing": "FAILED",
+    "production_original_account_history": true,
+    "publication": "CLOSED",
+    "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN"
+  },
+  "upstream_uncomposed": "Old2459 binding deliberately refuses this new map. Old input factory requires exact V1 archives; old lifecycle/admissions still bind old byte_auth/parser. A DISTINCT source-bound upstream composition/map transition/finder/guard contract must select the new identities consistently before any execution proposal. No claim that new data modules repair the old composition at runtime."
+}
