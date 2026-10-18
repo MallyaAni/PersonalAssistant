@@ -52,11 +52,20 @@ class _Effects:
         self.owner, self.phase, self.declaration = owner, phase, deepcopy(declaration)
         self.counts, self.order = {}, None
 
-    # Charge before any selected effect and refuse changed native functions or CAS uncertainty.
+    # Bind every effect to the original persisted inputs and lease before charging or acting.
     def _claim(self, verb):
         owner = self.owner
         owner._guard()
         owner.io._lease()
+        directory = owner._directory(self.phase)
+        original, _ = owner._read(directory / 'reservation.json')
+        declaration = owner._declaration(self.phase, self.declaration)
+        physical._require(not owner.io.failed and owner.io.directory == directory
+            and legacy.admitted.encoded(original['declaration']) == legacy.admitted.encoded(declaration)
+            and original['sources'] == sources()
+            and original['native_io']['reserved_cas'] == owner.io.reserved_cas
+            and original['native_io']['effect_binding'] == owner.io.effect_binding == packet._digest(declaration),
+            'Original reserved Cycle capability inputs/lease changed')
         physical._require(self.phase == 'SUBMISSION_CAPTURED' and self.counts.get(verb, 0) == 0,
                           'Unreserved/repeated Cycle capability')
         self.counts[verb] = 1
