@@ -12,13 +12,13 @@
     },
     "diagnostic-owner.py": {
       "repository_path": "sources/original-loader-format2-owner-2026-10-18.py",
-      "sha256": "69cc1eb60e6b367d7fe6004aeb4627de912a45bd9e20e21cb132cb59dec1cd9b",
-      "bytes": 6837
+      "sha256": "3424bb22298c577f93c07ce88308db5ee6f49add004469a5ffed77b9a5076f6c",
+      "bytes": 6836
     },
     "diagnostic-verifier.py": {
       "repository_path": "sources/original-loader-format2-verifier-2026-10-18.py",
-      "sha256": "34c7c853e76904b8416af9601a9ee454f5e35a169c22dba2a15262590e95c6cc",
-      "bytes": 9984
+      "sha256": "80db67b0cb6360e410c790cb2e798a5bcafb9d272bd0cab8e6598d0e7b5df00b",
+      "bytes": 9983
     }
   },
   "inputs": {
@@ -65,7 +65,7 @@
       "<source>/owner/diagnostic-owner.py",
       "--admitted-format2-hypothesis",
       "<fresh-admission-sha256>",
-      "69cc1eb60e6b367d7fe6004aeb4627de912a45bd9e20e21cb132cb59dec1cd9b",
+      "3424bb22298c577f93c07ce88308db5ee6f49add004469a5ffed77b9a5076f6c",
       "<exact-source-book-sha256>"
     ],
     "prerequisites": [
@@ -120,4 +120,3 @@
     "force-stop/alarm/SIGKILL/transport-loss cleanup"
   ]
 }
-
