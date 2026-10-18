@@ -16,6 +16,7 @@ from backend.agents.trading.desk import paper
 from backend.cli.verify_actual_policy_timing import same
 from backend.market import calendar, entry_timing
 from backend.market import live_model_history_nightly_model as numerical
+from backend.market import original_history_json as streamed
 from backend.market.live_model_history_observation_context import ObservationContext
 from backend.market.live_model_history_receipts import instant, require, whole
 from backend.market.live_probability_timing import POLICY
@@ -65,18 +66,27 @@ def finite_float(value):
 # Authenticate original bytes and source without certifying economic correctness.
 @dataclass(frozen=True, slots=True)
 class OriginalProxyEvidence:
-    _archive: bytes
+    _archive: bytes | streamed.ArchiveRef
     sha256: str
 
     # Keep immutable input bytes separately from all saved state comparison targets.
     def __init__(self, archive, expected_sha256, producer_sources):
-        require(type(archive) is bytes, "Immutable original gzip evidence required")
         require(
-            len(archive) <= MAX_COMPRESSED_BYTES,
+            type(archive) in (bytes, streamed.ArchiveRef),
+            "Immutable original gzip evidence required",
+        )
+        size = (
+            len(archive)
+            if type(archive) is bytes
+            else streamed.authenticate(archive.path, expected_sha256)[2]
+        )
+        require(
+            size <= MAX_COMPRESSED_BYTES,
             "UNRECONSTRUCTIBLE_ARCHIVE_SIZE: original gzip exceeds bound",
         )
         require(
-            sha256(archive).hexdigest() == expected_sha256,
+            (sha256(archive).hexdigest() if type(archive) is bytes else archive.sha256)
+            == expected_sha256,
             "Original session archive bytes differ",
         )
         require(
@@ -96,6 +106,22 @@ class OriginalProxyEvidence:
 
     # Select original decision/attempt receipts without reading saved current controls.
     def records(self, session):
+        if type(self._archive) is streamed.ArchiveRef:
+            value = streamed.read(
+                self._archive.path, self.sha256, compressed=True, retain=False
+            )
+            require(
+                value["session"] == session, "Original pending evidence session differs"
+            )
+            result = {
+                key: value[key]
+                for key in ("forecast_decisions", "observations", "attempts")
+            }
+            require(
+                all(type(rows) is list for rows in result.values()),
+                "Original pending receipt lists required",
+            )
+            return result
         require(
             sha256(self._archive).hexdigest() == self.sha256,
             "Original pending archive changed",
@@ -507,7 +533,9 @@ def fold_pending(
 
 
 # Compare a failed first account read without reconciling the closing state.
-def compare_unavailable(value, previous, derived, observed, held, session, at):
+def compare_unavailable(
+    value, previous, derived, observed, held, session, at, *, history=None
+):
     before = numerical.serialized(vars(previous))
     after = numerical.serialized(vars(derived))
     before_controls = {key: row for key, row in before.items() if key != "pending"}
@@ -556,8 +584,12 @@ def compare_unavailable(value, previous, derived, observed, held, session, at):
     }
     same(value["nightly"], expected, "Complete original unavailable nightly result")
     same(value["new_intents"], [], "Unavailable account created no new intent")
-    numerical.exact_integers(value["paper_state"], after, "Unavailable full state")
-    same(value["paper_state"], after, "Complete original unavailable state")
+    numerical.compare_state(
+        value["paper_state"],
+        after,
+        "Complete original unavailable state",
+        history=history,
+    )
     require(value["session"] == session, "Unavailable archive session differs")
     return {
         "path": "nightly_broker_unavailable",

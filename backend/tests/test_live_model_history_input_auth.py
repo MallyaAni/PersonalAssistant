@@ -85,6 +85,21 @@ def test_all_bytes_are_authenticated(cohort):
     assert result["publication"] == "CLOSED"
 
 
+# Sealed-map mode authenticates every source/input twice and retains identical receipts.
+def test_external_input_map_preserves_all_authentication_receipts(cohort, tmp_path):
+    expected = run(cohort)
+    paths, *_ = cohort
+    pins = auth.Pins(
+        "complete-private-v10", *(digest(path.read_bytes()) for path in paths)
+    )
+    actual = auth.authenticate(
+        *paths, pins, external_inputs=True, scratch=tmp_path / "map-auth"
+    )
+    assert actual == expected
+    assert actual["input_files"] == 1
+    assert len(actual["files"]) == 2429
+
+
 # A bounded receipt cannot be relabelled as the original full source profile.
 def test_full_and_bounded_profiles_are_distinct(cohort):
     with pytest.raises(ValueError, match="PROFILE_COUNT"):
@@ -331,4 +346,41 @@ def test_no_numerical_imports():
         if isinstance(node, (ast.Import, ast.ImportFrom))
         for alias in (node.names if isinstance(node, ast.Import) else [None])
     }
-    assert roots <= {"json", "math", "os", "stat", "dataclasses", "hashlib", "pathlib"}
+    assert roots <= {
+        "json",
+        "math",
+        "os",
+        "stat",
+        "dataclasses",
+        "hashlib",
+        "pathlib",
+        "backend",
+    }
+    internal = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ImportFrom) and node.module.startswith("backend")
+    ]
+    assert len(internal) == 1
+    assert internal[0].module == "backend.market"
+    assert [name.name for name in internal[0].names] == ["original_history_json"]
+    helper = ast.parse(Path(auth.streamed.__file__).read_text())
+    pure_roots = {
+        (node.module if isinstance(node, ast.ImportFrom) else alias.name).split(".")[0]
+        for node in ast.walk(helper)
+        if isinstance(node, (ast.Import, ast.ImportFrom))
+        for alias in (node.names if isinstance(node, ast.Import) else [None])
+    }
+    assert pure_roots <= {
+        "gzip",
+        "io",
+        "json",
+        "math",
+        "os",
+        "stat",
+        "sqlite3",
+        "dataclasses",
+        "hashlib",
+        "pathlib",
+        "tempfile",
+    }

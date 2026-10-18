@@ -370,15 +370,85 @@ def test_all_archives_and_physical_state_are_rechecked(tmp_path):
         },
         ending_state=cli.digest(expected),
     )
-    before = cli.preserved_archives(archives)
+    external = sha256(state.read_bytes()).hexdigest()
+    before = cli.preserved_archives(archives, external, state.stat().st_size)
     assert len(before) == 2
     state.write_text(json.dumps({**expected, "pending": [1]}))
     with pytest.raises(ValueError, match="PHYSICAL_STATE_DIFFERS"):
-        cli.preserved_archives(archives)
+        cli.preserved_archives(
+            archives, sha256(state.read_bytes()).hexdigest(), state.stat().st_size
+        )
     state.write_text(json.dumps(expected))
     path.write_bytes(b"changed saved compressed bytes")
     with pytest.raises(ValueError, match="bytes differ"):
-        cli.preserved_archives(archives)
+        cli.preserved_archives(archives, external, state.stat().st_size)
+
+
+# Physical comparison streams beyond the old aggregate cap under an external pin.
+def test_streamed_physical_external_pin_and_legacy_capacity(tmp_path, monkeypatch):
+    monkeypatch.setattr(cli, "MAX_STATE_BYTES", 32, raising=False)
+    folder = tmp_path / "state/paper"
+    folder.mkdir(parents=True)
+    state = asdict(cli.paper.PaperState())
+    state["history"] = [{"session": "initial", "payload": "x" * 128, "x": None}]
+    physical = folder / "state.json"
+    raw = json.dumps(state).replace('"x": null', '"x": NaN').encode()
+    physical.write_bytes(raw)
+    external = sha256(raw).hexdigest()
+    archives = SimpleNamespace(
+        root=tmp_path, completion={"sessions": []}, ending_state=cli.digest(state)
+    )
+    assert (
+        cli.preserved_archives(archives, external, len(raw))[str(physical)] == external
+    )
+    assert physical.read_bytes() == raw
+    with pytest.raises(ValueError, match="SIZE_DIFFERS"):
+        cli.preserved_archives(archives, external, len(raw) - 1)
+    physical.write_bytes(json.dumps(state).encode())
+    with pytest.raises(ValueError, match="DIGEST_MISMATCH"):
+        cli.preserved_archives(archives, external, physical.stat().st_size)
+
+
+# The new invocation must supply physical bytes independently, including TEST profiles.
+@pytest.mark.parametrize("missing", [None, "physical_sha256", "physical_bytes"])
+def test_streamed_invocation_requires_external_physical_pin(tmp_path, missing):
+    value = {
+        "schema": cli.SCHEMA,
+        "profile": "complete-private-v10",
+        "account": "/account",
+        "market": "/market",
+        "completion_sha256": "a" * 64,
+        "physical_sha256": "b" * 64,
+        "physical_bytes": 123,
+        "initial_sha256": "c" * 64,
+        "manifest": "/manifest",
+        "manifest_sha256": "d" * 64,
+        "execution": "/execution",
+        "execution_sha256": "e" * 64,
+        "audit_source_sha256": {"auditor": "f" * 64},
+        "runtime": "/runtime",
+        "runtime_sha256": "1" * 64,
+        "producer_runtime": "/producer",
+        "producer_runtime_sha256": "2" * 64,
+        "git_map": None,
+        "git_map_sha256": None,
+        "initial_receipts": None,
+        "initial_receipts_sha256": None,
+        "proof_parent": "/proof",
+    }
+    if missing is not None:
+        value.pop(missing)
+    path = tmp_path / "invocation.json"
+    expected = write(path, value)
+    if missing is not None:
+        with pytest.raises(ValueError, match="EXACT_AUDIT_INVOCATION"):
+            cli.invocation(path, expected)
+    else:
+        assert cli.invocation(path, expected)["physical_sha256"] == "b" * 64
+        value["profile"] = "original-full-27471"
+        expected = write(path, value)
+        with pytest.raises(ValueError, match="EXACT_ORIGINAL_FULL_PHYSICAL_PIN"):
+            cli.invocation(path, expected)
 
 
 # Only physical state uses source-pinned nonfinite-to-null export semantics.
@@ -531,6 +601,7 @@ def source_fixture(tmp_path):
         "backend/market/live_model_history_nightly_audit.py",
         "backend/market/live_model_history_receipts.py",
         "backend/market/live_model_history_input_auth.py",
+        "backend/market/original_history_json.py",
         "backend/market/live_model_history_binding.py",
         "backend/market/live_policy_replay.py",
         "backend/agents/trading/desk/paper.py",
@@ -562,6 +633,7 @@ def test_exact_full_source_map_admission(tmp_path):
     [
         "backend/cli/verify_actual_policy_timing.py",
         "backend/cli/verify_live_model_history.py",
+        "backend/market/original_history_json.py",
     ],
 )
 def test_executed_verifier_dependency_pin_is_required(tmp_path, name):
@@ -577,6 +649,7 @@ def test_executed_verifier_dependency_pin_is_required(tmp_path, name):
     [
         "backend/cli/verify_actual_policy_timing.py",
         "backend/cli/verify_live_model_history.py",
+        "backend/market/original_history_json.py",
     ],
 )
 def test_executed_verifier_dependency_pin_cannot_be_substituted(tmp_path, name):
@@ -594,6 +667,7 @@ def test_executed_verifier_dependency_pin_cannot_be_substituted(tmp_path, name):
     [
         "backend/cli/verify_actual_policy_timing.py",
         "backend/cli/verify_live_model_history.py",
+        "backend/market/original_history_json.py",
     ],
 )
 def test_executed_verifier_dependency_rejects_stale_actual_bytes(

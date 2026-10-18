@@ -57,7 +57,22 @@ SOURCES = {
         "fae5bfc7d7438071094f31f42e884cb48e3709c55f364954e51c28302d3c3e30"
     ),
     "backend/market/live_model_history_stream_audit.py": (
-        "c64eadd658b46f75dd605dddb79074bdba7177d83f0e6e3439fba630378c135b"
+        "f404e15be6e97caf856a4ba6db22eedef51ff5a4e3304dcbed90cf8e0abac2ff"
+    ),
+    "backend/market/original_history_json.py": (
+        "de29c1017f4c9eadd874b2fbe0d85b4c80ced8e7a43fb6bd4f779c3d726cb2eb"
+    ),
+    "backend/market/live_model_history_nightly_model.py": (
+        "ae35feda683debb13e83bbcd9d5c75a35b71b10b1417d571cc7c3fcdd3f3cde9"
+    ),
+    "backend/market/live_model_history_pending_audit.py": (
+        "74e7d9800bf1bdeb51655f09ae2846bfb0dbbcc67afdcad705405a849eb0cf02"
+    ),
+    "backend/market/live_model_history_nightly_audit.py": (
+        "4289bc4f44e0f622681457e81317d00429c735d89801012493605ffd34ed3581"
+    ),
+    "backend/market/live_model_history_observation_context.py": (
+        "cd2fab769ef75ab719b3c4e9162ce6a44a9e980b9f5ecd72283a44f6ddfd205c"
     ),
     "backend/market/live_model_history_receipts.py": (
         "1e9d72e817caa5470842aa50936b3f004f48fbfde77deb0fa5617b72972fea9f"
