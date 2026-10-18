@@ -18,6 +18,7 @@ from backend.market import historical_conditional_nightly as legacy
 from backend.market import historical_native_metadata as metadata
 from backend.market import historical_paper_component as component
 from backend.market import historical_physical_checkpoint as physical
+from backend.market import historical_raw_cycle as raw_cycle
 from backend.market import historical_timing_packet as packet
 from backend.market import replay_broker as native
 from backend.market.historical_packet_registry import digest
@@ -36,7 +37,8 @@ WRITE_KEYS = {'schema', 'checkpoint', 'raw_sha256', 'raw_bytes', 'identity_sha25
 
 # Bind this composition independently from the unchanged native/legacy source map.
 def sources():
-    return {**legacy.sources(), str(Path(__file__)): sha256(Path(__file__).read_bytes()).hexdigest()}
+    return {**legacy.sources(), **raw_cycle.sources(),
+            str(Path(__file__)): sha256(Path(__file__).read_bytes()).hexdigest()}
 
 
 # Keep every genuine raw entry closed until complete lifecycle admission is implemented.
@@ -236,9 +238,26 @@ class RawNightly(legacy.Nightly):
         legacy.admitted.require(record['value']['phase'] == 'BIRTH', 'Original raw birth required')
         return record['value']
 
-    # Admit only raw Nightly lineage until raw Cycle final continuation is implemented.
+    # Require an exact committed raw Cycle final or the original reserved Nightly result.
     def raw_predecessor(self, reference, *, raw_checkpoint):
-        return self.read_lifecycle(reference, raw_checkpoint=raw_checkpoint)['value']
+        record = legacy.admitted.decoded(self.store.read_blob(reference, limit=legacy.CAP))
+        if record.get('schema') != 'private-conditional-cycle-receipt/2':
+            return self.read_lifecycle(reference, raw_checkpoint=raw_checkpoint)['value']
+        final = raw_cycle.read_final(self.store, reference, self.pins(),
+            expected_head=self.expected_head, raw_checkpoint=raw_checkpoint)
+        lineage, receipt = final['lineage'], final['receipt']
+        prior = self.read_lifecycle(lineage['previous_nightly'], raw_checkpoint=raw_checkpoint)['value']
+        legacy.admitted.require(prior['phase'] == 'NIGHTLY_CLOSE'
+            and prior['detail']['status'] == 'NATIVE_NIGHTLY_RETURNED'
+            and all(prior[key] == lineage[key] for key in ('birth', 'context', 'context_identity'))
+            and date.fromisoformat(receipt['session']) == legacy.intraday_orders.next_session(
+                date.fromisoformat(prior['session']))
+            and raw_cycle.paper_content(prior['components']['paper'], raw_checkpoint, self.store.identity)
+                == raw_cycle.paper_content(final['decision']['components']['paper'],
+                    raw_checkpoint, self.store.identity), 'Raw Cycle earlier Nightly lineage differs')
+        raw_cycle.verify_latch(self.store, self.root, receipt['session'], receipt['components']['latch'])
+        return {**prior, 'phase': 'RAW_CYCLE_OUTCOME', 'session': receipt['session'],
+                'components': {key: receipt['components'][key] for key in ('broker', 'paper')}}
 
     # Execute the isolated raw birth body once under the existing exclusive writer scope.
     def _initialize(self, context, *, raw_checkpoint):
@@ -293,7 +312,10 @@ class RawNightly(legacy.Nightly):
             current = legacy.components(self.store, client, self.root, self.pins(), raw_checkpoint=raw_checkpoint)
             legacy.admitted.require(content(current, raw_checkpoint, self.store.identity)
                 == content(prior['components'], raw_checkpoint, self.store.identity), 'Raw pre-close components differ')
-            if prior['phase'] == 'BIRTH':
+            if prior['phase'] == 'RAW_CYCLE_OUTCOME':
+                legacy.admitted.require(session == prior['session'],
+                                        'Final raw Cycle same-session close required')
+            elif prior['phase'] == 'BIRTH':
                 legacy.admitted.require(session == '2019-02-28', 'Original prior-close initialization required')
             else:
                 legacy.admitted.require(date.fromisoformat(session) == legacy.intraday_orders.next_session(
