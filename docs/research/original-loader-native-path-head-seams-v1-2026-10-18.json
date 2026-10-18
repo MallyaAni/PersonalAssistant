@@ -1,0 +1,174 @@
+{
+  "schema": "observed-native-path-head-next-read-requirements/1",
+  "status": "METADATA_VERIFIED_BINARY_READ_REQUIREMENTS_ONLY_NO_EXECUTABLE_COLLECTOR",
+  "basis": {
+    "source_checkpoint": "085ab94f74341b71d305b9900265de81f3101f1e",
+    "declaration_seam_sha256": "15f8249875d0aef99b9f48d0e3eb9c1971cf85d23fefc09d27d9ed7538325128",
+    "independent_sha256": "6f3696b006cb335a06656501446d2976723ec4649117dd33a31cd03c825adaaa",
+    "independent_bytes": 86271,
+    "candidate_sha256": "52363e510d61b6d3c3964fef6ab099bb270aeee124c849e1f66ef01a649a7723",
+    "candidate_bytes": 57387
+  },
+  "observations": {
+    "paths": 20,
+    "paired_HEAD_requests": 40,
+    "retained_files_independently_checked": 129,
+    "all_HTTP200_regular_mode_and_empty_linkTarget": true,
+    "all_sizes_match_RECORD": true,
+    "header_body_requested": false,
+    "actual_native_bytes_read": false,
+    "all_stopped_raw_inspections_sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2",
+    "Mounts_order_flags_all_true": true,
+    "reordered_positive_branch_exercised": false,
+    "reported_stat_scope": "Docker daemon path metadata only. No held-FD container source physical authority, aliases/inodes, every-file baked-image attestation, ELF, actual loads, native runtime versions, thread or RAM claim.",
+    "paths_and_sizes": [
+      {
+        "path": "pyarrow/lib.cpython-312-aarch64-linux-gnu.so",
+        "size": 4107800,
+        "mode": 493
+      },
+      {
+        "path": "pyarrow/_compute.cpython-312-aarch64-linux-gnu.so",
+        "size": 1307360,
+        "mode": 493
+      },
+      {
+        "path": "pyarrow/_fs.cpython-312-aarch64-linux-gnu.so",
+        "size": 537304,
+        "mode": 493
+      },
+      {
+        "path": "pyarrow/_dataset.cpython-312-aarch64-linux-gnu.so",
+        "size": 1037800,
+        "mode": 493
+      },
+      {
+        "path": "pyarrow/_dataset_parquet.cpython-312-aarch64-linux-gnu.so",
+        "size": 401808,
+        "mode": 493
+      },
+      {
+        "path": "pyarrow/_parquet.cpython-312-aarch64-linux-gnu.so",
+        "size": 705264,
+        "mode": 493
+      },
+      {
+        "path": "pyarrow/libarrow.so.2500",
+        "size": 48111992,
+        "mode": 420
+      },
+      {
+        "path": "pyarrow/libarrow_compute.so.2500",
+        "size": 14905408,
+        "mode": 420
+      },
+      {
+        "path": "pyarrow/libarrow_dataset.so.2500",
+        "size": 2268752,
+        "mode": 420
+      },
+      {
+        "path": "pyarrow/libparquet.so.2500",
+        "size": 11764248,
+        "mode": 420
+      },
+      {
+        "path": "pyarrow/libarrow_python.so",
+        "size": 2185016,
+        "mode": 493
+      },
+      {
+        "path": "pyarrow/libarrow_python.so.2500",
+        "size": 2185016,
+        "mode": 493
+      },
+      {
+        "path": "pyarrow/libarrow_python.so.2500.1.0",
+        "size": 2185016,
+        "mode": 493
+      },
+      {
+        "path": "numpy/_core/_multiarray_umath.cpython-312-aarch64-linux-gnu.so",
+        "size": 6122041,
+        "mode": 493
+      },
+      {
+        "path": "numpy.libs/libscipy_openblas64_-f552eb69.so",
+        "size": 27121113,
+        "mode": 493
+      },
+      {
+        "path": "numpy.libs/libgfortran-e1b7dfc8-d8198c01.so.5.0.0",
+        "size": 1605377,
+        "mode": 493
+      },
+      {
+        "path": "scipy/_lib/_ccallback_c.cpython-312-aarch64-linux-gnu.so",
+        "size": 216280,
+        "mode": 493
+      },
+      {
+        "path": "scipy.libs/libscipy_openblas-b7e2810b.so",
+        "size": 28750121,
+        "mode": 493
+      },
+      {
+        "path": "scipy.libs/libgfortran-daac5196-038a5e3c.so.5.0.0",
+        "size": 1605393,
+        "mode": 493
+      },
+      {
+        "path": "scipy.libs/libgfortran-e1b7dfc8.so.5.0.0",
+        "size": 1484433,
+        "mode": 493
+      }
+    ]
+  },
+  "limits": {
+    "ordinary_content_wire_file_bytes": 262144,
+    "reported_native_files_above_bound": 19,
+    "reported_native_files_at_or_below_bound": 1,
+    "largest_reported_size": 48111992,
+    "body_RAM_or_unique_disk_allocation_meaning": false
+  },
+  "single_bounded_candidate": {
+    "relative_path": "scipy/_lib/_ccallback_c.cpython-312-aarch64-linux-gnu.so",
+    "container_path": "/usr/local/lib/python3.12/site-packages/scipy/_lib/_ccallback_c.cpython-312-aarch64-linux-gnu.so",
+    "reported_and_RECORD_declared_size": 216280,
+    "reason": "Only one of these 20 reported bodies fits the ordinary content bound. This does not establish tar-wire fit, actual content hash or ELF validity.",
+    "requirements": [
+      "Prepare NEW bounded paired single-path binary-copy collector, not a UTF8 package-text collector. Bind exact selected RECORD row/hash/size plus this HEAD proof, full stopped baseline and source/invocation/resources before use.",
+      "Keep BOTH content and entire tar-wire <=262144; reject extra members, nonregular/link/sparse entries, unexpected name/size, truncated body and trailing nonzero bytes. No filesystem extraction or package import. Retain exact binary bytes/hash and both raw wire/terminal receipts in new roots.",
+      "Independent readback must check complete source/byte hashes and held/named physical bookends, paired archive/member equivalence and RECORD SHA256, and one fresh full stopped inspection. HEAD metadata is not actual-byte authority.",
+      "Only after authenticated binary copies, prepare separate bounded stdlib ELF data parser using numeric offsets/counts and exact file/segment bounds, independently reviewed before use. No ctypes/dlopen, package import, native function/body, subprocess binary execution or guessed dependency path.",
+      "A single small ELF cannot prove NumPy/SciPy/PyArrow/sklearn closure, model capacity, callback allocation or runtime binding."
+    ]
+  },
+  "other_nineteen": {
+    "status": "NATIVE_CONTENT_UNREAD_ABOVE_ORDINARY_CAP",
+    "requirements": "Do not apply ordinary text/binary copy tools to oversized paths or relax caps. Design and independently review a separate conforming bounded authentication method before any body read. No reader/invocation exists; declared size or stream chunks alone do not waive cumulative content/wire bounds."
+  },
+  "source_only_contracts_still_required": [
+    "Selected callable/global/type/dataclass live-producer/class-flags/native/phase provenance and dataclass-only format2.",
+    "Arrow default use_threads/pre_buffer/extensions and ordinary compute-wrapper registry provenance. Six BLAS environment values are not Arrow pool/RAM bounds.",
+    "Transitive dynamic-loader native dependencies/origins and actual package versions; sklearn metadata/version remains unresolved."
+  ],
+  "execution_authorized": false,
+  "binary_collector_parser_runtime_admission": null,
+  "guard3b8be00b_all25_payload_functions": "UNRUN_UNCHANGED",
+  "old2446_030c_G08_caps": "UNCHANGED",
+  "producer2431_reference2446_executor2468_original_receipts_and_full_lifetimes": "SEPARATE_MANDATORY",
+  "assembledtree_strategy_entrypoint_manifests_bootstrap_wrapper_owner_caller_stager_packet_runtime_launch_admission": null,
+  "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+  "original_timing": "FAILED",
+  "publication": "CLOSED",
+  "missing_receipts": "STILL_MISSING",
+  "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEWRUN",
+  "actual_twohost_Spark2_image_daemon_temp_RAM": "UNADMITTED_UNCHANGED",
+  "heartbeat": "ACTIVE",
+  "diagram": "NONE",
+  "API_reference": {
+    "url": "https://docs.docker.com/reference/api/engine/version/v1.51/",
+    "meaning": "Descriptive official API reference only; requests used unversioned /containers/.../archive, not a runtime API pin. Markdown browser view failed unsupported content-type; no additional source or runtime claim."
+  }
+}

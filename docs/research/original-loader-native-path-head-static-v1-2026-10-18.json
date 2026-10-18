@@ -1,0 +1,115 @@
+{
+  "AST_warnings_as_errors": "PASS",
+  "Ruff": "PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM",
+  "exact20_DECLARATIONS_and_observed_sizes": true,
+  "exact_function_AST_comparisons": [
+    "primary:digest",
+    "primary:save",
+    "primary:save_json",
+    "primary:alarm",
+    "primary:client_limits",
+    "primary:command",
+    "primary:inspect_source",
+    "primary:physical",
+    "primary:read",
+    "independent:physical",
+    "independent:read",
+    "independent:digest",
+    "independent:save",
+    "independent:save_json",
+    "independent:alarm",
+    "independent:client_limits",
+    "independent:command",
+    "independent:decode",
+    "shared:inspection"
+  ],
+  "new_four_outputs_byte_exact_reproduction": true,
+  "old_gates_payloads_tests": "NOT_RUN",
+  "pins": {
+    "capacity-native-path-head-v1-2026-10-18.py": {
+      "bytes": 28952,
+      "physical": {
+        "st_blocks": "64",
+        "st_ctime_ns": "1792334949729187109",
+        "st_dev": "16777223",
+        "st_ino": "183370345",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792334949729187109",
+        "st_nlink": "1",
+        "st_size": "28952",
+        "st_uid": "501"
+      },
+      "sha256": "096adba1b0d8163ab1ce7f9e7253dab9033682cc0e49fe9e639d8e6a87b978ce"
+    },
+    "native-path-head-independent-transport-v1-2026-10-18.py": {
+      "bytes": 6015,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792335062855792241",
+        "st_dev": "16777223",
+        "st_ino": "183399310",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792335062855792241",
+        "st_nlink": "1",
+        "st_size": "6015",
+        "st_uid": "501"
+      },
+      "sha256": "d4539e41dbabd2831935f0cb3d5a6c91c65f287e7b13ba47ccc952878c210126"
+    },
+    "native-path-head-primary-transport-v1-2026-10-18.py": {
+      "bytes": 6014,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792334949732384839",
+        "st_dev": "16777223",
+        "st_ino": "183370348",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792334949732384839",
+        "st_nlink": "1",
+        "st_size": "6014",
+        "st_uid": "501"
+      },
+      "sha256": "025ba96b3875366ef81e472b6fb347d9bed7e8c27d9217221e0b65d90a50bbea"
+    },
+    "prepare-native-path-head-v1-2026-10-18.py": {
+      "bytes": 12531,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792335062673046233",
+        "st_dev": "16777223",
+        "st_ino": "183343675",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792335062673046233",
+        "st_nlink": "1",
+        "st_size": "12531",
+        "st_uid": "501"
+      },
+      "sha256": "71495dd12d1e7d94c84778a4075c37967a377e8fbaf8579e87b59356a4c35e01"
+    },
+    "verify-native-path-head-v1-2026-10-18.py": {
+      "bytes": 30511,
+      "physical": {
+        "st_blocks": "64",
+        "st_ctime_ns": "1792335062852932930",
+        "st_dev": "16777223",
+        "st_ino": "183399308",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792335062852932930",
+        "st_nlink": "1",
+        "st_size": "30511",
+        "st_uid": "501"
+      },
+      "sha256": "a1800d2d0625599e676c139c35438969e1924654aebd74e3c975f3359810f473"
+    }
+  },
+  "purpose_comments": {
+    "capacity-native-path-head-v1-2026-10-18.py": 13,
+    "native-path-head-independent-transport-v1-2026-10-18.py": 3,
+    "native-path-head-primary-transport-v1-2026-10-18.py": 3,
+    "prepare-native-path-head-v1-2026-10-18.py": 7,
+    "verify-native-path-head-v1-2026-10-18.py": 13
+  },
+  "schema": "native-path-head-controls-static/1",
+  "timeout_missing_size_type_signal_overflow_crash_branches": "UNTESTED",
+  "transport_exit0_empty_stderr_no_owned_stop_cleanup_failure": true
+}

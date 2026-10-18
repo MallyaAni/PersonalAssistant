@@ -1,0 +1,11 @@
+{
+  "crash_or_second_full_remote_archive_guarantee": false,
+  "data_bytes": 293711,
+  "files": 15,
+  "files_readbacks_root_resolved_parent_fsync": true,
+  "manifest_bytes": 17139,
+  "manifest_sha256": "59facb009c9dc4b8def857ef81c7200f7c8d06aba3ec4ce5e8d2b10a493b6a61",
+  "root": "/tmp/capacity-native-path-head-evidence-20261018-v1",
+  "schema": "native-path-head-local-preservation/1",
+  "source_reproduction_root": "/tmp/capacity-native-path-head-reproduction-20261018-v1"
+}
