@@ -1,0 +1,171 @@
+{
+  "schema": "original-n2-capacity-harness-synthetic-plan/1",
+  "status": "SOURCE_ONLY_NOT_EXECUTED_NOT_ADMITTED",
+  "contract_sha256": "ecc58ad7f6ec65bb42a28ef0c2bea8d116b0e9be5ea59e490388fa0e74dfddc8",
+  "harness": {
+    "path": "docs/research/sources/original-loader-capacity-harness-2026-10-18.py",
+    "sha256": "737d4236345ebfbc90a0ecf33e3e9ce733e5f06afb2e53c3125e465e9b1a2eea",
+    "bytes": 30408,
+    "future_import_name": "capacity_harness_reviewed",
+    "imported_or_executed": false
+  },
+  "objective": "Test the new guard and stage boundaries using fresh stdlib-only backend fixtures. Never mount or import real backend modules, numerical packages, original/model/account artifacts or live credentials.",
+  "scope": {
+    "harness_imports": "Future synthetic execution may import this stdlib harness only; the present checkpoint performs AST inspection without importing it.",
+    "actual_sourcebook_constructor": "The genuine SourceBook2446/503e contract remains unchanged. Small fixture tests may create an explicitly labelled injected SourceBook with object.__new__, their own held directory FD and exact tiny pins; this is not genuine source authentication or admission.",
+    "fixture_namespace": "Only NEW empty backend packages and backend.capacity_fixture modules; stub audit CLI for the stage-journey test. Fixture mount covers backend completely, excluding the image and repository backend.",
+    "native_and_runtime_claims": false,
+    "generated_code": "Freeze exact code hashes on the proposed native Python version in a separate source-reviewed fixture-preparation step. No wildcard generated code, fallback source or profile exemption. Genuine call manifest remains absent.",
+    "allowed_source_edits": "Test fixtures only. Never monkeypatch or rewrite the harness or any original admission/financial source to get green."
+  },
+  "source_review_findings_corrected": [
+    "Initial private _capacity_steps could be called without proving guard installation/source authentication; final draft checks exact fence type/state/profile and first pinned finder before import, then preimport runtime plus unchanged invocation/runtime admission.",
+    "Initial effect-module check missed simple top-level functions and unregistered generated dataclass methods; final check blocks all function-code frames in the declared paper/broker/provider modules before either registration branch.",
+    "Exact unchanged daily_prefix compiles <pinned daily prefix>; it requires distinct producer-bound exact code fingerprints for BOTH the exec module wrapper and continuation.inputs, limited to their exact module/LOAD phase. A source-review follow-up caught the omitted wrapper; no runtime was run.",
+    "Failure slot now requires O_RDWR and forbids O_APPEND before installation; readonly/append refusal must precede any backend import.",
+    "The reserved guard slot occupies the sole fresh proof root; the draft requires exactly that slot and held-FD/path identity before creating its new workflow child. It does not call full audit(), whose empty-root execution path is forbidden.",
+    "Full cgroup/process metrics, bounded retained-array metadata, source bookends and fsynced small phase receipts were added. None have runtime acceptance yet."
+  ],
+  "proposed_runtime_NOT_admission": {
+    "host": "Spark1 only, after fresh independent host and image/resource review; no Spark2 or live-model/service operation",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "transport": "Explicit local Docker unix socket and --pull never; exact owned CID retained. No command or controller is supplied by this source-only plan.",
+    "uid": "1000:1000",
+    "network": "none",
+    "readonly_rootfs": true,
+    "cpu": 1,
+    "memory_bytes": 2147483648,
+    "memory_swap_total_bytes": 2147483648,
+    "pids": 32,
+    "tmpfs_bytes": 67108864,
+    "healthcheck": "disabled",
+    "log_driver": "none",
+    "mounts": "Small harness/test sources RO, tiny fixtures RO, sole NEW finite output RW. No repository backend, native NumPy/sklearn, models, original namespaces, accounts, .env, socket or credentials.",
+    "wall_deadline_seconds": 60,
+    "parent_controller_deadline_seconds": 120,
+    "child_deadline_seconds": 3,
+    "expected_children_max": 128,
+    "cumulative_output_target_bytes": 33554432,
+    "child_file_limit_bytes": 262144,
+    "stdout_stderr_limit_each_bytes": 262144,
+    "limits_are_not_physical_reservations": true,
+    "owned_child_cleanup": "Source-reviewed parent registry, bounded wait/terminate/kill/reap and durable status for every actual owned PID; no os._exit control is ever run in the test parent. Outer owned-container stop on timeout.",
+    "metric_scope": "The unchanged draft measurement() reads the actual proposed2GiB cgroup and process counters. No measurement monkeypatch or injected kernel-counter text. A small stdlib-only positive stage fixture is not a genuine loader/model capacity result. Wrong-limit refusal can be a separately named tiny child/container only after its concrete source/resources are reviewed.",
+    "fresh_root_name_proposal": "/home/animallya96/scratch/original-loader-guard-synthetic-20261018-v1",
+    "root_created": false,
+    "container_created": false,
+    "actual_runtime_or_host_evidence": null
+  },
+  "cases": [
+    {
+      "id": "G01",
+      "purpose": "Allowed exact fixture code and literal module/class definitions",
+      "expected": "Child reaches durable success marker with source SHA before/after equal; zero forbidden markers."
+    },
+    {
+      "id": "G02",
+      "purpose": "Call unadmitted function through imported alias",
+      "expected": "Actual child exits86; fixed failure slot identifies actual code; no body marker."
+    },
+    {
+      "id": "G03",
+      "purpose": "Unknown bootstrap top-level call before a module completes import",
+      "expected": "Exit86 before import-side-effect marker; no second import or workflow stage."
+    },
+    {
+      "id": "G04",
+      "purpose": "Unknown/backend shadow module and ambient .pyc or image fallback",
+      "expected": "Import refused; no fallback marker; source and fixture tree unchanged."
+    },
+    {
+      "id": "G05",
+      "purpose": "Symlinked root/intermediate/file, content tamper, inode replacement or size growth",
+      "expected": "Held-FD/source bookend refusal before module body; each physical failed fixture retained."
+    },
+    {
+      "id": "G06",
+      "purpose": "Wrong externally pinned call manifest or recipe/contract/phase schema",
+      "expected": "Constructor refusal before backend import or profile installation; original reserved slot unchanged."
+    },
+    {
+      "id": "G07",
+      "purpose": "Distribution, select, StreamAudit/full audit, fitting and order entry targets",
+      "expected": "Each actual child86 before function entry marker, even if an erroneous phase manifest lists the name. No fit/provider/account effect."
+    },
+    {
+      "id": "G08",
+      "purpose": "Top-level and generated functions in paper/broker/provider effect modules",
+      "expected": "Exit86 before effect marker for registered simple function and generated method; module/class definitions alone remain separately scoped."
+    },
+    {
+      "id": "G09",
+      "purpose": "Exact dataclass-generated constructor versus changed code/native hash/producer",
+      "expected": "Only the exact reviewed tiny generated code may run. Wrong record or code refuses86. No generic <string> exemption."
+    },
+    {
+      "id": "G10",
+      "purpose": "Actual compile-to-exec-module-to-inputs daily-prefix sequence versus wrong producer/code/module/phase",
+      "expected": "Both exact reviewed module-wrapper and inputs fingerprints are required for <pinned daily prefix> in LOAD. A FunctionType-only shortcut is insufficient. All mutations refuse86 before the relevant body."
+    },
+    {
+      "id": "G11",
+      "purpose": "Catch RuntimeError/BaseException around a forbidden call",
+      "expected": "Child still exits86; handler and later-effect markers absent. Profile exception-catching cannot restore execution."
+    },
+    {
+      "id": "G12",
+      "purpose": "Replace sys profile/trace, create Python thread, socket or subprocess",
+      "expected": "Child86 before tamper/network/process marker. Test parent and unrelated processes remain alive; cleanup owns only listed child PIDs."
+    },
+    {
+      "id": "G13",
+      "purpose": "Failure FD readonly/append/sparse/wrong-size/hardlink/nonzero/path mismatch",
+      "expected": "Descriptor or workflow refusal before backend import/effect as applicable; slot length and inode preserved, no append growth."
+    },
+    {
+      "id": "G14",
+      "purpose": "Private workflow called without installed fence/first finder/full source authentication",
+      "expected": "Refusal before any dummy backend import marker."
+    },
+    {
+      "id": "G15",
+      "purpose": "Wrong numerical version/runtime/profile/account mapping/proof namespace",
+      "expected": "Pure synthetic metadata refusals at designated preimport or unchanged-admission stub boundary. Injected inspect data is labelled synthetic, never actual runtime admission."
+    },
+    {
+      "id": "G16",
+      "purpose": "Synthetic complete phase journey with explicit fake audit boundary",
+      "expected": "One fake loader call, two fake auth returns, no select/distribution/StreamAudit; both full tiny receipts and fake loaded context alive at serialization; durable candidate and phase files read back and byte checked."
+    },
+    {
+      "id": "G17",
+      "purpose": "Second receipt/state/source changes, malformed metadata, inventory/output growth or existing result path",
+      "expected": "Nonzero refusal and retained previous phase/raw evidence; no candidate accepted and no automatic retry."
+    },
+    {
+      "id": "G18",
+      "purpose": "Actual waiting child timeout/interrupt and required-child nonzero",
+      "expected": "All owned actual children reaped with terminal receipts, unrelated sentinel survives, no green aggregate if any required child outcome differs."
+    }
+  ],
+  "independent_acceptance_required": [
+    "Source hashes of harness/test builder/runner/controller/fixtures pinned before create and unchanged afterward.",
+    "Actual stopped exact image/container resources/mounts and all actual child PID/exit/status correlated; expected86 child failures are not counted as successful journeys.",
+    "Read every marker and fixed failure slot, compare inode/size/full bytes, retain raw malformed/failure evidence and ensure no forbidden marker exists.",
+    "Exact declared case IDs, actual outcomes and zero skips; no tests from earlier completed gates included.",
+    "Preserve failed roots/controllers/source versions. No fabricated traceback, no red/green claim from source-only assertions.",
+    "Only after this new guard suite has actual bounded acceptance may a separate reviewed genuine capacity controller and admission be prepared. This plan does not authorize genuine loading."
+  ],
+  "current_unverified": [
+    "Every proposed case G01-G18",
+    "Guard dynamic-code fingerprints and complete genuine phase-call manifest",
+    "Import closure/source assembly",
+    "Actual cgroup metrics, array alias inventory and phase persistence behavior",
+    "Timeout/interrupt/failure cleanup controller",
+    "Full loader/receipt peak memory and historical acceptance"
+  ],
+  "publication": "CLOSED",
+  "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_OR_NEW_RUN",
+  "actual_two_host": false,
+  "diagram_impact": "NONE: private source-only harness proposal; no implemented production/runtime flow changed."
+}

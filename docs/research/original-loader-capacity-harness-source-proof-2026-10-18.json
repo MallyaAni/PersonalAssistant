@@ -1,0 +1,91 @@
+{
+  "schema": "original-n2-loader-capacity-harness-source/1",
+  "status": "SOURCE_PREPARED_AND_REVIEWED_ONLY_NOT_EXECUTED",
+  "starting_head": "1fdd8473f29b2c11f253a9a6b1224f813f07bce9",
+  "contract": {
+    "sha256": "ecc58ad7f6ec65bb42a28ef0c2bea8d116b0e9be5ea59e490388fa0e74dfddc8",
+    "source_checkpoint": "1118eb00833302dc2262681a33aba59c719b5de6"
+  },
+  "scope": "Prepare a private capacity harness source and a concrete finite synthetic plan. No harness import, compile/exec, tests, fixture build, application/numerical import, host probe, SSH, Docker or model/account operation.",
+  "artifacts": {
+    "sources/original-loader-capacity-harness-2026-10-18.py": {
+      "sha256": "737d4236345ebfbc90a0ecf33e3e9ce733e5f06afb2e53c3125e465e9b1a2eea",
+      "bytes": 30408
+    },
+    "original-loader-capacity-harness-synthetic-plan-2026-10-18.json": {
+      "sha256": "70b49f28252ebdebde0ac642f80e74e7d3aad21b677d185063594bee834fa3f4",
+      "bytes": 11666
+    },
+    "sources/original-loader-capacity-harness-initial-2026-10-18.py.txt": {
+      "sha256": "bccf3aa855706545fe275413fd8a09c3601936adf3ffda1224be611898d694f9",
+      "bytes": 19134
+    }
+  },
+  "intended_source_boundaries": [
+    "Public execute() unconditionally refuses and direct script main exits SOURCE_ONLY. No launch flag, runnable controller or runtime admission document exists.",
+    "Private workflow requires installed exact CallFence, complete SourceBook authentication and first pinned import finder before backend import, then a stdlib preimport runtime check and unchanged genuine invocation/runtime/source/producer/calendar/preservation admissions.",
+    "Pinned backend finder compiles held-FD/SHA-checked source bytes, registers actual code objects and refuses undeclared modules or ambient bytecode/image fallback.",
+    "Phase manifest is external SHA-pinned finite/duplicate-free metadata. Backend aliases still resolve to actual registered compiled code. Broker/account/provider functions, forbidden stateful classes and fit/distribution/select calls are denied independently of accidental allowlist entries.",
+    "Guard refusal is a bounded preallocated-fd write followed by process exit86, so a caught profile exception cannot leave execution unguarded. This behavior is proposed, not tested.",
+    "Generated dataclass code and the exact original daily-prefix module wrapper plus inputs require separate exact native code hashes and source-producer binding. No wildcard filename/code exemption.",
+    "The workflow stops model computation at loader return; both complete byte-auth receipts, loaded context and final JSON/UTF8 buffers remain live. Small fsynced phase records, cgroup/proc counters, source bookends and bounded alias-aware retained-array metadata are proposed."
+  ],
+  "readonly_review_findings": {
+    "initial_draft": "SOURCE REVIEW GAPS, NOT A RUNTIME FAILURE: private workflow readiness, top-level/generated effect calls, daily-prefix registration, descriptor flags and complete measurement/persistence boundaries needed correction.",
+    "worker_findings": [
+      "Exact loader daily_prefix uses an unregistered <pinned daily prefix> filename; corrected to exact source-bound generated-code records.",
+      "A second source review caught the preceding exec module wrapper; corrected schema and guard seam to separately fingerprint <module> and inputs, with exact producer/module/LOAD restrictions. Worker confirmed final narrow fix.",
+      "Read-only and O_APPEND descriptors could pass the original slot checks; added O_RDWR/nonappend flags before installation."
+    ],
+    "worker_execution": "None: existing healthy worker only read source/plan; no imports, edits or runtime. Limited workers were not retried.",
+    "root_corrections": "All corrections remain source proposals. Final function behavior is UNVERIFIED until fresh synthetic acceptance."
+  },
+  "checks": {
+    "harness_ast_parse": "PASS",
+    "purpose_commented_functions": 28,
+    "external_plan_json_parse": "PASS",
+    "planned_case_ids": "G01-G18, all UNEXECUTED",
+    "synthetic_tests_run": 0,
+    "genuine_tests_run": 0,
+    "old_completed_gates_repeated": 0,
+    "harness_imported": false,
+    "application_or_numerical_imported": false,
+    "harness_code_compiled_or_execed": false,
+    "ruff": "UNAVAILABLE_NOT_CLAIMED",
+    "runtime_safety_or_capacity_acceptance": "UNVERIFIED"
+  },
+  "synthetic_proposal": {
+    "native_image": "Exact original e0, no substitute or availability probe",
+    "memory_bytes": 2147483648,
+    "memory_swap_total_bytes": 2147483648,
+    "cpu": 1,
+    "pids": 32,
+    "suite_work_seconds": 60,
+    "outer_controller_seconds": 120,
+    "total_child_ceiling": 128,
+    "child_deadline_seconds": 3,
+    "cumulative_output_target_bytes": 33554432,
+    "profile": "stdlib-only tiny fake backend; no real repository backend, numerical imports, original files, models or accounts",
+    "genuine_sourcebook_and_admissions": "Not substituted: injected tiny SourceBook/fake audit metadata are explicitly synthetic and prove no genuine source/runtime admission.",
+    "real_counters": "Proposed actual2GiB cgroup/process metrics; no metric monkeypatch.",
+    "admitted": false,
+    "created_container_or_root": false
+  },
+  "preserved_initial_local_source": "/tmp/original-loader-capacity-harness-initial-20261018-v1.py",
+  "unresolved": [
+    "Review and implement tiny fixture builder, exact phase/generated-code manifests, test runner and finite owned-child/controller/cleanup source plus concrete invocation before any synthetic execution.",
+    "Actual independent host/image/resources/mount admission and source bookends for that new synthetic suite.",
+    "Every G01-G18 outcome, guard refusal/alias/dynamic-code behavior, metrics/alias inventory/persistence and timeout/reaping.",
+    "Separate exact assembled genuine source tree/call manifest/invocation/mount/controller/admission after the synthetic boundary.",
+    "Actual original loader/receipt coexistence and peak RAM; no full original/corrected account run authorized."
+  ],
+  "source_helpers_native_caps_store_nightly_cycle_changed": false,
+  "production_changed": false,
+  "original_files_changed": false,
+  "publication": "CLOSED",
+  "original_timing": "FAILED_UNCHANGED",
+  "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_OR_NEW_RUN",
+  "actual_two_host": false,
+  "historical_weekday_intraday_fill_UI": "UNVERIFIED",
+  "diagram_impact": "NONE: private source-only harness; no implemented production/component/runtime flow changed."
+}

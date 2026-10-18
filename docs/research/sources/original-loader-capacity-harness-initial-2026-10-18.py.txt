@@ -1,0 +1,359 @@
+"""SOURCE ONLY: proposed N2 capacity harness, with no admitted execution entry point.
+
+No application module is imported at module scope. This draft has not been
+imported or executed. A separately reviewed controller, exact call manifest,
+source tree, runtime/mount admission and synthetic acceptance are still absent.
+The Python guards constrain accidental calls in authenticated code; they are
+not a sandbox against hostile native extensions or a privileged host.
+"""
+
+import ast
+import hashlib
+import importlib.abc
+import importlib.util
+import json
+import marshal
+import os
+import resource
+import socket
+import stat
+import sys
+import time
+from datetime import UTC, datetime
+from pathlib import Path, PurePosixPath
+from types import CodeType
+
+CONTRACT_SHA256 = 'ecc58ad7f6ec65bb42a28ef0c2bea8d116b0e9be5ea59e490388fa0e74dfddc8'
+RECIPE_SHA256 = '503e8d508ebe5fdc82a17c11974ccce5366c60ce8e78fc549c129fc6c6d81e03'
+IMAGE = 'sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237'
+PHASES = ('BOOTSTRAP', 'ADMISSION', 'BEFORE', 'LOAD', 'FROZEN', 'AFTER', 'SERIALIZE', 'DONE')
+FAILURE_BYTES = 65536
+MAX_PYTHON_BYTES = 1024 ** 2
+MAX_METADATA_BYTES = 16 * 1024 ** 2
+MAX_CODES_PER_MODULE = 20000
+FORBIDDEN_NAMES = frozenset({
+    'audit', 'verify', 'distribution', 'select', 'fit', '_fit', 'partial_fit',
+    'fit_transform', 'fit_log', 'fit_market_log', 'walk_forward', 'save_state',
+    'submit_order', 'cancel_order', 'send_order', 'place_order',
+})
+EFFECT_MODULES = (
+    'backend.market.replay_broker', 'backend.market.alpaca_trading',
+    'backend.agents.trading.desk.paper',
+)
+DENIED_AUDIT_EVENTS = frozenset({
+    'socket.__new__', 'socket.connect', 'socket.bind', 'subprocess.Popen',
+    'os.system', 'os.fork', 'os.forkpty', 'os.posix_spawn', 'os.exec',
+})
+
+
+# Refuse unavailable source/admission facts without inventing a default.
+def require(condition, message):
+    if not condition:
+        raise RuntimeError(message)
+
+
+# Preserve exact physical counters without a floating-point timestamp roundtrip.
+def physical(value):
+    return {name: str(getattr(value, name)) for name in (
+        'st_dev', 'st_ino', 'st_mode', 'st_uid', 'st_nlink', 'st_size',
+        'st_mtime_ns', 'st_ctime_ns',
+    )}
+
+
+# Open each directory component without following a source-root symlink.
+def directory_fd(path):
+    path = PurePosixPath(path)
+    require(path.is_absolute() and '..' not in path.parts, 'ABSOLUTE_ROOT_REQUIRED')
+    current = os.open('/', os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        for name in path.parts[1:]:
+            following = os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=current)
+            os.close(current)
+            current = following
+        return current
+    except BaseException:
+        os.close(current)
+        raise
+
+
+# Hold only SHA-pinned source files beneath an already held source directory.
+class SourceBook:
+    # Bind the exact composed recipe before any backend module can be imported.
+    def __init__(self, root, pins):
+        require(type(pins) is dict and len(pins) == 2446, 'COMPLETE_RECIPE_REQUIRED')
+        compact = json.dumps(pins, sort_keys=True, separators=(',', ':')).encode()
+        require(hashlib.sha256(compact).hexdigest() == RECIPE_SHA256, 'RECIPE_DIFFERS')
+        self.root = str(PurePosixPath(root))
+        self.fd = directory_fd(self.root)
+        self.pins = dict(pins)
+        self.bookends = {}
+
+    # Read one exact bounded source with held-FD and directory-relative bookends.
+    def read(self, name, *, limit=MAX_METADATA_BYTES):
+        path = PurePosixPath(name)
+        require(not path.is_absolute() and '..' not in path.parts and str(path) == name, 'CANONICAL_SOURCE_NAME_REQUIRED')
+        require(name in self.pins, 'UNDECLARED_SOURCE')
+        parent = os.dup(self.fd)
+        descriptor = None
+        try:
+            for part in path.parts[:-1]:
+                following = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent)
+                os.close(parent)
+                parent = following
+            descriptor = os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW, dir_fd=parent)
+            before = os.fstat(descriptor)
+            require(stat.S_ISREG(before.st_mode) and 0 <= before.st_size <= limit, 'BOUNDED_REGULAR_SOURCE_REQUIRED')
+            chunks, count, checksum = [], 0, hashlib.sha256()
+            while block := os.read(descriptor, min(65536, limit + 1 - count)):
+                count += len(block)
+                require(count <= limit, 'SOURCE_GREW_PAST_BOUND')
+                checksum.update(block)
+                chunks.append(block)
+            after = os.fstat(descriptor)
+            named = os.stat(path.name, dir_fd=parent, follow_symlinks=False)
+            require(physical(before) == physical(after) == physical(named), 'SOURCE_IDENTITY_CHANGED')
+            require(count == before.st_size and checksum.hexdigest() == self.pins[name], 'SOURCE_BYTES_DIFFER')
+            identity = physical(before)
+            if name in self.bookends:
+                require(self.bookends[name] == identity, 'SOURCE_CHANGED_SINCE_ADMISSION')
+            self.bookends[name] = identity
+            return b''.join(chunks)
+        finally:
+            if descriptor is not None:
+                os.close(descriptor)
+            os.close(parent)
+
+    # Authenticate the entire composed source recipe without importing its files.
+    def authenticate_all(self):
+        for name in sorted(self.pins):
+            self.read(name)
+
+    # Close only this reader's held source-root descriptor.
+    def close(self):
+        os.close(self.fd)
+
+
+# Stop a single owned capacity process before an unadmitted call body executes.
+class CallFence:
+    # Require an external reviewed phase manifest and a preallocated failure slot.
+    def __init__(self, book, manifest, failure_fd):
+        require(type(manifest) is dict and set(manifest) == {'schema', 'recipe_sha256', 'contract_sha256', 'calls', 'generated'}, 'EXACT_CALL_MANIFEST_REQUIRED')
+        require(manifest['schema'] == 'n2-capacity-call-manifest/1' and manifest['recipe_sha256'] == RECIPE_SHA256 and manifest['contract_sha256'] == CONTRACT_SHA256, 'CALL_MANIFEST_BINDING_DIFFERS')
+        require(type(manifest['calls']) is dict and set(manifest['calls']) == set(PHASES), 'ALL_PHASE_CALL_LISTS_REQUIRED')
+        require(all(type(rows) is list for rows in manifest['calls'].values()) and type(manifest['generated']) is list, 'EXPLICIT_CALL_LISTS_REQUIRED')
+        slot = os.fstat(failure_fd)
+        require(stat.S_ISREG(slot.st_mode) and slot.st_uid == os.getuid() and slot.st_nlink == 1 and slot.st_size == FAILURE_BYTES and slot.st_blocks * 512 >= FAILURE_BYTES, 'PREALLOCATED_FAILURE_SLOT_REQUIRED')
+        require(os.pread(failure_fd, FAILURE_BYTES, 0) == bytes(FAILURE_BYTES), 'FAILURE_SLOT_NOT_EMPTY')
+        self.book, self.manifest, self.failure_fd = book, manifest, failure_fd
+        self.phase, self.active, self.installing = 'BOOTSTRAP', False, False
+        self.codes, self.seen, self.denied = {}, set(), False
+
+    # Register only code objects compiled from an authenticated backend file.
+    def register(self, path, code):
+        pending, count = [code], 0
+        while pending:
+            item = pending.pop()
+            count += 1
+            require(count <= MAX_CODES_PER_MODULE, 'COMPILED_SOURCE_CODE_BOUND')
+            self.codes[id(item)] = (item, path, item.co_qualname, item.co_firstlineno)
+            pending.extend(value for value in item.co_consts if isinstance(value, CodeType))
+
+    # Write one bounded diagnosis and exit even if application code catches errors.
+    def trip(self, reason, identity=''):
+        self.denied = True
+        raw = json.dumps({'status': 'FAILED_CLOSED', 'phase': self.phase, 'reason': reason[:128], 'identity': identity[:1024], 'publication': 'CLOSED'}, sort_keys=True, allow_nan=False).encode()
+        try:
+            body = raw + bytes(FAILURE_BYTES - len(raw))
+            offset = 0
+            while offset < len(body):
+                count = os.pwrite(self.failure_fd, body[offset:], offset)
+                if count <= 0:
+                    break
+                offset += count
+            os.fsync(self.failure_fd)
+        finally:
+            os._exit(86)
+
+    # Reject Python backend calls by their actual compiled identity, including aliases.
+    def profile(self, frame, event, argument):
+        if not self.active:
+            return
+        if event == 'c_call':
+            name = getattr(argument, '__name__', '')
+            module = getattr(argument, '__module__', '') or ''
+            if argument is sys.setprofile and not self.installing:
+                self.trip('PROFILE_REPLACEMENT')
+            if module == '_thread' and name in ('start_new_thread', 'start_joinable_thread'):
+                self.trip('UNADMITTED_PYTHON_THREAD')
+            if module.startswith(('numpy', 'scipy', 'sklearn', 'backend')) and name in FORBIDDEN_NAMES:
+                self.trip('FORBIDDEN_NATIVE_CALL', module + '.' + name)
+            return
+        if event != 'call':
+            return
+        code = frame.f_code
+        module = frame.f_globals.get('__name__', '')
+        backend = type(module) is str and (module == 'backend' or module.startswith('backend.'))
+        if code.co_name in FORBIDDEN_NAMES and (backend or str(module).startswith(('sklearn', 'scipy'))):
+            self.trip('FORBIDDEN_FUNCTION', str(module) + '.' + code.co_qualname)
+        if not backend and not code.co_filename.startswith(self.book.root + '/backend/'):
+            return
+        registered = self.codes.get(id(code))
+        if registered is not None and registered[0] is code:
+            _, path, qualified, line = registered
+            key = [path, qualified, line]
+            if key not in self.manifest['calls'][self.phase]:
+                self.trip('UNREVIEWED_PHASE_CALL', path + ':' + qualified)
+            # Effect modules may define classes during import, but their methods
+            # and functions must never be admitted in an execution phase.
+            if module.startswith(EFFECT_MODULES) and ('.' in qualified or qualified == '__init__'):
+                self.trip('BROKER_OR_ACCOUNT_METHOD', str(module) + '.' + qualified)
+            self.seen.add((self.phase, path, qualified, line))
+            return
+        # Dataclass-generated code has no source file to authenticate. Only an
+        # externally reviewed exact native-version code hash may admit it.
+        generated = [self.phase, str(module), code.co_qualname, code.co_firstlineno, hashlib.sha256(marshal.dumps(code)).hexdigest()]
+        if code.co_filename != '<string>' or generated not in self.manifest['generated']:
+            self.trip('UNREGISTERED_OR_GENERATED_CODE', str(module) + '.' + code.co_qualname)
+
+    # Deny network/process creation and guard removal without logging arguments.
+    def audit(self, event, arguments):
+        if not self.active:
+            return
+        if event in DENIED_AUDIT_EVENTS:
+            self.trip('FORBIDDEN_AUDIT_EVENT', event)
+        if event in ('sys.setprofile', 'sys.settrace') and not self.installing:
+            self.trip('PROFILE_OR_TRACE_REPLACEMENT', event)
+
+    # Install both guards before any backend import; never accept preloaded backend.
+    def install(self):
+        require(not any(name == 'backend' or name.startswith('backend.') for name in sys.modules), 'BACKEND_PRELOADED')
+        require(sys.getprofile() is None and sys.gettrace() is None, 'EXISTING_INSTRUMENTATION')
+        self.active, self.installing = True, True
+        sys.addaudithook(self.audit)
+        sys.setprofile(self.profile)
+        self.installing = False
+        require(sys.getprofile() == self.profile, 'PROFILE_NOT_INSTALLED')
+
+    # Advance exactly once through the fixed workflow phase order.
+    def advance(self, phase):
+        require(PHASES.index(phase) == PHASES.index(self.phase) + 1, 'PHASE_ORDER_DIFFERS')
+        require(sys.getprofile() == self.profile and self.active and not self.denied, 'CALL_GUARD_NOT_HEALTHY')
+        self.phase = phase
+
+
+# Resolve backend imports only through the authenticated source recipe.
+class PinnedBackendFinder(importlib.abc.MetaPathFinder, importlib.abc.Loader):
+    # Share the held source book and the guard installed before first import.
+    def __init__(self, book, fence):
+        self.book, self.fence, self.paths = book, fence, {}
+
+    # Refuse absent or shadowed backend modules instead of falling back to the image.
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname != 'backend' and not fullname.startswith('backend.'):
+            return None
+        stem = fullname.replace('.', '/')
+        choices = [name for name in (stem + '.py', stem + '/__init__.py') if name in self.book.pins]
+        require(len(choices) == 1, 'EXACT_BACKEND_MODULE_REQUIRED')
+        selected = choices[0]
+        self.paths[fullname] = selected
+        spec = importlib.util.spec_from_loader(fullname, self, origin=self.book.root + '/' + selected, is_package=selected.endswith('/__init__.py'))
+        spec.has_location = True
+        return spec
+
+    # Use import machinery's new empty module without loading ambient bytecode.
+    def create_module(self, spec):
+        return None
+
+    # Compile authenticated bytes and register all function identities before execution.
+    def exec_module(self, module):
+        name = self.paths[module.__name__]
+        raw = self.book.read(name, limit=MAX_PYTHON_BYTES)
+        code = compile(raw, self.book.root + '/' + name, 'exec', dont_inherit=True, optimize=0)
+        self.fence.register(name, code)
+        exec(code, module.__dict__)
+
+
+# Check the independently pinned runtime before importing the numerical audit CLI.
+def preimport_runtime(value, actual):
+    require(type(actual) is list and len(actual) == 1, 'ONE_ACTUAL_RUNTIME_REQUIRED')
+    row = actual[0]
+    config, host = row['Config'], row['HostConfig']
+    require(value['profile'] == 'original-full-27471' and row['Image'] == IMAGE, 'EXACT_ORIGINAL_AUDITOR_REQUIRED')
+    require(row['Id'].startswith(socket.gethostname()) and config['Hostname'] == socket.gethostname() and config['User'] in ('1000', '1000:1000') and os.getuid() == 1000, 'ACTUAL_OWNER_HOSTNAME_REQUIRED')
+    require(host['NetworkMode'] == 'none' and host['ReadonlyRootfs'] is True and host['NanoCpus'] == 1000000000 and host['Memory'] == host['MemorySwap'] == 2147483648 and host['Tmpfs'] == {'/tmp': 'rw,size=64m'}, 'EXACT_EXISTING_RESOURCE_GUARD_REQUIRED')
+    require(host.get('Privileged', False) is False and not host.get('CapAdd') and not host.get('Devices'), 'NO_PRIVILEGED_RUNTIME')
+    require(sys.flags.optimize == 0 and 'numpy' not in sys.modules and 'sklearn' not in sys.modules, 'PREIMPORT_NATIVE_BOUNDARY_REQUIRED')
+    # Full unchanged runtime_admission is still called after importing its
+    # authenticated module. This precheck does not replace mount admission.
+
+
+# Record small phase observations without serializing arrays or account state.
+def measurement(phase):
+    return {'phase': phase, 'monotonic': time.monotonic(), 'ru_maxrss_kib': resource.getrusage(resource.RUSAGE_SELF).ru_maxrss}
+
+
+# Describe the real loader workflow for later guarded synthetic source validation.
+def _capacity_steps(value, book, fence):
+    import importlib
+
+    audit = importlib.import_module('backend.cli.audit_original_live_model_history')
+    fence.advance('ADMISSION')
+    runtime = audit.runtime_admission(value)
+    require(audit.np.__version__ == '2.5.3' and audit.sklearn.__version__ == '1.9.1', 'EXACT_NATIVE_PACKAGES_REQUIRED')
+    started = datetime.now(UTC)
+    destination = Path(value['proof_parent']) / 'original-loader-capacity'
+    destination.mkdir(mode=0o700, exist_ok=False)
+    archives = audit.OriginalArchives(value['account'], value['completion_sha256'], value['initial_sha256'], value['manifest'], value['manifest_sha256'], scratch=destination / 'streamed-history', external_inputs=True)
+    source = audit.source_admission(value, archives)
+    producer = audit.producer_admission(value)
+    calendar = audit.calendar_admission(archives, value['profile'])
+    preserved = audit.preserved_archives(archives, value['physical_sha256'], value['physical_bytes'])
+    pins = audit.byte_auth.Pins(value['profile'], value['completion_sha256'], value['manifest_sha256'], value['execution_sha256'])
+    marks = [measurement('ADMISSION')]
+    fence.advance('BEFORE')
+    before = audit.byte_auth.authenticate(Path(value['account']) / 'completion.json', value['manifest'], value['execution'], pins, external_inputs=True, scratch=destination / 'input-auth-before')
+    marks.append(measurement('BEFORE'))
+    fence.advance('LOAD')
+    loaded = audit.loader.load(archives, value['market'], observed_at=started)
+    fence.advance('FROZEN')
+    marks.append(measurement('FROZEN'))
+    # No select/distribution/StreamAudit/planner/broker/account call follows.
+    fence.advance('AFTER')
+    after = audit.byte_auth.authenticate(Path(value['account']) / 'completion.json', value['manifest'], value['execution'], pins, external_inputs=True, scratch=destination / 'input-auth-after')
+    require(before == after, 'COMPLETE_BYTE_RECEIPTS_CHANGED')
+    require(audit.preserved_archives(archives, value['physical_sha256'], value['physical_bytes']) == preserved, 'ORIGINAL_STATE_CHANGED')
+    book.authenticate_all()
+    marks.append(measurement('AFTER'))
+    fence.advance('SERIALIZE')
+    result = {
+        'status': 'CAPACITY_CANDIDATE_REQUIRES_INDEPENDENT_TERMINAL_ACCEPTANCE',
+        'runtime': runtime, 'source': source, 'producer': producer, 'calendar': calendar,
+        'input_bytes': before, 'publication': 'CLOSED',
+        'current_live_timing_parity': 'FAILED_ORIGINAL_UNCHANGED',
+        'historical_publication_authorized': False, 'account_or_orders': False,
+        'full_distribution_cache_or_horizon_acceptance': False,
+        'full_fixed_calibration_dates': len(loaded.reader._parent._frozen_dates),
+        'risk_bank_rows': len(loaded.reader._parent._bank['dates']),
+    }
+    serialized = json.dumps(result, sort_keys=True, indent=2, allow_nan=False)
+    encoded = serialized.encode('utf-8')
+    require(len(encoded) <= 256 * 1024 ** 2, 'CAPACITY_RESULT_BOUND_EXCEEDED')
+    with (destination / 'candidate.json').open('xb') as output:
+        output.write(encoded)
+        output.flush()
+        os.fsync(output.fileno())
+    marks.append(measurement('SERIALIZED_WITH_BOTH_RECEIPTS_AND_LOADED_CONTEXT'))
+    # References deliberately remain live until the last measurement; neither
+    # receipt nor the loaded context is dropped to manufacture a smaller peak.
+    require(before == after and loaded is not None and archives is not None and serialized and encoded, 'COEXISTENCE_ROOTS_REQUIRED')
+    fence.advance('DONE')
+    return marks
+
+
+# Keep every public invocation inert until a different reviewed admission exists.
+def execute(*arguments, **keywords):
+    raise RuntimeError('SOURCE_ONLY_NO_CONTROLLER_CALL_MANIFEST_OR_EXECUTION_ADMISSION')
+
+
+if __name__ == '__main__':
+    raise SystemExit('SOURCE_ONLY_NOT_EXECUTABLE')
