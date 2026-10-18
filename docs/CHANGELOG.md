@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-10-18 — Reserve and recover the private raw Cycle final tail
+
+New historical_raw_cycle_final private bodies bind committed submission/decision,
+earlier Nightly/birth/holding lineage, separate Cycle context, source/resolved/
+broker/paper/latch inputs in an exclusive fsynced reservation BEFORE fold/save.
+A source-linked prepared receipt/marker precedes the actual Store OUTCOME commit;
+recovery only completes the original missing result marker after exact commitment.
+Public finalize/recover refuse before effects. All pre-existing files are unchanged.
+
+Source28078835/tree8a00debc passed eight NEW isolated tests,0fail/0error/0skip,
+11.044714189s/57528KiB. Actual native partial8desired/5filled journal and NaN save,
+Store commit/reopen, original-result recovery and same-session Nightly passed.
+Four actual owned SIGKILL children at reservation/native-save/prepared/commit
+were reaped; uncommitted cuts stay paused and post-commit recovery changes only
+the result marker. Full cut/exit records and canonical SHA/physical fold retained.
+Proof9c1bf94c: research/raw-cycle-final-producer-proof-2026-10-18.json.
+
+The resolver declaration/stage/context/policy/trade/calendar/source-manifest
+surroundings remain synthetic. Full Cycle resolver/sender/constructors, native
+operation/adoption, physical capacity/metadata/two-host/model/RAM/power-loss/genuine
+admission remain UNVERIFIED. Next: explicit preallocated native-save composition,
+preserving old guards/caps and using a new synthetic account from birth. No old
+gate replay, deploy or production change. Original timingFAILED/publicationCLOSED/
+pausedv6 unchanged. Diagram impact: NONE — existing private adapter boundaries.
+
 ## 2026-10-18 — Read committed raw Cycle finals in the private Nightly path
 
 New historical_raw_cycle.read_final authenticates authoritative OUTCOME head,

@@ -1,0 +1,2739 @@
+{
+  "schema": "private-raw-cycle-final-producer-proof/1",
+  "date": "2026-10-18",
+  "source_commit": "280788355ad9fe2c2ca2d589cd3e6b26adea076e",
+  "source_tree": "8a00debc144e625f455f569e1e82240633f60071",
+  "local_root": "/tmp/raw-cycle-final-producer-20261018-v1",
+  "remote_root": "/home/animallya96/scratch/raw-cycle-final-producer-20261018-v1",
+  "objective": "Reserve and run the private raw Cycle final settlement/save/Store OUTCOME tail exactly once, then recover only its original committed result metadata without native replay.",
+  "acceptance_status": "VERIFIED_BOUNDED_SYNTHETIC_PRIVATE_FINAL_PRODUCER_AND_PROCESS_DEATH_RECOVERY",
+  "actual_before_stage_resources": {
+    "at_ns": "1792359820112367736",
+    "available_bytes": 9717383168,
+    "free_inodes": 243491989,
+    "host": "animallya-spark1",
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "native_map_sha256": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5",
+    "root": "/home/animallya96/scratch/raw-cycle-final-producer-20261018-v1",
+    "scratch_free_bytes": 2803774656512,
+    "uid": 1000
+  },
+  "actual_stage": {
+    "actual_prerequisite": {
+      "at_ns": "1792359873316102456",
+      "available_bytes": 9738682368,
+      "free_inodes": 243491989,
+      "host": "animallya-spark1",
+      "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "native_map_sha256": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5",
+      "root": "/home/animallya96/scratch/raw-cycle-final-producer-20261018-v1",
+      "scratch_free_bytes": 2803778740224,
+      "uid": 1000
+    },
+    "files": {
+      "backend/__init__.py": {
+        "bytes": 35,
+        "sha256": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5"
+      },
+      "backend/market/__init__.py": {
+        "bytes": 42,
+        "sha256": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e"
+      },
+      "backend/market/historical_broker_checkpoint.py": {
+        "bytes": 40026,
+        "sha256": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08"
+      },
+      "backend/market/historical_conditional_cycle.py": {
+        "bytes": 61225,
+        "sha256": "086a85c052aa536edc77cf92035864eb92c8ce009d3e5593fa8f44e4b67bca9a"
+      },
+      "backend/market/historical_conditional_nightly.py": {
+        "bytes": 63878,
+        "sha256": "2b9ed4161123813a7d126229e4912e8c8b873caf896c4bd2a84d8b20f7fb95ee"
+      },
+      "backend/market/historical_conditional_settlement.py": {
+        "bytes": 11377,
+        "sha256": "9e194856545dbf07e0ba6f0f2af9b022f75f767ee6371bb6af1f85e522f4c90d"
+      },
+      "backend/market/historical_native_metadata.py": {
+        "bytes": 6432,
+        "sha256": "c234c1005a7a8e50062be3aadcf6892e34a0adf8249d3351b69bd6e861b2d13e"
+      },
+      "backend/market/historical_packet_checkpoint.py": {
+        "bytes": 4763,
+        "sha256": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f"
+      },
+      "backend/market/historical_packet_demand.py": {
+        "bytes": 6666,
+        "sha256": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0"
+      },
+      "backend/market/historical_packet_registry.py": {
+        "bytes": 6645,
+        "sha256": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3"
+      },
+      "backend/market/historical_packet_store.py": {
+        "bytes": 41884,
+        "sha256": "be90098bf2c64e7e8da390f2b40db646b50c7d0be659e1a3c9391b8b5595fdbf"
+      },
+      "backend/market/historical_paper_component.py": {
+        "bytes": 4280,
+        "sha256": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648"
+      },
+      "backend/market/historical_physical_checkpoint.py": {
+        "bytes": 36101,
+        "sha256": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+      },
+      "backend/market/historical_raw_cycle.py": {
+        "bytes": 7137,
+        "sha256": "3dee58cf49bd1e4f2a4879ca2ca103d166179b3f3dba33c143b66406f87e1bfa"
+      },
+      "backend/market/historical_raw_cycle_final.py": {
+        "bytes": 19945,
+        "sha256": "823ec6c6edf17e06fd9c2fe67fc4381506c9fa431dbc1896aec68f3a2f9104b0"
+      },
+      "backend/market/historical_raw_nightly.py": {
+        "bytes": 26947,
+        "sha256": "2bf3013bf60e0ba057fbd6302fe30d625467d40719dc7c13520fb579d499ca09"
+      },
+      "backend/market/historical_timing_packet.py": {
+        "bytes": 18520,
+        "sha256": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d"
+      },
+      "backend/tests/__init__.py": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "backend/tests/test_historical_packet_store.py": {
+        "bytes": 29406,
+        "sha256": "3556d1b866a4b48d3cad9508eee85b5e799ba8e5d7255ca48e7635747a1926aa"
+      },
+      "backend/tests/test_historical_paper_component_integration.py": {
+        "bytes": 17814,
+        "sha256": "906c22c408316e76ec04e94fbda874dbac0615ef61cf122f082b70ee2e0e0300"
+      },
+      "backend/tests/test_historical_raw_cycle_final.py": {
+        "bytes": 18717,
+        "sha256": "e0ccfe0ee179e190f08d77439cdd19f4ec11fc28394fc1a360f20bded0130e7a"
+      },
+      "backend/tests/test_historical_raw_cycle_nightly.py": {
+        "bytes": 16002,
+        "sha256": "c7caa7bee45aa529d34f44d9153dfe6a75bdcc84a246bdb64508e0820a1c1b56"
+      },
+      "backend/tests/test_historical_raw_nightly_lifecycle.py": {
+        "bytes": 16342,
+        "sha256": "a1c9c5a730863bd60231eb7db3973fb3a9218c271edc11b767f9353baaafaad2"
+      },
+      "backend/tests/test_historical_raw_nightly_metadata.py": {
+        "bytes": 16557,
+        "sha256": "f7a4c26e44249122e5e7107d7cde71bd2cdf30a8463e869f09fa1dfe3682b182"
+      },
+      "backend/tests/test_historical_raw_settlement_integration.py": {
+        "bytes": 16665,
+        "sha256": "ac14872456f03729687f7f37bafa1b6c25fe5919b1eaca0592c88e0cd7012e43"
+      },
+      "fixture/current-identity.json": {
+        "bytes": 4070,
+        "sha256": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d"
+      },
+      "run.py": {
+        "bytes": 6823,
+        "sha256": "15f6def784e8d250adb4deadfc8eb4f218151c305f228750fd55f7d01e29298f"
+      }
+    },
+    "reviewed_prerequisite_sha256": "9c69aaf55d80f3b3bf996863a1fb604611e51b43b006e7c558a6e3e5ef01afa3"
+  },
+  "actual_proof_sha256": "9c1bf94c993d56dea5470f4a6df9d5d1b84997e3df08e914e632128bf357058f",
+  "actual_proof": {
+    "actual_owned_sigkill_children": [
+      {
+        "cut": {
+          "path": "/out/cases/runTest-acdnnw4x/store/synthetic-account/actual-child-cut.json",
+          "physical": {
+            "st_ctime_ns": "1792359876877880043",
+            "st_dev": "66306",
+            "st_ino": "60589840",
+            "st_mtime_ns": "1792359876877880043",
+            "st_size": "203"
+          },
+          "sha256": "b6e6dd0852cdf9ea83531eeeef3444f18fd2820fcff32329d8c83f2e4e730b61",
+          "value": {
+            "head": "544afdf26159f8348afdd037a1d7d440202167d8bf8e1fd778cde8fba2a9910c",
+            "paper_sha256": "ac88c185235b3545b75ff9e51fd4346b3225aa1388fe91f342f554ee13ca8891",
+            "pid": 7,
+            "point": "raw_final_outcome_committed"
+          }
+        },
+        "exit": {
+          "path": "/out/cases/runTest-acdnnw4x/store/synthetic-account/actual-child-exit.json",
+          "physical": {
+            "st_ctime_ns": "1792359876885137833",
+            "st_dev": "66306",
+            "st_ino": "60589841",
+            "st_mtime_ns": "1792359876885137833",
+            "st_size": "184"
+          },
+          "sha256": "fc0e9438924c642765d9f35c58eab35100da9af367cde446ff0324c3a70101c9",
+          "value": {
+            "boundary": "raw_final_outcome_committed",
+            "exitcode": -9,
+            "head": "544afdf26159f8348afdd037a1d7d440202167d8bf8e1fd778cde8fba2a9910c",
+            "pid": 7,
+            "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+          }
+        }
+      },
+      {
+        "cut": {
+          "path": "/out/cases/runTest-btzho77t/store/synthetic-account/actual-child-cut.json",
+          "physical": {
+            "st_ctime_ns": "1792359878232219501",
+            "st_dev": "66306",
+            "st_ino": "60590042",
+            "st_mtime_ns": "1792359878232219501",
+            "st_size": "198"
+          },
+          "sha256": "7788c0021fb34c1af7d09da13903c4c59c2ea28c0551a12eccf59a80558badcc",
+          "value": {
+            "head": "69884cf6245212f82c5dd6981b5ee8fe86743cfa0b0005d67d4d04caf8b2aad4",
+            "paper_sha256": "b35062ab1f8c435d9a02cbe2e7524e820561204fb446de8f1fd19d07de3723ca",
+            "pid": 8,
+            "point": "raw_final_native_saved"
+          }
+        },
+        "exit": {
+          "path": "/out/cases/runTest-btzho77t/store/synthetic-account/actual-child-exit.json",
+          "physical": {
+            "st_ctime_ns": "1792359878244037687",
+            "st_dev": "66306",
+            "st_ino": "60590052",
+            "st_mtime_ns": "1792359878244037687",
+            "st_size": "179"
+          },
+          "sha256": "5107f6a4dabcaa70dcc477db55d825d84eab5827f4020c38157375a25b24b6e9",
+          "value": {
+            "boundary": "raw_final_native_saved",
+            "exitcode": -9,
+            "head": "69884cf6245212f82c5dd6981b5ee8fe86743cfa0b0005d67d4d04caf8b2aad4",
+            "pid": 8,
+            "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+          }
+        }
+      },
+      {
+        "cut": {
+          "path": "/out/cases/runTest-wv1dnxca/store/synthetic-account/actual-child-cut.json",
+          "physical": {
+            "st_ctime_ns": "1792359879604959825",
+            "st_dev": "66306",
+            "st_ino": "60590264",
+            "st_mtime_ns": "1792359879604959825",
+            "st_size": "194"
+          },
+          "sha256": "9d006c3d7ee7ace0a21601a9671dce1ae875f9727723b270ca2209569942d11e",
+          "value": {
+            "head": "da08ca0b4c8d2e73693b990159a5c09411f6517e92825ff19b48344d51fa1d9e",
+            "paper_sha256": "e833bf56c44b73addcd37a7d1a24a7846b802643e8c72c22ff6b0e4467cfcfd3",
+            "pid": 9,
+            "point": "raw_final_prepared"
+          }
+        },
+        "exit": {
+          "path": "/out/cases/runTest-wv1dnxca/store/synthetic-account/actual-child-exit.json",
+          "physical": {
+            "st_ctime_ns": "1792359879614119211",
+            "st_dev": "66306",
+            "st_ino": "60590265",
+            "st_mtime_ns": "1792359879614119211",
+            "st_size": "175"
+          },
+          "sha256": "865a074e77c0e202a5b2d78dd55194984fea03cb136e1827a562bfaa8e42ab55",
+          "value": {
+            "boundary": "raw_final_prepared",
+            "exitcode": -9,
+            "head": "da08ca0b4c8d2e73693b990159a5c09411f6517e92825ff19b48344d51fa1d9e",
+            "pid": 9,
+            "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+          }
+        }
+      },
+      {
+        "cut": {
+          "path": "/out/cases/runTest-qm4s3qlo/store/synthetic-account/actual-child-cut.json",
+          "physical": {
+            "st_ctime_ns": "1792359880898975169",
+            "st_dev": "66306",
+            "st_ino": "60590472",
+            "st_mtime_ns": "1792359880898975169",
+            "st_size": "195"
+          },
+          "sha256": "071cb4028562b0d9645e13e9da0f7857ddf6fe34b2cf72c08c539517fb1ad49d",
+          "value": {
+            "head": "b9385a24b4d455a7bd134a13a3cd940d4379bd0b4a69a027a274430768b27e70",
+            "paper_sha256": "4d43640d96fe82e129615942ddc4193c1bfb980313171cd056d0d12a820a73f8",
+            "pid": 10,
+            "point": "raw_final_reserved"
+          }
+        },
+        "exit": {
+          "path": "/out/cases/runTest-qm4s3qlo/store/synthetic-account/actual-child-exit.json",
+          "physical": {
+            "st_ctime_ns": "1792359880907069220",
+            "st_dev": "66306",
+            "st_ino": "60590473",
+            "st_mtime_ns": "1792359880907069220",
+            "st_size": "176"
+          },
+          "sha256": "24cade8ee2fa9f9e2ccf77fc6b474780a008427b4d55f006bbc693b4c44a4bd3",
+          "value": {
+            "boundary": "raw_final_reserved",
+            "exitcode": -9,
+            "head": "b9385a24b4d455a7bd134a13a3cd940d4379bd0b4a69a027a274430768b27e70",
+            "pid": 10,
+            "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+          }
+        }
+      }
+    ],
+    "elapsed_seconds": 11.044714189134538,
+    "errors": 0,
+    "failures": 0,
+    "forbidden_imports": [],
+    "native_after": {
+      "backend.agents": {
+        "physical": {
+          "st_ctime_ns": "1792252095713452724",
+          "st_dev": "66306",
+          "st_ino": "56003890",
+          "st_mtime_ns": "1788401448000000000",
+          "st_size": "30"
+        },
+        "sha256": "6f54ad4ec10e21b19085989fe0589d17a654a8d1bafdf62d3a6f5838833bdae4"
+      },
+      "backend.agents.trading": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794570",
+          "st_mtime_ns": "1788496919000000000",
+          "st_size": "442"
+        },
+        "sha256": "e2674427378cce57e276762d62e35f76df4220e65f989b2468c6b900ff7a5593"
+      },
+      "backend.agents.trading.desk": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794576",
+          "st_mtime_ns": "1788651713000000000",
+          "st_size": "612"
+        },
+        "sha256": "c4915530882e9d8abb10ca8334719c416fc4b0d63502c25ea079ab7aba6fab57"
+      },
+      "backend.agents.trading.desk.allocation": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794578",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "26094"
+        },
+        "sha256": "e031ecbd40f4303fb34c0a1b8d497d55abcf33e941d997b3210d91224d1a7563"
+      },
+      "backend.agents.trading.desk.backtest": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794579",
+          "st_mtime_ns": "1788666740000000000",
+          "st_size": "10956"
+        },
+        "sha256": "0f6b7a2258960982ecab9199d6965cf2c15aece0eaf5c3a6813f1d81015dce7a"
+      },
+      "backend.agents.trading.desk.entry": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794584",
+          "st_mtime_ns": "1788658778000000000",
+          "st_size": "3467"
+        },
+        "sha256": "d3981dcc762ae2b5cc59d562999627f1f0fade57496b9470b7bca99defdabeb3"
+      },
+      "backend.agents.trading.desk.execution_evidence": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794587",
+          "st_mtime_ns": "1789351742000000000",
+          "st_size": "2050"
+        },
+        "sha256": "ba0d3b0e329410d3915a57b44eba004ae9e1479e35022de8d52d2ca36e3ec171"
+      },
+      "backend.agents.trading.desk.exit": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794588",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "7612"
+        },
+        "sha256": "ad4efad8fa146bedccd571f20fda60c60e5bdfe518e28bb51db468fd660e045b"
+      },
+      "backend.agents.trading.desk.funded_execution": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794590",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "32942"
+        },
+        "sha256": "6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c"
+      },
+      "backend.agents.trading.desk.grading": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794591",
+          "st_mtime_ns": "1789942231000000000",
+          "st_size": "11525"
+        },
+        "sha256": "00561286fcbce8d6b4d63d7f24174064640b3d80e40567ce4045c5a5d3d0b4aa"
+      },
+      "backend.agents.trading.desk.intraday_orders": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794593",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "52215"
+        },
+        "sha256": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c"
+      },
+      "backend.agents.trading.desk.opinions": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794598",
+          "st_mtime_ns": "1790455279000000000",
+          "st_size": "8212"
+        },
+        "sha256": "f55e5ca041deae749cea9e6733510a7ef3a6e1fff81985fdd516769d327accbb"
+      },
+      "backend.agents.trading.desk.paper": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794599",
+          "st_mtime_ns": "1792246285000000000",
+          "st_size": "66598"
+        },
+        "sha256": "a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c"
+      },
+      "backend.agents.trading.desk.planner": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794602",
+          "st_mtime_ns": "1789039782000000000",
+          "st_size": "3388"
+        },
+        "sha256": "ad917b5344654087e12b25b55cf558d3f519d3955ee2f3191b58ae263d8d248c"
+      },
+      "backend.agents.trading.desk.policy_v4": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794604",
+          "st_mtime_ns": "1790473980000000000",
+          "st_size": "3579"
+        },
+        "sha256": "d918aeb225d2f8873bdcda004c803c5040149cbd63fa6274e0bff6ec02f6d6f5"
+      },
+      "backend.agents.trading.desk.risk": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794608",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "11877"
+        },
+        "sha256": "2ed66bfc516eddff40c97fb99b0b953fa8ac255b47b5a1dde5db5476e18a00c7"
+      },
+      "backend.agents.trading.desk.simulate": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794613",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "110487"
+        },
+        "sha256": "ac1ff48a0746fb112cbcbfbf88e254f6c7a73d554d5ecb1eb015222a103e80e6"
+      },
+      "backend.agents.trading.desk.trend_brake": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794617",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "3414"
+        },
+        "sha256": "2262e0fd79101d68b10cf2d06e690442af00e94e0b6a215b14294681c4df9931"
+      },
+      "backend.market.alpaca": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59794960",
+          "st_mtime_ns": "1790473980000000000",
+          "st_size": "15047"
+        },
+        "sha256": "698e2425964622290b06a0f51eda7fd148d2a79f24be58d01577ae8c1804840a"
+      },
+      "backend.market.alpaca_trading": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794961",
+          "st_mtime_ns": "1790986089000000000",
+          "st_size": "15211"
+        },
+        "sha256": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2"
+      },
+      "backend.market.alpha": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794962",
+          "st_mtime_ns": "1788580522000000000",
+          "st_size": "6628"
+        },
+        "sha256": "72b1c9487135f642f7bd6f1850aca1351856fda48f53218e402897ebaf53f76d"
+      },
+      "backend.market.bands": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59794963",
+          "st_mtime_ns": "1789827168000000000",
+          "st_size": "3836"
+        },
+        "sha256": "82f69d93471b62cba47e38beef39627aaee72d2e27031f2aea7a310ac46567d5"
+      },
+      "backend.market.baselines": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794964",
+          "st_mtime_ns": "1788797239000000000",
+          "st_size": "7548"
+        },
+        "sha256": "ced5769bece00034e6a659866ac7f8ec3d3465a50be17795b446dbf6ce58fdc8"
+      },
+      "backend.market.bounded_execution": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794967",
+          "st_mtime_ns": "1790903972000000000",
+          "st_size": "11204"
+        },
+        "sha256": "ccaa9f62b7ee49b30041a80b366c13fadb69ba2c6e551630e35575b0ddc6dd32"
+      },
+      "backend.market.calendar": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794968",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "13181"
+        },
+        "sha256": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4"
+      },
+      "backend.market.candidate_stats": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794969",
+          "st_mtime_ns": "1790644500000000000",
+          "st_size": "16550"
+        },
+        "sha256": "93ecebb36422470684208429836f81a27c64b704cc70dc1db7b25b991ff78780"
+      },
+      "backend.market.deep_intraday": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794996",
+          "st_mtime_ns": "1790644500000000000",
+          "st_size": "48371"
+        },
+        "sha256": "cdcf42880c4c8c6aec6cb5138aca12ad09dc56d14e3b7f6786c8c1b615050cae"
+      },
+      "backend.market.desk_freshness": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795002",
+          "st_mtime_ns": "1790432515000000000",
+          "st_size": "3900"
+        },
+        "sha256": "ca9e546915aefb6557d21297bcf194ef70fdda0fae6ed1dcb127b6938cf9b96c"
+      },
+      "backend.market.entry_timing": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795013",
+          "st_mtime_ns": "1790986089000000000",
+          "st_size": "28453"
+        },
+        "sha256": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88"
+      },
+      "backend.market.execution_quotes": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795017",
+          "st_mtime_ns": "1789827168000000000",
+          "st_size": "5151"
+        },
+        "sha256": "4dc6415247b79faba9b557478702facfc0a74950bc9edba7cd679d89aa8bf2f2"
+      },
+      "backend.market.fill_timing": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795020",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "115733"
+        },
+        "sha256": "2bb9eb6c6bbc5bc593a873ef825d8233c890a7b026289ad2b5874bbeda4366fc"
+      },
+      "backend.market.intraday_sip": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795055",
+          "st_mtime_ns": "1790484391000000000",
+          "st_size": "28544"
+        },
+        "sha256": "bbe74be27e547ab4e71ae83521581d4ecd9942a9e9e7498bcbd09f8e3b5197ec"
+      },
+      "backend.market.levels": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795079",
+          "st_mtime_ns": "1789827168000000000",
+          "st_size": "11949"
+        },
+        "sha256": "0b52c13a65146d2225319568ec605a4373a60fbb6ebf385e925f0dc163d07d8f"
+      },
+      "backend.market.options": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795119",
+          "st_mtime_ns": "1790432515000000000",
+          "st_size": "16584"
+        },
+        "sha256": "e81142caa5a6458c44508bc7d8a6a017c3aedecebc1428a5beef3507d2049fd6"
+      },
+      "backend.market.options_evidence": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795120",
+          "st_mtime_ns": "1790432515000000000",
+          "st_size": "8370"
+        },
+        "sha256": "3d506ab19f745582d98942a6a8bf854bc9d1ca78f7344596a71e9b4c34ca1ae8"
+      },
+      "backend.market.panel": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795121",
+          "st_mtime_ns": "1788651713000000000",
+          "st_size": "9202"
+        },
+        "sha256": "dee6b591080f18ba0b35c1241d96cb0e906957b3007f25be941957d2ee7252a2"
+      },
+      "backend.market.replay_broker": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795137",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "46431"
+        },
+        "sha256": "c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616"
+      },
+      "backend.market.session_anatomy": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795151",
+          "st_mtime_ns": "1790484391000000000",
+          "st_size": "25534"
+        },
+        "sha256": "ec56a9e2025613423c35c0d676e69985c880601c808c43824a82fc329b94bf25"
+      },
+      "backend.market.sip_cube": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795154",
+          "st_mtime_ns": "1790484391000000000",
+          "st_size": "10961"
+        },
+        "sha256": "2a6689f13dfbe97a677fabf53010c9a0a9ee5acd4ab2ecc8d55a9daeea8a6bad"
+      },
+      "backend.market.sizing": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795155",
+          "st_mtime_ns": "1788797239000000000",
+          "st_size": "22330"
+        },
+        "sha256": "af98cc0ee0e83b2a4d80f980e93471c712d4d6717a93ee093c9f282ff5d8a162"
+      },
+      "backend.market.sr_levels": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795157",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "26808"
+        },
+        "sha256": "3ae96df32dc326e647a2489cac52afa6546c88517c94016400d70f25ab47cec0"
+      },
+      "backend.market.stage3_io": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795164",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "27286"
+        },
+        "sha256": "b0775a216b319c8e2f35d609b8e6678a7651c46815f5eb34007c52020efc86d5"
+      },
+      "backend.market.stage3_verdict": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795168",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "33122"
+        },
+        "sha256": "ae5e5472a802de3c757b0077797648ab10a0838cc49d38a7c436756b04f7e0ce"
+      },
+      "backend.market.store": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795174",
+          "st_mtime_ns": "1790214767000000000",
+          "st_size": "13705"
+        },
+        "sha256": "a299516ab68710d56355e036770d3c9695ed332641e9fa6ee4d64c9f6ede9aff"
+      },
+      "backend.market.technical": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795179",
+          "st_mtime_ns": "1790903972000000000",
+          "st_size": "14415"
+        },
+        "sha256": "11bf94ad0a0e74ee7d859de204f1e89423a78605dc2a9dfd81569d306b29a742"
+      },
+      "backend.market.vol_forecast": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795188",
+          "st_mtime_ns": "1790644500000000000",
+          "st_size": "12195"
+        },
+        "sha256": "17f8b1948b9ba378db747739d3e2ea99d124e65348a71416c288358dedd20b97"
+      },
+      "backend.market.yahoo": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795191",
+          "st_mtime_ns": "1788578401000000000",
+          "st_size": "13065"
+        },
+        "sha256": "311323b71355858a1ea1fca9d7b03861df71f35466a789d90a872bbbdc93e82d"
+      }
+    },
+    "native_before": {
+      "backend.agents": {
+        "physical": {
+          "st_ctime_ns": "1792252095713452724",
+          "st_dev": "66306",
+          "st_ino": "56003890",
+          "st_mtime_ns": "1788401448000000000",
+          "st_size": "30"
+        },
+        "sha256": "6f54ad4ec10e21b19085989fe0589d17a654a8d1bafdf62d3a6f5838833bdae4"
+      },
+      "backend.agents.trading": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794570",
+          "st_mtime_ns": "1788496919000000000",
+          "st_size": "442"
+        },
+        "sha256": "e2674427378cce57e276762d62e35f76df4220e65f989b2468c6b900ff7a5593"
+      },
+      "backend.agents.trading.desk": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794576",
+          "st_mtime_ns": "1788651713000000000",
+          "st_size": "612"
+        },
+        "sha256": "c4915530882e9d8abb10ca8334719c416fc4b0d63502c25ea079ab7aba6fab57"
+      },
+      "backend.agents.trading.desk.allocation": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794578",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "26094"
+        },
+        "sha256": "e031ecbd40f4303fb34c0a1b8d497d55abcf33e941d997b3210d91224d1a7563"
+      },
+      "backend.agents.trading.desk.backtest": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794579",
+          "st_mtime_ns": "1788666740000000000",
+          "st_size": "10956"
+        },
+        "sha256": "0f6b7a2258960982ecab9199d6965cf2c15aece0eaf5c3a6813f1d81015dce7a"
+      },
+      "backend.agents.trading.desk.entry": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794584",
+          "st_mtime_ns": "1788658778000000000",
+          "st_size": "3467"
+        },
+        "sha256": "d3981dcc762ae2b5cc59d562999627f1f0fade57496b9470b7bca99defdabeb3"
+      },
+      "backend.agents.trading.desk.execution_evidence": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794587",
+          "st_mtime_ns": "1789351742000000000",
+          "st_size": "2050"
+        },
+        "sha256": "ba0d3b0e329410d3915a57b44eba004ae9e1479e35022de8d52d2ca36e3ec171"
+      },
+      "backend.agents.trading.desk.exit": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794588",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "7612"
+        },
+        "sha256": "ad4efad8fa146bedccd571f20fda60c60e5bdfe518e28bb51db468fd660e045b"
+      },
+      "backend.agents.trading.desk.funded_execution": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794590",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "32942"
+        },
+        "sha256": "6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c"
+      },
+      "backend.agents.trading.desk.grading": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794591",
+          "st_mtime_ns": "1789942231000000000",
+          "st_size": "11525"
+        },
+        "sha256": "00561286fcbce8d6b4d63d7f24174064640b3d80e40567ce4045c5a5d3d0b4aa"
+      },
+      "backend.agents.trading.desk.intraday_orders": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794593",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "52215"
+        },
+        "sha256": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c"
+      },
+      "backend.agents.trading.desk.opinions": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794598",
+          "st_mtime_ns": "1790455279000000000",
+          "st_size": "8212"
+        },
+        "sha256": "f55e5ca041deae749cea9e6733510a7ef3a6e1fff81985fdd516769d327accbb"
+      },
+      "backend.agents.trading.desk.paper": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794599",
+          "st_mtime_ns": "1792246285000000000",
+          "st_size": "66598"
+        },
+        "sha256": "a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c"
+      },
+      "backend.agents.trading.desk.planner": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794602",
+          "st_mtime_ns": "1789039782000000000",
+          "st_size": "3388"
+        },
+        "sha256": "ad917b5344654087e12b25b55cf558d3f519d3955ee2f3191b58ae263d8d248c"
+      },
+      "backend.agents.trading.desk.policy_v4": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794604",
+          "st_mtime_ns": "1790473980000000000",
+          "st_size": "3579"
+        },
+        "sha256": "d918aeb225d2f8873bdcda004c803c5040149cbd63fa6274e0bff6ec02f6d6f5"
+      },
+      "backend.agents.trading.desk.risk": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794608",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "11877"
+        },
+        "sha256": "2ed66bfc516eddff40c97fb99b0b953fa8ac255b47b5a1dde5db5476e18a00c7"
+      },
+      "backend.agents.trading.desk.simulate": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794613",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "110487"
+        },
+        "sha256": "ac1ff48a0746fb112cbcbfbf88e254f6c7a73d554d5ecb1eb015222a103e80e6"
+      },
+      "backend.agents.trading.desk.trend_brake": {
+        "physical": {
+          "st_ctime_ns": "1792252095721452938",
+          "st_dev": "66306",
+          "st_ino": "59794617",
+          "st_mtime_ns": "1790204705000000000",
+          "st_size": "3414"
+        },
+        "sha256": "2262e0fd79101d68b10cf2d06e690442af00e94e0b6a215b14294681c4df9931"
+      },
+      "backend.market.alpaca": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59794960",
+          "st_mtime_ns": "1790473980000000000",
+          "st_size": "15047"
+        },
+        "sha256": "698e2425964622290b06a0f51eda7fd148d2a79f24be58d01577ae8c1804840a"
+      },
+      "backend.market.alpaca_trading": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794961",
+          "st_mtime_ns": "1790986089000000000",
+          "st_size": "15211"
+        },
+        "sha256": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2"
+      },
+      "backend.market.alpha": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794962",
+          "st_mtime_ns": "1788580522000000000",
+          "st_size": "6628"
+        },
+        "sha256": "72b1c9487135f642f7bd6f1850aca1351856fda48f53218e402897ebaf53f76d"
+      },
+      "backend.market.bands": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59794963",
+          "st_mtime_ns": "1789827168000000000",
+          "st_size": "3836"
+        },
+        "sha256": "82f69d93471b62cba47e38beef39627aaee72d2e27031f2aea7a310ac46567d5"
+      },
+      "backend.market.baselines": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794964",
+          "st_mtime_ns": "1788797239000000000",
+          "st_size": "7548"
+        },
+        "sha256": "ced5769bece00034e6a659866ac7f8ec3d3465a50be17795b446dbf6ce58fdc8"
+      },
+      "backend.market.bounded_execution": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794967",
+          "st_mtime_ns": "1790903972000000000",
+          "st_size": "11204"
+        },
+        "sha256": "ccaa9f62b7ee49b30041a80b366c13fadb69ba2c6e551630e35575b0ddc6dd32"
+      },
+      "backend.market.calendar": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794968",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "13181"
+        },
+        "sha256": "f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4"
+      },
+      "backend.market.candidate_stats": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59794969",
+          "st_mtime_ns": "1790644500000000000",
+          "st_size": "16550"
+        },
+        "sha256": "93ecebb36422470684208429836f81a27c64b704cc70dc1db7b25b991ff78780"
+      },
+      "backend.market.deep_intraday": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59794996",
+          "st_mtime_ns": "1790644500000000000",
+          "st_size": "48371"
+        },
+        "sha256": "cdcf42880c4c8c6aec6cb5138aca12ad09dc56d14e3b7f6786c8c1b615050cae"
+      },
+      "backend.market.desk_freshness": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795002",
+          "st_mtime_ns": "1790432515000000000",
+          "st_size": "3900"
+        },
+        "sha256": "ca9e546915aefb6557d21297bcf194ef70fdda0fae6ed1dcb127b6938cf9b96c"
+      },
+      "backend.market.entry_timing": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795013",
+          "st_mtime_ns": "1790986089000000000",
+          "st_size": "28453"
+        },
+        "sha256": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88"
+      },
+      "backend.market.execution_quotes": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795017",
+          "st_mtime_ns": "1789827168000000000",
+          "st_size": "5151"
+        },
+        "sha256": "4dc6415247b79faba9b557478702facfc0a74950bc9edba7cd679d89aa8bf2f2"
+      },
+      "backend.market.fill_timing": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795020",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "115733"
+        },
+        "sha256": "2bb9eb6c6bbc5bc593a873ef825d8233c890a7b026289ad2b5874bbeda4366fc"
+      },
+      "backend.market.intraday_sip": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795055",
+          "st_mtime_ns": "1790484391000000000",
+          "st_size": "28544"
+        },
+        "sha256": "bbe74be27e547ab4e71ae83521581d4ecd9942a9e9e7498bcbd09f8e3b5197ec"
+      },
+      "backend.market.levels": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795079",
+          "st_mtime_ns": "1789827168000000000",
+          "st_size": "11949"
+        },
+        "sha256": "0b52c13a65146d2225319568ec605a4373a60fbb6ebf385e925f0dc163d07d8f"
+      },
+      "backend.market.options": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795119",
+          "st_mtime_ns": "1790432515000000000",
+          "st_size": "16584"
+        },
+        "sha256": "e81142caa5a6458c44508bc7d8a6a017c3aedecebc1428a5beef3507d2049fd6"
+      },
+      "backend.market.options_evidence": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795120",
+          "st_mtime_ns": "1790432515000000000",
+          "st_size": "8370"
+        },
+        "sha256": "3d506ab19f745582d98942a6a8bf854bc9d1ca78f7344596a71e9b4c34ca1ae8"
+      },
+      "backend.market.panel": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795121",
+          "st_mtime_ns": "1788651713000000000",
+          "st_size": "9202"
+        },
+        "sha256": "dee6b591080f18ba0b35c1241d96cb0e906957b3007f25be941957d2ee7252a2"
+      },
+      "backend.market.replay_broker": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795137",
+          "st_mtime_ns": "1791357572000000000",
+          "st_size": "46431"
+        },
+        "sha256": "c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616"
+      },
+      "backend.market.session_anatomy": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795151",
+          "st_mtime_ns": "1790484391000000000",
+          "st_size": "25534"
+        },
+        "sha256": "ec56a9e2025613423c35c0d676e69985c880601c808c43824a82fc329b94bf25"
+      },
+      "backend.market.sip_cube": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795154",
+          "st_mtime_ns": "1790484391000000000",
+          "st_size": "10961"
+        },
+        "sha256": "2a6689f13dfbe97a677fabf53010c9a0a9ee5acd4ab2ecc8d55a9daeea8a6bad"
+      },
+      "backend.market.sizing": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795155",
+          "st_mtime_ns": "1788797239000000000",
+          "st_size": "22330"
+        },
+        "sha256": "af98cc0ee0e83b2a4d80f980e93471c712d4d6717a93ee093c9f282ff5d8a162"
+      },
+      "backend.market.sr_levels": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795157",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "26808"
+        },
+        "sha256": "3ae96df32dc326e647a2489cac52afa6546c88517c94016400d70f25ab47cec0"
+      },
+      "backend.market.stage3_io": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795164",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "27286"
+        },
+        "sha256": "b0775a216b319c8e2f35d609b8e6678a7651c46815f5eb34007c52020efc86d5"
+      },
+      "backend.market.stage3_verdict": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795168",
+          "st_mtime_ns": "1790706030000000000",
+          "st_size": "33122"
+        },
+        "sha256": "ae5e5472a802de3c757b0077797648ab10a0838cc49d38a7c436756b04f7e0ce"
+      },
+      "backend.market.store": {
+        "physical": {
+          "st_ctime_ns": "1792252095710452644",
+          "st_dev": "66306",
+          "st_ino": "59795174",
+          "st_mtime_ns": "1790214767000000000",
+          "st_size": "13705"
+        },
+        "sha256": "a299516ab68710d56355e036770d3c9695ed332641e9fa6ee4d64c9f6ede9aff"
+      },
+      "backend.market.technical": {
+        "physical": {
+          "st_ctime_ns": "1792252095709452618",
+          "st_dev": "66306",
+          "st_ino": "59795179",
+          "st_mtime_ns": "1790903972000000000",
+          "st_size": "14415"
+        },
+        "sha256": "11bf94ad0a0e74ee7d859de204f1e89423a78605dc2a9dfd81569d306b29a742"
+      },
+      "backend.market.vol_forecast": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795188",
+          "st_mtime_ns": "1790644500000000000",
+          "st_size": "12195"
+        },
+        "sha256": "17f8b1948b9ba378db747739d3e2ea99d124e65348a71416c288358dedd20b97"
+      },
+      "backend.market.yahoo": {
+        "physical": {
+          "st_ctime_ns": "1792252095708452591",
+          "st_dev": "66306",
+          "st_ino": "59795191",
+          "st_mtime_ns": "1788578401000000000",
+          "st_size": "13065"
+        },
+        "sha256": "311323b71355858a1ea1fca9d7b03861df71f35466a789d90a872bbbdc93e82d"
+      }
+    },
+    "native_writer_globals_unchanged": true,
+    "peak_kib": 57528,
+    "scope": "Exact complete private raw final producer/reservation/prepared/Store OUTCOME commit/result-only recovery CodeTypes; four actual owned fork SIGKILL cuts; real native broker partial fills/paper save/raw settlement/checkpoint/SQLite-CAS; synthetic committed stage producer/resolver declaration/context parser/holding policy/trade/calendar/source-manifest globals; no full Cycle/resolver/sender/constructor/model/genuine/native-operation adoption/capacity admission",
+    "skips": 0,
+    "source_after": {
+      "/audit/backend/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873921907831",
+          "st_dev": "66306",
+          "st_ino": "60589563",
+          "st_mtime_ns": "1792359873921907831",
+          "st_size": "35"
+        },
+        "sha256": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5"
+      },
+      "/audit/backend/market/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874030908521",
+          "st_dev": "66306",
+          "st_ino": "60589571",
+          "st_mtime_ns": "1792359874030908521",
+          "st_size": "42"
+        },
+        "sha256": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e"
+      },
+      "/audit/backend/market/historical_broker_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873987908249",
+          "st_dev": "66306",
+          "st_ino": "60589568",
+          "st_mtime_ns": "1792359873987908249",
+          "st_size": "40026"
+        },
+        "sha256": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08"
+      },
+      "/audit/backend/market/historical_conditional_cycle.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874083908857",
+          "st_dev": "66306",
+          "st_ino": "60589573",
+          "st_mtime_ns": "1792359874083908857",
+          "st_size": "61225"
+        },
+        "sha256": "086a85c052aa536edc77cf92035864eb92c8ce009d3e5593fa8f44e4b67bca9a"
+      },
+      "/audit/backend/market/historical_conditional_nightly.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874204909624",
+          "st_dev": "66306",
+          "st_ino": "60589579",
+          "st_mtime_ns": "1792359874204909624",
+          "st_size": "63878"
+        },
+        "sha256": "2b9ed4161123813a7d126229e4912e8c8b873caf896c4bd2a84d8b20f7fb95ee"
+      },
+      "/audit/backend/market/historical_conditional_settlement.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874041908591",
+          "st_dev": "66306",
+          "st_ino": "60589572",
+          "st_mtime_ns": "1792359874041908591",
+          "st_size": "11377"
+        },
+        "sha256": "9e194856545dbf07e0ba6f0f2af9b022f75f767ee6371bb6af1f85e522f4c90d"
+      },
+      "/audit/backend/market/historical_native_metadata.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873996908306",
+          "st_dev": "66306",
+          "st_ino": "60589569",
+          "st_mtime_ns": "1792359873996908306",
+          "st_size": "6432"
+        },
+        "sha256": "c234c1005a7a8e50062be3aadcf6892e34a0adf8249d3351b69bd6e861b2d13e"
+      },
+      "/audit/backend/market/historical_packet_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874137909199",
+          "st_dev": "66306",
+          "st_ino": "60589576",
+          "st_mtime_ns": "1792359874137909199",
+          "st_size": "4763"
+        },
+        "sha256": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f"
+      },
+      "/audit/backend/market/historical_packet_demand.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873952908027",
+          "st_dev": "66306",
+          "st_ino": "60589566",
+          "st_mtime_ns": "1792359873952908027",
+          "st_size": "6666"
+        },
+        "sha256": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0"
+      },
+      "/audit/backend/market/historical_packet_registry.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874165909377",
+          "st_dev": "66306",
+          "st_ino": "60589578",
+          "st_mtime_ns": "1792359874165909377",
+          "st_size": "6645"
+        },
+        "sha256": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3"
+      },
+      "/audit/backend/market/historical_packet_store.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874023908477",
+          "st_dev": "66306",
+          "st_ino": "60589570",
+          "st_mtime_ns": "1792359874023908477",
+          "st_size": "41884"
+        },
+        "sha256": "be90098bf2c64e7e8da390f2b40db646b50c7d0be659e1a3c9391b8b5595fdbf"
+      },
+      "/audit/backend/market/historical_paper_component.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873961908084",
+          "st_dev": "66306",
+          "st_ino": "60589567",
+          "st_mtime_ns": "1792359873961908084",
+          "st_size": "4280"
+        },
+        "sha256": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648"
+      },
+      "/audit/backend/market/historical_physical_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874127909136",
+          "st_dev": "66306",
+          "st_ino": "60589575",
+          "st_mtime_ns": "1792359874127909136",
+          "st_size": "36101"
+        },
+        "sha256": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+      },
+      "/audit/backend/market/historical_raw_cycle.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874215909693",
+          "st_dev": "66306",
+          "st_ino": "60589580",
+          "st_mtime_ns": "1792359874215909693",
+          "st_size": "7137"
+        },
+        "sha256": "3dee58cf49bd1e4f2a4879ca2ca103d166179b3f3dba33c143b66406f87e1bfa"
+      },
+      "/audit/backend/market/historical_raw_cycle_final.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874100908965",
+          "st_dev": "66306",
+          "st_ino": "60589574",
+          "st_mtime_ns": "1792359874100908965",
+          "st_size": "19945"
+        },
+        "sha256": "823ec6c6edf17e06fd9c2fe67fc4381506c9fa431dbc1896aec68f3a2f9104b0"
+      },
+      "/audit/backend/market/historical_raw_nightly.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873941907957",
+          "st_dev": "66306",
+          "st_ino": "60589565",
+          "st_mtime_ns": "1792359873941907957",
+          "st_size": "26947"
+        },
+        "sha256": "2bf3013bf60e0ba057fbd6302fe30d625467d40719dc7c13520fb579d499ca09"
+      },
+      "/audit/backend/market/historical_timing_packet.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874152909294",
+          "st_dev": "66306",
+          "st_ino": "60589577",
+          "st_mtime_ns": "1792359874152909294",
+          "st_size": "18520"
+        },
+        "sha256": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d"
+      },
+      "/audit/backend/tests/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873853907400",
+          "st_dev": "66306",
+          "st_ino": "60589558",
+          "st_mtime_ns": "1792359873853907400",
+          "st_size": "0"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "/audit/backend/tests/test_historical_packet_store.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873848907368",
+          "st_dev": "66306",
+          "st_ino": "60589557",
+          "st_mtime_ns": "1792359873848907368",
+          "st_size": "29406"
+        },
+        "sha256": "3556d1b866a4b48d3cad9508eee85b5e799ba8e5d7255ca48e7635747a1926aa"
+      },
+      "/audit/backend/tests/test_historical_paper_component_integration.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873813907146",
+          "st_dev": "66306",
+          "st_ino": "60589555",
+          "st_mtime_ns": "1792359873813907146",
+          "st_size": "17814"
+        },
+        "sha256": "906c22c408316e76ec04e94fbda874dbac0615ef61cf122f082b70ee2e0e0300"
+      },
+      "/audit/backend/tests/test_historical_raw_cycle_final.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873868907495",
+          "st_dev": "66306",
+          "st_ino": "60589559",
+          "st_mtime_ns": "1792359873868907495",
+          "st_size": "18717"
+        },
+        "sha256": "e0ccfe0ee179e190f08d77439cdd19f4ec11fc28394fc1a360f20bded0130e7a"
+      },
+      "/audit/backend/tests/test_historical_raw_cycle_nightly.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873883907590",
+          "st_dev": "66306",
+          "st_ino": "60589560",
+          "st_mtime_ns": "1792359873883907590",
+          "st_size": "16002"
+        },
+        "sha256": "c7caa7bee45aa529d34f44d9153dfe6a75bdcc84a246bdb64508e0820a1c1b56"
+      },
+      "/audit/backend/tests/test_historical_raw_nightly_lifecycle.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873898907685",
+          "st_dev": "66306",
+          "st_ino": "60589561",
+          "st_mtime_ns": "1792359873898907685",
+          "st_size": "16342"
+        },
+        "sha256": "a1c9c5a730863bd60231eb7db3973fb3a9218c271edc11b767f9353baaafaad2"
+      },
+      "/audit/backend/tests/test_historical_raw_nightly_metadata.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873828907241",
+          "st_dev": "66306",
+          "st_ino": "60589556",
+          "st_mtime_ns": "1792359873828907241",
+          "st_size": "16557"
+        },
+        "sha256": "f7a4c26e44249122e5e7107d7cde71bd2cdf30a8463e869f09fa1dfe3682b182"
+      },
+      "/audit/backend/tests/test_historical_raw_settlement_integration.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873911907767",
+          "st_dev": "66306",
+          "st_ino": "60589562",
+          "st_mtime_ns": "1792359873911907767",
+          "st_size": "16665"
+        },
+        "sha256": "ac14872456f03729687f7f37bafa1b6c25fe5919b1eaca0592c88e0cd7012e43"
+      },
+      "/audit/run.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873794907026",
+          "st_dev": "66306",
+          "st_ino": "60589552",
+          "st_mtime_ns": "1792359873794907026",
+          "st_size": "6823"
+        },
+        "sha256": "15f6def784e8d250adb4deadfc8eb4f218151c305f228750fd55f7d01e29298f"
+      },
+      "/fixture/current-identity.json": {
+        "physical": {
+          "st_ctime_ns": "1792359873774906899",
+          "st_dev": "66306",
+          "st_ino": "60589551",
+          "st_mtime_ns": "1792359873774906899",
+          "st_size": "4070"
+        },
+        "sha256": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d"
+      },
+      "/fixture/native-source-map.json": {
+        "physical": {
+          "st_ctime_ns": "1792359873316960014",
+          "st_dev": "66306",
+          "st_ino": "60589548",
+          "st_mtime_ns": "1792359873316960014",
+          "st_size": "182466"
+        },
+        "sha256": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5"
+      }
+    },
+    "source_before": {
+      "/audit/backend/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873921907831",
+          "st_dev": "66306",
+          "st_ino": "60589563",
+          "st_mtime_ns": "1792359873921907831",
+          "st_size": "35"
+        },
+        "sha256": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5"
+      },
+      "/audit/backend/market/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874030908521",
+          "st_dev": "66306",
+          "st_ino": "60589571",
+          "st_mtime_ns": "1792359874030908521",
+          "st_size": "42"
+        },
+        "sha256": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e"
+      },
+      "/audit/backend/market/historical_broker_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873987908249",
+          "st_dev": "66306",
+          "st_ino": "60589568",
+          "st_mtime_ns": "1792359873987908249",
+          "st_size": "40026"
+        },
+        "sha256": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08"
+      },
+      "/audit/backend/market/historical_conditional_cycle.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874083908857",
+          "st_dev": "66306",
+          "st_ino": "60589573",
+          "st_mtime_ns": "1792359874083908857",
+          "st_size": "61225"
+        },
+        "sha256": "086a85c052aa536edc77cf92035864eb92c8ce009d3e5593fa8f44e4b67bca9a"
+      },
+      "/audit/backend/market/historical_conditional_nightly.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874204909624",
+          "st_dev": "66306",
+          "st_ino": "60589579",
+          "st_mtime_ns": "1792359874204909624",
+          "st_size": "63878"
+        },
+        "sha256": "2b9ed4161123813a7d126229e4912e8c8b873caf896c4bd2a84d8b20f7fb95ee"
+      },
+      "/audit/backend/market/historical_conditional_settlement.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874041908591",
+          "st_dev": "66306",
+          "st_ino": "60589572",
+          "st_mtime_ns": "1792359874041908591",
+          "st_size": "11377"
+        },
+        "sha256": "9e194856545dbf07e0ba6f0f2af9b022f75f767ee6371bb6af1f85e522f4c90d"
+      },
+      "/audit/backend/market/historical_native_metadata.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873996908306",
+          "st_dev": "66306",
+          "st_ino": "60589569",
+          "st_mtime_ns": "1792359873996908306",
+          "st_size": "6432"
+        },
+        "sha256": "c234c1005a7a8e50062be3aadcf6892e34a0adf8249d3351b69bd6e861b2d13e"
+      },
+      "/audit/backend/market/historical_packet_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874137909199",
+          "st_dev": "66306",
+          "st_ino": "60589576",
+          "st_mtime_ns": "1792359874137909199",
+          "st_size": "4763"
+        },
+        "sha256": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f"
+      },
+      "/audit/backend/market/historical_packet_demand.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873952908027",
+          "st_dev": "66306",
+          "st_ino": "60589566",
+          "st_mtime_ns": "1792359873952908027",
+          "st_size": "6666"
+        },
+        "sha256": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0"
+      },
+      "/audit/backend/market/historical_packet_registry.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874165909377",
+          "st_dev": "66306",
+          "st_ino": "60589578",
+          "st_mtime_ns": "1792359874165909377",
+          "st_size": "6645"
+        },
+        "sha256": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3"
+      },
+      "/audit/backend/market/historical_packet_store.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874023908477",
+          "st_dev": "66306",
+          "st_ino": "60589570",
+          "st_mtime_ns": "1792359874023908477",
+          "st_size": "41884"
+        },
+        "sha256": "be90098bf2c64e7e8da390f2b40db646b50c7d0be659e1a3c9391b8b5595fdbf"
+      },
+      "/audit/backend/market/historical_paper_component.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873961908084",
+          "st_dev": "66306",
+          "st_ino": "60589567",
+          "st_mtime_ns": "1792359873961908084",
+          "st_size": "4280"
+        },
+        "sha256": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648"
+      },
+      "/audit/backend/market/historical_physical_checkpoint.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874127909136",
+          "st_dev": "66306",
+          "st_ino": "60589575",
+          "st_mtime_ns": "1792359874127909136",
+          "st_size": "36101"
+        },
+        "sha256": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+      },
+      "/audit/backend/market/historical_raw_cycle.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874215909693",
+          "st_dev": "66306",
+          "st_ino": "60589580",
+          "st_mtime_ns": "1792359874215909693",
+          "st_size": "7137"
+        },
+        "sha256": "3dee58cf49bd1e4f2a4879ca2ca103d166179b3f3dba33c143b66406f87e1bfa"
+      },
+      "/audit/backend/market/historical_raw_cycle_final.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874100908965",
+          "st_dev": "66306",
+          "st_ino": "60589574",
+          "st_mtime_ns": "1792359874100908965",
+          "st_size": "19945"
+        },
+        "sha256": "823ec6c6edf17e06fd9c2fe67fc4381506c9fa431dbc1896aec68f3a2f9104b0"
+      },
+      "/audit/backend/market/historical_raw_nightly.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873941907957",
+          "st_dev": "66306",
+          "st_ino": "60589565",
+          "st_mtime_ns": "1792359873941907957",
+          "st_size": "26947"
+        },
+        "sha256": "2bf3013bf60e0ba057fbd6302fe30d625467d40719dc7c13520fb579d499ca09"
+      },
+      "/audit/backend/market/historical_timing_packet.py": {
+        "physical": {
+          "st_ctime_ns": "1792359874152909294",
+          "st_dev": "66306",
+          "st_ino": "60589577",
+          "st_mtime_ns": "1792359874152909294",
+          "st_size": "18520"
+        },
+        "sha256": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d"
+      },
+      "/audit/backend/tests/__init__.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873853907400",
+          "st_dev": "66306",
+          "st_ino": "60589558",
+          "st_mtime_ns": "1792359873853907400",
+          "st_size": "0"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "/audit/backend/tests/test_historical_packet_store.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873848907368",
+          "st_dev": "66306",
+          "st_ino": "60589557",
+          "st_mtime_ns": "1792359873848907368",
+          "st_size": "29406"
+        },
+        "sha256": "3556d1b866a4b48d3cad9508eee85b5e799ba8e5d7255ca48e7635747a1926aa"
+      },
+      "/audit/backend/tests/test_historical_paper_component_integration.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873813907146",
+          "st_dev": "66306",
+          "st_ino": "60589555",
+          "st_mtime_ns": "1792359873813907146",
+          "st_size": "17814"
+        },
+        "sha256": "906c22c408316e76ec04e94fbda874dbac0615ef61cf122f082b70ee2e0e0300"
+      },
+      "/audit/backend/tests/test_historical_raw_cycle_final.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873868907495",
+          "st_dev": "66306",
+          "st_ino": "60589559",
+          "st_mtime_ns": "1792359873868907495",
+          "st_size": "18717"
+        },
+        "sha256": "e0ccfe0ee179e190f08d77439cdd19f4ec11fc28394fc1a360f20bded0130e7a"
+      },
+      "/audit/backend/tests/test_historical_raw_cycle_nightly.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873883907590",
+          "st_dev": "66306",
+          "st_ino": "60589560",
+          "st_mtime_ns": "1792359873883907590",
+          "st_size": "16002"
+        },
+        "sha256": "c7caa7bee45aa529d34f44d9153dfe6a75bdcc84a246bdb64508e0820a1c1b56"
+      },
+      "/audit/backend/tests/test_historical_raw_nightly_lifecycle.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873898907685",
+          "st_dev": "66306",
+          "st_ino": "60589561",
+          "st_mtime_ns": "1792359873898907685",
+          "st_size": "16342"
+        },
+        "sha256": "a1c9c5a730863bd60231eb7db3973fb3a9218c271edc11b767f9353baaafaad2"
+      },
+      "/audit/backend/tests/test_historical_raw_nightly_metadata.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873828907241",
+          "st_dev": "66306",
+          "st_ino": "60589556",
+          "st_mtime_ns": "1792359873828907241",
+          "st_size": "16557"
+        },
+        "sha256": "f7a4c26e44249122e5e7107d7cde71bd2cdf30a8463e869f09fa1dfe3682b182"
+      },
+      "/audit/backend/tests/test_historical_raw_settlement_integration.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873911907767",
+          "st_dev": "66306",
+          "st_ino": "60589562",
+          "st_mtime_ns": "1792359873911907767",
+          "st_size": "16665"
+        },
+        "sha256": "ac14872456f03729687f7f37bafa1b6c25fe5919b1eaca0592c88e0cd7012e43"
+      },
+      "/audit/run.py": {
+        "physical": {
+          "st_ctime_ns": "1792359873794907026",
+          "st_dev": "66306",
+          "st_ino": "60589552",
+          "st_mtime_ns": "1792359873794907026",
+          "st_size": "6823"
+        },
+        "sha256": "15f6def784e8d250adb4deadfc8eb4f218151c305f228750fd55f7d01e29298f"
+      },
+      "/fixture/current-identity.json": {
+        "physical": {
+          "st_ctime_ns": "1792359873774906899",
+          "st_dev": "66306",
+          "st_ino": "60589551",
+          "st_mtime_ns": "1792359873774906899",
+          "st_size": "4070"
+        },
+        "sha256": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d"
+      },
+      "/fixture/native-source-map.json": {
+        "physical": {
+          "st_ctime_ns": "1792359873316960014",
+          "st_dev": "66306",
+          "st_ino": "60589548",
+          "st_mtime_ns": "1792359873316960014",
+          "st_size": "182466"
+        },
+        "sha256": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5"
+      }
+    },
+    "status": "VERIFIED_SOURCE_ISOLATED_PRIVATE_RAW_CYCLE_FINAL_PRODUCER",
+    "tests": 8
+  },
+  "runtime": {
+    "cid": "c15d8f125bbb8cef971c2b1e2af716af92ae8a9ff6ce7f198f827a1d8c943b53",
+    "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+    "state": {
+      "Dead": false,
+      "Error": "",
+      "ExitCode": 0,
+      "FinishedAt": "2026-10-18T21:44:46.570648886Z",
+      "OOMKilled": false,
+      "Paused": false,
+      "Pid": 0,
+      "Restarting": false,
+      "Running": false,
+      "StartedAt": "2026-10-18T21:44:34.928892994Z",
+      "Status": "exited"
+    },
+    "host_config": {
+      "AutoRemove": false,
+      "Binds": null,
+      "BlkioDeviceReadBps": [],
+      "BlkioDeviceReadIOps": [],
+      "BlkioDeviceWriteBps": [],
+      "BlkioDeviceWriteIOps": [],
+      "BlkioWeight": 0,
+      "BlkioWeightDevice": [],
+      "CapAdd": null,
+      "CapDrop": [
+        "ALL"
+      ],
+      "Cgroup": "",
+      "CgroupParent": "",
+      "CgroupnsMode": "private",
+      "ConsoleSize": [
+        0,
+        0
+      ],
+      "ContainerIDFile": "/home/animallya96/scratch/raw-cycle-final-producer-20261018-v1/cid",
+      "CpuCount": 0,
+      "CpuPercent": 0,
+      "CpuPeriod": 0,
+      "CpuQuota": 0,
+      "CpuRealtimePeriod": 0,
+      "CpuRealtimeRuntime": 0,
+      "CpuShares": 0,
+      "CpusetCpus": "",
+      "CpusetMems": "",
+      "DeviceCgroupRules": null,
+      "DeviceRequests": null,
+      "Devices": [],
+      "Dns": null,
+      "DnsOptions": [],
+      "DnsSearch": [],
+      "ExtraHosts": null,
+      "GroupAdd": null,
+      "IOMaximumBandwidth": 0,
+      "IOMaximumIOps": 0,
+      "IpcMode": "private",
+      "Isolation": "",
+      "Links": null,
+      "LogConfig": {
+        "Config": {},
+        "Type": "none"
+      },
+      "MaskedPaths": [
+        "/proc/acpi",
+        "/proc/asound",
+        "/proc/interrupts",
+        "/proc/kcore",
+        "/proc/keys",
+        "/proc/latency_stats",
+        "/proc/sched_debug",
+        "/proc/scsi",
+        "/proc/timer_list",
+        "/proc/timer_stats",
+        "/sys/devices/virtual/powercap",
+        "/sys/firmware"
+      ],
+      "Memory": 536870912,
+      "MemoryReservation": 0,
+      "MemorySwap": 536870912,
+      "MemorySwappiness": null,
+      "Mounts": [
+        {
+          "ReadOnly": true,
+          "Source": "/home/animallya96/scratch/raw-cycle-final-producer-20261018-v1/source",
+          "Target": "/audit",
+          "Type": "bind"
+        },
+        {
+          "ReadOnly": true,
+          "Source": "/home/animallya96/scratch/raw-cycle-final-producer-20261018-v1/fixture",
+          "Target": "/fixture",
+          "Type": "bind"
+        },
+        {
+          "ReadOnly": true,
+          "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+          "Target": "/native",
+          "Type": "bind"
+        },
+        {
+          "Source": "/home/animallya96/scratch/raw-cycle-final-producer-20261018-v1/out",
+          "Target": "/out",
+          "Type": "bind"
+        }
+      ],
+      "NanoCpus": 1000000000,
+      "NetworkMode": "none",
+      "OomKillDisable": null,
+      "OomScoreAdj": 0,
+      "PidMode": "",
+      "PidsLimit": 32,
+      "PortBindings": {},
+      "Privileged": false,
+      "PublishAllPorts": false,
+      "ReadonlyPaths": [
+        "/proc/bus",
+        "/proc/fs",
+        "/proc/irq",
+        "/proc/sys",
+        "/proc/sysrq-trigger"
+      ],
+      "ReadonlyRootfs": true,
+      "RestartPolicy": {
+        "MaximumRetryCount": 0,
+        "Name": "no"
+      },
+      "Runtime": "runc",
+      "SecurityOpt": [
+        "no-new-privileges"
+      ],
+      "ShmSize": 67108864,
+      "Tmpfs": {
+        "/tmp": "rw,noexec,nosuid,size=64m"
+      },
+      "UTSMode": "",
+      "Ulimits": [
+        {
+          "Hard": 30,
+          "Name": "cpu",
+          "Soft": 30
+        },
+        {
+          "Hard": 1048576,
+          "Name": "fsize",
+          "Soft": 1048576
+        }
+      ],
+      "UsernsMode": "",
+      "VolumeDriver": "",
+      "VolumesFrom": null
+    },
+    "full_mounts": [
+      {
+        "Destination": "/audit",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/raw-cycle-final-producer-20261018-v1/source",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/fixture",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/raw-cycle-final-producer-20261018-v1/fixture",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/native",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": false,
+        "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+        "Type": "bind"
+      },
+      {
+        "Destination": "/out",
+        "Mode": "",
+        "Propagation": "rprivate",
+        "RW": true,
+        "Source": "/home/animallya96/scratch/raw-cycle-final-producer-20261018-v1/out",
+        "Type": "bind"
+      }
+    ],
+    "mount_order_equal": false,
+    "hostconfig_differences": {
+      "OomKillDisable": [
+        false,
+        null
+      ]
+    },
+    "create_argv": [
+      "docker",
+      "--host",
+      "unix:///var/run/docker.sock",
+      "create",
+      "--name",
+      "raw-cycle-final-producer-20261018-v1",
+      "--cidfile",
+      "/home/animallya96/scratch/raw-cycle-final-producer-20261018-v1/cid",
+      "--pull",
+      "never",
+      "--user",
+      "1000:1000",
+      "--network",
+      "none",
+      "--read-only",
+      "--cpus",
+      "1",
+      "--memory",
+      "512m",
+      "--memory-swap",
+      "512m",
+      "--pids-limit",
+      "32",
+      "--cap-drop",
+      "ALL",
+      "--security-opt",
+      "no-new-privileges",
+      "--no-healthcheck",
+      "--log-driver",
+      "none",
+      "--ulimit",
+      "cpu=30:30",
+      "--ulimit",
+      "fsize=1048576:1048576",
+      "--tmpfs",
+      "/tmp:rw,noexec,nosuid,size=64m",
+      "--workdir",
+      "/audit",
+      "--env",
+      "PYTHONPATH=/audit",
+      "--env",
+      "PYTHONDONTWRITEBYTECODE=1",
+      "--env",
+      "ANIOS_TEST_MODE=1",
+      "--env",
+      "PYTHONUNBUFFERED=1",
+      "--env",
+      "OPENBLAS_NUM_THREADS=1",
+      "--env",
+      "OMP_NUM_THREADS=1",
+      "--env",
+      "MKL_NUM_THREADS=1",
+      "--env",
+      "NUMEXPR_NUM_THREADS=1",
+      "--env",
+      "VECLIB_MAXIMUM_THREADS=1",
+      "--env",
+      "BLIS_NUM_THREADS=1",
+      "--mount",
+      "type=bind,src=/home/animallya96/scratch/raw-cycle-final-producer-20261018-v1/source,dst=/audit,readonly",
+      "--mount",
+      "type=bind,src=/home/animallya96/scratch/raw-cycle-final-producer-20261018-v1/fixture,dst=/fixture,readonly",
+      "--mount",
+      "type=bind,src=/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source,dst=/native,readonly",
+      "--mount",
+      "type=bind,src=/home/animallya96/scratch/raw-cycle-final-producer-20261018-v1/out,dst=/out",
+      "--entrypoint",
+      "python",
+      "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+      "/audit/run.py"
+    ]
+  },
+  "test_names": [
+    "test_private_producer_commit_reopen_and_same_session_nightly",
+    "test_actual_kill_after_reservation_stays_open_without_native_replay",
+    "test_actual_kill_after_native_save_never_repeats_fold_or_save",
+    "test_actual_kill_after_prepared_refuses_uncommitted_recovery",
+    "test_actual_kill_after_commit_recovers_only_original_result_marker",
+    "test_public_and_pre_reservation_component_guards",
+    "test_post_prepared_component_change_stops_commit",
+    "test_conflicting_open_reservation_and_prepared_tamper_refuse"
+  ],
+  "actual_test_log": "test_actual_kill_after_commit_recovers_only_original_result_marker (backend.tests.test_historical_raw_cycle_final.RawCycleFinalTests.test_actual_kill_after_commit_recovers_only_original_result_marker) ... ok\ntest_actual_kill_after_native_save_never_repeats_fold_or_save (backend.tests.test_historical_raw_cycle_final.RawCycleFinalTests.test_actual_kill_after_native_save_never_repeats_fold_or_save) ... ok\ntest_actual_kill_after_prepared_refuses_uncommitted_recovery (backend.tests.test_historical_raw_cycle_final.RawCycleFinalTests.test_actual_kill_after_prepared_refuses_uncommitted_recovery) ... ok\ntest_actual_kill_after_reservation_stays_open_without_native_replay (backend.tests.test_historical_raw_cycle_final.RawCycleFinalTests.test_actual_kill_after_reservation_stays_open_without_native_replay) ... ok\ntest_conflicting_open_reservation_and_prepared_tamper_refuse (backend.tests.test_historical_raw_cycle_final.RawCycleFinalTests.test_conflicting_open_reservation_and_prepared_tamper_refuse) ... ok\ntest_post_prepared_component_change_stops_commit (backend.tests.test_historical_raw_cycle_final.RawCycleFinalTests.test_post_prepared_component_change_stops_commit) ... ok\ntest_private_producer_commit_reopen_and_same_session_nightly (backend.tests.test_historical_raw_cycle_final.RawCycleFinalTests.test_private_producer_commit_reopen_and_same_session_nightly) ... ok\ntest_public_and_pre_reservation_component_guards (backend.tests.test_historical_raw_cycle_final.RawCycleFinalTests.test_public_and_pre_reservation_component_guards) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 11.041s\n\nOK\n",
+  "phases": {
+    "preflight": {
+      "exit": 0,
+      "remote_quiescence_inferred": false
+    },
+    "stage": {
+      "exit": 0,
+      "remote_quiescence_inferred": false
+    },
+    "source-copy": {
+      "exit": 0,
+      "remote_quiescence_inferred": false
+    },
+    "execute": {
+      "exit": 0,
+      "remote_quiescence_inferred": false
+    },
+    "results": {
+      "exit": 0,
+      "remote_quiescence_inferred": false
+    }
+  },
+  "all_phase_stderr_empty": true,
+  "retained_results": {
+    "create-argv.json": {
+      "sha256": "4ea2c5ca22b27a6c09bb947c8b47bf061d8a7627474c814f45de0e6dee3e42d2",
+      "physical": {
+        "st_ctime_ns": "1792359874754850148",
+        "st_dev": "66306",
+        "st_ino": "60589581",
+        "st_mtime_ns": "1792359874754850148",
+        "st_size": "1508"
+      }
+    },
+    "inspect-after.json": {
+      "sha256": "8313a5108ce619a0b804550027b5f251386cefc18593423bb48d1cfa5120b978",
+      "physical": {
+        "st_ctime_ns": "1792359886633462643",
+        "st_dev": "66306",
+        "st_ino": "60589615",
+        "st_mtime_ns": "1792359886633462643",
+        "st_size": "3594"
+      }
+    },
+    "inspect-before.json": {
+      "sha256": "c3343a1d464cd215ecf0283e2c35fc923b5b462a87243419295ab0b51fec9f84",
+      "physical": {
+        "st_ctime_ns": "1792359874896839559",
+        "st_dev": "66306",
+        "st_ino": "60589617",
+        "st_mtime_ns": "1792359874896839559",
+        "st_size": "3576"
+      }
+    },
+    "out/proof.json": {
+      "sha256": "9c1bf94c993d56dea5470f4a6df9d5d1b84997e3df08e914e632128bf357058f",
+      "physical": {
+        "st_ctime_ns": "1792359886538654668",
+        "st_dev": "66306",
+        "st_ino": "60591317",
+        "st_mtime_ns": "1792359886538654668",
+        "st_size": "57530"
+      }
+    },
+    "run.log": {
+      "sha256": "36fc171992898362114f292451986efccef374a750c8c92b00edbdd7d64cc274",
+      "physical": {
+        "st_ctime_ns": "1792359886530987659",
+        "st_dev": "66306",
+        "st_ino": "60589618",
+        "st_mtime_ns": "1792359886530987659",
+        "st_size": "1647"
+      }
+    },
+    "source/pins.json": {
+      "sha256": "342b601506552f1c3fddcc811b4900f48094fa25737e3df5e37841be5e6a91a0",
+      "physical": {
+        "st_ctime_ns": "1792359873320854022",
+        "st_dev": "66306",
+        "st_ino": "60589549",
+        "st_mtime_ns": "1792359873320854022",
+        "st_size": "3368"
+      }
+    },
+    "stage.json": {
+      "sha256": "7143e0e984d2e86e6794dfc88aeb7f1ea3a49569c78f516f438e5fc7df22b547",
+      "physical": {
+        "st_ctime_ns": "1792359873323577656",
+        "st_dev": "66306",
+        "st_ino": "60589550",
+        "st_mtime_ns": "1792359873323577656",
+        "st_size": "4370"
+      }
+    }
+  },
+  "controls": {
+    "/tmp/run_raw_cycle_final_producer_20261018.py": {
+      "sha256": "15f6def784e8d250adb4deadfc8eb4f218151c305f228750fd55f7d01e29298f",
+      "bytes": 6823
+    },
+    "/tmp/launch_raw_cycle_final_producer_20261018.py": {
+      "sha256": "b8e04da6977ec7b76825c7ebf93b0122ef1f3dfcba26757328e82c6ca94b145e",
+      "bytes": 10713
+    },
+    "/tmp/raw_cycle_final_producer_remote_20261018.py": {
+      "sha256": "8b49780d3c606ab3eda0aedaab1b1a6a6dabcdf0b3bbc478a1a2ba80e011260e",
+      "bytes": 13997
+    },
+    "/tmp/get_raw_cycle_final_producer_results_20261018.py": {
+      "sha256": "ceb6da3c7dc851de446542db54230ecfe013736cde8f570d0a33fb1d81e617cb",
+      "bytes": 2051
+    }
+  },
+  "product_test_pins": {
+    "backend/market/historical_conditional_nightly.py": "2b9ed4161123813a7d126229e4912e8c8b873caf896c4bd2a84d8b20f7fb95ee",
+    "backend/market/historical_conditional_cycle.py": "086a85c052aa536edc77cf92035864eb92c8ce009d3e5593fa8f44e4b67bca9a",
+    "backend/market/historical_physical_checkpoint.py": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604",
+    "backend/market/historical_paper_component.py": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648",
+    "backend/market/historical_packet_store.py": "be90098bf2c64e7e8da390f2b40db646b50c7d0be659e1a3c9391b8b5595fdbf",
+    "backend/market/historical_packet_demand.py": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0",
+    "backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+    "backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+    "backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+    "backend/tests/test_historical_paper_component_integration.py": "906c22c408316e76ec04e94fbda874dbac0615ef61cf122f082b70ee2e0e0300",
+    "backend/tests/test_historical_packet_store.py": "3556d1b866a4b48d3cad9508eee85b5e799ba8e5d7255ca48e7635747a1926aa",
+    "backend/market/historical_native_metadata.py": "c234c1005a7a8e50062be3aadcf6892e34a0adf8249d3351b69bd6e861b2d13e",
+    "backend/tests/test_historical_raw_nightly_metadata.py": "f7a4c26e44249122e5e7107d7cde71bd2cdf30a8463e869f09fa1dfe3682b182",
+    "backend/market/historical_broker_checkpoint.py": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08",
+    "backend/market/historical_raw_nightly.py": "2bf3013bf60e0ba057fbd6302fe30d625467d40719dc7c13520fb579d499ca09",
+    "backend/tests/test_historical_raw_nightly_lifecycle.py": "a1c9c5a730863bd60231eb7db3973fb3a9218c271edc11b767f9353baaafaad2",
+    "backend/market/historical_raw_cycle.py": "3dee58cf49bd1e4f2a4879ca2ca103d166179b3f3dba33c143b66406f87e1bfa",
+    "backend/tests/test_historical_raw_cycle_nightly.py": "c7caa7bee45aa529d34f44d9153dfe6a75bdcc84a246bdb64508e0820a1c1b56",
+    "backend/market/historical_conditional_settlement.py": "9e194856545dbf07e0ba6f0f2af9b022f75f767ee6371bb6af1f85e522f4c90d",
+    "backend/tests/test_historical_raw_settlement_integration.py": "ac14872456f03729687f7f37bafa1b6c25fe5919b1eaca0592c88e0cd7012e43",
+    "backend/market/historical_raw_cycle_final.py": "823ec6c6edf17e06fd9c2fe67fc4381506c9fa431dbc1896aec68f3a2f9104b0",
+    "backend/tests/test_historical_raw_cycle_final.py": "e0ccfe0ee179e190f08d77439cdd19f4ec11fc28394fc1a360f20bded0130e7a"
+  },
+  "local_control_transport_readbacks": {
+    "execute-argv.json": {
+      "sha256": "b15cb189587ecfd5182f395b9e295f962b1cb13f959c1ae283f1c74b2052c2cd",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189077738",
+        "st_size": "17304",
+        "st_mtime_ns": "1792359874199740226",
+        "st_ctime_ns": "1792359874199740226"
+      }
+    },
+    "execute-exit.json": {
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189078599",
+        "st_size": "48",
+        "st_mtime_ns": "1792359886627295172",
+        "st_ctime_ns": "1792359886627295172"
+      }
+    },
+    "execute-input.bin": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189077739",
+        "st_size": "0",
+        "st_mtime_ns": "1792359874200007903",
+        "st_ctime_ns": "1792359874200084167"
+      }
+    },
+    "execute-stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189077741",
+        "st_size": "0",
+        "st_mtime_ns": "1792359874200384895",
+        "st_ctime_ns": "1792359874200425175"
+      }
+    },
+    "execute-stdout": {
+      "sha256": "79cfc5b244ca33e8560338c9bf441f53caf7b962da822fe04f2f98f251747bd9",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189077740",
+        "st_size": "245",
+        "st_mtime_ns": "1792359886621901180",
+        "st_ctime_ns": "1792359886621901180"
+      }
+    },
+    "launcher.py": {
+      "sha256": "b8e04da6977ec7b76825c7ebf93b0122ef1f3dfcba26757328e82c6ca94b145e",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189067339",
+        "st_size": "10713",
+        "st_mtime_ns": "1792359819338269665",
+        "st_ctime_ns": "1792359819338269665"
+      }
+    },
+    "preflight-argv.json": {
+      "sha256": "68a04b979f43b63cfb822c0d8b2f9f841a3dd3c37d4ed124bbe5b270f09bf1df",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189067340",
+        "st_size": "17241",
+        "st_mtime_ns": "1792359819340115920",
+        "st_ctime_ns": "1792359819340115920"
+      }
+    },
+    "preflight-exit.json": {
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189067346",
+        "st_size": "48",
+        "st_mtime_ns": "1792359820256611096",
+        "st_ctime_ns": "1792359820256611096"
+      }
+    },
+    "preflight-input.bin": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189067341",
+        "st_size": "0",
+        "st_mtime_ns": "1792359819340551063",
+        "st_ctime_ns": "1792359819340617945"
+      }
+    },
+    "preflight-stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189067343",
+        "st_size": "0",
+        "st_mtime_ns": "1792359819341045920",
+        "st_ctime_ns": "1792359819341116594"
+      }
+    },
+    "preflight-stdout": {
+      "sha256": "c85e9c4cb85d3f0fec45be2a6b9409dc0703494a16640478d77359b5a4d85db9",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189067342",
+        "st_size": "243728",
+        "st_mtime_ns": "1792359820206836290",
+        "st_ctime_ns": "1792359820206836290"
+      }
+    },
+    "remote.py": {
+      "sha256": "8b49780d3c606ab3eda0aedaab1b1a6a6dabcdf0b3bbc478a1a2ba80e011260e",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189067337",
+        "st_size": "13997",
+        "st_mtime_ns": "1792359819336631177",
+        "st_ctime_ns": "1792359819336631177"
+      }
+    },
+    "results-argv.json": {
+      "sha256": "635cbb3f6a10ecd5e4fe8fbb15ce01af73e879a9acee08d3e37e14a77312ae5f",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189083672",
+        "st_size": "2708",
+        "st_mtime_ns": "1792359915633001813",
+        "st_ctime_ns": "1792359915633001813"
+      }
+    },
+    "results-exit.json": {
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189083681",
+        "st_size": "48",
+        "st_mtime_ns": "1792359916306987747",
+        "st_ctime_ns": "1792359916306987747"
+      }
+    },
+    "results-input.bin": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189083673",
+        "st_size": "0",
+        "st_mtime_ns": "1792359915633673295",
+        "st_ctime_ns": "1792359915633762654"
+      }
+    },
+    "results-stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189083675",
+        "st_size": "0",
+        "st_mtime_ns": "1792359915634372402",
+        "st_ctime_ns": "1792359915634433662"
+      }
+    },
+    "results-stdout": {
+      "sha256": "a4708da7c70c42aff915ff026c62e4db7edb9b2e1fe8edaf297c4731e0fdaea6",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189083674",
+        "st_size": "102634",
+        "st_mtime_ns": "1792359916253486801",
+        "st_ctime_ns": "1792359916253486801"
+      }
+    },
+    "runner.py": {
+      "sha256": "15f6def784e8d250adb4deadfc8eb4f218151c305f228750fd55f7d01e29298f",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189067338",
+        "st_size": "6823",
+        "st_mtime_ns": "1792359819337387532",
+        "st_ctime_ns": "1792359819337387532"
+      }
+    },
+    "source-copy-argv.json": {
+      "sha256": "89e868c0c21d862cb4934e3b7e4b4ebff45264ad8b91681d41412ce2bff2aebc",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189077551",
+        "st_size": "463",
+        "st_mtime_ns": "1792359873308348961",
+        "st_ctime_ns": "1792359873308348961"
+      }
+    },
+    "source-copy-exit.json": {
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189077736",
+        "st_size": "48",
+        "st_mtime_ns": "1792359874198547114",
+        "st_ctime_ns": "1792359874198547114"
+      }
+    },
+    "source-copy-input.bin": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189077552",
+        "st_size": "0",
+        "st_mtime_ns": "1792359873308850450",
+        "st_ctime_ns": "1792359873308920380"
+      }
+    },
+    "source-copy-stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189077554",
+        "st_size": "0",
+        "st_mtime_ns": "1792359873309254385",
+        "st_ctime_ns": "1792359873309308029"
+      }
+    },
+    "source-copy-stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189077553",
+        "st_size": "0",
+        "st_mtime_ns": "1792359873309097938",
+        "st_ctime_ns": "1792359873309161717"
+      }
+    },
+    "source-pins.json": {
+      "sha256": "d73ea8c47721602f67edd329a1addeb576dd67ba41d09d65d1ce1a4b817cfcd2",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189077346",
+        "st_size": "3820",
+        "st_mtime_ns": "1792359872698048133",
+        "st_ctime_ns": "1792359872698048133"
+      }
+    },
+    "stage-argv.json": {
+      "sha256": "e0b7a625d25a835f1580966919751ea2c942bf1cb6d99d68e7e24b876f451551",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189077391",
+        "st_size": "17302",
+        "st_mtime_ns": "1792359872735565965",
+        "st_ctime_ns": "1792359872735565965"
+      }
+    },
+    "stage-exit.json": {
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189077550",
+        "st_size": "48",
+        "st_mtime_ns": "1792359873307290416",
+        "st_ctime_ns": "1792359873307290416"
+      }
+    },
+    "stage-input.bin": {
+      "sha256": "787c7d23fe10e9ee4c1d184f6fa14c231b9018a4bf882800434e4ae216ec25e0",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189077392",
+        "st_size": "4263",
+        "st_mtime_ns": "1792359872735876549",
+        "st_ctime_ns": "1792359872735876549"
+      }
+    },
+    "stage-stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189077395",
+        "st_size": "0",
+        "st_mtime_ns": "1792359872736212417",
+        "st_ctime_ns": "1792359872736279914"
+      }
+    },
+    "stage-stdout": {
+      "sha256": "d566c5272ebb10734ebfd0386a23d9064b45aab202ffa8c069c95b431f2b28ac",
+      "physical": {
+        "st_dev": "16777223",
+        "st_ino": "189077393",
+        "st_size": "209",
+        "st_mtime_ns": "1792359873284946226",
+        "st_ctime_ns": "1792359873284946226"
+      }
+    }
+  },
+  "source_validation": {
+    "ast_warnings_as_errors": true,
+    "purpose_comments": true,
+    "zero_literal_backspaces": true,
+    "runner_repo_copy_equal": true,
+    "source_pins": 22,
+    "transferred_files": 27,
+    "pinned_payloads": 28,
+    "physical_payloads_plus_pins": 29,
+    "product_test_source_bytes": 487329,
+    "all_pre_existing_repository_files_unchanged": true,
+    "legacy_fold_current_and_final_settlement_unchanged": true,
+    "public_genuine_execution_closed": true,
+    "ruff": "UNAVAILABLE",
+    "full_unit_build_deploy": "NOT_RUN"
+  },
+  "verified": [
+    "Public finalize and recover unconditionally refuse before any reservation, capture or native effect.",
+    "Separate standalone-current-raw-cycle-final/1 physical metadata reservation precedes raw reconciliation/native save; operation namespace depends on identity/submission head, not mutable context/resolved input, preventing a second attempt after interruption.",
+    "Reservation binds exact sources, committed submission and decision entries, prior reserved Nightly/birth/frozen holding identity, distinct Cycle context, finite supplied resolved declaration, exact post-resolution broker bytes and submission paper/latch.",
+    "Actual native desired8/submitted5/filled5 partial reconciliation, >256KiB/NaN save and raw readback preserve exact broker bytes and emit a finite raw_final_operation source/reservation link.",
+    "CAS final receipt and exclusive fsynced prepared marker precede the actual Store OUTCOME append. Source/reservation/live native paper/broker/latch are rechecked before append; committed read bridge validates the exact final before the result marker.",
+    "Actual Store/head persistence and checkpoint reopen; repeated metadata recovery returns the original entry/receipt with unchanged native paper/broker/checkpoint control/Store head. Same-session private Nightly continuation preserves the committed head and synthetic policy count2.",
+    "Four actual owned child SIGKILL controls: after reservation native bytes unchanged and OPEN pauses; after native save changed NaN bytes retained and OPEN pauses; after prepared persistence uncommitted head pauses; after Store commit only original missing result marker is completed.",
+    "Changed resolved declaration cannot create a second operation; prepared marker tamper, post-prepared native mutation, nonfinite resolved data and changed pre-reservation paper refuse. Expected cuts retain all incomplete state without replay.",
+    "All28pinned payload and47native SHA/physical records match; original native writer globals unchanged/forbidden imports empty. Eight exact new test outcomes pass once with zero skips."
+  ],
+  "actual_process_interruption_evidence": {
+    "children": [
+      {
+        "cut": {
+          "path": "/out/cases/runTest-acdnnw4x/store/synthetic-account/actual-child-cut.json",
+          "physical": {
+            "st_ctime_ns": "1792359876877880043",
+            "st_dev": "66306",
+            "st_ino": "60589840",
+            "st_mtime_ns": "1792359876877880043",
+            "st_size": "203"
+          },
+          "sha256": "b6e6dd0852cdf9ea83531eeeef3444f18fd2820fcff32329d8c83f2e4e730b61",
+          "value": {
+            "head": "544afdf26159f8348afdd037a1d7d440202167d8bf8e1fd778cde8fba2a9910c",
+            "paper_sha256": "ac88c185235b3545b75ff9e51fd4346b3225aa1388fe91f342f554ee13ca8891",
+            "pid": 7,
+            "point": "raw_final_outcome_committed"
+          }
+        },
+        "exit": {
+          "path": "/out/cases/runTest-acdnnw4x/store/synthetic-account/actual-child-exit.json",
+          "physical": {
+            "st_ctime_ns": "1792359876885137833",
+            "st_dev": "66306",
+            "st_ino": "60589841",
+            "st_mtime_ns": "1792359876885137833",
+            "st_size": "184"
+          },
+          "sha256": "fc0e9438924c642765d9f35c58eab35100da9af367cde446ff0324c3a70101c9",
+          "value": {
+            "boundary": "raw_final_outcome_committed",
+            "exitcode": -9,
+            "head": "544afdf26159f8348afdd037a1d7d440202167d8bf8e1fd778cde8fba2a9910c",
+            "pid": 7,
+            "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+          }
+        }
+      },
+      {
+        "cut": {
+          "path": "/out/cases/runTest-btzho77t/store/synthetic-account/actual-child-cut.json",
+          "physical": {
+            "st_ctime_ns": "1792359878232219501",
+            "st_dev": "66306",
+            "st_ino": "60590042",
+            "st_mtime_ns": "1792359878232219501",
+            "st_size": "198"
+          },
+          "sha256": "7788c0021fb34c1af7d09da13903c4c59c2ea28c0551a12eccf59a80558badcc",
+          "value": {
+            "head": "69884cf6245212f82c5dd6981b5ee8fe86743cfa0b0005d67d4d04caf8b2aad4",
+            "paper_sha256": "b35062ab1f8c435d9a02cbe2e7524e820561204fb446de8f1fd19d07de3723ca",
+            "pid": 8,
+            "point": "raw_final_native_saved"
+          }
+        },
+        "exit": {
+          "path": "/out/cases/runTest-btzho77t/store/synthetic-account/actual-child-exit.json",
+          "physical": {
+            "st_ctime_ns": "1792359878244037687",
+            "st_dev": "66306",
+            "st_ino": "60590052",
+            "st_mtime_ns": "1792359878244037687",
+            "st_size": "179"
+          },
+          "sha256": "5107f6a4dabcaa70dcc477db55d825d84eab5827f4020c38157375a25b24b6e9",
+          "value": {
+            "boundary": "raw_final_native_saved",
+            "exitcode": -9,
+            "head": "69884cf6245212f82c5dd6981b5ee8fe86743cfa0b0005d67d4d04caf8b2aad4",
+            "pid": 8,
+            "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+          }
+        }
+      },
+      {
+        "cut": {
+          "path": "/out/cases/runTest-wv1dnxca/store/synthetic-account/actual-child-cut.json",
+          "physical": {
+            "st_ctime_ns": "1792359879604959825",
+            "st_dev": "66306",
+            "st_ino": "60590264",
+            "st_mtime_ns": "1792359879604959825",
+            "st_size": "194"
+          },
+          "sha256": "9d006c3d7ee7ace0a21601a9671dce1ae875f9727723b270ca2209569942d11e",
+          "value": {
+            "head": "da08ca0b4c8d2e73693b990159a5c09411f6517e92825ff19b48344d51fa1d9e",
+            "paper_sha256": "e833bf56c44b73addcd37a7d1a24a7846b802643e8c72c22ff6b0e4467cfcfd3",
+            "pid": 9,
+            "point": "raw_final_prepared"
+          }
+        },
+        "exit": {
+          "path": "/out/cases/runTest-wv1dnxca/store/synthetic-account/actual-child-exit.json",
+          "physical": {
+            "st_ctime_ns": "1792359879614119211",
+            "st_dev": "66306",
+            "st_ino": "60590265",
+            "st_mtime_ns": "1792359879614119211",
+            "st_size": "175"
+          },
+          "sha256": "865a074e77c0e202a5b2d78dd55194984fea03cb136e1827a562bfaa8e42ab55",
+          "value": {
+            "boundary": "raw_final_prepared",
+            "exitcode": -9,
+            "head": "da08ca0b4c8d2e73693b990159a5c09411f6517e92825ff19b48344d51fa1d9e",
+            "pid": 9,
+            "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+          }
+        }
+      },
+      {
+        "cut": {
+          "path": "/out/cases/runTest-qm4s3qlo/store/synthetic-account/actual-child-cut.json",
+          "physical": {
+            "st_ctime_ns": "1792359880898975169",
+            "st_dev": "66306",
+            "st_ino": "60590472",
+            "st_mtime_ns": "1792359880898975169",
+            "st_size": "195"
+          },
+          "sha256": "071cb4028562b0d9645e13e9da0f7857ddf6fe34b2cf72c08c539517fb1ad49d",
+          "value": {
+            "head": "b9385a24b4d455a7bd134a13a3cd940d4379bd0b4a69a027a274430768b27e70",
+            "paper_sha256": "4d43640d96fe82e129615942ddc4193c1bfb980313171cd056d0d12a820a73f8",
+            "pid": 10,
+            "point": "raw_final_reserved"
+          }
+        },
+        "exit": {
+          "path": "/out/cases/runTest-qm4s3qlo/store/synthetic-account/actual-child-exit.json",
+          "physical": {
+            "st_ctime_ns": "1792359880907069220",
+            "st_dev": "66306",
+            "st_ino": "60590473",
+            "st_mtime_ns": "1792359880907069220",
+            "st_size": "176"
+          },
+          "sha256": "24cade8ee2fa9f9e2ccf77fc6b474780a008427b4d55f006bbc693b4c44a4bd3",
+          "value": {
+            "boundary": "raw_final_reserved",
+            "exitcode": -9,
+            "head": "b9385a24b4d455a7bd134a13a3cd940d4379bd0b4a69a027a274430768b27e70",
+            "pid": 10,
+            "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+          }
+        }
+      }
+    ],
+    "root_canonical_witness_reconstruction": "All eight parsed cut/exit records re-encoded with the unchanged pinned demand.encoded formatter; complete raw SHA and lengths match,1504 bytes total.",
+    "raw_witness_files": "Retained at the eight exact source-bound /out/cases paths on Spark1; proof contains complete parsed witness records, raw SHA and exact decimal physical fields, not verbatim base64 bodies.",
+    "scope": "Actual owned process SIGKILL, not power loss or kill inside a native syscall/SQLite commit; cut markers precede kill, observed Process PID/exitcode and bounded reaping checked."
+  },
+  "limitations": [
+    "Private final-production/recovery tail only. DECISION/SUBMISSION production, resolver declaration, Cycle context parser, policy/trade/calendar/source-manifest/marker globals are explicitly SYNTHETIC; full Cycle resolver/sender/constructor and genuine inputs are not admitted.",
+    "Complete-source CodeTypes run with explicit globals; native broker, paper, raw settlement, checkpoint and SQLite/CAS execute, but native market_daily planning/models/providers do not.",
+    "Recovery validates broker checkpoints by deserializing immutable stored bytes; it never restores account files, captures, reconciles, saves or appends. Store OUTCOME_COMMITTED does not establish native operation or durable simulator adoption.",
+    "Reservation here is bounded source/lineage metadata, not complete physical capacity. Native temporary inode/directory metadata, Store CAS/SQLite/latch/entry-decision files and two-host resources remain unreserved as a complete lifecycle.",
+    "Runtime512MiB=swap/1CPU/PIDs32/tmp64, explicit synthetic checkpoint512KiBspans/1MiBraw/32body32pages plus reused fixture reservations, native artifact1MiBFSIZE and source/control/log256KiB are unchanged; fresh headroom is not reservation.",
+    "Full horizon/model/deepcopy/native load-save/encoding RAM, actual context/calendar/economics, full resolver/sender, power-loss/transport-loss and complete native/two-host/genuine admission remain UNVERIFIED. No full unit suite/build/lint/deploy/UI/model acceptance claim.",
+    "Original timingFAILED/publicationCLOSED/missing original receipts/immutable roots and genuinev6OPEN-PAUSED unchanged; no replay/adoption/new genuine run, Spark2 load, model/provider/account/service change or production deploy."
+  ],
+  "pre_runtime_review_notes": [
+    "No unexpected operational/test failure or replay. The four SIGKILLs, BoundaryCut and mutated-state refusals are deliberate NEW synthetic controls.",
+    "Before first runtime, recovery comment was narrowed from no restore to no account-file restore, because validation deserializes broker checkpoints; unused import removed and exact source pin updated. No function body changed by that wording fix.",
+    "New source/controls were independently reviewed before first prerequisite, actual fresh proof before one run, and observed-proof-pinned getter before results read. Prior completed controls were read as SOURCE only; no old gate or helper test body was run."
+  ],
+  "independent_review": {
+    "agent": "/root/trading_action_consistency",
+    "mode": "READONLY",
+    "reviewed": [
+      "complete producer/test source",
+      "new controls and exact first prerequisite call",
+      "actual fresh preflight and exact dependent run",
+      "observed-proof-pinned getter and exact call",
+      "actual proof/runtime/all8tests/fourPID-exit/canonicalwitness/scope"
+    ],
+    "result": "NO_MATERIAL_MISMATCH"
+  },
+  "next_product_task": "Implement an explicit physically reserved native-save composition across the private raw Nightly birth/close and raw Cycle final tail. Inspect/reuse a058ab10 ReservedWriter from the existing settlement worktree, preserving its unchanged8MiB slot bound, exact original writer/self-binding guards and no shared tempfile patch. It writes only its own root/work/paper/state.json, starts with an absent destination/None preimage and is incompatible with an arbitrary existing account/observer replacement; do not call it drop-in or adopt/relocate failed genuinev6 state. Use a new explicitly SYNTHETIC account rooted in the reserved workspace from birth, and prove preallocated same-inode native saves, byte parity and interruption/recovery with NEW assertions. Full native horizon/metadata/Store/latch/two-host/model/RAM/genuine admission stays closed until actually implemented and measured; no cap raise or old gate replay. Preserve the current1MiB native FSIZE as well; use a distinct source-bound smaller synthetic reservation version if the unchanged8MiB-slot helper cannot fit, never silently raise a cap.",
+  "next_source_only_facts": {
+    "reserved_writer_path": "/Users/animallya/.codex/worktrees/settlement-quantity-retention-20261017/PersonalAssistant/backend/market/historical_native_write_reservation.py",
+    "sha256": "a058ab1051190c85d2080ed1dfbfd5ff02cda9221f48f26fa4500c76a3cfaaf2",
+    "bytes": 28494,
+    "only_existing_source_read": true,
+    "no_adapter_or_old_test_execution": true
+  },
+  "diagram_impact": "NONE"
+}

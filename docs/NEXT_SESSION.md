@@ -1,5 +1,103 @@
 # Next session
 
+## 2026-10-18 — Private raw Cycle final producer/recovery VERIFIED
+
+Product acceptance remains the priority. This NEW eight-test final-tail seam is
+CLOSED; never rerun its preflight/stage/copy/test/getter, the previous committed-read
+eight, or prior7/8/10/11/5 gates for documentation. Public genuine execution and
+production remain unchanged. Source checkpoint280788355ad9fe2c2ca2d589cd3e6b26adea076e,
+tested tree8a00debc144e625f455f569e1e82240633f60071, adds ONLY three files:
+historical_raw_cycle_final.py, its new test module and a separate runner. Every
+pre-existing file, including legacy _fold_current/_final_settlement, is unchanged.
+
+New standalone-current-raw-cycle-final/1 is a PRIVATE final-production/recovery
+tail after committed submission. Public finalize/recover refuse before effects.
+A deterministic identity/submission-head operation namespace cannot be changed
+by supplying a different resolved/context declaration after interruption.
+Exclusive fsynced reservation binds exact sources, submission/decision entries,
+prior reserved Nightly/birth/frozen holding identity, separate Cycle context,
+finite supplied resolved declaration, post-resolution broker bytes and submitted
+paper/latch BEFORE native fold/save. Prepared CAS receipt/source-reservation link
+and exclusive fsynced prepared marker precede the actual Store OUTCOME append.
+Source/reservation/live native paper/broker/latch are rechecked before commit.
+The unchanged committed-read bridge then validates the exact final result marker.
+Store commitment remains distinct from native operation/adoption, both FALSE.
+
+Private recovery only authenticates stored metadata/components and may finish
+a missing result marker after the exact authoritative OUTCOME commit. It never
+folds, saves, captures, appends or restores account files. Validation does
+deserialize immutable broker checkpoints. Missing/partial/conflicting reservation,
+uncommitted prepared receipt or wrong descendant remains PAUSED without replay.
+
+VERIFIED: ONE newc15d8f125bbb8cef971c2b1e2af716af92ae8a9ff6ce7f198f827a1d8c943b53/f612
+exited0/noOOM21:44:46.570648886Z. Eight NEW tests passed0fail/0error/0skip in
+11.044714189s/57528KiB. Actual native desired8/submitted5/filled5 partial fold/save
+retained >256KiB/NaN paper and exact broker bytes. Actual Store OUTCOME commit,
+reopen, repeated original-result recovery and same-session private Nightly close
+passed; policy count2 and final Store head unchanged during Nightly.
+
+Four ACTUAL owned child SIGKILLs passed: in-container PID7 after OUTCOME commit,
+PID8 after native save, PID9 after prepared persistence, PID10 after reservation;
+all exit-9, bounded/reaped with exact retained cut/head/PID/hash+exit records.
+Reservation cut leaves native bytes unchanged; native-save cut retains changed
+bytes but no prepared result; prepared/uncommitted cut cannot append on recovery;
+post-commit cut completes ONLY the original missing result marker. Paper/broker/
+checkpoint control/head are unchanged across recovery. These are actual process
+kills at protocol boundaries, NOT power loss or interruption inside a native
+syscall/SQLite commit. Conflicting declarations, prepared tamper, post-prepared
+native mutation, nonfinite resolved data, changed current paper and public calls
+all refused. Deliberate injected BoundaryCut/mutation controls are not unexpected
+operational failures. No unexpected runtime/test failure or replay occurred.
+
+Read research/raw-cycle-final-producer-proof-2026-10-18.json. Proof9c1bf94c/57530B,
+complete parsed four cut+exit witness records and seven fixed results remain
+/tmp/raw-cycle-final-producer-20261018-v1 and matching Spark1scratch. All five
+phases0/empty stderr.22product/test pins;28pinned payloads+pins=29physical files;
+47native SHA/physical bindings/writer globals unchanged/forbidden imports empty.
+Full4mounts equal by unique destination/raw order differs; HostConfig ONLY
+OomKillDisablefalse→null. UID1000/noneRO/1CPU/512MiB=swap/PIDs32/tmp64, explicit
+synthetic512KiBspan/1MiBraw/32body32page checkpoint plus reused reservations,
+native artifact1MiBFSIZE/source-controls-log256KiB/production caps unchanged.
+Twenty-nine local control/transport fullSHA/physical double-read bookends retain
+exact decimal ns strings. ROOT and existing healthy READONLY reviewer reconstructed
+all8canonical witness byte strings using the pinned encoder:1504B/all SHA+lengths
+match. Raw witness files remain Spark; proof has complete parsed records, raw SHA
+and physical identity rather than verbatim base64. Exact sources/calls/fresh
+prerequisite/getter/actual results reviewed independently. Purpose/AST warnings/
+pins/runner-byte/zero-backspace/diff PASS; Ruff unavailable, no full unit/build/
+deploy claim. Diagram impact: NONE — existing private historical adapter boundary.
+
+UNVERIFIED: full Cycle resolver/sender/stage producer/constructors, model/context/
+calendar/economics, complete physical reservation/native filesystem metadata/
+Store/latch/entry-decision/two-host/model/RAM/power-loss/genuine acceptance.
+The final tail accepts a finite supplied resolver declaration; the test's stage
+producer/context parser/policy/trade/calendar/source-manifest globals are SYNTHETIC.
+Exact complete-source CodeTypes and real native broker/paper/storage execute;
+native market_daily planning and model/provider calls do NOT. Metadata reservation
+is not native/Store/whole-lifecycle physical capacity. Full native load/save,
+deepcopy and serialization still have full-horizon RAM limits.
+
+NEXT CONCRETE PRODUCT TASK: implement an explicit physically reserved native-save
+composition across PRIVATE raw Nightly birth/close and raw Cycle final. Inspect
+the existing settlement-worktree historical_native_write_reservation.py
+a058ab1051190c85d2080ed1dfbfd5ff02cda9221f48f26fa4500c76a3cfaaf2/28494B as SOURCE.
+Its unchanged8MiB-slot ReservedWriter writes ONLY its own root/work/paper/state.json,
+starts with absent destination/None preimage and rejects arbitrary observer/global
+replacement; it is NOT drop-in for an existing account. Use a NEW explicitly
+SYNTHETIC account rooted in reserved work space from birth; never relocate/adopt
+genuinev6 or other existing genuine state. Preserve old helper/guards/caps and
+unchanged current1MiB native FSIZE; use a distinct source-bound smaller synthetic
+reservation version if necessary, never silently raise an existing cap. Prove
+preallocated same-inode native saves, exact byte parity and interruption/original
+recovery with NEW assertions. Complete full native horizon/metadata/Store/latch/
+two-host/model/RAM admission before genuine effects; no provenance-audit detours.
+
+Original timingFAILED/publicationCLOSED/missing receipts/immutable roots unchanged;
+genuinev6OPEN-PAUSED/no replay/adoption/new genuine run. No Spark2 load, guard/G08/
+cap weakening, model/provider/account/service change, paid data/tuning/real-money
+orders or historical-main deployment. Heartbeat ACTIVE; quiet on unchanged state;
+no ETA.
+
 ## 2026-10-18 — Committed raw Cycle → private Nightly read bridge VERIFIED
 
 Product acceptance remains the priority. This NEW eight-test committed-read seam
