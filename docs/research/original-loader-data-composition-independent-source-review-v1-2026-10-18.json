@@ -1,0 +1,80 @@
+{
+  "binding_added_guards": [
+    "EXACT_DATA_INTERFACE_SCHEMA_REQUIRED",
+    "EXACT_FOUR_NEW_DATA_INTERFACES_REQUIRED",
+    "EXACT2463_DATA_UNION_REQUIRED",
+    "EXACT_UPSTREAM_COMPOSITION_SCHEMA_REQUIRED",
+    "EXACT_FIVE_UPSTREAM_ADDITIONS_REQUIRED",
+    "EXACT2468_UPSTREAM_UNION_REQUIRED"
+  ],
+  "checks": [
+    "admissions_COMPLETE_AST_only_two_dependency_import_changes",
+    "inputs_COMPLETE_AST_only_new_archive_result_module_schema_identities",
+    "durability_exact_sync_body_bound_no_old_lifecycle_import",
+    "lifecycle_COMPLETE_AST_only_declared_types_imports_16origins_and_receipt_metadata",
+    "binding_COMPLETE_AST_retains_all_old_root_source_calendar_and_map_checks",
+    "exact2463_plus5_union_all_runtime_fields_NULL",
+    "direct_imports_no_old_data_binding_and_public_execute_refuses"
+  ],
+  "contract_sha256": "3a2b5faf0904a89d6c95ca967f4eb1d7af867f0678fba1e934cd7bc1e7bb8f6e",
+  "durability_exact_function": true,
+  "execution_authorized": false,
+  "full_module_AST_comparisons": [
+    "admissions",
+    "inputs",
+    "binding",
+    "lifecycle"
+  ],
+  "module_files": {
+    "admissions": {
+      "bytes": 13412,
+      "functions": 6,
+      "path": "sources/capacity-data-admissions-composition-v1-2026-10-18.py",
+      "payload_bodies_run": false,
+      "proposed_origin": "backend/market/capacity_original_admissions_v2.py",
+      "sha256": "92115c2a2e227cd16eb2cf0fab3e38f9cfb044b01efc9861b600e69493425fb9"
+    },
+    "binding": {
+      "bytes": 18627,
+      "functions": 10,
+      "path": "sources/capacity-data-binding-composition-v1-2026-10-18.py",
+      "payload_bodies_run": false,
+      "proposed_origin": "backend/market/capacity_original_loader_binding_v2.py",
+      "sha256": "8182adf55aa8780b1ae781167734427ef1879298ab3d4456932427773a8298b5"
+    },
+    "durability": {
+      "bytes": 1113,
+      "functions": 1,
+      "path": "sources/capacity-data-durability-composition-v1-2026-10-18.py",
+      "payload_bodies_run": false,
+      "proposed_origin": "backend/market/capacity_original_durability_v1.py",
+      "sha256": "3fbef0d64244652d583b5a751172e0b2ec54d3c196e7f5846b7f90b8b07aa284"
+    },
+    "inputs": {
+      "bytes": 7592,
+      "functions": 4,
+      "path": "sources/capacity-data-inputs-composition-v1-2026-10-18.py",
+      "payload_bodies_run": false,
+      "proposed_origin": "backend/market/capacity_original_inputs_v2.py",
+      "sha256": "e77195289c37d540269cdea2bfdf09ceed2b8c837f63af8e094f7bd4727bd1fe"
+    },
+    "lifecycle": {
+      "bytes": 10511,
+      "functions": 8,
+      "path": "sources/capacity-data-lifecycle-composition-v1-2026-10-18.py",
+      "payload_bodies_run": false,
+      "proposed_origin": "backend/market/capacity_original_loader_lifecycle_v2.py",
+      "sha256": "e001293c9b043005926fc4915649f06924eb6f4923b760cdc419692db2f43fa5"
+    }
+  },
+  "module_origin_members": 16,
+  "new_map": {
+    "bytes": 287897,
+    "path": "original-loader-data-composition-source-map-v1-2026-10-18.json",
+    "sha256": "544fe1859ec11e62f2bf506eff70e9111a6a930d53dff59450d9d4816abaa202"
+  },
+  "payload_functions": 29,
+  "schema": "capacity-data-upstream-independent-source-review/1",
+  "scope": "Complete AST correspondence after declared deltas and direct-import checks only. Not transitive module/call/native/generated/finder/phase closure or runtime/type/numeric/parity/RAM admission.",
+  "status": "SOURCE_AST_MAP_IDENTITY_ONLY_ALL_BODIES_UNRUN"
+}

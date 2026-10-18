@@ -1,0 +1,106 @@
+{
+  "composition_map_sha256": "5a605c1018f3274ad6ccd6e6363e20587e7769b5d46b0cfa2ece3ebcdb85e248",
+  "data_map_sha256": "d78058068ee9fb03722971917a32dcb6589dcf43fa2320fa51d4c998e8c695f0",
+  "deltas": {
+    "admissions": "Only new byte-auth/adaptations imports; original schema2 invocation/runtime/source/producer/calendar/package body checks intact.",
+    "binding": "Only declared new dependency imports/schema; exact old map chain retained, then exact2463 data additions and2468 upstream union. Root/source/calendar/native/module-origin checks unchanged except executor count metadata. No old path override.",
+    "durability": "Exact original sync_directory body and256MiB expression only; standalone new module avoids importing old lifecycle/byte-auth.",
+    "inputs": "New archiveV2 exact guard/import, resultV2 class and schema2; all factory/numerical/economic/readonly bodies otherwise unchanged.",
+    "lifecycle": "Explicit V2 dependencies/archive/source-reader/input result/Pins/authenticate; real clock/private factory/type lineage/fullgraphs/serialization/fsync order retained. New implementation metadata and result schema prevent old byte receipt adoption."
+  },
+  "execution_authorized": false,
+  "guard": "Unchanged030cb5bb guard; no verify whitelist or call/generated manifest. Full import and selected-call closure NOT yet established. Existing V1 modules/binding/maps remain unchanged and refuse these new identities/map.",
+  "identity_and_receipts": "New class/module globals/CodeTypes are distinct. Metadata source correspondence is not runtime/type/alias/readonly/deepcopy/numeric/factory/lifetime/RAM parity. Original2431 producer/reference2446/newexecutor2468 receipts remain separate; original795d4c6b receipt not adopted.",
+  "limits": "16MiB typed map outside ordinary262KiB source/log/packet roots;256MiB result bound unchanged. No cap increase. New declarations are unassembled, not executed-map/finder/runtime admission.",
+  "modules": {
+    "admissions": {
+      "bytes": 13412,
+      "functions": 6,
+      "path": "sources/capacity-data-admissions-composition-v1-2026-10-18.py",
+      "payload_bodies_run": false,
+      "proposed_origin": "backend/market/capacity_original_admissions_v2.py",
+      "sha256": "92115c2a2e227cd16eb2cf0fab3e38f9cfb044b01efc9861b600e69493425fb9"
+    },
+    "binding": {
+      "bytes": 18627,
+      "functions": 10,
+      "path": "sources/capacity-data-binding-composition-v1-2026-10-18.py",
+      "payload_bodies_run": false,
+      "proposed_origin": "backend/market/capacity_original_loader_binding_v2.py",
+      "sha256": "8182adf55aa8780b1ae781167734427ef1879298ab3d4456932427773a8298b5"
+    },
+    "durability": {
+      "bytes": 1113,
+      "functions": 1,
+      "path": "sources/capacity-data-durability-composition-v1-2026-10-18.py",
+      "payload_bodies_run": false,
+      "proposed_origin": "backend/market/capacity_original_durability_v1.py",
+      "sha256": "3fbef0d64244652d583b5a751172e0b2ec54d3c196e7f5846b7f90b8b07aa284"
+    },
+    "inputs": {
+      "bytes": 7592,
+      "functions": 4,
+      "path": "sources/capacity-data-inputs-composition-v1-2026-10-18.py",
+      "payload_bodies_run": false,
+      "proposed_origin": "backend/market/capacity_original_inputs_v2.py",
+      "sha256": "e77195289c37d540269cdea2bfdf09ceed2b8c837f63af8e094f7bd4727bd1fe"
+    },
+    "lifecycle": {
+      "bytes": 10511,
+      "functions": 8,
+      "path": "sources/capacity-data-lifecycle-composition-v1-2026-10-18.py",
+      "payload_bodies_run": false,
+      "proposed_origin": "backend/market/capacity_original_loader_lifecycle_v2.py",
+      "sha256": "e001293c9b043005926fc4915649f06924eb6f4923b760cdc419692db2f43fa5"
+    }
+  },
+  "next": "Independently review exact new import/type/schema/map/lifetime deltas, then SOURCE ONLY inspect full selected import/call/guard closure and bind distinct source-book/finder/phase/generated/native contracts before any synthetic or genuine runtime proposal. No old gate/body/packet replay.",
+  "original_sources": {
+    "admissions": {
+      "path": "sources/original-loader-capacity-admissions-v1-2026-10-18.py",
+      "sha256": "f7a226b3d90472ac3ebe161e4c46beb2c49245d489ac1de4a78f90ee2af6d0a9"
+    },
+    "binding": {
+      "path": "sources/original-loader-capacity-loader-binding-v1-2026-10-18.py",
+      "sha256": "d41e2bf0f408fa77dc2d69160ce2452abde3803998e760b5d6113f9bd0d4bc6b"
+    },
+    "durability": {
+      "path": "sources/original-loader-capacity-admission-lifecycle-v1-2026-10-18.py",
+      "sha256": "3acd8b296b3d14234d7c769e2ce4c5a63c8e381d87d7677476964ea1a5f84b1b"
+    },
+    "inputs": {
+      "path": "sources/original-loader-capacity-inputs-v1-2026-10-18.py",
+      "sha256": "8470e2b579cc39b32113e2fcb88e8e918eac283e900f7d62341059761c524661"
+    },
+    "lifecycle": {
+      "path": "sources/original-loader-capacity-loader-lifecycle-v1-2026-10-18.py",
+      "sha256": "ba888e95f5925d7ffb084ce3d15688299f9987284e8a9e38fd1d54a1c772ebc4"
+    }
+  },
+  "schema": "capacity-data-upstream-source-contract/1",
+  "source_map_declaration": {
+    "bytes": 287897,
+    "path": "original-loader-data-composition-source-map-v1-2026-10-18.json",
+    "sha256": "544fe1859ec11e62f2bf506eff70e9111a6a930d53dff59450d9d4816abaa202"
+  },
+  "status": "SOURCE_ONLY_ALL_NEW_BODIES_UNRUN",
+  "unadmitted": {
+    "admission": null,
+    "bootstrap": null,
+    "call_manifest": null,
+    "caller": null,
+    "entrypoint": null,
+    "executed_map": null,
+    "finder": null,
+    "generated_manifest": null,
+    "launch": null,
+    "model_import_strategy": null,
+    "native_package_closure": null,
+    "owner": null,
+    "packet": null,
+    "phase_manifest": null,
+    "runtime": null,
+    "stager": null,
+    "wrapper": null
+  }
+}
