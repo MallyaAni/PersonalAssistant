@@ -1,0 +1,95 @@
+{
+  "schema": "original-loader-metadata-tiny-source-proof/1",
+  "status": "SOURCE_PACKET_PREPARED_ALL_TEST_BODIES_UNEXECUTED",
+  "starting_revision": "aa898b4d05e8ef2ef7a3036d13f3e93b80adbbd5",
+  "source_revision": "04aceec2ec94f7272fa2b03c8cede643c424445a",
+  "proposal": {
+    "path": "original-loader-metadata-tiny-proposal-2026-10-18.json",
+    "sha256": "f61ece6b752d20d61ce8b1815b315a9adcd34e321c038aceb2fee5bca4f73cd9",
+    "bytes": 7900
+  },
+  "local_source_validation": {
+    "proposal_sha256": "f61ece6b752d20d61ce8b1815b315a9adcd34e321c038aceb2fee5bca4f73cd9",
+    "proposal_bytes": 7900,
+    "packet_records": 40,
+    "book_records": 38,
+    "case_ids": 23,
+    "status": "LOCAL_SOURCE_PACKET_JSON_SHA_READBACK_PASS_NO_PAYLOAD_EXEC"
+  },
+  "packet": {
+    "bytes": 1411906,
+    "decoded_source_bytes": 1050161,
+    "records": 40,
+    "sha256": "881af8743066e336c4abf021b9c7a5ded1e8b0bb55d3f1df03aac7f0112d0a3e"
+  },
+  "source_book": {
+    "bytes": 6471,
+    "records": 38,
+    "sha256": "dc785f33272b61c4bb79c5c456cce8728aede1ac8ee69880e47817766221ef0f"
+  },
+  "pins": {
+    "sources/original-loader-metadata-tiny-2026-10-18.py": {
+      "sha256": "4fbcf5167d5d00a3a5f29d0b84484550e91548a9b466f38fd9433d80d5c81ceb",
+      "bytes": 14660
+    },
+    "sources/original-loader-metadata-tiny-owner-2026-10-18.py": {
+      "sha256": "d1a73446f79c26e627ac74c5face0ad480e5f62fd9a360bfccf37442a4b5c434",
+      "bytes": 7617
+    },
+    "sources/original-loader-metadata-tiny-caller-2026-10-18.py": {
+      "sha256": "5b2151c4ea45512f1a4bf08ad7299c03f5647d43dba5bddfbfde34c59821f272",
+      "bytes": 2439
+    },
+    "sources/prepare-original-loader-metadata-tiny-packet-2026-10-18.py": {
+      "sha256": "fc1abc449d85bce6b55c21ce5db633c5037e341e670d6184cbea96c97e31ab36",
+      "bytes": 4686
+    }
+  },
+  "partial_source_reader_scope": "Actual unchanged SourceBook constructor validates full2446 map declaration; proposed fixture contains31 real retained source files only,29 Python+2documents. authenticate_all never called; authenticated remains False,2415files unread. No2446 source admission claim.",
+  "planned_tests": {
+    "children": 2,
+    "outcomes": 23,
+    "helper_refusals": 16,
+    "adapter_refusals": 6,
+    "positive_partial31_reader": 1,
+    "runtime_observed": 0,
+    "first_source_boundary": "Changed or CURRENT paper bytes fail wholeSHA, not an independently forced internal AST guard.",
+    "reference": "Isolated synthetic declaration/field/path comparison; no PaperState instance/backend import/full original module execution.",
+    "guard_fence_or_old_cases_reexecuted": false
+  },
+  "independent_review": "Existing healthy trading_action_consistency READONLY found no deterministic source-only blocker. Actual acceptance remains unrun; enforce exact packet/book/outcome inventories, actual runtime and independent physical/source preservation before any execution.",
+  "validation": {
+    "AST_JSON_SHA_links": "PASS",
+    "purpose_functions": 22,
+    "diff_check": "PASS",
+    "Ruff": "UNAVAILABLE established environment; no lint claim",
+    "new_payload_import_compile_exec_tests": 0,
+    "source_builder": "Only stdlib local exact source/Git/packet builder ran. No application, numerical, helper, bootstrap, owner or caller payload import/exec.",
+    "remote_stage_SSH_Docker_host_probes_jobs": 0
+  },
+  "preservation": {
+    "local_packet_root": "/tmp/n2-metadata-tiny-packet-20261018-v1",
+    "packet_and_book_files": "Exclusive write/fsync/full byte readback; raw packet/source metadata only, not bulk account data.",
+    "initial_bootstrap_draft": "/tmp/n2-metadata-tiny-drafts-20261018-v1/bootstrap-initial.py:09c18f43/12380B preserved before rootFD/bounded-gzip/source-binding controls added.",
+    "old_sources_roots_admissions": true
+  },
+  "not_ready": {
+    "stager": null,
+    "independent_source_prerequisite_terminal_verifier": null,
+    "remote_root": null,
+    "actual_resources": null,
+    "exact_final_invocation": null,
+    "admission": null,
+    "test_acceptance": null
+  },
+  "next": "Finish separately pinned stager and independent source/prerequisite/terminal/preservation verifier; retain exact packet881af874/bookdc785f33 and review all closure/caller sources. Independently review fresh actual cached e0/UID/jobs/absent roots/resources/exact invocation before one fresh synthetic-only admission and ONE metadata tiny attempt. No old body replay, guard/cap changes, root/admission reuse or genuine loader/model/account execution.",
+  "unchanged": {
+    "helper_d413_harness030c_controller2e50": true,
+    "model_import_strategy": null,
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "historical_weekday_intraday_fill_UI_RAM_horizon": "UNVERIFIED",
+    "heartbeat": "ACTIVE"
+  }
+}
