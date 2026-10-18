@@ -1,0 +1,82 @@
+{
+  "schema": "original-loader-dependency-boundary-proof/1",
+  "status": "SOURCE_REVIEWED_UNEXECUTED_METADATA_PROPOSAL_MODEL_BOUNDARY_OPEN",
+  "starting_revision": "e50b81c6eb893c5d43310a3c30747eaa15da0776",
+  "source_revision": "20f04861dc104b016571a948e4950896260d072e",
+  "artifacts": {
+    "original-loader-dependency-boundary-review-2026-10-18.json": {
+      "sha256": "8a795b2b82fbaf27e4c1d42ee1c0871948792783ffea8923b0b57245071af2e1",
+      "bytes": 27864
+    },
+    "sources/original-loader-capacity-metadata-boundary-2026-10-18.py": {
+      "sha256": "d413e748bf2b1eb63f4d267371f22cf6431f6ae650368676c815b07779723135",
+      "bytes": 5034
+    },
+    "sources/review-original-loader-dependency-boundary-2026-10-18.py": {
+      "sha256": "aa3db9cf78c311ecf545dbaac78101b19a6294bb1140a98ea28d3fd1b84c8917",
+      "bytes": 11584
+    }
+  },
+  "source_review": {
+    "pinned_files": 12,
+    "exact_declaration_ASTs": 24,
+    "original_N2_paper_sha256": "e2eef2f0270497d9a5944212d6581b7ebf503d2675687a172e76690fcc7bc3c3",
+    "paper_fields": 17,
+    "native31_compact_sha256": "99e62ab9f8b02bc315ce59b81f8b461ae5c988e275cdf09cacf2d36b1025f8ab",
+    "CURRENT_paper_substituted": false,
+    "helper_functions": 4,
+    "helper_imports": [
+      "ast",
+      "hashlib",
+      "json",
+      "pathlib"
+    ],
+    "helper_imported_compiled_or_executed": false,
+    "helper_test_acceptance": "UNRUN"
+  },
+  "findings": [
+    "Preservation requires exact PaperState field names and state path metadata, not an account instance. Candidate derives only those declarations after whole original N2 source and exact AST pin checks.",
+    "Source identity can hash the exact31 source files through the real authenticated reader without importing installed policy/account code. Callable injection alone is never source admission.",
+    "Model/calibration/forward modules hash __file__ and dependency source bytes. Moving numeric bodies changes source identities; daily_prefix uses inspect.getsource and requires exact original code.",
+    "The helper alone does not remove existing imports. Unchanged503/ecc/030c genuine bootstrap is still incompatible; model_import_strategy remains null."
+  ],
+  "independent_review": {
+    "worker": "existing trading_action_consistency",
+    "mode": "READONLY_NO_IMPORT_EXEC_TEST_SSH_OR_EDITS",
+    "metadata_helper_and_report": "No blocker as unexecuted metadata-only source proposal; genuine reader binding and unchanged release/source admission remain required.",
+    "architecture_recommendation": "Explicit separately versioned read-only capacity modules; no runtime CodeType/AST projection masquerading as original modules. Preserve unchanged pure forward/calibration files at their real paths. Moved reader classes have NEW identities/type bindings requiring explicit parity.",
+    "full_model_closure_selected_or_admitted": false
+  },
+  "validation": {
+    "AST_JSON_hash_links": "PASS",
+    "purpose_comments": 9,
+    "diff_check": "PASS",
+    "Ruff": "UNAVAILABLE established environment; no lint claim",
+    "new_application_imports": 0,
+    "new_CodeType_compilation": 0,
+    "new_helper_body_executions": 0,
+    "new_tests_or_old_gate_replays": 0,
+    "SSH_Docker_host_probes_jobs": 0,
+    "models_arrays_accounts_read_or_changed": 0,
+    "analysis_program": "Only the new stdlib source-review metadata generator executed locally; helper and application source parsed as AST only."
+  },
+  "gates_before_integration": [
+    "New bounded source-pinned tiny proposal/caller/packet and independently reviewed fresh actual synthetic-only source/image/UID/jobs/resources/invocation admission.",
+    "Exact N2 paper descriptor/path parity, all17 fields/all31 hash paths and held-FD reader binding; wrong source/CURRENT/layout/AST/schema/pins/bytes/reader must fail closed.",
+    "Real guard unchanged; reference controls explicitly synthetic and isolated. No account object, native-state normalization or genuine loader run.",
+    "A concrete capacity module boundary, new executed-source map and separate original-source map/contract, full-compilation identities and explicit parity of types/identities/arrays/allocation lifetimes. No AST-only equivalence claim."
+  ],
+  "unchanged": {
+    "old_sources_contracts_roots_admissions": true,
+    "guard_G08_caps_source_config_checks": true,
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "missing_receipts": "UNCHANGED",
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "genuine_loader_or_model_or_history_run": false,
+    "historical_weekday_intraday_fill_UI_combined_RAM_horizon": "UNVERIFIED",
+    "production_deployed": false,
+    "heartbeat": "ACTIVE"
+  },
+  "next": "Prepare the narrow metadata helper tiny proposal and fail-closed controls with independent review and fresh scoped synthetic admission before any new test. Source-review explicit separately versioned capacity modules and original-source/identity/type/parity obligations; model import strategy is still unresolved. Do not replay65+4/tiny/diagnostics/v2 or launch genuine work."
+}

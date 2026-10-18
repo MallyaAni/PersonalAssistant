@@ -1,5 +1,55 @@
 # Next session
 
+## 2026-10-18 — Capacity metadata boundary SOURCE reviewed; helper UNEXECUTED
+
+Read research/original-loader-dependency-boundary-proof-2026-10-18.json and
+original-loader-dependency-boundary-review-2026-10-18.json. Source20f04861dc104b016571a948e4950896260d072e
+pins review8a795b2b/27864B, helperd413e748/5034B and analyzeraa3db9cf/11584B.
+Twelve exact sources/24 declaration ASTs reviewed; N2 papere2eef2f0 from
+original27471 Git, CURRENTa8 excluded. No application import/CodeType compile,
+helper import/body execution/test, numerical/model/account/data read, SSH/
+host probe/Docker/new job, old gate replay or production change this checkpoint.
+
+New DISTINCT source-only helper has four stdlib functions. It pins whole N2
+paper bytes and exact PaperState/state_path ASTs before deriving17 field names
+and ['paper','state.json']; no PaperState instance/account function executes.
+Its native-source helper requires exact31 map99e62 and hashes every returned
+source byte. A future caller MUST bind the real authenticated SourceBook;
+callable injection alone is not genuine source/release admission. No existing
+2446/503/ecc/030c route imports this helper. All helper acceptance UNRUN.
+
+Source review also shows constructor/calibration/forward receipts read their
+real __file__/dependency hashes; daily_prefix uses inspect.getsource. Moving
+numeric bodies, projecting CodeTypes or changing globals/class ancestry/
+super cells/type checks can alter identities and semantics. AST equality is
+not parity of values, missingness, types, readonly flags, aliasing/deepcopy,
+allocation lifetimes or peak memory. Existing genuine bootstrap remains
+incompatible; model_import_strategy is deliberately null.
+
+Healthy existing worker READONLY accepted helper/report ONLY as unexecuted
+metadata proposals; no operations/edits/new or limited worker. Recommendation:
+explicit separately versioned capacity-only modules, NOT runtime AST/CodeType
+projection masquerading as original modules. Separate read-only archive
+admission/preservation from StreamAudit/nightly/account imports, loader daily-
+prefix/passive-economic helpers from study CLIs, and explicit capacity reader
+classes from policy classes. Keep unchanged pure forward/calibration files at
+real paths. New reader identities/type bindings need explicit parity under a
+new immutable contract/executed-source map, separately retaining original2431/
+N2native31/producer27471 provenance. Old503/ecc/guard/G08 remain unchanged.
+
+NEXT ROOT: prepare narrow source-pinned metadata-helper tiny proposal/caller/
+packet and fail-closed controls; independent review + fresh actual synthetic-
+only source/image/UID/jobs/resources/invocation admission BEFORE any new test.
+Cover exact N2 layout/path17fields/all31 hashes and real reader binding; wrong
+source/CURRENT/layout/AST/schema/pins/bytes/reader refuse. Any original-function
+reference control stays explicitly isolated SYNTHETIC, no genuine account.
+Do not replay65+4/tiny/diagnostic/v2 or reuse old roots/admissions. This helper
+does not close the numeric import boundary or admit genuine loader/RAM work.
+Historical/weekday/intraday/fill/UI/fullhorizon/combinedRAM UNVERIFIED;
+originaltimingFAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/no replay/
+adoption/newrun/actualtwohost/Spark2 image-daemon-temp-RAM unchanged.
+Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Genuine composition pinned INERT; unchanged bootstrap incompatible
 
 Read research/original-loader-genuine-composition-proof-2026-10-18.json and
