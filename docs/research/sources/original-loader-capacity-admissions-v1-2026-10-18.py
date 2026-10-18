@@ -362,4 +362,3 @@ def native_packages():
     import sklearn
     require(np.__version__ == '2.5.3' and sklearn.__version__ == '1.9.1', 'EXACT_NATIVE_NUMERIC_PACKAGES_REQUIRED')
     return {'numpy': np.__version__, 'sklearn': sklearn.__version__, 'model_or_fit': False}
-

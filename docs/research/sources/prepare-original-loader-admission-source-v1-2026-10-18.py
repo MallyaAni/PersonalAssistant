@@ -94,7 +94,7 @@ def native_packages():
     require(np.__version__ == '2.5.3' and sklearn.__version__ == '1.9.1', 'EXACT_NATIVE_NUMERIC_PACKAGES_REQUIRED')
     return {'numpy': np.__version__, 'sklearn': sklearn.__version__, 'model_or_fit': False}
 ''')
-    raw = ('\n\n'.join(parts) + '\n').encode()
+    raw = ('\n\n'.join(parts).rstrip() + '\n').encode()
     admissions_pin = save(ADMISSIONS, raw)
     candidate = ast.parse(raw)
     comparisons = {}
@@ -125,7 +125,7 @@ def native_packages():
     source_map = {'schema': 'capacity-original-source-map/1', 'base': base, 'modules': modules, 'files': {**base, **modules}}
     assert len(modules) == 11 and len(source_map['files']) == 2453
     # Keep this large metadata declaration local; it is not an application tree or staging packet.
-    local = pathlib.Path('/tmp/capacity-admission-source-map-20261018-v2')
+    local = pathlib.Path('/tmp/capacity-admission-source-map-20261018-v3')
     local.mkdir(mode=0o700, exist_ok=False)
     source_map_pin = save_json(local / 'source-map.json', source_map)
     review = {

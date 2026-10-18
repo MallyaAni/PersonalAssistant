@@ -6,10 +6,10 @@
   "full_source_map": {
     "base_files": 2446,
     "bytes": 570874,
-    "compact_union_sha256": "40f990c7622b264c5e4b7ffc4bfbe843f0268818e2d4cbbd08f732603549b96e",
-    "local_path": "/tmp/capacity-admission-source-map-20261018-v2/source-map.json",
+    "compact_union_sha256": "5c3be1ffa55eb86db02f45e76d2c21ca6a9c9a9e7c60f32d8e5622eefb95b17d",
+    "local_path": "/tmp/capacity-admission-source-map-20261018-v3/source-map.json",
     "module_files": 11,
-    "sha256": "b81649d3a4b2413e2f95fe3b3bc050077989d238b902f80bfbbda5ee87fdfa67",
+    "sha256": "a68ebbefb776a93dfdfb56fc6c4893ac35450a224fcf2fa50498cb911bfeda43",
     "tree_assembled_or_runtime_admitted": false,
     "union_files": 2453
   },
@@ -39,7 +39,7 @@
     "backend/__init__.py": "162e5eeb402108f20b1a976525f5bbf5a03a12ea619f64a19ce5c0fe9aec09af",
     "backend/market/__init__.py": "5a886c13f35054c2238d9a661349a38ea242495972aae02a7aa2029dd1533910",
     "backend/market/capacity_original_admission_lifecycle_v1.py": "3acd8b296b3d14234d7c769e2ce4c5a63c8e381d87d7677476964ea1a5f84b1b",
-    "backend/market/capacity_original_admissions_v1.py": "b53adaab7c3bb03e12062521ceb8f1400ad63c5b26454bab25af909769d6d247",
+    "backend/market/capacity_original_admissions_v1.py": "f7a226b3d90472ac3ebe161e4c46beb2c49245d489ac1de4a78f90ee2af6d0a9",
     "backend/market/capacity_original_archive_adaptations_v1.py": "39f2884741036bbe3a33f451909a59b46924c43ea699e39670c1c13fbcde5134",
     "backend/market/capacity_original_archives_v1.py": "0212bc8dedd0fb44502547fe974670ef84c21db608ab633e2a818c9e718e692b",
     "backend/market/capacity_original_calendar_v1.py": "37140d9ff8ae5a59d10aa56923f1ce2008b6e603ddb38933a517437d1137fc05",
@@ -57,23 +57,23 @@
       "sha256": "3acd8b296b3d14234d7c769e2ce4c5a63c8e381d87d7677476964ea1a5f84b1b"
     },
     "original-loader-capacity-admissions-v1-2026-10-18.py": {
-      "bytes": 13342,
-      "sha256": "b53adaab7c3bb03e12062521ceb8f1400ad63c5b26454bab25af909769d6d247"
+      "bytes": 13341,
+      "sha256": "f7a226b3d90472ac3ebe161e4c46beb2c49245d489ac1de4a78f90ee2af6d0a9"
     },
     "original-loader-capacity-calendar-v1-2026-10-18.py": {
       "bytes": 1094,
       "sha256": "37140d9ff8ae5a59d10aa56923f1ce2008b6e603ddb38933a517437d1137fc05"
     },
     "prepare-original-loader-admission-source-v1-2026-10-18.py": {
-      "bytes": 12582,
-      "sha256": "479b6bf04d440fca7dbfdf0e399a10da3aad8a45f6d1cabc3fc6dbcbd97dcd25"
+      "bytes": 12591,
+      "sha256": "1c0ad9afb9ff9730c85c988fb6de0456c866577e4d655fddc851ffb5af097336"
     }
   },
-  "starting_revision": "0c1f6109d3019b9f9223558d757182ac8835ab2a",
+  "starting_revision": "47febd128ce03f872ad062684c1e5431f0210545",
   "static_review": {
     "bytes": 4466,
     "path": "original-loader-admission-static-review-v1-2026-10-18.json",
-    "sha256": "a4749f9de6aa4410bf386b91115eefd0d3f35919d00d32570b698d740eccee97"
+    "sha256": "b7a6f3e10655d1f686ea9ba9beb07c914a7d503f7a8c06123ff9fe7c214b5ee5"
   },
   "status": "SOURCE_PREPARED_UNEXECUTED_WRAPPER_LIFECYCLE",
   "unchanged": {

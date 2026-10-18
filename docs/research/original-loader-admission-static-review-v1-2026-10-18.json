@@ -64,8 +64,8 @@
     "drop only own RAM refs; retain files"
   ],
   "new_admissions": {
-    "bytes": 13342,
-    "sha256": "b53adaab7c3bb03e12062521ceb8f1400ad63c5b26454bab25af909769d6d247"
+    "bytes": 13341,
+    "sha256": "f7a226b3d90472ac3ebe161e4c46beb2c49245d489ac1de4a78f90ee2af6d0a9"
   },
   "original_CLI": {
     "bytes": 21981,
@@ -76,10 +76,10 @@
   "source_map": {
     "base_files": 2446,
     "bytes": 570874,
-    "compact_union_sha256": "40f990c7622b264c5e4b7ffc4bfbe843f0268818e2d4cbbd08f732603549b96e",
-    "local_path": "/tmp/capacity-admission-source-map-20261018-v2/source-map.json",
+    "compact_union_sha256": "5c3be1ffa55eb86db02f45e76d2c21ca6a9c9a9e7c60f32d8e5622eefb95b17d",
+    "local_path": "/tmp/capacity-admission-source-map-20261018-v3/source-map.json",
     "module_files": 11,
-    "sha256": "b81649d3a4b2413e2f95fe3b3bc050077989d238b902f80bfbbda5ee87fdfa67",
+    "sha256": "a68ebbefb776a93dfdfb56fc6c4893ac35450a224fcf2fa50498cb911bfeda43",
     "tree_assembled_or_runtime_admitted": false,
     "union_files": 2453
   },
