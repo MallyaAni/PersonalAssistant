@@ -1,5 +1,87 @@
 # Next session
 
+## 2026-10-18 — Callback section DATA reviewed; symbol/version requirements SOURCE ONLY
+
+Read research/original-loader-callback-section-page-proof-v1-2026-10-18.json.
+Source3675d1e9a8968126a037f9b37a884249ce731757 pins observer122a929d/4171B/
+transport5820e07e/7992B/preparerb98963e9/4014B/contractbuilder0b0f67b2/11706B/
+preservera837cf43/5028B. Exactpage43ce6401/15279B, observationcee2b2c1/21951B,
+stagee36c10c8/470B/staticf54037f2/1627B/requirementsca3503c0/12746B retained.
+Only NEW stdlib operational controls and retained JSON DATA ran; no binary read/
+ELF parser/fold/closed37/package/backend/model AST/CodeType/import/body/test,
+Docker/container/service/account/marketdata/credentials/other19body operation,
+old gate/census/packet replay, guard/G08/cap/source-map/production change.
+
+ONE independently exact-source/invocation/resource-reviewed SSH exit0/empty stderr/
+noownedstop/cleanupfailure. Spark1 UID1000 hostPython3.12.3, NOT N2/e0 runtime.
+Three inputs(prior20c33344/6569B,page,ownsource) two full held/named reads/SHA/
+decimalphysical and later fullSHAphysical bookends. Page matches original prior
+physical identity; fullbase64 bytes preserved unchanged. New scope is authenticated
+page retrieval/review, NOT another independent binary/completeELF decoder fold.
+30complete headers reviewed; exact selected sections3/4/5/6/27/28 and their complete
+fields/rawhex/spanSHA/links retained. Size-derived counts ONLY: dynamic3912/24=163,
+regular7896/24=329,versym326/2=163; section6info declares2 top records. All symbol/
+version contents remain UNINTERPRETED. Complete header type set has no GNUverdef
+1879048189 or SYMTAB_SHNDX18; no provider/export/init/compatibility/loadability claim.
+
+New REQUIREMENTS-only contract binds both symbol arrays/linked string tables/
+versym/GNUverneed+aux chains, complete raw records/names/multiplicity/order/gaps,
+bounded traversal/refusals and separate every-field/page/canonical independentfold.
+Reviewer caught overbroad offset wording BEFORE decoder implementation: vn_file/
+vna_name index linkedstrtab; vn_aux/vn_next currentVerneed; vna_next currentVernaux.
+Initialgenerator8418adf8/contract9cefb11b/staticd82c0614 plusmanifest retained in
+exclusive /tmp/callback-symbol-requirements-preparation-drafts-20261018-v1.
+Corrected source+JSON via filepatch, no generator/body/remote replay. New symbol/
+version decoders/independent/fixtures/invocation/originobserver/nativeadmission NULL.
+
+Official Xinuos ELF4.3 DRAFT symbols + upstreamCPython3.12.14 importdl/dynload_shlib
+and glibc2.42 elf.h/dl-version/dl-load read as REFERENCE ONLY, not installed-version/
+actual-loader-Python-build certification or complete raw C-source archive. CPython
+reference uses specname/origin/interpreterflags/dlopen/dlsym; declaration names do
+not bind actual providers/init. Existing libm.so.6/libc.so.6 remain unresolved names.
+Actual interpreter/loader/build/search/cache/config/env/preload/security/namespace/
+globals/providerbytes+aliases+versions/transitive closure remain unadmitted.
+
+Helpers512MiBASsoft=hard/20CPU/30stage canceled BEFORE30helper/70SSH/262KiBfilelogs/
+TERM1KILL1. Fresh9949093888B available/2GiB minimum +32MiBscratch512inodes checked;
+headroom NOT reservation/native/model/daemon bound. ReportedLinuxRSS14380KiB is not
+native/model peak. Timeout/signal/overflow/cleanup/crash branches UNEXERCISED.
+New proposed parsing keeps262KiBinputfile/string4096/pages65536B AND64records/
+max256pages/output+canonical16MiB/one16MiBhashworkledger; not runtime acceptance.
+
+Existing healthy worker READONLY beforeuse/actualpage/requirements/correction/
+preserver/finalmanifestmetadata review; no newagent/limitedretry/workerops.
+AST warnings-as-errors/17purposefunctions across5controls/3unchangedtransportASTs/
+embeddedbootstrapAST/JSON/fullSHA/fullpagebase64/exactselectedrecords/corrected
+generator-versionrequirements/stageddiff PASS. Ruff previously unavailable/no lint.
+Exclusive Spark capacity-callback-section-page-tools-20261018-v1 COMPLETE, source/
+stage/observation fsync+readback/toolsroot+parent sync; no second remote physical
+inventory/archive/crash guarantee. Raw localstdout retained, displaytruncation
+changed no savedbytes. Exclusive /tmp/capacity-callback-section-page-evidence-
+20261018-v1 retains18files143845B+manifest7982d92e/21447B: twoheld/namedreads,
+exclusivecopy/fsync/readbacks/lateroriginal+copySHAphysical/manifestlast/root+
+resolvedparent sync. Separate root readback checks18originals+copies SHAphysical;
+worker checked manifestmetadata only. Local software262KiBfile/1MiBtotal/30alarm,
+no MacAS/kernelFSIZE claim. All failed/completed roots/receipts preserved.
+
+NEXT ROOT: SOURCE ONLY implement separately versioned pure selected-symbol/version
+DATA decoder, independent complete fold and bounded known-value synthetic fixtures
+against ca3503c0 requirements and exact authenticated section records. Review every
+new source/invocation/resource BEFORE use. Do not repeat this page observation,
+completed ELF parser/fold/37 or bytecopy/20HEAD/metadata/censuses/AST inventories/
+73/80/23/65+4/tiny/diagnostic/v2/packets for documentation. No guessed librarypaths/
+host substitutes/ldd/readelf/dlopen/native/package execution/other19reads/capraise.
+Actual-loader/Python/provider authentication remains separate; nativeadmission NULL.
+Finish selected callable/global/type/dataclass liveproducer/classflags/native/phase/
+Arrow pools+wrapper/sklearnactualmetadata. Guard3b8be00b/all25payloadbodies UNRUN;
+old2446/030c/G08/caps/maps unchanged. Producer2431/reference2446/executor2468/
+originalreceipts/fullcontext+graphs+JSON+UTF8 lifetimes separate. Assembledtree/
+strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/
+launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/
+intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/
+v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM
+unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Exact retained callback ELF DATA VERIFIED; native/runtime UNVERIFIED
 
 Read research/original-loader-callback-elf-data-proof-v1-2026-10-18.json.

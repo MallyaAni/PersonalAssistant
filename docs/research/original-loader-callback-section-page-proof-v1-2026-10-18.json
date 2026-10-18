@@ -1,0 +1,179 @@
+{
+  "schema": "original-loader-callback-section-page-source-proof/1",
+  "date": "2026-10-18",
+  "status": "VERIFIED_EXACT_SECTION_PAGE_DATA_AND_SOURCE_REVIEWED_REQUIREMENTS_ONLY",
+  "source_commit": "3675d1e9a8968126a037f9b37a884249ce731757",
+  "starting_commit": "5e4577ce4b249500ce305e473e038dfe804fec12",
+  "starting_branch": "codex/learned-live-release-20261006",
+  "starting_state": "CLEAN_PULL_REBASE_ORIGIN_MAIN_UP_TO_DATE",
+  "objective": "Expose the exact previously authenticated complete section page and prepare selected symbol/version DATA and dependency-origin requirements without repeating completed binary decoders or loading native code.",
+  "source_and_evidence_pins": [
+    {
+      "bytes": 21951,
+      "path": "docs/research/original-loader-callback-section-page-observation-v1-2026-10-18.json",
+      "sha256": "cee2b2c1bdb24231fc00600164742b71509c25b698a54383da747e1572b9e38d"
+    },
+    {
+      "bytes": 470,
+      "path": "docs/research/original-loader-callback-section-page-stage-v1-2026-10-18.json",
+      "sha256": "e36c10c8d07782d80be1570256cff353d18ce791c84789b56cc691040b59e1be"
+    },
+    {
+      "bytes": 1627,
+      "path": "docs/research/original-loader-callback-section-page-static-v1-2026-10-18.json",
+      "sha256": "f54037f29f7c8f8f71e5c653a4f231cae66d0dc9c8d93fcdd7f0daa8083b378d"
+    },
+    {
+      "bytes": 15279,
+      "path": "docs/research/original-loader-callback-section-page-v1-2026-10-18.json",
+      "sha256": "43ce64015bf67ad315821caa994123c7134d55e4dabb89c7bea9414607a5daa3"
+    },
+    {
+      "bytes": 12746,
+      "path": "docs/research/original-loader-callback-symbol-requirements-v1-2026-10-18.json",
+      "sha256": "ca3503c0c58352297104f286ca8784422dc66612aa46ad27eb20f9bbfd51b40f"
+    },
+    {
+      "bytes": 7992,
+      "path": "docs/research/sources/callback-section-page-transport-v1-2026-10-18.py",
+      "sha256": "5820e07ec1ed9f9c37efc9b9e38b68ee6f899de03f35ef96eee6187825ef7598"
+    },
+    {
+      "bytes": 4171,
+      "path": "docs/research/sources/observe-callback-section-page-v1-2026-10-18.py",
+      "sha256": "122a929d204ef3552346c098c9d3a29de69926f6f76092e782b41ff733b3dcf2"
+    },
+    {
+      "bytes": 4014,
+      "path": "docs/research/sources/prepare-callback-section-page-transport-v1-2026-10-18.py",
+      "sha256": "b98963e9a95ac0307b255019db733851ead85ada7e724259bebc2229e1f6d0a6"
+    },
+    {
+      "bytes": 11706,
+      "path": "docs/research/sources/prepare-callback-symbol-contract-v1-2026-10-18.py",
+      "sha256": "0b0f67b2e233850e01aad1b42248edfaf0d3e0e4139c1370f4b721edb76b9b3d"
+    },
+    {
+      "bytes": 5028,
+      "path": "docs/research/sources/preserve-callback-section-page-v1-2026-10-18.py",
+      "sha256": "a837cf43e50d54075a931fe7faa92a5c0e23b069c5e9562a8f40aa617676ba2a"
+    }
+  ],
+  "actual_observation": {
+    "SSH_calls": 1,
+    "SSH_exit": 0,
+    "stderr_bytes": 0,
+    "owned_SSH_stop": null,
+    "cleanup_failure": null,
+    "host": "animallya-spark1",
+    "uid": 1000,
+    "Python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+    "is_N2_runtime": false,
+    "prior_sha256": "20c33344ece0c69c550f23771dbea6d9ab8d1eb6c2344a6fac2366224d817889",
+    "prior_bytes": 6569,
+    "page_bytes": 15279,
+    "page_sha256": "43ce64015bf67ad315821caa994123c7134d55e4dabb89c7bea9414607a5daa3",
+    "page_prior_decimal_physical_binding": true,
+    "three_inputs": "Prior proof, complete page and own source; two full held/named reads and later full SHA/physical bookends. Output readback checked separately.",
+    "raw_observation_sha256": "cee2b2c1bdb24231fc00600164742b71509c25b698a54383da747e1572b9e38d",
+    "raw_observation_bytes": 21951,
+    "reported_Linux_ru_maxrss_KiB": 14380,
+    "scope": "Reads retained JSON DATA only. No binary read or ELF parser/fold invocation; no package/backend/model AST/CodeType/import/body/test, Docker/container/service/account/marketdata/credential/other19body operation or old gate/packet replay."
+  },
+  "section_review": {
+    "complete_headers": 30,
+    "selected_indices": [
+      3,
+      4,
+      5,
+      6,
+      27,
+      28
+    ],
+    "selection": "Numeric types and linked indices, full original header records/rawhex/span hashes; byte names are retained only.",
+    "dynamic_symbol_size_derived_rows": 163,
+    "regular_symbol_size_derived_rows": 329,
+    "versym_size_derived_rows": 163,
+    "derivations": [
+      "3912/24=163",
+      "7896/24=329",
+      "326/2=163"
+    ],
+    "version_need_section_info_declaration": 2,
+    "complete_header_type_absences": [
+      "1879048189 (GNU verdef)",
+      "18 (SYMTAB_SHNDX)"
+    ],
+    "symbol_names_rows_versions_or_initialization_decoded": false,
+    "semantics": "Header arithmetic and type-set absence only, not exports, providers, ABI compatibility, resolved origins, loadability or actual initialization."
+  },
+  "requirements": {
+    "sha256": "ca3503c0c58352297104f286ca8784422dc66612aa46ad27eb20f9bbfd51b40f",
+    "bytes": 12746,
+    "reviewed_only": true,
+    "proposed_scope": "Two complete symbol tables and linked string tables, complete versym and bounded GNU verneed/aux chains; exact raw fields/hex/decimal offsets/span hashes/multiplicity/order/gaps and independent every-field/page/canonical fold.",
+    "offset_bases": "vn_file/vna_name use linked string table; vn_aux/vn_next current Verneed; vna_next current Vernaux.",
+    "bounds": "Input/file262144, string4096, page65536 encoded bytes AND64records, max256pages, output/canonical16MiB and one16MiB aggregate hash-work ledger before hashing; all loops finite; single oversized record refuses.",
+    "upstream_references": "Official Xinuos ELF4.3 DRAFT symbol layout and upstream CPython3.12.14 importdl/dynload_shlib and glibc2.42 elf.h/dl-version/dl-load read as references only. Their versions are not installed-version or image-binary-build certificates; no full raw C-source archive/authenticated actual installed loader proof claimed.",
+    "dependency_origin": "DT_NEEDED libm.so.6/libc.so.6 remain unresolved names. Installed Python/loader build, interpreter flags, relevant search/cache/config/env/preloads/security/namespace/global symbols and provider/transitive bytes/aliases/versions still require bounded authenticated evidence. No guessed library directories or host substitutes.",
+    "decoder": null,
+    "independent_decoder": null,
+    "fixtures": null,
+    "invocation": null,
+    "origin_observer": null,
+    "actual_loader_Python_build_authentication": null,
+    "native_runtime_admission": null,
+    "execution_authorized": false
+  },
+  "resource_controls": {
+    "helper_AS_soft_hard_bytes": 536870912,
+    "CPU_seconds": 20,
+    "staging_alarm_seconds": 30,
+    "staging_alarm_canceled_before_helper": true,
+    "helper_alarm_seconds": 30,
+    "SSH_timeout_seconds": 70,
+    "SSH_log_helper_file_bound_bytes": 262144,
+    "owned_cleanup": "TERM1s then KILL1s; bounded owner signal cleanup source inherited unchanged.",
+    "source_envelope_bytes": 65536,
+    "fresh_MemAvailable_bytes": "9949093888",
+    "fresh_minimum_MemAvailable_bytes": 2147483648,
+    "fresh_minimum_scratch_bytes": 33554432,
+    "fresh_minimum_inodes": 512,
+    "headroom_is_reservation": false,
+    "native_model_daemon_RAM_bound": false,
+    "timeout_signal_overflow_cleanup_crash_branches": "UNEXERCISED"
+  },
+  "review_and_validation": {
+    "worker": "Reused healthy /root/trading_action_consistency; READONLY source/invocation/resources BEFORE one SSH and actual page/requirements/preservation after; no new agent, limited-agent retry or worker operations.",
+    "review_correction": "Initial SOURCE requirements overbroad offset-base wording corrected before any symbol decoder implementation. Old generator8418adf8/contract9cefb11b/staticd82c0614 and draft manifest retained; no remote/body replay.",
+    "AST_warnings_as_errors": "PASS",
+    "purpose_comments": 17,
+    "new_controls": 5,
+    "unchanged_transport_function_ASTs": 3,
+    "embedded_bootstrap_AST": "PASS",
+    "JSON_SHA_full_page_base64_and_exact_selected_records": "PASS",
+    "corrected_generator_version_requirements_exact": "PASS_NO_BUILDER_REPLAY",
+    "staged_diff": "PASS",
+    "Ruff": "PREVIOUSLY_UNAVAILABLE_NOT_RUN_NO_LINT_CLAIM"
+  },
+  "preservation": {
+    "remote_tools_root": "/home/animallya96/scratch/capacity-callback-section-page-tools-20261018-v1",
+    "remote_scope": "Exclusive source+stage+observation files fsynced/readback and tools root+parent synced. No second remote physical inventory/archive or crash/durability claim.",
+    "local_transport_root": "/tmp/callback-section-page-transport-20261018-v1",
+    "local_evidence_root": "/tmp/capacity-callback-section-page-evidence-20261018-v1",
+    "local_files": 18,
+    "local_bytes": 143845,
+    "manifest_sha256": "7982d92e6bbb393dad6aac7c2e39f9648f5978cc5a6a6aa741ddd82faef7f17e",
+    "manifest_bytes": 21447,
+    "draft_root": "/tmp/callback-symbol-requirements-preparation-drafts-20261018-v1",
+    "checks": "18 fixed files: two full held/named reads, exact decimal physical identities, exclusive copy/fsync/two readbacks, later originals and copies full SHA/physical bookends, manifest last/root+resolvedparent fsync. Separate root readback checked all18 originals/copies hashes and physical rows; worker final checked manifest metadata only.",
+    "local_software_file_bytes": 262144,
+    "local_software_total_bytes": 1048576,
+    "local_alarm_seconds": 30,
+    "local_Mac_AS_or_kernel_FSIZE_claim": false,
+    "all_old_failed_completed_roots_preserved": true,
+    "display_truncation_changed_saved_stdout": false
+  },
+  "next": "SOURCE ONLY implement separately versioned pure symbol/version DATA decoder and separate independent complete fold plus bounded known-value synthetic fixtures against ca3503c0 contract. Exact source/invocation/resource review before new use. No repeat of this page retrieval, completed ELF parser/fold/37 or old copies/HEAD/censuses/gates/packets for documentation. Actual loader/Python/provider authentication remains separate and no native admission exists.",
+  "unchanged": "Other19 native bodies unread/above262KiB; all25 guard payload functions UNRUN, old2446/030c/G08/caps/maps unchanged. Selected callable/global/type/dataclass liveproducer/classflags/native/phase/Arrow pools+wrapper/sklearn actualmetadata unresolved. Producer2431/reference2446/executor2468/original receipts/fullcontext+graphs+JSON+UTF8 lifetimes separate. Assembledtree/strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/intraday/fill/UI UNVERIFIED; original timing FAILED/publication CLOSED/missing receipts/v6 OPEN-PAUSED/no replay/adoption/newrun; actualtwohost/Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram NONE."
+}
