@@ -1,0 +1,329 @@
+{
+  "schema": "stopped-package-source-census-checkpoint/1",
+  "status": "VERIFIED_TEN_PAIRED_TEXT_SOURCE_COPIES_ONLY_NATIVE_RUNTIME_CLOSURE_UNADMITTED",
+  "source_revision": "0b7f4c0e1a4d5442a4bfd5a78b8c55a998a9938c",
+  "primary_source_revision": "2c193c8b041e8b05a2dc8e0de325042c04515a9b",
+  "starting_revision": "b4e4634f0fa7b2703791a76cdaf2a33d46a8d2c9",
+  "branch": "codex/learned-live-release-20261006",
+  "starting_owned_worktree": "CLEAN; git pull --rebase origin main up to date",
+  "objective": "Acquire and independently authenticate a bounded fixed-path text-source census from the retained stopped N2 native probe without starting a container or executing package/model payloads.",
+  "files": {
+    "sources/capacity-stopped-package-source-census-v1-2026-10-18.py": {
+      "bytes": 12911,
+      "sha256": "8bcecaf2cd1765e698465758f1959e59b022091f2df5b09e6636c1630a3ad515"
+    },
+    "sources/capacity-stopped-package-source-independent-transport-v1-2026-10-18.py": {
+      "bytes": 6018,
+      "sha256": "22aa585d4debf80d7c88f18cc6c59eaf11df910b1e067067ad9fa49c58c96e7e"
+    },
+    "sources/capacity-stopped-package-source-transport-v1-2026-10-18.py": {
+      "bytes": 6025,
+      "sha256": "0c84e4b1f89815a7ca085c07695386824802b9c742c20f6df7152d4312b4e6d2"
+    },
+    "sources/verify-stopped-package-source-census-v1-2026-10-18.py": {
+      "bytes": 15537,
+      "sha256": "5f7385ef5baa13d64c6775c60bd116ec9dcf24d3b3b984bd848db5a064085eea"
+    }
+  },
+  "independent_proof": {
+    "path": "original-loader-stopped-package-source-independent-v1-2026-10-18.json",
+    "sha256": "6860a76c8a50e4891549ea656ed881cf81518ae1e7d28b02ba65bd32d045c08b",
+    "bytes": 36153
+  },
+  "artifact": {
+    "container": "803718a62e3cbd1f6070abab25a58e1fbc0ee5d04b5444f57c817d7e47b8bf57",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "state": "exited",
+    "original_finished_at": "2026-10-18T09:53:55.975021651Z",
+    "fresh_inspect_sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2",
+    "inspect_scope": "Exact CID/image/finish/Pid0/pausedFalse/restartingFalse/exit0/noOOM/RO root/user1000:1000/two unique audit+out mounts, no source-path overlap; full primary before/after/fresh independent JSON equal. Same fresh inspect SHA as retained native proof. No baked-image provenance certification for every copied file."
+  },
+  "collection": {
+    "paths": [
+      "/usr/local/lib/python3.12/dataclasses.py",
+      "/usr/local/lib/python3.12/site-packages/numpy/__init__.py",
+      "/usr/local/lib/python3.12/site-packages/scipy/__init__.py",
+      "/usr/local/lib/python3.12/site-packages/sklearn/__init__.py",
+      "/usr/local/lib/python3.12/site-packages/threadpoolctl.py",
+      "/usr/local/lib/python3.12/site-packages/pyarrow/__init__.py",
+      "/usr/local/lib/python3.12/site-packages/pyarrow/parquet/__init__.py",
+      "/usr/local/lib/python3.12/site-packages/pyarrow/parquet/core.py",
+      "/usr/local/lib/python3.12/site-packages/pyarrow/fs.py",
+      "/usr/local/lib/python3.12/site-packages/pyarrow/dataset.py"
+    ],
+    "source_files": 10,
+    "source_bytes": 337466,
+    "paired_reads": 20,
+    "primary_files": 78,
+    "primary_candidate_sha256": "1d74567f0ec18673868461c4f122c02a994acfce1bb31abd426d81c4b01cdebe",
+    "primary_candidate_bytes": 13154,
+    "docker_read_calls": 23,
+    "SSH_invocations": 2,
+    "all_exit": 0,
+    "stderr": "EMPTY",
+    "owned_stop": null,
+    "cleanup_failure": null,
+    "source_inventory": {
+      "source-00.py.txt": {
+        "bytes": 62085,
+        "physical": {
+          "st_blocks": "128",
+          "st_ctime_ns": "1792325507447411560",
+          "st_dev": "66306",
+          "st_ino": "60582304",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325507447411560",
+          "st_nlink": "1",
+          "st_size": "62085",
+          "st_uid": "1000"
+        },
+        "sha256": "d242aea5fcf6408b1c1f622442f88f68b9526ce1f8bd2890d74a144677c427d9"
+      },
+      "source-01.py.txt": {
+        "bytes": 25220,
+        "physical": {
+          "st_blocks": "56",
+          "st_ctime_ns": "1792325507526245273",
+          "st_dev": "66306",
+          "st_ino": "60582311",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325507526245273",
+          "st_nlink": "1",
+          "st_size": "25220",
+          "st_uid": "1000"
+        },
+        "sha256": "09295a80660f17925ae23765ce8cbd7ff7ceae968d5f2f89349f1cb74c0b9e11"
+      },
+      "source-02.py.txt": {
+        "bytes": 4193,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792325507606972582",
+          "st_dev": "66306",
+          "st_ino": "60582318",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325507606972582",
+          "st_nlink": "1",
+          "st_size": "4193",
+          "st_uid": "1000"
+        },
+        "sha256": "39ccae300a4739cc53719bd3b39ce3f8f66e736c6eb672006e338a4c5cc3dc76"
+      },
+      "source-03.py.txt": {
+        "bytes": 4520,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792325507689446892",
+          "st_dev": "66306",
+          "st_ino": "60582325",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325507689446892",
+          "st_nlink": "1",
+          "st_size": "4520",
+          "st_uid": "1000"
+        },
+        "sha256": "66a78bb27706626c4cc8ef424a5479f6301204baacd85986e8002c16b751fef1"
+      },
+      "source-04.py.txt": {
+        "bytes": 67710,
+        "physical": {
+          "st_blocks": "136",
+          "st_ctime_ns": "1792325507769741781",
+          "st_dev": "66306",
+          "st_ino": "60582332",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325507769741781",
+          "st_nlink": "1",
+          "st_size": "67710",
+          "st_uid": "1000"
+        },
+        "sha256": "e5f119e394193e206655bec4b993ef0bb40b0fbb2f22c92bd5b2d70a622bb518"
+      },
+      "source-05.py.txt": {
+        "bytes": 19173,
+        "physical": {
+          "st_blocks": "40",
+          "st_ctime_ns": "1792325507849359020",
+          "st_dev": "66306",
+          "st_ino": "60582339",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325507849359020",
+          "st_nlink": "1",
+          "st_size": "19173",
+          "st_uid": "1000"
+        },
+        "sha256": "04ef85e330eb3cda057b5f4f8e9c06891536bf06d7b26341d392153ecaa861e2"
+      },
+      "source-06.py.txt": {
+        "bytes": 822,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792325507930218921",
+          "st_dev": "66306",
+          "st_ino": "60582346",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325507930218921",
+          "st_nlink": "1",
+          "st_size": "822",
+          "st_uid": "1000"
+        },
+        "sha256": "e16eb809bbf0bceeb4b46e7c9df36dc82c0c5427ee3ee9adbbcda9fa48863da1"
+      },
+      "source-07.py.txt": {
+        "bytes": 98264,
+        "physical": {
+          "st_blocks": "192",
+          "st_ctime_ns": "1792325508009620333",
+          "st_dev": "66306",
+          "st_ino": "60582353",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325508009620333",
+          "st_nlink": "1",
+          "st_size": "98264",
+          "st_uid": "1000"
+        },
+        "sha256": "149cfca45f9767541a6b6a9c002da5becc35d106f6eac35eb08b6878b153858b"
+      },
+      "source-08.py.txt": {
+        "bytes": 14972,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792325508086928215",
+          "st_dev": "66306",
+          "st_ino": "60582360",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325508086928215",
+          "st_nlink": "1",
+          "st_size": "14972",
+          "st_uid": "1000"
+        },
+        "sha256": "a8bee55eed9049b0f725b3b02444307fae366393677b9eada56e6743c3bdb790"
+      },
+      "source-09.py.txt": {
+        "bytes": 40507,
+        "physical": {
+          "st_blocks": "80",
+          "st_ctime_ns": "1792325508165830809",
+          "st_dev": "66306",
+          "st_ino": "60582367",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792325508165830809",
+          "st_nlink": "1",
+          "st_size": "40507",
+          "st_uid": "1000"
+        },
+        "sha256": "4b78383bd1bd2218d6072afbb59e6af07c0c0b7e489e806680ab225f66860987"
+      }
+    },
+    "archive_scope": "Exactly one regular UTF8 text member per fixed path; links/sparse/extra members/trailing nonzero bytes refused; no archive extraction to filesystem. Raw tar headers are archive metadata, not held-FD/exact physical-nanosecond source authority."
+  },
+  "independent_review": {
+    "before_primary": "Existing healthy trading_action_consistency READONLY source/exact invocation/resource/cleanup review completed before the single use.",
+    "before_independent": "Same worker reviewed candidate SHA/readback binding, complete stopped-source baseline predicates and archive metadata equality before the independent single use.",
+    "actual": "Worker verified exact proof SHA against retained stdout and both actual transport exit0/empty stderr/no owned stop/no cleanup failure. No source-copy scope inconsistency found.",
+    "fold": "All78 files read twice with full SHA and local copy physical bookends; exact22 primary CLI commands/outputs/terminal receipts, ten source/tar pairs and full decoded archive metadata, known original dataclasses and NumPy init SHA, external candidate SHA, fresh stopped inspect. Decimal-string physical fields retained losslessly.",
+    "no_new_agent_or_limited_retry": true
+  },
+  "source_corrections": {
+    "state": "BEFORE_USE_SOURCE_FINDINGS_NOT_RUNTIME_FAILURES",
+    "items": [
+      "Set parent soft512MiB/hard4GiB and owned Go CLI virtual4GiB rather than inheriting helper's512MiB soft ceiling.",
+      "Mask all watched interruptions through Popen assignment; unmask child; handle poll/killpg exit race; nested cleanup preserves logs/exit even bounded reap failure. No absolute SIGKILL/uninterruptible-I/O guarantee.",
+      "Independent fold now pins actual candidateSHA, compares its initial and inventory reads, independently checks full known stopped baseline and every decoded archive metadata row."
+    ]
+  },
+  "checks": {
+    "AST_warnings_as_errors": "PASS4control_sources",
+    "purpose_comments": "PASS24functions",
+    "six_helper_ASTs_after_ROOT_to_REVIEW": "PASS",
+    "whole_transport_text_after_seven_declared_deltas": "PASS",
+    "staged_source_diff": "PASS",
+    "Ruff": "UNAVAILABLE",
+    "package_source_import_compile_CodeType_or_body": "UNRUN",
+    "synthetic_or_genuine_model_tests": "NOT_RUN"
+  },
+  "resources": {
+    "host_helpers": "Primary AS soft512MiB/hard4GiB,CPU30s; independent AS soft512MiB/hard4GiB,CPU20s; owned Docker CLI AS4GiB; ordinary file and wire bounds262144B unchanged.",
+    "deadlines": "Primary45s work/50s alarm/each CLI5s/each SSH70s, independent fresh inspect8s outer/5s CLI/10s alarm. Actual timeout/signal/owned-stop/overflow branches unexercised.",
+    "fresh_minimums": "Primary host MemAvailable>=2GiB/scratch>=1GiB/inodes>=512 predicates passed; prerequisite bytes retained/hashchecked. Headroom is not a reservation, native/model capacity or Docker daemon RAM bound.",
+    "reservation": false,
+    "daemon_memory_bound": null
+  },
+  "actual_operations": {
+    "ran": [
+      "new stdlib host helper and separate independent metadata verifier",
+      "two exact pinned-key SSH control transports",
+      "two stopped-container inspections plus20 fixed-path Docker copies, one independent stopped inspect",
+      "new local stdlib source/AST/JSON/SHA validation and preservation",
+      "Git checkpoints"
+    ],
+    "control_helper_compilation": "Only explicitly reviewed stdlib operational helpers compiled/executed, never copied package/application source.",
+    "container_start_create_exec_load_or_mutation": false,
+    "package_import_CodeType_body_or_model": false,
+    "account_market_data_credentials_read": false,
+    "old_gate_or_packet_replay": false,
+    "old_admission_reuse": false,
+    "guard_G08_caps_production_original_change": false
+  },
+  "preservation": {
+    "primary_root": "/home/animallya96/scratch/capacity-stopped-package-source-census-20261018-v1",
+    "primary_tools_root": "/home/animallya96/scratch/capacity-stopped-package-source-census-tools-20261018-v1",
+    "independent_root": "/home/animallya96/scratch/capacity-stopped-package-source-census-review-20261018-v1",
+    "independent_tools_root": "/home/animallya96/scratch/capacity-stopped-package-source-census-verifier-tools-20261018-v1",
+    "remote": "Source337466B plus raw wires/receipts stay Spark. Individual files fsynced/readback and output/tool directories fsynced; independent two-read physical fold of78primary files. No process-crash/durability guarantee or second full remote archive copy claimed.",
+    "local": {
+      "root": "/tmp/capacity-stopped-package-source-local-evidence-20261018-v1",
+      "files": 11,
+      "bytes": 116329,
+      "manifest_sha256": "873d7b92a43b6e9a38a1590a94822a4aa6160bb6cfec6bb1cacbb76c8aef58c9",
+      "manifest_bytes": 6523,
+      "parent_observation_sha256": "f7269273128e53a3b01f4aa1960c7956f031316bf304ee65c2afd342a15d7d4c",
+      "parent_observation_bytes": 363,
+      "head": "0b7f4c0e1a4d5442a4bfd5a78b8c55a998a9938c",
+      "primary_source_revision": "2c193c8b041e8b05a2dc8e0de325042c04515a9b"
+    },
+    "initial_local_parent_sync": "FAILED_NotADirectoryError because /tmp is a symlink; all11 files/manifest/root directory had already been fsynced. Original manifest preserved. Separate followup verified all copies twice and fsynced resolved /private/tmp parent; new parent-sync-observation.json records failure and followup. No remote/helper/body rerun.",
+    "old_roots_sources_packets_admissions": "UNCHANGED; every new completed root immutable, never reuse or overwrite"
+  },
+  "limitations": [
+    "Ten fixed Python text origins are not full installed distribution metadata, package versions, native extension hashes, transitive import/codegen/thread closure, evaluated package behavior, full sourcebook/finder/guard or capacity admission.",
+    "No payload AST analysis or CodeType compilation/import occurred in this checkpoint; the next source review must inspect these exact retained bytes and their conditional/deferred/extension imports.",
+    "Container-provided tar metadata cannot establish held-root-FD physical identity for source paths, hostile-code isolation or immutable baked-image provenance.",
+    "No model/type/factory/readonly/alias/deepcopy/array/lifetime/combined late RAM/horizon/historical/ordinary/intraday/fill/UI acceptance."
+  ],
+  "next": "SOURCE ONLY inspect the ten authenticated source copies (especially PyArrow init/parquet/core/fs/dataset and dataclasses) and declare exact transitive package/native/generated seams. Then prepare bounded further source/metadata reads as required and implement distinct inert2468 sourcebook/finder/guard against c2a72054 contract. No package import, synthetic/genuine capacity proposal or new execution until full source/call/generated/native/phase contracts and independent review; never repeat this completed census or prior closed gates for documentation.",
+  "unadmitted": {
+    "source_book": null,
+    "finder": null,
+    "new_guard_source": null,
+    "selected_callable_closure": null,
+    "call_manifest": null,
+    "generated_manifest": null,
+    "phase_manifest": null,
+    "native_package_closure": null,
+    "model_import_strategy": null,
+    "entrypoint": null,
+    "wrapper": null,
+    "owner": null,
+    "caller": null,
+    "stager": null,
+    "bootstrap": null,
+    "packet": null,
+    "runtime": null,
+    "launch": null,
+    "admission": null,
+    "execution_authorized": false
+  },
+  "unchanged": {
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "missing_original_raw_receipts": "MISSING",
+    "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "actual_two_host": false,
+    "Spark2_image_daemon_temp_incremental_RAM": "UNADMITTED",
+    "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+    "heartbeat": "ACTIVE",
+    "diagram": "NONE"
+  },
+  "public_reference": "https://docs.docker.com/reference/cli/docker/container/cp/"
+}

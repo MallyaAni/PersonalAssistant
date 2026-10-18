@@ -1,0 +1,1200 @@
+{
+  "candidate_sha256": "1d74567f0ec18673868461c4f122c02a994acfce1bb31abd426d81c4b01cdebe",
+  "cli_exit": 0,
+  "container_file_physical_identity": null,
+  "fresh_inspect": {
+    "bytes": 9755,
+    "physical": {
+      "st_blocks": "24",
+      "st_ctime_ns": "1792325689478129792",
+      "st_dev": "66306",
+      "st_ino": "60582375",
+      "st_mode": "33152",
+      "st_mtime_ns": "1792325689478129792",
+      "st_nlink": "1",
+      "st_size": "9755",
+      "st_uid": "1000"
+    },
+    "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+  },
+  "full_readback_files": 78,
+  "native_model_RAM_acceptance": false,
+  "package_imports_or_container_start": false,
+  "schema": "stopped-n2-package-source-census-independent/1",
+  "source_bytes": 337466,
+  "source_files": 10,
+  "source_inventory": {
+    "candidate.json": {
+      "bytes": 13154,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792325508201753407",
+        "st_dev": "66306",
+        "st_ino": "60582371",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508201753407",
+        "st_nlink": "1",
+        "st_size": "13154",
+        "st_uid": "1000"
+      },
+      "sha256": "1d74567f0ec18673868461c4f122c02a994acfce1bb31abd426d81c4b01cdebe"
+    },
+    "inspect-after.exit.json": {
+      "bytes": 747,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325508194798153",
+        "st_dev": "66306",
+        "st_ino": "60582370",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508194798153",
+        "st_nlink": "1",
+        "st_size": "747",
+        "st_uid": "1000"
+      },
+      "sha256": "5198e7b4a9799e7c478192e4cb41c4ac5a70971cf8b889ced203e94129c269eb"
+    },
+    "inspect-after.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325508187899027",
+        "st_dev": "66306",
+        "st_ino": "60582369",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508187899027",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "inspect-after.stdout": {
+      "bytes": 9755,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792325508182817959",
+        "st_dev": "66306",
+        "st_ino": "60582368",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508182817959",
+        "st_nlink": "1",
+        "st_size": "9755",
+        "st_uid": "1000"
+      },
+      "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+    },
+    "inspect-before.exit.json": {
+      "bytes": 749,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507360303800",
+        "st_dev": "66306",
+        "st_ino": "60582297",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507360303800",
+        "st_nlink": "1",
+        "st_size": "749",
+        "st_uid": "1000"
+      },
+      "sha256": "de5edfa6f441acbc5b97474b00af57c1faa6f0e0c3410734ba19702e4e0bdbdb"
+    },
+    "inspect-before.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325507352894431",
+        "st_dev": "66306",
+        "st_ino": "60582296",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507352894431",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "inspect-before.stdout": {
+      "bytes": 9755,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792325507347503890",
+        "st_dev": "66306",
+        "st_ino": "60582295",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507347503890",
+        "st_nlink": "1",
+        "st_size": "9755",
+        "st_uid": "1000"
+      },
+      "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2"
+    },
+    "prerequisites.json": {
+      "bytes": 1015,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507284160309",
+        "st_dev": "66306",
+        "st_ino": "60582294",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507284160309",
+        "st_nlink": "1",
+        "st_size": "1015",
+        "st_uid": "1000"
+      },
+      "sha256": "e008a42689add023e9021c06590bd7895745aa6b9ac440b722518709264d3ed5"
+    },
+    "source-00-read-0.exit.json": {
+      "bytes": 799,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507404410891",
+        "st_dev": "66306",
+        "st_ino": "60582300",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507404410891",
+        "st_nlink": "1",
+        "st_size": "799",
+        "st_uid": "1000"
+      },
+      "sha256": "4a9585b25f737c836412acbb008f3091f6288f54d7ed1eb0cf5f485768b79a74"
+    },
+    "source-00-read-0.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325507398236457",
+        "st_dev": "66306",
+        "st_ino": "60582299",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507398236457",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-00-read-0.stdout": {
+      "bytes": 64000,
+      "physical": {
+        "st_blocks": "128",
+        "st_ctime_ns": "1792325507389477097",
+        "st_dev": "66306",
+        "st_ino": "60582298",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507389477097",
+        "st_nlink": "1",
+        "st_size": "64000",
+        "st_uid": "1000"
+      },
+      "sha256": "f979b070f1ebfd2b97bc4e04f2f5f1635749f7f029fbec4628cfc4b6ce299275"
+    },
+    "source-00-read-1.exit.json": {
+      "bytes": 799,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507439894910",
+        "st_dev": "66306",
+        "st_ino": "60582303",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507439894910",
+        "st_nlink": "1",
+        "st_size": "799",
+        "st_uid": "1000"
+      },
+      "sha256": "6077ac339bda48a7d444ea74f256655eb1187b55e8876b47189d130642110ccd"
+    },
+    "source-00-read-1.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325507433894877",
+        "st_dev": "66306",
+        "st_ino": "60582302",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507433894877",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-00-read-1.stdout": {
+      "bytes": 64000,
+      "physical": {
+        "st_blocks": "128",
+        "st_ctime_ns": "1792325507426808886",
+        "st_dev": "66306",
+        "st_ino": "60582301",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507426808886",
+        "st_nlink": "1",
+        "st_size": "64000",
+        "st_uid": "1000"
+      },
+      "sha256": "f979b070f1ebfd2b97bc4e04f2f5f1635749f7f029fbec4628cfc4b6ce299275"
+    },
+    "source-00.py.txt": {
+      "bytes": 62085,
+      "physical": {
+        "st_blocks": "128",
+        "st_ctime_ns": "1792325507447411560",
+        "st_dev": "66306",
+        "st_ino": "60582304",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507447411560",
+        "st_nlink": "1",
+        "st_size": "62085",
+        "st_uid": "1000"
+      },
+      "sha256": "d242aea5fcf6408b1c1f622442f88f68b9526ce1f8bd2890d74a144677c427d9"
+    },
+    "source-01-read-0.exit.json": {
+      "bytes": 816,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507483015180",
+        "st_dev": "66306",
+        "st_ino": "60582307",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507483015180",
+        "st_nlink": "1",
+        "st_size": "816",
+        "st_uid": "1000"
+      },
+      "sha256": "8dfa13bd180a9f326edd5f45f38781e6c545f3a798a9d0460fca5ac85980a5a8"
+    },
+    "source-01-read-0.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325507475895108",
+        "st_dev": "66306",
+        "st_ino": "60582306",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507475895108",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-01-read-0.stdout": {
+      "bytes": 27136,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792325507467895064",
+        "st_dev": "66306",
+        "st_ino": "60582305",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507467895064",
+        "st_nlink": "1",
+        "st_size": "27136",
+        "st_uid": "1000"
+      },
+      "sha256": "54ba504d5922ecee083786ce935d69835768543c9fc88e60abaa9e42068681a5"
+    },
+    "source-01-read-1.exit.json": {
+      "bytes": 816,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507520329625",
+        "st_dev": "66306",
+        "st_ino": "60582310",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507520329625",
+        "st_nlink": "1",
+        "st_size": "816",
+        "st_uid": "1000"
+      },
+      "sha256": "943c5de4835ead646baf1f84f8a5d990b2a5a5515078309dae7446f4eff3d082"
+    },
+    "source-01-read-1.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325507512895312",
+        "st_dev": "66306",
+        "st_ino": "60582309",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507512895312",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-01-read-1.stdout": {
+      "bytes": 27136,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792325507505902041",
+        "st_dev": "66306",
+        "st_ino": "60582308",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507505902041",
+        "st_nlink": "1",
+        "st_size": "27136",
+        "st_uid": "1000"
+      },
+      "sha256": "54ba504d5922ecee083786ce935d69835768543c9fc88e60abaa9e42068681a5"
+    },
+    "source-01.py.txt": {
+      "bytes": 25220,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792325507526245273",
+        "st_dev": "66306",
+        "st_ino": "60582311",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507526245273",
+        "st_nlink": "1",
+        "st_size": "25220",
+        "st_uid": "1000"
+      },
+      "sha256": "09295a80660f17925ae23765ce8cbd7ff7ceae968d5f2f89349f1cb74c0b9e11"
+    },
+    "source-02-read-0.exit.json": {
+      "bytes": 815,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507565506977",
+        "st_dev": "66306",
+        "st_ino": "60582314",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507565506977",
+        "st_nlink": "1",
+        "st_size": "815",
+        "st_uid": "1000"
+      },
+      "sha256": "cfed0fca99bd19a5cd0df36d1207987b9a046faf739d9bc5136d560130aff0fc"
+    },
+    "source-02-read-0.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325507557895560",
+        "st_dev": "66306",
+        "st_ino": "60582313",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507557895560",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-02-read-0.stdout": {
+      "bytes": 6144,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792325507551242195",
+        "st_dev": "66306",
+        "st_ino": "60582312",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507551242195",
+        "st_nlink": "1",
+        "st_size": "6144",
+        "st_uid": "1000"
+      },
+      "sha256": "d32d5ae8d13e4a653c42cbdd1cf6b48f1a1ec8ee499a161327f87375a84982ff"
+    },
+    "source-02-read-1.exit.json": {
+      "bytes": 815,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507600618483",
+        "st_dev": "66306",
+        "st_ino": "60582317",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507600618483",
+        "st_nlink": "1",
+        "st_size": "815",
+        "st_uid": "1000"
+      },
+      "sha256": "63907a1506ae7eb2ae3cee2bacbb8ada7261f44df1d81601e0e0372b7ca79850"
+    },
+    "source-02-read-1.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325507592895752",
+        "st_dev": "66306",
+        "st_ino": "60582316",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507592895752",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-02-read-1.stdout": {
+      "bytes": 6144,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792325507587114392",
+        "st_dev": "66306",
+        "st_ino": "60582315",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507587114392",
+        "st_nlink": "1",
+        "st_size": "6144",
+        "st_uid": "1000"
+      },
+      "sha256": "d32d5ae8d13e4a653c42cbdd1cf6b48f1a1ec8ee499a161327f87375a84982ff"
+    },
+    "source-02.py.txt": {
+      "bytes": 4193,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792325507606972582",
+        "st_dev": "66306",
+        "st_ino": "60582318",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507606972582",
+        "st_nlink": "1",
+        "st_size": "4193",
+        "st_uid": "1000"
+      },
+      "sha256": "39ccae300a4739cc53719bd3b39ce3f8f66e736c6eb672006e338a4c5cc3dc76"
+    },
+    "source-03-read-0.exit.json": {
+      "bytes": 817,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507645851900",
+        "st_dev": "66306",
+        "st_ino": "60582321",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507645851900",
+        "st_nlink": "1",
+        "st_size": "817",
+        "st_uid": "1000"
+      },
+      "sha256": "7c4df52d99617ad13dd667885093ce181c1b146447416d15f7f0515da522caf0"
+    },
+    "source-03-read-0.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325507638896005",
+        "st_dev": "66306",
+        "st_ino": "60582320",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507638896005",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-03-read-0.stdout": {
+      "bytes": 6144,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792325507631492333",
+        "st_dev": "66306",
+        "st_ino": "60582319",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507631492333",
+        "st_nlink": "1",
+        "st_size": "6144",
+        "st_uid": "1000"
+      },
+      "sha256": "efa46e8b797b700efefa15f2794e1cbf141d0f1cd55b7320a8780d06c26da29d"
+    },
+    "source-03-read-1.exit.json": {
+      "bytes": 817,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507682995912",
+        "st_dev": "66306",
+        "st_ino": "60582324",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507682995912",
+        "st_nlink": "1",
+        "st_size": "817",
+        "st_uid": "1000"
+      },
+      "sha256": "31005b6f1d7fff0df3c97cb9c30edefdc430571f98fafdc91a767ca7ea8afd29"
+    },
+    "source-03-read-1.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325507675896209",
+        "st_dev": "66306",
+        "st_ino": "60582323",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507675896209",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-03-read-1.stdout": {
+      "bytes": 6144,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792325507668901658",
+        "st_dev": "66306",
+        "st_ino": "60582322",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507668901658",
+        "st_nlink": "1",
+        "st_size": "6144",
+        "st_uid": "1000"
+      },
+      "sha256": "efa46e8b797b700efefa15f2794e1cbf141d0f1cd55b7320a8780d06c26da29d"
+    },
+    "source-03.py.txt": {
+      "bytes": 4520,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792325507689446892",
+        "st_dev": "66306",
+        "st_ino": "60582325",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507689446892",
+        "st_nlink": "1",
+        "st_size": "4520",
+        "st_uid": "1000"
+      },
+      "sha256": "66a78bb27706626c4cc8ef424a5479f6301204baacd85986e8002c16b751fef1"
+    },
+    "source-04-read-0.exit.json": {
+      "bytes": 815,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507726590008",
+        "st_dev": "66306",
+        "st_ino": "60582328",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507726590008",
+        "st_nlink": "1",
+        "st_size": "815",
+        "st_uid": "1000"
+      },
+      "sha256": "808aa6bba62d74931c6af89b66287f7c11df77ef0c33eaadacacc3bf80e4065c"
+    },
+    "source-04-read-0.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325507718896445",
+        "st_dev": "66306",
+        "st_ino": "60582327",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507718896445",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-04-read-0.stdout": {
+      "bytes": 69632,
+      "physical": {
+        "st_blocks": "136",
+        "st_ctime_ns": "1792325507711796918",
+        "st_dev": "66306",
+        "st_ino": "60582326",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507711796918",
+        "st_nlink": "1",
+        "st_size": "69632",
+        "st_uid": "1000"
+      },
+      "sha256": "b55c6244d49608d7a9ff4e4cbfdd875abe9f143212266c99780ae29ef59a293b"
+    },
+    "source-04-read-1.exit.json": {
+      "bytes": 815,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507763492803",
+        "st_dev": "66306",
+        "st_ino": "60582331",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507763492803",
+        "st_nlink": "1",
+        "st_size": "815",
+        "st_uid": "1000"
+      },
+      "sha256": "146ae8a59c5b579af7ed7b7678c952b433ba52d991d30d9709425150a4e378ab"
+    },
+    "source-04-read-1.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325507756896655",
+        "st_dev": "66306",
+        "st_ino": "60582330",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507756896655",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-04-read-1.stdout": {
+      "bytes": 69632,
+      "physical": {
+        "st_blocks": "136",
+        "st_ctime_ns": "1792325507749723159",
+        "st_dev": "66306",
+        "st_ino": "60582329",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507749723159",
+        "st_nlink": "1",
+        "st_size": "69632",
+        "st_uid": "1000"
+      },
+      "sha256": "b55c6244d49608d7a9ff4e4cbfdd875abe9f143212266c99780ae29ef59a293b"
+    },
+    "source-04.py.txt": {
+      "bytes": 67710,
+      "physical": {
+        "st_blocks": "136",
+        "st_ctime_ns": "1792325507769741781",
+        "st_dev": "66306",
+        "st_ino": "60582332",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507769741781",
+        "st_nlink": "1",
+        "st_size": "67710",
+        "st_uid": "1000"
+      },
+      "sha256": "e5f119e394193e206655bec4b993ef0bb40b0fbb2f22c92bd5b2d70a622bb518"
+    },
+    "source-05-read-0.exit.json": {
+      "bytes": 818,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507807526597",
+        "st_dev": "66306",
+        "st_ino": "60582335",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507807526597",
+        "st_nlink": "1",
+        "st_size": "818",
+        "st_uid": "1000"
+      },
+      "sha256": "cf8cfcd7bd02f8cc57df003a0a319875a083c10f8b7251188272061937caf670"
+    },
+    "source-05-read-0.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325507799896891",
+        "st_dev": "66306",
+        "st_ino": "60582334",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507799896891",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-05-read-0.stdout": {
+      "bytes": 20992,
+      "physical": {
+        "st_blocks": "48",
+        "st_ctime_ns": "1792325507793120678",
+        "st_dev": "66306",
+        "st_ino": "60582333",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507793120678",
+        "st_nlink": "1",
+        "st_size": "20992",
+        "st_uid": "1000"
+      },
+      "sha256": "d408adcae1486e453916b1dbc3fdc39d8adbad216b7616b7d37d77af2f320cff"
+    },
+    "source-05-read-1.exit.json": {
+      "bytes": 818,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507842437205",
+        "st_dev": "66306",
+        "st_ino": "60582338",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507842437205",
+        "st_nlink": "1",
+        "st_size": "818",
+        "st_uid": "1000"
+      },
+      "sha256": "18e0760cc3fdde9cabde1cbfa04976d0aa63d8c8957c540f6963de567c185fee"
+    },
+    "source-05-read-1.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325507834897084",
+        "st_dev": "66306",
+        "st_ino": "60582337",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507834897084",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-05-read-1.stdout": {
+      "bytes": 20992,
+      "physical": {
+        "st_blocks": "48",
+        "st_ctime_ns": "1792325507828429640",
+        "st_dev": "66306",
+        "st_ino": "60582336",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507828429640",
+        "st_nlink": "1",
+        "st_size": "20992",
+        "st_uid": "1000"
+      },
+      "sha256": "d408adcae1486e453916b1dbc3fdc39d8adbad216b7616b7d37d77af2f320cff"
+    },
+    "source-05.py.txt": {
+      "bytes": 19173,
+      "physical": {
+        "st_blocks": "40",
+        "st_ctime_ns": "1792325507849359020",
+        "st_dev": "66306",
+        "st_ino": "60582339",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507849359020",
+        "st_nlink": "1",
+        "st_size": "19173",
+        "st_uid": "1000"
+      },
+      "sha256": "04ef85e330eb3cda057b5f4f8e9c06891536bf06d7b26341d392153ecaa861e2"
+    },
+    "source-06-read-0.exit.json": {
+      "bytes": 825,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507887604030",
+        "st_dev": "66306",
+        "st_ino": "60582342",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507887604030",
+        "st_nlink": "1",
+        "st_size": "825",
+        "st_uid": "1000"
+      },
+      "sha256": "7f21137167395b8aaf7fababcbaa96e3f4855a0969abe8a3a64e6abcc24ce4e8"
+    },
+    "source-06-read-0.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325507880897337",
+        "st_dev": "66306",
+        "st_ino": "60582341",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507880897337",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-06-read-0.stdout": {
+      "bytes": 2560,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507873854834",
+        "st_dev": "66306",
+        "st_ino": "60582340",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507873854834",
+        "st_nlink": "1",
+        "st_size": "2560",
+        "st_uid": "1000"
+      },
+      "sha256": "5f53fecc90fb6ccc5522bcdca84a9b88b39dda6311aab38e9a13f44d5fe7d8bf"
+    },
+    "source-06-read-1.exit.json": {
+      "bytes": 825,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507924082183",
+        "st_dev": "66306",
+        "st_ino": "60582345",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507924082183",
+        "st_nlink": "1",
+        "st_size": "825",
+        "st_uid": "1000"
+      },
+      "sha256": "c199b48262c9cfb667311804d077d4cf9c5c42c81a7595e486413652a5a25ab2"
+    },
+    "source-06-read-1.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325507916897535",
+        "st_dev": "66306",
+        "st_ino": "60582344",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507916897535",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-06-read-1.stdout": {
+      "bytes": 2560,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507910244059",
+        "st_dev": "66306",
+        "st_ino": "60582343",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507910244059",
+        "st_nlink": "1",
+        "st_size": "2560",
+        "st_uid": "1000"
+      },
+      "sha256": "5f53fecc90fb6ccc5522bcdca84a9b88b39dda6311aab38e9a13f44d5fe7d8bf"
+    },
+    "source-06.py.txt": {
+      "bytes": 822,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507930218921",
+        "st_dev": "66306",
+        "st_ino": "60582346",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507930218921",
+        "st_nlink": "1",
+        "st_size": "822",
+        "st_uid": "1000"
+      },
+      "sha256": "e16eb809bbf0bceeb4b46e7c9df36dc82c0c5427ee3ee9adbbcda9fa48863da1"
+    },
+    "source-07-read-0.exit.json": {
+      "bytes": 822,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325507966260367",
+        "st_dev": "66306",
+        "st_ino": "60582349",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507966260367",
+        "st_nlink": "1",
+        "st_size": "822",
+        "st_uid": "1000"
+      },
+      "sha256": "b228b165332de4910b4edc26ba5081876cf97493131eb58d5dcc40091a63898e"
+    },
+    "source-07-read-0.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325507958897766",
+        "st_dev": "66306",
+        "st_ino": "60582348",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507958897766",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-07-read-0.stdout": {
+      "bytes": 99840,
+      "physical": {
+        "st_blocks": "200",
+        "st_ctime_ns": "1792325507952006192",
+        "st_dev": "66306",
+        "st_ino": "60582347",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507952006192",
+        "st_nlink": "1",
+        "st_size": "99840",
+        "st_uid": "1000"
+      },
+      "sha256": "a24c871b2508b5b68a7d0067fa8f541aef5276a565bb6186574ade62839317fc"
+    },
+    "source-07-read-1.exit.json": {
+      "bytes": 822,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325508003191498",
+        "st_dev": "66306",
+        "st_ino": "60582352",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508003191498",
+        "st_nlink": "1",
+        "st_size": "822",
+        "st_uid": "1000"
+      },
+      "sha256": "0fb26c59efe71f918932836c6ec10c83f0f249a44ffed2ecc7738362c58e2e31"
+    },
+    "source-07-read-1.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325507995897970",
+        "st_dev": "66306",
+        "st_ino": "60582351",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507995897970",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-07-read-1.stdout": {
+      "bytes": 99840,
+      "physical": {
+        "st_blocks": "200",
+        "st_ctime_ns": "1792325507990972551",
+        "st_dev": "66306",
+        "st_ino": "60582350",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325507990972551",
+        "st_nlink": "1",
+        "st_size": "99840",
+        "st_uid": "1000"
+      },
+      "sha256": "a24c871b2508b5b68a7d0067fa8f541aef5276a565bb6186574ade62839317fc"
+    },
+    "source-07.py.txt": {
+      "bytes": 98264,
+      "physical": {
+        "st_blocks": "192",
+        "st_ctime_ns": "1792325508009620333",
+        "st_dev": "66306",
+        "st_ino": "60582353",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508009620333",
+        "st_nlink": "1",
+        "st_size": "98264",
+        "st_uid": "1000"
+      },
+      "sha256": "149cfca45f9767541a6b6a9c002da5becc35d106f6eac35eb08b6878b153858b"
+    },
+    "source-08-read-0.exit.json": {
+      "bytes": 812,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325508046265815",
+        "st_dev": "66306",
+        "st_ino": "60582356",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508046265815",
+        "st_nlink": "1",
+        "st_size": "812",
+        "st_uid": "1000"
+      },
+      "sha256": "169f3d9fa9dc627ce25dc13d43dad23193ea58ffc163080ede9c6a63ca838595"
+    },
+    "source-08-read-0.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325508038898207",
+        "st_dev": "66306",
+        "st_ino": "60582355",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508038898207",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-08-read-0.stdout": {
+      "bytes": 16896,
+      "physical": {
+        "st_blocks": "40",
+        "st_ctime_ns": "1792325508032190858",
+        "st_dev": "66306",
+        "st_ino": "60582354",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508032190858",
+        "st_nlink": "1",
+        "st_size": "16896",
+        "st_uid": "1000"
+      },
+      "sha256": "b06c0d8a54c441b28effa3ea19517fbf9885f9d097ddaad2d92d12e69d1500ee"
+    },
+    "source-08-read-1.exit.json": {
+      "bytes": 812,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325508080840213",
+        "st_dev": "66306",
+        "st_ino": "60582359",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508080840213",
+        "st_nlink": "1",
+        "st_size": "812",
+        "st_uid": "1000"
+      },
+      "sha256": "14cb9c613601de07f3060803c6067f771026ea4b88679871148170e28b64c010"
+    },
+    "source-08-read-1.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325508073898399",
+        "st_dev": "66306",
+        "st_ino": "60582358",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508073898399",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-08-read-1.stdout": {
+      "bytes": 16896,
+      "physical": {
+        "st_blocks": "40",
+        "st_ctime_ns": "1792325508068724259",
+        "st_dev": "66306",
+        "st_ino": "60582357",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508068724259",
+        "st_nlink": "1",
+        "st_size": "16896",
+        "st_uid": "1000"
+      },
+      "sha256": "b06c0d8a54c441b28effa3ea19517fbf9885f9d097ddaad2d92d12e69d1500ee"
+    },
+    "source-08.py.txt": {
+      "bytes": 14972,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792325508086928215",
+        "st_dev": "66306",
+        "st_ino": "60582360",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508086928215",
+        "st_nlink": "1",
+        "st_size": "14972",
+        "st_uid": "1000"
+      },
+      "sha256": "a8bee55eed9049b0f725b3b02444307fae366393677b9eada56e6743c3bdb790"
+    },
+    "source-09-read-0.exit.json": {
+      "bytes": 817,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325508126096367",
+        "st_dev": "66306",
+        "st_ino": "60582363",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508126096367",
+        "st_nlink": "1",
+        "st_size": "817",
+        "st_uid": "1000"
+      },
+      "sha256": "6158b8134631bebbb500a20c7adcbabd4af002eb207e9e2f8d5d3a5a6fb91cea"
+    },
+    "source-09-read-0.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325508118898647",
+        "st_dev": "66306",
+        "st_ino": "60582362",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508118898647",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-09-read-0.stdout": {
+      "bytes": 42496,
+      "physical": {
+        "st_blocks": "88",
+        "st_ctime_ns": "1792325508114370382",
+        "st_dev": "66306",
+        "st_ino": "60582361",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508114370382",
+        "st_nlink": "1",
+        "st_size": "42496",
+        "st_uid": "1000"
+      },
+      "sha256": "4d12e0d6f2d89a9aadba47668d148465182c2a978821df3870b6d263065ebf9a"
+    },
+    "source-09-read-1.exit.json": {
+      "bytes": 817,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792325508159804456",
+        "st_dev": "66306",
+        "st_ino": "60582366",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508159804456",
+        "st_nlink": "1",
+        "st_size": "817",
+        "st_uid": "1000"
+      },
+      "sha256": "f9bdd5b1d3d033f092b5c35715d88215c217f4ba232c232ddba40d9903b0c821"
+    },
+    "source-09-read-1.stderr": {
+      "bytes": 0,
+      "physical": {
+        "st_blocks": "0",
+        "st_ctime_ns": "1792325508152898834",
+        "st_dev": "66306",
+        "st_ino": "60582365",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508152898834",
+        "st_nlink": "1",
+        "st_size": "0",
+        "st_uid": "1000"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source-09-read-1.stdout": {
+      "bytes": 42496,
+      "physical": {
+        "st_blocks": "88",
+        "st_ctime_ns": "1792325508146193997",
+        "st_dev": "66306",
+        "st_ino": "60582364",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508146193997",
+        "st_nlink": "1",
+        "st_size": "42496",
+        "st_uid": "1000"
+      },
+      "sha256": "4d12e0d6f2d89a9aadba47668d148465182c2a978821df3870b6d263065ebf9a"
+    },
+    "source-09.py.txt": {
+      "bytes": 40507,
+      "physical": {
+        "st_blocks": "80",
+        "st_ctime_ns": "1792325508165830809",
+        "st_dev": "66306",
+        "st_ino": "60582367",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792325508165830809",
+        "st_nlink": "1",
+        "st_size": "40507",
+        "st_uid": "1000"
+      },
+      "sha256": "4b78383bd1bd2218d6072afbb59e6af07c0c0b7e489e806680ab225f66860987"
+    }
+  },
+  "status": "VERIFIED_TEN_PAIRED_TEXT_SOURCE_COPIES_ONLY_NOT_PACKAGE_RUNTIME_CLOSURE",
+  "transitive_package_closure": null
+}

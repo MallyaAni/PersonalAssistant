@@ -1,5 +1,73 @@
 # Next session
 
+## 2026-10-18 — Ten stopped-N2 package source copies VERIFIED; package runtime unadmitted
+
+Read research/original-loader-stopped-package-source-proof-v1-2026-10-18.json.
+Source0b7f4c0e1a4d5442a4bfd5a78b8c55a998a9938c (primary2c193c8b) pins
+collector8bcecaf2/12911B/transport0c84e4b1/6025B/independent5f7385ef/15537B/
+independenttransport22aa585d/6018B. New stdlib operational helpers ran; copied
+package/application sources were NEVER imported/compiled/CodeTyped/executed.
+No container start/create/exec/load, model/account/market-data/credential read,
+old gate/packet replay, admission reuse or guard/G08/cap/production change.
+
+ONE exact pinned-key primary SSH exited0/empty stderr/no owned stop; two Docker
+inspect calls plus20 paired fixed-path Docker cp reads only. Exact retained CID
+803718a6/e0 remained exited0/noOOM/finish09:53:55.975021651Z/Pid0/notpaused/
+notrestarting/RO root/user1000:1000/two unique audit+out mounts/no source overlap.
+Ten UTF8 Python files337466B: dataclasses, NumPy/SciPy/sklearn init, threadpoolctl,
+PyArrow init/parquet init/parquet core/fs/dataset. One regular archive member each;
+links/sparse/extra members/trailing nonzero bytes refuse, no filesystem extraction.
+Candidate1d74567f/13154B and78 files remain Spark with wires/receipts/source copies.
+Dataclassesd242aea5 and NumPyinit09295a80 match known prior bytes. Tar metadata is
+NOT held-FD source physical/ns authority or every-file baked-image attestation.
+
+Healthy existing worker independently reviewed exact source/invocation/resources
+BEFORE primary use, then tightened independent candidate pin/first-vs-inventory
+read/full stopped baseline/archive metadata BEFORE separate readback use. Both
+new transports actually exit0/empty stderr/no owned stop/cleanup failure. No new
+agent/limitedretry/workerops. Independent ONE SSH readback exit0;78 files each
+two full reads/SHA/local-copy physical decimalstrings;22 exact CLI terminals and
+all ten paired tar/source copies/full archive fields checked. ONE fresh stopped
+inspectd5265be8 matches full before/after and original retained native inspection.
+Raw independent6860a76c/36153B fetched unchanged and retained in research/
+original-loader-stopped-package-source-independent-v1-2026-10-18.json. Worker
+final READONLY actual-proof review confirms VERIFIED narrow source-copy scope.
+
+Helpers soft512MiB/hard4GiB virtualAS, owned Go CLI4GiB virtualAS,CPU30s/20s,
+ordinary file/wire262KiB unchanged. Fresh primary minimum2GiB availableRAM/1GiB
+scratch/512inodes passed; no reservation/native/model/daemon RAM bound. Primary
+45swork/50salarm/5sCLI/70sSSH; timeout/signal/overflow/ownedstop branches UNTESTED.
+Source review corrected inherited CLI-AS ceiling, interruption registration/child
+mask/killpg exit race/nested terminal persistence BEFORE use, no runtime failure.
+AST warnings-as-errors/purpose24 across4controls/six reused helper ASTs after only
+ROOT->REVIEW/seven declared whole-transport text deltas/JSON/SHA/diff PASS; Ruff
+unavailable. No package AST/codegen/native-extension/version/transitive proof yet.
+
+New remote census/census-tools/census-review/census-verifier-tools roots COMPLETE,
+immutable. Source337466B stays Spark; files/readback+root-directory fsync done;
+no crash/durability guarantee or second full remote evidence archive claimed.
+Exclusive local /tmp/capacity-stopped-package-source-local-evidence-20261018-v1
+retains11 control/proof/transport files116329B+manifest873d7b92/6523B. Initial
+parent fsync FAILED NotADirectoryError on /tmp symlink after files+root fsync;
+original manifest preserved. Separate parent-observationf7269273/363B records
+two-read SHA followup+resolved /private/tmp parent fsync, no remote/body rerun.
+Both local transports/actual stdout/exit receipts and all older roots preserved.
+
+NEXT ROOT: SOURCE ONLY inspect these ten exact retained package texts, especially
+PyArrow init/parquet/core/fs/dataset/dataclasses, and declare conditional/deferred/
+native-extension/generated seams. Prepare additional bounded source/metadata reads
+only as evidence requires. Implement distinct inert2468 sourcebook/finder/guard
+againstc2a72054 contract. Complete selected-call/global/type/generated/native/phase
+contracts+independent review BEFORE any package import or synthetic/genuine model
+capacity proposal. Do NOT repeat completed ten-source census or closed73/80/23/
+65+4/tiny/diagnostic/v2 gates/packets for docs. Producer2431/reference2446/executor
+2468/original receipts/all context/graph/JSON/UTF8 lifetimes remain separate.
+Sourcebook/finder/newguard/strategy/entrypoint/manifests/wrapper/owner/caller/
+stager/bootstrap/packet/runtime/launch/admission NULL/execution_authorizedFALSE.
+Model/RAM/horizon/history/ordinary/intraday/fill/UI UNVERIFIED; originaltimingFAILED/
+publicationCLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/actual
+twohost/Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Source graph and lambda supplement VERIFIED; executable closure unadmitted
 
 Read research/original-loader-data-closure-source-proof-v1-2026-10-18.json.
