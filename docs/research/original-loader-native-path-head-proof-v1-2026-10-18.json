@@ -1,0 +1,303 @@
+{
+  "schema": "original-loader-native-path-head-proof/1",
+  "date": "2026-10-18",
+  "status": "VERIFIED_TWENTY_PAIRED_DAEMON_PATH_HEADERS_ONLY_NATIVE_CONTENT_UNREAD",
+  "source_commit": "f2e46340456ab236b086f7e7bbeaa799b970530c",
+  "starting_commit": "f562c2e261644006de6b513d61af45968a9fab0e",
+  "starting_branch": "codex/learned-live-release-20261006",
+  "starting_worktree": "CLEAN_PULL_REBASE_ORIGIN_MAIN_UP_TO_DATE",
+  "objective": "Observe exact20 RECORD-derived native paths and sizes through paired bounded HEAD requests; independently fold retained requests/headers/receipts and full stopped baseline without reading native bodies.",
+  "source_and_evidence_pins": [
+    {
+      "path": "docs/research/original-loader-native-path-head-independent-v1-2026-10-18.json",
+      "sha256": "6f3696b006cb335a06656501446d2976723ec4649117dd33a31cd03c825adaaa",
+      "bytes": 86271
+    },
+    {
+      "path": "docs/research/original-loader-native-path-head-preservation-v1-2026-10-18.json",
+      "sha256": "ab5501b8a945de29bf2cbf29b14bea30d9d279e84b8f4417bd53e79548bd3bdb",
+      "bytes": 477
+    },
+    {
+      "path": "docs/research/original-loader-native-path-head-seams-v1-2026-10-18.json",
+      "sha256": "fb821e71f5e9454aa87ddeca7114f49c3aa036342e949072885ca9d65528c092",
+      "bytes": 7730
+    },
+    {
+      "path": "docs/research/original-loader-native-path-head-static-v1-2026-10-18.json",
+      "sha256": "371a1f713df663962b779eeaa9a09e48ba0bd0998ca83a2183790d008e4a1b83",
+      "bytes": 3685
+    },
+    {
+      "path": "docs/research/sources/capacity-native-path-head-v1-2026-10-18.py",
+      "sha256": "096adba1b0d8163ab1ce7f9e7253dab9033682cc0e49fe9e639d8e6a87b978ce",
+      "bytes": 28952
+    },
+    {
+      "path": "docs/research/sources/native-path-head-independent-transport-v1-2026-10-18.py",
+      "sha256": "d4539e41dbabd2831935f0cb3d5a6c91c65f287e7b13ba47ccc952878c210126",
+      "bytes": 6015
+    },
+    {
+      "path": "docs/research/sources/native-path-head-primary-transport-v1-2026-10-18.py",
+      "sha256": "025ba96b3875366ef81e472b6fb347d9bed7e8c27d9217221e0b65d90a50bbea",
+      "bytes": 6014
+    },
+    {
+      "path": "docs/research/sources/prepare-native-path-head-v1-2026-10-18.py",
+      "sha256": "71495dd12d1e7d94c84778a4075c37967a377e8fbaf8579e87b59356a4c35e01",
+      "bytes": 12531
+    },
+    {
+      "path": "docs/research/sources/preserve-native-path-head-controls-v1-2026-10-18.py",
+      "sha256": "9b49b405785010404793306e46a82eb69f0cfbd2dcbe394e45a1638052e962e9",
+      "bytes": 10991
+    },
+    {
+      "path": "docs/research/sources/verify-native-path-head-v1-2026-10-18.py",
+      "sha256": "a1800d2d0625599e676c139c35438969e1924654aebd74e3c975f3359810f473",
+      "bytes": 30511
+    }
+  ],
+  "prior": {
+    "declaration_source_commit": "085ab94f74341b71d305b9900265de81f3101f1e",
+    "seam_sha256": "15f8249875d0aef99b9f48d0e3eb9c1971cf85d23fefc09d27d9ed7538325128",
+    "scope": "Exact selected20 original RECORD references, not guessed suffixes or complete native closure.",
+    "old_closed_steps": "All prior metadata parsing/copies/HEAD/15/10 package censuses/AST inventories/synthetic73/80/23/65+4/tiny/diagnostic/v2 gates/packets preserved and not rerun."
+  },
+  "actual_operations": {
+    "primary_SSH_count": 1,
+    "independent_SSH_count": 1,
+    "both_exit": 0,
+    "both_stderr_bytes": 0,
+    "both_owned_stop": null,
+    "both_cleanup_failure": null,
+    "primary": "Two exact stopped container CLI inspections +40 paired fixed HEAD requests on local Docker socket. No GET/cp/tar/native content read.",
+    "independent": "129 retained files independently read twice/SHA/held+named decimal physical then later bookend pass; all40 requests/headers/base64/path stats/receipts and both exact CLI terminals checked. Original retained baseline read/physical bound and ONE fresh exact stopped inspect. No HEAD replay.",
+    "candidate_sha256": "52363e510d61b6d3c3964fef6ab099bb270aeee124c849e1f66ef01a649a7723",
+    "candidate_bytes": 57387,
+    "independent_sha256": "6f3696b006cb335a06656501446d2976723ec4649117dd33a31cd03c825adaaa",
+    "independent_bytes": 86271,
+    "review": "Existing healthy /root/trading_action_consistency READONLY exact source/invocation/resources BEFORE each use; actual proof and next requirements-only seam accepted. No newagent/limitedretry/workerops.",
+    "only_new_stdlib_operational_control_bodies_executed": true,
+    "no_package_backend_model_CodeType_import_body_AST_or_tests": true,
+    "no_container_start_create_exec_load_or_account_marketdata_credential_read": true,
+    "no_guard_G08_cap_source_map_or_production_change": true
+  },
+  "observed_acceptance": {
+    "paths": 20,
+    "paired_HEAD_requests": 40,
+    "all_HTTP200_regular_and_empty_linkTarget": true,
+    "all_exact_RECORD_declared_sizes_match": true,
+    "paths_and_sizes": [
+      {
+        "path": "pyarrow/lib.cpython-312-aarch64-linux-gnu.so",
+        "size": 4107800,
+        "mode": 493
+      },
+      {
+        "path": "pyarrow/_compute.cpython-312-aarch64-linux-gnu.so",
+        "size": 1307360,
+        "mode": 493
+      },
+      {
+        "path": "pyarrow/_fs.cpython-312-aarch64-linux-gnu.so",
+        "size": 537304,
+        "mode": 493
+      },
+      {
+        "path": "pyarrow/_dataset.cpython-312-aarch64-linux-gnu.so",
+        "size": 1037800,
+        "mode": 493
+      },
+      {
+        "path": "pyarrow/_dataset_parquet.cpython-312-aarch64-linux-gnu.so",
+        "size": 401808,
+        "mode": 493
+      },
+      {
+        "path": "pyarrow/_parquet.cpython-312-aarch64-linux-gnu.so",
+        "size": 705264,
+        "mode": 493
+      },
+      {
+        "path": "pyarrow/libarrow.so.2500",
+        "size": 48111992,
+        "mode": 420
+      },
+      {
+        "path": "pyarrow/libarrow_compute.so.2500",
+        "size": 14905408,
+        "mode": 420
+      },
+      {
+        "path": "pyarrow/libarrow_dataset.so.2500",
+        "size": 2268752,
+        "mode": 420
+      },
+      {
+        "path": "pyarrow/libparquet.so.2500",
+        "size": 11764248,
+        "mode": 420
+      },
+      {
+        "path": "pyarrow/libarrow_python.so",
+        "size": 2185016,
+        "mode": 493
+      },
+      {
+        "path": "pyarrow/libarrow_python.so.2500",
+        "size": 2185016,
+        "mode": 493
+      },
+      {
+        "path": "pyarrow/libarrow_python.so.2500.1.0",
+        "size": 2185016,
+        "mode": 493
+      },
+      {
+        "path": "numpy/_core/_multiarray_umath.cpython-312-aarch64-linux-gnu.so",
+        "size": 6122041,
+        "mode": 493
+      },
+      {
+        "path": "numpy.libs/libscipy_openblas64_-f552eb69.so",
+        "size": 27121113,
+        "mode": 493
+      },
+      {
+        "path": "numpy.libs/libgfortran-e1b7dfc8-d8198c01.so.5.0.0",
+        "size": 1605377,
+        "mode": 493
+      },
+      {
+        "path": "scipy/_lib/_ccallback_c.cpython-312-aarch64-linux-gnu.so",
+        "size": 216280,
+        "mode": 493
+      },
+      {
+        "path": "scipy.libs/libscipy_openblas-b7e2810b.so",
+        "size": 28750121,
+        "mode": 493
+      },
+      {
+        "path": "scipy.libs/libgfortran-daac5196-038a5e3c.so.5.0.0",
+        "size": 1605393,
+        "mode": 493
+      },
+      {
+        "path": "scipy.libs/libgfortran-e1b7dfc8.so.5.0.0",
+        "size": 1484433,
+        "mode": 493
+      }
+    ],
+    "above_262144_content_bound": 19,
+    "at_or_below_bound": 1,
+    "smallest_and_only_below_bound": {
+      "path": "/usr/local/lib/python3.12/site-packages/scipy/_lib/_ccallback_c.cpython-312-aarch64-linux-gnu.so",
+      "bytes": 216280
+    },
+    "meaning": "Daemon-reported path metadata only. Declaration hashes, binary bytes, ELF/architecture/DT_NEEDED/SONAME, aliases/inodes, every-file baked-image origin, actual library loads, native runtime versions, threads/model/RAM remain UNVERIFIED. No content read authority from this proof; even below-cap target needs new separately reviewed binary-copy invocation."
+  },
+  "stopped_binding": {
+    "container": "803718a62e3cbd1f6070abab25a58e1fbc0ee5d04b5444f57c817d7e47b8bf57",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "baseline_sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2",
+    "baseline_bytes": 9755,
+    "all_before_after_fresh_raw_SHA_equal_baseline": true,
+    "all_raw_Mounts_order_flags": true,
+    "full_comparison": "Every nonMounts field plus both complete mount records by two unique Destinations equals fixed baseline; raw hashes/order flags retained.",
+    "state": "exited0/noOOM/Pid0/notpaused/notrestarting/finish2026-10-18T09:53:55.975021651Z/ROroot/user1000:1000/two unique audit+out mounts/no source target overlap",
+    "reordered_positive_branch": "SOURCE_REVIEWED_NOT_EXERCISED_BY_THIS_SUCCESS",
+    "metadata_identity_not_container_source_held_FD_or_image_attestation": true,
+    "api": "Unversioned /containers/.../archive requests; official v1.51 docs are descriptive only, not runtime API pin."
+  },
+  "resource_controls": {
+    "helper_AS_soft_bytes": 536870912,
+    "helper_AS_hard_and_owned_Go_CLI_bytes": 4294967296,
+    "primary_CPU_seconds": 30,
+    "independent_CPU_seconds": 20,
+    "ordinary_header_file_and_wire_cap": 262144,
+    "primary_work_seconds": 90,
+    "primary_alarm_seconds": 95,
+    "per_HEAD_or_CLI_seconds": 5,
+    "primary_SSH_seconds": 120,
+    "independent_whole_main_alarm_seconds": 30,
+    "independent_fresh_CLI_seconds": 5,
+    "independent_SSH_seconds": 70,
+    "cumulative_primary_bound": "40 HEADs could exceed90s if individually slow. Work deadline deliberately remains90s; partial failed attempt retained, no guarantee all40 complete at worst-case5s each.",
+    "primary_fresh_headroom_minimum": {
+      "MemAvailable_bytes": 2147483648,
+      "scratch_bytes": 1073741824,
+      "scratch_inodes": 512
+    },
+    "meaning": "Limits/headroom only, no reservation or native/model/daemon RAM bound.",
+    "timeout_signal_missing_link_size_overflow_owned_stop_crash_branches": "UNTESTED"
+  },
+  "source_review_corrections": {
+    "primary": "Reviewer caught gap after request fsync before connect/send; exact positive remaining checks added before dispatch. Initial observer0492244c/28715B, transportadb483ce/6014B, builderf6912d1c/11356B retained in exclusive local preparation-drafts root.",
+    "independent": "Reviewer caught inner10s alarm resetting outer30s. Removed inner rearm before only independent dispatch, preserving original30s alarm through fresh inspection and final fold. Initial verifier267619cb/30444B/transporta167f10b/6015B and builder21084e7d/12358B retained in independent-deadline subdirectory.",
+    "builder": "ROOT caught PATHS blankline slicing would remove adjacent candidate pin before any independent generation/use; changed to exact AST endline. Final4 generated outputs reproduced byte-exact. Full old source pins corrected from retained bytes BEFORE first builder use; no failed dispatch.",
+    "draft_root": "/tmp/capacity-native-path-head-preparation-drafts-20261018-v1",
+    "no_runtime_failure_or_payload_replay": true
+  },
+  "validation": {
+    "AST_warnings_as_errors": "PASS",
+    "purpose_comments": 43,
+    "new_control_sources": 6,
+    "exact_function_AST_comparisons": 19,
+    "new_generated_outputs_byte_exact_reproduction": 4,
+    "JSON_full_SHA_hashlinks_staged_diff": "PASS",
+    "Ruff": "PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM",
+    "old_gates_payload_or_model_tests_run": 0
+  },
+  "preservation": {
+    "remote_roots": [
+      "/home/animallya96/scratch/capacity-native-path-head-20261018-v1",
+      "/home/animallya96/scratch/capacity-native-path-head-primary-tools-20261018-v1",
+      "/home/animallya96/scratch/capacity-native-path-head-independent-20261018-v1",
+      "/home/animallya96/scratch/capacity-native-path-head-independent-tools-20261018-v1"
+    ],
+    "remote": "New exclusive roots COMPLETE; file/readback+output-directory fsync; 129 raw observations remain Spark.",
+    "local_root": "/tmp/capacity-native-path-head-evidence-20261018-v1",
+    "local_files": 15,
+    "local_data_bytes": 293711,
+    "manifest_sha256": "59facb009c9dc4b8def857ef81c7200f7c8d06aba3ec4ce5e8d2b10a493b6a61",
+    "manifest_bytes": 17139,
+    "files_readback_root_resolved_parent_fsync": true,
+    "reproduction_root": "/tmp/capacity-native-path-head-reproduction-20261018-v1",
+    "separate_requirements_preservation": {
+      "schema": "native-path-head-next-requirements-preservation/1",
+      "root": "/tmp/capacity-native-path-head-next-requirements-20261018-v1",
+      "file": "original-loader-native-path-head-seams-v1-2026-10-18.json",
+      "sha256": "fb821e71f5e9454aa87ddeca7114f49c3aa036342e949072885ca9d65528c092",
+      "bytes": 7730,
+      "content_read_authorization": false,
+      "manifest_sha256": "a3da9a0c0494436ff79601435d27044c2648984b59d8230745dfd24bd3a694da",
+      "manifest_bytes": 349,
+      "files_root_resolved_parent_fsync": true
+    },
+    "raw_stdout": "Tool display truncation did not change saved raw stdout; local raw independent proof is byte-identical.",
+    "crash_durability_second_full_remote_archive_guarantee": false
+  },
+  "unchanged_and_unadmitted": {
+    "guard_sha256": "3b8be00b26cbf02f375bca5207e207dc8505dcfb997e281ab7c80cee3c187594",
+    "all25_payload_functions": "UNRUN",
+    "old_guard_sha256": "030cb5bb25f89c2785e6acbd55aceff5c99b632a5eb538079ee027362ae6178a",
+    "old2446_G08_caps_sources": "UNCHANGED",
+    "producer2431_reference2446_executor2468_original_receipts_full_context_graphs_JSON_UTF8_lifetimes": "SEPARATE_MANDATORY",
+    "execution_authorized": false,
+    "assembledtree_strategy_entrypoint_manifests_bootstrap_wrapper_owner_caller_stager_packet_runtime_launch_admission": null,
+    "binary_collector_ELF_parser": null,
+    "sklearn_metadata_version": "UNRESOLVED_1.9.1_PREDICATE_NOT_ATTESTATION",
+    "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "missing_receipts": "STILL_MISSING",
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEWRUN",
+    "actual_twohost_Spark2_image_daemon_temp_RAM": "UNADMITTED_UNCHANGED",
+    "heartbeat": "ACTIVE",
+    "diagram": "NONE"
+  },
+  "next": "SOURCE ONLY prepare NEW bounded paired single-path binary-copy tools for exact RECORD-bound SciPy _ccallback_c216280B; independent exact source/invocation/resource review BEFORE use. Keep content AND entire tar-wire262KiB, one regular member, no links/sparse/extra/trailing nonzero, no filesystem extraction/UTF8 assumption/package import. Then separately review bounded ELF data parser only after binary authentication. Other19 native bodies remain unread/abovebound; no textcopy reuse/cap relaxation/guessed suffix/recursivecopy. Finish all selected callable/global/type/dataclass liveproducer/classflags/native/phase contracts; no fullclosure/runtime capacity admission."
+}

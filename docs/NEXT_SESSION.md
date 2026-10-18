@@ -1,5 +1,90 @@
 # Next session
 
+## 2026-10-18 — Twenty native path headers/sizes VERIFIED; all binary contents UNREAD
+
+Read research/original-loader-native-path-head-proof-v1-2026-10-18.json.
+Sourcef2e46340456ab236b086f7e7bbeaa799b970530c pins observer096adba1/28952B/
+transport025ba96b/6014B/independenta1800d2d/30511B/transportd4539e41/6015B,
+builder71495dd1/12531B/preserver9b49b405/10991B. Rawproof6f3696b0/86271B/
+static371a1f71/3685B/newseamsfb821e71/7730B retained. Only NEW stdlib operational
+controls ran; no package/backend/model AST/CodeType/import/body/test, binary content/
+account/marketdata/credential read, container start/create/exec/load, old census/
+AST-job/gate/packet replay or guard/G08/cap/source-map/production change.
+
+ONE independently source/invocation/resource-reviewed primary SSH exit0/empty
+stderr/noownedstop/cleanupfailure: exact STOPPED803718a6/e0 only2CLIinspect+
+40paired fixed HEAD requests on local Docker socket. Exact20 RECORD row/path/hash/
+size references from seam15f82498; all20HTTP200/plainregular/emptylinkTarget and
+sizes match declarations. Candidate52363e51/57387B/129files staySpark. APIrequest
+unversioned; officialv1.51docs descriptive only, NOT runtime pin. HEAD metadata is
+NOT native byte/hash/ELF/alias/inode/heldFD-container-source/every-file image proof.
+
+ONE separately reviewed independent SSH exit0/empty stderr/noownedstop/cleanup
+failure:129files each two fullreads/SHA/held+named decimalphysical then later
+bookends;40exact requests/headers/base64/statpairs/receipts/twoCLIterminals checked.
+Original baseline physical bound; ONE fresh stoppedinspect. Before/after/fresh
+all rawd5265be8/orderflagsTRUE, full nonMounts+complete2uniqueDestination mount
+records equal. Reorderedpositive branch SOURCE-reviewed, NOT exercised here.
+Same exited0/noOOM/Pid0/finish09:53:55.975021651Z/notpaused/notrestarting/ROroot/
+user1000:1000/twoaudit+outmounts/no sourceoverlap. Independent repeats noHEAD/body.
+
+19of20 reported native bodies EXCEED262KiB; only SciPy
+/usr/local/lib/python3.12/site-packages/scipy/_lib/_ccallback_c.cpython-312-aarch64-linux-gnu.so
+216280B fits content bound. Largest libarrow.so.2500=48111992B. Even belowcap does
+NOT prove tar-wire fit/contenthash/ELF or authorize a content read by HEAD proof.
+All20 binary contents UNREAD; no native/runtime package attestation/loads/threads/
+RAM/fullclosure. Equal libarrow_python declared hashes/sizes do NOT prove aliases.
+New REQUIREMENTS-only seam binds20observations and one bounded candidate; executable
+binarycollector/parser/invocation/admission NULL; other19remainunadmitted.
+
+Reviewer caught primary post-fsync deadline gap BEFOREdispatch: recheck positive
+remaining before connect/send. Initialobserver0492244c/transportadb483ce/builder
+f6912d1c retained exclusive /tmp/capacity-native-path-head-preparation-drafts-
+20261018-v1. ROOT caught builder PATHS slice would remove adjacentcandidatepin
+BEFOREindependentgeneration; ASTendline fix retained. Reviewer then caught inner10s
+alarm resetting outer30; removed innerrearm BEFOREonlyindependentdispatch, keeping
+original30s active through whole main/freshinspect/finalfold. Initialverifier
+267619cb/transporta167f10b/builder21084e7d retained independent-deadline subdir.
+No runtime failure/body replay. Existing healthy worker final READONLY actualproof/
+seam scope accepted; no newagent/limitedretry/workerops.
+
+Helpers512MiBsoft/4GiBhardAS/ownedGoCLI4GiB/CPU30primary20independent; unchanged
+262KiBheader/file/wire. Primary90swork/95alarm/5request-or-CLI/120SSH;40slowHEADs
+may exhaust90beforecompletion, deliberately no worstcase200s completion guarantee.
+Independent original30salarm retained/5freshCLI/70SSH. Freshprimary2GiBavailableRAM/
+1GiBscratch/512inodes passed; headroom NOT reservation/native/model/daemonRAMbound.
+Missing/type/size/timeout/signal/overflow/ownedstop/crash branches UNTESTED. AST
+warnings-as-errors/43purposecomments across6controls/19utilityASTcomparisons/
+fournewoutputs byte-exact reproduction/JSON/fullSHA/stageddiff PASS; Ruff previously
+unavailable/no lintclaim. No old gates/tests repeated.
+
+New remote observation/tools/independent/tools roots COMPLETE immutable/files+
+outputdirfsync/readback;129rawfiles staySpark. Exclusive /tmp/capacity-native-path-
+head-evidence-20261018-v1 retains15smallfiles293711B+manifest59facb00/17139B;
+files/readbacks/root/resolvedparent fsynced. Separate reproductionroot synced.
+Newrequirements-only root capacity-native-path-head-next-requirements-20261018-v1
+retains seam+manifesta3da9a0c/349B fsynced/readback/root+parent. No crash/durability/
+secondfullremotearchive guarantee. Old failed/completed roots/admissions preserved.
+
+NEXT ROOT: SOURCE ONLY prepare NEW bounded paired single-path binary-copy tools
+for exact RECORD-bound SciPy_ccallback_c216280B; independent exactsource/invocation/
+resource review BEFOREuse. Keep content ANDentiretarwire262KiB/oneplainregularmember/
+no links/sparse/extra/trailingnonzero/no filesystemextraction/UTF8assumption/package
+import. Then separatelyreview bounded ELF DATA parser only AFTERbinaryauthentication.
+Do NOT use oldtextcopytools or relaxcaps for other19 oversized native bodies;
+design conforming bounded authentication separately. No guessed suffix/recursivecopy.
+Finish selected callable/global/type/dataclass liveproducer/classflags/native/phase
+contracts; Arrow defaults/ordinarycompute-wrapperregistry and sklearnactualmetadata
+still unresolved. Do NOT repeat closed20HEAD/metadata parsing/copy/15/10censuses/
+AST inventories/73/80/23/65+4/tiny/diagnostic/v2 gates/packets fordocs. Guard3b8be00b/
+all25payloadbodies UNRUN; old2446/030c/G08/caps unchanged. Producer2431/reference2446/
+executor2468/originalreceipts/fullcontext+graphs+JSON+UTF8 lifetimes separate.
+Assembledtree/strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/
+packet/runtime/launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/
+history/ordinary/intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/
+missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-
+daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Metadata headers/full RECORD declarations VERIFIED; native files UNREAD
 
 Read research/original-loader-package-metadata-record-proof-v1-2026-10-18.json.
