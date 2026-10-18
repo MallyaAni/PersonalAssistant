@@ -1,0 +1,52 @@
+{
+  "schema": "authenticated-callback-ELF-next-requirements/1",
+  "status": "REQUIREMENTS_ONLY_NO_NATIVE_OR_GENUINE_EXECUTION_ADMISSION",
+  "prior_source_commit": "f2ab0578d6918b47492fa921c101b63cf35f7556",
+  "actual_ELF_independent_proof": {
+    "path": "docs/research/original-loader-callback-elf-data-independent-v1-2026-10-18.json",
+    "bytes": 6569,
+    "sha256": "20c33344ece0c69c550f23771dbea6d9ab8d1eb6c2344a6fac2366224d817889",
+    "meaning": "Exact retained ELF DATA reconstruction and source/physical bookends, not native runtime or image-build admission."
+  },
+  "authenticated_binary": {
+    "path": "/home/animallya96/scratch/capacity-callback-binary-copy-20261018-v1/callback.bin",
+    "bytes": 216280,
+    "sha256": "9edf4136653a328edcc88dc97f6d828440ad96550c436cbe087951845c89903b",
+    "original_byte_proof_sha256": "779a1f86987f55065061ca81d6891a61072d06a2f1514ec5bb64bbeb74dd4d9e",
+    "physical_authority": "Exact original copied-file identity, not container held-FD or every-file baked-image attestation."
+  },
+  "verified_DATA": {
+    "header_domain": "ELF64 little-endian CURRENT ET_DYN, machine field decimal183; no complete architecture-specific ABI conformance or loadability claim.",
+    "program_headers": 10,
+    "section_headers": 30,
+    "dynamic_slots_including_inactive_tail": 31,
+    "active_string_declarations": 2,
+    "complete_canonical_result_bytes": 25232,
+    "complete_canonical_result_sha256": "2ad9100f4bf1f7bbc82906002f420ae9e5c947d8d9fd5ec1558729a95691cad2",
+    "ordered_DT_NEEDED": [
+      {"slot_index": 0, "dynstr_index_decimal": "2897", "bytes": 9, "hex": "6c69626d2e736f2e36", "ASCII_DATA_display": "libm.so.6"},
+      {"slot_index": 1, "dynstr_index_decimal": "2907", "bytes": 9, "hex": "6c6962632e736f2e36", "ASCII_DATA_display": "libc.so.6"}
+    ],
+    "active_SONAME_RPATH_RUNPATH_string_declarations": [],
+    "meaning": "Names and absence within this exact parsed declaration set only; no dependency filesystem paths, inode/alias relations, bytes, versions, actual loads or complete transitive closure."
+  },
+  "next_source_review_input": {
+    "path": "/home/animallya96/scratch/capacity-callback-elf-data-analysis-20261018-v1/page-0001.json",
+    "bytes": 15279,
+    "sha256": "43ce64015bf67ad315821caa994123c7134d55e4dabb89c7bea9414607a5daa3",
+    "scope": "Complete30 section records already independently folded. ROOT has not semantically reviewed symbol/version-section requirements from these records; do not infer their contents or symbol exports from filenames.",
+    "required": "A new bounded exact-file DATA observation may expose these retained section records for source review, with original independent physical binding/fullSHA, before designing any selected symbol/version-table decoder. Do not rerun the completed binary parser or37-case checks for documentation."
+  },
+  "remaining_native_contracts": [
+    "Bind selected Python native seams to actual exported symbol/type/capsule/ABI and ownership contracts. Symbol or version-table declarations alone would still not establish live callable/global/type provenance.",
+    "Establish dependency origins and the dynamic-loader search/namespace contract from authenticated source/data before proposing any fixed dependency paths. Do not guess library directories, resolve using host paths or invoke ldd/dlopen/readelf.",
+    "Other19 selected native bodies remain unread and exceed262KiB. Design conforming bounded authentication separately; no old text-copy reuse, whole oversized archive-wire read, recursive copy or cap relaxation.",
+    "Finish selected callable/global/type/dataclass live-producer/classflags/native/phase contracts, Arrow default thread/prebuffer/extension pools and ordinary wrapper registry provenance, and sklearn actualmetadata. No all-functions or generic native allowance."
+  ],
+  "closed": "This actual retained ELF DATA parser/fold and prior37/byte-copy/20HEAD/metadata/censuses/AST/gates/packets are complete within their recorded scopes; no replay for documentation.",
+  "new_symbol_version_DATA_parser": null,
+  "new_dependency_origin_observer": null,
+  "native_runtime_model_RAM_admission": null,
+  "genuine_execution_authorized": false,
+  "unchanged": "All25guard payload bodies UNRUN; old2446/030c/G08/caps/maps untouched. Original producer2431/reference2446/executor2468/receipts/lifetimes separate. Assembledtree/strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/launch/admission absent. Model/RAM/horizon/history/ordinary/intraday/fill/UI UNVERIFIED; original timing FAILED/publication CLOSED/missing receipts/v6 OPEN-PAUSED/no replay/adoption/newrun. Heartbeat ACTIVE."
+}

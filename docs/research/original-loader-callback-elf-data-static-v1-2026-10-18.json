@@ -1,0 +1,63 @@
+{
+  "AST_warnings_as_errors": "PASS",
+  "JSON": "PASS",
+  "Ruff": "NOT_RUN_PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM",
+  "embedded_bootstrap_AST": "PASS",
+  "no_old_parser_or_test_replay": true,
+  "purpose_comments": 25,
+  "schema": "retained-callback-elf-static/1",
+  "source_pins": [
+    {
+      "bytes": 7056,
+      "path": "docs/research/sources/analyze-callback-elf-retained-v1-2026-10-18.py",
+      "purpose_comments": 6,
+      "sha256": "dd28a751b8f8219239b014978406430b2a5a2cfa2b0a4625cded6bd8074f6cdf"
+    },
+    {
+      "bytes": 9452,
+      "path": "docs/research/sources/verify-callback-elf-retained-v1-2026-10-18.py",
+      "purpose_comments": 5,
+      "sha256": "8d38a2d9cbbe50694afab4b94587e04c80b04d4fe95c8ca671a378b11f169868"
+    },
+    {
+      "bytes": 8347,
+      "path": "docs/research/sources/callback-elf-data-primary-transport-v1-2026-10-18.py",
+      "purpose_comments": 3,
+      "sha256": "6c85dd69fa8054a6b2b27d20798e2ea509c441e589c6faea4e14bfca521da7ab"
+    },
+    {
+      "bytes": 8357,
+      "path": "docs/research/sources/callback-elf-data-independent-transport-v1-2026-10-18.py",
+      "purpose_comments": 3,
+      "sha256": "7f267f08d12b00d4c57cea9819b205875a442e72ac6f0fe7e883bd001c5ec659"
+    },
+    {
+      "bytes": 7155,
+      "path": "docs/research/sources/prepare-callback-elf-data-transports-v1-2026-10-18.py",
+      "purpose_comments": 4,
+      "sha256": "195a85672e13e3e2c06d2c5707c3fafdf73622153f382848d938547a50f58cff"
+    },
+    {
+      "bytes": 4902,
+      "path": "docs/research/sources/preserve-callback-elf-retained-v1-2026-10-18.py",
+      "purpose_comments": 4,
+      "sha256": "759f74571dbef0baacf94a449efa3c581f7d4d0ccea80095d5568dcc6aea73c0"
+    }
+  ],
+  "utility_AST_comparisons": [
+    "analyze-callback-elf-retained:physical",
+    "analyze-callback-elf-retained:read",
+    "verify-callback-elf-retained:physical",
+    "verify-callback-elf-retained:read",
+    "callback-elf-data-primary-transport:limits",
+    "callback-elf-data-primary-transport:interrupt",
+    "callback-elf-data-primary-transport:main",
+    "callback-elf-data-independent-transport:limits",
+    "callback-elf-data-independent-transport:interrupt",
+    "callback-elf-data-independent-transport:main",
+    "preserve-callback-elf-retained:physical",
+    "preserve-callback-elf-retained:read_bound",
+    "preserve-callback-elf-retained:retain",
+    "canonical_settings_AST_equal"
+  ]
+}
