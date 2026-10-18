@@ -1,0 +1,917 @@
+{
+  "schema": "capacity-context-parity-acceptance-proof/1",
+  "status": "VERIFIED_SYNTHETIC73_ONLY_GENUINE_STILL_UNADMITTED",
+  "source_commit": "71ededa908783eb66e878b0a88915f429e2888f6",
+  "prior_payload_source_commit": "c31987c6fb114d682fe526f94eaa479e79438479",
+  "sources": {
+    "docs/research/sources/original-loader-context-native-probe-v1-2026-10-18.py": {
+      "sha256": "6a9e82a33291466c7ef7abc57554c90b26f56c9253bbc1ff4969c49515f0105f",
+      "bytes": 1878
+    },
+    "docs/research/sources/original-loader-context-parity-preflight-v1-2026-10-18.py": {
+      "sha256": "e064dc5e1739a1e7e8e20b8af178a3420a6d58476233a2bbaad2943446ead243",
+      "bytes": 13589
+    },
+    "docs/research/sources/original-loader-context-parity-launch-v1-2026-10-18.py": {
+      "sha256": "133fee6d408e76245457e0da39b44f25eb0ced3f8476f4a8f4755433db02bea2",
+      "bytes": 7554
+    },
+    "docs/research/sources/original-loader-context-parity-operations-v1-2026-10-18.py": {
+      "sha256": "c87836875509410a2ed60fe144aef3f0d96a2e734e030896436bead03d656385",
+      "bytes": 11096
+    },
+    "docs/research/sources/original-loader-context-parity-verifier-v2-2026-10-18.py": {
+      "sha256": "c2abab9db6b347d0a7e34bed0b85df05b4c7487539c89ebe07e1797633f2f48e",
+      "bytes": 22777
+    },
+    "docs/research/sources/original-loader-context-parity-preserver-v2-2026-10-18.py": {
+      "sha256": "cf772f8dc17b4f7e325f50d463e2ea79abeb1e25561e8929aae8f5b992f56329",
+      "bytes": 9562
+    }
+  },
+  "immutable_packet": {
+    "sha256": "dfd903f31677b5945ae8fceafb25990b237d8780a5060f9469acc064d133f772",
+    "bytes": 903267,
+    "records": 83,
+    "decoded_bytes": 1643772,
+    "source_book_sha256": "371af1dfa4fb82fea78888044cb7165c266bf50f16fc17752c52ebf363224f33",
+    "source_book_bytes": 14446,
+    "regenerated": false
+  },
+  "tools": {
+    "source_book_sha256": "554f40ffbc163fa96e2590b3a8ef1bf9a609fb1ab02a9092eca4448e3fe757d1",
+    "files": {
+      "launch.py": {
+        "bytes": 7554,
+        "sha256": "133fee6d408e76245457e0da39b44f25eb0ced3f8476f4a8f4755433db02bea2"
+      },
+      "native-audit/bootstrap.py": {
+        "bytes": 1878,
+        "sha256": "6a9e82a33291466c7ef7abc57554c90b26f56c9253bbc1ff4969c49515f0105f"
+      },
+      "operations.py": {
+        "bytes": 11096,
+        "sha256": "c87836875509410a2ed60fe144aef3f0d96a2e734e030896436bead03d656385"
+      },
+      "preflight.py": {
+        "bytes": 13589,
+        "sha256": "e064dc5e1739a1e7e8e20b8af178a3420a6d58476233a2bbaad2943446ead243"
+      },
+      "preserver.py": {
+        "bytes": 9562,
+        "sha256": "cf772f8dc17b4f7e325f50d463e2ea79abeb1e25561e8929aae8f5b992f56329"
+      },
+      "query-library.py": {
+        "bytes": 6374,
+        "sha256": "8d3f17d41e5b13b98e697138facadb3f00fe68e5822130fc9d4ad2b5929acc38"
+      },
+      "stager.py": {
+        "bytes": 4638,
+        "sha256": "7cfef0ebd7b2b53cf7032b9e063c2d03d5d866385577539ac66e942700aad4b5"
+      },
+      "verifier.py": {
+        "bytes": 22777,
+        "sha256": "c2abab9db6b347d0a7e34bed0b85df05b4c7487539c89ebe07e1797633f2f48e"
+      }
+    },
+    "scope": "SEPARATE_REAL_TOOLS_SOURCE_ROOT_NOT_RETROACTIVELY_IN_IMMUTABLE83_PACKET",
+    "old_v1_verifier_preserver": "PRESERVED_UNEXECUTED_SOURCE_V2_ADDS_COMMAND_LABEL_LAUNCH_HASHLINKS_AND_COMPLETE_METADATA_ROOT_PRESERVATION"
+  },
+  "prerequisites": {
+    "proof_sha256": "0c52a7ea3b638a3796eef8a8d0985adb3cf6ad11d90112539aa434b6925d1a72",
+    "bytes": 46952,
+    "files_checked": 93,
+    "resources": {
+      "MemAvailable_bytes": "10322501632",
+      "host": "animallya-spark1",
+      "jobs_empty": true,
+      "observed_at_ns": "1792317081236922249",
+      "reservation": false,
+      "run_target_lexists": false,
+      "scratch_available_bytes": "2807345565696",
+      "scratch_inodes_available": "243502879",
+      "uid": 1000
+    },
+    "absent_targets": {
+      "/home/animallya96/scratch/capacity-context-native-probe-20261018-v1": false,
+      "/home/animallya96/scratch/capacity-context-native-probe-review-20261018-v1": false,
+      "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1": false,
+      "/home/animallya96/scratch/capacity-context-parity-evidence-review-20261018-v1": false,
+      "/home/animallya96/scratch/capacity-context-parity-independent-review-20261018-v1": false,
+      "/home/animallya96/scratch/capacity-context-parity-source-20261018-v1/admission": false
+    },
+    "image_sha256": "e7358876815ce15204dd9087c9010a14d939c45381d5b197ddb78af1ddbb015c",
+    "image_id": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "independent_worker_review_before_native_create": true,
+    "headroom_is_reservation": false
+  },
+  "native": {
+    "admission_sha256": "82c412ff83061562e25a52ad10bdacc2d9b3633dd7ceaa1308327d58b90bd606",
+    "consumed_once_never_reuse": true,
+    "proof_sha256": "1355771ff667f81e02dbe07885914dd5be8bf5cf395a3e74ef3bfdfd4988c6f7",
+    "cid": "803718a62e3cbd1f6070abab25a58e1fbc0ee5d04b5444f57c817d7e47b8bf57",
+    "finished": "2026-10-18T09:53:55.975021651Z",
+    "exit": 0,
+    "OOMKilled": false,
+    "python": "3.12.14",
+    "numpy": {
+      "init_sha256": "09295a80660f17925ae23765ce8cbd7ff7ceae968d5f2f89349f1cb74c0b9e11",
+      "path": "/usr/local/lib/python3.12/site-packages/numpy/__init__.py",
+      "version": "2.5.3"
+    },
+    "threads": {
+      "BLIS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    },
+    "backend_modules": [],
+    "source_physical_93_equal_prerequisites": true,
+    "fresh_stopped_inspect_sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2",
+    "scope": "NUMPY_IMPORT_METADATA_ONLY_NOT_PARITY_MODEL_ARCHIVE_RAM_ACCEPTANCE"
+  },
+  "attempt": {
+    "admission_sha256": "720598d76aab2c84f9d4340962a344b348e21d06a0a0a1958dcbbcb13a05ab39",
+    "consumed_once_never_reuse": true,
+    "independent_native_and_exact_invocation_review_before_admission": true,
+    "cid": "f3938915b07e14053777bd230179e896ece8cc0dfd761c13e2e366f767387f3d",
+    "started": "2026-10-18T09:54:56.672869245Z",
+    "finished": "2026-10-18T09:55:00.112957999Z",
+    "exit": 0,
+    "OOMKilled": false,
+    "outer_transport_exit": 0,
+    "owned_stop": null,
+    "children": [
+      "10",
+      "7",
+      "8",
+      "9"
+    ],
+    "all_children_exit": 0,
+    "child_stdout_stderr": "EMPTY",
+    "source_before_after_83_full_SHA_and_physical_equal": true,
+    "groups": {
+      "reader": 13,
+      "context": 20,
+      "preservation": 11,
+      "calendar": 5,
+      "binding_units": 10,
+      "lifecycle_units": 14
+    },
+    "observed": {
+      "positive": 19,
+      "expected_refusals": 54,
+      "total": 73,
+      "unexpected_failure": 0,
+      "skipped": 0
+    },
+    "named_outcomes": [
+      {
+        "case": "reader-exact31-and-paper-descriptor",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "PASS",
+        "value_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+      },
+      {
+        "case": "reader-identical-copy-content-equivalent",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "PASS",
+        "value_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+      },
+      {
+        "case": "reader-map-type-refusal",
+        "exception": "ValueError",
+        "reason": "EXACT_NATIVE_SOURCE_DICT_REQUIRED",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "reader-map-count-refusal",
+        "exception": "RuntimeError",
+        "reason": "EXACT_N2_SOURCE_READER_REQUIRED",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "reader-map-hash-refusal",
+        "exception": "RuntimeError",
+        "reason": "EXACT_N2_NATIVE31_MAP_REQUIRED",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "reader-missing-source-refusal",
+        "exception": "FileNotFoundError",
+        "reason": "[Errno 2] No such file or directory: '/out/context/source/backend/agents/trading/desk/event_execution.py'",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "reader-changed-source-refusal",
+        "exception": "ValueError",
+        "reason": "Pinned stream input bytes differ",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "reader-absolute-path-refusal",
+        "exception": "ValueError",
+        "reason": "CANONICAL_RELATIVE_NATIVE_SOURCE_REQUIRED",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "reader-traversal-path-refusal",
+        "exception": "ValueError",
+        "reason": "CANONICAL_RELATIVE_NATIVE_SOURCE_REQUIRED",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "reader-noncanonical-path-refusal",
+        "exception": "ValueError",
+        "reason": "CANONICAL_RELATIVE_NATIVE_SOURCE_REQUIRED",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "reader-nonmember-refusal",
+        "exception": "ValueError",
+        "reason": "NATIVE_SOURCE_MEMBER_REQUIRED",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "reader-subclass-refusal",
+        "exception": "ValueError",
+        "reason": "EXACT_CAPACITY_SOURCE_READER_REQUIRED",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "reader-recheck-changed-bytes-refusal",
+        "exception": "ValueError",
+        "reason": "Pinned stream input bytes differ",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "constructor-external-ShaMap-retained",
+        "scope": "ISOLATED_SYNTHETIC_CONSTRUCTOR_PARITY_DECLARED_CLASS_AND_ROOT_DIFFERENCES",
+        "status": "PASS",
+        "value_sha256": "e7ef17ff2a380426d23ed389052ef3815e9a4d38be3e113f05a03b3a1567cfc6"
+      },
+      {
+        "case": "constructor-plain-input-map-mode",
+        "scope": "ISOLATED_SYNTHETIC_CONSTRUCTOR_PARITY_DECLARED_CLASS_AND_ROOT_DIFFERENCES",
+        "status": "PASS",
+        "value_sha256": "e7ef17ff2a380426d23ed389052ef3815e9a4d38be3e113f05a03b3a1567cfc6"
+      },
+      {
+        "case": "constructor-ending-Rows-digest-and-release",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "PASS",
+        "value_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+      },
+      {
+        "case": "constructor-readonly-and-deepcopy",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "PASS",
+        "value_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+      },
+      {
+        "case": "constructor-explicit-root-scratch-identity",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "PASS",
+        "value_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+      },
+      {
+        "case": "constructor-scratch-collision-refusal",
+        "exception": "FileExistsError",
+        "reason": "[Errno 17] File exists: '/out/context/ending-release/spools'",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "constructor-reader-type-refusal",
+        "exception": "ValueError",
+        "reason": "EXACT_CAPACITY_SOURCE_READER_REQUIRED",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "constructor-bool-mode-refusal",
+        "exception": "ValueError",
+        "reason": "EXACT_EXTERNAL_INPUT_MODE_REQUIRED",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "constructor-status-refusal-retains-scratch",
+        "exception": "ValueError",
+        "reason": "Genuine completed original account required",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "constructor-missing-ending-retains-scratch",
+        "exception": "KeyError",
+        "reason": "'paper_state'",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "constructor-malformed-completion-refusal",
+        "exception": "ValueError",
+        "reason": "Truncated original JSON value",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "inputs-capture-selection-and-unused-count",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "PASS",
+        "value_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+      },
+      {
+        "case": "inputs-relative-capture-path-refusal",
+        "exception": "ValueError",
+        "reason": "Relative original capture path required",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "inputs-changed-consumed-file-refusal",
+        "exception": "ValueError",
+        "reason": "Pinned stream input bytes differ",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "unchanged-ShaMap-index-tamper-refusal",
+        "exception": "ValueError",
+        "reason": "SHA map index changed",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "unchanged-ShaMap-spool-tamper-refusal",
+        "exception": "ValueError",
+        "reason": "SHA map spool changed",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "unchanged-original-selector-tamper-refusal",
+        "exception": "ValueError",
+        "reason": "Pinned stream input bytes differ",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "source-chain-three-catalog-two-transition",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "PASS",
+        "value_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+      },
+      {
+        "case": "source-chain-changed-third-catalog-refusal",
+        "exception": "ValueError",
+        "reason": "Pinned stream input bytes differ",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "source-chain-legacy6-and-producer5-refusal",
+        "exception": "ValueError",
+        "reason": "Exact original legacy producer profile required",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "preservation-all-session-and-physical-hashes",
+        "scope": "SYNTHETIC_RAW_HASH_PRESERVATION_NOT_GENUINE_ORIGINAL_ARCHIVES",
+        "status": "PASS",
+        "value_sha256": "976b04644495333c2ae63fd8f6eeafb481a89a6bdf1230f75b4c16789c865cb6"
+      },
+      {
+        "case": "preservation-source-bound17fields-and-path",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "PASS",
+        "value_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+      },
+      {
+        "case": "preservation-original-physical-nonfinite-logical-domain",
+        "scope": "EXISTING_EXPLICIT_PHYSICAL_TRUE_LOGICAL_COMPARISON_ONLY",
+        "status": "PASS",
+        "value_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+      },
+      {
+        "case": "preservation-physical-size-refusal",
+        "exception": "ValueError",
+        "reason": "EXTERNAL_PHYSICAL_SIZE_DIFFERS",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "preservation-physical-SHA-refusal",
+        "exception": "ValueError",
+        "reason": "ORIGINAL_INPUT_DIGEST_MISMATCH",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "preservation-session-SHA-refusal",
+        "exception": "ValueError",
+        "reason": "Pinned stream input bytes differ",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "preservation-missing-field-refusal",
+        "exception": "ValueError",
+        "reason": "EXACT_ORIGINAL_PHYSICAL_STATE_SCHEMA_REQUIRED",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "preservation-extra-field-refusal",
+        "exception": "ValueError",
+        "reason": "EXACT_ORIGINAL_PHYSICAL_STATE_SCHEMA_REQUIRED",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "preservation-logical-ending-mismatch-refusal",
+        "exception": "ValueError",
+        "reason": "FINAL_PHYSICAL_STATE_DIFFERS_FROM_COMPLETION",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "preservation-CURRENT-paper-source-refusal",
+        "exception": "RuntimeError",
+        "reason": "EXACT_N2_PAPER_SOURCE_REQUIRED",
+        "scope": "SOURCE_DESCRIPTOR_BOUNDARY_ONLY_CONTEXT_NATIVE31_WOULD_REFUSE_EARLIER",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "preservation-archive-type-refusal",
+        "exception": "ValueError",
+        "reason": "EXACT_CAPACITY_ARCHIVES_REQUIRED",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "calendar-source-and-parent-data-origins",
+        "scope": "ACTUAL_SYNTHETIC_CANDIDATE",
+        "status": "PASS",
+        "value_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+      },
+      {
+        "case": "calendar-reviewed-years-and-closures-parity",
+        "scope": "ISOLATED_REVIEWED_SESSIONS_REFERENCE_REAL_PUBLIC_DATA",
+        "status": "PASS",
+        "value_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+      },
+      {
+        "case": "calendar-boundary-session-sequence-parity",
+        "scope": "BOUNDED_DATE_REFERENCE_PARITY_NOT_FULL_ORIGINAL_PROFILE",
+        "status": "PASS",
+        "value_sha256": "e218c9881a2788d1cefb415b00b56f9bb37bb84a2cdfc15d7b616da46dc64129"
+      },
+      {
+        "case": "calendar-root-mismatch-refusal",
+        "exception": "ValueError",
+        "reason": "CAPACITY_CALENDAR_IMPORT_ROOT_REQUIRED",
+        "scope": "SYNTHETIC_CALENDAR_METADATA_ONLY",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "calendar-data-hash-refusal",
+        "exception": "ValueError",
+        "reason": "Pinned stream input bytes differ",
+        "scope": "SYNTHETIC_CALENDAR_METADATA_ONLY",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "binding-unit-schema-refusal",
+        "exception": "ValueError",
+        "reason": "EXACT_CAPACITY_BINDING_REQUIRED",
+        "scope": "INJECTED_PINNED_METADATA_NEGATIVE_UNIT_NO_FULLMAP_OR_GENUINE_ADMISSION",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "binding-unit-profile-refusal",
+        "exception": "ValueError",
+        "reason": "ORIGINAL_FULL_CAPACITY_PROFILE_REQUIRED",
+        "scope": "INJECTED_PINNED_METADATA_NEGATIVE_UNIT_NO_FULLMAP_OR_GENUINE_ADMISSION",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "binding-unit-import-root-refusal",
+        "exception": "ValueError",
+        "reason": "ACTUAL_CAPACITY_IMPORT_ROOT_REQUIRED",
+        "scope": "INJECTED_PINNED_METADATA_NEGATIVE_UNIT_NO_FULLMAP_OR_GENUINE_ADMISSION",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "binding-unit-base2446-hash-refusal",
+        "exception": "ValueError",
+        "reason": "UNCHANGED_LEGACY2446_MAP_REQUIRED",
+        "scope": "INJECTED_PINNED_METADATA_NEGATIVE_UNIT_NO_FULLMAP_OR_GENUINE_ADMISSION",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "binding-unit-module-set-refusal",
+        "exception": "ValueError",
+        "reason": "EXACT_CAPACITY_MODULE_SET_REQUIRED",
+        "scope": "INJECTED_PINNED_METADATA_NEGATIVE_UNIT_NO_FULLMAP_OR_GENUINE_ADMISSION",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "binding-unit-legacy-override-refusal",
+        "exception": "ValueError",
+        "reason": "LEGACY_SOURCE_OVERRIDE_FORBIDDEN",
+        "scope": "INJECTED_PINNED_METADATA_NEGATIVE_UNIT_NO_FULLMAP_OR_GENUINE_ADMISSION",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "binding-unit-map-union-refusal",
+        "exception": "ValueError",
+        "reason": "EXACT_CAPACITY_MAP_UNION_REQUIRED",
+        "scope": "INJECTED_PINNED_METADATA_NEGATIVE_UNIT_NO_FULLMAP_OR_GENUINE_ADMISSION",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "binding-unit-duplicate-mount-destination-refusal",
+        "exception": "ValueError",
+        "reason": "UNIQUE_RUNTIME_MOUNT_DESTINATIONS_REQUIRED",
+        "scope": "INJECTED_MOUNT_RECORD_NEGATIVE_UNIT_NOT_ACTUAL_RUNTIME",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "binding-unit-writable-root-refusal",
+        "exception": "ValueError",
+        "reason": "EXACT_READONLY_CAPACITY_HOST_ROOT_REQUIRED",
+        "scope": "INJECTED_MOUNT_RECORD_NEGATIVE_UNIT_NOT_ACTUAL_RUNTIME",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "binding-unit-host-root-mapping-refusal",
+        "exception": "ValueError",
+        "reason": "EXACT_READONLY_CAPACITY_HOST_ROOT_REQUIRED",
+        "scope": "INJECTED_MOUNT_RECORD_NEGATIVE_UNIT_NOT_ACTUAL_RUNTIME",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "phase-attach-before-after-order",
+        "scope": "INJECTED_PHASE_HOLDER_UNIT_CTOR_GENUINE_ADMISSIONS_LOADER_UNRUN",
+        "status": "PASS",
+        "value_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+      },
+      {
+        "case": "phase-duplicate-attach-refusal",
+        "exception": "ValueError",
+        "reason": "EXACT_LOADED_RETENTION_PHASE_REQUIRED",
+        "scope": "INJECTED_PHASE_HOLDER_UNIT_CTOR_GENUINE_ADMISSIONS_LOADER_UNRUN",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "phase-after-before-attach-refusal",
+        "exception": "ValueError",
+        "reason": "AFTER_PHASE_ORDER_REQUIRED",
+        "scope": "INJECTED_PHASE_HOLDER_UNIT_CTOR_GENUINE_ADMISSIONS_LOADER_UNRUN",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "phase-serialize-before-after-refusal",
+        "exception": "ValueError",
+        "reason": "COEXISTENCE_ROOTS_REQUIRED",
+        "scope": "INJECTED_PHASE_HOLDER_UNIT_CTOR_GENUINE_ADMISSIONS_LOADER_UNRUN",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "phase-complete-JSON-UTF8-retains-both-graphs",
+        "scope": "INJECTED_PHASE_HOLDER_UNIT_CTOR_GENUINE_ADMISSIONS_LOADER_UNRUN",
+        "status": "PASS",
+        "value_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+      },
+      {
+        "case": "phase-small-injected-result-bound-refusal",
+        "exception": "ValueError",
+        "reason": "CAPACITY_RESULT_BOUND_EXCEEDED",
+        "scope": "INJECTED_PHASE_HOLDER_UNIT_CTOR_GENUINE_ADMISSIONS_LOADER_UNRUN_INJECTED_SMALL_BOUND_RESTORED",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "phase-persist-before-encode-refusal",
+        "exception": "ValueError",
+        "reason": "DURABLE_CANDIDATE_PHASE_REQUIRED",
+        "scope": "INJECTED_PHASE_HOLDER_UNIT_CTOR_GENUINE_ADMISSIONS_LOADER_UNRUN",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "phase-exclusive-result-collision-refusal",
+        "exception": "FileExistsError",
+        "reason": "[Errno 17] File exists: '/out/units/collision/candidate/candidate.json'",
+        "scope": "INJECTED_PHASE_HOLDER_UNIT_CTOR_GENUINE_ADMISSIONS_LOADER_UNRUN",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "phase-real-file-directory-parent-sync-order",
+        "scope": "INJECTED_PHASE_HOLDER_UNIT_CTOR_GENUINE_ADMISSIONS_LOADER_UNRUN_REAL_IO_NO_CRASH_DURABILITY_CLAIM",
+        "status": "PASS",
+        "value_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+      },
+      {
+        "case": "phase-parent-path-FD-mismatch-refusal",
+        "exception": "ValueError",
+        "reason": "OWNED_DURABILITY_DIRECTORY_CHANGED",
+        "scope": "INJECTED_PHASE_HOLDER_UNIT_CTOR_GENUINE_ADMISSIONS_LOADER_UNRUN",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "phase-directory-sync-failure-no-durable-phase",
+        "exception": "OSError",
+        "reason": "INJECTED_UNIT_DIRECTORY_FSYNC_FAILURE",
+        "scope": "INJECTED_PHASE_HOLDER_UNIT_CTOR_GENUINE_ADMISSIONS_LOADER_UNRUN",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "phase-release-before-durability-refusal",
+        "exception": "ValueError",
+        "reason": "RELEASE_BEFORE_DURABILITY_FORBIDDEN",
+        "scope": "INJECTED_PHASE_HOLDER_UNIT_CTOR_GENUINE_ADMISSIONS_LOADER_UNRUN",
+        "status": "EXPECTED_REFUSAL"
+      },
+      {
+        "case": "phase-release-only-own-RAM-refs-files-retained",
+        "scope": "INJECTED_PHASE_HOLDER_UNIT_CTOR_GENUINE_ADMISSIONS_LOADER_UNRUN",
+        "status": "PASS",
+        "value_sha256": "b5bea41b6c623f7c09f1bf24dcae58ebab3c0cdd90ad966bc43a45b44867e12b"
+      },
+      {
+        "case": "phase-public-execute-unconditional-refusal",
+        "exception": "RuntimeError",
+        "reason": "SOURCE_ONLY_NO_GENUINE_EXECUTOR_OR_MODEL_STRATEGY",
+        "scope": "INJECTED_PHASE_HOLDER_UNIT_CTOR_GENUINE_ADMISSIONS_LOADER_UNRUN",
+        "status": "EXPECTED_REFUSAL"
+      }
+    ],
+    "independent_refusal_verification": "54_EXACT_EXCEPTION_TYPES_51_EXACT_REASONS_3_OS_PATH_DEPENDENT_CLASS_CHECKS",
+    "independent_origins": "ALL11_REAL_MODULE_ORIGINS_AND_EACH_CHILD_NATIVE_METADATA_MATCHED"
+  },
+  "runtime": {
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "uid": "1000:1000",
+    "network": "none",
+    "readonly": true,
+    "CPUs": 1,
+    "RAM_and_swap_bytes": 2147483648,
+    "PIDs": 32,
+    "tmp": "64MiB",
+    "healthcheck": "NONE",
+    "logging": "none",
+    "cap_drop": "ALL",
+    "no_new_privileges": true,
+    "mounts": [
+      {
+        "Type": "bind",
+        "Source": "/home/animallya96/scratch/capacity-context-parity-source-20261018-v1/audit",
+        "Destination": "/audit",
+        "Mode": "",
+        "RW": false,
+        "Propagation": "rprivate"
+      },
+      {
+        "Type": "bind",
+        "Source": "/home/animallya96/scratch/capacity-context-parity-20261018-v1/output",
+        "Destination": "/out",
+        "Mode": "",
+        "RW": true,
+        "Propagation": "rprivate"
+      }
+    ],
+    "created_stopped_fresh_full_unique_mount_records_equal": true,
+    "raw_mount_order": {
+      "cid": "f3938915b07e14053777bd230179e896ece8cc0dfd761c13e2e366f767387f3d",
+      "created_stopped_raw_mount_order_equal": true,
+      "fresh_inspect_sha256": "fb36a9348d5129d87e9f387e1f42c46d4609ac9e5c140b473d39752c2d0e439c",
+      "stopped_fresh_raw_mount_order_equal": true
+    },
+    "genuine_model_original_account_data_credentials_socket_mounts": false,
+    "headroom_not_model_or_daemon_RAM_bound": true
+  },
+  "preservation": {
+    "terminal_proof_sha256": "7dc8f17563387f6e5a5e85dea3cefb918022e0a1d993b4b6226e255fe973e9dd",
+    "run_inventory_files": 1169,
+    "run_inventory_bytes": 22023479,
+    "run_inventory_pages": [
+      {
+        "path": "run-manifest-000.json",
+        "sha256": "392e165a7b64ea2e735f71b2d9c54029e01ad8606343221f5333f6afc00f3daa"
+      },
+      {
+        "path": "run-manifest-001.json",
+        "sha256": "fc50204be0f75e150cba3e81ab1373fd03edb7a38c03745b4c3f157d7a33677c"
+      },
+      {
+        "path": "run-manifest-002.json",
+        "sha256": "46d036cf16ee1b09e0e8915ee8790465061f84cae8951412dc63f223b0d129d3"
+      },
+      {
+        "path": "run-manifest-003.json",
+        "sha256": "e4bea0bdefcf13ab2d2300f0f8f89d9ba424fc09f67251a48b9db4682e26c14a"
+      },
+      {
+        "path": "run-manifest-004.json",
+        "sha256": "04bb17e1684c619b2eb9221ef69c81b0962742e2c7a3e9f8c5895b4604195ae1"
+      },
+      {
+        "path": "run-manifest-005.json",
+        "sha256": "e38a543c4b198e948ee16ce68d70109298f776ed23943fbaf73aebb1213b46ff"
+      },
+      {
+        "path": "run-manifest-006.json",
+        "sha256": "84076a4ba4b4451c4ac57d94a7687a3254e4a912527d9a156c6f0fe635865e93"
+      },
+      {
+        "path": "run-manifest-007.json",
+        "sha256": "549ffceb6ea8a1e0df0d4b85cd194ca0be23c791bb0ee7b6202b5210e8ec47a0"
+      },
+      {
+        "path": "run-manifest-008.json",
+        "sha256": "453eb2209e30c528e2f6970f59e06b0aa68f631f16d5bef27908a920acf6c4ea"
+      },
+      {
+        "path": "run-manifest-009.json",
+        "sha256": "a5a4d6b7591f5c03bcf53947e3d28dfb73a9d0ac943646cf77fa9cab376541ae"
+      },
+      {
+        "path": "run-manifest-010.json",
+        "sha256": "a1506a5c82a4d822906073d1977b07a69faf03d1f2b02d4179139f4a6cdeb97d"
+      },
+      {
+        "path": "run-manifest-011.json",
+        "sha256": "eab410f0b30163bdb6cd822a0a7a7147412959d25554489740144cfae61392de"
+      },
+      {
+        "path": "run-manifest-012.json",
+        "sha256": "ca9ecffa2540e8c3c75d626aba114764b71c3f582a067e52eee85edff6eba9bd"
+      },
+      {
+        "path": "run-manifest-013.json",
+        "sha256": "fe9f1fc89f3361f251bef48f73c687a00950d7baf8869e815acc7ae86f41f23f"
+      },
+      {
+        "path": "run-manifest-014.json",
+        "sha256": "764b1efa9961d6afc440e50cb8cf2b18568eafd8f1ad2a1708b573c11ce4dbd6"
+      },
+      {
+        "path": "run-manifest-015.json",
+        "sha256": "f7456bcfc382351ecaedc236ebdea10f244e4533108b77e5c995b6bc5de4d8c7"
+      },
+      {
+        "path": "run-manifest-016.json",
+        "sha256": "29393890ebb70c21fa61f777258436a542e21a214573cba2c00c2c64d514b815"
+      },
+      {
+        "path": "run-manifest-017.json",
+        "sha256": "14333f860e0fb71b4fd46b1021ea08c6a43aec720da28b17b9793e5d54126b43"
+      },
+      {
+        "path": "run-manifest-018.json",
+        "sha256": "68d00cbff0139a815a00e4bed08c4e982b66f54576149bca3a29832fe00c8353"
+      }
+    ],
+    "run_inventory_two_full_reads": true,
+    "root": "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1",
+    "copied_payload_files": 1339,
+    "copied_payload_bytes": 24575979,
+    "manifest_pages": 21,
+    "manifest_page_bytes": 1289452,
+    "top_manifest_bytes": 10845,
+    "evidence_total_files": 1361,
+    "evidence_total_bytes": 25876276,
+    "manifest_sha256": "d2378ddf7f0e5cf9eac724ff1f7c8f3f5d3cff70c0ba39f45cd2ca18546fd9f9",
+    "independent_copy_review_sha256": "c982fb473d82677a2f628f4eeb21ab1b0e2775fa73517ee710085ec0251fcc89",
+    "copy_review_scope": "TWO_FULL_READS_OF_EACH1339_ORIGINAL_AND_COPY_WITH_EXACT_PHYSICAL_FIELDS;21PAGES_SHA_PHYSICAL_CHECKED;TOP_MANIFEST_BOOKENDED",
+    "external_packet": {
+      "bytes": 903267,
+      "copied_into_ordinary_evidence_root": false,
+      "path": "/home/animallya96/scratch/capacity-context-parity-transfer-20261018-v1/packet.json",
+      "physical": {
+        "st_blocks": "1768",
+        "st_ctime_ns": "1792317056816831058",
+        "st_dev": "66306",
+        "st_ino": "60578625",
+        "st_mode": "33204",
+        "st_mtime_ns": "1792317056816831058",
+        "st_nlink": "1",
+        "st_size": "903267",
+        "st_uid": "1000"
+      },
+      "sha256": "dfd903f31677b5945ae8fceafb25990b237d8780a5060f9469acc064d133f772"
+    },
+    "ordinary_perfile_bytes_bound": 262144,
+    "ordinary_file_bound_exception": false,
+    "all_ns_decimal_strings": true
+  },
+  "raw_receipts": {
+    "fetch-prerequisites.stdout": {
+      "sha256": "0c52a7ea3b638a3796eef8a8d0985adb3cf6ad11d90112539aa434b6925d1a72",
+      "bytes": 46952,
+      "remote": "/home/animallya96/scratch/capacity-context-parity-prerequisites-20261018-v1/proof.json",
+      "local": "/tmp/capacity-context-parity-operations-20261018-v1/fetch-prerequisites.stdout"
+    },
+    "fetch-prerequisite-image.stdout": {
+      "sha256": "e7358876815ce15204dd9087c9010a14d939c45381d5b197ddb78af1ddbb015c",
+      "bytes": 3243,
+      "remote": "/home/animallya96/scratch/capacity-context-parity-prerequisites-20261018-v1/runtime-image.json",
+      "local": "/tmp/capacity-context-parity-operations-20261018-v1/fetch-prerequisite-image.stdout"
+    },
+    "fetch-native-proof.stdout": {
+      "sha256": "1355771ff667f81e02dbe07885914dd5be8bf5cf395a3e74ef3bfdfd4988c6f7",
+      "bytes": 46814,
+      "remote": "/home/animallya96/scratch/capacity-context-native-probe-review-20261018-v1/proof.json",
+      "local": "/tmp/capacity-context-parity-operations-20261018-v1/fetch-native-proof.stdout"
+    },
+    "fetch-native-inspect.stdout": {
+      "sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2",
+      "bytes": 9755,
+      "remote": "/home/animallya96/scratch/capacity-context-native-probe-review-20261018-v1/fresh-inspect.json",
+      "local": "/tmp/capacity-context-parity-operations-20261018-v1/fetch-native-inspect.stdout"
+    },
+    "fetch-terminal-proof.stdout": {
+      "sha256": "7dc8f17563387f6e5a5e85dea3cefb918022e0a1d993b4b6226e255fe973e9dd",
+      "bytes": 22634,
+      "remote": "/home/animallya96/scratch/capacity-context-parity-independent-review-20261018-v1/proof.json",
+      "local": "/tmp/capacity-context-parity-operations-20261018-v1/fetch-terminal-proof.stdout"
+    },
+    "fetch-parity-inspect.stdout": {
+      "sha256": "fb36a9348d5129d87e9f387e1f42c46d4609ac9e5c140b473d39752c2d0e439c",
+      "bytes": 9717,
+      "remote": "/home/animallya96/scratch/capacity-context-parity-independent-review-20261018-v1/fresh-inspect.json",
+      "local": "/tmp/capacity-context-parity-operations-20261018-v1/fetch-parity-inspect.stdout"
+    },
+    "fetch-evidence-manifest.stdout": {
+      "sha256": "d2378ddf7f0e5cf9eac724ff1f7c8f3f5d3cff70c0ba39f45cd2ca18546fd9f9",
+      "bytes": 10845,
+      "remote": "/home/animallya96/scratch/capacity-context-parity-evidence-20261018-v1/manifest.json",
+      "local": "/tmp/capacity-context-parity-operations-20261018-v1/fetch-evidence-manifest.stdout"
+    },
+    "fetch-evidence-review.stdout": {
+      "sha256": "c982fb473d82677a2f628f4eeb21ab1b0e2775fa73517ee710085ec0251fcc89",
+      "bytes": 386,
+      "remote": "/home/animallya96/scratch/capacity-context-parity-evidence-review-20261018-v1/proof.json",
+      "local": "/tmp/capacity-context-parity-operations-20261018-v1/fetch-evidence-review.stdout"
+    }
+  },
+  "scope": [
+    "49 tiny reader/context/preservation/calendar outcomes, including only two isolated original constructor projections and two isolated reviewed-session/calendar comparisons. Not73 general original-domain parity comparisons.",
+    "24 explicitly injected binding/lifecycle UNIT outcomes. Actual retain/serialize/exclusive persist/file+destination+parent fsync/refusal/release methods tested; genuine lifecycle constructor, full byte receipts, loader, model type, default256MiB cap and crash durability not accepted.",
+    "Real separately named candidate eleven-module tree and three public frozen calendar files; all31 real inert N2 source bytes plus actual legacy6/producer5/three catalog bytes. Copies are content-equivalent, not original source-root authority/full2446/2453 source/import admission.",
+    "Actual strict-parser tiny SYNTHETIC Rows and ShaMap provenance/order/hashes/spool/index/read-only/deepcopy/lifetime; full genuine1916-row/164833-input account and model/receipt coexistence remain untested.",
+    "Explicit original physical=True logical nonfinite comparison retained. No generic native NaN normalization. Source descriptor CURRENT-paper control stops at metadata source boundary; no forced later native-map bypass.",
+    "Full570874B map remains240215B authenticated gzip and expands bounded RAM only in negative injected metadata UNITs. No default source/history/native/model/guard/G08/cap change.",
+    "Both native and parity single-use fresh admissions have been consumed. Every new source/tool/transfer/prerequisite/native/run/review/evidence root is COMPLETE and must never replay/adopt/overwrite.",
+    "Actual timeouts, parent alarm, force-stop, transport loss and process crash branches were not exercised. Injected UNIT IO failure is not an actual filesystem or crash acceptance."
+  ],
+  "checks": {
+    "AST": "PASS",
+    "new_source_purpose_comments": 44,
+    "JSON_fullSHA_hashlinks": "PASS",
+    "exact_named_73_cases": "PASS",
+    "independent_terminal": "PASS",
+    "independent_preservation": "PASS",
+    "source_staged_diff": "PASS",
+    "Ruff": "UNAVAILABLE_NOT_CLAIMED",
+    "no_old80_23_65plus4_tiny_diagnostic_v2_replay": true,
+    "no_new_agent_or_limited_worker_retry": true,
+    "healthy_existing_worker": "READONLY_SOURCE_ACTUAL_PREREQUISITES_EXACT_INVOCATIONS_NATIVE_TERMINAL_PRESERVATION_SCOPE_REVIEW"
+  },
+  "next": {
+    "boundary": "SOURCE_ONLY_REAL_CAPACITY_LOADER_DEPENDENCY_AND_ENTRY_BINDING",
+    "first_source": "backend/market/live_model_history_audit_inputs.py:247 load; the real import/loader closure remains unadmitted. Prior source-proved bootstrap incompatibility is preserved, not an observed genuine runtime failure.",
+    "requirements": [
+      "Retain unchanged pure forward/calibration files at actual real paths and review exact loader dependency closure, identity/type/source-receipt/inspect.getsource constraints before implementation.",
+      "Complete separately versioned executed-map/fence/phase-manifest/root/runtime/producer/calendar/configuration/economic/byte-before-after/preservation bindings and explicit model strategy before any genuine capacity proposal.",
+      "No genuine loader/full original/corrected/account/history/twohost launch; model_import_strategy and genuine entrypoint/admission remain null.",
+      "Do not rerun73 or old80/23/65+4/tiny/diagnostic/v2, regenerate packet, reuse roots/admissions or weaken guard/G08/caps."
+    ]
+  },
+  "unchanged": {
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "missing_original_receipts": "STILL_MISSING",
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN",
+    "genuine_fullsource_fence_runtime_loader_model_strategy_RAM_horizon_history_weekday_intraday_fill_UI": "UNVERIFIED",
+    "actual_twohost_Spark2_image_daemon_temp_incremental_RAM": "UNVERIFIED",
+    "production_native_model_account_change": false,
+    "heartbeat": "ACTIVE",
+    "diagram": "NONE"
+  }
+}

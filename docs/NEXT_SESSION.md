@@ -1,5 +1,90 @@
 # Next session
 
+## 2026-10-18 — Synthetic73 context acceptance VERIFIED; genuine still unadmitted
+
+Read research/original-loader-context-parity-proof-v1-2026-10-18.json.
+Source71ededa908783eb66e878b0a88915f429e2888f6 pins preflighte064dc5e/13589B,
+launch133fee6d/7554B/operationsc8783687/11096B/nativeprobe6a9e82a3/1878B/
+verifierv2c2abab9d/22777B/preserverv2cf772f8d/9562B. Prior v1e4a35/f22c5
+source preserved/unrun; v2 adds exact command/label/launch hashlinks and native/
+prerequisite/transfer preservation. Immutable packetdfd903f3/903267B/83records/
+book371af1df/14446B retained, never regenerated. Payload sourcec31987c6 and seven
+context/admission modules unchanged; no old80/23/65+4/tiny/diagnostic/v2 replay.
+
+Actual source-only staging exit0; separate tools book554f40ff/8records. Independent
+prerequisite0c52a7ea/46952B checked93source+tool files/fullphysical bookends/actual
+e0linuxarm64/Spark1UID1000/jobs empty/absent new roots/headroom. Existing healthy
+worker READONLY reviewed actual proof/raw image/exact native invocation BEFORE
+fresh separate admission82c412ff at1792317235366445367ns/MemAvailable10332078080B.
+ONE actual native-only803718a6/e0 exited0/noOOM09:53:55.975021651Z. Fresh stopped
+inspectd5265be8/native independent1355771f/46814B verifies exact source93 bookends/
+Name/label/command/full two-mount records/Python3.12.14/NumPy2.5.3/real proposed
+path/initSHA09295a80/six thread envs1/no backend imports. Native proof is only
+metadata, not model/archive/context parity or RAM acceptance.
+
+Worker independently reviewed actual native proof/raw inspect/exact synthetic call
+BEFORE fresh separate scoped admission720598d7 at1792317296339859132ns/MemAvailable
+10303377408B, consumed ONLY here. Headroom is not reservation/model/daemon bound.
+ONE actual synthetic73f3938915b07e14053777bd230179e896ece8cc0dfd761c13e2e366f767387f3d
+exited0/noOOM09:55:00.112957999Z. Actual four children7/8/9/10 exit0/empty logs/
+no owned stop/outer caller0. Native+parity exact e0 UID1000/noneRO/1CPU/2GiB=swap/
+PIDs32/tmp64/noHC/lognone/capdropALL/no-new-privileges; auditRO+outRW only, no
+genuine model/original/account/data/credential/socket mounts. Eleven real candidate
+module origins and three actual public frozen calendar files verified separately
+from real31 inert N2 source copies/legacy6/producer5/three catalogs.
+
+All73 pass:19positive/54expected refusal/0unexpected/0skip. Reader13/context20/
+preservation11/calendar5/bindingUNIT10/lifecycleUNIT14. Actual tiny SYNTHETIC
+strict-reader Rows/ShaMap provenance/order/hashes/spool/index/readonly/deepcopy/
+release checked; same-byte source copies are not original source-root authority.
+Only two constructor projections and two calendar comparisons use isolated original
+references; NOT73 general original parity comparisons. No original effect-module
+import/body or PaperState instance. Tiny private-v10 calendar metadata explicit.
+Twenty-four injected binding/phase-holder UNITs include actual exclusive JSON/UTF8/
+file+destination+parent fsync/refusal/release IO, not genuine constructor/wholemap/
+full receipts/loader/model/default256MiB-cap/crash/RAM acceptance. Explicit original
+physical=True logical nonfinite domain retained; no generic native NaN normalization.
+Raw570874B map remains240215B gzip and expands only bounded RAM in negative UNITs.
+
+Independent terminal7dc8f175/22634B checks all73 named outcomes/status/exact scopes/
+54exception types/51fixed reasons/3OS-path-dependent classes/11origins/native
+metadata/four actual child exits/full source83 SHA+physical/exact caller+launch+
+tools+native+admission hashlinks/fresh stopped inspectfb36a934. Created/stopped/fresh
+two unique destinations/full mount records equal, raw order also equal; only allowed
+HostConfig representation difference false→nullOomKillDisable. Run1169files/
+22023479B recorded by two full reads in19bounded manifest pages.
+
+Exclusive evidence root capacity-context-parity-evidence-20261018-v1 copies1339
+payload/source/native/prerequisite/review/tool/transfer files24575979B, fsynced/
+readback;21manifest pages1289452B+topmanifestd2378ddf/10845B =>1361evidence files/
+25876276B total. Distinct evidence-review-v1 proofc982fb47/386B checks two full
+reads of each1339original+copy/exact physical fields,21page SHA+physical/topmanifest
+bookends. Raw903267B packet stays outside ordinarycopy roots, streamedSHA/exact
+physical pointer retained and rechecked; raw packet retained both Mac+Spark. Every
+ordinary file<=262KiB/no capexception; exact ns decimal strings. Raw proofs/manifest/
+small observations fetched/hashchecked. All new roots COMPLETE never replay/adopt/
+overwrite; both admissions consumed/never reusable. Worker final READONLY scope/
+preservation accepted; no newagent/limitedretry/workerops. AST/purpose44/JSON/fullSHA/
+hashlinks/source diff pass; Ruff unavailable. Timeout/alarm/force-stop/transport-loss/
+process-crash branches unexercised; UNIT IO error is injected, not actual crash proof.
+No production/native/model/account change; model_import_strategy remains NULL.
+
+NEXT ROOT: synthetic73 boundary CLOSED, never rerun73 or prior80/23/65+4/tiny/
+diagnostic/v2 or regenerate packet for docs. SOURCE ONLY review exact real capacity
+loader closure/entry binding from live_model_history_audit_inputs.py load247:
+daily_prefix/economic/live_execution_inputs/frozen reader imports remain unadmitted;
+existing original bootstrap incompatibility is source-proved, not observed genuine
+failure. Keep unchanged pure forward/calibration at real paths; bind new identity/
+type/source receipts/inspect.getsource/deepcopy/readonly/allocation lifetimes under
+NEW immutable executed-map/fence/phase-manifest contract. Complete every original
+invocation/runtime/fullsource/producer/calendar/config/economic/preservation and
+full byte-before+after receipt admission plus explicit model strategy BEFORE any
+genuine capacity proposal. No genuine loader/model/account/history/twohost launch/
+guard/G08/cap relaxation. Fullsource/fence/runtime/loader/combinedRAM/horizon/
+historical/weekday/intraday/fill/UI UNVERIFIED. OriginaltimingFAILED/publication
+CLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/
+Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Synthetic73 context packet SOURCE prepared; all payload bodies UNRUN
 
 Read research/original-loader-context-parity-source-proof-v1-2026-10-18.json.
