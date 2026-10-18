@@ -1,5 +1,70 @@
 # Next session
 
+## 2026-10-18 — Pure-data guard-name collision SOURCE cut; four new modules UNRUN
+
+Read research/original-loader-map-auth-interface-source-proof-v1-2026-10-18.json.
+Source1093aca48c836968453a1999c6fa83955eed5f09 pins builder5cc1ea86/12735B,
+reviewerc7828813/10391B/parserb6f4b97f/27766B/inputauthc152e2a4/13593B/
+adaptations87a5d858/6851B/contextc6d7dfb3/11077B/contractbe1f4037/7087B/
+independentd595fa05/18730B. Only new local stdlib source/AST/tokenize/JSON/SHA
+builder+independent checker/source preservation/Git ran. No payload import/
+CodeType/body/test/numerical/model/account/data/SSH/hostprobe/Docker/job. All four
+new modules/79payload functions remain UNRUN; no actual guard/model run admitted.
+
+NEW SOURCE-PROVED BARRIER: unchanged030cb5bb profile refuses exact backend co_name
+verify BEFORE manifest lookup. V1 archive constructor -> streamed.read external
+inputs -> Cursor.sha_map -> ShaMap.verify during ADMISSION; byte_auth reader and
+verify_sha_map repeat it at three checkpoints; archives.unchanged calls it again.
+No manifest can override this. Conditional on earlier imports/admissions/reads,
+not observed genuine failure or certified first runtime event. Complete callable
+closure was not established by prior module graphs. No guard/G08/cap change.
+
+New capacity_original_history_json_v1 copies exact parser except pure ShaMap.verify
+declaration and own Cursor call become authenticate_contents. New input_auth_v1
+imports that parser and changes its one value.verify call; verify_sha_map helper
+name remains (exact co_name differs). Complete authentication bodies, bounds,
+spool/index/canonical/full byte checks, physical=True handling, two-read receipts,
+fields/allocations/releases preserved in SOURCE. New adaptations_v2 binds exact
+new Rows/digest; new archives_v2 binds parser/inputauth/adaptations, SCHEMA2,
+CapacityOriginalArchivesV2/CapacitySourceReaderV2 and unchanged() method call.
+No alias/original-module patch/sys.modules injection or generic NaN normalization.
+
+Twelve independent checks include FOUR complete normalized-module AST comparisons
+and79function inventory; exact one declaration/three calls/five import rebindings/
+two schemas/class references. Existing healthy worker READONLY final review found
+no deterministic blocker/diff outside declared deltas; no newagent/limitedretry/
+workerops. AST warning-as-error/purpose94 across6sources/JSON/fullSHA/hashlinks/
+staged diff PASS; Ruff unavailable. New2463 declarationd7805806/287138B is2459+four
+additions only; original paths/maps/guard untouched. Typed16MiB metadata outside
+ordinary262KiB source/log/packet roots, no capincrease/exception. Not assembled/
+executed map, sourcebook/finder or runtime admission.
+
+New Rows/ShaMap/Row/Cursor/History/ArchiveRef/Pins/context/source-reader identities
+differ. Source equality is NOT behavior/type/readonly/alias/digest/lifetime/RAM
+parity. Original795d4c6b byte receipt stays distinct; equal return-field shape
+cannot relabel it. Old input factory exactV1 archive guard, lifecycle V1construction/
+oldPins/authenticate, and2459 binding remain INCOMPATIBLE/UNCOMPOSED; old binding
+refuses newmap. No claim that four source modules repair old workflow at runtime.
+Exclusive /tmp/capacity-map-auth-interface-source-20261018-v1 retains four inert
+copies/contract pointer and exact tools/review/contract/preservation17dcde5b/941B;
+file fsync/readback and directory fsync done. Never regenerate for documentation.
+
+NEXT ROOT: SOURCE ONLY compose all four new data identities through DISTINCT
+input-result/archive-type/source-reader/Pins/byte-auth/admission/binding/lifecycle
+interfaces and immutable map contract. Keep separate executor/reference/original
+producer namespaces and every original receipt/size/config/calendar/economic/
+preservation/full BEFORE+AFTER graph/JSON/UTF8 lifetime. Inspect complete module
+and selected-call closure against unchanged guard before new finder/guard proposal;
+exact dataclass-only format2/native/call/phase provenance still required. No new
+synthetic or genuine proposal until independent source composition/closure review.
+Upstream/executedmap/finder/modelstrategy/manifests/entrypoint/wrapper/owner/caller/
+stager/bootstrap/packet/runtime/launch/admission NULL/execution_authorizedFALSE.
+No old73/80/23/65+4/tiny/diagnostic/v2 replay/packet regeneration/genuine loader/
+model/account/history/twohost launch/guard-G08-cap relaxation. RAM/horizon/history/
+ordinary/intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/
+missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-
+daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Capacity map/lifecycle composition SOURCE reviewed; all bodies UNRUN
 
 Read research/original-loader-composition-source-proof-v1-2026-10-18.json.

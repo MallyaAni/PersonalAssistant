@@ -1,0 +1,92 @@
+{
+  "schema": "capacity-map-auth-interface-source-checkpoint-proof/1",
+  "status": "SOURCE_REVIEWED_NEW_DATA_INTERFACES_UNEXECUTED_UPSTREAM_UNCOMPOSED",
+  "source_revision": "1093aca48c836968453a1999c6fa83955eed5f09",
+  "starting_revision": "02eecf7df5f4c3abcfdc32cdebc157f654b35ebf",
+  "branch": "codex/learned-live-release-20261006",
+  "starting_owned_worktree": "CLEAN; git pull --rebase origin main up to date",
+  "objective": "Resolve a source-proved pure-data method-name collision under a separate interface identity while preserving the complete authentication body and unchanged guard; no runtime compatibility claim.",
+  "files": {
+    "sources/prepare-capacity-map-auth-interface-v1-2026-10-18.py": {"sha256": "5cc1ea8641c4f99726515ff84dc6e43615baba399bc54396448f51582b352a6a", "bytes": 12735},
+    "sources/review-capacity-map-auth-interface-v1-2026-10-18.py": {"sha256": "c78288138277518f8a70098ccffe55f4f5d8951f00da75e0c2101b4f48d22104", "bytes": 10391},
+    "sources/capacity-original-history-json-v1-2026-10-18.py": {"sha256": "b6f4b97f7804efa43f65cb4513d586cc5f092449a2660c126ed7306b53ff8c19", "bytes": 27766},
+    "sources/capacity-original-input-auth-v1-2026-10-18.py": {"sha256": "c152e2a47dab3c6cdd42903af54fed560857cea3ae7c47d0cdd26b454c2cc7de", "bytes": 13593},
+    "sources/capacity-original-archive-adaptations-v2-2026-10-18.py": {"sha256": "87a5d8582e8b3aef54e93e0433452468a6bde416ee17bf462dca3bf1436e1173", "bytes": 6851},
+    "sources/capacity-original-archive-context-v2-2026-10-18.py": {"sha256": "c6d7dfb305ae328bb8c31c3ed1058dfb8ecde7e4a1c27b31fda5438f4f737ac5", "bytes": 11077},
+    "original-loader-map-auth-interface-source-contract-v1-2026-10-18.json": {"sha256": "be1f4037e000f158b77a3cf085d77f2c3de23663b863bcb8b81de14a2674899b", "bytes": 7087},
+    "original-loader-map-auth-interface-source-map-v1-2026-10-18.json": {"sha256": "d78058068ee9fb03722971917a32dcb6589dcf43fa2320fa51d4c998e8c695f0", "bytes": 287138},
+    "original-loader-map-auth-interface-independent-source-review-v1-2026-10-18.json": {"sha256": "d595fa05268366c12b84929a4e75872d85248b3f04effd6c42650fbbff8cee66", "bytes": 18730}
+  },
+  "source_barrier": {
+    "unchanged_guard_sha256": "030cb5bb25f89c2785e6acbd55aceff5c99b632a5eb538079ee027362ae6178a",
+    "profile_order": "Exact backend co_name verify is refused as FORBIDDEN_FUNCTION before registered call-manifest lookup. A manifest or generated row cannot override this refusal.",
+    "ADMISSION": "CapacityLoaderLeaseV1.__init__ -> CapacityOriginalArchivesV1.__init__ -> streamed.read(external_inputs=True) -> Cursor.sha_map -> ShaMap.verify.",
+    "BEFORE_AFTER": "byte_auth.authenticate -> streamed.read -> ShaMap.verify; verify_sha_map calls the same method at three acceptance checkpoints. CapacityOriginalArchivesV1.unchanged calls completion input-map verify again.",
+    "scope": "Static source reachability conditional on prior imports/admissions/reads succeeding, not an observed genuine failure or a certified first runtime event. Earlier source graphs did not establish this complete callable closure.",
+    "guard_G08_forbidden_names_classes_effect_prefixes": "UNCHANGED; no exception or broad verify allowance introduced."
+  },
+  "new_source_interfaces": {
+    "modules": 4,
+    "payload_functions_including_methods": 79,
+    "all_payload_bodies": "UNRUN",
+    "parser": "New module retains complete original parser source except ShaMap.verify declaration becomes authenticate_contents and Cursor.sha_map calls that method. Identical method body, spool/index/full canonical authentication, parser bounds, physical=True handling, fields, release and allocation statements in source. No verification omission, forwarding alias or original module patch.",
+    "input_auth": "New module imports only the new parser identity and calls value.authenticate_contents. Existing verify_sha_map helper name remains unchanged and is not equal to forbidden co_name verify. Complete original two-pass source/input byte receipt statements/fields, limits, exact Pins and ShaMap tests are retained under NEW type/module identities.",
+    "adaptations": "New schema2/module identity imports the new parser. Full finite-control/row digest and source-review bodies unchanged. Exact Rows check and digest are bound to the same new parser as the new context.",
+    "archives": "New schema2, CapacityOriginalArchivesV2 and CapacitySourceReaderV2 identities; three imports select new parser/input-auth/adaptations. unchanged uses authenticate_contents. All other complete context/source/catalog/input/initial/physical-preservation bodies unchanged in source.",
+    "identity_limits": "Rows/ShaMap/Row/Cursor/History/ArchiveRef/Pins/context/source-reader identities differ. Full AST correspondence is not behavior, interoperability, readonly/alias/deepcopy, canonical digest, allocation lifetime or RAM parity. No model, account or generic nonfinite normalization introduced.",
+    "receipt_limits": "Original795d4c6b full byte-auth receipt and all old proofs remain immutable and separate. Unchanged receipt field shapes in unexecuted new source do not relabel an old receipt as a new implementation result. Future receipt wrapper must bind exact new implementation identities and complete original producer/archive byte facts.",
+    "map": "New2463 declaration is exact old2459 plus four new paths only. No old source path is changed; old parser/input-auth/context/adaptations, old2446/2453/2457/2459 maps and guard are untouched. Old2459 capacity binding deliberately refuses this new declaration."
+  },
+  "independent_source_review": {
+    "new_checker_exit": 0,
+    "checks": 12,
+    "complete_normalized_module_AST_comparisons": 4,
+    "payload_functions_inventoried": 79,
+    "declared_deltas": "One pure metadata method declaration and three direct calls; five import rebindings; two schema values; two archive class names and their identifier references; source-only comments. No executable CodeType compilation or source body call.",
+    "old_call_trace": "All three selected direct verify sites checked, plus three byte-auth helper checkpoints and unchanged guard ordering.",
+    "worker": "Reused healthy trading_action_consistency READONLY source review. No new agent, limited-worker retry, edits, imports, tests or runtime/host operations.",
+    "worker_final": "No deterministic source blocker found; contract/report and all four module hashes match. Complete diffs contain only declared changes. All three direct collisions covered and authentication bodies intact. Declarative map/upstream incompatible/all79UNRUN scope accurate."
+  },
+  "upstream_still_incompatible": {
+    "input_factory": "Existing capacity_original_inputs_v1 requires exact CapacityOriginalArchivesV1. It cannot silently accept the new V2 context.",
+    "lifecycle": "Existing lifecycle constructs V1 archive/source-reader and binds old byte_auth.Pins/authenticate. New identities require an explicit separately versioned composition.",
+    "binding_and_admissions": "Old2459 binding rejects the new map. Binding/admission source/root/calendar/digest imports and original/executor/reference receipts must be rebound explicitly and independently reviewed. No class alias, sys.modules substitution or generic callback is permitted.",
+    "finder_guard": "No new source book/finder/guard, compiled call/generated/phase/native closure or bootstrap exists. Old _capacity_steps and its original audit_source == book.pins condition do not compose these new sources.",
+    "complete_workflow_guard_compatibility": "UNVERIFIED"
+  },
+  "actual_operations": {
+    "ran": ["new local stdlib source/AST/tokenize/JSON/SHA builder once", "new independent AST checker once", "exact local source reads, source preservation/file and directory fsync/readback", "Git validation and checkpoint"],
+    "payload_import_CodeType_body_or_test": false,
+    "numerical_model_load_fit_predict": false,
+    "SSH_hostprobe_Docker_job": false,
+    "original_account_market_data_read": false,
+    "old_completed_gate_packet_or_body_replay": false,
+    "production_original_guard_G08_cap_change": false
+  },
+  "checks": {
+    "AST_warning_as_error": "PASS6sources",
+    "function_purpose_comments": "PASS94functions across6sources",
+    "independent_AST_identity_map_guard_checks": "PASS12",
+    "JSON_fullSHA_and_hashlinks": "PASS",
+    "source_staged_diff": "PASS",
+    "Ruff": "UNAVAILABLE",
+    "behavior_type_digest_lifetime_numerical_model_RAM_runtime": "UNRUN_UNVERIFIED"
+  },
+  "bounds": {"map_bytes": 287138, "typed_metadata_bound_bytes": 16777216, "ordinary_source_log_packet_bound_bytes": 262144, "map_outside_ordinary_source_roots": true, "cap_increase_or_ordinary_exception": false},
+  "preservation": {
+    "exclusive_source_root": "/tmp/capacity-map-auth-interface-source-20261018-v1",
+    "contents": "Four inert new source copies and initial contract pointer; distinct contract/review/builder/checker copies plus source-review-preservation.json. File fsync/readback and directory fsync completed. Typed map remains outside ordinary root with its exact pointer/hash.",
+    "preservation_sha256": "17dcde5bc08fe5c30bfcec8fbfb546331a84d18edc9949289ac0c136bca29044",
+    "preservation_bytes": 941,
+    "all_old_failed_completed_roots_packets_receipts_admissions": "UNCHANGED; no replay/adoption/overwrite/reuse."
+  },
+  "unadmitted": {
+    "upstream_composition": null, "executed_map": null, "finder": null, "call_manifest": null,
+    "generated_manifest": null, "phase_manifest": null, "native_package_closure": null,
+    "entrypoint": null, "model_import_strategy": null, "wrapper": null, "owner": null,
+    "caller": null, "stager": null, "bootstrap": null, "packet": null, "runtime": null,
+    "launch": null, "admission": null, "execution_authorized": false
+  },
+  "next": "SOURCE ONLY compose the four new data identities consistently through a DISTINCT input-result/archive-type/source-reader/Pins/byte-auth/admission/binding/lifecycle interface and immutable map contract. Preserve all old sources and refusals. Inspect complete module and selected-call closure against unchanged profile before building any new finder/guard proposal; exact dataclass-only format2/native/call/phase provenance remains required. No synthetic or genuine runtime proposal until independent source composition/closure review is complete. No old73/80/23/65+4/tiny/diagnostic/v2 replay, packet regeneration or genuine loader/model/account/history/twohost launch.",
+  "unchanged": {"original_timing": "FAILED", "publication": "CLOSED", "missing_original_raw_receipts": "MISSING", "v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEW_RUN", "actual_two_host": false, "Spark2_image_daemon_temp_incremental_RAM": "UNADMITTED", "model_RAM_horizon_historical_ordinary_intraday_fill_UI": "UNVERIFIED", "heartbeat": "ACTIVE"}
+}
