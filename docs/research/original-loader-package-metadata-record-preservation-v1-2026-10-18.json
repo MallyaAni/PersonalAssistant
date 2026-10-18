@@ -1,0 +1,9 @@
+{
+  "data_bytes": 848531,
+  "files": 16,
+  "files_readback_root_resolved_parent_fsync": true,
+  "manifest_bytes": 18721,
+  "manifest_sha256": "5da70b4abdcbb1d3f8340e2647915833457a196ffd57cd8d67fc76188fd93ac8",
+  "root": "/tmp/capacity-package-metadata-record-evidence-20261018-v1",
+  "schema": "package-metadata-record-local-preservation/1"
+}

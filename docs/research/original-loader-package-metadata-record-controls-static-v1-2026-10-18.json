@@ -1,0 +1,133 @@
+{
+  "AST_warnings_as_errors": "PASS",
+  "Ruff": "PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM",
+  "all20_selected_native_declarations_exact": true,
+  "controls": {
+    "analyze-package-metadata-records-v1-2026-10-18.py": {
+      "bytes": 10576,
+      "physical": {
+        "st_blocks": "24",
+        "st_ctime_ns": "1792333662016701673",
+        "st_dev": "16777223",
+        "st_ino": "182965990",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792333662016701673",
+        "st_nlink": "1",
+        "st_size": "10576",
+        "st_uid": "501"
+      },
+      "sha256": "3cec8db1f812ae6d44af397ace2cf3637d96e284cdd91f700ded89d8665cc029"
+    },
+    "package-metadata-record-analysis-transport-v1-2026-10-18.py": {
+      "bytes": 6038,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792333707417435541",
+        "st_dev": "16777223",
+        "st_ino": "182977902",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792333707417435541",
+        "st_nlink": "1",
+        "st_size": "6038",
+        "st_uid": "501"
+      },
+      "sha256": "26330657173e61a1fba507a43865c0e54f637655d0d3418364f3ed7d3933d366"
+    },
+    "package-metadata-record-independent-transport-v1-2026-10-18.py": {
+      "bytes": 6044,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792333854241649426",
+        "st_dev": "16777223",
+        "st_ino": "183023905",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792333854241649426",
+        "st_nlink": "1",
+        "st_size": "6044",
+        "st_uid": "501"
+      },
+      "sha256": "54d3640b3f350bad9a370d5285bc09161ab1385554f855893e07710a32944262"
+    },
+    "prepare-metadata-record-transports-v1-2026-10-18.py": {
+      "bytes": 2238,
+      "physical": {
+        "st_blocks": "8",
+        "st_ctime_ns": "1792333707283445690",
+        "st_dev": "16777223",
+        "st_ino": "182977901",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792333707283445690",
+        "st_nlink": "1",
+        "st_size": "2238",
+        "st_uid": "501"
+      },
+      "sha256": "4e39b46aee43f261279a72fc0dbb410fb5c480ab43320d82ecc41a423260ff74"
+    },
+    "verify-package-metadata-records-v1-2026-10-18.py": {
+      "bytes": 12497,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792333854109785750",
+        "st_dev": "16777223",
+        "st_ino": "183011683",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792333854109785750",
+        "st_nlink": "1",
+        "st_size": "12497",
+        "st_uid": "501"
+      },
+      "sha256": "8d50d3e16e60fdf28c22239a3fce48d52cfedf695a4778de2737a3b8369e2e06"
+    }
+  },
+  "exact_utility_AST_comparisons": 6,
+  "independent": {
+    "bytes": 158768,
+    "physical": {
+      "st_blocks": "312",
+      "st_ctime_ns": "1792333979225061765",
+      "st_dev": "16777223",
+      "st_ino": "183057650",
+      "st_mode": "33188",
+      "st_mtime_ns": "1792333979225025692",
+      "st_nlink": "1",
+      "st_size": "158768",
+      "st_uid": "501"
+    },
+    "sha256": "a5565ba52c801a79dd45cce0d5cb75564d2fe01da0cd85f87aaba7a8e0300362"
+  },
+  "packaging_spec_full_compliance_or_runtime_native_RAM_acceptance": false,
+  "purpose_comments_across_five_controls": 21,
+  "schema": "package-metadata-record-controls-static/1",
+  "summary": {
+    "bytes": 228692,
+    "physical": {
+      "st_blocks": "448",
+      "st_ctime_ns": "1792333838806071490",
+      "st_dev": "16777223",
+      "st_ino": "183018328",
+      "st_mode": "33188",
+      "st_mtime_ns": "1792333838806000301",
+      "st_nlink": "1",
+      "st_size": "228692",
+      "st_uid": "501"
+    },
+    "sha256": "180359449b7d1a3085ad2a50a63f027da28b199f6ecb0559861f098920c7f976"
+  },
+  "timeout_invalid_input_signal_crash_branches": "UNTESTED",
+  "transports": [
+    {
+      "cleanup_failure": null,
+      "exit": 0,
+      "label": "analysis",
+      "owned_stop": null,
+      "stderr_bytes": 0
+    },
+    {
+      "cleanup_failure": null,
+      "exit": 0,
+      "label": "independent",
+      "owned_stop": null,
+      "stderr_bytes": 0
+    }
+  ]
+}
