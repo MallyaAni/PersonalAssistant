@@ -1,0 +1,210 @@
+{
+  "schema": "original-loader-callback-binary-copy-proof/1",
+  "date": "2026-10-18",
+  "status": "VERIFIED_ONE_BINARY_BYTE_COPY_RECORD_SHA_ONLY_ELF_AND_RUNTIME_UNVERIFIED",
+  "source_commit": "95c4b5513d22059497fa5e9c43c4f871593a9de0",
+  "starting_commit": "05978a56e9205dc7e3b740f12a1763d4355f40e5",
+  "starting_branch": "codex/learned-live-release-20261006",
+  "starting_worktree": "CLEAN_PULL_REBASE_ORIGIN_MAIN_UP_TO_DATE",
+  "objective": "Authenticate paired inert binary copies for the sole below-cap selected callback path while keeping content and entire archive-wire bounds unchanged; no ELF interpretation or native execution.",
+  "source_and_evidence_pins": [
+    {
+      "path": "docs/research/original-loader-callback-binary-independent-v1-2026-10-18.json",
+      "sha256": "779a1f86987f55065061ca81d6891a61072d06a2f1514ec5bb64bbeb74dd4d9e",
+      "bytes": 11338,
+      "purpose_comments": null
+    },
+    {
+      "path": "docs/research/original-loader-callback-binary-preservation-v1-2026-10-18.json",
+      "sha256": "2d7810c40e27c27fb827d91fe0cf9624559bdc4af9c5e2781431d8108fa3ae7e",
+      "bytes": 518,
+      "purpose_comments": null
+    },
+    {
+      "path": "docs/research/original-loader-callback-binary-seams-v1-2026-10-18.json",
+      "sha256": "ac822a964d90ba6bfdc07bd9fb3445ea1f7bccbac0d2675322dcfa18cf58e933",
+      "bytes": 4801,
+      "purpose_comments": null
+    },
+    {
+      "path": "docs/research/original-loader-callback-binary-static-v1-2026-10-18.json",
+      "sha256": "11c66e3cfad01107356adb824688bdbb53ea4c302bddbde92f97bad8f5e412c8",
+      "bytes": 3420,
+      "purpose_comments": null
+    },
+    {
+      "path": "docs/research/sources/callback-binary-independent-transport-v1-2026-10-18.py",
+      "sha256": "91b9b37cf125151029780a275931fb124c12aeae70260c83df446af7851e131a",
+      "bytes": 6020,
+      "purpose_comments": 3
+    },
+    {
+      "path": "docs/research/sources/callback-binary-primary-transport-v1-2026-10-18.py",
+      "sha256": "975e2ca84e462a3ba0add2039c0d84b85cf54798ff62a7ef79b3bcb21a88f580",
+      "bytes": 6016,
+      "purpose_comments": 3
+    },
+    {
+      "path": "docs/research/sources/capacity-callback-binary-copy-v1-2026-10-18.py",
+      "sha256": "ed0411890473c979b7219af30530529817388c0897abf4637d77ff91c120bdac",
+      "bytes": 16057,
+      "purpose_comments": 12
+    },
+    {
+      "path": "docs/research/sources/prepare-callback-binary-copy-v1-2026-10-18.py",
+      "sha256": "3caf6124e1be90c13ae61d7f47d3162ba4a562d64f1fde5ef3f98787a539aee6",
+      "bytes": 19211,
+      "purpose_comments": 6
+    },
+    {
+      "path": "docs/research/sources/preserve-callback-binary-copy-v1-2026-10-18.py",
+      "sha256": "17dd926d15d61d3816bc4e81111e9613130f8171bc96456c5f4b730917ee39e4",
+      "bytes": 10229,
+      "purpose_comments": 4
+    },
+    {
+      "path": "docs/research/sources/verify-callback-binary-copy-v1-2026-10-18.py",
+      "sha256": "44f5fd350e71bf0d2e0e987eceb3153e0b156127da657464a9688bddb286acd0",
+      "bytes": 17473,
+      "purpose_comments": 10
+    }
+  ],
+  "prior": {
+    "HEAD_source_commit": "f2e46340456ab236b086f7e7bbeaa799b970530c",
+    "HEAD_proof_sha256": "6f3696b006cb335a06656501446d2976723ec4649117dd33a31cd03c825adaaa",
+    "metadata_RECORD_source_commit": "085ab94f74341b71d305b9900265de81f3101f1e",
+    "declaration_seam_sha256": "15f8249875d0aef99b9f48d0e3eb9c1971cf85d23fefc09d27d9ed7538325128"
+  },
+  "actual_operations": {
+    "primary_SSH_count": 1,
+    "independent_SSH_count": 1,
+    "both_exit": 0,
+    "both_stderr_bytes": 0,
+    "both_owned_stop": null,
+    "both_cleanup_failure": null,
+    "primary": "Four CLI terminals: two full stopped-container inspections and two single fixed-path Docker cp streams only.",
+    "independent": "17 new retained files + two original prior inputs, each two full reads/SHA/held and named decimal physical identity, then later bookend pass; both complete tar/source copies/full archive fields/four CLI terminals and original baseline/HEAD/candidate bindings reconstructed. ONE fresh exact stopped inspect, no cp/HEAD replay.",
+    "candidate_sha256": "10590bccad71e60b7589a2ef75ff03ed9ea435e26ef6311f57578cc2697506d2",
+    "candidate_bytes": 4046,
+    "independent_sha256": "779a1f86987f55065061ca81d6891a61072d06a2f1514ec5bb64bbeb74dd4d9e",
+    "independent_bytes": 11338,
+    "reviewer": "Existing healthy /root/trading_action_consistency READONLY exact source/invocation/resources BEFORE each use and actual proof/seam after; no newagent/limitedretry/workerops.",
+    "only_new_stdlib_operational_controls_ran": true,
+    "no_ELF_parse_or_package_backend_model_AST_CodeType_import_or_body": true,
+    "no_container_start_create_exec_load_or_account_marketdata_credentials_read": true,
+    "no_old_HEAD_census_AST_job_gate_packet_replay_or_guard_G08_cap_source_map_production_change": true
+  },
+  "byte_acceptance": {
+    "container_path": "/usr/local/lib/python3.12/site-packages/scipy/_lib/_ccallback_c.cpython-312-aarch64-linux-gnu.so",
+    "retained_path": "/home/animallya96/scratch/capacity-callback-binary-copy-20261018-v1/callback.bin",
+    "bytes": 216280,
+    "sha256": "9edf4136653a328edcc88dc97f6d828440ad96550c436cbe087951845c89903b",
+    "RECORD_source_sha256": "b4b210e29143fee78ff3abd82e2d308554642129deacfcfec4e7e626c2d4fd68",
+    "RECORD_index": 219,
+    "CSV_end_line": 220,
+    "paired_bodies_equal": true,
+    "paired_complete_tar_wire_bytes": [
+      218112,
+      218112
+    ],
+    "ordinary_content_and_entire_wire_cap": 262144,
+    "one_plain_regular_member": true,
+    "links_sparse_PAX_sparse_extra_members_nonzero_trailing_data": "REFUSE_IN_SOURCE; only positive ordinary archive observed",
+    "filesystem_extraction_UTF8_assumption": false,
+    "meaning": "Exact copied bytes authenticated to RECORD declaration only. Tar metadata is not held-FD container-source physical identity or every-file image attestation; copied local SHA/physical identity is separately observed. No ELF architecture/ABI/dependency/origin/load/native-runtime-version/thread/model/RAM/fullclosure proof."
+  },
+  "stopped_binding": {
+    "container": "803718a62e3cbd1f6070abab25a58e1fbc0ee5d04b5444f57c817d7e47b8bf57",
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "baseline_before_after_sha256": "d5265be87b979e83e396e18d1d9d4571cc6e1db5aa09239200004a2809bd90d2",
+    "fresh_sha256": "b04d931483a4c70b3b3640ba23d76afbd1c9db43258c225181bc5133763c1021",
+    "before_after_order_flags": true,
+    "fresh_order_flag": false,
+    "all_nonMounts_fields_and_complete_uniqueDestination_mount_records_equal": true,
+    "actual_reordered_positive_branch": "EXERCISED_IN_NEW_INDEPENDENT_CHECKER_ONLY_PRIMARY_BEFORE_AFTER_UNREORDERED",
+    "state": "Same exited0/noOOM/Pid0/notpaused/notrestarting/finish2026-10-18T09:53:55.975021651Z/ROroot/user1000:1000/two unique audit+out mounts/no source overlap.",
+    "old_v1_failure": "PRESERVED_NO_REPLAY_ADOPTION_OR_RELABEL"
+  },
+  "resource_controls": {
+    "helper_AS_soft_bytes": 536870912,
+    "helper_AS_hard_and_owned_Go_CLI_bytes": 4294967296,
+    "primary_CPU_seconds": 30,
+    "independent_CPU_seconds": 20,
+    "ordinary_content_wire_file_cap": 262144,
+    "primary_work_seconds": 90,
+    "primary_alarm_seconds": 95,
+    "each_CLI_seconds": 5,
+    "primary_SSH_seconds": 120,
+    "independent_single_alarm_seconds": 30,
+    "independent_SSH_seconds": 70,
+    "primary_fresh_headroom_minimum": {
+      "MemAvailable_bytes": 2147483648,
+      "scratch_bytes": 1073741824,
+      "inodes": 512
+    },
+    "meaning": "Limits/headroom only; no reservation, measured peak or native/model/daemon RAM acceptance.",
+    "missing_hash_size_type_sparse_timeout_overflow_signal_owned_stop_crash_branches": "UNTESTED"
+  },
+  "validation": {
+    "AST_warnings_as_errors": "PASS",
+    "purpose_comments": 38,
+    "new_control_sources": 6,
+    "exact_operational_function_AST_comparisons": 19,
+    "new_generated_outputs_byte_exact_reproduction": 4,
+    "JSON_full_SHA_hashlinks_staged_diff": "PASS",
+    "Ruff": "PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM",
+    "old_gates_or_payload_model_tests_run": 0,
+    "source_reuse": "Only reviewed operational CLI/read/save/inspection controls reused as source; new distinct binary collector/verifier mains and binary archive checks. Old text-copy tools were never invoked.",
+    "source_preparation": "ROOT tightened sparse field to isNone plus GNU.sparse PAX-key refusal and explicit MemAvailable kB unit check before review/dispatch; initial three unrun drafts retained. No failed SSH or payload replay.",
+    "draft_root": "/tmp/capacity-callback-binary-preparation-drafts-20261018-v1"
+  },
+  "preservation": {
+    "remote_roots": [
+      "/home/animallya96/scratch/capacity-callback-binary-copy-20261018-v1",
+      "/home/animallya96/scratch/capacity-callback-binary-primary-tools-20261018-v1",
+      "/home/animallya96/scratch/capacity-callback-binary-independent-20261018-v1",
+      "/home/animallya96/scratch/capacity-callback-binary-independent-tools-20261018-v1"
+    ],
+    "remote": "New exclusive roots COMPLETE/file+output-directory fsync/readback; native binary/wires and 17 raw files stay Spark.",
+    "local_root": "/tmp/capacity-callback-binary-evidence-20261018-v1",
+    "local_files": 14,
+    "local_data_bytes": 104661,
+    "manifest_sha256": "94de8715701ed157cd701d5f248626589d5d3a1ccedefdf5091f7775d29ebbeb",
+    "manifest_bytes": 15965,
+    "files_readback_root_resolved_parent_fsync": true,
+    "reproduction_root": "/tmp/capacity-callback-binary-reproduction-20261018-v1",
+    "separate_next_requirements": {
+      "schema": "callback-binary-next-requirements-preservation/1",
+      "root": "/tmp/capacity-callback-binary-next-requirements-20261018-v1",
+      "file": "original-loader-callback-binary-seams-v1-2026-10-18.json",
+      "bytes": 4801,
+      "sha256": "ac822a964d90ba6bfdc07bd9fb3445ea1f7bccbac0d2675322dcfa18cf58e933",
+      "ELF_parser_execution_authorized": false,
+      "manifest_sha256": "7b8368ffbd811b8e83965f53d8c9d5e33cfe532515e1e56ec2ac72e2e2a11372",
+      "manifest_bytes": 351,
+      "files_root_resolved_parent_fsync": true
+    },
+    "crash_durability_or_second_full_remote_archive_guarantee": false
+  },
+  "next": "SOURCE ONLY read official ELF layout specification and prepare new bounded stdlib ELF DATA parser plus separately implemented independent fold over exact retained callback.bin. Authenticate full SHA/physical identities before/after, bound every header/table/span/extended-numbering/non-file-backed case and dynamic-string mapping; retain full ordered metadata with bounded pages and exact raw-span hashes. Independent exact source/invocation/resource review BEFORE use. No package import/dlopen/ldd/readelf/native execution/other19 oversized body reads/cap relaxation. ELF validity is not native/runtime/model capacity admission.",
+  "unchanged_and_unadmitted": {
+    "guard_sha256": "3b8be00b26cbf02f375bca5207e207dc8505dcfb997e281ab7c80cee3c187594",
+    "all25_payload_functions": "UNRUN",
+    "old_guard_sha256": "030cb5bb25f89c2785e6acbd55aceff5c99b632a5eb538079ee027362ae6178a",
+    "old2446_G08_caps_sources": "UNCHANGED",
+    "producer2431_reference2446_executor2468_original_receipts_context_graphs_JSON_UTF8_lifetimes": "SEPARATE_MANDATORY",
+    "other19_selected_native_bodies": "UNREAD_ABOVE_ORDINARY_CAP",
+    "ELF_parser_independent_invocation_runtime_admission": null,
+    "execution_authorized": false,
+    "assembledtree_strategy_entrypoint_manifests_bootstrap_wrapper_owner_caller_stager_packet_runtime_launch_admission": null,
+    "sklearn_actualmetadata_version": "UNRESOLVED_1.9.1_PREDICATE_NOT_ATTESTATION",
+    "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "missing_receipts": "STILL_MISSING",
+    "genuine_v6": "OPEN_PAUSED_NO_REPLAY_ADOPTION_NEWRUN",
+    "actual_twohost_Spark2_image_daemon_temp_RAM": "UNADMITTED_UNCHANGED",
+    "heartbeat": "ACTIVE",
+    "diagram": "NONE"
+  }
+}

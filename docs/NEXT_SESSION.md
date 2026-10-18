@@ -1,5 +1,90 @@
 # Next session
 
+## 2026-10-18 — One callback binary byte copy/RECORD hash VERIFIED; ELF/runtime UNVERIFIED
+
+Read research/original-loader-callback-binary-proof-v1-2026-10-18.json.
+Source95c4b5513d22059497fa5e9c43c4f871593a9de0 pins collectored041189/16057B/
+transport975e2ca8/6016B/independent44f5fd35/17473B/transport91b9b37c/6020B,
+builder3caf6124/19211B/preserver17dd926d/10229B. Rawproof779a1f86/11338B/
+static11c66e3c/3420B/newseamsac822a96/4801B retained. Only NEW stdlib operational
+controls ran. No ELF interpretation/package/backend/model AST/CodeType/import/body/
+test, container start/create/exec/load/account/marketdata/credential read, old HEAD/
+census/AST-job/gate/packet replay or guard/G08/cap/source-map/production change.
+
+ONE independently source/invocation/resource-reviewed primary SSH exit0/empty
+stderr/noownedstop/cleanupfailure: exact STOPPED803718a6/e0 only2CLIinspect+
+2paired fixedcp reads for /usr/local/lib/python3.12/site-packages/scipy/_lib/
+_ccallback_c.cpython-312-aarch64-linux-gnu.so. Both complete tarwires218112B;
+exact binary216280B SHA9edf4136653a328edcc88dc97f6d828440ad96550c436cbe087951845c89903b
+matches SciPyRECORDb4b210e2/index219/endline220. One plainregular member/no links/
+sparse/PAXsparse/extra/nonzero trailingdata; no filesystemextraction/UTF8assumption.
+Candidate10590bcc/4046B and17rawfiles/binary/wires remainSpark. Content ANDentire
+tarwire262KiB bounds unchanged. Tar metadata is NOT heldFD container-source physical
+identity/every-file image attestation; copied local SHA/physical identity separate.
+
+ONE separately reviewed independent SSH exit0/empty stderr/noownedstop/cleanup
+failure:17newfiles+2original priorHEAD/baseline inputs, each twofullreads/SHA/
+held+named decimalphysical and laterbookends. Both complete tar/sourcecopies/full
+archivefields/fourCLIterminals/exact RECORDhash/priorHEAD/candidate checked.
+ONE fresh stoppedinspect; no cp/HEAD/body replay. Primarybefore/after rawd5265be8/
+orderTRUE. Fresh rawb04d931483a4c70b3b3640ba23d76afbd1c9db43258c225181bc5133763c1021
+has orderFALSE; every nonMounts field+complete2uniqueDestination mount records equal.
+Thus reorderedpositive branch ACTUALLY EXERCISED in NEW independentchecker ONLY;
+primarybefore/after stayed unreordered. Original v1rawinspect failure preserved/
+neverreplayed/adopted/relabeled. Same exited0/noOOM/Pid0/notpaused/notrestarting/
+finish09:53:55.975021651Z/ROroot/user1000:1000/twoaudit+out/no sourceoverlap.
+
+This supersedes prior all20UNREAD statement ONLY for exact callback binary bytes.
+ELF magic/class/encoding/machine/ABI/dependencies/origins/aliases/loads/native runtime
+versions/thread/model/RAM/fullclosure remain UNVERIFIED. Other19 native bodies stay
+UNREAD/above262KiB; no caprelaxation/textcopyreuse/guessed suffix/recursivecopy.
+New REQUIREMENTS-only seam binds authenticated callback bytes and next ELFDATA
+parser obligations; parser/independent/invocation/admission NULL/no execution grant.
+sklearn actualmetadata/version and selected callable/global/type/dataclass live-
+producer/classflags/native/phase/Arrow default pools+wrapper provenance stillopen.
+
+Helpers512MiBsoft/4GiBhardAS/ownedGoCLI4GiB/CPU30primary20independent; unchanged
+262KiBcontent/wire/file. Primary90work/95alarm/5CLI/120SSH; independent single30alarm/
+5freshCLI/70SSH. Freshprimary2GiBavailableRAM/1GiBscratch/512inodes passed; headroom
+NOT reservation/measuredpeak/native/model/daemonRAMbound. Missing/hash/size/type/
+sparse/timeout/overflow/signal/ownedstop/crash branches UNTESTED. Existing healthy
+worker READONLY exactsource/invocation/resource review BEFOREeachuse then actual
+proof/seam accepted; no newagent/limitedretry/workerops. ROOT tightened sparseisNone/
+GNU.sparsePAXrefusal/kBunit beforeuse; initial3unrun drafts preserved exclusive
+/tmp/capacity-callback-binary-preparation-drafts-20261018-v1; no failedSSH/bodyreplay.
+
+AST warnings-as-errors/38purposecomments across6controls/19operationalfunctionAST
+comparisons/fournewoutputs byte-exact reproduction/JSON/fullSHA/stageddiff PASS;
+Ruff previously unavailable/no lintclaim. Operational utilities reused as SOURCE
+only; old text-copy executables/gates/tests were never run. No native code compiled/
+imported/executed; all25guard payloadfunctions remainUNRUN.
+
+New remote copy/tools/independent/tools roots COMPLETE immutable/files+outputdir
+fsync/readback; nativebinary/wires staySpark. Exclusive /tmp/capacity-callback-binary-
+evidence-20261018-v1 retains14smallfiles104661B+manifest94de8715/15965B; files/
+readbacks/root/resolvedparent fsynced. Separate reproductionroot synced. New
+-requirements root capacity-callback-binary-next-requirements-20261018-v1 retains
+seam+manifest7b8368ff/351B fsynced/readback/root+parent. No crash/durability/secondfull
+remote archive guarantee. All old failed/completed roots/receipts/admissions preserved.
+
+NEXT ROOT: SOURCE ONLY read official ELF layout specification and prepare new
+bounded stdlib ELFDATA parser plus separately implemented independentfold for exact
+retained callback.bin. Authenticate fullSHA/physical before+after; bound every
+header/table/span/extendednumbering/nonfilebacked case and dynamicstring mapping;
+retain complete ordered records/rawspan hashes/boundedpages. Independent exact
+source/invocation/resource review BEFOREuse. No packageimport/dlopen/ldd/readelf/
+nativeexecution/other19oversizedreads/caprelaxation. Finish selected callable/global/
+type/dataclass liveproducer/classflags/native/phase contracts; no native/runtime/
+modelcapacity admission. Do NOT repeat closedcallbackcopy/20HEAD/metadata parsing/
+copy/15/10censuses/AST inventories/73/80/23/65+4/tiny/diagnostic/v2 gates/packets.
+Guard3b8be00b/all25payloadbodies UNRUN; old2446/030c/G08/caps unchanged. Producer2431/
+reference2446/executor2468/originalreceipts/fullcontext+graphs+JSON+UTF8 lifetimes
+separate. Assembledtree/strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/
+stager/packet/runtime/launch/admission NULL/execution_authorizedFALSE. Model/RAM/
+horizon/history/ordinary/intraday/fill/UI UNVERIFIED; originaltimingFAILED/
+publicationCLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/
+Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Twenty native path headers/sizes VERIFIED; all binary contents UNREAD
 
 Read research/original-loader-native-path-head-proof-v1-2026-10-18.json.
