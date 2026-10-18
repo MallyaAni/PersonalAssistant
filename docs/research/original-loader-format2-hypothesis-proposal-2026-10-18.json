@@ -1,0 +1,123 @@
+{
+  "schema": "tiny-format2-hypothesis-proposal/1",
+  "status": "SOURCE_ONLY_UNEXECUTED",
+  "objective": "Test explicit marshal format 2 in both deferred preparation and a labelled candidate live adapter before modifying the real guard.",
+  "prior_verified": "original-loader-generated-code-diagnostic-proof-2026-10-18.json",
+  "prior_failed": "original-loader-guard-synthetic-failure-proof-2026-10-18.json",
+  "active_sources": {
+    "bootstrap.py": {
+      "repository_path": "sources/original-loader-format2-hypothesis-2026-10-18.py",
+      "sha256": "1c1cc6f2d2633b9f46a2aa4e05aa005ecdc3fa907ceaf012fe3fdc1aa4e7557b",
+      "bytes": 15656
+    },
+    "diagnostic-owner.py": {
+      "repository_path": "sources/original-loader-format2-owner-2026-10-18.py",
+      "sha256": "69cc1eb60e6b367d7fe6004aeb4627de912a45bd9e20e21cb132cb59dec1cd9b",
+      "bytes": 6837
+    },
+    "diagnostic-verifier.py": {
+      "repository_path": "sources/original-loader-format2-verifier-2026-10-18.py",
+      "sha256": "34c7c853e76904b8416af9601a9ee454f5e35a169c22dba2a15262590e95c6cc",
+      "bytes": 9984
+    }
+  },
+  "inputs": {
+    "harness-source.txt": {
+      "repository_path": "sources/original-loader-capacity-harness-2026-10-18.py",
+      "sha256": "737d4236345ebfbc90a0ecf33e3e9ce733e5f06afb2e53c3125e465e9b1a2eea",
+      "bytes": 30408
+    },
+    "owner/controller.py": {
+      "repository_path": "sources/original-loader-guard-controller-v2-2026-10-18.py",
+      "sha256": "2e505205cc8a3793d7b3313a5b5c3b670b00134575982d26c725787b6530df5a",
+      "bytes": 16728
+    }
+  },
+  "candidate": {
+    "schema": "tiny-generated-code-format2-candidate/1",
+    "fingerprint_algorithm": "cpython-code-marshal-format-2-sha256/1",
+    "marshal_version": 2,
+    "original_schema_reinterpreted": false,
+    "adapter": "INJECTED marshal namespace on unchanged full-compilation profile CodeType; genuine constructor, audit-hook, failure slot and source book not exercised.",
+    "positive": "First wrapper matches complete format2 record and bytes; unchanged profile must then refuse __create_fn__ as BROKER_OR_ACCOUNT_FUNCTION.",
+    "negative_controls": [
+      "all eight first-record binding fields individually wrong",
+      "changed outer bytecode, unreachable appended NOP, refused before body",
+      "shape-checked nested __create_fn__ 'value' constant changed, refused before body",
+      "old schema",
+      "implicit-default algorithm",
+      "marshal version 4",
+      "boolean marshal version"
+    ],
+    "proposed_profile_cases": 11,
+    "proposed_version_controls": 4
+  },
+  "execution": {
+    "image": "sha256:e0a54c1f3b293c241ea0eae767d8ba017d0e1a05679965935b336910faa63237",
+    "source_root": "/home/animallya96/scratch/n2-format2-hypothesis-source-20261018-v1",
+    "run_root": "/home/animallya96/scratch/n2-format2-hypothesis-20261018-v1",
+    "review_root": "/home/animallya96/scratch/n2-format2-hypothesis-independent-review-20261018-v1",
+    "argv": [
+      "python3",
+      "-I",
+      "-S",
+      "-B",
+      "<source>/owner/diagnostic-owner.py",
+      "--admitted-format2-hypothesis",
+      "<fresh-admission-sha256>",
+      "69cc1eb60e6b367d7fe6004aeb4627de912a45bd9e20e21cb132cb59dec1cd9b",
+      "<exact-source-book-sha256>"
+    ],
+    "prerequisites": [
+      "bounded exact packet/source-book with fsync and independent physical readback",
+      "independently reviewed exact sources and concrete invocation",
+      "fresh actual cached e0 image/host UID/jobs/resources, absent new run root",
+      "new scoped admission, age <=120 seconds; consumed by one owner attempt"
+    ],
+    "runtime": {
+      "uid": 1000,
+      "network": "none",
+      "read_only": true,
+      "cpu": 1,
+      "memory_bytes": 2147483648,
+      "memory_swap_bytes": 2147483648,
+      "pids": 32,
+      "tmpfs_bytes": 67108864,
+      "healthcheck": false,
+      "logging": "none",
+      "binds": [
+        "tiny audit RO",
+        "new out RW"
+      ],
+      "child_count": 2,
+      "child_cpu_seconds": 5,
+      "child_wait_seconds": 7,
+      "parent_alarm_seconds": 20,
+      "phase_wait_seconds": 25,
+      "owner_alarm_seconds": 60,
+      "per_file_bytes": 262144
+    },
+    "headroom_not_reservation": {
+      "memory_bytes": 5368709120,
+      "disk_bytes": 4294967296,
+      "inodes": 8192
+    },
+    "runtime_admission": null
+  },
+  "preservation": {
+    "old_guard_harness_fixture_manifest_caps_unchanged": true,
+    "old_roots_not_reused": true,
+    "no_old_gate_replay": true,
+    "source_blocker_fixed": "Initial constants control searched nonexistent top-level string. Retained metadata verified nested __create_fn__ constant; targeted shape-checked nested replacement applied before execution.",
+    "independent_source_review": "Existing healthy trading_action_consistency READONLY; no remaining blocker found in corrected nested control/owner/verifier. No execution."
+  },
+  "not_proved": [
+    "full guard constructor/audit/failure-slot/source book",
+    "genuine source admission",
+    "original failed guard hash recovery",
+    "combined model and receipt RAM",
+    "horizon/history/ordinary/intraday/fill/UI",
+    "force-stop/alarm/SIGKILL/transport-loss cleanup"
+  ]
+}
+
