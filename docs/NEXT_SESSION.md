@@ -1,5 +1,98 @@
 # Next session
 
+## 2026-10-18 — Historical native.json complete independent DATA fold VERIFIED
+
+Read research/original-loader-native-origin-independent-proof-v1-2026-10-18.json.
+Sourced563b336cc29eb59d7c6e28b14177d4e8adce782 pins independent321b8d9c/16744B,
+bootstrapa41b4dee/15283B/transportae813300/25251B/builder5120411e/11218B/
+getter14e002ef/5510B/gettransportd77a01c3/6497B/preserverec5322ee/14253B.
+New stdlib controls and retained historical DATA only ran. Original094561ab/16701B
+draft unchanged/UNRUN/preserved, new selector differs ONLY actualSUMMARY_SHA8402d423/
+SUMMARY_BYTES13430. Primaryb7f6ffb0/oldcontrols/oldpacket never replayed or changed.
+No Docker/container/executable/provider/package/backend/model/account/marketdata/
+credential read, oldgate replay, guard/G08/cap/map/production change.
+
+Five independently reviewed SSHs each exit0/empty stderr/noownedstop/failure/
+cleanupfailure: readonly prerequisite, source-only stage, fresh before-fold
+prerequisite, ONE independentfold, separate2file resultgetter. Exact pinnedkeys/
+fullSSHargv/embeddedsource/phase/SHA/wire/terminal links checked. Spark1UID1000
+hostPython3.12.3 NOT historicalN2/e0. Actualc97dbf1a/869B and0865f8ed/1774B
+fresh proofs reviewed BEFOREdispatch, fullSHAargv/<=300s enforced. Stagef640b131/
+1285B bindsONE16744B verifier+stage.json/exactphysicalroot; nevercompiledselector.
+New immutable packet24d5cc379c57ac77ba347f3206eb4a8a1207e211783c99a68b1859fd607cf928/
+8116B in /tmp/native-origin-independent-preparation-20261018-v1; onegzip5787B
+to16744B/singleEOF/noextra. Wires10877/12035/10877/13243B/getter7409B all<=65536.
+MemAvailable9742008320/9695973376B prerequisites and9800437760B getter;
+2GiBmem/32MiBscratch512inodes predicates passed, NOTreservation/native/model/
+daemon bound. Getter rechecks beforefixedreads. Packet/preparationroot immutable.
+
+Independent proof13f2f1e95d2b9d2c8125536dbf53dc9fa77bb4adf1818d820852b1063413a6ad/
+14794B now retained exact. Complete21page1339METADATA catalog reconstructed before
+ONEunique native.json row; other1338payload bodies UNREAD.31inputs authenticate
+full original/copy650B/76daf7a4/nativefields/rawpage1048B/everyfield/physicalinventory
+and complete canonical13430B primarysummary8402d423. No primaryimport/call.
+All31input twofullheldnamed chunkedreads/SHA/physical thenlaterfullSHAphysical.
+Exact originalphysical row/copyphysical row match; all28primaryinput rows plus
+independentownsource/summary/rawpage rows checked. Full31inventory retained in
+research/original-loader-native-origin-independent-raw-v1-2026-10-18.json.
+Required path "/usr/local/bin/python" stays HISTORICAL STRING ONLY; file/path/link/
+build/interpreter/loader/provider/native/runtime authority NOT established and
+declared executable NEVER opened. HistoricalPython3.12.14/NumPy2.5.3/sixthreads1/
+UID1000/backend[]/timestamp match prior1355771f, not retroactive scope extension.
+
+Independenthashbefore2858026B =2*sum31inputbytes+650raw; final2887614B adds
+2*14794proof. Primaryhash2825586B separately reconstructed unchanged. Separate
+control4MiB ANDindependent4MiB ledgers, not wholeprocess4MiB.512MiBASsoft=hard/
+CPU20 cumulative sameprocess/bootstrap30alarm canceled BEFOREindependent own30/
+outer70SSH/TERM1KILL1/262KiBfilelogs unchanged. Signal/timeout/overflow/IO/ownedstop/
+cleanup/crash branches UNEXERCISED. Getter45780c57/23138B retainsfullproof+stage,
+no selector/primary rerun, catalogpages staySpark. No model/RAM acceptance.
+
+Reused healthy worker READONLY complete sources/exactcalls/actualfreshproof BEFORE
+eachuse, actualproof/preservation/scope after; no newagent/limitedretry/workerops.
+Reviewer caught localpreserver missing getterexactSSH/bootstrap/sourcepin and
+returnedstage/ownsource/summary/page identity links BEFOREfirstuse. Addedallchecks;
+initialUNRUN62af0ce9/12589B+reason retained /tmp/native-origin-independent-preserver-
+drafts-20261018-v1 andfinalinputs. Worker readonlyinspection initially compared
+wrongfulltransportSHA aftershortprefix; actualfullSHA/embeddedpins checked, no
+writes/body/remote failure or replay. All operationalattempts succeeded once.
+
+Reviewed localbuilder ONCEexit0:8inputs131896B/manifestbd734b7a/12278B/reportd3ce4606/
+3711B/hash952564B. Reviewed localpreserver ONCEexit0: exclusive /tmp/native-origin-
+independent-evidence-20261018-v1 retains39inputs395180B; manifest9d25c81ad8755c1218a3bbade796a25f8c4d289119a84dbcc172be02be8e79c7/
+46217B/reportb94d98bf/7638B/hash2173651B. Twofullheldnamedreads/fullSHA/exactdecimal
+physical/exclusivecopies/fsync/readbacks/laterorig+copybookends/tworeturnedoutputs/
+report/manifestlast/rootresolvedparent+sourcedirsync. Separate ROOT82evidencefiles
+(39orig+39copy+2outputs+report+manifest) AND22preparationfiles(8orig+8copy+4outputs+
+report+manifest) fullSHAphysical/twoheldreads/laterbookends PASS. Exact research
+native-origin-independent-{preservation,local-review,readback,preparation,source-review}
+reports retained. Localsoftware262KiBfile/1MiBinput/4MiBhash/30alarm, noMacAS/kernelFSIZE/
+crashdurability claim.7sources/54purposefunctions/warnings-as-errorsAST/two-pin delta/
+declaredbootstrapdelta/5outertransport+3getter+5utilityASTequal/JSON/fullSHA/accounting/
+zero literalbackspaces/diff PASS. Ruff previously unavailable, no lint/app-test/deploy claim.
+
+NEXT ROOT: historical native.json independent boundary CLOSED; never rerun primary/
+independent/prerequisites/stage/getters or oldsymbols/ELF/copy/HEAD/metadata/censuses/
+AST/63/37/73/80/23/65+4/tiny/diagnostic/v2/nativeprobe/full1339contentfold/oldpackets
+for docs. SOURCE ONLY derive next interpreter namespace/path/link-origin requirements
+from verified historicalstring and exact stoppedN2/e0 metadata/origincontract.
+String recovery does NOT admit opening that executable. Before any later bounded
+stopped-runtime path/link METADATA observation, prepare distinct controls/exactcall
+and independently review actualfreshresources/source/namespace/containerbindings.
+No guessed suffixes/librarypaths/hostsubstitutes/ldd/readelf/dlopen/packageexecution/
+capraise. Allold failed/completed roots/admissions preserved.
+
+Actualinterpreter/loader/provider/build/search/alias/version/transitive closure,
+selectedcallable/global/type/dataclassliveproducer/classflags/native/phase/Arrow
+pools+wrapper/sklearnactualmetadata open. Guard3b8be00b separate25payloadfunctions
+UNRUN; old2446/030c/G08/caps/maps unchanged. Producer2431/reference2446/executor2468/
+originalreceipts/fullcontext+graphs+JSON+UTF8 lifetimes separate. Genuineassembledtree/
+strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/
+launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/
+intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/
+v6OPEN-PAUSED/no replay/adoption/newgenuinerun/actualtwohost/Spark2image-daemon-temp-
+RAM unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Historical native.json observed; independent remote fold PENDING
 
 Read research/original-loader-native-origin-observation-proof-v1-2026-10-18.json.

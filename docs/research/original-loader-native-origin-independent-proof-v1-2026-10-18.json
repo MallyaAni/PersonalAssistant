@@ -1,0 +1,550 @@
+{
+  "schema": "native-origin-independent-data-proof/1",
+  "status": "VERIFIED_HISTORICAL_JSON_BYTES_AND_COMPLETE_CANONICAL_SUMMARY_ONLY",
+  "source_checkpoint": {
+    "starting_HEAD": "c881038f74636c1ab68120cc101c30e3da48d3a0",
+    "starting_branch": "codex/learned-live-release-20261006",
+    "starting_worktree": "CLEAN",
+    "starting_pull": "git pull --rebase origin main: already up to date",
+    "commit": "d563b336cc29eb59d7c6e28b14177d4e8adce782",
+    "tree": "2fd714a3eb9372f66cdb5ac46f6e5e729b2a626f",
+    "scope": "Exact new operational SOURCE plus historical retained DATA; not application deployment or model/native/trading acceptance."
+  },
+  "sources": {
+    "verify-retained-native-json-pinned-v1-2026-10-18.py": {
+      "bytes": 16744,
+      "sha256": "321b8d9c445c615152efd8751223e8fd4985d8c6016ed55e4e51a8bdb4be36d6",
+      "purpose_functions": 12
+    },
+    "native-origin-independent-bootstrap-v1-2026-10-18.py": {
+      "bytes": 15283,
+      "sha256": "a41b4deea218ad41d282fe0c4068de13ff7ade72579253198e4b38df2ad48ec5",
+      "purpose_functions": 15
+    },
+    "prepare-native-origin-independent-controls-v1-2026-10-18.py": {
+      "bytes": 11218,
+      "sha256": "5120411ef2d480e6af50606c6fc9258148c20eee68e8dce131c0341a105541e5",
+      "purpose_functions": 7
+    },
+    "native-origin-independent-transport-v1-2026-10-18.py": {
+      "bytes": 25251,
+      "sha256": "ae8133009f11926ca0ee2ccb6bdce274486657ce921a5f2ddfbdf98ef3bcc845",
+      "purpose_functions": 5
+    },
+    "get-native-origin-independent-result-v1-2026-10-18.py": {
+      "bytes": 5510,
+      "sha256": "14e002ef46d97164e9cee283ce81575f8c45529b55aed810e7703f6c95310be1",
+      "purpose_functions": 6
+    },
+    "native-origin-independent-result-getter-transport-v1-2026-10-18.py": {
+      "bytes": 6497,
+      "sha256": "d77a01c33f1321c5ea4d918926c52f49fced99b409a9ea74823c6bfbe3dcda58",
+      "purpose_functions": 3
+    },
+    "preserve-native-origin-independent-v1-2026-10-18.py": {
+      "bytes": 14253,
+      "sha256": "ec5322ee5603dd09d6a2f53b3752a052defddfc9ee5ad89fd8639fbac37a877d",
+      "purpose_functions": 6
+    }
+  },
+  "source_derivation": {
+    "independent_draft_sha256": "094561ab917e774ae04af52dc81cdbc5865db23ae5898f1ae25fd00496867a76",
+    "draft_unchanged": true,
+    "preserved_draft_copy": "/tmp/native-origin-observation-evidence-20261018-v1/03-verify-retained-native-json-v1-2026-10-18.py",
+    "pinned_source_sha256": "321b8d9c445c615152efd8751223e8fd4985d8c6016ed55e4e51a8bdb4be36d6",
+    "only_pinned_source_changes": [
+      "SUMMARY_SHA = 8402d4238508755502005d8290141e10827494083a6384b46be611b5e962986d",
+      "SUMMARY_BYTES = 13430"
+    ],
+    "selector_implementation_otherwise_byte_identical": true,
+    "control_bootstrap_base": "70fb388a8cf1271a4eb0957a9071594490ef26318dc52ab9392b4572a6eacb67",
+    "bootstrap_changes_only": [
+      "TOOLS",
+      "OUT",
+      "READER",
+      "one-file PINS",
+      "decoded payload total16744",
+      "exact independent argv"
+    ],
+    "outer_transport_source_base": "ce66a5d53a789bcb63f31633b222653f62af1cf59419ce3cfe30154952deb087",
+    "outer_five_functions_equal_after_single_prerequisite_path_rebinding": true,
+    "old_controls_primary_packet_and_gates_replayed": false
+  },
+  "preparation": {
+    "root": "/tmp/native-origin-independent-preparation-20261018-v1",
+    "invocation": "python3 -W error docs/research/sources/prepare-native-origin-independent-controls-v1-2026-10-18.py",
+    "exit": 0,
+    "manifest_sha256": "bd734b7a57448fa8c6bcf7eb6cccbac0d224c189d340ba6483cff601bc15e720",
+    "manifest_bytes": 12278,
+    "source_review_sha256": "d3ce460624c3fd03ac89cc40a0fae23bb418fba1366e6c9442bb946d97dbe250",
+    "source_review_bytes": 3711,
+    "input_files": 8,
+    "input_bytes": 131896,
+    "packet_sha256": "24d5cc379c57ac77ba347f3206eb4a8a1207e211783c99a68b1859fd607cf928",
+    "packet_bytes": 8116,
+    "compressed_records": 1,
+    "compressed_bytes": 5787,
+    "decoded_bytes": 16744,
+    "fixed_wire_bytes": 10877,
+    "hash_work_final": 952564,
+    "single_gzip_exact_EOF_no_trailing_or_second_member": true,
+    "immutable": true
+  },
+  "actual_phases": {
+    "before-stage": {
+      "stdout": {
+        "bytes": 869,
+        "sha256": "c97dbf1a20ef273d9c0e51a29dff888f6dafaae6cdd75ef61ae191710cfd501d"
+      },
+      "receipt": {
+        "bytes": 20059,
+        "sha256": "dbb7f65697feffa65571edf99c1a8f2f9d477a771b92b65ac6afc8f2447b5dcf"
+      },
+      "wire_bytes": 10877,
+      "result": {
+        "base_packet_sha256": "24d5cc379c57ac77ba347f3206eb4a8a1207e211783c99a68b1859fd607cf928",
+        "control_source_sha256": "a41b4deea218ad41d282fe0c4068de13ff7ade72579253198e4b38df2ad48ec5",
+        "hostname": "animallya-spark1",
+        "native_runtime_admission": null,
+        "observed_at_ns": "1792350933727598528",
+        "phase": "before-stage",
+        "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+        "reader_executed": false,
+        "schema": "native-origin-readonly-prerequisite/1",
+        "source_pins": {
+          "verify-retained-native-json-v1-2026-10-18.py": {
+            "bytes": 16744,
+            "sha256": "321b8d9c445c615152efd8751223e8fd4985d8c6016ed55e4e51a8bdb4be36d6"
+          }
+        },
+        "state": {
+          "files": {},
+          "output_absent": true,
+          "resources": {
+            "MemAvailable_bytes": "9742008320",
+            "headroom_is_reservation": false,
+            "scratch_available_bytes": "2805392834560",
+            "scratch_available_inodes": "243498293"
+          },
+          "root_physical": null,
+          "stage_sha256": null,
+          "tools_absent": true
+        },
+        "uid": 1000
+      }
+    },
+    "stage": {
+      "stdout": {
+        "bytes": 1285,
+        "sha256": "f640b131690a5d3332d1ddc1d16e64f8a1cca54b6b4f0884e66966d0d5c76c97"
+      },
+      "receipt": {
+        "bytes": 20615,
+        "sha256": "0b5640e546b614ac1561b53421fb250ad8df086252dd02a8ffb17ee79d55011a"
+      },
+      "wire_bytes": 12035,
+      "result": {
+        "base_packet_sha256": "24d5cc379c57ac77ba347f3206eb4a8a1207e211783c99a68b1859fd607cf928",
+        "control_source_sha256": "a41b4deea218ad41d282fe0c4068de13ff7ade72579253198e4b38df2ad48ec5",
+        "files": {
+          "verify-retained-native-json-v1-2026-10-18.py": {
+            "bytes": 16744,
+            "physical": {
+              "st_blocks": "40",
+              "st_ctime_ns": "1792350972526976561",
+              "st_dev": "66306",
+              "st_ino": "60583283",
+              "st_mode": "33152",
+              "st_mtime_ns": "1792350972526976561",
+              "st_nlink": "1",
+              "st_size": "16744",
+              "st_uid": "1000"
+            },
+            "sha256": "321b8d9c445c615152efd8751223e8fd4985d8c6016ed55e4e51a8bdb4be36d6"
+          }
+        },
+        "native_runtime_admission": null,
+        "observed_at_ns": "1792350972539208964",
+        "prerequisite_sha256": "c97dbf1a20ef273d9c0e51a29dff888f6dafaae6cdd75ef61ae191710cfd501d",
+        "reader_executed": false,
+        "resources": {
+          "MemAvailable_bytes": "9741889536",
+          "headroom_is_reservation": false,
+          "scratch_available_bytes": "2805375598592",
+          "scratch_available_inodes": "243498291"
+        },
+        "root_physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792350972538414985",
+          "st_dev": "66306",
+          "st_ino": "60583282",
+          "st_mode": "16832",
+          "st_mtime_ns": "1792350972538414985",
+          "st_nlink": "2",
+          "st_size": "4096",
+          "st_uid": "1000"
+        },
+        "schema": "native-origin-source-stage/1",
+        "source_pins": {
+          "verify-retained-native-json-v1-2026-10-18.py": {
+            "bytes": 16744,
+            "sha256": "321b8d9c445c615152efd8751223e8fd4985d8c6016ed55e4e51a8bdb4be36d6"
+          }
+        }
+      }
+    },
+    "before-observe": {
+      "stdout": {
+        "bytes": 1774,
+        "sha256": "0865f8edaa6b177869a54d8907875b8c98df672e6cfdc25a4e370515511a05e1"
+      },
+      "receipt": {
+        "bytes": 20061,
+        "sha256": "bca45a724843ba39c0ce746765b483ad6a9179840a7675ee9abc29b58fe9556d"
+      },
+      "wire_bytes": 10877,
+      "result": {
+        "base_packet_sha256": "24d5cc379c57ac77ba347f3206eb4a8a1207e211783c99a68b1859fd607cf928",
+        "control_source_sha256": "a41b4deea218ad41d282fe0c4068de13ff7ade72579253198e4b38df2ad48ec5",
+        "hostname": "animallya-spark1",
+        "native_runtime_admission": null,
+        "observed_at_ns": "1792351007258323681",
+        "phase": "before-observe",
+        "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+        "reader_executed": false,
+        "schema": "native-origin-readonly-prerequisite/1",
+        "source_pins": {
+          "verify-retained-native-json-v1-2026-10-18.py": {
+            "bytes": 16744,
+            "sha256": "321b8d9c445c615152efd8751223e8fd4985d8c6016ed55e4e51a8bdb4be36d6"
+          }
+        },
+        "state": {
+          "files": {
+            "stage.json": {
+              "bytes": 1285,
+              "physical": {
+                "st_blocks": "8",
+                "st_ctime_ns": "1792350972539263525",
+                "st_dev": "66306",
+                "st_ino": "60583284",
+                "st_mode": "33152",
+                "st_mtime_ns": "1792350972539263525",
+                "st_nlink": "1",
+                "st_size": "1285",
+                "st_uid": "1000"
+              },
+              "sha256": "f640b131690a5d3332d1ddc1d16e64f8a1cca54b6b4f0884e66966d0d5c76c97"
+            },
+            "verify-retained-native-json-v1-2026-10-18.py": {
+              "bytes": 16744,
+              "physical": {
+                "st_blocks": "40",
+                "st_ctime_ns": "1792350972526976561",
+                "st_dev": "66306",
+                "st_ino": "60583283",
+                "st_mode": "33152",
+                "st_mtime_ns": "1792350972526976561",
+                "st_nlink": "1",
+                "st_size": "16744",
+                "st_uid": "1000"
+              },
+              "sha256": "321b8d9c445c615152efd8751223e8fd4985d8c6016ed55e4e51a8bdb4be36d6"
+            }
+          },
+          "output_absent": true,
+          "resources": {
+            "MemAvailable_bytes": "9695973376",
+            "headroom_is_reservation": false,
+            "scratch_available_bytes": "2805375225856",
+            "scratch_available_inodes": "243498289"
+          },
+          "root_physical": {
+            "st_blocks": "8",
+            "st_ctime_ns": "1792350972538414985",
+            "st_dev": "66306",
+            "st_ino": "60583282",
+            "st_mode": "16832",
+            "st_mtime_ns": "1792350972538414985",
+            "st_nlink": "2",
+            "st_size": "4096",
+            "st_uid": "1000"
+          },
+          "stage_sha256": "f640b131690a5d3332d1ddc1d16e64f8a1cca54b6b4f0884e66966d0d5c76c97",
+          "tools_absent": false
+        },
+        "uid": 1000
+      }
+    },
+    "observe": {
+      "stdout": {
+        "bytes": 169,
+        "sha256": "69515a14beb37f3990437fd88a958f3278d6b8a4a7ca27c26f656ae14c57dc06"
+      },
+      "receipt": {
+        "bytes": 20621,
+        "sha256": "ba9d2e1b68b518acc6bc59977309f33785af293a4ae191de7c8df34cb5956591"
+      },
+      "wire_bytes": 13243,
+      "result": {
+        "hash_work_final": 2887614,
+        "historical_artifact_only": true,
+        "proof_bytes": 14794,
+        "proof_sha256": "13f2f1e95d2b9d2c8125536dbf53dc9fa77bb4adf1818d820852b1063413a6ad"
+      }
+    }
+  },
+  "actual_getter": {
+    "stdout": {
+      "bytes": 23138,
+      "sha256": "45780c577735a781c3684dc2a9ebfbf3233549cd5efd119d1b78407e60b416d6"
+    },
+    "receipt": {
+      "bytes": 1950,
+      "sha256": "366dac751dcd46bfa1c30c4e7d74b6e27a2e6f3e59a6a8814ade97c66360e2d7"
+    },
+    "resources": {
+      "MemAvailable_bytes": "9800437760",
+      "headroom_is_reservation": false,
+      "scratch_available_bytes": "2805373595648",
+      "scratch_available_inodes": "243498287"
+    },
+    "files": 2,
+    "whole_wire_bytes": 7409,
+    "invocation": "python3 docs/research/sources/native-origin-independent-result-getter-transport-v1-2026-10-18.py",
+    "reader_rerun": false
+  },
+  "all_five_SSH_terminals": {
+    "exit": 0,
+    "stderr_bytes": 0,
+    "owned_stop": null,
+    "failure_class": null,
+    "cleanup_failure_class": null,
+    "full_fixed_SSH_prefix_embedded_source_phase_SHA_and_wire_physical_links_checked": true,
+    "remote_quiescence_inferred_from_SSH_exit": false,
+    "host": "Spark1 UID1000 Python3.12.3, not historical N2/e0 runtime"
+  },
+  "independent_result": {
+    "proof_sha256": "13f2f1e95d2b9d2c8125536dbf53dc9fa77bb4adf1818d820852b1063413a6ad",
+    "proof_bytes": 14794,
+    "full_raw_proof_file": "original-loader-native-origin-independent-raw-v1-2026-10-18.json",
+    "summary": {
+      "bytes": 13430,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792349786884852600",
+        "st_dev": "66306",
+        "st_ino": "60583281",
+        "st_mode": "33152",
+        "st_mtime_ns": "1792349786884852600",
+        "st_nlink": "1",
+        "st_size": "13430",
+        "st_uid": "1000"
+      },
+      "sha256": "8402d4238508755502005d8290141e10827494083a6384b46be611b5e962986d"
+    },
+    "remote_input_files": 31,
+    "catalog_records": 1339,
+    "catalog_pages": 21,
+    "catalog_declared_payload_bytes_only": 24575979,
+    "selection": {
+      "page": "manifest-page-020.json",
+      "row": {
+        "copy": {
+          "bytes": 650,
+          "physical": {
+            "st_blocks": "8",
+            "st_ctime_ns": "1792317367571594252",
+            "st_dev": "66306",
+            "st_ino": "60582265",
+            "st_mode": "33204",
+            "st_mtime_ns": "1792317367571594252",
+            "st_nlink": "1",
+            "st_size": "650",
+            "st_uid": "1000"
+          },
+          "sha256": "76daf7a43f8652e767817fb7da442664470c13b1d25915b02cb49534268c588e"
+        },
+        "original": {
+          "bytes": 650,
+          "physical": {
+            "st_blocks": "8",
+            "st_ctime_ns": "1792317235958189827",
+            "st_dev": "66306",
+            "st_ino": "60578789",
+            "st_mode": "33188",
+            "st_mtime_ns": "1792317235958189827",
+            "st_nlink": "1",
+            "st_size": "650",
+            "st_uid": "1000"
+          },
+          "sha256": "76daf7a43f8652e767817fb7da442664470c13b1d25915b02cb49534268c588e"
+        }
+      }
+    },
+    "native_fields": {
+      "backend_modules": [],
+      "numpy": {
+        "init_sha256": "09295a80660f17925ae23765ce8cbd7ff7ceae968d5f2f89349f1cb74c0b9e11",
+        "path": "/usr/local/lib/python3.12/site-packages/numpy/__init__.py",
+        "version": "2.5.3"
+      },
+      "observed_at_ns": "1792317235957806688",
+      "parity_or_genuine_acceptance": false,
+      "python": "3.12.14",
+      "python_executable": "/usr/local/bin/python",
+      "schema": "capacity-context-native-probe/1",
+      "threads": {
+        "BLIS_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "uid": 1000
+    },
+    "raw_bytes": 650,
+    "raw_sha256": "76daf7a43f8652e767817fb7da442664470c13b1d25915b02cb49534268c588e",
+    "raw_pages": [
+      {
+        "bytes": 1048,
+        "count": 1,
+        "file": "body-0000.json",
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792349786877300108",
+          "st_dev": "66306",
+          "st_ino": "60583280",
+          "st_mode": "33152",
+          "st_mtime_ns": "1792349786877300108",
+          "st_nlink": "1",
+          "st_size": "1048",
+          "st_uid": "1000"
+        },
+        "sha256": "efbb47a1f36466cd4e16231de337533cf97eb03af2cd6d6cce2c748a05e55f5b",
+        "start": 0
+      }
+    ],
+    "complete_raw_equal": true,
+    "complete_canonical_summary_equal": true,
+    "coverage": "Every catalog record/schema/canonical relative name/count/size/unique selection; exact original+copy SHA/physical and full bytes; every historical field; complete raw page bytes, source/summary/page physical inventory; complete independently rebuilt primary canonical summary. All31 inputs two full held/named chunked reads then later fullSHAphysical bookends. No primary implementation import/call.",
+    "primary_hash_work_final": 2825586,
+    "hash_work_before_proof": 2858026,
+    "hash_work_final": 2887614,
+    "accounting": "Independent before_proof=2*sum(all31inputbytes)+650raw fragment; final adds2*14794proof. Primary final separately reconstructed2825586.",
+    "authority": "Historical /usr/local/bin/python STRING ONLY. No executable/path/link/build/interpreter/loader/provider/native/runtime authentication or retroactive extension of prior1355771f."
+  },
+  "review": {
+    "reviewer": "/root/trading_action_consistency",
+    "reused_healthy_worker": true,
+    "new_agent_or_limited_retry": false,
+    "worker_operations": false,
+    "before_use": [
+      "Complete original independent source/proposed reuse boundary",
+      "Pinned source/bootstrap/local builder/exact invocation",
+      "Actual generated transport/embedded source/packet/exact first readonly command",
+      "Actual fresh before-stage proof/exact source-only stage call",
+      "Actual stage/root/terminal and exact before-observe call",
+      "Actual fresh before-observe proof and exact ONE independent-fold call",
+      "Actual proof pointer/new getter/full embedded transport/exact call",
+      "Local preserver complete source/exact call; strengthened receipt and identity links before first use"
+    ],
+    "after_use": "Actual returned raw proof,31input inventories,canonical/raw/field/summary/page/accounting and preservation/readback scope reviewed separately.",
+    "pre_use_preserver_findings": [
+      "Authenticate full getter fixed SSH prefix/exact embedded bootstrap/source pins",
+      "Returned stage bytes equal retained stage stdout",
+      "Independent proof own-source row equals staged file physical row",
+      "Proof summary/page extra input rows equal corresponding proof/primary-summary metadata"
+    ],
+    "initial_UNRUN_preserver": {
+      "root": "/tmp/native-origin-independent-preserver-drafts-20261018-v1",
+      "sha256": "62af0ce993823165838a34da3d2eeae492a95e141b016eb107b64f29123b48b3",
+      "bytes": 12589,
+      "preserved_with_reason_as_final_inputs": true
+    },
+    "inspection_failure": "Worker read-only metadata inspection initially compared an incorrect full transport SHA after the request supplied its short prefix. Actual full SHA computed and embedded/source links checked; no writes/body/remote operation or retry."
+  },
+  "local_preservation": {
+    "root": "/tmp/native-origin-independent-evidence-20261018-v1",
+    "invocation": "python3 -W error docs/research/sources/preserve-native-origin-independent-v1-2026-10-18.py",
+    "exit": 0,
+    "input_files": 39,
+    "input_bytes": 395180,
+    "manifest": {
+      "sha256": "9d25c81ad8755c1218a3bbade796a25f8c4d289119a84dbcc172be02be8e79c7",
+      "bytes": 46217
+    },
+    "local_review": {
+      "sha256": "b94d98bfd1408b987e1f43064a845b888b847978d6526dff49ad338c2de7f15a",
+      "bytes": 7638
+    },
+    "hash_work_final": 2173651,
+    "protocol": "Twofullheldnamedreads/fullSHA/exactdecimalphysical/exclusivecopies/fsync/fullreadbacks/lateralloriginal+copySHAphysical/two returnedoutputs/report/manifestlast/rootresolvedparent+sourcedirsync.",
+    "separate_ROOT_readback": {
+      "evidence_files": 82,
+      "preparation_files": 22,
+      "scope": "39orig+39copy+2outputs+report+manifest; separate8preparationorig+8copy+4outputs+report+manifest. FullSHAphysical/twoheldreads then laterbookends; not another remote fold.",
+      "source": "from pathlib import Path\nimport hashlib,json,os,stat\nFIELDS=('st_dev','st_ino','st_mode','st_uid','st_nlink','st_size','st_blocks','st_mtime_ns','st_ctime_ns')\nchecks={}\n# Authenticate complete bounded bytes twice and return exact physical identity for later bookends.\ndef read(path,expected=None):\n fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW)\n try:\n  st=os.fstat(fd)\n  assert stat.S_ISREG(st.st_mode)and st.st_nlink==1 and 0<=st.st_size<=262144\n  raw=os.read(fd,262145);os.lseek(fd,0,os.SEEK_SET);assert os.read(fd,262145)==raw and len(raw)==st.st_size\n  physical={k:str(getattr(st,k))for k in FIELDS}\n  assert physical=={k:str(getattr(os.fstat(fd),k))for k in FIELDS}=={k:str(getattr(os.lstat(path),k))for k in FIELDS}\n  row={'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest(),'physical':physical}\n  if expected:assert row==expected\n  return raw,row\n finally:os.close(fd)\nroot=Path('/tmp/native-origin-independent-evidence-20261018-v1')\nraw,row=read(root/'manifest.json');assert row['sha256']=='9d25c81ad8755c1218a3bbade796a25f8c4d289119a84dbcc172be02be8e79c7'\nm=json.loads(raw);checks[str(root/'manifest.json')]=row\nassert m['input_files']==39 and m['input_bytes']==395180\nfor path,item in m['inputs'].items():\n for p,pin in ((Path(path),item['original']),(Path(item['copy_path']),item['copy'])):\n  _,r=read(p,pin);checks[str(p)]=r\nfor name,pin in m['returned_outputs'].items():\n _,r=read(root/name,pin);checks[str(root/name)]=r\n_,r=read(Path(m['local_review_path']),m['local_review']);checks[m['local_review_path']]=r\nassert len(checks)==82\nfor path,pin in checks.items():read(Path(path),pin)\npre=Path('/tmp/native-origin-independent-preparation-20261018-v1')\nraw,pre_row=read(pre/'manifest.json');assert pre_row['sha256']=='bd734b7a57448fa8c6bcf7eb6cccbac0d224c189d340ba6483cff601bc15e720'\nm2=json.loads(raw);prep={str(pre/'manifest.json'):pre_row}\nfor path,item in m2['inputs'].items():\n for p,pin in ((Path(path),item['original']),(Path(item['copy_path']),item['copy'])):\n  _,r=read(p,pin);prep[str(p)]=r\nfor name,pin in m2['outputs'].items():\n _,r=read(pre/name,pin);prep[str(pre/name)]=r\n_,r=read(pre/'source-review.json',m2['source_review']);prep[str(pre/'source-review.json')]=r\nassert len(prep)==22 and m2['input_files']==8\nfor path,pin in prep.items():read(Path(path),pin)\nprint(json.dumps({'schema':'native-origin-independent-local-readback/1','evidence_files':82,'preparation_files':22,'evidence_inventory':checks,'preparation_inventory':prep,'two_full_held_named_reads_and_later_full_SHA_physical_equal':True,'scope':'LOCAL_PRESERVATION_READBACK_NOT_A_SECOND_REMOTE_FOLD','native_runtime_admission':None},sort_keys=True,indent=2))\n"
+    },
+    "software_file_bound": 262144,
+    "software_input_bound": 1048576,
+    "software_hash_bound": 4194304,
+    "alarm_seconds": 30,
+    "Mac_AS_or_kernel_FSIZE_or_crash_durability_claim": false
+  },
+  "limits": {
+    "Linux_AS_soft_hard": 536870912,
+    "CPU_seconds_cumulative_same_process": 20,
+    "bootstrap_alarm_seconds": 30,
+    "cancel_before_exact_independent_argv_handoff_then_own_alarm_seconds": 30,
+    "SSH_seconds": 70,
+    "owned_TERM_seconds": 1,
+    "owned_KILL_seconds": 1,
+    "ordinary_file_log_bound": 262144,
+    "wire_bound": 65536,
+    "authenticated_control_read_calls": 1024,
+    "control_direct_names": 16,
+    "separate_control_hash_ledger": 4194304,
+    "separate_independent_hash_ledger": 4194304,
+    "wholeprocess_4MiB_hash_claim": false,
+    "fresh_headroom": "2GiB MemAvailable/32MiB scratch/512inodes rechecked immediately before stage/fold/getter reads. Actual prerequisites independently reviewed before each mutation/fold; not reservation/native/model/daemon bound.",
+    "getter_wrapper": "Bounded source-envelope and source SHA authentication additional to getter result4MiB ledger; not wholeprocess hashing claim.",
+    "timeout_signal_overflow_ownedstop_cleanupfailure_IO_crash": "UNEXERCISED; no new guarantee"
+  },
+  "validation": {
+    "new_source_files": 7,
+    "purpose_functions": 54,
+    "warnings_as_errors_AST": true,
+    "zero_literal_backspaces": true,
+    "two_pin_only_selector_delta": true,
+    "declared_bootstrap_AST_delta_only": true,
+    "five_transport_ASTs_equal_after_one_path_rebinding": true,
+    "three_getter_outer_ASTs_equal_old78253": true,
+    "five_builder_and_preserver_utilities_equal_257322a2": true,
+    "allJSON_fullSHA_links_accounting_and_staged_diff": true,
+    "Ruff": "Previously unavailable; no lint claim.",
+    "app_tests_build_deploy": "NOT RUN; application/prompt/production unchanged.",
+    "operational_or_payload_failure_or_body_replay": false
+  },
+  "unadmitted": {
+    "native_runtime": null,
+    "actual_interpreter_loader_provider_build_search_alias_version_transitive_closure": null,
+    "other1338_payload_bodies": "UNREAD",
+    "other19_native_bodies": "UNREAD",
+    "guard3b8be00b_separate25payload_functions": "UNRUN",
+    "old2446_030c_G08_caps_maps": "UNCHANGED",
+    "producer2431_reference2446_executor2468_and_original_receipts_lifetimes": "SEPARATE",
+    "genuine_assembled_tree_strategy_entrypoint_manifests_bootstrap_wrapper_owner_caller_stager_packet_runtime_launch_admission": null,
+    "execution_authorized": false,
+    "model_RAM_horizon_history_ordinary_intraday_fill_UI": "UNVERIFIED",
+    "original_timing": "FAILED",
+    "publication": "CLOSED",
+    "missing_original_receipts": "MISSING",
+    "genuine_v6": "OPEN/PAUSED; no replay/adoption/new genuine run",
+    "actual_two_host_Spark2_image_daemon_temp_RAM": "UNCHANGED_UNADMITTED"
+  },
+  "next": "Independent historical JSON boundary CLOSED. Never rerun primary/independent/stage/getters/prerequisites or old completed gates/packets for docs. SOURCE ONLY derive next interpreter namespace/path/link-origin requirements from verified historical string and pinned stopped N2/e0 metadata/contract. No executable opening or loading is admitted by string recovery or this fold. Before any later bounded stopped-runtime path/link metadata observation, prepare distinct controls and exact invocation and independently review actual fresh resources/source/namespace/container bindings. Do not guess suffixes/library paths or use host substitutes/ldd/readelf/dlopen/package execution/cap raises. Provider/build/alias/version/transitive/native/call/global/type/dataclass/phase/Arrow-pool/wrapper/sklearnmetadata closure and genuine model/RAM remain separate mandatory gates.",
+  "heartbeat": "ACTIVE",
+  "diagram": "NONE"
+}

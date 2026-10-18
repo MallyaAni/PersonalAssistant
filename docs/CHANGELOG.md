@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-18 — Independently verify the retained historical native JSON
+
+A separately pinned selector reconstructed the complete 21-page metadata catalog,
+selected both 650B JSON copies, and matched every field, raw page, physical input
+row and complete canonical primary summary. One fold and four surrounding
+prerequisite/staging/retrieval operations exited 0. Proof13f2f1e9/14794B and 39 local
+inputs totalling 395180B are retained; separate readbacks of 82 evidence files and
+22 preparation files passed. Source checkpoint d563b336; read
+research/original-loader-native-origin-independent-proof-v1-2026-10-18.json.
+
+The recovered executable path remains a historical string. Its file/build/loader
+and native/model/RAM authority are unverified. No primary replay, production change
+or new trading acceptance occurred; original timing remains FAILED/publication CLOSED.
+
 ## 2026-10-18 — Observe the retained historical native JSON without opening its executable
 
 Five bounded, independently reviewed SSH operations staged fixed source files,

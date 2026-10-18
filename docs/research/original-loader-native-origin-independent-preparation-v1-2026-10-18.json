@@ -1,0 +1,352 @@
+{
+  "input_bytes": 131896,
+  "input_files": 8,
+  "inputs": {
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/native-origin-control-bootstrap-v1-2026-10-18.py": {
+      "copy": {
+        "bytes": 15611,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792350889045239085",
+          "st_dev": "16777223",
+          "st_ino": "187620555",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792350889045239085",
+          "st_nlink": "1",
+          "st_size": "15611",
+          "st_uid": "501"
+        },
+        "sha256": "70fb388a8cf1271a4eb0957a9071594490ef26318dc52ab9392b4572a6eacb67"
+      },
+      "copy_path": "/tmp/native-origin-independent-preparation-20261018-v1/06-native-origin-control-bootstrap-v1-2026-10-18.py",
+      "original": {
+        "bytes": 15611,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792348705960456846",
+          "st_dev": "16777223",
+          "st_ino": "186997790",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792348705960456846",
+          "st_nlink": "1",
+          "st_size": "15611",
+          "st_uid": "501"
+        },
+        "sha256": "70fb388a8cf1271a4eb0957a9071594490ef26318dc52ab9392b4572a6eacb67"
+      }
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/native-origin-control-transport-v1-2026-10-18.py": {
+      "copy": {
+        "bytes": 26208,
+        "physical": {
+          "st_blocks": "56",
+          "st_ctime_ns": "1792350889042356598",
+          "st_dev": "16777223",
+          "st_ino": "187620550",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792350889042356598",
+          "st_nlink": "1",
+          "st_size": "26208",
+          "st_uid": "501"
+        },
+        "sha256": "ce66a5d53a789bcb63f31633b222653f62af1cf59419ce3cfe30154952deb087"
+      },
+      "copy_path": "/tmp/native-origin-independent-preparation-20261018-v1/02-native-origin-control-transport-v1-2026-10-18.py",
+      "original": {
+        "bytes": 26208,
+        "physical": {
+          "st_blocks": "56",
+          "st_ctime_ns": "1792349001905724239",
+          "st_dev": "16777223",
+          "st_ino": "187149031",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792349001905724239",
+          "st_nlink": "1",
+          "st_size": "26208",
+          "st_uid": "501"
+        },
+        "sha256": "ce66a5d53a789bcb63f31633b222653f62af1cf59419ce3cfe30154952deb087"
+      }
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/native-origin-independent-bootstrap-v1-2026-10-18.py": {
+      "copy": {
+        "bytes": 15283,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792350889041475307",
+          "st_dev": "16777223",
+          "st_ino": "187620548",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792350889041475307",
+          "st_nlink": "1",
+          "st_size": "15283",
+          "st_uid": "501"
+        },
+        "sha256": "a41b4deea218ad41d282fe0c4068de13ff7ade72579253198e4b38df2ad48ec5"
+      },
+      "copy_path": "/tmp/native-origin-independent-preparation-20261018-v1/01-native-origin-independent-bootstrap-v1-2026-10-18.py",
+      "original": {
+        "bytes": 15283,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792350764326498328",
+          "st_dev": "16777223",
+          "st_ino": "187593070",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792350764326498328",
+          "st_nlink": "1",
+          "st_size": "15283",
+          "st_uid": "501"
+        },
+        "sha256": "a41b4deea218ad41d282fe0c4068de13ff7ade72579253198e4b38df2ad48ec5"
+      }
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/prepare-native-origin-independent-controls-v1-2026-10-18.py": {
+      "copy": {
+        "bytes": 11218,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792350889045970013",
+          "st_dev": "16777223",
+          "st_ino": "187620556",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792350889045970013",
+          "st_nlink": "1",
+          "st_size": "11218",
+          "st_uid": "501"
+        },
+        "sha256": "5120411ef2d480e6af50606c6fc9258148c20eee68e8dce131c0341a105541e5"
+      },
+      "copy_path": "/tmp/native-origin-independent-preparation-20261018-v1/07-prepare-native-origin-independent-controls-v1-2026-10-18.py",
+      "original": {
+        "bytes": 11218,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792350822400944853",
+          "st_dev": "16777223",
+          "st_ino": "187608440",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792350822400944853",
+          "st_nlink": "1",
+          "st_size": "11218",
+          "st_uid": "501"
+        },
+        "sha256": "5120411ef2d480e6af50606c6fc9258148c20eee68e8dce131c0341a105541e5"
+      }
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/verify-retained-native-json-pinned-v1-2026-10-18.py": {
+      "copy": {
+        "bytes": 16744,
+        "physical": {
+          "st_blocks": "40",
+          "st_ctime_ns": "1792350889040604057",
+          "st_dev": "16777223",
+          "st_ino": "187620547",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792350889040604057",
+          "st_nlink": "1",
+          "st_size": "16744",
+          "st_uid": "501"
+        },
+        "sha256": "321b8d9c445c615152efd8751223e8fd4985d8c6016ed55e4e51a8bdb4be36d6"
+      },
+      "copy_path": "/tmp/native-origin-independent-preparation-20261018-v1/00-verify-retained-native-json-pinned-v1-2026-10-18.py",
+      "original": {
+        "bytes": 16744,
+        "physical": {
+          "st_blocks": "40",
+          "st_ctime_ns": "1792350764325871353",
+          "st_dev": "16777223",
+          "st_ino": "187593069",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792350764325871353",
+          "st_nlink": "1",
+          "st_size": "16744",
+          "st_uid": "501"
+        },
+        "sha256": "321b8d9c445c615152efd8751223e8fd4985d8c6016ed55e4e51a8bdb4be36d6"
+      }
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/verify-retained-native-json-v1-2026-10-18.py": {
+      "copy": {
+        "bytes": 16701,
+        "physical": {
+          "st_blocks": "40",
+          "st_ctime_ns": "1792350889043039784",
+          "st_dev": "16777223",
+          "st_ino": "187620551",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792350889043039784",
+          "st_nlink": "1",
+          "st_size": "16701",
+          "st_uid": "501"
+        },
+        "sha256": "094561ab917e774ae04af52dc81cdbc5865db23ae5898f1ae25fd00496867a76"
+      },
+      "copy_path": "/tmp/native-origin-independent-preparation-20261018-v1/03-verify-retained-native-json-v1-2026-10-18.py",
+      "original": {
+        "bytes": 16701,
+        "physical": {
+          "st_blocks": "40",
+          "st_ctime_ns": "1792347571180635176",
+          "st_dev": "16777223",
+          "st_ino": "186771461",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792347571180635176",
+          "st_nlink": "1",
+          "st_size": "16701",
+          "st_uid": "501"
+        },
+        "sha256": "094561ab917e774ae04af52dc81cdbc5865db23ae5898f1ae25fd00496867a76"
+      }
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/03-verify-retained-native-json-v1-2026-10-18.py": {
+      "copy": {
+        "bytes": 16701,
+        "physical": {
+          "st_blocks": "40",
+          "st_ctime_ns": "1792350889043662281",
+          "st_dev": "16777223",
+          "st_ino": "187620552",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792350889043662281",
+          "st_nlink": "1",
+          "st_size": "16701",
+          "st_uid": "501"
+        },
+        "sha256": "094561ab917e774ae04af52dc81cdbc5865db23ae5898f1ae25fd00496867a76"
+      },
+      "copy_path": "/tmp/native-origin-independent-preparation-20261018-v1/04-03-verify-retained-native-json-v1-2026-10-18.py",
+      "original": {
+        "bytes": 16701,
+        "physical": {
+          "st_blocks": "40",
+          "st_ctime_ns": "1792350042284300083",
+          "st_dev": "16777223",
+          "st_ino": "187416336",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792350042284300083",
+          "st_nlink": "1",
+          "st_size": "16701",
+          "st_uid": "501"
+        },
+        "sha256": "094561ab917e774ae04af52dc81cdbc5865db23ae5898f1ae25fd00496867a76"
+      }
+    },
+    "/tmp/native-origin-observation-evidence-20261018-v1/summary.json": {
+      "copy": {
+        "bytes": 13430,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792350889044402656",
+          "st_dev": "16777223",
+          "st_ino": "187620554",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792350889044402656",
+          "st_nlink": "1",
+          "st_size": "13430",
+          "st_uid": "501"
+        },
+        "sha256": "8402d4238508755502005d8290141e10827494083a6384b46be611b5e962986d"
+      },
+      "copy_path": "/tmp/native-origin-independent-preparation-20261018-v1/05-summary.json",
+      "original": {
+        "bytes": 13430,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792350042311182423",
+          "st_dev": "16777223",
+          "st_ino": "187416377",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792350042311182423",
+          "st_nlink": "1",
+          "st_size": "13430",
+          "st_uid": "501"
+        },
+        "sha256": "8402d4238508755502005d8290141e10827494083a6384b46be611b5e962986d"
+      }
+    }
+  },
+  "kernel_AS_FSIZE_or_crash_durability_claim": false,
+  "outputs": {
+    "bootstrap.py": {
+      "bytes": 15283,
+      "physical": {
+        "st_blocks": "32",
+        "st_ctime_ns": "1792350889048432938",
+        "st_dev": "16777223",
+        "st_ino": "187620560",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350889048432938",
+        "st_nlink": "1",
+        "st_size": "15283",
+        "st_uid": "501"
+      },
+      "sha256": "a41b4deea218ad41d282fe0c4068de13ff7ade72579253198e4b38df2ad48ec5"
+    },
+    "packet.json": {
+      "bytes": 8116,
+      "physical": {
+        "st_blocks": "16",
+        "st_ctime_ns": "1792350889046722406",
+        "st_dev": "16777223",
+        "st_ino": "187620557",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350889046722406",
+        "st_nlink": "1",
+        "st_size": "8116",
+        "st_uid": "501"
+      },
+      "sha256": "24d5cc379c57ac77ba347f3206eb4a8a1207e211783c99a68b1859fd607cf928"
+    },
+    "pinned.py": {
+      "bytes": 16744,
+      "physical": {
+        "st_blocks": "40",
+        "st_ctime_ns": "1792350889049147222",
+        "st_dev": "16777223",
+        "st_ino": "187620562",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350889049147222",
+        "st_nlink": "1",
+        "st_size": "16744",
+        "st_uid": "501"
+      },
+      "sha256": "321b8d9c445c615152efd8751223e8fd4985d8c6016ed55e4e51a8bdb4be36d6"
+    },
+    "transport.py": {
+      "bytes": 25251,
+      "physical": {
+        "st_blocks": "56",
+        "st_ctime_ns": "1792350889047722048",
+        "st_dev": "16777223",
+        "st_ino": "187620559",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792350889047722048",
+        "st_nlink": "1",
+        "st_size": "25251",
+        "st_uid": "501"
+      },
+      "sha256": "ae8133009f11926ca0ee2ccb6bdce274486657ce921a5f2ddfbdf98ef3bcc845"
+    }
+  },
+  "remote_bodies": "UNRUN",
+  "schema": "native-origin-independent-control-preparation/1",
+  "software_file_bound": 262144,
+  "software_input_bound": 1048576,
+  "source_review": {
+    "bytes": 3711,
+    "physical": {
+      "st_blocks": "8",
+      "st_ctime_ns": "1792350889050163897",
+      "st_dev": "16777223",
+      "st_ino": "187620563",
+      "st_mode": "33188",
+      "st_mtime_ns": "1792350889050163897",
+      "st_nlink": "1",
+      "st_size": "3711",
+      "st_uid": "501"
+    },
+    "sha256": "d3ce460624c3fd03ac89cc40a0fae23bb418fba1366e6c9442bb946d97dbe250"
+  }
+}
