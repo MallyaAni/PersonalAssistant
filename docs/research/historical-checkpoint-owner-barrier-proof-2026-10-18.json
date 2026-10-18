@@ -1,0 +1,146 @@
+{
+  "actual_interruption_probe": "Separate one-second wall-clock SIGALRM raises KeyboardInterrupt after one owned Python child publishes READY. Global finally cleanup closes stdin; child writes EOF_AFTER_PARENT_ALARM and exits0. Physical markers/source bookends independently verified. This is not a fake clock, remote Docker timeout, SSH cleanup, native effect or account process.",
+  "default_inert_plan": {
+    "behavior": "Local source hash/AST reads and deterministic print only; no endpoint/caller imports, route calls, host probes, directories, fixture or real-owner execution.",
+    "bytes": 2022,
+    "canonical_plan_sha256": "ef4bb29e6d6c94ded18092a722d391d87544db8c225417ee36e2fa225710164f",
+    "executor_run": false,
+    "exit_code": 0,
+    "raw_sha256": "a66fe6afea751f70bcdaa23819b25f2d8447e0245e9dd11ac7bc256f0ba5026b"
+  },
+  "diagram_impact": "NONE — private standalone controller source/test/evidence, deployed architecture unchanged",
+  "expected_red_meaning": "Three exact failures on the preserved266d execute AST tail with the same physical fixtures: first collector child sees only four required exit markers; a failed b STATUS or b refusal occurs after an early a collection marker already exists. Wrapper exit0 denotes EXPECTED_RED, not original-owner acceptance. No original endpoint/genuine run or completed gate replay.",
+  "green_coverage": [
+    "Positive pair ordering: both collector children physically observe all six exit markers and the exact already-persisted barrier. Independently read back launch, both STATUS hashes, six identities/actual child exit values and quiescent receipt hashes.",
+    "Actual second STATUS child exit7 and second refusal child exit7 prevent every collector side effect.",
+    "Incomplete/duplicate owned CID evidence and mismatched observed identity prevent barrier/collection. Mismatched inspect evidence is retained before the unchanged inspection guard rejects it.",
+    "Actual O_EXCL barrier publication failure leaves the pre-existing untrusted bytes intact and creates no collector markers; no adoption/replacement.",
+    "Wrong first collector root or content retains its raw result and the valid barrier, stops before the second collector and preserves all failed fixture files."
+  ],
+  "implementation": [
+    "Factor the existing STATUS/refusal/collection tail into observe_and_collect, called by execute after the original authenticated ordinary conversation and exit checks.",
+    "Finish both roles STATUS and exact consumed-session refusal before collection. Require the complete six role/phase pairs and six distinct owned CIDs, then use the unchanged Owner.inspect(expected=exited) guards and bind observed id/role/phase.",
+    "Persist/fsync an exclusive barrier binding launch, six actual inspection receipt hashes/CIDs/states and both observed STATUS reply hashes. Only then persist expectations and call the read-only collectors.",
+    "Preserve original collector role/root/content validation and stop on any first-collector mismatch. COMPLETE additionally binds the barrier digest.",
+    "Default plan declares collection_requires_pair_global_quiescence; the changed owner-source digest changes the canonical plan digest. Existing external admission schema/gates, runtime checks, protocol/source pins/caps and original Owner class remain unchanged."
+  ],
+  "independent_review": {
+    "proof_bytes": 158231,
+    "proof_sha256": "ccc81e0e9cd9434061a96075218abfd0255b289e581845d5a5c477be84b4fea7",
+    "scope": "Separate read-only no-follow physical file/SHA/source bookend checks, exact failure causes, marker order, barrier binding, actual owned child PID/exit correlations, refusal/result preservation. No test replay or host probes. Existing healthy worker reviewed source/resources/invocations READONLY.",
+    "status": "INDEPENDENT_ISOLATED_OWNER_BARRIER_REVIEW_PASSED",
+    "verifier_sha256": "35b4ad26a92ee2167fcf4b288bba0a7a49f8cb9677d6d7f2165ed09c0a16f2ee"
+  },
+  "isolated_tests": {
+    "bytes": 27585,
+    "runtime_python": "3.12.13 (main, Aug  8 2026, 04:52:31) [Clang 14.0.3 (clang-1403.0.22.14.1)]",
+    "scope": "Native Mac stdlib controller tests only. Injected endpoint/collector callbacks with actual owned Python children, real framed STATUS pipes/terminal EOF/exit codes, fsynced markers and original failed outputs. No SSH/Docker/backend/native/model/account/provider calls or real owner.execute. The unchanged Owner.inspect validates injected declared profile JSON; only PID/ExitCode come from the actual test child. Synthetic profile fields are not observed host/container proof.",
+    "sha256": "6c45c0b079810c853a004788fd691ddcc2e7329e55a85d9f51af584256e4ea6d",
+    "source_path": "/tmp/test_checkpoint_owner_barrier_20261018.py",
+    "startup_flags": [
+      "-I",
+      "-S",
+      "-B"
+    ]
+  },
+  "limitations": [
+    "Nine isolated ordering tests and the actual alarm probe are not real-owner execution, endpoint protocol acceptance or actual two-host placement/durability. Prior LOCAL positive endpoint/collector v2 proof remains separate and was not rerun.",
+    "Actual future owner still NOT ADMITTED/NOT RUN; no genuine external admission. Spark2 exactf612 Docker load/runtime/resource proof remains NOT DONE/NOT ADMITTED. No unchanged missing-image or denied-read probe repeated.",
+    "New source is private standalone tooling preserved outside the repository application; not merged/deployed application integration. No existing Store/schema/stages/Nightly/Cycle/native/helper/protocol/source cap changed.",
+    "No native save/metadata pre-effect reservation, full832MB lifecycle/model RAM/horizon, restore, coordinator/corporate action, historical numerical/economic or full corrected acceptance.",
+    "Original timing FAILED/publication CLOSED/missing raw receipts unchanged; genuinev6 remains OPEN/PAUSED with no replay/adoption/new genuine run. Ordinary/intraday/fill/UI remain UNVERIFIED."
+  ],
+  "new_source_bytes": 39369,
+  "new_source_path": "/tmp/checkpoint_two_host_owner_barrier_20261018.py",
+  "new_source_sha256": "ad25e80c1326f4a29150ea74d8313a6a8f024c7e7de82f8bd9fe13651de04dd2",
+  "next_boundary": "Use new ad25 source/canonical plan ef4bb29e for any future owner source review; never relabel old266d acceptance or run/adopt a partial job. Actual two-host execution still requires independently authenticated exact-image availability, daemon/runtime/resource and host/root admission; preserve known unavailable gates and avoid repeated unchanged probes. Independent remaining original-audit/source-integration work may proceed within its existing contracts.",
+  "objective": "Correct the unexecuted actual-owner collection sequence so both peers finish STATUS/refusal and all six owned observation phases are validated quiescent before either collector can start.",
+  "original_source_preserved": "Original266d remains unchanged at its original Mac path and original source-only roots on both Sparks. New source has a distinct filename and new source/evidence roots on Spark1. No actual-owner executor was run and no admission document exists.",
+  "original_source_sha256": "266d293847aef772b1392cc54e7280f61007f5dee2c71881adfb0938dff11a6e",
+  "positive_synthetic_barrier_sha256": "0c5754c62bbbf8adb26553a3c05fdf954bae342831430153b16e69d3d4500d2d",
+  "preservation": {
+    "evidence": {
+      "batches": 1,
+      "bytes": 394405,
+      "files": 356,
+      "manifest_sha256": "2f1da23601546015b58686fcd3d8e07f03b5902c386049ad2159baf70a6470f7",
+      "mode": "evidence",
+      "preserver_sha256": "ca2abd17a7451a83ac2dea294735576f55b9ad3d174a6e7491e4e6cbfcf6cfb6",
+      "root": "/home/animallya96/scratch/checkpoint-owner-barrier-evidence-20261018-v1"
+    },
+    "independent_review": {
+      "files": {
+        "independent-proof.json": {
+          "bytes": "158231",
+          "ctime_ns": "1792289154500257141",
+          "inode": "60569514",
+          "mtime_ns": "1792289154500257141",
+          "sha256": "ccc81e0e9cd9434061a96075218abfd0255b289e581845d5a5c477be84b4fea7"
+        },
+        "independent-verifier.py": {
+          "bytes": "8493",
+          "ctime_ns": "1792289154504559412",
+          "inode": "60569515",
+          "mtime_ns": "1792289154504559412",
+          "sha256": "35b4ad26a92ee2167fcf4b288bba0a7a49f8cb9677d6d7f2165ed09c0a16f2ee"
+        },
+        "preservation.py": {
+          "bytes": "2889",
+          "ctime_ns": "1792289154508699601",
+          "inode": "60569516",
+          "mtime_ns": "1792289154508699601",
+          "sha256": "2b5b06f18506a871ca19719ef4cf6ad6b0dd3b70d41caecf9a2280865c36173e"
+        }
+      },
+      "root": "/home/animallya96/scratch/checkpoint-owner-barrier-independent-review-20261018-v1"
+    },
+    "policy": "Exclusive small Spark1 roots, mode0700/0600, per-file fsync/readbackSHA and directory fsync; source/evidence manifests last. Original source, all failed/completed fixture roots and independent raw receipts retained. No modification to any historical/production/failedv6 root.",
+    "source": {
+      "batches": 1,
+      "bytes": 156511,
+      "files": 7,
+      "manifest_sha256": "aeba6d79c71a988f5cced6194300c761d150a9093449afd83c9d173e341c47e9",
+      "mode": "source",
+      "preserver_sha256": "ca2abd17a7451a83ac2dea294735576f55b9ad3d174a6e7491e4e6cbfcf6cfb6",
+      "root": "/home/animallya96/scratch/checkpoint-owner-barrier-source-20261018-v1"
+    }
+  },
+  "resource_limits": "Suite60s actual work alarm; owned child pipe/read/exit bounds and bounded cleanup touching only registered PIDs. Nominal suite children have RLIMIT_FSIZE262144. The one interruption-probe child has limits=None and fixed tiny marker source; do not claim the kernel file cap covers that child. No cgroup/container/RAM/full model/horizon admission is established on the Mac. Local artifacts remain small, not preallocated cumulative quotas.",
+  "results": {
+    "green": {
+      "elapsed_seconds": 5.863530140020885,
+      "errors": 0,
+      "failures": 0,
+      "file_count": 255,
+      "owned_children": 57,
+      "proof_sha256": "4c1a89d18a0c76e9d22505a191c91d28f2b7ed1d93cba1221d68f01263f6d825",
+      "root": "/tmp/checkpoint-owner-barrier-green-20261018-v1",
+      "skipped": 0,
+      "status": "VERIFIED_ISOLATED_BARRIER_ORDERING",
+      "tests": 9
+    },
+    "interrupt": {
+      "child_pid": 79689,
+      "child_returncode": 0,
+      "file_count": 5,
+      "proof_sha256": "46d9f6960f0f0304cdef7d3e055f5431d28d2593317c23fc046ff40bfeb2d669",
+      "root": "/tmp/checkpoint-owner-barrier-interrupt-20261018-v1",
+      "status": "VERIFIED_ACTUAL_ALARM_OWNED_CHILD_CLEANUP"
+    },
+    "red": {
+      "elapsed_seconds": 1.900770346983336,
+      "errors": 0,
+      "failures": 3,
+      "file_count": 89,
+      "owned_children": 21,
+      "proof_sha256": "0050e2ed5f852e6fc74daf57b5aebd913e1a8f64d0964e676f86064e0ef84a21",
+      "root": "/tmp/checkpoint-owner-barrier-red-20261018-v1",
+      "skipped": 0,
+      "status": "EXPECTED_RED",
+      "tests": 3
+    }
+  },
+  "status": "VERIFIED_PRIVATE_OWNER_PAIR_BARRIER_SOURCE_AND_ISOLATED_ORDERING_ONLY",
+  "test_review_correction": "Initial test draft00ce396f had only tearDown cleanup, so setup failure/KeyboardInterrupt could bypass child ownership cleanup. Found READONLY before any test invocation; exact draft retained. Corrected fixture masks SIGALRM across Popen/registration, retains an immediate global registry, and runs bounded owned-child cleanup in outer finally. No runtime RED claim for the initial test draft.",
+  "unchanged_owner_class": "AST equality checked for the entire original Owner class, including admission-adjacent command, route, source, runtime, cleanup and inspect mechanics. This is structural preservation, not a new runtime validation of those real host operations."
+}

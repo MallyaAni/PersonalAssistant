@@ -1,5 +1,64 @@
 # Next session
 
+## 2026-10-18 — Private actual-owner barrier source and isolated ordering VERIFIED
+
+Read research/historical-checkpoint-owner-barrier-proof-2026-10-18.json.
+New standalone /tmp/checkpoint_two_host_owner_barrier_20261018.py ad25e80c/
+39369B preserves original266d at its old path and both original Spark source
+roots. Existing Owner class is AST-identical; source/runtime/admission/pins/
+caps unchanged. execute now calls observe_and_collect: both STATUS/refusal
+sequences finish, six distinct owned ordinary/STATUS/refusal CIDs are inspected
+as quiescent, then an exclusive fsynced barrier binds launch/six receipt hashes/
+CIDs/states/both observed STATUS hashes before either collector. COMPLETE binds
+barrier SHA. Existing result role/root/content checks retained. Default inert
+plan passed0/rawa66fe6af/canonicalef4bb29e; returns before caller/endpoint
+imports or route/host/runtime work. REAL EXECUTOR STILL NOT ADMITTED/NOT RUN.
+
+New isolated Mac stdlib tests6c45c0b0/27585B ran9PASS0fail0error0skip5.864s,
+57actual owned Python children all reaped. Exact original266d AST tail control
+reproduced3FAIL0error0skip1.901s/21children; wrapper0=EXPECTED_RED, not old
+acceptance. New private /tmp/checkpoint-owner-barrier-{green,red}-20261018-v1
+roots COMPLETE, never rerun for docs. Green physical collector markers see all
+six required phase-exit markers plus valid barrier; second STATUS/refusal exit7,
+missing/duplicateCID, observed identity mismatch, actualO_EXCL barrier collision
+prevent every collector side effect. Wrong first collector root/content retains
+raw result/barrier and prevents second collector. Unchanged Owner.inspect checks
+injected declared profile JSON; only child PID/ExitCode are real process facts.
+These are isolated ordering tests, NOT actual Docker/host/endpoint admission.
+
+READONLY review caught initial testdraft00ce396f tearDown-only cleanup gap
+before runtime. Preserved draft, added immediate global child registry with
+SIGALRM masked across Popen/registration and bounded global finally cleanup.
+Separate actual1s wall-clock SIGALRM probe interrupted parent; registered child
+observed stdinEOF/retainedmarker/exit0, source bookends exact. Root
+/tmp/checkpoint-owner-barrier-interrupt-20261018-v1 COMPLETE; proof46d9f696.
+Probe child has limits=None/fixed tiny source; do not claim suite262KiB file
+limit covers it. Suite60s work alarm; no fake clock or remote cleanup proof.
+
+Independent verifier35b4ad26/proofccc81e0e/158231B checked no-follow physical
+files/source4 beforeafter, exact original failure causes, markers/barrier0c5754c6,
+actual child PID/exit correlations and refusal/raw-result preservation. Green
+proof4c1a89d1/red0050e2ed. Exact source/test/initialdraft/plan preserved Spark1
+scratch/checkpoint-owner-barrier-source-20261018-v1:7files156511B/manifestaeba6d79.
+Evidence root checkpoint-owner-barrier-evidence-20261018-v1 retains356files/
+394405B/manifest2f1da236/preserverca2abd17. Independent-review-v1 root retains
+original proof/verifier/preserver, fsync/readbackSHA exact. All namespace/source/
+evidence writes exclusive; original histories/production/genuinev6 untouched.
+Existing worker READONLY reviews; AST/purpose comments checked/Ruff unavailable.
+No completed6/11/18/17/15/21/LOCALpositive gate repeated.
+
+NEXT: use new ad25 source/canonicalplanef4bb29e for future source review;
+old266d remains historical source, never relabel its acceptance. Actual twohost
+still needs a genuine independently pinned admission plus exact Spark2 f612
+image/load/runtime/resource/host/root evidence. Known missing-image/daemon-temp/
+incremental-memory gaps unchanged; no repetitive probe, substitute profile or
+denial bypass. Independent original-audit/source-integration work may continue
+within its existing contracts. No full corrected/genuine run or v6 replay.
+Native metadata/fullmodel/horizon/restore/coordinator/corporate actions open;
+original timing FAILED/publication CLOSED, weekday/intraday/fill/UI UNVERIFIED.
+Heartbeat ACTIVE/no permission question pending. Diagram impact: NONE — private
+standalone source/tests/evidence; deployed architecture unchanged.
+
 ## 2026-10-18 — LOCAL positive endpoint/collector and pair barrier VERIFIED
 
 Read research/historical-checkpoint-local-endpoint-proof-2026-10-18.json.
