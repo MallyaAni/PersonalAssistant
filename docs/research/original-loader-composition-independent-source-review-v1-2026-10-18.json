@@ -1,0 +1,362 @@
+{
+  "AST_checks": [
+    "exact_map_chain_and_sole_transition_plus4plus2",
+    "exact7_digest_constants_and_module_sets",
+    "complete_legacy_source_Git2431_body_only_explicit_root_and_guard",
+    "complete_calendar_profile_body_and_both_source_3data_copies",
+    "complete_constructor_only4_declared_root_admission_metadata_changes",
+    "_bytes_full_AST_same_new_declared_binding_globals",
+    "verify_after_full_AST_same_new_declared_binding_globals",
+    "persist_full_AST_same_new_declared_binding_globals",
+    "serialize_only_extra_type_metadata_complete_JSON_UTF8_retention",
+    "release_only_extra_metadata_reference_after_durable_bytes",
+    "one_private_factory_call_after_real_UTC_clock_no_supplied_result_or_clock",
+    "exact12_proposed_module_origin_members",
+    "both_public_execute_bodies_unconditional_refusal"
+  ],
+  "contract_sha256": "a69aa1b659dfe9a33053d798592ea8e41856e70f87431c69f5d2b414ffeca2d3",
+  "entrypoint_modelstrategy_wrapper_finder_manifests_runtime_admission": null,
+  "limitations": [
+    "No payload import, executable CodeType compilation, body, test or previous completed gate replay.",
+    "Map declaration only; full physical source assembly/SourceBook/finder/native/generated/call/phase/runtime/admission absent.",
+    "Both rootFDs held during map hashing only; per-file opens path based, no hostile kernel/native isolation.",
+    "Module class/file/spec origin and exact result lineage are not live CodeType/global/factory provenance or numerical/type/parity/RAM acceptance.",
+    "Reference sys.path overlap refusal is not full meta_path/finder exclusion proof.",
+    "Original2431 producer source, reference2446 and new2459 executor roles stay distinct; old2453 binding still refuses transition."
+  ],
+  "module_origin_members": [
+    "capacity_original_inputs_v1",
+    "capacity_original_daily_inputs_v1",
+    "capacity_original_economics_v1",
+    "capacity_original_frozen_readers_v1",
+    "forward_arithmetic",
+    "holding_risk_bank",
+    "direct_daily_arithmetic",
+    "learned_retention_models",
+    "market_conditioned_holding",
+    "conditional_holding_calibration",
+    "calendar",
+    "live_execution_inputs"
+  ],
+  "production_original_files_guard_G08_caps": "UNCHANGED",
+  "schema": "capacity-original-loader-composition-independent-source-review/1",
+  "source_map": {
+    "bytes": 286385,
+    "path": "original-loader-composition-source-map-v1-2026-10-18.json",
+    "sha256": "5a605c1018f3274ad6ccd6e6363e20587e7769b5d46b0cfa2ece3ebcdb85e248"
+  },
+  "source_modules": {
+    "binding": {
+      "bodies_run": false,
+      "bytes": 15840,
+      "functions": 10,
+      "path": "sources/original-loader-capacity-loader-binding-v1-2026-10-18.py",
+      "proposed_origin": "backend/market/capacity_original_loader_binding_v1.py",
+      "sha256": "d41e2bf0f408fa77dc2d69160ce2452abde3803998e760b5d6113f9bd0d4bc6b"
+    },
+    "lifecycle": {
+      "bodies_run": false,
+      "bytes": 10027,
+      "functions": 8,
+      "path": "sources/original-loader-capacity-loader-lifecycle-v1-2026-10-18.py",
+      "proposed_origin": "backend/market/capacity_original_loader_lifecycle_v1.py",
+      "sha256": "ba888e95f5925d7ffb084ce3d15688299f9987284e8a9e38fd1d54a1c772ebc4"
+    }
+  },
+  "static_functions": {
+    "binding": {
+      "calendar_admission": {
+        "AST_sha256": "9b17627dda9b50f48ea58ae18bdad156705bfcb9ebd15b411f0bee5aee8c3372",
+        "calls": [
+          "Path",
+          "Path(calendar.__file__).resolve",
+          "all",
+          "authenticate_file",
+          "calendar.reviewed_sessions",
+          "day.astype",
+          "digest",
+          "len",
+          "list",
+          "map",
+          "np.arange",
+          "np.datetime64",
+          "np.is_busday",
+          "np.timedelta64",
+          "path.relative_to",
+          "require",
+          "str"
+        ],
+        "end_line": 212,
+        "line": 194
+      },
+      "capacity_binding": {
+        "AST_sha256": "7105bff9f34431fb1040d95c896b9b254923d4817d6749d3ef0249a7be61dc12",
+        "calls": [
+          "ENTRY_MODULES.items",
+          "Path",
+          "Path(__file__).resolve",
+          "admissions.invocation",
+          "all",
+          "byte_auth.canonical",
+          "byte_auth.digest_value",
+          "evidence.pinned",
+          "evidence.require",
+          "evidence.strict_json",
+          "file_map",
+          "map_digest",
+          "native.items",
+          "set",
+          "type"
+        ],
+        "end_line": 92,
+        "line": 60
+      },
+      "check_root": {
+        "AST_sha256": "0aee7a98fa76213aa2178f3fe2403f7ae81c0432facbd2894297008ede030cf4",
+        "calls": [
+          "all",
+          "byte_auth.physical",
+          "byte_auth.physical(path).stat",
+          "evidence.require",
+          "expected.values",
+          "getattr",
+          "int",
+          "os.fstat",
+          "set",
+          "stat.S_ISDIR",
+          "str",
+          "type",
+          "value.isdecimal"
+        ],
+        "end_line": 124,
+        "line": 120
+      },
+      "execute": {
+        "AST_sha256": "382980cf514e945f879d939a03a8a4c8a56b4d1e876c62e5ce26c987d2a52134",
+        "calls": [
+          "RuntimeError"
+        ],
+        "end_line": 217,
+        "line": 216
+      },
+      "file_map": {
+        "AST_sha256": "a549413d97a1e1437eb86f8761f71f63af7fbb109458f92c547305ce6944368a",
+        "calls": [
+          "byte_auth.canonical",
+          "byte_auth.digest_value",
+          "evidence.require",
+          "len",
+          "type",
+          "value.items"
+        ],
+        "end_line": 56,
+        "line": 51
+      },
+      "map_digest": {
+        "AST_sha256": "ad3cc25e9622d8fbaed67d25a5fc4992479ca63f5a12e15b398d27e1ea3461ef",
+        "calls": [
+          "hashlib.sha256",
+          "hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest",
+          "json.dumps",
+          "json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode"
+        ],
+        "end_line": 47,
+        "line": 46
+      },
+      "module_admission": {
+        "AST_sha256": "af8df657c0274f2de5d76a024640dce7c60f33ea7af3bce1e6eee29dc276ef1d",
+        "calls": [
+          "Path",
+          "byte_auth.physical",
+          "check_root",
+          "descriptors.append",
+          "evidence.authenticate_file",
+          "files.items",
+          "os.close",
+          "os.open"
+        ],
+        "end_line": 144,
+        "line": 128
+      },
+      "module_origin": {
+        "AST_sha256": "42e5b31cd9c091b0c41d295206ab30488254384a384ae50f426af5e1467e6a67",
+        "calls": [
+          "Path",
+          "Path(module.__file__).resolve",
+          "evidence.authenticate_file",
+          "evidence.require",
+          "module.__name__.replace",
+          "str",
+          "type"
+        ],
+        "end_line": 155,
+        "line": 148
+      },
+      "root_admission": {
+        "AST_sha256": "b712767a87676e6ad5ad2b16d30d815949b5d31e4005043caf5ba817f380a070",
+        "calls": [
+          "Path",
+          "Path(item or os.getcwd()).resolve",
+          "Path(item or os.getcwd()).resolve().is_relative_to",
+          "Path(item['Destination']).is_relative_to",
+          "all",
+          "any",
+          "evidence.pinned",
+          "evidence.require",
+          "evidence.strict_json",
+          "host.is_relative_to",
+          "left.is_relative_to",
+          "len",
+          "os.getcwd",
+          "proof.is_relative_to",
+          "proof_host.is_relative_to",
+          "reference.is_relative_to",
+          "right.is_relative_to",
+          "root.is_relative_to",
+          "str",
+          "type",
+          "zip"
+        ],
+        "end_line": 116,
+        "line": 96
+      },
+      "source_admission": {
+        "AST_sha256": "af25c1aee84a5eea950c3f237097aaebe3c1dab1c352f6242cbad776a62b0ec0",
+        "calls": [
+          "Path",
+          "authenticate_file",
+          "byte_auth.canonical",
+          "files.items",
+          "len",
+          "pinned",
+          "require",
+          "set",
+          "strict_json"
+        ],
+        "end_line": 190,
+        "line": 159
+      }
+    },
+    "lifecycle": {
+      "__init__": {
+        "AST_sha256": "24fea5a7a5ed58ba10cf9643c3ca936edc23583906bcc5c15284740cc7b06732",
+        "calls": [
+          "(Path(self.value['account']) / 'completion.json').stat",
+          "(parent / 'guard-failure.bin').stat",
+          "Path",
+          "admissions.native_packages",
+          "admissions.producer_admission",
+          "admissions.runtime_admission",
+          "all",
+          "archives_module.CapacityOriginalArchivesV1",
+          "archives_module.CapacitySourceReaderV1",
+          "archives_module.preserved_archives",
+          "byte_auth.Pins",
+          "byte_auth.physical",
+          "calendar_admission",
+          "capacity_binding",
+          "evidence.require",
+          "getattr",
+          "module_admission",
+          "os.fstat",
+          "parent.is_dir",
+          "parent.iterdir",
+          "parent.stat",
+          "root_admission",
+          "self._bytes",
+          "self.destination.mkdir",
+          "self.destination.stat",
+          "source_admission",
+          "stat.S_ISREG",
+          "tuple",
+          "type"
+        ],
+        "end_line": 57,
+        "line": 29
+      },
+      "_bytes": {
+        "AST_sha256": "2ab1e1ed96c4c62b7cd9a8e7ce8fbf3a88631e94f637f8e9b29a5b6b7fde66e6",
+        "calls": [
+          "Path",
+          "byte_auth.authenticate"
+        ],
+        "end_line": 61,
+        "line": 60
+      },
+      "_load_inputs": {
+        "AST_sha256": "9cb3e369de8c53cc4500d1653a0f85481bdcb7f7265ebf551b2d00350cc3268a",
+        "calls": [
+          "datetime.now",
+          "evidence.require",
+          "inputs_module._load_capacity_inputs",
+          "isinstance",
+          "module_origin",
+          "origins.append",
+          "sys.modules.get",
+          "type"
+        ],
+        "end_line": 77,
+        "line": 64
+      },
+      "execute": {
+        "AST_sha256": "2d46a6ab244a55fdf334d5d4001888d754816560d37c6c5ff0e66c7b0654a32a",
+        "calls": [
+          "RuntimeError"
+        ],
+        "end_line": 123,
+        "line": 122
+      },
+      "persist": {
+        "AST_sha256": "e49cf9d217afefb6b63928d711c378d48fc924bfd76af8af71b6688e0be8b5ed",
+        "calls": [
+          "evidence.authenticate_file",
+          "evidence.require",
+          "hashlib.sha256",
+          "hashlib.sha256(self.encoded).hexdigest",
+          "len",
+          "os.fsync",
+          "output.fileno",
+          "output.flush",
+          "output.write",
+          "path.open",
+          "str",
+          "sync_directory"
+        ],
+        "end_line": 112,
+        "line": 100
+      },
+      "release": {
+        "AST_sha256": "127b20d2dcf8f71ef5678062a1df255c802c6677f86634f15695fad815594870",
+        "calls": [
+          "evidence.require"
+        ],
+        "end_line": 118,
+        "line": 115
+      },
+      "serialize": {
+        "AST_sha256": "7080fa3544b4f5de89080a13ce0a2f09b0960c0c435141ca6073b34657117c67",
+        "calls": [
+          "evidence.require",
+          "json.dumps",
+          "len",
+          "self.serialized.encode"
+        ],
+        "end_line": 97,
+        "line": 90
+      },
+      "verify_after": {
+        "AST_sha256": "a9835da5eba15e27f37ec5b864eb1cde15f003b7ef458fb7abcc75feec8c1649",
+        "calls": [
+          "archives_module.preserved_archives",
+          "evidence.require",
+          "module_admission",
+          "self._bytes",
+          "self.archives.unchanged"
+        ],
+        "end_line": 87,
+        "line": 80
+      }
+    }
+  },
+  "status": "SOURCE_AST_MAP_ROOT_AND_LIFETIME_DESIGN_ONLY_ALL_BODIES_UNRUN"
+}
