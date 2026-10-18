@@ -1,0 +1,230 @@
+{
+  "schema": "original-loader-callback-symbol-synthetic-proof/1",
+  "date": "2026-10-18",
+  "status": "VERIFIED_NEW_SYNTHETIC63_DATA_ONLY",
+  "source_commit": "3b926d55589f6559f3e3c5186c8fd29f7b27c7cd",
+  "starting_commit": "f4af7f29e475976fd3e6679fa19fbca9d3cac85d",
+  "starting_branch": "codex/learned-live-release-20261006",
+  "starting_state": "CLEAN_PULL_REBASE_ORIGIN_MAIN_UP_TO_DATE",
+  "objective": "Prepare reviewed finite Linux staging/owner/transport and exercise ONE separately scoped new synthetic63 attempt against the exact three prior symbol DATA sources, then independently verify every named outcome, retained source/result/terminal identity and preservation.",
+  "source_and_evidence_pins": [
+    {
+      "path": "docs/research/original-loader-callback-symbol-synthetic-independent-v1-2026-10-18.json",
+      "bytes": 174316,
+      "sha256": "9e70eb47cef11630dd8ddf2f9900623a153ac0d903f58838b5f6c8d501b68ac4"
+    },
+    {
+      "path": "docs/research/original-loader-callback-symbol-synthetic-verification-v1-2026-10-18.json",
+      "bytes": 35832,
+      "sha256": "dbf804f652b944b169689c330c40c7d061f85f0ee9c36d57c34562f306ce593f"
+    },
+    {
+      "path": "docs/research/original-loader-callback-symbol-synthetic-result-v1-2026-10-18.json",
+      "bytes": 10271,
+      "sha256": "4e0b437468109c0ae31d95bbf3f2333740731625ce3999e6d33d68ba8065a34f"
+    },
+    {
+      "path": "docs/research/original-loader-callback-symbol-synthetic-stage-v1-2026-10-18.json",
+      "bytes": 2136,
+      "sha256": "5d91223b0ee59aabcc82b2232ce672123c28ffca21d792d765b0c8cf71691bc7"
+    },
+    {
+      "path": "docs/research/sources/callback-symbol-synthetic-bootstrap-v1-2026-10-18.py",
+      "bytes": 8046,
+      "sha256": "1617828eb4138c1d77879848691fd39c7d4ff3734dbc60089a0e650cb4972256"
+    },
+    {
+      "path": "docs/research/sources/callback-symbol-synthetic-observer-transport-v1-2026-10-18.py",
+      "bytes": 9017,
+      "sha256": "416d5f39b94c831b7d10febe22734fa1117289f0d0639b9d4958cac7ca64e6dc"
+    },
+    {
+      "path": "docs/research/sources/callback-symbol-synthetic-transport-v1-2026-10-18.py",
+      "bytes": 14367,
+      "sha256": "2be80072e441080ca8b23a37f544d9804d35a7bb20534eeee245050b62bc02ed"
+    },
+    {
+      "path": "docs/research/sources/observe-callback-symbol-synthetic-v1-2026-10-18.py",
+      "bytes": 3386,
+      "sha256": "f3a3504fd3e8626e63aec0d0ede5c5cff6119e0cf300b9ae5f5439014c96fd44"
+    },
+    {
+      "path": "docs/research/sources/prepare-callback-symbol-observer-transport-v1-2026-10-18.py",
+      "bytes": 2392,
+      "sha256": "26ea3a9bf3beb35981f8d8a69f42fee43251623a97c7c6dc76602ca0bfc445ec"
+    },
+    {
+      "path": "docs/research/sources/prepare-callback-symbol-transport-v1-2026-10-18.py",
+      "bytes": 3522,
+      "sha256": "681ff719a5f17c9cc13093ea7bbe9cc9063375dde83f93584b5a68a5525c90f1"
+    },
+    {
+      "path": "docs/research/sources/run-callback-symbol-checks-v1-2026-10-18.py",
+      "bytes": 9318,
+      "sha256": "5bbae0ddefe3fe32ce83e163e58d72ea1b5f99d55d682149af35a42f5b6d3f0f"
+    },
+    {
+      "path": "docs/research/sources/verify-preserve-callback-symbol-synthetic-v1-2026-10-18.py",
+      "bytes": 11759,
+      "sha256": "12ac5cca5dc0b6799093d27d06c64c222347d89e58979677cedce8d910df9812"
+    }
+  ],
+  "payload_source_pins": [
+    {
+      "path": "docs/research/sources/parse-callback-symbol-data-v1-2026-10-18.py",
+      "bytes": 13496,
+      "sha256": "6fe24522e57910ed2f9136762ea4f910f46fd6a6a91afe4f55c80b5e8462bd11"
+    },
+    {
+      "path": "docs/research/sources/fold-callback-symbol-data-v1-2026-10-18.py",
+      "bytes": 14287,
+      "sha256": "a526e85d63313fac8a4de11eb31dc34964ad9eaeed6d93a4a78d25cb5b469127"
+    },
+    {
+      "path": "docs/research/sources/check-callback-symbol-data-v1-2026-10-18.py",
+      "bytes": 17574,
+      "sha256": "847127b3a70b7522645e8901c881cb135ca2da5850400c9a282647096a9cd76d"
+    }
+  ],
+  "actual_operations": {
+    "new_SSH": 3,
+    "stage_only_SSH": 1,
+    "one_synthetic_SSH": 1,
+    "separate_retained_data_only_SSH": 1,
+    "all_SSH_exit": 0,
+    "all_SSH_stderr_empty": true,
+    "owned_SSH_stop": null,
+    "cleanup_failure": null,
+    "new_children": 1,
+    "child_pid": "2426345",
+    "child_exit": 0,
+    "child_reaped": true,
+    "child_exception": null,
+    "child_timeout": false,
+    "child_owned_stop": null,
+    "actual_callback_binary_reads": 0,
+    "old_ELF_decoder_fold_or37_replays": 0,
+    "Docker_container_operations": 0,
+    "package_backend_model_CodeType_import_body_tests": 0,
+    "other19_native_body_reads": 0,
+    "production_changes": 0
+  },
+  "staging": {
+    "stage_sha256": "5d91223b0ee59aabcc82b2232ce672123c28ffca21d792d765b0c8cf71691bc7",
+    "stage_bytes": 2136,
+    "source_files": 4,
+    "decoded_source_bytes": 54675,
+    "wire_bytes": 23427,
+    "wire_sha256": "822fcba0afab04f886d310628b150d0ebba3aa197fffd3f3b11d84848af724d4",
+    "envelope": "Each source is one gzip member with exact-size+1 bounded zlib decompression, eof/no unused or unconsumed tail, full SHA; whole JSON wire <=65536. No bound increased.",
+    "source_physical": "Four exclusive new source files, two full held/named reads and exact decimal physical identities, fsync/readback/tools-root+parent sync. Stage branch cannot execute owner/fixtures.",
+    "run_root_absent": true,
+    "host": "animallya-spark1",
+    "uid": 1000,
+    "Python": "3.12.3",
+    "N2_runtime_admission": false
+  },
+  "runtime_limits": {
+    "helper_AS_soft_hard_bytes": 536870912,
+    "helper_CPU_seconds": 20,
+    "child_CPU_seconds": 10,
+    "child_alarm_seconds": 15,
+    "parent_wait_seconds": 20,
+    "owner_alarm_seconds": 25,
+    "stage_alarm_seconds": 30,
+    "stage_alarm_canceled_before_owner": true,
+    "SSH_wait_seconds": 70,
+    "owned_TERM_wait_seconds": 1,
+    "owned_KILL_wait_seconds": 1,
+    "source_file_log_bytes": 262144,
+    "source_envelope_bytes": 65536,
+    "observer_aggregate_input_bytes": 131072,
+    "observer_output_bytes": 262144,
+    "minimum_available_memory_bytes": 2147483648,
+    "minimum_scratch_tmp_bytes": 33554432,
+    "minimum_scratch_tmp_inodes": 128,
+    "fresh_run_headroom": {
+      "MemAvailable_bytes": "9988038656",
+      "filesystems": {
+        "/home/animallya96/scratch": {
+          "available_bytes": "2805847343104",
+          "available_inodes": "243498368"
+        },
+        "/tmp": {
+          "available_bytes": "2805847343104",
+          "available_inodes": "243498368"
+        }
+      },
+      "reservation": false
+    },
+    "headroom_is_reservation": false,
+    "Mac_AS_or_kernel_FSIZE_claim": false
+  },
+  "synthetic_acceptance": {
+    "total": 63,
+    "positive": 9,
+    "expected_parser_refusals": 51,
+    "injected_JSON_paging_unit_refusals": 3,
+    "unexpected_failure": 0,
+    "skip": 0,
+    "result_bytes": 10271,
+    "result_sha256": "4e0b437468109c0ae31d95bbf3f2333740731625ce3999e6d33d68ba8065a34f",
+    "elapsed_seconds": 1.0540862083435059,
+    "reported_Linux_ru_maxrss_KiB": 70232,
+    "scope": "Synthetic ELF-shaped binary+matching complete supplied section records only. Both separate decoders produce equal complete result fields, canonical bytes and ordered bounded pages; independent known-value assertions and per-kind complete page flattening/start/hash/record equality ran in the exact pinned harness.",
+    "known_values": "Arbitrary/duplicate/substrings/nonUTF8 names, zero/local/undefined/reserved/MAX64 fields, complete st_other and separately named visibility projections, relative need/aux chain and string offsets, gaps, raw version flags and missing/ambiguous declaration multiplicity.",
+    "bounds": "Hash-work, retained rows/candidate fanout, strings, input/page sizes and malformed record/link/chain/refusal cases actually exercised as named synthetic fixtures. Fanout907 retained rows/49500 candidates now expected-refusal PASS; repeated3998*4097B name-span hash-work fixture expected-refusal PASS.",
+    "paging_units": "Three arbitrary injected JSON units for one oversized complete record/page count/canonical size, not binary/native proof.",
+    "unexercised": "Ordinary signal/timeout/log overflow/owned TERM-KILL/transport loss/cleanup failure/crash branches remain UNEXERCISED; source-reviewed controls are not branch acceptance or exact peak-memory certification.",
+    "native_model_combined_peak_RAM_acceptance": false
+  },
+  "independent_verification": {
+    "remote_files": 14,
+    "remote_full_bytes": 126278,
+    "remote": "Separate read-only SSH, two full held/named reads then later full SHA/physical bookends of all source/receipts/result files and root name inventory. Observer inventories dynamically under16 files/root; local verifier separately requires exactly six tools and eight run files. No fixture/decoder replay.",
+    "local": "Exact10 run-return keys (two tools receipts+eight run files), complete returned rows/bytes/physical equal independent observation; all four tools+run source bodies equal pinned local originals; complete stage and child source inventories/PID/command/exits match. Full fixed SSH options and exact remote Python-I-S-B-c source/phase/stageSHA argv checked. Every63 ordered name/status/reason/scope equals literal harness AST declarations; no counts-only acceptance.",
+    "bootstrap_source_binding": "Bootstrap and observer source bytes authenticated and stored before deriving pins or command-source expectations; later controls reads require identical held/named physical/SHA rows.",
+    "raw_observation_bytes": 174316,
+    "raw_observation_sha256": "9e70eb47cef11630dd8ddf2f9900623a153ac0d903f58838b5f6c8d501b68ac4"
+  },
+  "review": {
+    "worker": "Reused healthy trading_action_consistency READONLY source/invocation/resources before stage, actual stage/exact invocation before run, observer source before separate SSH, local verifier before use, final proof/preservation metadata. No newagent/limited-worker retry/worker runtime/probes.",
+    "corrections_before_use": [
+      "ROOT handles owned child killpg exit races and records source-bookend failure without suppressing exit receipt.",
+      "ROOT reset owner argv before exec; initial unrun transport74d75c67 retained in exclusive preparation-drafts root, no remote failure or retry.",
+      "Reviewer local-verifier findings corrected before use: exact returned-file key set, authenticated bootstrap/observer bytes before derivation, and full SSH option prefix. No test or verifier-body failure/replay."
+    ],
+    "AST_warnings_as_errors": "PASS",
+    "purpose_functions": 27,
+    "new_controls": 8,
+    "embedded_bootstrap_AST_and_byte_equality": "PASS",
+    "unchanged_transport_limits_interrupt_AST": "PASS",
+    "staged_diff": "PASS",
+    "Ruff": "PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM"
+  },
+  "preservation": {
+    "root": "/tmp/callback-symbol-synthetic-evidence-20261018-v1",
+    "local_files": 20,
+    "input_bytes": 410366,
+    "proof_bytes": 35832,
+    "proof_sha256": "dbf804f652b944b169689c330c40c7d061f85f0ee9c36d57c34562f306ce593f",
+    "checks": "Two full held/named reads and exact decimal physical identities, exclusive copied files/fsync/readback, later every original+copy full SHA/physical, proof last/root+resolvedparent sync. Separate ROOT readback all20original+20copy full SHA/physical PASS. Returned remote14 bodies retained in complete raw observation; no second independent remote archive or crash guarantee.",
+    "software_file_bytes": 262144,
+    "software_total_bytes": 1048576,
+    "local_alarm_seconds": 30,
+    "remote_tools_root": "/home/animallya96/scratch/callback-symbol-synthetic-tools-20261018-v1",
+    "remote_run_root": "/home/animallya96/scratch/callback-symbol-synthetic-run-20261018-v1",
+    "remote_roots_complete_never_replay": true,
+    "local_preparation_drafts": "/tmp/callback-symbol-transport-preparation-drafts-20261018-v1",
+    "raw_transport_stdout_retained_unchanged": true,
+    "tool_display_truncation_did_not_change_saved_bytes": true,
+    "failed_completed_roots_preserved": true
+  },
+  "next": "SYNTHETIC63 CLOSED: never replay63 or closed37/section-page/ELF parser-fold/copy/HEAD/metadata/censuses/AST inventories/73/80/23/65+4/tiny/diagnostic/v2/packets for documentation. SOURCE ONLY prepare distinct actual retained-callback symbol/version DATA driver and separate complete independent fold around unchanged6fe24522/a526e85d decoders. Bind exact216280B/9edf4136 binary and15279B/43ce6401 section page/prior20c33344/original decimal physical identities, two full held/named reads then later fullSHAphysical bookends. Carry residual16MiB hash-work ledger through every canonical/page/output hash; complete every-field/order/page/canonical independent reconstruction under unchanged bounds. Independently review exact sources/invocation/fresh resources before any ONE separately scoped actual-DATA attempt. Actual driver/fold/invocation/admission remain NULL now.",
+  "actual_symbol_driver": null,
+  "actual_independent_symbol_driver": null,
+  "dependency_origin_observer": null,
+  "native_runtime_admission": null,
+  "genuine_execution_authorized": false,
+  "unchanged": "Actual retained-callback symbol/version contents UNINTERPRETED. libm.so.6/libc.so.6 unresolved declarations, other19 native bodies UNREAD/oversized; actual loader/Python/build/provider bytes/aliases/versions/transitive closure unadmitted. No ldd/readelf/dlopen/guessedpaths/host-library substitutes/package execution/cap relaxation. Guard3b8be00b/all25payloadfunctions UNRUN, old2446/030c/G08/caps/maps unchanged; producer2431/reference2446/executor2468/originalreceipts/fullcontext/graph/JSON/UTF8 lifetimes separate. Selected callable/global/type/dataclass liveproducer/classflags/native/phase/Arrow pools+wrapper/sklearn actualmetadata open. Assembledtree/strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/launch/admission for genuine capacity NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2 image-daemon-temp-RAM unchanged. Heartbeat ACTIVE. Diagram NONE."
+}

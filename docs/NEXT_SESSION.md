@@ -1,5 +1,92 @@
 # Next session
 
+## 2026-10-18 — Symbol/version SYNTHETIC63 VERIFIED; actual callback DATA still UNRUN
+
+Read research/original-loader-callback-symbol-synthetic-proof-v1-2026-10-18.json.
+Source3b926d55589f6559f3e3c5186c8fd29f7b27c7cd pins owner5bbae0dd/9318B/
+bootstrap1617828e/8046B/transport2be80072/14367B/observerf3a3504f/3386B/
+observertransport416d5f39/9017B/verifier12ac5cca/11759B. Preparers681ff719/3522B
+and26ea3a9b/2392B retained. Exact prior primary6fe24522/independenta526e85d/
+harness847127b3 unchanged. New stdlib controls and SYNTHETIC DATA only ran; no
+actualcallbackbinary/other19body read/package/backend/model CodeType/import/body/
+test/Docker/container/service/account/marketdata/credentials/oldgate/packet replay
+or guard/G08/cap/map/production change. Actual symbols/version contents UNINTERPRETED.
+
+Three independently reviewed SSHs: source-only stage, ONE new synthetic attempt,
+separate retained-DATA observation; all exit0/empty stderr/noownedstop/cleanupfailure.
+Stage5d91223b/2136B binds four exclusive source files/fullSHA/twoheldnamedreads/
+decimalphysical identities. Exact bounded single-gzip members decompress only to
+declaredsize+1/eof/noextra; wholeJSONwire23427B/822fcba0 fits existing65536B.
+Host Spark1 UID1000 Python3.12.3, NOT N2/e0 runtime. Actualstage/resource/exactrun
+invocation reviewed BEFORE ONE child2426345 exit0/reaped/noexception/timeout/stop.
+Initial UNRUN transport74d75c67 retained exclusive /tmp/callback-symbol-transport-
+preparation-drafts-20261018-v1 before argv-reset correction; no remote failure/retry.
+
+All63 pass:9positive/51parser expectedrefusal+3INJECTEDJSONpaging UNITrefusals/
+0unexpected/0skip. Result4e0b437468109c0ae31d95bbf3f2333740731625ce3999e6d33d68ba8065a34f/
+10271B; elapsed1.054086208s/reportedLinuxRSS70232KiB. Known byte names/substring/
+duplicate/nonUTF8/zero/local/undefined/reserved/MAX64 fields/rawvisibility/version
+bits/relativechain+stringoffset/gaps/missing+ambiguous multiplicity assertions ran.
+Both complete result/canonical/pages equal plus per-kind complete pageflattening/
+start/hash/record equality. Fanout907rows/49500references and hash3998*4097B spans
+expectedrefusals actually PASS. Paging UNITs are arbitrary injectedJSON, NOT binary/
+native proof. No actualcallback/fullELF/export/provider/init/ABI/model/RAM acceptance.
+
+Separate readonly observation9e70eb47/174316B:14files126278B, each twofullheldnamed
+reads/SHA/decimalphysical then laterfullSHAphysical+nameinventory bookends. Observer
+bounded dynamicinventory; localverifier requires exact6tools+8runfiles, exact10
+run-return keys, complete body+row equality, all4sourcecopies vs originals, source/
+stage/child inventories/PID/exit/command and EVERY63ordered name/status/reason/scope
+against harnessAST. Full fixedSSH options +exact Python-I-S-B-c source/phase/
+stageSHA argv checked. Reviewer found partialkeyset/source-before-derivation/SSH
+prefix gaps; all corrected BEFORE verifieruse, no fixture/verifier failure/replay.
+Complete raw stdout stays retained; tool displaytruncation changed no saved bytes.
+
+Linux512MiBASsoft=hard/20CPUparent10child/15childalarm20wait25owner/30stage canceled
+BEFOREowner/70SSH/TERM1KILL1/262KiBfile-log limits unchanged. Harddeadline raises
+KeyboardInterrupt outside fixture Exception retention; short launchregistration mask,
+killpg exitrace handling, sourcebookendfailure terminalreceipt retained in source.
+Fresh run9988038656B available/2GiBminimum +32MiB/128inodes scratch+tmp passed;
+headroom NOT reservation/native/model/daemon RAM bound. Observer131072Baggregate/
+262144Boutput unchanged. Signal/timeout/overflow/ownedstop/cleanupfailure/crash
+branches UNEXERCISED. RSS is synthetic child usage, NOT native/model combined peak.
+
+Reused healthy worker READONLY source/invocation/resources BEFORE stage/run/observer/
+verifier and actualproof/preservation review, no newagent/limitedretry/workerops.
+ASTwarnings-as-errors/27purposefunctions across8controls/embeddedbootstrap exact/
+unchangedlimits+interruptAST/stageddiff PASS; Ruff previously unavailable/no lint.
+Exclusive remote tools/run roots COMPLETE, never replay/adopt/overwrite.
+Exclusive /tmp/callback-symbol-synthetic-evidence-20261018-v1 preserves20inputs/
+410366B +proofdbf804f6/35832B: twoheldnamedfullreads/decimalphysical/exclusivecopies/
+fsync/readback/lateroriginal+copySHAphysical/prooflast/rootresolvedparent sync.
+Separate ROOTreadback all20original+20copySHAphysical PASS. Full14remote bodies
+retained in raw independent observation; no second independentremote archive/
+crashdurability/MacAS/kernelFSIZE claim. All failed/completed roots preserved.
+
+NEXT ROOT: synthetic63 boundary CLOSED. SOURCE ONLY prepare distinct actual retained-
+callback symbol/version DATA driver and separate complete independentfold around
+unchanged6fe24522/a526e85d decoders. Bind exact216280B/9edf4136 callback +15279B/
+43ce6401 page/prior20c33344/originaldecimalphysical identities, twofullheldnamed
+reads then laterfullSHAphysical. Carry residual16MiBhashwork through EVERY canonical/
+page/output hash, no freshperfileledger; complete ordered every-field/page/canonical
+independent reconstruction within unchanged262KiBfile/65536B+64rowpages/256pages/
+16MiBtotals/4096strings/8192rows+references. Independently review exact source/
+invocation/fresh resources BEFORE ONE separatelyscoped actual-DATA attempt.
+Actualsymbol driver/fold/invocation/admission remain NULL now. Never rerun63 or old37/
+sectionpage/ELFparserfold/copy/HEAD/metadata/censuses/ASTinventories/73/80/23/65+4/
+tiny/diagnostic/v2/packets for docs. No ldd/readelf/dlopen/guessedpaths/hostsubstitutes/
+package execution/other19reads/caprelaxation; unresolvedlibm/libc are names only.
+
+Selected callable/global/type/dataclass liveproducer/classflags/native/phase/Arrow
+pools+wrapper/sklearnactualmetadata stillopen. Guard3b8be00b/all25payloadfunctions
+UNRUN; old2446/030c/G08/caps/maps unchanged. Producer2431/reference2446/executor2468/
+originalreceipts/fullcontext+graphs+JSON+UTF8lifetimes separate. Genuine assembledtree/
+strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/
+launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/
+intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/
+v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM
+unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — Symbol/version DATA decoders SOURCE reviewed; synthetic63 ALL UNRUN
 
 Read research/original-loader-callback-symbol-source-proof-v1-2026-10-18.json.

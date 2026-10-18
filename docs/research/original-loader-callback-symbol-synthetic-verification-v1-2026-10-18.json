@@ -1,0 +1,1082 @@
+{
+  "actual_callback_native_model_RAM_acceptance": false,
+  "child_exit": 0,
+  "child_pid": "2426345",
+  "crash_durability_guarantee": false,
+  "elapsed_seconds": 1.0540862083435059,
+  "fresh_run_resources": {
+    "MemAvailable_bytes": "9988038656",
+    "filesystems": {
+      "/home/animallya96/scratch": {
+        "available_bytes": "2805847343104",
+        "available_inodes": "243498368"
+      },
+      "/tmp": {
+        "available_bytes": "2805847343104",
+        "available_inodes": "243498368"
+      }
+    },
+    "reservation": false
+  },
+  "local_preservation": [
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/000-callback-symbol-synthetic-bootstrap-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 8046,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792343057932559170",
+          "st_dev": "16777223",
+          "st_ino": "185546048",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057932559170",
+          "st_nlink": "1",
+          "st_size": "8046",
+          "st_uid": "501"
+        },
+        "sha256": "1617828eb4138c1d77879848691fd39c7d4ff3734dbc60089a0e650cb4972256"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/callback-symbol-synthetic-bootstrap-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 8046,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792342697317160187",
+          "st_dev": "16777223",
+          "st_ino": "185501252",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792342697317160187",
+          "st_nlink": "1",
+          "st_size": "8046",
+          "st_uid": "501"
+        },
+        "sha256": "1617828eb4138c1d77879848691fd39c7d4ff3734dbc60089a0e650cb4972256"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/001-callback-symbol-synthetic-observer-transport-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 9017,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792343057934993333",
+          "st_dev": "16777223",
+          "st_ino": "185546049",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057934993333",
+          "st_nlink": "1",
+          "st_size": "9017",
+          "st_uid": "501"
+        },
+        "sha256": "416d5f39b94c831b7d10febe22734fa1117289f0d0639b9d4958cac7ca64e6dc"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/callback-symbol-synthetic-observer-transport-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 9017,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792342833476463115",
+          "st_dev": "16777223",
+          "st_ino": "185542013",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792342833476463115",
+          "st_nlink": "1",
+          "st_size": "9017",
+          "st_uid": "501"
+        },
+        "sha256": "416d5f39b94c831b7d10febe22734fa1117289f0d0639b9d4958cac7ca64e6dc"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/002-callback-symbol-synthetic-transport-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 14367,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792343057936130711",
+          "st_dev": "16777223",
+          "st_ino": "185546050",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057936130711",
+          "st_nlink": "1",
+          "st_size": "14367",
+          "st_uid": "501"
+        },
+        "sha256": "2be80072e441080ca8b23a37f544d9804d35a7bb20534eeee245050b62bc02ed"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/callback-symbol-synthetic-transport-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 14367,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792342712217092585",
+          "st_dev": "16777223",
+          "st_ino": "185513306",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792342712217092585",
+          "st_nlink": "1",
+          "st_size": "14367",
+          "st_uid": "501"
+        },
+        "sha256": "2be80072e441080ca8b23a37f544d9804d35a7bb20534eeee245050b62bc02ed"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/003-check-callback-symbol-data-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 17574,
+        "physical": {
+          "st_blocks": "40",
+          "st_ctime_ns": "1792343057937857440",
+          "st_dev": "16777223",
+          "st_ino": "185546051",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057937857440",
+          "st_nlink": "1",
+          "st_size": "17574",
+          "st_uid": "501"
+        },
+        "sha256": "847127b3a70b7522645e8901c881cb135ca2da5850400c9a282647096a9cd76d"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/check-callback-symbol-data-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 17574,
+        "physical": {
+          "st_blocks": "40",
+          "st_ctime_ns": "1792341973135095609",
+          "st_dev": "16777223",
+          "st_ino": "185271132",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792341973135095609",
+          "st_nlink": "1",
+          "st_size": "17574",
+          "st_uid": "501"
+        },
+        "sha256": "847127b3a70b7522645e8901c881cb135ca2da5850400c9a282647096a9cd76d"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/004-fold-callback-symbol-data-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 14287,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792343057939299267",
+          "st_dev": "16777223",
+          "st_ino": "185546052",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057939299267",
+          "st_nlink": "1",
+          "st_size": "14287",
+          "st_uid": "501"
+        },
+        "sha256": "a526e85d63313fac8a4de11eb31dc34964ad9eaeed6d93a4a78d25cb5b469127"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/fold-callback-symbol-data-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 14287,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792341611414107200",
+          "st_dev": "16777223",
+          "st_ino": "185198364",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792341611414107200",
+          "st_nlink": "1",
+          "st_size": "14287",
+          "st_uid": "501"
+        },
+        "sha256": "a526e85d63313fac8a4de11eb31dc34964ad9eaeed6d93a4a78d25cb5b469127"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/005-observe-callback-symbol-synthetic-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 3386,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792343057940551463",
+          "st_dev": "16777223",
+          "st_ino": "185546053",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057940551463",
+          "st_nlink": "1",
+          "st_size": "3386",
+          "st_uid": "501"
+        },
+        "sha256": "f3a3504fd3e8626e63aec0d0ede5c5cff6119e0cf300b9ae5f5439014c96fd44"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/observe-callback-symbol-synthetic-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 3386,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792342833328240945",
+          "st_dev": "16777223",
+          "st_ino": "185526162",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792342833328240945",
+          "st_nlink": "1",
+          "st_size": "3386",
+          "st_uid": "501"
+        },
+        "sha256": "f3a3504fd3e8626e63aec0d0ede5c5cff6119e0cf300b9ae5f5439014c96fd44"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/006-parse-callback-symbol-data-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 13496,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792343057941624262",
+          "st_dev": "16777223",
+          "st_ino": "185546054",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057941624262",
+          "st_nlink": "1",
+          "st_size": "13496",
+          "st_uid": "501"
+        },
+        "sha256": "6fe24522e57910ed2f9136762ea4f910f46fd6a6a91afe4f55c80b5e8462bd11"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/parse-callback-symbol-data-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 13496,
+        "physical": {
+          "st_blocks": "32",
+          "st_ctime_ns": "1792341611412605342",
+          "st_dev": "16777223",
+          "st_ino": "185173044",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792341611412605342",
+          "st_nlink": "1",
+          "st_size": "13496",
+          "st_uid": "501"
+        },
+        "sha256": "6fe24522e57910ed2f9136762ea4f910f46fd6a6a91afe4f55c80b5e8462bd11"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/007-prepare-callback-symbol-observer-transport-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 2392,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792343057943562196",
+          "st_dev": "16777223",
+          "st_ino": "185546055",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057943562196",
+          "st_nlink": "1",
+          "st_size": "2392",
+          "st_uid": "501"
+        },
+        "sha256": "26ea3a9bf3beb35981f8d8a69f42fee43251623a97c7c6dc76602ca0bfc445ec"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/prepare-callback-symbol-observer-transport-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 2392,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792342833328911079",
+          "st_dev": "16777223",
+          "st_ino": "185541980",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792342833328911079",
+          "st_nlink": "1",
+          "st_size": "2392",
+          "st_uid": "501"
+        },
+        "sha256": "26ea3a9bf3beb35981f8d8a69f42fee43251623a97c7c6dc76602ca0bfc445ec"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/008-prepare-callback-symbol-transport-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 3522,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792343057944720493",
+          "st_dev": "16777223",
+          "st_ino": "185546056",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057944720493",
+          "st_nlink": "1",
+          "st_size": "3522",
+          "st_uid": "501"
+        },
+        "sha256": "681ff719a5f17c9cc13093ea7bbe9cc9063375dde83f93584b5a68a5525c90f1"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/prepare-callback-symbol-transport-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 3522,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792342661618716075",
+          "st_dev": "16777223",
+          "st_ino": "185501254",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792342661618716075",
+          "st_nlink": "1",
+          "st_size": "3522",
+          "st_uid": "501"
+        },
+        "sha256": "681ff719a5f17c9cc13093ea7bbe9cc9063375dde83f93584b5a68a5525c90f1"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/009-run-callback-symbol-checks-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 9318,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792343057945917384",
+          "st_dev": "16777223",
+          "st_ino": "185546057",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057945917384",
+          "st_nlink": "1",
+          "st_size": "9318",
+          "st_uid": "501"
+        },
+        "sha256": "5bbae0ddefe3fe32ce83e163e58d72ea1b5f99d55d682149af35a42f5b6d3f0f"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/run-callback-symbol-checks-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 9318,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792342584191950851",
+          "st_dev": "16777223",
+          "st_ino": "185443354",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792342584191950851",
+          "st_nlink": "1",
+          "st_size": "9318",
+          "st_uid": "501"
+        },
+        "sha256": "5bbae0ddefe3fe32ce83e163e58d72ea1b5f99d55d682149af35a42f5b6d3f0f"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/010-verify-preserve-callback-symbol-synthetic-v1-2026-10-18.py",
+      "copy_identity": {
+        "bytes": 11759,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792343057947417189",
+          "st_dev": "16777223",
+          "st_ino": "185546058",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057947417189",
+          "st_nlink": "1",
+          "st_size": "11759",
+          "st_uid": "501"
+        },
+        "sha256": "12ac5cca5dc0b6799093d27d06c64c222347d89e58979677cedce8d910df9812"
+      },
+      "original": "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/docs/research/sources/verify-preserve-callback-symbol-synthetic-v1-2026-10-18.py",
+      "original_identity": {
+        "bytes": 11759,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792343057750146319",
+          "st_dev": "16777223",
+          "st_ino": "185545763",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057750146319",
+          "st_nlink": "1",
+          "st_size": "11759",
+          "st_uid": "501"
+        },
+        "sha256": "12ac5cca5dc0b6799093d27d06c64c222347d89e58979677cedce8d910df9812"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/011-exit.json",
+      "copy_identity": {
+        "bytes": 4565,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792343057948964840",
+          "st_dev": "16777223",
+          "st_ino": "185546059",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057948964840",
+          "st_nlink": "1",
+          "st_size": "4565",
+          "st_uid": "501"
+        },
+        "sha256": "74795b7b472866d05d367a1a80751ee40dbbba526a36b15b153f5907f725c663"
+      },
+      "original": "/tmp/callback-symbol-synthetic-observe-transport-20261018-v1/exit.json",
+      "original_identity": {
+        "bytes": 4565,
+        "physical": {
+          "st_blocks": "16",
+          "st_ctime_ns": "1792342941097944267",
+          "st_dev": "16777223",
+          "st_ino": "185545803",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792342941097944267",
+          "st_nlink": "1",
+          "st_size": "4565",
+          "st_uid": "501"
+        },
+        "sha256": "74795b7b472866d05d367a1a80751ee40dbbba526a36b15b153f5907f725c663"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/012-stderr",
+      "copy_identity": {
+        "bytes": 0,
+        "physical": {
+          "st_blocks": "0",
+          "st_ctime_ns": "1792343057950305512",
+          "st_dev": "16777223",
+          "st_ino": "185546060",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057950229614",
+          "st_nlink": "1",
+          "st_size": "0",
+          "st_uid": "501"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "original": "/tmp/callback-symbol-synthetic-observe-transport-20261018-v1/stderr",
+      "original_identity": {
+        "bytes": 0,
+        "physical": {
+          "st_blocks": "0",
+          "st_ctime_ns": "1792342940293378460",
+          "st_dev": "16777223",
+          "st_ino": "185545797",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792342940293324946",
+          "st_nlink": "1",
+          "st_size": "0",
+          "st_uid": "501"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/013-stdout",
+      "copy_identity": {
+        "bytes": 174316,
+        "physical": {
+          "st_blocks": "344",
+          "st_ctime_ns": "1792343057951155003",
+          "st_dev": "16777223",
+          "st_ino": "185546061",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057951155003",
+          "st_nlink": "1",
+          "st_size": "174316",
+          "st_uid": "501"
+        },
+        "sha256": "9e70eb47cef11630dd8ddf2f9900623a153ac0d903f58838b5f6c8d501b68ac4"
+      },
+      "original": "/tmp/callback-symbol-synthetic-observe-transport-20261018-v1/stdout",
+      "original_identity": {
+        "bytes": 174316,
+        "physical": {
+          "st_blocks": "344",
+          "st_ctime_ns": "1792342941046477172",
+          "st_dev": "16777223",
+          "st_ino": "185545796",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792342941046477172",
+          "st_nlink": "1",
+          "st_size": "174316",
+          "st_uid": "501"
+        },
+        "sha256": "9e70eb47cef11630dd8ddf2f9900623a153ac0d903f58838b5f6c8d501b68ac4"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/014-exit.json",
+      "copy_identity": {
+        "bytes": 10525,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792343057953958595",
+          "st_dev": "16777223",
+          "st_ino": "185546062",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057953958595",
+          "st_nlink": "1",
+          "st_size": "10525",
+          "st_uid": "501"
+        },
+        "sha256": "9c7cd5c105ec730d36703780339ff06af4da45c80abd4210160ff05199182f66"
+      },
+      "original": "/tmp/callback-symbol-synthetic-run-transport-20261018-v1/exit.json",
+      "original_identity": {
+        "bytes": 10525,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792342856528295812",
+          "st_dev": "16777223",
+          "st_ino": "185545561",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792342856528295812",
+          "st_nlink": "1",
+          "st_size": "10525",
+          "st_uid": "501"
+        },
+        "sha256": "9c7cd5c105ec730d36703780339ff06af4da45c80abd4210160ff05199182f66"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/015-stderr",
+      "copy_identity": {
+        "bytes": 0,
+        "physical": {
+          "st_blocks": "0",
+          "st_ctime_ns": "1792343057954825606",
+          "st_dev": "16777223",
+          "st_ino": "185546063",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057954781346",
+          "st_nlink": "1",
+          "st_size": "0",
+          "st_uid": "501"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "original": "/tmp/callback-symbol-synthetic-run-transport-20261018-v1/stderr",
+      "original_identity": {
+        "bytes": 0,
+        "physical": {
+          "st_blocks": "0",
+          "st_ctime_ns": "1792342854423489939",
+          "st_dev": "16777223",
+          "st_ino": "185545550",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792342854423439984",
+          "st_nlink": "1",
+          "st_size": "0",
+          "st_uid": "501"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/016-stdout",
+      "copy_identity": {
+        "bytes": 101193,
+        "physical": {
+          "st_blocks": "200",
+          "st_ctime_ns": "1792343057955336198",
+          "st_dev": "16777223",
+          "st_ino": "185546064",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057955336198",
+          "st_nlink": "1",
+          "st_size": "101193",
+          "st_uid": "501"
+        },
+        "sha256": "7e6d940bc18f8fd0522ff15f1f2f547099ca5fa35581bf7346931429ef460a98"
+      },
+      "original": "/tmp/callback-symbol-synthetic-run-transport-20261018-v1/stdout",
+      "original_identity": {
+        "bytes": 101193,
+        "physical": {
+          "st_blocks": "200",
+          "st_ctime_ns": "1792342856476482939",
+          "st_dev": "16777223",
+          "st_ino": "185545549",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792342856476482939",
+          "st_nlink": "1",
+          "st_size": "101193",
+          "st_uid": "501"
+        },
+        "sha256": "7e6d940bc18f8fd0522ff15f1f2f547099ca5fa35581bf7346931429ef460a98"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/017-exit.json",
+      "copy_identity": {
+        "bytes": 10467,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792343057957313640",
+          "st_dev": "16777223",
+          "st_ino": "185546065",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057957313640",
+          "st_nlink": "1",
+          "st_size": "10467",
+          "st_uid": "501"
+        },
+        "sha256": "a5e55af927f8e83e49de2438412d1daca9e5945267123cd7c5426a160b9b8e64"
+      },
+      "original": "/tmp/callback-symbol-synthetic-stage-transport-20261018-v1/exit.json",
+      "original_identity": {
+        "bytes": 10467,
+        "physical": {
+          "st_blocks": "24",
+          "st_ctime_ns": "1792342788461340384",
+          "st_dev": "16777223",
+          "st_ino": "185531365",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792342788461340384",
+          "st_nlink": "1",
+          "st_size": "10467",
+          "st_uid": "501"
+        },
+        "sha256": "a5e55af927f8e83e49de2438412d1daca9e5945267123cd7c5426a160b9b8e64"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/018-stderr",
+      "copy_identity": {
+        "bytes": 0,
+        "physical": {
+          "st_blocks": "0",
+          "st_ctime_ns": "1792343057958315243",
+          "st_dev": "16777223",
+          "st_ino": "185546066",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057958241226",
+          "st_nlink": "1",
+          "st_size": "0",
+          "st_uid": "501"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "original": "/tmp/callback-symbol-synthetic-stage-transport-20261018-v1/stderr",
+      "original_identity": {
+        "bytes": 0,
+        "physical": {
+          "st_blocks": "0",
+          "st_ctime_ns": "1792342787679535905",
+          "st_dev": "16777223",
+          "st_ino": "185531228",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792342787679474499",
+          "st_nlink": "1",
+          "st_size": "0",
+          "st_uid": "501"
+        },
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "copy": "/tmp/callback-symbol-synthetic-evidence-20261018-v1/019-stdout",
+      "copy_identity": {
+        "bytes": 2136,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792343057959033733",
+          "st_dev": "16777223",
+          "st_ino": "185546067",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792343057959033733",
+          "st_nlink": "1",
+          "st_size": "2136",
+          "st_uid": "501"
+        },
+        "sha256": "5d91223b0ee59aabcc82b2232ce672123c28ffca21d792d765b0c8cf71691bc7"
+      },
+      "original": "/tmp/callback-symbol-synthetic-stage-transport-20261018-v1/stdout",
+      "original_identity": {
+        "bytes": 2136,
+        "physical": {
+          "st_blocks": "8",
+          "st_ctime_ns": "1792342788419950793",
+          "st_dev": "16777223",
+          "st_ino": "185531227",
+          "st_mode": "33188",
+          "st_mtime_ns": "1792342788419950793",
+          "st_nlink": "1",
+          "st_size": "2136",
+          "st_uid": "501"
+        },
+        "sha256": "5d91223b0ee59aabcc82b2232ce672123c28ffca21d792d765b0c8cf71691bc7"
+      }
+    }
+  ],
+  "outcomes": [
+    {
+      "name": "baseline_arbitrary_names_values_and_gaps",
+      "scope": "SYNTHETIC_KNOWN_VALUES_FULL_CANONICAL_AND_PAGE_PARITY",
+      "status": "positive"
+    },
+    {
+      "name": "two_aux_relative_chain_and_ambiguous_index",
+      "scope": "SYNTHETIC_KNOWN_VALUES_FULL_CANONICAL_AND_PAGE_PARITY",
+      "status": "positive"
+    },
+    {
+      "name": "missing_version_declaration",
+      "scope": "SYNTHETIC_KNOWN_VALUES_FULL_CANONICAL_AND_PAGE_PARITY",
+      "status": "positive"
+    },
+    {
+      "name": "reserved_raw_version",
+      "scope": "SYNTHETIC_KNOWN_VALUES_FULL_CANONICAL_AND_PAGE_PARITY",
+      "status": "positive"
+    },
+    {
+      "name": "high_bit_global_raw_retained",
+      "scope": "SYNTHETIC_KNOWN_VALUES_FULL_CANONICAL_AND_PAGE_PARITY",
+      "status": "positive"
+    },
+    {
+      "name": "zero_aux_retains_uncovered_bytes",
+      "scope": "SYNTHETIC_KNOWN_VALUES_FULL_CANONICAL_AND_PAGE_PARITY",
+      "status": "positive"
+    },
+    {
+      "name": "repeated_dependency_byte_name",
+      "scope": "SYNTHETIC_KNOWN_VALUES_FULL_CANONICAL_AND_PAGE_PARITY",
+      "status": "positive"
+    },
+    {
+      "name": "exact4096_byte_name",
+      "scope": "SYNTHETIC_KNOWN_VALUES_FULL_CANONICAL_AND_PAGE_PARITY",
+      "status": "positive"
+    },
+    {
+      "name": "contiguous_version_records_no_gap",
+      "scope": "SYNTHETIC_KNOWN_VALUES_FULL_CANONICAL_AND_PAGE_PARITY",
+      "status": "positive"
+    },
+    {
+      "name": "input_type",
+      "reason": "SYM_INPUT_DOMAIN",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "input_file_cap",
+      "reason": "SYM_INPUT_DOMAIN",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "input_header_short",
+      "reason": "SYM_INPUT_DOMAIN",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "section_page_byte_cap",
+      "reason": "SYM_INPUT_DOMAIN",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "ELF_class",
+      "reason": "SYM_ELF64_LE_CURRENT",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "ELF_type",
+      "reason": "SYM_ELF_HEADER_DOMAIN",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "section_header_file_range",
+      "reason": "SYM_FILE_SPAN",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "selected_payload_file_range",
+      "reason": "SYM_FILE_SPAN",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "page_binary_binding",
+      "reason": "SYM_PAGE_BINDING",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "page_duplicate_key",
+      "reason": "SYM_PAGE_DUPLICATE_KEY",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "page_section_count",
+      "reason": "SYM_PAGE_SECTION_COUNT",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "page_record_index",
+      "reason": "SYM_SECTION_INDEX",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "page_header_raw",
+      "reason": "SYM_SECTION_HEADER_BINDING",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "selected_payload_SHA",
+      "reason": "SYM_SECTION_PAYLOAD_BINDING",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "unsupported_verdef",
+      "reason": "SYM_EXTENDED_OR_VERDEF_UNSUPPORTED",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "unsupported_index_extension_table",
+      "reason": "SYM_EXTENDED_OR_VERDEF_UNSUPPORTED",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "missing_symbol_table",
+      "reason": "SYM_TABLE_SET_DOMAIN",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "bad_string_link",
+      "reason": "SYM_STRING_LINK",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "bad_version_link",
+      "reason": "SYM_VERSION_LINK",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "symbol_record_width",
+      "reason": "SYM_SYMBOL_WIDTH",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "symbol_size_remainder",
+      "reason": "SYM_SYMBOL_WIDTH",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "symbol_local_info",
+      "reason": "SYM_SYMBOL_COUNT_OR_INFO",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "nonzero_first_symbol",
+      "reason": "SYM_ZERO_SYMBOL",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "local_partition",
+      "reason": "SYM_LOCAL_PARTITION",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "symbol_extended_index",
+      "reason": "SYM_XINDEX_UNSUPPORTED",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "symbol_ordinary_section_index",
+      "reason": "SYM_ORDINARY_SECTION_INDEX",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "string_index",
+      "reason": "SYM_STRING_INDEX",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "string_edges",
+      "reason": "SYM_STRING_EDGES",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "string4097_bound",
+      "reason": "SYM_STRING_NUL_OR_BOUND",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "versym_width",
+      "reason": "SYM_VERSYM_WIDTH_OR_COUNT",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "versym_count",
+      "reason": "SYM_VERSYM_WIDTH_OR_COUNT",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "verneed_domain",
+      "reason": "SYM_VERNEED_DOMAIN",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "version_revision",
+      "reason": "SYM_VERSION_REVISION_UNSUPPORTED",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "version_aux_unaligned",
+      "reason": "SYM_VERSION_RECORD_RANGE",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "version_aux_overlaps_parent",
+      "reason": "SYM_VERSION_OVERLAP",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "version_aux_range",
+      "reason": "SYM_VERSION_RECORD_RANGE",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "version_aux_count_budget_before_loop",
+      "reason": "SYM_RECORD_BOUND",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "version_aux_count_zero_with_pointer",
+      "reason": "SYM_AUX_COUNT_OR_OFFSET",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "version_aux_early_end",
+      "reason": "SYM_AUX_TERMINATOR_OR_COUNT",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "version_aux_late_end",
+      "reason": "SYM_AUX_TERMINATOR_OR_COUNT",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "version_aux_nonprogress",
+      "reason": "SYM_VERSION_PROGRESS",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "version_need_early_end",
+      "reason": "SYM_NEED_TERMINATOR_OR_COUNT",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "version_need_late_end",
+      "reason": "SYM_NEED_TERMINATOR_OR_COUNT",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "version_need_nonprogress",
+      "reason": "SYM_VERSION_PROGRESS",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "version_next_parent_overlaps_prior_aux",
+      "reason": "SYM_VERSION_OVERLAP",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "version_need_range_wrap_shape",
+      "reason": "SYM_VERSION_RECORD_RANGE",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "version_file_is_linked_string_index",
+      "reason": "SYM_STRING_INDEX",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "version_aux_name_is_linked_string_index",
+      "reason": "SYM_STRING_INDEX",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "global_row_budget_before_traversal",
+      "reason": "SYM_RECORD_BOUND",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "aggregate_hash_work_not_just_input_size",
+      "reason": "SYM_HASH_WORK_BOUND",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "association_reference_fanout_before_serialization",
+      "reason": "SYM_ASSOCIATION_FANOUT_BOUND",
+      "scope": "SYNTHETIC_DATA_PARSER",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "single_complete_record_byte_bound",
+      "reason": "SYM_SINGLE_RECORD_PAGE_BOUND",
+      "scope": "INJECTED_JSON_PAGING_UNIT_NOT_BINARY_DECODING",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "page_count_bound",
+      "reason": "SYM_PAGE_COUNT_BOUND",
+      "scope": "INJECTED_JSON_PAGING_UNIT_NOT_BINARY_DECODING",
+      "status": "expected_refusal"
+    },
+    {
+      "name": "canonical_bound",
+      "reason": "SYM_CANONICAL_BOUND",
+      "scope": "INJECTED_JSON_PAGING_UNIT_NOT_BINARY_DECODING",
+      "status": "expected_refusal"
+    }
+  ],
+  "remote_files": 14,
+  "remote_full_bytes": 126278,
+  "reported_Linux_ru_maxrss_KiB": 70232,
+  "result_bytes": 10271,
+  "result_sha256": "4e0b437468109c0ae31d95bbf3f2333740731625ce3999e6d33d68ba8065a34f",
+  "schema": "callback-symbol-synthetic-verification/1",
+  "stage_sha256": "5d91223b0ee59aabcc82b2232ce672123c28ffca21d792d765b0c8cf71691bc7",
+  "status": "VERIFIED_SYNTHETIC63_ONLY"
+}
