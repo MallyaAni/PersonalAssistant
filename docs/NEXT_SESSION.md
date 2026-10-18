@@ -1,5 +1,93 @@
 # Next session
 
+## 2026-10-18 — ELF DATA decoders SYNTHETIC37 VERIFIED; actual callback ELF UNRUN
+
+Read research/original-loader-callback-elf-source-proof-v1-2026-10-18.json.
+Sourcef2ab0578d6918b47492fa921c101b63cf35f7556 pins primarye5c80403/9013B/
+independentf3021960/9855B/harnesse4b2ace8/10696B/owner1ccc1797/5521B/
+transport777950f1/9163B/preserver41e7f672/4647B. Contract6fa1d99e/7281B/
+static2d2b70c4/1620B/result851ad8a6/5150B/owner9d2e3554/298B/
+stage31090730/675B retained. Only NEW stdlib operational controls and SYNTHETIC
+ELF-shaped fixture DATA ran; no actual callback read/ELF interpretation/package/
+backend/model AST/CodeType/import/body, Docker/container operation, account/
+marketdata/credentials, other19native-body read, old gate/census/packet replay
+or guard/G08/cap/source-map/production change.
+
+Official Xinuos ELF4.3 DRAFT Ehdr/Shdr/string/Phdr/dynamic layouts read as reference,
+NOT binary-build/architectureABI/runtime certification. Two separate pure decoders:
+primary struct.unpack_from; independent explicit widths/int.from_bytes/cursor,
+never imports/calls primary. Narrow ELF64LE/CURRENT/ET_DYN/standard nonextended
+required PH+SH+names/one dynamic segment+linked section. Full records/rawhex/span
+SHA, signed tags/decimal values, ordered arbitrary byte string declarations.
+PT_NULL/SHT_NULL undefined and SHT_NOBITS nonfilebytes never allocate payload.
+Full dynstr must map through exactly ONE file-backed LOAD, using filesz not memsz.
+Every dynamic slot retained; semantics stop at first DT_NULL, later slots raw/
+inactive. RepeatedNEEDED/substrings/empty names retained. Extended/missing tables
+explicitly refuse as unsupported domain, not generic invalidELF. Unknown tags raw;
+no symbols/relocations/path-resolution/completeELFvalidity/native acceptance.
+
+ONE independently source/invocation/resource-reviewed Linux SSH exit0/empty
+stderr/noownedstop/cleanupfailure. Host Spark1 UID1000 Python3.12.3, NOT N2/e0.
+Actual sole child2304808 exit0/reaped/noexception/timeout/cleanupfailure.
+All37 pass:5positive/32expectedrefusals/0unexpected/0skip,0.025638688s/reported
+LinuxRSS15564KiB. Full positive result equality plus independent known-value
+assertions; all37 exact ordered names/status/reasons checked against harnessAST.
+Fixture2048B SHA2bbc9c1d; hash-work refusal additionally uses262144B SYNTHETIC input.
+Not actual callback/architecture/ABI/dependency/fullnative/model/RAM acceptance.
+
+Preserved Mac FAILED first attempt ownerc4e523df: AS512MiB setrlimit raised
+ValueError current limit exceeds maximum limit BEFORE root.mkdir/child/decoder.
+Separate readonly Python3.12.13 observation showed AS/CPU/FSIZE max decimal
+9223372036854775807 and planned root ABSENT. Failure7c4dd73e/1515B and exact
+owner preserved; no unchanged retry/cap relaxation. Linux route separately reviewed.
+Reviewer caught uncharged hash overhead and default HUP/TERM ownership gaps BEFORE
+use; corrected unified ledger + signal/registration cleanup. Root corrected initial
+alarm-cancel placement BEFORE Linux dispatch. No synthetic test-body failure/replay.
+
+Input/file262KiB unchanged; strings<=4096; ONE16MiB ledger charges EVERY full-input/
+record/table/payload/string-span hashed byte before hashing. Linux512MiB AS soft=
+hard/CPU20parent10child/15childalarm/20wait/25owneralarm/TERM1+KILL1; staging30alarm
+canceled BEFORE owner,70SSH. Fresh9991757824B available/2GiB minimum and32MiB/
+128inodes each scratch+tmp checked, NOT reservation/native/model/daemon RAM bound.
+Ordinary signal/timeout/cleanup/transport-loss/crash branches UNEXERCISED. Existing
+healthy worker READONLY reviewed exact sources/invocations/resources BEFORE each
+use then actualproof/scope/preservation source; no newagent/limitedretry/workerops.
+AST warnings-as-errors/27purposefunctions across6controls/embeddedbootstrap AST/
+JSON/fullSHA/stageddiff PASS; Ruff previously unavailable/no lintclaim.
+
+New exclusive Spark tools scratch/callback-elf-synthetic-tools-20261018-v1 and
+/tmp/callback-elf-synthetic-20261018-v1 COMPLETE, source/run fsync+readback.
+Stage/result/owner returned two reads/base64/fullSHA only; remote physical identity
+fold/second complete remote archive NOT performed. Local transport stdout9037B/
+ce76e79d exact retained; display truncation did not change saved stdout.
+Exclusive /tmp/callback-elf-data-evidence-20261018-v1 retains16files87095B plus
+manifest47269b94/16994B: two full held/named reads, exact decimal physical identities,
+exclusive copies/fsync/two readbacks/later originalSHAphysical bookends, manifest
+last/root+resolvedparent fsync. Local preservation30alarm/262KiBfile/1MiBtotal,
+no Mac AS bound claimed. Initial unrun signal-gap owner and failed Mac owner remain
+/tmp/callback-elf-preparation-drafts-20261018-v1. No crash/durability guarantee.
+
+NEXT ROOT: SOURCE ONLY prepare new bounded actual retained-callback DATA reader
+and separate independent complete-record fold around these exact two decoders.
+Bind prior779a1f86 proof/exact callback216280B/9edf4136 and original decimalphysical
+identity; authenticate two full held/named reads then later SHA/physical bookends.
+Retain COMPLETE ordered records/rawspan hashes in pages bounded by encoded bytes
+AND record counts. Independent reconstructs from authenticated binary and checks
+every field/page/order, not only counts. Exact-source/invocation/resource review
+BEFORE use; actual reader/independent drivers/invocation/admission still NULL.
+No packageimport/dlopen/ldd/readelf/native execution/other19reads/caprelaxation.
+Do NOT repeat closed NEW37 or prior callbackcopy/20HEAD/metadata parsing/copy/
+15/10censuses/AST inventories/73/80/23/65+4/tiny/diagnostic/v2 gates/packets fordocs.
+Selected callable/global/type/dataclass liveproducer/classflags/native/phase/Arrow
+pools+wrapper/sklearnactualmetadata unresolved. Guard3b8be00b/all25payloadbodies
+UNRUN; old2446/030c/G08/caps unchanged. Producer2431/reference2446/executor2468/
+originalreceipts/fullcontext+graphs+JSON+UTF8 lifetimes separate. Assembledtree/
+strategy/entrypoint/manifests/bootstrap/wrapper/owner/caller/stager/packet/runtime/
+launch/admission NULL/execution_authorizedFALSE. Model/RAM/horizon/history/ordinary/
+intraday/fill/UI UNVERIFIED; originaltimingFAILED/publicationCLOSED/missingreceipts/
+v6OPEN-PAUSED/no replay/adoption/newrun/actualtwohost/Spark2image-daemon-temp-RAM
+unchanged. Heartbeat ACTIVE. Diagram:NONE.
+
 ## 2026-10-18 — One callback binary byte copy/RECORD hash VERIFIED; ELF/runtime UNVERIFIED
 
 Read research/original-loader-callback-binary-proof-v1-2026-10-18.json.

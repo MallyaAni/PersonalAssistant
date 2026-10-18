@@ -1,0 +1,200 @@
+{
+  "schema": "original-loader-callback-elf-data-source-proof/1",
+  "date": "2026-10-18",
+  "status": "VERIFIED_NEW_DECODER_SOURCE_AND_SYNTHETIC37_ONLY_ACTUAL_CALLBACK_ELF_UNRUN",
+  "source_commit": "f2ab0578d6918b47492fa921c101b63cf35f7556",
+  "starting_commit": "7637da047bdbe14a634952e018b6228b675f1699",
+  "starting_branch": "codex/learned-live-release-20261006",
+  "starting_worktree": "CLEAN_PULL_REBASE_ORIGIN_MAIN_UP_TO_DATE",
+  "objective": "Prepare two separate bounded stdlib ELF DATA decoders from official layout documentation and verify finite synthetic boundaries before any actual authenticated callback parsing.",
+  "source_and_evidence_pins": [
+    {
+      "path": "docs/research/original-loader-callback-elf-data-contract-v1-2026-10-18.json",
+      "bytes": 7281,
+      "sha256": "6fa1d99e7082fda8514b670f1b82b1199ed4d4247a64c7977a68bec04e252451"
+    },
+    {
+      "path": "docs/research/original-loader-callback-elf-local-AS-failure-v1-2026-10-18.json",
+      "bytes": 1515,
+      "sha256": "7c4dd73e07f6aee4d06a17be429c1714f15a957bf5c36377db3e2360cc742c29"
+    },
+    {
+      "path": "docs/research/original-loader-callback-elf-static-v1-2026-10-18.json",
+      "bytes": 1620,
+      "sha256": "2d2b70c46610f0a916e3d78cd8cbd57bd7f72f4a67e6657c9959bdcfb27aace9"
+    },
+    {
+      "path": "docs/research/original-loader-callback-elf-synthetic-owner-v1-2026-10-18.json",
+      "bytes": 298,
+      "sha256": "9d2e35547b9b424c1b3e94c9258d05a16ff3028b8f17c4c86e9895345c65c148"
+    },
+    {
+      "path": "docs/research/original-loader-callback-elf-synthetic-result-v1-2026-10-18.json",
+      "bytes": 5150,
+      "sha256": "851ad8a6399035c0f11a936e92b6085c0de91f77737378a398364b574036938b"
+    },
+    {
+      "path": "docs/research/original-loader-callback-elf-synthetic-stage-v1-2026-10-18.json",
+      "bytes": 675,
+      "sha256": "31090730bf89c9d7ca7648ba4d6b515fccd3fc4a232363046c80642e529fe863"
+    },
+    {
+      "path": "docs/research/sources/parse-callback-elf-data-v1-2026-10-18.py",
+      "bytes": 9013,
+      "sha256": "e5c8040315f3b471a4d35d2c90a82778a78954659d4b66e494d5b18abdf9edaf"
+    },
+    {
+      "path": "docs/research/sources/fold-callback-elf-data-v1-2026-10-18.py",
+      "bytes": 9855,
+      "sha256": "f302196006bc47e3dd7c1a31aa9477d5119e6c18ac0cad015aa5efb302a34dc1"
+    },
+    {
+      "path": "docs/research/sources/check-callback-elf-data-v1-2026-10-18.py",
+      "bytes": 10696,
+      "sha256": "e4b2ace819e5a09f26bad354b69f9faa5d474601fd78f69af417a00b514fcb22"
+    },
+    {
+      "path": "docs/research/sources/run-callback-elf-checks-v1-2026-10-18.py",
+      "bytes": 5521,
+      "sha256": "1ccc1797c6ae95f589c375a5e093495620b7a01f5ed3c24ed3e56e278437ce2c"
+    },
+    {
+      "path": "docs/research/sources/callback-elf-synthetic-transport-v1-2026-10-18.py",
+      "bytes": 9163,
+      "sha256": "777950f1bac4d9674518ce6a2e72d8398f6bdf9288c45e367e68c5867f325a19"
+    },
+    {
+      "path": "docs/research/sources/preserve-callback-elf-controls-v1-2026-10-18.py",
+      "bytes": 4647,
+      "sha256": "41e7f672e28cf4927526f8d7cb86299e143d4a07cfe2a11a8c1d86b5358f1208"
+    }
+  ],
+  "specification": {
+    "title": "Xinuos ELF Object File Format4.3 DRAFT",
+    "urls": [
+      "https://gabi.xinuos.com/elf/02-eheader.html",
+      "https://gabi.xinuos.com/elf/03-sheader.html",
+      "https://gabi.xinuos.com/elf/04-strtab.html",
+      "https://gabi.xinuos.com/elf/07-pheader.html",
+      "https://gabi.xinuos.com/elf/08-dynamic.html"
+    ],
+    "scope": "Layout reference, not image-build certification or complete/architecture-specific ELF conformance."
+  },
+  "implementation": {
+    "primary": "struct.unpack_from",
+    "independent": "Separately written int.from_bytes widths/cursor/string scan; never imports or calls primary.",
+    "domain": "ELF64 little-endian CURRENT ET_DYN standard widths, required standard-numbered PH/SH/name tables, one dynamic segment and linked section; unsupported representations explicitly refuse.",
+    "complete_records": "Raw Ehdr/PH/SH and every dynamic slot including after first NULL, decimal numeric values, raw byte names/NEEDED/SONAME/RPATH/RUNPATH declarations and full payload/span SHA.",
+    "nonfilebacked": "PT_NULL/SHT_NULL undefined payloads and SHT_NOBITS retain raw fields without file allocation.",
+    "bounds": "Input<=262144, each selected string<=4096, one16MiB ledger charges every hashed span and full input; all-or-refuse complete output. Exactly one whole file-backed LOAD map for dynstr.",
+    "scope_limit": "No symbol/relocation interpretation, loader/path resolution, dlopen/ldd/readelf or complete ELF-validity claim."
+  },
+  "Mac_failure": {
+    "status": "FAILED_PRESERVED_NOT_REPLAYED",
+    "owner_sha256": "c4e523df4b57edce8b0d28978952101aac67b526812c8af46c0e4dde2982493f",
+    "exit": 1,
+    "first_boundary": "AS512MiB setrlimit raised ValueError current limit exceeds maximum limit, before root.mkdir or child/decoder.",
+    "planned_root_absent_in_separate_readonly_observation": true,
+    "decoder_bodies_ran": false,
+    "meaning": "Mac resource-setting failure, not decoder acceptance or Linux failure; no cap relaxation."
+  },
+  "actual_synthetic": {
+    "attempts_on_Linux": 1,
+    "SSH_exit": 0,
+    "SSH_stderr_bytes": 0,
+    "owned_SSH_stop": null,
+    "cleanup_failure": null,
+    "host": "animallya-spark1",
+    "uid": 1000,
+    "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+    "runtime_is_N2": false,
+    "child_pid": "2304808",
+    "child_exit": 0,
+    "child_reaped": true,
+    "child_exception": null,
+    "child_timeout": false,
+    "child_cleanup_failure": null,
+    "outcomes": 37,
+    "positive": 5,
+    "expected_refusals": 32,
+    "unexpected_failures": 0,
+    "skips": 0,
+    "elapsed_seconds": 0.02563868835568428,
+    "reported_Linux_ru_maxrss_KiB": 15564,
+    "fixture_bytes": 2048,
+    "fixture_sha256": "2bbc9c1d865eb24e8a66efc82f7081de7662482e3d650ad4b0d7ec90c1b8dbdb",
+    "all_exact_ordered_names_status_and_reasons_checked_against_harness_AST": true,
+    "positive_properties": "Complete known-value records, arbitrary nonUTF8 byte strings, repeated NEEDED, SONAME, substring/empty-string indices, signed unknown tags, inactive trailing slots, maximal nonfilebacked spans and full span hashes.",
+    "refusal_properties": "Input/class/encoding/header/table width/extended or absent numbering/spans/LOAD bounds and alignment/section names/dynamic NULL/scalars/mapping/link/string indices/hash-work exhaustion.",
+    "actual_callback_opened": false,
+    "remote_physical_identity_fold": false,
+    "full_source_or_native_runtime_admission": false
+  },
+  "resources": {
+    "Linux_parent_and_child_AS_soft_and_hard_bytes": 536870912,
+    "parent_CPU_seconds": 20,
+    "child_CPU_seconds": 10,
+    "child_alarm_seconds": 15,
+    "parent_wait_seconds": 20,
+    "parent_alarm_seconds": 25,
+    "cleanup": "TERM wait1s then KILL wait1s; ordinary signal and registration masking SOURCE-reviewed, not interruption-runtime-tested.",
+    "staging_alarm_seconds": 30,
+    "staging_alarm_canceled_before_owner": true,
+    "SSH_timeout_seconds": 70,
+    "ordinary_file_bound_bytes": 262144,
+    "encoded_source_envelope_bound_bytes": 65536,
+    "fresh_MemAvailable_bytes": "9991757824",
+    "minimum_MemAvailable_bytes": 2147483648,
+    "minimum_space_each_scratch_and_tmp_bytes": 33554432,
+    "minimum_inodes_each": 128,
+    "headroom_is_reservation_or_model_daemon_RAM_bound": false,
+    "transport_loss_signal_timeout_crash_branches": "UNEXERCISED; successful SSH is not a general remote-quiescence guarantee."
+  },
+  "review": {
+    "worker": "Existing healthy /root/trading_action_consistency",
+    "scope": "READONLY exact sources/pins/invocations/resources BEFORE each actual use, then actual proof/contract/preservation source; no new agent/limited-agent retry/worker ops.",
+    "pre_use_corrections": "All hash work moved into one ledger after reviewer caught omitted overhead; ordinary-signal/registration cleanup added after reviewer caught default termination gap. Root caught and corrected initial alarm-cancel placement before Linux use.",
+    "source_review_is_behavioral_acceptance": false
+  },
+  "preservation": {
+    "remote_tools_root": "/home/animallya96/scratch/callback-elf-synthetic-tools-20261018-v1",
+    "remote_run_root": "/tmp/callback-elf-synthetic-20261018-v1",
+    "remote": "Exclusive source copies and7 run files synced/read back; raw stage/result/owner returned via two reads/base64/SHA. No separate complete remote physical fold or archive.",
+    "local_transport_root": "/tmp/callback-elf-synthetic-transport-20261018-v1",
+    "local_transport_stdout_bytes": 9037,
+    "local_transport_stdout_sha256": "ce76e79d351fe1a5aac4dae8e40c22742848dbd999f3961e80750835414986dc",
+    "local_evidence_root": "/tmp/callback-elf-data-evidence-20261018-v1",
+    "files": 16,
+    "bytes": 87095,
+    "manifest_sha256": "47269b9445699dae3bade153199a72109a49f61b4eb5a489a8407868eac2010b",
+    "manifest_bytes": 16994,
+    "checks": "Two held/named full reads with exact decimal physical identity, exclusive copies/fsync/two readbacks, later originals SHA/physical bookends, manifest last/root+resolvedparent fsync.",
+    "drafts_root": "/tmp/callback-elf-preparation-drafts-20261018-v1",
+    "crash_durability_guarantee": false,
+    "old_failed_completed_roots_preserved": true
+  },
+  "validation": {
+    "AST_warnings_as_errors": "PASS",
+    "purpose_comments": 27,
+    "controls": 6,
+    "embedded_bootstrap_AST": "PASS",
+    "JSON_and_source_SHA_pins": "PASS",
+    "Ruff": "NOT_RUN_PREVIOUSLY_UNAVAILABLE_NO_LINT_CLAIM",
+    "synthetic37_replays": 0,
+    "old_gates_census_packets_or_other19_reads": 0,
+    "guard_G08_caps_source_maps_production": "UNCHANGED"
+  },
+  "actual_callback": {
+    "retained_path": "/home/animallya96/scratch/capacity-callback-binary-copy-20261018-v1/callback.bin",
+    "bytes": 216280,
+    "sha256": "9edf4136653a328edcc88dc97f6d828440ad96550c436cbe087951845c89903b",
+    "ELF_interpretation": "UNRUN",
+    "native_runtime_model_RAM_admission": null,
+    "actual_reader_driver": null,
+    "actual_independent_driver": null,
+    "actual_invocation": null,
+    "execution_authorized": false
+  },
+  "next": "SOURCE ONLY prepare new authenticated retained-binary reader and independent complete-record paged fold around these two decoders; exact prior SHA/physical bindings and full before/after bookends, bounded byte-size pages; independent exact-source/invocation/resource review BEFORE use. Never rerun closed37 or prior gates for docs. No native loading/package execution or other19 oversized reads/cap relaxation.",
+  "unchanged": "All25 guard payload bodies UNRUN; original producer2431/reference2446/executor2468/receipts/lifetimes separate. Callable/global/type/dataclass live-producer/classflags/native/phase and Arrow pools/wrapper provenance/sklearn actualmetadata unresolved. Model/RAM/horizon/history/ordinary/intraday/fill/UI UNVERIFIED, original timing FAILED/publication CLOSED/missingreceipts/v6 OPEN-PAUSED/no replay/adoption/newrun. Actualtwohost/Spark2image-daemon-temp-RAM unchanged. Heartbeat ACTIVE."
+}
