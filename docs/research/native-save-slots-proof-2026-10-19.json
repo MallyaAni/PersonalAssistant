@@ -1,0 +1,2887 @@
+{
+  "actual_old_mode_late_exhaustion": {
+    "accepted_qty": "5",
+    "head": "f0dc5435c3d7a14d6e5837dbe25429ba7fa9365cab55acf7f8303276abe90c61",
+    "scope": "ACTUAL_OLD_MODE_LATE_EXHAUSTION_NOT_ACCEPTANCE",
+    "slot": 2
+  },
+  "attempts": [
+    {
+      "bundle": {
+        "physical": {
+          "st_ctime_ns": "1792377738159187333",
+          "st_dev": "16777223",
+          "st_ino": "193700698",
+          "st_mtime_ns": "1792377738159187333",
+          "st_size": "132145"
+        },
+        "sha256": "8f249301db0b33a47146cb40b1313b6e1675aba17283f72fec67833f85a0e541"
+      },
+      "cohort": "a",
+      "local_root": "/tmp/native-save-slots-20261019-v2-a",
+      "metrics": {
+        "elapsed_seconds": 25.543420060537755,
+        "errors": 0,
+        "failures": 0,
+        "peak_kib": 57544,
+        "skips": 0,
+        "status": "VERIFIED_SYNTHETIC_NATIVE_SAVE_SLOTS_COHORT",
+        "tests": 3
+      },
+      "native_count": 47,
+      "outcomes": [
+        "test_a_legacy_late_slot_gap (backend.tests.test_historical_native_save_slots.NativeSaveSlotsTests.test_a_legacy_late_slot_gap) ... ok",
+        "test_b_submission_pre_effect_exhaustion (backend.tests.test_historical_native_save_slots.NativeSaveSlotsTests.test_b_submission_pre_effect_exhaustion) ... ok",
+        "test_c_final_pre_flush_exhaustion (backend.tests.test_historical_native_save_slots.NativeSaveSlotsTests.test_c_final_pre_flush_exhaustion) ... ok"
+      ],
+      "payload_bytes": 482683,
+      "payload_count": 31,
+      "physical_validation": {
+        "allocated_and_logical_bytes_each": 34344960,
+        "canonical_witness_bytes": 0,
+        "children": [],
+        "complete_inventory_encoding": {
+          "base64": "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",
+          "encoding": "gzip-base64-complete-json/1",
+          "gzip_bytes": 11148,
+          "gzip_sha256": "e532921c87e76034343cb6aee6d02626825c5ddc7edd1b780fd763d2adb89546",
+          "raw_bytes": 158740,
+          "raw_sha256": "08b7924c970c2b8abbab9663d5e17a99a6d3f0f8f0f35c226eea3f5e60e5219f"
+        },
+        "directory_distinct_inodes": 12,
+        "directory_totals": [
+          {
+            "allocated_bytes": 790528,
+            "logical_bytes": 790528
+          },
+          {
+            "allocated_bytes": 790528,
+            "logical_bytes": 790528
+          },
+          {
+            "allocated_bytes": 790528,
+            "logical_bytes": 790528
+          }
+        ],
+        "distinct_inodes": 1548,
+        "inventories": 3,
+        "metadata_distinct_inodes": 111,
+        "metadata_totals": [
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          }
+        ],
+        "native_directory_distinct_inodes": 18,
+        "sqlite_distinct_inodes": 21,
+        "sqlite_totals": [
+          {
+            "allocated_bytes": 1843200,
+            "logical_bytes": 1843200
+          },
+          {
+            "allocated_bytes": 1843200,
+            "logical_bytes": 1843200
+          },
+          {
+            "allocated_bytes": 1843200,
+            "logical_bytes": 1843200
+          }
+        ]
+      },
+      "proof": {
+        "physical": {
+          "st_ctime_ns": "1792377669818340108",
+          "st_dev": "66306",
+          "st_ino": "60952675",
+          "st_mtime_ns": "1792377669818340108",
+          "st_size": "73545"
+        },
+        "sha256": "5038e7794927fcba5b241123b6341bf42738b8fdd2f659b24b7486eae7583fa9"
+      },
+      "runtime": {
+        "cid": "2498367a8a33e3e7eb28fa1583ba817b39c77672599a6eb48464e627dda9530f",
+        "full_mounts": [
+          {
+            "Destination": "/audit/backend/market/historical_broker_checkpoint.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-cycle-outcome-20261018-v1-a/source/backend/market/historical_broker_checkpoint.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_reserved_blob_store.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-cycle-outcome-20261018-v1-a/source/backend/market/historical_reserved_blob_store.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_physical_checkpoint.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-protocol-metadata-20261018-v1-a/source/backend/market/historical_physical_checkpoint.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_conditional_nightly.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-sqlite-banks-20261018-v2-a/source/backend/market/historical_conditional_nightly.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/native-save-slots-20261019-v2-a/source",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/fixture",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/native-save-slots-20261019-v2-a/fixture",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/native",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/out",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": true,
+            "Source": "/home/animallya96/scratch/native-save-slots-20261019-v2-a/out",
+            "Type": "bind"
+          }
+        ],
+        "hostconfig_changes": {
+          "OomKillDisable": [
+            false,
+            null
+          ]
+        },
+        "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+        "mount_order_equal": false,
+        "state": {
+          "Dead": false,
+          "Error": "",
+          "ExitCode": 0,
+          "FinishedAt": "2026-10-19T02:41:09.850548926Z",
+          "OOMKilled": false,
+          "Paused": false,
+          "Pid": 0,
+          "Restarting": false,
+          "Running": false,
+          "StartedAt": "2026-10-19T02:40:43.733737856Z",
+          "Status": "exited"
+        }
+      },
+      "source_count": 33,
+      "source_pins": {
+        "/audit/backend/__init__.py": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5",
+        "/audit/backend/market/__init__.py": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e",
+        "/audit/backend/market/historical_broker_checkpoint.py": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08",
+        "/audit/backend/market/historical_conditional_cycle.py": "d74f8da8d7e55894a44967b184e1ca0369d96beea443dcbaa123822a7ab408d7",
+        "/audit/backend/market/historical_conditional_nightly.py": "ba56fb829e9d55cf8baed52e97784ddc4fab56134cb30bc297f2051db7942300",
+        "/audit/backend/market/historical_conditional_settlement.py": "9e194856545dbf07e0ba6f0f2af9b022f75f767ee6371bb6af1f85e522f4c90d",
+        "/audit/backend/market/historical_native_directory_binding.py": "8fbeb810503c349cc098f7f8622a82c881c9e21f65af5b814fcc7f636b5f8c48",
+        "/audit/backend/market/historical_native_metadata.py": "333c5d22c49e06742eb4cb50183bf90fa0859d0ce200d3be5f2a4914c8f71e21",
+        "/audit/backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+        "/audit/backend/market/historical_packet_demand.py": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0",
+        "/audit/backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+        "/audit/backend/market/historical_packet_spool.py": "705300210493d46e1a65225c371a05dd9bc8e30dff2c5ae8da43b85041b3f6ac",
+        "/audit/backend/market/historical_packet_store.py": "387ab41b3b83ac127d2489fedbb7a11908bba281e463a59a67437e985f3c2823",
+        "/audit/backend/market/historical_paper_component.py": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648",
+        "/audit/backend/market/historical_physical_checkpoint.py": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604",
+        "/audit/backend/market/historical_raw_cycle.py": "3e8b136e8f37e63600e008dd6e8e1bb238c72dd01538f420b3183148e0c270b4",
+        "/audit/backend/market/historical_raw_nightly.py": "df3e2589a5c209f0a40e39d1e4f1be421631892c894b6d40305c2b570e4a2feb",
+        "/audit/backend/market/historical_reserved_blob_store.py": "9058cf5f54902ef7043a1d95514e1262b8a47b405413d389d636f3a107260caf",
+        "/audit/backend/market/historical_reserved_cycle_final.py": "4719affc9a87aef161d49eaa982da76e195f542a66943c5f9a6bac687bdc4eea",
+        "/audit/backend/market/historical_reserved_cycle_stages.py": "b4b94550139c689018382d49b5c47afe1ea166ad8f5e12bb80a742230f1a5135",
+        "/audit/backend/market/historical_reserved_native_io.py": "a473940650a04b0cef6b5b7f83305a92e15c4a6f9ba484d07a9f97ecb176ff44",
+        "/audit/backend/market/historical_reserved_native_metadata.py": "23a60cfb3020ab333911592c47458b85541e1a59bdb0bd91ac8f39078f37cd51",
+        "/audit/backend/market/historical_reserved_protocol.py": "e5fe183efd639e8ec0b322481b958d87b1b1d7d6a13ea7855c830261970820c1",
+        "/audit/backend/market/historical_reserved_sqlite.py": "c665030aaf2dc4045dc966df2c432cb0ca9e2e6b3283da665e34311cfbbada0a",
+        "/audit/backend/market/historical_synthetic_native_write.py": "21f5c29c89405d6b9b59e081b14e6a2c649e4547b86dba9c314a7efba1fb7501",
+        "/audit/backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+        "/audit/backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "/audit/backend/tests/synthetic_native_save_slots_setup.py": "b1042637e01aa00ce4a613ab1b81eb59b1322128cdd0097db4b9c795cb1d16ab",
+        "/audit/backend/tests/test_historical_native_save_slots.py": "beb738ebe5fbfa76125559b3ec2488e91e915fadbffc0df3e3b39a87aa9546c2",
+        "/audit/run.py": "d47a364c58d5084a5aceb8d591d4e988ed1292be76be5db5ba396ee773e9853a",
+        "/fixture/current-identity.json": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d",
+        "/fixture/native-source-map.json": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5",
+        "/native/backend/cli/market_daily.py": "0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819"
+      },
+      "version": "2"
+    },
+    {
+      "bundle": {
+        "physical": {
+          "st_ctime_ns": "1792377889341675042",
+          "st_dev": "16777223",
+          "st_ino": "193747999",
+          "st_mtime_ns": "1792377889341675042",
+          "st_size": "131937"
+        },
+        "sha256": "8bbde821cb5b1ff587620dad36e9dddf4b5e5515c61eaa552168cd1b002c96e9"
+      },
+      "cohort": "b",
+      "local_root": "/tmp/native-save-slots-20261019-v2-b",
+      "metrics": {
+        "elapsed_seconds": 25.429265797138214,
+        "errors": 0,
+        "failures": 0,
+        "peak_kib": 56540,
+        "skips": 0,
+        "status": "VERIFIED_SYNTHETIC_NATIVE_SAVE_SLOTS_COHORT",
+        "tests": 3
+      },
+      "native_count": 47,
+      "outcomes": [
+        "test_d_exact_full_graph_and_recovery (backend.tests.test_historical_native_save_slots.NativeSaveSlotsTests.test_d_exact_full_graph_and_recovery) ... ok",
+        "test_e_zero_count_and_typed_claim (backend.tests.test_historical_native_save_slots.NativeSaveSlotsTests.test_e_zero_count_and_typed_claim) ... ok",
+        "test_f_underconsumption_and_evidence_downgrade (backend.tests.test_historical_native_save_slots.NativeSaveSlotsTests.test_f_underconsumption_and_evidence_downgrade) ... ok"
+      ],
+      "payload_bytes": 482683,
+      "payload_count": 31,
+      "physical_validation": {
+        "allocated_and_logical_bytes_each": 34344960,
+        "canonical_witness_bytes": 0,
+        "children": [],
+        "complete_inventory_encoding": {
+          "base64": "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",
+          "encoding": "gzip-base64-complete-json/1",
+          "gzip_bytes": 11146,
+          "gzip_sha256": "fee2d188da798e0c6f8ee32aa6253a22bcafedd2e4487204817998a274be175a",
+          "raw_bytes": 158820,
+          "raw_sha256": "40fb22c7adfcaabcf1b88dcb3be3d8dc999a40cc6fcfcdaf8a515e6d2dc45aa1"
+        },
+        "directory_distinct_inodes": 12,
+        "directory_totals": [
+          {
+            "allocated_bytes": 790528,
+            "logical_bytes": 790528
+          },
+          {
+            "allocated_bytes": 790528,
+            "logical_bytes": 790528
+          },
+          {
+            "allocated_bytes": 790528,
+            "logical_bytes": 790528
+          }
+        ],
+        "distinct_inodes": 1548,
+        "inventories": 3,
+        "metadata_distinct_inodes": 111,
+        "metadata_totals": [
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          }
+        ],
+        "native_directory_distinct_inodes": 18,
+        "sqlite_distinct_inodes": 21,
+        "sqlite_totals": [
+          {
+            "allocated_bytes": 1843200,
+            "logical_bytes": 1843200
+          },
+          {
+            "allocated_bytes": 1843200,
+            "logical_bytes": 1843200
+          },
+          {
+            "allocated_bytes": 1843200,
+            "logical_bytes": 1843200
+          }
+        ]
+      },
+      "proof": {
+        "physical": {
+          "st_ctime_ns": "1792377766517601591",
+          "st_dev": "66306",
+          "st_ino": "60954751",
+          "st_mtime_ns": "1792377766517601591",
+          "st_size": "73356"
+        },
+        "sha256": "343a2762ac7c05d2893e7df989889def7293cf2759eec4584afe49b65067a9ba"
+      },
+      "runtime": {
+        "cid": "7e4d6b062f21f22f848db8bc9ad9d4bd75bf2a46305c194ce60f9c1c1d560ac4",
+        "full_mounts": [
+          {
+            "Destination": "/audit/backend/market/historical_broker_checkpoint.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-cycle-outcome-20261018-v1-a/source/backend/market/historical_broker_checkpoint.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_reserved_blob_store.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-cycle-outcome-20261018-v1-a/source/backend/market/historical_reserved_blob_store.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_physical_checkpoint.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-protocol-metadata-20261018-v1-a/source/backend/market/historical_physical_checkpoint.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_conditional_nightly.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-sqlite-banks-20261018-v2-a/source/backend/market/historical_conditional_nightly.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/native-save-slots-20261019-v2-b/source",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/fixture",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/native-save-slots-20261019-v2-b/fixture",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/native",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/out",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": true,
+            "Source": "/home/animallya96/scratch/native-save-slots-20261019-v2-b/out",
+            "Type": "bind"
+          }
+        ],
+        "hostconfig_changes": {
+          "OomKillDisable": [
+            false,
+            null
+          ]
+        },
+        "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+        "mount_order_equal": false,
+        "state": {
+          "Dead": false,
+          "Error": "",
+          "ExitCode": 0,
+          "FinishedAt": "2026-10-19T02:42:46.550879509Z",
+          "OOMKilled": false,
+          "Paused": false,
+          "Pid": 0,
+          "Restarting": false,
+          "Running": false,
+          "StartedAt": "2026-10-19T02:42:20.644364947Z",
+          "Status": "exited"
+        }
+      },
+      "source_count": 33,
+      "source_pins": {
+        "/audit/backend/__init__.py": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5",
+        "/audit/backend/market/__init__.py": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e",
+        "/audit/backend/market/historical_broker_checkpoint.py": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08",
+        "/audit/backend/market/historical_conditional_cycle.py": "d74f8da8d7e55894a44967b184e1ca0369d96beea443dcbaa123822a7ab408d7",
+        "/audit/backend/market/historical_conditional_nightly.py": "ba56fb829e9d55cf8baed52e97784ddc4fab56134cb30bc297f2051db7942300",
+        "/audit/backend/market/historical_conditional_settlement.py": "9e194856545dbf07e0ba6f0f2af9b022f75f767ee6371bb6af1f85e522f4c90d",
+        "/audit/backend/market/historical_native_directory_binding.py": "8fbeb810503c349cc098f7f8622a82c881c9e21f65af5b814fcc7f636b5f8c48",
+        "/audit/backend/market/historical_native_metadata.py": "333c5d22c49e06742eb4cb50183bf90fa0859d0ce200d3be5f2a4914c8f71e21",
+        "/audit/backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+        "/audit/backend/market/historical_packet_demand.py": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0",
+        "/audit/backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+        "/audit/backend/market/historical_packet_spool.py": "705300210493d46e1a65225c371a05dd9bc8e30dff2c5ae8da43b85041b3f6ac",
+        "/audit/backend/market/historical_packet_store.py": "387ab41b3b83ac127d2489fedbb7a11908bba281e463a59a67437e985f3c2823",
+        "/audit/backend/market/historical_paper_component.py": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648",
+        "/audit/backend/market/historical_physical_checkpoint.py": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604",
+        "/audit/backend/market/historical_raw_cycle.py": "3e8b136e8f37e63600e008dd6e8e1bb238c72dd01538f420b3183148e0c270b4",
+        "/audit/backend/market/historical_raw_nightly.py": "df3e2589a5c209f0a40e39d1e4f1be421631892c894b6d40305c2b570e4a2feb",
+        "/audit/backend/market/historical_reserved_blob_store.py": "9058cf5f54902ef7043a1d95514e1262b8a47b405413d389d636f3a107260caf",
+        "/audit/backend/market/historical_reserved_cycle_final.py": "4719affc9a87aef161d49eaa982da76e195f542a66943c5f9a6bac687bdc4eea",
+        "/audit/backend/market/historical_reserved_cycle_stages.py": "b4b94550139c689018382d49b5c47afe1ea166ad8f5e12bb80a742230f1a5135",
+        "/audit/backend/market/historical_reserved_native_io.py": "a473940650a04b0cef6b5b7f83305a92e15c4a6f9ba484d07a9f97ecb176ff44",
+        "/audit/backend/market/historical_reserved_native_metadata.py": "23a60cfb3020ab333911592c47458b85541e1a59bdb0bd91ac8f39078f37cd51",
+        "/audit/backend/market/historical_reserved_protocol.py": "e5fe183efd639e8ec0b322481b958d87b1b1d7d6a13ea7855c830261970820c1",
+        "/audit/backend/market/historical_reserved_sqlite.py": "c665030aaf2dc4045dc966df2c432cb0ca9e2e6b3283da665e34311cfbbada0a",
+        "/audit/backend/market/historical_synthetic_native_write.py": "21f5c29c89405d6b9b59e081b14e6a2c649e4547b86dba9c314a7efba1fb7501",
+        "/audit/backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+        "/audit/backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "/audit/backend/tests/synthetic_native_save_slots_setup.py": "b1042637e01aa00ce4a613ab1b81eb59b1322128cdd0097db4b9c795cb1d16ab",
+        "/audit/backend/tests/test_historical_native_save_slots.py": "beb738ebe5fbfa76125559b3ec2488e91e915fadbffc0df3e3b39a87aa9546c2",
+        "/audit/run.py": "d47a364c58d5084a5aceb8d591d4e988ed1292be76be5db5ba396ee773e9853a",
+        "/fixture/current-identity.json": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d",
+        "/fixture/native-source-map.json": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5",
+        "/native/backend/cli/market_daily.py": "0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819"
+      },
+      "version": "2"
+    },
+    {
+      "bundle": {
+        "physical": {
+          "st_ctime_ns": "1792377995164803471",
+          "st_dev": "16777223",
+          "st_ino": "193781497",
+          "st_mtime_ns": "1792377995164803471",
+          "st_size": "178102"
+        },
+        "sha256": "d3201b1ecee4b6ab1e28e60f71fb76acdf3146f63dea8b09374675463bba4ffd"
+      },
+      "cohort": "c",
+      "local_root": "/tmp/native-save-slots-20261019-v2-c",
+      "metrics": {
+        "elapsed_seconds": 33.51023030653596,
+        "errors": 0,
+        "failures": 0,
+        "peak_kib": 57300,
+        "skips": 0,
+        "status": "VERIFIED_SYNTHETIC_NATIVE_SAVE_SLOTS_COHORT",
+        "tests": 3
+      },
+      "native_count": 47,
+      "outcomes": [
+        "test_g_actual_allowance_before_effects (backend.tests.test_historical_native_save_slots.NativeSaveSlotsTests.test_g_actual_allowance_before_effects) ... ok",
+        "test_h_actual_pending_before_native (backend.tests.test_historical_native_save_slots.NativeSaveSlotsTests.test_h_actual_pending_before_native) ... ok",
+        "test_i_actual_original_result_before_seal (backend.tests.test_historical_native_save_slots.NativeSaveSlotsTests.test_i_actual_original_result_before_seal) ... ok"
+      ],
+      "payload_bytes": 482683,
+      "payload_count": 31,
+      "physical_validation": {
+        "allocated_and_logical_bytes_each": 34344960,
+        "canonical_witness_bytes": 26542,
+        "children": [
+          {
+            "cut": {
+              "path": "/out/cases/test_g_actual_allowance_before_effects-tvfcu39a/actual-child-cut.json",
+              "physical": {
+                "st_ctime_ns": "1792377901692429016",
+                "st_dev": "66306",
+                "st_ino": "60955503",
+                "st_mtime_ns": "1792377901692429016",
+                "st_size": "8356"
+              },
+              "sha256": "37b9e7b90fc384c3a927893e62df6c321f56350395b2be0c991588127e9b7d94",
+              "value": {
+                "allowance": {
+                  "claim": {
+                    "head": "8c0a45e8255ab502e13d39652c2e0b2eed7acd2538e1ccbd49b8c521524e7ec5",
+                    "inputs": "b16a106829d6f34e94cd1d373cbd73bc4fa92edac82e56dac6c80fbd747529ae",
+                    "latch_session": null,
+                    "operation": "75755a5a92c225aff553305e63b6abf038513920727d122fb1fea7d57ab11c16",
+                    "phase": "OUTCOME_COMMITTED",
+                    "pool": {
+                      "account": "/out/cases/test_g_actual_allowance_before_effects-tvfcu39a/store/SYNTHETIC-reserved-workspace/work",
+                      "header_sha256": "420adf4f4d1309ed4950f60f423163bb009227ee57edefbda03577cbd6e22e1d",
+                      "identity": "e13b03259b95797ed7032c9fb6397975f4c29d9d47dba6d5b15ee571644a26df",
+                      "root": "/out/cases/test_g_actual_allowance_before_effects-tvfcu39a/store/reserved-protocol",
+                      "schema": "synthetic-reserved-protocol-metadata/1"
+                    },
+                    "schema": "synthetic-reserved-protocol-metadata/1",
+                    "slot": 5
+                  },
+                  "result": null,
+                  "save_allowance": {
+                    "count": 1,
+                    "first": 3
+                  },
+                  "status": "OPEN"
+                },
+                "broker_raw": "{\"schema\":\"private-n2-broker-checkpoint/1\",\"private_synthetic_only\":true,\"identity\":{\"backend_image\":\"sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272\",\"broker_sha256\":\"c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616\",\"calendar_sha256\":\"f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4\",\"holding_config_sha256\":\"f96a29777403f5f08623709b70f36b15300500065202acbd215cd43f3c99a588\",\"holding_release_sha256\":\"1c1c6e9bcc7e9fa8d095f6ce5e6bf973c99ed19531e88c38a9aba5ed8410cd3e\",\"source_revision\":\"3b72cd4e0bc15acd24432d501918c721685a5333\",\"source_sha256\":{\"backend/agents/trading/desk/event_execution.py\":\"76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f\",\"backend/agents/trading/desk/event_risk.py\":\"34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973\",\"backend/agents/trading/desk/funded_execution.py\":\"6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c\",\"backend/agents/trading/desk/intraday_orders.py\":\"ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c\",\"backend/agents/trading/desk/nightly_plan.py\":\"9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca\",\"backend/agents/trading/desk/paper.py\":\"a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c\",\"backend/api/v1/market.py\":\"fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88\",\"backend/cli/market_daily.py\":\"0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819\",\"backend/market/adaptive_growth_policy.py\":\"35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34\",\"backend/market/alpaca_trading.py\":\"105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2\",\"backend/market/decision_view.py\":\"8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca\",\"backend/market/entry_timing.py\":\"f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88\",\"backend/market/forward_arithmetic.py\":\"9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882\",\"backend/market/forward_execution.py\":\"62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295\",\"backend/market/forward_market_evidence.py\":\"737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2\",\"backend/market/forward_probability_timing.py\":\"0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92\",\"backend/market/grade_led_policy.py\":\"4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66\",\"backend/market/holding_risk_bank.py\":\"4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158\",\"backend/market/joint_funded_policy.py\":\"5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339\",\"backend/market/learned_holding_transition.py\":\"c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55\",\"backend/market/learned_live_holding.py\":\"25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1\",\"backend/market/learned_live_timing.py\":\"80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f\",\"backend/market/learned_order_observation.py\":\"e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff\",\"backend/market/learned_personal_guidance.py\":\"37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721\",\"backend/market/live_model_decision.py\":\"b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93\",\"backend/market/live_probability_timing.py\":\"3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721\",\"backend/market/market_conditioned_holding.py\":\"e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4\",\"backend/market/personal_history.py\":\"8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a\",\"backend/market/sequential_shadow_context.py\":\"5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92\",\"docs/research/grade-led-sizing-contract-2026-10-13.md\":\"51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6\",\"docs/research/learned-held-transition-2026-10-07.md\":\"f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a\"},\"timing_config_sha256\":\"d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a\"},\"identity_sha256\":\"e13b03259b95797ed7032c9fb6397975f4c29d9d47dba6d5b15ee571644a26df\",\"caps\":{\"bytes\":8388608,\"names\":256,\"orders\":8192,\"attempts\":16384,\"fills\":8192,\"actions\":8192,\"dividends\":8192,\"claims_per_kind\":2048,\"records\":32768,\"string_chars\":512,\"depth\":16},\"codec_sha256\":\"703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08\",\"state\":{\"map\":[[\"_cash\",100000.0],[\"cost_bps\",10.0],[\"_held\",{\"map\":[]}],[\"_average\",{\"map\":[]}],[\"_orders\",{\"map\":[[\"SYNTHETIC-reserved-outcome\",{\"map\":[[\"id\",\"private-replay-0\"],[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",\"5\"],[\"type\",\"market\"],[\"time_in_force\",\"day\"],[\"status\",\"accepted\"],[\"filled_qty\",\"0\"],[\"filled_avg_price\",null],[\"created_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"submitted_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"execution_phase\",\"market\"],[\"execute_on\",\"2019-03-01\"],[\"reserved_cash\",500.49999999999994],[\"fee\",0.0]]}]]}],[\"_attempts\",{\"list\":[{\"map\":[[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",5],[\"at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"observed_price\",100.0],[\"available_cash\",100000.0],[\"accepted\",true],[\"reason\",null]]}]}],[\"_fills\",{\"list\":[]}],[\"_actions\",{\"map\":[]}],[\"_dividends\",{\"list\":[]}],[\"_marks\",{\"map\":[[\"AAPL\",100.0]]}],[\"_mark_times\",{\"map\":[[\"AAPL\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}]]}],[\"_security_distributions\",{\"list\":[]}],[\"_security_exchanges\",{\"list\":[]}],[\"_share_consolidations\",{\"list\":[]}],[\"_cash_mergers\",{\"list\":[]}],[\"_now\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}],[\"_observed_at\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}],[\"_market_open\",true],[\"_batch_open\",true],[\"_last_equity\",100000.0]]}}",
+                "broker_sha256": "e125d3628ea2c398d224956d97e7ca0f75c0926c6a30dd02d34c4798aab29210",
+                "directory_cursor": {
+                  "current": {
+                    "device": 66306,
+                    "inode": 60955382,
+                    "length": 301880,
+                    "sha256": "c9e225e3a7e05e329227e74420d885b7b21d060e3bea6680ea1707134fd6d075"
+                  },
+                  "last": {
+                    "receipt_sha256": "f79f1862f98a1909d4ffe4ef365df5431ab0fcb74737a27b91baccf9d8a4820a",
+                    "slot": 2
+                  },
+                  "next_slot": 3,
+                  "operation": null
+                },
+                "directory_pending": null,
+                "directory_records": 3,
+                "head": "8c0a45e8255ab502e13d39652c2e0b2eed7acd2538e1ccbd49b8c521524e7ec5",
+                "kind": "native-save-slot-final",
+                "native_directories": {
+                  ".": [
+                    "66306",
+                    "60955370",
+                    "16832",
+                    "4096",
+                    "8",
+                    "5"
+                  ],
+                  "anchors": [
+                    "66306",
+                    "60955371",
+                    "16832",
+                    "4096",
+                    "8",
+                    "2"
+                  ],
+                  "receipts": [
+                    "66306",
+                    "60955372",
+                    "16832",
+                    "4096",
+                    "8",
+                    "2"
+                  ],
+                  "work": [
+                    "66306",
+                    "60955373",
+                    "16832",
+                    "4096",
+                    "8",
+                    "4"
+                  ],
+                  "work/operations": [
+                    "66306",
+                    "60955461",
+                    "16832",
+                    "4096",
+                    "8",
+                    "2"
+                  ],
+                  "work/paper": [
+                    "66306",
+                    "60955374",
+                    "16832",
+                    "4096",
+                    "8",
+                    "2"
+                  ]
+                },
+                "paper_sha256": "c9e225e3a7e05e329227e74420d885b7b21d060e3bea6680ea1707134fd6d075",
+                "pid": 7,
+                "point": "native_save_allowance_reserved",
+                "policy_calls": 1,
+                "writer": {
+                  "current": {
+                    "device": 66306,
+                    "inode": 60955382,
+                    "length": 301880,
+                    "sha256": "c9e225e3a7e05e329227e74420d885b7b21d060e3bea6680ea1707134fd6d075"
+                  },
+                  "last": {
+                    "receipt_sha256": "f79f1862f98a1909d4ffe4ef365df5431ab0fcb74737a27b91baccf9d8a4820a",
+                    "slot": 2
+                  },
+                  "next_slot": 3,
+                  "operation": null
+                }
+              }
+            },
+            "exit": {
+              "path": "/out/cases/test_g_actual_allowance_before_effects-tvfcu39a/actual-child-exit.json",
+              "physical": {
+                "st_ctime_ns": "1792377901700397218",
+                "st_dev": "66306",
+                "st_ino": "60955504",
+                "st_mtime_ns": "1792377901700397218",
+                "st_size": "184"
+              },
+              "sha256": "baf4909f8563218e34808184753d435ba889546bcf37119b7d37e59ad02b3d93",
+              "value": {
+                "exitcode": -9,
+                "head": "8c0a45e8255ab502e13d39652c2e0b2eed7acd2538e1ccbd49b8c521524e7ec5",
+                "pid": 7,
+                "point": "native_save_allowance_reserved",
+                "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+              }
+            }
+          },
+          {
+            "cut": {
+              "path": "/out/cases/test_h_actual_pending_before_native-na0vjc7n/actual-child-cut.json",
+              "physical": {
+                "st_ctime_ns": "1792377912135101863",
+                "st_dev": "66306",
+                "st_ino": "60956167",
+                "st_mtime_ns": "1792377912135101863",
+                "st_size": "8960"
+              },
+              "sha256": "4504e649f4fd3494f3afc125f04c551dbd3437087e03a017e5ec4a5cbb038990",
+              "value": {
+                "allowance": {
+                  "claim": {
+                    "head": "8fb2bb7cad85c05a8392bad84227c6e1ee139df91654d908607f038b874365fc",
+                    "inputs": "307e64908243f4490bb59d5913813afb4e47d51057f09f49843805ed6e938172",
+                    "latch_session": null,
+                    "operation": "c3d5cedcd685ffa6051375afc4c3a6e812d9a98b056ee8e7997e13180b90f459",
+                    "phase": "OUTCOME_COMMITTED",
+                    "pool": {
+                      "account": "/out/cases/test_h_actual_pending_before_native-na0vjc7n/store/SYNTHETIC-reserved-workspace/work",
+                      "header_sha256": "de9182357baebb7042aa7704b5ba8600cf60e2ee358b477d9459177718fc6af9",
+                      "identity": "e13b03259b95797ed7032c9fb6397975f4c29d9d47dba6d5b15ee571644a26df",
+                      "root": "/out/cases/test_h_actual_pending_before_native-na0vjc7n/store/reserved-protocol",
+                      "schema": "synthetic-reserved-protocol-metadata/1"
+                    },
+                    "schema": "synthetic-reserved-protocol-metadata/1",
+                    "slot": 5
+                  },
+                  "result": null,
+                  "save_allowance": {
+                    "count": 1,
+                    "first": 3
+                  },
+                  "status": "OPEN"
+                },
+                "broker_raw": "{\"schema\":\"private-n2-broker-checkpoint/1\",\"private_synthetic_only\":true,\"identity\":{\"backend_image\":\"sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272\",\"broker_sha256\":\"c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616\",\"calendar_sha256\":\"f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4\",\"holding_config_sha256\":\"f96a29777403f5f08623709b70f36b15300500065202acbd215cd43f3c99a588\",\"holding_release_sha256\":\"1c1c6e9bcc7e9fa8d095f6ce5e6bf973c99ed19531e88c38a9aba5ed8410cd3e\",\"source_revision\":\"3b72cd4e0bc15acd24432d501918c721685a5333\",\"source_sha256\":{\"backend/agents/trading/desk/event_execution.py\":\"76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f\",\"backend/agents/trading/desk/event_risk.py\":\"34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973\",\"backend/agents/trading/desk/funded_execution.py\":\"6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c\",\"backend/agents/trading/desk/intraday_orders.py\":\"ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c\",\"backend/agents/trading/desk/nightly_plan.py\":\"9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca\",\"backend/agents/trading/desk/paper.py\":\"a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c\",\"backend/api/v1/market.py\":\"fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88\",\"backend/cli/market_daily.py\":\"0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819\",\"backend/market/adaptive_growth_policy.py\":\"35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34\",\"backend/market/alpaca_trading.py\":\"105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2\",\"backend/market/decision_view.py\":\"8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca\",\"backend/market/entry_timing.py\":\"f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88\",\"backend/market/forward_arithmetic.py\":\"9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882\",\"backend/market/forward_execution.py\":\"62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295\",\"backend/market/forward_market_evidence.py\":\"737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2\",\"backend/market/forward_probability_timing.py\":\"0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92\",\"backend/market/grade_led_policy.py\":\"4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66\",\"backend/market/holding_risk_bank.py\":\"4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158\",\"backend/market/joint_funded_policy.py\":\"5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339\",\"backend/market/learned_holding_transition.py\":\"c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55\",\"backend/market/learned_live_holding.py\":\"25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1\",\"backend/market/learned_live_timing.py\":\"80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f\",\"backend/market/learned_order_observation.py\":\"e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff\",\"backend/market/learned_personal_guidance.py\":\"37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721\",\"backend/market/live_model_decision.py\":\"b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93\",\"backend/market/live_probability_timing.py\":\"3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721\",\"backend/market/market_conditioned_holding.py\":\"e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4\",\"backend/market/personal_history.py\":\"8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a\",\"backend/market/sequential_shadow_context.py\":\"5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92\",\"docs/research/grade-led-sizing-contract-2026-10-13.md\":\"51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6\",\"docs/research/learned-held-transition-2026-10-07.md\":\"f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a\"},\"timing_config_sha256\":\"d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a\"},\"identity_sha256\":\"e13b03259b95797ed7032c9fb6397975f4c29d9d47dba6d5b15ee571644a26df\",\"caps\":{\"bytes\":8388608,\"names\":256,\"orders\":8192,\"attempts\":16384,\"fills\":8192,\"actions\":8192,\"dividends\":8192,\"claims_per_kind\":2048,\"records\":32768,\"string_chars\":512,\"depth\":16},\"codec_sha256\":\"703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08\",\"state\":{\"map\":[[\"_cash\",99499.5],[\"cost_bps\",10.0],[\"_held\",{\"map\":[[\"AAPL\",5]]}],[\"_average\",{\"map\":[[\"AAPL\",100.0]]}],[\"_orders\",{\"map\":[[\"SYNTHETIC-reserved-outcome\",{\"map\":[[\"id\",\"private-replay-0\"],[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",\"5\"],[\"type\",\"market\"],[\"time_in_force\",\"day\"],[\"status\",\"filled\"],[\"filled_qty\",\"5\"],[\"filled_avg_price\",\"100.0\"],[\"created_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"submitted_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"execution_phase\",\"market\"],[\"execute_on\",\"2019-03-01\"],[\"reserved_cash\",0.0],[\"fee\",0.5],[\"filled_at\",\"2019-03-01T14:45:33+00:00\"]]}]]}],[\"_attempts\",{\"list\":[{\"map\":[[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",5],[\"at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"observed_price\",100.0],[\"available_cash\",100000.0],[\"accepted\",true],[\"reason\",null]]}]}],[\"_fills\",{\"list\":[{\"map\":[[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"requested_qty\",5],[\"filled_qty\",5],[\"price\",100.0],[\"fee\",0.5],[\"at\",\"2019-03-01T14:45:33+00:00\"],[\"status\",\"filled\"],[\"reason\",\"filled\"]]}]}],[\"_actions\",{\"map\":[]}],[\"_dividends\",{\"list\":[]}],[\"_marks\",{\"map\":[[\"AAPL\",100.0]]}],[\"_mark_times\",{\"map\":[[\"AAPL\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}]]}],[\"_security_distributions\",{\"list\":[]}],[\"_security_exchanges\",{\"list\":[]}],[\"_share_consolidations\",{\"list\":[]}],[\"_cash_mergers\",{\"list\":[]}],[\"_now\",{\"datetime\":\"2019-03-01T14:45:33+00:00\"}],[\"_observed_at\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}],[\"_market_open\",true],[\"_batch_open\",false],[\"_last_equity\",100000.0]]}}",
+                "broker_sha256": "a610d03fbe7174407d8b33ee7f13468b747b703c4bc60576b7892d535463fa4b",
+                "directory_cursor": {
+                  "current": {
+                    "device": 66306,
+                    "inode": 60956046,
+                    "length": 301880,
+                    "sha256": "acf5c284c76d81e246152898a2d6c8abc589dca6725c07e4ea0c396d68a4b2b2"
+                  },
+                  "last": {
+                    "receipt_sha256": "3c54b03dae15818cba1de56d3ab65097c30542ce97a49dba6a41cd37cb784103",
+                    "slot": 2
+                  },
+                  "next_slot": 3,
+                  "operation": null
+                },
+                "directory_pending": {
+                  "before": {
+                    "current": {
+                      "device": 66306,
+                      "inode": 60956046,
+                      "length": 301880,
+                      "sha256": "acf5c284c76d81e246152898a2d6c8abc589dca6725c07e4ea0c396d68a4b2b2"
+                    },
+                    "last": {
+                      "receipt_sha256": "3c54b03dae15818cba1de56d3ab65097c30542ce97a49dba6a41cd37cb784103",
+                      "slot": 2
+                    },
+                    "next_slot": 3,
+                    "operation": null
+                  },
+                  "phase": 5,
+                  "slot": 3
+                },
+                "directory_records": 3,
+                "head": "8fb2bb7cad85c05a8392bad84227c6e1ee139df91654d908607f038b874365fc",
+                "kind": "native-save-slot-final",
+                "native_directories": {
+                  ".": [
+                    "66306",
+                    "60956034",
+                    "16832",
+                    "4096",
+                    "8",
+                    "5"
+                  ],
+                  "anchors": [
+                    "66306",
+                    "60956035",
+                    "16832",
+                    "4096",
+                    "8",
+                    "2"
+                  ],
+                  "receipts": [
+                    "66306",
+                    "60956036",
+                    "16832",
+                    "4096",
+                    "8",
+                    "2"
+                  ],
+                  "work": [
+                    "66306",
+                    "60956037",
+                    "16832",
+                    "4096",
+                    "8",
+                    "4"
+                  ],
+                  "work/operations": [
+                    "66306",
+                    "60956125",
+                    "16832",
+                    "4096",
+                    "8",
+                    "2"
+                  ],
+                  "work/paper": [
+                    "66306",
+                    "60956038",
+                    "16832",
+                    "4096",
+                    "8",
+                    "2"
+                  ]
+                },
+                "paper_sha256": "acf5c284c76d81e246152898a2d6c8abc589dca6725c07e4ea0c396d68a4b2b2",
+                "pid": 8,
+                "point": "native_directory_pending",
+                "policy_calls": 1,
+                "writer": {
+                  "current": {
+                    "device": 66306,
+                    "inode": 60956046,
+                    "length": 301880,
+                    "sha256": "acf5c284c76d81e246152898a2d6c8abc589dca6725c07e4ea0c396d68a4b2b2"
+                  },
+                  "last": {
+                    "receipt_sha256": "3c54b03dae15818cba1de56d3ab65097c30542ce97a49dba6a41cd37cb784103",
+                    "slot": 2
+                  },
+                  "next_slot": 3,
+                  "operation": null
+                }
+              }
+            },
+            "exit": {
+              "path": "/out/cases/test_h_actual_pending_before_native-na0vjc7n/actual-child-exit.json",
+              "physical": {
+                "st_ctime_ns": "1792377912145321857",
+                "st_dev": "66306",
+                "st_ino": "60956168",
+                "st_mtime_ns": "1792377912145321857",
+                "st_size": "178"
+              },
+              "sha256": "9e35195aec0a841c0740062497b657bac23da6d0bd0ae41bb5a6158227f57300",
+              "value": {
+                "exitcode": -9,
+                "head": "8fb2bb7cad85c05a8392bad84227c6e1ee139df91654d908607f038b874365fc",
+                "pid": 8,
+                "point": "native_directory_pending",
+                "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+              }
+            }
+          },
+          {
+            "cut": {
+              "path": "/out/cases/test_i_actual_original_result_before_seal-af7qbsyh/actual-child-cut.json",
+              "physical": {
+                "st_ctime_ns": "1792377924480737400",
+                "st_dev": "66306",
+                "st_ino": "60956831",
+                "st_mtime_ns": "1792377924480737400",
+                "st_size": "8681"
+              },
+              "sha256": "1e5c677308d0fe5b62131934a600f3327c3f75a30743de1db7e3aea209e1cdfc",
+              "value": {
+                "allowance": {
+                  "claim": {
+                    "head": "f79cdc20038ffedf0a7782bf90997b0b7c752251b5e8150f6c5dec9e3c0fec93",
+                    "inputs": "ebba231ee4f300e49a428c17af3a117872f3086870341e687bd0e9a9a0c53288",
+                    "latch_session": null,
+                    "operation": "359c04733b75272cd71fd120335c894aa7b96d5a0b001f9658b92ee6e8f46247",
+                    "phase": "OUTCOME_COMMITTED",
+                    "pool": {
+                      "account": "/out/cases/test_i_actual_original_result_before_seal-af7qbsyh/store/SYNTHETIC-reserved-workspace/work",
+                      "header_sha256": "203595c56750f53c8dbb2a3d27de3856410165d846227b44988e27d75e637f5f",
+                      "identity": "e13b03259b95797ed7032c9fb6397975f4c29d9d47dba6d5b15ee571644a26df",
+                      "root": "/out/cases/test_i_actual_original_result_before_seal-af7qbsyh/store/reserved-protocol",
+                      "schema": "synthetic-reserved-protocol-metadata/1"
+                    },
+                    "schema": "synthetic-reserved-protocol-metadata/1",
+                    "slot": 5
+                  },
+                  "result": null,
+                  "save_allowance": {
+                    "count": 1,
+                    "first": 3
+                  },
+                  "status": "OPEN"
+                },
+                "broker_raw": "{\"schema\":\"private-n2-broker-checkpoint/1\",\"private_synthetic_only\":true,\"identity\":{\"backend_image\":\"sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272\",\"broker_sha256\":\"c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616\",\"calendar_sha256\":\"f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4\",\"holding_config_sha256\":\"f96a29777403f5f08623709b70f36b15300500065202acbd215cd43f3c99a588\",\"holding_release_sha256\":\"1c1c6e9bcc7e9fa8d095f6ce5e6bf973c99ed19531e88c38a9aba5ed8410cd3e\",\"source_revision\":\"3b72cd4e0bc15acd24432d501918c721685a5333\",\"source_sha256\":{\"backend/agents/trading/desk/event_execution.py\":\"76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f\",\"backend/agents/trading/desk/event_risk.py\":\"34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973\",\"backend/agents/trading/desk/funded_execution.py\":\"6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c\",\"backend/agents/trading/desk/intraday_orders.py\":\"ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c\",\"backend/agents/trading/desk/nightly_plan.py\":\"9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca\",\"backend/agents/trading/desk/paper.py\":\"a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c\",\"backend/api/v1/market.py\":\"fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88\",\"backend/cli/market_daily.py\":\"0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819\",\"backend/market/adaptive_growth_policy.py\":\"35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34\",\"backend/market/alpaca_trading.py\":\"105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2\",\"backend/market/decision_view.py\":\"8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca\",\"backend/market/entry_timing.py\":\"f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88\",\"backend/market/forward_arithmetic.py\":\"9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882\",\"backend/market/forward_execution.py\":\"62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295\",\"backend/market/forward_market_evidence.py\":\"737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2\",\"backend/market/forward_probability_timing.py\":\"0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92\",\"backend/market/grade_led_policy.py\":\"4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66\",\"backend/market/holding_risk_bank.py\":\"4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158\",\"backend/market/joint_funded_policy.py\":\"5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339\",\"backend/market/learned_holding_transition.py\":\"c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55\",\"backend/market/learned_live_holding.py\":\"25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1\",\"backend/market/learned_live_timing.py\":\"80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f\",\"backend/market/learned_order_observation.py\":\"e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff\",\"backend/market/learned_personal_guidance.py\":\"37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721\",\"backend/market/live_model_decision.py\":\"b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93\",\"backend/market/live_probability_timing.py\":\"3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721\",\"backend/market/market_conditioned_holding.py\":\"e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4\",\"backend/market/personal_history.py\":\"8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a\",\"backend/market/sequential_shadow_context.py\":\"5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92\",\"docs/research/grade-led-sizing-contract-2026-10-13.md\":\"51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6\",\"docs/research/learned-held-transition-2026-10-07.md\":\"f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a\"},\"timing_config_sha256\":\"d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a\"},\"identity_sha256\":\"e13b03259b95797ed7032c9fb6397975f4c29d9d47dba6d5b15ee571644a26df\",\"caps\":{\"bytes\":8388608,\"names\":256,\"orders\":8192,\"attempts\":16384,\"fills\":8192,\"actions\":8192,\"dividends\":8192,\"claims_per_kind\":2048,\"records\":32768,\"string_chars\":512,\"depth\":16},\"codec_sha256\":\"703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08\",\"state\":{\"map\":[[\"_cash\",99499.5],[\"cost_bps\",10.0],[\"_held\",{\"map\":[[\"AAPL\",5]]}],[\"_average\",{\"map\":[[\"AAPL\",100.0]]}],[\"_orders\",{\"map\":[[\"SYNTHETIC-reserved-outcome\",{\"map\":[[\"id\",\"private-replay-0\"],[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",\"5\"],[\"type\",\"market\"],[\"time_in_force\",\"day\"],[\"status\",\"filled\"],[\"filled_qty\",\"5\"],[\"filled_avg_price\",\"100.0\"],[\"created_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"submitted_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"execution_phase\",\"market\"],[\"execute_on\",\"2019-03-01\"],[\"reserved_cash\",0.0],[\"fee\",0.5],[\"filled_at\",\"2019-03-01T14:45:33+00:00\"]]}]]}],[\"_attempts\",{\"list\":[{\"map\":[[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",5],[\"at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"observed_price\",100.0],[\"available_cash\",100000.0],[\"accepted\",true],[\"reason\",null]]}]}],[\"_fills\",{\"list\":[{\"map\":[[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"requested_qty\",5],[\"filled_qty\",5],[\"price\",100.0],[\"fee\",0.5],[\"at\",\"2019-03-01T14:45:33+00:00\"],[\"status\",\"filled\"],[\"reason\",\"filled\"]]}]}],[\"_actions\",{\"map\":[]}],[\"_dividends\",{\"list\":[]}],[\"_marks\",{\"map\":[[\"AAPL\",100.0]]}],[\"_mark_times\",{\"map\":[[\"AAPL\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}]]}],[\"_security_distributions\",{\"list\":[]}],[\"_security_exchanges\",{\"list\":[]}],[\"_share_consolidations\",{\"list\":[]}],[\"_cash_mergers\",{\"list\":[]}],[\"_now\",{\"datetime\":\"2019-03-01T14:45:33+00:00\"}],[\"_observed_at\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}],[\"_market_open\",true],[\"_batch_open\",false],[\"_last_equity\",100000.0]]}}",
+                "broker_sha256": "a610d03fbe7174407d8b33ee7f13468b747b703c4bc60576b7892d535463fa4b",
+                "directory_cursor": {
+                  "current": {
+                    "device": 66306,
+                    "inode": 60956712,
+                    "length": 301990,
+                    "sha256": "c50b4352a68cd8103a08d95a0c4375ef6c2241987ce7699ded6a47fd1cc6004f"
+                  },
+                  "last": {
+                    "receipt_sha256": "e55cb5d794409c90556409c2b0dda5096bd93620432a84ac7f8454b97fc62fa5",
+                    "slot": 3
+                  },
+                  "next_slot": 4,
+                  "operation": null
+                },
+                "directory_pending": null,
+                "directory_records": 4,
+                "head": "68e6aeabd7cafd9f8f6e154e4ba52d09128e9381c08701551fb0237ddd2fa256",
+                "kind": "native-save-slot-final",
+                "native_directories": {
+                  ".": [
+                    "66306",
+                    "60956698",
+                    "16832",
+                    "4096",
+                    "8",
+                    "5"
+                  ],
+                  "anchors": [
+                    "66306",
+                    "60956699",
+                    "16832",
+                    "4096",
+                    "8",
+                    "2"
+                  ],
+                  "receipts": [
+                    "66306",
+                    "60956700",
+                    "16832",
+                    "4096",
+                    "8",
+                    "2"
+                  ],
+                  "work": [
+                    "66306",
+                    "60956701",
+                    "16832",
+                    "4096",
+                    "8",
+                    "4"
+                  ],
+                  "work/operations": [
+                    "66306",
+                    "60956789",
+                    "16832",
+                    "4096",
+                    "8",
+                    "2"
+                  ],
+                  "work/paper": [
+                    "66306",
+                    "60956702",
+                    "16832",
+                    "4096",
+                    "8",
+                    "2"
+                  ]
+                },
+                "paper_sha256": "c50b4352a68cd8103a08d95a0c4375ef6c2241987ce7699ded6a47fd1cc6004f",
+                "pid": 9,
+                "point": "reserved_final_result_written",
+                "policy_calls": 1,
+                "writer": {
+                  "current": {
+                    "device": 66306,
+                    "inode": 60956712,
+                    "length": 301990,
+                    "sha256": "c50b4352a68cd8103a08d95a0c4375ef6c2241987ce7699ded6a47fd1cc6004f"
+                  },
+                  "last": {
+                    "receipt_sha256": "e55cb5d794409c90556409c2b0dda5096bd93620432a84ac7f8454b97fc62fa5",
+                    "slot": 3
+                  },
+                  "next_slot": 4,
+                  "operation": null
+                }
+              }
+            },
+            "exit": {
+              "path": "/out/cases/test_i_actual_original_result_before_seal-af7qbsyh/actual-child-exit.json",
+              "physical": {
+                "st_ctime_ns": "1792377924490532014",
+                "st_dev": "66306",
+                "st_ino": "60956832",
+                "st_mtime_ns": "1792377924490532014",
+                "st_size": "183"
+              },
+              "sha256": "5ff02d5f09dd95dc351a2178e7132ff2f9d8a0ac9f6a6326178cbd298559ae51",
+              "value": {
+                "exitcode": -9,
+                "head": "68e6aeabd7cafd9f8f6e154e4ba52d09128e9381c08701551fb0237ddd2fa256",
+                "pid": 9,
+                "point": "reserved_final_result_written",
+                "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+              }
+            }
+          }
+        ],
+        "complete_inventory_encoding": {
+          "base64": "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",
+          "encoding": "gzip-base64-complete-json/1",
+          "gzip_bytes": 11158,
+          "gzip_sha256": "3c12a5ca8aa99964d0ff1b80327f5ca6c856b4e421629948e33129394487ce77",
+          "raw_bytes": 158815,
+          "raw_sha256": "bbda02cba6843ddd49bb79b35de175ba0bb8a07b1433c9fc2b0fb9410eecb6b6"
+        },
+        "directory_distinct_inodes": 12,
+        "directory_totals": [
+          {
+            "allocated_bytes": 790528,
+            "logical_bytes": 790528
+          },
+          {
+            "allocated_bytes": 790528,
+            "logical_bytes": 790528
+          },
+          {
+            "allocated_bytes": 790528,
+            "logical_bytes": 790528
+          }
+        ],
+        "distinct_inodes": 1548,
+        "inventories": 3,
+        "metadata_distinct_inodes": 111,
+        "metadata_totals": [
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          }
+        ],
+        "native_directory_distinct_inodes": 18,
+        "sqlite_distinct_inodes": 21,
+        "sqlite_totals": [
+          {
+            "allocated_bytes": 1843200,
+            "logical_bytes": 1843200
+          },
+          {
+            "allocated_bytes": 1843200,
+            "logical_bytes": 1843200
+          },
+          {
+            "allocated_bytes": 1843200,
+            "logical_bytes": 1843200
+          }
+        ]
+      },
+      "proof": {
+        "physical": {
+          "st_ctime_ns": "1792377925788599518",
+          "st_dev": "66306",
+          "st_ino": "60956833",
+          "st_mtime_ns": "1792377925788599518",
+          "st_size": "107982"
+        },
+        "sha256": "ab5dc252205d5d352a45f4e691587bda6f2729f428ccc6baa9202536f571f1b3"
+      },
+      "runtime": {
+        "cid": "828a1526b3d5f470ea262ae5455b26a19800c2752bb70be4f0643037b7e83d5b",
+        "full_mounts": [
+          {
+            "Destination": "/native",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/out",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": true,
+            "Source": "/home/animallya96/scratch/native-save-slots-20261019-v2-c/out",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_broker_checkpoint.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-cycle-outcome-20261018-v1-a/source/backend/market/historical_broker_checkpoint.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_reserved_blob_store.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-cycle-outcome-20261018-v1-a/source/backend/market/historical_reserved_blob_store.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_physical_checkpoint.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-protocol-metadata-20261018-v1-a/source/backend/market/historical_physical_checkpoint.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_conditional_nightly.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-sqlite-banks-20261018-v2-a/source/backend/market/historical_conditional_nightly.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/native-save-slots-20261019-v2-c/source",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/fixture",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/native-save-slots-20261019-v2-c/fixture",
+            "Type": "bind"
+          }
+        ],
+        "hostconfig_changes": {
+          "OomKillDisable": [
+            false,
+            null
+          ]
+        },
+        "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+        "mount_order_equal": false,
+        "state": {
+          "Dead": false,
+          "Error": "",
+          "ExitCode": 0,
+          "FinishedAt": "2026-10-19T02:45:25.836316229Z",
+          "OOMKilled": false,
+          "Paused": false,
+          "Pid": 0,
+          "Restarting": false,
+          "Running": false,
+          "StartedAt": "2026-10-19T02:44:51.793890296Z",
+          "Status": "exited"
+        }
+      },
+      "source_count": 33,
+      "source_pins": {
+        "/audit/backend/__init__.py": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5",
+        "/audit/backend/market/__init__.py": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e",
+        "/audit/backend/market/historical_broker_checkpoint.py": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08",
+        "/audit/backend/market/historical_conditional_cycle.py": "d74f8da8d7e55894a44967b184e1ca0369d96beea443dcbaa123822a7ab408d7",
+        "/audit/backend/market/historical_conditional_nightly.py": "ba56fb829e9d55cf8baed52e97784ddc4fab56134cb30bc297f2051db7942300",
+        "/audit/backend/market/historical_conditional_settlement.py": "9e194856545dbf07e0ba6f0f2af9b022f75f767ee6371bb6af1f85e522f4c90d",
+        "/audit/backend/market/historical_native_directory_binding.py": "8fbeb810503c349cc098f7f8622a82c881c9e21f65af5b814fcc7f636b5f8c48",
+        "/audit/backend/market/historical_native_metadata.py": "333c5d22c49e06742eb4cb50183bf90fa0859d0ce200d3be5f2a4914c8f71e21",
+        "/audit/backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+        "/audit/backend/market/historical_packet_demand.py": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0",
+        "/audit/backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+        "/audit/backend/market/historical_packet_spool.py": "705300210493d46e1a65225c371a05dd9bc8e30dff2c5ae8da43b85041b3f6ac",
+        "/audit/backend/market/historical_packet_store.py": "387ab41b3b83ac127d2489fedbb7a11908bba281e463a59a67437e985f3c2823",
+        "/audit/backend/market/historical_paper_component.py": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648",
+        "/audit/backend/market/historical_physical_checkpoint.py": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604",
+        "/audit/backend/market/historical_raw_cycle.py": "3e8b136e8f37e63600e008dd6e8e1bb238c72dd01538f420b3183148e0c270b4",
+        "/audit/backend/market/historical_raw_nightly.py": "df3e2589a5c209f0a40e39d1e4f1be421631892c894b6d40305c2b570e4a2feb",
+        "/audit/backend/market/historical_reserved_blob_store.py": "9058cf5f54902ef7043a1d95514e1262b8a47b405413d389d636f3a107260caf",
+        "/audit/backend/market/historical_reserved_cycle_final.py": "4719affc9a87aef161d49eaa982da76e195f542a66943c5f9a6bac687bdc4eea",
+        "/audit/backend/market/historical_reserved_cycle_stages.py": "b4b94550139c689018382d49b5c47afe1ea166ad8f5e12bb80a742230f1a5135",
+        "/audit/backend/market/historical_reserved_native_io.py": "a473940650a04b0cef6b5b7f83305a92e15c4a6f9ba484d07a9f97ecb176ff44",
+        "/audit/backend/market/historical_reserved_native_metadata.py": "23a60cfb3020ab333911592c47458b85541e1a59bdb0bd91ac8f39078f37cd51",
+        "/audit/backend/market/historical_reserved_protocol.py": "e5fe183efd639e8ec0b322481b958d87b1b1d7d6a13ea7855c830261970820c1",
+        "/audit/backend/market/historical_reserved_sqlite.py": "c665030aaf2dc4045dc966df2c432cb0ca9e2e6b3283da665e34311cfbbada0a",
+        "/audit/backend/market/historical_synthetic_native_write.py": "21f5c29c89405d6b9b59e081b14e6a2c649e4547b86dba9c314a7efba1fb7501",
+        "/audit/backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+        "/audit/backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "/audit/backend/tests/synthetic_native_save_slots_setup.py": "b1042637e01aa00ce4a613ab1b81eb59b1322128cdd0097db4b9c795cb1d16ab",
+        "/audit/backend/tests/test_historical_native_save_slots.py": "beb738ebe5fbfa76125559b3ec2488e91e915fadbffc0df3e3b39a87aa9546c2",
+        "/audit/run.py": "d47a364c58d5084a5aceb8d591d4e988ed1292be76be5db5ba396ee773e9853a",
+        "/fixture/current-identity.json": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d",
+        "/fixture/native-source-map.json": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5",
+        "/native/backend/cli/market_daily.py": "0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819"
+      },
+      "version": "2"
+    }
+  ],
+  "directory_capacity_reserved": false,
+  "hard_blocker": {
+    "callsite_consequence": "Original paper.save_state temporary.replace(path) (paper.py:433), failure cleanup temporary.unlink, and adapter post-save parent fsync cannot be certified allocation-free or pre-reserved. Full physical/genuine admission stays closed.",
+    "independent_product_progress": "Exact per-phase save counts now refuse insufficient finite native slots BEFORE submission observe/order or final flush, rather than detecting exhaustion after earlier selected effects.",
+    "unavailable_input": "A source/runtime/filesystem-bound allocator acknowledgement reserving native rename directory-entry and journal capacity; no such API/receipt exists in the current Path.replace-based storage interface."
+  },
+  "hash_budget": {
+    "limits": {
+      "CONTROL_A": 2097152,
+      "CONTROL_B": 2097152,
+      "CONTROL_C": 2097152,
+      "CONTROL_UNRUN": 2097152,
+      "DERIVED": 2097152,
+      "EVIDENCE": 4194304,
+      "SOURCE": 4194304
+    },
+    "separate_ledgers_not_whole_process_4MiB": true
+  },
+  "inventory_totals": {
+    "canonical_witness_bytes": 26542,
+    "distinct_original_cas_inodes": 4644,
+    "distinct_original_directory_binding_inodes": 36,
+    "distinct_original_metadata_inodes": 333,
+    "distinct_original_native_directories": 54,
+    "distinct_original_sqlite_inodes": 63,
+    "gzip_bytes": 33452,
+    "raw_bytes": 476375
+  },
+  "limitations": [
+    "Directory dev/ino/mode/size/block/nlink equality is a tested observation and fail-closed lineage invariant, NOT reserved directory-entry/journal capacity.",
+    "Named-vs-held descriptors plus advisory owner locks are not hostile concurrent-path-replacement isolation; native absolute Path.replace/unlink/mkdir semantics remain unchanged.",
+    "Three actual protocol-boundary process kills, not powerloss or inside native syscall/SQLite commit. Cuts occur after allowance persistence, after pending consumption before native write, and after original final result before seal; no Path.replace patch.",
+    "Two manually armed zero/count/downgrade negative units are not whole Cycle admission. Exact count-one mode refuses zero-save unavailable closes before result publication; no unavailable-close native-path test claim.",
+    "Four unchanged whole SOURCE-only RO file references; NEW31copiedpayloads482683B<524288, combined executed closure exceeds512KiB; synthetic context/policy/program/calendar/source-manifest and bypassed constructors remain explicit.",
+    "Native FILE-mode SQLite reservation, full filesystem capacity, whole832MB horizon/load-save/deepcopy/serialization/model RAM/twohost/genuine execution/native adoption/publication/API/UI remain unverified.",
+    "No fullunit/build/deploy/UI/model claim; Ruff unavailable; production unchanged; original timing FAILED/publication CLOSED/genuinev6 OPEN-PAUSED/no replay/adoption."
+  ],
+  "local_hash_work_before_output": {
+    "CONTROL_A": 1727502,
+    "CONTROL_B": 1727502,
+    "CONTROL_C": 1727502,
+    "CONTROL_UNRUN": 1541384,
+    "DERIVED": 791252,
+    "EVIDENCE": 2210752,
+    "SOURCE": 2784972
+  },
+  "local_inputs": {
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_broker_checkpoint.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792252269142498959",
+        "st_dev": "16777223",
+        "st_ino": "169476881",
+        "st_mtime_ns": "1792252269142498959",
+        "st_size": "40026"
+      },
+      "sha256": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_conditional_cycle.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792370252627361907",
+        "st_dev": "16777223",
+        "st_ino": "169484943",
+        "st_mtime_ns": "1792370252627361907",
+        "st_size": "61496"
+      },
+      "sha256": "d74f8da8d7e55894a44967b184e1ca0369d96beea443dcbaa123822a7ab408d7"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_conditional_nightly.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792370578661545566",
+        "st_dev": "16777223",
+        "st_ino": "169781386",
+        "st_mtime_ns": "1792370578661545566",
+        "st_size": "63878"
+      },
+      "sha256": "ba56fb829e9d55cf8baed52e97784ddc4fab56134cb30bc297f2051db7942300"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_conditional_settlement.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792354521769826098",
+        "st_dev": "16777223",
+        "st_ino": "169478369",
+        "st_mtime_ns": "1792354521769826098",
+        "st_size": "11377"
+      },
+      "sha256": "9e194856545dbf07e0ba6f0f2af9b022f75f767ee6371bb6af1f85e522f4c90d"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_native_directory_binding.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792377212754659235",
+        "st_dev": "16777223",
+        "st_ino": "192761612",
+        "st_mtime_ns": "1792377212754659235",
+        "st_size": "30314"
+      },
+      "sha256": "8fbeb810503c349cc098f7f8622a82c881c9e21f65af5b814fcc7f636b5f8c48"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_native_metadata.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792362839980927381",
+        "st_dev": "16777223",
+        "st_ino": "188347722",
+        "st_mtime_ns": "1792362839980927381",
+        "st_size": "7097"
+      },
+      "sha256": "333c5d22c49e06742eb4cb50183bf90fa0859d0ce200d3be5f2a4914c8f71e21"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_packet_checkpoint.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792245297505270888",
+        "st_dev": "16777223",
+        "st_ino": "169431282",
+        "st_mtime_ns": "1792245297505270888",
+        "st_size": "4763"
+      },
+      "sha256": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_packet_demand.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792252765099138572",
+        "st_dev": "16777223",
+        "st_ino": "169478340",
+        "st_mtime_ns": "1792252765099138572",
+        "st_size": "6666"
+      },
+      "sha256": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_packet_registry.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792245297506635487",
+        "st_dev": "16777223",
+        "st_ino": "169431285",
+        "st_mtime_ns": "1792245297506635487",
+        "st_size": "6645"
+      },
+      "sha256": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_packet_spool.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792250186761766611",
+        "st_dev": "16777223",
+        "st_ino": "169470207",
+        "st_mtime_ns": "1792250186761766611",
+        "st_size": "10414"
+      },
+      "sha256": "705300210493d46e1a65225c371a05dd9bc8e30dff2c5ae8da43b85041b3f6ac"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_packet_store.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792375537804944494",
+        "st_dev": "16777223",
+        "st_ino": "169470208",
+        "st_mtime_ns": "1792375537804944494",
+        "st_size": "53910"
+      },
+      "sha256": "387ab41b3b83ac127d2489fedbb7a11908bba281e463a59a67437e985f3c2823"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_paper_component.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792353414050181307",
+        "st_dev": "16777223",
+        "st_ino": "187885217",
+        "st_mtime_ns": "1792353414050181307",
+        "st_size": "4280"
+      },
+      "sha256": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_physical_checkpoint.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792352115745890961",
+        "st_dev": "16777223",
+        "st_ino": "187748374",
+        "st_mtime_ns": "1792352115745890961",
+        "st_size": "36101"
+      },
+      "sha256": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_raw_cycle.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792370252588872967",
+        "st_dev": "16777223",
+        "st_ino": "188810040",
+        "st_mtime_ns": "1792370252588872967",
+        "st_size": "7538"
+      },
+      "sha256": "3e8b136e8f37e63600e008dd6e8e1bb238c72dd01538f420b3183148e0c270b4"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_raw_nightly.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792370870086870116",
+        "st_dev": "16777223",
+        "st_ino": "188564953",
+        "st_mtime_ns": "1792370870086870116",
+        "st_size": "31820"
+      },
+      "sha256": "df3e2589a5c209f0a40e39d1e4f1be421631892c894b6d40305c2b570e4a2feb"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_blob_store.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792363186193468673",
+        "st_dev": "16777223",
+        "st_ino": "189412902",
+        "st_mtime_ns": "1792363186193468673",
+        "st_size": "28606"
+      },
+      "sha256": "9058cf5f54902ef7043a1d95514e1262b8a47b405413d389d636f3a107260caf"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_cycle_final.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792370564413971864",
+        "st_dev": "16777223",
+        "st_ino": "190082780",
+        "st_mtime_ns": "1792370564413971864",
+        "st_size": "19999"
+      },
+      "sha256": "4719affc9a87aef161d49eaa982da76e195f542a66943c5f9a6bac687bdc4eea"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_cycle_stages.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792370564413210232",
+        "st_dev": "16777223",
+        "st_ino": "189716512",
+        "st_mtime_ns": "1792370564413210232",
+        "st_size": "40294"
+      },
+      "sha256": "b4b94550139c689018382d49b5c47afe1ea166ad8f5e12bb80a742230f1a5135"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_native_io.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792377193634666573",
+        "st_dev": "16777223",
+        "st_ino": "189195866",
+        "st_mtime_ns": "1792377193634666573",
+        "st_size": "23050"
+      },
+      "sha256": "a473940650a04b0cef6b5b7f83305a92e15c4a6f9ba484d07a9f97ecb176ff44"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_native_metadata.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792363287442675657",
+        "st_dev": "16777223",
+        "st_ino": "189451472",
+        "st_mtime_ns": "1792363287442675657",
+        "st_size": "7719"
+      },
+      "sha256": "23a60cfb3020ab333911592c47458b85541e1a59bdb0bd91ac8f39078f37cd51"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_protocol.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792375247885110690",
+        "st_dev": "16777223",
+        "st_ino": "190825582",
+        "st_mtime_ns": "1792375247885110690",
+        "st_size": "29036"
+      },
+      "sha256": "e5fe183efd639e8ec0b322481b958d87b1b1d7d6a13ea7855c830261970820c1"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_sqlite.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792373904997309194",
+        "st_dev": "16777223",
+        "st_ino": "191805420",
+        "st_mtime_ns": "1792373904997309194",
+        "st_size": "28980"
+      },
+      "sha256": "c665030aaf2dc4045dc966df2c432cb0ca9e2e6b3283da665e34311cfbbada0a"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_synthetic_native_write.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792360808501541443",
+        "st_dev": "16777223",
+        "st_ino": "189178492",
+        "st_mtime_ns": "1792360808501541443",
+        "st_size": "28492"
+      },
+      "sha256": "21f5c29c89405d6b9b59e081b14e6a2c649e4547b86dba9c314a7efba1fb7501"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_timing_packet.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792241371433295533",
+        "st_dev": "16777223",
+        "st_ino": "169405635",
+        "st_mtime_ns": "1792241371433295533",
+        "st_size": "18520"
+      },
+      "sha256": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/tests/synthetic_native_save_slots_setup.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792377224531482655",
+        "st_dev": "16777223",
+        "st_ino": "193538048",
+        "st_mtime_ns": "1792377224531482655",
+        "st_size": "20293"
+      },
+      "sha256": "b1042637e01aa00ce4a613ab1b81eb59b1322128cdd0097db4b9c795cb1d16ab"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/tests/test_historical_native_save_slots.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792377501283392118",
+        "st_dev": "16777223",
+        "st_ino": "193562966",
+        "st_mtime_ns": "1792377501283392118",
+        "st_size": "16528"
+      },
+      "sha256": "beb738ebe5fbfa76125559b3ec2488e91e915fadbffc0df3e3b39a87aa9546c2"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/scripts/run_native_save_slots.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792377381387966514",
+        "st_dev": "16777223",
+        "st_ino": "193591277",
+        "st_mtime_ns": "1792377381387966514",
+        "st_size": "9021"
+      },
+      "sha256": "d47a364c58d5084a5aceb8d591d4e988ed1292be76be5db5ba396ee773e9853a"
+    },
+    "/tmp/collect_native_save_slots_evidence_20261019.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792377825013890923",
+        "st_dev": "16777223",
+        "st_ino": "193718700",
+        "st_mtime_ns": "1792377825013890923",
+        "st_size": "31690"
+      },
+      "sha256": "41c892ef87b05190e91a6e4048d805b32872c88c043f03eaee252cfe82fcc284"
+    },
+    "/tmp/get_native_save_slots_results_transport_v2_a_20261019.py": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377681973203749",
+        "st_dev": "16777223",
+        "st_ino": "193683109",
+        "st_mtime_ns": "1792377681973203749",
+        "st_size": "392"
+      },
+      "sha256": "854ee2fc6d44460b8d83b8591a69651ddaa1d541db0943a5e7e7c443ea4d8291"
+    },
+    "/tmp/get_native_save_slots_results_transport_v2_b_20261019.py": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377824113351086",
+        "st_dev": "16777223",
+        "st_ino": "193727756",
+        "st_mtime_ns": "1792377824113351086",
+        "st_size": "392"
+      },
+      "sha256": "41dfdbf77020e235b9a91d67eff32a41ff3df4873195ebd27d308fe215ab34f8"
+    },
+    "/tmp/get_native_save_slots_results_transport_v2_c_20261019.py": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377952343691434",
+        "st_dev": "16777223",
+        "st_ino": "193768027",
+        "st_mtime_ns": "1792377952343691434",
+        "st_size": "392"
+      },
+      "sha256": "80e0352c2af996bc0bf15bb425f5afff8cf6b40e0bdcea11abf8dcab748db88a"
+    },
+    "/tmp/get_native_save_slots_results_v2_a_20261019.py": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377681959115393",
+        "st_dev": "16777223",
+        "st_ino": "193683108",
+        "st_mtime_ns": "1792377681959115393",
+        "st_size": "2050"
+      },
+      "sha256": "7f9e29f9b4267803cfe75e88988b529fe5652c3f92102b5a513b2ac2dc8ace43"
+    },
+    "/tmp/get_native_save_slots_results_v2_b_20261019.py": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377824103089612",
+        "st_dev": "16777223",
+        "st_ino": "193727751",
+        "st_mtime_ns": "1792377824103089612",
+        "st_size": "2050"
+      },
+      "sha256": "dafea9aff3b03ca143d1da3fad09b9ab853d0c8b9bb378519a58a3220a98f2aa"
+    },
+    "/tmp/get_native_save_slots_results_v2_c_20261019.py": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377952324368295",
+        "st_dev": "16777223",
+        "st_ino": "193768020",
+        "st_mtime_ns": "1792377952324368295",
+        "st_size": "2050"
+      },
+      "sha256": "ce3ebc6f15e779fb6e221335f34ea5762f600c2154acbb13916a040bb37892db"
+    },
+    "/tmp/launch_native_save_slots_v1_a_20261019.py": {
+      "category": "CONTROL_UNRUN",
+      "physical": {
+        "st_ctime_ns": "1792377512186411101",
+        "st_dev": "16777223",
+        "st_ino": "193606371",
+        "st_mtime_ns": "1792377512186411101",
+        "st_size": "11244"
+      },
+      "sha256": "21852d62a8633aa53d0f4dc132e71e01f96f5d8160e6a038ae32e306fd985730"
+    },
+    "/tmp/launch_native_save_slots_v1_b_20261019.py": {
+      "category": "CONTROL_UNRUN",
+      "physical": {
+        "st_ctime_ns": "1792377545699946769",
+        "st_dev": "16777223",
+        "st_ino": "193639121",
+        "st_mtime_ns": "1792377545699946769",
+        "st_size": "11244"
+      },
+      "sha256": "e8011fae9ec45009f8e0889c8357a23ce84cdb35dc84551e59d1d1a3f2273af4"
+    },
+    "/tmp/launch_native_save_slots_v1_c_20261019.py": {
+      "category": "CONTROL_UNRUN",
+      "physical": {
+        "st_ctime_ns": "1792377545730793494",
+        "st_dev": "16777223",
+        "st_ino": "193639134",
+        "st_mtime_ns": "1792377545730793494",
+        "st_size": "11244"
+      },
+      "sha256": "0521d54ecb370fd4b7d0a201a33c1f178bf30296aa6e85ee0216b56dfb171734"
+    },
+    "/tmp/launch_native_save_slots_v2_a_20261019.py": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377569132633615",
+        "st_dev": "16777223",
+        "st_ino": "193646768",
+        "st_mtime_ns": "1792377569132633615",
+        "st_size": "11303"
+      },
+      "sha256": "de81151682259f2eafa9058763741c84e9f7dd2bb9f02c91c5b86b9fc10f1de9"
+    },
+    "/tmp/launch_native_save_slots_v2_b_20261019.py": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377569160599036",
+        "st_dev": "16777223",
+        "st_ino": "193646770",
+        "st_mtime_ns": "1792377569160599036",
+        "st_size": "11303"
+      },
+      "sha256": "95a31cf1876516b22d157810beab80757a62eb710ca66504de912416e9727471"
+    },
+    "/tmp/launch_native_save_slots_v2_c_20261019.py": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377569186829555",
+        "st_dev": "16777223",
+        "st_ino": "193646772",
+        "st_mtime_ns": "1792377569186829555",
+        "st_size": "11303"
+      },
+      "sha256": "c951c758297f57e0572fa8bad06c6bbb90773592e6ea1ec2508a15a0d4b0bbb0"
+    },
+    "/tmp/native-save-slots-20261019-v1-a/launcher.py": {
+      "category": "CONTROL_UNRUN",
+      "physical": {
+        "st_ctime_ns": "1792377524057256014",
+        "st_dev": "16777223",
+        "st_ino": "193634656",
+        "st_mtime_ns": "1792377524057256014",
+        "st_size": "11244"
+      },
+      "sha256": "21852d62a8633aa53d0f4dc132e71e01f96f5d8160e6a038ae32e306fd985730"
+    },
+    "/tmp/native-save-slots-20261019-v1-a/preflight-argv.json": {
+      "category": "CONTROL_UNRUN",
+      "physical": {
+        "st_ctime_ns": "1792377524058411331",
+        "st_dev": "16777223",
+        "st_ino": "193634657",
+        "st_mtime_ns": "1792377524058411331",
+        "st_size": "20015"
+      },
+      "sha256": "c7e29cbcd882dbcd761d0d957130639247839d7f1cf7cbb57044021bd8ddd948"
+    },
+    "/tmp/native-save-slots-20261019-v1-a/preflight-exit.json": {
+      "category": "CONTROL_UNRUN",
+      "physical": {
+        "st_ctime_ns": "1792377524840706406",
+        "st_dev": "16777223",
+        "st_ino": "193634661",
+        "st_mtime_ns": "1792377524840706406",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/native-save-slots-20261019-v1-a/preflight-input.bin": {
+      "category": "CONTROL_UNRUN",
+      "physical": {
+        "st_ctime_ns": "1792377524058842324",
+        "st_dev": "16777223",
+        "st_ino": "193634658",
+        "st_mtime_ns": "1792377524058766611",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v1-a/preflight-stderr": {
+      "category": "CONTROL_UNRUN",
+      "physical": {
+        "st_ctime_ns": "1792377524059313949",
+        "st_dev": "16777223",
+        "st_ino": "193634660",
+        "st_mtime_ns": "1792377524059259027",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v1-a/preflight-stdout": {
+      "category": "CONTROL_UNRUN",
+      "physical": {
+        "st_ctime_ns": "1792377524808967916",
+        "st_dev": "16777223",
+        "st_ino": "193634659",
+        "st_mtime_ns": "1792377524808967916",
+        "st_size": "244904"
+      },
+      "sha256": "229ba7d237f2e047c00ba18e0b2c167716254d40639883fec8717e8c8aa69113"
+    },
+    "/tmp/native-save-slots-20261019-v1-a/remote.py": {
+      "category": "CONTROL_UNRUN",
+      "physical": {
+        "st_ctime_ns": "1792377524055521088",
+        "st_dev": "16777223",
+        "st_ino": "193634654",
+        "st_mtime_ns": "1792377524055521088",
+        "st_size": "16451"
+      },
+      "sha256": "caa753b2420a67ed6c4747e144870d4724e0619acedb2e2c3b00e34fdff26f07"
+    },
+    "/tmp/native-save-slots-20261019-v1-a/runner.py": {
+      "category": "CONTROL_UNRUN",
+      "physical": {
+        "st_ctime_ns": "1792377524056551458",
+        "st_dev": "16777223",
+        "st_ino": "193634655",
+        "st_mtime_ns": "1792377524056551458",
+        "st_size": "9021"
+      },
+      "sha256": "d47a364c58d5084a5aceb8d591d4e988ed1292be76be5db5ba396ee773e9853a"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/execute-argv.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377643146729974",
+        "st_dev": "16777223",
+        "st_ino": "193670306",
+        "st_mtime_ns": "1792377643146729974",
+        "st_size": "20078"
+      },
+      "sha256": "14c8ea8e2e440757ea67c13fa2b288e65c76ea4caf9e5c892f52836ce2e5aac1"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/execute-exit.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377669966465709",
+        "st_dev": "16777223",
+        "st_ino": "193679116",
+        "st_mtime_ns": "1792377669966465709",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/execute-input.bin": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377643147070321",
+        "st_dev": "16777223",
+        "st_ino": "193670307",
+        "st_mtime_ns": "1792377643147008199",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/execute-stderr": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377643147580957",
+        "st_dev": "16777223",
+        "st_ino": "193670309",
+        "st_mtime_ns": "1792377643147503939",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/execute-stdout": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377669948282318",
+        "st_dev": "16777223",
+        "st_ino": "193670308",
+        "st_mtime_ns": "1792377669948282318",
+        "st_size": "240"
+      },
+      "sha256": "a063dc3953b90603d8087698fe4a3628fd84016893af0b807e6fa36f7a0da68c"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/launcher.py": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377601271269501",
+        "st_dev": "16777223",
+        "st_ino": "193656889",
+        "st_mtime_ns": "1792377601271269501",
+        "st_size": "11303"
+      },
+      "sha256": "de81151682259f2eafa9058763741c84e9f7dd2bb9f02c91c5b86b9fc10f1de9"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/preflight-argv.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377601273174386",
+        "st_dev": "16777223",
+        "st_ino": "193656890",
+        "st_mtime_ns": "1792377601273174386",
+        "st_size": "20015"
+      },
+      "sha256": "85bc14beee315f6e913005d79451729c8197a9059a6b0f81d2fa79a6225914c3"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/preflight-exit.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377601992531828",
+        "st_dev": "16777223",
+        "st_ino": "193657181",
+        "st_mtime_ns": "1792377601992531828",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/preflight-input.bin": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377601273637095",
+        "st_dev": "16777223",
+        "st_ino": "193656891",
+        "st_mtime_ns": "1792377601273579451",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/preflight-stderr": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377601274049723",
+        "st_dev": "16777223",
+        "st_ino": "193656893",
+        "st_mtime_ns": "1792377601274000805",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/preflight-stdout": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377601941429204",
+        "st_dev": "16777223",
+        "st_ino": "193656892",
+        "st_mtime_ns": "1792377601941429204",
+        "st_size": "244904"
+      },
+      "sha256": "6a2d1e3e9c4f6e33dabc2c6b0c869de6eb0392391c827081ed6d4f25017686bd"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/remote.py": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377601270277058",
+        "st_dev": "16777223",
+        "st_ino": "193656886",
+        "st_mtime_ns": "1792377601270277058",
+        "st_size": "16451"
+      },
+      "sha256": "06846186e062fdccc2c60fb0eda9046c83df74a0a1ff48e8d1ab778a41f7720b"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/results-only-argv.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377737696406066",
+        "st_dev": "16777223",
+        "st_ino": "193700696",
+        "st_mtime_ns": "1792377737696406066",
+        "st_size": "2707"
+      },
+      "sha256": "884057624b6fcfee512faf8d9d08a219476c2a22827f6393cda0f6066344beb5"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/results-only-exit.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377738202346826",
+        "st_dev": "16777223",
+        "st_ino": "193700904",
+        "st_mtime_ns": "1792377738202346826",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/results-only-input.bin": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377737696812626",
+        "st_dev": "16777223",
+        "st_ino": "193700697",
+        "st_mtime_ns": "1792377737696754185",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/results-only-stderr": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377737697296999",
+        "st_dev": "16777223",
+        "st_ino": "193700699",
+        "st_mtime_ns": "1792377737697232152",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/results-only-stdout": {
+      "category": "EVIDENCE",
+      "physical": {
+        "st_ctime_ns": "1792377738159187333",
+        "st_dev": "16777223",
+        "st_ino": "193700698",
+        "st_mtime_ns": "1792377738159187333",
+        "st_size": "132145"
+      },
+      "sha256": "8f249301db0b33a47146cb40b1313b6e1675aba17283f72fec67833f85a0e541"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/runner.py": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377601270736782",
+        "st_dev": "16777223",
+        "st_ino": "193656887",
+        "st_mtime_ns": "1792377601270736782",
+        "st_size": "9021"
+      },
+      "sha256": "d47a364c58d5084a5aceb8d591d4e988ed1292be76be5db5ba396ee773e9853a"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/source-copy-argv.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377642362912934",
+        "st_dev": "16777223",
+        "st_ino": "193669992",
+        "st_mtime_ns": "1792377642362912934",
+        "st_size": "453"
+      },
+      "sha256": "10af69e5ae362bd54955a277bc3c3ffce3c3b30347e27a024411b5694f4c3305"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/source-copy-exit.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377643145526825",
+        "st_dev": "16777223",
+        "st_ino": "193670304",
+        "st_mtime_ns": "1792377643145526825",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/source-copy-input.bin": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377642363290264",
+        "st_dev": "16777223",
+        "st_ino": "193669993",
+        "st_mtime_ns": "1792377642363233809",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/source-copy-stderr": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377642363722072",
+        "st_dev": "16777223",
+        "st_ino": "193669995",
+        "st_mtime_ns": "1792377642363658176",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/source-copy-stdout": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377642363525388",
+        "st_dev": "16777223",
+        "st_ino": "193669994",
+        "st_mtime_ns": "1792377642363458923",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/source-pins.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377641721112362",
+        "st_dev": "16777223",
+        "st_ino": "193669919",
+        "st_mtime_ns": "1792377641721112362",
+        "st_size": "4376"
+      },
+      "sha256": "28232a0449f8b64a9fc0b0eeaf7b2a00101c9e53e5264436fc22a9ca5e448968"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/stage-argv.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377641744441272",
+        "st_dev": "16777223",
+        "st_ino": "193669968",
+        "st_mtime_ns": "1792377641744441272",
+        "st_size": "20076"
+      },
+      "sha256": "5358f74e139a3b393f9c7c76a8232b7ff06783ef42f933e604a049b6bece0b38"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/stage-exit.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377642361963689",
+        "st_dev": "16777223",
+        "st_ino": "193669991",
+        "st_mtime_ns": "1792377642361963689",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/stage-input.bin": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377641744989273",
+        "st_dev": "16777223",
+        "st_ino": "193669969",
+        "st_mtime_ns": "1792377641744989273",
+        "st_size": "5995"
+      },
+      "sha256": "1abb044ba3ae053ac3d28f204ca6f23bcd6b922cdc45acb5df1fbc8bec164a22"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/stage-stderr": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377641745783917",
+        "st_dev": "16777223",
+        "st_ino": "193669971",
+        "st_mtime_ns": "1792377641745736725",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-a/stage-stdout": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377642308188650",
+        "st_dev": "16777223",
+        "st_ino": "193669970",
+        "st_mtime_ns": "1792377642308188650",
+        "st_size": "204"
+      },
+      "sha256": "bc34b1a02f8518fbaa29683e66212065f8eafcd91d2da9644552d52ee52d340b"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/execute-argv.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377740010442687",
+        "st_dev": "16777223",
+        "st_ino": "193701453",
+        "st_mtime_ns": "1792377740010442687",
+        "st_size": "20078"
+      },
+      "sha256": "c5799de7237bb76ce19f932dbd4a8d58d072c7e56524fb3c0d69f6c61c3d3ec6"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/execute-exit.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377766693215426",
+        "st_dev": "16777223",
+        "st_ino": "193709824",
+        "st_mtime_ns": "1792377766693215426",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/execute-input.bin": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377740010808909",
+        "st_dev": "16777223",
+        "st_ino": "193701455",
+        "st_mtime_ns": "1792377740010746196",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/execute-stderr": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377740011248973",
+        "st_dev": "16777223",
+        "st_ino": "193701457",
+        "st_mtime_ns": "1792377740011197929",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/execute-stdout": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377766666041130",
+        "st_dev": "16777223",
+        "st_ino": "193701456",
+        "st_mtime_ns": "1792377766666041130",
+        "st_size": "240"
+      },
+      "sha256": "265a79d3a0e709197cad90130e06fe28cd581140cac9c5e89add8f6974d71260"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/launcher.py": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377682097714965",
+        "st_dev": "16777223",
+        "st_ino": "193683113",
+        "st_mtime_ns": "1792377682097714965",
+        "st_size": "11303"
+      },
+      "sha256": "95a31cf1876516b22d157810beab80757a62eb710ca66504de912416e9727471"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/preflight-argv.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377682098790425",
+        "st_dev": "16777223",
+        "st_ino": "193683114",
+        "st_mtime_ns": "1792377682098790425",
+        "st_size": "20015"
+      },
+      "sha256": "1975454a75de383a079e7a578873d42c0d623a979c66312d5679ef9410ad92f8"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/preflight-exit.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377682775336230",
+        "st_dev": "16777223",
+        "st_ino": "193683302",
+        "st_mtime_ns": "1792377682775336230",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/preflight-input.bin": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377682099199262",
+        "st_dev": "16777223",
+        "st_ino": "193683115",
+        "st_mtime_ns": "1792377682099135905",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/preflight-stderr": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377682099652566",
+        "st_dev": "16777223",
+        "st_ino": "193683117",
+        "st_mtime_ns": "1792377682099602704",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/preflight-stdout": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377682736110784",
+        "st_dev": "16777223",
+        "st_ino": "193683116",
+        "st_mtime_ns": "1792377682736110784",
+        "st_size": "244904"
+      },
+      "sha256": "87eea4616a5762b39c875e86593d1b9ce449baf245deea93f197f6531ae3e408"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/remote.py": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377682095126341",
+        "st_dev": "16777223",
+        "st_ino": "193683111",
+        "st_mtime_ns": "1792377682095126341",
+        "st_size": "16451"
+      },
+      "sha256": "f47928fc02bbac14d9f41dc198809dd7eae7d13f90abb23540ae192fbb9d338c"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/results-only-argv.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377888620566788",
+        "st_dev": "16777223",
+        "st_ino": "193747997",
+        "st_mtime_ns": "1792377888620566788",
+        "st_size": "2707"
+      },
+      "sha256": "bf3618d264035e19076c6835e7bdb550f670b9f203c36063ec3646f915efed02"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/results-only-exit.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377889357000387",
+        "st_dev": "16777223",
+        "st_ino": "193748290",
+        "st_mtime_ns": "1792377889357000387",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/results-only-input.bin": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377888620868732",
+        "st_dev": "16777223",
+        "st_ino": "193747998",
+        "st_mtime_ns": "1792377888620809355",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/results-only-stderr": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377888621278840",
+        "st_dev": "16777223",
+        "st_ino": "193748000",
+        "st_mtime_ns": "1792377888621226435",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/results-only-stdout": {
+      "category": "EVIDENCE",
+      "physical": {
+        "st_ctime_ns": "1792377889341675042",
+        "st_dev": "16777223",
+        "st_ino": "193747999",
+        "st_mtime_ns": "1792377889341675042",
+        "st_size": "131937"
+      },
+      "sha256": "8bbde821cb5b1ff587620dad36e9dddf4b5e5515c61eaa552168cd1b002c96e9"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/runner.py": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377682097086859",
+        "st_dev": "16777223",
+        "st_ino": "193683112",
+        "st_mtime_ns": "1792377682097086859",
+        "st_size": "9021"
+      },
+      "sha256": "d47a364c58d5084a5aceb8d591d4e988ed1292be76be5db5ba396ee773e9853a"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/source-copy-argv.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377739306740621",
+        "st_dev": "16777223",
+        "st_ino": "193701306",
+        "st_mtime_ns": "1792377739306740621",
+        "st_size": "453"
+      },
+      "sha256": "f76a3814a4f157be1d077bb4f70834f30ea66a5ab5a937b25fbb11a77b6b63cf"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/source-copy-exit.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377740009123435",
+        "st_dev": "16777223",
+        "st_ino": "193701452",
+        "st_mtime_ns": "1792377740009123435",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/source-copy-input.bin": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377739307106972",
+        "st_dev": "16777223",
+        "st_ino": "193701307",
+        "st_mtime_ns": "1792377739307063567",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/source-copy-stderr": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377739307390686",
+        "st_dev": "16777223",
+        "st_ino": "193701309",
+        "st_mtime_ns": "1792377739307355438",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/source-copy-stdout": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377739307270657",
+        "st_dev": "16777223",
+        "st_ino": "193701308",
+        "st_mtime_ns": "1792377739307234128",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/source-pins.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377738672795808",
+        "st_dev": "16777223",
+        "st_ino": "193701093",
+        "st_mtime_ns": "1792377738672795808",
+        "st_size": "4376"
+      },
+      "sha256": "28232a0449f8b64a9fc0b0eeaf7b2a00101c9e53e5264436fc22a9ca5e448968"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/stage-argv.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377738695563912",
+        "st_dev": "16777223",
+        "st_ino": "193701139",
+        "st_mtime_ns": "1792377738695563912",
+        "st_size": "20076"
+      },
+      "sha256": "3848e31ea549f9d4e10a3a30cbf9d9a852e94918b4ef8bc9a2750e06dc24d17b"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/stage-exit.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377739304745133",
+        "st_dev": "16777223",
+        "st_ino": "193701305",
+        "st_mtime_ns": "1792377739304745133",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/stage-input.bin": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377738696381272",
+        "st_dev": "16777223",
+        "st_ino": "193701140",
+        "st_mtime_ns": "1792377738696381272",
+        "st_size": "5995"
+      },
+      "sha256": "f8f85bf928a5a50741a580bae34b5a742e5d7261a3589f8b5098fdecbb7c5dd3"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/stage-stderr": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377738697035614",
+        "st_dev": "16777223",
+        "st_ino": "193701142",
+        "st_mtime_ns": "1792377738696974867",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-b/stage-stdout": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377739247950577",
+        "st_dev": "16777223",
+        "st_ino": "193701141",
+        "st_mtime_ns": "1792377739247950577",
+        "st_size": "204"
+      },
+      "sha256": "6c9ea959177628fde588e3215ba407605e332c2c87e232d7043de072396adc8c"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/execute-argv.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377891138819057",
+        "st_dev": "16777223",
+        "st_ino": "193748840",
+        "st_mtime_ns": "1792377891138819057",
+        "st_size": "20078"
+      },
+      "sha256": "032244b65d5912fa1181f2bb2d4322a0dfbe37fc6ba70d1c517fce92e86acb22"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/execute-exit.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377926089339634",
+        "st_dev": "16777223",
+        "st_ino": "193759803",
+        "st_mtime_ns": "1792377926089339634",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/execute-input.bin": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377891139741171",
+        "st_dev": "16777223",
+        "st_ino": "193748841",
+        "st_mtime_ns": "1792377891139678310",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/execute-stderr": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377891140181140",
+        "st_dev": "16777223",
+        "st_ino": "193748844",
+        "st_mtime_ns": "1792377891140125439",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/execute-stdout": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377926053155549",
+        "st_dev": "16777223",
+        "st_ino": "193748842",
+        "st_mtime_ns": "1792377926053155549",
+        "st_size": "240"
+      },
+      "sha256": "9ab94da0675264bf69828046f65ba694430ee6a3f0a31fd18d09018107e11947"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/launcher.py": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377824263269403",
+        "st_dev": "16777223",
+        "st_ino": "193727818",
+        "st_mtime_ns": "1792377824263269403",
+        "st_size": "11303"
+      },
+      "sha256": "c951c758297f57e0572fa8bad06c6bbb90773592e6ea1ec2508a15a0d4b0bbb0"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/preflight-argv.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377824264168829",
+        "st_dev": "16777223",
+        "st_ino": "193727819",
+        "st_mtime_ns": "1792377824264168829",
+        "st_size": "20015"
+      },
+      "sha256": "44128052cd12a7c1051592e78e29b060de273867af776b023f5dce335ab41dc0"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/preflight-exit.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377824987038359",
+        "st_dev": "16777223",
+        "st_ino": "193728111",
+        "st_mtime_ns": "1792377824987038359",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/preflight-input.bin": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377824264515152",
+        "st_dev": "16777223",
+        "st_ino": "193727820",
+        "st_mtime_ns": "1792377824264443372",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/preflight-stderr": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377824265535003",
+        "st_dev": "16777223",
+        "st_ino": "193727822",
+        "st_mtime_ns": "1792377824265477225",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/preflight-stdout": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377824961948252",
+        "st_dev": "16777223",
+        "st_ino": "193727821",
+        "st_mtime_ns": "1792377824961948252",
+        "st_size": "244904"
+      },
+      "sha256": "7beeb7971d1b999aab90322d82df25a3189b0e632285aa6e1ad337f21d17cae5"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/remote.py": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377824262000919",
+        "st_dev": "16777223",
+        "st_ino": "193727815",
+        "st_mtime_ns": "1792377824262000919",
+        "st_size": "16451"
+      },
+      "sha256": "21cd1f9e76b1994f9a37597c55428e6fd4557abf6b6af832e987c7076fa750e1"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/results-only-argv.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377994613275286",
+        "st_dev": "16777223",
+        "st_ino": "193781495",
+        "st_mtime_ns": "1792377994613275286",
+        "st_size": "2707"
+      },
+      "sha256": "dc505d65b711a07391ad37445284f97da9a2658f64497db5346449264d64d843"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/results-only-exit.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377995210229063",
+        "st_dev": "16777223",
+        "st_ino": "193781762",
+        "st_mtime_ns": "1792377995210229063",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/results-only-input.bin": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377994613582105",
+        "st_dev": "16777223",
+        "st_ino": "193781496",
+        "st_mtime_ns": "1792377994613509010",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/results-only-stderr": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377994614321589",
+        "st_dev": "16777223",
+        "st_ino": "193781498",
+        "st_mtime_ns": "1792377994614247156",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/results-only-stdout": {
+      "category": "EVIDENCE",
+      "physical": {
+        "st_ctime_ns": "1792377995164803471",
+        "st_dev": "16777223",
+        "st_ino": "193781497",
+        "st_mtime_ns": "1792377995164803471",
+        "st_size": "178102"
+      },
+      "sha256": "d3201b1ecee4b6ab1e28e60f71fb76acdf3146f63dea8b09374675463bba4ffd"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/runner.py": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377824262547852",
+        "st_dev": "16777223",
+        "st_ino": "193727816",
+        "st_mtime_ns": "1792377824262547852",
+        "st_size": "9021"
+      },
+      "sha256": "d47a364c58d5084a5aceb8d591d4e988ed1292be76be5db5ba396ee773e9853a"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/source-copy-argv.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377890338528480",
+        "st_dev": "16777223",
+        "st_ino": "193748716",
+        "st_mtime_ns": "1792377890338528480",
+        "st_size": "453"
+      },
+      "sha256": "bf6d07043ffe60d4ab4a2b68677a71e75defd9ab8107c468cbd90be086a3ade6"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/source-copy-exit.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377891137284741",
+        "st_dev": "16777223",
+        "st_ino": "193748838",
+        "st_mtime_ns": "1792377891137284741",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/source-copy-input.bin": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377890338868874",
+        "st_dev": "16777223",
+        "st_ino": "193748717",
+        "st_mtime_ns": "1792377890338819421",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/source-copy-stderr": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377890339165169",
+        "st_dev": "16777223",
+        "st_ino": "193748719",
+        "st_mtime_ns": "1792377890339124060",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/source-copy-stdout": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377890339039124",
+        "st_dev": "16777223",
+        "st_ino": "193748718",
+        "st_mtime_ns": "1792377890338998071",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/source-pins.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377889810645364",
+        "st_dev": "16777223",
+        "st_ino": "193748486",
+        "st_mtime_ns": "1792377889810645364",
+        "st_size": "4376"
+      },
+      "sha256": "28232a0449f8b64a9fc0b0eeaf7b2a00101c9e53e5264436fc22a9ca5e448968"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/stage-argv.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377889828873193",
+        "st_dev": "16777223",
+        "st_ino": "193748531",
+        "st_mtime_ns": "1792377889828873193",
+        "st_size": "20076"
+      },
+      "sha256": "7be7c310cfe381cc085ff5c821fe459f0ed3c4ac9641bd51fcdffa9db2441053"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/stage-exit.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377890337655769",
+        "st_dev": "16777223",
+        "st_ino": "193748715",
+        "st_mtime_ns": "1792377890337655769",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/stage-input.bin": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377889829332241",
+        "st_dev": "16777223",
+        "st_ino": "193748532",
+        "st_mtime_ns": "1792377889829332241",
+        "st_size": "5995"
+      },
+      "sha256": "ff67b9fe75193dc6b97de93df8a1f3b1829fbef50bb9ced3c5b804e47f85d9de"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/stage-stderr": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377889830991056",
+        "st_dev": "16777223",
+        "st_ino": "193748534",
+        "st_mtime_ns": "1792377889830941851",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/native-save-slots-20261019-v2-c/stage-stdout": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377890298278431",
+        "st_dev": "16777223",
+        "st_ino": "193748533",
+        "st_mtime_ns": "1792377890298278431",
+        "st_size": "204"
+      },
+      "sha256": "667e5c48b1ac2df026ac5f953921f384cd8c6fdf9a1ba78e29cd7d2c3ada3890"
+    },
+    "/tmp/native-save-slots-result-review-v2-a-20261019.json": {
+      "category": "EVIDENCE",
+      "physical": {
+        "st_ctime_ns": "1792377738370245439",
+        "st_dev": "16777223",
+        "st_ino": "193700970",
+        "st_mtime_ns": "1792377738370245439",
+        "st_size": "24968"
+      },
+      "sha256": "f6929cb5ec3c363b523620fd252025165d8aab15241d96213773cc59167a7717"
+    },
+    "/tmp/native-save-slots-result-review-v2-b-20261019.json": {
+      "category": "EVIDENCE",
+      "physical": {
+        "st_ctime_ns": "1792377889527355475",
+        "st_dev": "16777223",
+        "st_ino": "193748361",
+        "st_mtime_ns": "1792377889527355475",
+        "st_size": "25000"
+      },
+      "sha256": "4d7df52082cbb595207f015b26612b846f8d7f166dc06e11d00c3d94e6aaea0a"
+    },
+    "/tmp/native-save-slots-result-review-v2-c-20261019.json": {
+      "category": "EVIDENCE",
+      "physical": {
+        "st_ctime_ns": "1792377995386940613",
+        "st_dev": "16777223",
+        "st_ino": "193781834",
+        "st_mtime_ns": "1792377995386940613",
+        "st_size": "60536"
+      },
+      "sha256": "0e85f653040dc1e07959b29f916231acc465e9ea0e03d8168ef5c0ec57ecbbd0"
+    },
+    "/tmp/native-save-slots-v1-unrun-pin-failure-20261019.json": {
+      "category": "CONTROL_UNRUN",
+      "physical": {
+        "st_ctime_ns": "1792377569502914138",
+        "st_dev": "16777223",
+        "st_ino": "193646774",
+        "st_mtime_ns": "1792377569502914138",
+        "st_size": "578"
+      },
+      "sha256": "2fe359bff6a7c736a6768b7f834b1f03848655bb460fe7835fef3bb3e0825440"
+    },
+    "/tmp/native_save_slots_remote_v1_a_20261019.py": {
+      "category": "CONTROL_UNRUN",
+      "physical": {
+        "st_ctime_ns": "1792377457685977934",
+        "st_dev": "16777223",
+        "st_ino": "193606377",
+        "st_mtime_ns": "1792377457685977934",
+        "st_size": "16451"
+      },
+      "sha256": "caa753b2420a67ed6c4747e144870d4724e0619acedb2e2c3b00e34fdff26f07"
+    },
+    "/tmp/native_save_slots_remote_v1_b_20261019.py": {
+      "category": "CONTROL_UNRUN",
+      "physical": {
+        "st_ctime_ns": "1792377545715078042",
+        "st_dev": "16777223",
+        "st_ino": "193639127",
+        "st_mtime_ns": "1792377545715078042",
+        "st_size": "16451"
+      },
+      "sha256": "a4e5107f59042975f1a83348e000f392dcb1cd76b957fd39b27019c5e43e4ccc"
+    },
+    "/tmp/native_save_slots_remote_v1_c_20261019.py": {
+      "category": "CONTROL_UNRUN",
+      "physical": {
+        "st_ctime_ns": "1792377545746177941",
+        "st_dev": "16777223",
+        "st_ino": "193639141",
+        "st_mtime_ns": "1792377545746177941",
+        "st_size": "16451"
+      },
+      "sha256": "7899ba3c77ad038f3498445670ca7f1dbdc6bb101c7121acead78f38ea83349d"
+    },
+    "/tmp/native_save_slots_remote_v2_a_20261019.py": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792377569150384298",
+        "st_dev": "16777223",
+        "st_ino": "193646769",
+        "st_mtime_ns": "1792377569150384298",
+        "st_size": "16451"
+      },
+      "sha256": "06846186e062fdccc2c60fb0eda9046c83df74a0a1ff48e8d1ab778a41f7720b"
+    },
+    "/tmp/native_save_slots_remote_v2_b_20261019.py": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792377569169730507",
+        "st_dev": "16777223",
+        "st_ino": "193646771",
+        "st_mtime_ns": "1792377569169730507",
+        "st_size": "16451"
+      },
+      "sha256": "f47928fc02bbac14d9f41dc198809dd7eae7d13f90abb23540ae192fbb9d338c"
+    },
+    "/tmp/native_save_slots_remote_v2_c_20261019.py": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792377569200037685",
+        "st_dev": "16777223",
+        "st_ino": "193646773",
+        "st_mtime_ns": "1792377569200037685",
+        "st_size": "16451"
+      },
+      "sha256": "21cd1f9e76b1994f9a37597c55428e6fd4557abf6b6af832e987c7076fa750e1"
+    },
+    "/tmp/review_native_save_slots_results_20261019.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792377491778600550",
+        "st_dev": "16777223",
+        "st_ino": "193626596",
+        "st_mtime_ns": "1792377491778600550",
+        "st_size": "17690"
+      },
+      "sha256": "2b20e22c931f2c5f091d09e8ef09f373aa2a3f9d5ea892a10e2b24d3034b4584"
+    }
+  },
+  "next": "Keep physical native rename/journal admission blocked on unavailable allocator acknowledgement. Continue independent synthetic product work: inspect and implement exact source/head/input/preimage-bound owned PaperState preparation BEFORE callback observe/submit, with effects.load returning only that prepared object once. _order already loads before effects; eliminate the repeated _Effects.load disk read/materialization AFTER accepted submit. Native submitted_at still arrives after broker response: do not claim whole transition/serialization preparation or RAM reservation. Add NEW bounded preparation-failure/original-result assertions and full private graph, preserve old writer/Store/caps/public genuine refusal. No whole832MB/modelRAM claim; never rerun these closed9 or older gates.",
+  "references": [
+    "https://docs.python.org/3.12/library/pathlib.html#pathlib.Path.replace",
+    "https://www.kernel.org/doc/html/latest/filesystems/ext4/directory.html"
+  ],
+  "schema": "private-native-save-slots-proof/1",
+  "scope": "NINE NEW assertions at ONE source in THREE bounded cohorts. One actual old-mode late-slot-exhaustion baseline plus eight exact pre-effect save-allowance lifecycle/refusal assertions. Three actual process SIGKILL cuts only cohort C; exact fixed writer save counts bound to original source/head/input/phase and first slot. Directory physical capacity remains False.",
+  "source_checkpoint": "30f525cbc176af3f0b1e02ff5a63f15ccb9d8546",
+  "source_tree": "e621cd790b36408d0ae00442958d4d5e50e625b8",
+  "transport_phases": {
+    "a": {
+      "execute": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "preflight": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "results-only": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "source-copy": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "stage": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      }
+    },
+    "b": {
+      "execute": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "preflight": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "results-only": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "source-copy": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "stage": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      }
+    },
+    "c": {
+      "execute": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "preflight": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "results-only": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "source-copy": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "stage": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      }
+    }
+  },
+  "unrun_control_failure": {
+    "no_native_or_test_dispatch": true,
+    "reason": "shasum Perl startup diagnostic was mistakenly taken as the test digest, producing literal perl: pin. Python digest audit refused before source stage or tests. v1-a only readonly preflight ran; v1-b/c controls never dispatched. All v1 source controls and preflight remain preserved; corrected v2 controls use independently computed Python full SHA and fresh roots/prerequisites. Product and assertions unchanged.",
+    "source_checkpoint": "30f525cbc176af3f0b1e02ff5a63f15ccb9d8546",
+    "status": "FAILED_LOCAL_SOURCE_PREPARATION_BEFORE_STAGE"
+  }
+}

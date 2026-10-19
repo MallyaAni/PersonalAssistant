@@ -1,5 +1,162 @@
 # Next session
 
+## 2026-10-19 — Exact pre-effect native save-slot allowances VERIFIED
+
+Read research/native-save-slots-proof-2026-10-19.json:
+57bdc36ecd8e4425b5b0d42fd6e715e9ff4f4e7082ebe9fd7ea0a07090afc162,
+181236B. Source30f525cbc176af3f0b1e02ff5a63f15ccb9d8546/tree
+e621cd790b36408d0ae00442958d4d5e50e625b8 passed NINE NEW tests in THREE bounded
+cohorts at this ONE tree. No test failures/errors/skips or unexpected native
+operational failure. One earlier malformed local source pin refused preparation
+before staging/tests; its controls and readonly prerequisite remain preserved.
+
+PRODUCT: explicit reserve_saves=True selects separately versioned
+synthetic-native-directory-binding/2 plus typed synthetic-native-save-slots/1
+and native-io/6. Existing directory-binding/1 remains the default count-less
+mode. No native writer or Store bytes changed; original writer semantics,
+absent birth destination, ordinary Store DELETE+FILE/schema/paths/caps/guards
+and public genuine/old bound-CAS raw-final refusals remain unchanged.
+
+Exact source/account/identity/metadata-claim/head/input-bound phase allowances
+are persisted BEFORE selected effects. Counts derive from the original phase,
+never a caller count: BIRTH1/NIGHTLY_CLOSE1/PREPARE0/DECISION_FROZEN0/
+SUBMISSION_CAPTURED1/OUTCOME_COMMITTED1. The typed lease binds original first
+slot/count/schema and original metadata claim. Under the original writer lock,
+arm authenticates published cursor/preimage/original unused extents and refuses
+first+count beyond the original finite pool before submission observation/order
+or final flush. Phases cannot overlap, extend, reopen or reclaim unused slots.
+Each native save checks its original phase-owned range before PENDING/native
+write; pending uncertainty remains unreadable/unreplayable. Completion and
+prepared/result validation require the exact count of original native receipts.
+Original result still precedes directory→SQL→CAS seals. Recovery only seals the
+original published result; no flush/fold/save/capture/append/SQL generation or
+account restore. Historical original receipts stay readable after later pending
+work. Python API/global identities remain NOT a hostile sandbox/deep immutability.
+
+The same four initialized directory-metadata inodes/header/control/mode exist
+before birth; no new per-save namespace or dummy reserves. This claims finite
+ownership of original native 1MiB save slots, NOT physical native directory/
+journal capacity. capacity_reserved=False remains explicit. Native FILE-backed
+SQLite DELETE-journal/FILE-temp reservation, whole filesystem/horizon/model RAM/
+twohost/powerloss/genuine admission remain UNVERIFIED.
+
+A: CID2498367a8a33e3e7eb28fa1583ba817b39c77672599a6eb48464e627dda9530f/f612,
+exit0/noOOM2026-10-19T02:41:09.850548926Z;3pass/0fail/error/skip,
+25.543420060537755s/57544KiB. NEW actual old-mode two-slot baseline accepts native
+order qty5 before late save exhaustion; paper/Store head stay unchanged. This
+reproduced gap is NOT acceptance of old behavior. New two-slot mode refuses
+SUBMISSION before observe/order/save/latch body (original None); new three-slot
+mode refuses final before flush, retaining broker accepted status/bytes. Repeated
+original paused recovery never reexecutes effects.
+Proof5038e7794927fcba5b241123b6341bf42738b8fdd2f659b24b7486eae7583fa9/73545B.
+
+B: CID7e4d6b062f21f22f848db8bc9ad9d4bd75bf2a46305c194ce60f9c1c1d560ac4/f612,
+exit0/noOOM2026-10-19T02:42:46.550879509Z;3pass/0fail/error/skip,
+25.429265797138214s/56540KiB. Actual five-slot birth→prior close→real Store stages→
+desired8/submitted5/filled5 native partial journal→Store OUTCOME→reopen/repeated
+original recovery→same-session Nightly passed. Seven COMPLETE directory+SQL+CAS
+phases have counts[1,1,0,0,1,1,1]/first[0,1,2,2,2,3,4], five original saves,
+policycount2 and exact >256KiB NaN/Unicode native bytes. Two explicitly manually
+armed NEGATIVE units prove zero-count save refusal, bool/count/first mutations,
+underconsumption/IO5 downgrade refusal. They are NOT whole Cycle admission.
+Exact count-one mode refuses zero-save unavailable-close results by source
+validation; no actual unavailable-close native-path test claim.
+Proof343a2762ac7c05d2893e7df989889def7293cf2759eec4584afe49b65067a9ba/73356B.
+
+C: CID828a1526b3d5f470ea262ae5455b26a19800c2752bb70be4f0643037b7e83d5b/f612,
+exit0/noOOM2026-10-19T02:45:25.836316229Z;3pass/0fail/error/skip,
+33.51023030653596s/57300KiB. Actual owned PID7 SIGKILL after allowance first3/count1
+persistence BEFORE final effects; PID8 after PENDING slot3 BEFORE original native
+write (writer still next3/no OPEN native operation; real broker flush already
+occurred); PID9 after original final result with four save records BEFORE seal.
+All-9/reaped. First two recover paused with no replay/adoption; old birth receipt
+remains readable during later pending work. Published original final recovers ONLY
+missing directory/SQL/CAS seals, no additional native save or SQL generation.
+Three process cuts at protocol boundaries, NOT powerloss/inside-syscall/SQLite
+commit proof; immutable broker witness decoding never restores parent/account.
+Proofab5dc252205d5d352a45f4e691587bda6f2729f428ccc6baa9202536f571f1b3/107982B.
+
+All raw proofs+seven fixed results retained /tmp/native-save-slots-20261019-v2-
+{a,b,c} and matching Spark1 scratch. ROOT+healthy READONLY reviewer independently
+folded ALL9 complete inventories:4644CAS+333metadata+63SQL+36directory-metadata+
+54native-directory identities =5130 globally distinct originals. Every name/all
+physical fields unchanged; CAS34344960/meta9183232/SQL1843200/directory-metadata
+790528 allocated AND logicalB per case. Native writer data changes remain its
+original semantics; the unchanged inventories cover reserved metadata/CAS/SQL
+pools and original directory fields, not unchanged native state bodies.
+Complete476375B inventories retained33452B gzip. Six canonical cut/exit strings
+26542B reproduce exact SHA/length. Sources/exact calls/actual fresh prerequisites/
+getters/full actual results/create argv/CID/runtime/terminal links independently
+accepted. Reviewer corrected an inspection-only comparison that had included
+intentional reference placeholders; exact22 product pins plus mounted originals
+match, no payload/runtime issue.
+
+22 copied product/test pins/31payloads482683B<524288;33source bookends/47native
+fullSHA physical bookends/writer globals unchanged/forbidden[]. FOUR unchanged
+whole codec/CAS/physical/Nightly SOURCE-only exact RO file mounts from prior
+closed SOURCE paths, never old account/output/pools. Whole CLI text for two helper
+CodeTypes pins1655map/no CLI startup import. Combined executed closure exceeds
+512KiB; copied-payload bound is NOT closure/RAM. Context/policy/program/calendar/
+source-manifest globals remain SYNTHETIC/constructors bypassed.
+Eight FULL mounts equal by uniqueDestination; raw order differs all three.
+HostConfig only OomKillDisablefalse→null. UID1000/noneRO/1CPU/512MiB=swap/PIDs32/
+tmp64/dropALL/no-new-privileges/CPU30/native1MiBFSIZE/source-controls-log256KiB/
+productioncaps unchanged. All three five-phase transports0/emptyerr.
+
+Preserved local FAILED SOURCE preparation: v1 test pin became literal "perl:"
+after a SHA utility startup diagnostic was mistaken for its output. Independent
+Python fullSHA audit and prepare() refused BEFORE source stage/tests. Only v1-A
+readonly preflight ran; B/C v1 controls never dispatched. Source/tests unchanged.
+All v1 controls/prerequisite and reason retained in /tmp/native-save-slots-v1-
+unrun-pin-failure-20261019.json and original /tmp controls; corrected distinct v2
+roots/prerequisites used Python-only fullSHA pins. No old root/pool adoption.
+Two local JS source construction errors also stopped before new test/runner file
+write and were corrected before runtime; no native/test failure or replay.
+
+Local data-only collector ONCE/exclusive fsync/readback:146inputs2793054B/four full
+held-read SHA physical bookends. Separate SOURCE4MiB+A/B/C/UNRUN CONTROL2MiB each+
+EVIDENCE4MiB+DERIVED2MiB =18MiB maximum, NOT whole-process4MiB. ActualSOURCE2784972/
+A=B=C1727502/UNRUN1541384/DERIVED791252/EVIDENCE2573224B. No local crash/kernel
+FSIZE claim. Five product/test/runner sources93purpose comments plus14controls/
+helpers73purpose comments/ASTwarnings/zeroBackspaces/diff pass; original writer
+AND Store full bytes equal9f6e7df5. Ruff unavailable/no fullunit/build/deploy/UI/
+model claim. Diagram:NONE.
+
+NEXT CONCRETE PRODUCT TASK: this NEW9 finite save-count boundary is CLOSED. NEVER
+rerun its v2 cohorts/preflight/stage/copy/tests/getters/collector or v1 unused
+controls/prerequisite, prior namespace9/SQLite11/protocol13/outcome10/stage9/
+capability2/older closed gates for docs. Never adopt failed/OPEN/completed pools
+or reopen COMPLETE phases. Physical native rename/journal admission stays blocked
+on the unavailable source/runtime/filesystem-bound allocator acknowledgement;
+original paper.save_state temporary.replace(path) at paper.py:433, cleanup
+temporary.unlink and adapter parent fsync cannot be certified pre-reserved by
+body fallocate/stat/names. Do not relabel these guards as physical capacity.
+
+Continue independent synthetic product work: FIRST inspect _order (already loads
+paper before effects) and _Effects.load (repeats disk read/materialization AFTER
+observe/accepted submit). Implement exact source/head/input/preimage-bound owned
+PaperState preparation before the callback; effects.load returns only that
+original prepared object once. Preserve live preimage/source/lease checks before
+observe/submit/save. Native submitted_at arrives after broker response, so do NOT
+claim the whole transition or serialization can be prepared in advance. Prove NEW
+bounded preparation-failure/original-result assertions and full private graph.
+Preserve old native writer/Store/caps/public genuine refusal. This is not full
+832MB/native-model RAM admission. Advance one coherent boundary; no recursive
+ELF/interpreter/provenance detours.
+
+Full native rename/journal/filesystem/native SQLite FILE mode, whole832MB horizon/
+load-save/deepcopy/serialization/model RAM coexistence/twohost/powerloss/whole
+genuine constructors/market_daily Resolver/sender/models/providers/actualcontext/
+calendar/economics/native operation/adoption/independent publication/API/UI remain
+UNVERIFIED. Full admission mandatory BEFORE genuine effects. Originaltiming FAILED/
+publication CLOSED/missing receipts/immutable roots unchanged. Genuinev6 OPEN/
+PAUSED/no replay/adoption/newgenuine run from failed reservation. No Spark2load/
+guard-G08-cap weakening/fakeclock/actualday replay/historyrewrite/model-provider-
+account-servicechange/denied-read bypass/paiddata/tuning/realmoneyorders.
+Production unchanged; NEVER deploy historical main wholesale. Heartbeat ACTIVE,
+quiet on unchanged/non-actionable state; notify only meaningful progress/completion/
+failure/required user action. No ETA.
+
 ## 2026-10-18 — Native directory lineage VERIFIED; physical rename capacity BLOCKED
 
 Read research/native-directory-binding-proof-2026-10-18.json:
