@@ -65,7 +65,8 @@ class PreparedPaperTests(unittest.TestCase):
             None if client is None else codec.encode(client, **f.nightly.pins()),
             (f.writer.root / 'control').read_bytes(), (f.raw.root / 'control').read_bytes(),
             f.sql._control()['current'], f.context.policy_calls,
-            None if f.binding is None else f.binding._control()['cursor'])
+            None if f.binding is None else f.binding._control()['cursor'],
+            f.metadata.read_latch('2019-03-01'))
 
     # Reopen only original published Store and directory bindings without restoring an account or broker.
     def reopen(self, head):
@@ -87,6 +88,25 @@ class PreparedPaperTests(unittest.TestCase):
             with self.assertRaises((ValueError, FileNotFoundError)):
                 action()
             self.assertEqual(self.state(), before)
+
+    # Require the one original pre-callback SQL reservation while every native effect remains absent.
+    def reserved_only(self, before):
+        f = self.f
+        after = self.state()
+        self.assertEqual(after[:4], before[:4])
+        self.assertEqual(after[5:], before[5:])
+        self.assertEqual(after[4]['generation'], before[4]['generation'] + 1)
+        self.assertEqual(after[4]['bank'], 1 - before[4]['bank'])
+        self.assertEqual(after[4]['head'], before[4]['head'])
+        self.assertIsNone(f.sql._control()['pending'])
+        self.assertEqual(f.store.snapshot()['head'], before[4]['head'])
+        original, _ = f.stage._read(f.stage._directory('SUBMISSION_CAPTURED') / 'reservation.json')
+        operation = fixture.packet._digest({'cycle': f.stage.cycle, 'stage': 'SUBMISSION_CAPTURED'})
+        row = f.store.connection.execute('SELECT * FROM operations WHERE id=?', (operation,)).fetchone()
+        self.assertEqual((row['cycle'], row['stage'], row['parent'], row['inputs'], row['status'], row['receipt']),
+            (f.stage.cycle, 'SUBMISSION_CAPTURED', original['pre_head'],
+             fixture.packet._digest(original['declaration']), 'OPEN', None))
+        self.assertEqual(row['owner'], f.store.owner)
 
     # Profile only the unchanged native reader while running one bounded action.
     def profiled(self, action):
@@ -211,7 +231,7 @@ class PreparedPaperTests(unittest.TestCase):
         before = self.state()
         with self.assertRaises(ValueError):
             f.submit_original()
-        self.assertEqual(self.state(), before)
+        self.reserved_only(before)
         self.assertEqual(f.client._orders, {})
         self.assertIn('caught_binding', fixture.EVENTS)
         self.assertTrue(fixture.CAPSULES[-1].closed)
@@ -225,7 +245,7 @@ class PreparedPaperTests(unittest.TestCase):
         before = self.state()
         with self.assertRaisesRegex(ValueError, 'Unhanded prepared native paper changed'):
             f.submit_original()
-        self.assertEqual(self.state(), before)
+        self.reserved_only(before)
         self.assertEqual(f.client._orders, {})
         self.assertTrue(fixture.CAPSULES[-1].closed)
         self.assertIsNone(fixture.CAPSULES[-1].state)
