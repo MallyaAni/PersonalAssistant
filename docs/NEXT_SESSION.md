@@ -1,5 +1,163 @@
 # Next session
 
+## 2026-10-18 — Private finite SQLite banks VERIFIED; native FILE mode remains UNVERIFIED
+
+The NEW finite PRIVATE memory-SQLite/durable-bank boundary is VERIFIED at source
+ec2fe9345ce0be62d6b6d3227fd1ebdff03bba33, tree
+ce47086797d994c3d9e51b43d79f36f2d8aa1cef. Read
+research/reserved-sqlite-banks-proof-2026-10-18.json:
+eb834c5cacd3a23d4d2bc3853461161c571008b3a60b268a2821c0f0c928ab6c,
+222213B. Eleven NEW assertions passed in THREE bounded cohorts at this ONE source.
+The first source failed before cuts; it remains FAILED and preserved separately.
+No old closed gate, pool, admission or runtime was replayed/adopted.
+
+PRODUCT: historical_reserved_sqlite.SQLiteBanks introduces distinct
+synthetic-reserved-sqlite-banks/1 and optional native-io/4. All two512KiB banks,
+fixed header/control/mode, original Store owner lock and namespace extents are
+initialized before Store creation/birth. Real SQLite executes in :memory: with
+journal_mode=MEMORY, temp_store=MEMORY, main-only access,4096B pages and128-page
+serialized main-image cap. Exact observed SQLite3.46.1/source_id/compile options,
+including TEMP_STORE=1, are bound to the source/identity/header. This selects a
+different private storage strategy: it does NOT physically reserve native SQLite
+DELETE journals/FILE temporaries or trace VFS/syscall activity. Ordinary Store
+schema/paths/caps and default DELETE+FILE behavior remain unchanged. Source-only
+AST comparison confirms the ordinary setup literal and original transaction body
+remain exact after the new mode guard; no old runtime tests were rerun.
+
+Exact source/head/input-bound phase allowances precede selected native effects.
+A separate128-transaction ticket domain and eight bootstrap tickets bound this
+finite graph; PREPARE32/DECISION2/SUBMISSION2/OUTCOME1 and birth/close0. Ticket,
+phase and session exhaustion are not broadly tested. Each transition persists a
+PENDING generation/opposite inactive-bank ticket BEFORE SQL BEGIN. Real RAM
+COMMIT does not grant authority: serialize, bounded same-original-bank write,
+fsync, exact bytes/tail/hash/inode readback, then fixed control publication must
+finish before the original Store after_commit returns. Observed final generation20
+is the21st published commit. Original result precedes SQL phase seal and CAS seal.
+Completed phases cannot reopen for later native work.
+
+Explicit persisted SQLite mode/header forbids downgrade even when omitted by the
+caller. Reopen authenticates ONLY the last published bank; a complete-looking
+inactive PENDING bank cannot be adopted or replayed. Caught uncertainty persists
+failed status and poisons live connection shortcuts AND held cursors before another
+native save/effect. Statement caching is disabled, the native authorizer restricts
+existing Store SQL, and disk/ATTACH/DDL/extension/alternate image and callback APIs
+are refused. These API/global bindings are not a hostile Python sandbox or deep
+immutability guarantee. Recovery creates only the original missing result/seals,
+without SQL generation advance, flush/fold/save/capture/append/account restore.
+
+FAILED first source0063827c5f76f7b812d27e5e6db455a50d60dd90:
+CID9247cef77af903e49751538deb38b80fbe436b8774b9106047cb23d704917f79/f612,
+exit1/noOOM2026-10-19T01:36:58.752352555Z;3errors/0assertionfail/0skip,
+19.369174724444747s/57516KiB. Unchanged Cycle._head_entry SELECT length(raw),
+substr(raw,1,?) hit an omitted SQLite-function admission. ONLY length/substr
+were admitted in the next product source; no Store guard/assertion/cap weakening.
+No kill cut reached. Proofa5f1fbeafde9b5591e7cbc6cddf7e7017e0f66f4c2e026a700b0e26612106c25/
+71641B +seven fixed results/all3complete unchanged inventories retained
+/tmp/reserved-sqlite-banks-20261018-v1-a and matching Spark1 scratch. Never adopt.
+
+Corrected cohort A:
+CIDf4302c46e25648ba6f026b5986d79505a959929e4a71bc59cb1b5f82196f275d/f612,
+exit0/noOOM2026-10-19T01:41:15.5046335Z;3pass/0fail/error/skip,
+26.738348470069468s/58028KiB. Actual birth→stages→desired8/submitted5/filled5
+native partial journal→Store OUTCOME→reopen/repeated original final recovery→
+same-session private Nightly, policycount2/seven COMPLETE SQL+CAS phases, exact
+>256KiB/NaN/Unicode native bytes passed. Owned PID7 SIGKILL after durable SUBMISSION
+reservation before new submit; PID8 after real final RAM COMMIT before bank
+publication, both-9/reaped. The latter retains published generation19/submission
+head plus pending20; RAM final head differs and recovery cannot adopt it.
+Proofedf4c2b933ae268220c6a89306f9b70292b7531842a79055b208cda3a13809a6/87414B
++seven fixed results /tmp/reserved-sqlite-banks-20261018-v2-a +matching Spark1.
+
+Corrected cohort B:
+CID7a8c9a124e6c69dd3b1306541004e51bc268eabe7f7b294918c59fe6dcb62a0f/f612,
+exit0/noOOM2026-10-19T01:43:10.725110576Z;3pass/0fail/error/skip,
+28.014291373081505s/58328KiB. Owned PID7 after inactive bank fsync but before
+publication; PID8 after bank publication; PID9 after original final result before
+SQL seal, all-9/reaped. Unpublished stays paused; published final recovers only
+original missing metadata/seals, without another SQL/native effect. Witness-only
+immutable broker decode validates evidence, never parent/account restore.
+Proof268ef5a2b4587c97935f2c3e4514184c87db2e9dc5ce7fcbd9182d42a268a680/96595B
++seven fixed results /tmp/reserved-sqlite-banks-20261018-v2-b +matching Spark1.
+Five total cuts are process SIGKILL at protocol boundaries, NOT powerloss or
+interruption inside native syscall/SQLite commit.
+
+Corrected cohort C:
+CID44ea0687f2dc224ab326f2d68fa93282f4ed1aa9e211f4de21ae7cf5bf2013b3/f612,
+exit0/noOOM2026-10-19T01:45:02.766710491Z;5pass/0fail/error/skip,
+24.84090609382838s/59196KiB. Actual exact SQLITE_FULL before birth, caught
+publication uncertainty/live+held-cursor poisoning, same previously prepared SQL
+outside admission, disk/DDL routes, overlapping generation and missing explicit
+mode refusals passed. Page exhaustion is real; control corruption and caught-bank
+fault are explicit injected controls. No new kill claim.
+Proof7d0d5f6ad13ae01f19a42790dd263f9f8c4fbd47228991244801469ea69cd847/81058B
++seven fixed results /tmp/reserved-sqlite-banks-20261018-v2-c +matching Spark1.
+
+ROOT and healthy READONLY reviewer independently reconstruct all14 inventories,
+including preserved failure:7224 CAS+518 metadata+98 SQL=7840 globally distinct
+original inodes/every name/all4dev-inode-size-block fields unchanged. Each tested
+CAS34344960B, metadata9183232B, SQL1843200B allocated ANDlogical; SQL remains under
+its separate2MiB bound. Eleven green inventories alone contain6160 original inodes.
+Complete724204B inventory JSON retained49612B gzip; all10canonical cut/exit strings
+34836B SHA/length exact. All actual source/exact calls/fresh proofs/getters/full
+results/source-map/createargv/CID/runtime/terminal links accepted independently.
+
+Each green cohort has22copied product/test pins,30payloads510929B<524288,
+32source bookends and47native fullSHA/physical bookends/writer globals unchanged/
+forbidden[]. THREE unchanged whole codec/CAS/physical SOURCE-only references at
+exact original old-v1-a SOURCE paths are separately mounted RO into declared inert
+mountpoints; no old account/output/pool or broad source fallback. Combined executed
+closure exceeds512KiB: copied-payload cap is not whole closure/RAM. Whole CLI text
+supplies two source-pinned helper CodeTypes, no CLI startup import. Context/policy/
+program/calendar/source-manifest globals remain SYNTHETIC/constructors bypassed.
+Seven full mount records equal by unique Destination; raw order differs allfour.
+HostConfig only OomKillDisablefalse→null. UID1000/noneRO/1CPU/512MiB=swap/PIDs32/
+tmp64/dropALL/no-new-privileges/CPU30/nativeFSIZE1MiB/source-control-log256KiB/
+productioncaps unchanged. Green cohorts all5phases exit0/emptyerr; failed v1
+execute1/AssertionError retained, its other4phases0/emptyerr.
+
+Local DATA-only collector ran ONCE/exclusive/fsync/readback.165inputs2948375B
+have four held-full-SHA/decimal-physical passes/bookends, independently rechecked
+by reviewer. Separate SOURCE4MiB/CONTROL_FAILURE+A+B+C2MiB each/EVIDENCE4MiB/
+DERIVED2MiB:18MiB maximum aggregate, NOT whole-process4MiB. Actual final usage:
+2747600/1715238/1714358/1714390/1714390/3361814/1145360B respectively.
+No local crash/kernel-FSIZE claim. Initial local edit/manifest write failed
+ENOSPC before mutation; one regenerable Homebrew Go download80145725B was removed
+after exact path/inode observation, restoring ~91MiB free. Dependencies/source/
+backups/prior evidence untouched; no cache-wide cleanup. Pre-use review corrected
+unrun control path/pin substitutions before any v2 call. No additional runtime
+hypothesis failed.29sources/317purpose-functions/warnings-as-errors AST/zero
+backspaces/source-and-runner byte pins/diff PASS. Ruff unavailable; no
+fullunit/build/deploy/UI/model claim.
+Diagram:NONE.
+
+NEXT ROOT: This NEW11 finite SQLite-bank boundary is CLOSED. Never rerun its
+cohorts/preflights/stages/copies/tests/getters, failed v1 or any prior closed gate
+for docs; never adopt failed/OPEN/completed pools/reopen COMPLETE phases.
+FIRST inspect original reserved native writer _Handle.__exit__, precreated
+temporary path, Path.replace, links/anchors and work/paper directory effects.
+Implement a DISTINCT finite PRIVATE native rename-directory admission boundary
+with NEW bounded interruption/original-result assertions, preserving native
+writer semantics (including absent birth destination), ordinary Store defaults,
+caps/guards and public genuine refusal. Fixed bank/marker bodies do NOT reserve
+native rename directory capacity. Native FILE-backed SQLite DELETE-journal/
+FILE-temp physical admission remains a separate requirement; this memory mode
+does not certify it. Do not create placeholders or dummy reserve claims. Advance
+one coherent boundary; a hard blocker names exact unavailable input/access and
+callsite consequence, while independent synthetic product work continues.
+
+Full filesystem/native-directory/SQLite FILE-mode admission, whole832MB horizon/
+load-save/deepcopy/serialization/model-RAM coexistence/twohost/powerloss, genuine
+constructors/native market_daily Resolver/sender/planning/models/providers/
+actualcontext/calendar/economics/native operation/adoption/publication/API/UI
+remain UNVERIFIED. Full admission mandatory BEFORE genuine effects. Original
+timing FAILED/publication CLOSED/missing receipts/immutable roots unchanged.
+Genuinev6 OPEN/PAUSED/no replay/adoption/newgenuine run from failed reservation.
+No Spark2load/guard-G08-cap weakening/fakeclock/actualday replay/historyrewrite/
+model-provider-account-service change/denied-read bypass/paiddata-tuning/realmoney
+orders. Production unchanged; never deploy historical main wholesale. Keep
+heartbeat ACTIVE/quiet unchanged; notify only meaningful progress/failure/
+completion/required user action; no ETA. All archived handoffs below preserved.
+
 ## 2026-10-18 — Fixed private operation/result/latch namespace VERIFIED
 
 The NEW finite PRIVATE metadata boundary is VERIFIED at source
