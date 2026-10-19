@@ -11,6 +11,15 @@ errors/skips. Local ENOSPC caused a separate FAILED C transport tail: original
 SSH return remains UNKNOWN/missing, never reconstructed as success. No test,
 runtime, pool, completed getter or closed gate replay/adoption.
 
+AUTOMATION DELIVERY PENDING: verified checkpointedc60ec4001cbd6df1084466f8474b6b1da21b40
+is pushed. ONE new app automation_update request did not return; only owned wait
+cell8681 was terminated, no retry. Actual saved TOML readback stays ACTIVE/
+updated_at1792383594745/promptSHAba51c600f1a0de4d67c94e6840bf66490f117a2748152931601011b419e9b6c3,
+contains0168b4e1 but lacks a7ecf12b. New delivery UNKNOWN, not observed saved.
+Before/request/update-readback retained /tmp/final-saved-bytes-automation-{before,request,update-readback}-20261019.json.
+These app observations are outside132-input product proof. Re-read later without
+a duplicate request; current NEXT/proof takes precedence over older firing text.
+
 PRODUCT: PRIVATE Final schema3 plus synthetic-final-saved-native-bytes/1 replace
 TWO post-save paper.load_state→native re-encoding checks with actual streaming
 byte verification. The typed binding includes exact source/account/identity/
