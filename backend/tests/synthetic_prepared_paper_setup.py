@@ -327,7 +327,7 @@ class Fixture:
              'STATE_JSON': paper._state_json, 'STATE_JSON_CODE': paper._state_json.__code__,
              'STATE_TYPE': paper.PaperState,
              'SUBMIT_MARKET': native.ReplayBroker.submit_market,
-             **constants(base / 'historical_reserved_cycle_stages.py', {'SCHEMA', 'PHASES', 'PAPER_SCHEMA'})},
+             **constants(base / 'historical_reserved_cycle_stages.py', {'SCHEMA', 'PHASES', 'PAPER_SCHEMA', 'RESULT_SCHEMA'})},
             classes=(('_PreparedPaper', ()), ('_Effects', ()), ('_Stages', ()), ('_StageReader', ())))
         self.stage_ns = stage_ns
         self.final_ns = load(base / 'historical_reserved_cycle_final.py',

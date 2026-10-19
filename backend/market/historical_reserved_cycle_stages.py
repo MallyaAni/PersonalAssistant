@@ -28,6 +28,7 @@ from backend.market.historical_packet_store import Store, StorePause
 
 SCHEMA = 'synthetic-reserved-cycle-stages/2'
 PAPER_SCHEMA = 'synthetic-cycle-prepared-paper/1'
+RESULT_SCHEMA = 'synthetic-reserved-cycle-stages/1'
 PHASES = ('PREPARE', 'DECISION_FROZEN', 'SUBMISSION_CAPTURED')
 OBSERVE = native.ReplayBroker.observe
 SUBMIT = native.ReplayBroker._submit
@@ -410,7 +411,7 @@ class _Stages:
                 and operation_row['inputs'] == packet._digest(declaration)
                 and operation_row['parent'] == original['pre_head'],
                 'Exact committed reserved Cycle operation required')
-        marker = {'schema': SCHEMA, 'receipt': reference, 'head': entry['sha256'],
+        marker = {'schema': RESULT_SCHEMA, 'receipt': reference, 'head': entry['sha256'],
                   'reservation_sha256': reservation_sha}
         try:
             retained, _ = self._read(directory / 'result.json')
