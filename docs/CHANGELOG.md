@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-19 — Preserve paper account access across atomic saves
+
+LIVE minimal production52056af2 preserves an existing state's POSIX UID/GID/mode
+on its temporary file before atomic replacement. An absent destination in an
+existing paper directory inherits its owner with0600; metadata failure retains
+the original file. Exact JSON bytes and planner/settlement logic are unchanged.
+The reviewed approval renews only paper.py, retaining the other30 source pins
+and all economic inputs. Canonical10902unit passed(93skip/6xfail),100functional
+passed; actual host/container source approval and serving checks passed.
+The already root-owned live account still requires a separately authorized
+one-time ownership correction; no live body read/repair or sender readiness claim.
+Evidence:research/paper-ownership-delivery-proof-2026-10-19.json.
+
 ## 2026-10-19 — Disclose failed saved-fill verification in ticker views
 
 Production2f9fd73f passes the existing saved-history error through NameDetail to

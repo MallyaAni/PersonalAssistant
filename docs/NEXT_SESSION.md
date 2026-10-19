@@ -1,5 +1,83 @@
 # Next session
 
+## 2026-10-19 — Ownership prevention LIVE; one-time account repair requires authority
+
+This entry supersedes the running-release directions below. Exact minimal
+production52056af248d4ffe1425c0f44d0be7fa69cdacc4d is LIVE, direct parent2f9fd73f.
+Canonical controller completed0/SSH0; exact poststatus is
+`2026-10-19T17:42:46Z 52056af2 ok (cheap)`. Existing exec80661 and collector33077
+are terminal; NEVER restart/poll them or duplicate this release/collector.
+Main product integration4101df25 is separate; never deploy historical main.
+
+VERIFIED at the exact production tree:10902unit passed/93skipped/6xfailed/
+439warnings/25subtests586.18s, then100real-model functional passed284.28s.
+Normal gates, backup, migration, source approval, rebuild/restart and cheap
+serving checks ran without skip/clock flags. All six backend-image services
+rebuilt through scripts/deploy.sh. Installed HOST+CONTAINER trading admission
+passed. Only native paper a8c508→1a96dd changed in the31-source map; other30,
+economic evidence4d6af1bb, models, costs, timing and all other selector fields
+remain unchanged. Configa237bfe4/releasefc325971 bind this exact source renewal.
+
+Actual backend668d1e94cfa6f81b22147017cdb0297eea501f755c2604676d21bf9818d3fade
+image20986d31599b79b9d623e551d8dfe08a0177a5837cc2a59bfc1fe5f149550931,
+restart0. Gateway519a293d/imagee28360bb remains unchanged/restart0; actual current
+index's sole primary JS is index-DIdPh0aa.js/SHA69d12566abc786033e6418de409ecfd407943d37406145d16acfbe5638e94f0b.
+All31 host and actual backend hashes matched under unchanged runtime bookends.
+No old browser cases were rerun; prior deployed-asset proofs remain scoped to
+their synthetic GET-only journeys, not signed-in account acceptance.
+
+Canonical backup completed47-table dump, base backup and2139 archived WAL files,
+then Spark2 dump+WAL mirror. Per-invocation BACKUP_MIRROR_HOST selected ONLY
+animallya96@172.16.8.5; optional Mac WAL mirror was NOT restarted. Do not retry
+the stopped Mac mirror or delete backups. Source/config/service settings did
+not change for this mirror selection. Local free remains about3.3GiB.
+
+Delivery proof research/paper-ownership-delivery-proof-2026-10-19.json is133327B/
+SHA15251a10e8da49380357f594bfb50533f4390aca4ad3a55b8f71c225c971518f.
+It retains13 exact canonical receipts/log, installed approval, actual31 source
+hashes/current gateway index binding and service identities. Corrected collector
+8358B/SHA41f9d989c64ea7ea7ffacdfdce648cd8b12833fc8ea48d91736c41bd4a016a1b
+ran ONCE, exclusive/fsync/readback. Pre-use review fixed active-index and response
+bound checks before first invocation; no acceptance rerun. Application bounds
+are NOT kernel/whole-process RAM quotas. Candidate proof remains unchanged.
+
+FAILED live sender is NOT repaired by deploying this preventer. Existing state
+was last observed root:root0600/inode41818273/1649061B; no protected account body
+read, live chmod/chown/save/replay or forced strategy run occurred. The patch
+preserves existing ownership, including today's wrong root owner. Actual new
+sender/order/fill persistence and signed-in UI acceptance remain UNVERIFIED.
+
+Concrete next action requires explicit human authority under the user's
+no-denied-read-bypass restriction: change ONLY this original state's owner/group
+to1000:1000, keep0600/path/inode/bytes/size/mtime, and authorize privileged before/
+after streaming hashes. The final response asks this narrow question; no grant
+has been received. Do not treat deploy authorization or an internal helper flag
+as that grant. Do not ask again while it is pending or bypass it with Docker.
+
+Reviewable INERT helper/proposal is preserved in
+research/paper-ownership-one-time-repair-proposal-2026-10-19.json,40714B/
+SHA252d8296fb1ff819222b8c8b4af6907296a8c9c014f4dcd8b38c709bd595d208.
+Helper /tmp/paper_ownership_one_time_repair_20261019.py is16337B/1478eafe9096923159ad61fcb2f55fdd9ed2e0142666ccf3ea6fa758bc564fa6;
+tests8777B/4ed44e5b5b8386b8894a042f733875ba3e33f06914e7d48e9fc09a57a136c5e5.
+First fresh syntheticCIDb0fef67679fa08125e900c78c16c138129273f13b7ea1d5458bf3f519c61ec9a
+exit0/noOOM17:34:09.327913385Z/SSH0:9pass0.05s. Cached136ebb46 image,
+networknone/RO/1CPU512MiB=swap/PIDs32/dropALL+CHOWN/SETUID/SETGID/DAC_OVERRIDE,
+tmp64/two exact sourceRO+freshoutRW, no live app/account/credential mounts.
+Actual fresh container UID1000 path-open/hash and refusal/uncertainty cases pass;
+this does NOT test the live CLI/source guard, host namespace or any real account.
+Never replay that synthetic root or rerun tests/getters for docs.
+
+After explicit grant, prepare/review the exact runtime wrapper: pin actual current
+deployed CID/source1a96/approval, exclude surviving known old-code writers, obtain
+fresh complete original metadata and existing nonblocking state.lock, retain
+exclusive external intent, execute one fd fchown+fsync, verify identical bytes/
+inode/mode and original UID1000 access. Follow with normal HOST UID1000 hash under
+the native lock; helper's UID proof is container-scoped. On changed inode/size,
+contention or uncertainty, abort/no automatic retry/rollback/restore. Then observe
+the NEXT natural sender run, never force market_daily/market_balancer or retime
+Oct13 intents. Existing original-history/anonymous-identity/genuine/private physical
+capacity restrictions remain. Goal/heartbeat ACTIVE. Diagram impact:NONE.
+
 ## 2026-10-19 — Ownership prevention in canonical gates; live file NOT repaired
 
 Current production-based candidate52056af248d4ffe1425c0f44d0be7fa69cdacc4d,
