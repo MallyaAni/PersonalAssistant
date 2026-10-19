@@ -8,6 +8,7 @@ from copy import deepcopy
 from contextlib import contextmanager
 from datetime import UTC, date, datetime
 from hashlib import sha256
+import json
 from pathlib import Path
 
 from backend.agents.trading.desk import paper, intraday_orders
@@ -25,12 +26,18 @@ from backend.market import historical_timing_packet as packet
 from backend.market import replay_broker as native
 from backend.market.historical_packet_store import Store, StorePause
 
-SCHEMA = 'synthetic-reserved-cycle-stages/1'
+SCHEMA = 'synthetic-reserved-cycle-stages/2'
+PAPER_SCHEMA = 'synthetic-cycle-prepared-paper/1'
 PHASES = ('PREPARE', 'DECISION_FROZEN', 'SUBMISSION_CAPTURED')
 OBSERVE = native.ReplayBroker.observe
 SUBMIT = native.ReplayBroker._submit
 SUBMIT_MARKET = native.ReplayBroker.submit_market
 DUE = intraday_orders.due
+LOAD_STATE = paper.load_state
+LOAD_CODE = paper.load_state.__code__
+STATE_JSON = paper._state_json
+STATE_JSON_CODE = paper._state_json.__code__
+STATE_TYPE = paper.PaperState
 
 
 # Preserve public genuine refusal before constructing a producer or allocating anything.
@@ -44,6 +51,96 @@ def sources():
         sha256(Path(module.__file__).read_bytes()).hexdigest() for module in
         (bridge, bridge.cycle, codec, cas, paper, intraday_orders)},
         str(Path(__file__)): sha256(Path(__file__).read_bytes()).hexdigest()}
+
+
+# Hash the original native representation without saving, normalizing or copying its state graph.
+def prepared_bytes(state, limit):
+    physical._require(type(state) is paper.PaperState, 'Exact owned native PaperState required')
+    hashed, length = sha256(), 0
+    for text in json.JSONEncoder(indent=2, default=paper._state_json).iterencode(state):
+        raw = text.encode()
+        length += len(raw)
+        physical._require(length <= limit, 'Finite prepared native paper byte bound')
+        hashed.update(raw)
+    return {'sha256': hashed.hexdigest(), 'length': length}
+
+
+# Authenticate persisted preparation metadata without loading or reconstructing a native state object.
+def verify_prepared_paper(nightly, original):
+    value, declared = original['prepared_paper'], original['declaration']
+    if declared['phase'] != 'SUBMISSION_CAPTURED':
+        physical._require(value is None, 'Only submission owns prepared native paper')
+        return None
+    physical._require(type(value) is dict and set(value) == {'schema', 'identity', 'account',
+        'source_sha256', 'head', 'declaration_sha256', 'native_io_sha256', 'preimage', 'native_bytes'}
+        and value['schema'] == PAPER_SCHEMA and value['identity'] == nightly.store.identity
+        and value['account'] == str(nightly.root)
+        and value['source_sha256'] == sha256(Path(__file__).read_bytes()).hexdigest()
+        and value['head'] == original['pre_head']
+        and value['declaration_sha256'] == packet._digest(declared)
+        and value['native_io_sha256'] == original['native_io']['reservation_sha256']
+        and type(value['preimage']) is dict and set(value['preimage']) == {'sha256', 'length', 'device', 'inode'}
+        and type(value['native_bytes']) is dict and set(value['native_bytes']) == {'sha256', 'length'}
+        and value['native_bytes'] == {key: value['preimage'][key] for key in ('sha256', 'length')},
+        'Exact original prepared native paper binding required')
+    auxiliary = legacy.admitted.decoded(protocol.read(nightly,
+        nightly.root / 'operations' / ('reserved-cycle-' + declared['cycle']) / declared['phase']
+            / 'reserved-native-save.json', legacy))
+    physical._require(value['preimage'] == auxiliary['before']['current'],
+                      'Prepared native paper must bind the original native preimage')
+    return value
+
+
+# Retain one exact pre-effect native object; this is not full transition or RAM admission.
+class _PreparedPaper:
+    # Materialize before the callback and bind exact native bytes to the original armed phase.
+    def __init__(self, owner, declaration):
+        self.owner, self.state, self.original, self.closed, self.handed = owner, None, None, False, False
+        try:
+            owner._guard()
+            owner.io._lease()
+            preimage = deepcopy(owner.io.cursor['current'])
+            path = paper.state_path(owner.nightly.root)
+            physical._require(preimage is not None and reserved_io.writer_module._image(path) == preimage,
+                              'Original prepared paper preimage required')
+            owner.nightly.store._point('reserved_paper_before_load')
+            self.state = self.original = paper.load_state(owner.nightly.root)
+            native_bytes = prepared_bytes(self.state, owner.checkpoint.limits['raw_bytes'])
+            physical._require(native_bytes == {key: preimage[key] for key in ('sha256', 'length')}
+                and reserved_io.writer_module._image(path) == preimage,
+                'Prepared native load/serialization changed the original bytes')
+            self.binding = {'schema': PAPER_SCHEMA, 'identity': owner.nightly.store.identity,
+                'account': str(owner.nightly.root), 'source_sha256': sha256(Path(__file__).read_bytes()).hexdigest(),
+                'head': owner.nightly.expected_head, 'declaration_sha256': packet._digest(declaration),
+                'native_io_sha256': owner.io.evidence()['reservation_sha256'],
+                'preimage': preimage, 'native_bytes': native_bytes}
+            self.raw = legacy.admitted.encoded(self.binding)
+            owner._order(declaration['inputs']['order'], state=self.state)
+            owner._guard()
+            owner.io._lease()
+            owner.nightly.store._point('reserved_paper_prepared')
+        except BaseException:
+            self.close()
+            raise
+
+    # Check frozen metadata and original preimage before every capability, without rereading native JSON.
+    def check(self, original, verb, counts):
+        physical._require(not self.closed and self.state is self.original
+            and type(self.state) is paper.PaperState
+            and legacy.admitted.encoded(self.binding) == self.raw
+            and verify_prepared_paper(self.owner.nightly, original) == self.binding,
+            'Original owned prepared native paper required')
+        if counts.get('save', 0) == 0:
+            physical._require(reserved_io.writer_module._image(paper.state_path(self.owner.nightly.root))
+                == self.binding['preimage'], 'Live prepared paper preimage changed')
+        if verb in ('observe', 'submit'):
+            physical._require(not self.handed and prepared_bytes(self.state,
+                self.owner.checkpoint.limits['raw_bytes']) == self.binding['native_bytes'],
+                'Unhanded prepared native paper changed before effects')
+
+    # Release only this scope's references, including on preparation failure or callback exceptions.
+    def close(self):
+        self.closed, self.state, self.original = True, None, None
 
 
 # Expose only the once-per-stage effects whose exact inputs were already reserved.
@@ -69,6 +166,8 @@ class _Effects:
             'Original reserved Cycle capability inputs/lease changed')
         physical._require(self.phase == 'SUBMISSION_CAPTURED' and self.counts.get(verb, 0) == 0,
                           'Unreserved/repeated Cycle capability')
+        physical._require(owner.prepared is not None, 'Original prepared native paper scope required')
+        owner.prepared.check(original, verb, self.counts)
         self.counts[verb] = 1
 
     # Retain uncertainty even when the source-bound program catches an effect failure.
@@ -80,8 +179,7 @@ class _Effects:
             self.owner._guard()
             self.owner.io._lease()
         except BaseException:
-            self.owner.io.failed = True
-            self.owner.nightly.store.blob_reservation.poison(self.owner.io.reserved_cas)
+            self.owner._poison_prepared()
             raise
 
     # Observe only the exact supplied synthetic submission clock and marks, once.
@@ -99,15 +197,22 @@ class _Effects:
                                                          value['client_order_id'])
             return deepcopy(self.order)
 
-    # Read native paper only while the original submission lease remains active.
+    # Return only the exact pre-effect owned object once after actual submission, without loading JSON.
     def load(self):
         with self._scope('load'):
-            return paper.load_state(self.owner.nightly.root)
+            prepared = self.owner.prepared
+            physical._require(self.order is not None and not prepared.handed,
+                              'Original prepared paper may be handed off once after submit')
+            prepared.handed = True
+            self.owner.nightly.store._point('reserved_paper_handed')
+            return prepared.state
 
     # Save the complete native state through the original reserved writer after actual submit.
     def save(self, state):
         with self._scope('save'):
             physical._require(self.order is not None, 'Original native submission required before save')
+            physical._require(self.counts.get('load') == 1 and self.owner.prepared.handed
+                and state is self.owner.prepared.state, 'Save requires the exact once-handed prepared state')
             return self.owner.io.save(self.owner.nightly.root, state)
 
     # Publish the preclaimed fixed latch when bound, retaining ordinary path semantics otherwise.
@@ -134,6 +239,7 @@ class _Stages:
             and type(nightly.store) is Store and type(nightly.store.blob_reservation) is cas.ReservedCAS
             and type(native_io) is reserved_io.SyntheticNativeIO, 'Exact private reserved Cycle objects required')
         self.nightly, self.client, self.checkpoint, self.io = nightly, client, checkpoint, native_io
+        self.prepared = None
         self.session, self.context, self.lineage = session, deepcopy(context), deepcopy(lineage)
         self._guard()
         physical._require(date.fromisoformat(session).isoformat() == session
@@ -156,13 +262,23 @@ class _Stages:
             and self.nightly.store.identity == self.io.writer.header['identity_sha256']
             and type(self.nightly.store.blob_reservation) is cas.ReservedCAS
             and native.ReplayBroker.observe is OBSERVE and native.ReplayBroker._submit is SUBMIT
-            and native.ReplayBroker.submit_market is SUBMIT_MARKET and intraday_orders.due is DUE,
+            and native.ReplayBroker.submit_market is SUBMIT_MARKET and intraday_orders.due is DUE
+            and paper.load_state is LOAD_STATE and paper.load_state.__code__ is LOAD_CODE
+            and paper._state_json is STATE_JSON and paper._state_json.__code__ is STATE_JSON_CODE
+            and paper.PaperState is STATE_TYPE,
             'Original private Cycle native bindings required')
 
     # Read bounded original protocol metadata without capturing or invoking a callback.
     def _read(self, path):
         raw = protocol.read(self.nightly, path, legacy)
         return legacy.admitted.decoded(raw), sha256(raw).hexdigest()
+
+    # Durably refuse later capabilities after caught preparation or owned-object uncertainty.
+    def _poison_prepared(self):
+        self.io.failed = True
+        self.nightly.store.blob_reservation.poison(self.io.reserved_cas)
+        if self.nightly.store.directory_binding is not None:
+            self.nightly.store.directory_binding.poison()
 
     # Fix the attempt by cycle/stage so changed inputs cannot obtain another operation.
     def _directory(self, phase):
@@ -210,12 +326,13 @@ class _Stages:
         original, reservation_sha = self._read(directory / 'reservation.json')
         protocol.verify(self.nightly, directory, phase=phase, head=original['pre_head'],
                         inputs=packet._digest(declaration))
-        physical._require(set(original) == {'schema', 'declaration', 'sources', 'pre_head', 'native_io'}
+        physical._require(set(original) == {'schema', 'declaration', 'sources', 'pre_head', 'native_io', 'prepared_paper'}
             and original['schema'] == SCHEMA
             and original['declaration'] == declaration and original['sources'] == sources()
             and original['pre_head'] == original['native_io']['reserved_cas']['head']
             and original['native_io']['effect_binding'] == packet._digest(declaration),
             'Conflicting reserved Cycle declaration')
+        preparation = verify_prepared_paper(self.nightly, original)
         try:
             prepared, _ = self._read(directory / 'prepared.json')
         except FileNotFoundError as error:
@@ -232,6 +349,8 @@ class _Stages:
             and prepared['native_io']['reserved_cas'] == original['native_io']['reserved_cas'],
             'Original reserved stage receipt/source differs')
         physical._require(receipt['detail']['stage'] == phase, 'Original reserved stage detail required')
+        physical._require(receipt['detail'].get('prepared_paper') == preparation,
+                          'Original receipt/pre-effect native paper binding differs')
         contents = [] if phase != 'SUBMISSION_CAPTURED' else [bridge.paper_content(
             receipt['components']['paper'], self.checkpoint, store.identity)]
         reserved_io.validate(self.nightly, directory, prepared['native_io'], contents,
@@ -335,10 +454,18 @@ class _Stages:
         protocol.create(self.nightly, directory, phase=phase, inputs=packet._digest(declaration),
             latch_session=inputs['latch']['session'] if phase == 'SUBMISSION_CAPTURED' else None)
         self.io.begin(self.nightly, directory, legacy, effect_binding=packet._digest(declaration))
-        value = {'schema': SCHEMA, 'declaration': declaration, 'sources': sources(),
-            'pre_head': self.nightly.expected_head, 'native_io': self.io.evidence()}
-        raw = legacy.admitted.encoded(value)
-        protocol.write(self.nightly, directory / 'reservation.json', raw, legacy)
+        try:
+            self.prepared = _PreparedPaper(self, declaration) if phase == 'SUBMISSION_CAPTURED' else None
+            value = {'schema': SCHEMA, 'declaration': declaration, 'sources': sources(),
+                'pre_head': self.nightly.expected_head, 'native_io': self.io.evidence(),
+                'prepared_paper': None if self.prepared is None else deepcopy(self.prepared.binding)}
+            raw = legacy.admitted.encoded(value)
+            protocol.write(self.nightly, directory / 'reservation.json', raw, legacy)
+            if self.prepared is not None:
+                self.nightly.store._point('reserved_paper_reserved')
+        except BaseException:
+            self._poison_prepared()
+            raise
         return declaration, (directory, sha256(raw).hexdigest())
 
     # Persist the exact prepared receipt before any authoritative stage/head commitment.
@@ -356,6 +483,12 @@ class _Stages:
         prepared, _ = self._read(directory / 'prepared.json')
         receipt = bridge.cycle._read_receipt(self.nightly.store, reference, self.nightly.pins(),
                                             raw_checkpoint=self.checkpoint)
+        preparation = verify_prepared_paper(self.nightly, original)
+        physical._require(receipt['detail'].get('prepared_paper') == preparation
+            and (phase != 'SUBMISSION_CAPTURED' or self.prepared is not None
+                and legacy.admitted.encoded(preparation) == self.prepared.raw
+                == legacy.admitted.encoded(self.prepared.binding)),
+            'Original prepared native paper changed before commitment')
         physical._require(original['declaration'] == declaration == self._declaration(phase, declaration['inputs'])
             and original['sources'] == sources() and self.io.evidence() == prepared['native_io']
             and prepared['receipt'] == reference and prepared['reservation_sha256'] == reservation_sha
@@ -417,6 +550,9 @@ class _Stages:
             self.io.failed = True
             raise
         finally:
+            if self.prepared is not None:
+                self.prepared.close()
+                self.prepared = None
             legacy.LOCK.release()
 
     # Execute a source-bound synthetic decision/submission only after both reservations exist.
@@ -444,7 +580,8 @@ class _Stages:
     # Produce and validate evidence before commitment; any failure poisons the original lease.
     def _produce(self, phase, inputs, declaration, directory, reservation_sha):
         store = self.nightly.store
-        self._order(inputs['candidate'] if phase == 'DECISION_FROZEN' else inputs['order'])
+        self._order(inputs['candidate'] if phase == 'DECISION_FROZEN' else inputs['order'],
+                    state=None if self.prepared is None else self.prepared.state)
         if phase == 'SUBMISSION_CAPTURED':
             decision_dir = self._directory('DECISION_FROZEN')
             original, _ = self._read(decision_dir / 'reservation.json')
@@ -476,17 +613,20 @@ class _Stages:
             physical._require(effects.counts == {'observe': 1, 'submit': 1, 'load': 1, 'save': 1, 'latch': 1},
                               'Complete original bounded submission effects required')
         store._point('reserved_cycle_effect_returned_' + phase)
-        reference = self._receipt(phase, {'output': output, 'effects': effects.counts}, reservation_sha)
+        reference = self._receipt(phase, {'output': output, 'effects': effects.counts,
+            'prepared_paper': None if self.prepared is None else deepcopy(self.prepared.binding)}, reservation_sha)
         self._prepared(phase, directory, reservation_sha, reference)
         self._before_commit(phase, declaration, directory, reference)
         return reference
 
     # Require an unsent native due row in this narrow synthetic market-order lane.
-    def _order(self, selected):
+    def _order(self, selected, *, state=None):
         physical._require(type(selected) is dict
             and set(selected) == {'symbol', 'side', 'qty', 'client_order_id'},
             'Finite single-order decision declaration required')
-        matches = [row for row in intraday_orders.due(paper.load_state(self.nightly.root),
+        state = paper.load_state(self.nightly.root) if state is None else state
+        physical._require(type(state) is paper.PaperState, 'Original native due-row state required')
+        matches = [row for row in intraday_orders.due(state,
             date.fromisoformat(self.session)) if row['client_order_id'] == selected['client_order_id']
             and row['symbol'] == selected['symbol'] and row['side'] == selected['side']]
         physical._require(len(matches) == 1 and type(selected['qty']) is int
