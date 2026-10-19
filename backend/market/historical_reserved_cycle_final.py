@@ -17,6 +17,7 @@ from backend.market import historical_physical_checkpoint as physical
 from backend.market import historical_raw_cycle as bridge
 from backend.market import historical_reserved_cycle_stages as stages
 from backend.market import historical_reserved_native_io as reserved_io
+from backend.market import historical_reserved_protocol as protocol
 from backend.market import historical_timing_packet as packet
 from backend.market import replay_broker as native
 from backend.market.historical_packet_store import StorePause
@@ -61,8 +62,8 @@ def request(value, session):
 
 
 # Read only the fixed final metadata under the same bounded physical contract as stages.
-def read_file(path):
-    raw = legacy.physical(path)
+def read_file(nightly, path):
+    raw = protocol.read(nightly, path, legacy)
     return legacy.admitted.decoded(raw), sha256(raw).hexdigest()
 
 
@@ -93,15 +94,17 @@ def validate(nightly, reference, checkpoint, *, require_result=True):
         expected_head=nightly.expected_head, raw_checkpoint=checkpoint)
     submission_head, cycle = final['entry']['parent'], final['entry']['cycle_sha256']
     _, directory = operation(nightly, submission_head)
-    value, reservation_sha = read_file(directory / 'reservation.json')
+    value, reservation_sha = read_file(nightly, directory / 'reservation.json')
     physical._require(set(value) == {'schema', 'declaration', 'native_io'} and value['schema'] == SCHEMA,
                       'Original reserved final reservation required')
     declared = value['declaration']
+    protocol.verify(nightly, directory, phase='OUTCOME_COMMITTED', head=submission_head,
+                    inputs=packet._digest(declared))
     physical._require(legacy.admitted.encoded(declared) == legacy.admitted.encoded(
         declaration(nightly, checkpoint, submission_head, declared['request']))
         and final['receipt'].get('reserved_cycle_final') == link(value, reservation_sha),
         'Original reserved final stage/input lineage differs')
-    prepared, _ = read_file(directory / 'prepared.json')
+    prepared, _ = read_file(nightly, directory / 'prepared.json')
     physical._require(set(prepared) == {'schema', 'reservation_sha256', 'receipt', 'native_io'}
         and prepared['schema'] == SCHEMA and prepared['reservation_sha256'] == reservation_sha
         and prepared['receipt'] == reference, 'Original reserved final prepared marker required')
@@ -112,8 +115,7 @@ def validate(nightly, reference, checkpoint, *, require_result=True):
     control, group = store.blob_reservation.group(lease)
     physical._require(value['native_io']['effect_binding'] == packet._digest(declared)
         and lease['head'] == submission_head
-        and lease['operation'] == sha256(physical._encoded({'directory': str(directory),
-            'effect_binding': packet._digest(declared)})).hexdigest()
+        and lease['operation'] == reserved_io.operation_identity(nightly, directory, packet._digest(declared))
         and group['status'] in ('ACTIVE', 'COMPLETE')
         and group['metadata_pending'] is None
         and (group['status'] == 'COMPLETE' or control['pending'] is None)
@@ -139,7 +141,7 @@ def validate(nightly, reference, checkpoint, *, require_result=True):
               'receipt': reference, 'head': final['entry']['sha256']}
     if require_result:
         physical._require(group['status'] == 'COMPLETE'
-            and read_file(directory / 'result.json')[0] == marker,
+            and read_file(nightly, directory / 'result.json')[0] == marker,
             'Original complete final result required before Nightly')
     return final, marker, value, prepared
 
@@ -169,7 +171,7 @@ class _Final:
         self._guard()
         self.io._lease()
         declared = value['declaration']
-        physical._require(not self.io.failed and read_file(directory / 'reservation.json') == (value, reservation_sha)
+        physical._require(not self.io.failed and read_file(self.nightly, directory / 'reservation.json') == (value, reservation_sha)
             and legacy.admitted.encoded(declared) == legacy.admitted.encoded(
                 declaration(self.nightly, self.checkpoint, declared['submission_head'], declared['request']))
             and self.nightly.store.snapshot()['head'] == declared['submission_head']
@@ -182,7 +184,7 @@ class _Final:
         physical._require(legacy.LOCK.acquire(blocking=False), 'Concurrent reserved final')
         try:
             _, directory = operation(self.nightly, submission_head)
-            if directory.exists():
+            if protocol.exists(self.nightly, directory):
                 return self._recover_once(submission_head, inputs)
             return self._produce(submission_head, inputs, directory)
         except BaseException:
@@ -202,12 +204,11 @@ class _Final:
         bridge.verify_latch(store, nightly.root, declared['session'], declared['before']['latch'])
         physical._require(client._now is not None and native._instant(declared['request']['at']) > client._now,
                           'Explicit later synthetic resolution clock required')
-        directory.mkdir(mode=0o700)
-        legacy.sync_directory(directory.parent)
+        protocol.create(nightly, directory, phase='OUTCOME_COMMITTED', inputs=packet._digest(declared))
         self.io.begin(nightly, directory, legacy, effect_binding=packet._digest(declared))
         value = {'schema': SCHEMA, 'declaration': declared, 'native_io': self.io.evidence()}
         raw = legacy.admitted.encoded(value)
-        legacy.write_once(directory / 'reservation.json', raw)
+        protocol.write(nightly, directory / 'reservation.json', raw, legacy)
         reservation_sha = sha256(raw).hexdigest()
         try:
             store._point('reserved_final_reserved')
@@ -258,10 +259,10 @@ class _Final:
             reserved_io.validate(nightly, directory, prepared['native_io'], [
                 bridge.paper_content(receipt['components']['paper'], self.checkpoint, store.identity)],
                 legacy, value['native_io'])
-            legacy.write_once(directory / 'prepared.json', legacy.admitted.encoded(prepared))
+            protocol.write(nightly, directory / 'prepared.json', legacy.admitted.encoded(prepared), legacy)
             store._point('reserved_final_prepared')
             self._active(value, reservation_sha, directory)
-            physical._require(legacy.admitted.encoded(read_file(directory / 'prepared.json')[0])
+            physical._require(legacy.admitted.encoded(read_file(self.nightly, directory / 'prepared.json')[0])
                 == legacy.admitted.encoded(prepared)
                 and legacy.admitted.encoded(bridge.cycle._read_receipt(store, reference, nightly.pins(),
                     raw_checkpoint=self.checkpoint)) == legacy.admitted.encoded(receipt),
@@ -297,18 +298,18 @@ class _Final:
     def _recover_once(self, submission_head, inputs):
         _, directory = operation(self.nightly, submission_head)
         try:
-            value, _ = read_file(directory / 'reservation.json')
+            value, _ = read_file(self.nightly, directory / 'reservation.json')
             physical._require(legacy.admitted.encoded(value['declaration']) == legacy.admitted.encoded(
                 declaration(self.nightly, self.checkpoint, submission_head, inputs)), 'Conflicting original final inputs')
-            prepared, _ = read_file(directory / 'prepared.json')
+            prepared, _ = read_file(self.nightly, directory / 'prepared.json')
         except FileNotFoundError as error:
             raise StorePause('OPEN reserved final; never replay') from error
         reference = prepared['receipt']
         _, marker, value, _ = validate(self.nightly, reference, self.checkpoint, require_result=False)
         try:
-            original, _ = read_file(directory / 'result.json')
+            original, _ = read_file(self.nightly, directory / 'result.json')
         except FileNotFoundError:
-            legacy.write_once(directory / 'result.json', legacy.admitted.encoded(marker))
+            protocol.write(self.nightly, directory / 'result.json', legacy.admitted.encoded(marker), legacy)
         else:
             physical._require(original == marker, 'Original final result marker differs')
         self.nightly.store._point('reserved_final_result_written')

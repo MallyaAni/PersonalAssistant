@@ -20,6 +20,7 @@ from backend.market import historical_raw_cycle as bridge
 from backend.market import historical_raw_nightly as raw_nightly
 from backend.market import historical_reserved_blob_store as cas
 from backend.market import historical_reserved_native_io as reserved_io
+from backend.market import historical_reserved_protocol as protocol
 from backend.market import historical_timing_packet as packet
 from backend.market import replay_broker as native
 from backend.market.historical_packet_store import Store, StorePause
@@ -109,14 +110,19 @@ class _Effects:
             physical._require(self.order is not None, 'Original native submission required before save')
             return self.owner.io.save(self.owner.nightly.root, state)
 
-    # Persist the declared synthetic latch once without claiming its directory/file capacity.
+    # Publish the preclaimed fixed latch when bound, retaining ordinary path semantics otherwise.
     def latch(self):
         with self._scope('latch'):
             physical._require(self.counts.get('save') == 1, 'Native submission save must precede latch')
             owner = self.owner
             path = bridge.cycle.entry_timing.latch_path(owner.nightly.root, date.fromisoformat(owner.session))
-            path.parent.mkdir(mode=0o700, exist_ok=True)
-            legacy.write_once(path, legacy.admitted.encoded(self.declaration['latch']))
+            namespace = protocol.pool(owner.nightly)
+            if namespace is None:
+                path.parent.mkdir(mode=0o700, exist_ok=True)
+                legacy.write_once(path, legacy.admitted.encoded(self.declaration['latch']))
+            else:
+                namespace.write_once(owner._directory(self.phase), 'latch',
+                                     legacy.admitted.encoded(self.declaration['latch']))
             return str(path)
 
 
@@ -155,7 +161,7 @@ class _Stages:
 
     # Read bounded original protocol metadata without capturing or invoking a callback.
     def _read(self, path):
-        raw = legacy.physical(path)
+        raw = protocol.read(self.nightly, path, legacy)
         return legacy.admitted.decoded(raw), sha256(raw).hexdigest()
 
     # Fix the attempt by cycle/stage so changed inputs cannot obtain another operation.
@@ -202,6 +208,8 @@ class _Stages:
         self._guard()
         store, cycle, directory = self.nightly.store, bridge.cycle, self._directory(phase)
         original, reservation_sha = self._read(directory / 'reservation.json')
+        protocol.verify(self.nightly, directory, phase=phase, head=original['pre_head'],
+                        inputs=packet._digest(declaration))
         physical._require(set(original) == {'schema', 'declaration', 'sources', 'pre_head', 'native_io'}
             and original['schema'] == SCHEMA
             and original['declaration'] == declaration and original['sources'] == sources()
@@ -290,7 +298,7 @@ class _Stages:
         except FileNotFoundError:
             physical._require(finish and store.snapshot()['head'] == entry['sha256'],
                               'Uncommitted/stale stage cannot finish result')
-            legacy.write_once(directory / 'result.json', legacy.admitted.encoded(marker))
+            protocol.write(self.nightly, directory / 'result.json', legacy.admitted.encoded(marker), legacy)
         else:
             physical._require(retained == marker, 'Original Cycle stage result differs')
         if finish:
@@ -303,7 +311,7 @@ class _Stages:
     def _start(self, phase, inputs):
         self._guard()
         declaration, directory = self._declaration(phase, inputs), self._directory(phase)
-        if directory.exists():
+        if protocol.exists(self.nightly, directory):
             return declaration, self._recover(phase, declaration)
         store = self.nightly.store
         physical._require(store.snapshot()['head'] == self.nightly.expected_head,
@@ -311,7 +319,8 @@ class _Stages:
         if phase == 'PREPARE':
             physical._require(store.snapshot()['next_stage'] == 'PRIOR_VERIFIED', 'Original empty Cycle stage required')
             self._prior()
-            self.root.mkdir(mode=0o700)
+            if protocol.pool(self.nightly) is None:
+                self.root.mkdir(mode=0o700)
         else:
             physical._require(store.snapshot()['cycle'] == self.cycle and store.snapshot()['next_stage'] == phase,
                               'Original next reserved Cycle stage required')
@@ -323,20 +332,20 @@ class _Stages:
             reserved_io.current_components(self.nightly, self.client, retained['value']['components'],
                                            self.checkpoint, legacy)
             bridge.verify_latch(store, self.nightly.root, self.session, retained['value']['components']['latch'])
-        directory.mkdir(mode=0o700)
-        legacy.sync_directory(directory.parent)
+        protocol.create(self.nightly, directory, phase=phase, inputs=packet._digest(declaration),
+            latch_session=inputs['latch']['session'] if phase == 'SUBMISSION_CAPTURED' else None)
         self.io.begin(self.nightly, directory, legacy, effect_binding=packet._digest(declaration))
         value = {'schema': SCHEMA, 'declaration': declaration, 'sources': sources(),
             'pre_head': self.nightly.expected_head, 'native_io': self.io.evidence()}
         raw = legacy.admitted.encoded(value)
-        legacy.write_once(directory / 'reservation.json', raw)
+        protocol.write(self.nightly, directory / 'reservation.json', raw, legacy)
         return declaration, (directory, sha256(raw).hexdigest())
 
     # Persist the exact prepared receipt before any authoritative stage/head commitment.
     def _prepared(self, phase, directory, reservation_sha, reference):
         value = {'schema': SCHEMA, 'reservation_sha256': reservation_sha, 'receipt': reference,
                  'native_io': self.io.evidence()}
-        legacy.write_once(directory / 'prepared.json', legacy.admitted.encoded(value))
+        protocol.write(self.nightly, directory / 'prepared.json', legacy.admitted.encoded(value), legacy)
         self.nightly.store._point('reserved_cycle_prepared_' + phase)
 
     # Recheck source/input/current bytes after preparation and before the Store commitment.
@@ -446,7 +455,7 @@ class _Stages:
         before = reserved_io.writer_module._image(paper.state_path(self.nightly.root))
         broker_before = codec.encode(self.client, **self.nightly.pins())
         latch_path = bridge.cycle.entry_timing.latch_path(self.nightly.root, date.fromisoformat(self.session))
-        latch_before = bridge.cycle._file(latch_path, absent=True)
+        latch_before = bridge.latch_bytes(store, self.nightly.root, self.session)
         self.io._lease()
         effects = _Effects(self, phase, inputs)
         output = self.io.trade(phase=phase, inputs=deepcopy(inputs), effects=effects)
@@ -458,7 +467,7 @@ class _Stages:
         if phase == 'DECISION_FROZEN':
             physical._require(not effects.counts and before == reserved_io.writer_module._image(
                 paper.state_path(self.nightly.root)) and broker_before == codec.encode(self.client, **self.nightly.pins())
-                and latch_before == bridge.cycle._file(latch_path, absent=True),
+                and latch_before == bridge.latch_bytes(store, self.nightly.root, self.session),
                 'Decision changed native paper/broker/latch/effects')
             physical._require(type(output) is dict and set(output) == {'order'}
                 and output['order'] == inputs['candidate'], 'Original reserved single-order decision required')
@@ -595,8 +604,7 @@ class _StageReader:
         lease = original['native_io']['reserved_cas']
         _, group = self.nightly.store.blob_reservation.group(lease)
         physical._require(group['status'] == 'COMPLETE' and group['result'] == value['receipt']
-            and lease['operation'] == sha256(physical._encoded({'directory': str(directory),
-                'effect_binding': packet._digest(declaration)})).hexdigest()
+            and lease['operation'] == reserved_io.operation_identity(self.nightly, directory, packet._digest(declaration))
             and auxiliary['trade_sha256'] == declaration['executor_sha256']
             and Path(auxiliary['trade_path']).is_absolute()
             and declaration['executor_name'] in {node.co_name for node in compile(

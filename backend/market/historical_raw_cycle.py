@@ -42,10 +42,20 @@ def committed_operation(store, head, cycle_sha256, stage):
     return entry
 
 
+# Read semantic latch absence or exact bytes from the explicitly bound namespace.
+def latch_bytes(store, root, session):
+    namespace = store.metadata_reservation
+    if namespace is None:
+        return cycle._file(cycle.entry_timing.latch_path(root, date.fromisoformat(session)), absent=True)
+    if namespace.header['account'] != str(root):
+        raise ValueError('Original metadata latch workspace differs')
+    return namespace.read_latch(session)
+
+
 # Require the exact final current-session latch before allowing a Nightly observation.
 def verify_latch(store, root, session, reference):
     expected = None if reference is None else store.read_blob(reference, limit=cycle.META_CAP)
-    if cycle._file(cycle.entry_timing.latch_path(root, date.fromisoformat(session)), absent=True) != expected:
+    if latch_bytes(store, root, session) != expected:
         raise ValueError('Raw Cycle current latch differs')
 
 

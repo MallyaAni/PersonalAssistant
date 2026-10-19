@@ -20,6 +20,7 @@ from backend.market import historical_paper_component as component
 from backend.market import historical_physical_checkpoint as physical
 from backend.market import historical_raw_cycle as raw_cycle
 from backend.market import historical_reserved_native_io as reserved_io
+from backend.market import historical_reserved_protocol as protocol
 from backend.market import historical_reserved_cycle_final as reserved_final
 from backend.market import historical_timing_packet as packet
 from backend.market import replay_broker as native
@@ -40,6 +41,7 @@ WRITE_KEYS = {'schema', 'checkpoint', 'raw_sha256', 'raw_bytes', 'identity_sha25
 # Bind this composition independently from the unchanged native/legacy source map.
 def sources():
     return {**legacy.sources(), **raw_cycle.sources(), **reserved_io.sources(),
+            str(Path(protocol.__file__)): sha256(Path(protocol.__file__).read_bytes()).hexdigest(),
             str(Path(reserved_final.__file__)): sha256(Path(reserved_final.__file__).read_bytes()).hexdigest(),
             str(Path(__file__)): sha256(Path(__file__).read_bytes()).hexdigest()}
 
@@ -64,6 +66,12 @@ def write_reference(checkpoint, reference):
             'native_operation_committed': False, 'durable_simulator_adoption': False}
 
 
+# Bind each raw lifecycle reservation to its original pre-effect metadata claim.
+def protocol_inputs(phase, session, context, birth, previous, before):
+    return packet._digest({'phase': phase, 'session': session, 'context': context,
+        'birth': birth, 'previous': previous, 'before': before, 'sources': sources()})
+
+
 # Compose raw lifecycle bodies without widening legacy execution or Cycle admission.
 class RawNightly(legacy.Nightly):
     # Refuse public raw birth before reservation, broker creation or native writes.
@@ -83,15 +91,15 @@ class RawNightly(legacy.Nightly):
             and checkpoint.header['identity_sha256'] == self.store.identity,
             'Exact same-account raw lifecycle checkpoint required')
 
-    # Reserve source-bound lineage and the optional finite CAS phase before native work.
+    # Claim source-bound metadata and the optional finite CAS phase before raw native work.
     def _reserve(self, phase, session, context, birth, previous, before, native_io=None):
         legacy.admitted.require(self.store.snapshot()['head'] == self.expected_head,
                                 'Stale raw lifecycle pre-head')
         legacy.admitted.require(self.store.blob_reservation is None or native_io is not None,
                                 'Reserved Store requires pre-effect native IO lease')
         directory = self.operation(phase, session)
-        directory.mkdir(mode=0o700)
-        legacy.sync_directory(directory.parent)
+        protocol.create(self, directory, phase=phase, inputs=protocol_inputs(
+            phase, session, context, birth, previous, before))
         if native_io is not None:
             legacy.admitted.require(type(native_io) is reserved_io.SyntheticNativeIO,
                                     'Exact synthetic native IO required')
@@ -103,7 +111,7 @@ class RawNightly(legacy.Nightly):
                  'native_io': None if native_io is None else native_io.evidence(),
                  'actual_reserved_at': datetime.now(UTC).isoformat()}
         raw = legacy.admitted.encoded(value)
-        legacy.write_once(directory / 'reservation.json', raw)
+        protocol.write(self, directory / 'reservation.json', raw, legacy)
         return directory, sha256(raw).hexdigest()
 
     # Validate exact typed metadata and all native write observations before publication.
@@ -182,8 +190,11 @@ class RawNightly(legacy.Nightly):
     # Publish one finite raw lifecycle result after all source/reservation links match.
     def _publish(self, directory, reservation, value, checkpoint):
         self._value(value, checkpoint)
-        raw = legacy.physical(directory / 'reservation.json')
+        raw = protocol.read(self, directory / 'reservation.json', legacy)
         operation = legacy.admitted.decoded(raw)
+        protocol.verify(self, directory, phase=operation['phase'], head=operation['pre_head'],
+            inputs=protocol_inputs(operation['phase'], operation['session'], operation['context_sha256'],
+                operation['birth'], operation['previous'], operation['before']))
         legacy.admitted.require(sha256(raw).hexdigest() == reservation
             and operation['schema'] == SCHEMA and operation['source_sha256'] == sources()
             and operation['identity'] == self.store.identity and operation['pre_head'] == self.expected_head
@@ -198,7 +209,7 @@ class RawNightly(legacy.Nightly):
                 legacy, operation['native_io'])
         else:
             legacy.admitted.require(native_evidence is None
-                and not (directory / 'reserved-native-save.json').exists(), 'Raw native IO mode differs')
+                and not protocol.marker_exists(self, directory / 'reserved-native-save.json'), 'Raw native IO mode differs')
         if value['phase'] == 'NIGHTLY_CLOSE' and value['detail']['status'] == 'NIGHTLY_BROKER_UNAVAILABLE':
             legacy.admitted.require(content(operation['before'], checkpoint, self.store.identity)
                 [1:] == content(value['components'], checkpoint, self.store.identity)[1:],
@@ -208,7 +219,7 @@ class RawNightly(legacy.Nightly):
                   'native_operation_committed': False, 'durable_simulator_adoption': False,
                   'publication_barrier': 'CLOSED', 'packet_pipeline_integrated': False}
         reference = legacy.put(self.store, legacy.admitted.encoded(record))
-        legacy.write_once(directory / 'result.json', legacy.admitted.encoded({'schema': SCHEMA, 'receipt': reference}))
+        protocol.write(self, directory / 'result.json', legacy.admitted.encoded({'schema': SCHEMA, 'receipt': reference}), legacy)
         self.store._point('reserved_phase_result_written')
         reserved_io.complete(self, operation['native_io'], reference)
         return reference
@@ -223,14 +234,17 @@ class RawNightly(legacy.Nightly):
             and record['packet_pipeline_integrated'] is False, 'Exact reserved raw lifecycle receipt required')
         value, operation = record['value'], record['operation']
         directory = self.operation(operation['phase'], operation['session'], operation['pre_head'])
-        raw = legacy.physical(directory / 'reservation.json')
+        raw = protocol.read(self, directory / 'reservation.json', legacy)
+        protocol.verify(self, directory, phase=operation['phase'], head=operation['pre_head'],
+            inputs=protocol_inputs(operation['phase'], operation['session'], operation['context_sha256'],
+                operation['birth'], operation['previous'], operation['before']))
         legacy.admitted.require(legacy.admitted.decoded(raw) == operation
             and sha256(raw).hexdigest() == record['reservation_sha256']
             and operation['schema'] == SCHEMA and operation['source_sha256'] == sources()
             and operation['identity'] == self.store.identity
             and all(operation[key] == value[key] for key in ('phase', 'session', 'birth', 'previous'))
             and operation['context_sha256'] == value['context']
-            and legacy.admitted.decoded(legacy.physical(directory / 'result.json'))
+            and legacy.admitted.decoded(protocol.read(self, directory / 'result.json', legacy))
                 == {'schema': SCHEMA, 'receipt': reference}, 'Raw lifecycle physical lineage differs')
         self._value(value, raw_checkpoint)
         native_evidence = value['detail'].get('reserved_native_io')
@@ -240,7 +254,7 @@ class RawNightly(legacy.Nightly):
                 legacy, operation['native_io'])
         else:
             legacy.admitted.require(native_evidence is None
-                and not (directory / 'reserved-native-save.json').exists(), 'Raw native IO mode differs')
+                and not protocol.marker_exists(self, directory / 'reserved-native-save.json'), 'Raw native IO mode differs')
         if value['phase'] == 'NIGHTLY_CLOSE' and value['detail']['status'] == 'NIGHTLY_BROKER_UNAVAILABLE':
             legacy.admitted.require(content(operation['before'], raw_checkpoint, self.store.identity)
                 [1:] == content(value['components'], raw_checkpoint, self.store.identity)[1:], 'Unavailable persisted bytes differ')
@@ -249,14 +263,14 @@ class RawNightly(legacy.Nightly):
     # Recover the originally reserved result without any model or broker reexecution.
     def recover_lifecycle(self, phase, session, *, context_sha256, birth, raw_checkpoint, previous=None):
         directory = self.operation(phase, session)
-        operation = legacy.admitted.decoded(legacy.physical(directory / 'reservation.json'))
+        operation = legacy.admitted.decoded(protocol.read(self, directory / 'reservation.json', legacy))
         expected = {'schema': SCHEMA, 'identity': self.store.identity, 'pre_head': self.expected_head,
                     'phase': phase, 'session': session, 'source_sha256': sources(),
                     'context_sha256': context_sha256, 'birth': birth, 'previous': previous}
         legacy.admitted.require(all(operation.get(key) == value for key, value in expected.items()),
                                 'Conflicting raw lifecycle reservation')
         try:
-            result = legacy.admitted.decoded(legacy.physical(directory / 'result.json'))
+            result = legacy.admitted.decoded(protocol.read(self, directory / 'result.json', legacy))
         except FileNotFoundError as error:
             raise StorePause('Interrupted raw lifecycle; never re-execute') from error
         legacy.admitted.require(type(result) is dict and set(result) == {'schema', 'receipt'}
@@ -299,7 +313,7 @@ class RawNightly(legacy.Nightly):
         self._checkpoint(raw_checkpoint)
         legacy.admitted.require(type(context) is legacy.HoldingContext, 'Exact holding context required')
         context_hash = sha256(context.provenance).hexdigest()
-        if self.operation('BIRTH', '2019-02-28').exists():
+        if protocol.exists(self, self.operation('BIRTH', '2019-02-28')):
             return None, self.recover_lifecycle('BIRTH', '2019-02-28',
                 context_sha256=context_hash, birth=None, raw_checkpoint=raw_checkpoint)
         legacy.admitted.require(legacy.LOCK.acquire(blocking=False), 'Concurrent raw lifecycle')
@@ -336,7 +350,7 @@ class RawNightly(legacy.Nightly):
         legacy.admitted.require(type(context) is legacy.HoldingContext and type(client) is native.ReplayBroker,
                                 'Exact private context/broker required')
         context_hash = sha256(context.provenance).hexdigest()
-        if self.operation('NIGHTLY_CLOSE', session).exists():
+        if protocol.exists(self, self.operation('NIGHTLY_CLOSE', session)):
             result = self.recover_lifecycle('NIGHTLY_CLOSE', session, context_sha256=context_hash,
                                             birth=birth, previous=previous, raw_checkpoint=raw_checkpoint)
             legacy.admitted.require(self.read_lifecycle(result, raw_checkpoint=raw_checkpoint)['value']['previous']

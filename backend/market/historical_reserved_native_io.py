@@ -14,9 +14,11 @@ from types import CodeType, FunctionType
 
 from backend.agents.trading.desk import paper
 from backend.market import historical_physical_checkpoint as physical
+from backend.market import historical_reserved_protocol as protocol
 from backend.market import historical_synthetic_native_write as writer_module
 
 SCHEMA = 'synthetic-reserved-native-io/2'
+METADATA_SCHEMA = 'synthetic-reserved-native-io/3'
 
 
 # Bind the exact synthetic executor source/code and all original global identities.
@@ -70,17 +72,30 @@ class SyntheticNativeIO:
             physical._require((not destination.exists() and before['current'] is None)
                 or (before['current'] is not None and writer_module._image(destination) == before['current']),
                 'Original reserved native preimage required')
-        value = {'schema': SCHEMA, 'identity': nightly.store.identity,
+        namespace = protocol.pool(nightly)
+        metadata_ref = protocol.reference(nightly, directory)
+        if namespace is not None:
+            namespace.check_effects(directory)
+            physical._require(metadata_ref['head'] == nightly.expected_head
+                and (effect_binding is None or metadata_ref['inputs'] == effect_binding),
+                'Original pre-effect metadata head/input binding required')
+        self.bound_nightly, self.metadata_pool, self.metadata_ref = nightly, namespace, metadata_ref
+        self.metadata_legacy = legacy
+        extra = {} if namespace is None else {'protocol': metadata_ref}
+        value = {'schema': SCHEMA if namespace is None else METADATA_SCHEMA, **extra, 'identity': nightly.store.identity,
             'account': str(nightly.root), 'writer_root': str(self.writer.root),
             'sources': sources(), 'trade_sha256': self.trade_sha256, 'trade_path': str(self.trade_path),
             'header_sha256': sha256((self.writer.root / 'header').read_bytes()).hexdigest(),
             'before': before, 'native_operation_adopted': False, 'effect_binding': effect_binding}
         pool = nightly.store.blob_reservation
         value['reserved_cas'] = None if pool is None else pool.arm(
-            operation=sha256(str(directory).encode()).hexdigest() if effect_binding is None else
-                sha256(physical._encoded({'directory': str(directory), 'effect_binding': effect_binding})).hexdigest(),
+            operation=operation_identity(nightly, directory, effect_binding),
             head=nightly.expected_head)
-        legacy.write_once(directory / 'reserved-native-save.json', legacy.admitted.encoded(value))
+        try:
+            protocol.write(nightly, directory / 'reserved-native-save.json', legacy.admitted.encoded(value), legacy)
+        except BaseException:
+            self.failed = True
+            raise
         self.directory, self.saved, self.cursor = directory, [], deepcopy(before)
         self.reserved_cas = value['reserved_cas']
         self.effect_binding = effect_binding
@@ -123,8 +138,10 @@ class SyntheticNativeIO:
                           'Uncertain/unreserved operation has no evidence')
         with self.writer._locked(shared=True):
             physical._require(self.writer._control() == self.cursor, 'Reserved native evidence cursor differs')
-        return {'schema': SCHEMA, 'reservation_sha256': sha256(
-            (self.directory / 'reserved-native-save.json').read_bytes()).hexdigest(),
+        extra = {} if self.metadata_pool is None else {'protocol': self.metadata_ref}
+        return {'schema': SCHEMA if self.metadata_pool is None else METADATA_SCHEMA, **extra,
+            'reservation_sha256': sha256(protocol.read(self.bound_nightly,
+                self.directory / 'reserved-native-save.json', self.metadata_legacy)).hexdigest(),
             'saves': deepcopy(self.saved), 'native_operation_adopted': False,
             'reserved_cas': self.reserved_cas, 'effect_binding': self.effect_binding}
 
@@ -186,6 +203,15 @@ class SyntheticNativeIO:
 
     # Refuse further native effects or fresh evidence once the exact CAS lease is uncertain.
     def _lease(self):
+        if getattr(self, 'metadata_pool', None) is not None:
+            try:
+                physical._require(protocol.pool(self.bound_nightly) is self.metadata_pool
+                    and protocol.reference(self.bound_nightly, self.directory) == self.metadata_ref,
+                    'Original retained metadata claim required before native work')
+                self.metadata_pool.check_effects(self.directory)
+            except BaseException:
+                self.failed = True
+                raise
         if getattr(self, 'reserved_cas', None) is not None:
             try:
                 physical._require(self.cas_store.blob_reservation is self.cas_pool,
@@ -198,6 +224,16 @@ class SyntheticNativeIO:
                 raise
 
 
+# Bind the exact optional metadata claim into CAS identity while preserving unbound version two.
+def operation_identity(nightly, directory, effect_binding):
+    reference = protocol.reference(nightly, directory)
+    if reference is not None:
+        return sha256(physical._encoded({'directory': str(directory),
+            'effect_binding': effect_binding, 'protocol': reference})).hexdigest()
+    return (sha256(str(directory).encode()).hexdigest() if effect_binding is None else
+        sha256(physical._encoded({'directory': str(directory), 'effect_binding': effect_binding})).hexdigest())
+
+
 # Authenticate the separate narrow writer and this explicit composition implementation.
 def sources():
     return {name: sha256(Path(path).read_bytes()).hexdigest() for name, path in
@@ -206,13 +242,18 @@ def sources():
 
 # Validate original slot receipts and anchored bytes without saving or advancing control.
 def validate(nightly, directory, evidence, native_contents, legacy, expected):
-    raw = legacy.physical(directory / 'reserved-native-save.json')
+    raw = protocol.read(nightly, directory / 'reserved-native-save.json', legacy)
+    namespace = protocol.pool(nightly)
+    extra = set() if namespace is None else {'protocol'}
     value = legacy.admitted.decoded(raw)
     physical._require(type(value) is dict and set(value) == {'schema', 'identity', 'account',
         'writer_root', 'sources', 'trade_sha256', 'trade_path', 'header_sha256', 'before',
-        'native_operation_adopted', 'reserved_cas', 'effect_binding'} and type(evidence) is dict and set(evidence) ==
-        {'schema', 'reservation_sha256', 'saves', 'native_operation_adopted', 'reserved_cas', 'effect_binding'}
-        and evidence['schema'] == value['schema'] == SCHEMA
+        'native_operation_adopted', 'reserved_cas', 'effect_binding'} | extra and type(evidence) is dict and set(evidence) ==
+        ({'schema', 'reservation_sha256', 'saves', 'native_operation_adopted', 'reserved_cas', 'effect_binding'} | extra)
+        and evidence['schema'] == value['schema'] == (SCHEMA if namespace is None else METADATA_SCHEMA)
+        and (namespace is None or value['protocol'] == evidence['protocol'] == protocol.reference(nightly, directory))
+        and (namespace is None or value['protocol']['head'] == value['reserved_cas']['head']
+             and (value['effect_binding'] is None or value['protocol']['inputs'] == value['effect_binding']))
         and expected == {**evidence, 'saves': []}
         and evidence['reservation_sha256'] == sha256(raw).hexdigest()
         and evidence['native_operation_adopted'] is value['native_operation_adopted'] is False

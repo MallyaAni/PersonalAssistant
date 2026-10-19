@@ -110,7 +110,11 @@ def _components(store, client, root, pins, session=DAY, *, raw_checkpoint=None):
         paper_ref = historical_paper_component.capture(
             raw_checkpoint, paper.state_path(root), expected_identity=store.identity
         )
-    latch = _file(entry_timing.latch_path(root, session), absent=True)
+    namespace = store.metadata_reservation
+    if namespace is not None and namespace.header['account'] != str(root):
+        raise ValueError('Original metadata latch workspace differs')
+    latch = (_file(entry_timing.latch_path(root, session), absent=True) if namespace is None
+             else namespace.read_latch(session.isoformat()))
     if (
         latch is not None
         and packet._decode(latch).get("session") != session.isoformat()

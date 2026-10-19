@@ -86,8 +86,9 @@ def _private(path, directory=False):
 
 # Persist one identity and authoritative head with indexed, crash-atomic appends.
 class Store:
-    # Open one private writer with an explicit reserved-CAS binding when persisted mode requires it.
-    def __init__(self, root, identity_sha256, expected_head, *, create=False, blob_reservation=None):
+    # Open one private writer requiring every original pool recorded by its persisted mode.
+    def __init__(self, root, identity_sha256, expected_head, *, create=False, blob_reservation=None,
+                 metadata_reservation=None):
         self.root = Path(root)
         self.identity = registry.digest(identity_sha256)
         self.owner = uuid4().hex
@@ -95,6 +96,7 @@ class Store:
         self.connection = None
         self._spools = {}
         self._blob_reservation = None
+        self._metadata_reservation = None
         self._last_clock = None
         self._opened_clock = self._sample_clock()
         if create:
@@ -249,6 +251,12 @@ class Store:
                 'Original explicit reserved CAS binding required; no downgrade')
             if blob_reservation is not None:
                 self.bind_reserved_blobs(blob_reservation)
+            metadata = self.connection.execute("SELECT raw FROM meta WHERE key='reserved_metadata_header'").fetchone()
+            _require(metadata_reservation is not None or (metadata is None
+                and not os.path.lexists(self.root / 'reserved-protocol')),
+                'Original explicit metadata namespace required; no downgrade')
+            if metadata_reservation is not None:
+                self.bind_reserved_metadata(metadata_reservation)
         except BaseException:
             self.close()
             raise
@@ -276,6 +284,40 @@ class Store:
         else:
             _require(row['raw'] == raw, 'Original reserved CAS header differs')
         self._blob_reservation = reservation
+
+    # Require the persisted original metadata mode even if its pool was removed or detached.
+    @property
+    def metadata_reservation(self):
+        row = self.connection.execute("SELECT raw FROM meta WHERE key='reserved_metadata_header'").fetchone()
+        _require((row is None and self._metadata_reservation is None
+            and not os.path.lexists(self.root / 'reserved-protocol'))
+            or (self._metadata_reservation is not None and row is not None
+                and row['raw'] == demand.encoded(self._metadata_reservation.binding)),
+            'Original retained metadata binding required; no downgrade')
+        return self._metadata_reservation
+
+    # Persist an exact pre-birth marker namespace without altering ordinary Store tables or paths.
+    def bind_reserved_metadata(self, reservation):
+        from backend.market.historical_reserved_protocol import MetadataSlots
+
+        _require(type(reservation) is MetadataSlots and reservation.identity == self.identity
+            and reservation.root == self.root / 'reserved-protocol'
+            and self._blob_reservation is not None
+            and self._metadata_reservation in (None, reservation), 'Exact same-Store metadata namespace required')
+        reservation._guard()
+        raw = demand.encoded(reservation.binding)
+        row = self.connection.execute("SELECT raw FROM meta WHERE key='reserved_metadata_header'").fetchone()
+        if row is None:
+            _require(self._state()['head'] is None and self._state()['sequence'] == 0,
+                     'Metadata namespace binding must precede Store effects')
+            _require(reservation._control() == {'operations': [], 'latches': {}, 'pending': None, 'failed': False}
+                and not os.path.lexists(Path(reservation.header['account']) / 'paper/state.json'),
+                'Existing metadata operations/account cannot be adopted')
+            with self._transaction():
+                self.connection.execute("INSERT INTO meta VALUES ('reserved_metadata_header',?)", (raw,))
+        else:
+            _require(row['raw'] == raw, 'Original metadata namespace header differs')
+        self._metadata_reservation = reservation
 
     # Release process ownership without resolving any unfinished external operation.
     def close(self):
