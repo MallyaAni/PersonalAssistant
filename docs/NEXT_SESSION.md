@@ -36,10 +36,12 @@ serves index-2TSoaArN.js878968B/SHA3a0d3c3d47761c8008c199a9f65cc2922c5296b8ce452
 equal to public primary JS. Four copied files are NOT whole-distribution proof.
 
 Actual served-asset NEW3 browser GREEN13.492751s/0fail-skip-flaky-errors,
-115 GETs/all finished/no writes/all six diagnostics empty, both contexts/reload/
+113 GETs/all finished/no writes/all six diagnostics empty, both contexts/reload/
 list/marker assertions. These are synthetic GET fixtures, NOT signed-in actual
 account or fresh strategy/order/fill acceptance. Delivery proof139174B/
 SHAc46f7444ae4f39e0450ad786cd591cba758efbfbbb6213fb7875e97def566aa4.
+The actual request count is37+39+37=113; the earlier115 document sum was wrong
+and corrected without changing raw results/proof or rerunning any acceptance.
 Root+healthy existing reviewer independently reconstructed actual receipts,
 source/binding/runtime/asset/browser links. No new worker/release/test duplicate.
 
