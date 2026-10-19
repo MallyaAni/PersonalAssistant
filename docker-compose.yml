@@ -134,13 +134,18 @@ services:
       - MAIN_LLM_MODEL=${MAIN_LLM_MODEL:-deepseek-v4-flash}
       - ROUTING_LLM_BASE_URL=${ROUTING_LLM_BASE_URL:-http://animallya-spark1.local:8000}
       - ROUTING_LLM_MODEL=${ROUTING_LLM_MODEL:-deepseek-v4-flash}
-      - VISION_BASE_URL=${VISION_BASE_URL:-http://animallya-spark2.local:8001}
-      - VISION_MODEL=${VISION_MODEL:-qwen3-vl-8b}
+      - VISION_BASE_URL=${VISION_BASE_URL:-http://animallya-spark1.local:8000}
+      - VISION_MODEL=${VISION_MODEL:-deepseek-v4.1-flash-1017}
       # The vision functional tests reach the real VLM through
       # get_vision_provider(), which reads VISION_LLM_BASE_URL - the serving
-      # services set it literally below, and without it the test container
+      # services set it below with a default, and without it the test container
       # fell back to 127.0.0.1:8003 and every vision test skipped (2026-09-07).
-      - VISION_LLM_BASE_URL=http://animallya-spark2.local:8001
+      # Since 2026-10-19 the default is the main model: DeepSeek-V4.1-Flash-1017
+      # serves vision itself and the separate Qwen3-VL on spark2:8001 is
+      # retired (it cannot share spark2's memory with the V4.1 worker). .env
+      # on spark1 sets the live values; the defaults are what a fresh checkout
+      # gets.
+      - VISION_LLM_BASE_URL=${VISION_LLM_BASE_URL:-http://animallya-spark1.local:8000}
       # The picture tests reach the desktop's ComfyUI with the deployed
       # recipe; without these the test container asked for a model file the
       # desktop does not have (400) and read pictures back from a server
@@ -302,8 +307,8 @@ services:
       - DIAGRAM_LLM_MODEL=deepseek-v4-flash
       - DIAGRAM_LLM_REASONING_EFFORT=${DIAGRAM_LLM_REASONING_EFFORT:-none}
       - VISION_INFERENCE_ADAPTER=${VISION_INFERENCE_ADAPTER:-}
-      - VISION_LLM_BASE_URL=http://animallya-spark2.local:8001
-      - VISION_MODEL=qwen3-vl-8b
+      - VISION_LLM_BASE_URL=${VISION_LLM_BASE_URL:-http://animallya-spark1.local:8000}
+      - VISION_MODEL=${VISION_MODEL:-deepseek-v4.1-flash-1017}
       - VISION_LLM_REASONING_EFFORT=${VISION_LLM_REASONING_EFFORT:-none}
       # Not previously passed at all, so the one number that decides whether
       # an upload's structured inspection fits could not be changed without
@@ -921,8 +926,8 @@ services:
       - MEMORY_PROPOSAL_LLM_REASONING_EFFORT=${MEMORY_PROPOSAL_LLM_REASONING_EFFORT:-none}
       - MEMORY_PROPOSAL_MAX_TOKENS=${MEMORY_PROPOSAL_MAX_TOKENS:-1024}
       - VISION_INFERENCE_ADAPTER=${VISION_INFERENCE_ADAPTER:-}
-      - VISION_LLM_BASE_URL=http://animallya-spark2.local:8001
-      - VISION_MODEL=qwen3-vl-8b
+      - VISION_LLM_BASE_URL=${VISION_LLM_BASE_URL:-http://animallya-spark1.local:8000}
+      - VISION_MODEL=${VISION_MODEL:-deepseek-v4.1-flash-1017}
       - VISION_LLM_REASONING_EFFORT=${VISION_LLM_REASONING_EFFORT:-none}
       # Not previously passed at all, so the one number that decides whether
       # an upload's structured inspection fits could not be changed without
@@ -1312,8 +1317,8 @@ services:
       - INFERENCE_ADAPTER=${INFERENCE_ADAPTER:-openai_compatible}
       - LLM_BASE_URL=http://animallya-spark1.local:8000
       - VISION_INFERENCE_ADAPTER=${VISION_INFERENCE_ADAPTER:-}
-      - VISION_LLM_BASE_URL=http://animallya-spark2.local:8001
-      - VISION_MODEL=qwen3-vl-8b
+      - VISION_LLM_BASE_URL=${VISION_LLM_BASE_URL:-http://animallya-spark1.local:8000}
+      - VISION_MODEL=${VISION_MODEL:-deepseek-v4.1-flash-1017}
       - VISION_LLM_REASONING_EFFORT=${VISION_LLM_REASONING_EFFORT:-none}
       - VISION_MAX_TOKENS=${VISION_MAX_TOKENS:-1536}
       - EMBEDDING_INFERENCE_ADAPTER=${EMBEDDING_INFERENCE_ADAPTER:-}
