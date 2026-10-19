@@ -1,5 +1,144 @@
 # Next session
 
+## 2026-10-19 — Pre-resolution owned native-asdict transition VERIFIED (private synthetic)
+
+Read research/prepared-transition-proof-2026-10-19.json:
+f6311e7129976f6049505b0059c0d459d5681cacb5633ee66ce7f3c2b2d23f3d,
+57008B. Exact source f50eca1cf9c5162a3c94dc06be88593667de3117/tree
+5f09e870f77500b53b37588af5226b477c6a8a12 passed NINE distinct assertions in
+NINE fresh single-assertion runtimes, all exit0/noOOM/0fail/error/skip. Actual
+proofs/metrics/CIDs/logs/complete source and physical bookends are retained in
+the two fixed report sidecars referenced by SHA+length in that proof. Sidecars
+are196608B/a7db258f and129996B/7451c3b7; full decoded reports1071908B.
+Root DATA fold/readback passed. NEW independent review is UNVERIFIED: the reused
+healthy reviewer reached its usage limit during source review. It was never
+retried/replaced and no account/model was switched. Prior design advice is not
+claimed as independent acceptance of these sources/runtime results.
+
+PRODUCT: PRIVATE synthetic-prepared-native-transition/1 owns the exact original
+prepared prior and exact PaperState(**native_asdict(prior)) output BEFORE flush.
+Final4 binds source/account/identity/phase/head/input/native-IO reservation and
+original native preimage metadata. Its once-only apply uses the explicitly
+DERIVED complete native tail AFTER the clone statement. Every copied tail
+statement matches native AST; full native source and live dependencies are
+checked. An immutable source certificate is built once, with full original
+source-byte comparison and live code/global checks on every later call. Changed
+certificate input refuses; no source recertification or cap change. Do NOT call
+this unchanged native whole-function execution. The native module and ordinary
+reconcile_raw default still call the original native apply_settlements; only
+the private prepared branch uses the derived adapter. Exact source pin literals
+propagate through Cycle/Nightly; their other AST is unchanged. Native paper,
+writer and Store full bytes/default DELETE+FILE/schema/paths/caps/guards/public
+genuine/old bound-CAS raw-final refusals remain unchanged.
+
+The original prior drives journal/pending/rebalance logic, while the distinct
+output clone is consumed once. Mutation, foreign ownership, duplicate use and
+preparation failures refuse. Constructor/application/final finally paths release
+capsule references; original native aliasing remains, not deep immutability or
+GC/RAM reclamation. Final metadata explicitly records derived mode/source/input;
+original result/read/recovery authenticate it without load/asdict/tail replay.
+Orders are copied AFTER real flush. Settlements/journal/pending/evidence/native
+serialization/save remain late. One allocation moved; full832MB/model RAM is
+still UNVERIFIED. Native submitted_at/fills are never invented/precomputed.
+
+Final v4: A pure parity assertion covers NINE fresh independent native-vs-derived
+cases: unresolved/open/partial-terminal/empty-rebalance/open-rebalance/confirmed/
+reset/pending-leg/prior-dead. Exact native JSON bytes including NaN/Unicode,
+future pending preservation, rebalance clocks and unchanged original inputs
+match ACTUAL unchanged native apply. These pure cases are not Cycle admission.
+B/C prove injected pre-asdict failure and changed prepared output refuse before
+flush. D proves actual birth→stages→desired8/submitted5/filled5 partial journal→
+Store OUTCOME→reopen/original recovery→same-session Nightly→historical recovery,
+policy2/five native saves/exact >256KiB NaN+Unicode bytes. Actual code profile:
+[loadFalse,input_copyFalse,native_asdictFalse,flushTrue,orders_copyTrue,
+derived_tailTrue], no native whole apply, no repeated source compile, recovery
+traces[]. E caught premature consumption refuses before flush. F retains real
+filled5 after postflush output mutation, refuses save/commit/replay; metadata
+snapshot copying is explicitly distinguished from the direct reconciliation
+copy by exact caller CodeType, with a separate validation-only negative control.
+
+G/H/I each own PID7 in a DIFFERENT isolated container, SIGKILL/reaped -9 after
+transition reservation, after real flush, and after authoritative OUTCOME.
+First two stay paused; committed recovery creates ONLY original missing result/
+seals, no load/asdict/flush/fold/save/capture/append/SQL generation/account restore.
+Six canonical cut/exit strings24911B reproduce exact SHA+length. Process boundary
+cuts, NOT powerloss/inside-syscall/SQLite-commit proof. Broker witnesses are DATA,
+never parent/account restoration. Final per-case5.07384–22.70918s/max58012KiB.
+All nine CIDs/proof hashes/exact ns times are in the referenced reports.
+
+FAILED evidence remains FAILED. v1-B CID637f5ef8 and v2-B CIDc60fb2ac stopped137/
+noOOM during F, after D/E logged pass; final proof and RAM inventories were NOT
+published. Exact signal origin UNPROVED; aggregate CPU30 is consistent with the
+observations. Source-certificate reuse alone did NOT fix it. Both runtime/log/
+source/inspect roots remain, never replayed/adopted. Only NEW fresh per-assertion
+runtime grouping solved the aggregate-bound path, CPU30/other caps unchanged.
+v1-A3pass at a519f705 and v2-A3pass at6c0c5b60 remain separate old evidence.
+v3-A–E each pass at80d53031; v3-F CIDd78cfdd9 exit1/1FAIL/0errors/skips because
+the broad shape profiler counted nested codec snapshot copies during test state
+observations. Targeted exact direct-caller measurement plus negative control
+fixed this test boundary; product bytes unchanged for final v4. Never label
+old attempts green or sum repeated cases as additional distinct assertions.
+Unused v1/v2 C and v3 G/H/I controls were never dispatched.
+
+Root folded21 COMPLETE inventories INCLUDING v3-F:10836CAS+777metadata+147SQL+
+84directory-metadata+126native-directory=11970 distinct originals. All names/
+fields unchanged; each case CAS34344960/meta9183232/SQL1843200/dir790528 allocated
+AND logicalB. Final green9 inventories5130 originals. Raw1110880B/gzip77993B
+inventories retained. The two exit137 attempts have no full before/after inventory
+claim. Native state body changes remain original semantics, outside unchanged
+reserved metadata/CAS/SQL/directory inventories.
+
+Final copied payload491220B+pins4024B=495244B<524288/33payloads+pins;
+34source/47native physical SHA bookends/globals unchanged/forbidden[]. FIVE
+unchanged whole SOURCE-only exact RO file references (codec/CAS/physical/Stage/
+Store), TWO exact RO SOURCE data files (1655-map and authenticated identity),
+new Nightly whole copied. Eleven FULL mounts equal by uniqueDestination; raw
+order differs all final9; HostConfig only OomKillDisablefalse→null. Synthetic
+context/policy/program/calendar/source-manifest globals/constructors bypassed;
+combined source closure exceeds copied cap. UID1000/noneRO1CPU512MiB=swap/PIDs32/
+tmp64/dropALL/no-new-privileges/CPU30/native1MiBFSIZE/control-log256KiB unchanged.
+
+Local collector v1/v2 refused at unchanged256KiB document output guard BEFORE
+target open; source/reasons retained. v3 changes only document projection into
+two fixed bounded sidecars, keeps complete reports and all validation. No native
+test/runtime/gate replay. Main+sidecars383612B total, each<256KiB. DATA-only fold
+439inputs8695456B/four held reads; separate SOURCE4MiB+19CONTROL4MiB each+
+DERIVED2MiB=82MiB maximum, NOT whole-process4MiB. Actual SOURCE3348792B, each
+CONTROL<1.74MiB, DERIVED767224B. No local crash/kernel-FSIZE claim.
+Exact small controller/failed-corrected collector sources additionally archived
+in research/prepared-transition-controls-2026-10-19.json (24288B/a1c30b895a4b47c1),
+13fixed inputs/four held reads, separate2MiB ledger/617524B actual incl readback.
+AST/purpose-comments/zero-backspaces/diff passed; Ruff unavailable; no fullunit/
+build/deploy/UI/model claim. Diagram:NONE. Production unchanged.
+
+Heartbeat observed ACTIVE/updated1792384393618/promptSHA
+aaf512585bde83092c6b338225e0a4eba178c05b2babc2e39acf2f860676efd0,
+saved-byte a7ecf12b delivered late. This supersedes the previous pending readback;
+no duplicate automation request. Current NEXT takes precedence over old firings.
+
+NEXT: this NEW9 prepared-transition boundary is CLOSED. Never rerun any v1–v4
+preflight/stage/copy/tests/getter/collector/archive or unused controls for docs;
+never adopt failed/OPEN/completed pools/reopen COMPLETE phases. Preserve all prior
+closed gates. Physical rename/journal capacity stays blocked on unavailable
+source/runtime/filesystem-bound allocator acknowledgement at original native
+paper.py:433 replace/failure unlink/parent fsync; capacity_reserved=False.
+
+Continue independent synthetic product work: FIRST inspect postflush orders
+deepcopy, native settle, derived tail and reconciliation evidence lifetimes.
+Identify the next exact preventable allocation/failure before selected effects;
+do NOT pre-snapshot execution fields, fills or settled results. Implement one
+separately typed/source/head/input-bound finite boundary with NEW original-result/
+failure/full-graph assertions. Preserve native defaults/writer/Store/caps/public
+refusal and late uncertainty; no full832MB/model RAM or genuine admission claim.
+Full filesystem/native SQLite FILE/horizon/model RAM/twohost/powerloss/genuine
+constructors/Resolver/sender/providers/calendar/economics/native operation/
+adoption/publication/API/UI remain UNVERIFIED. Genuinev6 OPEN/PAUSED/no replay/
+adoption/new genuine run; original timing FAILED/publication CLOSED/missing
+receipts/immutable roots unchanged. No Spark2 load, guard/G08/cap weakening,
+fakeclock/actualday replay/history rewrite/model-provider-account-service change,
+denied-read bypass/paiddata/tuning/real-money orders. Never deploy historical main
+wholesale. ACTIVE/quiet on unchanged state, meaningful progress only; no ETA.
+
 ## 2026-10-19 — Exact phase-owned native saved-byte verification VERIFIED
 
 Read research/final-saved-bytes-proof-2026-10-19.json:
