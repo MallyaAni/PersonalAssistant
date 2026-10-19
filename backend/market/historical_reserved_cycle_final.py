@@ -22,9 +22,10 @@ from backend.market import historical_timing_packet as packet
 from backend.market import replay_broker as native
 from backend.market.historical_packet_store import StorePause
 
-SCHEMA = 'synthetic-reserved-cycle-final/2'
+SCHEMA = 'synthetic-reserved-cycle-final/3'
 RESULT_SCHEMA = 'synthetic-reserved-cycle-final/1'
 INPUT_SCHEMA = 'synthetic-final-prepared-raw-input/1'
+SAVED_SCHEMA = 'synthetic-final-saved-native-bytes/1'
 REQUEST = 'synthetic-declared-native-flush/1'
 FLUSH, FILL = native.ReplayBroker.flush, native.ReplayBroker._fill
 PREPARED_INPUT = settlement._PreparedRawInput
@@ -75,11 +76,82 @@ def read_file(nightly, path):
 
 
 # Bind final bytes to the original phase and source-bound resolution declaration.
-def link(value, reservation_sha):
+def link(value, reservation_sha, saved):
     return {'schema': SCHEMA, 'reservation_sha256': reservation_sha,
             'declaration_sha256': packet._digest(value['declaration']),
             'reserved_cas': value['native_io']['reserved_cas'], 'sources': sources(),
-            'prepared_input_sha256': packet._digest(value['prepared_input'])}
+            'prepared_input_sha256': packet._digest(value['prepared_input']),
+            'saved_bytes_sha256': packet._digest(saved)}
+
+
+# Bind one original phase-owned save to its exact reconciled native bytes without JSON loading.
+def saved_binding(value, reservation_sha, evidence, target):
+    before, declared = value['prepared_input']['preimage'], value['declaration']
+    physical._require(type(evidence) is dict and evidence['schema'] == reserved_io.SAVE_SCHEMA
+        and type(evidence['saves']) is list and len(evidence['saves']) == 1
+        and legacy.admitted.encoded({**evidence, 'saves': []}) == legacy.admitted.encoded(value['native_io'])
+        and type(target) is dict and set(target) == {'schema', 'raw_sha256', 'raw_bytes'}
+        and target['schema'] == 'native-paper-serialization/1'
+        and type(target['raw_bytes']) is int and 0 < target['raw_bytes'] <= value['prepared_input']['raw_limit'],
+        'Exact sole final save and bounded native target required')
+    physical._digest(target['raw_sha256'])
+    receipt = evidence['saves'][0]
+    auxiliary = value['native_io']['native_directory']['save_allowance']
+    physical._require(type(receipt) is dict and type(receipt['slot']) is int
+        and type(auxiliary['first']) is int and type(auxiliary['count']) is int
+        and auxiliary['count'] == 1 and receipt['slot'] == auxiliary['first']
+        and receipt['slot'] >= 0 and legacy.admitted.encoded(receipt['prior']) == legacy.admitted.encoded(before)
+        and type(receipt['state']) is dict and set(receipt['state']) == {'sha256', 'length', 'device', 'inode'}
+        and all(type(receipt['state'][k]) is int and receipt['state'][k] > 0 for k in ('length', 'device', 'inode'))
+        and receipt['state']['sha256'] == target['raw_sha256'] and receipt['state']['length'] == target['raw_bytes'],
+        'Original phase-owned final slot/preimage/native bytes required')
+    physical._digest(reservation_sha)
+    return {'schema': SAVED_SCHEMA, 'identity': declared['identity'], 'account': value['prepared_input']['account'],
+        'phase': 'OUTCOME_COMMITTED', 'head': declared['submission_head'], 'sources_sha256': packet._digest(sources()),
+        'declaration_sha256': packet._digest(declared), 'prepared_input_sha256': packet._digest(value['prepared_input']),
+        'reservation_sha256': reservation_sha, 'native_io_sha256': evidence['reservation_sha256'],
+        'receipt_sha256': packet._digest(receipt), 'slot': receipt['slot'], 'state': deepcopy(receipt['state']),
+        'native_bytes': deepcopy(target)}
+
+
+# Own only finite saved-byte metadata while rechecking the actual original writer and file bytes.
+class _SavedBytes:
+    # Freeze the original sole save before later callbacks can mutate its descriptor or receipt.
+    def __init__(self, owner, value, reservation_sha, target):
+        self.owner = owner
+        self.evidence = owner.io.evidence()
+        self.target = deepcopy(target)
+        self.binding = saved_binding(value, reservation_sha, self.evidence, self.target)
+        self.original = legacy.admitted.encoded(self.binding)
+        self.receipt = deepcopy(self.evidence['saves'][0])
+        self.receipt_raw = legacy.admitted.encoded(self.receipt)
+        self.check(value, reservation_sha)
+
+    # Authenticate the phase cursor and original receipt against streaming held-file verification.
+    def check(self, value, reservation_sha):
+        owner = self.owner
+        owner.io._lease()
+        physical._require(not owner.io.failed
+            and legacy.admitted.encoded(self.binding) == self.original
+            and legacy.admitted.encoded(self.receipt) == self.receipt_raw
+            and legacy.admitted.encoded(owner.io.evidence()) == legacy.admitted.encoded(self.evidence)
+            and legacy.admitted.encoded(saved_binding(value, reservation_sha, self.evidence, self.target)) == self.original,
+            'Original frozen final saved-byte binding required')
+        writer = owner.io.writer
+        receipt = writer.completed()
+        auxiliary, _ = read_file(owner.nightly, owner.io.directory / 'reserved-native-save.json')
+        expected = {'operation': None, 'next_slot': auxiliary['before']['next_slot'] + 1,
+            'current': self.binding['state'], 'last': {'slot': self.binding['slot'],
+                'receipt_sha256': physical._sha(physical._encoded(self.receipt))}}
+        with writer._locked(shared=True):
+            physical._require(legacy.admitted.encoded(receipt) == self.receipt_raw
+                and auxiliary['before']['next_slot'] == self.binding['slot']
+                and legacy.admitted.encoded(owner.io.cursor) == legacy.admitted.encoded(expected)
+                and legacy.admitted.encoded(writer._control()) == legacy.admitted.encoded(expected)
+                and reserved_io.writer_module._image(paper.state_path(owner.nightly.root)) == self.binding['state']
+                and legacy.admitted.encoded(writer._control()) == legacy.admitted.encoded(expected),
+                'Original final cursor/receipt/native inode bytes required')
+        return deepcopy(self.binding)
 
 
 # Authenticate the original pre-resolution preparation descriptor without materializing native paper.
@@ -132,16 +204,22 @@ def validate(nightly, reference, checkpoint, *, require_result=True):
     protocol.verify(nightly, directory, phase='OUTCOME_COMMITTED', head=submission_head,
                     inputs=packet._digest(declared))
     physical._require(legacy.admitted.encoded(declared) == legacy.admitted.encoded(
-        declaration(nightly, checkpoint, submission_head, declared['request']))
-        and final['receipt'].get('reserved_cycle_final') == link(value, reservation_sha),
+        declaration(nightly, checkpoint, submission_head, declared['request'])),
         'Original reserved final stage/input lineage differs')
     prepared, _ = read_file(nightly, directory / 'prepared.json')
-    physical._require(set(prepared) == {'schema', 'reservation_sha256', 'receipt', 'native_io'}
+    physical._require(set(prepared) == {'schema', 'reservation_sha256', 'receipt', 'native_io', 'saved_bytes'}
         and prepared['schema'] == SCHEMA and prepared['reservation_sha256'] == reservation_sha
         and prepared['receipt'] == reference, 'Original reserved final prepared marker required')
     reserved_io.validate(nightly, directory, prepared['native_io'], [
         bridge.paper_content(final['receipt']['components']['paper'], checkpoint, store.identity)],
         legacy, value['native_io'])
+    target = final['receipt']['raw_reconciliation']['evidence']['reconciled_native_serialization']
+    saved = saved_binding(value, reservation_sha, prepared['native_io'], target)
+    physical._require(legacy.admitted.encoded(prepared['saved_bytes']) == legacy.admitted.encoded(saved)
+        and final['receipt'].get('reserved_cycle_final') == link(value, reservation_sha, saved)
+        and bridge.paper_content(final['receipt']['components']['paper'], checkpoint, store.identity)
+            == (saved['state']['sha256'], saved['state']['length']),
+        'Original saved-byte descriptor/receipt/raw component required')
     lease = value['native_io']['reserved_cas']
     control, group = store.blob_reservation.group(lease)
     physical._require(value['native_io']['effect_binding'] == packet._digest(declared)
@@ -190,6 +268,7 @@ class _Final:
         self.stage, self.nightly, self.client = producer, producer.nightly, producer.client
         self.checkpoint, self.io = producer.checkpoint, producer.io
         self.prepared_input = None
+        self.saved_bytes = None
         self._guard()
 
     # Refuse substituted native resolution functions or changed original stage bindings.
@@ -268,6 +347,7 @@ class _Final:
             if self.prepared_input is not None:
                 self.prepared_input.close()
                 self.prepared_input = None
+            self.saved_bytes = None
             legacy.LOCK.release()
 
     # Reserve before flush and retain all uncertain native outcomes without replay authority.
@@ -276,6 +356,8 @@ class _Final:
         store, client, nightly = self.nightly.store, self.client, self.nightly
         physical._require(store.snapshot()['head'] == nightly.expected_head == submission_head
             and store.snapshot()['next_stage'] == 'OUTCOME_COMMITTED', 'Original submitted head required')
+        physical._require(store.directory_binding is not None and store.directory_binding.reserves_saves,
+                          'Exact finite native save-count mode required before final effects')
         declared = declaration(self.nightly, self.checkpoint, submission_head, inputs)
         reserved_io.current_components(nightly, client, declared['before'], self.checkpoint, legacy)
         bridge.verify_latch(store, nightly.root, declared['session'], declared['before']['latch'])
@@ -324,9 +406,10 @@ class _Final:
             self.io.save(nightly.root, updated)
             store._point('reserved_final_native_saved')
             self._active(value, reservation_sha, directory)
-            physical._require(codec.encode(client, **nightly.pins()) == broker
-                and settlement._native_serialization(paper.load_state(nightly.root), self.checkpoint.limits['raw_bytes'])
-                    == evidence['reconciled_native_serialization'], 'Original resolved native save differs')
+            self.saved_bytes = _SavedBytes(self, value, reservation_sha, evidence['reconciled_native_serialization'])
+            saved = deepcopy(self.saved_bytes.binding)
+            store._point('reserved_final_saved_bytes')
+            physical._require(codec.encode(client, **nightly.pins()) == broker, 'Original resolved broker differs')
             bridge.verify_latch(store, nightly.root, declared['session'], declared['before']['latch'])
             detail = {'stage': 'OUTCOME_COMMITTED', 'settlement_submission_head': submission_head,
                 'settlement_cycle': declared['cycle'], 'raw_nightly_lineage': declared['lineage'],
@@ -335,10 +418,12 @@ class _Final:
                 session=date.fromisoformat(declared['session']), context=declared['context'],
                 raw_checkpoint=self.checkpoint, raw_reconciliation={'pre_settlement_receipt': pre, 'evidence': evidence})
             receipt = bridge.cycle._read_receipt(store, reference, nightly.pins(), raw_checkpoint=self.checkpoint)
-            receipt['reserved_cycle_final'] = link(value, reservation_sha)
+            physical._require(bridge.paper_content(receipt['components']['paper'], self.checkpoint, store.identity)
+                == (saved['state']['sha256'], saved['state']['length']), 'Original saved raw component differs')
+            receipt['reserved_cycle_final'] = link(value, reservation_sha, saved)
             reference = bridge.cycle._put(store, legacy.admitted.encoded(receipt))
             prepared = {'schema': SCHEMA, 'reservation_sha256': reservation_sha,
-                        'receipt': reference, 'native_io': self.io.evidence()}
+                        'receipt': reference, 'native_io': self.io.evidence(), 'saved_bytes': saved}
             reserved_io.validate(nightly, directory, prepared['native_io'], [
                 bridge.paper_content(receipt['components']['paper'], self.checkpoint, store.identity)],
                 legacy, value['native_io'])
@@ -351,9 +436,10 @@ class _Final:
                     raw_checkpoint=self.checkpoint)) == legacy.admitted.encoded(receipt),
                 'Prepared reserved final file/receipt changed before commit')
             physical._require(self.io.evidence() == prepared['native_io']
-                and codec.encode(client, **nightly.pins()) == broker
-                and settlement._native_serialization(paper.load_state(nightly.root), self.checkpoint.limits['raw_bytes'])
-                    == evidence['reconciled_native_serialization'], 'Prepared reserved final changed')
+                and codec.encode(client, **nightly.pins()) == broker, 'Prepared reserved final changed')
+            physical._require(self.saved_bytes.check(value, reservation_sha) == prepared['saved_bytes'],
+                              'Original final saved bytes changed before commit')
+            store._point('reserved_final_saved_bytes_rechecked')
             bridge.verify_latch(store, nightly.root, declared['session'], declared['before']['latch'])
         except BaseException:
             self._poison()
