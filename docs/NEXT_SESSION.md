@@ -1,5 +1,149 @@
 # Next session
 
+## 2026-10-18 — Fixed private operation/result/latch namespace VERIFIED
+
+The NEW finite PRIVATE metadata boundary is VERIFIED at source
+216682b83e64b350623e3da503d6cb3f223d1f06, tree
+25065302481e54e921f7b48ea1b23c78016c7352. Read
+research/reserved-protocol-metadata-proof-2026-10-18.json:
+2f510b87a7954bd15c062003f318a060f2e50bbf80e2757aff052f984f6c937e,
+178818B. Thirteen NEW assertions ran in THREE bounded cohorts at this ONE source;
+no closed gate was replayed. All three new roots are COMPLETE and immutable:
+never adopt their pools or rerun their tests/preflights/stages/copies/getters for
+documentation. No unexpected operational/test failure.
+
+PRODUCT: historical_reserved_protocol.MetadataSlots introduces the distinct
+synthetic-reserved-protocol-metadata/1 namespace. All initialized body/header/
+control/lock extents and fixed names exist BEFORE birth. The tested plan has
+eight operations, four256KiB marker bodies each, one fixed session latch body,
+and original root/header/control/lock identity. Exact source/account/identity/
+head/input/latch ownership is persisted before selected native effects.
+Hash-derived operation paths remain logical identities, with no per-operation
+directories or synthetic-latch directory allocated. PENDING is persisted BEFORE
+body write; even complete-looking PENDING bytes remain unreadable and never
+retry/adoption authority. Complete bodies preserve their exact unpadded raw
+bytes, original inodes, sizes and block counts. Existing completed records remain
+readable after another refused write.
+
+Store persists explicit original metadata mode/header; reopen cannot downgrade
+when the original pool is absent. Optional native-io/3 carries the exact typed
+claim in auxiliary/evidence/CAS identity. Ordinary Store schema/paths/caps,
+unbound native-io/2 and original native writer semantics remain unchanged.
+PRIVATE RawNightly birth/close, _Stages reservation/prepared/result/latch, _Final
+reservation/prepared/result and Cycle latch component reads compose this mode.
+Original result publication and metadata operation COMPLETE share one control
+update. Completed operations cannot fill unused roles or grant later native
+saves/evidence, including the interval before the separate CAS seal. Recovery
+may fill ONLY an EMPTY original committed result and/or its missing CAS seal:
+no flush/fold/save/capture/append/replay/account restore. Public genuine and old
+bound-CAS raw-final refusals remain unchanged. Global identities are not a sandbox
+or deep immutability.
+
+Cohort A: CID9e34a384248e500ee0ae5394f133b92a5158b09ffaf03ff7f164643ada3dcbbd/
+f612 exit0/noOOM2026-10-19T00:59:21.135042537Z;3pass/0fail/0error/0skip,
+21.91394247300923s/57952KiB. Actual private birth→stages→native partial8/5 final→
+Store OUTCOME→reopen/repeated original recovery→same-session Nightly passed,
+policycount2 and seven COMPLETE metadata/CAS phases. Exact >256KiB native NaN/
+Unicode bytes and latch absence→original bytes retained. Actual owned PID7
+SIGKILL at pending birth auxiliary BEFORE native birth, and PID8 after accepted
+submission/save and latch body fsync BEFORE its control publication, both-9/reaped.
+Pending latch remains unreadable, old birth remains readable, no replay.
+Raw proof dee97ace566ffe712fdc4ca2d1524745e548025c85eb7d268869e343f010ba6e/
+77863B +seven fixed results retained /tmp/reserved-protocol-metadata-20261018-v1-a
+and matching Spark1 scratch.
+
+Cohort B: CIDecc7a874b9d9536a85c686c97f586214025f5e49a415b3c4a8af95d611b80294/
+f612 exit0/noOOM2026-10-19T01:02:00.151381944Z;3pass/0fail/0error/0skip,
+28.928945827297866s/58208KiB. Actual owned PID7 after Store final commitment,
+PID8 after original result body fsync BEFORE metadata publication, and PID9
+after same-session Nightly result BEFORE CAS seal, all-9/reaped. Committed EMPTY
+result recovery and original published Nightly recovery perform only missing
+metadata; PENDING result never adopted. Raw proof
+ec6fd2fa77f3823a25b84f58f67fc1f1a52a8c587ecc94aba0436fe7d6ef8339/92986B
++seven fixed results retained /tmp/reserved-protocol-metadata-20261018-v1-b and
+matching Spark1 scratch. Five total cuts are protocol-boundary process kills,
+NOT powerloss or interruption inside native syscall/SQLite commit.
+
+Cohort C: CID85ab9e8bd967d794e6c5c179c078a1d64dc1de9f28776e66a1375a8c05905799/
+f612 exit0/noOOM2026-10-19T01:05:09.410772996Z;7pass/0fail/0error/0skip,
+34.70481628738344s/58616KiB. Payload bound, exact-byte idempotence/conflict,
+persisted missing-pool downgrade, mandatory source/header, original head claim,
+completed-role extension and COMPLETE-metadata/ACTIVE-CAS effect refusals passed.
+Payload test proves the payload cap, not eight-slot/session exhaustion. Missing-
+pool test moves the directory only as an explicit test fault and restores it for
+retention; it is not a product namespace operation. No new kill claim.
+Raw proof be43a3c27aa1182cb1d865aaa67e83efd8197db18ea05b70d257db600f559552/
+86839B +seven fixed results retained /tmp/reserved-protocol-metadata-20261018-v1-c
+and matching Spark1 scratch.
+
+ROOT and the healthy READONLY reviewer independently reconstruct all thirteen
+complete inventories:6708 CAS +481 metadata =7189 globally distinct original
+inodes, every name and all four dev/inode/size/block fields unchanged.
+Each CAS pool34344960 allocated ANDlogicalB; each tested metadata namespace
+9183232 allocated ANDlogicalB, under its separate16MiB bound. Product metadata
+requires allocated≥logical and unchanged originals, not arbitrary block equality.
+Complete662248B inventories retained as44858B gzip. All ten canonical cut/exit
+strings28254B reproduce SHA/length. Witness-only immutable broker decode never
+restores an account. Sources/exactcalls/actualfreshproofs/getters/fullactualresults/
+source-map/createargv/CID/runtime/terminal links accepted independently.
+
+22copied product/test pins/29payloads512459B<524288/31sourcebookend rows/
+47native fullSHAphysical bookends, writer globals unchanged, forbidden imports[].
+TWO UNCHANGED whole codec40026B/CAS28606B SOURCE-only references come from closed
+outcome-v1-a source paths at exact nested /audit/backend/market RO file mounts.
+Explicit inert mountpoints are declared before create and overridden by original
+reference pins; no old account/output/pool/broad-source fallback. Combined source
+closure exceeds512KiB; copied-payload bound is not full closure/RAM admission.
+Native CLI text for two helper CodeTypes is authenticated against1655map; no CLI
+startup import. Context/policy/program/calendar/source-manifest surroundings and
+bypassed constructors remain explicitly SYNTHETIC.
+
+Each cohort's five transport phases0/emptyerr. Six FULL mounts match by unique
+destination; raw order A:false/B:true/C:false. HostConfig ONLY
+OomKillDisablefalse→null. UID1000/noneRO/1CPU/512MiB=swap/PIDs32/tmp64/dropALL/
+no-new-privileges/CPU30/native1MiBFSIZE/source-controls-log256KiB/production caps
+unchanged. Reviewed local DATA collector ran ONCE,120inputs2201492B with four
+full held read/SHA/physical bookends each. Explicit separate SOURCE4MiB,
+CONTROL_A/B/C2MiB each, EVIDENCE4MiB ledgers (14MiB maximum, NOT whole-process
+4MiB) finished2456012/1560994 each/2572008B. Exclusive research proof fsynced/
+read back. No local crashdurability/kernelFSIZE claim. Purpose comments/AST
+warnings-as-errors/zero-backspace/diff pass; Ruff unavailable, no fullunit/build/
+deploy/UI/model claim. Diagram NONE. Source review caught an OPEN-claim guard,
+fixture method placement and checker allocation-contract mismatch BEFORE first
+runtime; no assertions/caps/guards weakened and no runtime replay.
+
+UNVERIFIED: SQLite database/DELETE journal/FILE temp capacity, native rename
+directory metadata and whole filesystem capacity; full832MB horizon/load-save/
+deepcopy/serialization/model-RAM coexistence, actual twohost/powerloss; whole
+constructors/native market_daily Resolver/sender/planning/models/providers/
+actual context/calendar/economics/native operation/simulator adoption/independent
+publication/API/UI. Fixed marker/latch slots do not prove those requirements.
+Original timingFAILED/publicationCLOSED/missing receipts/immutable roots unchanged;
+genuinev6OPEN/PAUSED/no replay/adoption/new genuine run from failed reservation.
+Production unchanged.
+
+NEXT CONCRETE PRODUCT TASK: inspect/implement DISTINCT finite PRIVATE SQLite
+database/journal/FILE-temp admission for this graph BEFORE selected native
+effects. First inspect Store PRAGMA/_transaction/page growth and actual SQLite
+filesystem calls. Preserve ordinary Store paths/schema/caps/guards/default
+DELETE-journal behavior, original native writer semantics and public genuine
+refusal. Use a separate source-bound finite mode with NEW bounded interruption/
+original-result assertions; do not infer SQLite or native-rename directory
+reservation from marker slots. Full filesystem/latch/SQLite/horizon/twohost/
+model-RAM admission remains mandatory BEFORE genuine effects, then genuine
+proposals/ordinary/intraday/fills→independent publication→API/UI. Advance ONE
+coherent boundary; a hard blocker names unavailable input/access and exact
+callsite consequence, while independent synthetic work continues.
+NEVER rerun this13/three cohorts/preflights/stages/copies/getters, prior outcome10/
+stage9/capability2/RED/metadataCAS8/reserved-save8/final8/read8/Nightly7/metadata8/
+settlement10/component11/observer5 or older closed gates for docs. Never adopt
+failed/OPEN/completed pools or reopen completed phases for later writes. No
+recursive ELF/interpreter/provenance detours. No Spark2load/guard-G08-cap
+weakening/fakeclock/actualday replay/historyrewrite/model-provider-account-service
+change/denied-read bypass/paiddata/tuning/realmoney orders. NEVER deploy historical
+main wholesale. Heartbeat ACTIVE; meaningful changes only; no ETA.
+
+
 ## 2026-10-18 — Reserved private Cycle final and same-session Nightly VERIFIED
 
 Product acceptance remains the priority. The NEW finite PRIVATE stage→native

@@ -1,0 +1,2264 @@
+{
+  "attempts": [
+    {
+      "bundle": {
+        "physical": {
+          "st_ctime_ns": "1792371621588738975",
+          "st_dev": "16777223",
+          "st_ino": "191425001",
+          "st_mtime_ns": "1792371621588738975",
+          "st_size": "133329"
+        },
+        "sha256": "c74ca6b3b85dda8165fed4d60e0769c5c5c99834208c15f36e818acfa4c4f006"
+      },
+      "cohort": "a",
+      "local_root": "/tmp/reserved-protocol-metadata-20261018-v1-a",
+      "metrics": {
+        "elapsed_seconds": 21.91394247300923,
+        "errors": 0,
+        "failures": 0,
+        "peak_kib": 57952,
+        "skips": 0,
+        "status": "VERIFIED_SYNTHETIC_RESERVED_PROTOCOL_METADATA_COHORT",
+        "tests": 3
+      },
+      "native_count": 47,
+      "outcomes": [
+        "test_a_full_namespace_journey_and_reopen (backend.tests.test_historical_reserved_protocol.ReservedProtocolTests.test_a_full_namespace_journey_and_reopen) ... ok",
+        "test_b_actual_birth_aux_pending (backend.tests.test_historical_reserved_protocol.ReservedProtocolTests.test_b_actual_birth_aux_pending) ... ok",
+        "test_c_actual_latch_body_pending (backend.tests.test_historical_reserved_protocol.ReservedProtocolTests.test_c_actual_latch_body_pending) ... ok"
+      ],
+      "payload_bytes": 512459,
+      "payload_count": 29,
+      "physical_validation": {
+        "allocated_and_logical_bytes_each": 34344960,
+        "canonical_witness_bytes": 7106,
+        "children": [
+          {
+            "cut": {
+              "path": "/out/cases/test_b_actual_birth_aux_pending-h8cjkrmx/actual-child-cut.json",
+              "physical": {
+                "st_ctime_ns": "1792371553978848302",
+                "st_dev": "66306",
+                "st_ino": "60831679",
+                "st_mtime_ns": "1792371553978848302",
+                "st_size": "230"
+              },
+              "sha256": "7286f23e31a24d84eef286b924b6d7d4a6050e355118fe56e44bd97809de8215",
+              "value": {
+                "broker_raw": null,
+                "broker_sha256": null,
+                "head": null,
+                "kind": "birth",
+                "metadata_pending": {
+                  "role": "reserved-native-save.json",
+                  "slot": 0
+                },
+                "paper_sha256": null,
+                "pid": 7,
+                "point": "metadata_pending_reserved-native-save.json",
+                "policy_calls": 0
+              }
+            },
+            "exit": {
+              "path": "/out/cases/test_b_actual_birth_aux_pending-h8cjkrmx/actual-child-exit.json",
+              "physical": {
+                "st_ctime_ns": "1792371554002868921",
+                "st_dev": "66306",
+                "st_ino": "60831680",
+                "st_mtime_ns": "1792371554002868921",
+                "st_size": "134"
+              },
+              "sha256": "bb8637b6299906f2c2c3e2c3b3f0606d30995ec410d893cf628d6dd9c584843f",
+              "value": {
+                "exitcode": -9,
+                "head": null,
+                "pid": 7,
+                "point": "metadata_pending_reserved-native-save.json",
+                "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+              }
+            }
+          },
+          {
+            "cut": {
+              "path": "/out/cases/test_c_actual_latch_body_pending-4y940jec/actual-child-cut.json",
+              "physical": {
+                "st_ctime_ns": "1792371560972986529",
+                "st_dev": "66306",
+                "st_ino": "60832340",
+                "st_mtime_ns": "1792371560972986529",
+                "st_size": "6561"
+              },
+              "sha256": "70c3c9c72124321cf9ab2c0d6968226db56e2be2fe1e6dfbfbad816f6641849b",
+              "value": {
+                "broker_raw": "{\"schema\":\"private-n2-broker-checkpoint/1\",\"private_synthetic_only\":true,\"identity\":{\"backend_image\":\"sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272\",\"broker_sha256\":\"c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616\",\"calendar_sha256\":\"f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4\",\"holding_config_sha256\":\"f96a29777403f5f08623709b70f36b15300500065202acbd215cd43f3c99a588\",\"holding_release_sha256\":\"1c1c6e9bcc7e9fa8d095f6ce5e6bf973c99ed19531e88c38a9aba5ed8410cd3e\",\"source_revision\":\"3b72cd4e0bc15acd24432d501918c721685a5333\",\"source_sha256\":{\"backend/agents/trading/desk/event_execution.py\":\"76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f\",\"backend/agents/trading/desk/event_risk.py\":\"34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973\",\"backend/agents/trading/desk/funded_execution.py\":\"6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c\",\"backend/agents/trading/desk/intraday_orders.py\":\"ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c\",\"backend/agents/trading/desk/nightly_plan.py\":\"9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca\",\"backend/agents/trading/desk/paper.py\":\"a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c\",\"backend/api/v1/market.py\":\"fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88\",\"backend/cli/market_daily.py\":\"0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819\",\"backend/market/adaptive_growth_policy.py\":\"35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34\",\"backend/market/alpaca_trading.py\":\"105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2\",\"backend/market/decision_view.py\":\"8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca\",\"backend/market/entry_timing.py\":\"f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88\",\"backend/market/forward_arithmetic.py\":\"9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882\",\"backend/market/forward_execution.py\":\"62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295\",\"backend/market/forward_market_evidence.py\":\"737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2\",\"backend/market/forward_probability_timing.py\":\"0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92\",\"backend/market/grade_led_policy.py\":\"4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66\",\"backend/market/holding_risk_bank.py\":\"4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158\",\"backend/market/joint_funded_policy.py\":\"5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339\",\"backend/market/learned_holding_transition.py\":\"c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55\",\"backend/market/learned_live_holding.py\":\"25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1\",\"backend/market/learned_live_timing.py\":\"80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f\",\"backend/market/learned_order_observation.py\":\"e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff\",\"backend/market/learned_personal_guidance.py\":\"37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721\",\"backend/market/live_model_decision.py\":\"b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93\",\"backend/market/live_probability_timing.py\":\"3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721\",\"backend/market/market_conditioned_holding.py\":\"e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4\",\"backend/market/personal_history.py\":\"8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a\",\"backend/market/sequential_shadow_context.py\":\"5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92\",\"docs/research/grade-led-sizing-contract-2026-10-13.md\":\"51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6\",\"docs/research/learned-held-transition-2026-10-07.md\":\"f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a\"},\"timing_config_sha256\":\"d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a\"},\"identity_sha256\":\"e13b03259b95797ed7032c9fb6397975f4c29d9d47dba6d5b15ee571644a26df\",\"caps\":{\"bytes\":8388608,\"names\":256,\"orders\":8192,\"attempts\":16384,\"fills\":8192,\"actions\":8192,\"dividends\":8192,\"claims_per_kind\":2048,\"records\":32768,\"string_chars\":512,\"depth\":16},\"codec_sha256\":\"703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08\",\"state\":{\"map\":[[\"_cash\",100000.0],[\"cost_bps\",10.0],[\"_held\",{\"map\":[]}],[\"_average\",{\"map\":[]}],[\"_orders\",{\"map\":[[\"SYNTHETIC-reserved-outcome\",{\"map\":[[\"id\",\"private-replay-0\"],[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",\"5\"],[\"type\",\"market\"],[\"time_in_force\",\"day\"],[\"status\",\"accepted\"],[\"filled_qty\",\"0\"],[\"filled_avg_price\",null],[\"created_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"submitted_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"execution_phase\",\"market\"],[\"execute_on\",\"2019-03-01\"],[\"reserved_cash\",500.49999999999994],[\"fee\",0.0]]}]]}],[\"_attempts\",{\"list\":[{\"map\":[[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",5],[\"at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"observed_price\",100.0],[\"available_cash\",100000.0],[\"accepted\",true],[\"reason\",null]]}]}],[\"_fills\",{\"list\":[]}],[\"_actions\",{\"map\":[]}],[\"_dividends\",{\"list\":[]}],[\"_marks\",{\"map\":[[\"AAPL\",100.0]]}],[\"_mark_times\",{\"map\":[[\"AAPL\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}]]}],[\"_security_distributions\",{\"list\":[]}],[\"_security_exchanges\",{\"list\":[]}],[\"_share_consolidations\",{\"list\":[]}],[\"_cash_mergers\",{\"list\":[]}],[\"_now\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}],[\"_observed_at\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}],[\"_market_open\",true],[\"_batch_open\",true],[\"_last_equity\",100000.0]]}}",
+                "broker_sha256": "e125d3628ea2c398d224956d97e7ca0f75c0926c6a30dd02d34c4798aab29210",
+                "head": "723138f922e853f229d9a29ae9dd6152c1ccaf43a2700a73c1ad9904b1ff6ba7",
+                "kind": "latch",
+                "metadata_pending": {
+                  "role": "latch",
+                  "slot": 4
+                },
+                "paper_sha256": "dd6fc209371db13cbd70d6cb9c3f04c6d9e6295933c04d143889db090afbf83d",
+                "pid": 8,
+                "point": "metadata_body_written_latch",
+                "policy_calls": 1
+              }
+            },
+            "exit": {
+              "path": "/out/cases/test_c_actual_latch_body_pending-4y940jec/actual-child-exit.json",
+              "physical": {
+                "st_ctime_ns": "1792371561001607127",
+                "st_dev": "66306",
+                "st_ino": "60832341",
+                "st_mtime_ns": "1792371561001607127",
+                "st_size": "181"
+              },
+              "sha256": "9b8698b7d316c62236ac2224a8090b0598bdba23ab2d0ebf317ee7b249dd9163",
+              "value": {
+                "exitcode": -9,
+                "head": "723138f922e853f229d9a29ae9dd6152c1ccaf43a2700a73c1ad9904b1ff6ba7",
+                "pid": 8,
+                "point": "metadata_body_written_latch",
+                "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+              }
+            }
+          }
+        ],
+        "complete_inventory_encoding": {
+          "base64": "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",
+          "encoding": "gzip-base64-complete-json/1",
+          "gzip_bytes": 10415,
+          "gzip_sha256": "6c71181d6853998c7a169dae853eddaca0107b325c368579b20cadcb24ca5aac",
+          "raw_bytes": 152818,
+          "raw_sha256": "3b4c43ed9a6b6193b6da76bc1995d5a788c074fbd31371f92f402b63f4d5d69a"
+        },
+        "distinct_inodes": 1548,
+        "inventories": 3,
+        "metadata_distinct_inodes": 111,
+        "metadata_totals": [
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          }
+        ]
+      },
+      "proof": {
+        "physical": {
+          "st_ctime_ns": "1792371561092629270",
+          "st_dev": "66306",
+          "st_ino": "60832342",
+          "st_mtime_ns": "1792371561092629270",
+          "st_size": "77863"
+        },
+        "sha256": "dee97ace566ffe712fdc4ca2d1524745e548025c85eb7d268869e343f010ba6e"
+      },
+      "runtime": {
+        "cid": "9e34a384248e500ee0ae5394f133b92a5158b09ffaf03ff7f164643ada3dcbbd",
+        "full_mounts": [
+          {
+            "Destination": "/audit",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-protocol-metadata-20261018-v1-a/source",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/fixture",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-protocol-metadata-20261018-v1-a/fixture",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/native",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/out",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": true,
+            "Source": "/home/animallya96/scratch/reserved-protocol-metadata-20261018-v1-a/out",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_broker_checkpoint.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-cycle-outcome-20261018-v1-a/source/backend/market/historical_broker_checkpoint.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_reserved_blob_store.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-cycle-outcome-20261018-v1-a/source/backend/market/historical_reserved_blob_store.py",
+            "Type": "bind"
+          }
+        ],
+        "hostconfig_changes": {
+          "OomKillDisable": [
+            false,
+            null
+          ]
+        },
+        "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+        "mount_order_equal": false,
+        "state": {
+          "Dead": false,
+          "Error": "",
+          "ExitCode": 0,
+          "FinishedAt": "2026-10-19T00:59:21.135042537Z",
+          "OOMKilled": false,
+          "Paused": false,
+          "Pid": 0,
+          "Restarting": false,
+          "Running": false,
+          "StartedAt": "2026-10-19T00:58:58.575328084Z",
+          "Status": "exited"
+        }
+      },
+      "source_count": 31,
+      "source_pins": {
+        "/audit/backend/__init__.py": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5",
+        "/audit/backend/market/__init__.py": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e",
+        "/audit/backend/market/historical_broker_checkpoint.py": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08",
+        "/audit/backend/market/historical_conditional_cycle.py": "d74f8da8d7e55894a44967b184e1ca0369d96beea443dcbaa123822a7ab408d7",
+        "/audit/backend/market/historical_conditional_nightly.py": "ba56fb829e9d55cf8baed52e97784ddc4fab56134cb30bc297f2051db7942300",
+        "/audit/backend/market/historical_conditional_settlement.py": "9e194856545dbf07e0ba6f0f2af9b022f75f767ee6371bb6af1f85e522f4c90d",
+        "/audit/backend/market/historical_native_metadata.py": "333c5d22c49e06742eb4cb50183bf90fa0859d0ce200d3be5f2a4914c8f71e21",
+        "/audit/backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+        "/audit/backend/market/historical_packet_demand.py": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0",
+        "/audit/backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+        "/audit/backend/market/historical_packet_spool.py": "705300210493d46e1a65225c371a05dd9bc8e30dff2c5ae8da43b85041b3f6ac",
+        "/audit/backend/market/historical_packet_store.py": "edc0ea5c05e710e3a9a67a6507aa1d4352296e92f97ea95f3ce8b62870729db4",
+        "/audit/backend/market/historical_paper_component.py": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648",
+        "/audit/backend/market/historical_physical_checkpoint.py": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604",
+        "/audit/backend/market/historical_raw_cycle.py": "3e8b136e8f37e63600e008dd6e8e1bb238c72dd01538f420b3183148e0c270b4",
+        "/audit/backend/market/historical_raw_nightly.py": "df3e2589a5c209f0a40e39d1e4f1be421631892c894b6d40305c2b570e4a2feb",
+        "/audit/backend/market/historical_reserved_blob_store.py": "9058cf5f54902ef7043a1d95514e1262b8a47b405413d389d636f3a107260caf",
+        "/audit/backend/market/historical_reserved_cycle_final.py": "4719affc9a87aef161d49eaa982da76e195f542a66943c5f9a6bac687bdc4eea",
+        "/audit/backend/market/historical_reserved_cycle_stages.py": "b4b94550139c689018382d49b5c47afe1ea166ad8f5e12bb80a742230f1a5135",
+        "/audit/backend/market/historical_reserved_native_io.py": "0af0a4d163f49ebfe63a32ae0e5f9691991e4b77b70669b421060997562d4c52",
+        "/audit/backend/market/historical_reserved_native_metadata.py": "23a60cfb3020ab333911592c47458b85541e1a59bdb0bd91ac8f39078f37cd51",
+        "/audit/backend/market/historical_reserved_protocol.py": "6c53bf2b138de589731f3bf98b5c8055e4aa3af69a36adff7e7c4eb52e740453",
+        "/audit/backend/market/historical_synthetic_native_write.py": "21f5c29c89405d6b9b59e081b14e6a2c649e4547b86dba9c314a7efba1fb7501",
+        "/audit/backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+        "/audit/backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "/audit/backend/tests/synthetic_reserved_protocol_setup.py": "9eae547e9c6efdd3b751e4050327397b0c1dcf7250d09da59f9a5f4e386f85b1",
+        "/audit/backend/tests/test_historical_reserved_protocol.py": "c360ab0f7979e66501193af4462bea111405e3ea8cae4284f316487399d9c779",
+        "/audit/run.py": "3951f2ecff59ceba463259f2c11e19f1798025d5739f34c8ad68798b5f1f87ee",
+        "/fixture/current-identity.json": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d",
+        "/fixture/native-source-map.json": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5",
+        "/native/backend/cli/market_daily.py": "0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819"
+      },
+      "version": "1"
+    },
+    {
+      "bundle": {
+        "physical": {
+          "st_ctime_ns": "1792371807040666657",
+          "st_dev": "16777223",
+          "st_ino": "191499675",
+          "st_mtime_ns": "1792371807040666657",
+          "st_size": "153505"
+        },
+        "sha256": "6a1e4a960c6d3e1fd67fd0904343247cba4e68a96949b27e59153b475d2661e9"
+      },
+      "cohort": "b",
+      "local_root": "/tmp/reserved-protocol-metadata-20261018-v1-b",
+      "metrics": {
+        "elapsed_seconds": 28.928945827297866,
+        "errors": 0,
+        "failures": 0,
+        "peak_kib": 58208,
+        "skips": 0,
+        "status": "VERIFIED_SYNTHETIC_RESERVED_PROTOCOL_METADATA_COHORT",
+        "tests": 3
+      },
+      "native_count": 47,
+      "outcomes": [
+        "test_d_actual_committed_missing_marker (backend.tests.test_historical_reserved_protocol.ReservedProtocolTests.test_d_actual_committed_missing_marker) ... ok",
+        "test_e_actual_result_body_pending (backend.tests.test_historical_reserved_protocol.ReservedProtocolTests.test_e_actual_result_body_pending) ... ok",
+        "test_f_actual_nightly_original_marker (backend.tests.test_historical_reserved_protocol.ReservedProtocolTests.test_f_actual_nightly_original_marker) ... ok"
+      ],
+      "payload_bytes": 512459,
+      "payload_count": 29,
+      "physical_validation": {
+        "allocated_and_logical_bytes_each": 34344960,
+        "canonical_witness_bytes": 21148,
+        "children": [
+          {
+            "cut": {
+              "path": "/out/cases/test_d_actual_committed_missing_marker-yt6gpzes/actual-child-cut.json",
+              "physical": {
+                "st_ctime_ns": "1792371700050312771",
+                "st_dev": "66306",
+                "st_ino": "60833089",
+                "st_mtime_ns": "1792371700050312771",
+                "st_size": "6857"
+              },
+              "sha256": "4202c3b635efc11af7009f998169af34877f1decbbb3c50887d852a5e0212bd2",
+              "value": {
+                "broker_raw": "{\"schema\":\"private-n2-broker-checkpoint/1\",\"private_synthetic_only\":true,\"identity\":{\"backend_image\":\"sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272\",\"broker_sha256\":\"c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616\",\"calendar_sha256\":\"f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4\",\"holding_config_sha256\":\"f96a29777403f5f08623709b70f36b15300500065202acbd215cd43f3c99a588\",\"holding_release_sha256\":\"1c1c6e9bcc7e9fa8d095f6ce5e6bf973c99ed19531e88c38a9aba5ed8410cd3e\",\"source_revision\":\"3b72cd4e0bc15acd24432d501918c721685a5333\",\"source_sha256\":{\"backend/agents/trading/desk/event_execution.py\":\"76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f\",\"backend/agents/trading/desk/event_risk.py\":\"34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973\",\"backend/agents/trading/desk/funded_execution.py\":\"6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c\",\"backend/agents/trading/desk/intraday_orders.py\":\"ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c\",\"backend/agents/trading/desk/nightly_plan.py\":\"9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca\",\"backend/agents/trading/desk/paper.py\":\"a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c\",\"backend/api/v1/market.py\":\"fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88\",\"backend/cli/market_daily.py\":\"0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819\",\"backend/market/adaptive_growth_policy.py\":\"35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34\",\"backend/market/alpaca_trading.py\":\"105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2\",\"backend/market/decision_view.py\":\"8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca\",\"backend/market/entry_timing.py\":\"f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88\",\"backend/market/forward_arithmetic.py\":\"9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882\",\"backend/market/forward_execution.py\":\"62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295\",\"backend/market/forward_market_evidence.py\":\"737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2\",\"backend/market/forward_probability_timing.py\":\"0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92\",\"backend/market/grade_led_policy.py\":\"4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66\",\"backend/market/holding_risk_bank.py\":\"4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158\",\"backend/market/joint_funded_policy.py\":\"5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339\",\"backend/market/learned_holding_transition.py\":\"c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55\",\"backend/market/learned_live_holding.py\":\"25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1\",\"backend/market/learned_live_timing.py\":\"80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f\",\"backend/market/learned_order_observation.py\":\"e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff\",\"backend/market/learned_personal_guidance.py\":\"37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721\",\"backend/market/live_model_decision.py\":\"b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93\",\"backend/market/live_probability_timing.py\":\"3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721\",\"backend/market/market_conditioned_holding.py\":\"e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4\",\"backend/market/personal_history.py\":\"8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a\",\"backend/market/sequential_shadow_context.py\":\"5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92\",\"docs/research/grade-led-sizing-contract-2026-10-13.md\":\"51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6\",\"docs/research/learned-held-transition-2026-10-07.md\":\"f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a\"},\"timing_config_sha256\":\"d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a\"},\"identity_sha256\":\"e13b03259b95797ed7032c9fb6397975f4c29d9d47dba6d5b15ee571644a26df\",\"caps\":{\"bytes\":8388608,\"names\":256,\"orders\":8192,\"attempts\":16384,\"fills\":8192,\"actions\":8192,\"dividends\":8192,\"claims_per_kind\":2048,\"records\":32768,\"string_chars\":512,\"depth\":16},\"codec_sha256\":\"703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08\",\"state\":{\"map\":[[\"_cash\",99499.5],[\"cost_bps\",10.0],[\"_held\",{\"map\":[[\"AAPL\",5]]}],[\"_average\",{\"map\":[[\"AAPL\",100.0]]}],[\"_orders\",{\"map\":[[\"SYNTHETIC-reserved-outcome\",{\"map\":[[\"id\",\"private-replay-0\"],[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",\"5\"],[\"type\",\"market\"],[\"time_in_force\",\"day\"],[\"status\",\"filled\"],[\"filled_qty\",\"5\"],[\"filled_avg_price\",\"100.0\"],[\"created_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"submitted_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"execution_phase\",\"market\"],[\"execute_on\",\"2019-03-01\"],[\"reserved_cash\",0.0],[\"fee\",0.5],[\"filled_at\",\"2019-03-01T14:45:33+00:00\"]]}]]}],[\"_attempts\",{\"list\":[{\"map\":[[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",5],[\"at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"observed_price\",100.0],[\"available_cash\",100000.0],[\"accepted\",true],[\"reason\",null]]}]}],[\"_fills\",{\"list\":[{\"map\":[[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"requested_qty\",5],[\"filled_qty\",5],[\"price\",100.0],[\"fee\",0.5],[\"at\",\"2019-03-01T14:45:33+00:00\"],[\"status\",\"filled\"],[\"reason\",\"filled\"]]}]}],[\"_actions\",{\"map\":[]}],[\"_dividends\",{\"list\":[]}],[\"_marks\",{\"map\":[[\"AAPL\",100.0]]}],[\"_mark_times\",{\"map\":[[\"AAPL\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}]]}],[\"_security_distributions\",{\"list\":[]}],[\"_security_exchanges\",{\"list\":[]}],[\"_share_consolidations\",{\"list\":[]}],[\"_cash_mergers\",{\"list\":[]}],[\"_now\",{\"datetime\":\"2019-03-01T14:45:33+00:00\"}],[\"_observed_at\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}],[\"_market_open\",true],[\"_batch_open\",false],[\"_last_equity\",100000.0]]}}",
+                "broker_sha256": "a610d03fbe7174407d8b33ee7f13468b747b703c4bc60576b7892d535463fa4b",
+                "head": "7a1f9cce07ccf7c026ede9018dfc48408b7489112d919848d3d59b2bb0095c46",
+                "kind": "final",
+                "metadata_pending": null,
+                "paper_sha256": "0623e8ed5aef251709dc43804e1fe39493cb556d374c7151d44781318cd4189b",
+                "pid": 7,
+                "point": "reserved_final_committed",
+                "policy_calls": 1
+              }
+            },
+            "exit": {
+              "path": "/out/cases/test_d_actual_committed_missing_marker-yt6gpzes/actual-child-exit.json",
+              "physical": {
+                "st_ctime_ns": "1792371700075149365",
+                "st_dev": "66306",
+                "st_ino": "60833090",
+                "st_mtime_ns": "1792371700075149365",
+                "st_size": "178"
+              },
+              "sha256": "85e195dc7cc130c3383d39157f7c447101b877f30e857d1c6de3898a4a54fc48",
+              "value": {
+                "exitcode": -9,
+                "head": "7a1f9cce07ccf7c026ede9018dfc48408b7489112d919848d3d59b2bb0095c46",
+                "pid": 7,
+                "point": "reserved_final_committed",
+                "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+              }
+            }
+          },
+          {
+            "cut": {
+              "path": "/out/cases/test_e_actual_result_body_pending-eknanvc0/actual-child-cut.json",
+              "physical": {
+                "st_ctime_ns": "1792371709568862825",
+                "st_dev": "66306",
+                "st_ino": "60833750",
+                "st_mtime_ns": "1792371709568862825",
+                "st_size": "6893"
+              },
+              "sha256": "280c925db353217b3bbfccacd02ab3601ad0046d270abe10edfce047eeee3e46",
+              "value": {
+                "broker_raw": "{\"schema\":\"private-n2-broker-checkpoint/1\",\"private_synthetic_only\":true,\"identity\":{\"backend_image\":\"sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272\",\"broker_sha256\":\"c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616\",\"calendar_sha256\":\"f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4\",\"holding_config_sha256\":\"f96a29777403f5f08623709b70f36b15300500065202acbd215cd43f3c99a588\",\"holding_release_sha256\":\"1c1c6e9bcc7e9fa8d095f6ce5e6bf973c99ed19531e88c38a9aba5ed8410cd3e\",\"source_revision\":\"3b72cd4e0bc15acd24432d501918c721685a5333\",\"source_sha256\":{\"backend/agents/trading/desk/event_execution.py\":\"76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f\",\"backend/agents/trading/desk/event_risk.py\":\"34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973\",\"backend/agents/trading/desk/funded_execution.py\":\"6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c\",\"backend/agents/trading/desk/intraday_orders.py\":\"ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c\",\"backend/agents/trading/desk/nightly_plan.py\":\"9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca\",\"backend/agents/trading/desk/paper.py\":\"a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c\",\"backend/api/v1/market.py\":\"fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88\",\"backend/cli/market_daily.py\":\"0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819\",\"backend/market/adaptive_growth_policy.py\":\"35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34\",\"backend/market/alpaca_trading.py\":\"105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2\",\"backend/market/decision_view.py\":\"8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca\",\"backend/market/entry_timing.py\":\"f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88\",\"backend/market/forward_arithmetic.py\":\"9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882\",\"backend/market/forward_execution.py\":\"62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295\",\"backend/market/forward_market_evidence.py\":\"737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2\",\"backend/market/forward_probability_timing.py\":\"0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92\",\"backend/market/grade_led_policy.py\":\"4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66\",\"backend/market/holding_risk_bank.py\":\"4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158\",\"backend/market/joint_funded_policy.py\":\"5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339\",\"backend/market/learned_holding_transition.py\":\"c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55\",\"backend/market/learned_live_holding.py\":\"25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1\",\"backend/market/learned_live_timing.py\":\"80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f\",\"backend/market/learned_order_observation.py\":\"e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff\",\"backend/market/learned_personal_guidance.py\":\"37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721\",\"backend/market/live_model_decision.py\":\"b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93\",\"backend/market/live_probability_timing.py\":\"3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721\",\"backend/market/market_conditioned_holding.py\":\"e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4\",\"backend/market/personal_history.py\":\"8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a\",\"backend/market/sequential_shadow_context.py\":\"5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92\",\"docs/research/grade-led-sizing-contract-2026-10-13.md\":\"51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6\",\"docs/research/learned-held-transition-2026-10-07.md\":\"f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a\"},\"timing_config_sha256\":\"d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a\"},\"identity_sha256\":\"e13b03259b95797ed7032c9fb6397975f4c29d9d47dba6d5b15ee571644a26df\",\"caps\":{\"bytes\":8388608,\"names\":256,\"orders\":8192,\"attempts\":16384,\"fills\":8192,\"actions\":8192,\"dividends\":8192,\"claims_per_kind\":2048,\"records\":32768,\"string_chars\":512,\"depth\":16},\"codec_sha256\":\"703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08\",\"state\":{\"map\":[[\"_cash\",99499.5],[\"cost_bps\",10.0],[\"_held\",{\"map\":[[\"AAPL\",5]]}],[\"_average\",{\"map\":[[\"AAPL\",100.0]]}],[\"_orders\",{\"map\":[[\"SYNTHETIC-reserved-outcome\",{\"map\":[[\"id\",\"private-replay-0\"],[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",\"5\"],[\"type\",\"market\"],[\"time_in_force\",\"day\"],[\"status\",\"filled\"],[\"filled_qty\",\"5\"],[\"filled_avg_price\",\"100.0\"],[\"created_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"submitted_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"execution_phase\",\"market\"],[\"execute_on\",\"2019-03-01\"],[\"reserved_cash\",0.0],[\"fee\",0.5],[\"filled_at\",\"2019-03-01T14:45:33+00:00\"]]}]]}],[\"_attempts\",{\"list\":[{\"map\":[[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",5],[\"at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"observed_price\",100.0],[\"available_cash\",100000.0],[\"accepted\",true],[\"reason\",null]]}]}],[\"_fills\",{\"list\":[{\"map\":[[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"requested_qty\",5],[\"filled_qty\",5],[\"price\",100.0],[\"fee\",0.5],[\"at\",\"2019-03-01T14:45:33+00:00\"],[\"status\",\"filled\"],[\"reason\",\"filled\"]]}]}],[\"_actions\",{\"map\":[]}],[\"_dividends\",{\"list\":[]}],[\"_marks\",{\"map\":[[\"AAPL\",100.0]]}],[\"_mark_times\",{\"map\":[[\"AAPL\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}]]}],[\"_security_distributions\",{\"list\":[]}],[\"_security_exchanges\",{\"list\":[]}],[\"_share_consolidations\",{\"list\":[]}],[\"_cash_mergers\",{\"list\":[]}],[\"_now\",{\"datetime\":\"2019-03-01T14:45:33+00:00\"}],[\"_observed_at\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}],[\"_market_open\",true],[\"_batch_open\",false],[\"_last_equity\",100000.0]]}}",
+                "broker_sha256": "a610d03fbe7174407d8b33ee7f13468b747b703c4bc60576b7892d535463fa4b",
+                "head": "50e738513b963160c9301ea54597ad1668139eb6354745fd70495e1da8706307",
+                "kind": "final",
+                "metadata_pending": {
+                  "role": "result.json",
+                  "slot": 5
+                },
+                "paper_sha256": "c6429978011754c3701800d80cd94641e85ffcc174dc5f7d162aafdb9f6c93fd",
+                "pid": 8,
+                "point": "metadata_body_written_result.json",
+                "policy_calls": 1
+              }
+            },
+            "exit": {
+              "path": "/out/cases/test_e_actual_result_body_pending-eknanvc0/actual-child-exit.json",
+              "physical": {
+                "st_ctime_ns": "1792371709595273913",
+                "st_dev": "66306",
+                "st_ino": "60833751",
+                "st_mtime_ns": "1792371709595273913",
+                "st_size": "187"
+              },
+              "sha256": "da3237a378e09b753e196228b1a30fe6996ec21adb1eaa4dabcf14509b24397e",
+              "value": {
+                "exitcode": -9,
+                "head": "50e738513b963160c9301ea54597ad1668139eb6354745fd70495e1da8706307",
+                "pid": 8,
+                "point": "metadata_body_written_result.json",
+                "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+              }
+            }
+          },
+          {
+            "cut": {
+              "path": "/out/cases/test_f_actual_nightly_original_marker-klav3l_b/actual-child-cut.json",
+              "physical": {
+                "st_ctime_ns": "1792371719642097131",
+                "st_dev": "66306",
+                "st_ino": "60834411",
+                "st_mtime_ns": "1792371719642097131",
+                "st_size": "6850"
+              },
+              "sha256": "497cddb3b97020d3bcf04740873e9414b1c13252892df017a7a386dafbbaaf4a",
+              "value": {
+                "broker_raw": "{\"schema\":\"private-n2-broker-checkpoint/1\",\"private_synthetic_only\":true,\"identity\":{\"backend_image\":\"sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272\",\"broker_sha256\":\"c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616\",\"calendar_sha256\":\"f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4\",\"holding_config_sha256\":\"f96a29777403f5f08623709b70f36b15300500065202acbd215cd43f3c99a588\",\"holding_release_sha256\":\"1c1c6e9bcc7e9fa8d095f6ce5e6bf973c99ed19531e88c38a9aba5ed8410cd3e\",\"source_revision\":\"3b72cd4e0bc15acd24432d501918c721685a5333\",\"source_sha256\":{\"backend/agents/trading/desk/event_execution.py\":\"76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f\",\"backend/agents/trading/desk/event_risk.py\":\"34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973\",\"backend/agents/trading/desk/funded_execution.py\":\"6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c\",\"backend/agents/trading/desk/intraday_orders.py\":\"ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c\",\"backend/agents/trading/desk/nightly_plan.py\":\"9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca\",\"backend/agents/trading/desk/paper.py\":\"a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c\",\"backend/api/v1/market.py\":\"fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88\",\"backend/cli/market_daily.py\":\"0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819\",\"backend/market/adaptive_growth_policy.py\":\"35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34\",\"backend/market/alpaca_trading.py\":\"105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2\",\"backend/market/decision_view.py\":\"8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca\",\"backend/market/entry_timing.py\":\"f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88\",\"backend/market/forward_arithmetic.py\":\"9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882\",\"backend/market/forward_execution.py\":\"62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295\",\"backend/market/forward_market_evidence.py\":\"737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2\",\"backend/market/forward_probability_timing.py\":\"0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92\",\"backend/market/grade_led_policy.py\":\"4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66\",\"backend/market/holding_risk_bank.py\":\"4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158\",\"backend/market/joint_funded_policy.py\":\"5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339\",\"backend/market/learned_holding_transition.py\":\"c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55\",\"backend/market/learned_live_holding.py\":\"25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1\",\"backend/market/learned_live_timing.py\":\"80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f\",\"backend/market/learned_order_observation.py\":\"e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff\",\"backend/market/learned_personal_guidance.py\":\"37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721\",\"backend/market/live_model_decision.py\":\"b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93\",\"backend/market/live_probability_timing.py\":\"3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721\",\"backend/market/market_conditioned_holding.py\":\"e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4\",\"backend/market/personal_history.py\":\"8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a\",\"backend/market/sequential_shadow_context.py\":\"5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92\",\"docs/research/grade-led-sizing-contract-2026-10-13.md\":\"51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6\",\"docs/research/learned-held-transition-2026-10-07.md\":\"f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a\"},\"timing_config_sha256\":\"d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a\"},\"identity_sha256\":\"e13b03259b95797ed7032c9fb6397975f4c29d9d47dba6d5b15ee571644a26df\",\"caps\":{\"bytes\":8388608,\"names\":256,\"orders\":8192,\"attempts\":16384,\"fills\":8192,\"actions\":8192,\"dividends\":8192,\"claims_per_kind\":2048,\"records\":32768,\"string_chars\":512,\"depth\":16},\"codec_sha256\":\"703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08\",\"state\":{\"map\":[[\"_cash\",99499.5],[\"cost_bps\",10.0],[\"_held\",{\"map\":[[\"AAPL\",5]]}],[\"_average\",{\"map\":[[\"AAPL\",100.0]]}],[\"_orders\",{\"map\":[[\"SYNTHETIC-reserved-outcome\",{\"map\":[[\"id\",\"private-replay-0\"],[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",\"5\"],[\"type\",\"market\"],[\"time_in_force\",\"day\"],[\"status\",\"filled\"],[\"filled_qty\",\"5\"],[\"filled_avg_price\",\"100.0\"],[\"created_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"submitted_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"execution_phase\",\"market\"],[\"execute_on\",\"2019-03-01\"],[\"reserved_cash\",0.0],[\"fee\",0.5],[\"filled_at\",\"2019-03-01T14:45:33+00:00\"]]}]]}],[\"_attempts\",{\"list\":[{\"map\":[[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",5],[\"at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"observed_price\",100.0],[\"available_cash\",100000.0],[\"accepted\",true],[\"reason\",null]]}]}],[\"_fills\",{\"list\":[{\"map\":[[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"requested_qty\",5],[\"filled_qty\",5],[\"price\",100.0],[\"fee\",0.5],[\"at\",\"2019-03-01T14:45:33+00:00\"],[\"status\",\"filled\"],[\"reason\",\"filled\"]]}]}],[\"_actions\",{\"map\":[]}],[\"_dividends\",{\"list\":[]}],[\"_marks\",{\"map\":[[\"AAPL\",101.0]]}],[\"_mark_times\",{\"map\":[[\"AAPL\",{\"datetime\":\"2019-03-01T21:01:00+00:00\"}]]}],[\"_security_distributions\",{\"list\":[]}],[\"_security_exchanges\",{\"list\":[]}],[\"_share_consolidations\",{\"list\":[]}],[\"_cash_mergers\",{\"list\":[]}],[\"_now\",{\"datetime\":\"2019-03-01T21:01:00+00:00\"}],[\"_observed_at\",{\"datetime\":\"2019-03-01T21:01:00+00:00\"}],[\"_market_open\",false],[\"_batch_open\",true],[\"_last_equity\",100004.5]]}}",
+                "broker_sha256": "10913dffefb0d1bdb60b5c538aaaf02a99220beecce5dbd5df1a51acf3eccbfd",
+                "head": "86c6f7a69ed2001f3e03b4421f3e1a3bb8eb39f55d3f6c3f16dfe50abdf0e897",
+                "kind": "nightly",
+                "metadata_pending": null,
+                "paper_sha256": "1d9b1ab60f1a52d10d7b531fb7ef0911b9c0c26f601d1031683ade7500d94ffe",
+                "pid": 9,
+                "point": "reserved_phase_result_written",
+                "policy_calls": 2
+              }
+            },
+            "exit": {
+              "path": "/out/cases/test_f_actual_nightly_original_marker-klav3l_b/actual-child-exit.json",
+              "physical": {
+                "st_ctime_ns": "1792371719670385372",
+                "st_dev": "66306",
+                "st_ino": "60834412",
+                "st_mtime_ns": "1792371719670385372",
+                "st_size": "183"
+              },
+              "sha256": "be781bbf83a220230655579e1985b678aaab2955e2fa1705d62443cb802eebdf",
+              "value": {
+                "exitcode": -9,
+                "head": "86c6f7a69ed2001f3e03b4421f3e1a3bb8eb39f55d3f6c3f16dfe50abdf0e897",
+                "pid": 9,
+                "point": "reserved_phase_result_written",
+                "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+              }
+            }
+          }
+        ],
+        "complete_inventory_encoding": {
+          "base64": "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",
+          "encoding": "gzip-base64-complete-json/1",
+          "gzip_bytes": 10422,
+          "gzip_sha256": "b198ab07a7fe48d6201751936c674bd5308b2bff08bebf4dc7e191fe3e0f18de",
+          "raw_bytes": 152833,
+          "raw_sha256": "f0d93d86ae763bbbda9c4d4f554983f4ba167874ee2a00c89a5879183ef2886c"
+        },
+        "distinct_inodes": 1548,
+        "inventories": 3,
+        "metadata_distinct_inodes": 111,
+        "metadata_totals": [
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          }
+        ]
+      },
+      "proof": {
+        "physical": {
+          "st_ctime_ns": "1792371720111230010",
+          "st_dev": "66306",
+          "st_ino": "60834413",
+          "st_mtime_ns": "1792371720111230010",
+          "st_size": "92986"
+        },
+        "sha256": "ec6fd2fa77f3823a25b84f58f67fc1f1a52a8c587ecc94aba0436fe7d6ef8339"
+      },
+      "runtime": {
+        "cid": "ecc7a874b9d9536a85c686c97f586214025f5e49a415b3c4a8af95d611b80294",
+        "full_mounts": [
+          {
+            "Destination": "/fixture",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-protocol-metadata-20261018-v1-b/fixture",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/native",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/out",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": true,
+            "Source": "/home/animallya96/scratch/reserved-protocol-metadata-20261018-v1-b/out",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_broker_checkpoint.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-cycle-outcome-20261018-v1-a/source/backend/market/historical_broker_checkpoint.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_reserved_blob_store.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-cycle-outcome-20261018-v1-a/source/backend/market/historical_reserved_blob_store.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-protocol-metadata-20261018-v1-b/source",
+            "Type": "bind"
+          }
+        ],
+        "hostconfig_changes": {
+          "OomKillDisable": [
+            false,
+            null
+          ]
+        },
+        "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+        "mount_order_equal": true,
+        "state": {
+          "Dead": false,
+          "Error": "",
+          "ExitCode": 0,
+          "FinishedAt": "2026-10-19T01:02:00.151381944Z",
+          "OOMKilled": false,
+          "Paused": false,
+          "Pid": 0,
+          "Restarting": false,
+          "Running": false,
+          "StartedAt": "2026-10-19T01:01:30.732969675Z",
+          "Status": "exited"
+        }
+      },
+      "source_count": 31,
+      "source_pins": {
+        "/audit/backend/__init__.py": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5",
+        "/audit/backend/market/__init__.py": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e",
+        "/audit/backend/market/historical_broker_checkpoint.py": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08",
+        "/audit/backend/market/historical_conditional_cycle.py": "d74f8da8d7e55894a44967b184e1ca0369d96beea443dcbaa123822a7ab408d7",
+        "/audit/backend/market/historical_conditional_nightly.py": "ba56fb829e9d55cf8baed52e97784ddc4fab56134cb30bc297f2051db7942300",
+        "/audit/backend/market/historical_conditional_settlement.py": "9e194856545dbf07e0ba6f0f2af9b022f75f767ee6371bb6af1f85e522f4c90d",
+        "/audit/backend/market/historical_native_metadata.py": "333c5d22c49e06742eb4cb50183bf90fa0859d0ce200d3be5f2a4914c8f71e21",
+        "/audit/backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+        "/audit/backend/market/historical_packet_demand.py": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0",
+        "/audit/backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+        "/audit/backend/market/historical_packet_spool.py": "705300210493d46e1a65225c371a05dd9bc8e30dff2c5ae8da43b85041b3f6ac",
+        "/audit/backend/market/historical_packet_store.py": "edc0ea5c05e710e3a9a67a6507aa1d4352296e92f97ea95f3ce8b62870729db4",
+        "/audit/backend/market/historical_paper_component.py": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648",
+        "/audit/backend/market/historical_physical_checkpoint.py": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604",
+        "/audit/backend/market/historical_raw_cycle.py": "3e8b136e8f37e63600e008dd6e8e1bb238c72dd01538f420b3183148e0c270b4",
+        "/audit/backend/market/historical_raw_nightly.py": "df3e2589a5c209f0a40e39d1e4f1be421631892c894b6d40305c2b570e4a2feb",
+        "/audit/backend/market/historical_reserved_blob_store.py": "9058cf5f54902ef7043a1d95514e1262b8a47b405413d389d636f3a107260caf",
+        "/audit/backend/market/historical_reserved_cycle_final.py": "4719affc9a87aef161d49eaa982da76e195f542a66943c5f9a6bac687bdc4eea",
+        "/audit/backend/market/historical_reserved_cycle_stages.py": "b4b94550139c689018382d49b5c47afe1ea166ad8f5e12bb80a742230f1a5135",
+        "/audit/backend/market/historical_reserved_native_io.py": "0af0a4d163f49ebfe63a32ae0e5f9691991e4b77b70669b421060997562d4c52",
+        "/audit/backend/market/historical_reserved_native_metadata.py": "23a60cfb3020ab333911592c47458b85541e1a59bdb0bd91ac8f39078f37cd51",
+        "/audit/backend/market/historical_reserved_protocol.py": "6c53bf2b138de589731f3bf98b5c8055e4aa3af69a36adff7e7c4eb52e740453",
+        "/audit/backend/market/historical_synthetic_native_write.py": "21f5c29c89405d6b9b59e081b14e6a2c649e4547b86dba9c314a7efba1fb7501",
+        "/audit/backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+        "/audit/backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "/audit/backend/tests/synthetic_reserved_protocol_setup.py": "9eae547e9c6efdd3b751e4050327397b0c1dcf7250d09da59f9a5f4e386f85b1",
+        "/audit/backend/tests/test_historical_reserved_protocol.py": "c360ab0f7979e66501193af4462bea111405e3ea8cae4284f316487399d9c779",
+        "/audit/run.py": "3951f2ecff59ceba463259f2c11e19f1798025d5739f34c8ad68798b5f1f87ee",
+        "/fixture/current-identity.json": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d",
+        "/fixture/native-source-map.json": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5",
+        "/native/backend/cli/market_daily.py": "0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819"
+      },
+      "version": "1"
+    },
+    {
+      "bundle": {
+        "physical": {
+          "st_ctime_ns": "1792371956949610692",
+          "st_dev": "16777223",
+          "st_ino": "191559491",
+          "st_mtime_ns": "1792371956949610692",
+          "st_size": "146118"
+        },
+        "sha256": "bb16ca3ca752f042cf4c199328d79a5aa229be61c9868b63211a10cedf0485e1"
+      },
+      "cohort": "c",
+      "local_root": "/tmp/reserved-protocol-metadata-20261018-v1-c",
+      "metrics": {
+        "elapsed_seconds": 34.70481628738344,
+        "errors": 0,
+        "failures": 0,
+        "peak_kib": 58616,
+        "skips": 0,
+        "status": "VERIFIED_SYNTHETIC_RESERVED_PROTOCOL_METADATA_COHORT",
+        "tests": 7
+      },
+      "native_count": 47,
+      "outcomes": [
+        "test_g_payload_cap_before_birth (backend.tests.test_historical_reserved_protocol.ReservedProtocolTests.test_g_payload_cap_before_birth) ... ok",
+        "test_h_original_bytes_and_conflict (backend.tests.test_historical_reserved_protocol.ReservedProtocolTests.test_h_original_bytes_and_conflict) ... ok",
+        "test_i_removed_pool_cannot_downgrade (backend.tests.test_historical_reserved_protocol.ReservedProtocolTests.test_i_removed_pool_cannot_downgrade) ... ok",
+        "test_j_source_header_refusal (backend.tests.test_historical_reserved_protocol.ReservedProtocolTests.test_j_source_header_refusal) ... ok",
+        "test_k_original_claim_head_refusal (backend.tests.test_historical_reserved_protocol.ReservedProtocolTests.test_k_original_claim_head_refusal) ... ok",
+        "test_l_completed_operation_cannot_extend (backend.tests.test_historical_reserved_protocol.ReservedProtocolTests.test_l_completed_operation_cannot_extend) ... ok",
+        "test_m_result_before_cas_seal_refuses_effects (backend.tests.test_historical_reserved_protocol.ReservedProtocolTests.test_m_result_before_cas_seal_refuses_effects) ... ok"
+      ],
+      "payload_bytes": 512459,
+      "payload_count": 29,
+      "physical_validation": {
+        "allocated_and_logical_bytes_each": 34344960,
+        "canonical_witness_bytes": 0,
+        "children": [],
+        "complete_inventory_encoding": {
+          "base64": "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",
+          "encoding": "gzip-base64-complete-json/1",
+          "gzip_bytes": 24021,
+          "gzip_sha256": "8fc6d355caaee7a231820bb6dcd3740368db5df2b52952fa510ad4f601758125",
+          "raw_bytes": 356597,
+          "raw_sha256": "8d8a26deb38e4853b7a1ca056128cfbc550eef30066aca783bce26e6f0649ca7"
+        },
+        "distinct_inodes": 3612,
+        "inventories": 7,
+        "metadata_distinct_inodes": 259,
+        "metadata_totals": [
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          }
+        ]
+      },
+      "proof": {
+        "physical": {
+          "st_ctime_ns": "1792371909379653209",
+          "st_dev": "66306",
+          "st_ino": "60839114",
+          "st_mtime_ns": "1792371909379653209",
+          "st_size": "86839"
+        },
+        "sha256": "be43a3c27aa1182cb1d865aaa67e83efd8197db18ea05b70d257db600f559552"
+      },
+      "runtime": {
+        "cid": "85ab9e8bd967d794e6c5c179c078a1d64dc1de9f28776e66a1375a8c05905799",
+        "full_mounts": [
+          {
+            "Destination": "/fixture",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-protocol-metadata-20261018-v1-c/fixture",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/native",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/out",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": true,
+            "Source": "/home/animallya96/scratch/reserved-protocol-metadata-20261018-v1-c/out",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_broker_checkpoint.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-cycle-outcome-20261018-v1-a/source/backend/market/historical_broker_checkpoint.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_reserved_blob_store.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-cycle-outcome-20261018-v1-a/source/backend/market/historical_reserved_blob_store.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-protocol-metadata-20261018-v1-c/source",
+            "Type": "bind"
+          }
+        ],
+        "hostconfig_changes": {
+          "OomKillDisable": [
+            false,
+            null
+          ]
+        },
+        "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+        "mount_order_equal": false,
+        "state": {
+          "Dead": false,
+          "Error": "",
+          "ExitCode": 0,
+          "FinishedAt": "2026-10-19T01:05:09.410772996Z",
+          "OOMKilled": false,
+          "Paused": false,
+          "Pid": 0,
+          "Restarting": false,
+          "Running": false,
+          "StartedAt": "2026-10-19T01:04:34.131256175Z",
+          "Status": "exited"
+        }
+      },
+      "source_count": 31,
+      "source_pins": {
+        "/audit/backend/__init__.py": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5",
+        "/audit/backend/market/__init__.py": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e",
+        "/audit/backend/market/historical_broker_checkpoint.py": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08",
+        "/audit/backend/market/historical_conditional_cycle.py": "d74f8da8d7e55894a44967b184e1ca0369d96beea443dcbaa123822a7ab408d7",
+        "/audit/backend/market/historical_conditional_nightly.py": "ba56fb829e9d55cf8baed52e97784ddc4fab56134cb30bc297f2051db7942300",
+        "/audit/backend/market/historical_conditional_settlement.py": "9e194856545dbf07e0ba6f0f2af9b022f75f767ee6371bb6af1f85e522f4c90d",
+        "/audit/backend/market/historical_native_metadata.py": "333c5d22c49e06742eb4cb50183bf90fa0859d0ce200d3be5f2a4914c8f71e21",
+        "/audit/backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+        "/audit/backend/market/historical_packet_demand.py": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0",
+        "/audit/backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+        "/audit/backend/market/historical_packet_spool.py": "705300210493d46e1a65225c371a05dd9bc8e30dff2c5ae8da43b85041b3f6ac",
+        "/audit/backend/market/historical_packet_store.py": "edc0ea5c05e710e3a9a67a6507aa1d4352296e92f97ea95f3ce8b62870729db4",
+        "/audit/backend/market/historical_paper_component.py": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648",
+        "/audit/backend/market/historical_physical_checkpoint.py": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604",
+        "/audit/backend/market/historical_raw_cycle.py": "3e8b136e8f37e63600e008dd6e8e1bb238c72dd01538f420b3183148e0c270b4",
+        "/audit/backend/market/historical_raw_nightly.py": "df3e2589a5c209f0a40e39d1e4f1be421631892c894b6d40305c2b570e4a2feb",
+        "/audit/backend/market/historical_reserved_blob_store.py": "9058cf5f54902ef7043a1d95514e1262b8a47b405413d389d636f3a107260caf",
+        "/audit/backend/market/historical_reserved_cycle_final.py": "4719affc9a87aef161d49eaa982da76e195f542a66943c5f9a6bac687bdc4eea",
+        "/audit/backend/market/historical_reserved_cycle_stages.py": "b4b94550139c689018382d49b5c47afe1ea166ad8f5e12bb80a742230f1a5135",
+        "/audit/backend/market/historical_reserved_native_io.py": "0af0a4d163f49ebfe63a32ae0e5f9691991e4b77b70669b421060997562d4c52",
+        "/audit/backend/market/historical_reserved_native_metadata.py": "23a60cfb3020ab333911592c47458b85541e1a59bdb0bd91ac8f39078f37cd51",
+        "/audit/backend/market/historical_reserved_protocol.py": "6c53bf2b138de589731f3bf98b5c8055e4aa3af69a36adff7e7c4eb52e740453",
+        "/audit/backend/market/historical_synthetic_native_write.py": "21f5c29c89405d6b9b59e081b14e6a2c649e4547b86dba9c314a7efba1fb7501",
+        "/audit/backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+        "/audit/backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "/audit/backend/tests/synthetic_reserved_protocol_setup.py": "9eae547e9c6efdd3b751e4050327397b0c1dcf7250d09da59f9a5f4e386f85b1",
+        "/audit/backend/tests/test_historical_reserved_protocol.py": "c360ab0f7979e66501193af4462bea111405e3ea8cae4284f316487399d9c779",
+        "/audit/run.py": "3951f2ecff59ceba463259f2c11e19f1798025d5739f34c8ad68798b5f1f87ee",
+        "/fixture/current-identity.json": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d",
+        "/fixture/native-source-map.json": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5",
+        "/native/backend/cli/market_daily.py": "0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819"
+      },
+      "version": "1"
+    }
+  ],
+  "hash_budget": {
+    "limits": {
+      "CONTROL_A": 2097152,
+      "CONTROL_B": 2097152,
+      "CONTROL_C": 2097152,
+      "EVIDENCE": 4194304,
+      "SOURCE": 4194304
+    },
+    "separate_ledgers_not_whole_process_4MiB": true
+  },
+  "inventory_totals": {
+    "distinct_original_cas_inodes": 6708,
+    "distinct_original_metadata_inodes": 481,
+    "gzip_bytes": 44858,
+    "metadata_totals": [
+      {
+        "allocated_bytes": 9183232,
+        "logical_bytes": 9183232
+      },
+      {
+        "allocated_bytes": 9183232,
+        "logical_bytes": 9183232
+      },
+      {
+        "allocated_bytes": 9183232,
+        "logical_bytes": 9183232
+      },
+      {
+        "allocated_bytes": 9183232,
+        "logical_bytes": 9183232
+      },
+      {
+        "allocated_bytes": 9183232,
+        "logical_bytes": 9183232
+      },
+      {
+        "allocated_bytes": 9183232,
+        "logical_bytes": 9183232
+      },
+      {
+        "allocated_bytes": 9183232,
+        "logical_bytes": 9183232
+      },
+      {
+        "allocated_bytes": 9183232,
+        "logical_bytes": 9183232
+      },
+      {
+        "allocated_bytes": 9183232,
+        "logical_bytes": 9183232
+      },
+      {
+        "allocated_bytes": 9183232,
+        "logical_bytes": 9183232
+      },
+      {
+        "allocated_bytes": 9183232,
+        "logical_bytes": 9183232
+      },
+      {
+        "allocated_bytes": 9183232,
+        "logical_bytes": 9183232
+      },
+      {
+        "allocated_bytes": 9183232,
+        "logical_bytes": 9183232
+      }
+    ],
+    "raw_bytes": 662248
+  },
+  "limitations": [
+    "Protocol-boundary process SIGKILLs, not powerloss or inside syscall/SQLite commit",
+    "Two unchanged whole source references are separately authenticated RO file mounts; NEW copied payload512459B<524288, combined executed source closure exceeds512KiB",
+    "Initialized fixed operation/result/latch bytes and namespace verified only in this finite synthetic domain; SQLite database/DELETE journal/FILE temps and native rename directory capacity remain separate/unverified",
+    "Whole832MB horizon/load-save/deepcopy/serialization/model-RAM coexistence/twohost/native constructors/market_daily resolver/sender/planning/models/providers/actual economics/native adoption/publication/API/UI remain unverified",
+    "No fullunit/build/deploy/UI/model claim; Ruff unavailable; production unchanged; original timing FAILED/publication CLOSED/genuinev6 OPEN-PAUSED/no replay or adoption"
+  ],
+  "local_hash_work_before_output": {
+    "CONTROL_A": 1560994,
+    "CONTROL_B": 1560994,
+    "CONTROL_C": 1560994,
+    "EVIDENCE": 2214372,
+    "SOURCE": 2456012
+  },
+  "local_inputs": {
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_broker_checkpoint.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792252269142498959",
+        "st_dev": "16777223",
+        "st_ino": "169476881",
+        "st_mtime_ns": "1792252269142498959",
+        "st_size": "40026"
+      },
+      "sha256": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_conditional_cycle.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792370252627361907",
+        "st_dev": "16777223",
+        "st_ino": "169484943",
+        "st_mtime_ns": "1792370252627361907",
+        "st_size": "61496"
+      },
+      "sha256": "d74f8da8d7e55894a44967b184e1ca0369d96beea443dcbaa123822a7ab408d7"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_conditional_nightly.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792370578661545566",
+        "st_dev": "16777223",
+        "st_ino": "169781386",
+        "st_mtime_ns": "1792370578661545566",
+        "st_size": "63878"
+      },
+      "sha256": "ba56fb829e9d55cf8baed52e97784ddc4fab56134cb30bc297f2051db7942300"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_conditional_settlement.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792354521769826098",
+        "st_dev": "16777223",
+        "st_ino": "169478369",
+        "st_mtime_ns": "1792354521769826098",
+        "st_size": "11377"
+      },
+      "sha256": "9e194856545dbf07e0ba6f0f2af9b022f75f767ee6371bb6af1f85e522f4c90d"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_native_metadata.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792362839980927381",
+        "st_dev": "16777223",
+        "st_ino": "188347722",
+        "st_mtime_ns": "1792362839980927381",
+        "st_size": "7097"
+      },
+      "sha256": "333c5d22c49e06742eb4cb50183bf90fa0859d0ce200d3be5f2a4914c8f71e21"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_packet_checkpoint.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792245297505270888",
+        "st_dev": "16777223",
+        "st_ino": "169431282",
+        "st_mtime_ns": "1792245297505270888",
+        "st_size": "4763"
+      },
+      "sha256": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_packet_demand.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792252765099138572",
+        "st_dev": "16777223",
+        "st_ino": "169478340",
+        "st_mtime_ns": "1792252765099138572",
+        "st_size": "6666"
+      },
+      "sha256": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_packet_registry.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792245297506635487",
+        "st_dev": "16777223",
+        "st_ino": "169431285",
+        "st_mtime_ns": "1792245297506635487",
+        "st_size": "6645"
+      },
+      "sha256": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_packet_spool.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792250186761766611",
+        "st_dev": "16777223",
+        "st_ino": "169470207",
+        "st_mtime_ns": "1792250186761766611",
+        "st_size": "10414"
+      },
+      "sha256": "705300210493d46e1a65225c371a05dd9bc8e30dff2c5ae8da43b85041b3f6ac"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_packet_store.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792370870086160332",
+        "st_dev": "16777223",
+        "st_ino": "169470208",
+        "st_mtime_ns": "1792370870086160332",
+        "st_size": "46908"
+      },
+      "sha256": "edc0ea5c05e710e3a9a67a6507aa1d4352296e92f97ea95f3ce8b62870729db4"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_paper_component.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792353414050181307",
+        "st_dev": "16777223",
+        "st_ino": "187885217",
+        "st_mtime_ns": "1792353414050181307",
+        "st_size": "4280"
+      },
+      "sha256": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_physical_checkpoint.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792352115745890961",
+        "st_dev": "16777223",
+        "st_ino": "187748374",
+        "st_mtime_ns": "1792352115745890961",
+        "st_size": "36101"
+      },
+      "sha256": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_raw_cycle.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792370252588872967",
+        "st_dev": "16777223",
+        "st_ino": "188810040",
+        "st_mtime_ns": "1792370252588872967",
+        "st_size": "7538"
+      },
+      "sha256": "3e8b136e8f37e63600e008dd6e8e1bb238c72dd01538f420b3183148e0c270b4"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_raw_nightly.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792370870086870116",
+        "st_dev": "16777223",
+        "st_ino": "188564953",
+        "st_mtime_ns": "1792370870086870116",
+        "st_size": "31820"
+      },
+      "sha256": "df3e2589a5c209f0a40e39d1e4f1be421631892c894b6d40305c2b570e4a2feb"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_blob_store.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792363186193468673",
+        "st_dev": "16777223",
+        "st_ino": "189412902",
+        "st_mtime_ns": "1792363186193468673",
+        "st_size": "28606"
+      },
+      "sha256": "9058cf5f54902ef7043a1d95514e1262b8a47b405413d389d636f3a107260caf"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_cycle_final.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792370564413971864",
+        "st_dev": "16777223",
+        "st_ino": "190082780",
+        "st_mtime_ns": "1792370564413971864",
+        "st_size": "19999"
+      },
+      "sha256": "4719affc9a87aef161d49eaa982da76e195f542a66943c5f9a6bac687bdc4eea"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_cycle_stages.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792370564413210232",
+        "st_dev": "16777223",
+        "st_ino": "189716512",
+        "st_mtime_ns": "1792370564413210232",
+        "st_size": "40294"
+      },
+      "sha256": "b4b94550139c689018382d49b5c47afe1ea166ad8f5e12bb80a742230f1a5135"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_native_io.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792371276794928479",
+        "st_dev": "16777223",
+        "st_ino": "189195866",
+        "st_mtime_ns": "1792371276794928479",
+        "st_size": "18178"
+      },
+      "sha256": "0af0a4d163f49ebfe63a32ae0e5f9691991e4b77b70669b421060997562d4c52"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_native_metadata.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792363287442675657",
+        "st_dev": "16777223",
+        "st_ino": "189451472",
+        "st_mtime_ns": "1792363287442675657",
+        "st_size": "7719"
+      },
+      "sha256": "23a60cfb3020ab333911592c47458b85541e1a59bdb0bd91ac8f39078f37cd51"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_protocol.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792371276793721353",
+        "st_dev": "16777223",
+        "st_ino": "190825582",
+        "st_mtime_ns": "1792371276793721353",
+        "st_size": "28957"
+      },
+      "sha256": "6c53bf2b138de589731f3bf98b5c8055e4aa3af69a36adff7e7c4eb52e740453"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_synthetic_native_write.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792360808501541443",
+        "st_dev": "16777223",
+        "st_ino": "189178492",
+        "st_mtime_ns": "1792360808501541443",
+        "st_size": "28492"
+      },
+      "sha256": "21f5c29c89405d6b9b59e081b14e6a2c649e4547b86dba9c314a7efba1fb7501"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_timing_packet.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792241371433295533",
+        "st_dev": "16777223",
+        "st_ino": "169405635",
+        "st_mtime_ns": "1792241371433295533",
+        "st_size": "18520"
+      },
+      "sha256": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/tests/synthetic_reserved_protocol_setup.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792370710469557713",
+        "st_dev": "16777223",
+        "st_ino": "191003999",
+        "st_mtime_ns": "1792370710469557713",
+        "st_size": "18711"
+      },
+      "sha256": "9eae547e9c6efdd3b751e4050327397b0c1dcf7250d09da59f9a5f4e386f85b1"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/tests/test_historical_reserved_protocol.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792371317929011179",
+        "st_dev": "16777223",
+        "st_ino": "191093835",
+        "st_mtime_ns": "1792371317929011179",
+        "st_size": "19792"
+      },
+      "sha256": "c360ab0f7979e66501193af4462bea111405e3ea8cae4284f316487399d9c779"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/scripts/run_reserved_protocol_metadata.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792371317929711530",
+        "st_dev": "16777223",
+        "st_ino": "191268158",
+        "st_mtime_ns": "1792371317929711530",
+        "st_size": "8525"
+      },
+      "sha256": "3951f2ecff59ceba463259f2c11e19f1798025d5739f34c8ad68798b5f1f87ee"
+    },
+    "/tmp/collect_reserved_protocol_metadata_evidence_20261018.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792371725760778370",
+        "st_dev": "16777223",
+        "st_ino": "191467340",
+        "st_mtime_ns": "1792371725760778370",
+        "st_size": "23925"
+      },
+      "sha256": "8a4759e60178a144146c13dc2012f64107e1be11f949989928e53ae901bcd4a4"
+    },
+    "/tmp/get_reserved_protocol_metadata_results_transport_v1_a_20261018.py": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371579472471345",
+        "st_dev": "16777223",
+        "st_ino": "191408801",
+        "st_mtime_ns": "1792371579472471345",
+        "st_size": "410"
+      },
+      "sha256": "2ac9a54ffe73620cadc96224b4ab093918f3cd4acf00859905baca9498c50242"
+    },
+    "/tmp/get_reserved_protocol_metadata_results_transport_v1_b_20261018.py": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371751290209020",
+        "st_dev": "16777223",
+        "st_ino": "191477562",
+        "st_mtime_ns": "1792371751290209020",
+        "st_size": "410"
+      },
+      "sha256": "3a16f78e9f85cdb5050962bf742112597dc956420b579b971c597590188efb0d"
+    },
+    "/tmp/get_reserved_protocol_metadata_results_transport_v1_c_20261018.py": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371921340717153",
+        "st_dev": "16777223",
+        "st_ino": "191545910",
+        "st_mtime_ns": "1792371921340717153",
+        "st_size": "410"
+      },
+      "sha256": "f7e11d42d3890601f3d33e7b96bed746d8ca61bb02f214c65846157d39a5762f"
+    },
+    "/tmp/get_reserved_protocol_metadata_results_v1_a_20261018.py": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371579453403474",
+        "st_dev": "16777223",
+        "st_ino": "191408792",
+        "st_mtime_ns": "1792371579453403474",
+        "st_size": "2059"
+      },
+      "sha256": "75bf99122913412d67181d62098dca8c35196a1d4892ecba6e899ebb480ff4b9"
+    },
+    "/tmp/get_reserved_protocol_metadata_results_v1_b_20261018.py": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371751279300659",
+        "st_dev": "16777223",
+        "st_ino": "191477558",
+        "st_mtime_ns": "1792371751279300659",
+        "st_size": "2059"
+      },
+      "sha256": "9d753b497bd76fc01da9dad4bb10a68f8d9cab621fc33014f370c599566f4868"
+    },
+    "/tmp/get_reserved_protocol_metadata_results_v1_c_20261018.py": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371921331391321",
+        "st_dev": "16777223",
+        "st_ino": "191545909",
+        "st_mtime_ns": "1792371921331391321",
+        "st_size": "2059"
+      },
+      "sha256": "89e04612d0e26bb54f3612a2eb62f07f4cdf0df85d1342589bb80d9838e5e28b"
+    },
+    "/tmp/launch_reserved_protocol_metadata_v1_a_20261018.py": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371401103413895",
+        "st_dev": "16777223",
+        "st_ino": "191274436",
+        "st_mtime_ns": "1792371401103413895",
+        "st_size": "11049"
+      },
+      "sha256": "4f875b59c589ddf2e5d28d39529b01a2d514ea69c75b2960899c326d78632bcb"
+    },
+    "/tmp/launch_reserved_protocol_metadata_v1_b_20261018.py": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371401116338934",
+        "st_dev": "16777223",
+        "st_ino": "191274457",
+        "st_mtime_ns": "1792371401116338934",
+        "st_size": "11049"
+      },
+      "sha256": "39757484cad894cdfea9cc7354eae7e0521c3ee27749c4e18c26c5b217b9495e"
+    },
+    "/tmp/launch_reserved_protocol_metadata_v1_c_20261018.py": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371401129188045",
+        "st_dev": "16777223",
+        "st_ino": "191274469",
+        "st_mtime_ns": "1792371401129188045",
+        "st_size": "11049"
+      },
+      "sha256": "4dc996a866da99b51dda9b2cf46b1d7a4411c591a5c28a5665c065990d961116"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/execute-argv.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371537920935905",
+        "st_dev": "16777223",
+        "st_ino": "191392443",
+        "st_mtime_ns": "1792371537920935905",
+        "st_size": "19332"
+      },
+      "sha256": "6f4af96bd486df58ec5facabf2e90e0b785862f413352d44e1065e03c8ebedda"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/execute-exit.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371561231730292",
+        "st_dev": "16777223",
+        "st_ino": "191401806",
+        "st_mtime_ns": "1792371561231730292",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/execute-input.bin": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371537921193910",
+        "st_dev": "16777223",
+        "st_ino": "191392444",
+        "st_mtime_ns": "1792371537921154232",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/execute-stderr": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371537921458530",
+        "st_dev": "16777223",
+        "st_ino": "191392446",
+        "st_mtime_ns": "1792371537921411440",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/execute-stdout": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371561180686841",
+        "st_dev": "16777223",
+        "st_ino": "191392445",
+        "st_mtime_ns": "1792371561180686841",
+        "st_size": "249"
+      },
+      "sha256": "c0b0b3ed9ad0597447ab1196c1b6eab55f57eb238860e6d10eea52e4b4a31e4f"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/preflight-argv.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371449687168843",
+        "st_dev": "16777223",
+        "st_ino": "191356930",
+        "st_mtime_ns": "1792371449687168843",
+        "st_size": "19269"
+      },
+      "sha256": "6116451916c855fabad604656e126f35f031d094aa1efc3e08746d6b44b724b6"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/preflight-exit.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371450808533503",
+        "st_dev": "16777223",
+        "st_ino": "191357466",
+        "st_mtime_ns": "1792371450808533503",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/preflight-input.bin": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371449687470686",
+        "st_dev": "16777223",
+        "st_ino": "191356931",
+        "st_mtime_ns": "1792371449687430762",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/preflight-stderr": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371449687816588",
+        "st_dev": "16777223",
+        "st_ino": "191356933",
+        "st_mtime_ns": "1792371449687765063",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/preflight-stdout": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371450761022388",
+        "st_dev": "16777223",
+        "st_ino": "191356932",
+        "st_mtime_ns": "1792371450761022388",
+        "st_size": "244333"
+      },
+      "sha256": "b680d1db6c860e5651c6a77bedd23b717ca54740e633f3b9d59791d62b25bfc6"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/results-only-argv.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371620929379464",
+        "st_dev": "16777223",
+        "st_ino": "191424999",
+        "st_mtime_ns": "1792371620929379464",
+        "st_size": "2716"
+      },
+      "sha256": "701bbc0ad583dda18599f41431c26e4f39e2e49c3c12c0faaffe8cd81229c110"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/results-only-exit.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371621619285757",
+        "st_dev": "16777223",
+        "st_ino": "191425018",
+        "st_mtime_ns": "1792371621619285757",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/results-only-input.bin": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371620929648502",
+        "st_dev": "16777223",
+        "st_ino": "191425000",
+        "st_mtime_ns": "1792371620929609497",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/results-only-stderr": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371620929993409",
+        "st_dev": "16777223",
+        "st_ino": "191425002",
+        "st_mtime_ns": "1792371620929953161",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/results-only-stdout": {
+      "category": "EVIDENCE",
+      "physical": {
+        "st_ctime_ns": "1792371621588738975",
+        "st_dev": "16777223",
+        "st_ino": "191425001",
+        "st_mtime_ns": "1792371621588738975",
+        "st_size": "133329"
+      },
+      "sha256": "c74ca6b3b85dda8165fed4d60e0769c5c5c99834208c15f36e818acfa4c4f006"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/source-copy-argv.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371536858566872",
+        "st_dev": "16777223",
+        "st_ino": "191391860",
+        "st_mtime_ns": "1792371536858566872",
+        "st_size": "471"
+      },
+      "sha256": "6333e42ecfcc1232624b7d9376947bce845de04da60d33c567531e7c41909e1b"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/source-copy-exit.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371537919367109",
+        "st_dev": "16777223",
+        "st_ino": "191392441",
+        "st_mtime_ns": "1792371537919367109",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/source-copy-input.bin": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371536859050919",
+        "st_dev": "16777223",
+        "st_ino": "191391862",
+        "st_mtime_ns": "1792371536858990038",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/source-copy-stderr": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371536859472892",
+        "st_dev": "16777223",
+        "st_ino": "191391864",
+        "st_mtime_ns": "1792371536859439117",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/source-copy-stdout": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371536859340042",
+        "st_dev": "16777223",
+        "st_ino": "191391863",
+        "st_mtime_ns": "1792371536859288681",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/source-pins.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371535115422607",
+        "st_dev": "16777223",
+        "st_ino": "191391240",
+        "st_mtime_ns": "1792371535115422607",
+        "st_size": "4085"
+      },
+      "sha256": "9b0d1319aca7bca486fdf5441b9164c82805bc2ac465f2f333593d120d8a32d4"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/stage-argv.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371535135455418",
+        "st_dev": "16777223",
+        "st_ino": "191391286",
+        "st_mtime_ns": "1792371535135455418",
+        "st_size": "19330"
+      },
+      "sha256": "32ea527250dbdb1c08cfd4381e87c640eee635f9dca062a63e211dcfebec90bf"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/stage-exit.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371536856939271",
+        "st_dev": "16777223",
+        "st_ino": "191391858",
+        "st_mtime_ns": "1792371536856939271",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/stage-input.bin": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371535136234342",
+        "st_dev": "16777223",
+        "st_ino": "191391288",
+        "st_mtime_ns": "1792371535136234342",
+        "st_size": "5133"
+      },
+      "sha256": "0b74ee82a0b564ebe72b3a80646c39eae91f6905339a4a6a4905d8046ee328d5"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/stage-stderr": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371535136733723",
+        "st_dev": "16777223",
+        "st_ino": "191391290",
+        "st_mtime_ns": "1792371535136697869",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-a/stage-stdout": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371536800789253",
+        "st_dev": "16777223",
+        "st_ino": "191391289",
+        "st_mtime_ns": "1792371536800789253",
+        "st_size": "213"
+      },
+      "sha256": "a7680b1050d263ad0e1424bd48f1648598d48a4fdcea682aaf6a9106f351d0f0"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/execute-argv.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371689973350311",
+        "st_dev": "16777223",
+        "st_ino": "191452857",
+        "st_mtime_ns": "1792371689973350311",
+        "st_size": "19332"
+      },
+      "sha256": "bac6c3c314ee40db609a4bd2194a1247f721ca639c5c263d17d494c80a94ad48"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/execute-exit.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371720219430186",
+        "st_dev": "16777223",
+        "st_ino": "191465103",
+        "st_mtime_ns": "1792371720219430186",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/execute-input.bin": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371689973680796",
+        "st_dev": "16777223",
+        "st_ino": "191452858",
+        "st_mtime_ns": "1792371689973635595",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/execute-stderr": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371689974109429",
+        "st_dev": "16777223",
+        "st_ino": "191452860",
+        "st_mtime_ns": "1792371689974041903",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/execute-stdout": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371720215070944",
+        "st_dev": "16777223",
+        "st_ino": "191452859",
+        "st_mtime_ns": "1792371720215070944",
+        "st_size": "249"
+      },
+      "sha256": "647802c760b031af2b7252158167188af61528d5fc7e2824ef066248b9fcb079"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/preflight-argv.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371633500775345",
+        "st_dev": "16777223",
+        "st_ino": "191430043",
+        "st_mtime_ns": "1792371633500775345",
+        "st_size": "19269"
+      },
+      "sha256": "dd7904e6f6c771f752c21a6adabd7c1f7a3405ec6b595d489d63d40ecfb6ea0c"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/preflight-exit.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371634207329233",
+        "st_dev": "16777223",
+        "st_ino": "191430263",
+        "st_mtime_ns": "1792371634207329233",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/preflight-input.bin": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371633501149821",
+        "st_dev": "16777223",
+        "st_ino": "191430044",
+        "st_mtime_ns": "1792371633501105294",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/preflight-stderr": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371633501512808",
+        "st_dev": "16777223",
+        "st_ino": "191430046",
+        "st_mtime_ns": "1792371633501442100",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/preflight-stdout": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371634164835969",
+        "st_dev": "16777223",
+        "st_ino": "191430045",
+        "st_mtime_ns": "1792371634164835969",
+        "st_size": "244333"
+      },
+      "sha256": "9b5a0ddbeb68fde23148f07bab2ff49679a90c7a64b95814f743a8d366a6c99a"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/results-only-argv.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371806154735487",
+        "st_dev": "16777223",
+        "st_ino": "191499673",
+        "st_mtime_ns": "1792371806154735487",
+        "st_size": "2716"
+      },
+      "sha256": "062547070321dc50c50a59a8c7426adcce1786d8694b48f51c1f200445088c80"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/results-only-exit.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371807056023476",
+        "st_dev": "16777223",
+        "st_ino": "191500141",
+        "st_mtime_ns": "1792371807056023476",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/results-only-input.bin": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371806155519154",
+        "st_dev": "16777223",
+        "st_ino": "191499674",
+        "st_mtime_ns": "1792371806155443927",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/results-only-stderr": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371806156034016",
+        "st_dev": "16777223",
+        "st_ino": "191499676",
+        "st_mtime_ns": "1792371806155971725",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/results-only-stdout": {
+      "category": "EVIDENCE",
+      "physical": {
+        "st_ctime_ns": "1792371807040666657",
+        "st_dev": "16777223",
+        "st_ino": "191499675",
+        "st_mtime_ns": "1792371807040666657",
+        "st_size": "153505"
+      },
+      "sha256": "6a1e4a960c6d3e1fd67fd0904343247cba4e68a96949b27e59153b475d2661e9"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/source-copy-argv.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371688749922588",
+        "st_dev": "16777223",
+        "st_ino": "191452239",
+        "st_mtime_ns": "1792371688749922588",
+        "st_size": "471"
+      },
+      "sha256": "de25851a1d8bc35ef45cc78d5c209e269608bc5a48f40bf6c5ccf8aec79fd50c"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/source-copy-exit.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371689972155410",
+        "st_dev": "16777223",
+        "st_ino": "191452856",
+        "st_mtime_ns": "1792371689972155410",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/source-copy-input.bin": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371688750288130",
+        "st_dev": "16777223",
+        "st_ino": "191452240",
+        "st_mtime_ns": "1792371688750239178",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/source-copy-stderr": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371688750564235",
+        "st_dev": "16777223",
+        "st_ino": "191452242",
+        "st_mtime_ns": "1792371688750524545",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/source-copy-stdout": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371688750444023",
+        "st_dev": "16777223",
+        "st_ino": "191452241",
+        "st_mtime_ns": "1792371688750408880",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/source-pins.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371688006434963",
+        "st_dev": "16777223",
+        "st_ino": "191452125",
+        "st_mtime_ns": "1792371688006434963",
+        "st_size": "4085"
+      },
+      "sha256": "9b0d1319aca7bca486fdf5441b9164c82805bc2ac465f2f333593d120d8a32d4"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/stage-argv.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371688027197557",
+        "st_dev": "16777223",
+        "st_ino": "191452171",
+        "st_mtime_ns": "1792371688027197557",
+        "st_size": "19330"
+      },
+      "sha256": "9f25e1791abf844d2eef20fa40e63b3fdf340e02482c2a6ab20208a29f0a7003"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/stage-exit.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371688748978121",
+        "st_dev": "16777223",
+        "st_ino": "191452238",
+        "st_mtime_ns": "1792371688748978121",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/stage-input.bin": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371688027579478",
+        "st_dev": "16777223",
+        "st_ino": "191452172",
+        "st_mtime_ns": "1792371688027579478",
+        "st_size": "5133"
+      },
+      "sha256": "113cb24120f36a22211671188913305f6aeb0aee1fb198a059460985599e123c"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/stage-stderr": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371688028052815",
+        "st_dev": "16777223",
+        "st_ino": "191452174",
+        "st_mtime_ns": "1792371688027995286",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-b/stage-stdout": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371688707710641",
+        "st_dev": "16777223",
+        "st_ino": "191452173",
+        "st_mtime_ns": "1792371688707710641",
+        "st_size": "213"
+      },
+      "sha256": "453d1d5a8bd3fbc8d20f484f534654b4365da434c4baaa5cb53b471092189dc2"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/execute-argv.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371873441970838",
+        "st_dev": "16777223",
+        "st_ino": "191526782",
+        "st_mtime_ns": "1792371873441970838",
+        "st_size": "19332"
+      },
+      "sha256": "0620fa81a3e342bafe9c33f6f163666bf773ef228e73cc8e7c76ae0e895d1680"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/execute-exit.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371909561332708",
+        "st_dev": "16777223",
+        "st_ino": "191541290",
+        "st_mtime_ns": "1792371909561332708",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/execute-input.bin": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371873442452906",
+        "st_dev": "16777223",
+        "st_ino": "191526783",
+        "st_mtime_ns": "1792371873442394473",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/execute-stderr": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371873442799425",
+        "st_dev": "16777223",
+        "st_ino": "191526785",
+        "st_mtime_ns": "1792371873442742394",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/execute-stdout": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371909544007396",
+        "st_dev": "16777223",
+        "st_ino": "191526784",
+        "st_mtime_ns": "1792371909544007396",
+        "st_size": "249"
+      },
+      "sha256": "9b4e6f70007e3853a4ae9e19dcce4cfa60cacfc24f8dad4c1cf51d1de606e02b"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/preflight-argv.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371816396162032",
+        "st_dev": "16777223",
+        "st_ino": "191503796",
+        "st_mtime_ns": "1792371816396162032",
+        "st_size": "19269"
+      },
+      "sha256": "d9f80e484c34d8b304343d8b1c1b58e021efbc2283f51069105b43b028941507"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/preflight-exit.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371817101937855",
+        "st_dev": "16777223",
+        "st_ino": "191504177",
+        "st_mtime_ns": "1792371817101937855",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/preflight-input.bin": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371816396721973",
+        "st_dev": "16777223",
+        "st_ino": "191503798",
+        "st_mtime_ns": "1792371816396663706",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/preflight-stderr": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371816397167041",
+        "st_dev": "16777223",
+        "st_ino": "191503800",
+        "st_mtime_ns": "1792371816397117902",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/preflight-stdout": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371817050157346",
+        "st_dev": "16777223",
+        "st_ino": "191503799",
+        "st_mtime_ns": "1792371817050157346",
+        "st_size": "244333"
+      },
+      "sha256": "df70fa7e3758a608c114c6c85227eafb119a0b18cc7acb62e2e3ba9ca84e6a63"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/results-only-argv.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371956286889567",
+        "st_dev": "16777223",
+        "st_ino": "191559488",
+        "st_mtime_ns": "1792371956286889567",
+        "st_size": "2716"
+      },
+      "sha256": "d299014a30ff5051d60d4a20807b96db16e0076c3770f2c551004ffffa8a4901"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/results-only-exit.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371956997084800",
+        "st_dev": "16777223",
+        "st_ino": "191559800",
+        "st_mtime_ns": "1792371956997084800",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/results-only-input.bin": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371956287334358",
+        "st_dev": "16777223",
+        "st_ino": "191559490",
+        "st_mtime_ns": "1792371956287260719",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/results-only-stderr": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371956287755260",
+        "st_dev": "16777223",
+        "st_ino": "191559492",
+        "st_mtime_ns": "1792371956287715472",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/results-only-stdout": {
+      "category": "EVIDENCE",
+      "physical": {
+        "st_ctime_ns": "1792371956949610692",
+        "st_dev": "16777223",
+        "st_ino": "191559491",
+        "st_mtime_ns": "1792371956949610692",
+        "st_size": "146118"
+      },
+      "sha256": "bb16ca3ca752f042cf4c199328d79a5aa229be61c9868b63211a10cedf0485e1"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/source-copy-argv.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371872257526618",
+        "st_dev": "16777223",
+        "st_ino": "191526435",
+        "st_mtime_ns": "1792371872257526618",
+        "st_size": "471"
+      },
+      "sha256": "4cf4109873fa7a7ef6fb355d0340556b973ba970bea06ea163d0776e786a12b6"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/source-copy-exit.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371873440639974",
+        "st_dev": "16777223",
+        "st_ino": "191526781",
+        "st_mtime_ns": "1792371873440639974",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/source-copy-input.bin": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371872257867093",
+        "st_dev": "16777223",
+        "st_ino": "191526436",
+        "st_mtime_ns": "1792371872257808136",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/source-copy-stderr": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371872258373350",
+        "st_dev": "16777223",
+        "st_ino": "191526438",
+        "st_mtime_ns": "1792371872258234420",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/source-copy-stdout": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371872258090832",
+        "st_dev": "16777223",
+        "st_ino": "191526437",
+        "st_mtime_ns": "1792371872258040094",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/source-pins.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371871631273476",
+        "st_dev": "16777223",
+        "st_ino": "191526073",
+        "st_mtime_ns": "1792371871631273476",
+        "st_size": "4085"
+      },
+      "sha256": "9b0d1319aca7bca486fdf5441b9164c82805bc2ac465f2f333593d120d8a32d4"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/stage-argv.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371871650491842",
+        "st_dev": "16777223",
+        "st_ino": "191526119",
+        "st_mtime_ns": "1792371871650491842",
+        "st_size": "19330"
+      },
+      "sha256": "1e5381f9937ccbb1df00019e3eb58a9091a3753003c854b0b23fa159d68737b2"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/stage-exit.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371872256220490",
+        "st_dev": "16777223",
+        "st_ino": "191526433",
+        "st_mtime_ns": "1792371872256220490",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/stage-input.bin": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371871650939174",
+        "st_dev": "16777223",
+        "st_ino": "191526120",
+        "st_mtime_ns": "1792371871650939174",
+        "st_size": "5133"
+      },
+      "sha256": "54c936b6ef5cdf1ce91d32e5a8637eec598304f76f96627100144eaffae3e599"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/stage-stderr": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371871651412429",
+        "st_dev": "16777223",
+        "st_ino": "191526122",
+        "st_mtime_ns": "1792371871651381222",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/reserved-protocol-metadata-20261018-v1-c/stage-stdout": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371872232527425",
+        "st_dev": "16777223",
+        "st_ino": "191526121",
+        "st_mtime_ns": "1792371872232527425",
+        "st_size": "213"
+      },
+      "sha256": "f12edee8a2155dd1223b4fa565cbc939c26b07efbd4fc1a55fd4ca7a89c2c9eb"
+    },
+    "/tmp/reserved-protocol-metadata-result-review-v1-a-20261018.json": {
+      "category": "EVIDENCE",
+      "physical": {
+        "st_ctime_ns": "1792371633527916562",
+        "st_dev": "16777223",
+        "st_ino": "191430047",
+        "st_mtime_ns": "1792371633527916562",
+        "st_size": "31945"
+      },
+      "sha256": "b4b74578d12f18b6f3769a8e1c5358672a8091c423e2a2aa769d58a5a22adc5a"
+    },
+    "/tmp/reserved-protocol-metadata-result-review-v1-b-20261018.json": {
+      "category": "EVIDENCE",
+      "physical": {
+        "st_ctime_ns": "1792371816426104245",
+        "st_dev": "16777223",
+        "st_ino": "191503814",
+        "st_mtime_ns": "1792371816426104245",
+        "st_size": "47151"
+      },
+      "sha256": "8f56a60f6eb5409d4ca73c090f093186e4f14c921003aa959b38d6a97a456180"
+    },
+    "/tmp/reserved-protocol-metadata-result-review-v1-c-20261018.json": {
+      "category": "EVIDENCE",
+      "physical": {
+        "st_ctime_ns": "1792371964620039619",
+        "st_dev": "16777223",
+        "st_ino": "191562748",
+        "st_mtime_ns": "1792371964620039619",
+        "st_size": "41545"
+      },
+      "sha256": "f2aba54ac0253e7f4120d8176b6e43de87fdab2ff7dc17e6626bd85ec10b6d71"
+    },
+    "/tmp/reserved_protocol_metadata_remote_v1_a_20261018.py": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792371370351115879",
+        "st_dev": "16777223",
+        "st_ino": "191274451",
+        "st_mtime_ns": "1792371370351115879",
+        "st_size": "15743"
+      },
+      "sha256": "b041e8f3788dd787fd1a5634343458e2b4694176a064926eca7868966a43c0c4"
+    },
+    "/tmp/reserved_protocol_metadata_remote_v1_b_20261018.py": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792371370370962379",
+        "st_dev": "16777223",
+        "st_ino": "191274463",
+        "st_mtime_ns": "1792371370370962379",
+        "st_size": "15743"
+      },
+      "sha256": "f62f42bd4f3cfae70b586e9084c7d6b0a382624356cb11412f4baf8ea3f7def1"
+    },
+    "/tmp/reserved_protocol_metadata_remote_v1_c_20261018.py": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792371370387806884",
+        "st_dev": "16777223",
+        "st_ino": "191274474",
+        "st_mtime_ns": "1792371370387806884",
+        "st_size": "15743"
+      },
+      "sha256": "042bf2426ac7a49dda0701a94ee4a2c4d8c968d1ed785082ffe079a966a698bb"
+    },
+    "/tmp/review_reserved_protocol_metadata_results_20261018.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792371419086141552",
+        "st_dev": "16777223",
+        "st_ino": "191313081",
+        "st_mtime_ns": "1792371419086141552",
+        "st_size": "13276"
+      },
+      "sha256": "96e46749325e597c53a7a1ed3e54e8ef0ca5884dd222171515f4fc792e1658ce"
+    }
+  },
+  "next": "Inspect and implement distinct finite private SQLite database/journal/FILE-temp admission for this graph. First inspect Store PRAGMA/transaction/page growth and actual SQLite filesystem calls. Preserve ordinary Store paths/schema/caps/guards, original DELETE-journal behavior by default, old writer semantics and public genuine refusal. Do not pretend fixed marker/latch slots reserve SQLite or native rename directory capacity. Use a separate source-bound finite mode and NEW bounded interruption/original-result assertions before selected effects; full filesystem/horizon/twohost/model-RAM admission remains mandatory before genuine effects.",
+  "schema": "private-reserved-protocol-metadata-proof/1",
+  "scope": "THIRTEEN new assertions in THREE bounded cohorts at ONE source; initialized fixed marker/result/latch namespace before PRIVATE birth/stages/final/same-session Nightly; original result/recovery and five actual process cuts; synthetic resolver proxy/context/policy/calendar/source-manifest and bypassed constructors; public genuine admission remains closed",
+  "source_checkpoint": "216682b83e64b350623e3da503d6cb3f223d1f06",
+  "source_tree": "25065302481e54e921f7b48ea1b23c78016c7352",
+  "transport_phases": {
+    "a": {
+      "execute": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "preflight": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "results-only": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "source-copy": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "stage": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      }
+    },
+    "b": {
+      "execute": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "preflight": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "results-only": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "source-copy": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "stage": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      }
+    },
+    "c": {
+      "execute": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "preflight": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "results-only": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "source-copy": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "stage": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      }
+    }
+  }
+}
