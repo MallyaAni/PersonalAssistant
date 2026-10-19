@@ -1,5 +1,173 @@
 # Next session
 
+## 2026-10-19 — Owned order containers before resolution VERIFIED; live acceptance still UNVERIFIED
+
+USER STATUS QUESTION: "is the live strategy and dashboard fixed?" Answered that
+the recent private reliability fixes have not been deployed and current complete
+live acceptance is not established. Fresh READ-ONLY in-app browser navigation to
+https://deep-matter.com/ displayed "Sign in to DeepMatter", Username/Password,
+disabled Continue. No authenticated trading workspace was visible; no credentials,
+orders or account changes were submitted. This is a concrete access gap for
+CURRENT dashboard interaction/persistence/fill-to-UI verification, not a claim
+that the sign-in page is broken or that the live system is healthy. Deployed
+artifact/source identity was NOT observed. Record:
+research/live-trading-status-observation-2026-10-19.json. Earlier dashboard cleanup
+browser acceptance remains historical and separate from this current question.
+No permission question pending; do not bypass authentication or invent acceptance.
+
+Read research/prepared-orders-proof-2026-10-19.json:
+d3d6c5b57fa61f562f236643d2020fdd63b54aa26771fb6d7f629b6862075036,
+32168B. Source f866e67188dbeb5f56d19e0a74f1a4d4df1b0a11/tree
+d7ffb8ed6ff22413eab38047033a25bff5d3fcbd passed EIGHT NEW named assertions in
+EIGHT fresh single-case runtimes, exit0/noOOM/0failure/error/skip. Reports525753B
+retained in one152908B sidecar5a98656d. Root source/call/runtime/full DATA fold/
+readback passed. Independent review stays UNVERIFIED: previous reviewer remains
+usage-limited, no retry/replacement/account/model switch. Goal/heartbeat ACTIVE.
+This checkpoint is private synthetic product progress, NOT live strategy/UI fix
+or deployment/genuine/native-operation/simulator-adoption acceptance.
+
+PRODUCT: distinct PRIVATE historical_prepared_orders.PreparedOrders,
+synthetic-prepared-native-orders/1 plus Final9. Before output-asdict/flush it
+allocates the detached list/dictionary containers for original native order rows,
+reserving only the two possible _fill-added keys filled_at/expired_at. Private
+sentinels occupy every value: no status/fill/fee/price/execution-time presnapshot,
+placeholder EVIDENCE, or invented native outcome. Original native row identities,
+membership/key ordering and source/head/input/preimage/IO bindings are checked;
+actual immutable scalar values populate the SAME containers ONCE after real
+resolution. Native row dictionaries remain untouched by the copy. A caught
+duplicate handoff poisons later saves/evidence; it cannot undo an actual fill.
+
+The reconciliation function is explicitly DERIVED. Full original source and
+complete original CodeType authenticate the entry; AST derivation replaces ONLY
+orders=deepcopy(list(client._orders.values())) with prepared_orders.take(client),
+adds the required typed-owner keyword and explicitly renames the function. Every
+other original statement remains in the derived body. It is NEVER labelled
+unchanged/native whole-function execution. Original settlement module/default
+reconcile_raw API and native apply_settlements body remain FULL-byte unchanged.
+Original function/global identities plus derived code/global identities are
+checked, not a hostile Python sandbox or deep immutability guarantee.
+
+Original reservation/receipt bind the typed shape digest/count/length, input
+digest, exact source hashes and PRIVATE_DERIVED_RECONCILE mode. Recovery validates
+only original metadata, never allocates new order containers or recompiles/runs
+the derived reconciliation. Owner closes/releases native rows, output containers,
+client and copied globals before saving/on all paths. Original result precedes
+existing directory→SQL→CAS seals. Ordinary Store/default DELETE+FILE/schema/paths/
+caps/guards/native writer/absent birth/public genuine/old bound-CAS raw-final
+refusals remain unchanged. Ten native/default/input-capacity files match8e057025
+in FULL bytes. Existing output transition remains its separate DERIVED tail.
+
+A CIDfadc858842e56c5748cef93745eeedc491287e751a855d163cc37f9ee4960f51
+uses unchanged whole Final8 SOURCE CodeTypes. Profiling injects MemoryError at the
+ACTUAL original postflush orders deepcopy call: native broker already filled5,
+writer stays next3/no final save/head unchanged. This is an INJECTED allocation
+failure control, NOT an observed system OOM. B CIDd5e5d974fe3296f487c707ab1d8b1916baa340fdec99ff3b46a26bea764f1b36
+injects preparation failure at the explicit PRE-effect boundary: no flush/
+output-asdict/orders-copy, accepted/native/account/head/cursors/latch preserved,
+poison and original paused recovery. It too is NOT an actual OOM measurement.
+
+C CID8deb4baf0bb2e0198c18de5015241ffe5c9eb9620c72567bf3754886cf6ec406
+compares SEVEN actual independent native broker journeys: full, missing-price,
+partial-cash, canceled, prior terminal, working closing auction, empty. Exact
+postflush deepcopy JSON/order-key parity, same preallocated list/dict identities,
+no native-row aliases, no pre-effect execution values, strict bool metadata
+refusal, original broker preservation and released metadata checks pass. These
+units are seven broker comparisons WITHIN ONE test, not seven extra Cycle tests.
+
+D CID94ef936bb6eda55ca97058d600a4f3747d932c5467e7309ec1183be818b36beb
+completes actual birth→stages→desired8/submitted5/filled5 partial journal→Store
+OUTCOME→reopen/original recovery→same-session Nightly→historical final recovery.
+The actual derived return is compared against unchanged WHOLE reconcile_raw
+on a fresh independent native input using the SAME actual postflush broker:
+314187 native JSON bytes SHA49ad3c8ef0e9f9ae5b1a1f0aaf680c445bd59958e09896b609206192c64b7c08
+and14300 finite evidence bytes exactly match; original input and broker bytes
+are preserved. Reference comparison is test-only, not production replay/adoption.
+Native NaN/Unicode state, policy2/five native saves preserved. Profile proves
+container preparation BEFORE flush, actual values take AFTER, ZERO original late
+orders-copy calls in the derived path. Recovery/historical traces[].
+
+E CID60e8e6b67952fc487089147197846029c0c47f3f384b973c411404c55de0f5c4
+catches a duplicate take after real fill5; later saving/evidence refuses, writer
+next3/original native bytes/head retained, no replay. H CID9e09fcacaca9e1ddc5cbaa281531a80ced961940591a27babe9dcabc20da3536
+substitutes an equivalent in-memory native row dictionary at a deliberate negative
+hook; original row-identity guard refuses BEFORE flush, preserving encoded native
+state and original recovery pause. These controls are not hostile concurrency
+isolation or financial policy admission.
+
+F CIDea7abf08ba7c05c204d7f10d3ad533222e2307348b5fae5cdc464446c618ce10
+and G CIDcaf992fb1b0535ebb9f68b09352bd7639bfca0df418be7582e70009f12fe6b64
+each owned PID7 SIGKILL/reaped-9 in DIFFERENT runtimes: after original container
+reservation before flush; after authoritative OUTCOME with owner released.
+Reserved stays paused; committed recovers ONLY original missing result/seals,
+no preparation/load/copy/fold/flush/save/capture/append/SQL generation/restore.
+Four canonical cut/exit strings15505B exact SHA+length. Protocol process cuts,
+NOT powerloss/inside-syscall/SQLite-commit proof; immutable broker DATA witnesses
+are never parent/account restore. Per-case4.99441–32.92876s/max57812KiB; CPU30
+is a CPU limit, not a30s wall claim. All transport phases0/emptyerr, no unexpected
+native/test failure.
+
+UNRUN LOCAL v1-A failure preserved: launcher named a nonexistent local remote
+control path, stopped at first source(REMOTE) after local mkdir BEFORE SSH argv/
+input/dispatch. No remote root/source stage/container/tests. Original controls
+and reason /tmp/prepared-orders-local-preflight-failure-20261019.json retained;
+distinct v2 roots/matching named controls used. Product/tests/source checkpoint
+unchanged, v1 B–H never dispatched. Never retry those controls or adopt that root.
+
+Root folded all8 inventories:4128CAS+296metadata+56SQL+32directory-metadata+
+48native-directory=4560 globally distinct original identities/every name/field
+unchanged. Each case CAS34344960/meta9183232/SQL1843200/dir790528 allocated AND
+logicalB. Raw423302B inventories29814B gzip. Original native bodies change outside
+these unchanged inventories. Payload475320B+pins4741B=480061B<524288/39payloads+
+pins;40source/47native SHA physical bookends/globals unchanged/forbidden[]. EIGHT
+whole exact SOURCE-only RO refs codec/CAS/physical/Stage/Store/Final8/StaticAdmission/
+Nightly plus TWO SOURCE data files map1655/identity, no old account/output/pool/
+broad fallback. Combined closure exceeds copied cap, not a RAM bound. Fourteen
+FULL mounts equal by uniqueDestination; raw order only F true. HC only
+OomKillDisablefalse→null. UID1000/noneRO1CPU512MiB=swap/PIDs32/tmp64/dropALL/
+no-new-privileges/CPU30/native1MiBFSIZE/control-log256KiB/productioncaps unchanged.
+Context/policy/program/calendar/source-manifest globals SYNTHETIC/constructors
+bypassed. No model/provider/market_daily startup or whole genuine acceptance.
+
+DATA-only collector ONCE207inputs/four held SHA+physical reads, exclusive fsync/
+readback. Separate SOURCE4MiB+8CONTROL4MiB each+DERIVED2MiB=38MiB maximum,
+NOT whole4MiB. Actual SOURCE3297232/eachCONTROL<1.73MiB/DERIVED370152B.
+Main+sidecar185076B total/each<256KiB. Seven small source/failure records retained
+research/prepared-orders-controls-2026-10-19.json,21587B/
+100e0b66b7bcc4740e546bd0b639ccfa7f63975b829ef3df289149f584174283,
+four held reads/separate2MiB/314594B actual incl readback. Eleven Python sources/
+148purpose functions/ASTwarnings/zero-backspaces/diff PASS; Ruff unavailable.
+No fullunit/build/deploy/UI/model or local crash/kernel-FSIZE claim.
+Diagram impact: NONE — internal private allocation ownership, no deployment or
+cross-subsystem flow changes.
+
+NEXT: this NEW8 prepared-order container boundary is CLOSED. Never rerun v2 A–H/
+v1 unused controls/preflight/stage/copy/tests/getters/collector/archive or previous
+receipt5/finite9/static9/identity9/prepared-transition9/older gates for docs.
+Never adopt failed/OPEN/completed pools/reopen COMPLETE phases. Current live
+dashboard/strategy/fills-to-UI remain UNVERIFIED; the available browser stops at
+sign-in. Do not call these private changes live fixes, deploy historical main,
+bypass auth, or interpret old dashboard cleanup as current complete acceptance.
+
+For independent product work, FIRST inspect original paper.settle per-pending
+Settled/execution-evidence construction and reconciliation journal/list/evidence
+lifetimes. Any preparation must own containers only and take ACTUAL results after
+resolution, explicitly label derived code, preserve diagnostics/native byte parity/
+original input and metadata-only recovery, and never invent placeholder evidence
+or pre-snapshot outcomes. Remaining encoding/save/broker serialization/settlement/
+journal/checks and other allocations are still late; this moved ONE allocation,
+not full832MB/model RAM admission. Full native rename/journal/filesystem capacity
+remains BLOCKED on unavailable source/runtime/filesystem-bound allocator ack at
+paper.py:433 replace/failure unlink/parent fsync; capacity_reserved=False.
+NativeSQLiteFILE/horizon/modelRAM/twohost/powerloss/genuine constructors/Resolver/
+sender/providers/calendar/economics/native operation/adoption/independent
+publication/API/UI remain UNVERIFIED; full admission mandatory BEFORE genuine
+effects. Original timing FAILED/publication CLOSED/missing receipts/immutable
+roots unchanged; genuinev6 OPEN/PAUSED/no replay/adoption/new genuine run.
+No Spark2load/guard-G08-cap weakening/fakeclock/actualday replay/history rewrite/
+model-provider-account-service change/denied-read bypass/paiddata/tuning/real-money
+orders/provenance-ELF detours/limited-worker retries. Meaningful progress only;
+no ETA. Keep the full goal intact and read current NEXT for stale heartbeat prompts.
+
 ## 2026-10-19 — Pre-resolution final receipt byte allowance VERIFIED (private synthetic)
 
 Read research/receipt-capacity-proof-2026-10-19.json:

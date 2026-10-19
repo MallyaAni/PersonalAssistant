@@ -1,0 +1,21 @@
+{
+  "schema": "live-trading-readonly-status-observation/1",
+  "recorded_after_observation_utc": "2026-10-19 14:30:24 UTC",
+  "trigger": "User asked whether the live strategy and dashboard are fixed",
+  "surface": "Connected in-app browser, fresh background tab",
+  "url": "https://deep-matter.com/",
+  "title": "DeepMatter · Private intelligence",
+  "visible_heading": "Sign in to DeepMatter",
+  "visible_controls": ["Username", "Password", "Continue (disabled)", "Request an account"],
+  "actions": ["Read browser inventory", "Navigate to the known live origin", "Observe rendered accessibility state"],
+  "authenticated_dashboard_visible": false,
+  "deployed_source_revision_or_asset_identity": null,
+  "current_strategy_decision_acceptance": "UNVERIFIED",
+  "current_dashboard_interaction_and_persistence": "UNVERIFIED",
+  "current_order_fill_to_ui_acceptance": "UNVERIFIED",
+  "specific_access_gap": "The connected browser displayed sign-in rather than an authenticated workspace; no authenticated trading view was available for this read-only observation",
+  "scope": "Sign-in page visibility only. This does not prove current strategy, dashboard, backend health or persistence correctness. Earlier verified dashboard cleanup is a separate historical result.",
+  "no_login_credentials_submitted": true,
+  "no_trading_actions_or_model_provider_changes": true,
+  "no_deployment_performed": true
+}
