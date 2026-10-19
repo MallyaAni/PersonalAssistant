@@ -1,0 +1,1057 @@
+{
+  "candidate": "2cea13ecff99f32b7695f2e6054b35f8940b8a09",
+  "captured_at": "2026-10-19T16:14:25.335513+00:00",
+  "diagram_impact": "NONE: existing reconciliation, projection and chart flows.",
+  "failed_preserved": [
+    "First canonical deployment failed test collection, before any production checkout, selector or running-service change.",
+    "The targeted identified-input browser run reused the first GREEN output directory. Its preceding four-case JSON retains embedded diagnostics/data, but not all preceding trace archives remain. No replay was used to reconstruct lost traces."
+  ],
+  "final_product_source_pins": {
+    "backend/agents/trading/desk/decision_history.py": {
+      "bytes": 13672,
+      "sha256": "26224acae5aebeb641bb19a1f81c3bdf649a56f4445873c137e2faa359781669"
+    },
+    "backend/cli/market_daily.py": {
+      "bytes": 120901,
+      "sha256": "70201cfb771fb873a75b1356654a5dce9ab1b0900094ddcc23bcb6da56f1549b"
+    },
+    "backend/cli/market_release_admission.py": {
+      "bytes": 20472,
+      "sha256": "5f18164f0e465b89fd546509c4091f5201243de5b5652292a331c305bb26b1a4"
+    },
+    "backend/market/live_model_decision.py": {
+      "bytes": 33329,
+      "sha256": "06bd5150ec8cdfce5399e2ce1bc96f9a07c43231fc2b47fb6dbf5b1ea6f89aea"
+    },
+    "backend/tests/test_archived_fill_projection_contract.py": {
+      "bytes": 3715,
+      "sha256": "ba9508a23aa6e8705e7cfee7cbdd55dd761d65c3e78cdc51b341028267092bc5"
+    },
+    "backend/tests/test_decision_history.py": {
+      "bytes": 23090,
+      "sha256": "cd63831ed533a75714293308dfdc5ed425c76224c13566fc0ba3043c89225f1c"
+    },
+    "backend/tests/test_live_model_decision.py": {
+      "bytes": 27997,
+      "sha256": "cf7d43017b465a3340fc08241010d1f29d6b94d524df33e42ce1502d9a284c7d"
+    },
+    "backend/tests/test_partial_fill_receipt_absence.py": {
+      "bytes": 10978,
+      "sha256": "047d73d28bbe136f7895bafd5b59937b0c6356f63b5b7dd456dad93ca15a27b0"
+    },
+    "backend/tests/test_reconciliation_release_admission.py": {
+      "bytes": 5546,
+      "sha256": "ff0230f8b0b21b24779dc7d393e05238adebcb484e3b14d347ee367af9a0c306"
+    }
+  },
+  "first_candidate": "c159473d7dd3444d14453ac3cc39ccd76060d80b",
+  "metadata_limits": [
+    "The package-qualified targeted native harness dependency_revision field names live parent50d62c63, while its actual backend mount is original candidatec159473d. The mounted path is retained in its controller/create argv; field is parent metadata, not candidate identity.",
+    "Four initial browser cases include a rounded identified compatibility input. The identified full-price input was additionally observed passing in a targeted tool run; no standalone raw reporter file is claimed for that targeted observation."
+  ],
+  "observations": [
+    {
+      "bytes": 3698,
+      "original": "{\"cid\": \"02f68c9c05a80d92b90031a8350035a653e1669f5ffbc8a801ca8a8ad0390ac0\", \"image\": \"sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2\", \"original_source_revision\": \"50d62c63e654a86ddfaa01cdc70b475081e60cb4\", \"test_sha256\": \"6c885c2a38bfcacbf222af0a96cd7a314c461e8da3ef99f4bf2938b01d5e8655\", \"docker_start_returncode\": 1, \"state\": {\"Status\": \"exited\", \"Running\": false, \"Paused\": false, \"Restarting\": false, \"OOMKilled\": false, \"Dead\": false, \"Pid\": 0, \"ExitCode\": 1, \"Error\": \"\", \"StartedAt\": \"2026-10-19T15:49:08.458911768Z\", \"FinishedAt\": \"2026-10-19T15:49:10.540391981Z\"}, \"mem_available_before\": 9619759104, \"sources_unchanged\": true, \"scope\": \"NEW_SYNTHETIC_NATIVE_RECONCILIATION; NO_ACCOUNT_MODEL_PROVIDER_NETWORK_OR_ORDER_CALL\"}\nFF.                                                                      [100%]\n=================================== FAILURES ===================================\n___________ test_confirmed_partial_survives_absent_ordinary_receipt ____________\n\ntmp_path = PosixPath('/tmp/pytest-of-unknown/pytest-0/test_confirmed_partial_survive0')\n\n    def test_confirmed_partial_survives_absent_ordinary_receipt(tmp_path):\n        from backend.cli import market_daily\n    \n        state = saved_partial(tmp_path)\n        original_journal = deepcopy(state.journal)\n        original_pending = deepcopy(state.pending)\n        client = ReadOnlySyntheticClient([[], []])\n        updated, settled = market_daily._reconcile(\n            client, state, tmp_path, True, decision_at=OBSERVED\n        )\n        reopened = paper.load_state(tmp_path)\n>       assert reopened.journal[0][\"filled_qty\"] == 2\nE       assert 0 == 2\n\n/regression/test_partial_fill_receipt_absence.py:119: AssertionError\n----------------------------- Captured stdout call -----------------------------\n  last session's orders: 1 missing\n    buy      8 AAA    missing (0 filled)\n_________ test_later_authoritative_receipt_completes_original_partial __________\n\ntmp_path = PosixPath('/tmp/pytest-of-unknown/pytest-0/test_later_authoritative_recei0')\n\n    def test_later_authoritative_receipt_completes_original_partial(tmp_path):\n        from backend.cli import market_daily\n    \n        state = saved_partial(tmp_path)\n        terminal = receipt(status=\"filled\", filled=\"5\", price=\"102.5\")\n        terminal[\"filled_at\"] = \"2026-10-14T13:35:00Z\"\n        original_terminal = deepcopy(terminal)\n        client = ReadOnlySyntheticClient([[], [terminal]])\n        state, _ = market_daily._reconcile(\n            client, state, tmp_path, True, decision_at=OBSERVED\n        )\n        state = paper.load_state(tmp_path)\n        result, settled = market_daily._reconcile(\n            client, state, tmp_path, True, decision_at=OBSERVED\n        )\n        reopened = paper.load_state(tmp_path)\n        assert reopened.pending == []\n        assert len(reopened.journal) == 1\n        row = reopened.journal[0]\n        assert row[\"client_order_id\"] == CID\n>       assert (row[\"qty\"], row[\"submitted_qty\"], row[\"sender_qty\"], row[\"filled_qty\"]) == (\n            8, 5, 5, 5,\n        )\nE       assert (8, 5, 5, 0) == (8, 5, 5, 5)\nE         \nE         At index 3 diff: 0 != 5\nE         Use -v to get more diff\n\n/regression/test_partial_fill_receipt_absence.py:155: AssertionError\n----------------------------- Captured stdout call -----------------------------\n  last session's orders: 1 missing\n    buy      8 AAA    missing (0 filled)\n=========================== short test summary info ============================\nFAILED ../dev::test_confirmed_partial_survives_absent_ordinary_receipt - asse...\nFAILED ../dev::test_later_authoritative_receipt_completes_original_partial - ...\n2 failed, 1 passed in 0.19s\n\n\n",
+      "path": "/tmp/partial-fill-absence-red-20261019-v1/stdout",
+      "sha256": "6829956f869af67dbc5cb674437ce9e7ea0721470f0c109d6c8cbac8bc0832bd"
+    },
+    {
+      "bytes": 1816,
+      "original": "{\"cid\": \"9b2972192aedb2dc92a50b9c2a45e36b4b82e7c23e03ac639925bc5a48e880d1\", \"image\": \"sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2\", \"dependency_revision\": \"50d62c63e654a86ddfaa01cdc70b475081e60cb4\", \"docker_start_returncode\": 0, \"state\": {\"Status\": \"exited\", \"Running\": false, \"Paused\": false, \"Restarting\": false, \"OOMKilled\": false, \"Dead\": false, \"Pid\": 0, \"ExitCode\": 0, \"Error\": \"\", \"StartedAt\": \"2026-10-19T15:57:11.044455724Z\", \"FinishedAt\": \"2026-10-19T15:57:12.454368879Z\"}, \"mem_available_before\": 9647206400, \"candidate_sources\": {\"backend/cli/market_daily.py\": {\"sha256\": \"70201cfb771fb873a75b1356654a5dce9ab1b0900094ddcc23bcb6da56f1549b\", \"bytes\": 120901}, \"backend/cli/market_release_admission.py\": {\"sha256\": \"9e2d2a5a80c5fe7578ef762051f320642db622cb29fde81da47959aa67b7823b\", \"bytes\": 19356}, \"backend/agents/trading/desk/decision_history.py\": {\"sha256\": \"26224acae5aebeb641bb19a1f81c3bdf649a56f4445873c137e2faa359781669\", \"bytes\": 13672}, \"backend/tests/test_partial_fill_receipt_absence.py\": {\"sha256\": \"047d73d28bbe136f7895bafd5b59937b0c6356f63b5b7dd456dad93ca15a27b0\", \"bytes\": 10978}, \"backend/tests/test_archived_fill_projection_contract.py\": {\"sha256\": \"ba9508a23aa6e8705e7cfee7cbdd55dd761d65c3e78cdc51b341028267092bc5\", \"bytes\": 3715}, \"backend/tests/test_reconciliation_release_admission.py\": {\"sha256\": \"e8311857261c23d3935dc6d6ebc9f224b63e5cf3ea7651dbfe9f11e73dd71133\", \"bytes\": 3941}, \"backend/tests/test_decision_history.py\": {\"sha256\": \"cd63831ed533a75714293308dfdc5ed425c76224c13566fc0ba3043c89225f1c\", \"bytes\": 23090}}, \"production_sources_unchanged\": true, \"scope\": \"NEW_SYNTHETIC_NORMAL_NATIVE_MODULES; NO_ACCOUNT_MODEL_PROVIDER_NETWORK_OR_ORDER_CALL\"}\n.........................................                                [100%]\n41 passed in 0.37s\n\n\n",
+      "path": "/tmp/fill-consistency-green-20261019-v1/stdout",
+      "sha256": "ca3b98e16c9bf602d0f1dadef612e8a8d6e03b1505a9d09d7b396156f97ca925"
+    },
+    {
+      "bytes": 5178,
+      "original": "{\"cid\": \"008d841ce60b71b628849d1b24f581c1367105aa3edf102081b494ce937d2ae4\", \"image\": \"sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2\", \"dependency_revision\": \"50d62c63e654a86ddfaa01cdc70b475081e60cb4\", \"docker_start_returncode\": 1, \"state\": {\"Status\": \"exited\", \"Running\": false, \"Paused\": false, \"Restarting\": false, \"OOMKilled\": false, \"Dead\": false, \"Pid\": 0, \"ExitCode\": 1, \"Error\": \"\", \"StartedAt\": \"2026-10-19T16:00:58.362716797Z\", \"FinishedAt\": \"2026-10-19T16:01:02.747085532Z\"}, \"mem_available_before\": 9662238720, \"candidate_sources\": {\"backend/cli/market_daily.py\": {\"sha256\": \"70201cfb771fb873a75b1356654a5dce9ab1b0900094ddcc23bcb6da56f1549b\", \"bytes\": 120901}, \"backend/cli/market_release_admission.py\": {\"sha256\": \"9e2d2a5a80c5fe7578ef762051f320642db622cb29fde81da47959aa67b7823b\", \"bytes\": 19356}, \"backend/agents/trading/desk/decision_history.py\": {\"sha256\": \"26224acae5aebeb641bb19a1f81c3bdf649a56f4445873c137e2faa359781669\", \"bytes\": 13672}, \"backend/tests/test_partial_fill_receipt_absence.py\": {\"sha256\": \"047d73d28bbe136f7895bafd5b59937b0c6356f63b5b7dd456dad93ca15a27b0\", \"bytes\": 10978}, \"backend/tests/test_archived_fill_projection_contract.py\": {\"sha256\": \"ba9508a23aa6e8705e7cfee7cbdd55dd761d65c3e78cdc51b341028267092bc5\", \"bytes\": 3715}, \"backend/tests/test_reconciliation_release_admission.py\": {\"sha256\": \"e8311857261c23d3935dc6d6ebc9f224b63e5cf3ea7651dbfe9f11e73dd71133\", \"bytes\": 3941}, \"backend/tests/test_decision_history.py\": {\"sha256\": \"cd63831ed533a75714293308dfdc5ed425c76224c13566fc0ba3043c89225f1c\", \"bytes\": 23090}, \"backend/tests/test_working_partial_execution_history.py\": {\"sha256\": \"4a1bec9904fd1dd536fdea95b54031ead7fdb08c969a29d9c1f2188c186c9c97\", \"bytes\": 5391}}, \"production_sources_unchanged\": true, \"scope\": \"NEW_SYNTHETIC_NORMAL_NATIVE_MODULES; NO_ACCOUNT_MODEL_PROVIDER_NETWORK_OR_ORDER_CALL\"}\nFF................                                                       [100%]\n=================================== FAILURES ===================================\n___ test_saved_working_partial_remains_dated_execution_after_nextday_absence ___\n\ntmp_path = PosixPath('/tmp/pytest-of-unknown/pytest-0/test_saved_working_partial_rem0')\n\n    def test_saved_working_partial_remains_dated_execution_after_nextday_absence(tmp_path):\n        from backend.cli import market_daily\n    \n        state = saved_partial(tmp_path)\n        original = deepcopy(asdict(state))\n        path = paper.state_path(tmp_path)\n        original_bytes = path.read_bytes()\n        client = ReadOnlySyntheticClient([[]])\n        updated, outcomes = market_daily._reconcile(\n            client, state, tmp_path, True, decision_at=NEXT_DAY\n        )\n        reopened = paper.load_state(tmp_path)\n        assert outcomes == []\n        assert asdict(updated) == asdict(reopened) == asdict(state) == original\n        assert path.read_bytes() == original_bytes\n        assert reopened.pending == original[\"pending\"]\n        assert projection._terminal_entry(reopened.journal[0], NEXT_DAY) is None\n        rows = projection.recorded_fills(reopened.journal, NEXT_DAY)\n>       assert len(rows) == 1\nE       assert 0 == 1\nE        +  where 0 = len([])\n\n/regression/test_working_partial_execution_history.py:41: AssertionError\n----------------------------- Captured stdout call -----------------------------\n  ordinary order outcome unknown; preserving recorded evidence (anios-2026-10-13-buy-aaa-7)\n__________ test_later_terminal_replaces_visible_working_partial_once ___________\n\ntmp_path = PosixPath('/tmp/pytest-of-unknown/pytest-0/test_later_terminal_replaces_v0')\n\n    def test_later_terminal_replaces_visible_working_partial_once(tmp_path):\n        from backend.cli import market_daily\n    \n        state = saved_partial(tmp_path)\n        original = deepcopy(asdict(state))\n        terminal = receipt(status=\"filled\", filled=\"5\", price=\"102.5\")\n        terminal[\"filled_at\"] = \"2026-10-15T13:35:00Z\"\n        original_terminal = deepcopy(terminal)\n        client = ReadOnlySyntheticClient([[], [terminal]])\n        preserved, _ = market_daily._reconcile(\n            client, state, tmp_path, True, decision_at=NEXT_DAY\n        )\n        assert asdict(preserved) == asdict(state) == original\n        assert projection._terminal_entry(preserved.journal[0], NEXT_DAY) is None\n        before = projection.recorded_fills(preserved.journal, NEXT_DAY)\n>       assert [(row[\"client_order_id\"], row[\"qty\"]) for row in before] == [(CID, 2)]\nE       AssertionError: assert [] == [('anios-2026...uy-aaa-7', 2)]\nE         \nE         Right contains one more item: ('anios-2026-10-13-buy-aaa-7', 2)\nE         Use -v to get more diff\n\n/regression/test_working_partial_execution_history.py:72: AssertionError\n----------------------------- Captured stdout call -----------------------------\n  ordinary order outcome unknown; preserving recorded evidence (anios-2026-10-13-buy-aaa-7)\n=========================== short test summary info ============================\nFAILED ../dev::test_saved_working_partial_remains_dated_execution_after_nextday_absence\nFAILED ../dev::test_later_terminal_replaces_visible_working_partial_once - As...\n2 failed, 16 passed in 2.08s\n\n\n",
+      "path": "/tmp/working-partial-red-20261019-v1/stdout",
+      "sha256": "fe04ad680b653c423dbd19e717b22ffd853114483603b0539a784ff34f76d8e3"
+    },
+    {
+      "bytes": 2327,
+      "original": "{\"cid\": \"8fd24885938222a843da8f713255fb8e180f07ad6d3c3af950dadeece7329366\", \"image\": \"sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2\", \"dependency_revision\": \"50d62c63e654a86ddfaa01cdc70b475081e60cb4\", \"docker_start_returncode\": 0, \"state\": {\"Status\": \"exited\", \"Running\": false, \"Paused\": false, \"Restarting\": false, \"OOMKilled\": false, \"Dead\": false, \"Pid\": 0, \"ExitCode\": 0, \"Error\": \"\", \"StartedAt\": \"2026-10-19T16:02:26.0150212Z\", \"FinishedAt\": \"2026-10-19T16:02:29.281322469Z\"}, \"mem_available_before\": 9648820224, \"candidate_sources\": {\"backend/cli/market_daily.py\": {\"sha256\": \"70201cfb771fb873a75b1356654a5dce9ab1b0900094ddcc23bcb6da56f1549b\", \"bytes\": 120901}, \"backend/cli/market_release_admission.py\": {\"sha256\": \"5f18164f0e465b89fd546509c4091f5201243de5b5652292a331c305bb26b1a4\", \"bytes\": 20472}, \"backend/agents/trading/desk/decision_history.py\": {\"sha256\": \"26224acae5aebeb641bb19a1f81c3bdf649a56f4445873c137e2faa359781669\", \"bytes\": 13672}, \"backend/tests/test_partial_fill_receipt_absence.py\": {\"sha256\": \"047d73d28bbe136f7895bafd5b59937b0c6356f63b5b7dd456dad93ca15a27b0\", \"bytes\": 10978}, \"backend/tests/test_archived_fill_projection_contract.py\": {\"sha256\": \"ba9508a23aa6e8705e7cfee7cbdd55dd761d65c3e78cdc51b341028267092bc5\", \"bytes\": 3715}, \"backend/tests/test_reconciliation_release_admission.py\": {\"sha256\": \"ff0230f8b0b21b24779dc7d393e05238adebcb484e3b14d347ee367af9a0c306\", \"bytes\": 5546}, \"backend/tests/test_decision_history.py\": {\"sha256\": \"cd63831ed533a75714293308dfdc5ed425c76224c13566fc0ba3043c89225f1c\", \"bytes\": 23090}, \"backend/market/live_model_decision.py\": {\"sha256\": \"06bd5150ec8cdfce5399e2ce1bc96f9a07c43231fc2b47fb6dbf5b1ea6f89aea\", \"bytes\": 33329}, \"backend/tests/test_working_partial_execution_history.py\": {\"sha256\": \"4a1bec9904fd1dd536fdea95b54031ead7fdb08c969a29d9c1f2188c186c9c97\", \"bytes\": 5391}, \"backend/tests/test_live_model_decision.py\": {\"sha256\": \"cf7d43017b465a3340fc08241010d1f29d6b94d524df33e42ce1502d9a284c7d\", \"bytes\": 27997}}, \"production_sources_unchanged\": true, \"scope\": \"NEW_SYNTHETIC_NORMAL_NATIVE_MODULES; NO_ACCOUNT_MODEL_PROVIDER_NETWORK_OR_ORDER_CALL\"}\n........................................................................ [ 51%]\n...................................................................      [100%]\n139 passed in 1.47s\n\n\n",
+      "path": "/tmp/fill-consistency-final-green-20261019-v1/stdout",
+      "sha256": "1aadf22a936f63ae14db58368ae941692acc6390f8d39aef1682579b260baac5"
+    },
+    {
+      "bytes": 2107,
+      "original": "{\"cid\": \"0a2e64154798603ca5d6c0e41a89a1d1ffa0050011889c52ef4b7bd5750f797e\", \"image\": \"sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2\", \"dependency_revision\": \"50d62c63e654a86ddfaa01cdc70b475081e60cb4\", \"docker_start_returncode\": 0, \"state\": {\"Status\": \"exited\", \"Running\": false, \"Paused\": false, \"Restarting\": false, \"OOMKilled\": false, \"Dead\": false, \"Pid\": 0, \"ExitCode\": 0, \"Error\": \"\", \"StartedAt\": \"2026-10-19T16:10:34.234226346Z\", \"FinishedAt\": \"2026-10-19T16:10:36.564746068Z\"}, \"mem_available_before\": 9508270080, \"candidate_sources\": {\"backend/cli/market_daily.py\": {\"sha256\": \"70201cfb771fb873a75b1356654a5dce9ab1b0900094ddcc23bcb6da56f1549b\", \"bytes\": 120901}, \"backend/cli/market_release_admission.py\": {\"sha256\": \"5f18164f0e465b89fd546509c4091f5201243de5b5652292a331c305bb26b1a4\", \"bytes\": 20472}, \"backend/agents/trading/desk/decision_history.py\": {\"sha256\": \"26224acae5aebeb641bb19a1f81c3bdf649a56f4445873c137e2faa359781669\", \"bytes\": 13672}, \"backend/tests/test_partial_fill_receipt_absence.py\": {\"sha256\": \"047d73d28bbe136f7895bafd5b59937b0c6356f63b5b7dd456dad93ca15a27b0\", \"bytes\": 10978}, \"backend/tests/test_archived_fill_projection_contract.py\": {\"sha256\": \"ba9508a23aa6e8705e7cfee7cbdd55dd761d65c3e78cdc51b341028267092bc5\", \"bytes\": 3715}, \"backend/tests/test_reconciliation_release_admission.py\": {\"sha256\": \"ff0230f8b0b21b24779dc7d393e05238adebcb484e3b14d347ee367af9a0c306\", \"bytes\": 5546}, \"backend/tests/test_decision_history.py\": {\"sha256\": \"cd63831ed533a75714293308dfdc5ed425c76224c13566fc0ba3043c89225f1c\", \"bytes\": 23090}, \"backend/market/live_model_decision.py\": {\"sha256\": \"06bd5150ec8cdfce5399e2ce1bc96f9a07c43231fc2b47fb6dbf5b1ea6f89aea\", \"bytes\": 33329}, \"backend/tests/test_working_partial_execution_history.py\": {\"sha256\": \"5398312f9475439cd82187512989ca83332c0c96c468958f8538fee11d31ab92\", \"bytes\": 5405}}, \"production_sources_unchanged\": true, \"scope\": \"NEW_SYNTHETIC_NORMAL_NATIVE_MODULES; NO_ACCOUNT_MODEL_PROVIDER_NETWORK_OR_ORDER_CALL\"}\n..................                                                       [100%]\n18 passed in 1.06s\n\n\n",
+      "path": "/tmp/working-partial-package-green-20261019-v1/stdout",
+      "sha256": "9f13b3f67a1144bc595e746044998276023a7adb546e069f2304d36d0e0c86f9"
+    },
+    {
+      "bytes": 83782,
+      "original": {
+        "config": {
+          "argv": [
+            "/Users/animallya/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/node_modules/@playwright/test/cli.js",
+            "test",
+            "--config=/tmp/archived-fill-identity-red-20261019.config.mjs"
+          ],
+          "configFile": "/tmp/archived-fill-identity-red-20261019.config.mjs",
+          "failOnFlakyTests": false,
+          "forbidOnly": false,
+          "fullyParallel": false,
+          "globalSetup": null,
+          "globalTeardown": null,
+          "globalTimeout": 0,
+          "grep": {},
+          "grepInvert": null,
+          "maxFailures": 0,
+          "metadata": {
+            "actualWorkers": 1
+          },
+          "preserveOutput": "always",
+          "projects": [
+            {
+              "id": "",
+              "metadata": {
+                "actualWorkers": 1
+              },
+              "name": "",
+              "outputDir": "/tmp/archived-fill-identity-red-20261019-artifacts",
+              "repeatEach": 1,
+              "retries": 0,
+              "testDir": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e",
+              "testIgnore": [],
+              "testMatch": [
+                "archived-paper-fill-identity.spec.ts"
+              ],
+              "timeout": 30000
+            }
+          ],
+          "quiet": false,
+          "reportSlowTests": {
+            "max": 5,
+            "threshold": 300000
+          },
+          "reporter": [
+            [
+              "list",
+              null
+            ],
+            [
+              "json",
+              {
+                "outputFile": "/tmp/archived-fill-identity-red-20261019-results.json"
+              }
+            ]
+          ],
+          "rootDir": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e",
+          "shard": null,
+          "tags": [],
+          "updateSnapshots": "missing",
+          "updateSourceMethod": "patch",
+          "version": "1.62.1",
+          "webServer": {
+            "command": "/usr/local/bin/python3 -m http.server 5187 --bind 127.0.0.1 --directory /tmp/trading-paper-refresh-deployed-static-20261019-v1",
+            "reuseExistingServer": false,
+            "url": "http://127.0.0.1:5187"
+          },
+          "workers": 1
+        },
+        "errors": [],
+        "stats": {
+          "duration": 79545.546,
+          "expected": 0,
+          "flaky": 0,
+          "skipped": 0,
+          "startTime": "2026-10-19T15:49:11.957Z",
+          "unexpected": 3
+        },
+        "suites": [
+          {
+            "column": 0,
+            "file": "archived-paper-fill-identity.spec.ts",
+            "line": 0,
+            "specs": [
+              {
+                "column": 3,
+                "file": "archived-paper-fill-identity.spec.ts",
+                "id": "eb307a1b13b7e7a7b96c-5ae3627854e0238de3d5",
+                "line": 172,
+                "ok": false,
+                "tags": [],
+                "tests": [
+                  {
+                    "annotations": [],
+                    "expectedStatus": "passed",
+                    "projectId": "",
+                    "projectName": "",
+                    "results": [
+                      {
+                        "annotations": [],
+                        "attachments": [
+                          {
+                            "body": "ewogICJyZWNvcmRlZCI6IFsKICAgIHsKICAgICAgImNsaWVudF9vcmRlcl9pZCI6ICJhbmlvcy0yMDI2LTEwLTEzLXNlbGwtc3R4LTEzNSIsCiAgICAgICJzeW1ib2wiOiAiU1RYIiwKICAgICAgInNpZGUiOiAic2VsbCIsCiAgICAgICJxdHkiOiAxMiwKICAgICAgInByaWNlIjogNzM5LjIzNjY2NywKICAgICAgImZpbGxlZF9hdCI6ICIyMDI2LTEwLTE0VDEzOjMyOjQ2LjkyMjcxOVoiLAogICAgICAic2Vzc2lvbiI6ICIyMDI2LTEwLTEzIiwKICAgICAgImNyZWF0ZWRfYXQiOiAiMjAyNi0xMC0xM1QyMzo0Njo0NFoiLAogICAgICAicmVjb25jaWxlZF9hdCI6ICIyMDI2LTEwLTE5VDE1OjQ5OjE2LjczN1oiCiAgICB9CiAgXSwKICAiYXJjaGl2ZWQiOiBbCiAgICB7CiAgICAgICJkYXRlIjogIjIwMjYtMTAtMTQiLAogICAgICAic2lkZSI6ICJzZWxsIiwKICAgICAgInF0eSI6IDEyLAogICAgICAicHJpY2UiOiA3MzkuMjM2NywKICAgICAgImZpbGxlZF9hdCI6ICIyMDI2LTEwLTE0VDEzOjMyOjQ2LjkyMjcxOVoiCiAgICB9CiAgXSwKICAicmVxdWVzdHMiOiBbCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9hdXRoL3Nlc3Npb24iLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2NvbnZlcnNhdGlvbnMvYXJjaGl2ZWQtZmlsbC1vd25lciIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzayIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9ob2xkaW5ncyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3Nlc3Npb24tcHJpY2VzIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZSIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9wYXBlciIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9jaGFydC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZS9yZWFkL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc3RyYXRlZ3ktc2ltdWxhdGlvbi9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svaGlzdG9yeS9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2F1dGgvc2Vzc2lvbiIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvY29udmVyc2F0aW9ucy9hcmNoaXZlZC1maWxsLW93bmVyIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9jb252ZXJzYXRpb25zL2FyY2hpdmVkLWZpbGwtb3duZXIvNzM4YmUzYWMtNjllYy00MDg3LTgyMDYtZDljMWVhMGI5YzU5IiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2hvbGRpbmdzIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3Nlc3Npb24tcHJpY2VzIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZSIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9wYXBlciIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9jaGFydC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZS9yZWFkL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc3RyYXRlZ3ktc2ltdWxhdGlvbi9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svaGlzdG9yeS9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfQogIF0sCiAgIm9ic2VydmF0aW9ucyI6IFsKICAgIHsKICAgICAgImxhYmVsIjogImJlZm9yZSByZWxvYWQiLAogICAgICAiZXhlY3V0aW9uVGV4dCI6ICJCcm9rZXIgb3JkZXJzIGFuZCBmaWxscyDCtyByZWFkIE9jdCAxOSwgMTE6NDkgQU0gRVRcblxuMCBvcmRlcnMgb3BlbiBhdCB0aGUgYnJva2VyXG5cbk5vIGZpbGxzIMK3IDIwMjYtMTAtMTlcblxuU29sZCAxMiBTVFggQCAkNzM5LjI0IMK3IE9jdCAxNCwgMjAyNiwgMDk6MzI6NDYgQU0gRVQiLAogICAgICAiY2hhcnRUZXh0IjogIkNvbmZpcm1lZCBwYXBlciBmaWxscyBhdCB0aGVpciBvcmlnaW5hbCBkYXRlLCBxdWFudGl0eSBhbmQgcHJpY2UuIFRoZXNlIGFyZSBleGVjdXRpb25zLCBub3QgZ3JhZGUgc2lnbmFscyBvciByZXNlYXJjaCBmaWxscy5cblxuMjAyNi0xMC0xNCDCtyA5OjMyIEFNIEVUIMK3IFNFTEwgMTIgQCAkNzM5LjI0XG4yMDI2LTEwLTE0IMK3IDk6MzIgQU0gRVQgwrcgU0VMTCAxMiBAICQ3MzkuMjQiLAogICAgICAibWFya2VyVGV4dHMiOiBbCiAgICAgICAgIlNFTEwgMjQgc2giCiAgICAgIF0KICAgIH0sCiAgICB7CiAgICAgICJsYWJlbCI6ICJhZnRlciByZWxvYWQiLAogICAgICAiZXhlY3V0aW9uVGV4dCI6ICJCcm9rZXIgb3JkZXJzIGFuZCBmaWxscyDCtyByZWFkIE9jdCAxOSwgMTE6NDkgQU0gRVRcblxuMCBvcmRlcnMgb3BlbiBhdCB0aGUgYnJva2VyXG5cbk5vIGZpbGxzIMK3IDIwMjYtMTAtMTlcblxuU29sZCAxMiBTVFggQCAkNzM5LjI0IMK3IE9jdCAxNCwgMjAyNiwgMDk6MzI6NDYgQU0gRVQiLAogICAgICAiY2hhcnRUZXh0IjogIkNvbmZpcm1lZCBwYXBlciBmaWxscyBhdCB0aGVpciBvcmlnaW5hbCBkYXRlLCBxdWFudGl0eSBhbmQgcHJpY2UuIFRoZXNlIGFyZSBleGVjdXRpb25zLCBub3QgZ3JhZGUgc2lnbmFscyBvciByZXNlYXJjaCBmaWxscy5cblxuMjAyNi0xMC0xNCDCtyA5OjMyIEFNIEVUIMK3IFNFTEwgMTIgQCAkNzM5LjI0XG4yMDI2LTEwLTE0IMK3IDk6MzIgQU0gRVQgwrcgU0VMTCAxMiBAICQ3MzkuMjQiLAogICAgICAibWFya2VyVGV4dHMiOiBbCiAgICAgICAgIlNFTEwgMjQgc2giCiAgICAgIF0KICAgIH0KICBdLAogICJkaWFnbm9zdGljcyI6IHsKICAgICJwYWdlRXJyb3JzIjogW10sCiAgICAiY29uc29sZUVycm9ycyI6IFtdLAogICAgImZhaWxlZFJlcXVlc3RzIjogW10sCiAgICAiYmFkUmVzcG9uc2VzIjogW10sCiAgICAidW5leHBlY3RlZFJlcXVlc3RzIjogW10sCiAgICAiZm9yYmlkZGVuV3JpdGVzIjogW10KICB9Cn0=",
+                            "contentType": "application/json",
+                            "name": "archived-fill-evidence"
+                          },
+                          {
+                            "contentType": "image/png",
+                            "name": "screenshot",
+                            "path": "/tmp/archived-fill-identity-red-20261019-artifacts/archived-paper-fill-identi-6dbbe-al-executions-across-reload/test-failed-1.png"
+                          },
+                          {
+                            "contentType": "text/markdown",
+                            "name": "error-context",
+                            "path": "/tmp/archived-fill-identity-red-20261019-artifacts/archived-paper-fill-identi-6dbbe-al-executions-across-reload/error-context.md"
+                          },
+                          {
+                            "contentType": "application/zip",
+                            "name": "trace",
+                            "path": "/tmp/archived-fill-identity-red-20261019-artifacts/archived-paper-fill-identi-6dbbe-al-executions-across-reload/trace.zip"
+                          }
+                        ],
+                        "duration": 24778,
+                        "error": {
+                          "location": {
+                            "column": 41,
+                            "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                            "line": 155
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to 2 elements\u001b[22m\n\u001b[2m       - unexpected value \"2\"\u001b[22m\n",
+                          "snippet": "  153 |   await settle(state)\n  154 |   const list = chart.getByLabel('STX actual paper executions', {exact: true})\n> 155 |   await expect.soft(list.locator('li')).toHaveCount(count)\n      |                                         ^\n  156 |   for (const fill of state.recorded) {\n  157 |     await expect.soft(list.locator(`[data-client-order-id=\"${fill.client_order_id}\"]`)).toHaveCount(1)\n  158 |   }",
+                          "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to 2 elements\u001b[22m\n\u001b[2m       - unexpected value \"2\"\u001b[22m\n\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:155:41)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:179:7"
+                        },
+                        "errorLocation": {
+                          "column": 41,
+                          "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                          "line": 155
+                        },
+                        "errors": [
+                          {
+                            "location": {
+                              "column": 41,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 155
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to 2 elements\u001b[22m\n\u001b[2m       - unexpected value \"2\"\u001b[22m\n\n\n  153 |   await settle(state)\n  154 |   const list = chart.getByLabel('STX actual paper executions', {exact: true})\n> 155 |   await expect.soft(list.locator('li')).toHaveCount(count)\n      |                                         ^\n  156 |   for (const fill of state.recorded) {\n  157 |     await expect.soft(list.locator(`[data-client-order-id=\"${fill.client_order_id}\"]`)).toHaveCount(1)\n  158 |   }\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:155:41)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:179:7"
+                          },
+                          {
+                            "location": {
+                              "column": 47,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 159
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m\"SELL 12 sh\"\u001b[39m\nReceived array: \u001b[31m[\"SELL 24 sh\"]\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  157 |     await expect.soft(list.locator(`[data-client-order-id=\"${fill.client_order_id}\"]`)).toHaveCount(1)\n  158 |   }\n> 159 |   await expect.soft.poll(() => markers(page)).toContain(`SELL ${12 * count} sh`)\n      |                                               ^\n  160 |   const markerTexts = await markers(page)\n  161 |   expect.soft(markerTexts).not.toContain(`SELL ${24 * count} sh`)\n  162 |   expect.soft(markerTexts).toEqual([`SELL ${12 * count} sh`])\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:159:47)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:179:7"
+                          },
+                          {
+                            "location": {
+                              "column": 32,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 161
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"SELL 24 sh\"\u001b[39m\nReceived array:     \u001b[31m[\u001b[7m\"SELL 24 sh\"\u001b[27m]\u001b[39m\n\n  159 |   await expect.soft.poll(() => markers(page)).toContain(`SELL ${12 * count} sh`)\n  160 |   const markerTexts = await markers(page)\n> 161 |   expect.soft(markerTexts).not.toContain(`SELL ${24 * count} sh`)\n      |                                ^\n  162 |   expect.soft(markerTexts).toEqual([`SELL ${12 * count} sh`])\n  163 |   state.observations.push({label, executionText, chartText: await list.innerText(), markerTexts})\n  164 |   await page.getByRole('button', {name: 'Close', exact: true}).click()\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:161:32)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:179:7"
+                          },
+                          {
+                            "location": {
+                              "column": 28,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 162
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[2m  Array [\u001b[22m\n\u001b[32m-   \"SELL 12 sh\",\u001b[39m\n\u001b[31m+   \"SELL 24 sh\",\u001b[39m\n\u001b[2m  ]\u001b[22m\n\n  160 |   const markerTexts = await markers(page)\n  161 |   expect.soft(markerTexts).not.toContain(`SELL ${24 * count} sh`)\n> 162 |   expect.soft(markerTexts).toEqual([`SELL ${12 * count} sh`])\n      |                            ^\n  163 |   state.observations.push({label, executionText, chartText: await list.innerText(), markerTexts})\n  164 |   await page.getByRole('button', {name: 'Close', exact: true}).click()\n  165 |   await settle(state)\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:162:28)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:179:7"
+                          },
+                          {
+                            "location": {
+                              "column": 41,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 155
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to 2 elements\u001b[22m\n\u001b[2m       - unexpected value \"2\"\u001b[22m\n\n\n  153 |   await settle(state)\n  154 |   const list = chart.getByLabel('STX actual paper executions', {exact: true})\n> 155 |   await expect.soft(list.locator('li')).toHaveCount(count)\n      |                                         ^\n  156 |   for (const fill of state.recorded) {\n  157 |     await expect.soft(list.locator(`[data-client-order-id=\"${fill.client_order_id}\"]`)).toHaveCount(1)\n  158 |   }\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:155:41)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:181:7"
+                          },
+                          {
+                            "location": {
+                              "column": 47,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 159
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m\"SELL 12 sh\"\u001b[39m\nReceived array: \u001b[31m[\"SELL 24 sh\"]\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  157 |     await expect.soft(list.locator(`[data-client-order-id=\"${fill.client_order_id}\"]`)).toHaveCount(1)\n  158 |   }\n> 159 |   await expect.soft.poll(() => markers(page)).toContain(`SELL ${12 * count} sh`)\n      |                                               ^\n  160 |   const markerTexts = await markers(page)\n  161 |   expect.soft(markerTexts).not.toContain(`SELL ${24 * count} sh`)\n  162 |   expect.soft(markerTexts).toEqual([`SELL ${12 * count} sh`])\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:159:47)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:181:7"
+                          },
+                          {
+                            "location": {
+                              "column": 32,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 161
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"SELL 24 sh\"\u001b[39m\nReceived array:     \u001b[31m[\u001b[7m\"SELL 24 sh\"\u001b[27m]\u001b[39m\n\n  159 |   await expect.soft.poll(() => markers(page)).toContain(`SELL ${12 * count} sh`)\n  160 |   const markerTexts = await markers(page)\n> 161 |   expect.soft(markerTexts).not.toContain(`SELL ${24 * count} sh`)\n      |                                ^\n  162 |   expect.soft(markerTexts).toEqual([`SELL ${12 * count} sh`])\n  163 |   state.observations.push({label, executionText, chartText: await list.innerText(), markerTexts})\n  164 |   await page.getByRole('button', {name: 'Close', exact: true}).click()\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:161:32)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:181:7"
+                          },
+                          {
+                            "location": {
+                              "column": 28,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 162
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[2m  Array [\u001b[22m\n\u001b[32m-   \"SELL 12 sh\",\u001b[39m\n\u001b[31m+   \"SELL 24 sh\",\u001b[39m\n\u001b[2m  ]\u001b[22m\n\n  160 |   const markerTexts = await markers(page)\n  161 |   expect.soft(markerTexts).not.toContain(`SELL ${24 * count} sh`)\n> 162 |   expect.soft(markerTexts).toEqual([`SELL ${12 * count} sh`])\n      |                            ^\n  163 |   state.observations.push({label, executionText, chartText: await list.innerText(), markerTexts})\n  164 |   await page.getByRole('button', {name: 'Close', exact: true}).click()\n  165 |   await settle(state)\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:162:28)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:181:7"
+                          }
+                        ],
+                        "parallelIndex": 0,
+                        "retry": 0,
+                        "startTime": "2026-10-19T15:49:13.675Z",
+                        "status": "failed",
+                        "stderr": [],
+                        "stdout": [],
+                        "workerIndex": 0
+                      }
+                    ],
+                    "status": "unexpected",
+                    "timeout": 60000
+                  }
+                ],
+                "title": "rounded anonymous timestamped archived fill history conserves original executions across reload"
+              },
+              {
+                "column": 3,
+                "file": "archived-paper-fill-identity.spec.ts",
+                "id": "eb307a1b13b7e7a7b96c-ca32da2f0a074fc07de2",
+                "line": 172,
+                "ok": false,
+                "tags": [],
+                "tests": [
+                  {
+                    "annotations": [],
+                    "expectedStatus": "passed",
+                    "projectId": "",
+                    "projectName": "",
+                    "results": [
+                      {
+                        "annotations": [],
+                        "attachments": [
+                          {
+                            "body": "ewogICJyZWNvcmRlZCI6IFsKICAgIHsKICAgICAgImNsaWVudF9vcmRlcl9pZCI6ICJhbmlvcy0yMDI2LTEwLTEzLXNlbGwtc3R4LTEzNSIsCiAgICAgICJzeW1ib2wiOiAiU1RYIiwKICAgICAgInNpZGUiOiAic2VsbCIsCiAgICAgICJxdHkiOiAxMiwKICAgICAgInByaWNlIjogNzM5LjIzNjY2NywKICAgICAgImZpbGxlZF9hdCI6ICIyMDI2LTEwLTE0VDEzOjMyOjQ2LjkyMjcxOVoiLAogICAgICAic2Vzc2lvbiI6ICIyMDI2LTEwLTEzIiwKICAgICAgImNyZWF0ZWRfYXQiOiAiMjAyNi0xMC0xM1QyMzo0Njo0NFoiLAogICAgICAicmVjb25jaWxlZF9hdCI6ICIyMDI2LTEwLTE5VDE1OjQ5OjQyLjMwN1oiCiAgICB9CiAgXSwKICAiYXJjaGl2ZWQiOiBbCiAgICB7CiAgICAgICJkYXRlIjogIjIwMjYtMTAtMTQiLAogICAgICAic2lkZSI6ICJzZWxsIiwKICAgICAgInF0eSI6IDEyLAogICAgICAicHJpY2UiOiA3MzkuMjM2NwogICAgfQogIF0sCiAgInJlcXVlc3RzIjogWwogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvYXV0aC9zZXNzaW9uIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9jb252ZXJzYXRpb25zL2FyY2hpdmVkLWZpbGwtb3duZXIiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2siLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svaG9sZGluZ3MiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZSIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3BhcGVyIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2NoYXJ0L1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlL3JlYWQvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2Vhcm5pbmdzL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9zdHJhdGVneS1zaW11bGF0aW9uL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9oaXN0b3J5L1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvYXV0aC9zZXNzaW9uIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9jb252ZXJzYXRpb25zL2FyY2hpdmVkLWZpbGwtb3duZXIiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2NvbnZlcnNhdGlvbnMvYXJjaGl2ZWQtZmlsbC1vd25lci9kNzdlMTAxMC0wNWFjLTRiMmQtODFiOS03ZDE1ODE2NDFjMGMiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2siLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svaG9sZGluZ3MiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZSIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3Nlc3Npb24tcHJpY2VzIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svcGFwZXIiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svY2hhcnQvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUvcmVhZC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svZWFybmluZ3MvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3N0cmF0ZWd5LXNpbXVsYXRpb24vU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2hpc3RvcnkvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0KICBdLAogICJvYnNlcnZhdGlvbnMiOiBbCiAgICB7CiAgICAgICJsYWJlbCI6ICJiZWZvcmUgcmVsb2FkIiwKICAgICAgImV4ZWN1dGlvblRleHQiOiAiQnJva2VyIG9yZGVycyBhbmQgZmlsbHMgwrcgcmVhZCBPY3QgMTksIDExOjQ5IEFNIEVUXG5cbjAgb3JkZXJzIG9wZW4gYXQgdGhlIGJyb2tlclxuXG5ObyBmaWxscyDCtyAyMDI2LTEwLTE5XG5cblNvbGQgMTIgU1RYIEAgJDczOS4yNCDCtyBPY3QgMTQsIDIwMjYsIDA5OjMyOjQ2IEFNIEVUIiwKICAgICAgImNoYXJ0VGV4dCI6ICJDb25maXJtZWQgcGFwZXIgZmlsbHMgYXQgdGhlaXIgb3JpZ2luYWwgZGF0ZSwgcXVhbnRpdHkgYW5kIHByaWNlLiBUaGVzZSBhcmUgZXhlY3V0aW9ucywgbm90IGdyYWRlIHNpZ25hbHMgb3IgcmVzZWFyY2ggZmlsbHMuXG5cbjIwMjYtMTAtMTQgwrcgOTozMiBBTSBFVCDCtyBTRUxMIDEyIEAgJDczOS4yNFxuMjAyNi0xMC0xNCDCtyBTRUxMIDEyIEAgJDczOS4yNCIsCiAgICAgICJtYXJrZXJUZXh0cyI6IFsKICAgICAgICAiU0VMTCAyNCBzaCIKICAgICAgXQogICAgfSwKICAgIHsKICAgICAgImxhYmVsIjogImFmdGVyIHJlbG9hZCIsCiAgICAgICJleGVjdXRpb25UZXh0IjogIkJyb2tlciBvcmRlcnMgYW5kIGZpbGxzIMK3IHJlYWQgT2N0IDE5LCAxMTo0OSBBTSBFVFxuXG4wIG9yZGVycyBvcGVuIGF0IHRoZSBicm9rZXJcblxuTm8gZmlsbHMgwrcgMjAyNi0xMC0xOVxuXG5Tb2xkIDEyIFNUWCBAICQ3MzkuMjQgwrcgT2N0IDE0LCAyMDI2LCAwOTozMjo0NiBBTSBFVCIsCiAgICAgICJjaGFydFRleHQiOiAiQ29uZmlybWVkIHBhcGVyIGZpbGxzIGF0IHRoZWlyIG9yaWdpbmFsIGRhdGUsIHF1YW50aXR5IGFuZCBwcmljZS4gVGhlc2UgYXJlIGV4ZWN1dGlvbnMsIG5vdCBncmFkZSBzaWduYWxzIG9yIHJlc2VhcmNoIGZpbGxzLlxuXG4yMDI2LTEwLTE0IMK3IDk6MzIgQU0gRVQgwrcgU0VMTCAxMiBAICQ3MzkuMjRcbjIwMjYtMTAtMTQgwrcgU0VMTCAxMiBAICQ3MzkuMjQiLAogICAgICAibWFya2VyVGV4dHMiOiBbCiAgICAgICAgIlNFTEwgMjQgc2giCiAgICAgIF0KICAgIH0KICBdLAogICJkaWFnbm9zdGljcyI6IHsKICAgICJwYWdlRXJyb3JzIjogW10sCiAgICAiY29uc29sZUVycm9ycyI6IFtdLAogICAgImZhaWxlZFJlcXVlc3RzIjogW10sCiAgICAiYmFkUmVzcG9uc2VzIjogW10sCiAgICAidW5leHBlY3RlZFJlcXVlc3RzIjogW10sCiAgICAiZm9yYmlkZGVuV3JpdGVzIjogW10KICB9Cn0=",
+                            "contentType": "application/json",
+                            "name": "archived-fill-evidence"
+                          },
+                          {
+                            "contentType": "image/png",
+                            "name": "screenshot",
+                            "path": "/tmp/archived-fill-identity-red-20261019-artifacts/archived-paper-fill-identi-07e02-al-executions-across-reload/test-failed-1.png"
+                          },
+                          {
+                            "contentType": "text/markdown",
+                            "name": "error-context",
+                            "path": "/tmp/archived-fill-identity-red-20261019-artifacts/archived-paper-fill-identi-07e02-al-executions-across-reload/error-context.md"
+                          },
+                          {
+                            "contentType": "application/zip",
+                            "name": "trace",
+                            "path": "/tmp/archived-fill-identity-red-20261019-artifacts/archived-paper-fill-identi-07e02-al-executions-across-reload/trace.zip"
+                          }
+                        ],
+                        "duration": 23988,
+                        "error": {
+                          "location": {
+                            "column": 41,
+                            "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                            "line": 155
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to 2 elements\u001b[22m\n\u001b[2m       - unexpected value \"2\"\u001b[22m\n",
+                          "snippet": "  153 |   await settle(state)\n  154 |   const list = chart.getByLabel('STX actual paper executions', {exact: true})\n> 155 |   await expect.soft(list.locator('li')).toHaveCount(count)\n      |                                         ^\n  156 |   for (const fill of state.recorded) {\n  157 |     await expect.soft(list.locator(`[data-client-order-id=\"${fill.client_order_id}\"]`)).toHaveCount(1)\n  158 |   }",
+                          "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to 2 elements\u001b[22m\n\u001b[2m       - unexpected value \"2\"\u001b[22m\n\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:155:41)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:179:7"
+                        },
+                        "errorLocation": {
+                          "column": 41,
+                          "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                          "line": 155
+                        },
+                        "errors": [
+                          {
+                            "location": {
+                              "column": 41,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 155
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to 2 elements\u001b[22m\n\u001b[2m       - unexpected value \"2\"\u001b[22m\n\n\n  153 |   await settle(state)\n  154 |   const list = chart.getByLabel('STX actual paper executions', {exact: true})\n> 155 |   await expect.soft(list.locator('li')).toHaveCount(count)\n      |                                         ^\n  156 |   for (const fill of state.recorded) {\n  157 |     await expect.soft(list.locator(`[data-client-order-id=\"${fill.client_order_id}\"]`)).toHaveCount(1)\n  158 |   }\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:155:41)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:179:7"
+                          },
+                          {
+                            "location": {
+                              "column": 47,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 159
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m\"SELL 12 sh\"\u001b[39m\nReceived array: \u001b[31m[\"SELL 24 sh\"]\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  157 |     await expect.soft(list.locator(`[data-client-order-id=\"${fill.client_order_id}\"]`)).toHaveCount(1)\n  158 |   }\n> 159 |   await expect.soft.poll(() => markers(page)).toContain(`SELL ${12 * count} sh`)\n      |                                               ^\n  160 |   const markerTexts = await markers(page)\n  161 |   expect.soft(markerTexts).not.toContain(`SELL ${24 * count} sh`)\n  162 |   expect.soft(markerTexts).toEqual([`SELL ${12 * count} sh`])\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:159:47)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:179:7"
+                          },
+                          {
+                            "location": {
+                              "column": 32,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 161
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"SELL 24 sh\"\u001b[39m\nReceived array:     \u001b[31m[\u001b[7m\"SELL 24 sh\"\u001b[27m]\u001b[39m\n\n  159 |   await expect.soft.poll(() => markers(page)).toContain(`SELL ${12 * count} sh`)\n  160 |   const markerTexts = await markers(page)\n> 161 |   expect.soft(markerTexts).not.toContain(`SELL ${24 * count} sh`)\n      |                                ^\n  162 |   expect.soft(markerTexts).toEqual([`SELL ${12 * count} sh`])\n  163 |   state.observations.push({label, executionText, chartText: await list.innerText(), markerTexts})\n  164 |   await page.getByRole('button', {name: 'Close', exact: true}).click()\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:161:32)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:179:7"
+                          },
+                          {
+                            "location": {
+                              "column": 28,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 162
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[2m  Array [\u001b[22m\n\u001b[32m-   \"SELL 12 sh\",\u001b[39m\n\u001b[31m+   \"SELL 24 sh\",\u001b[39m\n\u001b[2m  ]\u001b[22m\n\n  160 |   const markerTexts = await markers(page)\n  161 |   expect.soft(markerTexts).not.toContain(`SELL ${24 * count} sh`)\n> 162 |   expect.soft(markerTexts).toEqual([`SELL ${12 * count} sh`])\n      |                            ^\n  163 |   state.observations.push({label, executionText, chartText: await list.innerText(), markerTexts})\n  164 |   await page.getByRole('button', {name: 'Close', exact: true}).click()\n  165 |   await settle(state)\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:162:28)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:179:7"
+                          },
+                          {
+                            "location": {
+                              "column": 41,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 155
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\nExpected: \u001b[32m1\u001b[39m\nReceived: \u001b[31m2\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to 2 elements\u001b[22m\n\u001b[2m       - unexpected value \"2\"\u001b[22m\n\n\n  153 |   await settle(state)\n  154 |   const list = chart.getByLabel('STX actual paper executions', {exact: true})\n> 155 |   await expect.soft(list.locator('li')).toHaveCount(count)\n      |                                         ^\n  156 |   for (const fill of state.recorded) {\n  157 |     await expect.soft(list.locator(`[data-client-order-id=\"${fill.client_order_id}\"]`)).toHaveCount(1)\n  158 |   }\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:155:41)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:181:7"
+                          },
+                          {
+                            "location": {
+                              "column": 47,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 159
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m\"SELL 12 sh\"\u001b[39m\nReceived array: \u001b[31m[\"SELL 24 sh\"]\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  157 |     await expect.soft(list.locator(`[data-client-order-id=\"${fill.client_order_id}\"]`)).toHaveCount(1)\n  158 |   }\n> 159 |   await expect.soft.poll(() => markers(page)).toContain(`SELL ${12 * count} sh`)\n      |                                               ^\n  160 |   const markerTexts = await markers(page)\n  161 |   expect.soft(markerTexts).not.toContain(`SELL ${24 * count} sh`)\n  162 |   expect.soft(markerTexts).toEqual([`SELL ${12 * count} sh`])\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:159:47)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:181:7"
+                          },
+                          {
+                            "location": {
+                              "column": 32,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 161
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"SELL 24 sh\"\u001b[39m\nReceived array:     \u001b[31m[\u001b[7m\"SELL 24 sh\"\u001b[27m]\u001b[39m\n\n  159 |   await expect.soft.poll(() => markers(page)).toContain(`SELL ${12 * count} sh`)\n  160 |   const markerTexts = await markers(page)\n> 161 |   expect.soft(markerTexts).not.toContain(`SELL ${24 * count} sh`)\n      |                                ^\n  162 |   expect.soft(markerTexts).toEqual([`SELL ${12 * count} sh`])\n  163 |   state.observations.push({label, executionText, chartText: await list.innerText(), markerTexts})\n  164 |   await page.getByRole('button', {name: 'Close', exact: true}).click()\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:161:32)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:181:7"
+                          },
+                          {
+                            "location": {
+                              "column": 28,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 162
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[2m  Array [\u001b[22m\n\u001b[32m-   \"SELL 12 sh\",\u001b[39m\n\u001b[31m+   \"SELL 24 sh\",\u001b[39m\n\u001b[2m  ]\u001b[22m\n\n  160 |   const markerTexts = await markers(page)\n  161 |   expect.soft(markerTexts).not.toContain(`SELL ${24 * count} sh`)\n> 162 |   expect.soft(markerTexts).toEqual([`SELL ${12 * count} sh`])\n      |                            ^\n  163 |   state.observations.push({label, executionText, chartText: await list.innerText(), markerTexts})\n  164 |   await page.getByRole('button', {name: 'Close', exact: true}).click()\n  165 |   await settle(state)\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:162:28)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:181:7"
+                          }
+                        ],
+                        "parallelIndex": 0,
+                        "retry": 0,
+                        "startTime": "2026-10-19T15:49:41.940Z",
+                        "status": "failed",
+                        "stderr": [],
+                        "stdout": [],
+                        "workerIndex": 1
+                      }
+                    ],
+                    "status": "unexpected",
+                    "timeout": 60000
+                  }
+                ],
+                "title": "rounded anonymous date-only archived fill history conserves original executions across reload"
+              },
+              {
+                "column": 3,
+                "file": "archived-paper-fill-identity.spec.ts",
+                "id": "eb307a1b13b7e7a7b96c-aaed792f021b7d360453",
+                "line": 172,
+                "ok": false,
+                "tags": [],
+                "tests": [
+                  {
+                    "annotations": [],
+                    "expectedStatus": "passed",
+                    "projectId": "",
+                    "projectName": "",
+                    "results": [
+                      {
+                        "annotations": [],
+                        "attachments": [
+                          {
+                            "body": "ewogICJyZWNvcmRlZCI6IFsKICAgIHsKICAgICAgImNsaWVudF9vcmRlcl9pZCI6ICJhbmlvcy0yMDI2LTEwLTEzLXNlbGwtc3R4LTEzNSIsCiAgICAgICJzeW1ib2wiOiAiU1RYIiwKICAgICAgInNpZGUiOiAic2VsbCIsCiAgICAgICJxdHkiOiAxMiwKICAgICAgInByaWNlIjogNzM5LjIzNjY2NywKICAgICAgImZpbGxlZF9hdCI6ICIyMDI2LTEwLTE0VDEzOjMyOjQ2LjkyMjcxOVoiLAogICAgICAic2Vzc2lvbiI6ICIyMDI2LTEwLTEzIiwKICAgICAgImNyZWF0ZWRfYXQiOiAiMjAyNi0xMC0xM1QyMzo0Njo0NFoiLAogICAgICAicmVjb25jaWxlZF9hdCI6ICIyMDI2LTEwLTE5VDE1OjUwOjA3Ljc0MFoiCiAgICB9LAogICAgewogICAgICAiY2xpZW50X29yZGVyX2lkIjogImFuaW9zLTIwMjYtMTAtMTMtc2VsbC1zdHgtMTM2IiwKICAgICAgInN5bWJvbCI6ICJTVFgiLAogICAgICAic2lkZSI6ICJzZWxsIiwKICAgICAgInF0eSI6IDEyLAogICAgICAicHJpY2UiOiA3MzkuMjM2NjY3LAogICAgICAiZmlsbGVkX2F0IjogIjIwMjYtMTAtMTRUMTM6MzI6NDYuOTIyNzE5WiIsCiAgICAgICJzZXNzaW9uIjogIjIwMjYtMTAtMTMiLAogICAgICAiY3JlYXRlZF9hdCI6ICIyMDI2LTEwLTEzVDIzOjQ2OjQ0WiIsCiAgICAgICJyZWNvbmNpbGVkX2F0IjogIjIwMjYtMTAtMTlUMTU6NTA6MDcuNzQwWiIKICAgIH0KICBdLAogICJhcmNoaXZlZCI6IFsKICAgIHsKICAgICAgImRhdGUiOiAiMjAyNi0xMC0xNCIsCiAgICAgICJzaWRlIjogInNlbGwiLAogICAgICAicXR5IjogMTIsCiAgICAgICJwcmljZSI6IDczOS4yMzY3LAogICAgICAiZmlsbGVkX2F0IjogIjIwMjYtMTAtMTRUMTM6MzI6NDYuOTIyNzE5WiIKICAgIH0sCiAgICB7CiAgICAgICJkYXRlIjogIjIwMjYtMTAtMTQiLAogICAgICAic2lkZSI6ICJzZWxsIiwKICAgICAgInF0eSI6IDEyLAogICAgICAicHJpY2UiOiA3MzkuMjM2NywKICAgICAgImZpbGxlZF9hdCI6ICIyMDI2LTEwLTE0VDEzOjMyOjQ2LjkyMjcxOVoiCiAgICB9CiAgXSwKICAicmVxdWVzdHMiOiBbCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9hdXRoL3Nlc3Npb24iLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2NvbnZlcnNhdGlvbnMvYXJjaGl2ZWQtZmlsbC1vd25lciIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzayIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9ob2xkaW5ncyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3Nlc3Npb24tcHJpY2VzIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svcGFwZXIiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svY2hhcnQvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUvcmVhZC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svZWFybmluZ3MvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3N0cmF0ZWd5LXNpbXVsYXRpb24vU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2hpc3RvcnkvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9hdXRoL3Nlc3Npb24iLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2NvbnZlcnNhdGlvbnMvYXJjaGl2ZWQtZmlsbC1vd25lciIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvY29udmVyc2F0aW9ucy9hcmNoaXZlZC1maWxsLW93bmVyL2I4NmM2YmUyLTc5NDctNDU1Ny1iNGUwLWVjNjE3NWU5MTk2ZiIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzayIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9ob2xkaW5ncyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3Nlc3Npb24tcHJpY2VzIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZSIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9wYXBlciIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9jaGFydC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZS9yZWFkL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc3RyYXRlZ3ktc2ltdWxhdGlvbi9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svaGlzdG9yeS9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfQogIF0sCiAgIm9ic2VydmF0aW9ucyI6IFsKICAgIHsKICAgICAgImxhYmVsIjogImJlZm9yZSByZWxvYWQiLAogICAgICAiZXhlY3V0aW9uVGV4dCI6ICJCcm9rZXIgb3JkZXJzIGFuZCBmaWxscyDCtyByZWFkIE9jdCAxOSwgMTE6NTAgQU0gRVRcblxuMCBvcmRlcnMgb3BlbiBhdCB0aGUgYnJva2VyXG5cbk5vIGZpbGxzIMK3IDIwMjYtMTAtMTlcblxuU29sZCAxMiBTVFggQCAkNzM5LjI0IMK3IE9jdCAxNCwgMjAyNiwgMDk6MzI6NDYgQU0gRVRcblxuU29sZCAxMiBTVFggQCAkNzM5LjI0IMK3IE9jdCAxNCwgMjAyNiwgMDk6MzI6NDYgQU0gRVQiLAogICAgICAiY2hhcnRUZXh0IjogIkNvbmZpcm1lZCBwYXBlciBmaWxscyBhdCB0aGVpciBvcmlnaW5hbCBkYXRlLCBxdWFudGl0eSBhbmQgcHJpY2UuIFRoZXNlIGFyZSBleGVjdXRpb25zLCBub3QgZ3JhZGUgc2lnbmFscyBvciByZXNlYXJjaCBmaWxscy5cblxuMjAyNi0xMC0xNCDCtyA5OjMyIEFNIEVUIMK3IFNFTEwgMTIgQCAkNzM5LjI0XG4yMDI2LTEwLTE0IMK3IDk6MzIgQU0gRVQgwrcgU0VMTCAxMiBAICQ3MzkuMjRcbjIwMjYtMTAtMTQgwrcgOTozMiBBTSBFVCDCtyBTRUxMIDEyIEAgJDczOS4yNFxuMjAyNi0xMC0xNCDCtyA5OjMyIEFNIEVUIMK3IFNFTEwgMTIgQCAkNzM5LjI0IiwKICAgICAgIm1hcmtlclRleHRzIjogWwogICAgICAgICJTRUxMIDQ4IHNoIgogICAgICBdCiAgICB9LAogICAgewogICAgICAibGFiZWwiOiAiYWZ0ZXIgcmVsb2FkIiwKICAgICAgImV4ZWN1dGlvblRleHQiOiAiQnJva2VyIG9yZGVycyBhbmQgZmlsbHMgwrcgcmVhZCBPY3QgMTksIDExOjUwIEFNIEVUXG5cbjAgb3JkZXJzIG9wZW4gYXQgdGhlIGJyb2tlclxuXG5ObyBmaWxscyDCtyAyMDI2LTEwLTE5XG5cblNvbGQgMTIgU1RYIEAgJDczOS4yNCDCtyBPY3QgMTQsIDIwMjYsIDA5OjMyOjQ2IEFNIEVUXG5cblNvbGQgMTIgU1RYIEAgJDczOS4yNCDCtyBPY3QgMTQsIDIwMjYsIDA5OjMyOjQ2IEFNIEVUIiwKICAgICAgImNoYXJ0VGV4dCI6ICJDb25maXJtZWQgcGFwZXIgZmlsbHMgYXQgdGhlaXIgb3JpZ2luYWwgZGF0ZSwgcXVhbnRpdHkgYW5kIHByaWNlLiBUaGVzZSBhcmUgZXhlY3V0aW9ucywgbm90IGdyYWRlIHNpZ25hbHMgb3IgcmVzZWFyY2ggZmlsbHMuXG5cbjIwMjYtMTAtMTQgwrcgOTozMiBBTSBFVCDCtyBTRUxMIDEyIEAgJDczOS4yNFxuMjAyNi0xMC0xNCDCtyA5OjMyIEFNIEVUIMK3IFNFTEwgMTIgQCAkNzM5LjI0XG4yMDI2LTEwLTE0IMK3IDk6MzIgQU0gRVQgwrcgU0VMTCAxMiBAICQ3MzkuMjRcbjIwMjYtMTAtMTQgwrcgOTozMiBBTSBFVCDCtyBTRUxMIDEyIEAgJDczOS4yNCIsCiAgICAgICJtYXJrZXJUZXh0cyI6IFsKICAgICAgICAiU0VMTCA0OCBzaCIKICAgICAgXQogICAgfQogIF0sCiAgImRpYWdub3N0aWNzIjogewogICAgInBhZ2VFcnJvcnMiOiBbXSwKICAgICJjb25zb2xlRXJyb3JzIjogW10sCiAgICAiZmFpbGVkUmVxdWVzdHMiOiBbXSwKICAgICJiYWRSZXNwb25zZXMiOiBbXSwKICAgICJ1bmV4cGVjdGVkUmVxdWVzdHMiOiBbXSwKICAgICJmb3JiaWRkZW5Xcml0ZXMiOiBbXQogIH0KfQ==",
+                            "contentType": "application/json",
+                            "name": "archived-fill-evidence"
+                          },
+                          {
+                            "contentType": "image/png",
+                            "name": "screenshot",
+                            "path": "/tmp/archived-fill-identity-red-20261019-artifacts/archived-paper-fill-identi-01a82-al-executions-across-reload/test-failed-1.png"
+                          },
+                          {
+                            "contentType": "text/markdown",
+                            "name": "error-context",
+                            "path": "/tmp/archived-fill-identity-red-20261019-artifacts/archived-paper-fill-identi-01a82-al-executions-across-reload/error-context.md"
+                          },
+                          {
+                            "contentType": "application/zip",
+                            "name": "trace",
+                            "path": "/tmp/archived-fill-identity-red-20261019-artifacts/archived-paper-fill-identi-01a82-al-executions-across-reload/trace.zip"
+                          }
+                        ],
+                        "duration": 23725,
+                        "error": {
+                          "location": {
+                            "column": 41,
+                            "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                            "line": 155
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m4\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to 4 elements\u001b[22m\n\u001b[2m       - unexpected value \"4\"\u001b[22m\n",
+                          "snippet": "  153 |   await settle(state)\n  154 |   const list = chart.getByLabel('STX actual paper executions', {exact: true})\n> 155 |   await expect.soft(list.locator('li')).toHaveCount(count)\n      |                                         ^\n  156 |   for (const fill of state.recorded) {\n  157 |     await expect.soft(list.locator(`[data-client-order-id=\"${fill.client_order_id}\"]`)).toHaveCount(1)\n  158 |   }",
+                          "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m4\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to 4 elements\u001b[22m\n\u001b[2m       - unexpected value \"4\"\u001b[22m\n\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:155:41)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:179:7"
+                        },
+                        "errorLocation": {
+                          "column": 41,
+                          "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                          "line": 155
+                        },
+                        "errors": [
+                          {
+                            "location": {
+                              "column": 41,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 155
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m4\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to 4 elements\u001b[22m\n\u001b[2m       - unexpected value \"4\"\u001b[22m\n\n\n  153 |   await settle(state)\n  154 |   const list = chart.getByLabel('STX actual paper executions', {exact: true})\n> 155 |   await expect.soft(list.locator('li')).toHaveCount(count)\n      |                                         ^\n  156 |   for (const fill of state.recorded) {\n  157 |     await expect.soft(list.locator(`[data-client-order-id=\"${fill.client_order_id}\"]`)).toHaveCount(1)\n  158 |   }\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:155:41)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:179:7"
+                          },
+                          {
+                            "location": {
+                              "column": 47,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 159
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m\"SELL 24 sh\"\u001b[39m\nReceived array: \u001b[31m[\"SELL 48 sh\"]\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  157 |     await expect.soft(list.locator(`[data-client-order-id=\"${fill.client_order_id}\"]`)).toHaveCount(1)\n  158 |   }\n> 159 |   await expect.soft.poll(() => markers(page)).toContain(`SELL ${12 * count} sh`)\n      |                                               ^\n  160 |   const markerTexts = await markers(page)\n  161 |   expect.soft(markerTexts).not.toContain(`SELL ${24 * count} sh`)\n  162 |   expect.soft(markerTexts).toEqual([`SELL ${12 * count} sh`])\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:159:47)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:179:7"
+                          },
+                          {
+                            "location": {
+                              "column": 32,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 161
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"SELL 48 sh\"\u001b[39m\nReceived array:     \u001b[31m[\u001b[7m\"SELL 48 sh\"\u001b[27m]\u001b[39m\n\n  159 |   await expect.soft.poll(() => markers(page)).toContain(`SELL ${12 * count} sh`)\n  160 |   const markerTexts = await markers(page)\n> 161 |   expect.soft(markerTexts).not.toContain(`SELL ${24 * count} sh`)\n      |                                ^\n  162 |   expect.soft(markerTexts).toEqual([`SELL ${12 * count} sh`])\n  163 |   state.observations.push({label, executionText, chartText: await list.innerText(), markerTexts})\n  164 |   await page.getByRole('button', {name: 'Close', exact: true}).click()\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:161:32)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:179:7"
+                          },
+                          {
+                            "location": {
+                              "column": 28,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 162
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[2m  Array [\u001b[22m\n\u001b[32m-   \"SELL 24 sh\",\u001b[39m\n\u001b[31m+   \"SELL 48 sh\",\u001b[39m\n\u001b[2m  ]\u001b[22m\n\n  160 |   const markerTexts = await markers(page)\n  161 |   expect.soft(markerTexts).not.toContain(`SELL ${24 * count} sh`)\n> 162 |   expect.soft(markerTexts).toEqual([`SELL ${12 * count} sh`])\n      |                            ^\n  163 |   state.observations.push({label, executionText, chartText: await list.innerText(), markerTexts})\n  164 |   await page.getByRole('button', {name: 'Close', exact: true}).click()\n  165 |   await settle(state)\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:162:28)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:179:7"
+                          },
+                          {
+                            "location": {
+                              "column": 41,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 155
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\nExpected: \u001b[32m2\u001b[39m\nReceived: \u001b[31m4\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByLabel('STX actual paper executions', { exact: true }).locator('li')\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to 4 elements\u001b[22m\n\u001b[2m       - unexpected value \"4\"\u001b[22m\n\n\n  153 |   await settle(state)\n  154 |   const list = chart.getByLabel('STX actual paper executions', {exact: true})\n> 155 |   await expect.soft(list.locator('li')).toHaveCount(count)\n      |                                         ^\n  156 |   for (const fill of state.recorded) {\n  157 |     await expect.soft(list.locator(`[data-client-order-id=\"${fill.client_order_id}\"]`)).toHaveCount(1)\n  158 |   }\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:155:41)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:181:7"
+                          },
+                          {
+                            "location": {
+                              "column": 47,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 159
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m\"SELL 24 sh\"\u001b[39m\nReceived array: \u001b[31m[\"SELL 48 sh\"]\u001b[39m\n\nCall Log:\n- Timeout 5000ms exceeded while waiting on the predicate\n\n  157 |     await expect.soft(list.locator(`[data-client-order-id=\"${fill.client_order_id}\"]`)).toHaveCount(1)\n  158 |   }\n> 159 |   await expect.soft.poll(() => markers(page)).toContain(`SELL ${12 * count} sh`)\n      |                                               ^\n  160 |   const markerTexts = await markers(page)\n  161 |   expect.soft(markerTexts).not.toContain(`SELL ${24 * count} sh`)\n  162 |   expect.soft(markerTexts).toEqual([`SELL ${12 * count} sh`])\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:159:47)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:181:7"
+                          },
+                          {
+                            "location": {
+                              "column": 32,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 161
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: not \u001b[32m\"SELL 48 sh\"\u001b[39m\nReceived array:     \u001b[31m[\u001b[7m\"SELL 48 sh\"\u001b[27m]\u001b[39m\n\n  159 |   await expect.soft.poll(() => markers(page)).toContain(`SELL ${12 * count} sh`)\n  160 |   const markerTexts = await markers(page)\n> 161 |   expect.soft(markerTexts).not.toContain(`SELL ${24 * count} sh`)\n      |                                ^\n  162 |   expect.soft(markerTexts).toEqual([`SELL ${12 * count} sh`])\n  163 |   state.observations.push({label, executionText, chartText: await list.innerText(), markerTexts})\n  164 |   await page.getByRole('button', {name: 'Close', exact: true}).click()\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:161:32)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:181:7"
+                          },
+                          {
+                            "location": {
+                              "column": 28,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts",
+                              "line": 162
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[2m  Array [\u001b[22m\n\u001b[32m-   \"SELL 24 sh\",\u001b[39m\n\u001b[31m+   \"SELL 48 sh\",\u001b[39m\n\u001b[2m  ]\u001b[22m\n\n  160 |   const markerTexts = await markers(page)\n  161 |   expect.soft(markerTexts).not.toContain(`SELL ${24 * count} sh`)\n> 162 |   expect.soft(markerTexts).toEqual([`SELL ${12 * count} sh`])\n      |                            ^\n  163 |   state.observations.push({label, executionText, chartText: await list.innerText(), markerTexts})\n  164 |   await page.getByRole('button', {name: 'Close', exact: true}).click()\n  165 |   await settle(state)\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:162:28)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/archived-paper-fill-identity.spec.ts:181:7"
+                          }
+                        ],
+                        "parallelIndex": 0,
+                        "retry": 0,
+                        "startTime": "2026-10-19T15:50:07.216Z",
+                        "status": "failed",
+                        "stderr": [],
+                        "stdout": [],
+                        "workerIndex": 2
+                      }
+                    ],
+                    "status": "unexpected",
+                    "timeout": 60000
+                  }
+                ],
+                "title": "rounded anonymous two distinct identical-valued archived fill history conserves original executions across reload"
+              }
+            ],
+            "title": "archived-paper-fill-identity.spec.ts"
+          }
+        ]
+      },
+      "path": "/tmp/archived-fill-identity-red-20261019-results.json",
+      "sha256": "2cae893f0e939ab74dc0c72582a2a86fb506f92b22740b02bc82d863ca7f9f82"
+    },
+    {
+      "bytes": 51430,
+      "original": {
+        "config": {
+          "argv": [
+            "/Users/animallya/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/node_modules/@playwright/test/cli.js",
+            "test",
+            "--config=/tmp/archived-fill-identity-green-20261019.config.mjs"
+          ],
+          "configFile": "/tmp/archived-fill-identity-green-20261019.config.mjs",
+          "failOnFlakyTests": false,
+          "forbidOnly": false,
+          "fullyParallel": false,
+          "globalSetup": null,
+          "globalTeardown": null,
+          "globalTimeout": 0,
+          "grep": {},
+          "grepInvert": null,
+          "maxFailures": 0,
+          "metadata": {
+            "actualWorkers": 1
+          },
+          "preserveOutput": "always",
+          "projects": [
+            {
+              "id": "",
+              "metadata": {
+                "actualWorkers": 1
+              },
+              "name": "",
+              "outputDir": "/tmp/archived-fill-identity-green-20261019-artifacts",
+              "repeatEach": 1,
+              "retries": 0,
+              "testDir": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e",
+              "testIgnore": [],
+              "testMatch": [
+                "archived-paper-fill-identity.spec.ts"
+              ],
+              "timeout": 30000
+            }
+          ],
+          "quiet": false,
+          "reportSlowTests": {
+            "max": 5,
+            "threshold": 300000
+          },
+          "reporter": [
+            [
+              "list",
+              null
+            ],
+            [
+              "json",
+              {
+                "outputFile": "/tmp/archived-fill-identity-green-20261019-results.json"
+              }
+            ]
+          ],
+          "rootDir": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e",
+          "shard": null,
+          "tags": [],
+          "updateSnapshots": "missing",
+          "updateSourceMethod": "patch",
+          "version": "1.62.1",
+          "webServer": {
+            "command": "/usr/local/bin/python3 -m http.server 5187 --bind 127.0.0.1 --directory /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/dist",
+            "reuseExistingServer": false,
+            "url": "http://127.0.0.1:5187"
+          },
+          "workers": 1
+        },
+        "errors": [],
+        "stats": {
+          "duration": 30568.715,
+          "expected": 4,
+          "flaky": 0,
+          "skipped": 0,
+          "startTime": "2026-10-19T15:58:04.189Z",
+          "unexpected": 0
+        },
+        "suites": [
+          {
+            "column": 0,
+            "file": "archived-paper-fill-identity.spec.ts",
+            "line": 0,
+            "specs": [
+              {
+                "column": 3,
+                "file": "archived-paper-fill-identity.spec.ts",
+                "id": "eb307a1b13b7e7a7b96c-5ae3627854e0238de3d5",
+                "line": 208,
+                "ok": true,
+                "tags": [],
+                "tests": [
+                  {
+                    "annotations": [],
+                    "expectedStatus": "passed",
+                    "projectId": "",
+                    "projectName": "",
+                    "results": [
+                      {
+                        "annotations": [],
+                        "attachments": [
+                          {
+                            "body": "ewogICJyZWNvcmRlZCI6IFsKICAgIHsKICAgICAgImNsaWVudF9vcmRlcl9pZCI6ICJhbmlvcy0yMDI2LTEwLTEzLXNlbGwtc3R4LTEzNSIsCiAgICAgICJzeW1ib2wiOiAiU1RYIiwKICAgICAgInNpZGUiOiAic2VsbCIsCiAgICAgICJxdHkiOiAxMiwKICAgICAgInByaWNlIjogNzM5LjIzNjY2NywKICAgICAgImZpbGxlZF9hdCI6ICIyMDI2LTEwLTE0VDEzOjMyOjQ2LjkyMjcxOVoiLAogICAgICAic2Vzc2lvbiI6ICIyMDI2LTEwLTEzIiwKICAgICAgImNyZWF0ZWRfYXQiOiAiMjAyNi0xMC0xM1QyMzo0Njo0NFoiLAogICAgICAicmVjb25jaWxlZF9hdCI6ICIyMDI2LTEwLTE5VDE1OjU4OjEyLjY5MFoiCiAgICB9CiAgXSwKICAiYXJjaGl2ZWQiOiBbCiAgICB7CiAgICAgICJkYXRlIjogIjIwMjYtMTAtMTQiLAogICAgICAic2lkZSI6ICJzZWxsIiwKICAgICAgInF0eSI6IDEyLAogICAgICAicHJpY2UiOiA3MzkuMjM2NywKICAgICAgImZpbGxlZF9hdCI6ICIyMDI2LTEwLTE0VDEzOjMyOjQ2LjkyMjcxOVoiCiAgICB9CiAgXSwKICAicmVxdWVzdHMiOiBbCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9hdXRoL3Nlc3Npb24iLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2NvbnZlcnNhdGlvbnMvYXJjaGl2ZWQtZmlsbC1vd25lciIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzayIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9ob2xkaW5ncyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3Nlc3Npb24tcHJpY2VzIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZSIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9wYXBlciIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9jaGFydC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZS9yZWFkL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc3RyYXRlZ3ktc2ltdWxhdGlvbi9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svaGlzdG9yeS9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svY2hhcnQvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUvcmVhZC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svZWFybmluZ3MvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2hpc3RvcnkvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9hdXRoL3Nlc3Npb24iLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2NvbnZlcnNhdGlvbnMvYXJjaGl2ZWQtZmlsbC1vd25lciIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvY29udmVyc2F0aW9ucy9hcmNoaXZlZC1maWxsLW93bmVyLzRmZjM5NmM5LWNjY2EtNDExNC04ODViLWI0NTNkM2UxNGQ4OCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzayIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9ob2xkaW5ncyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3Nlc3Npb24tcHJpY2VzIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZSIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9wYXBlciIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9jaGFydC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZS9yZWFkL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc3RyYXRlZ3ktc2ltdWxhdGlvbi9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svaGlzdG9yeS9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svY2hhcnQvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUvcmVhZC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svZWFybmluZ3MvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2hpc3RvcnkvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0KICBdLAogICJvYnNlcnZhdGlvbnMiOiBbCiAgICB7CiAgICAgICJsYWJlbCI6ICJiZWZvcmUgcmVsb2FkIiwKICAgICAgImV4ZWN1dGlvblRleHQiOiAiQnJva2VyIG9yZGVycyBhbmQgZmlsbHMgwrcgcmVhZCBPY3QgMTksIDExOjU4IEFNIEVUXG5cbjAgb3JkZXJzIG9wZW4gYXQgdGhlIGJyb2tlclxuXG5ObyBmaWxscyDCtyAyMDI2LTEwLTE5XG5cblNvbGQgMTIgU1RYIEAgJDczOS4yNCDCtyBPY3QgMTQsIDIwMjYsIDA5OjMyOjQ2IEFNIEVUIiwKICAgICAgImNoYXJ0VGV4dCI6ICJDb25maXJtZWQgcGFwZXIgZmlsbHMgYXQgdGhlaXIgb3JpZ2luYWwgZGF0ZSwgcXVhbnRpdHkgYW5kIHByaWNlLiBUaGVzZSBhcmUgZXhlY3V0aW9ucywgbm90IGdyYWRlIHNpZ25hbHMgb3IgcmVzZWFyY2ggZmlsbHMuXG5cbjIwMjYtMTAtMTQgwrcgOTozMiBBTSBFVCDCtyBTRUxMIDEyIEAgJDczOS4yNCIsCiAgICAgICJsZWdhY3lUZXh0cyI6IFsKICAgICAgICAiMjAyNi0xMC0xNCDCtyAyMDI2LTEwLTE0VDEzOjMyOjQ2LjkyMjcxOVogwrcgU0VMTCAxMiBAICQ3MzkuMjM2NyIKICAgICAgXSwKICAgICAgIm1hcmtlclRleHRzIjogWwogICAgICAgICJTRUxMIDEyIHNoIgogICAgICBdCiAgICB9LAogICAgewogICAgICAibGFiZWwiOiAiYWZ0ZXIgcmVsb2FkIiwKICAgICAgImV4ZWN1dGlvblRleHQiOiAiQnJva2VyIG9yZGVycyBhbmQgZmlsbHMgwrcgcmVhZCBPY3QgMTksIDExOjU4IEFNIEVUXG5cbjAgb3JkZXJzIG9wZW4gYXQgdGhlIGJyb2tlclxuXG5ObyBmaWxscyDCtyAyMDI2LTEwLTE5XG5cblNvbGQgMTIgU1RYIEAgJDczOS4yNCDCtyBPY3QgMTQsIDIwMjYsIDA5OjMyOjQ2IEFNIEVUIiwKICAgICAgImNoYXJ0VGV4dCI6ICJDb25maXJtZWQgcGFwZXIgZmlsbHMgYXQgdGhlaXIgb3JpZ2luYWwgZGF0ZSwgcXVhbnRpdHkgYW5kIHByaWNlLiBUaGVzZSBhcmUgZXhlY3V0aW9ucywgbm90IGdyYWRlIHNpZ25hbHMgb3IgcmVzZWFyY2ggZmlsbHMuXG5cbjIwMjYtMTAtMTQgwrcgOTozMiBBTSBFVCDCtyBTRUxMIDEyIEAgJDczOS4yNCIsCiAgICAgICJsZWdhY3lUZXh0cyI6IFsKICAgICAgICAiMjAyNi0xMC0xNCDCtyAyMDI2LTEwLTE0VDEzOjMyOjQ2LjkyMjcxOVogwrcgU0VMTCAxMiBAICQ3MzkuMjM2NyIKICAgICAgXSwKICAgICAgIm1hcmtlclRleHRzIjogWwogICAgICAgICJTRUxMIDEyIHNoIgogICAgICBdCiAgICB9CiAgXSwKICAiZGlhZ25vc3RpY3MiOiB7CiAgICAicGFnZUVycm9ycyI6IFtdLAogICAgImNvbnNvbGVFcnJvcnMiOiBbXSwKICAgICJmYWlsZWRSZXF1ZXN0cyI6IFtdLAogICAgImJhZFJlc3BvbnNlcyI6IFtdLAogICAgInVuZXhwZWN0ZWRSZXF1ZXN0cyI6IFtdLAogICAgImZvcmJpZGRlbldyaXRlcyI6IFtdCiAgfQp9",
+                            "contentType": "application/json",
+                            "name": "archived-fill-evidence"
+                          },
+                          {
+                            "contentType": "application/zip",
+                            "name": "trace",
+                            "path": "/tmp/archived-fill-identity-green-20261019-artifacts/archived-paper-fill-identi-6dbbe-al-executions-across-reload/trace.zip"
+                          }
+                        ],
+                        "duration": 6885,
+                        "errors": [],
+                        "parallelIndex": 0,
+                        "retry": 0,
+                        "startTime": "2026-10-19T15:58:06.962Z",
+                        "status": "passed",
+                        "stderr": [],
+                        "stdout": [],
+                        "workerIndex": 0
+                      }
+                    ],
+                    "status": "expected",
+                    "timeout": 60000
+                  }
+                ],
+                "title": "rounded anonymous timestamped archived fill history conserves original executions across reload"
+              },
+              {
+                "column": 3,
+                "file": "archived-paper-fill-identity.spec.ts",
+                "id": "eb307a1b13b7e7a7b96c-ca32da2f0a074fc07de2",
+                "line": 208,
+                "ok": true,
+                "tags": [],
+                "tests": [
+                  {
+                    "annotations": [],
+                    "expectedStatus": "passed",
+                    "projectId": "",
+                    "projectName": "",
+                    "results": [
+                      {
+                        "annotations": [],
+                        "attachments": [
+                          {
+                            "body": "ewogICJyZWNvcmRlZCI6IFsKICAgIHsKICAgICAgImNsaWVudF9vcmRlcl9pZCI6ICJhbmlvcy0yMDI2LTEwLTEzLXNlbGwtc3R4LTEzNSIsCiAgICAgICJzeW1ib2wiOiAiU1RYIiwKICAgICAgInNpZGUiOiAic2VsbCIsCiAgICAgICJxdHkiOiAxMiwKICAgICAgInByaWNlIjogNzM5LjIzNjY2NywKICAgICAgImZpbGxlZF9hdCI6ICIyMDI2LTEwLTE0VDEzOjMyOjQ2LjkyMjcxOVoiLAogICAgICAic2Vzc2lvbiI6ICIyMDI2LTEwLTEzIiwKICAgICAgImNyZWF0ZWRfYXQiOiAiMjAyNi0xMC0xM1QyMzo0Njo0NFoiLAogICAgICAicmVjb25jaWxlZF9hdCI6ICIyMDI2LTEwLTE5VDE1OjU4OjE5LjA0NloiCiAgICB9CiAgXSwKICAiYXJjaGl2ZWQiOiBbCiAgICB7CiAgICAgICJkYXRlIjogIjIwMjYtMTAtMTQiLAogICAgICAic2lkZSI6ICJzZWxsIiwKICAgICAgInF0eSI6IDEyLAogICAgICAicHJpY2UiOiA3MzkuMjM2NwogICAgfQogIF0sCiAgInJlcXVlc3RzIjogWwogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvYXV0aC9zZXNzaW9uIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9jb252ZXJzYXRpb25zL2FyY2hpdmVkLWZpbGwtb3duZXIiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2siLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svaG9sZGluZ3MiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZSIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3BhcGVyIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2NoYXJ0L1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlL3JlYWQvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2Vhcm5pbmdzL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9zdHJhdGVneS1zaW11bGF0aW9uL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9oaXN0b3J5L1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9jaGFydC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZS9yZWFkL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svaGlzdG9yeS9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2F1dGgvc2Vzc2lvbiIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvY29udmVyc2F0aW9ucy9hcmNoaXZlZC1maWxsLW93bmVyIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9jb252ZXJzYXRpb25zL2FyY2hpdmVkLWZpbGwtb3duZXIvNTcwYzhiZDEtNzg3Zi00ZDJkLWExM2ItZGIyNDM4MzBhODExIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2hvbGRpbmdzIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3Nlc3Npb24tcHJpY2VzIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZSIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3BhcGVyIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2NoYXJ0L1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlL3JlYWQvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2Vhcm5pbmdzL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9zdHJhdGVneS1zaW11bGF0aW9uL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9oaXN0b3J5L1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9jaGFydC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZS9yZWFkL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svaGlzdG9yeS9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfQogIF0sCiAgIm9ic2VydmF0aW9ucyI6IFsKICAgIHsKICAgICAgImxhYmVsIjogImJlZm9yZSByZWxvYWQiLAogICAgICAiZXhlY3V0aW9uVGV4dCI6ICJCcm9rZXIgb3JkZXJzIGFuZCBmaWxscyDCtyByZWFkIE9jdCAxOSwgMTE6NTggQU0gRVRcblxuMCBvcmRlcnMgb3BlbiBhdCB0aGUgYnJva2VyXG5cbk5vIGZpbGxzIMK3IDIwMjYtMTAtMTlcblxuU29sZCAxMiBTVFggQCAkNzM5LjI0IMK3IE9jdCAxNCwgMjAyNiwgMDk6MzI6NDYgQU0gRVQiLAogICAgICAiY2hhcnRUZXh0IjogIkNvbmZpcm1lZCBwYXBlciBmaWxscyBhdCB0aGVpciBvcmlnaW5hbCBkYXRlLCBxdWFudGl0eSBhbmQgcHJpY2UuIFRoZXNlIGFyZSBleGVjdXRpb25zLCBub3QgZ3JhZGUgc2lnbmFscyBvciByZXNlYXJjaCBmaWxscy5cblxuMjAyNi0xMC0xNCDCtyA5OjMyIEFNIEVUIMK3IFNFTEwgMTIgQCAkNzM5LjI0IiwKICAgICAgImxlZ2FjeVRleHRzIjogWwogICAgICAgICIyMDI2LTEwLTE0IMK3IFNFTEwgMTIgQCAkNzM5LjIzNjciCiAgICAgIF0sCiAgICAgICJtYXJrZXJUZXh0cyI6IFsKICAgICAgICAiU0VMTCAxMiBzaCIKICAgICAgXQogICAgfSwKICAgIHsKICAgICAgImxhYmVsIjogImFmdGVyIHJlbG9hZCIsCiAgICAgICJleGVjdXRpb25UZXh0IjogIkJyb2tlciBvcmRlcnMgYW5kIGZpbGxzIMK3IHJlYWQgT2N0IDE5LCAxMTo1OCBBTSBFVFxuXG4wIG9yZGVycyBvcGVuIGF0IHRoZSBicm9rZXJcblxuTm8gZmlsbHMgwrcgMjAyNi0xMC0xOVxuXG5Tb2xkIDEyIFNUWCBAICQ3MzkuMjQgwrcgT2N0IDE0LCAyMDI2LCAwOTozMjo0NiBBTSBFVCIsCiAgICAgICJjaGFydFRleHQiOiAiQ29uZmlybWVkIHBhcGVyIGZpbGxzIGF0IHRoZWlyIG9yaWdpbmFsIGRhdGUsIHF1YW50aXR5IGFuZCBwcmljZS4gVGhlc2UgYXJlIGV4ZWN1dGlvbnMsIG5vdCBncmFkZSBzaWduYWxzIG9yIHJlc2VhcmNoIGZpbGxzLlxuXG4yMDI2LTEwLTE0IMK3IDk6MzIgQU0gRVQgwrcgU0VMTCAxMiBAICQ3MzkuMjQiLAogICAgICAibGVnYWN5VGV4dHMiOiBbCiAgICAgICAgIjIwMjYtMTAtMTQgwrcgU0VMTCAxMiBAICQ3MzkuMjM2NyIKICAgICAgXSwKICAgICAgIm1hcmtlclRleHRzIjogWwogICAgICAgICJTRUxMIDEyIHNoIgogICAgICBdCiAgICB9CiAgXSwKICAiZGlhZ25vc3RpY3MiOiB7CiAgICAicGFnZUVycm9ycyI6IFtdLAogICAgImNvbnNvbGVFcnJvcnMiOiBbXSwKICAgICJmYWlsZWRSZXF1ZXN0cyI6IFtdLAogICAgImJhZFJlc3BvbnNlcyI6IFtdLAogICAgInVuZXhwZWN0ZWRSZXF1ZXN0cyI6IFtdLAogICAgImZvcmJpZGRlbldyaXRlcyI6IFtdCiAgfQp9",
+                            "contentType": "application/json",
+                            "name": "archived-fill-evidence"
+                          },
+                          {
+                            "contentType": "application/zip",
+                            "name": "trace",
+                            "path": "/tmp/archived-fill-identity-green-20261019-artifacts/archived-paper-fill-identi-07e02-al-executions-across-reload/trace.zip"
+                          }
+                        ],
+                        "duration": 4902,
+                        "errors": [],
+                        "parallelIndex": 0,
+                        "retry": 0,
+                        "startTime": "2026-10-19T15:58:18.957Z",
+                        "status": "passed",
+                        "stderr": [],
+                        "stdout": [],
+                        "workerIndex": 0
+                      }
+                    ],
+                    "status": "expected",
+                    "timeout": 60000
+                  }
+                ],
+                "title": "rounded anonymous date-only archived fill history conserves original executions across reload"
+              },
+              {
+                "column": 3,
+                "file": "archived-paper-fill-identity.spec.ts",
+                "id": "eb307a1b13b7e7a7b96c-aaed792f021b7d360453",
+                "line": 208,
+                "ok": true,
+                "tags": [],
+                "tests": [
+                  {
+                    "annotations": [],
+                    "expectedStatus": "passed",
+                    "projectId": "",
+                    "projectName": "",
+                    "results": [
+                      {
+                        "annotations": [],
+                        "attachments": [
+                          {
+                            "body": "ewogICJyZWNvcmRlZCI6IFsKICAgIHsKICAgICAgImNsaWVudF9vcmRlcl9pZCI6ICJhbmlvcy0yMDI2LTEwLTEzLXNlbGwtc3R4LTEzNSIsCiAgICAgICJzeW1ib2wiOiAiU1RYIiwKICAgICAgInNpZGUiOiAic2VsbCIsCiAgICAgICJxdHkiOiAxMiwKICAgICAgInByaWNlIjogNzM5LjIzNjY2NywKICAgICAgImZpbGxlZF9hdCI6ICIyMDI2LTEwLTE0VDEzOjMyOjQ2LjkyMjcxOVoiLAogICAgICAic2Vzc2lvbiI6ICIyMDI2LTEwLTEzIiwKICAgICAgImNyZWF0ZWRfYXQiOiAiMjAyNi0xMC0xM1QyMzo0Njo0NFoiLAogICAgICAicmVjb25jaWxlZF9hdCI6ICIyMDI2LTEwLTE5VDE1OjU4OjI0LjEyOFoiCiAgICB9LAogICAgewogICAgICAiY2xpZW50X29yZGVyX2lkIjogImFuaW9zLTIwMjYtMTAtMTMtc2VsbC1zdHgtMTM2IiwKICAgICAgInN5bWJvbCI6ICJTVFgiLAogICAgICAic2lkZSI6ICJzZWxsIiwKICAgICAgInF0eSI6IDEyLAogICAgICAicHJpY2UiOiA3MzkuMjM2NjY3LAogICAgICAiZmlsbGVkX2F0IjogIjIwMjYtMTAtMTRUMTM6MzI6NDYuOTIyNzE5WiIsCiAgICAgICJzZXNzaW9uIjogIjIwMjYtMTAtMTMiLAogICAgICAiY3JlYXRlZF9hdCI6ICIyMDI2LTEwLTEzVDIzOjQ2OjQ0WiIsCiAgICAgICJyZWNvbmNpbGVkX2F0IjogIjIwMjYtMTAtMTlUMTU6NTg6MjQuMTI4WiIKICAgIH0KICBdLAogICJhcmNoaXZlZCI6IFsKICAgIHsKICAgICAgImRhdGUiOiAiMjAyNi0xMC0xNCIsCiAgICAgICJzaWRlIjogInNlbGwiLAogICAgICAicXR5IjogMTIsCiAgICAgICJwcmljZSI6IDczOS4yMzY3LAogICAgICAiZmlsbGVkX2F0IjogIjIwMjYtMTAtMTRUMTM6MzI6NDYuOTIyNzE5WiIKICAgIH0sCiAgICB7CiAgICAgICJkYXRlIjogIjIwMjYtMTAtMTQiLAogICAgICAic2lkZSI6ICJzZWxsIiwKICAgICAgInF0eSI6IDEyLAogICAgICAicHJpY2UiOiA3MzkuMjM2NywKICAgICAgImZpbGxlZF9hdCI6ICIyMDI2LTEwLTE0VDEzOjMyOjQ2LjkyMjcxOVoiCiAgICB9CiAgXSwKICAicmVxdWVzdHMiOiBbCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9hdXRoL3Nlc3Npb24iLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2NvbnZlcnNhdGlvbnMvYXJjaGl2ZWQtZmlsbC1vd25lciIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzayIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9ob2xkaW5ncyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3Nlc3Npb24tcHJpY2VzIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svcGFwZXIiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svY2hhcnQvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUvcmVhZC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svZWFybmluZ3MvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3N0cmF0ZWd5LXNpbXVsYXRpb24vU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2hpc3RvcnkvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2NoYXJ0L1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlL3JlYWQvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2Vhcm5pbmdzL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9oaXN0b3J5L1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvYXV0aC9zZXNzaW9uIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9jb252ZXJzYXRpb25zL2FyY2hpdmVkLWZpbGwtb3duZXIiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2NvbnZlcnNhdGlvbnMvYXJjaGl2ZWQtZmlsbC1vd25lci80M2U3OGQyYy0wMDFiLTQ1ZTctODg2ZS0xM2Y2OTVhMjMwN2UiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2siLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svaG9sZGluZ3MiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZSIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3Nlc3Npb24tcHJpY2VzIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svcGFwZXIiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svY2hhcnQvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUvcmVhZC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svZWFybmluZ3MvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3N0cmF0ZWd5LXNpbXVsYXRpb24vU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2hpc3RvcnkvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2NoYXJ0L1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlL3JlYWQvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2Vhcm5pbmdzL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9oaXN0b3J5L1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9CiAgXSwKICAib2JzZXJ2YXRpb25zIjogWwogICAgewogICAgICAibGFiZWwiOiAiYmVmb3JlIHJlbG9hZCIsCiAgICAgICJleGVjdXRpb25UZXh0IjogIkJyb2tlciBvcmRlcnMgYW5kIGZpbGxzIMK3IHJlYWQgT2N0IDE5LCAxMTo1OCBBTSBFVFxuXG4wIG9yZGVycyBvcGVuIGF0IHRoZSBicm9rZXJcblxuTm8gZmlsbHMgwrcgMjAyNi0xMC0xOVxuXG5Tb2xkIDEyIFNUWCBAICQ3MzkuMjQgwrcgT2N0IDE0LCAyMDI2LCAwOTozMjo0NiBBTSBFVFxuXG5Tb2xkIDEyIFNUWCBAICQ3MzkuMjQgwrcgT2N0IDE0LCAyMDI2LCAwOTozMjo0NiBBTSBFVCIsCiAgICAgICJjaGFydFRleHQiOiAiQ29uZmlybWVkIHBhcGVyIGZpbGxzIGF0IHRoZWlyIG9yaWdpbmFsIGRhdGUsIHF1YW50aXR5IGFuZCBwcmljZS4gVGhlc2UgYXJlIGV4ZWN1dGlvbnMsIG5vdCBncmFkZSBzaWduYWxzIG9yIHJlc2VhcmNoIGZpbGxzLlxuXG4yMDI2LTEwLTE0IMK3IDk6MzIgQU0gRVQgwrcgU0VMTCAxMiBAICQ3MzkuMjRcbjIwMjYtMTAtMTQgwrcgOTozMiBBTSBFVCDCtyBTRUxMIDEyIEAgJDczOS4yNCIsCiAgICAgICJsZWdhY3lUZXh0cyI6IFsKICAgICAgICAiMjAyNi0xMC0xNCDCtyAyMDI2LTEwLTE0VDEzOjMyOjQ2LjkyMjcxOVogwrcgU0VMTCAxMiBAICQ3MzkuMjM2NyIsCiAgICAgICAgIjIwMjYtMTAtMTQgwrcgMjAyNi0xMC0xNFQxMzozMjo0Ni45MjI3MTlaIMK3IFNFTEwgMTIgQCAkNzM5LjIzNjciCiAgICAgIF0sCiAgICAgICJtYXJrZXJUZXh0cyI6IFsKICAgICAgICAiU0VMTCAyNCBzaCIKICAgICAgXQogICAgfSwKICAgIHsKICAgICAgImxhYmVsIjogImFmdGVyIHJlbG9hZCIsCiAgICAgICJleGVjdXRpb25UZXh0IjogIkJyb2tlciBvcmRlcnMgYW5kIGZpbGxzIMK3IHJlYWQgT2N0IDE5LCAxMTo1OCBBTSBFVFxuXG4wIG9yZGVycyBvcGVuIGF0IHRoZSBicm9rZXJcblxuTm8gZmlsbHMgwrcgMjAyNi0xMC0xOVxuXG5Tb2xkIDEyIFNUWCBAICQ3MzkuMjQgwrcgT2N0IDE0LCAyMDI2LCAwOTozMjo0NiBBTSBFVFxuXG5Tb2xkIDEyIFNUWCBAICQ3MzkuMjQgwrcgT2N0IDE0LCAyMDI2LCAwOTozMjo0NiBBTSBFVCIsCiAgICAgICJjaGFydFRleHQiOiAiQ29uZmlybWVkIHBhcGVyIGZpbGxzIGF0IHRoZWlyIG9yaWdpbmFsIGRhdGUsIHF1YW50aXR5IGFuZCBwcmljZS4gVGhlc2UgYXJlIGV4ZWN1dGlvbnMsIG5vdCBncmFkZSBzaWduYWxzIG9yIHJlc2VhcmNoIGZpbGxzLlxuXG4yMDI2LTEwLTE0IMK3IDk6MzIgQU0gRVQgwrcgU0VMTCAxMiBAICQ3MzkuMjRcbjIwMjYtMTAtMTQgwrcgOTozMiBBTSBFVCDCtyBTRUxMIDEyIEAgJDczOS4yNCIsCiAgICAgICJsZWdhY3lUZXh0cyI6IFsKICAgICAgICAiMjAyNi0xMC0xNCDCtyAyMDI2LTEwLTE0VDEzOjMyOjQ2LjkyMjcxOVogwrcgU0VMTCAxMiBAICQ3MzkuMjM2NyIsCiAgICAgICAgIjIwMjYtMTAtMTQgwrcgMjAyNi0xMC0xNFQxMzozMjo0Ni45MjI3MTlaIMK3IFNFTEwgMTIgQCAkNzM5LjIzNjciCiAgICAgIF0sCiAgICAgICJtYXJrZXJUZXh0cyI6IFsKICAgICAgICAiU0VMTCAyNCBzaCIKICAgICAgXQogICAgfQogIF0sCiAgImRpYWdub3N0aWNzIjogewogICAgInBhZ2VFcnJvcnMiOiBbXSwKICAgICJjb25zb2xlRXJyb3JzIjogW10sCiAgICAiZmFpbGVkUmVxdWVzdHMiOiBbXSwKICAgICJiYWRSZXNwb25zZXMiOiBbXSwKICAgICJ1bmV4cGVjdGVkUmVxdWVzdHMiOiBbXSwKICAgICJmb3JiaWRkZW5Xcml0ZXMiOiBbXQogIH0KfQ==",
+                            "contentType": "application/json",
+                            "name": "archived-fill-evidence"
+                          },
+                          {
+                            "contentType": "application/zip",
+                            "name": "trace",
+                            "path": "/tmp/archived-fill-identity-green-20261019-artifacts/archived-paper-fill-identi-01a82-al-executions-across-reload/trace.zip"
+                          }
+                        ],
+                        "duration": 5461,
+                        "errors": [],
+                        "parallelIndex": 0,
+                        "retry": 0,
+                        "startTime": "2026-10-19T15:58:24.041Z",
+                        "status": "passed",
+                        "stderr": [],
+                        "stdout": [],
+                        "workerIndex": 0
+                      }
+                    ],
+                    "status": "expected",
+                    "timeout": 60000
+                  }
+                ],
+                "title": "rounded anonymous two distinct identical-valued archived fill history conserves original executions across reload"
+              },
+              {
+                "column": 3,
+                "file": "archived-paper-fill-identity.spec.ts",
+                "id": "eb307a1b13b7e7a7b96c-dd8ddfb8cd039896ab5d",
+                "line": 208,
+                "ok": true,
+                "tags": [],
+                "tests": [
+                  {
+                    "annotations": [],
+                    "expectedStatus": "passed",
+                    "projectId": "",
+                    "projectName": "",
+                    "results": [
+                      {
+                        "annotations": [],
+                        "attachments": [
+                          {
+                            "body": "ewogICJyZWNvcmRlZCI6IFsKICAgIHsKICAgICAgImNsaWVudF9vcmRlcl9pZCI6ICJhbmlvcy0yMDI2LTEwLTEzLXNlbGwtc3R4LTEzNSIsCiAgICAgICJzeW1ib2wiOiAiU1RYIiwKICAgICAgInNpZGUiOiAic2VsbCIsCiAgICAgICJxdHkiOiAxMiwKICAgICAgInByaWNlIjogNzM5LjIzNjY2NywKICAgICAgImZpbGxlZF9hdCI6ICIyMDI2LTEwLTE0VDEzOjMyOjQ2LjkyMjcxOVoiLAogICAgICAic2Vzc2lvbiI6ICIyMDI2LTEwLTEzIiwKICAgICAgImNyZWF0ZWRfYXQiOiAiMjAyNi0xMC0xM1QyMzo0Njo0NFoiLAogICAgICAicmVjb25jaWxlZF9hdCI6ICIyMDI2LTEwLTE5VDE1OjU4OjMwLjE1NloiCiAgICB9CiAgXSwKICAiYXJjaGl2ZWQiOiBbCiAgICB7CiAgICAgICJkYXRlIjogIjIwMjYtMTAtMTQiLAogICAgICAic2lkZSI6ICJzZWxsIiwKICAgICAgInF0eSI6IDEyLAogICAgICAicHJpY2UiOiA3MzkuMjM2NywKICAgICAgImZpbGxlZF9hdCI6ICIyMDI2LTEwLTE0VDEzOjMyOjQ2LjkyMjcxOVoiLAogICAgICAiY2xpZW50X29yZGVyX2lkIjogImFuaW9zLTIwMjYtMTAtMTMtc2VsbC1zdHgtMTM1IgogICAgfQogIF0sCiAgInJlcXVlc3RzIjogWwogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvYXV0aC9zZXNzaW9uIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9jb252ZXJzYXRpb25zL2FyY2hpdmVkLWZpbGwtb3duZXIiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2siLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svaG9sZGluZ3MiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZSIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3BhcGVyIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2NoYXJ0L1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlL3JlYWQvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2Vhcm5pbmdzL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9zdHJhdGVneS1zaW11bGF0aW9uL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9oaXN0b3J5L1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9jaGFydC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZS9yZWFkL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svaGlzdG9yeS9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2F1dGgvc2Vzc2lvbiIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvY29udmVyc2F0aW9ucy9hcmNoaXZlZC1maWxsLW93bmVyIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9jb252ZXJzYXRpb25zL2FyY2hpdmVkLWZpbGwtb3duZXIvY2JmYzU5NzgtMDc2Mi00YzljLWExNmMtNTllYzlkMDhiOGZiIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2hvbGRpbmdzIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3Nlc3Npb24tcHJpY2VzIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZSIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9wYXBlciIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9jaGFydC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZS9yZWFkL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc3RyYXRlZ3ktc2ltdWxhdGlvbi9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svaGlzdG9yeS9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svY2hhcnQvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUvcmVhZC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svZWFybmluZ3MvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2hpc3RvcnkvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0KICBdLAogICJvYnNlcnZhdGlvbnMiOiBbCiAgICB7CiAgICAgICJsYWJlbCI6ICJiZWZvcmUgcmVsb2FkIiwKICAgICAgImV4ZWN1dGlvblRleHQiOiAiQnJva2VyIG9yZGVycyBhbmQgZmlsbHMgwrcgcmVhZCBPY3QgMTksIDExOjU4IEFNIEVUXG5cbjAgb3JkZXJzIG9wZW4gYXQgdGhlIGJyb2tlclxuXG5ObyBmaWxscyDCtyAyMDI2LTEwLTE5XG5cblNvbGQgMTIgU1RYIEAgJDczOS4yNCDCtyBPY3QgMTQsIDIwMjYsIDA5OjMyOjQ2IEFNIEVUIiwKICAgICAgImNoYXJ0VGV4dCI6ICJDb25maXJtZWQgcGFwZXIgZmlsbHMgYXQgdGhlaXIgb3JpZ2luYWwgZGF0ZSwgcXVhbnRpdHkgYW5kIHByaWNlLiBUaGVzZSBhcmUgZXhlY3V0aW9ucywgbm90IGdyYWRlIHNpZ25hbHMgb3IgcmVzZWFyY2ggZmlsbHMuXG5cbjIwMjYtMTAtMTQgwrcgOTozMiBBTSBFVCDCtyBTRUxMIDEyIEAgJDczOS4yNCIsCiAgICAgICJsZWdhY3lUZXh0cyI6IFtdLAogICAgICAibWFya2VyVGV4dHMiOiBbCiAgICAgICAgIlNFTEwgMTIgc2giCiAgICAgIF0KICAgIH0sCiAgICB7CiAgICAgICJsYWJlbCI6ICJhZnRlciByZWxvYWQiLAogICAgICAiZXhlY3V0aW9uVGV4dCI6ICJCcm9rZXIgb3JkZXJzIGFuZCBmaWxscyDCtyByZWFkIE9jdCAxOSwgMTE6NTggQU0gRVRcblxuMCBvcmRlcnMgb3BlbiBhdCB0aGUgYnJva2VyXG5cbk5vIGZpbGxzIMK3IDIwMjYtMTAtMTlcblxuU29sZCAxMiBTVFggQCAkNzM5LjI0IMK3IE9jdCAxNCwgMjAyNiwgMDk6MzI6NDYgQU0gRVQiLAogICAgICAiY2hhcnRUZXh0IjogIkNvbmZpcm1lZCBwYXBlciBmaWxscyBhdCB0aGVpciBvcmlnaW5hbCBkYXRlLCBxdWFudGl0eSBhbmQgcHJpY2UuIFRoZXNlIGFyZSBleGVjdXRpb25zLCBub3QgZ3JhZGUgc2lnbmFscyBvciByZXNlYXJjaCBmaWxscy5cblxuMjAyNi0xMC0xNCDCtyA5OjMyIEFNIEVUIMK3IFNFTEwgMTIgQCAkNzM5LjI0IiwKICAgICAgImxlZ2FjeVRleHRzIjogW10sCiAgICAgICJtYXJrZXJUZXh0cyI6IFsKICAgICAgICAiU0VMTCAxMiBzaCIKICAgICAgXQogICAgfQogIF0sCiAgImRpYWdub3N0aWNzIjogewogICAgInBhZ2VFcnJvcnMiOiBbXSwKICAgICJjb25zb2xlRXJyb3JzIjogW10sCiAgICAiZmFpbGVkUmVxdWVzdHMiOiBbXSwKICAgICJiYWRSZXNwb25zZXMiOiBbXSwKICAgICJ1bmV4cGVjdGVkUmVxdWVzdHMiOiBbXSwKICAgICJmb3JiaWRkZW5Xcml0ZXMiOiBbXQogIH0KfQ==",
+                            "contentType": "application/json",
+                            "name": "archived-fill-evidence"
+                          },
+                          {
+                            "contentType": "application/zip",
+                            "name": "trace",
+                            "path": "/tmp/archived-fill-identity-green-20261019-artifacts/archived-paper-fill-identi-9f270-al-executions-across-reload/trace.zip"
+                          }
+                        ],
+                        "duration": 4343,
+                        "errors": [],
+                        "parallelIndex": 0,
+                        "retry": 0,
+                        "startTime": "2026-10-19T15:58:30.057Z",
+                        "status": "passed",
+                        "stderr": [],
+                        "stdout": [],
+                        "workerIndex": 0
+                      }
+                    ],
+                    "status": "expected",
+                    "timeout": 60000
+                  }
+                ],
+                "title": "rounded identified archived fill history conserves original executions across reload"
+              }
+            ],
+            "title": "archived-paper-fill-identity.spec.ts"
+          }
+        ]
+      },
+      "path": "/tmp/archived-fill-identity-green-20261019-results.json",
+      "sha256": "fe490757dc57db3ded09b4cf7be544a32758df18ef562c3e75241f7a6856f3e9"
+    },
+    {
+      "bytes": 15075,
+      "original": {
+        "config": {
+          "argv": [
+            "/Users/animallya/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/node_modules/@playwright/test/cli.js",
+            "test",
+            "--config=/tmp/working-partial-browser-green-20261019.config.mjs"
+          ],
+          "configFile": "/tmp/working-partial-browser-green-20261019.config.mjs",
+          "failOnFlakyTests": false,
+          "forbidOnly": false,
+          "fullyParallel": false,
+          "globalSetup": null,
+          "globalTeardown": null,
+          "globalTimeout": 0,
+          "grep": {},
+          "grepInvert": null,
+          "maxFailures": 0,
+          "metadata": {
+            "actualWorkers": 1
+          },
+          "preserveOutput": "always",
+          "projects": [
+            {
+              "id": "",
+              "metadata": {
+                "actualWorkers": 1
+              },
+              "name": "",
+              "outputDir": "/tmp/working-partial-browser-green-20261019-artifacts",
+              "repeatEach": 1,
+              "retries": 0,
+              "testDir": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e",
+              "testIgnore": [],
+              "testMatch": [
+                "archived-paper-fill-identity.spec.ts"
+              ],
+              "timeout": 30000
+            }
+          ],
+          "quiet": false,
+          "reportSlowTests": {
+            "max": 5,
+            "threshold": 300000
+          },
+          "reporter": [
+            [
+              "list",
+              null
+            ],
+            [
+              "json",
+              {
+                "outputFile": "/tmp/working-partial-browser-green-20261019-results.json"
+              }
+            ]
+          ],
+          "rootDir": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e",
+          "shard": null,
+          "tags": [],
+          "updateSnapshots": "missing",
+          "updateSourceMethod": "patch",
+          "version": "1.62.1",
+          "webServer": {
+            "command": "/usr/local/bin/python3 -m http.server 5187 --bind 127.0.0.1 --directory /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/dist",
+            "reuseExistingServer": false,
+            "url": "http://127.0.0.1:5187"
+          },
+          "workers": 1
+        },
+        "errors": [],
+        "stats": {
+          "duration": 16991.932999999997,
+          "expected": 1,
+          "flaky": 0,
+          "skipped": 0,
+          "startTime": "2026-10-19T16:05:32.107Z",
+          "unexpected": 0
+        },
+        "suites": [
+          {
+            "column": 0,
+            "file": "archived-paper-fill-identity.spec.ts",
+            "line": 0,
+            "specs": [
+              {
+                "column": 1,
+                "file": "archived-paper-fill-identity.spec.ts",
+                "id": "eb307a1b13b7e7a7b96c-3c3c5d53b8c2a0c6ded6",
+                "line": 218,
+                "ok": true,
+                "tags": [],
+                "tests": [
+                  {
+                    "annotations": [],
+                    "expectedStatus": "passed",
+                    "projectId": "",
+                    "projectName": "",
+                    "results": [
+                      {
+                        "annotations": [],
+                        "attachments": [
+                          {
+                            "body": "ewogICJyZWNvcmRlZCI6IFsKICAgIHsKICAgICAgImNsaWVudF9vcmRlcl9pZCI6ICJhbmlvcy0yMDI2LTEwLTEzLWJ1eS1zdHgtNyIsCiAgICAgICJzeW1ib2wiOiAiU1RYIiwKICAgICAgInNpZGUiOiAiYnV5IiwKICAgICAgInF0eSI6IDIsCiAgICAgICJwcmljZSI6IDEwMS4yNSwKICAgICAgImZpbGxlZF9hdCI6ICIyMDI2LTEwLTE0VDEzOjMxOjAwWiIsCiAgICAgICJzZXNzaW9uIjogIjIwMjYtMTAtMTMiLAogICAgICAiY3JlYXRlZF9hdCI6ICIyMDI2LTEwLTE0VDEzOjMwOjAwWiIsCiAgICAgICJyZWNvbmNpbGVkX2F0IjogbnVsbCwKICAgICAgIm9yaWdpbmFsX3F0eSI6IDgsCiAgICAgICJzb3VyY2UiOiAicmVjb3JkZWRfcGFwZXJfam91cm5hbCIsCiAgICAgICJleGVjdXRpb24iOiB7CiAgICAgICAgImRlY2lzaW9uX2F0IjogIjIwMjYtMTAtMTNUMjM6NDU6MDBaIiwKICAgICAgICAicmVmZXJlbmNlX3ByaWNlIjogMTAwLAogICAgICAgICJyZWZlcmVuY2Vfc2Vzc2lvbiI6ICIyMDI2LTEwLTEzIiwKICAgICAgICAicmVmZXJlbmNlX3NvdXJjZSI6ICJzeW50aGV0aWMgb3JpZ2luYWwgZGFpbHkgY2xvc2UiLAogICAgICAgICJjcmVhdGVkX2F0IjogIjIwMjYtMTAtMTRUMTM6MzA6MDBaIiwKICAgICAgICAic3VibWl0dGVkX2F0IjogIjIwMjYtMTAtMTRUMTM6MzA6MDFaIiwKICAgICAgICAiZmlsbGVkX2F0IjogIjIwMjYtMTAtMTRUMTM6MzE6MDBaIgogICAgICB9CiAgICB9CiAgXSwKICAiYXJjaGl2ZWQiOiBbXSwKICAicmVxdWVzdHMiOiBbCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9hdXRoL3Nlc3Npb24iLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2NvbnZlcnNhdGlvbnMvYXJjaGl2ZWQtZmlsbC1vd25lciIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzayIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9ob2xkaW5ncyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3Nlc3Npb24tcHJpY2VzIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZSIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9wYXBlciIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9jaGFydC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZS9yZWFkL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc3RyYXRlZ3ktc2ltdWxhdGlvbi9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svaGlzdG9yeS9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svY2hhcnQvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUvcmVhZC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svZWFybmluZ3MvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2hpc3RvcnkvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9hdXRoL3Nlc3Npb24iLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2NvbnZlcnNhdGlvbnMvYXJjaGl2ZWQtZmlsbC1vd25lciIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvY29udmVyc2F0aW9ucy9hcmNoaXZlZC1maWxsLW93bmVyL2I5OTNlNTFmLTVjZTgtNGY2Ni04MjY3LWFjNWQ5NGVjODBlMSIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzayIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9ob2xkaW5ncyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9saXZlIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL3Nlc3Npb24tcHJpY2VzIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZSIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9wYXBlciIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9jaGFydC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svbGl2ZS9yZWFkL1NUWCIsCiAgICAgICJjb21wbGV0ZWQiOiB0cnVlLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L2FyY2hpdmVkLWZpbGwtb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svc3RyYXRlZ3ktc2ltdWxhdGlvbi9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svaGlzdG9yeS9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svY2hhcnQvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2xpdmUvcmVhZC9TVFgiLAogICAgICAiY29tcGxldGVkIjogdHJ1ZSwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9hcmNoaXZlZC1maWxsLW93bmVyL2Rlc2svZWFybmluZ3MvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvYXJjaGl2ZWQtZmlsbC1vd25lci9kZXNrL2hpc3RvcnkvU1RYIiwKICAgICAgImNvbXBsZXRlZCI6IHRydWUsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0KICBdLAogICJvYnNlcnZhdGlvbnMiOiBbCiAgICB7CiAgICAgICJsYWJlbCI6ICJ3b3JraW5nIHBhcnRpYWwgYmVmb3JlIHJlbG9hZCIsCiAgICAgICJleGVjdXRpb25UZXh0IjogIkJyb2tlciBvcmRlcnMgYW5kIGZpbGxzIMK3IHJlYWQgT2N0IDE5LCAxMjowNSBQTSBFVFxuXG4wIG9yZGVycyBvcGVuIGF0IHRoZSBicm9rZXJcblxuTm8gZmlsbHMgwrcgMjAyNi0xMC0xNVxuXG5Cb3VnaHQgMiBTVFggQCAkMTAxLjI1IMK3IE9jdCAxNCwgMjAyNiwgMDk6MzE6MDAgQU0gRVQiLAogICAgICAiY2hhcnRUZXh0IjogIkNvbmZpcm1lZCBwYXBlciBmaWxscyBhdCB0aGVpciBvcmlnaW5hbCBkYXRlLCBxdWFudGl0eSBhbmQgcHJpY2UuIFRoZXNlIGFyZSBleGVjdXRpb25zLCBub3QgZ3JhZGUgc2lnbmFscyBvciByZXNlYXJjaCBmaWxscy5cblxuMjAyNi0xMC0xNCDCtyA5OjMxIEFNIEVUIMK3IEJVWSAyIEAgJDEwMS4yNSIsCiAgICAgICJsZWdhY3lUZXh0cyI6IFtdLAogICAgICAibWFya2VyVGV4dHMiOiBbCiAgICAgICAgIkJVWSAyIHNoIgogICAgICBdCiAgICB9LAogICAgewogICAgICAibGFiZWwiOiAid29ya2luZyBwYXJ0aWFsIGFmdGVyIHJlbG9hZCIsCiAgICAgICJleGVjdXRpb25UZXh0IjogIkJyb2tlciBvcmRlcnMgYW5kIGZpbGxzIMK3IHJlYWQgT2N0IDE5LCAxMjowNSBQTSBFVFxuXG4wIG9yZGVycyBvcGVuIGF0IHRoZSBicm9rZXJcblxuTm8gZmlsbHMgwrcgMjAyNi0xMC0xNVxuXG5Cb3VnaHQgMiBTVFggQCAkMTAxLjI1IMK3IE9jdCAxNCwgMjAyNiwgMDk6MzE6MDAgQU0gRVQiLAogICAgICAiY2hhcnRUZXh0IjogIkNvbmZpcm1lZCBwYXBlciBmaWxscyBhdCB0aGVpciBvcmlnaW5hbCBkYXRlLCBxdWFudGl0eSBhbmQgcHJpY2UuIFRoZXNlIGFyZSBleGVjdXRpb25zLCBub3QgZ3JhZGUgc2lnbmFscyBvciByZXNlYXJjaCBmaWxscy5cblxuMjAyNi0xMC0xNCDCtyA5OjMxIEFNIEVUIMK3IEJVWSAyIEAgJDEwMS4yNSIsCiAgICAgICJsZWdhY3lUZXh0cyI6IFtdLAogICAgICAibWFya2VyVGV4dHMiOiBbCiAgICAgICAgIkJVWSAyIHNoIgogICAgICBdCiAgICB9CiAgXSwKICAiZGlhZ25vc3RpY3MiOiB7CiAgICAicGFnZUVycm9ycyI6IFtdLAogICAgImNvbnNvbGVFcnJvcnMiOiBbXSwKICAgICJmYWlsZWRSZXF1ZXN0cyI6IFtdLAogICAgImJhZFJlc3BvbnNlcyI6IFtdLAogICAgInVuZXhwZWN0ZWRSZXF1ZXN0cyI6IFtdLAogICAgImZvcmJpZGRlbldyaXRlcyI6IFtdCiAgfSwKICAiYWN0aXZpdHlTZXNzaW9uIjogIjIwMjYtMTAtMTUiCn0=",
+                            "contentType": "application/json",
+                            "name": "archived-fill-evidence"
+                          },
+                          {
+                            "contentType": "application/zip",
+                            "name": "trace",
+                            "path": "/tmp/working-partial-browser-green-20261019-artifacts/archived-paper-fill-identi-c41f2-y-empty-activity-and-reload/trace.zip"
+                          }
+                        ],
+                        "duration": 6092,
+                        "errors": [],
+                        "parallelIndex": 0,
+                        "retry": 0,
+                        "startTime": "2026-10-19T16:05:35.825Z",
+                        "status": "passed",
+                        "stderr": [],
+                        "stdout": [],
+                        "workerIndex": 0
+                      }
+                    ],
+                    "status": "expected",
+                    "timeout": 60000
+                  }
+                ],
+                "title": "working partial execution remains visible after nextday empty activity and reload"
+              }
+            ],
+            "title": "archived-paper-fill-identity.spec.ts"
+          }
+        ]
+      },
+      "path": "/tmp/working-partial-browser-green-20261019-results.json",
+      "sha256": "3c0741266c244229da05fa9e6a3516e24add89ca6b2b2e227300e03501e240fb"
+    },
+    {
+      "bytes": 4283,
+      "original": "\n\u001b[1m==> Current state\u001b[0m\nrunning 50d62c63; checkout at 50d62c63 on main\n\n\u001b[1m==> Fetching (the checkout is not touched until the gate passes)\u001b[0m\n\n\u001b[1m==> Deciding what to rebuild\u001b[0m\nwill rebuild after the gate: backend discovery-worker presentation-worker local-capabilities memory-maintenance storage-collection frontend gateway\n\n\u001b[1m==> Gating\u001b[0m\ngating c159473d in /home/animallya96/deploy/.gate/c159473d\n==> Migrating anios_gate_deploy to head\n Image anios-functional-tests:deploy-gate Building \n Image anios-functional-tests:deploy-gate Built \n Container anios-functional-tests-run-e3340991d9c3 Creating \n Container anios-functional-tests-run-e3340991d9c3 Created \nINFO  [alembic.runtime.migration] Context impl PostgresqlImpl.\nINFO  [alembic.runtime.migration] Will assume transactional DDL.\n==> Gating on backend/tests\n    (a skipped test counts as a failure here)\n Image anios-functional-tests:deploy-gate Building \n#1 [internal] load local bake definitions\n#1 reading from stdin 602B done\n#1 DONE 0.0s\n\n#2 [internal] load build definition from Dockerfile\n#2 transferring dockerfile: 3.90kB done\n#2 DONE 0.0s\n\n#3 [internal] load metadata for docker.io/library/python:3.12-slim\n#3 DONE 0.0s\n\n#4 [internal] load .dockerignore\n#4 transferring context: 413B done\n#4 DONE 0.0s\n\n#5 [base 1/7] FROM docker.io/library/python:3.12-slim\n#5 DONE 0.0s\n\n#6 [internal] load build context\n#6 transferring context: 154.81kB 0.1s done\n#6 DONE 0.1s\n\n#7 [base 7/7] COPY . .\n#7 CACHED\n\n#8 [base 2/7] WORKDIR /app\n#8 CACHED\n\n#9 [base 3/7] RUN apt-get update && apt-get install -y     build-essential     libpq-dev     git     graphviz     && rm -rf /var/lib/apt/lists/*\n#9 CACHED\n\n#10 [base 5/7] COPY requirements.txt .\n#10 CACHED\n\n#11 [base 4/7] COPY docker/classic-tls-groups.cnf /etc/ssl/classic-tls-groups.cnf\n#11 CACHED\n\n#12 [base 6/7] RUN pip install --no-cache-dir -r requirements.txt\n#12 CACHED\n\n#13 [test 1/1] RUN pip install --no-cache-dir \"pytest>=8.0.0\" \"pytest-asyncio>=0.23.0\"     \"pytest-xdist>=3.5.0\" \"ruff>=0.4.0\"     \"exchange-calendars>=4.13.2,<5.0.0\"\n#13 CACHED\n\n#14 exporting to image\n#14 exporting layers done\n#14 writing image sha256:f6a1b59d0146c1bc35b5af70223b3852aaf79d90c450eff18381f94ed8e72638 done\n#14 naming to docker.io/library/anios-functional-tests:deploy-gate done\n#14 DONE 0.0s\n\n#15 resolving provenance for metadata file\n#15 DONE 0.0s\n Image anios-functional-tests:deploy-gate Built \n Container anios-functional-tests-run-3776db978559 Creating \n Container anios-functional-tests-run-3776db978559 Created \n\n==================================== ERRORS ====================================\n___ ERROR collecting backend/tests/test_working_partial_execution_history.py ___\nImportError while importing test module '/app/backend/tests/test_working_partial_execution_history.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/usr/local/lib/python3.12/importlib/__init__.py:90: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend/tests/test_working_partial_execution_history.py:11: in <module>\n    from test_partial_fill_receipt_absence import (\nE   ModuleNotFoundError: No module named 'test_partial_fill_receipt_absence'\n=============================== warnings summary ===============================\n<frozen abc>:106\n<frozen abc>:106\n<frozen abc>:106\n<frozen abc>:106\n  <frozen abc>:106: DeprecationWarning: BaseAgentConfig is deprecated and will be removed in future versions. Config is now loaded via reflection so the separate config class is no longer needed.\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nERROR backend/tests/test_working_partial_execution_history.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n13 skipped, 4 warnings, 1 error in 14.58s\n\n==> Gate FAILED\nUnit suite failed on c159473d.\nNOTHING CHANGED: /home/animallya96/deploy/anios is still at 50d62c63;\n                 no image was built or tagged and no container was restarted.\nFix or delete the failing test - a red suite hides the next regression.\ndeploy.sh: exiting with status 1 at line 777 (exit 1)\n",
+      "path": "/tmp/fill-consistency-release-20261019-v1/canonical-deploy.log",
+      "sha256": "c333a3819fca6e281293a9435c742689414fb7357e0a8cc501e4fe557a21761f"
+    },
+    {
+      "bytes": 73,
+      "original": {
+        "exit_code": 1,
+        "finished_at": "2026-10-19T16:08:37.294978+00:00"
+      },
+      "path": "/tmp/fill-consistency-release-20261019-v1/canonical-result.json",
+      "sha256": "e915a3df3a60634196855dae824960c49cfaa0d52ea3c8837f2a0f8337ebb602"
+    },
+    {
+      "bytes": 514,
+      "original": {
+        "backend": {
+          "cid": "3e4edfca9185e0cfbc108e4ed1628ec18cbc4a795e8c559b19d874600ed84b59",
+          "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+          "restarts": 0,
+          "state": "running"
+        },
+        "gateway": {
+          "cid": "4d688649175bdf45177f0719f8fe758a35c4d6f7c3fcf0f7c16606f85f1be9d3",
+          "image": "sha256:227db6e3476345055851cfb7c3a10ede01e556adcc423e47f672d7aa443edd07",
+          "restarts": 0,
+          "state": "running"
+        },
+        "head": "50d62c63e654a86ddfaa01cdc70b475081e60cb4"
+      },
+      "path": "/tmp/fill-consistency-release-20261019-v1/after.json",
+      "sha256": "58badafd6d8e23489ec7f1224fa318e9de044bf2e1b7f99c41852de0779e0886"
+    },
+    {
+      "bytes": 31,
+      "original": {
+        "upstream": "origin/main"
+      },
+      "path": "/tmp/fill-consistency-release-20261019-v1/upstream-restoration.json",
+      "sha256": "dae96103f15daab6852e948cd86cd4ab2875d8f185a4b7803fcbaab10e89cc42"
+    }
+  ],
+  "production_predecessor": "50d62c63e654a86ddfaa01cdc70b475081e60cb4",
+  "schema": "production-fill-consistency-evidence/1",
+  "unverified": [
+    "Corrected canonical deployment and actual new runtime/static artifact acceptance are recorded separately after completion.",
+    "Fresh naturally scheduled ordinary decision through real paper orders/fills, persistence and authenticated UI.",
+    "Complete historical execution identities for anonymous legacy rows without original linkage or coverage evidence.",
+    "Original historical economic/timing acceptance and private physical filesystem/full-horizon/model-memory admission remain separate and incomplete."
+  ],
+  "verified": [
+    "Native persistence failure reproduced, then corrected with actual serializer/readback and later original terminal receipt.",
+    "Chart duplicate quantity reproduced on exact previously deployed assets; corrected compiled browser cases conserve original identities and preserve anonymous evidence separately.",
+    "Working partial projection failure reproduced; corrected strict partial projection passes native readback and leaves terminal-only decision conclusion unchanged.",
+    "139 candidate backend tests passed; corrected package-qualified import passed targeted18. Five distinct compiled browser cases passed across separate cohorts with empty diagnostics.",
+    "Main integration TypeScript passed; no whole-main browser or deployment claim."
+  ]
+}

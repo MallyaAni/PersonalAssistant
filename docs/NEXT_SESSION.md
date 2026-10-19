@@ -1,5 +1,48 @@
 # Next session
 
+## 2026-10-19 — Corrected live fill repair is in canonical gates; NEVER duplicate release
+
+Current production-based candidate6ae6dde29e64f4589c46dac0d9b62ed4562524c2
+on codex/trading-fill-consistency-20261019 contains the same product bytes as
+c159473d, followed by package-import and exact-CID test-contract corrections.
+Main integration31558142 is pushed; never deploy historical main wholesale.
+First two canonical attempts FAILED BEFORE production changes, as detailed
+below. The corrected15-path v3 release is RUNNING, not delivered/verified live.
+
+FIRST poll this thread's existing exec session56555. Exact owned controller is
+/home/animallya96/scratch/release_fill_consistency_20261019_v3.py; sole target
+6ae6dde29e64f4589c46dac0d9b62ed4562524c2. Source9581B/SHA
+58345560bbe05a4701dfb46697a77bce9a71223af9018c12b0ce246f5a8b66ca;
+normal scripts/deploy.sh, no skip or clock flags. Log/claim/result live under
+Spark1 scratch/fill-consistency-release-20261019-v3; matching local root retains
+SSH stdout/stderr and eventual transport result. If handle is missing, inspect
+the exact owned live process and canonical children before inferring stopped.
+Never restart from a timeout, log silence or absent terminal file alone.
+
+After terminal success, run the already READONLY-reviewed one-time observer
+/tmp/observe_fill_consistency_deployed_v3_20261019.py: binds actual backend files
+(including history projection outside31-map), runtime IDs and four gateway assets,
+compares public JS SHA and saves exact static files. Assert production worktree
+still clean at6ae6dde2 before using it. Then execute the NEW5 browser cases on
+those actual assets with a fresh output/config root, not the old source build.
+No whole-distribution or authenticated-account claim from four copied files.
+Do not execute the observer before successful v3release-result exists.
+
+Predeployment source/RED/green/failed-v1 evidence is preserved in
+research/fill-consistency-candidate-proof-2026-10-19.json,183487B/SHA
+3edd751e09045035d3731b940bb51f20d0bbeb705f4ba8cb6af5a32374cf3fba.
+It records the earlier2cea candidate and is NOT final deployment proof. Original
+v2fullgate failed10862pass/2FAIL/93skip/6xfail/439warnings/25subtests/582.98s;
+both exact expected output dictionaries now require original IDs and targeted2
+passed1.29s. All product bytes remain unchanged; do not weaken gates/assertions.
+Main TypeScript passed; no whole-main browser/build acceptance claim.
+
+Keep goal/heartbeat ACTIVE; complete actual deployment/artifact checks, then
+observe the naturally scheduled19:30ET ordinary decision and subsequent intraday
+orders/fills/persistence/UI. Never force market_daily/market_balancer or use fake
+clocks. Signed-in live UI and missing legacy identity remain UNVERIFIED. All
+private/historical failure and physical-admission restrictions below still hold.
+
 ## 2026-10-19 — Production-based fill consistency candidate
 
 This candidate starts from deployed50d62c63, not historical main. The user goal
