@@ -1,5 +1,55 @@
 # Next session
 
+## 2026-10-19 — Human approved account repair and conditional reset; source preflight refused before change
+
+This section supersedes the older pending-account-approval notes below. The human
+explicitly approved the ownership correction and then authorized resetting the
+paper account if appropriate. Do not ask for either permission again. Neither
+approval is a request to erase history automatically or force a strategy run.
+
+ONE authorized controller attempt used exact reviewed90611f/helper1478 sources,
+the verbatim human grant, and fresh exclusive controls/output namespaces. SSH
+returned1: before-backend-sources, running as1000:1000, could not read
+/app/backend/agents/trading/desk/intraday_orders.py (PermissionError). All host
+31-source hashes and current backend identity had passed; container31-source
+verification did not finish. The controller stopped BEFORE expectation.json,
+helper creation, protected account open or ownership change. Incomplete receipt
+has owned_helper_cid:null. Preserve failedv1; never replay/adopt its output root.
+
+One NEW concise asynchronous question asks permission for hash-only verification
+of the31 strategy source files through the backend's existing root identity,
+because earlier human instructions prohibit bypassing denied reads. Its answer
+is still pending at this checkpoint; do not repeat it or infer it from heartbeat
+text. Original ownership authority has arrived; this is a distinct observed
+source-read boundary. No privileged source retry has occurred.
+
+Prepared v2 controller is SOURCE ONLY/UNRUN:
+/tmp/live_paper_owner_repair_controller_authorized_source_check_20261019.py,
+27402B/SHAaadd5b1f299088f2f6f4976be523a200114e9d2d1d44738375cc352a49f6e196.
+Exact comparison against90611f changes ONLY exclusive output/container v1→v2
+names and source-hash exec UID1000→root. All31 digests/runtime/known-writer/
+original-inode-size/native-lock/owner-verifier checks and helper1478 are unchanged.
+Do not dispatch until the new source-read authority arrives. Then use fresh
+controls and preserve failedv1. Never silently retarget changed account metadata.
+
+Independent read-only paper-broker assessment succeeded at21:23:25UTC, under
+container UID1000 with a transport allowing ONLY official paper GET /clock,
+/account, /positions and open-orders. Broker reports market closed,8 positions,
+0 open orders, equity88435.98/cash18786.74. No local state file was read; no
+orders/cancellations/account reset occurred. Evidence and original response are
+/tmp/paper-reset-assessment-20261019-v1; responseSHA301f12887715e81d28c383ead234a9a97bb1040c6aff5d214bd6c6a3007558f0.
+Installed GradeLedFundedPolicy plans from actual broker holdings and retains
+prior state; a policy change alone does not require an empty account. Deleting
+only local state would strand8 actual broker holdings and discard journal/IDs.
+Keep history for now; evaluate any clean-baseline reset against original state
+and broker lifecycle after the approved access repair, preserving an archive.
+No genuine sender/fill/signed-in UI acceptance or full completion claim follows.
+
+Normal git pull --rebase origin main now succeeded without network changes or
+resolver bypass. Prior DNS failures remain preserved. Current production878
+and closed gates are unchanged. Research proof:
+research/authorized-paper-repair-preflight-proof-2026-10-19.json.
+
 Latest documentation transport note: after the successful0a95adcf sync, the
 normal pull and push attempted for natural-status checkpointf4c261bb both failed
 again with GitHub hostname DNS resolution errors at18:56UTC (pull1/push128).

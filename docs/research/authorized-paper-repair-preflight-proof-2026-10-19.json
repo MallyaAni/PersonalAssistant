@@ -1,0 +1,58 @@
+{
+  "schema": "authorized-paper-repair-preflight/1",
+  "scope": "FAILED_SOURCE_PREFLIGHT_BEFORE_ACCOUNT_CHANGE_AND_READ_ONLY_RESET_ASSESSMENT",
+  "human_ownership_grant": "i’m giving you my approval for it. The paper account might need to be treated like we started it from scratch because the strategy is different now",
+  "human_conditional_reset_grant": "you can reset paper account if its the right thing to do",
+  "ownership_attempt": {
+    "controller_sha256": "90611f497f1ed847e687470ca2e515df42703b1962fdf1a385d84f6a1db8f389",
+    "helper_sha256": "1478eafe9096923159ad61fcb2f55fdd9ed2e0142666ccf3ea6fa758bc564fa6",
+    "authorization_sha256": "eb1bdc997dd51964a589cdbfc14583ecb645984208bfbbd9ccb46d9f21ec4634",
+    "local_transport_root": "/tmp/authorized-paper-owner-repair-20261019-v1",
+    "remote_output_root": "/home/animallya96/scratch/live-paper-owner-repair-20261019-v1",
+    "ssh_returncode": 1,
+    "first_failed_boundary": "before-backend-sources",
+    "failed_command_returncode": 1,
+    "failed_command_stderr": "Traceback (most recent call last):\n  File \"<string>\", line 8, in <module>\nPermissionError: [Errno 13] Permission denied: '/app/backend/agents/trading/desk/intraday_orders.py'\n",
+    "failed_command_stderr_sha256": "9c54218dc1473cc31b75dcfa2fe25fdb069a3a968138e7908bd61b7333bad793",
+    "owned_helper_cid": null,
+    "expectation_created": false,
+    "account_opened": false,
+    "ownership_changed": false,
+    "retry": false
+  },
+  "source_read_authority": {
+    "status": "PENDING_NEW_ASYNCHRONOUS_HUMAN_ANSWER",
+    "reason": "Existing instructions prohibit bypassing denied reads; hash-only source verification using backend root is a new observed boundary.",
+    "prepared_controller": "/tmp/live_paper_owner_repair_controller_authorized_source_check_20261019.py",
+    "prepared_controller_bytes": 27402,
+    "prepared_controller_sha256": "aadd5b1f299088f2f6f4976be523a200114e9d2d1d44738375cc352a49f6e196",
+    "status_of_prepared_controller": "SOURCE_ONLY_UNRUN",
+    "exact_changes": ["Exclusive output root v1 to v2", "Exclusive owned container name v1 to v2", "Backend source hashing UID1000 to root"],
+    "all_other_controller_bytes_equivalent_after_exact_substitutions": true,
+    "ast_parse": "PASS"
+  },
+  "broker_assessment": {
+    "observed_at": "2026-10-19T21:23:25.106360+00:00",
+    "scope": "READ_ONLY_OFFICIAL_PAPER_BROKER_NO_LOCAL_STATE",
+    "container_uid": 1000,
+    "local_output_root": "/tmp/paper-reset-assessment-20261019-v1",
+    "ssh_returncode": 0,
+    "stdout_sha256": "301f12887715e81d28c383ead234a9a97bb1040c6aff5d214bd6c6a3007558f0",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "client_source_sha256": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2",
+    "requests": ["GET /clock", "GET /account", "GET /positions", "GET /orders?status=open&limit=500"],
+    "market_open": false,
+    "position_count": 8,
+    "open_order_count": 0,
+    "equity": 88435.98,
+    "cash": 18786.74
+  },
+  "reset_assessment": {
+    "reset_performed": false,
+    "reason": "The installed grade-led planner accepts existing broker holdings; deleting local state alone would lose recovery and journal identities while leaving eight broker positions. Further original-state inspection follows ownership repair.",
+    "archive_required_before_any_conditional_reset": true
+  },
+  "production_commit": "878cbc53db56f635c8dd9ee6a3307e0d4f1c6b2f",
+  "remaining_unverified": ["Completed ownership correction", "Natural strategy run", "Original orders and persisted fills", "Signed-in real-account dashboard acceptance"],
+  "diagram_impact": "NONE"
+}
