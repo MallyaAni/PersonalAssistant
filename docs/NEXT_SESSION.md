@@ -1,5 +1,187 @@
 # Next session
 
+## 2026-10-19 — Exact phase-owned native saved-byte verification VERIFIED
+
+Read research/final-saved-bytes-proof-2026-10-19.json:
+ce63a828412faa932751ba7401a5a24b87df309e0125b85dbb39af072fe42175,
+175891B. Sourcea7ecf12b25927ed34bea4320a7d872df5d8d7b49/tree
+e72ea29333fa42a710fe3e3ea7c56a94696e534a passed NINE NEW assertions in THREE
+bounded cohorts at ONE tree. All actual containers exit0/noOOM;0test failures/
+errors/skips. Local ENOSPC caused a separate FAILED C transport tail: original
+SSH return remains UNKNOWN/missing, never reconstructed as success. No test,
+runtime, pool, completed getter or closed gate replay/adoption.
+
+PRODUCT: PRIVATE Final schema3 plus synthetic-final-saved-native-bytes/1 replace
+TWO post-save paper.load_state→native re-encoding checks with actual streaming
+byte verification. The typed binding includes exact source/account/identity/
+OUTCOME phase/submission-head/declaration/prepared-input/final-reservation/
+native-IO-reservation SHA, sole original receipt SHA/slot and state dev/inode/
+rawSHA/length. IO/6 requires exactly one phase-owned save at the original
+allowance first/aux before.next_slot, with its exact original preimage. Frozen
+canonical descriptor/receipt/evidence bytes and strict integer fields refuse
+bool/equal-value substitutions. Live verification authenticates the active
+lease, original cursor/control, exact writer.completed receipt and actual held/
+named inode bytes immediately after save and again before Store commit. Generic
+latest completion alone is insufficient.
+
+Prepared metadata persists the typed descriptor; final receipt links its digest
+without a hash cycle and requires exact raw-component byte equality. Historical
+read/recovery validates the ORIGINAL phase receipt/anchor/raw component/evidence,
+never the latest native writer completion/current account path. Same-session
+Nightly followed by original final recovery passes. Original stable RESULT_SCHEMA
+final/1 remains separate from Final3; all uncertainty stays inside durable poison/
+finally handling. Native IO/writer/Store/settlement/Cycle/Nightly full bytes are
+unchanged. Ordinary Store DELETE+FILE/schema/paths/caps/guards, absent native birth
+destination, public genuine and old bound-CAS raw-final refusals remain unchanged.
+No hostile Python sandbox/deep immutability/advisory-lock isolation claim.
+
+This removes two JSON rematerializations, NOT all late allocation. The actual
+profile still observes native apply_settlements PaperState(**asdict(state))
+after flush; orders deepcopy/new journal/pending/result graphs, evidence/encoding/
+native save remain late. Full832MB/horizon/model-RAM admission stays UNVERIFIED.
+
+A: CID0e931ba004e39a1ace0fb97e3ba5e81201609194d53eac0dd3902d8c675d15b1/f612,
+exit0/noOOM2026-10-19T04:20:30.321743345Z;3pass0fail/error/skip,
+44.016044658608735s/57040KiB. Actual full private birth→stages→desired8/submitted5/
+filled5 partial native journal→Store OUTCOME→reopen/original recovery→same-session
+Nightly→historical original final recovery passes, policy2/five native saves/
+exact >256KiB NaN+Unicode native bytes. Native code profiler (no replacement)
+trace is [loadFalse,input_copyFalse,flushTrue,native_asdictTrue], ZERO post-save
+native JSON loads; both original/post-Nightly recovery traces[].
+Two equal slot3 descriptors observed at the two live verification points.
+Immediate actual native-byte tamper and authentic foreign birth receipt both
+refuse commit/replay while retaining real filled5/native save. No rollback claim.
+Rawproof42f32fe03a0337ea8a6948aa4fe88c0b7a4559f52b853c8932b16cbc38204689/75210B.
+
+B: CIDacd25aad57551482cea5477c119645fedbdc0e67dc4125a10708c827dc6230b2/f612,
+exit0/noOOM2026-10-19T04:21:32.925215638Z;3pass0fail/error/skip,
+37.421718559227884s/56092KiB. Frozen descriptor slot→bool and actual precommit
+native-byte mutations refuse before Store OUTCOME, retain filled5/save4 and
+repeated paused original recovery. Strict finite metadata NEGATIVE units inside
+a real private final cover bool/wrong slot, duplicate save, wrong prior,
+bool byte length/wrong hash; these units alone are not whole Cycle admission.
+Rawproof9bd9a3651a306dbe6b3af5cb934310f94833cedf98731aa85ed07f063fb11e91/73233B.
+
+C: CID630d2a7e95b5f3056f66916edf0f5385b81a14f31077a815696f9694791d9a6c/f612,
+exit0/noOOM2026-10-19T04:22:55.490009829Z;3pass0fail/error/skip,
+39.90029850509018s/57552KiB. Actual owned PID7 SIGKILL after first saved-byte
+verification before prepared, PID8 after prepared before commit, PID9 after
+authoritative OUTCOME before original result. All-9/reaped; each writer next4/
+slot3/frozen descriptor/exact receipt/current bytes and broker filled5 retained.
+First two remain paused; committed recovers ONLY original missing result/seals,
+no native input load/flush/fold/save/capture/append/SQL generation/account restore.
+Three protocol boundary process cuts, NOT powerloss/inside native syscall/SQLite
+commit proof. Full packed broker witnesses are DATA validation, never restore.
+Rawproof20576619778af65d80b1ddde2277e5e2e103983696d504817dc3bfa7ea1bee45/106947B.
+
+LOCAL TRANSPORT FAILURE preserved: B's first results getter failed ENOSPC opening
+the FIRST results-only-argv.json BEFORE Popen/SSH; all phase files remained absent.
+A premature local DATA checker then failed ENOENT before any input read/hash/
+output. Its later first actual retrieval/fold passed; no remote getter replay.
+C's original execute stdout/stderr are zero bytes and execute-exit.json absent:
+ENOSPC in the finally receipt write masked the underlying SSH return. It remains
+UNKNOWN; original outer failed1 is not relabelled. No C execution retry.
+A distinct reviewed eight-fixed-file DATA observation recovered the already
+retained C proof/log/cid/create argv/before+after/pins/stage; raw64B cid matches
+both inspect IDs. Its own SSH exits0/emptyerr. Separate C DATA checker report
+explicitly retains original missing terminal/SSHnull/localENOSPC versus actual
+container0. Seven-file redundant C getter was never created/executed.
+Reasons retained /tmp/final-saved-bytes-local-enospc-20261019.json. Raw proofs/
+seven fixed A/B results and eight C diagnostic results stay in
+/tmp/final-saved-bytes-20261019-v1-{a,b,c} plus matching Spark1 scratch.
+
+Only ONE exact observed regular nlink1 regenerable Homebrew Python3.14.7 source
+download31414918B/dev16777223/inode67827712 was removed, restoring52633600B.
+Installed Python/dependencies/source/backups/prior proofs untouched; no cachewide
+cleanup. A collector source edit also refused ENOSPC before body use; unchanged
+31877B/9e42b3f9 draft was observed after refusal, then separately edited. Initial
+unmeasured child literal counter removed, DATA helper stale test filename fixed,
+and C unknown-tail handling prepared/reviewed BEFORE respective first body use;
+no assertions/caps/guards weakened. Two apply_patch input mismatches refused
+before mutation, then exact source was read/corrected. No native/test failure.
+
+ROOT+healthy READONLY reviewer independently reconstructed all9 complete
+inventories:4644CAS+333metadata+63SQL+36directory-metadata+54native-directory =
+5130 globally distinct original identities/every name/all fields unchanged.
+Each case CAS34344960/meta9183232/SQL1843200/directory-metadata790528 allocated
+AND logicalB. Native state body mutations are intentional negative controls/
+original writer semantics, outside unchanged metadata-pool inventories.
+Complete476130B inventories retained33374B gzip. Six canonical cut/exit strings
+27746B reproduce every SHA/length; original slot receipt digests also checked.
+
+22 copied product/test pins/31payloads510124B<524288;33source/47native fullSHA
+physical bookends/writer globals unchanged/forbidden[]. Whole Stage48956B copied;
+FOUR unchanged whole SOURCE-only codec/CAS/physical/current Nightly63878B RO
+references. Fourth reference swapped from Stage to current Nightly355b from
+closed final-input-A SOURCE, exact original dev66306/inode60967257/times
+1792382248013453315 bound prerequisite→precreate→poststop/inner source bookends.
+No old account/output/pools/broad-tree fallback. Whole CLI text two helper
+CodeTypes pins1655map, no CLI startup import. Combined executed closure exceeds
+512KiB; copied cap NOT closure/RAM. Context/policy/program/calendar/source-manifest
+globals SYNTHETIC/constructors bypassed. Eight FULL mounts equal by unique
+Destination; raw order Atrue/Bfalse/Cfalse. HConlyOomKillDisablefalse→null.
+UID1000/noneRO1CPU512MiB=swap/PIDs32/tmp64/dropALL/no-new-privileges/CPU30/
+native1MiBFSIZE/source-controls-log256KiB/productioncaps unchanged.
+A/B five phases0/emptyerr. C preflight/stage/copy/diagnostic0/emptyerr, original
+execute SSH UNKNOWN/local failed tail; actual stopped container0 independently
+bound. Sources/exact calls/fresh proofs/getters/full results/create/CID/runtime/
+all actual witness and physical links reviewed independently.
+
+Local DATA collector ONCE exit0:132inputs2458047B/four full held-read SHA/
+physical bookends; exclusive175891B proof/fsync/readback. Separate SOURCE4MiB+
+A/B/C CONTROL2MiB each+EVIDENCE4MiB+DERIVED2MiB=16MiB maximum, NOT whole4MiB.
+Actual SOURCE2987996/A1728940/B1728940/C1728932/EVIDENCE2561330/DERIVED885734B.
+No local crash/kernel-FSIZE claim.19 new/changed product/test/runner/control/
+helper sources161 purpose functions/ASTwarnings/zeroBackspaces/diff PASS.
+Ruff unavailable/no fullunit/build/deploy/UI/model claim. Diagram:NONE.
+
+Prior heartbeat update is now OBSERVED delivered late: actual saved TOML ACTIVE/
+updated_at1792383594745/promptSHAba51c600f1a0de4d67c94e6840bf66490f117a2748152931601011b419e9b6c3
+contains0168b4e1, not yet a7ecf12b. Earlier request/cell8615 was never retried;
+its then-pending record below stays intact. Readback retained at
+/tmp/final-saved-bytes-automation-readback-20261019.json, outside132-input proof.
+
+NEXT CONCRETE PRODUCT TASK: this NEW9 saved-byte boundary is CLOSED. NEVER rerun
+its cohorts/preflight/stage/copy/tests/getters/diagnostic/collector or prior
+input9/submission9/failedA/save-slots9/namespace9/SQLite11/protocol13/outcome10/
+stage9/capability2/older closed gates for docs. Never adopt failed/OPEN/completed
+pools or reopen COMPLETE phases. Physical native rename/journal admission remains
+blocked on unavailable source/runtime/filesystem-bound allocator acknowledgement
+at original paper.save_state temporary.replace(path) paper.py:433, failure unlink
+and adapter parent fsync. Body fallocate/stat/names cannot reserve that capacity;
+capacity_reserved=False.
+
+Continue independent synthetic product work: FIRST inspect the current native
+paper.apply_settlements initial PaperState(**asdict(state)) allocation and the
+rest of that whole body, plus reconcile_raw's prior/settled/orders lifetime.
+Its unchanged API cannot consume a prepared clone; passing that clone as state
+still performs another asdict. A DISTINCT typed PRIVATE prepared-transition
+adapter may own the exact native-asdict output clone BEFORE flush and consume it
+once via an explicitly named source-bound DERIVED native tail after the single
+clone statement. Never label that tail unchanged native whole-code execution.
+Keep original prior for journal/pending/rebalance decisions, preserve old native
+module/default reconcile_raw semantics and release prior/output ownership on
+all paths. NEW bounded assertions must compare native JSON bytes against actual
+unchanged native apply_settlements on fresh independent inputs (including NaN,
+unresolved/open/terminal/rebalance and original-input preservation), then prove
+pre-asdict failure/no flush/original metadata-only recovery/full private graph.
+Do NOT pre-snapshot orders: flush changes execution fields. Orders copy,
+settlements/list/journal/evidence/encoding/save remain late; one moved allocation
+is NOT full832MB/native-model RAM admission. Preserve writer/Store/caps/public
+genuine refusal. Advance one coherent boundary, no provenance/ELF detours.
+
+Full native rename/journal/filesystem/native SQLite FILE mode/whole832MB horizon/
+load-save/deepcopy/serialization/model RAM/twohost/powerloss/whole genuine
+constructors/market_daily Resolver/sender/models/providers/actualcontext/calendar/
+economics/native operation/adoption/independent publication/API/UI UNVERIFIED.
+Full admission mandatory BEFORE genuine effects. Original timing FAILED/
+publication CLOSED/missing receipts/immutable roots unchanged; genuinev6 OPEN/
+PAUSED/no replay/adoption/newgenuine run. No Spark2load/guard-G08-cap weakening/
+fakeclock/actualday replay/historyrewrite/model-provider-account-service change/
+denied-read bypass/paiddata/tuning/realmoneyorders. Production unchanged; NEVER
+deploy historical main wholesale. Heartbeat ACTIVE, quiet on unchanged/
+nonactionable state; no ETA.
+
 ## 2026-10-19 — Owned settlement input prepared before resolution VERIFIED
 
 Read research/final-prepared-input-proof-2026-10-19.json:
