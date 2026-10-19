@@ -1,5 +1,134 @@
 # Next session
 
+## 2026-10-19 — Original finite-evidence inputs before resolution VERIFIED (private synthetic)
+
+Read research/finite-evidence-proof-2026-10-19.json:
+460f0095531a55af328ede6594dcbc2f088d9153af7c572f29615b74413102d7,
+32825B. Exact source b52ed6940c87ed5b4011b7f955e7707a6abe1c30/tree
+45f905d05778a16ee28cfebf0be4414ca15582f7 passed NINE NEW named assertions in
+NINE fresh single-case runtimes, all exit0/noOOM/0failure/error/skip. A is an
+actual unchanged Final6 negative baseline, not acceptance of its late failure.
+Full reports584632B retained losslessly in one172760B sidecar15407007. Root
+source/call/runtime/complete DATA fold and readback passed. Independent review
+remains UNVERIFIED: previous reviewer usage-limited, no retry/replacement/account/
+model switch. Production unchanged, heartbeat ACTIVE, full objective incomplete.
+
+PRODUCT: distinct PRIVATE historical_finite_evidence_input.EvidenceInput,
+synthetic-finite-evidence-inputs/1 plus Final7. The existing reconciliation2
+strategy requires strict finite JSON evidence. Admission checks ORIGINAL pending
+identity/kind/execution mapping/raw sender quantity compatibility before output
+asdict or native flush. This is ENCODING_ADMISSION_NOT_QUANTITY_POLICY, not a new
+meaning of native quantity diagnostics. Unrelated native NaN history is untouched.
+It does not fabricate filled quantities, snapshot execution outcomes, normalize
+native state, or claim complete evidence byte capacity/RAM/physical reservation.
+
+Exact source/account/identity/OUTCOME/head/prepared-input/native-IO/native-byte
+preimage bindings and frozen strict metadata persist in the original reservation;
+the final receipt binds its digest. Original owned prior and projection are
+rechecked before AND after real resolution, consumed once before flush and
+released before native save/on all failure paths. A held-descriptor mutation
+after consume refuses BEFORE flush. Read/recovery authenticates only original
+metadata; no load/projection/quantity diagnostic/flush/fold/save/capture/append/
+SQL generation/account restore. Original native paper/writer/Store/settlement/
+Cycle/Nightly/static-admission FULL bytes unchanged from34e2f346, including
+default DELETE+FILE/schema/paths/caps/public genuine and old bound-CAS raw-final
+refusals. API/global identities/advisory locks are NOT hostile sandbox/deep
+immutability/path isolation. Stable final RESULT_SCHEMA1 remains separate.
+
+A uses unchanged whole Final6 SOURCE CodeTypes on a FRESH explicitly synthetic
+account. Real accepted5 submission saves raw sender qtyNaN with the real reserved
+writer; desired8 remains unchanged. Actual flush fills5; the actual native
+quantity helper preserves raw NaN and labels invalid_sender_qty, then strict
+finite detail encoding raises ValueError. No final save/head advance. B rejects
+the SAME original input before flush/output-asdict/orders-copy/native diagnostic,
+retaining accepted5/filled0/original native NaN bytes/head/cursors/latch, durable
+poison and paused original recovery. This is a reproduced gap and targeted fix,
+not post-authentication state tampering or old-pool adoption.
+
+C actual finite sender6/broker5 disagreement STILL resolves/fills5/commits/reopens
+and recovers its original result. Exact native diagnostic broker_sender_disagreement
+and raw sender6/broker string5 persist beside desired8/filled5/submitted5/sender6.
+The native helper was observed through actual code-return profiling, never
+replaced or given invented results. E separately declared units admit five finite
+raw quantity shapes (None/bool/int/string/dict); reject three unsupported execution
+mapping shapes, two nonfinite strategy inputs and the finite projection bound;
+test strict bool metadata/foreign ownership/once-only/release/input preservation.
+These are input units, not whole Cycle or quantity-policy admission.
+
+D actual birth→stages→desired8/submitted5/filled5 partial native journal→Store
+OUTCOME→reopen/original recovery→same-session Nightly→historical final recovery
+passes, policy2/five native saves/exact >256KiB NaN+Unicode state. The new input
+constructor runs BEFORE real flush; orders_copy/full_requests remain AFTER it.
+Both original/historical recovery traces are empty. Orders/settlements/journal/
+pending/result/evidence/encoding/save allocations remain late and unreserved.
+F/G/H each owned PID7 in DIFFERENT containers SIGKILL/reaped-9: after original
+evidence-input reservation before consume; after real resolution; after OUTCOME
+commit with owned references released. First two stay paused; committed recovery
+creates ONLY original missing result/seals, no native re-preparation or SQL
+advance. Six canonical cut/exit strings25141B exact SHA+length. Process-boundary
+cuts, NOT powerloss/inside-syscall/SQLite-commit proof; immutable broker witnesses
+are DATA, never parent/account restore. I verifies caught metadata drift refuses
+resolution. Every transport phase0/emptyerr; no unexpected native/test failure.
+Per-case4.82231–28.88567s/max56832KiB. Exact CIDs/times/full logs in reports.
+
+Root reconstructed all9 complete inventories:4644CAS+333metadata+63SQL+
+36directory-metadata+54native-directory=5130 globally distinct originals; every
+name/physical field unchanged. Each case CAS34344960/meta9183232/SQL1843200/
+dir790528 allocated AND logicalB. Raw476126B inventories retained33401B gzip.
+Native state bodies change under original semantics outside these inventories.
+Payload510005B+pins4498B=514503B<524288/37payloads+pins;38source/47native SHA
+physical bookends/writer globals unchanged/forbidden[]. SEVEN whole exact SOURCE
+RO refs codec/CAS/physical/Stage/Store/Final6/StaticAdmission and TWO exact SOURCE
+data files map1655/identity, no old account/output/pool/broad fallback. Combined
+executed closure exceeds copied cap, which is not a RAM bound. Thirteen FULL
+mounts equal by uniqueDestination; raw order only E true. HC only
+OomKillDisablefalse→null. UID1000/noneRO1CPU512MiB=swap/PIDs32/tmp64/dropALL/
+no-new-privileges/CPU30/native1MiBFSIZE/source-controls-log256KiB/productioncaps
+unchanged. Context/policy/program/calendar/source-manifest globals SYNTHETIC,
+constructors bypassed; no model/provider/market_daily startup/planning/economic/
+native-operation/adoption acceptance.
+
+DATA-only collector ONCE:223inputs/four full held SHA+physical reads; separate
+SOURCE4MiB+9CONTROL4MiB each+DERIVED2MiB=42MiB maximum, NOT whole4MiB. Actual
+SOURCE3080380/eachCONTROL<1.75MiB/DERIVED411170B. Main+sidecar205585B total,
+each<256KiB/exclusive fsync/readback. Small four-source archive additionally in
+research/finite-evidence-controls-2026-10-19.json,18651B/
+c9c65c014c4d0f984d310fcc3a468b9458403d43ed7a7e9aff02736647837080;
+four held reads/separate2MiB ledger207482B actual including readback. No local
+crash/kernel-FSIZE claim. Nine sources124purpose functions/ASTwarnings/zero
+backspaces/diff PASS; Ruff unavailable/no fullunit/build/deploy/UI/model claim.
+Diagram impact: NONE — internal private validation; no architectural flow or
+deployment boundary changes.
+
+NEXT: this NEW9 finite-evidence input boundary is CLOSED. Never rerun its cases/
+preflight/stage/copy/tests/getter/collector/archive or prior static9/identity9/
+prepared-transition9 and older closed gates for docs. Never adopt failed/OPEN/
+completed pools/reopen COMPLETE phases. Physical native rename/journal capacity
+remains BLOCKED on unavailable source/runtime/filesystem-bound allocator
+acknowledgement at paper.py:433 replace/failure unlink/parent fsync.
+capacity_reserved=False; body allocation/stat/names cannot certify that capacity.
+No permission question pending; original timing FAILED/publication CLOSED/
+missing receipts/immutable roots unchanged; genuinev6 OPEN/PAUSED/no replay/
+adoption/new genuine run. Production unchanged, never deploy historical main.
+
+Continue independent synthetic product work: FIRST inspect exact reconcile_raw
+detail construction/strict encoding and Cycle._receipt/Store.put_blob/CAS phase
+allowances. The new original-input projection cap does NOT bound the eventual
+settled/unreconciled metadata or its enclosing receipt. Trace actual native
+broker execution-field bounds and duplicated evidence fields; reproduce any NEW
+late evidence-capacity failure on fresh authenticated input before choosing a
+source/head/input-bound conservative admission or distinct typed evidence layout.
+Do not predict fills, pre-snapshot postflush orders, reject finite diagnostics
+as policy, normalize native NaNs, or weaken caps/guards. Advance one coherent
+product boundary. Full filesystem/nativeSQLiteFILE/832MB horizon/modelRAM/
+twohost/powerloss/genuine constructors/Resolver/sender/providers/calendar/
+economics/native operation/adoption/independent publication/API/UI remain
+UNVERIFIED. Full admission mandatory BEFORE genuine effects. No Spark2load/
+guard-G08-cap weakening/fakeclock/actualday replay/history rewrite/model-provider-
+account-service change/denied-read bypass/paiddata/tuning/real-money orders.
+No recursive provenance/ELF detours or limited-worker retries. Read current NEXT
+even for stale heartbeat prompts; meaningful progress only, no ETA.
+
 ## 2026-10-19 — Static original request inputs before resolution VERIFIED (private synthetic)
 
 Read research/static-input-proof-2026-10-19.json:
