@@ -1730,6 +1730,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           paperActivity={paperLive?.activity}
           paperRecordedFills={paperLive?.recorded_fills}
           paperRecordedFillsReason={paperLive?.recorded_fills_reason}
+          paperAccountUnavailable={paperLive?.reason !== undefined}
           historyGeneration={accountGen.current}
           personalReceiptId={historyContext?.userId === userId
             && historyContext.generation === accountGen.current
@@ -2823,6 +2824,7 @@ const NameDetail = ({
   paperActivity,
   paperRecordedFills,
   paperRecordedFillsReason,
+  paperAccountUnavailable = false,
   personalReceiptId,
   order = null,
   lastClose = null,
@@ -2853,6 +2855,7 @@ const NameDetail = ({
   paperActivity?: DeskPaperLive['activity']
   paperRecordedFills?: DeskPaperLive['recorded_fills']
   paperRecordedFillsReason?: DeskPaperLive['recorded_fills_reason']
+  paperAccountUnavailable?: boolean
   personalReceiptId?: string
   strategy?: boolean
 }) => {
@@ -2949,7 +2952,7 @@ const NameDetail = ({
             so it leads on a phone and holds the right two-fifths of a wide
             window, staying in place while the reasoning scrolls beside it. */}
         <div className="mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0">
-          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} paperRecordedFills={paperRecordedFills} paperRecordedFillsReason={paperRecordedFillsReason} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} strategy={strategy} simulation={simulation} simulationError={simulationError} sizedHistory={sizedHistory} sizedHistoryError={sizedHistoryError} />
+          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} paperRecordedFills={paperRecordedFills} paperRecordedFillsReason={paperRecordedFillsReason} paperAccountUnavailable={paperAccountUnavailable} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} strategy={strategy} simulation={simulation} simulationError={simulationError} sizedHistory={sizedHistory} sizedHistoryError={sizedHistoryError} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
         {order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}

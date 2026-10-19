@@ -617,6 +617,7 @@ export const TickerChart = ({
   paperActivity,
   paperRecordedFills,
   paperRecordedFillsReason,
+  paperAccountUnavailable = false,
   quote,
   live,
   now = Date.now(),
@@ -639,6 +640,7 @@ export const TickerChart = ({
   paperActivity?: DeskPaperLive['activity']
   paperRecordedFills?: DeskPaperLive['recorded_fills']
   paperRecordedFillsReason?: DeskPaperLive['recorded_fills_reason']
+  paperAccountUnavailable?: boolean
   quote?: LiveQuote
   live?: DeskLive
   now?: number
@@ -822,6 +824,10 @@ export const TickerChart = ({
   const actionMarkers = useMemo(() => recommendationMarkers(events, merged.bars, timeframe), [events, merged, timeframe])
   const changes = useMemo(() => gradeMarkers(history, merged.bars, timeframe).map(marker => /^(BUY|SELL) /.test(marker.text) ? {...marker, text: `Grade ${marker.text}`} : marker), [history, merged, timeframe])
   const decisions = useMemo(() => decisionMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
+  const paperActivityWarning = paperAccountUnavailable
+    ? 'Paper account is unavailable; execution history could not be verified.'
+    : paperActivity?.reason || (paperActivity?.complete === false
+    ? 'Broker fill history may be incomplete; other fills may be missing.' : '')
   const fills = useMemo(() => currentFillRows(history, paperActivity, paperRecordedFills, ticker, now), [history, paperActivity, paperRecordedFills, ticker, now])
   const legacyFills = useMemo(() => fillRows(history).filter(fill => !fill.client_order_id), [history])
   const fillMarks = useMemo(() => groupedFillMarkers(fillMarkers(fills, merged.bars, timeframe)), [fills, merged, timeframe])
@@ -1238,12 +1244,14 @@ export const TickerChart = ({
           {strategy && showPaperFills && <div className="mt-2 text-xs text-[#6e6e73]" aria-label={`${ticker} actual paper executions`}>
             <p>Confirmed paper fills at their original date, quantity and price. These are executions, not grade signals or research fills.</p>
             {paperRecordedFillsReason && <p role="alert" className="text-[#b42318]">{paperRecordedFillsReason}</p>}
-            {fills.length === 0 ? !paperRecordedFillsReason && <p>No confirmed paper executions in the loaded history.</p> : <ul>{[...fills].reverse().map((fill, index) => <li key={`${fill.client_order_id ?? fill.date}-${index}`} data-client-order-id={fill.client_order_id ?? undefined}><time dateTime={fill.filled_at} title={fill.filled_at}>{fill.date}{fill.filled_at ? ` · ${newYorkClock(Date.parse(fill.filled_at) / 1000, false)} ET` : ''}</time> · {tradeText(fill.side, fill.qty, fill.price)}</li>)}</ul>}
+            {paperActivityWarning && <p role="alert" className="text-[#b42318]">{paperActivityWarning}</p>}
+            {fills.length === 0 ? !paperRecordedFillsReason && !paperActivityWarning && <p>No confirmed paper executions in the loaded history.</p> : <ul>{[...fills].reverse().map((fill, index) => <li key={`${fill.client_order_id ?? fill.date}-${index}`} data-client-order-id={fill.client_order_id ?? undefined}><time dateTime={fill.filled_at} title={fill.filled_at}>{fill.date}{fill.filled_at ? ` · ${newYorkClock(Date.parse(fill.filled_at) / 1000, false)} ET` : ''}</time> · {tradeText(fill.side, fill.qty, fill.price)}</li>)}</ul>}
             {timeframe === '15m' && fills.some(fill => !recordedInstant(fill.filled_at)) && <p>Fills without a recorded execution time are listed but not marked on 15m.</p>}
           </div>}
-          {!strategy && (latestDecision || suggestion || fills.length > 0 || paperRecordedFillsReason) && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label={`${ticker} decisions`}>
+          {!strategy && (latestDecision || suggestion || fills.length > 0 || paperRecordedFillsReason || paperActivityWarning) && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label={`${ticker} decisions`}>
             <p className="font-medium text-[#1d1d1f]" aria-label={`${ticker} now`}>Now: {suggestion ? `${suggestion.word} · ${suggestion.detail}` : 'no paper order'}</p>
             {paperRecordedFillsReason && <p role="alert" className="text-[#b42318]">{paperRecordedFillsReason}</p>}
+            {paperActivityWarning && <p role="alert" className="text-[#b42318]">{paperActivityWarning}</p>}
             {fills.length > 0 && <ul className="mt-1" aria-label={`${ticker} paper fills`}>
               {[...fills].reverse().slice(0, 12).map((fill, index) => (
                 <li key={`${fill.date}-${fill.side}-${fill.qty}-${index}`}>{sessionLabel(fill.date, currentYear)}{fill.filled_at ? ` · ${newYorkClock(Date.parse(fill.filled_at) / 1000, false)} ET` : ''} · {tradeText(fill.side, fill.qty, fill.price)}{isRedeploy(fill) ? ' · idle cash put to work' : ''}</li>
