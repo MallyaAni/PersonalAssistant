@@ -955,7 +955,8 @@ def test_write_history_carries_the_policy_decisions_and_fills(tmp_path):
     assert rows[0]["grade"] == "A+"
     assert "forward_residual" in rows[0]
     assert payload["fills"] == [
-        {"date": "2026-09-09", "side": "buy", "qty": 63, "price": 224.81}
+        {"date": "2026-09-09", "side": "buy", "qty": 63, "price": 224.81,
+         "client_order_id": "anios-2026-09-08-buy-sndk-0"}
     ]
     # IREN is graded C: never held, no fills.
     other = json.loads((tmp_path / "history" / "IREN.json").read_text())
@@ -1776,7 +1777,8 @@ def test_a_live_redeploy_carries_its_kind_to_the_record_and_the_fills(
     market_daily.save(Path(tmp_path), market_daily.record(report, paper=later))
     assert decision_history.fills(tmp_path, "SNDK") == [
         {"date": "2026-09-03", "side": "buy", "qty": 150, "price": 100.0,
-         "kind": paper.REDEPLOY_KIND},
+         "kind": paper.REDEPLOY_KIND,
+         "client_order_id": "anios-2026-09-03-buy-sndk-0"},
     ]
 
 
