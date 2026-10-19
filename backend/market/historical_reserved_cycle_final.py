@@ -18,6 +18,7 @@ from backend.market import historical_prepared_transition as transition
 from backend.market import historical_request_admission as request_admission
 from backend.market import historical_static_request_admission as static_admission
 from backend.market import historical_finite_evidence_input as finite_evidence
+from backend.market import historical_final_receipt_capacity as receipt_capacity
 from backend.market import historical_raw_cycle as bridge
 from backend.market import historical_reserved_cycle_stages as stages
 from backend.market import historical_reserved_native_io as reserved_io
@@ -26,7 +27,7 @@ from backend.market import historical_timing_packet as packet
 from backend.market import replay_broker as native
 from backend.market.historical_packet_store import StorePause
 
-SCHEMA = 'synthetic-reserved-cycle-final/7'
+SCHEMA = 'synthetic-reserved-cycle-final/8'
 RESULT_SCHEMA = 'synthetic-reserved-cycle-final/1'
 INPUT_SCHEMA = 'synthetic-final-prepared-raw-input/1'
 SAVED_SCHEMA = 'synthetic-final-saved-native-bytes/1'
@@ -48,6 +49,9 @@ ADMISSION_METHODS = {name: getattr(ADMISSION, name).__code__ for name in
 EVIDENCE_INPUT = finite_evidence.EvidenceInput
 EVIDENCE_METHODS = {name: getattr(EVIDENCE_INPUT, name).__code__ for name in
                     ('__init__', 'check', 'consume', 'check_released', 'close')}
+CAPACITY = receipt_capacity.ReceiptCapacity
+CAPACITY_METHODS = {name: getattr(CAPACITY, name).__code__ for name in
+                    ('__init__', 'check', 'consume', 'output', 'check_released', 'close')}
 
 
 # Keep public genuine execution closed before constructing or reserving anything.
@@ -64,6 +68,7 @@ def sources():
         str(Path(request_admission.__file__)): sha256(Path(request_admission.__file__).read_bytes()).hexdigest(),
         str(Path(static_admission.__file__)): sha256(Path(static_admission.__file__).read_bytes()).hexdigest(),
         str(Path(finite_evidence.__file__)): sha256(Path(finite_evidence.__file__).read_bytes()).hexdigest(),
+        str(Path(receipt_capacity.__file__)): sha256(Path(receipt_capacity.__file__).read_bytes()).hexdigest(),
         str(Path(__file__)): sha256(Path(__file__).read_bytes()).hexdigest()}
 
 
@@ -104,6 +109,7 @@ def link(value, reservation_sha, saved):
             'prepared_transition_sha256': packet._digest(value['prepared_transition']),
             'request_admission_sha256': packet._digest(value['request_admission']),
             'evidence_input_sha256': packet._digest(value['evidence_input']),
+            'receipt_capacity_sha256': packet._digest(value['receipt_capacity']),
             'saved_bytes_sha256': packet._digest(saved)}
 
 
@@ -222,6 +228,16 @@ def verify_evidence_input(value):
     return finite_evidence.read_descriptor(value['evidence_input'], value['prepared_input'])
 
 
+# Read the original finite receipt byte allowance without estimating outcomes or loading native state.
+def verify_capacity(value):
+    capacity = receipt_capacity.read_descriptor(value['receipt_capacity'], value['prepared_input'])
+    physical._require(capacity['declaration_bytes'] == len(legacy.admitted.encoded(value['declaration']))
+        and capacity['source_bytes'] == len(legacy.admitted.encoded(sources()))
+        and capacity['broker_sha256'] == value['declaration']['before']['broker'],
+        'Original receipt allowance declaration/source/broker binding required')
+    return capacity
+
+
 # Derive exact source/head/input bindings from the original completed producer graph.
 def declaration(nightly, checkpoint, submission_head, inputs):
     entry = bridge.cycle._head_entry(nightly.store, submission_head)
@@ -243,12 +259,15 @@ def validate(nightly, reference, checkpoint, *, require_result=True):
     submission_head, cycle = final['entry']['parent'], final['entry']['cycle_sha256']
     _, directory = operation(nightly, submission_head)
     value, reservation_sha = read_file(nightly, directory / 'reservation.json')
-    physical._require(set(value) == {'schema', 'declaration', 'native_io', 'prepared_input', 'prepared_transition', 'request_admission', 'evidence_input'} and value['schema'] == SCHEMA,
+    physical._require(set(value) == {'schema', 'declaration', 'native_io', 'prepared_input', 'prepared_transition', 'request_admission', 'evidence_input', 'receipt_capacity'} and value['schema'] == SCHEMA,
                       'Original reserved final reservation required')
     verify_input(nightly, checkpoint, directory, value)
     verify_transition(value)
     verify_admission(value)
     verify_evidence_input(value)
+    capacity = verify_capacity(value)
+    physical._require(len(legacy.admitted.encoded(final['receipt'])) <= capacity['receipt_upper_bytes'],
+                      'Original final receipt byte allowance differs')
     declared = value['declaration']
     protocol.verify(nightly, directory, phase='OUTCOME_COMMITTED', head=submission_head,
                     inputs=packet._digest(declared))
@@ -320,6 +339,7 @@ class _Final:
         self.prepared_transition = None
         self.request_admission = None
         self.evidence_input = None
+        self.receipt_capacity = None
         self.saved_bytes = None
         self._guard()
 
@@ -344,6 +364,9 @@ class _Final:
         physical._require(finite_evidence.EvidenceInput is EVIDENCE_INPUT
             and all(getattr(EVIDENCE_INPUT, name).__code__ is code for name, code in EVIDENCE_METHODS.items()),
             'Original finite evidence-input admission required')
+        physical._require(receipt_capacity.ReceiptCapacity is CAPACITY
+            and all(getattr(CAPACITY, name).__code__ is code for name, code in CAPACITY_METHODS.items()),
+            'Original finite receipt capacity admission required')
 
     # Rebind every later step to original persisted inputs, current sources and active lease.
     def _active(self, value, reservation_sha, directory):
@@ -382,6 +405,12 @@ class _Final:
             self.evidence_input.check_released(binding, evidence_input)
         else:
             self.evidence_input.check(self.prepared_input.prior, binding, evidence_input)
+        capacity = verify_capacity(value)
+        physical._require(type(self.receipt_capacity) is CAPACITY, 'Original receipt capacity ownership required')
+        if self.receipt_capacity.closed:
+            self.receipt_capacity.check_released(binding, capacity)
+        else:
+            self.receipt_capacity.check(self.prepared_input.prior, self.client, binding, capacity)
         if not self.io.saved:
             physical._require(reserved_io.writer_module._image(paper.state_path(self.nightly.root))
                 == binding['preimage'], 'Live final input preimage changed')
@@ -430,6 +459,12 @@ class _Final:
         self.evidence_input = EVIDENCE_INPUT(self.prepared_input.prior, binding)
         return deepcopy(self.evidence_input.binding)
 
+    # Admit the original complete receipt allowance before output cloning or native broker resolution.
+    def _prepare_receipt_capacity(self, binding, declared):
+        self.receipt_capacity = CAPACITY(self.prepared_input.prior, self.client, binding, declared,
+                                         self.nightly.pins(), sources())
+        return deepcopy(self.receipt_capacity.binding)
+
     # Persist uncertainty after preparation or folding so caught failures cannot authorize effects.
     def _poison(self):
         self.io.failed = True
@@ -449,6 +484,9 @@ class _Final:
             self.io.failed = True
             raise
         finally:
+            if self.receipt_capacity is not None:
+                self.receipt_capacity.close()
+                self.receipt_capacity = None
             if self.evidence_input is not None:
                 self.evidence_input.close()
                 self.evidence_input = None
@@ -484,6 +522,7 @@ class _Final:
             value['prepared_input'] = self._prepare_input(declared, value['native_io'])
             value['request_admission'] = self._prepare_requests(value['prepared_input'], declared['request']['at'])
             value['evidence_input'] = self._prepare_evidence_input(value['prepared_input'])
+            value['receipt_capacity'] = self._prepare_receipt_capacity(value['prepared_input'], declared)
             value['prepared_transition'] = self._prepare_transition(value['prepared_input'])
             raw = legacy.admitted.encoded(value)
             protocol.write(nightly, directory / 'reservation.json', raw, legacy)
@@ -492,6 +531,7 @@ class _Final:
             store._point('reserved_final_transition_reserved')
             store._point('reserved_final_requests_ready')
             store._point('reserved_final_evidence_ready')
+            store._point('reserved_final_capacity_ready')
             store._point('reserved_final_reserved')
             self._active(value, reservation_sha, directory)
             reserved_io.current_components(nightly, client, declared['before'], self.checkpoint, legacy)
@@ -501,6 +541,7 @@ class _Final:
             self.prepared_transition.check(value['prepared_transition'], unconsumed=True)
             self.request_admission.consume(self.prepared_input.prior, value['prepared_input'], value['request_admission'])
             self.evidence_input.consume(self.prepared_input.prior, value['prepared_input'], value['evidence_input'])
+            self.receipt_capacity.consume(self.prepared_input.prior, client, value['prepared_input'], value['receipt_capacity'], nightly.pins())
             store._point('reserved_final_requests_consumed')
             self._active(value, reservation_sha, directory)
             fills = client.flush(call['at'], call['prices'], phase=call['phase'])
@@ -526,6 +567,7 @@ class _Final:
                 prior_component=retained['components']['paper'], raw_checkpoint=self.checkpoint,
                 prepared_input=self.prepared_input, prepared_transition=self.prepared_transition)
             self.evidence_input.close()
+            self.receipt_capacity.close()
             self.request_admission.close()
             self.prepared_transition.close()
             self.prepared_input.close()
@@ -549,7 +591,10 @@ class _Final:
             physical._require(bridge.paper_content(receipt['components']['paper'], self.checkpoint, store.identity)
                 == (saved['state']['sha256'], saved['state']['length']), 'Original saved raw component differs')
             receipt['reserved_cycle_final'] = link(value, reservation_sha, saved)
-            reference = bridge.cycle._put(store, legacy.admitted.encoded(receipt))
+            receipt_raw = legacy.admitted.encoded(receipt)
+            self.receipt_capacity.output(receipt_raw)
+            store._point('reserved_final_capacity_checked')
+            reference = bridge.cycle._put(store, receipt_raw)
             prepared = {'schema': SCHEMA, 'reservation_sha256': reservation_sha,
                         'receipt': reference, 'native_io': self.io.evidence(), 'saved_bytes': saved}
             reserved_io.validate(nightly, directory, prepared['native_io'], [
