@@ -413,16 +413,40 @@ def _state_json(value):
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
-# Stream identical JSON bytes before atomically replacing the durable account state.
+# Preserve account access while streaming identical JSON before atomic replacement.
 def save_state(root: Path, state: PaperState) -> Path:
     """Write the PaperState and return its path."""
     path = state_path(root)
     path.parent.mkdir(parents=True, exist_ok=True)
+    ownership = None
+    if os.name == "posix":
+        try:
+            original = path.stat()
+        except FileNotFoundError:
+            original = path.parent.stat()
+            mode = 0o600
+        else:
+            mode = original.st_mode & 0o7777
+        ownership = (original.st_uid, original.st_gid, mode)
     with tempfile.NamedTemporaryFile(
         mode="w", encoding="utf-8", dir=path.parent, delete=False
     ) as handle:
         temporary = Path(handle.name)
         try:
+            if ownership is not None:
+                uid, gid, mode = ownership
+                allocated = os.fstat(handle.fileno())
+                if allocated.st_mode & 0o7777 != mode:
+                    os.fchmod(handle.fileno(), mode)
+                if (allocated.st_uid, allocated.st_gid) != (uid, gid):
+                    os.fchown(handle.fileno(), uid, gid)
+                prepared = os.fstat(handle.fileno())
+                if (
+                    prepared.st_uid,
+                    prepared.st_gid,
+                    prepared.st_mode & 0o7777,
+                ) != ownership:
+                    raise PermissionError("Temporary paper state ownership or mode changed")
             json.dump(state, handle, indent=2, default=_state_json)
             handle.flush()
             os.fsync(handle.fileno())

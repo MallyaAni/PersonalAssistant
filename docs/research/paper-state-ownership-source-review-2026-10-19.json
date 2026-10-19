@@ -1,0 +1,38 @@
+{
+  "status": "REVIEWED_NATIVE_PAPER_OWNERSHIP_PRESERVATION",
+  "production_predecessor": "2f9fd73f5230480a1b13e393eeccc44bf02f1bbf",
+  "source_changes": {
+    "backend/agents/trading/desk/paper.py": {
+      "before_sha256": "a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c",
+      "after_sha256": "1a96dd96c254abb4799c6f14cb99938c65fb2907d6777fbc4b1194bfaa851bc4"
+    }
+  },
+  "other_reviewed_sources_unchanged": 30,
+  "reviewed_save_state_ast_sha256": "bce627aba5775d7f413d2ff20463def10e8177718f933e4d5e233d950b7222f7",
+  "unchanged_paper_module_ast_sha256": "20e7baa802964b5bdc58aec243e8e92f0bab6cd79b9b4d2e5872f960c2a2ac68",
+  "problem": "An atomic native save by root can publish root-owned0600 state over the host scheduler's UID1000-owned file. The host sender then cannot read its account.",
+  "reviewed_behavior": [
+    "On POSIX, an existing destination supplies its original UID/GID/mode. An absent destination in an existing paper directory inherits that directory UID/GID with0600.",
+    "Prepare and verify metadata only on the new temporary descriptor before JSON encoding and replacement; refuse uncertainty with original cleanup and original destination retained.",
+    "Never chmod/chown the existing destination, widen private0600 to bypass access, change the service user or modify account bytes through this preventer."
+  ],
+  "preserved": [
+    "Complete native paper module AST outside save_state, including imports, classes, planner, settlement and default encoder, is unchanged.",
+    "Original json.dump/default encoder, flush/fsync, atomic replace and failure cleanup remain unchanged.",
+    "Models, policy, costs, timing, risk, economic evidence and all other30 reviewed source hashes remain unchanged; only the source-approval receipt pointer may renew normally.",
+    "Existing admission kinds retain their original guards. Legacy test fixture reconstructs exact a8 source as inert data rather than approving ownership changes under the old settlement kind."
+  ],
+  "verification": {
+    "native_red": "CID6e0a296042aede73fbf5da998b8c7158c0f9a5b75fa57cb57f7557b20a682d79:4 expected assertion failures and1pass in1.95s; real UID1000 reopen fails after root native save/birth.",
+    "native_green": "CID5a0b9d15d2c69e1e35ff496284fce48a588cc6b383f76953524554b9e84c162d:5pass0error/skip2.09s, exact native NaN/Unicode/no-newline byte parity and original-file/input preservation.",
+    "source_admission": "CID474a8566133347dbd48a7bc502ba3916ef6824689f60ccbe278172e010e208e7:37pass15subtests0.26s, separate UID1000 selector/source tests. No model/provider/account access.",
+    "independent_review": "Healthy dashboard agent read-only reviewed source scope, original raw results, unchanged economic guards and legacy inert-source fixture; no material blocker."
+  },
+  "limitations": [
+    "This source preventer preserves an already wrong root owner; it does not repair the current live file.",
+    "A one-time live ownership correction requires separate explicit authority under the user's no-denied-read-bypass instruction, plus unchanged byte/inode/mode checks.",
+    "Birth coverage assumes an existing account directory. No full horizon, physical filesystem, crash/powerloss, genuine historical or signed-in dashboard acceptance follows from these tests.",
+    "The source-admission run's raw scope label was inherited from the UID-transition harness; its actual create argv uses UID1000/dropALL and does not perform credential transitions."
+  ],
+  "diagram_impact": "NONE: existing atomic writer and host/shared-account boundary."
+}
