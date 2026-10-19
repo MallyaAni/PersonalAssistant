@@ -88,7 +88,7 @@ def _private(path, directory=False):
 class Store:
     # Open one private writer requiring every original pool recorded by its persisted mode.
     def __init__(self, root, identity_sha256, expected_head, *, create=False, blob_reservation=None,
-                 metadata_reservation=None, sqlite_reservation=None):
+                 metadata_reservation=None, sqlite_reservation=None, directory_binding=None):
         self.root = Path(root)
         self.identity = registry.digest(identity_sha256)
         self.owner = uuid4().hex
@@ -98,10 +98,19 @@ class Store:
         self._blob_reservation = None
         self._metadata_reservation = None
         self._sqlite_reservation = sqlite_reservation
+        self._directory_binding = directory_binding
         self._last_clock = None
         self._opened_clock = self._sample_clock()
         if create and sqlite_reservation is None:
             self.root.mkdir(mode=0o700)
+        _require(directory_binding is not None or (not os.path.lexists(self.root / 'native-directory-mode')
+            and not os.path.lexists(self.root / 'reserved-native-directory')),
+            'Original explicit native-directory mode required before connect')
+        if directory_binding is not None:
+            from backend.market.historical_native_directory_binding import DirectoryBindings
+
+            _require(type(directory_binding) is DirectoryBindings and directory_binding.store == self.root
+                and directory_binding.identity == self.identity, 'Original native-directory Store binding required')
         _require(sqlite_reservation is not None or (not os.path.lexists(self.root / 'sqlite-mode')
             and not os.path.lexists(self.root / 'reserved-sqlite')),
                  'Original explicit SQLite bank mode required before connect')
@@ -118,6 +127,8 @@ class Store:
         try:
             _private(self.root / "lock")
             fcntl.flock(self.lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            if directory_binding is not None:
+                directory_binding.owner_fd = self.lock
             if sqlite_reservation is not None:
                 sqlite_reservation.owner_fd = self.lock
             for name in ("blobs", "incoming"):
@@ -281,6 +292,11 @@ class Store:
             if metadata_reservation is not None:
                 self.bind_reserved_metadata(metadata_reservation)
             self.sqlite_reservation
+            if directory_binding is not None:
+                directory_binding.store_owner = self
+                _require(directory_binding.metadata_pool is self._metadata_reservation,
+                         'Original retained directory metadata namespace required')
+            self.directory_binding
             if sqlite_reservation is not None:
                 sqlite_reservation.seal_connection()
         except BaseException:
@@ -291,6 +307,35 @@ class Store:
     @property
     def blob_reservation(self):
         return self._blob_reservation
+
+    # Require the original directory mode recorded before birth, even after its pool disappears.
+    @property
+    def directory_binding(self):
+        row = self.connection.execute("SELECT raw FROM meta WHERE key='native_directory_header'").fetchone()
+        value = self._directory_binding
+        _require((row is None and value is None
+            and not os.path.lexists(self.root / 'native-directory-mode')
+            and not os.path.lexists(self.root / 'reserved-native-directory'))
+            or (row is not None and value is not None and row['raw'] == demand.encoded(value.binding)),
+            'Original persisted native-directory binding required; no downgrade')
+        return value
+
+    # Persist one fresh source-bound namespace guard before any account or stage exists.
+    def bind_native_directory(self, value):
+        from backend.market.historical_native_directory_binding import DirectoryBindings
+
+        _require(type(value) is DirectoryBindings and value.store == self.root and value.identity == self.identity
+            and self.snapshot()['sequence'] == 0 and self._directory_binding is None,
+            'Fresh pre-birth native-directory binding required')
+        value.owner_fd = self.lock
+        value.check()
+        _require(self.connection.execute("SELECT raw FROM meta WHERE key='native_directory_header'").fetchone() is None,
+                 'Native-directory mode cannot rebind')
+        with self._transaction():
+            self.connection.execute("INSERT INTO meta VALUES ('native_directory_header',?)",
+                                    (demand.encoded(value.binding),))
+        self._directory_binding = value
+        value.store_owner = self
 
     # Require the original separate bank mode and forbid a stale native-file fallback.
     @property
@@ -361,6 +406,8 @@ class Store:
 
     # Release process ownership without resolving any unfinished external operation.
     def close(self):
+        if getattr(self, '_directory_binding', None) is not None:
+            self._directory_binding.close()
         if self.connection is not None:
             self.connection.close()
             self.connection = None

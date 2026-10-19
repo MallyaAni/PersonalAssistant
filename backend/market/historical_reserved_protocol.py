@@ -23,7 +23,7 @@ SOURCES = ('historical_reserved_protocol.py', 'historical_packet_store.py',
     'historical_reserved_native_io.py', 'historical_raw_nightly.py',
     'historical_reserved_cycle_stages.py', 'historical_reserved_cycle_final.py',
     'historical_conditional_cycle.py', 'historical_raw_cycle.py', 'historical_conditional_nightly.py',
-    'historical_reserved_sqlite.py')
+    'historical_reserved_sqlite.py', 'historical_native_directory_binding.py')
 
 
 # Authenticate finite regular source text through one held descriptor before using its hash.
