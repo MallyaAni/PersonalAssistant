@@ -1,5 +1,5 @@
 import {useMemo, useState} from 'react'
-import type {DeskCurrentSetup, DeskLive, DeskRecord} from '../../services/api'
+import type {DeskCurrentSetup, DeskLive, DeskModelAllocation, DeskRecord} from '../../services/api'
 import {currentSetup, confirmationText, invalidationText} from './currentRanking'
 import {currentAssessments} from './liveAssessment'
 import {displayedBoardPrice, SessionPrice} from './StockBoard'
@@ -8,6 +8,29 @@ type Side = 'all' | 'buy' | 'sell'
 type Signal = {word: string; ready: boolean; priority: string; rank: number; reason: string}
 type Signals = {ticker: string; grade: string; setup: DeskCurrentSetup | null; buy: Signal; sell: Signal}
 const PRIORITY: Record<string, number> = {high: 3, medium: 2, low: 1}
+
+// Require the same original dated numeric allocation rather than funding a chart signal from paper shares.
+export const modelWeight = (latest: DeskRecord, allocation: DeskModelAllocation | undefined, ticker: string, now: number): number | null => {
+  const weight = allocation?.rows?.[ticker]?.target_weight
+  if (allocation?.version !== 'published-model-allocation/1' || allocation.status !== 'available'
+      || allocation.policy !== 'grade-led-learned-sizing/1' || allocation.policy !== latest.targets?.policy
+      || allocation.session !== latest.session || allocation.observed_at !== latest.written
+      || allocation.basis !== 'original_published_strategy_allocation_not_trade_quantity'
+      || !/^[a-f0-9]{64}$/.test(allocation.record_sha256 ?? '') || !/^[a-f0-9]{64}$/.test(allocation.receipt_sha256 ?? '')
+      || !(Date.parse(allocation.observed_at ?? '') <= Date.parse(allocation.as_of) && Date.parse(allocation.as_of) <= now)
+      || !(Date.parse(allocation.valid_until ?? '') > now)
+      || typeof weight !== 'number' || !Number.isFinite(weight) || weight < 0 || weight > 1) return null
+  return weight
+}
+
+// Keep model allocation percentages distinct from trade sizes and the current chart's direction.
+export const ModelSize = ({latest, allocation, ticker, now}: {latest: DeskRecord; allocation?: DeskModelAllocation; ticker: string; now: number}) => {
+  const weight = modelWeight(latest, allocation, ticker, now)
+  return <div aria-label={`${ticker} model size`}>
+    <span className="font-medium">{weight === null ? 'Unavailable' : `${(weight * 100).toFixed(1)}% target`}</span>
+    <p className="text-[10px] text-[#6e6e73]">{weight === null ? allocation?.reason ?? 'Verified current model allocation required' : `Strategy allocation · ${allocation!.session}`}</p>
+  </div>
+}
 
 // Preserve model priorities while keeping immediate, waiting and unavailable evidence distinct.
 const signal = (word: string, ready: boolean, priority: string, reason: string, tier: number): Signal =>
@@ -18,7 +41,9 @@ export const signalsFor = (latest: DeskRecord, live: DeskLive, ticker: string, n
   const setup = currentSetup(live, latest.session, ticker, now)
   const original = live.opportunities?.rows?.[ticker]
   const grade = currentAssessments(live, latest.session, now)[ticker]?.grade_live ?? '—'
-  const missing = live.opportunities?.unavailable?.[ticker] ?? 'Fresh chart assessment unavailable; no immediate signal is inferred.'
+  const missing = live.opportunities?.unavailable?.[ticker] ?? (live.market_status?.phase && live.market_status.phase !== 'open'
+    ? 'Regular-session assessment expired or unavailable. Extended-hours prices do not supply a new strategy assessment.'
+    : 'Fresh chart assessment unavailable; no immediate signal is inferred.')
   const unavailable = signal('Unavailable', false, '', missing, 3)
   if (!setup || setup.entry === 'unavailable' || !Number.isFinite(Date.parse(setup.bar))
       || Date.parse(setup.bar) + 900_000 > Date.parse(setup.generated_at)
@@ -55,7 +80,7 @@ export const SignalDetail = ({signals}: {signals: Signals}) => <section aria-lab
 </section>
 
 // Rank all covered names by fresh directional actionability, independent of the paper account.
-export const SignalBoard = ({latest, live, now, onOpen, closes}: {latest: DeskRecord; live: DeskLive; now: number; onOpen: (ticker: string) => void; closes?: Record<string, number | null>}) => {
+export const SignalBoard = ({latest, live, allocation, now, onOpen, closes}: {latest: DeskRecord; live: DeskLive; allocation?: DeskModelAllocation; now: number; onOpen: (ticker: string) => void; closes?: Record<string, number | null>}) => {
   const [side, setSide] = useState<Side>('all')
   const [query, setQuery] = useState('')
   const [opened, setOpened] = useState<string | null>(null)
@@ -74,15 +99,16 @@ export const SignalBoard = ({latest, live, now, onOpen, closes}: {latest: DeskRe
         <input aria-label="Find a stock" placeholder="Find a stock" value={query} onChange={event => {setQuery(event.target.value); setVisible(25)}} className="rounded border px-2 py-1 text-xs" />
       </div>
       <p aria-label="Signal coverage" className="text-xs text-[#6e6e73]">{rows.filter(row => row.setup).length} of {rows.length} current assessments · {rows.filter(row => row.buy.ready).length} buy now · {rows.filter(row => row.sell.ready).length} sell reviews now{live.market_status?.phase !== 'open' ? ' · regular session closed or unavailable' : ''}.</p>
-      <p className="text-xs text-[#6e6e73]">Buy signals use the current grade’s entry permission and model chart confirmation. Sell reviews use the model’s independent downside assessment, even for names absent from the paper account. These are manual review signals, not the funded allocator’s orders.</p>
+      <p className="text-xs text-[#6e6e73]">Model size is the published strategy target percentage, not shares or an instruction to buy that percentage now. Entry and exit reviews use fresh chart assessments; they do not recalculate the model’s allocation.</p>
     </div>
     <table aria-label="Ranked stock signals" className="w-full text-left text-xs">
-      <thead className="border-y bg-[#f5f5f7]"><tr><th className="p-2">Stock / price</th><th className="p-2">Grade</th><th className="p-2">Buy signal</th><th className="p-2">Sell signal</th><th className="p-2">Strength</th><th className="p-2">Reason / timing</th></tr></thead>
+      <thead className="border-y bg-[#f5f5f7]"><tr><th className="p-2">Stock / price</th><th className="p-2">Grade</th><th className="p-2">Buy signal</th><th className="p-2">Sell review</th><th className="p-2">Position size %</th><th className="p-2">Strength</th><th className="p-2">Reason / timing</th></tr></thead>
       <tbody>{ranked.slice(0, visible).map(row => <tr key={row.ticker} data-ticker={row.ticker} className="border-t align-top">
         <td className="p-2"><button type="button" className="font-semibold text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}</button><SessionPrice live={live} ticker={row.ticker} now={now} compact close={closes?.[row.ticker]} closeSession={latest.session} /></td>
         <td aria-label={`${row.ticker} displayed grade`} className="p-2">{row.grade}</td>
         <td aria-label={`${row.ticker} buy signal`} className={`p-2 font-medium ${row.buy.ready ? 'text-[#248a3d]' : 'text-[#6e6e73]'}`}>{row.buy.word}</td>
         <td aria-label={`${row.ticker} sell signal`} className={`p-2 font-medium ${row.sell.ready ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{row.sell.word}</td>
+        <td className="p-2"><ModelSize latest={latest} allocation={allocation} ticker={row.ticker} now={now} /></td>
         <td aria-label={`${row.ticker} signal strength`} className="p-2">{selected(row).priority ? selected(row).priority[0].toUpperCase() + selected(row).priority.slice(1) : '—'}</td>
         <td className="max-w-sm p-2"><p>{selected(row).reason}</p><button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={opened === row.ticker} className="text-[#0071e3]" onClick={() => setOpened(opened === row.ticker ? null : row.ticker)}>Details</button>{opened === row.ticker && <SignalDetail signals={row} />}</td>
       </tr>)}</tbody>

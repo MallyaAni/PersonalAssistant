@@ -2499,6 +2499,29 @@ export type DeskOptionsEvidence = {
   reason: string;
 });
 
+export interface DeskModelAllocation {
+  version: 'published-model-allocation/1';
+  status: 'available' | 'stale' | 'unavailable';
+  reason?: string | null;
+  policy: string;
+  session: string | null;
+  observed_at: string | null;
+  as_of: string;
+  valid_until: string | null;
+  record_sha256?: string;
+  receipt_sha256?: string;
+  basis?: string;
+  rows: Record<string, {target_weight: number}>;
+}
+
+// Read published strategy weights without supplying a balance or accessing a paper account.
+export const getDeskModelAllocation = async (userId: string): Promise<DeskModelAllocation | undefined> => {
+  try {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/model-allocation`);
+    return response.ok ? await response.json() as DeskModelAllocation : undefined;
+  } catch { return undefined; }
+};
+
 export interface DeskLive {
   opportunities?: {status: string; rows: Record<string, DeskCurrentSetup>; unavailable?: Record<string, string>; generated_at?: string; snapshot_at?: string};
   as_of: string | null;

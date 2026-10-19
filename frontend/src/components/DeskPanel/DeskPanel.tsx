@@ -13,7 +13,7 @@ import { TickerChart } from './TickerChart'
 import {currentAssessments, assessmentPermission} from './liveAssessment'
 import {currentSetup, confirmationText, invalidationText, quoteReferenceText} from './currentRanking'
 import { TradeBoard, RecordedModelDecision, boardRows, dollars, percent, orderWord, quantityLabel, executionRuleText, learnedAllocation, rankingText, savedTargetText, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
-import {SignalBoard, SignalDetail, signalsFor} from './SignalBoard'
+import {ModelSize, SignalBoard, SignalDetail, signalsFor} from './SignalBoard'
 import { StrategyBench } from './StrategyBench'
 import { NeuralStudy } from './NeuralStudy'
 import { OpportunityCard } from './OpportunityCard'
@@ -26,6 +26,7 @@ import {
   getDeskHoldings,
   getDeskIntraday,
   getDeskLive,
+  getDeskModelAllocation,
   getDeskLiveRead,
   getDeskMine,
   getDeskPaper,
@@ -44,6 +45,7 @@ import {
   type DeskStrategyStock,
   type DeskIntraday,
   type DeskLive,
+  type DeskModelAllocation,
   type DeskLiveRead,
   type DeskLiveGrade,
   type DeskMineRow,
@@ -1096,6 +1098,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [live, setLive] = useState<DeskLive>({ as_of: null, quotes: {} })
+  const [modelAllocation, setModelAllocation] = useState<DeskModelAllocation | undefined>()
   const [paperLive, setPaperLive] = useState<DeskPaperLive | null>(null)
   const [holdings, setHoldings] = useState<DeskHolding[]>([])
   const [holdingsReady, setHoldingsReady] = useState(false)
@@ -1247,6 +1250,12 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     // An obsolete poll must neither publish data nor start another private guidance capture.
     const current = () => active() && gen === accountGen.current && request === pollRequestSeq.current
     setNow(Date.now())
+    // Read published percentages independently of paper access and personal inputs.
+    void getDeskModelAllocation(userId).then(value => {
+      if (!current()) return
+      setModelAllocation(value)
+      setNow(Date.now())
+    })
     // Session quotes have their own completion path; regular-data waits or failures cannot discard them.
     void getDeskSessionPrices(userId).then(extended_hours => {
       if (!current()) return
@@ -1353,12 +1362,12 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
   // Expire displayed quotes, signals and numeric plans even when no network refresh completes.
   useEffect(() => {
-    const deadlines = [...Object.values(gradeContext.until), ...Object.values(live.grade_valid_until ?? {}), ...Object.values(live.opportunities?.rows ?? {}).map(row => row.valid_until), payload?.intraday_research?.valid_until ?? '', paperLive?.model_decisions?.valid_until ?? '', ...Object.values(decisions?.rows ?? {}).map(row => row.valid_until ?? ''), ...Object.values(live.extended_hours?.quotes ?? {}).map(row => row.valid_until ?? '')].map(Date.parse).filter(value => value > now)
+    const deadlines = [modelAllocation?.valid_until ?? '', ...Object.values(gradeContext.until), ...Object.values(live.grade_valid_until ?? {}), ...Object.values(live.opportunities?.rows ?? {}).map(row => row.valid_until), payload?.intraday_research?.valid_until ?? '', paperLive?.model_decisions?.valid_until ?? '', ...Object.values(decisions?.rows ?? {}).map(row => row.valid_until ?? ''), ...Object.values(live.extended_hours?.quotes ?? {}).map(row => row.valid_until ?? '')].map(Date.parse).filter(value => value > now)
     deadlines.push(...[live.extended_hours?.as_of, ...Object.values(live.extended_hours?.quotes ?? {}).map(row => row.at)].map(value => Date.parse(value ?? '') + 60_000).filter(value => value > now))
     if (!deadlines.length) return
     const timer = window.setTimeout(() => setNow(Date.now()), Math.min(...deadlines) - now + 1)
     return () => window.clearTimeout(timer)
-  }, [gradeContext, now, payload?.intraday_research?.valid_until, paperLive?.model_decisions?.valid_until, decisions, live.extended_hours, live.grade_valid_until, live.opportunities])
+  }, [gradeContext, now, modelAllocation, payload?.intraday_research?.valid_until, paperLive?.model_decisions?.valid_until, decisions, live.extended_hours, live.grade_valid_until, live.opportunities])
 
   // Re-read the paper account's orders every 20 seconds while the page is
   // visible, so a level reached on the candle, the order it sends and the fill
@@ -1555,7 +1564,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {!strategyView && latest && <RegimeBanner regime={latest.regime} session={latest.session} />}
 
       {strategyView && !research && latest && <div className="flex flex-col sm:max-h-[75vh]">
-        <SignalBoard latest={latest} live={live} now={now} onOpen={setOpenName} closes={closes} />
+          <SignalBoard latest={latest} live={live} allocation={modelAllocation} now={now} onOpen={setOpenName} closes={closes} />
       </div>}
       {!strategyView && !research && <>
       {/* On phones, diagnostics use page scrolling instead of a tiny nested viewport. */}
@@ -1728,6 +1737,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           order={latest && !strategyView ? boardRows(latest, paperLive).find(r => r.ticker === openName) ?? null : null}
           personalHistory={false}
           strategy={strategyView}
+          allocation={modelAllocation}
           paperActivity={paperLive?.activity}
           paperRecordedFills={paperLive?.recorded_fills}
           paperRecordedFillsReason={paperLive?.recorded_fills_reason}
@@ -2832,6 +2842,7 @@ const NameDetail = ({
   order = null,
   lastClose = null,
   strategy = false,
+  allocation,
 }: {
   userId: string
   ticker: string
@@ -2861,6 +2872,7 @@ const NameDetail = ({
   paperAccountUnavailable?: boolean
   personalReceiptId?: string
   strategy?: boolean
+  allocation?: DeskModelAllocation
 }) => {
   const [simulation, setSimulation] = useState<DeskStrategyStock | null>(null)
   const [simulationError, setSimulationError] = useState('')
@@ -2949,10 +2961,10 @@ const NameDetail = ({
             so it leads on a phone and holds the right two-fifths of a wide
             window, staying in place while the reasoning scrolls beside it. */}
         <div className="mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0">
-          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} paperRecordedFills={paperRecordedFills} paperRecordedFillsReason={paperRecordedFillsReason} paperAccountUnavailable={paperAccountUnavailable} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} strategy={strategy} simulation={strategy ? matchingSimulation : simulation} simulationError={strategy ? matchingSimulationError : simulationError} />
+          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} paperRecordedFills={paperRecordedFills} paperRecordedFillsReason={paperRecordedFillsReason} paperAccountUnavailable={paperAccountUnavailable} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} closeSession={latest.session} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} strategy={strategy} simulation={strategy ? matchingSimulation : simulation} simulationError={strategy ? matchingSimulationError : simulationError} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
-        {strategy && <SignalDetail signals={signalsFor(latest, live, ticker, now)} />}
+        {strategy && <><SignalDetail signals={signalsFor(latest, live, ticker, now)} /><ModelSize latest={latest} allocation={allocation} ticker={ticker} now={now} /></>}
         {order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}
         {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}
         {!strategy && <section aria-label="Latest available grade" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">

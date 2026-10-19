@@ -595,6 +595,7 @@ export const TickerChart = ({
   personalReceiptId,
   tall = false,
   close,
+  closeSession,
   suggestion,
   levels = null,
   strategy = false,
@@ -617,6 +618,7 @@ export const TickerChart = ({
   tall?: boolean
   // The name's last close, so the session price can fall back to it when no dated quote exists.
   close?: number | null
+  closeSession?: string | null
   // The board's levels for this name (the balancer's structure), drawn as
   // labelled horizontal lines on every timeframe; nothing when absent.
   levels?: DeskStructure | null
@@ -1002,7 +1004,7 @@ export const TickerChart = ({
 
   return (
     <section className="mb-4" aria-label={`${ticker} price chart`}>
-      {live && <div className="mb-2 text-xs"><SessionPrice live={live} ticker={ticker} now={now} close={close} /></div>}
+      {live && <div className="mb-2 text-xs"><SessionPrice live={live} ticker={ticker} now={now} close={close} closeSession={closeSession} /></div>}
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h4 className="text-xs font-medium text-[#1d1d1f]">
           {strategy ? 'Price, simulated trades and grade changes' : 'Price, indicators and grade history'}

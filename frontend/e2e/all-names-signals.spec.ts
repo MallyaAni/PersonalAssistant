@@ -2,7 +2,7 @@ import {expect, test, type Page} from '@playwright/test'
 
 const names = ['BUYLOW', 'BUYHIGH', 'SELLLOW', 'SELLHIGH', 'WAIT', 'MISSING']
 const session = '2026-10-13'
-type Fixture = {phase: string; paper: boolean; lost: boolean; expired: boolean; quoteMissing: boolean; liveReads: number; diagnostics: string[]; simulationPolicy?: string; signalUntil?: string}
+type Fixture = {phase: string; paper: boolean; lost: boolean; expired: boolean; quoteMissing: boolean; liveReads: number; diagnostics: string[]; simulationPolicy?: string; signalUntil?: string; allocationUntil?: string; allocationWrong?: boolean; allocationMissing?: boolean; regularFallback?: boolean}
 
 // Exercise live signal evidence with deliberately contrary paper allocations and executions.
 async function install(page: Page, baseURL: string, state: Fixture) {
@@ -23,7 +23,14 @@ async function install(page: Page, baseURL: string, state: Fixture) {
     if (path === '/api/v1/auth/session') json = {authentication_required: true, user_id: 'signals-owner', desk_access: true, desk_write: false}
     else if (path.includes('/conversations/')) json = {conversations: [], messages: []}
     else if (path.endsWith('/desk')) json = {latest: {session, written: `${session}T23:47:45Z`, grades: Object.fromEntries(names.map(ticker => [ticker, {grade: 'B'}])),
-      targets: {policy: 'grade-led-learned-sizing/1', weights: {BUYLOW: .99, BUYHIGH: 0, SELLHIGH: 0}}, actions: [], book: [], briefs: {}, regime: {exposure: 1, flags: []}}, sessions: [session]}
+      targets: {policy: 'grade-led-learned-sizing/1', weights: {BUYLOW: .99, BUYHIGH: 0, SELLHIGH: 0}}, actions: [{ticker: 'BUYHIGH', last_close: 127.5}], book: [], briefs: {}, regime: {exposure: 1, flags: []}}, sessions: [session]}
+    else if (path.endsWith('/model-allocation')) json = state.allocationMissing
+      ? {version: 'published-model-allocation/1', status: 'unavailable', reason: 'Published model allocation could not be verified', rows: {}}
+      : {version: 'published-model-allocation/1', status: 'available', policy: 'grade-led-learned-sizing/1', session,
+        observed_at: state.allocationWrong ? '2026-10-12T23:47:45Z' : `${session}T23:47:45Z`, as_of: at,
+        valid_until: state.allocationUntil ?? until, record_sha256: 'a'.repeat(64), receipt_sha256: 'b'.repeat(64),
+        basis: 'original_published_strategy_allocation_not_trade_quantity',
+        rows: {BUYHIGH: {target_weight: .025}, BUYLOW: {target_weight: 0}, SELLHIGH: {target_weight: .1}}}
     else if (path.endsWith('/live')) {
       state.liveReads++
       json = {as_of: at, decision_session: session, market_status: {phase: state.phase, as_of: at},
@@ -101,6 +108,47 @@ test('All names ranks independent buy and sell signals, with matching details', 
   await page.reload()
   await page.getByRole('region', {name: 'All names signals', exact: true}).getByRole('button', {name: 'Best buys', exact: true}).click()
   await expect(page.locator('tbody tr[data-ticker]').first()).toHaveAttribute('data-ticker', 'BUYHIGH')
+  expect(state.diagnostics).toEqual([])
+})
+
+// Render real model percentages separately from price movement and keep the full chart on the same dated price.
+test('All names dates the comparison and shows independent model size in row and chart', async ({page, baseURL}) => {
+  const state = fixture()
+  state.paper = true
+  state.quoteMissing = true
+  await install(page, baseURL!, state)
+  await page.goto('/?deskView=strategy#desk')
+  const board = page.getByRole('region', {name: 'All names signals', exact: true})
+  await expect(board.getByRole('columnheader', {name: 'Position size %', exact: true})).toBeVisible()
+  await expect(board.getByLabel('BUYHIGH model size', {exact: true})).toContainText('2.5% target')
+  await expect(board.getByLabel('BUYLOW model size', {exact: true})).toContainText('0.0% target')
+  await expect(board.getByLabel('BUYHIGH session price', {exact: true})).toContainText('-20.0% vs Oct 13 close')
+  await board.getByRole('button', {name: 'BUYHIGH', exact: true}).click()
+  const dialog = page.getByRole('dialog', {name: 'BUYHIGH history', exact: true})
+  await expect(dialog.getByLabel('BUYHIGH session price', {exact: true})).toContainText('$102.00 last regular')
+  await expect(dialog.getByLabel('BUYHIGH session price', {exact: true})).not.toContainText('$127.50')
+  await expect(dialog.getByLabel('BUYHIGH model size', {exact: true})).toContainText('2.5% target')
+  expect(state.diagnostics).toEqual([])
+})
+
+// Expire a numeric target without a network refresh and reject a different original plan on refresh.
+test('All names withholds expired or foreign model percentages without hiding signal evidence', async ({page, baseURL}) => {
+  const state = fixture()
+  state.allocationUntil = new Date(Date.now() + 7000).toISOString()
+  await install(page, baseURL!, state)
+  await page.goto('/?deskView=strategy#desk')
+  const size = page.getByLabel('BUYHIGH model size', {exact: true})
+  await expect(size).toContainText('2.5% target')
+  await expect(size).toContainText('Unavailable', {timeout: 10000})
+  await expect(page.getByLabel('BUYHIGH buy signal', {exact: true})).toHaveText('Buy now')
+  state.allocationUntil = undefined
+  state.allocationWrong = true
+  await refresh(page, state)
+  await expect(size).toContainText('Unavailable')
+  state.allocationWrong = false
+  state.allocationMissing = true
+  await refresh(page, state)
+  await expect(size).toContainText('could not be verified')
   expect(state.diagnostics).toEqual([])
 })
 
