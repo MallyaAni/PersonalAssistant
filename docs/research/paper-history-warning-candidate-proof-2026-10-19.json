@@ -1,0 +1,556 @@
+{
+  "captured_at": "2026-10-19T17:06:20.899052+00:00",
+  "diagram_impact": "NONE: existing paper-response to ticker data flow.",
+  "limitations": [
+    "Candidate source-build acceptance is not deployed-asset or signed-in live-account acceptance.",
+    "Initial Node/npm commands were unavailable on PATH and stopped before their intended tool invocation. Original34-byte failed npm build log is retained; successful direct tsc/vite logs are separate.",
+    "Previously closed five fill-identity and three response-order cases were not rerun.",
+    "The separate live scheduled-sender ownership failure is not repaired by this frontend disclosure."
+  ],
+  "observations": [
+    {
+      "bytes": 55241,
+      "original": {
+        "config": {
+          "argv": [
+            "/Users/animallya/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/node_modules/@playwright/test/cli.js",
+            "test",
+            "--config",
+            "/tmp/paper-history-error-red-20261019-v1.config.mjs"
+          ],
+          "configFile": "/tmp/paper-history-error-red-20261019-v1.config.mjs",
+          "failOnFlakyTests": false,
+          "forbidOnly": false,
+          "fullyParallel": false,
+          "globalSetup": null,
+          "globalTeardown": null,
+          "globalTimeout": 0,
+          "grep": {},
+          "grepInvert": null,
+          "maxFailures": 0,
+          "metadata": {
+            "actualWorkers": 1
+          },
+          "preserveOutput": "always",
+          "projects": [
+            {
+              "id": "",
+              "metadata": {
+                "actualWorkers": 1
+              },
+              "name": "",
+              "outputDir": "/tmp/paper-history-error-red-20261019-v1-artifacts",
+              "repeatEach": 1,
+              "retries": 0,
+              "testDir": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e",
+              "testIgnore": [],
+              "testMatch": [
+                "paper-history-error-disclosure.spec.ts"
+              ],
+              "timeout": 30000
+            }
+          ],
+          "quiet": false,
+          "reportSlowTests": {
+            "max": 5,
+            "threshold": 300000
+          },
+          "reporter": [
+            [
+              "list",
+              null
+            ],
+            [
+              "json",
+              {
+                "outputFile": "/tmp/paper-history-error-red-20261019-v1-results.json"
+              }
+            ]
+          ],
+          "rootDir": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e",
+          "shard": null,
+          "tags": [],
+          "updateSnapshots": "missing",
+          "updateSourceMethod": "patch",
+          "version": "1.62.1",
+          "webServer": {
+            "command": "/usr/local/bin/python3 -m http.server 5193 --bind 127.0.0.1 --directory /tmp/fill-consistency-deployed-static-20261019-v3",
+            "reuseExistingServer": false,
+            "url": "http://127.0.0.1:5193"
+          },
+          "workers": 1
+        },
+        "errors": [],
+        "stats": {
+          "duration": 60705.678,
+          "expected": 0,
+          "flaky": 0,
+          "skipped": 0,
+          "startTime": "2026-10-19T16:59:22.463Z",
+          "unexpected": 2
+        },
+        "suites": [
+          {
+            "column": 0,
+            "file": "paper-history-error-disclosure.spec.ts",
+            "line": 0,
+            "specs": [
+              {
+                "column": 3,
+                "file": "paper-history-error-disclosure.spec.ts",
+                "id": "66535c497539875c3285-4be536d443976f884560",
+                "line": 131,
+                "ok": false,
+                "tags": [],
+                "tests": [
+                  {
+                    "annotations": [],
+                    "expectedStatus": "passed",
+                    "projectId": "",
+                    "projectName": "",
+                    "results": [
+                      {
+                        "annotations": [],
+                        "attachments": [
+                          {
+                            "body": "ewogICJ3aXRoQWN0aXZpdHkiOiBmYWxzZSwKICAiZmlsbGVkQXQiOiAiMjAyNi0xMC0xOVQxNjo1ODoyMy44NzFaIiwKICAiZGF5IjogIjIwMjYtMTAtMTkiLAogICJyZXF1ZXN0cyI6IFsKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2F1dGgvc2Vzc2lvbiIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9jb252ZXJzYXRpb25zL3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzayIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2hvbGRpbmdzIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9saXZlIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9saXZlIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svcGFwZXIiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9jaGFydC9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9saXZlL3JlYWQvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svZWFybmluZ3MvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svc3RyYXRlZ3ktc2ltdWxhdGlvbi9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9oaXN0b3J5L1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2NoYXJ0L1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2xpdmUvcmVhZC9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9oaXN0b3J5L1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9hdXRoL3Nlc3Npb24iLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvY29udmVyc2F0aW9ucy9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2NvbnZlcnNhdGlvbnMvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9mNmMyZTUzMy1lMzg2LTRkM2YtOTM1Zi1kY2RhNWQyMjYxOWMiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzayIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2hvbGRpbmdzIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9saXZlIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9saXZlIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9saXZlIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svcGFwZXIiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9jaGFydC9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9saXZlL3JlYWQvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svZWFybmluZ3MvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svc3RyYXRlZ3ktc2ltdWxhdGlvbi9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9oaXN0b3J5L1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2NoYXJ0L1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2xpdmUvcmVhZC9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9oaXN0b3J5L1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0KICBdLAogICJvYnNlcnZhdGlvbnMiOiBbCiAgICB7CiAgICAgICJ2aWV3IjogIlN0b2NrcyIsCiAgICAgICJsYWJlbCI6ICJiZWZvcmUgcmVsb2FkIiwKICAgICAgInRleHQiOiAiTm8gcHJpY2UgdG8gZGlzcGxheVxuXG5QcmljZSBzaWduYWxzIHVzZSByZWd1bGFyLXNlc3Npb24gY2FuZGxlcy5cblxuUHJpY2UgYW5kIGdyYWRlIHNpZ25hbHNcblJlY2VudFxuRnVsbCBoaXN0b3J5XG5HcmFkZSBzaWduYWxzXG5Nb2RlbC1vbmx5IHJlc2VhcmNoIGZpbGxzXG5BY3R1YWwgcGFwZXIgZXhlY3V0aW9uc1xuMTVtXG5EXG5XXG5cdFxuXHRcblxuXHRcblx0XG5cbk5ld2VzdCBzdG9yZWQgc2Vzc2lvbjogMjAyNi0xMC0xOS4gNSBzZXNzaW9ucyBsb2FkZWQ7IHBhbiBvciB6b29tIGZvciBoaXN0b3J5LlxuXG5DaGFydCBrZXlcblxuUmVndWxhci1zZXNzaW9uIGNoYXJ0IMK3IHJlZnJlc2ggMjBzXG5cbk1vZGVsLW9ubHkgc3RyYXRlZ3kgcmVzZWFyY2hcblxuQ29uZmlybWVkIHBhcGVyIGZpbGxzIGF0IHRoZWlyIG9yaWdpbmFsIGRhdGUsIHF1YW50aXR5IGFuZCBwcmljZS4gVGhlc2UgYXJlIGV4ZWN1dGlvbnMsIG5vdCBncmFkZSBzaWduYWxzIG9yIHJlc2VhcmNoIGZpbGxzLlxuXG5ObyBjb25maXJtZWQgcGFwZXIgZXhlY3V0aW9ucyBpbiB0aGUgbG9hZGVkIGhpc3RvcnkuXG5cbkluZGljYXRvcnMgJiBwcmljZSBiYXNpcyIKICAgIH0sCiAgICB7CiAgICAgICJ2aWV3IjogIlBhcGVyIGFjY291bnQiLAogICAgICAibGFiZWwiOiAiYmVmb3JlIHJlbG9hZCIsCiAgICAgICJ0ZXh0IjogIk5vIHByaWNlIHRvIGRpc3BsYXlcblxuUHJpY2Ugc2lnbmFscyB1c2UgcmVndWxhci1zZXNzaW9uIGNhbmRsZXMuXG5cblByaWNlLCBpbmRpY2F0b3JzIGFuZCBncmFkZSBoaXN0b3J5XG5SZWNlbnRcbkZ1bGwgaGlzdG9yeVxuR3JhZGUgc2lnbmFsc1xuUG9saWN5IHJlcGxheVxuMTVtXG5EXG5XXG5cdFxuXHRcblxuXHRcblx0XG5cbk5ld2VzdCBzdG9yZWQgc2Vzc2lvbjogMjAyNi0xMC0xOS4gNSBzZXNzaW9ucyBsb2FkZWQ7IHBhbiBvciB6b29tIGZvciBoaXN0b3J5LlxuXG5DaGFydCBrZXlcblxuUmVndWxhci1zZXNzaW9uIGNoYXJ0IMK3IHJlZnJlc2ggMjBzXG5cbk5vdzogTm8gb3JkZXIgwrcgTW9kZWwgYWxsb2NhdGlvbiB1bmF2YWlsYWJsZSDCtyByZWNvcmRlZCB0YXJnZXQgaXMgbm90IGEgZnJlc2ggcmVjb21tZW5kYXRpb25cblxuTm8gcmVjb3JkZWQgc2V0dXBzIG9uIHRoZSBsb2FkZWQgY2FuZGxlcy5cblxuT3JpZ2luYWwgcmVhZGluZ3MgKDApXG5JbmRpY2F0b3JzICYgcHJpY2UgYmFzaXMiCiAgICB9LAogICAgewogICAgICAidmlldyI6ICJTdG9ja3MiLAogICAgICAibGFiZWwiOiAiYWZ0ZXIgcmVsb2FkIiwKICAgICAgInRleHQiOiAiTm8gcHJpY2UgdG8gZGlzcGxheVxuXG5QcmljZSBzaWduYWxzIHVzZSByZWd1bGFyLXNlc3Npb24gY2FuZGxlcy5cblxuUHJpY2UgYW5kIGdyYWRlIHNpZ25hbHNcblJlY2VudFxuRnVsbCBoaXN0b3J5XG5HcmFkZSBzaWduYWxzXG5Nb2RlbC1vbmx5IHJlc2VhcmNoIGZpbGxzXG5BY3R1YWwgcGFwZXIgZXhlY3V0aW9uc1xuMTVtXG5EXG5XXG5cdFxuXHRcblxuXHRcblx0XG5cbk5ld2VzdCBzdG9yZWQgc2Vzc2lvbjogMjAyNi0xMC0xOS4gNSBzZXNzaW9ucyBsb2FkZWQ7IHBhbiBvciB6b29tIGZvciBoaXN0b3J5LlxuXG5DaGFydCBrZXlcblxuUmVndWxhci1zZXNzaW9uIGNoYXJ0IMK3IHJlZnJlc2ggMjBzXG5cbk1vZGVsLW9ubHkgc3RyYXRlZ3kgcmVzZWFyY2hcblxuQ29uZmlybWVkIHBhcGVyIGZpbGxzIGF0IHRoZWlyIG9yaWdpbmFsIGRhdGUsIHF1YW50aXR5IGFuZCBwcmljZS4gVGhlc2UgYXJlIGV4ZWN1dGlvbnMsIG5vdCBncmFkZSBzaWduYWxzIG9yIHJlc2VhcmNoIGZpbGxzLlxuXG5ObyBjb25maXJtZWQgcGFwZXIgZXhlY3V0aW9ucyBpbiB0aGUgbG9hZGVkIGhpc3RvcnkuXG5cbkluZGljYXRvcnMgJiBwcmljZSBiYXNpcyIKICAgIH0sCiAgICB7CiAgICAgICJ2aWV3IjogIlBhcGVyIGFjY291bnQiLAogICAgICAibGFiZWwiOiAiYWZ0ZXIgcmVsb2FkIiwKICAgICAgInRleHQiOiAiTm8gcHJpY2UgdG8gZGlzcGxheVxuXG5QcmljZSBzaWduYWxzIHVzZSByZWd1bGFyLXNlc3Npb24gY2FuZGxlcy5cblxuUHJpY2UsIGluZGljYXRvcnMgYW5kIGdyYWRlIGhpc3RvcnlcblJlY2VudFxuRnVsbCBoaXN0b3J5XG5HcmFkZSBzaWduYWxzXG5Qb2xpY3kgcmVwbGF5XG4xNW1cbkRcbldcblx0XG5cdFxuXG5cdFxuXHRcblxuTmV3ZXN0IHN0b3JlZCBzZXNzaW9uOiAyMDI2LTEwLTE5LiA1IHNlc3Npb25zIGxvYWRlZDsgcGFuIG9yIHpvb20gZm9yIGhpc3RvcnkuXG5cbkNoYXJ0IGtleVxuXG5SZWd1bGFyLXNlc3Npb24gY2hhcnQgwrcgcmVmcmVzaCAyMHNcblxuTm93OiBObyBvcmRlciDCtyBNb2RlbCBhbGxvY2F0aW9uIHVuYXZhaWxhYmxlIMK3IHJlY29yZGVkIHRhcmdldCBpcyBub3QgYSBmcmVzaCByZWNvbW1lbmRhdGlvblxuXG5ObyByZWNvcmRlZCBzZXR1cHMgb24gdGhlIGxvYWRlZCBjYW5kbGVzLlxuXG5PcmlnaW5hbCByZWFkaW5ncyAoMClcbkluZGljYXRvcnMgJiBwcmljZSBiYXNpcyIKICAgIH0KICBdLAogICJkaWFnbm9zdGljcyI6IHsKICAgICJwYWdlRXJyb3JzIjogW10sCiAgICAiY29uc29sZUVycm9ycyI6IFtdLAogICAgImZhaWxlZFJlcXVlc3RzIjogW10sCiAgICAiYmFkUmVzcG9uc2VzIjogW10sCiAgICAidW5leHBlY3RlZFJlcXVlc3RzIjogW10sCiAgICAiZm9yYmlkZGVuV3JpdGVzIjogW10KICB9Cn0=",
+                            "contentType": "application/json",
+                            "name": "paper-history-error-evidence"
+                          },
+                          {
+                            "contentType": "image/png",
+                            "name": "screenshot",
+                            "path": "/tmp/paper-history-error-red-20261019-v1-artifacts/paper-history-error-disclo-7719b-ter-day-activity-and-reload/test-failed-1.png"
+                          },
+                          {
+                            "contentType": "text/markdown",
+                            "name": "error-context",
+                            "path": "/tmp/paper-history-error-red-20261019-v1-artifacts/paper-history-error-disclo-7719b-ter-day-activity-and-reload/error-context.md"
+                          },
+                          {
+                            "contentType": "application/zip",
+                            "name": "trace",
+                            "path": "/tmp/paper-history-error-red-20261019-v1-artifacts/paper-history-error-disclo-7719b-ter-day-activity-and-reload/trace.zip"
+                          }
+                        ],
+                        "duration": 34240,
+                        "error": {
+                          "location": {
+                            "column": 75,
+                            "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts",
+                            "line": 109
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\nExpected: \u001b[32m\"Saved execution history could not be verified\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\u001b[22m\n",
+                          "snippet": "  107 |     await settle(state)\n  108 |     state.observations.push({view, label, text: await chart.innerText()})\n> 109 |     await expect.soft(chart.getByRole('alert').filter({hasText: REASON})).toHaveText(REASON)\n      |                                                                           ^\n  110 |     await expect.soft(chart.getByText('No confirmed paper executions in the loaded history.', {exact: true})).toHaveCount(0)\n  111 |     if (state.withActivity) {\n  112 |       const list = chart.getByLabel(view === 'Stocks' ? 'STX actual paper executions' : 'STX paper fills', {exact: true})",
+                          "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\nExpected: \u001b[32m\"Saved execution history could not be verified\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\u001b[22m\n\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:109:75)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:137:7"
+                        },
+                        "errorLocation": {
+                          "column": 75,
+                          "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts",
+                          "line": 109
+                        },
+                        "errors": [
+                          {
+                            "location": {
+                              "column": 75,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts",
+                              "line": 109
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\nExpected: \u001b[32m\"Saved execution history could not be verified\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\u001b[22m\n\n\n  107 |     await settle(state)\n  108 |     state.observations.push({view, label, text: await chart.innerText()})\n> 109 |     await expect.soft(chart.getByRole('alert').filter({hasText: REASON})).toHaveText(REASON)\n      |                                                                           ^\n  110 |     await expect.soft(chart.getByText('No confirmed paper executions in the loaded history.', {exact: true})).toHaveCount(0)\n  111 |     if (state.withActivity) {\n  112 |       const list = chart.getByLabel(view === 'Stocks' ? 'STX actual paper executions' : 'STX paper fills', {exact: true})\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:109:75)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:137:7"
+                          },
+                          {
+                            "location": {
+                              "column": 111,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts",
+                              "line": 110
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'STX price chart', exact: true }).getByText('No confirmed paper executions in the loaded history.', { exact: true })\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m1\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByText('No confirmed paper executions in the loaded history.', { exact: true })\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to 1 element\u001b[22m\n\u001b[2m       - unexpected value \"1\"\u001b[22m\n\n\n  108 |     state.observations.push({view, label, text: await chart.innerText()})\n  109 |     await expect.soft(chart.getByRole('alert').filter({hasText: REASON})).toHaveText(REASON)\n> 110 |     await expect.soft(chart.getByText('No confirmed paper executions in the loaded history.', {exact: true})).toHaveCount(0)\n      |                                                                                                               ^\n  111 |     if (state.withActivity) {\n  112 |       const list = chart.getByLabel(view === 'Stocks' ? 'STX actual paper executions' : 'STX paper fills', {exact: true})\n  113 |       await expect.soft(list.locator('li')).toHaveCount(1)\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:110:111)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:137:7"
+                          },
+                          {
+                            "location": {
+                              "column": 75,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts",
+                              "line": 109
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\nExpected: \u001b[32m\"Saved execution history could not be verified\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\u001b[22m\n\n\n  107 |     await settle(state)\n  108 |     state.observations.push({view, label, text: await chart.innerText()})\n> 109 |     await expect.soft(chart.getByRole('alert').filter({hasText: REASON})).toHaveText(REASON)\n      |                                                                           ^\n  110 |     await expect.soft(chart.getByText('No confirmed paper executions in the loaded history.', {exact: true})).toHaveCount(0)\n  111 |     if (state.withActivity) {\n  112 |       const list = chart.getByLabel(view === 'Stocks' ? 'STX actual paper executions' : 'STX paper fills', {exact: true})\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:109:75)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:137:7"
+                          },
+                          {
+                            "location": {
+                              "column": 75,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts",
+                              "line": 109
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\nExpected: \u001b[32m\"Saved execution history could not be verified\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\u001b[22m\n\n\n  107 |     await settle(state)\n  108 |     state.observations.push({view, label, text: await chart.innerText()})\n> 109 |     await expect.soft(chart.getByRole('alert').filter({hasText: REASON})).toHaveText(REASON)\n      |                                                                           ^\n  110 |     await expect.soft(chart.getByText('No confirmed paper executions in the loaded history.', {exact: true})).toHaveCount(0)\n  111 |     if (state.withActivity) {\n  112 |       const list = chart.getByLabel(view === 'Stocks' ? 'STX actual paper executions' : 'STX paper fills', {exact: true})\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:109:75)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:139:7"
+                          },
+                          {
+                            "location": {
+                              "column": 111,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts",
+                              "line": 110
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'STX price chart', exact: true }).getByText('No confirmed paper executions in the loaded history.', { exact: true })\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m1\u001b[39m\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveCount\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByText('No confirmed paper executions in the loaded history.', { exact: true })\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to 1 element\u001b[22m\n\u001b[2m       - unexpected value \"1\"\u001b[22m\n\n\n  108 |     state.observations.push({view, label, text: await chart.innerText()})\n  109 |     await expect.soft(chart.getByRole('alert').filter({hasText: REASON})).toHaveText(REASON)\n> 110 |     await expect.soft(chart.getByText('No confirmed paper executions in the loaded history.', {exact: true})).toHaveCount(0)\n      |                                                                                                               ^\n  111 |     if (state.withActivity) {\n  112 |       const list = chart.getByLabel(view === 'Stocks' ? 'STX actual paper executions' : 'STX paper fills', {exact: true})\n  113 |       await expect.soft(list.locator('li')).toHaveCount(1)\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:110:111)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:139:7"
+                          },
+                          {
+                            "location": {
+                              "column": 75,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts",
+                              "line": 109
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\nExpected: \u001b[32m\"Saved execution history could not be verified\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\u001b[22m\n\n\n  107 |     await settle(state)\n  108 |     state.observations.push({view, label, text: await chart.innerText()})\n> 109 |     await expect.soft(chart.getByRole('alert').filter({hasText: REASON})).toHaveText(REASON)\n      |                                                                           ^\n  110 |     await expect.soft(chart.getByText('No confirmed paper executions in the loaded history.', {exact: true})).toHaveCount(0)\n  111 |     if (state.withActivity) {\n  112 |       const list = chart.getByLabel(view === 'Stocks' ? 'STX actual paper executions' : 'STX paper fills', {exact: true})\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:109:75)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:139:7"
+                          }
+                        ],
+                        "parallelIndex": 0,
+                        "retry": 0,
+                        "startTime": "2026-10-19T16:59:23.512Z",
+                        "status": "failed",
+                        "stderr": [],
+                        "stdout": [],
+                        "workerIndex": 0
+                      }
+                    ],
+                    "status": "unexpected",
+                    "timeout": 60000
+                  }
+                ],
+                "title": "failed saved history disclosed in both tickers with empty later-day activity and reload"
+              },
+              {
+                "column": 3,
+                "file": "paper-history-error-disclosure.spec.ts",
+                "id": "66535c497539875c3285-25281036a065d3a33341",
+                "line": 131,
+                "ok": false,
+                "tags": [],
+                "tests": [
+                  {
+                    "annotations": [],
+                    "expectedStatus": "passed",
+                    "projectId": "",
+                    "projectName": "",
+                    "results": [
+                      {
+                        "annotations": [],
+                        "attachments": [
+                          {
+                            "body": "ewogICJ3aXRoQWN0aXZpdHkiOiB0cnVlLAogICJmaWxsZWRBdCI6ICIyMDI2LTEwLTE5VDE2OjU4OjU5LjE4OFoiLAogICJkYXkiOiAiMjAyNi0xMC0xOSIsCiAgInJlcXVlc3RzIjogWwogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvYXV0aC9zZXNzaW9uIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2NvbnZlcnNhdGlvbnMvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lciIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svaG9sZGluZ3MiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2xpdmUiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2xpdmUiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2xpdmUiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9wYXBlciIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2NoYXJ0L1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2xpdmUvcmVhZC9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9zdHJhdGVneS1zaW11bGF0aW9uL1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2hpc3RvcnkvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svY2hhcnQvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svbGl2ZS9yZWFkL1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2Vhcm5pbmdzL1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2hpc3RvcnkvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2F1dGgvc2Vzc2lvbiIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9jb252ZXJzYXRpb25zL3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvY29udmVyc2F0aW9ucy9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2VhZmEzMzBlLTk4OTgtNGRhZS1hNDI3LTI3MWE4NjczMzFkZCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svaG9sZGluZ3MiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2xpdmUiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2xpdmUiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9wYXBlciIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2NoYXJ0L1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2xpdmUvcmVhZC9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9zdHJhdGVneS1zaW11bGF0aW9uL1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2hpc3RvcnkvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svY2hhcnQvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svbGl2ZS9yZWFkL1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2Vhcm5pbmdzL1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2hpc3RvcnkvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfQogIF0sCiAgIm9ic2VydmF0aW9ucyI6IFsKICAgIHsKICAgICAgInZpZXciOiAiU3RvY2tzIiwKICAgICAgImxhYmVsIjogImJlZm9yZSByZWxvYWQiLAogICAgICAidGV4dCI6ICJObyBwcmljZSB0byBkaXNwbGF5XG5cblByaWNlIHNpZ25hbHMgdXNlIHJlZ3VsYXItc2Vzc2lvbiBjYW5kbGVzLlxuXG5QcmljZSBhbmQgZ3JhZGUgc2lnbmFsc1xuUmVjZW50XG5GdWxsIGhpc3RvcnlcbkdyYWRlIHNpZ25hbHNcbk1vZGVsLW9ubHkgcmVzZWFyY2ggZmlsbHNcbkFjdHVhbCBwYXBlciBleGVjdXRpb25zXG4xNW1cbkRcbldcblx0XG5cdFxuXG5cdFxuXHRcblxuTmV3ZXN0IHN0b3JlZCBzZXNzaW9uOiAyMDI2LTEwLTE5LiA1IHNlc3Npb25zIGxvYWRlZDsgcGFuIG9yIHpvb20gZm9yIGhpc3RvcnkuXG5cbkNoYXJ0IGtleVxuXG5SZWd1bGFyLXNlc3Npb24gY2hhcnQgwrcgcmVmcmVzaCAyMHNcblxuTW9kZWwtb25seSBzdHJhdGVneSByZXNlYXJjaFxuXG5Db25maXJtZWQgcGFwZXIgZmlsbHMgYXQgdGhlaXIgb3JpZ2luYWwgZGF0ZSwgcXVhbnRpdHkgYW5kIHByaWNlLiBUaGVzZSBhcmUgZXhlY3V0aW9ucywgbm90IGdyYWRlIHNpZ25hbHMgb3IgcmVzZWFyY2ggZmlsbHMuXG5cbjIwMjYtMTAtMTkgwrcgMTI6NTggUE0gRVQgwrcgQlVZIDMgQCAkMTAxLjI1XG5JbmRpY2F0b3JzICYgcHJpY2UgYmFzaXMiCiAgICB9LAogICAgewogICAgICAidmlldyI6ICJQYXBlciBhY2NvdW50IiwKICAgICAgImxhYmVsIjogImJlZm9yZSByZWxvYWQiLAogICAgICAidGV4dCI6ICJObyBwcmljZSB0byBkaXNwbGF5XG5cblByaWNlIHNpZ25hbHMgdXNlIHJlZ3VsYXItc2Vzc2lvbiBjYW5kbGVzLlxuXG5QcmljZSwgaW5kaWNhdG9ycyBhbmQgZ3JhZGUgaGlzdG9yeVxuUmVjZW50XG5GdWxsIGhpc3RvcnlcbkdyYWRlIHNpZ25hbHNcblBvbGljeSByZXBsYXlcblBhcGVyIHRyYWRlc1xuMTVtXG5EXG5XXG5cdFxuXHRcblxuXHRcblx0XG5cbk5ld2VzdCBzdG9yZWQgc2Vzc2lvbjogMjAyNi0xMC0xOS4gNSBzZXNzaW9ucyBsb2FkZWQ7IHBhbiBvciB6b29tIGZvciBoaXN0b3J5LlxuXG5DaGFydCBrZXlcblxuUmVndWxhci1zZXNzaW9uIGNoYXJ0IMK3IHJlZnJlc2ggMjBzXG5cbk5vdzogTm8gb3JkZXIgwrcgTW9kZWwgYWxsb2NhdGlvbiB1bmF2YWlsYWJsZSDCtyByZWNvcmRlZCB0YXJnZXQgaXMgbm90IGEgZnJlc2ggcmVjb21tZW5kYXRpb25cblxuT2N0IDE5LCAyMDI2IMK3IDEyOjU4IFBNIEVUIMK3IEJVWSAzIEAgJDEwMS4yNVxuXG5ObyByZWNvcmRlZCBzZXR1cHMgb24gdGhlIGxvYWRlZCBjYW5kbGVzLlxuXG5PcmlnaW5hbCByZWFkaW5ncyAoMClcbkluZGljYXRvcnMgJiBwcmljZSBiYXNpcyIKICAgIH0sCiAgICB7CiAgICAgICJ2aWV3IjogIlN0b2NrcyIsCiAgICAgICJsYWJlbCI6ICJhZnRlciByZWxvYWQiLAogICAgICAidGV4dCI6ICJObyBwcmljZSB0byBkaXNwbGF5XG5cblByaWNlIHNpZ25hbHMgdXNlIHJlZ3VsYXItc2Vzc2lvbiBjYW5kbGVzLlxuXG5QcmljZSBhbmQgZ3JhZGUgc2lnbmFsc1xuUmVjZW50XG5GdWxsIGhpc3RvcnlcbkdyYWRlIHNpZ25hbHNcbk1vZGVsLW9ubHkgcmVzZWFyY2ggZmlsbHNcbkFjdHVhbCBwYXBlciBleGVjdXRpb25zXG4xNW1cbkRcbldcblx0XG5cdFxuXG5cdFxuXHRcblxuTmV3ZXN0IHN0b3JlZCBzZXNzaW9uOiAyMDI2LTEwLTE5LiA1IHNlc3Npb25zIGxvYWRlZDsgcGFuIG9yIHpvb20gZm9yIGhpc3RvcnkuXG5cbkNoYXJ0IGtleVxuXG5SZWd1bGFyLXNlc3Npb24gY2hhcnQgwrcgcmVmcmVzaCAyMHNcblxuTW9kZWwtb25seSBzdHJhdGVneSByZXNlYXJjaFxuXG5Db25maXJtZWQgcGFwZXIgZmlsbHMgYXQgdGhlaXIgb3JpZ2luYWwgZGF0ZSwgcXVhbnRpdHkgYW5kIHByaWNlLiBUaGVzZSBhcmUgZXhlY3V0aW9ucywgbm90IGdyYWRlIHNpZ25hbHMgb3IgcmVzZWFyY2ggZmlsbHMuXG5cbjIwMjYtMTAtMTkgwrcgMTI6NTggUE0gRVQgwrcgQlVZIDMgQCAkMTAxLjI1XG5JbmRpY2F0b3JzICYgcHJpY2UgYmFzaXMiCiAgICB9LAogICAgewogICAgICAidmlldyI6ICJQYXBlciBhY2NvdW50IiwKICAgICAgImxhYmVsIjogImFmdGVyIHJlbG9hZCIsCiAgICAgICJ0ZXh0IjogIk5vIHByaWNlIHRvIGRpc3BsYXlcblxuUHJpY2Ugc2lnbmFscyB1c2UgcmVndWxhci1zZXNzaW9uIGNhbmRsZXMuXG5cblByaWNlLCBpbmRpY2F0b3JzIGFuZCBncmFkZSBoaXN0b3J5XG5SZWNlbnRcbkZ1bGwgaGlzdG9yeVxuR3JhZGUgc2lnbmFsc1xuUG9saWN5IHJlcGxheVxuUGFwZXIgdHJhZGVzXG4xNW1cbkRcbldcblx0XG5cdFxuXG5cdFxuXHRcblxuTmV3ZXN0IHN0b3JlZCBzZXNzaW9uOiAyMDI2LTEwLTE5LiA1IHNlc3Npb25zIGxvYWRlZDsgcGFuIG9yIHpvb20gZm9yIGhpc3RvcnkuXG5cbkNoYXJ0IGtleVxuXG5SZWd1bGFyLXNlc3Npb24gY2hhcnQgwrcgcmVmcmVzaCAyMHNcblxuTm93OiBObyBvcmRlciDCtyBNb2RlbCBhbGxvY2F0aW9uIHVuYXZhaWxhYmxlIMK3IHJlY29yZGVkIHRhcmdldCBpcyBub3QgYSBmcmVzaCByZWNvbW1lbmRhdGlvblxuXG5PY3QgMTksIDIwMjYgwrcgMTI6NTggUE0gRVQgwrcgQlVZIDMgQCAkMTAxLjI1XG5cbk5vIHJlY29yZGVkIHNldHVwcyBvbiB0aGUgbG9hZGVkIGNhbmRsZXMuXG5cbk9yaWdpbmFsIHJlYWRpbmdzICgwKVxuSW5kaWNhdG9ycyAmIHByaWNlIGJhc2lzIgogICAgfQogIF0sCiAgImRpYWdub3N0aWNzIjogewogICAgInBhZ2VFcnJvcnMiOiBbXSwKICAgICJjb25zb2xlRXJyb3JzIjogW10sCiAgICAiZmFpbGVkUmVxdWVzdHMiOiBbXSwKICAgICJiYWRSZXNwb25zZXMiOiBbXSwKICAgICJ1bmV4cGVjdGVkUmVxdWVzdHMiOiBbXSwKICAgICJmb3JiaWRkZW5Xcml0ZXMiOiBbXQogIH0KfQ==",
+                            "contentType": "application/json",
+                            "name": "paper-history-error-evidence"
+                          },
+                          {
+                            "contentType": "image/png",
+                            "name": "screenshot",
+                            "path": "/tmp/paper-history-error-red-20261019-v1-artifacts/paper-history-error-disclo-f5f16-ent-broker-fills-and-reload/test-failed-1.png"
+                          },
+                          {
+                            "contentType": "text/markdown",
+                            "name": "error-context",
+                            "path": "/tmp/paper-history-error-red-20261019-v1-artifacts/paper-history-error-disclo-f5f16-ent-broker-fills-and-reload/error-context.md"
+                          },
+                          {
+                            "contentType": "application/zip",
+                            "name": "trace",
+                            "path": "/tmp/paper-history-error-red-20261019-v1-artifacts/paper-history-error-disclo-f5f16-ent-broker-fills-and-reload/trace.zip"
+                          }
+                        ],
+                        "duration": 23920,
+                        "error": {
+                          "location": {
+                            "column": 75,
+                            "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts",
+                            "line": 109
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\nExpected: \u001b[32m\"Saved execution history could not be verified\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\u001b[22m\n",
+                          "snippet": "  107 |     await settle(state)\n  108 |     state.observations.push({view, label, text: await chart.innerText()})\n> 109 |     await expect.soft(chart.getByRole('alert').filter({hasText: REASON})).toHaveText(REASON)\n      |                                                                           ^\n  110 |     await expect.soft(chart.getByText('No confirmed paper executions in the loaded history.', {exact: true})).toHaveCount(0)\n  111 |     if (state.withActivity) {\n  112 |       const list = chart.getByLabel(view === 'Stocks' ? 'STX actual paper executions' : 'STX paper fills', {exact: true})",
+                          "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\nExpected: \u001b[32m\"Saved execution history could not be verified\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\u001b[22m\n\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:109:75)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:137:7"
+                        },
+                        "errorLocation": {
+                          "column": 75,
+                          "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts",
+                          "line": 109
+                        },
+                        "errors": [
+                          {
+                            "location": {
+                              "column": 75,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts",
+                              "line": 109
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\nExpected: \u001b[32m\"Saved execution history could not be verified\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\u001b[22m\n\n\n  107 |     await settle(state)\n  108 |     state.observations.push({view, label, text: await chart.innerText()})\n> 109 |     await expect.soft(chart.getByRole('alert').filter({hasText: REASON})).toHaveText(REASON)\n      |                                                                           ^\n  110 |     await expect.soft(chart.getByText('No confirmed paper executions in the loaded history.', {exact: true})).toHaveCount(0)\n  111 |     if (state.withActivity) {\n  112 |       const list = chart.getByLabel(view === 'Stocks' ? 'STX actual paper executions' : 'STX paper fills', {exact: true})\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:109:75)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:137:7"
+                          },
+                          {
+                            "location": {
+                              "column": 75,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts",
+                              "line": 109
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\nExpected: \u001b[32m\"Saved execution history could not be verified\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\u001b[22m\n\n\n  107 |     await settle(state)\n  108 |     state.observations.push({view, label, text: await chart.innerText()})\n> 109 |     await expect.soft(chart.getByRole('alert').filter({hasText: REASON})).toHaveText(REASON)\n      |                                                                           ^\n  110 |     await expect.soft(chart.getByText('No confirmed paper executions in the loaded history.', {exact: true})).toHaveCount(0)\n  111 |     if (state.withActivity) {\n  112 |       const list = chart.getByLabel(view === 'Stocks' ? 'STX actual paper executions' : 'STX paper fills', {exact: true})\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:109:75)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:137:7"
+                          },
+                          {
+                            "location": {
+                              "column": 75,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts",
+                              "line": 109
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\nExpected: \u001b[32m\"Saved execution history could not be verified\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\u001b[22m\n\n\n  107 |     await settle(state)\n  108 |     state.observations.push({view, label, text: await chart.innerText()})\n> 109 |     await expect.soft(chart.getByRole('alert').filter({hasText: REASON})).toHaveText(REASON)\n      |                                                                           ^\n  110 |     await expect.soft(chart.getByText('No confirmed paper executions in the loaded history.', {exact: true})).toHaveCount(0)\n  111 |     if (state.withActivity) {\n  112 |       const list = chart.getByLabel(view === 'Stocks' ? 'STX actual paper executions' : 'STX paper fills', {exact: true})\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:109:75)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:139:7"
+                          },
+                          {
+                            "location": {
+                              "column": 75,
+                              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts",
+                              "line": 109
+                            },
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\nExpected: \u001b[32m\"Saved execution history could not be verified\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'STX price chart', exact: true }).getByRole('alert').filter({ hasText: 'Saved execution history could not be verified' })\u001b[22m\n\n\n  107 |     await settle(state)\n  108 |     state.observations.push({view, label, text: await chart.innerText()})\n> 109 |     await expect.soft(chart.getByRole('alert').filter({hasText: REASON})).toHaveText(REASON)\n      |                                                                           ^\n  110 |     await expect.soft(chart.getByText('No confirmed paper executions in the loaded history.', {exact: true})).toHaveCount(0)\n  111 |     if (state.withActivity) {\n  112 |       const list = chart.getByLabel(view === 'Stocks' ? 'STX actual paper executions' : 'STX paper fills', {exact: true})\n    at inspectViews (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:109:75)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/paper-history-error-disclosure.spec.ts:139:7"
+                          }
+                        ],
+                        "parallelIndex": 0,
+                        "retry": 0,
+                        "startTime": "2026-10-19T16:59:58.814Z",
+                        "status": "failed",
+                        "stderr": [],
+                        "stdout": [],
+                        "workerIndex": 1
+                      }
+                    ],
+                    "status": "unexpected",
+                    "timeout": 60000
+                  }
+                ],
+                "title": "failed saved history disclosed in both tickers beside current broker fills and reload"
+              }
+            ],
+            "title": "paper-history-error-disclosure.spec.ts"
+          }
+        ]
+      },
+      "path": "/tmp/paper-history-error-red-20261019-v1-results.json",
+      "sha256": "c5129173fc504824710814d6cec532fb7f8dcba58b1305193e28d6f280cf45c9"
+    },
+    {
+      "bytes": 27509,
+      "original": {
+        "config": {
+          "argv": [
+            "/Users/animallya/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+            "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/node_modules/@playwright/test/cli.js",
+            "test",
+            "--config",
+            "/tmp/paper-history-error-green-20261019-v1.config.mjs"
+          ],
+          "configFile": "/tmp/paper-history-error-green-20261019-v1.config.mjs",
+          "failOnFlakyTests": false,
+          "forbidOnly": false,
+          "fullyParallel": false,
+          "globalSetup": null,
+          "globalTeardown": null,
+          "globalTimeout": 0,
+          "grep": {},
+          "grepInvert": null,
+          "maxFailures": 0,
+          "metadata": {
+            "actualWorkers": 1
+          },
+          "preserveOutput": "always",
+          "projects": [
+            {
+              "id": "",
+              "metadata": {
+                "actualWorkers": 1
+              },
+              "name": "",
+              "outputDir": "/tmp/paper-history-error-green-20261019-v1-artifacts",
+              "repeatEach": 1,
+              "retries": 0,
+              "testDir": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e",
+              "testIgnore": [],
+              "testMatch": [
+                "paper-history-error-disclosure.spec.ts"
+              ],
+              "timeout": 30000
+            }
+          ],
+          "quiet": false,
+          "reportSlowTests": {
+            "max": 5,
+            "threshold": 300000
+          },
+          "reporter": [
+            [
+              "list",
+              null
+            ],
+            [
+              "json",
+              {
+                "outputFile": "/tmp/paper-history-error-green-20261019-v1-results.json"
+              }
+            ]
+          ],
+          "rootDir": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e",
+          "shard": null,
+          "tags": [],
+          "updateSnapshots": "missing",
+          "updateSourceMethod": "patch",
+          "version": "1.62.1",
+          "webServer": {
+            "command": "/usr/local/bin/python3 -m http.server 5194 --bind 127.0.0.1 --directory /tmp/paper-history-error-green-20261019-v1-dist",
+            "reuseExistingServer": false,
+            "url": "http://127.0.0.1:5194"
+          },
+          "workers": 1
+        },
+        "errors": [],
+        "stats": {
+          "duration": 10880.482,
+          "expected": 2,
+          "flaky": 0,
+          "skipped": 0,
+          "startTime": "2026-10-19T17:01:20.113Z",
+          "unexpected": 0
+        },
+        "suites": [
+          {
+            "column": 0,
+            "file": "paper-history-error-disclosure.spec.ts",
+            "line": 0,
+            "specs": [
+              {
+                "column": 3,
+                "file": "paper-history-error-disclosure.spec.ts",
+                "id": "66535c497539875c3285-4be536d443976f884560",
+                "line": 131,
+                "ok": true,
+                "tags": [],
+                "tests": [
+                  {
+                    "annotations": [],
+                    "expectedStatus": "passed",
+                    "projectId": "",
+                    "projectName": "",
+                    "results": [
+                      {
+                        "annotations": [],
+                        "attachments": [
+                          {
+                            "body": "ewogICJ3aXRoQWN0aXZpdHkiOiBmYWxzZSwKICAiZmlsbGVkQXQiOiAiMjAyNi0xMC0xOVQxNzowMDoyMy4wNjdaIiwKICAiZGF5IjogIjIwMjYtMTAtMTkiLAogICJyZXF1ZXN0cyI6IFsKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2F1dGgvc2Vzc2lvbiIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9jb252ZXJzYXRpb25zL3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzayIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2hvbGRpbmdzIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9saXZlIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9saXZlIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9saXZlIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svcGFwZXIiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9jaGFydC9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9saXZlL3JlYWQvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svZWFybmluZ3MvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svc3RyYXRlZ3ktc2ltdWxhdGlvbi9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9oaXN0b3J5L1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2NoYXJ0L1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2xpdmUvcmVhZC9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9oaXN0b3J5L1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9hdXRoL3Nlc3Npb24iLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvY29udmVyc2F0aW9ucy9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2NvbnZlcnNhdGlvbnMvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci81YzQzNDc1OC0yMzc5LTRlMWItODdmYS0xM2RjNDc5N2NiMTMiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzayIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2hvbGRpbmdzIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9saXZlIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svc2Vzc2lvbi1wcmljZXMiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9saXZlIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svcGFwZXIiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9jaGFydC9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9saXZlL3JlYWQvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svZWFybmluZ3MvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svc3RyYXRlZ3ktc2ltdWxhdGlvbi9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9oaXN0b3J5L1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2NoYXJ0L1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2xpdmUvcmVhZC9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9oaXN0b3J5L1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0KICBdLAogICJvYnNlcnZhdGlvbnMiOiBbCiAgICB7CiAgICAgICJ2aWV3IjogIlN0b2NrcyIsCiAgICAgICJsYWJlbCI6ICJiZWZvcmUgcmVsb2FkIiwKICAgICAgInRleHQiOiAiTm8gcHJpY2UgdG8gZGlzcGxheVxuXG5QcmljZSBzaWduYWxzIHVzZSByZWd1bGFyLXNlc3Npb24gY2FuZGxlcy5cblxuUHJpY2UgYW5kIGdyYWRlIHNpZ25hbHNcblJlY2VudFxuRnVsbCBoaXN0b3J5XG5HcmFkZSBzaWduYWxzXG5Nb2RlbC1vbmx5IHJlc2VhcmNoIGZpbGxzXG5BY3R1YWwgcGFwZXIgZXhlY3V0aW9uc1xuMTVtXG5EXG5XXG5cdFxuXHRcblxuXHRcblx0XG5cbk5ld2VzdCBzdG9yZWQgc2Vzc2lvbjogMjAyNi0xMC0xOS4gNSBzZXNzaW9ucyBsb2FkZWQ7IHBhbiBvciB6b29tIGZvciBoaXN0b3J5LlxuXG5DaGFydCBrZXlcblxuUmVndWxhci1zZXNzaW9uIGNoYXJ0IMK3IHJlZnJlc2ggMjBzXG5cbk1vZGVsLW9ubHkgc3RyYXRlZ3kgcmVzZWFyY2hcblxuQ29uZmlybWVkIHBhcGVyIGZpbGxzIGF0IHRoZWlyIG9yaWdpbmFsIGRhdGUsIHF1YW50aXR5IGFuZCBwcmljZS4gVGhlc2UgYXJlIGV4ZWN1dGlvbnMsIG5vdCBncmFkZSBzaWduYWxzIG9yIHJlc2VhcmNoIGZpbGxzLlxuXG5TYXZlZCBleGVjdXRpb24gaGlzdG9yeSBjb3VsZCBub3QgYmUgdmVyaWZpZWRcblxuSW5kaWNhdG9ycyAmIHByaWNlIGJhc2lzIgogICAgfSwKICAgIHsKICAgICAgInZpZXciOiAiUGFwZXIgYWNjb3VudCIsCiAgICAgICJsYWJlbCI6ICJiZWZvcmUgcmVsb2FkIiwKICAgICAgInRleHQiOiAiTm8gcHJpY2UgdG8gZGlzcGxheVxuXG5QcmljZSBzaWduYWxzIHVzZSByZWd1bGFyLXNlc3Npb24gY2FuZGxlcy5cblxuUHJpY2UsIGluZGljYXRvcnMgYW5kIGdyYWRlIGhpc3RvcnlcblJlY2VudFxuRnVsbCBoaXN0b3J5XG5HcmFkZSBzaWduYWxzXG5Qb2xpY3kgcmVwbGF5XG4xNW1cbkRcbldcblx0XG5cdFxuXG5cdFxuXHRcblxuTmV3ZXN0IHN0b3JlZCBzZXNzaW9uOiAyMDI2LTEwLTE5LiA1IHNlc3Npb25zIGxvYWRlZDsgcGFuIG9yIHpvb20gZm9yIGhpc3RvcnkuXG5cbkNoYXJ0IGtleVxuXG5SZWd1bGFyLXNlc3Npb24gY2hhcnQgwrcgcmVmcmVzaCAyMHNcblxuTm93OiBObyBvcmRlciDCtyBNb2RlbCBhbGxvY2F0aW9uIHVuYXZhaWxhYmxlIMK3IHJlY29yZGVkIHRhcmdldCBpcyBub3QgYSBmcmVzaCByZWNvbW1lbmRhdGlvblxuXG5TYXZlZCBleGVjdXRpb24gaGlzdG9yeSBjb3VsZCBub3QgYmUgdmVyaWZpZWRcblxuTm8gcmVjb3JkZWQgc2V0dXBzIG9uIHRoZSBsb2FkZWQgY2FuZGxlcy5cblxuT3JpZ2luYWwgcmVhZGluZ3MgKDApXG5JbmRpY2F0b3JzICYgcHJpY2UgYmFzaXMiCiAgICB9LAogICAgewogICAgICAidmlldyI6ICJTdG9ja3MiLAogICAgICAibGFiZWwiOiAiYWZ0ZXIgcmVsb2FkIiwKICAgICAgInRleHQiOiAiTm8gcHJpY2UgdG8gZGlzcGxheVxuXG5QcmljZSBzaWduYWxzIHVzZSByZWd1bGFyLXNlc3Npb24gY2FuZGxlcy5cblxuUHJpY2UgYW5kIGdyYWRlIHNpZ25hbHNcblJlY2VudFxuRnVsbCBoaXN0b3J5XG5HcmFkZSBzaWduYWxzXG5Nb2RlbC1vbmx5IHJlc2VhcmNoIGZpbGxzXG5BY3R1YWwgcGFwZXIgZXhlY3V0aW9uc1xuMTVtXG5EXG5XXG5cdFxuXHRcblxuXHRcblx0XG5cbk5ld2VzdCBzdG9yZWQgc2Vzc2lvbjogMjAyNi0xMC0xOS4gNSBzZXNzaW9ucyBsb2FkZWQ7IHBhbiBvciB6b29tIGZvciBoaXN0b3J5LlxuXG5DaGFydCBrZXlcblxuUmVndWxhci1zZXNzaW9uIGNoYXJ0IMK3IHJlZnJlc2ggMjBzXG5cbk1vZGVsLW9ubHkgc3RyYXRlZ3kgcmVzZWFyY2hcblxuQ29uZmlybWVkIHBhcGVyIGZpbGxzIGF0IHRoZWlyIG9yaWdpbmFsIGRhdGUsIHF1YW50aXR5IGFuZCBwcmljZS4gVGhlc2UgYXJlIGV4ZWN1dGlvbnMsIG5vdCBncmFkZSBzaWduYWxzIG9yIHJlc2VhcmNoIGZpbGxzLlxuXG5TYXZlZCBleGVjdXRpb24gaGlzdG9yeSBjb3VsZCBub3QgYmUgdmVyaWZpZWRcblxuSW5kaWNhdG9ycyAmIHByaWNlIGJhc2lzIgogICAgfSwKICAgIHsKICAgICAgInZpZXciOiAiUGFwZXIgYWNjb3VudCIsCiAgICAgICJsYWJlbCI6ICJhZnRlciByZWxvYWQiLAogICAgICAidGV4dCI6ICJObyBwcmljZSB0byBkaXNwbGF5XG5cblByaWNlIHNpZ25hbHMgdXNlIHJlZ3VsYXItc2Vzc2lvbiBjYW5kbGVzLlxuXG5QcmljZSwgaW5kaWNhdG9ycyBhbmQgZ3JhZGUgaGlzdG9yeVxuUmVjZW50XG5GdWxsIGhpc3RvcnlcbkdyYWRlIHNpZ25hbHNcblBvbGljeSByZXBsYXlcbjE1bVxuRFxuV1xuXHRcblx0XG5cblx0XG5cdFxuXG5OZXdlc3Qgc3RvcmVkIHNlc3Npb246IDIwMjYtMTAtMTkuIDUgc2Vzc2lvbnMgbG9hZGVkOyBwYW4gb3Igem9vbSBmb3IgaGlzdG9yeS5cblxuQ2hhcnQga2V5XG5cblJlZ3VsYXItc2Vzc2lvbiBjaGFydCDCtyByZWZyZXNoIDIwc1xuXG5Ob3c6IE5vIG9yZGVyIMK3IE1vZGVsIGFsbG9jYXRpb24gdW5hdmFpbGFibGUgwrcgcmVjb3JkZWQgdGFyZ2V0IGlzIG5vdCBhIGZyZXNoIHJlY29tbWVuZGF0aW9uXG5cblNhdmVkIGV4ZWN1dGlvbiBoaXN0b3J5IGNvdWxkIG5vdCBiZSB2ZXJpZmllZFxuXG5ObyByZWNvcmRlZCBzZXR1cHMgb24gdGhlIGxvYWRlZCBjYW5kbGVzLlxuXG5PcmlnaW5hbCByZWFkaW5ncyAoMClcbkluZGljYXRvcnMgJiBwcmljZSBiYXNpcyIKICAgIH0KICBdLAogICJkaWFnbm9zdGljcyI6IHsKICAgICJwYWdlRXJyb3JzIjogW10sCiAgICAiY29uc29sZUVycm9ycyI6IFtdLAogICAgImZhaWxlZFJlcXVlc3RzIjogW10sCiAgICAiYmFkUmVzcG9uc2VzIjogW10sCiAgICAidW5leHBlY3RlZFJlcXVlc3RzIjogW10sCiAgICAiZm9yYmlkZGVuV3JpdGVzIjogW10KICB9Cn0=",
+                            "contentType": "application/json",
+                            "name": "paper-history-error-evidence"
+                          },
+                          {
+                            "contentType": "application/zip",
+                            "name": "trace",
+                            "path": "/tmp/paper-history-error-green-20261019-v1-artifacts/paper-history-error-disclo-7719b-ter-day-activity-and-reload/trace.zip"
+                          }
+                        ],
+                        "duration": 3991,
+                        "errors": [],
+                        "parallelIndex": 0,
+                        "retry": 0,
+                        "startTime": "2026-10-19T17:01:21.040Z",
+                        "status": "passed",
+                        "stderr": [],
+                        "stdout": [],
+                        "workerIndex": 0
+                      }
+                    ],
+                    "status": "expected",
+                    "timeout": 60000
+                  }
+                ],
+                "title": "failed saved history disclosed in both tickers with empty later-day activity and reload"
+              },
+              {
+                "column": 3,
+                "file": "paper-history-error-disclosure.spec.ts",
+                "id": "66535c497539875c3285-25281036a065d3a33341",
+                "line": 131,
+                "ok": true,
+                "tags": [],
+                "tests": [
+                  {
+                    "annotations": [],
+                    "expectedStatus": "passed",
+                    "projectId": "",
+                    "projectName": "",
+                    "results": [
+                      {
+                        "annotations": [],
+                        "attachments": [
+                          {
+                            "body": "ewogICJ3aXRoQWN0aXZpdHkiOiB0cnVlLAogICJmaWxsZWRBdCI6ICIyMDI2LTEwLTE5VDE3OjAwOjI3LjA3NFoiLAogICJkYXkiOiAiMjAyNi0xMC0xOSIsCiAgInJlcXVlc3RzIjogWwogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvYXV0aC9zZXNzaW9uIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2NvbnZlcnNhdGlvbnMvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lciIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svaG9sZGluZ3MiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2xpdmUiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2xpdmUiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2xpdmUiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9wYXBlciIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2NoYXJ0L1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2xpdmUvcmVhZC9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9zdHJhdGVneS1zaW11bGF0aW9uL1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2hpc3RvcnkvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svY2hhcnQvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svbGl2ZS9yZWFkL1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2Vhcm5pbmdzL1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2hpc3RvcnkvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL2F1dGgvc2Vzc2lvbiIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9jb252ZXJzYXRpb25zL3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvY29udmVyc2F0aW9ucy9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyLzExZmU5ZTBjLWQ0NTAtNDc2MS1hNzNiLWI3NzBjNDk4NmUwYyIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svaG9sZGluZ3MiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2xpdmUiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9zZXNzaW9uLXByaWNlcyIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2xpdmUiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9wYXBlciIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2NoYXJ0L1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2xpdmUvcmVhZC9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9lYXJuaW5ncy9TVFgiLAogICAgICAiZmluaXNoZWQiOiB0cnVlCiAgICB9LAogICAgewogICAgICAibWV0aG9kIjogIkdFVCIsCiAgICAgICJwYXRoIjogIi9hcGkvdjEvbWFya2V0L3BhcGVyLWhpc3RvcnktZXJyb3Itb3duZXIvZGVzay9zdHJhdGVneS1zaW11bGF0aW9uL1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2hpc3RvcnkvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svY2hhcnQvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfSwKICAgIHsKICAgICAgIm1ldGhvZCI6ICJHRVQiLAogICAgICAicGF0aCI6ICIvYXBpL3YxL21hcmtldC9wYXBlci1oaXN0b3J5LWVycm9yLW93bmVyL2Rlc2svbGl2ZS9yZWFkL1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2Vhcm5pbmdzL1NUWCIsCiAgICAgICJmaW5pc2hlZCI6IHRydWUKICAgIH0sCiAgICB7CiAgICAgICJtZXRob2QiOiAiR0VUIiwKICAgICAgInBhdGgiOiAiL2FwaS92MS9tYXJrZXQvcGFwZXItaGlzdG9yeS1lcnJvci1vd25lci9kZXNrL2hpc3RvcnkvU1RYIiwKICAgICAgImZpbmlzaGVkIjogdHJ1ZQogICAgfQogIF0sCiAgIm9ic2VydmF0aW9ucyI6IFsKICAgIHsKICAgICAgInZpZXciOiAiU3RvY2tzIiwKICAgICAgImxhYmVsIjogImJlZm9yZSByZWxvYWQiLAogICAgICAidGV4dCI6ICJObyBwcmljZSB0byBkaXNwbGF5XG5cblByaWNlIHNpZ25hbHMgdXNlIHJlZ3VsYXItc2Vzc2lvbiBjYW5kbGVzLlxuXG5QcmljZSBhbmQgZ3JhZGUgc2lnbmFsc1xuUmVjZW50XG5GdWxsIGhpc3RvcnlcbkdyYWRlIHNpZ25hbHNcbk1vZGVsLW9ubHkgcmVzZWFyY2ggZmlsbHNcbkFjdHVhbCBwYXBlciBleGVjdXRpb25zXG4xNW1cbkRcbldcblx0XG5cdFxuXG5cdFxuXHRcblxuTmV3ZXN0IHN0b3JlZCBzZXNzaW9uOiAyMDI2LTEwLTE5LiA1IHNlc3Npb25zIGxvYWRlZDsgcGFuIG9yIHpvb20gZm9yIGhpc3RvcnkuXG5cbkNoYXJ0IGtleVxuXG5SZWd1bGFyLXNlc3Npb24gY2hhcnQgwrcgcmVmcmVzaCAyMHNcblxuTW9kZWwtb25seSBzdHJhdGVneSByZXNlYXJjaFxuXG5Db25maXJtZWQgcGFwZXIgZmlsbHMgYXQgdGhlaXIgb3JpZ2luYWwgZGF0ZSwgcXVhbnRpdHkgYW5kIHByaWNlLiBUaGVzZSBhcmUgZXhlY3V0aW9ucywgbm90IGdyYWRlIHNpZ25hbHMgb3IgcmVzZWFyY2ggZmlsbHMuXG5cblNhdmVkIGV4ZWN1dGlvbiBoaXN0b3J5IGNvdWxkIG5vdCBiZSB2ZXJpZmllZFxuXG4yMDI2LTEwLTE5IMK3IDE6MDAgUE0gRVQgwrcgQlVZIDMgQCAkMTAxLjI1XG5JbmRpY2F0b3JzICYgcHJpY2UgYmFzaXMiCiAgICB9LAogICAgewogICAgICAidmlldyI6ICJQYXBlciBhY2NvdW50IiwKICAgICAgImxhYmVsIjogImJlZm9yZSByZWxvYWQiLAogICAgICAidGV4dCI6ICJObyBwcmljZSB0byBkaXNwbGF5XG5cblByaWNlIHNpZ25hbHMgdXNlIHJlZ3VsYXItc2Vzc2lvbiBjYW5kbGVzLlxuXG5QcmljZSwgaW5kaWNhdG9ycyBhbmQgZ3JhZGUgaGlzdG9yeVxuUmVjZW50XG5GdWxsIGhpc3RvcnlcbkdyYWRlIHNpZ25hbHNcblBvbGljeSByZXBsYXlcblBhcGVyIHRyYWRlc1xuMTVtXG5EXG5XXG5cdFxuXHRcblxuXHRcblx0XG5cbk5ld2VzdCBzdG9yZWQgc2Vzc2lvbjogMjAyNi0xMC0xOS4gNSBzZXNzaW9ucyBsb2FkZWQ7IHBhbiBvciB6b29tIGZvciBoaXN0b3J5LlxuXG5DaGFydCBrZXlcblxuUmVndWxhci1zZXNzaW9uIGNoYXJ0IMK3IHJlZnJlc2ggMjBzXG5cbk5vdzogTm8gb3JkZXIgwrcgTW9kZWwgYWxsb2NhdGlvbiB1bmF2YWlsYWJsZSDCtyByZWNvcmRlZCB0YXJnZXQgaXMgbm90IGEgZnJlc2ggcmVjb21tZW5kYXRpb25cblxuU2F2ZWQgZXhlY3V0aW9uIGhpc3RvcnkgY291bGQgbm90IGJlIHZlcmlmaWVkXG5cbk9jdCAxOSwgMjAyNiDCtyAxOjAwIFBNIEVUIMK3IEJVWSAzIEAgJDEwMS4yNVxuXG5ObyByZWNvcmRlZCBzZXR1cHMgb24gdGhlIGxvYWRlZCBjYW5kbGVzLlxuXG5PcmlnaW5hbCByZWFkaW5ncyAoMClcbkluZGljYXRvcnMgJiBwcmljZSBiYXNpcyIKICAgIH0sCiAgICB7CiAgICAgICJ2aWV3IjogIlN0b2NrcyIsCiAgICAgICJsYWJlbCI6ICJhZnRlciByZWxvYWQiLAogICAgICAidGV4dCI6ICJObyBwcmljZSB0byBkaXNwbGF5XG5cblByaWNlIHNpZ25hbHMgdXNlIHJlZ3VsYXItc2Vzc2lvbiBjYW5kbGVzLlxuXG5QcmljZSBhbmQgZ3JhZGUgc2lnbmFsc1xuUmVjZW50XG5GdWxsIGhpc3RvcnlcbkdyYWRlIHNpZ25hbHNcbk1vZGVsLW9ubHkgcmVzZWFyY2ggZmlsbHNcbkFjdHVhbCBwYXBlciBleGVjdXRpb25zXG4xNW1cbkRcbldcblx0XG5cdFxuXG5cdFxuXHRcblxuTmV3ZXN0IHN0b3JlZCBzZXNzaW9uOiAyMDI2LTEwLTE5LiA1IHNlc3Npb25zIGxvYWRlZDsgcGFuIG9yIHpvb20gZm9yIGhpc3RvcnkuXG5cbkNoYXJ0IGtleVxuXG5SZWd1bGFyLXNlc3Npb24gY2hhcnQgwrcgcmVmcmVzaCAyMHNcblxuTW9kZWwtb25seSBzdHJhdGVneSByZXNlYXJjaFxuXG5Db25maXJtZWQgcGFwZXIgZmlsbHMgYXQgdGhlaXIgb3JpZ2luYWwgZGF0ZSwgcXVhbnRpdHkgYW5kIHByaWNlLiBUaGVzZSBhcmUgZXhlY3V0aW9ucywgbm90IGdyYWRlIHNpZ25hbHMgb3IgcmVzZWFyY2ggZmlsbHMuXG5cblNhdmVkIGV4ZWN1dGlvbiBoaXN0b3J5IGNvdWxkIG5vdCBiZSB2ZXJpZmllZFxuXG4yMDI2LTEwLTE5IMK3IDE6MDAgUE0gRVQgwrcgQlVZIDMgQCAkMTAxLjI1XG5JbmRpY2F0b3JzICYgcHJpY2UgYmFzaXMiCiAgICB9LAogICAgewogICAgICAidmlldyI6ICJQYXBlciBhY2NvdW50IiwKICAgICAgImxhYmVsIjogImFmdGVyIHJlbG9hZCIsCiAgICAgICJ0ZXh0IjogIk5vIHByaWNlIHRvIGRpc3BsYXlcblxuUHJpY2Ugc2lnbmFscyB1c2UgcmVndWxhci1zZXNzaW9uIGNhbmRsZXMuXG5cblByaWNlLCBpbmRpY2F0b3JzIGFuZCBncmFkZSBoaXN0b3J5XG5SZWNlbnRcbkZ1bGwgaGlzdG9yeVxuR3JhZGUgc2lnbmFsc1xuUG9saWN5IHJlcGxheVxuUGFwZXIgdHJhZGVzXG4xNW1cbkRcbldcblx0XG5cdFxuXG5cdFxuXHRcblxuTmV3ZXN0IHN0b3JlZCBzZXNzaW9uOiAyMDI2LTEwLTE5LiA1IHNlc3Npb25zIGxvYWRlZDsgcGFuIG9yIHpvb20gZm9yIGhpc3RvcnkuXG5cbkNoYXJ0IGtleVxuXG5SZWd1bGFyLXNlc3Npb24gY2hhcnQgwrcgcmVmcmVzaCAyMHNcblxuTm93OiBObyBvcmRlciDCtyBNb2RlbCBhbGxvY2F0aW9uIHVuYXZhaWxhYmxlIMK3IHJlY29yZGVkIHRhcmdldCBpcyBub3QgYSBmcmVzaCByZWNvbW1lbmRhdGlvblxuXG5TYXZlZCBleGVjdXRpb24gaGlzdG9yeSBjb3VsZCBub3QgYmUgdmVyaWZpZWRcblxuT2N0IDE5LCAyMDI2IMK3IDE6MDAgUE0gRVQgwrcgQlVZIDMgQCAkMTAxLjI1XG5cbk5vIHJlY29yZGVkIHNldHVwcyBvbiB0aGUgbG9hZGVkIGNhbmRsZXMuXG5cbk9yaWdpbmFsIHJlYWRpbmdzICgwKVxuSW5kaWNhdG9ycyAmIHByaWNlIGJhc2lzIgogICAgfQogIF0sCiAgImRpYWdub3N0aWNzIjogewogICAgInBhZ2VFcnJvcnMiOiBbXSwKICAgICJjb25zb2xlRXJyb3JzIjogW10sCiAgICAiZmFpbGVkUmVxdWVzdHMiOiBbXSwKICAgICJiYWRSZXNwb25zZXMiOiBbXSwKICAgICJ1bmV4cGVjdGVkUmVxdWVzdHMiOiBbXSwKICAgICJmb3JiaWRkZW5Xcml0ZXMiOiBbXQogIH0KfQ==",
+                            "contentType": "application/json",
+                            "name": "paper-history-error-evidence"
+                          },
+                          {
+                            "contentType": "application/zip",
+                            "name": "trace",
+                            "path": "/tmp/paper-history-error-green-20261019-v1-artifacts/paper-history-error-disclo-f5f16-ent-broker-fills-and-reload/trace.zip"
+                          }
+                        ],
+                        "duration": 3731,
+                        "errors": [],
+                        "parallelIndex": 0,
+                        "retry": 0,
+                        "startTime": "2026-10-19T17:01:26.990Z",
+                        "status": "passed",
+                        "stderr": [],
+                        "stdout": [],
+                        "workerIndex": 0
+                      }
+                    ],
+                    "status": "expected",
+                    "timeout": 60000
+                  }
+                ],
+                "title": "failed saved history disclosed in both tickers beside current broker fills and reload"
+              }
+            ],
+            "title": "paper-history-error-disclosure.spec.ts"
+          }
+        ]
+      },
+      "path": "/tmp/paper-history-error-green-20261019-v1-results.json",
+      "sha256": "5199db7f63ebd88019508bae31a4e23f3165206ffd04cb877ac3144252d140d4"
+    },
+    {
+      "bytes": 0,
+      "original": "",
+      "path": "/tmp/paper-history-error-green-20261019-v1-tsc.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 15289,
+      "original": "vite v8.2.2 building client environment for production...\ntransforming...\n\u2713 3643 modules transformed.\n\n(!) outDir /tmp/paper-history-error-green-20261019-v1-dist is not inside project root and will not be emptied.\nUse --emptyOutDir to override.\n\n[lightningcss minify] 'bg-black' is not recognized as a valid pseudo-class. Did you mean '::bg-black' (pseudo-element) or is this a typo?\n3365 |     pairing is re-stated rather than left as white on white. */\n3366 |  .dark .bg-\\[\\#1d1d1f\\] { color: #1c1c1e; }\n3367 |  .dark .hover:bg-black:hover { background-color: #e5e5ea; }\n     |               ^\n3368 |  \nrendering chunks...\ncomputing gzip size...\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/index.html                                         0.46 kB \u2502 gzip:   0.32 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/index-C5DBCRv7.css                         49.68 kB \u2502 gzip:  10.33 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/array-BifhSqXX.js                           0.10 kB \u2502 gzip:   0.11 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/channel-Dr-35dfm.js                         0.11 kB \u2502 gzip:   0.12 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/pie-WAS4IAKB-aQJwdWVZ.js                    0.12 kB \u2502 gzip:   0.13 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/info-A6RAGUB7-BD8qFEkY.js                   0.12 kB \u2502 gzip:   0.13 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/radar-RG4KPBEZ-D3qkfr8o.js                  0.12 kB \u2502 gzip:   0.13 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/packet-AYTQ26CC-CE0upfC4.js                 0.12 kB \u2502 gzip:   0.13 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/cynefin-OW5HDTMX-D8siaDuV.js                0.12 kB \u2502 gzip:   0.13 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/treemap-WGGIJYW6-KI3H-pcw.js                0.12 kB \u2502 gzip:   0.13 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/wardley-WFR3VGLG-B3HbX78e.js                0.12 kB \u2502 gzip:   0.13 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/gitGraph-4MIJSDKK-wi65d5T0.js               0.12 kB \u2502 gzip:   0.13 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/railroad-74A4TZTK-Co0rpLDe.js               0.12 kB \u2502 gzip:   0.13 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/treeView-Q6P3EWNA-D_1RH2ua.js               0.12 kB \u2502 gzip:   0.13 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/railroad-peg-WCYAUIDC-D9w8Oj6s.js           0.13 kB \u2502 gzip:   0.13 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/architecture-7GRP2DOG-BypeexPM.js           0.13 kB \u2502 gzip:   0.13 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/railroad-abnf-HS5TGJTU-Dx_ErHwv.js          0.13 kB \u2502 gzip:   0.13 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/railroad-ebnf-LZEXJU2U-CkrP5Y8m.js          0.13 kB \u2502 gzip:   0.13 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/eventmodeling-NTZA5JFV-I9XLJAKr.js          0.13 kB \u2502 gzip:   0.13 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/init-C-OQMol4.js                            0.14 kB \u2502 gzip:   0.12 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-Y2CYZVJY-DsF7k-Jl.js                  0.15 kB \u2502 gzip:   0.14 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-2Q5K7J3B-C1jixKkw.js                  0.19 kB \u2502 gzip:   0.16 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-JWPE2WC7-DVXcaiue.js                  0.22 kB \u2502 gzip:   0.17 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-XXDRQBXY-s0bIO4y8.js                  0.26 kB \u2502 gzip:   0.22 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-5VM5RSS4-ZNzvKenW.js                  0.36 kB \u2502 gzip:   0.27 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-POPQ4Y6H-C6lzlTEc.js                  0.57 kB \u2502 gzip:   0.40 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/flowDiagram-A5DVABFB-Ba0GPg30.js            0.57 kB \u2502 gzip:   0.31 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/infoDiagram-RXCK75RN-BapxlGEI.js            0.65 kB \u2502 gzip:   0.41 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/classDiagram-DTDB5LWJ-_mL3XW0x.js           0.77 kB \u2502 gzip:   0.45 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/classDiagram-v2-JRS7N3AN-_mL3XW0x.js        0.77 kB \u2502 gzip:   0.45 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/stateDiagram-v2-4QOOHH4V--Q6xxyCQ.js        0.78 kB \u2502 gzip:   0.45 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/swimlanesDiagram-VK2B7HYN-Cxgj5R6h.js       0.83 kB \u2502 gzip:   0.48 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/sizeCapture-X5ZJPWSS-B0uUizjq.js            0.87 kB \u2502 gzip:   0.51 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/line-BU8-UxUN.js                            0.94 kB \u2502 gzip:   0.47 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/ordinal-BDEzSJ7C.js                         1.17 kB \u2502 gzip:   0.56 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-OBVCFTLP-PZlAyQPp.js                  1.41 kB \u2502 gzip:   0.79 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/railroadDiagram-O6MQD6OU-BrrJ9nEA.js        1.65 kB \u2502 gzip:   0.76 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/abnfDiagram-VCTEODGH-h4sq_pzX.js            1.84 kB \u2502 gzip:   0.89 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-P2QGCYS3-B5BkWndG.js                  1.94 kB \u2502 gzip:   0.95 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-F27PBJKO-CSLDsQio.js                  1.97 kB \u2502 gzip:   0.88 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/pegDiagram-XKGWAZYB-LNXHfbAT.js             2.01 kB \u2502 gzip:   0.94 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/ebnfDiagram-PWID7BFC-B0175638.js            2.05 kB \u2502 gzip:   0.88 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/dist-CWkepPRr.js                            2.16 kB \u2502 gzip:   0.96 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/path-fybaL0A-.js                            2.27 kB \u2502 gzip:   0.98 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/arc-CkdhPx1e.js                             3.47 kB \u2502 gzip:   1.46 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/diagram-Z3DM3KII-Bbt-H7NS.js                4.28 kB \u2502 gzip:   1.84 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/defaultLocale-BFoDCU3G.js                   4.63 kB \u2502 gzip:   2.12 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/linear-Y215maY-.js                          5.51 kB \u2502 gzip:   2.25 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-PWAF6VOD-DqBJFDFH.js                  5.83 kB \u2502 gzip:   2.68 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/diagram-UQ7AKVKN-42fuz1nS.js                6.07 kB \u2502 gzip:   2.56 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/pieDiagram-E7YTZNPT-Duzr57BK.js             6.22 kB \u2502 gzip:   2.59 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/diagram-S7CK7UJ4-3qf65Oo1.js                8.19 kB \u2502 gzip:   3.65 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-JQ64N6SF-BOlTnsJi.js                  9.68 kB \u2502 gzip:   2.93 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/cynefinDiagram-5FMLGOSQ-Cv9nLWgB.js         9.94 kB \u2502 gzip:   3.51 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/stateDiagram-HBIQ2CUA-BUK6emp7.js          10.64 kB \u2502 gzip:   3.74 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/diagram-VSXAHHWV-DUyGixKG.js               10.65 kB \u2502 gzip:   4.12 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/dagre-3AP2YEHR-37bHP3Bj.js                 10.97 kB \u2502 gzip:   4.15 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-SVP7TREG-DTpyWNzR.js                 15.64 kB \u2502 gzip:   4.35 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/diagram-VX7I27RA-XkAm1HJT.js               15.75 kB \u2502 gzip:   5.52 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/mermaid-parser.core-DPcOK_W6.js            16.58 kB \u2502 gzip:   3.92 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/ishikawaDiagram-5VMMS53U-uIv4li7Q.js       17.31 kB \u2502 gzip:   6.53 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/kanban-definition-3QL26DDD-CoXZ74jU.js     20.26 kB \u2502 gzip:   7.15 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/sankeyDiagram-P5KCCOFB-B-NsuXPn.js         22.79 kB \u2502 gzip:   8.25 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/journeyDiagram-EYS64GPL-CC9il8uU.js        23.15 kB \u2502 gzip:   8.15 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/mindmap-definition-FBJOCRG2-DBfo0o_b.js    23.44 kB \u2502 gzip:   8.01 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/graphlib-DS17s2tU.js                       23.90 kB \u2502 gzip:   8.31 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/wardleyDiagram-VM6X3IG4-CS5RPc-3.js        25.20 kB \u2502 gzip:   6.55 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/rough.esm-Dy-Kn_BL.js                      27.10 kB \u2502 gzip:   8.85 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/gitGraphDiagram-WWUBYQGX-Daq8dWja.js       29.00 kB \u2502 gzip:   8.55 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/timeline-definition-24CTP7MA-CFjaNH8n.js   30.36 kB \u2502 gzip:   9.97 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/erDiagram-SSCWMZ5O-CCbt926h.js             30.69 kB \u2502 gzip:  10.57 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-75Z2AOVW-B956Zu9z.js                 30.75 kB \u2502 gzip:   8.50 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/requirementDiagram-EFPCY7ZU-CpAOkn6i.js    31.00 kB \u2502 gzip:   9.77 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/quadrantDiagram-AXDQQJYC-CIaICBpv.js       33.51 kB \u2502 gzip:   9.73 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-R7TYR2AO-nO14re7H.js                 36.13 kB \u2502 gzip:   7.95 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/dagre-PrKaheQc.js                          36.85 kB \u2502 gzip:  13.22 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-G27WJ6UU-CI5AUeUt.js                 37.64 kB \u2502 gzip:  12.26 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/vennDiagram-4TSXK5OY-Ca2rigcC.js           41.15 kB \u2502 gzip:  15.11 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/blockDiagram-NRAW4CY4-85hi1pK6.js          41.44 kB \u2502 gzip:  13.35 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/xychartDiagram-S5SC5T6Z-DenqDG0_.js        44.14 kB \u2502 gzip:  12.22 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/src-DPg5-KVp.js                            45.67 kB \u2502 gzip:  16.00 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-LCL6LL3I-B-cjGb37.js                 48.78 kB \u2502 gzip:  15.75 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-GMAD6QVW-D34fTSoR.js                 51.83 kB \u2502 gzip:  16.68 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-RHFEMEQ7-arPhFwLM.js                 61.19 kB \u2502 gzip:  19.81 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/c4Diagram-UCG6FXSJ-gRmsK6vX.js             64.74 kB \u2502 gzip:  18.53 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/ganttDiagram-EL5Y4UJY-hQfEZ5vG.js          69.34 kB \u2502 gzip:  22.73 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/cose-bilkent-JH36ORCC-B_nJO6rk.js          81.25 kB \u2502 gzip:  21.54 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/mermaid.core-Cairl1N1.js                   94.27 kB \u2502 gzip:  32.51 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-TEH6E4GO-D32qspow.js                104.84 kB \u2502 gzip:  25.62 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/swimlanes-XN3QIQJK-Cvl9MnWT.js            111.16 kB \u2502 gzip:  38.01 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/sequenceDiagram-WJ2MYXX4-CYS1ROuK.js      115.74 kB \u2502 gzip:  30.58 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/architectureDiagram-5GKGNRK7-CynMWxY3.js  148.91 kB \u2502 gzip:  41.12 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-DU6HZSFF-Roiikw9f.js                235.49 kB \u2502 gzip:  38.21 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/katex-CXMH3UgJ.js                         258.69 kB \u2502 gzip:  77.44 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/cytoscape.esm-C2x7inlt.js                 434.92 kB \u2502 gzip: 137.81 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/chunk-FOHPRMQF-DHwB1DNv.js                662.12 kB \u2502 gzip: 143.15 kB\n../../../../../../../tmp/paper-history-error-green-20261019-v1-dist/assets/index-Bg44pYFT.js                         878.28 kB \u2502 gzip: 257.29 kB\n\n[plugin builtin:vite-reporter] \n(!) Some chunks are larger than 500 kB after minification. Consider:\n- Using dynamic import() to code-split the application\n- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting\n- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.\n\u2713 built in 3.67s\n",
+      "path": "/tmp/paper-history-error-green-20261019-v1-vite.log",
+      "sha256": "8883837e7f6b3b9675188980e53f3bd73a2188d79160fdc3c2a9972ef87359cc"
+    },
+    {
+      "bytes": 34,
+      "original": "/bin/bash: npm: command not found\n",
+      "path": "/tmp/paper-history-error-green-20261019-v1-build.log",
+      "sha256": "29b5a3752613ef0ddebf13c6b9d80e2d7bfcf760204bb77d4615dfdb12873ff0"
+    }
+  ],
+  "production_base": "6ae6dde29e64f4589c46dac0d9b62ed4562524c2",
+  "schema": "ticker-paper-history-warning-candidate/1",
+  "source_pins": {
+    "frontend/e2e/paper-history-error-disclosure.spec.ts": {
+      "bytes": 9068,
+      "sha256": "512f96f4a8fecb4210102092fc18288d6c7a4b60697f8e503ddf3391188445b6"
+    },
+    "frontend/src/components/DeskPanel/DeskPanel.tsx": {
+      "bytes": 193484,
+      "sha256": "c0dd730512d017fb288031da9942a840d75b311b9715992d0b4eb829f8cdfbf9"
+    },
+    "frontend/src/components/DeskPanel/TickerChart.tsx": {
+      "bytes": 76794,
+      "sha256": "f51c517272d5655ddb995e9b3c33a8a35ada74be23eb62b0b4a7b8ebe5d5e843"
+    }
+  },
+  "verified": [
+    "Two new cases reproduced missing saved-history verification warning in both ticker contexts on retained exact deployed static assets, with empty browser diagnostics.",
+    "The unchanged two cases passed on the corrected source build in10.880482s, both ticker contexts and reload,78 completed GETs, empty diagnostics, preserving independent broker BUY3 at101.25.",
+    "Existing API reason is passed through NameDetail to TickerChart; failed verification cannot present a verified-empty message. No merge, quantity, marker, API or backend behavior changed.",
+    "TypeScript and Vite build passed using existing bundled executables; no dependency install."
+  ]
+}
