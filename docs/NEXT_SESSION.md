@@ -1,5 +1,92 @@
 # Next session
 
+## 2026-10-19 — Recovery reporting LIVE; account repair still requires human authority
+
+Exact minimal production878cbc53db56f635c8dd9ee6a3307e0d4f1c6b2f is LIVE,
+direct parentc25c8cbe, on codex/trading-fill-consistency-20261019. Main product
+integration79955aad is separate; NEVER deploy historical main wholesale.
+The production worktree is clean. Main TypeScript also passed using the installed
+bundled Node (initial bare-node command was unavailable before TSC execution);
+only the task-created dependency symlink was removed, installed deps untouched.
+
+Canonical release/session13652 TERMINAL0/SSH0, exactpost
+`2026-10-19T18:43:20Z 878cbc53 ok (cheap)`. NEVER restart or poll this terminal
+release or duplicate its gates. Normal unit10915PASS/93skip/6xfail/439warnings/
+25subtests620.28s, then100 real-model functional PASS294.65s. Source13 and source3
+browser checks in the prior entry remain separate cohorts, not a combined total.
+No skip/clock flags. Full image rebuild/restart,47-table primary DB dump/base+
+2144WAL backup and Spark2 dump/WAL mirror completed. Optional Mac WAL remained
+stopped via the per-invocation Spark2-only mirror override. No provider/model/
+account/strategy changes or forced sender run occurred.
+
+Original31 learned-strategy host+actual-container source identities and all3
+selectors remain identical: configa237bfe4/releasefc325971/evidence4d6af1bb.
+Fresh actual host/backend reporting source checks match CLI9c830586/status1adfd4b2.
+Backend089434b2fca6525b36ed1b147dea86a5e1beaec786632aba2b3599290a98635d,
+image156ff038921bead5f37746e7d2efa739d12eff3687d9c70f1d4d4b87c6cb4803,
+restart0. Gateway0d62f562b776fd50d366563ff0bc789f3f8cd0445056723c748ffc7dd50d1841,
+image3fb3c8bd17807d5e2c1a8c6d1ec93334e21a706c173c45cf20129952b370aa2a,
+restart0. Actual index-BT6Gh9TN.js879578B/
+SHA1ed62591ef30ce7ece51bccc4af6828393d4411bb5f8cd46ca5f11c300db0872
+matches public primary JS at that gateway-index path. Four copied files are not
+whole-distribution proof; a separate public index/signed-in account was not tested.
+
+Actual served-asset NEW3 browser PASS9.904940999999999s,65GETs(21/21/23), all
+finished/no retries/errors/skips/flaky/all6diagnostic categories empty. Real
+browser reload preserves explicit fresh/stale unconfirmed recovery and known
+regular Bought3 STX@$101.25/Today1filled; healthy monitoring stays unchanged.
+API/auth responses are SYNTHETIC GET fixtures. This verifies rendering of actual
+deployed bytes, NOT current genuine sender/plan/order/fill/account acceptance.
+Results /tmp/recovery-reporting-deployed-20261019-v1-results.json26239B/
+SHAde4906d30606dccae515af897cc50e6abc0c606e41a3e05300a9a575e45c433c.
+The task-only dependency link was removed; Desktop installed directory untouched.
+
+Deliveryproof research/recovery-reporting-delivery-proof-2026-10-19.json143084B/
+SHAd4ad21ef241db9e1b6b242ab556a35c1d84a2efac3bcb0fe7dbc255c9c2981b2
+retains8 exact canonical originals/96727B, actual observation/runtime/source/asset
+links, complete browser witnesses and24 local input identities1461045B. ROOT and
+healthy existing reviewer independently reconstructed all hashes/lengths/decimal
+physical fields/runtime links/results. Fixed8reader and actualassetobserver each
+ran ONCE/0 in independent calls, exact transport receipts retained. Approval in
+observer is the canonical snapshot, not a second fresh full31/selector read.
+Collector's first local DATA assertion compared rounded9904.941 against exact
+original JSON9904.940999999999 and stopped before output; failed source9881B/
+a248d207+reason retained. Corrected only the exact data comparison; no test/
+release/retrieval replay. Original browser/backend fixture failures remain FAILED.
+
+This reporting boundary is CLOSED. Never rerun its canonical release,13/source3/
+deployed3 browser cases, REDs, preflights/getters/observer/collectors for docs.
+All ROOT sessions13652/4151 and frontend browser process are terminal. Existing
+closed prior browser/private metadata/CAS/SQLite/Nightly/Cycle gates stay closed.
+
+Direct human ownership/hash approval REMAINS PENDING. Automatic goal continuations
+are NOT a grant. No protected account body read, chown/chmod/restore/replay or
+forced strategy call occurred. Existing wrong live-file ownership is not fixed
+by this reporting patch; current real sender/order/fill/signed-in UI remain
+UNVERIFIED. Do not repeat the already-pending question or bypass denial via Docker.
+
+Reviewable SOURCE-ONLY refreshed controller is now
+/tmp/live_paper_owner_repair_controller_after_reporting_20261019.py27408B/
+SHA90611f497f1ed847e687470ca2e515df42703b1962fdf1a385d84f6a1db8f389.
+research/live-paper-ownership-controller-rebinding-proof-2026-10-19.json31428B/
+SHA901e3b842351805cd3754d0a49b581ab784f980a2d068f360254e179a9fa97d8
+embeds its exact inert source. Original27407B/f33a674 remains preserved. ONLY
+HEAD878/new backendCID/image and one comment changed; all other AST/protocol/
+helper1478/31-selector/targetinode41818273-size1649061/lock/caps/no-auto-retry/
+human-authority requirements are identical and independently reviewed. Neither
+new wrapper nor default CLI was imported/run/staged/probed. No new kernel/helper
+tests or live scope follows from source comparison. NEVER invoke oldc25 wrapper.
+
+NEXT: actual direct-human grant is needed before protected hash/read/one-file
+owner correction. Then use refreshed controller only after fresh exact runtime/
+known-writer/original metadata/native-lock checks; changed original inode/size or
+uncertainty refuses, never retargets/retries. Prove normal HOST UID1000 fresh read
+and identical bytes/inode/mode afterward, then observe natural sender and genuine
+persisted IDs/fills/signed-in dashboard. Never force a strategy job or retime Oct13
+intents. Original-history/anonymous-identity/economic/calendar/private filesystem/
+horizon/twohost/model-RAM limitations remain unchanged. Goal/heartbeat ACTIVE.
+Diagram impact:NONE — existing reporting/planning/dashboard flow only.
+
 ## 2026-10-19 — Recovery failure reporting candidate VERIFIED; canonical release RUNNING
 
 Exact production-based candidate878cbc53db56f635c8dd9ee6a3307e0d4f1c6b2f,
