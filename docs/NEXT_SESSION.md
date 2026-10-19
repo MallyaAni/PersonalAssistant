@@ -1,5 +1,94 @@
 # Next session
 
+## 2026-10-19 — Recovery failure reporting candidate VERIFIED; canonical release RUNNING
+
+Exact production-based candidate878cbc53db56f635c8dd9ee6a3307e0d4f1c6b2f,
+direct parentc25c8cbe, is pushed on codex/trading-fill-consistency-20261019.
+Main product integration79955aad cherry-picked cleanly, preserving unrelated
+main frontend changes. NEVER deploy historical main wholesale. The new code
+only changes recovery.run/event_status.load and DeskPanel presentation, with
+two dedicated new test files and the candidate proof; native writer/31 learned
+strategy sources/models/quantities/broker routes/ordinary caps are unchanged.
+
+VERIFIED NEW13 backend cases: corrected RED4FAIL/9PASS0.19s at unchanged c25,
+then exact same test bytes GREEN13PASS0.11s. Original error_type survives a
+secondary denied state lookup; unknown active is omitted, genuinely computed
+policy retained, readable native state supplies authoritative boolean active.
+Fresh recovery-unavailable records pause planning; existing900s TTL and strict
+authoritative API state read remain unchanged. Account bytes/inode/owner/mode/
+mtime and archived nightly records remain unchanged in synthetic tests. Status
+publication failure itself still raises. Permission failures here are injected;
+the prior actual denied live read is separate evidence, never repeated/bypassed.
+
+VERIFIED separate NEW3 browser cases: corrected RED2FAIL/1healthy-controlPASS,
+then GREEN3PASS11.69193s/61GETs/all finished/no retries or diagnostics. Fresh and
+stale failed checks remain unconfirmed after reload without no-trading/no-cut
+or active-cycle inference. Backend pause boolean alone remains authoritative;
+stale failures do not create a client pause. Actual known regular BUY3@$101.25
+order/fill/Today count remain visible; normal monitoring control is unchanged.
+Source TSC/Vite passed. Final controlled four assets equal the browser-served
+source build; primaryindex-kklqIZZK.js879362B/SHA698478db78cc75b5d9d78028a78856b11257a4d28c2254d02fb337dc13199a7d.
+Do not substitute ordinary frontend/dist, which is older unrelated output.
+
+FAILED preparation evidence retained: backendv1 collection exited2 for missing
+synthetic SECRET_KEY before any tests. V2 adds only explicit test environment,
+fresh roots and pins; no assertion change. Browserv1 timed out in all3 cases
+on hidden Strategy details before intended assertions; diagnostic attachments
+are unavailable. V2 corrects only real navigation/Trading restriction label.
+These failures are NOT expected RED acceptance. Never rerun/adopt these roots.
+
+Backend actual GREEN CID0f5a9b2e5d29e8a689b0c001b8a8d0e2684e3ff0b9e37e5430b7c9f199a9ccab
+cached136ebb46 exited0/noOOM18:21:58.024816334Z/SSH0. User1000/networknone/RO/
+2GiB=swap/1CPU/PIDs32/dropALL/tmp64+appdata64; only backend SOURCE RO, three
+exact candidate/test overrides and freshoutRW, no real account/env/provider
+mounts. Corrected RED CIDd04e214f exited1/noOOM; initial collection CID9b4650c6
+exited2/noOOM. All source bookends unchanged. Source refs are full normal backend
+source, NOT whole native/genuine/model/RAM admission.
+
+One fixed27-file retained-DATA getter completed0, no tests/application/container
+calls:160178B wire SHA0c88d2ce9e236d100020c0ee783c1695d843cbbed552493ec159a2da02138277.
+All111583 decoded bytes/SHA/length/decimal physical fields, runtime/CID/mounts,
+exact13 JUnit identities/4FAIL→13PASS and sources independently reconstructed.
+Candidateproof research/recovery-reporting-candidate-proof-2026-10-19.json
+128663B/SHA0ca11440eb1e431da6df8f115e5c40b7eb355a7cbc4180892dc6c0ad599a34ea.
+Source pins CLI9c830586/status1adfd4b2/testc40d93c5/DeskPanel4a372420/spec74c87efb.
+Tests, runners, REDs, source build and traces remain /tmp/event-recovery-*
+plus matching Spark1 scratch. No old closed private/browser gates rerun.
+
+ACTUAL canonical release is RUNNING in ROOT exec session13652. Do not duplicate
+or restart it. Original transport /tmp/recovery-reporting-release-transport-
+20261019-v1; remote /home/animallya96/scratch/recovery-reporting-release-20261019-v1.
+Exact controller /tmp/release_recovery_reporting_20261019_v1.py9247B/
+SHA24799e6dd8e5d702be8ef137b3074e3d1e5f859e0b1d6db94c78e1e612b3dceb,
+dispatch /tmp/dispatch_recovery_reporting_release_20261019_v1.py.
+Last observed canonical log is isolated unit gate for878cbc53 in
+/home/animallya96/deploy/.gate/878cbc53, after testcontainer creation. No gate
+pass, checkout movement, backup, rebuild/restart or deployment acceptance is
+claimed yet. Source approval snapshots bind original31+selectors unchanged;
+controller also explicitly authenticates both changed backend files in the
+replacement container. Normal full gates/no skip or clock flags. Per-invocation
+BACKUP_MIRROR_HOST chooses only Spark2; optional Mac WAL stays stopped. Controller
+temporarily selects the production branch upstream and restores original
+origin/main in finally; do not interfere while it is running.
+
+NEXT: poll ONLY existing session13652; read its same canonical log if needed.
+After terminal success authenticate actual release receipts/source/image/31+
+selectors, then NEW3 browser against actual served assets (same new spec, new
+artifact scope), without replaying closed earlier browser5/2/3 or private gates.
+On observation timeout inspect the SAME owned process/handle, never redispatch.
+If normal gates fail preserve the failure and reassess its actual first boundary.
+This is reporting repair only, not trading success.
+
+The direct-human ownership/privileged-hash question REMAINS PENDING. No grant
+arrived in automatic goal continuations. No protected account body read,
+chown/chmod/restore/replay/forced strategy call occurred. Existing one-time repair
+controller is now pinned to older c25; NEVER invoke it after this release without
+fresh exact source/runtime review AND actual human grant. Real sender, current
+plan/order/fill persistence and signed-in account acceptance remain unresolved.
+Historical original identities/economics/calendar/private filesystem/horizon/
+twohost/model-RAM restrictions remain unchanged. Goal/heartbeat ACTIVE.
+Diagram impact:NONE — existing publication/planning/dashboard flow only.
+
 ## 2026-10-19 — Broker/account coverage warnings LIVE; ownership approval still pending
 
 Current production is minimalc25c8cbedbd0d00318f8a2e5d41db7531e8149ce,
