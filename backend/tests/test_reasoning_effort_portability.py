@@ -109,3 +109,23 @@ def test_the_rest_of_the_payload_is_untouched():
     assert payload["model"] == "candidate"
     assert payload["max_tokens"] == 128
     assert payload["messages"][0]["content"] == "hello"
+
+
+# The V4.1 image reads the level from chat_template_kwargs only, and spells
+# "no thinking" as `thinking: false`; the ds4 image reads the top-level field.
+# Both go out, so the same request means the same thing on either.
+def test_the_level_is_also_sent_as_a_chat_template_kwarg():
+    assert _payload("none")["chat_template_kwargs"] == {"thinking": False}
+    assert _payload("high")["chat_template_kwargs"] == {"reasoning_effort": "high"}
+    assert "chat_template_kwargs" not in _payload("")
+
+
+def test_a_refused_level_withdraws_the_template_kwarg_too():
+    provider = _provider("none")
+    payload = {
+        "model": "candidate",
+        "reasoning_effort": "none",
+        "chat_template_kwargs": {"thinking": False},
+    }
+    assert provider._retry_without_reasoning(_rejection(), payload) is True
+    assert "chat_template_kwargs" not in payload

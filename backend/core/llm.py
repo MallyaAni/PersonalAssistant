@@ -130,8 +130,7 @@ class OpenAICompatibleInferenceProvider(InferenceProvider):
         # would put an empty value back on every tool call and pay the 400 and
         # retry each time - or fail outright on an engine whose rejection does
         # not name the field.
-        if self.reasoning_effort:
-            payload["reasoning_effort"] = self.reasoning_effort
+        payload.update(self._reasoning_fields())
         with self._request_lock:
             response = self._post(payload)
             response.raise_for_status()
@@ -147,6 +146,27 @@ class OpenAICompatibleInferenceProvider(InferenceProvider):
     # Only `delta.content` is rendered. A reasoning model also emits
     # `reasoning_content`, which is its private working and not an answer, so a
     # stream carrying nothing else legitimately produces no output.
+    # The engines disagree about WHERE the reasoning level is read from, not
+    # only about its values. The ds4 image for V4-Flash honours the top-level
+    # OpenAI field `reasoning_effort`; the V4.1 image's reasoning parser reads
+    # only `chat_template_kwargs` (a top-level value is silently ignored and
+    # thinking stays on, its default), which would turn every bounded routing
+    # and classification call into a thinking call. Both forms are sent: the
+    # template kwarg is ignored by an engine that does not read it, and "none"
+    # is spelled the way that template understands - `thinking: false`.
+    def _reasoning_fields(self) -> dict[str, Any]:
+        if not self.reasoning_effort:
+            return {}
+        template = (
+            {"thinking": False}
+            if self.reasoning_effort == "none"
+            else {"reasoning_effort": self.reasoning_effort}
+        )
+        return {
+            "reasoning_effort": self.reasoning_effort,
+            "chat_template_kwargs": template,
+        }
+
     def _stream_event(self, line: str) -> tuple[str | None, bool]:
         if not line.startswith("data: "):
             return None, False
@@ -227,8 +247,7 @@ class OpenAICompatibleInferenceProvider(InferenceProvider):
         # only for an engine that refuses it. Dropping it unconditionally was
         # tried and silently turned reasoning back on for every caller,
         # including the ones whose token budgets assume there is none.
-        if self.reasoning_effort:
-            payload["reasoning_effort"] = self.reasoning_effort
+        payload.update(self._reasoning_fields())
         # Omitted, the runtime samples at its own default. Callers that parse the
         # reply as a decision rather than prose pass 0 for a reproducible answer.
         if temperature is not None:
@@ -272,6 +291,7 @@ class OpenAICompatibleInferenceProvider(InferenceProvider):
         )
         self.reasoning_effort = ""
         payload.pop("reasoning_effort", None)
+        payload.pop("chat_template_kwargs", None)
         return True
 
     def _post(self, payload: dict[str, Any]) -> httpx.Response:

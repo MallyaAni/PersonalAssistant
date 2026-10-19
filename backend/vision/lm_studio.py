@@ -218,6 +218,13 @@ class OpenAICompatibleVisionProvider(VisionProvider):
             "messages": messages,
             "max_tokens": self.max_tokens,
             "reasoning_effort": self.reasoning_effort,
+            # Same two-engine rule as InferenceProvider._reasoning_fields: the
+            # V4.1 image reads the level only from chat_template_kwargs.
+            "chat_template_kwargs": (
+                {"thinking": False}
+                if self.reasoning_effort == "none"
+                else {"reasoning_effort": self.reasoning_effort}
+            ),
             "temperature": 0.0,
         }
         if response_format is not None:

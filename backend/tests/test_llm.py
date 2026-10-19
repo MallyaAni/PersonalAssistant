@@ -125,6 +125,7 @@ def test_lm_studio_chat_uses_compatible_multiturn_contract():
             ],
             "max_tokens": 64,
             "reasoning_effort": "none",
+            "chat_template_kwargs": {"thinking": False},
         },
     }
 
