@@ -8,6 +8,18 @@ Read research/prepared-paper-proof-2026-10-19.json:
 treed6eef3bf27e6b5f051bae104fa696a61e285ca69 passed NINE NEW assertions in THREE
 bounded cohorts at ONE tree. Earlier v1-A and v2-A remain FAILED, never adopted.
 
+AUTOMATION DELIVERY PENDING: checkpoint4f7bb2a669179bbac98478aca39254f6d80d96bd
+is pushed. One app automation_update request for this new preparation handoff did
+not return; only owned waiting cell8539 was terminated, no retry. Saved TOML at
+the readback still has ACTIVE/updated_at1792378802891/old save-slot prompt SHA
+1874662ccea4a44e39da3cd973cb6f18c84024d1b7128c71247b53f74d1c90fa and lacks0d1fcb1b.
+Current delivery is UNKNOWN, not observed saved. Request/before/readback retained
+in /tmp/prepared-paper-automation-{request,before,readback}-20261019.json. As with
+the previous late delivery below, re-read actual saved state later without a
+duplicate request. These app observations are outside the229-input product proof.
+Read this current source/proof FIRST even if an older firing prompt still names
+the completed preparation task: NEW9 is CLOSED; next work is Final preparation.
+
 PRODUCT: PRIVATE Stage schema2 and synthetic-cycle-prepared-paper/1 bind one exact
 owned native PaperState to original source/account/identity/phase/declaration/
 head/input/native-IO reservation/preimage SHA+length+dev+inode before the callback.
