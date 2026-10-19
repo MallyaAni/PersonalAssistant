@@ -464,6 +464,7 @@ class _Final:
             self.prepared_transition.check(value['prepared_transition'], unconsumed=True)
             self.request_admission.consume(self.prepared_input.prior, value['prepared_input'], value['request_admission'])
             store._point('reserved_final_requests_consumed')
+            self._active(value, reservation_sha, directory)
             fills = client.flush(call['at'], call['prices'], phase=call['phase'])
             store._point('reserved_final_resolved')
             self._active(value, reservation_sha, directory)

@@ -414,3 +414,24 @@ class RequestAdmissionTests(unittest.TestCase):
         self.assertEqual((again, trace), (result, []))
         self.assertEqual(self.state(), before)
 
+    # Recheck the original frozen admission after its interruption hook and before real broker resolution.
+    def test_i_consumed_descriptor_drift(self):
+        self.submitted()
+        f, before = self.f, self.state()
+
+        # Mutate only held metadata after consume, retaining valid paper and the original persisted reservation.
+        def mutate(point):
+            if point == 'reserved_final_requests_consumed':
+                f.final.request_admission.binding['counts']['pending'] = True
+
+        f.store.fault = mutate
+        with self.assertRaisesRegex(ValueError, 'unused request admission ownership'):
+            self.profiled(self.finish)
+        f.store.fault = None
+        self.assertEqual(self.state(), before)
+        self.assertFalse(any(row[0] == 'flush' for row in self.trace))
+        self.assertTrue(f.io.failed)
+        self.assertIsNone(f.final.request_admission)
+        _, trace = self.profiled(lambda: self.paused(self.recover))
+        self.assertEqual(trace, [])
+

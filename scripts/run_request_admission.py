@@ -102,12 +102,12 @@ def main():
     native_before = native_sources()
     bindings = dict(vars(paper))
     group = os.environ['REQUEST_ADMISSION_GROUP']
-    assert group in tuple('ABCDEFGH')
+    assert group in tuple('ABCDEFGHI')
     names = sorted(name for name in vars(module.RequestAdmissionTests) if name.startswith('test_'))
     selected = [names[ord(group) - ord('A')]]
     suite = unittest.TestSuite(module.RequestAdmissionTests(name) for name in selected)
     count = 1
-    assert len(names) == 8 and suite.countTestCases() == count
+    assert len(names) == 9 and suite.countTestCases() == count
     started = time.monotonic()
     result = unittest.TextTestRunner(verbosity=2, stream=sys.stdout).run(suite)
     children = child_receipts(module)
