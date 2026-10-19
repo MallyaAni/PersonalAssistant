@@ -1,0 +1,59 @@
+{
+  "status": "SOURCE_CANDIDATE_NOT_YET_DEPLOYED",
+  "base": "c1acdffa232544783b78b97c1179870b314cd43e",
+  "branch": "codex/trading-fill-consistency-20261019",
+  "objective": "Date the saved price comparison, use the same newest dated price in list and chart, and display original authenticated strategy target percentages independently of current paper and personal accounts.",
+  "verified": {
+    "frontend": {
+      "report": "/tmp/position-size-price-v2-green-20261019-results.json",
+      "named_tests": 12,
+      "duration_ms": 46833.022,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0,
+      "diagnostics": [],
+      "typescript": "PASS",
+      "vite": "PASS; existing dark pseudo-class and chunk-size warnings retained",
+      "asset": "index-hOkILMva.js",
+      "bytes": 888604,
+      "sha256": "46c6d62a6833cf3248e4b861af62e05518f37e1a8964cade16ce2ad3be5657eb"
+    },
+    "targeted_backend": {
+      "image": "sha256:fd63b2375c58e5c3bd9072b22fbcf1248b557bb8cf074d3e0c2013dcb08fe491",
+      "passed": 9,
+      "duration_seconds": 2.08,
+      "scope": "Original receipt validation with isolated admission fixture; real authenticated ASGI GET owner/foreign/anonymous behavior; no live account or model calls.",
+      "source_note": "Final formatting/comments follow the successful semantic check; canonical exact-commit gate remains required."
+    },
+    "ruff": "Three new Python files PASS after 26 style findings were corrected",
+    "economic_source_hashes": {"checked": 31, "mismatches": []},
+    "diagram_impact": "NONE: original dated records still project through the existing private Desk API to the existing dashboard; no new store, provider, trust boundary or model behavior."
+  },
+  "failed_preserved": [
+    {"kind": "EXPECTED_RED", "report": "/tmp/position-size-price-red-20261019-results.json", "failed": 2, "basis": "Exact deployed c1 static bytes lack a model-size column; no tests were weakened."},
+    {"kind": "BACKEND_ROUTE", "passed": 8, "failed": 1, "duration_seconds": 3.17, "cause": "The existing dated-session wildcard intercepted model-allocation and returned 422. New fixed route moved before wildcard; original assertions preserved."},
+    {"kind": "LOCAL_PREPARATION", "exit": 125, "cause": "Local Docker image had no RepoDigests entry; no test container started. Exact immutable image ID used instead."}
+  ],
+  "current_data_blocker": {
+    "observed_at": "2026-10-19T22:23:32.066378+00:00",
+    "transport": "Four bounded read-only requests through existing configured Alpaca credentials; no account, provider, subscription or model changes.",
+    "iex_quotes_http": 200,
+    "aaoi_quote": {"at": "2026-10-19T20:00:01.121861893Z", "bid": 74.48, "ask": 0, "usable": false},
+    "iex_trades_http": 200,
+    "aaoi_last_trade": {"at": "2026-10-19T19:59:46.953519905Z", "price": 78.27},
+    "sip_http": 403,
+    "sip_message": "subscription does not permit querying recent SIP data",
+    "overnight_http": 200,
+    "aaoi_overnight_quote_at": "2026-10-19T08:00:00.536441328Z",
+    "consequence": "No available feed supplies a fresh current AAOI after-hours price. Existing assessments require fresh completed regular-session candles. Neither stale prices nor expired assessments may be relabelled immediate recommendations."
+  },
+  "unverified": [
+    "Canonical full backend/routing gate and production deployment",
+    "Current approved sizing after naturally scheduled 19:30 ET nightly; latest plan remains October 13 and must expire",
+    "Fresh after-hours strategy assessments and numeric sizing on every completed 15-minute candle",
+    "Authenticated live screen acceptance of this candidate",
+    "Current-strategy historical simulation and real-trading profitability"
+  ],
+  "cadence": {"chart_assessments": "Completed regular-session 15-minute candles", "screen_poll_seconds": 20, "quote_collection_seconds": 15, "numeric_sizing": "Original nightly strategy allocation; not recalculated on a price crossing or every chart candle"},
+  "safety": {"real_orders": false, "paper_reset": false, "artificial_nightly_run": false, "paid_data_change": false, "economic_guard_change": false, "historical_main_deploy": false}
+}

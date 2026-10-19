@@ -25,6 +25,7 @@ test('Stocks and chart details refresh assessments without personal guidance', a
     else if (path.endsWith('/desk')) json = {latest: {session: previous, written: `${previous}T23:47:45Z`, grades: {CRWV: old}, targets: {policy: 'grade-led-learned-sizing/1', weights: {CRWV: 0}}, book: [], actions: [{ticker: 'CRWV', grade_signal: 'avoid', signal_reason: 'Grade below A; no entry', last_close: 77.81}], briefs: {}, regime: {exposure: 1, flags: []}}, sessions: [previous]}
     else if (path.endsWith('/live')) json = {as_of: at, decision_session: previous, quotes: {CRWV: {last: 66, open: 72, high: 72.4, low: 65.55, bar, as_of: at}}, technical: {CRWV: {now: .28, close: .1}}, technical_detail: {}, grades_live: {CRWV: {grade_live: grade, ranks_live: {fundamental: .9, technical: .28, sentiment: .1}, stances_live: {fundamental: 1, technical: -1, sentiment: -1}}}, grade_valid_until: {CRWV: fresh ? until : '2020-01-01T00:00:00Z'}}
     else if (path.endsWith('/session-prices')) json = {as_of: at, quotes: {}, market_status: {open: true, session}}
+    else if (path.endsWith('/model-allocation')) json = {version: 'published-model-allocation/1', status: 'unavailable', reason: 'No current admitted allocation', rows: {}}
     else if (path.endsWith('/holdings')) json = {holdings: []}
     else if (path.endsWith('/paper')) json = {equity: 100000, cash: 100000, positions: [], plan: {orders: []}}
     else if (path.includes('/history/')) json = {ticker: 'CRWV', rows: [{date: previous, grade: 'C', said: true}], fills: [], backtest: null}

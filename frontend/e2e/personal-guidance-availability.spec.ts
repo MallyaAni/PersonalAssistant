@@ -56,6 +56,7 @@ async function install(page: Page, state: State, baseURL: string) {
       actions: [], book: [], briefs: {}, regime: {exposure: 1, flags: []}, event_risk: {}}, sessions: [SESSION]}
     else if (path === `${DESK}/live`) json = {as_of: at, decision_session: SESSION, quotes: {}, technical: {}, technical_detail: {}, market_status: {phase: 'closed'}}
     else if (path === `${DESK}/session-prices`) json = {session: 'closed', signal_scope: 'regular-session', as_of: at, quotes: {}}
+    else if (path === `${DESK}/model-allocation`) json = {version: 'published-model-allocation/1', status: 'unavailable', reason: 'No current admitted allocation', rows: {}}
     else if (path === `${DESK}/holdings`) json = {holdings: []}
     else if (path === `${DESK}/paper`) json = {as_of: at, equity: 100000, cash: 100000, positions: [], orders: [], recorded_fills: [],
       activity: {session: SESSION, complete: true, fills: []}, plan: {policy: 'grade-led-learned-sizing/1', orders: []}}

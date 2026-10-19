@@ -116,22 +116,20 @@ export const SessionPrice = ({live, ticker, now, compact = false, close, closeSe
   const displayReason = quote?.status === 'unavailable' && quote.reason
     ? quote.reason === 'No fresh quote from available feeds' ? 'No usable bid/ask midpoint was returned for this display.' : `Price-data detail: ${quote.reason}` : null
   // A stale row carries what was last observed; the price is shown only with its own time.
-  const lastPrice = state === 'stale' && typeof quote?.price === 'number' && Number.isFinite(quote.price) && quote.price > 0 ? quote.price : null
-  const lastClose = typeof close === 'number' && Number.isFinite(close) && close > 0 ? close : null
   const staleCaveat = state === 'stale' ? ' Last observed price; not a current quote.' : ''
-  const fallback = compact ? displayedBoardPrice(live, ticker, now, close, closeSession) : null
+  const fallback = displayedBoardPrice(live, ticker, now, close, closeSession)
   const regularCurrent = fallback?.kind === 'regular' && now - fallback.at < 20 * 60_000
   return <div aria-label={`${ticker} session price`} title={`${quote?.at ? `Last observed ${at} ET. ` : ''}${source}. ${regularText}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${quote?.at ?? 'unavailable'}. Expected schedule: ${currentSchedule}; not proof of venue availability. For display only; execution checks are separate.${displayReason ? ` ${displayReason}` : ''}${staleCaveat}`}>
     {compact
       // The board row: the price and one word for the session it belongs to;
       // the provenance (feed, time, regular bar, caveats) is the hover text.
-      ? state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{" "}{(session ?? "quote").toLowerCase()}</span><ChangeMark last={quote!.price!} close={close} /></>
-        : fallback?.kind === 'regular' ? <><span className={regularCurrent ? 'font-medium' : 'text-[#9a6700]'}>${fallback.price.toFixed(2)}</span><span className={`ml-1 ${regularCurrent ? '' : 'text-[#9a6700]'}`}>{" "}regular</span><ChangeMark last={fallback.price} close={close} /></>
+      ? state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{" "}{(session ?? "quote").toLowerCase()}</span><ChangeMark last={quote!.price!} close={close} session={closeSession} /></>
+        : fallback?.kind === 'regular' ? <><span className={regularCurrent ? 'font-medium' : 'text-[#9a6700]'}>${fallback.price.toFixed(2)}</span><span className={`ml-1 ${regularCurrent ? '' : 'text-[#9a6700]'}`}>{" "}regular</span><ChangeMark last={fallback.price} close={close} session={closeSession} /></>
         : <span className="text-[#9a6700]">{fallback ? `$${fallback.price.toFixed(2)} ${fallback.word}` : 'No price to display'}</span>
       : state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{session ?? 'Quote'} · {source} · {at} ET{qualification}</span></>
-      : <span className="text-[#9a6700]">{lastPrice !== null
-          ? `$${lastPrice.toFixed(2)} last ${session ?? 'quote'} · ${source}${at ? ` · ${at} ET` : ''}${qualification}`
-          : lastClose !== null ? `$${lastClose.toFixed(2)} last close` : 'No price to display'}</span>}
+      : <span className="text-[#9a6700]">{fallback
+          ? `$${fallback.price.toFixed(2)} last ${fallback.word} · ${fallback.kind === 'midpoint' ? source : fallback.kind === 'regular' ? 'IEX completed candle' : 'Saved decision close'}${quoteTime(fallback.at, now) ? ` · ${quoteTime(fallback.at, now)} ET` : ''}`
+          : 'No price to display'}</span>}
     {!compact && <p className="text-[11px] text-[#6e6e73]">Price signals use regular-session candles.</p>}
   </div>
 }
@@ -226,11 +224,9 @@ export const timedHover = (decision: DeskDecisions['rows'][string], session: str
 // Format a portfolio weight without rounding a small positive allocation to zero.
 const percentage = (weight: number) => weight > 0 && weight < .001 ? '<0.1%' : `${(weight * 100).toFixed(1)}%`
 
-// A name's move against its last close, in green or red with an arrow so the
-// direction reads without colour; nothing when there is no close to compare
-// against. This is the row a trader scans for, so it sits beside the price.
-const ChangeMark = ({ last, close }: { last: number; close: number | null | undefined }) => {
-  if (close == null || close <= 0 || !Number.isFinite(last)) return null
+// Date the saved reference explicitly; this comparison is neither a daily return nor position size.
+const ChangeMark = ({ last, close, session }: { last: number; close: number | null | undefined; session?: string | null }) => {
+  if (close == null || !Number.isFinite(close) || close <= 0 || !Number.isFinite(last) || !session || !/^\d{4}-\d{2}-\d{2}$/.test(session)) return null
   const raw = (last / close - 1) * 100
   // Below a twentieth of a point the row would print a signed zero, which
   // reads as a move that did not happen.
@@ -240,7 +236,8 @@ const ChangeMark = ({ last, close }: { last: number; close: number | null | unde
   const cls = up ? 'text-[#1e7a3a]' : down ? 'text-[#b42318]' : 'text-[#6e6e73]'
   const mark = up ? '↑' : down ? '↓' : '·'
   const sign = change > 0 ? '+' : ''
-  return <span className={`ml-1 ${cls}`} title="vs the last close">{mark} {sign}{change.toFixed(1)}%</span>
+  const date = new Date(`${session}T12:00:00Z`).toLocaleDateString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric'})
+  return <span className={`ml-1 ${cls}`} title={`Price change versus the saved ${session} close of $${close.toFixed(2)}; not today's change, strategy return or position size`}>{mark} {sign}{change.toFixed(1)}% vs {date} close</span>
 }
 
 // What the board shows during an FOMC cycle: the exposure the desk actually
