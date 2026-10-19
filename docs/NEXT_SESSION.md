@@ -10,6 +10,21 @@ cohorts at this ONE tree. No test failures/errors/skips or unexpected native
 operational failure. One earlier malformed local source pin refused preparation
 before staging/tests; its controls and readonly prerequisite remain preserved.
 
+AUTOMATION DELIVERY LIMIT: code/proof checkpointa26002cd27608e120ace22debf8a2f700ba6bdfb
+is pushed. The app automation_update request did not return; only its owned waiting
+exec cell was terminated, and no retry was submitted. Actual saved automation
+readback remains ACTIVE with the older namespace handoff/prompt (updated_at
+1792376960986, SHA336c4da55cffb62c47cd3faaed998518a7a940bf7723ba7afb73495638c16524).
+The new prompt was NOT observed saved. Request/before/readback remain at
+/tmp/native-save-slots-automation-{after,before}-20261019.txt and
+/tmp/native-save-slots-automation-readback-20261019.json. These are later app
+delivery observations, outside the146-input product proof. Re-read this latest
+source/proof before acting: the NEW9 save-slot boundary is complete and CLOSED;
+do not repeat it because the older scheduled prompt still names it. The next
+product task below targets repeated post-submit paper loading. Refresh the saved
+prompt only after app update access returns; no cause for the missing tool reply,
+app update success, schedule change, or user permission requirement is inferred.
+
 PRODUCT: explicit reserve_saves=True selects separately versioned
 synthetic-native-directory-binding/2 plus typed synthetic-native-save-slots/1
 and native-io/6. Existing directory-binding/1 remains the default count-less
