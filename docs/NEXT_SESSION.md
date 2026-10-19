@@ -1,5 +1,182 @@
 # Next session
 
+## 2026-10-19 — Owned native paper prepared before submission VERIFIED
+
+Read research/prepared-paper-proof-2026-10-19.json:
+9ec2253bb094f3876f801222b266d7fe51fb60649a4cf3d12651a5914a48c060,
+259714B. Source0d1fcb1b8152dfc80eb9ec261ab54dd0f2bea346/
+treed6eef3bf27e6b5f051bae104fa696a61e285ca69 passed NINE NEW assertions in THREE
+bounded cohorts at ONE tree. Earlier v1-A and v2-A remain FAILED, never adopted.
+
+PRODUCT: PRIVATE Stage schema2 and synthetic-cycle-prepared-paper/1 bind one exact
+owned native PaperState to original source/account/identity/phase/declaration/
+head/input/native-IO reservation/preimage SHA+length+dev+inode before the callback.
+The armed CAS/directory/SQL phase precedes actual native load and exact native
+JSON-byte hashing. Preparation failure durably poisons CAS+Directory before native
+observe/submit; original result/recovery stays metadata-only. Every capability
+rechecks original persisted descriptor, source, lease and live preimage; unhanded
+object bytes must match before observe/submit. effects.load returns the original
+object only once after actual acceptance; save requires that exact object.
+Finally releases its state/original references on success and failure. Native
+load/encoder/type identities are checked, not a hostile Python sandbox or deep
+immutability guarantee.
+
+The unchanged four-field result-marker contract remains stages/1, separately
+named RESULT_SCHEMA; new declaration/cycle/reservation/prepared/receipt records
+remain stages/2 and bind exact original reservation SHA. No MetadataSlots guard
+was widened. Original native writer, Store/default DELETE+FILE/schema/paths/caps/
+guards/public genuine and old bound-CAS raw-final refusals remain unchanged.
+_order already loaded before effects; the eliminated materialization is the
+repeated _Effects.load after accepted submission. Native submitted_at arrives
+after response, so later mutation/serialization/save can still fail. No whole
+transition preparation or full832MB/model-RAM admission claim.
+
+V3 A: CIDa12a29995eff116597cfe3a3dec2cfff20e00c29672b6148f7e9faa558a575ef/f612,
+exit0/noOOM2026-10-19T03:29:21.961823128Z;3pass0fail/error/skip,
+25.284945220686495s/58232KiB. Injected pre-load preparation failure leaves no
+callback/order/save; wrong binding and changed unhanded object refuse before
+observe/order/save/latch, preserving exact native state. The latter two have
+exactly one original SQL OPEN reservation commit (generation+1/oppositebank/
+samehead/pendingNone/original cycle+input+parent+owner/receiptNULL), not zero SQL
+transactions. Repeated paused attempts do not advance anything.
+Rawproofa7f7457deb9dd3214eabae05a47fd8265d3cf5e474244e14fceccaed2625dffc/73190B.
+
+V3 B: CIDe34a211b22a05a233ea2b3f2da09456e6293674d65e1a78f54ea5637df1792a6/f612,
+exit0/noOOM2026-10-19T03:31:08.840219562Z;3pass0fail/error/skip,
+33.91595763154328s/58212KiB. Actual native reader profiling (no replacement of the
+reader/globals) observes exactly ONE submission native load and ZERO original
+metadata-recovery loads; identical handed object/finally released references.
+Actual full private birth→stages→desired8/submitted5/filled5 partial native
+journal→Store OUTCOME→reopen/original recovery→same-session Nightly passes, policy2/
+five native saves/exact large NaN+Unicode native bytes. Foreign-copy save and
+caught duplicate handoff retain the already accepted5 order and refuse all later
+save/evidence/replay; do not claim those refusals undo broker acceptance.
+Rawproof171abbc2d00e49ae229f66eec7812d5e9cd837587095a2b02f3b8b3d32aba683/74369B.
+
+V3 C: CIDfbd0071f0d941857344fc1c0d7e8af7b156c354bd5a3c6b4937eef8e9a3ade9e/f612,
+exit0/noOOM2026-10-19T03:33:16.00707986Z;3pass0fail/error/skip,
+26.688652268610895s/58300KiB. Actual owned PID7 SIGKILL after prepared reservation
+BEFORE callback (no orders, native next2); PID8 after once-only handoff with real
+accepted5 order but no save (next2); PID9 after authoritative SUBMISSION commit
+(next3) before original result. All-9/reaped. First two remain paused with no
+re-materialization/replay; committed recovers ONLY original missing result/seals,
+zero native loads/no SQL generation/native effects. Witness-only packed broker
+DATA inspection, never parent/account restore. Three protocol-boundary process
+cuts, NOT powerloss/inside native syscall/SQLite-commit proof.
+Rawproof27cc9b519931bef40d0dfef8d5ff6b62fdef308cca7347e8ba8531e66e0c2020/102532B.
+
+FAILED v1A/source32d33c36a605ec059ee072f0dc6c13a15a7e0bc7/tree
+3a57ae34718b371ba2af43f9e420e3d4eeac116a:
+CID0b466dc443fdb73a351129d8727891a82128cc55f710f5b5e9608db3c16b2bd1/f612,
+exit1/noOOM03:19:13.580511268Z;3errors0assertionfail/skip,
+20.937734505161643s/58064KiB. New Stage schema2 was incorrectly reused for unchanged
+result-marker schema1; all cases stopped at PREPARE metadata result guard BEFORE
+their new assertions. Corrected only explicit stable RESULT_SCHEMA+fixture
+constant. Prooff0a3fa2e4258b8219a6d1bdfc723a77708918cb62ed2a53c5a86445aa7ebb35c/73108B.
+FAILED v2A/source71bf968f9367a17a1d7bb9252d1e7a649f960e5b/tree
+027ec74064861af43f8359ce4fe381febb077be4:
+CID16d37c29d3bc30d118e7b919c1c0327b601446da84e03bcffc6b084b30f771a0/f612,
+exit1/noOOM03:24:27.592179625Z;1pass/2assertionFAIL0error/skip,
+25.21604435890913s/72860KiB. b/c incorrectly required unchanged SQL bank across the
+original pre-callback Store.reserve_operation. Product unchanged for v3; tests
+now require that exact durable reservation plus unchanged native/latch state.
+Proof24db761a3de0a3959a7d5c2108f4d6a12746be2c2f2450573e4285dcf3072b67/73163B.
+All failed logs/sources/pools preserved, no kills reached in either failed A.
+V1/V2 B/C controls UNRUN, never dispatch them.
+
+Rawproofs+seven fixed results stay in /tmp/prepared-paper-20261019-v3-{a,b,c},
+-v1-a and-v2-a plus matching Spark1 scratch; never replay/adopt any pool. All15
+complete inventories INCLUDING both failures retained:7740 CAS+555 metadata+
+105 SQL+60 directory-metadata+90 original native directories=8550 globally distinct
+original identities. Every name/physical field unchanged; eachCAS34344960/
+metadata9183232/SQL1843200/directory-metadata790528 allocated AND logicalB. Native
+writer state body changes remain its original semantics. Complete793755B raw/
+55716B gzip inventories; six canonical cut/exit strings23705B SHA/length exact.
+Green9 inventories5130 originals. Reviewer independently reconstructs full actual
+sources/calls/fresh proofs/getters/results/inventories/witnesses/runtime links.
+
+22 product/test pins/31copiedpayloads495934B<524288,33source/47native physical
+SHA bookends/writer globals unchanged/forbidden[]. FOUR unchanged whole SOURCE-only
+codec/CAS/physical/Nightly RO file references from prior closed SOURCE paths, never
+old accounts/output/pools. Whole CLI text two helper CodeTypes pins1655map, no CLI
+startup import. Combined executed closure EXCEEDS512KiB; copied cap is not whole
+closure/RAM. Context/policy/program/calendar/source-manifest globals SYNTHETIC,
+constructors bypassed. Eight FULL mounts equal by uniqueDestination; raw order
+v1false/v2false/v3Atrue/Btrue/Cfalse; HConlyOomKillDisablefalse→null.
+UID1000/noneRO1CPU512MiB=swap/PIDs32/tmp64/dropALL/no-new-privileges/CPU30/
+native1MiBFSIZE/source-controls-log256KiB/productioncaps unchanged. All green five
+phases0/emptyerr; both failed execute1/AssertionError retained. Each failed attempt
+also has one separate retained fixed failure-metadata getter, not test replay.
+
+Local edit ENOSPC refused before mutation/runtime; removed ONLY observed regular
+nlink1 Homebrew OpenSSL3.6.3 source download54953005B/dev16777223/inode57320486,
+restoring~76MiB. No installed dependency/source/backups/prior evidence removed.
+101 product/test/runner purpose functions/ASTwarnings/zeroBackspaces/diff PASS;
+24 new source/control/checker files have279 purpose functions with no missing
+comments, warnings-as-errors AST/zeroBackspaces PASS.
+Ruff unavailable/no fullunit/build/deploy/UI/model claim. Diagram:NONE.
+
+Local DATA-only corrected collector ONCE exit0:229 inputs3860318B/four full
+held-read SHA+physical bookends; exclusive proof259714B/fsync/readback. Separate
+SOURCE4MiB + five CONTROL2MiB each + EVIDENCE4MiB + EVIDENCE_FAIL2MiB +
+DERIVED2MiB =22MiB maximum, NOT whole-process4MiB. Actual SOURCE3719460/
+CONTROL_FAIL2007802/FAIL21977614/A=B=C1726422/EVIDENCE2679944/
+EVIDENCE_FAIL1308944/DERIVED1286247B. Root two-held-read exact output SHA/physical
+readback passed. No local crash/kernel-FSIZE claim.
+
+First local collector failed NameError (missing FIELDS constant) after first
+fstat BEFORE first read/hash/output; target absence confirmed. Exact failed
+sourcea92bd2fd/36163B and failure reason retained at
+/tmp/collect_prepared_paper_evidence_v1_failed_20261019.py and
+/tmp/prepared-paper-collector-v1-failure-20261019.json. Added only original five
+physical-field constants plus failure preservation; no product/test/gate replay.
+An archival copy initially added one trailing LF (36164B/82bae138); removing
+exactly that last LF restored original36163B/a92bd2fd, with both identities and
+reason recorded BEFORE collection. Reviewer caught that copy mismatch and
+reviewed final cfc3e6f1/36489B collector/exact call before use. Failure remains
+FAILED, unrelated to nine native assertions. No failed/completed gate rerun.
+
+AUTOMATION late-delivery correction: prior saved-prompt update later completed.
+This03:00 heartbeat and actual saved ACTIVE TOML (updated_at1792378802891,
+promptSHA1874662ccea4a44e39da3cd973cb6f18c84024d1b7128c71247b53f74d1c90fa)
+confirmed delivery; the earlier68f574 note truthfully recorded its then-pending
+readback. No retry was sent.
+
+NEXT CONCRETE PRODUCT TASK: this NEW9 preparation boundary is CLOSED. Never rerun
+v3 cohorts/preflight/stage/copy/tests/getters/collector, failedv1/v2 or unused B/C
+controls, prior save-slot9/namespace9/SQLite11/protocol13/outcome10/stage9/capability2/
+older closed gates for docs. Never adopt failed/OPEN/completed pools or reopen
+COMPLETE phases. Physical directory/journal admission remains blocked on missing
+source/runtime/filesystem-bound allocator acknowledgement at original
+paper.save_state temporary.replace(path) paper.py:433/failure unlink/parent fsync.
+Body fallocate/stat/names do not reserve that capacity; capacity_reserved=False.
+
+Continue independent synthetic product work: exact _Final._produce still calls
+paper.load_state AFTER native client.flush (currently line237), then
+settlement.reconcile_raw serializes/deepcopies its input. FIRST inspect that
+pre/post-effect load and deepcopy lifetime and original result/read/recovery.
+Implement a separately source/head/input/preimage-bound owned native input
+preparation BEFORE resolution, with NEW bounded preparation-failure/interruption/
+original-result/full graph assertions. Preserve actual post-flush fills/resolved
+receipt binding and later transition/serialization uncertainty; do not precompute
+or fake broker results. Preserve old native writer/Store/caps/public genuine
+refusal. This is independent finite synthetic work, NOT full832MB/model RAM or
+physical/genuine admission. Advance one coherent boundary, no provenance/ELF
+detours.
+
+Full native rename/journal/filesystem/native SQLite FILE mode/whole832MB horizon/
+load-save/deepcopy/serialization/model RAM/twohost/powerloss/whole genuine
+constructors/market_daily Resolver/sender/models/providers/actualcontext/calendar/
+economics/native operation/adoption/independent publication/API/UI UNVERIFIED.
+Full admission mandatory BEFORE genuine effects. Originaltiming FAILED/publication
+CLOSED/missing receipts/immutable roots unchanged; genuinev6 OPEN/PAUSED/no replay/
+adoption/new genuine run from failed reservation. No Spark2load/guard-G08-cap
+weakening/fakeclock/actualday replay/historyrewrite/model-provider-account-service
+change/denied-read bypass/paiddata/tuning/realmoneyorders. Production unchanged;
+NEVER deploy historical main wholesale. Heartbeat ACTIVE; quiet on unchanged/
+nonactionable state, meaningful progress/completion/failure/action only. No ETA.
+
+
 ## 2026-10-19 — Exact pre-effect native save-slot allowances VERIFIED
 
 Read research/native-save-slots-proof-2026-10-19.json:
