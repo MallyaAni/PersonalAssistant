@@ -1,5 +1,99 @@
 # Next session
 
+## 2026-10-19 — PRIORITY: finish deployed strategy and dashboard acceptance
+
+This section supersedes conflicting archived NEXT directions. The user asked why
+the work was taking so long and whether the live strategy/dashboard were fixed.
+Stop the stream of private allocation guards. Prioritize concrete deployed
+defects, a fresh ordinary decision, actual existing paper-order/fill persistence,
+and the matching dashboard. Keep the goal and heartbeat ACTIVE and quiet when
+there is no new actionable evidence. No permission question is pending.
+
+Two healthy agents handled distinct production inventory and dashboard work;
+usage-limited private reviewers were not retried or replaced. No duplicate
+strategy run, simulation, release, provider/model/account operation was started.
+
+VERIFIED new frontend-only production release:
+50d62c63e654a86ddfaa01cdc70b475081e60cb4, parent deployed e237479c,
+tree c5be93a0d63a1c52a695cd82c271732702e35ca7. Shared paper-response ordering
+now covers both main/manual polling and the independent20s reader, including
+obsolete errors, without invalidating quote/personal-guidance work. The existing
+backend recorded_fills_reason is typed and displayed in Paper execution while
+valid current broker fills remain visible. No backend or strategy guard changed.
+Main integration is327c3590; production remains the separate minimal branch
+codex/trading-paper-refresh-20261019. NEVER deploy historical main wholesale.
+
+Before fixing, two real-timer compiled browser tests reproduced newer quantity9
+being overwritten by obsolete quantity2 in both directions. The third initial
+case failed BEFORE its intended assertion because its fixture omitted required
+current_price; source/trace preserved. Only fixture shape and strict origin
+isolation were corrected. A targeted warning-only RED then reproduced the missing
+warning with Bought3 still visible and empty browser diagnostics. No assertion
+was weakened. All THREE new tests then passed at the production tree50d62c63,
+50.129657s/0skip/flaky/unexpected; TypeScript and Vite build passed. Local reused
+dependencies use Vite8.2.2/Playwright1.62.1/Node24.19.0; canonical deploy uses
+Vite8.1.4, so build bytes differ and deployed-artifact acceptance is separate.
+
+Canonical release ran ONCE through scripts/deploy.sh, exact three-file frontend
+diff, no skip/clock flags, waiting for the scheduled intraday job. The standard
+frontend-only short path intentionally omits backend/model gates. Original
+upstream restored to origin/main. Exact terminal poststatus:
+2026-10-19T15:31:40Z 50d62c63 ok (cheap).
+Actual gateway4d688649/image227db6e3 serves index-BW05tuj4.js,
+SHAfafb8342fb9bd3934835b6bd8bdb9cb7e14d09a8dfeef28516d6058cfc3a6bf5.
+Backend3e4edfca/f612, all31 approved source hashes and config/release/economic
+evidence are unchanged before/after. Release evidence stays under Spark1
+scratch/trading-paper-refresh-release-20261019-v1 and matching local new evidence.
+
+FAILED public strict fixture run: all three intended behavior paths reached the
+correct results, but each failed diagnostics because its same-origin-only
+isolation refused Cloudflare's injected analytics beacon. Preserve the failures;
+do not call this a green authenticated/public acceptance. The exact four deployed
+gateway static files passed the UNCHANGED three assertions on a local static
+origin:3pass/0skip/flaky/unexpected,47.5s, all browser diagnostics empty. Actual
+deployed JS877526B matches the above full SHA. No analytics failure was suppressed
+or assertion loosened. These are THREE cases at two builds, not six distinct cases.
+Authenticated live account→screen acceptance remains UNVERIFIED; the available
+visible handoff browser is at sign-in and the previous access request has no
+reply. Do not bypass authentication or inject credentials.
+
+VERIFIED current strategy diagnosis (read-only, no rerun): latest saved ordinary
+record remainsOct13, and today's fresh live/intraday files still refer toOct13.
+Oct14–16 reports DID have fresh daily data but stopped at
+learned_live_holding._release112: Exact reviewed learned holding release required;
+market_daily._run2730 refused incumbent substitution. The last log write is
+Oct16 23:45:05.620053UTC, BEFORE theOct17 source-approval repair. Current binding
+atOct19 15:23:15UTC matches ALL31 source hashes/configf96a2977/release1c1c6e9b/
+economic evidence4d6af1bb, approvedOct17. Thus the historical release-binding
+failure is repaired at that boundary; a continuing mismatch is not supported.
+Do NOT renew it again, force/replayOct14–16, or manufacture new fills. TheOct13
+original input-capture hash matches its saved record. Expired numeric plans are
+correctly withheld, with no chart-grade fallback.
+
+NEW frontend boundary CLOSED; preserve source/RED/green/deployment/public-failure/
+exact-deployed-static results in research/live-trading-delivery-proof-2026-10-19.json.
+Do not repeat them for docs. Main integration TypeScript passed; no whole-main
+browser/build claim. NEXT: observe the NATURALLY scheduled ordinary nightly
+after19:30ET and subsequent
+intraday flow. No new ordinary nightly has been observed since the approval
+repair (weekend intervened).
+Inspect new logs/record/capture/approval binding once the scheduled run finishes,
+follow original proposal/submission/fill IDs and desired/submitted/filled amounts
+through persisted journal and authenticated UI when available. Fix only the first
+new reproduced production defect; never launch market_daily/market_balancer as
+read-only diagnostics. Full current strategy→orders→fills→UI stays UNVERIFIED.
+
+Private historical reliability evidence remains preserved and separate. All old
+closed gates/pools stay closed; no adoption/replay or reopening COMPLETE phases.
+Genuinev6 remains OPEN/PAUSED; original timing FAILED/publication CLOSED/missing
+receipts/immutable roots unchanged. Physical rename/journal admission remains
+blocked on the unavailable allocator acknowledgement at paper.py433 replace,
+failure unlink and parent fsync; body fallocate/stat/names do not reserve it.
+Full filesystem/nativeSQLiteFILE/832MB/modelRAM/twohost/genuine admission remains
+UNVERIFIED. No Spark2load, guard/G08/cap weakening, fake clocks, actual-day replay,
+provider/model/account changes, denied-read bypass, paiddata/tuning/real-money
+orders. No ETA. Diagram impact: NONE — polling ordering and field disclosure.
+
 ## 2026-10-19 — Private complete native output-byte admission VERIFIED; RAM/physical/live admission still UNVERIFIED
 
 Read research/native-output-capacity-proof-2026-10-19.json:
