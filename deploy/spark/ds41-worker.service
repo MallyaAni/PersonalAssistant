@@ -1,0 +1,32 @@
+[Unit]
+# The main LLM's rank-1 process.
+# DeepSeek-V4.1-Flash-1017 (EXL3 2.75 bpw), TP=2 across both Sparks; replaced
+# ds4-worker (V4-Flash-0731) on 2026-10-19. The ds4 unit stays installed but
+# disabled as the rollback; never enable both - they share the GPU pool.
+Description=AniOS main LLM (DeepSeek V4.1 Flash 1017, TP=2 worker)
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+Conflicts=ds4-worker.service
+
+[Service]
+Type=simple
+User=animallya96
+# GB10 CUDA cannot reclaim page cache and vLLM sizes its pools from what it
+# sees free, so drop the cache as root right before each start - the '+'
+# runs this one step with full privileges while the service itself runs as
+# the user. The recipe's launcher does the same with sudo.
+ExecStartPre=+/bin/sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches'
+# The launch script runs docker in the foreground with --rm, so systemd
+# supervises the container's lifetime directly.
+ExecStart=/home/animallya96/ds41-tp2.sh worker
+ExecStop=/usr/bin/docker stop -t 60 ds41-worker
+Restart=always
+RestartSec=30
+# Boot is ~6 minutes when the JIT kernels are prebuilt, but the head blocks
+# until rank 1 joins and spark2 may still be booting; keep ds4's margin.
+TimeoutStartSec=3900
+TimeoutStopSec=120
+
+[Install]
+WantedBy=multi-user.target

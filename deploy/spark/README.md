@@ -71,6 +71,71 @@ argument (`head` on spark1, `worker` on spark2), not from a different file. Keep
 it that way: a divergence between the two copies is a class of bug that shows up
 only as a hang during NCCL init.
 
+## DeepSeek-V4.1-Flash-1017 (ds41-*), prepared 2026-10-19
+
+The next model: `ds41-tp2.sh` + `ds41-serve.sh` (both nodes, byte-identical) and
+`ds41-{head,worker}.service`, replacing `ds4-*` (V4-Flash-0731). HeNryous's
+EXL3 2.75 bpw build (KLD 0.0201 vs native; code 0.0125) on
+`ghcr.io/henryous/deepseek-v41-1017-dgx-spark:v4i`, the sudoingX launcher's
+command transcribed into the ds4 systemd shape. Every value that is ours and
+why is in the two scripts' headers; the short list:
+
+| | ds4 (0731) | ds41 (1017) |
+|---|---|---|
+| weights | official FP8/MXFP4, ~90 GiB/rank | EXL3 2.75 bpw, ~93 GiB/rank; Engram 203 GB on NVMe, read at lookup |
+| fabric | `rocep1s0f1` + twin, GID 3 | same (recipe default `...f0` is DOWN here) |
+| context / seqs / KV | 393216 / 6 / sized by 0.81 | 262144 / 2 / pinned 2.5 GiB (660K tokens) |
+| speculation | DSpark k=5 | DSpark k=5, confidence-depth policy |
+| vision | Qwen3-VL-8B on spark2:8001 | this model (image:4); the VLM is retired |
+| served names | `deepseek-v4-flash` | `deepseek-v4.1-flash-1017`, alias `deepseek-v4-flash` |
+| boot | ~17 min | ~6 min with prebuilt JIT kernels |
+
+**Why the VLM goes.** With the V4.1 worker resident, spark2 has ~18 GiB left;
+the VLM reserves 11, and the recipe author measured the worker dipping to
+4.2 GiB free during long prefills on an otherwise empty node. The server's
+watchdog stops it at ~1.5 GiB. So vision moves to the main model
+(compose/.env `VISION_*`, `DOCLING_PICTURE_*`), not beside it.
+
+**Why 262K / 2 / 2.5 GiB and not the author's 320K / 4 / 3.75.** spark1
+carries the app stack and the embedder, ~5 GiB the author did not have, and
+his head node's low point was 3.1 GiB free at a 314K prefill. The base
+recipe's defaults are the measured-safe shape; the cutover script records the
+MemAvailable low point under a ~200K prefill on both nodes and rolls back
+under 3 GiB. Raise the context only against that number.
+
+**Engine difference that reaches the app.** This image reads the reasoning
+level only from `chat_template_kwargs` and ignores the top-level field,
+with thinking ON by default. `backend/core/llm.py` and the vision provider
+send both forms since `bf5f67b3`, with "none" as `thinking: false`. Without
+that, every routing/classification call becomes a thinking call, silently.
+Also: literal DeepSeek special tokens in user text become real tokens on
+this image; the README's defuse (zero-width space after `<`) is not applied
+in AniOS yet.
+
+**Apply, in order** (`scripts/spark-dsv41-cutover.sh` does 3-6 and rolls back
+on its own):
+1. `scripts/download_model.sh` from the HeNryous repo into
+   `~/models/DeepSeek-V4.1-Flash-1017-EXL3-2.75bpw-DGX-Spark` on spark1
+   (~402 GB; `HF_HUB_DISABLE_XET=1`), then sha256 the two Engram shards with
+   `dd iflag=direct` (hashing through the page cache on a serving GB10 node
+   has tripped the watchdog) and touch `.engram_sha256_ok`. Pull the image.
+2. `sudo bash ~/install-ds41.sh` on BOTH Sparks: installs the units and a
+   sudoers rule for exactly the model units and drop_caches.
+3. Baseline the old server; `disable --now` ds4-head, ds4-worker, anios-vlm.
+4. spark2: pull image, rsync the model folder over the fabric; both: build
+   the JIT kernels once (never beside loaded weights).
+5. `enable --now` ds41-worker, then ds41-head; smoke (both names, decode,
+   DSpark counters, a vision request, a tool call); the memory probe.
+6. Flip `.env` on spark1 (`VISION_LLM_BASE_URL`, `VISION_MODEL`,
+   `DOCLING_PICTURE_API_URL`, `DOCLING_PICTURE_MODEL`) and
+   `docker compose up -d`; `scripts/gate.sh`, `benchmark_inference`, the
+   vision suites; opencode's model entry on the desktop.
+7. Record the evidence here and in `NEXT_SESSION.md`; update `models.json`.
+
+Rollback at any point: `ROLLBACK=1 bash scripts/spark-dsv41-cutover.sh`
+(ds41 down; anios-vlm, ds4-worker, ds4-head up; ~17 min) and the `.env`
+lines back. The 0731 weights and scripts stay on both boxes.
+
 ## Deploying a change
 
 ```sh

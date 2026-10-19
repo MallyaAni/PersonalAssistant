@@ -1,5 +1,34 @@
 # Next session
 
+## 2026-10-19 — DeepSeek-V4.1-Flash-1017 prepared for the Sparks (NOT applied)
+
+Decision and evidence: the first model that is both clearly smarter than
+V4-Flash-0731 (DeepSWE 77.0 vs 54.4, Terminal-Bench 4.0 42.3 vs 7.0, DeepSeek
+harness) and faster on two Sparks (82-89 tok/s code single-stream measured by
+the recipe author vs our 67). Build chosen for quality, not bpw: HeNryous
+EXL3 2.75 bpw has the lowest measured KLD of any 2-Spark quant (0.0201; the
+uniform 2.9 bpw is 0.0295 because bits sit where sensitivity is not); 3.5 bpw
+builds are 240 GiB and do not fit. Full reasoning: `deploy/spark/README.md`
+("DeepSeek-V4.1-Flash-1017"), the two script headers, and
+`scripts/spark-dsv41-cutover.sh`.
+
+**Done, verified where it could be:** `deploy/spark/ds41-*` written from the
+launcher's generated command (32/32 recipe env vars identical by diff, our
+fabric devices substituted - the recipe's defaults are DOWN ports here), units
+pass `systemd-analyze verify`, files staged byte-identical on both Sparks.
+Cutover script dry-run against fake Sparks through success, boot failure
+(rolls back in the documented order) and thin-memory (rolls back). Backend
+`reasoning_effort` dual-form shipped as `bf5f67b3` (97 unit tests; live probe
+on ds4 unchanged); compose vision literals parameterized as `47915387`
+(no-op with the live .env). Weights downloading to spark1 (~21 MB/s, page
+cache dropped per file, pauses under 3 GiB available; no pause so far).
+
+**Not done:** Engram sha256 (after download); `sudo bash ~/install-ds41.sh`
+on both Sparks (needs a person); `scripts/deploy.sh` for bf5f67b3+47915387
+(blocked by the 19:20-19:55 ET window at the time); the cutover itself;
+opencode's model entry; `models.json`. UNVERIFIED until the cutover log and
+the gates say otherwise.
+
 ## 2026-10-19 — LIVE dated prices and position percentages; real current recommendations still unfinished
 
 CURRENT HUMAN INTENT: All names is the account-independent immediate buy/sell
