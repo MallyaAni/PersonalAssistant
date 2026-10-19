@@ -1,5 +1,78 @@
 # Next session
 
+## 2026-10-19 — Fill persistence and dashboard repair is LIVE and artifact-verified
+
+The user's explicit deploy request is fulfilled for the minimal production-based
+repair6ae6dde29e64f4589c46dac0d9b62ed4562524c2 on
+codex/trading-fill-consistency-20261019. NEVER deploy historical main wholesale.
+The sole v3 canonical release completed exit0/SSH0; do not poll/restart session56555
+or dispatch another release. Original roots and both failed earlier attempts stay
+preserved. All product bytes are identical to the reviewed c159 candidate; later
+commits corrected only package-import and exact original-CID test expectations.
+
+VERIFIED: normal scripts/deploy.sh gates passed10864unit/93skip/6xfail/
+439warnings/25subtests in599.22s, then100real-model functional checks in305.18s.
+No skip or clock flags. Canonical restart and installed trading source admission
+passed HOST+CONTAINER; source map retains29 unchanged files and the exact reviewed
+two-source reconciliation/projection update. Original economic evidence remains
+4d6af1bb; config8930ccc3/releaseec1d7d02 bind the corrected sources. The exact-target
+postcheck is `2026-10-19T16:51:05Z 6ae6dde2 ok (cheap)`. The normal scoped serving
+and trading-admission smoke is NOT a full journey/search sweep or fresh strategy
+execution claim.
+
+Actual backend44a654b0a31efe98ac801d21f795c8e5072b07fd52726dff243b8ec58018a3e2
+uses imagedb5ed26e29d8a7e033743362639f8435d00c7bb934a2ea7cd80ff31ab8486fe2;
+gateway11041b8224f6cbf1bf38a143c5ec413e8f67e8bac15c0287a85fbced7576021c
+uses image30a98a70f70736253727ad9daef740c76026155ef28f03990d90545ce10e2d5c.
+Both restartcounts0 and identities unchanged across actual source/static reads.
+Five actual backend file hashes match the candidate, including history projection
+outside the31-source map and unchanged native paper. Public index-CbL0w6uS.js is
+878225B/SHA92e0bd312c6bfd08cf1a6e31a73ec1e07d9ae944bb618c7a1d4c145266d88093,
+exactly equal to the running gateway's primary JavaScript.
+
+VERIFIED deployed-asset browser acceptance:5pass/0fail/skip/flaky/unexpected,
+29.904355s, using actual copied gateway assets and synthetic GET-only API fixtures.
+Working partial remains visible after nextday empty activity/reload; anonymous
+timestamped/date-only and two distinct identical-valued originals stay accessible
+with overlap warning without inflating confirmed quantities; identified original
+orders merge once. Both ticker views/account list and actual canvas marker text
+were exercised. All five retain evidence+trace attachments, empty page/console/
+required-network/mutation diagnostics. Four copied static files/public JS are NOT
+whole-distribution or signed-in account acceptance. Do not rerun these five for
+documentation. No live account order, cancellation, model or provider call was
+used for these browser fixtures.
+
+Operational warning preserved: canonical backup completed47-table dump/base and
+Spark2 dump+WAL mirror. Its additional owned Mac WAL rsync consumed Mac available
+space9.2GiB→3.9GiB. Root validated the complete exact owned process chain and sent
+SIGTERM ONLY to rsyncPID291921; canonical recorded code20/warning and continued.
+No source backup or whole mirror was removed by that stop; the original routine's
+--delete/pruning remains its own semantics, not an unchanged-mirror claim. The Mac
+WAL mirror is incomplete/NOT certified current; never independently retry it or
+delete backups to make space. Local free3.3GiB after stop, before small final proof.
+Primary/Spark2 originals remain; no local transport failure in successful v3.
+
+Evidence:research/fill-consistency-delivery-proof-2026-10-19.json,
+238203B/SHAbd2af175b4017ddb955109d4ef7fe6453f9d31b938bf337110421b449754d7a0.
+It retains original v3 canonical log/results/approval transition/upstream restored
+origin/main, original v2 failed log/results, actual runtime/static observation,
+complete five-case browser JSON and owned-mirror-stop record. Prior candidate
+proof remains immutable. One collector fetch+collect; no original acceptance
+rerun. /tmp/fill-consistency-deployed-browser-20261019-v3-artifacts retains traces;
+/tmp/fill-consistency-release-final-evidence-20261019 retains nine exact files.
+Production worktree is clean at6ae6dde2 after removing only this task's verified
+frontend/node_modules symlink; the shared installed dependencies remain intact.
+
+NEXT: keep goal/heartbeat ACTIVE. Observe the naturally scheduled19:30ET ordinary
+decision and subsequent real paper orders/fills/persistence, then signed-in live
+dashboard; these remain UNVERIFIED. Never force market_daily/market_balancer,
+fake clocks, replay old failed sessions or bypass sign-in. Anonymous historical
+identity/complete execution totals remain unresolved without original linkage.
+Original historical timingFAILED/publicationCLOSED/genuinev6OPEN-PAUSED and all
+physical/full-horizon/model-RAM restrictions remain. Do not resume archived private
+allocation work or repeat closed gates for docs. Diagram impact:NONE(existing
+reconciliation/projection/chart flows). Record only meaningful new runtime evidence.
+
 ## 2026-10-19 — Corrected live fill repair is in canonical gates; NEVER duplicate release
 
 Current production-based candidate6ae6dde29e64f4589c46dac0d9b62ed4562524c2

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-10-19 — Fill consistency repair deployed and checked on served assets
+
+Production-based6ae6dde2 is live through the canonical deployment. Unit gate:
+10864passed/93skipped/6xfailed/25subtests; real-model functional gate100passed.
+Host+container trading-source admission and exact-target serving smoke passed.
+Actual backend hashes and public primary JavaScript match the intended release.
+Five browser cases passed29.90s on exact deployed static assets with read-only
+synthetic API fixtures: retained working partials, conserved original quantities,
+separate unresolved legacy evidence and reload in both ticker views. Signed-in
+account UI and a fresh naturally scheduled strategy→orders→fills path remain
+UNVERIFIED; anonymous legacy identity is not fabricated. The optional Mac WAL
+mirror was deliberately stopped to preserve remaining disk space after primary
+and Spark2 backup completion; its original warning and incomplete status remain
+recorded, with no retry. Evidence:research/fill-consistency-delivery-proof-2026-10-19.json.
+Diagram impact: NONE — existing reconciliation, projection and chart data flows.
+
 ## 2026-10-19 — Preserve known fills and chart execution identity
 
 An absent later broker listing no longer erases an ordinary order's saved
