@@ -31,7 +31,20 @@ _reconcile and recorded-fill projection functions may change inside the original
 including terminal-only conclusions/planning/submission, remain unchanged.
 Normal economic/configuration/predecessor approval invariants remain mandatory.
 
-At this committed candidate, canonical gated deployment is recorded separately
+FAILED first canonical release:c159473d stopped during full-suite COLLECTION
+because the new working-partial test used a top-level sibling import that the
+repository package import mode cannot resolve. No production checkout/source
+approval/image/service changed; backend3e4edfca/f612 and gateway4d688649 remain
+at50d62c63. Original log/result/after/upstream receipts retained in Spark/local
+scratch/fill-consistency-release-20261019-v1. Root corrected only the test import
+to backend.tests.test_partial_fill_receipt_absence; all product bytes unchanged.
+The corrected18cases passed1.06s/CID0a2e64154798603ca5d6c0e41a89a1d1ffa0050011889c52ef4b7bd5750f797e
+with the actual candidate backend package mounted read-only. That harness's
+dependency_revision field still names the live parent50d62c63; create argv binds
+the actual candidate source path atc159473d. Treat that field as parent metadata,
+not the mounted candidate revision. Do not replay the failed release/root.
+
+The corrected candidate's fresh canonical gated deployment is recorded separately
 after it finishes. Never
 report candidate checks as deployed/live account acceptance. Naturally scheduled
 ordinary decision→orders→fills→authenticated UI still needs observation; no

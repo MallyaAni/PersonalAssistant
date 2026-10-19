@@ -8,7 +8,7 @@ import pytest
 
 from backend.agents.trading.desk import paper
 from backend.market import live_model_decision as projection
-from test_partial_fill_receipt_absence import (
+from backend.tests.test_partial_fill_receipt_absence import (
     CID,
     SINCE,
     ReadOnlySyntheticClient,
