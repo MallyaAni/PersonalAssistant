@@ -1,12 +1,13 @@
 # Next session
 
-Documentation sync note: main documentation checkpoint81c33585 is committed
-locally, but its actual `git push origin HEAD:main` failed128 at18:51UTC with
-`Could not resolve host: github.com`. This is NOT a deployment failure:
-production878cbc53 and its product branch were already pushed/deployed/verified.
-Preserve local commits and proofs; no force push, network restart or DNS bypass.
-Remote main was last successfully33b95032. A later ordinary push needs working
-normal DNS/network; do not redispatch any completed deployment/test/getter.
+Documentation sync history: the first push of checkpoint81c33585 failed128
+at18:51UTC with `Could not resolve host: github.com`; the failure remains
+preserved in local commitd0ddafc0. A later ordinary DNS read and normal
+`git pull --rebase origin main` both succeeded without network changes/bypass.
+This checkpoint includes the retained final release evidence. Production878cbc53
+and its product branch were already pushed/deployed/verified independently of
+that documentation transport failure. Do not redispatch completed deployments,
+tests or getters to synchronize documentation.
 
 ## 2026-10-19 — Recovery reporting LIVE; account repair still requires human authority
 
