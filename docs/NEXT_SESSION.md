@@ -9,6 +9,17 @@ Read research/final-prepared-input-proof-2026-10-19.json:
 bounded cohorts at ONE tree. No test failures/errors/skips or unexpected native
 operational failure. Old submission-preparation/save-slot gates remain CLOSED.
 
+AUTOMATION DELIVERY PENDING: verified checkpoint6a87861c7fd3ceb41e515660025512e5390955ec
+is pushed. ONE app automation_update request for this new handoff did not return;
+only owned waiting cell8615 was terminated, no retry. Actual saved TOML readback
+remains ACTIVE/updated_at1792381677747/previous promptSHAc2da29744121f3b89b1e10b336e135b2a1ca10df004d9ed97884d0340ef6a190,
+contains0d1fcb1b but lacks0168b4e1. Delivery is UNKNOWN, not observed saved.
+Request/before/readback retained /tmp/final-prepared-input-automation-{request,before,readback}-20261019.json.
+These app observations are outside the131-input product proof. Re-read saved
+state later without a duplicate request; this current handoff/proof takes
+precedence over an older firing prompt. NEW9 is CLOSED; next work is saved-byte
+verification below.
+
 PRODUCT: PRIVATE Final schema2 plus synthetic-final-prepared-raw-input/1 bind an
 owned native PaperState and its initial original deepcopy BEFORE real broker
 flush. The exact source/account/identity/phase/submission-head/declaration/input/
