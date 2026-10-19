@@ -1,5 +1,78 @@
 # Next session
 
+## 2026-10-19 — New ticker warning LIVE; scheduled paper sender FAILED on ownership
+
+This current entry supersedes older readiness/next-run directions. The original
+fill repair remains deployed, and a separately reproduced ticker error-disclosure
+fix is now LIVE at minimal production2f9fd73f5230480a1b13e393eeccc44bf02f1bbf,
+parent6ae6dde2. Main integration231f1a85 preserves unrelated sized-history props;
+main TypeScript passed. NEVER deploy historical main wholesale.
+
+VERIFIED new warning boundary:2RED assertion failures on prior deployed assets,
+then the SAME2 cases GREEN10.880482s on source build and GREEN on actual new
+deployed static assets(about9.2s), both contexts/reload/valid broker BUY3 retained.
+All browser diagnostics empty; GET-only synthetic fixtures, not signed-in account
+acceptance. No closed5/old3 cases rerun. Canonical frontend-only deploy completed
+exit0/SSH0, exact poststatus2026-10-19T17:11:22Z 2f9fd73f ok(cheap); standard short
+path, no skip flags/backend rebuild/backup/migration/account or source-approval
+change. Original backend44a654b0/db5ed26e and all31 approvals/config/evidence remain
+unchanged. Gateway519a293d6f2894c2fadc29ec239dbd8dfa10d1329d6ac5d106dc75b95e56c789
+imagee28360bbf681a126209ea2c0c42c425a7bcdab448c7289afc5ed6c47a499cfef serves
+index-DIdPh0aa.js878486B/SHA69d12566abc786033e6418de409ecfd407943d37406145d16acfbe5638e94f0b,
+equal to public primary JS. Four files are NOT whole distribution proof.
+Proof:research/paper-history-warning-delivery-proof-2026-10-19.json,
+92073B/SHA8dab7d3bb0a1dd52aec96198c7288763145d24dd791b278608b8bf9e28b514d3.
+Candidateproof104512B/920331cd remains separately preserved.
+
+FAILED LIVE acceptance: permitted board/log metadata revealed repeated scheduled
+sender PermissionError on paper/state.json from13:00UTC through17:00UTC. Root's
+direct host observation independently hit the same denied read; source5798B/
+e80ce957 and failure description retained, no alternate account read attempted.
+Stat/id-only evidence: host animallya96 UID/GID1000, paper directory1000:1000/0775,
+state root:root/0600/1649061B/inode41818273. Backend has no configured user override
+and Dockerfile no USER. Native save creates caller-owned0600 temporary and replaces
+the destination without retaining ownership. This supports the failure mechanism;
+the historical actor that wrote the root-owned state is NOT established.
+
+Natural13:00ET jobPID339589 was observed live17:00:37UTC, then its exact handle was
+absent; actual exit code UNKNOWN. Its live/intraday as_of17:00:39 and95 quotes from
+16:45 completed bar/fetched17:00:01 and latch17:00:39.833879 all advanced. However,
+the sender logged permission failure, event recovery retried paper.load_state in
+its exception handler and raised another PermissionError, and no matching final
+intraday summary appeared. Fresh quotes/HTTP health/deployed source are therefore
+NOT paper-sender readiness. Original strategy session remainsOct13. Do NOT wait
+for tonight's run as if this were healthy or force a replay/job as a diagnostic.
+Proof:research/scheduled-paper-ownership-failure-proof-2026-10-19.json,
+61752B/SHA5aa66db09276f41a296cceaca6dd46301443ce678d5c0376739ea0fc8416350e.
+The separate v2 observer omitted the denied account path entirely; all account
+CIDs/persistence remain UNVERIFIED. No sudo/Docker/alternative-path read bypass,
+chmod/chown of live state, real order/cancellation/provider/model operation occurred.
+
+Independent SYNTHETIC prevention: local production worktree now has UNCOMMITTED
+paper.save_state ownership preservation1a96dd96c254abb4799c6f14cb99938c65fb2907d6777fbc4b1194bfaa851bc4
+and NEWtest39cba720/8150B. Exact JSON/default encoder/flush/fsync/replace remain.
+It preserves existing UID/GID/mode; absent destination in an existing paper
+directory inherits that directory owner with0600. It does NOT repair today's
+already root-owned file. V2RED4FAIL/1PASS1.95s/CID6e0a2960 proves real UID1000
+reopen failures; V2GREEN5PASS0error/skip2.09s/CID5a0b9d15 proves preserved access,
+exact NaN/Unicode/no-newline bytes, original input, encoding and injected ownership
+failure preservation. All fresh isolated roots/no account mounts; UID0 restricted
+CHOWN/SETUID/SETGID/DAC_OVERRIDE, networknone/RO/1CPU/2GiB=swap/PIDs32/two separate
+64MiB tmpfs/CPU30/FSIZE1MiB. V1 CIDe9c0438b5FAIL includes THREE fixture-only root
+chmod refusals withoutFOWNER; preserve it as FAILED, not expectedRED. Fixed only
+fixture chmod via the owningUID1000, no capabilities/assertions changed. Never
+adopt/replay any test root. /tmp/paper-state-owner-{red,green}-20261019-v2 retained.
+
+NEXT: finish narrow DISTINCT ownership-source approval and new admission tests;
+existing prior review kinds/economic guards must remain unchanged. Healthy backend
+agent owns uncommitted backend files; root owns docs/release. No new backend release
+or live ownership repair has been dispatched. Before privileged live repair,
+prepare exact byte/inode/mode-preserving proposal and obtain explicit authority:
+current user restriction says no denied-read bypass. Protected account input remains
+unavailable; continue independent source work. Keep goal/heartbeat ACTIVE, do not
+repeat closed gates or retry usage-limited workers. Native/genuine/historical and
+anonymous legacy identity restrictions remain. Optional Mac WAL mirror stays stopped.
+
 ## 2026-10-19 — Fill persistence and dashboard repair is LIVE and artifact-verified
 
 The user's explicit deploy request is fulfilled for the minimal production-based

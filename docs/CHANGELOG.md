@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-19 — Disclose failed saved-fill verification in ticker views
+
+Production2f9fd73f passes the existing saved-history error through NameDetail to
+both ticker contexts. Failed verification cannot look like verified empty history;
+independently valid broker fills remain visible. Two new browser cases reproduced
+the defect, passed on source build, then passed on exact deployed static assets.
+Canonical frontend-only deployment and public-JS equality passed; backend/source
+approval unchanged. This does not fix the separately observed scheduled sender's
+root-owned0600 paper-state failure, which remains FAILED pending verified prevention
+and an explicitly authorized ownership repair. Signed-in account acceptance remains
+UNVERIFIED. Evidence:research/paper-history-warning-delivery-proof-2026-10-19.json
+and scheduled-paper-ownership-failure-proof-2026-10-19.json.
+Diagram impact: NONE — existing response-to-ticker and shared state paths.
+
 ## 2026-10-19 — Fill consistency repair deployed and checked on served assets
 
 Production-based6ae6dde2 is live through the canonical deployment. Unit gate:

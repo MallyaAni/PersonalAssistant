@@ -1,0 +1,1337 @@
+{
+  "captured_at": "2026-10-19T17:13:59.479773+00:00",
+  "cause_scope": "Atomic native save creates caller-owned0600 temporary state then replaces destination without retaining UID/GID/mode. Metadata matches that mechanism, but the historical root writer actor is not established.",
+  "diagram_impact": "NONE: existing shared state writer and scheduled sender.",
+  "metadata_observed_via_original_tool_output": {
+    "backend_cid": "44a654b0a31efe98ac801d21f795c8e5072b07fd52726dff243b8ec58018a3e2",
+    "backend_configured_user": "",
+    "host_gid": 1000,
+    "host_uid": 1000,
+    "host_user": "animallya96",
+    "paper_directory": {
+      "gid": 1000,
+      "inode": "41818288",
+      "mode": "0775",
+      "uid": 1000
+    },
+    "paper_state": {
+      "bytes": 1649061,
+      "gid": 0,
+      "inode": "41818273",
+      "mode": "0600",
+      "uid": 0
+    },
+    "separate_raw_metadata_command_receipt_retained": false
+  },
+  "natural_job": {
+    "acceptance": "FAILED: no matching final intraday summary; original cron traceback fails in event recovery at paper.load_state",
+    "exit_code": "UNKNOWN",
+    "observed_live_at_utc": "2026-10-19T17:00:37Z",
+    "observed_live_pid": 339589,
+    "original_tool_command": "pgrep -af -u1000 for python -m backend.cli.market_balancer",
+    "subsequent_exact_pid_ps_returncode": 1
+  },
+  "next_action": "Complete the isolated ownership-prevention source/admission checks; request explicit authority for one exact existing-file ownership repair preserving0600, inode and bytes before any privileged live access.",
+  "observations": [
+    {
+      "bytes": 25320,
+      "original": {
+        "files": {
+          "/home/animallya96/deploy/anios/data/market/desk/intraday.log": {
+            "identity": {
+              "after": {
+                "st_ctime_ns": "1792428344096575158",
+                "st_dev": "66306",
+                "st_ino": "41845871",
+                "st_mtime_ns": "1792428344096575158",
+                "st_size": "117501"
+              },
+              "before": {
+                "st_ctime_ns": "1792428344096575158",
+                "st_dev": "66306",
+                "st_ino": "41845871",
+                "st_mtime_ns": "1792428344096575158",
+                "st_size": "117501"
+              },
+              "bytes": 65536,
+              "exists": true,
+              "named_after": {
+                "st_ctime_ns": "1792428344096575158",
+                "st_dev": "66306",
+                "st_ino": "41845871",
+                "st_mtime_ns": "1792428344096575158",
+                "st_size": "117501"
+              },
+              "offset": 51965,
+              "path": "/home/animallya96/deploy/anios/data/market/desk/intraday.log",
+              "sha256": "8adb1c8b8d0eb12007f89c3a9c82d0f11a0da05ec4297ca3502d90b3cec6f9d8",
+              "stable": true
+            },
+            "last30_noncredential_lines": [
+              "2026-10-16T18:30:47+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,SNPS=A] changed=ALAB: A -> B",
+              "2026-10-16T18:45:46+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,ALAB=A] changed=ALAB: B -> A",
+              "2026-10-16T19:00:44+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,ALAB=A] changed=no change to the ranked buys",
+              "2026-10-16T19:15:51+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,ALAB=A] changed=no change to the ranked buys",
+              "2026-10-16T19:30:44+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,SNPS=A] changed=ALAB: A -> B",
+              "2026-10-16T19:45:34+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,ALAB=A] changed=ALAB: B -> A",
+              "2026-10-16T20:00:31+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,SNPS=A] changed=ALAB: A -> B",
+              "2026-10-16T20:15:27+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,SNPS=A] changed=no change to the ranked buys",
+              "2026-10-16T20:30:29+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,SNPS=A] changed=no change to the ranked buys",
+              "2026-10-16T20:45:27+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,SNPS=A] changed=no change to the ranked buys",
+              "2026-10-19T13:00:12+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T13:00:12+00:00 session=2026-10-13 buys=[SMCI=A+,SNDK=A+,ALAB=A,GEV=A,HPE=A] changed=ALAB: B -> A",
+              "2026-10-19T13:15:08+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T13:15:08+00:00 session=2026-10-13 buys=[SMCI=A+,SNDK=A+,ALAB=A,GEV=A,HPE=A] changed=no change to the ranked buys",
+              "2026-10-19T13:30:15+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T13:30:15+00:00 session=2026-10-13 buys=[SMCI=A+,SNDK=A+,ALAB=A,GEV=A,HPE=A] changed=no change to the ranked buys",
+              "2026-10-19T13:45:29+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T14:00:34+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T14:15:40+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T14:30:38+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T14:45:42+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T15:00:37+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T15:15:42+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T15:30:37+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T15:45:42+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T16:00:39+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T16:15:50+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T16:30:39+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T16:45:43+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T16:45:43+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,ALAB=A] changed=no change to the ranked buys"
+            ]
+          },
+          "/home/animallya96/desk_intraday.log": {
+            "identity": {
+              "after": {
+                "st_ctime_ns": "1792428344097575167",
+                "st_dev": "66306",
+                "st_ino": "3154379",
+                "st_mtime_ns": "1792428344097575167",
+                "st_size": "1581731"
+              },
+              "before": {
+                "st_ctime_ns": "1792428344097575167",
+                "st_dev": "66306",
+                "st_ino": "3154379",
+                "st_mtime_ns": "1792428344097575167",
+                "st_size": "1581731"
+              },
+              "bytes": 65536,
+              "exists": true,
+              "named_after": {
+                "st_ctime_ns": "1792428344097575167",
+                "st_dev": "66306",
+                "st_ino": "3154379",
+                "st_mtime_ns": "1792428344097575167",
+                "st_size": "1581731"
+              },
+              "offset": 1516195,
+              "path": "/home/animallya96/desk_intraday.log",
+              "sha256": "f9a67c59dc92f61f5bdf9302ea47b339555cb35fb5b54d6313303b284e7c6734",
+              "stable": true
+            },
+            "last30_noncredential_lines": [
+              "         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+              "  File \"/usr/lib/python3.12/pathlib.py\", line 1015, in open",
+              "    return io.open(self, mode, buffering, encoding, errors, newline)",
+              "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+              "PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json'",
+              "  paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "/home/animallya96/deploy/anios/backend/agents/trading/desk/regime.py:136: RuntimeWarning: Mean of empty slice",
+              "  out[t] = np.nanmean(window, axis=0)",
+              "/home/animallya96/deploy/anios/backend/agents/trading/desk/regime.py:226: RuntimeWarning: All-NaN slice encountered",
+              "  ai_part = np.nanmedian(np.where(is_ai[None, :], part, np.nan), axis=1)",
+              "/home/animallya96/deploy/anios/backend/agents/trading/desk/regime.py:227: RuntimeWarning: All-NaN slice encountered",
+              "  sw_part = np.nanmedian(np.where(is_sw[None, :], part, np.nan), axis=1)",
+              "/home/animallya96/deploy/anios/backend/market/levels.py:64: RuntimeWarning: All-NaN slice encountered",
+              "  is_low = np.isfinite(low[t]) & (low[t] < np.nanmin(window_low, axis=0))",
+              "/home/animallya96/deploy/anios/backend/market/levels.py:65: RuntimeWarning: All-NaN slice encountered",
+              "  is_high = np.isfinite(high[t]) & (high[t] > np.nanmax(window_high, axis=0))",
+              "/home/animallya96/deploy/anios/backend/market/levels.py:83: RuntimeWarning: All-NaN slice encountered",
+              "  out[t] = np.nanmax(candidates, axis=0) if len(window) else np.nan",
+              "/home/animallya96/deploy/anios/backend/market/levels.py:86: RuntimeWarning: All-NaN slice encountered",
+              "  out[t] = np.nanmin(candidates, axis=0) if len(window) else np.nan",
+              "/home/animallya96/deploy/anios/backend/market/levels.py:129: RuntimeWarning: Mean of empty slice",
+              "  middle = np.nanmean(piece, axis=0)",
+              "/home/animallya96/research-venv/lib/python3.12/site-packages/numpy/lib/_nanfunctions_impl.py:1997: RuntimeWarning: Degrees of freedom <= 0 for slice.",
+              "  var = nanvar(a, axis=axis, dtype=dtype, out=out, ddof=ddof,",
+              "/home/animallya96/deploy/anios/backend/market/levels.py:278: RuntimeWarning: All-NaN slice encountered",
+              "  out[t] = np.nanmax(window, axis=0) if largest else np.nanmin(window, axis=0)",
+              "  paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "intraday plan written: data/market/desk/intraday.json",
+              "session=2026-10-13 buys=['SNDK', 'SMCI', 'MU', 'HPE', 'ALAB', 'SNPS', 'GEV']",
+              "  - no change to the ranked buys"
+            ]
+          },
+          "desk/entry-timing/2026-10-19.json": {
+            "identity": {
+              "after": {
+                "st_ctime_ns": "1792428343100565641",
+                "st_dev": "66306",
+                "st_ino": "43025358",
+                "st_mtime_ns": "1792428343095565593",
+                "st_size": "74664"
+              },
+              "before": {
+                "st_ctime_ns": "1792428343100565641",
+                "st_dev": "66306",
+                "st_ino": "43025358",
+                "st_mtime_ns": "1792428343095565593",
+                "st_size": "74664"
+              },
+              "bytes": 74664,
+              "exists": true,
+              "named_after": {
+                "st_ctime_ns": "1792428343100565641",
+                "st_dev": "66306",
+                "st_ino": "43025358",
+                "st_mtime_ns": "1792428343095565593",
+                "st_size": "74664"
+              },
+              "offset": 0,
+              "path": "/home/animallya96/deploy/anios/data/market/desk/entry-timing/2026-10-19.json",
+              "sha256": "bbf1eceed5546b3858d20e2ddc68bbe365992cf2e9f9aa13daa4d84ba78e392c",
+              "stable": true
+            },
+            "selected": {
+              "session": "2026-10-19",
+              "updated_at": "2026-10-19T16:45:43.091808+00:00"
+            }
+          },
+          "desk/intraday.json": {
+            "identity": {
+              "after": {
+                "st_ctime_ns": "1792428343165325683",
+                "st_dev": "66306",
+                "st_ino": "41840231",
+                "st_mtime_ns": "1792428343165325683",
+                "st_size": "38214"
+              },
+              "before": {
+                "st_ctime_ns": "1792428343165325683",
+                "st_dev": "66306",
+                "st_ino": "41840231",
+                "st_mtime_ns": "1792428343165325683",
+                "st_size": "38214"
+              },
+              "bytes": 38214,
+              "exists": true,
+              "named_after": {
+                "st_ctime_ns": "1792428343165325683",
+                "st_dev": "66306",
+                "st_ino": "41840231",
+                "st_mtime_ns": "1792428343165325683",
+                "st_size": "38214"
+              },
+              "offset": 0,
+              "path": "/home/animallya96/deploy/anios/data/market/desk/intraday.json",
+              "sha256": "3d0eb7755d5d4a534f0b239ccb6f899246ba38e8049b8e486b72cfaae519b287",
+              "stable": true
+            },
+            "selected": {
+              "as_of": "2026-10-19T16:45:43+00:00",
+              "changed": [
+                "no change to the ranked buys"
+              ],
+              "row_count": 10,
+              "session": "2026-10-13",
+              "top_buy_count": 7
+            }
+          },
+          "desk/live.json": {
+            "identity": {
+              "after": {
+                "st_ctime_ns": "1792428343168506162",
+                "st_dev": "66306",
+                "st_ino": "41840225",
+                "st_mtime_ns": "1792428343168506162",
+                "st_size": "222225"
+              },
+              "before": {
+                "st_ctime_ns": "1792428343168506162",
+                "st_dev": "66306",
+                "st_ino": "41840225",
+                "st_mtime_ns": "1792428343168506162",
+                "st_size": "222225"
+              },
+              "bytes": 222225,
+              "exists": true,
+              "named_after": {
+                "st_ctime_ns": "1792428343168506162",
+                "st_dev": "66306",
+                "st_ino": "41840225",
+                "st_mtime_ns": "1792428343168506162",
+                "st_size": "222225"
+              },
+              "offset": 0,
+              "path": "/home/animallya96/deploy/anios/data/market/desk/live.json",
+              "sha256": "b3b90e02b60c30dda616cc39bf922cbff3da9310166b1a1cdbdc33c365b43103",
+              "stable": true
+            },
+            "selected": {
+              "as_of": "2026-10-19T16:45:43+00:00",
+              "decision_session": "2026-10-13",
+              "quote_clocks": {
+                "AAOI": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "AAPL": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "ACN": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "ADBE": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "ADI": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "ADSK": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "ALAB": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "AMAT": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "AMD": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "AMZN": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "ANET": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "APLD": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "ARM": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "ASML": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "AVGO": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "BE": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "CDNS": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "CEG": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "CIEN": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "CIFR": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "COHR": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "CORZ": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "CRDO": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "CRM": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "CRWD": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "CRWV": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "CSCO": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "DDOG": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "DELL": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "ETN": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "FFIV": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "FICO": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "FN": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "FSLR": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "FTNT": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "GEN": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "GEV": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "GLW": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "GLXY": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "GOOGL": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "HPE": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "HUT": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "IBM": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "INTC": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "INTU": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "IREN": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "KLAC": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "LITE": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "LRCX": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "MCHP": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "MDB": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "META": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "MOD": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "MPWR": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "MRVL": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "MSFT": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "MSI": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "MU": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "NBIS": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "NET": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "NOW": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "NTAP": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "NVDA": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "NXPI": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "OKLO": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "ON": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "ORCL": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "PANW": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "PLTR": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "POWL": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "PTC": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "Q": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "QCOM": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "SIMO": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "SMCI": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "SMR": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "SNDK": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "SNOW": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "SNPS": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "SPY": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "STX": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "SWKS": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "TEAM": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "TER": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "TLN": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "TRMB": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "TSM": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "TXN": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "TYL": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "VRT": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "VST": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "WDAY": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "WDC": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "WULF": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                },
+                "ZS": {
+                  "as_of": "2026-10-19T16:45:01+00:00",
+                  "bar": "2026-10-19T16:30:00+00:00"
+                }
+              },
+              "quote_count": 95
+            }
+          },
+          "paper/state.json": {
+            "body_read": false,
+            "status": "UNAVAILABLE_PERMISSION_DENIED_IN_V1_NOT_RETRIED"
+          }
+        },
+        "matching_job_processes": [],
+        "observed_at": "2026-10-19T16:58:14.220483+00:00",
+        "revision": "6ae6dde29e64f4589c46dac0d9b62ed4562524c2"
+      },
+      "path": "/tmp/natural-intraday-20261019-v2-before-1300.json",
+      "sha256": "24e1209d7174ed5c40fa096ad8614a1ed30e441bc6992880e3e5f9c63db6ec8e"
+    },
+    {
+      "bytes": 24745,
+      "original": {
+        "files": {
+          "/home/animallya96/deploy/anios/data/market/desk/intraday.log": {
+            "identity": {
+              "after": {
+                "st_ctime_ns": "1792429239914312615",
+                "st_dev": "66306",
+                "st_ino": "41845871",
+                "st_mtime_ns": "1792429239914312615",
+                "st_size": "117648"
+              },
+              "before": {
+                "st_ctime_ns": "1792429239914312615",
+                "st_dev": "66306",
+                "st_ino": "41845871",
+                "st_mtime_ns": "1792429239914312615",
+                "st_size": "117648"
+              },
+              "bytes": 65536,
+              "exists": true,
+              "named_after": {
+                "st_ctime_ns": "1792429239914312615",
+                "st_dev": "66306",
+                "st_ino": "41845871",
+                "st_mtime_ns": "1792429239914312615",
+                "st_size": "117648"
+              },
+              "offset": 52112,
+              "path": "/home/animallya96/deploy/anios/data/market/desk/intraday.log",
+              "sha256": "0d3a02e9b483f6c81d7ee2912ee018be7599af09ed1debdbbf3aaf2316af8049",
+              "stable": true
+            },
+            "last30_noncredential_lines": [
+              "2026-10-16T18:45:46+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,ALAB=A] changed=ALAB: B -> A",
+              "2026-10-16T19:00:44+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,ALAB=A] changed=no change to the ranked buys",
+              "2026-10-16T19:15:51+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,ALAB=A] changed=no change to the ranked buys",
+              "2026-10-16T19:30:44+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,SNPS=A] changed=ALAB: A -> B",
+              "2026-10-16T19:45:34+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,ALAB=A] changed=ALAB: B -> A",
+              "2026-10-16T20:00:31+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,SNPS=A] changed=ALAB: A -> B",
+              "2026-10-16T20:15:27+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,SNPS=A] changed=no change to the ranked buys",
+              "2026-10-16T20:30:29+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,SNPS=A] changed=no change to the ranked buys",
+              "2026-10-16T20:45:27+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,SNPS=A] changed=no change to the ranked buys",
+              "2026-10-19T13:00:12+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T13:00:12+00:00 session=2026-10-13 buys=[SMCI=A+,SNDK=A+,ALAB=A,GEV=A,HPE=A] changed=ALAB: B -> A",
+              "2026-10-19T13:15:08+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T13:15:08+00:00 session=2026-10-13 buys=[SMCI=A+,SNDK=A+,ALAB=A,GEV=A,HPE=A] changed=no change to the ranked buys",
+              "2026-10-19T13:30:15+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T13:30:15+00:00 session=2026-10-13 buys=[SMCI=A+,SNDK=A+,ALAB=A,GEV=A,HPE=A] changed=no change to the ranked buys",
+              "2026-10-19T13:45:29+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T14:00:34+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T14:15:40+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T14:30:38+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T14:45:42+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T15:00:37+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T15:15:42+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T15:30:37+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T15:45:42+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T16:00:39+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T16:15:50+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T16:30:39+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T16:45:43+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')",
+              "2026-10-19T16:45:43+00:00 session=2026-10-13 buys=[SNDK=A+,SMCI=A+,MU=A,HPE=A,ALAB=A] changed=no change to the ranked buys",
+              "2026-10-19T17:00:39+00:00 paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')"
+            ]
+          },
+          "/home/animallya96/desk_intraday.log": {
+            "identity": {
+              "after": {
+                "st_ctime_ns": "1792429241689318183",
+                "st_dev": "66306",
+                "st_ino": "3154379",
+                "st_mtime_ns": "1792429241689318183",
+                "st_size": "1586157"
+              },
+              "before": {
+                "st_ctime_ns": "1792429241689318183",
+                "st_dev": "66306",
+                "st_ino": "3154379",
+                "st_mtime_ns": "1792429241689318183",
+                "st_size": "1586157"
+              },
+              "bytes": 65536,
+              "exists": true,
+              "named_after": {
+                "st_ctime_ns": "1792429241689318183",
+                "st_dev": "66306",
+                "st_ino": "3154379",
+                "st_mtime_ns": "1792429241689318183",
+                "st_size": "1586157"
+              },
+              "offset": 1520621,
+              "path": "/home/animallya96/desk_intraday.log",
+              "sha256": "5c04819e7f843445118ce54451c66f7ef79aafcd42bf74e6675a27720b9b8a34",
+              "stable": true
+            },
+            "last30_noncredential_lines": [
+              "    return io.open(self, mode, buffering, encoding, errors, newline)",
+              "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+              "PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json'",
+              "",
+              "During handling of the above exception, another exception occurred:",
+              "",
+              "Traceback (most recent call last):",
+              "  File \"<frozen runpy>\", line 198, in _run_module_as_main",
+              "  File \"<frozen runpy>\", line 88, in _run_code",
+              "  File \"/home/animallya96/deploy/anios/backend/cli/market_balancer.py\", line 499, in <module>",
+              "    main()",
+              "  File \"/home/animallya96/deploy/anios/backend/cli/market_balancer.py\", line 488, in main",
+              "    path = run(Path(args.data_dir), args.equity)",
+              "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+              "  File \"/home/animallya96/deploy/anios/backend/cli/market_balancer.py\", line 452, in run",
+              "    market_event_recovery.run(data_dir, latest, live)",
+              "  File \"/home/animallya96/deploy/anios/backend/cli/market_event_recovery.py\", line 264, in run",
+              "    \"active\": bool(paper.load_state(root).event_cycle),",
+              "                   ^^^^^^^^^^^^^^^^^^^^^^",
+              "  File \"/home/animallya96/deploy/anios/backend/agents/trading/desk/paper.py\", line 405, in load_state",
+              "    data = json.loads(path.read_text(encoding=\"utf-8\"))",
+              "                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+              "  File \"/usr/lib/python3.12/pathlib.py\", line 1029, in read_text",
+              "    with self.open(mode='r', encoding=encoding, errors=errors) as f:",
+              "         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+              "  File \"/usr/lib/python3.12/pathlib.py\", line 1015, in open",
+              "    return io.open(self, mode, buffering, encoding, errors, newline)",
+              "           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+              "PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json'",
+              "  paper order: intraday orders unavailable (PermissionError: [Errno 13] Permission denied: 'data/market/paper/state.json')"
+            ]
+          },
+          "desk/entry-timing/2026-10-19.json": {
+            "identity": {
+              "after": {
+                "st_ctime_ns": "1792429239850312415",
+                "st_dev": "66306",
+                "st_ino": "43025330",
+                "st_mtime_ns": "1792429239836312371",
+                "st_size": "76184"
+              },
+              "before": {
+                "st_ctime_ns": "1792429239850312415",
+                "st_dev": "66306",
+                "st_ino": "43025330",
+                "st_mtime_ns": "1792429239836312371",
+                "st_size": "76184"
+              },
+              "bytes": 76184,
+              "exists": true,
+              "named_after": {
+                "st_ctime_ns": "1792429239850312415",
+                "st_dev": "66306",
+                "st_ino": "43025330",
+                "st_mtime_ns": "1792429239836312371",
+                "st_size": "76184"
+              },
+              "offset": 0,
+              "path": "/home/animallya96/deploy/anios/data/market/desk/entry-timing/2026-10-19.json",
+              "sha256": "0ff5b09d3d8b447ffc0ec97998716500ba5100290281f79ebb6ce31abcad7e2a",
+              "stable": true
+            },
+            "selected": {
+              "session": "2026-10-19",
+              "updated_at": "2026-10-19T17:00:39.833879+00:00"
+            }
+          },
+          "desk/intraday.json": {
+            "identity": {
+              "after": {
+                "st_ctime_ns": "1792429239910603579",
+                "st_dev": "66306",
+                "st_ino": "41840231",
+                "st_mtime_ns": "1792429239910603579",
+                "st_size": "38203"
+              },
+              "before": {
+                "st_ctime_ns": "1792429239910603579",
+                "st_dev": "66306",
+                "st_ino": "41840231",
+                "st_mtime_ns": "1792429239910603579",
+                "st_size": "38203"
+              },
+              "bytes": 38203,
+              "exists": true,
+              "named_after": {
+                "st_ctime_ns": "1792429239910603579",
+                "st_dev": "66306",
+                "st_ino": "41840231",
+                "st_mtime_ns": "1792429239910603579",
+                "st_size": "38203"
+              },
+              "offset": 0,
+              "path": "/home/animallya96/deploy/anios/data/market/desk/intraday.json",
+              "sha256": "580f2659168998d1e1a0b67d018c252cbb38581dfe869ec7c596a45b0bfd531f",
+              "stable": true
+            },
+            "selected": {
+              "as_of": "2026-10-19T17:00:39+00:00",
+              "changed": [
+                "no change to the ranked buys"
+              ],
+              "row_count": 10,
+              "session": "2026-10-13",
+              "top_buy_count": 7
+            }
+          },
+          "desk/live.json": {
+            "identity": {
+              "after": {
+                "st_ctime_ns": "1792429239913854069",
+                "st_dev": "66306",
+                "st_ino": "41840225",
+                "st_mtime_ns": "1792429239913854069",
+                "st_size": "221838"
+              },
+              "before": {
+                "st_ctime_ns": "1792429239913854069",
+                "st_dev": "66306",
+                "st_ino": "41840225",
+                "st_mtime_ns": "1792429239913854069",
+                "st_size": "221838"
+              },
+              "bytes": 221838,
+              "exists": true,
+              "named_after": {
+                "st_ctime_ns": "1792429239913854069",
+                "st_dev": "66306",
+                "st_ino": "41840225",
+                "st_mtime_ns": "1792429239913854069",
+                "st_size": "221838"
+              },
+              "offset": 0,
+              "path": "/home/animallya96/deploy/anios/data/market/desk/live.json",
+              "sha256": "6a86457bfe9e40f6aae5b79caeb353d41c1062795ba75880a5f23e2c47ee5da7",
+              "stable": true
+            },
+            "selected": {
+              "as_of": "2026-10-19T17:00:39+00:00",
+              "decision_session": "2026-10-13",
+              "quote_clocks": {
+                "AAOI": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "AAPL": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "ACN": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "ADBE": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "ADI": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "ADSK": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "ALAB": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "AMAT": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "AMD": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "AMZN": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "ANET": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "APLD": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "ARM": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "ASML": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "AVGO": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "BE": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "CDNS": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "CEG": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "CIEN": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "CIFR": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "COHR": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "CORZ": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "CRDO": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "CRM": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "CRWD": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "CRWV": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "CSCO": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "DDOG": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "DELL": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "ETN": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "FFIV": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "FICO": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "FN": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "FSLR": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "FTNT": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "GEN": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "GEV": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "GLW": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "GLXY": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "GOOGL": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "HPE": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "HUT": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "IBM": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "INTC": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "INTU": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "IREN": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "KLAC": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "LITE": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "LRCX": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "MCHP": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "MDB": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "META": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "MOD": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "MPWR": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "MRVL": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "MSFT": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "MSI": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "MU": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "NBIS": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "NET": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "NOW": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "NTAP": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "NVDA": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "NXPI": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "OKLO": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "ON": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "ORCL": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "PANW": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "PLTR": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "POWL": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "PTC": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "Q": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "QCOM": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "SIMO": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "SMCI": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "SMR": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "SNDK": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "SNOW": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "SNPS": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "SPY": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "STX": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "SWKS": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "TEAM": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "TER": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "TLN": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "TRMB": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "TSM": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "TXN": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "TYL": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "VRT": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "VST": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "WDAY": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "WDC": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "WULF": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                },
+                "ZS": {
+                  "as_of": "2026-10-19T17:00:01+00:00",
+                  "bar": "2026-10-19T16:45:00+00:00"
+                }
+              },
+              "quote_count": 95
+            }
+          },
+          "paper/state.json": {
+            "body_read": false,
+            "status": "UNAVAILABLE_PERMISSION_DENIED_IN_V1_NOT_RETRIED"
+          }
+        },
+        "matching_job_processes": [],
+        "observed_at": "2026-10-19T17:00:58.406879+00:00",
+        "revision": "6ae6dde29e64f4589c46dac0d9b62ed4562524c2"
+      },
+      "path": "/tmp/natural-intraday-20261019-v2-after-1300.json",
+      "sha256": "f2065ed1491381b294be203ebe1295b586b2a97c272851b1e82c0c1796216d69"
+    },
+    {
+      "bytes": 788,
+      "original": {
+        "account_path_retry_or_access_bypass": false,
+        "artifact_exists": false,
+        "error": "PermissionError: [Errno 13] Permission denied: '/home/animallya96/deploy/anios/data/market/paper/state.json'",
+        "failure_evidence": "Original tool traceback; this metadata does not reconstruct raw SSH output.",
+        "independent_next_action": "Observe only separately readable board/latch/log metadata; account CID and persistence acceptance remains UNVERIFIED.",
+        "raw_ssh_stdout_stderr_retained_separately": false,
+        "source_bytes": 5798,
+        "source_path": "/tmp/observe_natural_intraday_v1_failed_20261019.py",
+        "source_sha256": "e80ce95764431deb7f2bf7d6fc0db1533cf82175d0759b204515496cdf6426a2",
+        "ssh_returncode_reported_by_original_assertion": 1,
+        "status": "FAILED_READ_ONLY_OBSERVATION"
+      },
+      "path": "/tmp/natural-intraday-observer-v1-failure-20261019.json",
+      "sha256": "5f69d04521c916b4c6169fa57386aa20c10df0430db3debe61713dc6f3079663"
+    }
+  ],
+  "runtime_source_revision": "6ae6dde29e64f4589c46dac0d9b62ed4562524c2",
+  "schema": "scheduled-paper-ownership-failure/1",
+  "unverified": [
+    "Protected live account body, current original pending/journal CIDs and full fill persistence; access remains unavailable.",
+    "Live ownership repair, deployed ownership prevention, new ordinary strategy cycle and signed-in account acceptance."
+  ],
+  "verified": [
+    "Natural13:00ET run refreshed live/intraday as_of17:00:39UTC, with95 quotes from completed16:45UTC bar and17:00:01 fetch; latch updated17:00:39.833879UTC.",
+    "Both still reference originalOct13 decision, not a new ordinary strategy decision.",
+    "Original intraday log records sender PermissionError at17:00:39; cron log records the same denied state read during error recovery. Fresh files and health are not sender success.",
+    "Observer also encountered permission denial, preserved the failed source/result description, then omitted that path entirely from a distinct observation. No alternate read, chmod/chown or denied-read bypass occurred."
+  ]
+}
