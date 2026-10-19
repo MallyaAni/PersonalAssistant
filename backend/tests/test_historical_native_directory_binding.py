@@ -286,7 +286,8 @@ class NativeDirectoryTests(unittest.TestCase):
         evidence.pop('native_directory')
         evidence['schema'] = reserved_io.SQLITE_SCHEMA
         with self.assertRaises(ValueError):
-            reserved_io.validate(f.nightly, f.nightly.operation('BIRTH', '2019-02-28'), evidence,
+            reserved_io.validate(f.nightly, f.nightly.operation(record['operation']['phase'],
+                record['operation']['session'], record['operation']['pre_head']), evidence,
                 [(first['receipt']['state']['sha256'], first['receipt']['state']['length'])],
                 f.legacy, record['operation']['native_io'])
         self.assertEqual(f.binding.verify_save(lease, first['receipt']), first['receipt'])
