@@ -1,5 +1,139 @@
 # Next session
 
+## 2026-10-19 — Original request identity admission before resolution VERIFIED (private synthetic)
+
+Read research/request-admission-proof-2026-10-19.json:
+281c91edc6d25211e9d1e873ba1dd3b1b14ce755fca2fe41fd2cd41f8f4482fd,
+50400B. Source7221ff4f2fa94edf9bff3fef4533694eb17caf8c/tree
+96f287fada98cc5606f472478aa41ac0c5db3c15 passed NINE NEW named assertions in
+NINE fresh single-case runtimes, exit0/noOOM/0failure/error/skip. This includes
+one actual unchanged Final4 NEGATIVE baseline, not acceptance of its late failure.
+All full reports are losslessly retained in two SHA/length-bound sidecars:
+196608B/ee8133f8 and126008B/b10f1272, decoded1077864B. Root source/call/runtime/
+complete DATA fold/readback passed; independent review remains UNVERIFIED because
+the prior reviewer is usage-limited. Never retry/replace it to bypass the limit
+or switch account/model. No new independent review claim.
+
+PRODUCT: new PRIVATE historical_request_admission.RequestAdmission,
+synthetic-reconciliation-request-admission/1 plus Final5. The exact unchanged
+private settlement._unique predicate runs on ORIGINAL prepared pending/journal
+BEFORE output asdict or real flush. A finite catalogue binds original ordered
+IDs/counts/source/account/identity/phase/head/prepared-input/native-IO/native-byte
+preimage metadata. Frozen bytes/strict integer metadata/exact prior ownership
+are rechecked, admission consumed once just before flush, then source/lease/
+preimage/descriptor are rechecked after the interruption hook BEFORE the effect.
+Final reservation/receipt explicitly bind this original descriptor. Original
+read/recovery checks only metadata, never reloads paper or reruns its input
+predicate. Owned prior references release on success and failure. API/global
+identities/advisory locks remain NOT hostile sandbox/deep immutability/path
+isolation. Catalogue capacity262144B is finite private metadata, not RAM/FS
+reservation. Other request semantics are NOT admitted by identity uniqueness.
+
+Original native paper/writer/Store/settlement/Cycle/Nightly FULL bytes are unchanged
+from c1e7fbc5, including default DELETE+FILE/schema/paths/caps/public genuine and
+old bound-CAS raw-final refusals. Ordinary reconciliation still executes its
+original postflush predicate and native settlement logic. This moves a predictable
+input FAILURE before flush; it does NOT eliminate the later list/set/order-copy/
+settlement/journal/evidence/encoding/save allocations or prepare broker results.
+No execution-field/fill/settlement presnapshot or whole832MB/model-RAM claim.
+
+A uses unchanged WHOLE Final4 SOURCE CodeTypes on a FRESH account. The explicitly
+synthetic submission program writes a native journal with duplicate IDs through
+the real reserved writer before SUBMISSION commitment. Real native flush fills5,
+then unchanged _requests rejects duplicates; no final save/head advance. This
+reproduces the source-backed late gap, NOT old behavior acceptance or account
+tampering after authentication. B uses the SAME malformed producer/input and
+refuses BEFORE flush/asdict/orderscopy/fill, retaining accepted5/filled0, original
+paper/head/cursors/latch; native IO+directory poison and repeated paused recovery
+prevent effects/replay. C pure negative units cover original predicate row/list/
+ID types, duplicates, finite catalogue bound, bool/count/head/foreign ownership
+and once-only consumption. These units alone are not Cycle admission.
+
+D actual full private birth→stages→desired8/submitted5/filled5 partial native
+journal→Store OUTCOME→reopen/original recovery→same-session Nightly→historical
+final recovery passes, policy2/five native saves/exact >256KiB NaN+Unicode bytes.
+Actual profile: loadFalse/input_copyFalse/request_uniqueFalse×2/native_asdictFalse/
+flushTrue/orders_copyTrue/request_uniqueTrue×2/derived_tailTrue. Original and
+post-Nightly recovery traces[]. E caught premature duplicate consumption refuses
+before flush. I bool/count drift after consume is caught by the NEW immediate
+pre-flush recheck; accepted order/native bytes/head remain unchanged. This hook
+recheck was a source-review addition before its first drift runtime, no RED claim.
+
+F/G/H actual owned SIGKILL in separate containers: PID7 at requests-ready before
+consume, PID6 after real resolution, PID7 after authoritative OUTCOME; all-9/reaped.
+First two remain paused with original unused/consumed evidence, no replay. The
+committed result recovers ONLY original missing result/seals, no load/unique/
+asdict/flush/fold/save/capture/append/SQL generation/account restore. Final six
+canonical cut/exit strings25063B exactly reproduce hashes/lengths. Process
+boundary cuts, NOT powerloss/inside-syscall/SQLite-commit proof. Immutable broker
+witnesses are DATA, never parent/account restoration. All final per-case timings
+4.87555–25.37588s/max56328KiB and exact CIDs/ns times are in the reports.
+
+Earlier v1 sourceb1505ed075a8fc436abc92b978c94dda09a4cbc8/tree
+f3be31482e364ec223984261a47db9c70c34d656 passed its EIGHT fresh assertions,
+including the same negative baseline and three owned cuts. Final v2 adds the
+post-hook pre-flush recheck and ninth drift assertion, with all9 at ONE new tree.
+Do not sum repeated cases as17 distinct tests. Both17 roots/proofs/logs/source/
+fixed DATA records remain /tmp/request-admission-20261019-v{1,2}-{case} and matching
+Spark1 scratch; never replay/adopt pools. No native operational/test failure in
+either version. Local template/patch construction refusals occurred BEFORE SSH/
+runtime and were corrected before first use; no guards/assertions/caps weakened.
+
+Root reconstructed ALL17 complete inventories:8772CAS+629metadata+119SQL+
+68directory-metadata+102native-directory=9690 distinct original identities/all
+names/all fields unchanged. Each case CAS34344960/meta9183232/SQL1843200/dir790528
+allocated AND logicalB. Final9 inventories5130 originals/raw476161B/gzip33411B;
+all17 raw899413B/gzip63194B, twelve canonical cut/exit strings50126B exact. Native
+state body changes follow original writer semantics, outside unchanged pool/
+directory inventories. This is lineage/initialized bodies, NOT rename capacity.
+
+Final payload498228B+pins4239B=502467B<524288/35payloads+pins,36source/47native
+SHA physical bookends/globals unchanged/forbidden[]. SIX unchanged whole exact
+SOURCE-only RO references: codec/CAS/physical/Stage/Store plus original Final4
+34858B/872426a0 at its original SOURCE inode61087711. TWO exact SOURCE data files
+map1655/identity; no old accounts/output/pools or broad fallback. Combined executed
+closure exceeds copied cap. Twelve FULL mounts equal by uniqueDestination; raw
+order finalC/D/I true, other final cases false; HC only OomKillDisablefalse→null.
+UID1000/noneRO1CPU512MiB=swap/PIDs32/tmp64/dropALL/no-new-privileges/CPU30/native
+1MiBFSIZE/control-log256KiB/productioncaps unchanged. Every transport phase0/
+emptyerr. Explicit synthetic context/policy/program/calendar/source-manifest
+globals/constructors bypassed; no provider/model/planning/economic admission.
+
+DATA-only collector ONCE,391inputs8152267B/four held SHA+physical reads; separate
+SOURCE4MiB+17CONTROL4MiB each+DERIVED2MiB=74MiB maximum, NOT whole-process4MiB.
+Actual SOURCE3063256B, each CONTROL<1.78MiB, DERIVED746032B; main+two bounded
+sidecars373016B total/each<256KiB. No local crash/kernel-FSIZE claim. Six exact
+small control/collector source files additionally archived in
+research/request-admission-controls-2026-10-19.json,19836B/
+ef651a8c8ca02f17fc58db26c66d9a67ebd7a6f4765acccd2075e3dc28f7d1e3,
+four held reads/separate2MiB ledger294460B actual incl readback. AST/purpose/
+zero-backspaces/diff PASS; Ruff unavailable/no fullunit/build/deploy/UI/model
+claim. Diagram:NONE. Production unchanged. Heartbeat stays ACTIVE.
+
+NEXT: this NEW9 identity-admission boundary is CLOSED. Never rerun v1/v2 tests/
+preflight/stage/copy/getter/collector/archive or prior prepared-transition9 and
+other closed gates for docs. Never adopt failed/OPEN/completed pools/reopen
+COMPLETE phases. Physical rename/journal allocator acknowledgement remains
+unavailable at native paper.py:433 replace/failure unlink/parent fsync;
+capacity_reserved=False, body allocation/stat/names cannot reserve it.
+
+Continue independent synthetic product work: FIRST inspect the remaining static
+_requests checks: acknowledgement membership and original symbol/side/positive
+desired/submitted quantity/submitted_at binding. They still run after flush.
+Use NEW fresh authenticated original inputs to identify any actual late failure,
+then extend separately versioned pre-resolution INPUT admission as warranted.
+Do NOT pre-snapshot mutable execution fields, fills, order status or settlement
+results. Preserve native/default/Store/writer/caps/public refusal and later
+uncertainty; no wholeCycle/full832MB/model RAM or physical/genuine admission.
+Full filesystem/nativeSQLiteFILE/horizon/model RAM/twohost/powerloss/genuine
+constructors/Resolver/sender/providers/calendar/economics/native operation/
+adoption/publication/API/UI remain UNVERIFIED. Original timing FAILED/publication
+CLOSED/missing receipts/immutable roots unchanged; genuinev6 OPEN/PAUSED/no replay/
+adoption/new genuine run. No Spark2load/guard-G08-cap weakening/fakeclock/actualday
+replay/history rewrite/model-provider-account-service change/denied-read bypass/
+paiddata/tuning/real-money orders. Never deploy historical main wholesale. Read
+current NEXT first even for old firings; meaningful progress only, no ETA.
+
 ## 2026-10-19 — Pre-resolution owned native-asdict transition VERIFIED (private synthetic)
 
 Read research/prepared-transition-proof-2026-10-19.json:
