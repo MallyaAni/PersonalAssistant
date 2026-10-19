@@ -1,0 +1,57 @@
+{
+  "status": "VERIFIED_FRONTEND_CANDIDATE_NOT_YET_DEPLOYED",
+  "objective": "Account-independent All names directional signal ranking and consistent simulated-trade/grade chart presentation",
+  "starting_head": "742589e28256248c0e717cc3ef2084b1c5158885",
+  "production_base": "878cbc53db56f635c8dd9ee6a3307e0d4f1c6b2f",
+  "branch": "codex/trading-fill-consistency-20261019",
+  "verified": [
+    "SignalBoard accepts no paper account or personal portfolio prop. Universe comes from latest grades; action and qualitative priority come from exact current chart assessments.",
+    "Best buys and Best sells rank each direction independently: immediate before waiting, then other assessments, then unavailable; original High/Medium/Low priority within each group; alphabetical ties.",
+    "Non-held names can lead either list. Contradictory paper executions, saved weights, zero cash, unavailable paper responses and browser reload do not determine signal direction or rank.",
+    "Buy now requires current grade entry permission, chart confirmation and a fresh regular-session midpoint. Sell review now requires current independent downside review, an open regular session and fresh midpoint; it is not a short-sale instruction.",
+    "Signal reasons and exact candle/generated/valid-until times are shared with row details and stock chart. Original signal receipt expiry removes immediate actions without a network update even while grade and quote remain valid.",
+    "Strategy chart defaults to simultaneous simulated trades and grade changes. BUY/SELL/TRIM labels retain simulated shares; grade arrows show grade transitions rather than inventing additional trades. Matching-policy fixture shows BUY7/SELL5 alongside C-to-A/A-to-B grade changes; screenshot inspected for readable labels.",
+    "Earlier-policy simulation is withheld from current-strategy chart; actual paper trades are not relabelled as simulated performance.",
+    "TypeScript noEmit passed. Vite8.2.2 build passed. git diff --check passed. No backend, model prompt, strategy selector, native writer, broker or account state change."
+  ],
+  "failed_preserved": {
+    "original_deployed_static": {
+      "path": "/tmp/all-names-signals-red-20261019-results.json",
+      "sha256": "a80653a57d8d8fd4c8dd33fa96196bdab4aa460cfe9d8de8ea9decf2d316fcf5",
+      "bytes": 14576,
+      "failed": 2,
+      "duration_ms": 18948.524,
+      "reason": "The two new ranking workflows cannot find the independent signal board on actual retained deployed878 static bytes. Existing screen projects paper model decisions instead."
+    }
+  },
+  "final_source_acceptance": {
+    "path": "/tmp/all-names-signals-final-20261019-results.json",
+    "sha256": "c291ba867b8359f57a8eb996dc403b0536d65375b7a99989e38c5ea13cc7f8b7",
+    "bytes": 215149,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "duration_ms": 29026.482,
+    "composition": "Five new All names/chart cases, one updated current-assessment workflow, four existing personal-guidance availability cases. Not ten new model evaluations.",
+    "config": "/tmp/all-names-signals-final-20261019.config.mjs",
+    "static_directory": "/tmp/all-names-signals-final-20261019-dist",
+    "primary_asset": "index-BEGt_i4s.js",
+    "isolation": "Synthetic auth/API responses, no real account mutations; actual app and real timers, no fake clock. Page exceptions, warning/error console logs, failed required requests, unexpected endpoints, external requests and writes fail acceptance.",
+    "obsolete_test_replacement": "current-opportunities.spec.ts asserted the superseded paper-dependent Stocks contract. Its purpose is replaced by the five new independent-signal/chart cases in all-names-signals.spec.ts; prior source/results remain in Git and retained evidence. Current-assessment now expects actual fresh grades independently of a funded paper plan."
+  },
+  "source_sha256": {
+    "frontend/src/components/DeskPanel/SignalBoard.tsx": "62cd4b877ca8991cdc0c5e84e29d4c3238f78b74c0591150a3c9b40261ba0ce0",
+    "frontend/src/components/DeskPanel/DeskPanel.tsx": "942f220f90b3a30d52ecf5f3ea1ad18f38c70dff75198cd66cfd50a7c7fd6964",
+    "frontend/src/components/DeskPanel/TickerChart.tsx": "3f67867d278602f763e4c94cd3a2d7994fbd0b6d3986f93b3cb05c951af36a66",
+    "frontend/e2e/all-names-signals.spec.ts": "1e364b627cfb88d74fbf105f16ac4d0f6feaf15e6dbc24a3f3e678418a6d939c",
+    "frontend/e2e/current-assessment.spec.ts": "3812bbc9748d9930f236248551cf0ccd34de46561a114f1d55f2e6fef5c4fe44"
+  },
+  "unverified": [
+    "Fresh real current-market signals and recommendation profitability; latest recorded strategy session still Oct13 before natural nightly.",
+    "Current grade-led strategy historical share-sized simulation. backend.market.strategy_simulation.read admits only learned_holding_transition.POLICY (older allocator) with an exact config/source-bound manifest. No matching current-policy account/manifest was supplied or generated. Chart presentation tests use an explicitly synthetic compatible fixture and do not certify historical strategy performance.",
+    "Exact deployed artifact/browser acceptance remains to be performed after canonical deployment. No whole backend unit/model gate claimed for this frontend-only candidate."
+  ],
+  "diagram_impact": "NONE: existing trading-desk diagram already shows account-independent chart assessment-to-View opportunity ranking; frontend presentation changes no agent/store/provider/deployment/ownership boundary.",
+  "preservation": "All failed/completed historical pools and private gates untouched; no pool adoption, native replay, account reset, force-run market_daily/market_balancer or real-money orders."
+}
