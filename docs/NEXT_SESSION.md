@@ -1,5 +1,68 @@
 # Next session
 
+## 2026-10-19 — HUMAN CORRECTION: All names is the live decision workflow; Portfolio is optional
+
+CURRENT PRODUCT INTENT supersedes personal-account acceptance prerequisites below:
+"i dont think you're understanding my intent. I would be looking at the all
+names section ranked by the best buy or best sells (immediate actions) and
+making decisions. Why do i need portfolio tab?"
+
+The user wants an account-independent All names list of current immediate
+buy/sell recommendations, ranked by supported actionability/strength, with price,
+timing and reason, for manual decisions. Portfolio/real equity/cash/holdings are
+optional sizing/tracking inputs, NOT prerequisites for viewing that list. Stop
+asking the user to fill personal inputs or using paper holdings/fills as the
+definition of a universe-wide recommendation. No real-money execution authorized.
+Assistant acknowledged the mistaken focus and returned the signed-in IABtab3 to
+Stocks→All names94, URL ?deskView=strategy#desk. Keep this tab available.
+
+Source diagnosis: TradeBoard.currentOnly calls boardRows(latest,paper,true),
+which consumes paper.model_decisions through modelDecisionFor. Backend
+live_model_decision._row/_project explicitly project ORIGINAL funded paper orders,
+including quantity_basis original_funded_plan_not_new_instruction; unavailable
+or completed original orders suppress action. Its current ranking band puts
+blocked plans before planned changes, then uses saved targets/holdings. This is
+NOT yet the user's requested strongest immediate all-stock recommendations.
+Do not claim that a reordered paper-order list alone implements their intent.
+
+NEXT: inspect the current full-universe grade/learned forecast/timing evidence
+and build one coherent All names recommendation path independent of paper-order
+existence and personal cash. Retain source/session/quote/timing validity and
+distinguish ready-now from waiting, blocked, expired and unavailable. Do not
+manufacture a score/confidence, rename chart judgments as the numeric strategy,
+borrow funded paper quantities or fabricate immediate actions from the stale
+Oct13 record. Verify non-held names, ready buy/sell prioritization, shared action/
+timing/reason lineage and expiry through the actual screen. Optional sizing stays
+separate. Existing nightly19:30ET remains the natural next fresh-plan opportunity;
+do not force market_daily/market_balancer, replay history or fake clock/evidence.
+
+SIGNED-IN acceptance occurred this turn: actual served index-BT6Gh9TN.js,
+current strategy unavailable/Oct13 expired banner,94names with action dashes;
+no browser error/warning logs observed. User twice reported personal inputs
+applied, but this IAB session still shows default100000/blank cash/Add positions;
+do NOT assume that is their real account or ask again now—the clarified workflow
+does not require those values. No financial input or position write by assistant.
+Local screenshot/DOM evidence: /tmp/signed-in-personal-guidance-20261019-v1.
+
+Incidental personal-preview defect reproduced: failed learned guidance appeared
+as Hold with blocker only on hover. Minimal frontend-only candidate742589e28256248c0e717cc3ef2084b1c5158885
+(parent878) is pushed on codex/trading-fill-consistency-20261019 but NOT DEPLOYED
+and NOT integrated main. Source StockBoard422e8cf9/21142B, new browser test
+7f68164e/7559B. Actual prior deployed-static RED1FAIL/3PASS21.18897s; identical
+tests sourceGREEN4PASS12.664132s/no skip/flaky/errors. Cases unavailable/genuine
+Hold/blocked Buy/timing Wait; TypeScript/Vite8.2.2 build pass. No new live API/model
+acceptance follows; preserve both results. Candidate proof is on product branch
+at docs/research/personal-guidance-availability-candidate-proof-2026-10-19.json.
+Do not prioritize/deploy that optional personal-only change ahead of the clarified
+All names task. /tmp/release_personal_guidance_availability_20261019_v1.py is only
+an UNEDITED COPY of the old reporting controller, INERT/UNRUN/WRONG bindings;
+NEVER INVOKE it. No release job exists. Product worktree has only task-created
+frontend/node_modules symlink untracked; do not remove installed Desktop deps.
+
+Live production remains878; approved ownership repair COMPLETE and native read
+proof below remain valid. Heartbeat ACTIVE. All historical/failed/completed
+evidence preserved; no private tiny-guard work, account reset or denial bypass.
+
 ## 2026-10-19 — Ownership repaired; live recommendations await fresh nightly and personal-screen acceptance
 
 THIS IS CURRENT. The human renewed the direct instruction: "i want it ready for
