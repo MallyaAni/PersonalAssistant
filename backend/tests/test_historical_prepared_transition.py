@@ -101,7 +101,7 @@ class PreparedTransitionTests(unittest.TestCase):
         copy_code, asdict_code = copy.deepcopy.__code__, asdict.__code__
         previous = sys.getprofile()
 
-        # Observe actual native calls and distinguish the later native result-copy allocations.
+        # Observe the direct reconciliation order copy separately from nested broker-validation copies.
         def profile(frame, event, argument):
             if event == 'c_call' and argument is compile and frame.f_code is transition._certificate.__code__:
                 compile_events.append(resolved[0])
@@ -123,8 +123,8 @@ class PreparedTransitionTests(unittest.TestCase):
                 kind = 'derived_tail'
             elif frame.f_code is copy_code:
                 rows = frame.f_locals.get('x')
-                if type(rows) is list and rows and all(type(r) is dict and
-                        'client_order_id' in r and 'status' in r and 'filled_qty' in r for r in rows):
+                if (frame.f_back is not None and frame.f_back.f_code is self.f.settlement.reconcile_raw.__code__
+                        and type(rows) is list):
                     kind = 'orders_copy'
             if kind is not None:
                 self.assertLess(len(trace), 64)
@@ -452,6 +452,8 @@ class PreparedTransitionTests(unittest.TestCase):
         self.assertNotEqual(after[1], before[1])
         self.assertEqual([r['filled_qty'] for r in f.client._orders.values()], ['5'])
         self.assertIsNone(f.final.prepared_transition)
+        _, validation_trace = self.profiled(lambda: codec.encode(f.client, **f.nightly.pins()))
+        self.assertEqual(validation_trace, [])
         _, trace = self.profiled(lambda: self.paused(self.recover))
         self.assertEqual(trace, [])
 
