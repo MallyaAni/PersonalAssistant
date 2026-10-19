@@ -242,10 +242,11 @@ def _filled_at(row: dict) -> dict:
 # records are pruned to about a month and were written by several
 # revisions, so every field is read defensively and a malformed row is
 # skipped rather than fatal. A partial that settles again in a later
-# record replaces its earlier reading, keyed on the order id.
+# record replaces its earlier reading, keyed on the original string order id.
+# Preserve that identity and the actual price without manufacturing legacy IDs.
 def fills(root: Path, ticker: str) -> list[dict]:
-    """Return [{date, side, qty, price[, kind]}] for `ticker`, oldest first."""
-    found: dict[str, dict] = {}
+    """Return dated actual fills with any original order identity and completion clock."""
+    found: dict[tuple, dict] = {}
     for session in deskrecord.sessions(root):
         try:
             record = deskrecord.load(root, session)
@@ -271,12 +272,15 @@ def fills(root: Path, ticker: str) -> list[dict]:
             if qty <= 0 or price <= 0 or side not in ("buy", "sell"):
                 continue
             when = row.get("completion_session") or record.get("session") or session
-            key = str(row.get("client_order_id") or f"{session}:{index}")
+            identity = row.get("client_order_id")
+            identified = isinstance(identity, str) and bool(identity)
+            key = ("original", identity) if identified else ("legacy", session, index)
             found[key] = {
                 "date": str(when)[:10],
                 "side": side,
                 "qty": qty,
-                "price": round(price, 4),
+                "price": price,
+                **({"client_order_id": identity} if identified else {}),
                 **_plan_leg(row),
                 **_filled_at(row),
             }

@@ -164,12 +164,30 @@ def _terminal_entry(entry, now):
     return entry
 
 
-# Expose only dated actual fills while retaining original quantities and clock strings.
+# Validate a working partial's actual fill separately from terminal decision conclusions.
+def _recorded_fill_entry(entry, now):
+    if entry.get("terminal") is True:
+        return _terminal_entry(entry, now)
+    if entry.get("terminal") is not False or entry.get("status") != "partial":
+        return None
+    execution = entry.get("execution") or {}
+    if not isinstance(execution, dict):
+        raise ValueError("Original journal execution clocks required")
+    _order_identity(
+        entry.get("client_order_id"), entry.get("symbol"),
+        entry.get("side"), entry.get("session"),
+    )
+    _journal_quantities(entry)
+    _journal_fill(entry, execution, now)
+    return entry
+
+
+# Expose dated actual fills, including working partials, without concluding their orders.
 def recorded_fills(journal, now):
     result = []
     for supplied in _journal_rows(journal, now):
         try:
-            entry = _terminal_entry(supplied, now)
+            entry = _recorded_fill_entry(supplied, now)
         except (ValueError, TypeError, KeyError, OverflowError):
             # Invalid historical rows cannot hide later verified fills.
             continue

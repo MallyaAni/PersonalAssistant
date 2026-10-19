@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-10-19 — Preserve known fills and chart execution identity
+
+An absent later broker listing no longer erases an ordinary order's saved
+acknowledgment or partial fill. Other known receipts still reconcile, and a later
+terminal receipt advances the original order once. Valid working partial fills
+remain visible in execution history without concluding their numeric decision.
+Future ticker-history projections preserve original order IDs and actual prices.
+Charts merge identified executions by order ID; anonymous legacy rows remain
+separately accessible with an unresolved-overlap warning and do not inflate
+confirmed quantities or markers. Historical account and archive files are not
+rewritten. Candidate native/unit acceptance: 139 passed, zero skipped. Compiled
+browser acceptance covers duplicate quantities, retained legacy evidence and
+reload in both ticker views. Canonical release and authenticated live acceptance
+are recorded separately in NEXT_SESSION.md. Diagram impact: NONE — corrections
+stay within existing reconciliation, projection and chart data flows.
+
 ## 2026-10-18 — Reserve private synthetic Cycle stages and reject changed effect inputs
 
 New private stage producer owns the real Store prior/demand/wait/packet/decision/

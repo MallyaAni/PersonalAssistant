@@ -288,11 +288,14 @@ def test_fills_read_from_the_record_tree(tmp_path):
     root = _records(tmp_path)
     got = decision_history.fills(root, "AAA")
     assert got == [
-        {"date": "2026-09-11", "side": "buy", "qty": 63, "price": 224.81},
-        {"date": "2026-09-14", "side": "sell", "qty": 40, "price": 230.5},
+        {"date": "2026-09-11", "side": "buy", "qty": 63, "price": 224.81,
+         "client_order_id": "anios-2026-09-10-buy-aaa-0"},
+        {"date": "2026-09-14", "side": "sell", "qty": 40, "price": 230.5,
+         "client_order_id": "anios-2026-09-11-sell-aaa-0"},
     ]
     assert decision_history.fills(root, "BBB") == [
-        {"date": "2026-09-11", "side": "buy", "qty": 10, "price": 50.0}
+        {"date": "2026-09-11", "side": "buy", "qty": 10, "price": 50.0,
+         "client_order_id": "anios-2026-09-10-buy-bbb-0"}
     ]
     assert decision_history.fills(root, "CCC") == []
     assert decision_history.fills(tmp_path / "nowhere", "AAA") == []
@@ -303,7 +306,8 @@ def test_fills_skip_an_unreadable_record(tmp_path):
     root = _records(tmp_path)
     (root / "desk" / "asof=2026-09-11" / "desk.json").write_text("{", encoding="utf-8")
     assert decision_history.fills(root, "AAA") == [
-        {"date": "2026-09-14", "side": "sell", "qty": 40, "price": 230.5},
+        {"date": "2026-09-14", "side": "sell", "qty": 40, "price": 230.5,
+         "client_order_id": "anios-2026-09-11-sell-aaa-0"},
     ]
 
 
@@ -347,13 +351,15 @@ def test_fills_carry_the_plan_leg_when_the_record_names_one(tmp_path):
         encoding="utf-8",
     )
     assert decision_history.fills(root, "AAA") == [
-        {"date": "2026-09-29", "side": "buy", "qty": 3, "price": 90.0},
+        {"date": "2026-09-29", "side": "buy", "qty": 3, "price": 90.0,
+         "client_order_id": "anios-2026-09-28-buy-aaa-1"},
         {
             "date": "2026-09-29",
             "side": "buy",
             "qty": 7,
             "price": 91.0,
             "kind": "redeploy",
+            "client_order_id": "anios-2026-09-28-buy-aaa-2",
         },
     ]
 

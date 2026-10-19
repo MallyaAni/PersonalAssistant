@@ -1,0 +1,58 @@
+{
+  "status": "REVIEWED_EXACT_ORDER_RECONCILIATION_AND_FILL_PROJECTION",
+  "production_predecessor": "50d62c63e654a86ddfaa01cdc70b475081e60cb4",
+  "source_changes": {
+    "backend/cli/market_daily.py": {
+      "before_sha256": "0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819",
+      "after_sha256": "70201cfb771fb873a75b1356654a5dce9ab1b0900094ddcc23bcb6da56f1549b"
+    },
+    "backend/market/live_model_decision.py": {
+      "before_sha256": "b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93",
+      "after_sha256": "06bd5150ec8cdfce5399e2ce1bc96f9a07c43231fc2b47fb6dbf5b1ea6f89aea"
+    }
+  },
+  "other_reviewed_sources_unchanged": 29,
+  "unchanged_daily_module_ast_sha256": "abff05260e84aba546764b8fb030053f22f8eccbe7d309278a52d455f299622e",
+  "reviewed_reconcile_ast_sha256": "f983e65b5086d118f970ecb0a0c6b4aa9d0f3d6287fe63467f6063425476cfdf",
+  "unchanged_decision_module_ast_sha256": "3e894a1f3b802cffb2fd897cc9c7240f6fd1a00b8cade100fb6a1b019f389889",
+  "reviewed_fill_functions_ast_sha256": {
+    "_recorded_fill_entry": "0df5cd8a8c3be044e98707d253032f149db19e8eee260b9f6a1f0b708b0c1856",
+    "recorded_fills": "0b2397c02f185acecca8d6c91a5d177810edd5852b41bfff4551aa69ce3a0b55"
+  },
+  "problem": "A successful empty later broker listing overwrites an already persisted ordinary partial fill as missing and removes its pending intent, so a later terminal receipt is ignored.",
+  "reviewed_behavior": [
+    "An ordinary pending order carrying original broker acknowledgment timestamps remains unresolved when absent from a later listing.",
+    "Unknown acknowledged orders retain their original pending and journal evidence; other authoritative receipts in the same batch still reconcile.",
+    "The existing event-order unknown all-or-none guard remains unchanged.",
+    "Never-acknowledged expired intents retain existing missing behavior.",
+    "No native fold or save occurs when there are no eligible reconciliation candidates.",
+    "Recorded execution display accepts a strictly nonterminal working partial with original valid identity, quantities, actual positive price and execution chronology. Terminal-only decision conclusion remains unchanged."
+  ],
+  "preserved": [
+    "The complete market_daily module AST outside _reconcile is unchanged from the production predecessor.",
+    "The complete live_model_decision AST outside recorded_fills and its new private validator is unchanged, including _terminal_entry and _project.",
+    "Native paper serialization, apply_settlements, order submission, cancellation, planner and policy code are unchanged.",
+    "All model configuration, costs, policy selectors and original economic evidence must remain byte-identical except the source approval receipt pointer.",
+    "Candidate approval still requires the existing exact installed predecessor, committed review, normal source guard and canonical deployment gates."
+  ],
+  "additional_product_changes_outside_31_source_map": {
+    "backend/agents/trading/desk/decision_history.py": "Preserve original string order IDs and unrounded actual prices in future history projections; do not invent legacy IDs.",
+    "frontend/src/components/DeskPanel/TickerChart.tsx": "Aggregate confirmed original identities once and retain anonymous archive evidence separately with unresolved-overlap disclosure.",
+    "backend/cli/market_release_admission.py": "Add only this narrow review kind; existing candidate economic and predecessor constraints remain unchanged."
+  },
+  "verification": {
+    "native_red": "02f68c9c05a80d92b90031a8350035a653e1669f5ffbc8a801ca8a8ad0390ac0: 2 assertion failures and 1 passing never-acknowledged control; no model/provider/account/network/order calls.",
+    "first_native_green": "9b2972192aedb2dc92a50b9c2a45e36b4b82e7c23e03ac639925bc5a48e880d1: 41 passed in 0.37 seconds before the later working-partial projection correction.",
+    "working_partial_red": "008d841ce60b71b628849d1b24f581c1367105aa3edf102081b494ce937d2ae4: actual native saved partial2 survives reconciliation but is omitted from execution projection; 2 assertion failures and 16 passing metadata controls.",
+    "final_native_green": "8fd24885938222a843da8f713255fb8e180f07ad6d3c3af950dadeece7329366: 139 passed in 1.47 seconds at the final candidate source, including the working-partial lifecycle, projection refusals, original decision tests and exact two-module source-admission controls. No errors, skips or OOM.",
+    "compiled_browser": "Four identity/legacy-evidence cases passed in 30.57 seconds; identified full-price input passed targeted afterward. A fifth working-partial visibility case passed separately in 16.99 seconds. Reload, both ticker views and actual canvas quantities checked, with empty browser diagnostics and no API writes. These use local compiled product assets and synthetic API fixtures, not a signed-in live account.",
+    "independent_review": "Healthy production agents independently reviewed reconciliation preservation, source admission constraints and explicit archive identity ambiguity."
+  },
+  "limitations": [
+    "Synthetic broker read responses exercise actual native persistence; no real paper broker submission or cancellation is performed by these tests.",
+    "Existing anonymous archived rows lack enough evidence to reconstruct complete original identity or certify full historical execution totals.",
+    "Fresh naturally scheduled ordinary decision through actual orders, saved fills and authenticated dashboard remains unverified.",
+    "No model, economic, historical simulation, physical filesystem or full trading-system completion claim."
+  ],
+  "diagram_impact": "NONE: corrections stay within existing reconciliation and history-to-chart data flows."
+}

@@ -1,5 +1,44 @@
 # Next session
 
+## 2026-10-19 — Production-based fill consistency candidate
+
+This candidate starts from deployed50d62c63, not historical main. The user goal
+remains complete deployed strategy/dashboard reliability. Native persistence RED
+reproduced loss of a saved partial2 after an empty broker listing; chart RED
+reproduced SELL24 for one original12-share execution and SELL48 for two distinct
+12-share executions. A further native RED reproduced omitted working partials
+from execution history on a later day. All failed results are retained under
+/tmp/partial-fill-absence-red-20261019-v1, archived-fill-identity-red-20261019
+and working-partial-red-20261019-v1, with matching isolated Spark evidence.
+
+Candidate fixes preserve acknowledged ordinary pending/journal evidence, process
+other known receipts, retain working partials in dated execution display without
+concluding their orders, and preserve future history CIDs/raw prices. The chart
+merges identified orders by CID; anonymous originals remain accessible separately
+with unresolved-overlap disclosure, excluded from confirmed totals and markers.
+Do not infer missing legacy identity or rewrite accounts/historical archives.
+
+VERIFIED candidate normal native/unit path:139pass/0fail/error/skip,1.47s,
+CID8fd24885938222a843da8f713255fb8e180f07ad6d3c3af950dadeece7329366.
+TypeScript and Vite build passed. Four compiled chart cases passed30.6s;
+the identified case also passed with actual new-backend full-price shape.
+The fifth working-partial browser case passed separately17.0s, checking account
+list/both ticker lists/actual BUY2 canvas marker and reload with empty later-day
+activity. No page/console/network/mutation diagnostics; all inputs synthetic.
+Review:research/fill-consistency-source-review-2026-10-19.json. Only exact
+_reconcile and recorded-fill projection functions may change inside the original
+31-source approval map;29 other source hashes and complete module remainders,
+including terminal-only conclusions/planning/submission, remain unchanged.
+Normal economic/configuration/predecessor approval invariants remain mandatory.
+
+At this committed candidate, canonical gated deployment is recorded separately
+after it finishes. Never
+report candidate checks as deployed/live account acceptance. Naturally scheduled
+ordinary decision→orders→fills→authenticated UI still needs observation; no
+forced market_daily/market_balancer run, fake clock or authentication bypass.
+Keep goal/heartbeat ACTIVE. Never deploy historical main wholesale or resume
+archived private allocation guards. Diagram impact:NONE(existing data flows).
+
 ## 2026-10-19 — PRIORITY: finish deployed strategy and dashboard acceptance
 
 This section supersedes conflicting archived NEXT directions. The user asked why

@@ -89,8 +89,140 @@ def committed_review(bundle, revision):
     return json.loads(raw)
 
 
-# Require exact reviewed API changes and a function-preserving source guard extension.
+# Admit only the reviewed settlement metadata while preserving every other paper node.
+def settlement_metadata_review(old, new, review):
+    paper_path = "backend/agents/trading/desk/paper.py"
+    changes = {
+        name for name in old.keys() | new.keys() if old.get(name) != new.get(name)
+    }
+    if (
+        set(old) != set(new)
+        or len(old) != 31
+        or changes != {paper_path}
+        or set(review["source_changes"]) != {paper_path}
+        or review["source_changes"][paper_path]
+        != {"before_sha256": old[paper_path], "after_sha256": new[paper_path]}
+        or type(review["other_reviewed_sources_unchanged"]) is not int
+        or review["other_reviewed_sources_unchanged"] != 30
+    ):
+        raise ValueError("Exact paper-only settlement metadata review required")
+    raw = (Path(__file__).resolve().parents[2] / paper_path).read_bytes()
+    require_hash(raw, new[paper_path])
+    tree = ast.parse(raw)
+    changed = {"Settled", "settle", "apply_settlements"}
+    added = {"_settlement_quantity", "_settlement_quantity_evidence"}
+    definitions = [
+        node
+        for node in tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+    ]
+    if any(
+        sum(node.name == name for node in definitions) != 1 for name in changed | added
+    ):
+        raise ValueError("Exact settlement metadata definitions required")
+    settled = next(node for node in definitions if node.name == "Settled")
+    fields = {"submitted_qty", "sender_qty", "quantity_evidence"}
+    appended = [
+        node
+        for node in settled.body
+        if isinstance(node, ast.AnnAssign)
+        and isinstance(node.target, ast.Name)
+        and node.target.id in fields
+    ]
+    if len(appended) != 3 or {node.target.id for node in appended} != fields:
+        raise ValueError("Exact optional settlement quantity fields required")
+    settled.body = [node for node in settled.body if node not in appended]
+    if (
+        digest(ast.dump(settled, include_attributes=False).encode())
+        != review["original_settled_ast_sha256"]
+    ):
+        raise ValueError("Original settlement fields or behavior changed")
+    decimal_imports = [
+        node
+        for node in tree.body
+        if isinstance(node, ast.ImportFrom)
+        and node.level == 0
+        and node.module == "decimal"
+        and [(name.name, name.asname) for name in node.names]
+        == [("Decimal", None), ("InvalidOperation", None)]
+    ]
+    if len(decimal_imports) != 1:
+        raise ValueError("Exact settlement numeric reader import required")
+    tree.body = [
+        node
+        for node in tree.body
+        if node not in definitions or node.name not in changed | added
+    ]
+    tree.body = [node for node in tree.body if node not in decimal_imports]
+    if (
+        digest(ast.dump(tree, include_attributes=False).encode())
+        != review["unchanged_paper_module_ast_sha256"]
+    ):
+        raise ValueError("Unreviewed paper planning or persistence change")
+
+
+# Admit reviewed order persistence and fill projection while pinning all other logic.
+def reconciliation_review(old, new, review):
+    path = "backend/cli/market_daily.py"
+    projection = "backend/market/live_model_decision.py"
+    allowed = {path, projection}
+    changes = {name for name in old.keys() | new.keys() if old.get(name) != new.get(name)}
+    if (
+        set(old) != set(new)
+        or len(old) != 31
+        or changes != allowed
+        or set(review["source_changes"]) != allowed
+        or any(review["source_changes"][name]
+               != {"before_sha256": old[name], "after_sha256": new[name]}
+               for name in allowed)
+        or type(review["other_reviewed_sources_unchanged"]) is not int
+        or review["other_reviewed_sources_unchanged"] != 29
+    ):
+        raise ValueError("Exact reconciliation and fill-projection source review required")
+    raw = (Path(__file__).resolve().parents[2] / path).read_bytes()
+    require_hash(raw, new[path])
+    tree = ast.parse(raw)
+    functions = [
+        node for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == "_reconcile"
+    ]
+    if len(functions) != 1 or digest(
+        ast.dump(functions[0], include_attributes=False).encode()
+    ) != review["reviewed_reconcile_ast_sha256"]:
+        raise ValueError("Exact reviewed reconciliation body required")
+    tree.body = [node for node in tree.body if node is not functions[0]]
+    if digest(ast.dump(tree, include_attributes=False).encode()) != review[
+        "unchanged_daily_module_ast_sha256"
+    ]:
+        raise ValueError("Unreviewed daily planning, submission or persistence change")
+    raw = (Path(__file__).resolve().parents[2] / projection).read_bytes()
+    require_hash(raw, new[projection])
+    tree = ast.parse(raw)
+    selected = {"recorded_fills", "_recorded_fill_entry"}
+    functions = [node for node in tree.body
+                 if isinstance(node, ast.FunctionDef) and node.name in selected]
+    if (
+        len(functions) != 2
+        or {node.name for node in functions} != selected
+        or {node.name: digest(ast.dump(node, include_attributes=False).encode())
+            for node in functions} != review["reviewed_fill_functions_ast_sha256"]
+    ):
+        raise ValueError("Exact recorded-fill projection functions required")
+    tree.body = [node for node in tree.body if node not in functions]
+    if digest(ast.dump(tree, include_attributes=False).encode()) != review[
+        "unchanged_decision_module_ast_sha256"
+    ]:
+        raise ValueError("Unreviewed numeric decision or terminal conclusion change")
+
+
+# Require an exact reviewed transition without broadening the production source guard.
 def reviewed_sources(old, new, review):
+    if review["status"] == "REVIEWED_EXACT_ORDER_RECONCILIATION_AND_FILL_PROJECTION":
+        reconciliation_review(old, new, review)
+        return
+    if review["status"] == "REVIEWED_EXACT_SETTLEMENT_QUANTITY_METADATA":
+        settlement_metadata_review(old, new, review)
+        return
     changes = {
         name for name in old.keys() | new.keys() if old.get(name) != new.get(name)
     }

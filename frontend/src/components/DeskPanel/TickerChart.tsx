@@ -496,14 +496,11 @@ const fillRows = (history: DeskHistory | undefined): DeskHistoryFill[] => {
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
-// Use broker events for their day and conservatively merge journal identities with older archived fills.
+// Merge original order identities only; broker events keep their activity-day multiplicity.
 const currentFillRows = (history: DeskHistory | undefined, activity: DeskPaperLive['activity'], recorded: DeskPaperLive['recorded_fills'], ticker: string, now: number): DeskHistoryFill[] => {
   const activitySession = paperActivitySession(activity)
   const confirmed = confirmedPaperFills(recorded, activity, now).filter(fill => fill.symbol === ticker)
-  const archived = fillRows(history).filter(fill => fill.date !== activitySession)
-  const matched = new Set<number>()
-  // Match old archive rows without an execution identity conservatively, without deduplicating distinct fills.
-  const identity = (fill: DeskHistoryFill) => `${fill.date}:${fill.side}:${fill.qty}:${fill.price}`
+  const archived = fillRows(history).filter(fill => fill.client_order_id && fill.date !== activitySession)
   const fresh: DeskHistoryFill[] = []
   for (const fill of confirmed) {
     const instant = recordedInstant(fill.filled_at)
@@ -513,20 +510,26 @@ const currentFillRows = (history: DeskHistory | undefined, activity: DeskPaperLi
     const date = paperFillSession(fill.filled_at)
     const row: DeskHistoryFill = {date, side: fill.side, qty: fill.qty, price: fill.price, filled_at: fill.filled_at, client_order_id: fill.client_order_id}
     const byId = fill.client_order_id ? archived.findIndex(saved => saved.client_order_id === fill.client_order_id) : -1
-    if (byId >= 0) {matched.add(byId); archived[byId] = {...archived[byId], ...row}; continue}
-    const index = archived.findIndex((saved, i) => !matched.has(i) && identity(saved) === identity(row)
-      && !(saved.client_order_id && row.client_order_id && saved.client_order_id !== row.client_order_id)
-      && (!saved.filled_at || Date.parse(saved.filled_at) === instant.getTime()))
-    if (index >= 0) {
-      matched.add(index)
-      archived[index] = {...archived[index], ...row}
-      continue
-    }
+    if (byId >= 0) {archived[byId] = {...archived[byId], ...row}; continue}
     fresh.push(row)
   }
   return [...archived, ...fresh].sort((a, b) => a.date.localeCompare(b.date)
     || (Date.parse(a.filled_at ?? '') || 0) - (Date.parse(b.filled_at ?? '') || 0))
 }
+
+// Preserve anonymous archive rows separately because their overlap with identified executions is unresolved.
+const LegacyPaperFills = ({ticker, fills}: {ticker: string; fills: DeskHistoryFill[]}) => (
+  <div className="mt-2 text-xs text-[#6e6e73]" aria-label={`${ticker} legacy paper evidence`}>
+    <p role="status">Legacy paper records have no original order identity and may overlap confirmed executions. They are excluded from confirmed quantities and chart markers.</p>
+    <details className="mt-1" aria-label={`${ticker} original legacy paper records`}>
+      <summary className="cursor-pointer">Original legacy records ({fills.length}) · overlap unresolved</summary>
+      <ul>{fills.map((fill, index) => <li key={index}>
+        <time dateTime={fill.filled_at} title={fill.filled_at}>{fill.date}{fill.filled_at ? ` · ${fill.filled_at}` : ''}</time>
+        {' · '}{fill.side === 'buy' ? 'BUY' : 'SELL'} {String(fill.qty)} @ ${String(fill.price)}{isRedeploy(fill) ? ' · idle cash put to work' : ''}
+      </li>)}</ul>
+    </details>
+  </div>
+)
 
 // Place timestamped fills only on their containing 15-minute candle, never on a nearest substitute.
 const currentIntradayMarkers = (fills: DeskHistoryFill[], bars: DeskChartBar[]): FillMarker[] =>
@@ -818,6 +821,7 @@ export const TickerChart = ({
   const changes = useMemo(() => gradeMarkers(history, merged.bars, timeframe).map(marker => /^(BUY|SELL) /.test(marker.text) ? {...marker, text: `Grade ${marker.text}`} : marker), [history, merged, timeframe])
   const decisions = useMemo(() => decisionMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
   const fills = useMemo(() => currentFillRows(history, paperActivity, paperRecordedFills, ticker, now), [history, paperActivity, paperRecordedFills, ticker, now])
+  const legacyFills = useMemo(() => fillRows(history).filter(fill => !fill.client_order_id), [history])
   const fillMarks = useMemo(() => groupedFillMarkers(fillMarkers(fills, merged.bars, timeframe)), [fills, merged, timeframe])
   // The fifteen-minute layers come timed from the payload rather than dated
   // from the history file, so they are empty on daily and weekly.
@@ -1250,6 +1254,7 @@ export const TickerChart = ({
                 })}
               </ul>)}
           </div>}
+          {legacyFills.length > 0 && (!strategy || showPaperFills) && <LegacyPaperFills ticker={ticker} fills={legacyFills} />}
 
           {personalHistory && showRecommendations && <div className="mt-2 text-[11px] text-[#6e6e73]" aria-label="Saved recommendation history">
             <p aria-label="Buy and Sell markers">{actionMarkers.length
