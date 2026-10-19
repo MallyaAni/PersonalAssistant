@@ -247,6 +247,7 @@ def run(root: Path, latest: dict, snapshot: dict):
         return {"status": "waiting for gated deployment"}
     now = datetime.now(UTC)
     with paper.transaction(root):
+        policy = None
         try:
             panel, _ = book_panel(
                 MarketStore(root), date.fromisoformat(latest["session"])
@@ -261,10 +262,16 @@ def run(root: Path, latest: dict, snapshot: dict):
             # Keep failure visible without exposing provider text or credentials.
             result = {
                 "as_of": now.isoformat(),
-                "active": bool(paper.load_state(root).event_cycle),
                 "status": "recovery unavailable",
                 "error_type": type(exc).__name__,
             }
+            if policy is not None:
+                result["policy"] = policy
+            try:
+                result["active"] = bool(paper.load_state(root).event_cycle)
+            except Exception as state_exc:
+                # An unreadable account is unknown, not evidence of an inactive cycle.
+                result["state_error_type"] = type(state_exc).__name__
         path = root / "desk" / "event-live.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         pending = path.with_suffix(".tmp")

@@ -1417,17 +1417,17 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // of teaching a daily trading cadence the backtest does not use.
   const countdown = rows.find((r) => r.until_rebalance !== null)?.until_rebalance ?? latest?.paper?.until_rebalance ?? null
   const eventLive = payload.event_status
+  const eventRecoveryUnavailable = eventLive?.status === 'recovery unavailable'
   const event = (!eventLive?.stale && eventLive?.policy) || latest?.event_risk
-  // Planning is paused only on the live event state: an active cycle or a
-  // policy still in force. A stale observation is not a pause, and the
-  // nightly record's frozen execution_pending flag never is.
+  // The server alone sets the planning pause, including fresh unverified recovery.
+  // A stale failure must not create a new client-side pause.
   const eventPaused = eventLive?.planning_paused === true
   const exchange = exchangeState(live.market_status)
   const todayLine = latest ? <TodayLine exchange={exchange} event={event} boardEvent={eventPaused ? {
     exposure: event?.calendar_known === false || typeof event?.factor !== 'number' || !(event.factor > 0) ? null : event.factor,
     decisionDate: event?.decision_date ?? null, calendarUnknown: event?.calendar_known === false,
   } : null} orders={paperLive?.orders?.length ?? eventLive?.pending_orders ?? 0}
-    plan={paperLive?.plan?.orders ?? null} /> : null
+    plan={paperLive?.plan?.orders ?? null} eventRecoveryUnavailable={eventRecoveryUnavailable} /> : null
   const recordedExecutions = confirmedPaperFills(paperLive?.recorded_fills, paperLive?.activity, now)
   // Share dated analyst evidence with the full panel, revealing personal guidance only on request.
   const expandRow = (ticker: string) => {
@@ -1587,7 +1587,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         {describeFundamentalSource(latest.provenance?.data?.fundamentals).notice}
       </p>
             <h3 aria-label="Plan status" className="text-xs font-medium text-[#1d1d1f]">
-              {eventPaused ? 'The FOMC cycle takes priority over the scheduled plan.'
+              {eventPaused ? eventRecoveryUnavailable ? 'FOMC recovery is unconfirmed; regular planning is paused.' : 'The FOMC cycle takes priority over the scheduled plan.'
                 : paperLive?.plan?.until_rebalance != null ? paperLive.plan.until_rebalance <= 1 ? 'Paper weights reset at the next plan.' : `Paper weights reset in ${paperLive.plan.until_rebalance} sessions.`
                 : learnedAllocation(latest) ? 'Model allocations are evaluated at the nightly close; funded orders use their recorded execution timing.'
                 : countdown !== null ? `Paper weights reset in ${countdown} session${countdown === 1 ? '' : 's'}.`
@@ -1609,17 +1609,14 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 {latest && <DeskGuide latest={latest} open={detailsOpen} />}
 
 
-      {/* Amber only when the gate is actually doing something. It is a
-          provisional policy that spends most of its life monitoring - on the
-          live record factor 1.0, nothing pending, the decision 28 sessions
-          away - and rendering it as a standing warning put the reader's eye
-          on a rule that was idle while the rule halving his book sat
-          collapsed above it. */}
+      {/* Keep failed recovery explicit alongside active restrictions.
+          Healthy monitoring stays quiet; an unavailable check never proves
+          that no event execution occurred. */}
       {payload.event_policy?.enabled && (
-        <section aria-label="FOMC exposure policy" className={eventPaused || event?.factor === 0.5 || eventLive?.active
+        <section aria-label="FOMC exposure policy" className={eventRecoveryUnavailable || eventPaused || event?.factor === 0.5 || eventLive?.active
           ? "rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-[#5c4300]"
           : "rounded-2xl border border-black/[0.08] bg-white p-4 text-sm text-[#6e6e73]"}>
-          <h3 className="font-semibold">FOMC · {!eventLive?.stale && eventLive?.status ? eventLive.status : eventPaused ? 'portfolio adjustments paused' : !event ? 'decision missing' : 'monitoring'} <span className="text-xs font-normal">· provisional policy</span></h3>
+          <h3 className="font-semibold">FOMC · {eventRecoveryUnavailable && eventLive?.stale ? 'last recovery unavailable' : !eventLive?.stale && eventLive?.status ? eventLive.status : eventPaused ? 'portfolio adjustments paused' : !event ? 'decision missing' : 'monitoring'} <span className="text-xs font-normal">· provisional policy</span></h3>
           {eventLive?.as_of && <p className="mt-1 text-xs">Checked {marketTime(eventLive.as_of)}{eventLive.stale ? ' · last known status' : ''}</p>}
           <details className="mt-1 text-xs"><summary className="cursor-pointer">Policy & execution</summary>
           <p className="mt-1">A negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision.
@@ -1630,14 +1627,19 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear.
             If the remaining shares are unaffordable, the cycle ends with those shares left unbought.</p>
           </details>
-          <p className="mt-2 text-xs">{event
+          <p className="mt-2 text-xs" role={eventRecoveryUnavailable ? 'alert' : undefined}>{eventRecoveryUnavailable
+            ? eventLive?.stale ? 'The last FOMC recovery check failed; current event execution is unconfirmed.'
+              : 'FOMC recovery could not be verified; current event execution is unconfirmed.'
+            : event
             ? `Using the ${event.session} close: ${!event.calendar_known ? 'calendar unavailable; exposure changes paused' : event.factor === 0.5 ? 'reduction triggered or still in force' : eventLive?.active && !eventLive.stale ? `the reduction is done${eventLive.sold ? ` (${Object.keys(eventLive.sold).length} names sold)` : ''}; restoration is queued for the open after the decision` : eventLive?.active ? `the reduction is done; ${paperLive?.orders?.length ? `${paperLive.orders.length} restoration orders are` : 'restoration is'} queued for the open after the decision` : 'no pre-meeting reduction requested'}. FOMC decision: ${event.decision_date ?? 'unavailable'}.`
             : eventLive?.active ? 'An event cycle is recorded; the current policy observation is unavailable.'
             : 'Enabled for the next nightly run. The stored decision predates this policy; it does not confirm any reduction.'}</p>
           {event?.outcome?.status === 'cash-limited' && <p className="mt-2">Cash-limited restoration recorded {event.outcome.session}:
             {' '}{Object.entries(event.outcome.unrestored).map(([symbol, qty]) => `${symbol} ${qty} shares unbought`).join(' · ')}.
             These are unfilled quantities, not restored positions.</p>}
-          <p className="mt-1 text-xs">{eventLive?.active
+          <p className="mt-1 text-xs">{eventRecoveryUnavailable
+            ? 'This status does not confirm whether reductions or restorations were placed or filled. Recorded regular orders and fills remain shown below.'
+            : eventLive?.active
             ? 'The reduction runs in the practice account below; your own book is unchanged until you act at your broker.'
             : 'Nothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.'}</p>
         </section>
@@ -2744,16 +2746,18 @@ const GradeMove = ({changes, session, reads, revision}: {
   )
 }
 
-// Summarize exchange status, active restrictions and executable personal signals.
-const TodayLine = ({exchange, event, boardEvent, orders, plan}: {
+// Summarize exchange status and known paper orders without treating failed recovery as a confirmed cycle.
+const TodayLine = ({exchange, event, boardEvent, orders, plan, eventRecoveryUnavailable = false}: {
   exchange: ReturnType<typeof exchangeState>
   event?: {decision_date: string | null} | null
   boardEvent: BoardEvent | null
   orders: number
   plan: {state: string}[] | null
+  eventRecoveryUnavailable?: boolean
 }) => {
   const parts: string[] = [exchange.label]
-  if (boardEvent && boardEvent.exposure !== null && boardEvent.exposure < 1) parts.push(`paper FOMC target exposure ${Math.round(boardEvent.exposure * 100)}% through the ${event?.decision_date ?? 'FOMC'} decision`)
+  if (eventRecoveryUnavailable) parts.push('FOMC execution unconfirmed')
+  else if (boardEvent && boardEvent.exposure !== null && boardEvent.exposure < 1) parts.push(`paper FOMC target exposure ${Math.round(boardEvent.exposure * 100)}% through the ${event?.decision_date ?? 'FOMC'} decision`)
   else if (boardEvent) parts.push(boardEvent.exposure === null
     ? 'paper FOMC target exposure unavailable'
     : orders > 0 ? `${orders} pending paper order${orders === 1 ? '' : 's'} during FOMC recovery`
@@ -2775,7 +2779,7 @@ const TodayLine = ({exchange, event, boardEvent, orders, plan}: {
   const unknown = (plan ?? []).filter(o => !knownStates.includes(o.state)).length
   if (unknown) pieces.push(`${unknown} status unknown`)
   const action = plan === null ? 'Paper orders loading.'
-    : plan.length === 0 ? 'No paper orders.'
+    : plan.length === 0 ? eventRecoveryUnavailable ? 'No regular paper orders recorded.' : 'No paper orders.'
     : `Paper orders: ${pieces.join(' · ')}.`
   return <section aria-label="Today" className="shrink-0 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-sm">
     <span className="font-medium">{parts.join(' · ')}.</span> <span className="text-[#6e6e73]">{action}</span>
