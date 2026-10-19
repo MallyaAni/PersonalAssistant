@@ -1,5 +1,144 @@
 # Next session
 
+## 2026-10-19 — Pre-resolution final receipt byte allowance VERIFIED (private synthetic)
+
+Read research/receipt-capacity-proof-2026-10-19.json:
+d0c6c944a3decc9b2a451075759f732d289b930fe08335766629d4366fc36640,
+27505B. Exact source f977f8daebe93a4bec2f3c4074e9728e88099147/tree
+f88464bfcd745137f587a3347334b02eeaf50385 passed FIVE NEW named assertions in
+FIVE fresh single-case runtimes, exit0/noOOM/0failure/error/skip. This includes
+an unchanged Final7 negative baseline, not acceptance of its late failure.
+Full six-attempt reports392464B retained in one115380B sidecar38ec622b, INCLUDING
+the separate FAILED v1 probe. Root source/call/runtime/full DATA fold/readback
+passed. Independent review remains UNVERIFIED; prior reviewer usage-limited,
+never retried/replaced/account/model switched. Goal/heartbeat ACTIVE, production
+unchanged. Full-system acceptance is incomplete.
+
+PRODUCT: distinct PRIVATE historical_final_receipt_capacity.ReceiptCapacity,
+synthetic-final-receipt-capacity/1 plus Final8. An original source/head/input/
+native-IO/preimage-bound byte allowance is prepared BEFORE output-asdict/flush.
+It counts only original pending fields copied into settled evidence, original
+broker encoding length/order count, declaration length and exact source-map
+length. Source-bound arithmetic pays for native fixed/scalar/status/timestamp/
+diagnostic alternatives, original variable-field duplication and enclosing
+receipt/component/link metadata. It never predicts a status, fill quantity,
+price, fee or timestamp, constructs fake outcomes, or normalizes native state.
+This conservative allowance can refuse an input whose eventual receipt could
+fit; it is not a calculation of the future result's exact size or a policy
+rejection of finite quantity diagnostics. It is NOT RAM/physical reservation.
+
+Frozen strict integer/digest metadata binds original inputs/declaration/source/
+broker lengths. Original owned prior/client are checked, consumed once before
+resolution, released before native save/on all failure paths. Actual serialized
+final receipt bytes must fit their ORIGINAL pre-effect allowance before final
+CAS put. Original reservation, linked receipt, live validation and metadata-only
+historical recovery authenticate the same allowance; no re-estimation after a
+fill. No native load/clone/flush/fold/save/capture/append/SQL generation/account
+restore in original recovery. Existing native paper/writer/Store/settlement/
+Cycle/Nightly/static/finite-evidence input FULL bytes remain unchanged from
+29dac6f7, including default DELETE+FILE/schema/paths/caps/public genuine and old
+bound-CAS raw-final refusals. Existing prepared transition remains an explicitly
+DERIVED tail; this is not unchanged whole apply_settlements execution. Python
+globals/advisory locks remain NOT hostile sandbox/deep immutability/path isolation.
+
+FAILED v1-A/source6149c19e7886bbe358320b7df870c2797c63ff28:
+CID8796afc1aa7c9b5d542ea4541cb8525b1ee7ced4a3420f0040f31f60a25f163a,
+f612 exit1/noOOM14:08:10.005046666Z/1assertionFAIL0error/skip,
+22.936414276249707s/55740KiB. The new test expected a late cap with250000B of
+original finite annotation, but unchanged Final7 successfully returned. That
+hypothesis was too small; the FAILED test/published native result/pool/source/
+logs/proof043fe00567 remain preserved, never replayed/adopted. Only the fresh
+v2 annotation input and matching exact length assertion changed250000→260000;
+product/guards/caps/assertions were not weakened. V1 B–E never dispatched.
+
+V2 A CID97e6d54adc539d69e49a21859b6fef90ed09280a28cd7b90ae0a5d7f8f665fe4
+reproduces the actual late cap on FRESH authenticated input: unchanged Final7
+accepts260000B annotation through real submission/native writer, desired8/
+submitted5; flush fills5, native final save advances nextslot4, then enclosing
+receipt raises Reserved CAS byte capacity exhausted. Store head stays SUBMISSION;
+native journal retains the annotation and sender6/broker5 diagnostic. No adoption
+or replay authority follows. This is a limit=256KiB whole receipt write failure,
+not evidence that the entire4MiB CAS phase ran out of capacity.
+
+B CID44598c55749ead8484ad970c7928ca2032af4a9f40962920e4b76c1db1e83c73
+refuses the SAME original input before output-asdict/flush/orders-copy, retaining
+accepted5/filled0/native bytes/head/cursors/latch and durable pause; original
+recovery remains inert. C CID33471ed1b5e2c8b72b0c260fe19ace6e1776db4b13034b12954d866c765ebf51
+completes actual birth→stages→desired8/submitted5/filled5 partial journal→Store
+OUTCOME→reopen/original recovery→same-session Nightly→historical final recovery.
+Its original Unicode annotation yields input12270B/actual receipt20630B within
+pre-effect upper138110B≤262144, broker5812B/declaration4405B/sources2236B.
+Native finite sender6/broker5 diagnostic persists, policy2/five native saves/
+large NaN state preserved; recovery traces[]. Strict bool order-count metadata
+refuses. This verifies these finite cases, not every possible full-horizon state.
+
+D CID6505ed1f17bbbabcb46a136f69006b0bbc508d5fa69411b734a2ac67b896d300
+and E CID6c3aa25756c130dd59f5254dea1c4262dc35a8d10f92fe5e1bcfe3cdc1f67aa6
+each owned PID7 SIGKILL/reaped-9 in DIFFERENT runtimes: after allowance reservation
+before consume/flush; after authoritative OUTCOME with ownership released.
+Reserved cut stays paused; committed cut recovers ONLY original missing result/
+seals/no additional native effects or SQL generation. Four canonical cut/exit
+strings16085B exact SHA+length. Protocol process cuts, NOT powerloss/inside-native-
+syscall/SQLite-commit proof; broker witnesses are immutable DATA, never restore.
+Green per-case11.03748–29.40108s/max57012KiB. Every transport phase0/emptyerr;
+the FAILED v1 container exit1 is retained separately, not relabelled as a pass.
+
+Root reconstructed all6 inventories INCLUDING failed probe:3096CAS+222metadata+
+42SQL+24directory-metadata+36native-directory=3420 globally distinct originals;
+every name/physical field unchanged. Green5 alone2850 originals. Each case
+CAS34344960/meta9183232/SQL1843200/dir790528 allocated AND logicalB. Raw317474B
+inventories22359B gzip. Original native state bodies change outside these
+unchanged inventories. Payload517142B+pins4628B=521770B<524288/38payloads+pins;
+39source/47native SHA physical bookends/writer globals unchanged/forbidden[].
+SEVEN whole exact SOURCE-only RO refs codec/CAS/physical/Stage/Store/Final7/
+StaticAdmission plus TWO SOURCE data files map1655/identity, no old account/
+output/pool/broad fallback. Combined closure exceeds copied cap, not a RAM bound.
+Thirteen FULL mounts equal by uniqueDestination; raw order only v2-D true.
+HC only OomKillDisablefalse→null. UID1000/noneRO1CPU512MiB=swap/PIDs32/tmp64/
+dropALL/no-new-privileges/CPU30/native1MiBFSIZE/source-controls-log256KiB/
+productioncaps unchanged. Context/policy/program/calendar/source-manifest globals
+SYNTHETIC/constructors bypassed; no native Resolver/provider/model/economic/
+operation/adoption acceptance.
+
+DATA-only collector ONCE163inputs/four held SHA+physical reads, exclusive fsync/
+readback. Separate SOURCE4MiB+sixCONTROL4MiB each+DERIVED2MiB=30MiB maximum,
+NOT whole4MiB. Actual SOURCE3201556/eachCONTROL<1.76MiB/DERIVED285770B.
+Main+sidecar142885B total/each<256KiB. Six exact small control sources additionally
+archived research/receipt-capacity-controls-2026-10-19.json,20555B/
+15a3ad27141893a1476db2bdc5cb0014d41693a987d7b2896b8d5cc2e243b426,
+four held reads/separate2MiB/304414B actual incl readback. No local crash/kernel-
+FSIZE claim. Eleven sources141purpose functions/AST/zero-backspaces/diff PASS; Ruff unavailable/no fullunit/
+build/deploy/UI/model claim. Diagram impact: NONE — internal private validation.
+
+NEXT: this NEW5 finite-receipt allowance boundary is CLOSED. Never rerun v2 A–E,
+failed v1-A/unused v1 B–E/preflight/stage/copy/tests/getters/collector/archive or
+prior finite9/static9/identity9/prepared-transition9/older closed gates for docs.
+Never adopt failed/OPEN/completed pools/reopen COMPLETE phases. Full native
+rename/journal physical admission remains BLOCKED on unavailable source/runtime/
+filesystem-bound allocator acknowledgement at paper.py:433 replace/failure unlink/
+parent fsync. capacity_reserved=False; fallocate/stat/names cannot reserve it.
+
+Continue independent synthetic product work: FIRST inspect reconcile_raw's
+postflush deepcopy(list(client._orders.values())) and exact native _fill in-place
+order mutation/key-addition lifetime. Determine whether a DISTINCT owned container
+preparation can move allocation BEFORE effects while copying ONLY ACTUAL postflush
+execution values afterward. Do NOT pre-snapshot orders/outcomes, invent placeholder
+evidence/fills or call it unchanged whole reconcile_raw execution if derived.
+Preserve default reconciliation/native APIs and original metadata-only recovery;
+prove NEW bounded original-input preservation/actual native parity/interruption/
+full-private-graph assertions. This would move one allocation, NOT full model/RAM
+admission. Current native transition/evidence/encoding/save can still fail after
+effects. Full filesystem/nativeSQLiteFILE/832MB horizon/modelRAM/twohost/powerloss/
+genuine constructors/Resolver/sender/providers/calendar/economics/native operation/
+adoption/independent publication/API/UI remain UNVERIFIED; full admission mandatory
+BEFORE genuine effects. Original timing FAILED/publication CLOSED/missing receipts/
+immutable roots unchanged; genuinev6 OPEN/PAUSED/no replay/adoption/new genuine run.
+No Spark2load/guard-G08-cap weakening/fakeclock/actualday replay/history rewrite/
+model-provider-account-service change/denied-read bypass/paiddata/tuning/real-money
+orders/deploy historical main/provenance-ELF detours/limited-worker retries.
+No permission question pending. Read current NEXT for stale firings; meaningful
+progress only, no ETA.
+
 ## 2026-10-19 — Original finite-evidence inputs before resolution VERIFIED (private synthetic)
 
 Read research/finite-evidence-proof-2026-10-19.json:
