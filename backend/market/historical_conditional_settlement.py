@@ -134,9 +134,67 @@ def _native_serialization(state, limit):
             "raw_sha256": digest.hexdigest(), "raw_bytes": length}
 
 
-# Bind pure native reconciliation to opaque prior bytes instead of finite JSON hashes.
+# Own the original native input and its separate copy before any broker resolution.
+class _PreparedRawInput:
+    # Materialize only the source-bound input copy, never a predicted post-fill outcome.
+    def __init__(self, state, limit, *, binding):
+        self.state, self.prior = state, None
+        self.original_state, self.original_prior = state, None
+        self.used, self.closed = False, False
+        try:
+            if type(state) is not paper.PaperState or type(limit) is not int or limit <= 0:
+                raise ValueError('Exact finite prepared raw input required')
+            self.limit = limit
+            self.binding = deepcopy(binding)
+            self.binding_raw = demand.encoded(self.binding)
+            self.native_bytes = _native_serialization(state, limit)
+            self.prior = self.original_prior = deepcopy(state)
+            self.check(binding, unconsumed=True)
+        except BaseException:
+            self.close()
+            raise
+
+    # Recheck frozen metadata and both untouched pre-resolution native representations.
+    def check(self, binding, *, unconsumed=False):
+        if (self.closed or self.state is not self.original_state
+                or self.prior is not self.original_prior or self.prior is self.state
+                or type(self.state) is not paper.PaperState or type(self.prior) is not paper.PaperState
+                or type(self.used) is not bool or type(self.limit) is not int
+                or self.limit != self.binding['raw_limit'] or self.native_bytes != self.binding['native_bytes']
+                or demand.encoded(binding) != self.binding_raw
+                or demand.encoded(self.binding) != self.binding_raw
+                or (unconsumed and self.used)):
+            raise ValueError('Original once-owned raw input binding required')
+        if (_native_serialization(self.state, self.limit) != self.native_bytes
+                or (not self.used and _native_serialization(self.prior, self.limit) != self.native_bytes)):
+            raise ValueError('Prepared raw input bytes changed before resolution')
+
+    # Consume only the original separate copy once, retaining the untouched original for verification.
+    def take(self, state, original, limit):
+        self.check(self.binding, unconsumed=True)
+        if state is not self.state or original != self.native_bytes or limit != self.limit:
+            raise ValueError('Original prepared raw input/state/limit required')
+        self.used = True
+        return self.prior
+
+    # Authenticate the consumed descriptor after dropping this scope's input references.
+    def check_released(self, binding):
+        if (not self.closed or self.used is not True
+                or any(value is not None for value in
+                    (self.state, self.prior, self.original_state, self.original_prior))
+                or demand.encoded(binding) != self.binding_raw
+                or demand.encoded(self.binding) != self.binding_raw):
+            raise ValueError('Original consumed and released raw input required')
+
+    # Release this scope's references after success or any preparation/fold failure.
+    def close(self):
+        self.closed = True
+        self.state = self.prior = self.original_state = self.original_prior = None
+
+
+# Bind raw reconciliation to opaque prior bytes, optionally consuming an exact pre-resolution input copy.
 def reconcile_raw(client, state, *, pins, outcome_sha256, observed_at,
-                  prior_component, raw_checkpoint):
+                  prior_component, raw_checkpoint, prepared_input=None):
     from backend.market import historical_paper_component as component
 
     if type(client) is not native.ReplayBroker or type(state) is not paper.PaperState:
@@ -156,7 +214,10 @@ def reconcile_raw(client, state, *, pins, outcome_sha256, observed_at,
     if any(original[name] != prior_root[name] for name in ("raw_sha256", "raw_bytes")):
         raise ValueError("Native input state differs from prior raw component")
     before = codec.encode(client, **pins)
-    prior = deepcopy(state)
+    if prepared_input is not None and type(prepared_input) is not _PreparedRawInput:
+        raise ValueError('Exact typed pre-resolution raw input required')
+    prior = deepcopy(state) if prepared_input is None else prepared_input.take(
+        state, original, raw_checkpoint.limits['raw_bytes'])
     orders = deepcopy(list(client._orders.values()))
     known = _requests(prior, orders, observed)
     due = market_daily._reconciliation_pending(prior.pending, known, observed)

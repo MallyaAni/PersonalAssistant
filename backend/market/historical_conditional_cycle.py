@@ -41,7 +41,7 @@ WINDOW = packet.schedule("2019-03-01T14:45:00Z")
 DAY = date(2019, 3, 1)
 META_CAP = 256 * 1024
 CURRENT = "3b72cd4e0bc15acd24432d501918c721685a5333"
-SETTLEMENT_SHA256 = "9e194856545dbf07e0ba6f0f2af9b022f75f767ee6371bb6af1f85e522f4c90d"
+SETTLEMENT_SHA256 = "b4184036f2cb7899fe72494c9bdccadbc9a1278850e692d402b221afce6e132a"
 
 
 # Hash original bytes independently of normalized declaration hashes.

@@ -22,9 +22,16 @@ from backend.market import historical_timing_packet as packet
 from backend.market import replay_broker as native
 from backend.market.historical_packet_store import StorePause
 
-SCHEMA = 'synthetic-reserved-cycle-final/1'
+SCHEMA = 'synthetic-reserved-cycle-final/2'
+RESULT_SCHEMA = 'synthetic-reserved-cycle-final/1'
+INPUT_SCHEMA = 'synthetic-final-prepared-raw-input/1'
 REQUEST = 'synthetic-declared-native-flush/1'
 FLUSH, FILL = native.ReplayBroker.flush, native.ReplayBroker._fill
+PREPARED_INPUT = settlement._PreparedRawInput
+RECONCILE = settlement.reconcile_raw
+RECONCILE_CODE = RECONCILE.__code__
+INPUT_METHODS = {name: getattr(PREPARED_INPUT, name).__code__ for name in
+                 ('__init__', 'check', 'take', 'check_released', 'close')}
 
 
 # Keep public genuine execution closed before constructing or reserving anything.
@@ -71,7 +78,30 @@ def read_file(nightly, path):
 def link(value, reservation_sha):
     return {'schema': SCHEMA, 'reservation_sha256': reservation_sha,
             'declaration_sha256': packet._digest(value['declaration']),
-            'reserved_cas': value['native_io']['reserved_cas'], 'sources': sources()}
+            'reserved_cas': value['native_io']['reserved_cas'], 'sources': sources(),
+            'prepared_input_sha256': packet._digest(value['prepared_input'])}
+
+
+# Authenticate the original pre-resolution preparation descriptor without materializing native paper.
+def verify_input(nightly, checkpoint, directory, value):
+    binding, declared = value['prepared_input'], value['declaration']
+    physical._require(type(binding) is dict and set(binding) == {'schema', 'identity', 'account', 'phase',
+        'head', 'sources_sha256', 'declaration_sha256', 'native_io_sha256', 'preimage', 'native_bytes', 'raw_limit'}
+        and binding['schema'] == INPUT_SCHEMA and binding['identity'] == nightly.store.identity
+        and binding['account'] == str(nightly.root) and binding['phase'] == 'OUTCOME_COMMITTED'
+        and binding['head'] == declared['submission_head']
+        and binding['sources_sha256'] == packet._digest(sources())
+        and binding['declaration_sha256'] == packet._digest(declared)
+        and binding['native_io_sha256'] == value['native_io']['reservation_sha256']
+        and type(binding['raw_limit']) is int and binding['raw_limit'] == checkpoint.limits['raw_bytes']
+        and type(binding['preimage']) is dict and set(binding['preimage']) == {'sha256', 'length', 'device', 'inode'}
+        and binding['native_bytes'] == {'schema': 'native-paper-serialization/1',
+            'raw_sha256': binding['preimage']['sha256'], 'raw_bytes': binding['preimage']['length']},
+        'Exact original final input preparation binding required')
+    auxiliary, _ = read_file(nightly, directory / 'reserved-native-save.json')
+    physical._require(binding['preimage'] == auxiliary['before']['current'],
+                      'Original prepared final input preimage required')
+    return binding
 
 
 # Derive exact source/head/input bindings from the original completed producer graph.
@@ -95,8 +125,9 @@ def validate(nightly, reference, checkpoint, *, require_result=True):
     submission_head, cycle = final['entry']['parent'], final['entry']['cycle_sha256']
     _, directory = operation(nightly, submission_head)
     value, reservation_sha = read_file(nightly, directory / 'reservation.json')
-    physical._require(set(value) == {'schema', 'declaration', 'native_io'} and value['schema'] == SCHEMA,
+    physical._require(set(value) == {'schema', 'declaration', 'native_io', 'prepared_input'} and value['schema'] == SCHEMA,
                       'Original reserved final reservation required')
+    verify_input(nightly, checkpoint, directory, value)
     declared = value['declaration']
     protocol.verify(nightly, directory, phase='OUTCOME_COMMITTED', head=submission_head,
                     inputs=packet._digest(declared))
@@ -137,7 +168,7 @@ def validate(nightly, reference, checkpoint, *, require_result=True):
         and before.attempt_history == after.attempt_history
         and all(row['client_order_id'] in before._orders for row in resolved['fills']),
         'Original resolved broker/fill declaration differs')
-    marker = {'schema': SCHEMA, 'reservation_sha256': reservation_sha,
+    marker = {'schema': RESULT_SCHEMA, 'reservation_sha256': reservation_sha,
               'receipt': reference, 'head': final['entry']['sha256']}
     if require_result:
         physical._require(group['status'] == 'COMPLETE'
@@ -158,12 +189,16 @@ class _Final:
         physical._require(type(producer) is stages._Stages, 'Exact private stage producer required')
         self.stage, self.nightly, self.client = producer, producer.nightly, producer.client
         self.checkpoint, self.io = producer.checkpoint, producer.io
+        self.prepared_input = None
         self._guard()
 
     # Refuse substituted native resolution functions or changed original stage bindings.
     def _guard(self):
         self.stage._guard()
-        physical._require(native.ReplayBroker.flush is FLUSH and native.ReplayBroker._fill is FILL,
+        physical._require(native.ReplayBroker.flush is FLUSH and native.ReplayBroker._fill is FILL
+            and settlement._PreparedRawInput is PREPARED_INPUT
+            and settlement.reconcile_raw is RECONCILE and RECONCILE.__code__ is RECONCILE_CODE
+            and all(getattr(PREPARED_INPUT, name).__code__ is code for name, code in INPUT_METHODS.items()),
                           'Original native synthetic resolver required')
 
     # Rebind every later step to original persisted inputs, current sources and active lease.
@@ -178,6 +213,45 @@ class _Final:
             and self.io.directory == directory and self.io.reserved_cas == value['native_io']['reserved_cas']
             and self.io.effect_binding == value['native_io']['effect_binding'] == packet._digest(declared),
             'Original reserved final inputs/phase changed')
+        binding = verify_input(self.nightly, self.checkpoint, directory, value)
+        physical._require(type(self.prepared_input) is PREPARED_INPUT,
+                          'Original live final input ownership required')
+        if self.prepared_input.closed:
+            self.prepared_input.check_released(binding)
+        else:
+            self.prepared_input.check(binding)
+        if not self.io.saved:
+            physical._require(reserved_io.writer_module._image(paper.state_path(self.nightly.root))
+                == binding['preimage'], 'Live final input preimage changed')
+
+    # Load and copy one exact native input after leases arm but before any broker resolution.
+    def _prepare_input(self, declared, native_io):
+        self._guard()
+        self.io._lease()
+        preimage = deepcopy(self.io.cursor['current'])
+        physical._require(preimage is not None, 'Original final native input required')
+        binding = {'schema': INPUT_SCHEMA, 'identity': self.nightly.store.identity,
+            'account': str(self.nightly.root), 'phase': 'OUTCOME_COMMITTED',
+            'head': declared['submission_head'], 'sources_sha256': packet._digest(sources()),
+            'declaration_sha256': packet._digest(declared),
+            'native_io_sha256': native_io['reservation_sha256'], 'preimage': preimage,
+            'native_bytes': {'schema': 'native-paper-serialization/1', 'raw_sha256': preimage['sha256'],
+                             'raw_bytes': preimage['length']}, 'raw_limit': self.checkpoint.limits['raw_bytes']}
+        store = self.nightly.store
+        store._point('reserved_final_input_before_load')
+        state = paper.load_state(self.nightly.root)
+        store._point('reserved_final_input_before_copy')
+        self.prepared_input = PREPARED_INPUT(state, binding['raw_limit'], binding=binding)
+        physical._require(reserved_io.writer_module._image(paper.state_path(self.nightly.root)) == preimage,
+                          'Original final paper changed during preparation')
+        return binding
+
+    # Persist uncertainty after preparation or folding so caught failures cannot authorize effects.
+    def _poison(self):
+        self.io.failed = True
+        self.nightly.store.blob_reservation.poison(self.io.reserved_cas)
+        if self.nightly.store.directory_binding is not None:
+            self.nightly.store.directory_binding.poison()
 
     # Serialize production and never open a second phase for an existing attempt.
     def _finish(self, *, submission_head, inputs):
@@ -191,6 +265,9 @@ class _Final:
             self.io.failed = True
             raise
         finally:
+            if self.prepared_input is not None:
+                self.prepared_input.close()
+                self.prepared_input = None
             legacy.LOCK.release()
 
     # Reserve before flush and retain all uncertain native outcomes without replay authority.
@@ -206,16 +283,19 @@ class _Final:
                           'Explicit later synthetic resolution clock required')
         protocol.create(nightly, directory, phase='OUTCOME_COMMITTED', inputs=packet._digest(declared))
         self.io.begin(nightly, directory, legacy, effect_binding=packet._digest(declared))
-        value = {'schema': SCHEMA, 'declaration': declared, 'native_io': self.io.evidence()}
-        raw = legacy.admitted.encoded(value)
-        protocol.write(nightly, directory / 'reservation.json', raw, legacy)
-        reservation_sha = sha256(raw).hexdigest()
         try:
+            value = {'schema': SCHEMA, 'declaration': declared, 'native_io': self.io.evidence()}
+            value['prepared_input'] = self._prepare_input(declared, value['native_io'])
+            raw = legacy.admitted.encoded(value)
+            protocol.write(nightly, directory / 'reservation.json', raw, legacy)
+            reservation_sha = sha256(raw).hexdigest()
+            store._point('reserved_final_input_reserved')
             store._point('reserved_final_reserved')
             self._active(value, reservation_sha, directory)
             reserved_io.current_components(nightly, client, declared['before'], self.checkpoint, legacy)
             bridge.verify_latch(store, nightly.root, declared['session'], declared['before']['latch'])
             call = declared['request']
+            self.prepared_input.check(value['prepared_input'], unconsumed=True)
             fills = client.flush(call['at'], call['prices'], phase=call['phase'])
             store._point('reserved_final_resolved')
             self._active(value, reservation_sha, directory)
@@ -234,9 +314,12 @@ class _Final:
                 and retained['components']['latch'] == declared['before']['latch'],
                 'Resolution changed original submission paper/latch')
             self._active(value, reservation_sha, directory)
-            updated, evidence = settlement.reconcile_raw(client, paper.load_state(nightly.root),
+            updated, evidence = settlement.reconcile_raw(client, self.prepared_input.state,
                 pins=nightly.pins(), outcome_sha256=pre, observed_at=client._now.isoformat(),
-                prior_component=retained['components']['paper'], raw_checkpoint=self.checkpoint)
+                prior_component=retained['components']['paper'], raw_checkpoint=self.checkpoint,
+                prepared_input=self.prepared_input)
+            self.prepared_input.close()
+            store._point('reserved_final_input_released')
             self._active(value, reservation_sha, directory)
             self.io.save(nightly.root, updated)
             store._point('reserved_final_native_saved')
@@ -273,8 +356,7 @@ class _Final:
                     == evidence['reconciled_native_serialization'], 'Prepared reserved final changed')
             bridge.verify_latch(store, nightly.root, declared['session'], declared['before']['latch'])
         except BaseException:
-            self.io.failed = True
-            store.blob_reservation.poison(self.io.reserved_cas)
+            self._poison()
             raise
         try:
             entry = store.append(expected_head=submission_head, cycle_sha256=declared['cycle'],
