@@ -19,6 +19,7 @@ from backend.market import historical_request_admission as request_admission
 from backend.market import historical_static_request_admission as static_admission
 from backend.market import historical_finite_evidence_input as finite_evidence
 from backend.market import historical_final_receipt_capacity as receipt_capacity
+from backend.market import historical_prepared_orders as prepared_orders
 from backend.market import historical_raw_cycle as bridge
 from backend.market import historical_reserved_cycle_stages as stages
 from backend.market import historical_reserved_native_io as reserved_io
@@ -27,7 +28,7 @@ from backend.market import historical_timing_packet as packet
 from backend.market import replay_broker as native
 from backend.market.historical_packet_store import StorePause
 
-SCHEMA = 'synthetic-reserved-cycle-final/8'
+SCHEMA = 'synthetic-reserved-cycle-final/9'
 RESULT_SCHEMA = 'synthetic-reserved-cycle-final/1'
 INPUT_SCHEMA = 'synthetic-final-prepared-raw-input/1'
 SAVED_SCHEMA = 'synthetic-final-saved-native-bytes/1'
@@ -52,6 +53,9 @@ EVIDENCE_METHODS = {name: getattr(EVIDENCE_INPUT, name).__code__ for name in
 CAPACITY = receipt_capacity.ReceiptCapacity
 CAPACITY_METHODS = {name: getattr(CAPACITY, name).__code__ for name in
                     ('__init__', 'check', 'consume', 'output', 'check_released', 'close')}
+PREPARED_ORDERS = prepared_orders.PreparedOrders
+ORDER_METHODS = {name: getattr(PREPARED_ORDERS, name).__code__ for name in
+                 ('__init__', 'check', 'take', 'reconcile', 'check_released', 'close')}
 
 
 # Keep public genuine execution closed before constructing or reserving anything.
@@ -69,6 +73,7 @@ def sources():
         str(Path(static_admission.__file__)): sha256(Path(static_admission.__file__).read_bytes()).hexdigest(),
         str(Path(finite_evidence.__file__)): sha256(Path(finite_evidence.__file__).read_bytes()).hexdigest(),
         str(Path(receipt_capacity.__file__)): sha256(Path(receipt_capacity.__file__).read_bytes()).hexdigest(),
+        str(Path(prepared_orders.__file__)): sha256(Path(prepared_orders.__file__).read_bytes()).hexdigest(),
         str(Path(__file__)): sha256(Path(__file__).read_bytes()).hexdigest()}
 
 
@@ -110,6 +115,7 @@ def link(value, reservation_sha, saved):
             'request_admission_sha256': packet._digest(value['request_admission']),
             'evidence_input_sha256': packet._digest(value['evidence_input']),
             'receipt_capacity_sha256': packet._digest(value['receipt_capacity']),
+            'prepared_orders_sha256': packet._digest(value['prepared_orders']),
             'saved_bytes_sha256': packet._digest(saved)}
 
 
@@ -238,6 +244,11 @@ def verify_capacity(value):
     return capacity
 
 
+# Read only the original prepared-container metadata without rebuilding rows or replaying reconciliation.
+def verify_orders(value):
+    return prepared_orders.read_descriptor(value['prepared_orders'], value['prepared_input'])
+
+
 # Derive exact source/head/input bindings from the original completed producer graph.
 def declaration(nightly, checkpoint, submission_head, inputs):
     entry = bridge.cycle._head_entry(nightly.store, submission_head)
@@ -259,13 +270,14 @@ def validate(nightly, reference, checkpoint, *, require_result=True):
     submission_head, cycle = final['entry']['parent'], final['entry']['cycle_sha256']
     _, directory = operation(nightly, submission_head)
     value, reservation_sha = read_file(nightly, directory / 'reservation.json')
-    physical._require(set(value) == {'schema', 'declaration', 'native_io', 'prepared_input', 'prepared_transition', 'request_admission', 'evidence_input', 'receipt_capacity'} and value['schema'] == SCHEMA,
+    physical._require(set(value) == {'schema', 'declaration', 'native_io', 'prepared_input', 'prepared_transition', 'request_admission', 'evidence_input', 'receipt_capacity', 'prepared_orders'} and value['schema'] == SCHEMA,
                       'Original reserved final reservation required')
     verify_input(nightly, checkpoint, directory, value)
     verify_transition(value)
     verify_admission(value)
     verify_evidence_input(value)
     capacity = verify_capacity(value)
+    verify_orders(value)
     physical._require(len(legacy.admitted.encoded(final['receipt'])) <= capacity['receipt_upper_bytes'],
                       'Original final receipt byte allowance differs')
     declared = value['declaration']
@@ -340,6 +352,7 @@ class _Final:
         self.request_admission = None
         self.evidence_input = None
         self.receipt_capacity = None
+        self.prepared_orders = None
         self.saved_bytes = None
         self._guard()
 
@@ -367,6 +380,9 @@ class _Final:
         physical._require(receipt_capacity.ReceiptCapacity is CAPACITY
             and all(getattr(CAPACITY, name).__code__ is code for name, code in CAPACITY_METHODS.items()),
             'Original finite receipt capacity admission required')
+        physical._require(prepared_orders.PreparedOrders is PREPARED_ORDERS
+            and all(getattr(PREPARED_ORDERS, name).__code__ is code for name, code in ORDER_METHODS.items()),
+            'Original private prepared-order container implementation required')
 
     # Rebind every later step to original persisted inputs, current sources and active lease.
     def _active(self, value, reservation_sha, directory):
@@ -411,6 +427,12 @@ class _Final:
             self.receipt_capacity.check_released(binding, capacity)
         else:
             self.receipt_capacity.check(self.prepared_input.prior, self.client, binding, capacity)
+        orders = verify_orders(value)
+        physical._require(type(self.prepared_orders) is PREPARED_ORDERS, 'Original prepared-order ownership required')
+        if self.prepared_orders.closed:
+            self.prepared_orders.check_released(binding, orders)
+        else:
+            self.prepared_orders.check(self.client, binding, orders)
         if not self.io.saved:
             physical._require(reserved_io.writer_module._image(paper.state_path(self.nightly.root))
                 == binding['preimage'], 'Live final input preimage changed')
@@ -465,6 +487,12 @@ class _Final:
                                          self.nightly.pins(), sources())
         return deepcopy(self.receipt_capacity.binding)
 
+    # Prepare detached order containers without copying any native execution values before resolution.
+    def _prepare_orders(self, binding):
+        self.nightly.store._point('reserved_final_orders_before_allocate')
+        self.prepared_orders = PREPARED_ORDERS(self.client, binding, RECONCILE, self.nightly.pins())
+        return deepcopy(self.prepared_orders.binding)
+
     # Persist uncertainty after preparation or folding so caught failures cannot authorize effects.
     def _poison(self):
         self.io.failed = True
@@ -484,6 +512,9 @@ class _Final:
             self.io.failed = True
             raise
         finally:
+            if self.prepared_orders is not None:
+                self.prepared_orders.close()
+                self.prepared_orders = None
             if self.receipt_capacity is not None:
                 self.receipt_capacity.close()
                 self.receipt_capacity = None
@@ -523,6 +554,7 @@ class _Final:
             value['request_admission'] = self._prepare_requests(value['prepared_input'], declared['request']['at'])
             value['evidence_input'] = self._prepare_evidence_input(value['prepared_input'])
             value['receipt_capacity'] = self._prepare_receipt_capacity(value['prepared_input'], declared)
+            value['prepared_orders'] = self._prepare_orders(value['prepared_input'])
             value['prepared_transition'] = self._prepare_transition(value['prepared_input'])
             raw = legacy.admitted.encoded(value)
             protocol.write(nightly, directory / 'reservation.json', raw, legacy)
@@ -532,6 +564,7 @@ class _Final:
             store._point('reserved_final_requests_ready')
             store._point('reserved_final_evidence_ready')
             store._point('reserved_final_capacity_ready')
+            store._point('reserved_final_orders_ready')
             store._point('reserved_final_reserved')
             self._active(value, reservation_sha, directory)
             reserved_io.current_components(nightly, client, declared['before'], self.checkpoint, legacy)
@@ -562,11 +595,12 @@ class _Final:
                 and retained['components']['latch'] == declared['before']['latch'],
                 'Resolution changed original submission paper/latch')
             self._active(value, reservation_sha, directory)
-            updated, evidence = settlement.reconcile_raw(client, self.prepared_input.state,
+            updated, evidence = self.prepared_orders.reconcile(RECONCILE, client, self.prepared_input.state,
                 pins=nightly.pins(), outcome_sha256=pre, observed_at=client._now.isoformat(),
                 prior_component=retained['components']['paper'], raw_checkpoint=self.checkpoint,
                 prepared_input=self.prepared_input, prepared_transition=self.prepared_transition)
             self.evidence_input.close()
+            self.prepared_orders.close()
             self.receipt_capacity.close()
             self.request_admission.close()
             self.prepared_transition.close()
