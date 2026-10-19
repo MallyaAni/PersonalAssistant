@@ -16,6 +16,7 @@ from backend.market import historical_conditional_settlement as settlement
 from backend.market import historical_physical_checkpoint as physical
 from backend.market import historical_prepared_transition as transition
 from backend.market import historical_request_admission as request_admission
+from backend.market import historical_static_request_admission as static_admission
 from backend.market import historical_raw_cycle as bridge
 from backend.market import historical_reserved_cycle_stages as stages
 from backend.market import historical_reserved_native_io as reserved_io
@@ -24,7 +25,7 @@ from backend.market import historical_timing_packet as packet
 from backend.market import replay_broker as native
 from backend.market.historical_packet_store import StorePause
 
-SCHEMA = 'synthetic-reserved-cycle-final/5'
+SCHEMA = 'synthetic-reserved-cycle-final/6'
 RESULT_SCHEMA = 'synthetic-reserved-cycle-final/1'
 INPUT_SCHEMA = 'synthetic-final-prepared-raw-input/1'
 SAVED_SCHEMA = 'synthetic-final-saved-native-bytes/1'
@@ -38,8 +39,9 @@ INPUT_METHODS = {name: getattr(PREPARED_INPUT, name).__code__ for name in
 TRANSITION = transition.PreparedTransition
 TRANSITION_METHODS = {name: getattr(TRANSITION, name).__code__ for name in
                       ('__init__', 'check', 'apply', 'check_released', 'close')}
-ADMISSION, UNIQUE = request_admission.RequestAdmission, settlement._unique
+ADMISSION, UNIQUE = static_admission.StaticAdmission, settlement._unique
 UNIQUE_CODE = UNIQUE.__code__
+REQUESTS, REQUESTS_CODE = settlement._requests, settlement._requests.__code__
 ADMISSION_METHODS = {name: getattr(ADMISSION, name).__code__ for name in
                      ('__init__', 'check', 'consume', 'check_released', 'close')}
 
@@ -56,6 +58,7 @@ def sources():
         Path(settlement.__file__).read_bytes()).hexdigest(),
         str(Path(transition.__file__)): sha256(Path(transition.__file__).read_bytes()).hexdigest(),
         str(Path(request_admission.__file__)): sha256(Path(request_admission.__file__).read_bytes()).hexdigest(),
+        str(Path(static_admission.__file__)): sha256(Path(static_admission.__file__).read_bytes()).hexdigest(),
         str(Path(__file__)): sha256(Path(__file__).read_bytes()).hexdigest()}
 
 
@@ -204,8 +207,8 @@ def verify_transition(value):
 
 # Read the original finite request admission without loading paper or rerunning its native-input predicate.
 def verify_admission(value):
-    return request_admission.read_descriptor(value['request_admission'],
-        request_admission.base(value['prepared_input'], UNIQUE), UNIQUE)
+    return static_admission.read_descriptor(value['request_admission'], value['prepared_input'], REQUESTS,
+        value['declaration']['request']['at'])
 
 
 # Derive exact source/head/input bindings from the original completed producer graph.
@@ -319,11 +322,12 @@ class _Final:
             and all(getattr(TRANSITION, name).__code__ is code for name, code in TRANSITION_METHODS.items()),
             'Original separately derived transition adapter required')
         transition.sources()
-        physical._require(request_admission.RequestAdmission is ADMISSION
+        physical._require(static_admission.StaticAdmission is ADMISSION
             and settlement._unique is UNIQUE and UNIQUE.__code__ is UNIQUE_CODE
+            and settlement._requests is REQUESTS and REQUESTS.__code__ is REQUESTS_CODE
             and all(getattr(ADMISSION, name).__code__ is code for name, code in ADMISSION_METHODS.items()),
             'Original finite request admission and predicate required')
-        request_admission.sources(UNIQUE)
+        static_admission.sources(REQUESTS)
 
     # Rebind every later step to original persisted inputs, current sources and active lease.
     def _active(self, value, reservation_sha, directory):
@@ -392,10 +396,10 @@ class _Final:
         self.prepared_transition = TRANSITION(self.prepared_input.prior, binding['raw_limit'], binding=descriptor)
         return descriptor
 
-    # Admit original pending/journal identity shape before the output clone or broker resolution.
-    def _prepare_requests(self, binding):
+    # Admit original intent/submission inputs while mutable execution results stay outside the descriptor.
+    def _prepare_requests(self, binding, resolution_at):
         self.nightly.store._point('reserved_final_requests_before_check')
-        self.request_admission = ADMISSION(self.prepared_input.prior, binding, UNIQUE)
+        self.request_admission = ADMISSION(self.prepared_input.prior, self.client, binding, REQUESTS, resolution_at)
         return deepcopy(self.request_admission.binding)
 
     # Persist uncertainty after preparation or folding so caught failures cannot authorize effects.
@@ -447,7 +451,7 @@ class _Final:
         try:
             value = {'schema': SCHEMA, 'declaration': declared, 'native_io': self.io.evidence()}
             value['prepared_input'] = self._prepare_input(declared, value['native_io'])
-            value['request_admission'] = self._prepare_requests(value['prepared_input'])
+            value['request_admission'] = self._prepare_requests(value['prepared_input'], declared['request']['at'])
             value['prepared_transition'] = self._prepare_transition(value['prepared_input'])
             raw = legacy.admitted.encoded(value)
             protocol.write(nightly, directory / 'reservation.json', raw, legacy)
