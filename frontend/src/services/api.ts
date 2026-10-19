@@ -2968,6 +2968,7 @@ export const getDeskIntraday = async (userId: string): Promise<DeskIntraday | nu
 export interface DeskPaperLive {
   model_decisions?: DeskModelDecisions;
   recorded_fills?: DeskRecordedPaperFill[];
+  recorded_fills_reason?: string | null;
   activity?: { session?: string; complete?: boolean; reason?: string; fills?: { client_order_id?: string | null; symbol: string; side: string; qty: number; price: number; filled_at?: string }[] };
   as_of?: string;
   reason?: string;
