@@ -102,17 +102,17 @@ def main():
     native_before = native_sources()
     bindings = dict(vars(paper))
     group = os.environ['PREPARED_TRANSITION_GROUP']
-    assert group in ('A', 'B', 'C')
+    assert group in tuple('ABCDEFGHI')
     names = sorted(name for name in vars(module.PreparedTransitionTests) if name.startswith('test_'))
-    selected = names[:3] if group == 'A' else names[3:6] if group == 'B' else names[6:]
+    selected = [names[ord(group) - ord('A')]]
     suite = unittest.TestSuite(module.PreparedTransitionTests(name) for name in selected)
-    count = 3
+    count = 1
     assert len(names) == 9 and suite.countTestCases() == count
     started = time.monotonic()
     result = unittest.TextTestRunner(verbosity=2, stream=sys.stdout).run(suite)
     children = child_receipts(module)
     if result.wasSuccessful():
-        assert len(children) == (3 if group == 'C' else 0)
+        assert len(children) == (1 if group in 'GHI' else 0)
     assert children == child_receipts(module)
     assert before == sources() and native_before == native_sources()
     assert set(vars(paper)) == set(bindings)
