@@ -20,6 +20,7 @@ from backend.market import historical_paper_component as component
 from backend.market import historical_physical_checkpoint as physical
 from backend.market import historical_raw_cycle as raw_cycle
 from backend.market import historical_reserved_native_io as reserved_io
+from backend.market import historical_reserved_cycle_final as reserved_final
 from backend.market import historical_timing_packet as packet
 from backend.market import replay_broker as native
 from backend.market.historical_packet_registry import digest
@@ -39,6 +40,7 @@ WRITE_KEYS = {'schema', 'checkpoint', 'raw_sha256', 'raw_bytes', 'identity_sha25
 # Bind this composition independently from the unchanged native/legacy source map.
 def sources():
     return {**legacy.sources(), **raw_cycle.sources(), **reserved_io.sources(),
+            str(Path(reserved_final.__file__)): sha256(Path(reserved_final.__file__).read_bytes()).hexdigest(),
             str(Path(__file__)): sha256(Path(__file__).read_bytes()).hexdigest()}
 
 
@@ -274,8 +276,10 @@ class RawNightly(legacy.Nightly):
         record = legacy.admitted.decoded(self.store.read_blob(reference, limit=legacy.CAP))
         if record.get('schema') != 'private-conditional-cycle-receipt/2':
             return self.read_lifecycle(reference, raw_checkpoint=raw_checkpoint)['value']
-        final = raw_cycle.read_final(self.store, reference, self.pins(),
+        final = (raw_cycle.read_final(self.store, reference, self.pins(),
             expected_head=self.expected_head, raw_checkpoint=raw_checkpoint)
+            if self.store.blob_reservation is None else reserved_final.read(
+                self, reference, raw_checkpoint=raw_checkpoint))
         lineage, receipt = final['lineage'], final['receipt']
         prior = self.read_lifecycle(lineage['previous_nightly'], raw_checkpoint=raw_checkpoint)['value']
         legacy.admitted.require(prior['phase'] == 'NIGHTLY_CLOSE'

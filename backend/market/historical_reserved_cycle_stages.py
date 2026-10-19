@@ -545,3 +545,74 @@ class _Stages:
                               'Synthetic pages must not claim market validation')
             result[query['sha256']] = store.page_manifest(manifest.sha256, query['sha256'])
         return result
+
+
+# Read completed producer stages without constructing its broker, executor or write scope.
+class _StageReader:
+    # Derive one original metadata view from the fixed preparation reservation.
+    def __init__(self, nightly, checkpoint, cycle):
+        self.nightly, self.checkpoint, self.cycle = nightly, checkpoint, physical._digest(cycle)
+        self._guard()
+        self.root = nightly.root / 'operations' / ('reserved-cycle-' + cycle)
+        original, _ = self._read(self._directory('PREPARE') / 'reservation.json')
+        declared = original['declaration']
+        self.session, self.context, self.lineage = declared['session'], declared['context'], declared['lineage']
+        physical._require(cycle == packet._digest({'schema': SCHEMA, 'identity': nightly.store.identity,
+            'previous_nightly': self.lineage['previous_nightly'], 'session': self.session}),
+            'Original reserved stage cycle identity required')
+
+    # Check only metadata authority; no live broker, callback, save or CAS arm occurs.
+    def _guard(self):
+        physical._require(type(self.nightly) is raw_nightly.RawNightly
+            and type(self.nightly.store) is Store
+            and type(self.nightly.store.blob_reservation) is cas.ReservedCAS
+            and self.nightly.root.resolve().is_relative_to(self.nightly.store.root.resolve()),
+            'Original reserved stage metadata reader required')
+        self.nightly._checkpoint(self.checkpoint)
+
+    # Reuse the producer's bounded physical reader without constructing a producer.
+    def _read(self, path):
+        return _Stages._read(self, path)
+
+    # Reuse only its fixed phase-to-directory mapping, never a caller-supplied path.
+    def _directory(self, phase):
+        return _Stages._directory(self, phase)
+
+    # Validate original stage evidence and completed lease with all mutation disabled.
+    def read(self, phase):
+        directory = self._directory(phase)
+        original, _ = self._read(directory / 'reservation.json')
+        declaration = original['declaration']
+        physical._require(set(declaration) == {'schema', 'phase', 'cycle', 'identity', 'sources',
+            'session', 'context', 'lineage', 'inputs', 'executor_sha256', 'executor_name'}
+            and declaration['schema'] == SCHEMA and declaration['phase'] == phase
+            and declaration['cycle'] == self.cycle and declaration['identity'] == self.nightly.store.identity
+            and declaration['sources'] == sources() and declaration['session'] == self.session
+            and declaration['context'] == self.context and declaration['lineage'] == self.lineage,
+            'Original source/context-bound stage declaration required')
+        value = _Stages._recover(self, phase, declaration, finish=False)
+        auxiliary, _ = self._read(directory / 'reserved-native-save.json')
+        lease = original['native_io']['reserved_cas']
+        _, group = self.nightly.store.blob_reservation.group(lease)
+        physical._require(group['status'] == 'COMPLETE' and group['result'] == value['receipt']
+            and lease['operation'] == sha256(physical._encoded({'directory': str(directory),
+                'effect_binding': packet._digest(declaration)})).hexdigest()
+            and auxiliary['trade_sha256'] == declaration['executor_sha256']
+            and Path(auxiliary['trade_path']).is_absolute()
+            and declaration['executor_name'] in {node.co_name for node in compile(
+                Path(auxiliary['trade_path']).read_bytes(), auxiliary['trade_path'], 'exec',
+                dont_inherit=True).co_consts if hasattr(node, 'co_name')},
+            'Original completed stage lease/executor required')
+        return value
+
+
+# Authenticate every original stage and complete preparation/page ancestry before continuation.
+def read_committed(nightly, checkpoint, *, cycle, submission_head):
+    reader = _StageReader(nightly, checkpoint, cycle)
+    prepared, decision, submitted = (reader.read(phase) for phase in PHASES)
+    physical._require(submitted['head'] == submission_head
+        and submitted['entry']['parent'] == decision['head']
+        and decision['entry']['parent'] == prepared['head'],
+        'Original reserved stage immediate ancestry required')
+    return {'prepared': prepared, 'decision': decision, 'submission': submitted,
+            'session': reader.session, 'context': reader.context, 'lineage': reader.lineage}
