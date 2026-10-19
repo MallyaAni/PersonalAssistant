@@ -1,5 +1,42 @@
 # Next session
 
+## 2026-10-19 — Natural failure status observed; next live action blocked on authority
+
+One NEW ordinary host UID1000 read at18:54:11UTC observed desk/event-live.json
+608B/SHA349ac644adae262b046cb4f80440bc74248a8030637220f2228c6a149c5c5a9f,
+dated18:45:34.464350UTC after the18:43:20 release. It reports recovery unavailable,
+original PermissionError and secondary state_error_type PermissionError. Keys
+are onlyas_of/error_type/policy/state_error_type/status; unknown active and
+execution fields are absent. Current hostHEAD878 and exact reporting9c830/1adfd
+sources matched under head/held-file bookends. No paper/state.json open, Docker,
+privileged read, account mutation, strategy invocation or replay occurred.
+
+research/natural-recovery-unavailable-observation-2026-10-19.json retains exact
+read-only source/command/original successful tool response/decimal physical fields.
+Only selected status/error fields were emitted; full608-byte original content is
+NOT embedded or independently reconstructed. Producing PID/source invocation/
+exit code were NOT observed. This proves a newly dated failure record exists,
+not successful sender execution, confirmed orders/fills or genuine strategy
+acceptance. NEVER repeat this read merely for docs or reinterpret PermissionError
+as trading success. All earlier closed gates/releases/getters remain closed.
+
+Blocked audit: the same actual human ownership/hash approval remains absent
+across the live reporting-release turn, documentation-sync turn and this status
+observation turn. Safe independent fixes, deployment verification, evidence sync
+and current inert repair preparation are complete within their stated scopes.
+No active job or further authorized live repair remains to wait on or execute.
+The full goal is NOT complete. Its next action is blocked on that existing human
+grant, not on a new code test or another permission question. Do not ask again,
+read the protected account through another principal, or create filler work.
+Keep the separately requested heartbeat ACTIVE; do not pause/delete it.
+
+After actual grant use only refreshed90611f controller, after fresh original
+metadata/runtime/source/native-lock/known-writer checks. Original inode/size
+change or uncertainty refuses; no silent retarget/retry. Then prove HOST UID1000
+read/identical bytes/inode/mode and observe natural sender→original IDs/fills→
+signed-in dashboard. Remaining historical/private physical/input limitations
+remain as previously recorded. No formal completion or genuine acceptance claim.
+
 Documentation sync history: the first push of checkpoint81c33585 failed128
 at18:51UTC with `Could not resolve host: github.com`; the failure remains
 preserved in local commitd0ddafc0. A later ordinary DNS read and normal

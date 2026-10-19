@@ -1,0 +1,70 @@
+{
+  "schema": "natural-recovery-unavailable-observation/1",
+  "original_readonly_source": "from pathlib import Path\nfrom hashlib import sha256\nfrom datetime import UTC, datetime\nimport json, os, subprocess\nroot=Path(\"/home/animallya96/deploy/anios\")\nassert os.getuid()==1000\nhead=subprocess.run([\"git\",\"-C\",str(root),\"rev-parse\",\"HEAD\"],capture_output=True,text=True,check=True).stdout.strip()\nassert head==\"878cbc53db56f635c8dd9ee6a3307e0d4f1c6b2f\"\nsources={}\nfor name in (\"backend/cli/market_event_recovery.py\",\"backend/market/event_status.py\"):\n    sources[name]=sha256((root/name).read_bytes()).hexdigest()\nassert sources=={\"backend/cli/market_event_recovery.py\":\"9c83058638a018e4635d3d141b1dca2f62cbc036c250cca05721a987f6fd3c40\",\"backend/market/event_status.py\":\"1adfd4b22be14b07c025e90f90e008a3d795a8de428b9981437ab91bfea28626\"}\npath=root/\"data/market/desk/event-live.json\"\nwith path.open(\"rb\") as handle:\n    before=os.fstat(handle.fileno())\n    raw=handle.read(65537)\n    after=os.fstat(handle.fileno())\nassert len(raw)<=65536\nfields=(\"st_dev\",\"st_ino\",\"st_uid\",\"st_gid\",\"st_mode\",\"st_size\",\"st_mtime_ns\",\"st_ctime_ns\")\nnamed=path.stat()\nassert all(getattr(before,k)==getattr(after,k)==getattr(named,k) for k in fields)\nrecord=json.loads(raw)\nselected={k:record[k] for k in (\"as_of\",\"status\",\"error_type\",\"state_error_type\") if k in record}\nlast_head=subprocess.run([\"git\",\"-C\",str(root),\"rev-parse\",\"HEAD\"],capture_output=True,text=True,check=True).stdout.strip()\nassert last_head==head\nprint(json.dumps({\"observed_at\":datetime.now(UTC).isoformat(),\"uid\":os.getuid(),\"head\":head,\"source_sha256\":sources,\"path\":str(path),\"sha256\":sha256(raw).hexdigest(),\"bytes\":len(raw),\"physical\":{k:str(getattr(before,k)) for k in fields},\"selected\":selected,\"record_keys\":sorted(record),\"producer_process_observed\":False,\"producer_exit_code\":\"UNKNOWN\",\"protected_account_file_opened\":False},sort_keys=True))\n",
+  "original_command": "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o HostKeyAlgorithms=ssh-ed25519 -o ConnectTimeout=10 animallya96@172.16.8.3 'python3 -c '\"'\"'from pathlib import Path\nfrom hashlib import sha256\nfrom datetime import UTC, datetime\nimport json, os, subprocess\nroot=Path(\"/home/animallya96/deploy/anios\")\nassert os.getuid()==1000\nhead=subprocess.run([\"git\",\"-C\",str(root),\"rev-parse\",\"HEAD\"],capture_output=True,text=True,check=True).stdout.strip()\nassert head==\"878cbc53db56f635c8dd9ee6a3307e0d4f1c6b2f\"\nsources={}\nfor name in (\"backend/cli/market_event_recovery.py\",\"backend/market/event_status.py\"):\n    sources[name]=sha256((root/name).read_bytes()).hexdigest()\nassert sources=={\"backend/cli/market_event_recovery.py\":\"9c83058638a018e4635d3d141b1dca2f62cbc036c250cca05721a987f6fd3c40\",\"backend/market/event_status.py\":\"1adfd4b22be14b07c025e90f90e008a3d795a8de428b9981437ab91bfea28626\"}\npath=root/\"data/market/desk/event-live.json\"\nwith path.open(\"rb\") as handle:\n    before=os.fstat(handle.fileno())\n    raw=handle.read(65537)\n    after=os.fstat(handle.fileno())\nassert len(raw)<=65536\nfields=(\"st_dev\",\"st_ino\",\"st_uid\",\"st_gid\",\"st_mode\",\"st_size\",\"st_mtime_ns\",\"st_ctime_ns\")\nnamed=path.stat()\nassert all(getattr(before,k)==getattr(after,k)==getattr(named,k) for k in fields)\nrecord=json.loads(raw)\nselected={k:record[k] for k in (\"as_of\",\"status\",\"error_type\",\"state_error_type\") if k in record}\nlast_head=subprocess.run([\"git\",\"-C\",str(root),\"rev-parse\",\"HEAD\"],capture_output=True,text=True,check=True).stdout.strip()\nassert last_head==head\nprint(json.dumps({\"observed_at\":datetime.now(UTC).isoformat(),\"uid\":os.getuid(),\"head\":head,\"source_sha256\":sources,\"path\":str(path),\"sha256\":sha256(raw).hexdigest(),\"bytes\":len(raw),\"physical\":{k:str(getattr(before,k)) for k in fields},\"selected\":selected,\"record_keys\":sorted(record),\"producer_process_observed\":False,\"producer_exit_code\":\"UNKNOWN\",\"protected_account_file_opened\":False},sort_keys=True))\n'\"'\"''",
+  "original_tool_result": {
+    "chunk_id": "3a770e",
+    "wall_time_seconds": 0.58283169,
+    "exit_code": 0,
+    "original_token_count": 268,
+    "output": "{\"bytes\": 608, \"head\": \"878cbc53db56f635c8dd9ee6a3307e0d4f1c6b2f\", \"observed_at\": \"2026-10-19T18:54:11.754289+00:00\", \"path\": \"/home/animallya96/deploy/anios/data/market/desk/event-live.json\", \"physical\": {\"st_ctime_ns\": \"1792435535290757094\", \"st_dev\": \"66306\", \"st_gid\": \"1000\", \"st_ino\": \"41815508\", \"st_mode\": \"33204\", \"st_mtime_ns\": \"1792435535290757094\", \"st_size\": \"608\", \"st_uid\": \"1000\"}, \"producer_exit_code\": \"UNKNOWN\", \"producer_process_observed\": false, \"protected_account_file_opened\": false, \"record_keys\": [\"as_of\", \"error_type\", \"policy\", \"state_error_type\", \"status\"], \"selected\": {\"as_of\": \"2026-10-19T18:45:34.464350+00:00\", \"error_type\": \"PermissionError\", \"state_error_type\": \"PermissionError\", \"status\": \"recovery unavailable\"}, \"sha256\": \"349ac644adae262b046cb4f80440bc74248a8030637220f2228c6a149c5c5a9f\", \"source_sha256\": {\"backend/cli/market_event_recovery.py\": \"9c83058638a018e4635d3d141b1dca2f62cbc036c250cca05721a987f6fd3c40\", \"backend/market/event_status.py\": \"1adfd4b22be14b07c025e90f90e008a3d795a8de428b9981437ab91bfea28626\"}, \"uid\": 1000}\n"
+  },
+  "observation": {
+    "bytes": 608,
+    "head": "878cbc53db56f635c8dd9ee6a3307e0d4f1c6b2f",
+    "observed_at": "2026-10-19T18:54:11.754289+00:00",
+    "path": "/home/animallya96/deploy/anios/data/market/desk/event-live.json",
+    "physical": {
+      "st_ctime_ns": "1792435535290757094",
+      "st_dev": "66306",
+      "st_gid": "1000",
+      "st_ino": "41815508",
+      "st_mode": "33204",
+      "st_mtime_ns": "1792435535290757094",
+      "st_size": "608",
+      "st_uid": "1000"
+    },
+    "producer_exit_code": "UNKNOWN",
+    "producer_process_observed": false,
+    "protected_account_file_opened": false,
+    "record_keys": [
+      "as_of",
+      "error_type",
+      "policy",
+      "state_error_type",
+      "status"
+    ],
+    "selected": {
+      "as_of": "2026-10-19T18:45:34.464350+00:00",
+      "error_type": "PermissionError",
+      "state_error_type": "PermissionError",
+      "status": "recovery unavailable"
+    },
+    "sha256": "349ac644adae262b046cb4f80440bc74248a8030637220f2228c6a149c5c5a9f",
+    "source_sha256": {
+      "backend/cli/market_event_recovery.py": "9c83058638a018e4635d3d141b1dca2f62cbc036c250cca05721a987f6fd3c40",
+      "backend/market/event_status.py": "1adfd4b22be14b07c025e90f90e008a3d795a8de428b9981437ab91bfea28626"
+    },
+    "uid": 1000
+  },
+  "verified": [
+    "A normal host UID1000 read observed dated18:45:34 recovery-unavailable output after the18:43:20 release.",
+    "Original and secondary errors are both PermissionError; unknown active is absent and no execution fields were emitted.",
+    "Current source/head at observation match deployed878cbc53 and exact9c830/1adfd reporting files.",
+    "Only the ordinary desk status file and public source files were read; protected paper/state.json was never opened."
+  ],
+  "scope_limits": [
+    "Producing PID, invocation source and exit code were not observed; do not claim a successful natural sender or broker operation.",
+    "Only timestamp/status/error classes and record-key names were emitted. The full608-byte status record was SHA-authenticated by the primary read but is not embedded or independently reconstructed here.",
+    "This is one new bounded status observation, not a repeated gate/getter or authority for ownership repair.",
+    "All genuine order/fill/real-account acceptance remains incomplete; the existing human ownership/hash approval is still pending."
+  ],
+  "blocked_audit": {
+    "condition": "Actual direct human authority for the already-proposed one-file ownership correction and protected before/after hash reads has not arrived.",
+    "recurrence": "The same approval condition is recorded in the live reporting-release turn, the documentation-sync turn, and this natural-status-observation turn.",
+    "independent_work_closed": "Ownership prevention, fill consistency, dashboard uncertainty, recovery publication, canonical release, deployed-asset browser checks, evidence sync and inert exact repair preparation are complete within their stated scopes.",
+    "next_action": "After actual human grant, revalidate fresh source/runtime/writer/lock/original inode-size metadata and use only the reviewed refreshed controller. No automatic retry or denied-read bypass.",
+    "goal_complete": false,
+    "heartbeat_policy": "Keep the separately requested heartbeat ACTIVE; blocked goal is not a request to pause/delete it."
+  }
+}
