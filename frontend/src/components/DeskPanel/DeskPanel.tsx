@@ -13,6 +13,7 @@ import { TickerChart } from './TickerChart'
 import {currentAssessments, assessmentPermission} from './liveAssessment'
 import {currentSetup, confirmationText, invalidationText, quoteReferenceText} from './currentRanking'
 import { TradeBoard, RecordedModelDecision, boardRows, dollars, percent, orderWord, quantityLabel, executionRuleText, learnedAllocation, rankingText, savedTargetText, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
+import {SignalBoard, SignalDetail, signalsFor} from './SignalBoard'
 import { StrategyBench } from './StrategyBench'
 import { NeuralStudy } from './NeuralStudy'
 import { OpportunityCard } from './OpportunityCard'
@@ -1007,10 +1008,10 @@ const TrackRecord = ({ curve, latest }: { curve: DeskCurve | undefined; latest: 
 // Explain the selected stock or paper-account view using its own recorded evidence.
 const HowToUse = ({ onClose, compact = false, plan, strategy = false }: { onClose?: () => void; compact?: boolean; plan?: DeskPaperPlan; strategy?: boolean }) => strategy ? (
   <section aria-label="Strategy guide" className="my-2 max-w-2xl rounded-xl border p-3 text-xs">
-    <p>The stock list uses one admitted numeric plan for action, funded shares and timing. Missing or stale plans stay unavailable.</p>
-    <p>A/A+ gives entry permission, not a funded buy. An admitted BUY with zero shares keeps its blocking reason. No paper order does not imply HOLD.</p>
-    <p>TRIM reduces a holding; SELL exits. Chart judgments and actual paper executions are supporting details.</p>
-    <p>Open a ticker for dated history. Current-model historical quantities are shown only when that stock’s research is available. Confirmed paper executions and earlier model-only research remain separate.</p>
+    <p>All names ranks current chart signals independently of paper holdings, orders and personal cash. Best buys and Best sells rank each direction separately.</p>
+    <p>Fresh ready signals lead; then waiting, other assessments and unavailable names. High, Medium and Low are model priorities, not profit probabilities.</p>
+    <p>Buy now requires grade permission, chart confirmation and a fresh regular-session quote. Sell review now means review downside in an existing holding, not open a short. Sizes belong to optional personal sizing, not this ranking.</p>
+    <p>Open a ticker for dated grade changes and matching simulated trades. Current-model historical quantities require that stock’s published research; paper executions remain separate.</p>
     <p>Saved targets and grades retain their dates; prices and order status refresh live.</p>
     {onClose && <button type="button" className="mt-2 text-[#0071e3]" onClick={onClose}>Close guide</button>}
   </section>
@@ -1018,7 +1019,7 @@ const HowToUse = ({ onClose, compact = false, plan, strategy = false }: { onClos
   <div className={`rounded-xl border border-black/[0.08] bg-[#f5f5f7] p-4 text-sm text-[#1d1d1f] ${compact ? '' : 'my-2 max-w-2xl'}`}>
     <p className="font-medium">Reading this page</p>
     <p className="mt-1 text-[#6e6e73]">
-      Paper account shows recorded positions, orders and fills. Stocks shows the admitted numeric model plan.
+      Paper account shows recorded positions, orders and fills. Stocks ranks account-independent current chart signals.
       Nothing here touches your own brokerage account.
     </p>
     <dl className="mt-3 space-y-2">
@@ -1354,12 +1355,12 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
   // Expire displayed quotes, signals and numeric plans even when no network refresh completes.
   useEffect(() => {
-    const deadlines = [...Object.values(gradeContext.until), ...Object.values(live.grade_valid_until ?? {}), payload?.intraday_research?.valid_until ?? '', paperLive?.model_decisions?.valid_until ?? '', ...Object.values(decisions?.rows ?? {}).map(row => row.valid_until ?? ''), ...Object.values(live.extended_hours?.quotes ?? {}).map(row => row.valid_until ?? '')].map(Date.parse).filter(value => value > now)
+    const deadlines = [...Object.values(gradeContext.until), ...Object.values(live.grade_valid_until ?? {}), ...Object.values(live.opportunities?.rows ?? {}).map(row => row.valid_until), payload?.intraday_research?.valid_until ?? '', paperLive?.model_decisions?.valid_until ?? '', ...Object.values(decisions?.rows ?? {}).map(row => row.valid_until ?? ''), ...Object.values(live.extended_hours?.quotes ?? {}).map(row => row.valid_until ?? '')].map(Date.parse).filter(value => value > now)
     deadlines.push(...[live.extended_hours?.as_of, ...Object.values(live.extended_hours?.quotes ?? {}).map(row => row.at)].map(value => Date.parse(value ?? '') + 60_000).filter(value => value > now))
     if (!deadlines.length) return
     const timer = window.setTimeout(() => setNow(Date.now()), Math.min(...deadlines) - now + 1)
     return () => window.clearTimeout(timer)
-  }, [gradeContext, now, payload?.intraday_research?.valid_until, paperLive?.model_decisions?.valid_until, decisions, live.extended_hours, live.grade_valid_until])
+  }, [gradeContext, now, payload?.intraday_research?.valid_until, paperLive?.model_decisions?.valid_until, decisions, live.extended_hours, live.grade_valid_until, live.opportunities])
 
   // Re-read the paper account's orders every 20 seconds while the page is
   // visible, so a level reached on the candle, the order it sends and the fill
@@ -1534,7 +1535,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           </div>
           {help && <HowToUse onClose={() => setHelp(false)} plan={paperLive?.plan} strategy={strategyView} />}
           <p className="text-sm text-[#6e6e73]">
-            {strategyView ? 'Current actions and sizes · open a ticker for history' : latest ? `Decision session ${latest.session} · published ${marketTime(latest.written)}` : 'No decision on file yet'}
+            {strategyView ? 'Current buy and sell signals · open a ticker for its chart' : latest ? `Decision session ${latest.session} · published ${marketTime(latest.written)}` : 'No decision on file yet'}
           </p>
         </div>
         <button
@@ -1556,7 +1557,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {!strategyView && latest && <RegimeBanner regime={latest.regime} session={latest.session} />}
 
       {strategyView && !research && latest && <div className="flex flex-col sm:max-h-[75vh]">
-        <TradeBoard key="current-stocks" latest={latest} live={live} paper={paperLive} now={now} onOpen={setOpenName} closes={closes} paused={eventPaused} currentOnly />
+        <SignalBoard latest={latest} live={live} now={now} onOpen={setOpenName} closes={closes} />
       </div>}
       {!strategyView && !research && <>
       {/* On phones, diagnostics use page scrolling instead of a tiny nested viewport. */}
@@ -1726,7 +1727,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
         <NameDetail
           compact
           userId={userId}
-          order={latest ? boardRows(latest, paperLive, strategyView, now).find(r => r.ticker === openName) ?? null : null}
+          order={latest && !strategyView ? boardRows(latest, paperLive).find(r => r.ticker === openName) ?? null : null}
           personalHistory={false}
           strategy={strategyView}
           paperActivity={paperLive?.activity}
@@ -2913,6 +2914,10 @@ const NameDetail = ({
   const gradeReads = latest.grades?.[ticker]?.reads
   const currentAssessment = currentAssessments(live, latest.session, now)[ticker]
   const chartSetup = currentSetup(live, latest.session, ticker, now)
+  const matchingSimulation = simulation?.policy === latest.targets?.policy ? simulation : null
+  const matchingSimulationError = simulation && !matchingSimulation
+    ? 'Historical share-sized simulation unavailable for this strategy. The stored simulation belongs to a different policy; its trades are withheld.'
+    : simulationError
   const currentStances = row
     ? row.grade_source === 'intraday' ? row.stances_live ?? liveGrades[ticker]?.stances_live : undefined
     : liveGrades[ticker]?.stances_live
@@ -2956,9 +2961,10 @@ const NameDetail = ({
             so it leads on a phone and holds the right two-fifths of a wide
             window, staying in place while the reasoning scrolls beside it. */}
         <div className="mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0">
-          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} paperRecordedFills={paperRecordedFills} paperRecordedFillsReason={paperRecordedFillsReason} paperAccountUnavailable={paperAccountUnavailable} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} strategy={strategy} simulation={simulation} simulationError={simulationError} sizedHistory={sizedHistory} sizedHistoryError={sizedHistoryError} />
+          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} paperRecordedFills={paperRecordedFills} paperRecordedFillsReason={paperRecordedFillsReason} paperAccountUnavailable={paperAccountUnavailable} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} strategy={strategy} simulation={strategy ? matchingSimulation : simulation} simulationError={strategy ? matchingSimulationError : simulationError} sizedHistory={sizedHistory} sizedHistoryError={sizedHistoryError} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
+        {strategy && <SignalDetail signals={signalsFor(latest, live, ticker, now)} />}
         {order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}
         {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}
         {!strategy && <section aria-label="Latest available grade" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
