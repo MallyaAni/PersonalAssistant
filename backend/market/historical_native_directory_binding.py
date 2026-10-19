@@ -15,6 +15,8 @@ from backend.market import historical_reserved_protocol as protocol
 from backend.market import historical_synthetic_native_write as native
 
 SCHEMA = 'synthetic-native-directory-binding/1'
+SLOT_SCHEMA = 'synthetic-native-directory-binding/2'
+SAVE_SCHEMA = 'synthetic-native-save-slots/1'
 DIRECTORIES = ('.', 'anchors', 'receipts', 'work', 'work/paper', 'work/operations')
 
 
@@ -44,7 +46,8 @@ def anchor(path):
 
 
 # Create only fixed initialized lease metadata before birth, never an account placeholder.
-def reserve(store, writer, *, source_paths):
+def reserve(store, writer, *, source_paths, reserve_saves=False):
+    physical._require(type(reserve_saves) is bool, 'Explicit native save-count mode required')
     physical._require(store.sqlite_reservation is not None and store.metadata_reservation is not None
         and store.snapshot()['sequence'] == 0 and type(writer) is native.ReservedWriter
         and writer._control() == {'operation': None, 'next_slot': 0, 'current': None, 'last': None}
@@ -62,7 +65,9 @@ def reserve(store, writer, *, source_paths):
     physical._require(len(set(paths)) == len(paths)
         and all(Path(path).is_relative_to(Path(__file__).parents[1] / 'tests') for path in source_paths),
         'Distinct synthetic directory executors required')
-    header = {'schema': SCHEMA, 'identity': store.identity, 'store': str(store.root),
+    header = {'schema': SLOT_SCHEMA if reserve_saves else SCHEMA,
+        **({'save_allowance': SAVE_SCHEMA} if reserve_saves else {}),
+        'identity': store.identity, 'store': str(store.root),
         'writer': str(writer.root), 'writer_header': sha256((writer.root / 'header').read_bytes()).hexdigest(),
         'sources': {str(path): protocol.source_sha(path) for path in paths},
         'executors': list(map(str, source_paths)), 'slots': writer.header['slots'],
@@ -75,7 +80,7 @@ def reserve(store, writer, *, source_paths):
         'owner_inode': protocol.inode(store.root / 'lock'), 'capacity_reserved': False,
         'native_operation_adopted': False}
     physical._fixed_write(root / 'header', header)
-    binding = {'schema': SCHEMA, 'identity': store.identity, 'store': str(store.root),
+    binding = {'schema': header['schema'], 'identity': store.identity, 'store': str(store.root),
         'writer': str(writer.root), 'header_sha256': sha256(physical._encoded(header)).hexdigest(),
         'capacity_reserved': False}
     physical._fixed_write(store.root / 'native-directory-mode', binding)
@@ -113,9 +118,28 @@ class DirectoryBindings:
     # Preserve the exact source/account/writer/identity declaration in Store and phase evidence.
     @property
     def binding(self):
-        return {'schema': SCHEMA, 'identity': self.identity, 'store': str(self.store),
+        return {'schema': self.header['schema'], 'identity': self.identity, 'store': str(self.store),
             'writer': str(self.writer.root), 'header_sha256': sha256(physical._encoded(self.header)).hexdigest(),
             'capacity_reserved': False}
+
+    # Select only the explicit separately versioned persisted native save-count mode.
+    @property
+    def reserves_saves(self):
+        return self.header['schema'] == SLOT_SCHEMA
+
+    # Derive exact finite saves from the original phase, never a caller-supplied count.
+    def _save_count(self, phase):
+        counts = {'BIRTH': 1, 'NIGHTLY_CLOSE': 1, 'PREPARE': 0,
+                  'DECISION_FROZEN': 0, 'SUBMISSION_CAPTURED': 1, 'OUTCOME_COMMITTED': 1}
+        physical._require(phase in counts, 'Explicit finite native save phase required')
+        return counts[phase]
+
+    # Return a typed count/range bound to the original persisted phase claim and pool.
+    def _lease_value(self, index, phase):
+        return {'schema': self.header['schema'], 'pool': self.binding, 'slot': index,
+            'claim': deepcopy(phase['claim']),
+            **({'save_allowance': {'schema': SAVE_SCHEMA, **phase['save_allowance']}}
+               if self.reserves_saves else {})}
 
     # Close only held descriptors, retaining every failed/completed byte and pathname.
     def close(self):
@@ -129,13 +153,16 @@ class DirectoryBindings:
         physical._require(type(h) is dict and set(h) == {'schema', 'identity', 'store', 'writer',
             'writer_header', 'sources', 'executors', 'slots', 'metadata', 'directories', 'anchors',
             'inodes', 'owner_inode', 'capacity_reserved', 'native_operation_adopted'}
+                | ({'save_allowance'} if h.get('schema') == SLOT_SCHEMA else set())
             and type(self.writer) is native.ReservedWriter and self.store.resolve() == self.store
             and self.writer.root.is_relative_to(self.store)
             and type(self.metadata_pool) is protocol.MetadataSlots
             and self.metadata_pool.header['identity'] == self.identity
             and h['metadata'] == self.metadata_pool.binding
             and self.writer.header['identity_sha256'] == self.identity
-            and h['schema'] == SCHEMA and h['identity'] == self.identity
+            and h['schema'] in (SCHEMA, SLOT_SCHEMA)
+            and (not self.reserves_saves or h['save_allowance'] == SAVE_SCHEMA)
+            and h['identity'] == self.identity
             and h['store'] == str(self.store) and h['writer'] == str(self.writer.root)
             and h['capacity_reserved'] is h['native_operation_adopted'] is False
             and type(h['slots']) is int and 1 <= h['slots'] <= native.MAX_SLOTS
@@ -224,13 +251,26 @@ class DirectoryBindings:
             and (value['active'] is None or type(value['active']) is int
                  and 0 <= value['active'] < len(value['phases'])),
             'Exact native-directory phase/cursor control required')
+        first = 0
         for index, phase in enumerate(value['phases']):
             physical._require(type(phase) is dict and set(phase) == {'claim', 'status', 'result'}
+                | ({'save_allowance'} if self.reserves_saves else set())
                 and phase['status'] in ('OPEN', 'COMPLETE')
                 and (phase['status'] == 'OPEN') == (index == value['active'])
                 and (phase['result'] is None if phase['status'] == 'OPEN' else
                      physical._digest(phase['result']) == phase['result']), 'Original directory phase required')
             self._claim(phase['claim'])
+            if self.reserves_saves:
+                allowance = phase['save_allowance']
+                physical._require(type(allowance) is dict and set(allowance) == {'first', 'count'}
+                    and type(allowance['first']) is type(allowance['count']) is int
+                    and allowance['first'] == first and allowance['count'] == self._save_count(phase['claim']['phase'])
+                    and first + allowance['count'] <= self.header['slots'], 'Original exact native save allowance required')
+                used = sum(row.get('phase') == index for row in value['records'])
+                physical._require(used <= allowance['count']
+                    and (phase['status'] != 'COMPLETE' or used == allowance['count']),
+                    'Original completed phase must consume its exact native save count')
+                first += allowance['count']
         physical._require(len({physical._sha(physical._encoded(p['claim'])) for p in value['phases']})
             == len(value['phases']), 'Distinct original native-directory phase claims required')
         prior, previous_phase = None, -1
@@ -240,6 +280,10 @@ class DirectoryBindings:
                 and 0 <= record['phase'] < len(value['phases'])
                 and record['phase'] >= previous_phase, 'Original directory save record required')
             self.writer._receipt(record['receipt'], {'last': {'slot': index}})
+            if self.reserves_saves:
+                allowance = value['phases'][record['phase']]['save_allowance']
+                physical._require(allowance['first'] <= index < allowance['first'] + allowance['count'],
+                                  'Original phase must own this exact native slot')
             row = numbers(record['anchor'], 5)
             state = record['receipt']['state']
             physical._require(record['receipt']['prior'] == prior and record['anchor'][:2]
@@ -334,25 +378,42 @@ class DirectoryBindings:
 
     # Persist exact metadata source/head/input phase ownership before any selected native effect.
     def arm(self, claim):
-        value = self.check()
-        self._claim(claim)
-        physical._require(hasattr(self, 'store_owner') and self.store_owner._directory_binding is self
-            and self.store_owner.snapshot()['head'] == claim['head'], 'Original pre-effect directory head required')
-        physical._require(value['active'] is None and len(value['phases']) < 8
-            and all(row['claim'] != claim for row in value['phases']), 'Fresh native directory phase required')
-        value['phases'].append({'claim': deepcopy(claim), 'status': 'OPEN', 'result': None})
-        value['active'] = len(value['phases']) - 1
-        physical._fixed_write(self.root / 'control', value)
-        return {'schema': SCHEMA, 'pool': self.binding, 'slot': value['active'], 'claim': deepcopy(claim)}
+        try:
+            with self.writer._locked(shared=True):
+                value = self.check()
+                self._claim(claim)
+                physical._require(hasattr(self, 'store_owner') and self.store_owner._directory_binding is self
+                    and self.store_owner.snapshot()['head'] == claim['head'], 'Original pre-effect directory head required')
+                physical._require(value['active'] is None and len(value['phases']) < 8
+                    and all(row['claim'] != claim for row in value['phases']), 'Fresh native directory phase required')
+                extra = {}
+                if self.reserves_saves:
+                    first, count = value['cursor']['next_slot'], self._save_count(claim['phase'])
+                    physical._require(first + count <= self.header['slots'],
+                                      'Finite native save allowance exhausted BEFORE effects')
+                    extra['save_allowance'] = {'first': first, 'count': count}
+                value['phases'].append({'claim': deepcopy(claim), 'status': 'OPEN', 'result': None, **extra})
+                value['active'] = len(value['phases']) - 1
+                physical._fixed_write(self.root / 'control', value)
+                self._point('native_save_allowance_reserved')
+                return self._lease_value(value['active'], value['phases'][-1])
+        except BaseException:
+            self.poison()
+            raise
 
     # Authenticate original historical phase identity without adopting pending saves or requiring a latest cursor.
     def verify(self, lease):
         self._guard()
         value = self._control()
         physical._require(type(lease) is dict and set(lease) == {'schema', 'pool', 'slot', 'claim'}
-            and lease['schema'] == SCHEMA and lease['pool'] == self.binding
+                | ({'save_allowance'} if self.reserves_saves else set())
+            and lease['schema'] == self.header['schema'] and lease['pool'] == self.binding
             and type(lease['slot']) is int and 0 <= lease['slot'] < len(value['phases'])
-            and value['phases'][lease['slot']]['claim'] == lease['claim'], 'Original directory phase binding required')
+            and (not self.reserves_saves or type(lease['save_allowance']) is dict
+                and set(lease['save_allowance']) == {'schema', 'first', 'count'}
+                and type(lease['save_allowance']['first']) is type(lease['save_allowance']['count']) is int)
+            and self._lease_value(lease['slot'], value['phases'][lease['slot']]) == lease,
+            'Original directory/save-count phase binding required')
         return value['phases'][lease['slot']]
 
     # Read an original completed native save even when a later independent save remains pending.
@@ -384,6 +445,10 @@ class DirectoryBindings:
                 physical._require(expected_preimage == value['cursor']['current'], 'Original directory preimage required')
                 slot = value['cursor']['next_slot']
                 physical._require(slot < self.header['slots'], 'Finite native directory slots exhausted')
+                if self.reserves_saves:
+                    allowance = self.verify(lease)['save_allowance']
+                    physical._require(allowance['first'] <= slot < allowance['first'] + allowance['count'],
+                                      'Native save exceeds original pre-effect allowance')
                 value['pending'] = {'slot': slot, 'phase': lease['slot'], 'before': deepcopy(value['cursor'])}
                 physical._fixed_write(self.root / 'control', value)
                 self._point('native_directory_pending')
@@ -414,6 +479,9 @@ class DirectoryBindings:
             return
         self.check(lease)
         value = self._control()
+        if self.reserves_saves:
+            physical._require(sum(row['phase'] == lease['slot'] for row in value['records'])
+                == phase['save_allowance']['count'], 'Exact reserved native save count required before seal')
         value['phases'][lease['slot']].update(status='COMPLETE', result=result)
         value['active'] = None
         physical._fixed_write(self.root / 'control', value)
