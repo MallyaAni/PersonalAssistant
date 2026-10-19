@@ -1,5 +1,44 @@
 # Next session
 
+## 2026-10-19 — Ownership prevention in canonical gates; live file NOT repaired
+
+Current production-based candidate52056af248d4ffe1425c0f44d0be7fa69cdacc4d,
+direct parent2f9fd73f, contains ONLY seven ownership product/test/review paths.
+Source/candidate evidence is committed and pushed. Main integration4101df25
+adds the previously production-only frozen settlement-admission fixture after
+resolving its absent-file cherry-pick conflict; native product bytes unchanged.
+NEVER deploy historical main wholesale.
+
+The sole release is RUNNING via /tmp/release_paper_ownership_20261019_v1.py,
+9815B/SHA34bb4f422018fa327c8e9b43ae70b7dc2fe5a27c1db8b597326c66112283b8eb,
+remote same filename under /home/animallya96/scratch. Existing root exec80661
+owns its local dispatcher; first inspect/wait that handle, never dispatch another.
+Remote root scratch/paper-ownership-release-20261019-v1 retains canonical log,
+claim, original configuration and exact one-source approval bundle. Unit gate
+was observed progressing; NO live deployment completion claim yet. Canonical
+normal gates/backup/migration/build/admission/post remain, no skip/clock flags.
+Per-invocation BACKUP_MIRROR_HOST=animallya96@172.16.8.5 keeps primary+Spark2
+backups while excluding the previously stopped optional Mac WAL mirror; do not
+retry that Mac mirror or alter its persisted configuration.
+
+VERIFIED source-specific tests remain separate cohorts: five real Linux UID
+ownership cases passed2.09s and37 admission cases+15subtests passed0.26s. The
+candidate proof is22890B/SHA444a4b0a434ec5af14386f8543cdf85664f6fc7f52cda50a108b39a006c49044.
+The guard renews ONLY paper a8c508→1a96dd/other30 unchanged, preserving economics,
+models, costs and timing. Two healthy existing reviewers accepted source and
+exact release-controller scope read-only; no duplicate worker/job.
+
+FAILED live sender remains the root-owned0600 state described below. Prevention
+does not change that original file; no protected account body read or permission
+repair has occurred. A separately reviewed one-time descriptor-only fchown
+proposal is being prepared, not executed. It needs explicit authority because
+the user's no-denied-read-bypass restriction applies; no human question is pending
+yet. Preserve original byte hash/inode/size/mode/mtime and actual UID1000 readback
+under the existing native lock, with source/runtime checks and no old writers.
+Current protected account content, natural sender success, actual order/fill
+persistence and signed-in dashboard acceptance remain UNVERIFIED. Goal and
+heartbeat ACTIVE. Diagram impact:NONE(existing atomic writer/access boundary).
+
 ## 2026-10-19 — New ticker warning LIVE; scheduled paper sender FAILED on ownership
 
 This current entry supersedes older readiness/next-run directions. The original

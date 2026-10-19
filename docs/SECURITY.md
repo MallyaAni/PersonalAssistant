@@ -231,6 +231,13 @@ execution status, pending counts and confirmed reductions. The existing paper
 state journal remains the authority for order IDs and fills. Both nightly and
 intraday writers hold `paper/state.lock` across their transaction. These files
 follow the existing market-data backup/retention policy and desk-owner API access.
+On POSIX, the native atomic state writer preserves an existing destination's
+UID, GID and mode on the temporary descriptor before replacing it. An absent
+destination inherits an existing paper directory's owner with private `0600`
+permissions. A failed metadata preparation leaves the destination untouched.
+This prevents a root container save from stranding the scheduled host reader;
+it does not repair a file that already has the wrong owner. Such a correction
+requires a separate authorized, byte-preserving maintenance operation.
 Removing activation disables recovery; do not remove pending intent to retry an
 uncertain broker order. Recovery uses the original client ID until reconciled.
 
