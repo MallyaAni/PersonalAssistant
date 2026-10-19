@@ -1,5 +1,160 @@
 # Next session
 
+## 2026-10-19 — LIVE dated prices and position percentages; real current recommendations still unfinished
+
+CURRENT HUMAN INTENT: All names is the account-independent immediate buy/sell
+workflow. User wants genuine recommendations and sizing, not sample data or a
+portfolio prerequisite. Latest asks "are you fixing all of this?" Answered yes,
+with clear limits: UI fixes deployed, fresh recommendations still unresolved.
+Never claim real-trading readiness from presentation or fixtures.
+
+LIVE product b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8, parent c1acdffa,
+production branch codex/trading-fill-consistency-20261019. Main integration
+f24eced9 preserves unrelated private history routes/props and is NOT a release.
+NEVER deploy historical main wholesale. Read research/position-size-price-delivery-
+proof-2026-10-19.json and the original candidate proof for scope/failures.
+
+VERIFIED: dated comparison "-20.0% vs Oct13 close"; same newest dated price in
+AAOI row/chart ($78.27 last regular candle versus saved $97.78); Position size %
+column with original authenticated target, source/receipt/expiry checks and no
+current paper/personal account dependency. Size is NIGHTLY target, NOT freshly
+optimized 15-minute allocation or an instruction to buy that percentage now.
+Fresh regular-session assessments supply independent buy/sell priorities; price
+crossings revalidate an existing setup, not a new allocation/model verdict.
+
+ONE canonical scripts/deploy.sh release completed exit0 at22:50:11.959331UTC,
+no skip/clock flags. Full gate10924pass/93skip/6xfail/439warnings/25subtests in
+548.11s; real routing/model functional100pass/0skip305.76s. Backup47tables+2146
+archived WAL mirrored toSpark2 only; optional Mac mirror stays stopped. Backend
+eabd34b8/image04672834 and gateway9fab90a1/imagefd1452e6, both running/restarts0.
+All31economic source and3approval artifact hashes before/after equal. Upstream
+restored origin/main. Actual post22:50:14UTC b4b2eeb9 ok(cheap).
+
+FAILED original outer wrapper80352 exit1: read OLD c1 poststatus immediately
+after canonical exit0, before background b4 checks finished. Its stale
+post-status.json and absent release-result.json remain FAILED, never rewritten.
+Distinct data-only observer v2 ONCE authenticated completed b4 status, original
+receipts, exact runtime/source/static bytes. NEVER rerun deploy/controller.
+Remote/local position-size-price-deployed-20261019-v2 manifest
+8c67f6d92e8ced01fe3cbf041782c47078c4a20b4f04ecbc7adc767e4fe40b19,
+12files1039054B. Actual index-DiknNtgL.js888808B SHA
+f88e0dc77bed05dedf6f31dfd19e2292bb9a85d218f3e9c3f381b3b6a5dcca51.
+
+Frontend12 named cases source46.833s AND exact deployed static38.653s, each
+0skip/flaky/unexpected/diagnostics. Not24 distinct tests. TSC/build pass with
+existing CSS/chunk warnings. New backend9 targeted checks pass; original8pass/
+1wildcard422 failure retained. Two new missing-column REDs retained. Mac GitHub
+DNS failure preserved; exact verified bundles pushed normally viaSpark1 (no force).
+Never rerun these source/RED/deployed/collector/release gates for documentation.
+
+REAL-DATA PREVIEW at http://localhost:5173/?deskView=strategy#desk remains open
+IABtab4/deliverable. USER SIGNED IN normally; no pending sign-in/portfolio request.
+Vite source b4/session33452, SSHloopback18081→Spark1backend8100/session70626.
+Reuse those processes; product node_modules symlink is owned/required. No samples
+or API substitution. Non-read API methods blocked except normal login/logout;
+existing display GETs may update caches. No cookie/session/credential copying.
+At22:54:03UTC real94names/0current assessments/0buy-now/0sell-reviews; expired
+allocation reason correctly recovered after transitional old-backend422. Real
+AAOI row/chart agree; chart has82grade changes but no matching-policy simulation.
+Evidence /tmp/position-size-price-real-ui-20261019-v1. Dev logs at observation[];
+do not erase transitional failures. Publictab3 serves exact new asset but is now
+at ordinary sign-in after reload; authenticated public-origin remains UNVERIFIED.
+Do not repeat access questions or interfere with user’s preview input.
+
+UNFINISHED: actual current signals and percentage targets; current strategy
+historical action/share simulation; 15-minute numeric resizing; extended-session
+strategy and real-trading readiness. Existing feed check22:23UTC: AAOI IEXtrade
+78.27 at19:59:46UTC/unusable ask0 quote20:00UTC; latestSIP403 subscription;
+overnight08:00UTC. Fresh after-hours price unavailable from configured feeds.
+Entitlement AND validated extended-session strategy remain separate requirements;
+no paid-data/provider/model/account change, clock extension or fake signals.
+
+NEXT CONCRETE TASK: observe NATURALLY SCHEDULED ordinary19:30ET nightly AFTER
+completion, then subsequent real intraday flow. Latest ordinary recordOct13 is
+still expired. Read NEW bounded logs/record/capture/source bindings and fix first
+new failing boundary. market_daily/market_balancer mutate/send/cancel: NEVER run
+as diagnostics. Before natural completion stay quiet on unchanged state; only
+independent concrete production defects. No private tiny-allocation-guard treadmill.
+Full live plan→signals/sizing→chart acceptance still required; don't conflate
+fixture presentation with genuine strategy performance. Preserve all failed/
+completed roots/pools/gates; no adoption/replay/reopening COMPLETE. Physical
+native rename/journal admission still lacks allocator acknowledgement at original
+paper.py433 replace/unlink/parentfsync; capacity_reserved=False. All prior full
+filesystem/horizon/modelRAM/twohost/genuine constraints remain separate. No real
+orders/paper reset/paid-data changes/Spark2load/guard weakening. Heartbeat ACTIVE,
+quiet unless meaningful progress/failure/required action. No ETA. Diagram:NONE.
+
+## ARCHIVED in-progress snapshot — superseded by completed b4 release above
+
+Current human request: fix the misleading AAOI percentage, show position size %,
+make current buy/sell signals usable, and deploy. User also asks whether sizing
+and actions update on completed 15-minute candles or on price crossings. Answered
+truthfully: chart assessments use completed regular-session candles; screen polls
+20s and display quotes collect15s; numeric size is the original NIGHTLY target,
+not a newly calculated intraday allocation. Price crossings revalidate an existing
+setup; they do not create a new model size/verdict.
+
+Source candidate b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8, direct descendant
+of LIVE c1, branch codex/trading-fill-consistency-20261019. Frontend12 named cases
+PASS46.833s/0skip/flaky/unexpected; TSC/build/diff pass. New backend9 checks PASS
+after original8pass/1route422 failure: fixed path must register before the desk's
+dated-session wildcard. Ruff initially26style findings, corrected/PASS. New typed
+owner-only model-allocation GET authenticates original source/numeric receipt and
+expires without reading a current paper/personal account. Same newest dated price
+in row/chart; comparison explicitly says "vs Oct13 close". All31economic sources
+remain unchanged. Source proof docs/research/position-size-price-candidate-proof-
+2026-10-19.json in product tree; no current full-acceptance claim yet.
+
+ONE canonical deployment is RUNNING, owned by ROOT tool session80352:
+remote /home/animallya96/scratch/release_position_size_price_20261019_v1.py;
+receipts /home/animallya96/scratch/position-size-price-release-20261019-v1;
+source /home/animallya96/scratch/position-size-price-release-source-20261019-v1.
+Do NOT duplicate/retry/release while it runs. Exact argv uses scripts/deploy.sh
+--deploy-dir=/home/animallya96/deploy/anios --wait-post; no skip/clock overrides.
+Full backend/routing gate, backup and normal postchecks are required. Per-process
+backup mirror only Spark2; optional Mac WAL mirror remains stopped. Original
+upstream origin/main restored in finally. Product source stays on production
+branch; NEVER deploy historical main wholesale.
+
+Mac HTTPS Git push FAILED DNS resolving github.com. Exact one-commit bundle
+transferred over existing pinned SSH to Spark1, verified and pushed normally from
+there; remote confirmed c1→b4, no force/history rewrite/account/network changes.
+No deployment rerun. Source-only test preparation first failed missing local
+RepoDigests before any test container; exact existing immutable test image used.
+
+HARD CURRENT-DATA BLOCKER observed22:23:32UTC: existing IEX returns AAOI trade
+78.27 at19:59:46.9535UTC and unusable quote20:00:01UTC; SIP latest quote403
+"subscription does not permit querying recent SIP data"; accessible overnight
+quote is08:00UTC. No fresh after-hours evidence from configured feeds. Existing
+strategy assessments are regular-session and expired; do not extend clocks or
+invent current signals. Feed entitlement AND extended-session strategy validation
+remain required. Current sizing also awaits natural19:30ET nightly; latest record
+Oct13 stays expired. No paid-data/provider/model/guard changes or artificial jobs.
+No real orders or paper reset. User is already signed in; no portfolio question.
+
+USER PREVIEW CORRECTION: asks to review the real dashboard without repeated
+deployments and explicitly rejects sample recommendations. No sample preview was
+created. REAL-DATA local Vite preview now at http://localhost:5173/?deskView=strategy#desk,
+visible IABtab4. Config /tmp/live-recommendations-preview-20261019.mjs, Vite tool
+session33452; SSH loopback tunnel18081→Spark1backend8100 session70626. Exact
+product branch source; actual API data only, no response substitution. Middleware
+blocks all non-read API requests except ordinary login/logout. Binds127.0.0.1;
+no production security/provider/model change. Browser's production-domain cookie
+cannot be copied to localhost: preview currently at normal sign-in. ONE concise
+async sign-in request is pending; do not repeat it or inspect credentials. Do not
+mint/inject a session token. User can use productiontab3 instead. Tab4 marked
+deliverable, tab3 handoff. New allocation route remains unavailable in the old
+backend until the one authorized canonical release finishes. Fresh15-minute
+numeric sizing remains separate unfinished work; do not call nightly weights
+intraday sizing. Main source integration f24eced9 preserves private history
+router/sizedHistory; its own frontend12PASS36.060s/TSC/build, not a deployment.
+
+NEXT: observe original canonical job completion; if green, authenticate deployed
+backend/source/approval/static bytes, run the applicable browser checks on those
+bytes, exercise signed-in tab3 row/chart and record exact limitations. Preserve
+all failures and original c1/private evidence. Current fresh after-hours signals,
+15-minute numeric resizing and current-strategy historical simulation UNVERIFIED.
+
 ## 2026-10-19 — LIVE All names independent signals; current-strategy historical chart data still unavailable
 
 CURRENT PRODUCT PATH supersedes older paper-account/private guard directions.

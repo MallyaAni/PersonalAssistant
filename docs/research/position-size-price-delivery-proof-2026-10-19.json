@@ -1,0 +1,108 @@
+{
+  "status": "DEPLOYED_PRESENTATION_VERIFIED_CURRENT_RECOMMENDATIONS_UNFINISHED",
+  "product_revision": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+  "product_parent": "c1acdffa232544783b78b97c1179870b314cd43e",
+  "product_branch": "codex/trading-fill-consistency-20261019",
+  "main_integration": "f24eced9eec088bdd714c4cd22727eb50bcfcb83",
+  "objective": "Real-data All names with a dated price comparison, consistent table/chart price and authenticated original strategy target percentages, independent of current paper/personal accounts. Fresh current recommendations remain required separately.",
+  "verified": {
+    "behavior": [
+      "AAOI comparison explicitly states -20.0% vs Oct 13 close, with the original $97.78 anchor identified; it is not presented as today's return or size.",
+      "AAOI table and chart both select the newer $78.27 completed regular-session candle rather than the old $97.78 close.",
+      "Position size % projects the original authenticated published target; missing, foreign and expired evidence is withheld independently of buy/sell signal evidence.",
+      "Original published allocation is a nightly target, not a newly optimized 15-minute position or an instruction to buy that percentage now.",
+      "Owner-authenticated fixed allocation GET is registered before the existing dated-session wildcard; current broker/paper or personal inputs are not read to create percentages."
+    ],
+    "canonical_release": {
+      "argv": ["bash", "/home/animallya96/scratch/position-size-price-release-source-20261019-v1/scripts/deploy.sh", "--deploy-dir=/home/animallya96/deploy/anios", "--wait-post"],
+      "executions": 1,
+      "skip_or_clock_flags": false,
+      "canonical_exit": 0,
+      "finished_at": "2026-10-19T22:50:11.959331+00:00",
+      "original_receipts": "/home/animallya96/scratch/position-size-price-release-20261019-v1",
+      "unit_gate": {"passed": 10924, "skipped": 93, "xfailed": 6, "warnings": 439, "subtests_passed": 25, "seconds": 548.11},
+      "routing_model_functional_gate": {"passed": 100, "skipped": 0, "seconds": 305.76},
+      "backup": {"tables": 47, "path": "data/backups/anios_db-20261019-184719.sql.gz", "archived_wal_files_staged": 2146, "mirror": "Spark2 only; optional Mac mirror remains stopped"},
+      "economic_sources_before_after": {"count": 31, "equal": true},
+      "approval_artifacts_before_after_equal": true,
+      "upstream_restored": "origin/main",
+      "postcheck": "2026-10-19T22:50:14Z b4b2eeb9 ok (cheap)",
+      "postcheck_scope": "gateway anonymous authentication 401, health 200, installed trading admission; not a complete user journey sweep or search harness claim"
+    },
+    "runtime": {
+      "backend": {"cid": "eabd34b8b8f67d8e27d45470e8230794298388da698c8831db5b7ef25f817afc", "image": "sha256:04672834e7c5a8b88e9fc2ed4d759b5c4903e22bf3e25ae2fee289c7c71234f7", "state": "running", "restarts": 0},
+      "gateway": {"cid": "9fab90a1d737393cee63a31542865f7b07f92274f92aeb013fcc7c28a4e6e265", "image": "sha256:fd1452e6e4a0f1887792726d502c03c1355115d5019e4d1ae82e75f3978ebe55", "state": "running", "restarts": 0},
+      "source_hashes_equal_target": {
+        "backend/api/v1/api.py": "a4a6cff7c0e55ac749c79be04bc92fbe4f1f16dac5d26b8b28840d7f0cec644f",
+        "backend/api/v1/market_allocation.py": "21d7e0256ec5b9dc64d01a0a269ec15365521dd2e73cccb9887950fb96d97275",
+        "backend/market/model_allocation_view.py": "b223ff216ba83de34fa73746513bdda761d4cbb2f98fe12aca64df49c2657111"
+      },
+      "deployed_javascript": {"path": "assets/index-DiknNtgL.js", "bytes": 888808, "sha256": "f88e0dc77bed05dedf6f31dfd19e2292bb9a85d218f3e9c3f381b3b6a5dcca51"},
+      "deployed_stylesheet": {"path": "assets/index-Da6jOVsw.css", "bytes": 49735, "sha256": "2e1504f083cc70aa2287b67c515ea835780454592490bb0946ff3a7259f41244"},
+      "note": "Gateway build differs from source-preview index-hOkILMva.js; exact served bytes were retained and tested independently, not assumed identical."
+    },
+    "browser_acceptance": {
+      "distinct_named_cases": 12,
+      "source_report": "/tmp/position-size-price-v2-green-20261019-results.json",
+      "source_duration_ms": 46833.022,
+      "deployed_report": "/tmp/position-size-price-deployed-20261019-v2-results.json",
+      "deployed_duration_ms": 38653.399,
+      "deployed_expected": 12,
+      "skipped": 0, "unexpected": 0, "flaky": 0,
+      "diagnostics": [],
+      "scope": "Real browser against exact source/deployed frontend with controlled API fixtures. Twelve named cases at two builds, not 24 distinct tests or genuine current market signal acceptance.",
+      "typescript": "PASS",
+      "vite": "PASS with existing CSS pseudo-class and chunk-size warnings",
+      "main_integration_report": "/tmp/position-size-price-main-integration-20261019-results.json",
+      "main_integration_duration_ms": 36059.586,
+      "main_integration_scope": "Twelve frontend cases/TSC/build; main private optional history retained, never deployed wholesale."
+    },
+    "signed_in_real_preview": {
+      "url": "http://localhost:5173/?deskView=strategy#desk",
+      "user_signed_in_normally": true,
+      "real_backend_proxy": "127.0.0.1:18081 through existing pinned SSH to Spark1:8100",
+      "synthetic_api_responses": false,
+      "source": "Production branch b4 frontend via Vite HMR",
+      "writes": "Non-read API methods blocked before forwarding except normal login/logout; display GET caches may still update",
+      "observed_at": "2026-10-19T22:54:03.286Z",
+      "names": 94, "current_assessments": 0, "buy_now": 0, "sell_reviews_now": 0,
+      "aaoi_price": 78.27,
+      "aaoi_price_basis": "last regular; IEX completed candle; 4:00:00 PM ET",
+      "aaoi_comparison": "-20.0% vs Oct 13 close",
+      "model_size": "Unavailable: Published model allocation expired; awaiting the next strategy plan",
+      "historical_simulation": "Current-strategy share-sized history unavailable; incompatible older policy withheld; 82 actual grade changes visible",
+      "logs_at_observation": [],
+      "evidence_root": "/tmp/position-size-price-real-ui-20261019-v1",
+      "public_origin": "Public tab served exact new asset URL but normal sign-in is required after reload. Authenticated public-origin workflow remains UNVERIFIED; no credential/session copying or bypass."
+    },
+    "retained_collection": {
+      "remote_root": "/home/animallya96/scratch/position-size-price-deployed-20261019-v2",
+      "local_root": "/tmp/position-size-price-deployed-20261019-v2",
+      "manifest_sha256": "8c67f6d92e8ced01fe3cbf041782c47078c4a20b4f04ecbc7adc767e4fe40b19",
+      "files_excluding_manifest": 12,
+      "bytes_excluding_manifest": 1039054,
+      "readback": "Every copied file exact length/full SHA matched the remote manifest; same running CID/image/source held before and after collection",
+      "collector": "/tmp/collect_position_size_price_release_20261019_v2.py",
+      "collector_executions": 1
+    },
+    "diagram_impact": "NONE: read-only projection of existing authenticated strategy records into existing dashboard"
+  },
+  "failed_preserved": [
+    {"kind": "EXPECTED_RED", "report": "/tmp/position-size-price-red-20261019-results.json", "failed": 2, "reason": "Old c1 static has no position-size column"},
+    {"kind": "BACKEND_ROUTE", "passed": 8, "failed": 1, "reason": "Dated-session wildcard intercepted new fixed endpoint with 422; fixed registration order, assertions unchanged"},
+    {"kind": "LOCAL_DOCKER_PREPARATION", "exit": 125, "reason": "Absent RepoDigests produced malformed argv before a test container started"},
+    {"kind": "MAC_GIT_TRANSPORT", "reason": "HTTPS DNS could not resolve github.com; exact bundles verified and pushed normally from Spark1, no force or network bypass"},
+    {"kind": "ORIGINAL_RELEASE_WRAPPER", "exit": 1, "reason": "Canonical deployment exited 0 but outer wrapper immediately asserted on previous c1 poststatus before background b4 completion", "original_post_status_retained": "post-status.json", "release_result_absent": true, "later_observation": "Distinct data-only observer authenticated new b4 poststatus and artifacts; wrapper failure never relabelled success; no deploy retry"},
+    {"kind": "TRANSITIONAL_PREVIEW_ROUTE", "reason": "New frontend reached old c1 backend before release and model-allocation returned 422; preview recovered to actual expired-plan result after new backend, no lifetime zero-error claim"}
+  ],
+  "unfinished": [
+    "Fresh ordinary approved plan after naturally scheduled 19:30 ET nightly; latest record remains October 13 and expired",
+    "Fresh actionable after-hours buy/sell assessments: configured AAOI IEX trade is from regular close; latest SIP returns subscription 403; overnight quote stale",
+    "Validated extended-session strategy support, not merely a newer display quote or paid data entitlement",
+    "Numeric model resizing on every 15-minute candle or price crossing",
+    "Genuine historical current-strategy actions and share sizes; profitability and live-trading readiness",
+    "Authenticated public-origin account-to-screen acceptance of b4; real-data signed-in local preview is verified separately"
+  ],
+  "next": "Observe naturally scheduled 19:30 ET ordinary run after completion, then subsequent real intraday flow. Read new bounded logs/record/capture/source bindings, identify first failing boundary; never invoke market_daily or market_balancer as probes. No private tiny-guard treadmill or repeated closed gates.",
+  "safety": {"real_orders": false, "paper_reset": false, "artificial_nightly": false, "provider_or_paid_data_change": false, "economic_guard_change": false, "historical_main_deploy": false}
+}
